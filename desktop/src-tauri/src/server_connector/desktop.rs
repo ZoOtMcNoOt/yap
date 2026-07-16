@@ -3,7 +3,8 @@ use std::time::Duration;
 use tauri::{Emitter, Manager};
 
 use super::{
-    allow_insecure_private_server, client, config, ServerConnectionSnapshot, ServerConnector,
+    allow_insecure_private_server, capabilities, client, config, AsrCapabilityCatalog,
+    ServerConnectionSnapshot, ServerConnector,
 };
 
 impl ServerConnector {
@@ -154,6 +155,44 @@ pub(super) async fn refresh_connection(
         .synchronize_from_disk(&app)
         .map_err(|error| error.to_string())?;
     Ok(connector.refresh(&app).await)
+}
+
+pub(super) async fn asr_capabilities(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    connector: tauri::State<'_, ServerConnector>,
+) -> Result<Option<AsrCapabilityCatalog>, String> {
+    crate::authorization::ensure_main(&window)?;
+    connector
+        .synchronize_from_disk(&app)
+        .map_err(|error| error.to_string())?;
+    let Some(lease) = connector.asr_capability_lease() else {
+        return Ok(None);
+    };
+    if !config::origin_is_approved(lease.base_url()).unwrap_or(false) {
+        return Err("ASR capability origin is not approved.".into());
+    }
+    let catalog = match capabilities::fetch_asr_capabilities(
+        &connector.client,
+        lease.base_url(),
+        allow_insecure_private_server(),
+    )
+    .await
+    {
+        Ok(catalog) => catalog,
+        Err(
+            capabilities::AsrCatalogError::Transport | capabilities::AsrCatalogError::Unavailable,
+        ) => return Ok(None),
+        Err(capabilities::AsrCatalogError::InvalidOrigin) => {
+            return Err("ASR capability origin is invalid.".into());
+        }
+        Err(
+            capabilities::AsrCatalogError::ResponseTooLarge
+            | capabilities::AsrCatalogError::Malformed
+            | capabilities::AsrCatalogError::RevisionMismatch,
+        ) => return Err("Server returned an incompatible ASR capability catalog.".into()),
+    };
+    connector.with_current_asr_capability_lease(&lease, || Some(catalog))
 }
 
 pub(super) fn load_settings(

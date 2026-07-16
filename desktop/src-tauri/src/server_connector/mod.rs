@@ -1,5 +1,6 @@
 pub(crate) mod batch;
 mod boundary;
+mod capabilities;
 mod client;
 pub mod config;
 mod core;
@@ -7,6 +8,7 @@ mod desktop;
 mod state;
 
 pub use boundary::ServerConnectorBoundary;
+pub use capabilities::AsrCapabilityCatalog;
 pub(crate) use core::BatchConnectionLease;
 pub use core::ServerConnector;
 pub use state::{ServerCapabilities, ServerConnectionSnapshot};
@@ -31,6 +33,15 @@ pub(crate) async fn refresh_server_connection(
     connector: tauri::State<'_, ServerConnector>,
 ) -> Result<ServerConnectionSnapshot, String> {
     desktop::refresh_connection(window, app, connector).await
+}
+
+#[tauri::command]
+pub(crate) async fn server_asr_capabilities(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    connector: tauri::State<'_, ServerConnector>,
+) -> Result<Option<AsrCapabilityCatalog>, String> {
+    desktop::asr_capabilities(window, app, connector).await
 }
 
 #[tauri::command]

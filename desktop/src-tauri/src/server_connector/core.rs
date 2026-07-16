@@ -32,6 +32,17 @@ pub(crate) struct BatchConnectionLease {
     client: batch::BatchApiClient,
 }
 
+pub(crate) struct AsrCapabilityLease {
+    generation: u64,
+    base_url: String,
+}
+
+impl AsrCapabilityLease {
+    pub(crate) fn base_url(&self) -> &str {
+        &self.base_url
+    }
+}
+
 impl BatchConnectionLease {
     pub(crate) fn client(&self) -> &batch::BatchApiClient {
         &self.client
@@ -158,6 +169,22 @@ impl ServerConnector {
         }))
     }
 
+    pub(crate) fn asr_capability_lease(&self) -> Option<AsrCapabilityLease> {
+        let generation = self.generation.load(Ordering::Acquire);
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        if inner.generation() != generation
+            || snapshot.state != runtime::state::ServerConnectorState::Ready
+        {
+            return None;
+        }
+        let base_url = inner.configured_base_url(generation)?;
+        Some(AsrCapabilityLease {
+            generation,
+            base_url,
+        })
+    }
+
     pub(crate) fn persisted_cleanup_client(
         &self,
         base_url: &str,
@@ -192,6 +219,24 @@ impl ServerConnector {
             && snapshot.capabilities.job_status;
         if !current {
             return Err("Server connection changed before the batch response could commit.".into());
+        }
+        Ok(commit())
+    }
+
+    pub(crate) fn with_current_asr_capability_lease<T>(
+        &self,
+        lease: &AsrCapabilityLease,
+        commit: impl FnOnce() -> T,
+    ) -> Result<T, String> {
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        let current = self.generation.load(Ordering::Acquire) == lease.generation
+            && inner.generation() == lease.generation
+            && inner.configured_base_url(lease.generation).as_deref()
+                == Some(lease.base_url.as_str())
+            && snapshot.state == runtime::state::ServerConnectorState::Ready;
+        if !current {
+            return Err("Server connection changed before the ASR catalog could commit.".into());
         }
         Ok(commit())
     }

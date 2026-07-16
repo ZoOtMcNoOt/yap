@@ -32,6 +32,16 @@ class _Pool:
         return bool(self.jobs and self.jobs[-1].job_id == job_id)
 
 
+class _Runtime:
+    def __init__(self) -> None:
+        self.service = object()
+        self.asr_capabilities = {"schemaVersion": 1, "providers": []}
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
 class RoutedBatchProcessorTests(unittest.TestCase):
     def test_submit_routes_batch_work_before_entering_the_isolated_pool(self) -> None:
         pool = _Pool()
@@ -142,6 +152,32 @@ class RoutedBatchProcessorTests(unittest.TestCase):
 
 
 class ServerMainTests(unittest.TestCase):
+    def test_verified_runtime_capabilities_are_served_with_the_job_service(self) -> None:
+        runtime = _Runtime()
+        settings = ServerSettings()
+        with (
+            patch.object(server_main.signal, "signal"),
+            patch.object(
+                server_main.ServerSettings,
+                "from_env",
+                return_value=settings,
+            ),
+            patch.object(
+                server_main,
+                "build_batch_runtime",
+                return_value=runtime,
+            ),
+            patch.object(server_main, "serve", side_effect=KeyboardInterrupt) as serve,
+        ):
+            server_main.main()
+
+        serve.assert_called_once_with(
+            settings,
+            job_service=runtime.service,
+            asr_capabilities=runtime.asr_capabilities,
+        )
+        self.assertTrue(runtime.closed)
+
     def test_linux_termination_uses_the_graceful_runtime_cleanup_path(self) -> None:
         with (
             patch.object(server_main.signal, "signal") as install_signal,

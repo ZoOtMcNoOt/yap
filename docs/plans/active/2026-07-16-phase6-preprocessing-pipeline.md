@@ -1,8 +1,9 @@
 # Phase 6 Preprocessing Pipeline Implementation Plan
 
 **Status:** Active on `feat/phase6-preprocessing-pipeline`. Decision research
-and public aggregate benchmark evidence are complete; implementation and the
-Phase 6 gate are not.
+and public aggregate benchmark evidence are complete. The bounded verified ASR
+catalog slice executes with focused Python 3.12, OpenAPI, Rust, and TypeScript
+coverage; the remaining implementation and the Phase 6 gate are not complete.
 
 **Base:** Checkpoint A merge
 `a80934d844a068110e7f86b30b6e29d35146db57` from
@@ -94,6 +95,12 @@ and enterprise work in their accepted phases.
 The aggregate public-fixture spike is recorded in ADR 0024. It is design
 evidence, not per-language certification:
 
+The [dynamic language detection evaluation](../../research/2026-07-16-dynamic-language-detection-evaluation.md)
+also separates clip-level LID, finalized-segment tags, and true language
+diarization. Qwen3-ASR and VibeVoice remain benchmark challengers; neither
+changes the accepted Nemotron segment-level implementation before executable
+comparative evidence exists.
+
 - Nemotron automatic LID: 78/84 correct over 28 out-of-box language families,
   mean 134 ms/probe, and 1.293 GiB peak GPU allocation in the measured shape.
 - SpeechBrain VoxLingua107: 77/84 over the same 28 families plus 3/3 Greek;
@@ -110,12 +117,12 @@ evidence, not per-language certification:
 
 ### 1. Version the language, provider, and timing capability contract
 
-- [ ] Define one bounded catalog schema shared by OpenAPI, Python, Rust, and
+- [x] Define one bounded catalog schema shared by OpenAPI, Python, Rust, and
       TypeScript projections.
-- [ ] Record provider/model revision, BCP 47 locale, execution mode, quality
+- [x] Record provider/model revision, BCP 47 locale, execution mode, quality
       tier, language suggestion/tag support, alignment support, provenance/
       license identity, and promotion-evidence revision.
-- [ ] Advertise a catalog only when its locked runtime and required artifacts
+- [x] Advertise a catalog only when its locked runtime and required artifacts
       are verified. Health remains small; catalog retrieval is separately
       bounded and versioned.
 - [ ] Keep a last-known verified native snapshot for offline explanation

@@ -143,6 +143,22 @@ head `4771d9be60562fa009ccecbcd3c7111b699883a5` and merged as
 profile, not an authenticated, externally published, persistent production
 service.
 
+## Phase 6 verified ASR catalog (active development)
+
+An active batch runtime now verifies `asr-capabilities.lock.json` only after its
+immutable model artifacts pass their existing size and SHA-256 checks. It then
+serves the joined, fingerprinted catalog at `GET /v1/asr/capabilities`. The
+health-only profile returns `501`; it never advertises a catalog without a
+verified runtime. `YAP_ASR_CAPABILITY_LOCK` may override the lock path for a
+reviewed deployment, but the same regular-file, schema, model-pool, provenance,
+evidence-revision, and 256-KiB output bounds still apply.
+
+The current lock intentionally advertises only the already gated Cohere
+`en-US` fixed-batch route. Research candidates and model-card language lists do
+not become executable availability. Primary-language persistence, additional
+locales/providers, dynamic mode, LID, VAD, and alignment remain unfinished
+Phase 6 work until their own runtime artifacts and benchmark revisions pass.
+
 ## Local checks
 
 ```powershell

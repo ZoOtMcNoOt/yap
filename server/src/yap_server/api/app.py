@@ -4,7 +4,7 @@ import logging
 from functools import partial
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -42,10 +42,12 @@ class _HealthRequestHandler(JobRequestMixin, ResponseMixin, BaseHTTPRequestHandl
         *args: Any,
         request_logger: logging.Logger,
         job_service: RecordingJobService | None,
+        asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
     ) -> None:
         self._request_logger = request_logger
         self._job_service = job_service
+        self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
         self._request_logged = False
         self._request_body = BoundedRequestBody(self)
@@ -130,6 +132,17 @@ class _HealthRequestHandler(JobRequestMixin, ResponseMixin, BaseHTTPRequestHandl
             )
             return
 
+        if path == "/v1/asr/capabilities":
+            if self._asr_capabilities is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="ASR capabilities are not configured.",
+                )
+                return
+            self._send_json(HTTPStatus.OK, self._asr_capabilities)
+            return
+
         if self._job_service is not None and path != "/v1/live":
             self._dispatch_job_request(path)
             return
@@ -146,6 +159,7 @@ def create_server(
     *,
     logger: logging.Logger | None = None,
     job_service: RecordingJobService | None = None,
+    asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
     ensure_bind_is_allowed(settings.host)
     request_logger = logger or _REQUEST_LOGGER
@@ -153,6 +167,7 @@ def create_server(
         _HealthRequestHandler,
         request_logger=request_logger,
         job_service=job_service,
+        asr_capabilities=asr_capabilities,
     )
     server = server_type(
         settings.host,
@@ -168,6 +183,11 @@ def serve(
     settings: ServerSettings,
     *,
     job_service: RecordingJobService | None = None,
+    asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
-    with create_server(settings, job_service=job_service) as server:
+    with create_server(
+        settings,
+        job_service=job_service,
+        asr_capabilities=asr_capabilities,
+    ) as server:
         server.serve_forever()

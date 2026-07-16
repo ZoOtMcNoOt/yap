@@ -48,10 +48,24 @@ class ContractTests(unittest.TestCase):
             "AlignedWord",
             "ServerCapabilities",
             "HealthView",
+            "AsrExecutionMode",
+            "AsrQualityTier",
+            "AsrCapability",
+            "AsrProviderCapabilities",
+            "AsrCapabilityCatalog",
             "RecordingJob",
             "ApiError",
         }
         self.assertTrue(expected_components.issubset(schemas))
+        provider_capabilities = schemas["AsrProviderCapabilities"]["properties"]
+        for field in (
+            "providerId",
+            "poolId",
+            "modelId",
+            "modelLicense",
+            "modelSource",
+        ):
+            self.assertEqual(provider_capabilities[field]["pattern"], "^[ -~]+$")
         self.assertEqual(schemas["RecordingJobStatus"]["enum"], identity_contract.RECORDING_JOB_STATUSES)
         self.assertNotIn("server_processing_cohere", json.dumps(document))
         self.assertEqual(

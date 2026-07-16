@@ -20,7 +20,12 @@ import {
   setupStateLabel,
 } from "@/lib/setup-model";
 import { isWorkspaceView } from "@/lib/workspace";
-import { serverCanRouteImportedRecording, serverCanRouteLive } from "@/server";
+import {
+  catalogSupportsMode,
+  serverCanRouteImportedRecording,
+  serverCanRouteLive,
+  type AsrCapabilityCatalog,
+} from "@/server";
 
 describe("client workflow projections", () => {
   const baseFallbackModel = {
@@ -94,6 +99,39 @@ describe("client workflow projections", () => {
       state: "offline",
       capabilities: { ...readyWithoutCapabilities.capabilities, liveStreaming: true },
     })).toBe(false);
+  });
+
+  it("keeps fixed-language and dynamic-language availability distinct", () => {
+    const catalog = {
+      schemaVersion: 1,
+      catalogRevision: "b".repeat(64),
+      providers: [
+        {
+          providerId: "cohere",
+          poolId: "cohere-batch",
+          modelId: "CohereLabs/cohere-transcribe-03-2026",
+          modelRevision: "a".repeat(40),
+          modelLicense: "Apache-2.0",
+          modelSource: "https://example.com/model",
+          capabilities: [
+            {
+              languageBcp47: "en-US",
+              providerLanguageCode: "en",
+              mode: "fixedBatch",
+              qualityTier: "transcriptionReady",
+              languageSuggestion: false,
+              segmentLanguageTags: false,
+              wordAlignment: false,
+              promotionEvidenceRevision: "c".repeat(40),
+            },
+          ],
+        },
+      ],
+    } satisfies AsrCapabilityCatalog;
+
+    expect(catalogSupportsMode(catalog, "en-US", "fixedBatch")).toBe(true);
+    expect(catalogSupportsMode(catalog, "en-US", "dynamicBatch")).toBe(false);
+    expect(catalogSupportsMode(catalog, "es-US", "fixedBatch")).toBe(false);
   });
 
   it("labels the pinned local fallback model clearly", () => {

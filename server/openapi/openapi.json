@@ -4,12 +4,16 @@
   "info": {
     "title": "Yap Server API",
     "version": "1.0.0",
-    "description": "Normative Yap server wire contract. The default Phase 3 profile implements only GET /v1/health. The optional Phase 5 loopback development profile implements the bounded job, chunk, commit, status, result, and cancellation operations. Live-session operations remain contract-only."
+    "description": "Normative Yap server wire contract. The default profile implements GET /v1/health. The optional Phase 5 loopback development profile implements bounded batch jobs, and its Phase 6 extension publishes a verified ASR capability catalog. Live-session operations remain contract-only."
   },
   "tags": [
     {
       "name": "health",
       "description": "Implemented Phase 3 process health."
+    },
+    {
+      "name": "asr",
+      "description": "Verified model, locale, execution-mode, and timing capabilities."
     },
     {
       "name": "jobs",
@@ -49,6 +53,39 @@
           },
           "500": {
             "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/asr/capabilities": {
+      "get": {
+        "tags": [
+          "asr"
+        ],
+        "summary": "Read verified ASR capabilities",
+        "description": "Returns a bounded catalog only when the active runtime's immutable model artifacts have verified. The default health-only profile fails closed with 501.",
+        "operationId": "getAsrCapabilities",
+        "x-yap-phase-3-behavior": "Implemented",
+        "x-yap-later-owner": "Verified ASR runtime",
+        "x-yap-current-behavior": "Implemented only when locked runtime artifacts verify",
+        "responses": {
+          "200": {
+            "description": "The verified runtime capability catalog.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsrCapabilityCatalog"
+                },
+                "examples": {
+                  "verified": {
+                    "externalValue": "./examples/asr-capabilities.ok.json"
+                  }
+                }
+              }
+            }
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
           }
         }
       }
@@ -1448,6 +1485,155 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ModelRevision"
+            }
+          }
+        }
+      },
+      "AsrExecutionMode": {
+        "type": "string",
+        "description": "A user-visible ASR execution mode. Dynamic detection is distinct from fixed-language work.",
+        "enum": [
+          "localLive",
+          "serverLive",
+          "fixedBatch",
+          "dynamicBatch"
+        ]
+      },
+      "AsrQualityTier": {
+        "type": "string",
+        "description": "The highest quality tier supported by recorded promotion evidence.",
+        "enum": [
+          "transcriptionReady",
+          "broadCoverage",
+          "preview"
+        ]
+      },
+      "AsrCapability": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "languageBcp47",
+          "providerLanguageCode",
+          "mode",
+          "qualityTier",
+          "languageSuggestion",
+          "segmentLanguageTags",
+          "wordAlignment",
+          "promotionEvidenceRevision"
+        ],
+        "properties": {
+          "languageBcp47": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 35,
+            "pattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$"
+          },
+          "providerLanguageCode": {
+            "type": "string",
+            "pattern": "^[a-z]{2}$"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/AsrExecutionMode"
+          },
+          "qualityTier": {
+            "$ref": "#/components/schemas/AsrQualityTier"
+          },
+          "languageSuggestion": {
+            "type": "boolean"
+          },
+          "segmentLanguageTags": {
+            "type": "boolean"
+          },
+          "wordAlignment": {
+            "type": "boolean"
+          },
+          "promotionEvidenceRevision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      },
+      "AsrProviderCapabilities": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "providerId",
+          "poolId",
+          "modelId",
+          "modelRevision",
+          "modelLicense",
+          "modelSource",
+          "capabilities"
+        ],
+        "properties": {
+          "providerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[ -~]+$"
+          },
+          "poolId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[ -~]+$"
+          },
+          "modelId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[ -~]+$"
+          },
+          "modelRevision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "modelLicense": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[ -~]+$"
+          },
+          "modelSource": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^[ -~]+$",
+            "format": "uri"
+          },
+          "capabilities": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/AsrCapability"
+            }
+          }
+        }
+      },
+      "AsrCapabilityCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "catalogRevision",
+          "providers"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "catalogRevision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "providers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/AsrProviderCapabilities"
             }
           }
         }

@@ -26,6 +26,7 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         history::history_migrate_hidden_paths,
         crate::server_connector::server_connection_status,
         crate::server_connector::refresh_server_connection,
+        crate::server_connector::server_asr_capabilities,
         crate::server_connector::server_settings,
         crate::server_connector::set_server_settings,
         crate::jobs::commands::recording_jobs_snapshot,

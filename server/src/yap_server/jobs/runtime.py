@@ -12,6 +12,7 @@ import stat
 import threading
 from typing import Mapping, Protocol
 
+from yap_server.capabilities import load_verified_asr_capability_catalog
 from yap_server.jobs.service import RecordingJobService
 from yap_server.pools.batch_asr import (
     BatchAsrPool,
@@ -20,7 +21,7 @@ from yap_server.pools.batch_asr import (
     reconcile_owned_containers,
 )
 from yap_server.pools.batch_contract import BatchAsrJob, PoolBackpressure
-from yap_server.pools.model_lock import load_model_pool_lock, verify_model_artifacts
+from yap_server.pools.model_lock import load_model_pool_lock
 from yap_server.workload_router import (
     RouterBackpressure,
     WorkloadRequest,
@@ -84,6 +85,7 @@ class BatchRuntime:
     service: RecordingJobService
     pool: BatchAsrPool
     storage_lease: StorageRuntimeLease
+    asr_capabilities: dict[str, object]
 
     def close(self) -> None:
         try:
@@ -161,6 +163,12 @@ def build_batch_runtime(
     lock_path = Path(
         source.get("YAP_PHASE5_MODEL_LOCK", str(root / "model-pools.lock.json"))
     ).resolve(strict=True)
+    capability_lock_path = Path(
+        source.get(
+            "YAP_ASR_CAPABILITY_LOCK",
+            str(root / "asr-capabilities.lock.json"),
+        )
+    )
     model_dir = _required_existing_directory(source, "YAP_PHASE5_MODEL_DIR")
     storage_dir = _private_storage_directory(source, "YAP_PHASE5_STORAGE_DIR")
     storage_namespace = "storage-" + hashlib.sha256(
@@ -171,7 +179,10 @@ def build_batch_runtime(
         "YAP_PHASE5_WORKER_TIMEOUT_SECONDS",
     )
     lock = load_model_pool_lock(lock_path)
-    verify_model_artifacts(lock, model_dir)
+    asr_capabilities = load_verified_asr_capability_catalog(
+        capability_lock_path,
+        ((lock, model_dir),),
+    )
     docker_binary = source.get("YAP_PHASE5_DOCKER_BINARY", "docker")
     worker_image = resolve_phase5_worker_image(
         source,
@@ -218,6 +229,7 @@ def build_batch_runtime(
             service=service,
             pool=pool,
             storage_lease=storage_lease,
+            asr_capabilities=asr_capabilities,
         )
     except BaseException:
         if pool is not None:

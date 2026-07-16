@@ -16,6 +16,8 @@ SUPPORTED_HTTP_VERSIONS = frozenset({"HTTP/1.0", "HTTP/1.1"})
 def allowed_methods(path: str) -> frozenset[str] | None:
     if path == "/v1/health":
         return frozenset({"GET"})
+    if path == "/v1/asr/capabilities":
+        return frozenset({"GET"})
     if path == "/v1/jobs":
         return frozenset({"POST"})
     if JOB_PATH.fullmatch(path):

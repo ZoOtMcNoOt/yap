@@ -336,5 +336,6 @@ non-commercial license is incompatible with the enterprise baseline.
 - [SpeechBrain VoxLingua107 ECAPA](https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa)
 - [Cohere Transcribe 03-2026](https://huggingface.co/CohereLabs/cohere-transcribe-03-2026)
 - [Qwen3 ForcedAligner 0.6B](https://huggingface.co/Qwen/Qwen3-ForcedAligner-0.6B-hf)
+- [Dynamic language detection evaluation](../research/2026-07-16-dynamic-language-detection-evaluation.md)
 - [Local audio preprocessing stack](../specs/local-audio-preprocessing-stack.md)
 - [Testing strategy](../specs/testing-strategy.md)

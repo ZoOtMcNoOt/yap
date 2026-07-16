@@ -30,6 +30,7 @@ import {
   testServerConnection,
   verifyFallbackModel,
 } from "@/settings";
+import { serverAsrCapabilities } from "@/server";
 
 describe("settings model lifecycle bindings", () => {
   beforeEach(() => {
@@ -109,11 +110,13 @@ describe("settings model lifecycle bindings", () => {
     await serverSettings();
     await saveServerSettings(settings);
     await testServerConnection();
+    await serverAsrCapabilities();
 
     expect(invokeMock.mock.calls).toEqual([
       ["server_settings"],
       ["set_server_settings", { settings }],
       ["refresh_server_connection"],
+      ["server_asr_capabilities"],
     ]);
   });
 

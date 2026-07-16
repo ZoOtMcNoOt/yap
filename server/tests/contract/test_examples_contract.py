@@ -19,6 +19,9 @@ class ContractTests(unittest.TestCase):
             "live-events.schema.json": live_schema,
         }
         health_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "health.ok.json")
+        asr_capabilities_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "asr-capabilities.ok.json"
+        )
         job_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "job.accepted.json")
         partial_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "live.partial.json")
 
@@ -26,6 +29,12 @@ class ContractTests(unittest.TestCase):
         contract_schema.assert_schema_subset(
             health_example,
             schemas["HealthView"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        contract_schema.assert_schema_subset(
+            asr_capabilities_example,
+            schemas["AsrCapabilityCatalog"],
             document_name="openapi.json",
             documents=documents,
         )

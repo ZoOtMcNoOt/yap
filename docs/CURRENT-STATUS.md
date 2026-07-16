@@ -70,10 +70,13 @@ The complete owner and trust-boundary map is
   multi-user service, or measured multi-worker capacity is shipped.
 - No Entra/MSAL token validation, tenant-derived owner, purpose grant, internal
   DNS, enterprise certificate, ZPA policy, or production firewall rule exists.
-- Phase 6 preprocessing remains a decision and implementation plan on the
-  current branch. Normalization/VAD, SpeechBrain LID, the server Nemotron pool,
-  dynamic language tags, and Cohere word alignment are not yet wired product
-  capabilities.
+- Phase 6 has a focused implementation slice on the current branch: a verified
+  runtime may publish a bounded, fingerprinted ASR catalog through a separate
+  endpoint and native projection. The catalog honestly exposes only the gated
+  Cohere `en-US` fixed-batch route. Primary-language persistence/UX,
+  normalization/VAD, SpeechBrain LID, the server Nemotron pool, dynamic
+  language tags, and Cohere word alignment are not yet wired product
+  capabilities, and no Phase 6 gate has run.
 - Phase 8 speaker inference and Phase 9 knowledge/agent behavior remain deferred.
 - Private security scans, scan identifiers, host paths, and detailed private
   findings are not repository or PR material.

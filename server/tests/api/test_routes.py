@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from .api_fixtures import HealthServerTestCase, MAX_REQUEST_BODY_BYTES
 
@@ -92,6 +93,18 @@ class HealthRoutingTests(HealthServerTestCase):
                     message="This route is contract-only in Phase 3.",
                 )
 
+    def test_unconfigured_asr_capabilities_fail_closed(self) -> None:
+        status, headers, body = self._request("/v1/asr/capabilities")
+
+        self.assert_error(
+            status,
+            headers,
+            body,
+            expected_status=501,
+            code="NOT_IMPLEMENTED",
+            message="ASR capabilities are not configured.",
+        )
+
     def test_invalid_chunk_range_is_not_a_contract_route(self) -> None:
         for suffix in ("not-a-range", "0-15-99", "-1-15"):
             with self.subTest(suffix=suffix):
@@ -122,3 +135,21 @@ class HealthRoutingTests(HealthServerTestCase):
         self.assertEqual(event["method"], "GET")
         self.assertEqual(event["status"], 404)
         self.assertLessEqual(len(event["path"]), 513)
+
+
+class AsrCapabilityRoutingTests(HealthServerTestCase):
+    asr_capabilities = json.loads(
+        (
+            Path(__file__).resolve().parents[2]
+            / "openapi"
+            / "examples"
+            / "asr-capabilities.ok.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    def test_configured_server_returns_versioned_asr_capabilities(self) -> None:
+        status, headers, body = self._request("/v1/asr/capabilities")
+
+        self.assertEqual(status, 200)
+        self.assert_json_headers(headers, body)
+        self.assertEqual(json.loads(body), self.asr_capabilities)

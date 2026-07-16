@@ -54,6 +54,43 @@ fn stale_batch_connection_lease_cannot_commit_after_configuration_changes() {
 }
 
 #[test]
+fn stale_asr_catalog_lease_cannot_publish_after_configuration_changes() {
+    let connector = ServerConnector::default();
+    connector.synchronize_settings_with(
+        &config::ServerSettings {
+            schema_version: config::CURRENT_SCHEMA_VERSION,
+            enabled: true,
+            base_url: Some("http://127.0.0.1:18765".into()),
+        },
+        |_| {},
+    );
+    let (generation, _) = connector
+        .begin_health_request_with(|_| {})
+        .expect("configured connector begins health request");
+    connector.accept_health_result_with(
+        generation,
+        client::HealthCheckResult::Ready {
+            api_version: "1".into(),
+            capabilities: ServerCapabilities::default(),
+        },
+        |_| {},
+        |_, _, _| tauri::async_runtime::spawn(async {}),
+    );
+    let lease = connector
+        .asr_capability_lease()
+        .expect("ready connector yields a catalog lease");
+    connector.invalidate();
+
+    let committed = AtomicBool::new(false);
+    assert!(connector
+        .with_current_asr_capability_lease(&lease, || {
+            committed.store(true, Ordering::SeqCst);
+        })
+        .is_err());
+    assert!(!committed.load(Ordering::SeqCst));
+}
+
+#[test]
 fn settings_load_cannot_run_ahead_of_the_connector_save_lock() {
     let connector = Arc::new(ServerConnector::default());
     let save_guard = connector.inner.lock().unwrap();

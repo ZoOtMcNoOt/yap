@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "providers": [
+    {
+      "providerId": "cohere",
+      "poolId": "cohere-batch",
+      "capabilities": [
+        {
+          "languageBcp47": "en-US",
+          "providerLanguageCode": "en",
+          "mode": "fixedBatch",
+          "qualityTier": "transcriptionReady",
+          "languageSuggestion": false,
+          "segmentLanguageTags": false,
+          "wordAlignment": false,
+          "promotionEvidenceRevision": "4771d9be60562fa009ccecbcd3c7111b699883a5"
+        }
+      ]
+    }
+  ]
+}

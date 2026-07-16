@@ -121,11 +121,14 @@ def _phase5_job_request() -> dict[str, object]:
 
 
 class HealthServerTestCase(unittest.TestCase):
+    asr_capabilities: dict[str, object] | None = None
+
     def setUp(self) -> None:
         self.logger = _CapturingLogger()
         self.server = create_server(
             ServerSettings(host="127.0.0.1", port=0),
             logger=self.logger,
+            asr_capabilities=self.asr_capabilities,
         )
         self.assertIsInstance(self.server, HTTPServer)
         self.assertNotIsInstance(self.server, ThreadingHTTPServer)

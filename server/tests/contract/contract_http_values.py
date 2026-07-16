@@ -8,6 +8,7 @@ EXAMPLES_ROOT = SERVER_ROOT / "openapi" / "examples"
 
 HTTP_OPERATIONS = {
     ("/v1/health", "get"): "getHealth",
+    ("/v1/asr/capabilities", "get"): "getAsrCapabilities",
     ("/v1/jobs", "post"): "createJob",
     ("/v1/jobs/{jobId}", "get"): "getJob",
     ("/v1/jobs/{jobId}/result", "get"): "getJobResult",
@@ -22,6 +23,10 @@ HTTP_OPERATIONS = {
 
 PHASE_BOUNDARY = {
     ("/v1/health", "get"): ("Implemented", "Server process"),
+    ("/v1/asr/capabilities", "get"): (
+        "Implemented",
+        "Verified ASR runtime",
+    ),
     ("/v1/jobs", "post"): ("Contract only", "Phase 5 upload intake"),
     ("/v1/jobs/{jobId}", "get"): ("Contract only", "Phase 5 job status"),
     ("/v1/jobs/{jobId}", "delete"): ("Contract only", "Phase 5 cancellation"),
@@ -41,6 +46,10 @@ PHASE_BOUNDARY = {
 }
 
 CURRENT_BEHAVIOR = {
+    (
+        "/v1/asr/capabilities",
+        "get",
+    ): "Implemented only when locked runtime artifacts verify",
     ("/v1/jobs", "post"): "Implemented in the Phase 5 loopback batch runtime",
     ("/v1/jobs/{jobId}", "get"): "Implemented in the Phase 5 loopback batch runtime",
     ("/v1/jobs/{jobId}", "delete"): "Implemented in the Phase 5 loopback batch runtime",
@@ -62,6 +71,13 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "request": None,
         "success": {"200": "#/components/schemas/HealthView"},
         "errors": ["500"],
+    },
+    {
+        "path": "/v1/asr/capabilities",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/AsrCapabilityCatalog"},
+        "errors": ["501"],
     },
     {
         "path": "/v1/jobs",
