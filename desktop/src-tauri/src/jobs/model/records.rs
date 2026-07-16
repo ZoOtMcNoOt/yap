@@ -1,6 +1,7 @@
 use super::status::{
     RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
 };
+use super::RecordingLanguageDecision;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -24,6 +25,7 @@ pub struct NewRecordingJob {
     pub created_at_ms: u64,
     pub updated_at_ms: u64,
     pub expires_at_ms: Option<u64>,
+    pub language_decision: RecordingLanguageDecision,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,6 +49,7 @@ pub struct RecordingJobRecord {
     pub created_at_ms: u64,
     pub updated_at_ms: u64,
     pub expires_at_ms: Option<u64>,
+    pub language_decision: RecordingLanguageDecision,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

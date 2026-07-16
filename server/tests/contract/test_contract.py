@@ -142,6 +142,11 @@ class ContractTests(unittest.TestCase):
         )
         self.assertEqual(job_request["properties"]["tracks"]["maxItems"], 1)
         self.assertEqual(job_request["properties"]["chunks"]["maxItems"], 4096)
+        self.assertIn("languageDecision", job_request["required"])
+        self.assertEqual(
+            job_request["properties"]["languageDecision"]["$ref"],
+            "#/components/schemas/RecordingLanguageDecision",
+        )
         forbidden_ownership_fields = {
             "tenantId",
             "tenant_id",

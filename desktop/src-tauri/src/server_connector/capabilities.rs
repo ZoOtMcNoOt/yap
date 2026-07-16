@@ -4,6 +4,7 @@ use std::fmt::Write as _;
 use sha2::{Digest, Sha256};
 
 use super::config;
+use crate::language::valid_bcp47;
 
 const MAX_CATALOG_BYTES: usize = 256 * 1024;
 const MAX_PROVIDERS: usize = 8;
@@ -127,6 +128,15 @@ impl AsrCapabilityCatalog {
         Ok(catalog)
     }
 
+    pub(crate) fn supports_fixed_batch(&self, language_bcp47: &str) -> bool {
+        self.providers.iter().any(|provider| {
+            provider.capabilities.iter().any(|capability| {
+                capability.language_bcp47 == language_bcp47
+                    && capability.mode == AsrExecutionMode::FixedBatch
+            })
+        })
+    }
+
     fn validate(&self) -> Result<(), AsrCatalogError> {
         if self.schema_version != 1
             || !lower_hex(&self.catalog_revision, 64)
@@ -212,41 +222,6 @@ fn valid_model_source(value: &str) -> bool {
                 && url.username().is_empty()
                 && url.password().is_none()
         })
-}
-
-fn valid_bcp47(value: &str) -> bool {
-    if value.len() > 35 || !value.is_ascii() {
-        return false;
-    }
-    let parts = value.split('-').collect::<Vec<_>>();
-    let Some(language) = parts.first() else {
-        return false;
-    };
-    if !(2..=3).contains(&language.len()) || !language.bytes().all(|byte| byte.is_ascii_lowercase())
-    {
-        return false;
-    }
-
-    let mut index = 1;
-    if parts.get(index).is_some_and(|part| {
-        part.len() == 4
-            && part.as_bytes()[0].is_ascii_uppercase()
-            && part.as_bytes()[1..]
-                .iter()
-                .all(|byte| byte.is_ascii_lowercase())
-    }) {
-        index += 1;
-    }
-    if parts.get(index).is_some_and(|part| {
-        (part.len() == 2 && part.bytes().all(|byte| byte.is_ascii_uppercase()))
-            || (part.len() == 3 && part.bytes().all(|byte| byte.is_ascii_digit()))
-    }) {
-        index += 1;
-    }
-    parts[index..].iter().all(|part| {
-        ((5..=8).contains(&part.len()) || (part.len() == 4 && part.as_bytes()[0].is_ascii_digit()))
-            && part.bytes().all(|byte| byte.is_ascii_alphanumeric())
-    })
 }
 
 #[cfg(test)]

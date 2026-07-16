@@ -29,7 +29,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 4: private ASR node | Merged and gated | A bounded router/pool and transient isolated Cohere worker ran on GB10 using the pinned Python 3.12 / NVIDIA PyTorch 26.06 stack. This is reference-worker proof, not a production service. |
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
-| Phase 6: preprocessing | Active; implementation not gated | [ADR 0024](adr/0024-phase6-global-language-routing.md) and the [active plan](plans/active/2026-07-16-phase6-preprocessing-pipeline.md) record the benchmark-backed language/routing/timing decision. No Phase 6 product behavior or implementation-score increase is claimed yet. |
+| Phase 6: preprocessing | Active; partial implementation not gated | [ADR 0024](adr/0024-phase6-global-language-routing.md) and the [active plan](plans/active/2026-07-16-phase6-preprocessing-pipeline.md) govern the benchmark-backed language/routing/timing path. The verified capability catalog and Rust-owned primary/per-job fixed-language decision flow execute with focused tests; the complete Phase 6 gate has not run. |
 | Phases 7–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
 ## What executes now
@@ -70,13 +70,16 @@ The complete owner and trust-boundary map is
   multi-user service, or measured multi-worker capacity is shipped.
 - No Entra/MSAL token validation, tenant-derived owner, purpose grant, internal
   DNS, enterprise certificate, ZPA policy, or production firewall rule exists.
-- Phase 6 has a focused implementation slice on the current branch: a verified
+- Phase 6 has focused implementation slices on the current branch: a verified
   runtime may publish a bounded, fingerprinted ASR catalog through a separate
-  endpoint and native projection. The catalog honestly exposes only the gated
-  Cohere `en-US` fixed-batch route. Primary-language persistence/UX,
-  normalization/VAD, SpeechBrain LID, the server Nemotron pool, dynamic
-  language tags, and Cohere word alignment are not yet wired product
-  capabilities, and no Phase 6 gate has run.
+  endpoint and native projection; a versioned Rust-owned primary language is
+  explicitly confirmed; and each imported job freezes its primary/manual
+  decision through SQLite, preprocessing manifest, and server create contract.
+  React only projects native preference/catalog truth. The shipped catalog
+  still honestly exposes only the gated Cohere `en-US` fixed-batch route, so a
+  real alternate-language override is not yet promoted. Normalization/VAD,
+  SpeechBrain LID, the server Nemotron pool, dynamic language tags, Cohere word
+  alignment, and the complete Phase 6 gate remain unfinished.
 - Phase 8 speaker inference and Phase 9 knowledge/agent behavior remain deferred.
 - Private security scans, scan identifiers, host paths, and detailed private
   findings are not repository or PR material.

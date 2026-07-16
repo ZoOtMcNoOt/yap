@@ -70,6 +70,7 @@ pub(super) fn prepare_next_queued_job(
         remote_jobs_directory,
         owner_namespace,
         started_at,
+        &candidate.language_decision,
     )?
     .into_ledger_state()?;
     attach_prepared_remote_job_or_cleanup(

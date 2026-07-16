@@ -120,6 +120,11 @@ def _create_request(
             "privacyPolicyVersion": "development-only",
             "retentionExpiresAtUtc": retention_expires_at_utc,
         },
+        "languageDecision": {
+            "mode": "fixed",
+            "languageBcp47": "en-US",
+            "disposition": "primary",
+        },
         "tracks": [
             {
                 "trackId": track_id,

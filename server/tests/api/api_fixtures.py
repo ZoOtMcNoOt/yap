@@ -81,6 +81,11 @@ def _phase5_job_request() -> dict[str, object]:
             "privacyPolicyVersion": "development-only",
             "retentionExpiresAtUtc": "2026-08-13T21:00:00Z",
         },
+        "languageDecision": {
+            "mode": "fixed",
+            "languageBcp47": "en-US",
+            "disposition": "primary",
+        },
         "tracks": [
             {
                 "trackId": "track-1",

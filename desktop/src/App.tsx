@@ -1,5 +1,5 @@
 import { isTauri } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppChrome } from "@/components/app/app-chrome";
@@ -28,6 +28,7 @@ import { isRecordingFinished } from "@/lib/recording-job";
 import { workspaceCopy } from "@/lib/workspace";
 import { fireAndReport } from "@/lib/fire-and-report";
 import { cn } from "@/lib/utils";
+import { fixedBatchLanguageOptions } from "@/language-preference";
 
 function reportRecordingAction(action: () => unknown, message: string) {
   fireAndReport(action, (error) => toast.error(`${message}: ${error.message}`));
@@ -35,6 +36,7 @@ function reportRecordingAction(action: () => unknown, message: string) {
 
 export default function App() {
   const [status, setStatus] = useState("Starting");
+  const [recordingLanguageBcp47, setRecordingLanguageBcp47] = useState<string | null>(null);
   const settingsRefreshRef = useRef<() => Promise<void>>(async () => undefined);
   const {
     clearTranscriptText,
@@ -101,12 +103,6 @@ export default function App() {
       setStatus(isRecordingFinished(selectedItem?.status) ? "Transcript ready" : "Select a finished transcript first");
     },
   });
-  const addRecordings = useCallback(async () => {
-    const selectedQueueId = await pickImportedRecordings();
-    if (selectedQueueId === undefined) return;
-    openWorkspace("transcribe");
-    selectQueueItem(selectedQueueId);
-  }, [openWorkspace, pickImportedRecordings, selectQueueItem]);
   const recordingDrop = useRecordingDrop();
   const onNativeTranscriptSaved = useCallback((entry: TranscriptHistoryEntry) => {
     selectHistoryEntry(entry);
@@ -135,6 +131,41 @@ export default function App() {
   const settings = useSettingsControl({
     onStatusChange: setStatus,
   });
+  const languageCatalog = settings.language.status?.capabilityCatalog;
+  const languageOptions = useMemo(
+    () => fixedBatchLanguageOptions(languageCatalog),
+    [languageCatalog],
+  );
+  const primaryLanguageBcp47 = settings.language.status?.confirmedLanguageBcp47 ?? null;
+  useEffect(() => {
+    setRecordingLanguageBcp47((current) => {
+      if (current && languageOptions.some((option) => option.languageBcp47 === current)) {
+        return current;
+      }
+      return languageOptions.some((option) => option.languageBcp47 === primaryLanguageBcp47)
+        ? primaryLanguageBcp47
+        : null;
+    });
+  }, [languageOptions, primaryLanguageBcp47]);
+  const addRecordings = useCallback(async () => {
+    const catalogRevision = languageCatalog?.catalogRevision;
+    if (!recordingLanguageBcp47 || !catalogRevision) {
+      throw new Error("Confirm a currently supported recording language in Settings first.");
+    }
+    const selectedQueueId = await pickImportedRecordings({
+      languageBcp47: recordingLanguageBcp47,
+      catalogRevision,
+    });
+    if (selectedQueueId === undefined) return;
+    openWorkspace("transcribe");
+    selectQueueItem(selectedQueueId);
+  }, [
+    languageCatalog?.catalogRevision,
+    openWorkspace,
+    pickImportedRecordings,
+    recordingLanguageBcp47,
+    selectQueueItem,
+  ]);
   settingsRefreshRef.current = settings.refresh;
   const workspace = workspaceCopy[workspaceView];
   const showQueue = workspaceView === "transcribe";
@@ -290,8 +321,12 @@ export default function App() {
           onDragLeave={recordingDrop.onDragLeave}
           onDragOver={recordingDrop.onDragOver}
           onDrop={recordingDrop.onDrop}
+          languageOptions={languageOptions}
+          onLanguageChange={setRecordingLanguageBcp47}
           onOpenHelp={() => openWorkspace("help")}
+          onOpenLanguageSettings={showDetails}
           onPickFiles={() => void pickFiles()}
+          selectedLanguage={recordingLanguageBcp47}
         />
       ) : null}
 

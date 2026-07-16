@@ -169,6 +169,8 @@ fn accepted_retry_notifies_only_after_atomic_preflight_returns_to_server_queue()
             created_at_ms: 8_500,
             updated_at_ms: 8_500,
             expires_at_ms: Some(8_500 + PENDING_JOB_LIFETIME_MS),
+            language_decision: crate::jobs::RecordingLanguageDecision::primary("en-US".into())
+                .unwrap(),
         })
         .unwrap();
 

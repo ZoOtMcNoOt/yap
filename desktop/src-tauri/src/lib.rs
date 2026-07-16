@@ -7,6 +7,8 @@ mod commands;
 mod file_actions;
 mod install_identity;
 pub mod jobs;
+pub mod language;
+pub mod language_preferences;
 pub mod live;
 pub(crate) mod media_protocol;
 mod paths;

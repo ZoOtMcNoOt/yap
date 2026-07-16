@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import type { LiveCaptureMode, LiveInputDeviceView, LiveSessionView } from "@/lib/live-session";
 import type { FallbackModelView, LocalComputeTargetView } from "@/lib/setup-model";
+import { shouldRequestPrimaryLanguageSetup, type PrimaryLanguageStatus } from "@/language-preference";
 
 export type SettingsSheetProps = {
   auth: string;
@@ -44,7 +45,11 @@ export type SettingsSheetProps = {
   liveSettingsError: string;
   liveView: LiveSessionView;
   localComputeTargets: LocalComputeTargetView[];
+  primaryLanguageError: string;
+  primaryLanguagePending: boolean;
+  primaryLanguageStatus: PrimaryLanguageStatus | null;
   onCancelFallbackInstall: () => void;
+  onConfirmPrimaryLanguage: (languageBcp47: string) => void;
   onInstallFallback: (options?: { force?: boolean }) => void;
   onOpenChange: (open: boolean) => void;
   onOpenFallbackFolder: () => void;
@@ -78,7 +83,11 @@ export function SettingsSheet({
   liveSettingsError,
   liveView,
   localComputeTargets,
+  primaryLanguageError,
+  primaryLanguagePending,
+  primaryLanguageStatus,
   onCancelFallbackInstall,
+  onConfirmPrimaryLanguage,
   onInstallFallback,
   onOpenChange,
   onOpenFallbackFolder,
@@ -102,8 +111,9 @@ export function SettingsSheet({
   status,
 }: SettingsSheetProps) {
   const fallbackStatus = fallbackModel?.status;
+  const languageSetupRequired = shouldRequestPrimaryLanguageSetup(primaryLanguageStatus);
   const [section, setSection] = useState<SettingsSection>(
-    fallbackStatus && fallbackStatus !== "ready" ? "system" : "general",
+    languageSetupRequired ? "general" : fallbackStatus && fallbackStatus !== "ready" ? "system" : "general",
   );
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
   const server = useServerSettingsDraft(open);
@@ -115,10 +125,13 @@ export function SettingsSheet({
   });
 
   useEffect(() => {
-    if (open && fallbackStatus && fallbackStatus !== "ready") {
+    if (!open) return;
+    if (languageSetupRequired) {
+      setSection("general");
+    } else if (fallbackStatus && fallbackStatus !== "ready") {
       setSection("system");
     }
-  }, [fallbackStatus, open]);
+  }, [fallbackStatus, languageSetupRequired, open]);
 
   function runFallbackAction(actionId: FallbackLifecycleActionId) {
     switch (actionId) {
@@ -178,6 +191,7 @@ export function SettingsSheet({
                     liveOverlayAction={liveOverlayAction}
                     liveSettingsError={liveSettingsError}
                     liveView={liveView}
+                    onConfirmPrimaryLanguage={onConfirmPrimaryLanguage}
                     onPreflightLiveInput={onPreflightLiveInput}
                     onResetLiveHotkey={onResetLiveHotkey}
                     onResetLivePasteHotkey={onResetLivePasteHotkey}
@@ -188,6 +202,9 @@ export function SettingsSheet({
                     onSetLivePasteHotkey={onSetLivePasteHotkey}
                     onStartLive={onStartLive}
                     onStopLive={onStopLive}
+                    primaryLanguageError={primaryLanguageError}
+                    primaryLanguagePending={primaryLanguagePending}
+                    primaryLanguageStatus={primaryLanguageStatus}
                   />
                 ) : null}
 

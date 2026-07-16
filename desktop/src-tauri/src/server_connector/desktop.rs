@@ -163,8 +163,15 @@ pub(super) async fn asr_capabilities(
     connector: tauri::State<'_, ServerConnector>,
 ) -> Result<Option<AsrCapabilityCatalog>, String> {
     crate::authorization::ensure_main(&window)?;
+    current_asr_capabilities(&app, connector.inner()).await
+}
+
+pub(crate) async fn current_asr_capabilities(
+    app: &tauri::AppHandle,
+    connector: &ServerConnector,
+) -> Result<Option<AsrCapabilityCatalog>, String> {
     connector
-        .synchronize_from_disk(&app)
+        .synchronize_from_disk(app)
         .map_err(|error| error.to_string())?;
     let Some(lease) = connector.asr_capability_lease() else {
         return Ok(None);

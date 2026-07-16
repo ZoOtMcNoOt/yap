@@ -2,6 +2,7 @@ import { Microphone as Mic } from "@phosphor-icons/react/Microphone";
 import { useId } from "react";
 
 import { ShortcutRecorder } from "@/components/settings/shortcut-recorder";
+import { PrimaryLanguageSetting } from "@/components/settings/primary-language-setting";
 import { SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ import {
   type LiveInputDeviceView,
   type LiveSessionView,
 } from "@/lib/live-session";
+import type { PrimaryLanguageStatus } from "@/language-preference";
 
 type LiveOverlayAction = {
   disabled: boolean;
@@ -34,6 +36,7 @@ export function GeneralSettingsSection({
   liveSettingsError,
   liveView,
   onPreflightLiveInput,
+  onConfirmPrimaryLanguage,
   onResetLiveHotkey,
   onResetLivePasteHotkey,
   onSetInputDevice,
@@ -43,6 +46,9 @@ export function GeneralSettingsSection({
   onSetLivePasteHotkey,
   onStartLive,
   onStopLive,
+  primaryLanguageError,
+  primaryLanguagePending,
+  primaryLanguageStatus,
 }: {
   liveActive: boolean;
   liveBusy: boolean;
@@ -51,6 +57,7 @@ export function GeneralSettingsSection({
   liveSettingsError: string;
   liveView: LiveSessionView;
   onPreflightLiveInput: () => void;
+  onConfirmPrimaryLanguage: (languageBcp47: string) => void;
   onResetLiveHotkey: () => void;
   onResetLivePasteHotkey: () => void;
   onSetInputDevice: (deviceId?: string) => void;
@@ -60,12 +67,21 @@ export function GeneralSettingsSection({
   onSetLivePasteHotkey: () => void;
   onStartLive: () => void;
   onStopLive: () => void;
+  primaryLanguageError: string;
+  primaryLanguagePending: boolean;
+  primaryLanguageStatus: PrimaryLanguageStatus | null;
 }) {
   const micLabelId = useId();
   const modeLabelId = useId();
 
   return (
     <SettingsGroup>
+      <PrimaryLanguageSetting
+        error={primaryLanguageError}
+        onConfirm={onConfirmPrimaryLanguage}
+        pending={primaryLanguagePending}
+        status={primaryLanguageStatus}
+      />
       <SettingsRow
         detail={liveActive ? "Stop live first." : "Hold for push-to-talk or double-tap for hands-free."}
         label="Dictation shortcut"

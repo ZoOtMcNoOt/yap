@@ -23,6 +23,21 @@ CREATE_JOB_IDENTITY_INVARIANTS = {
     },
 }
 
+CREATE_JOB_LANGUAGE_INVARIANTS = {
+    "fixedLanguageContinuity": {
+        "rule": "all_equal",
+        "paths": [
+            "languageDecision.languageBcp47",
+            "metadata.localeHintBcp47",
+            "metadata.preferredLanguagesBcp47[0]",
+        ],
+    },
+    "immutability": {
+        "rule": "immutable_after_accept",
+        "path": "languageDecision",
+    },
+}
+
 RECORDING_JOB_IDENTITY_INVARIANTS = {
     "singleSessionIdentity": {
         "rule": "all_equal",

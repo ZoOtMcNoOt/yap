@@ -49,6 +49,12 @@ class ContractTests(unittest.TestCase):
         self.assertIs(
             schemas["CaptureManifestReference"].get("x-yap-immutable"), True
         )
+        self.assertEqual(
+            schemas["CreateRecordingJobRequest"].get(
+                "x-yap-language-decision-invariants"
+            ),
+            identity_contract.CREATE_JOB_LANGUAGE_INVARIANTS,
+        )
 
     def test_session_origin_and_track_provenance_are_coherent(self) -> None:
         openapi = contract_schema.load_json(http_contract.OPENAPI_PATH)

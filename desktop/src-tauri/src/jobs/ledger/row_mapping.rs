@@ -6,7 +6,8 @@ use rusqlite::{Connection, OptionalExtension, Row};
 
 use crate::jobs::{
     JobChunkRecord, JobLedgerError, PreparedRemoteJobRecord, RecordingJobRecord,
-    RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
+    RecordingJobStatus, RecordingLanguageDecision, RecordingRoute, SessionMode, SessionOrigin,
+    SourceOwnership,
 };
 
 use super::{
@@ -34,6 +35,9 @@ pub(super) struct RawJob {
     created_at_ms: i64,
     updated_at_ms: i64,
     expires_at_ms: Option<i64>,
+    language_mode: String,
+    language_bcp47: Option<String>,
+    language_disposition: String,
 }
 
 pub(super) fn raw_job_from_row(row: &Row<'_>) -> rusqlite::Result<RawJob> {
@@ -57,6 +61,9 @@ pub(super) fn raw_job_from_row(row: &Row<'_>) -> rusqlite::Result<RawJob> {
         created_at_ms: row.get(16)?,
         updated_at_ms: row.get(17)?,
         expires_at_ms: row.get(18)?,
+        language_mode: row.get(19)?,
+        language_bcp47: row.get(20)?,
+        language_disposition: row.get(21)?,
     })
 }
 
@@ -108,6 +115,11 @@ impl TryFrom<RawJob> for RecordingJobRecord {
             created_at_ms: stored_unsigned(raw.created_at_ms, "created_at_ms")?,
             updated_at_ms: stored_unsigned(raw.updated_at_ms, "updated_at_ms")?,
             expires_at_ms: stored_optional_unsigned(raw.expires_at_ms, "expires_at_ms")?,
+            language_decision: RecordingLanguageDecision::from_db(
+                &raw.language_mode,
+                raw.language_bcp47,
+                &raw.language_disposition,
+            )?,
         })
     }
 }

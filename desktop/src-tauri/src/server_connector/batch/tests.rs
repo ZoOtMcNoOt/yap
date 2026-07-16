@@ -1,6 +1,9 @@
 use std::time::{Duration, UNIX_EPOCH};
 
+use sha2::Digest;
+
 use crate::audio::session::{SessionId, SessionMetadata, SessionMode, SessionOrigin, TriggerMode};
+use crate::language::RecordingLanguageDecision;
 
 use super::{
     validate_development_batch_base_url, ApiError, BatchClientError, CaptureChunkReference,
@@ -42,6 +45,7 @@ fn persisted_create_request_round_trips_strictly_before_resume() {
             Some(started + Duration::from_secs(3600)),
         )
         .unwrap(),
+        language_decision: RecordingLanguageDecision::primary("en-US".into()).unwrap(),
         tracks: vec![UploadTrack {
             track_id: "track-1".into(),
             source: serde_json::json!({"kind": "imported", "provenance": "unknown"}),
@@ -83,6 +87,24 @@ fn persisted_create_request_round_trips_strictly_before_resume() {
         request
     );
     assert_eq!(request.create_idempotency_key().unwrap(), original_key);
+    let encoded_language = serde_json::to_string(&request.language_decision).unwrap();
+    let legacy_encoded =
+        encoded.replacen(&format!(",\"languageDecision\":{encoded_language}"), "", 1);
+    assert_ne!(legacy_encoded, encoded);
+    let legacy_value: serde_json::Value = serde_json::from_str(&legacy_encoded).unwrap();
+    let legacy_request = CreateRecordingJobRequest::decode_persisted(&legacy_encoded).unwrap();
+    assert!(legacy_request.language_decision.is_legacy_phase5_default());
+    assert_eq!(serde_json::to_value(&legacy_request).unwrap(), legacy_value);
+    assert_eq!(
+        legacy_request.create_idempotency_key().unwrap(),
+        format!(
+            "create-{}",
+            sha2::Sha256::digest(legacy_encoded.as_bytes())
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        )
+    );
     let mut new_attempt = request.clone();
     new_attempt.display_name = "a distinct immutable request".into();
     assert_ne!(new_attempt.create_idempotency_key().unwrap(), original_key);
@@ -98,6 +120,19 @@ fn persisted_create_request_round_trips_strictly_before_resume() {
     unbounded_retention.metadata.retention_expires_at_utc = Some("2126-07-14T21:00:00Z".into());
     assert!(CreateRecordingJobRequest::decode_persisted(
         &serde_json::to_string(&unbounded_retention).unwrap()
+    )
+    .is_err());
+    let mut mismatched_language = request.clone();
+    mismatched_language.language_decision =
+        RecordingLanguageDecision::manual_override("fr-FR".into()).unwrap();
+    assert!(CreateRecordingJobRequest::decode_persisted(
+        &serde_json::to_string(&mismatched_language).unwrap()
+    )
+    .is_err());
+    let mut dynamic_language = request.clone();
+    dynamic_language.language_decision = RecordingLanguageDecision::explicit_dynamic();
+    assert!(CreateRecordingJobRequest::decode_persisted(
+        &serde_json::to_string(&dynamic_language).unwrap()
     )
     .is_err());
 

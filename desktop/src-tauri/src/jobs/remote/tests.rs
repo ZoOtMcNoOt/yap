@@ -6,6 +6,7 @@ use std::{
 
 use crate::{
     audio::session::OwnerNamespace,
+    language::RecordingLanguageDecision,
     server_connector::batch::{LanguageDecision, ModelRevision, TranscriptResultRevision},
 };
 
@@ -47,6 +48,7 @@ fn wav_bytes_outside_declared_riff_are_rejected_before_spooling() {
         &root.join("spool"),
         &owner,
         UNIX_EPOCH + Duration::from_secs(1_720_000_000),
+        &RecordingLanguageDecision::primary("en-US".into()).unwrap(),
     )
     .err()
     .expect("trailing bytes must reject the imported WAV");
@@ -81,6 +83,7 @@ fn oversized_wav_container_metadata_is_rejected_before_spooling() {
         &root.join("spool"),
         &owner,
         UNIX_EPOCH + Duration::from_secs(1_720_000_000),
+        &RecordingLanguageDecision::primary("en-US".into()).unwrap(),
     )
     .err()
     .expect("oversized WAV metadata must be rejected");
@@ -101,6 +104,7 @@ fn canonical_pcm_wav_becomes_an_immutable_owned_upload_manifest() {
     let original = fs::read(&source_path).unwrap();
     let mut source = File::open(&source_path).unwrap();
     let owner = OwnerNamespace::local("i-phase5-test").unwrap();
+    let language = RecordingLanguageDecision::manual_override("fr-FR".into()).unwrap();
 
     let prepared = prepare_imported_pcm_wav(
         "job-phase5-test",
@@ -109,6 +113,7 @@ fn canonical_pcm_wav_becomes_an_immutable_owned_upload_manifest() {
         &root.join("spool"),
         &owner,
         UNIX_EPOCH + Duration::from_secs(1_720_000_000),
+        &language,
     )
     .unwrap();
 
@@ -119,8 +124,9 @@ fn canonical_pcm_wav_becomes_an_immutable_owned_upload_manifest() {
     );
     assert_eq!(
         prepared.request.metadata.preferred_languages_bcp47,
-        ["en-US"]
+        ["fr-FR"]
     );
+    assert_eq!(prepared.request.language_decision, language);
     assert_eq!(prepared.request.tracks.len(), 1);
     assert_eq!(prepared.request.chunks.len(), 1);
     assert_eq!(prepared.chunks.len(), 1);
@@ -142,10 +148,21 @@ fn canonical_pcm_wav_becomes_an_immutable_owned_upload_manifest() {
         pcm
     );
 
+    let capture_manifest: serde_json::Value =
+        serde_json::from_slice(&fs::read(&prepared.capture_manifest_path).unwrap()).unwrap();
     let durable = prepared.into_ledger_state().unwrap();
     let durable_request: serde_json::Value =
         serde_json::from_str(&durable.create_request_json).unwrap();
     assert_eq!(durable_request["route"], "server_batch");
+    assert_eq!(durable_request["languageDecision"]["mode"], "fixed");
+    assert_eq!(
+        durable_request["languageDecision"]["languageBcp47"],
+        "fr-FR"
+    );
+    assert_eq!(
+        capture_manifest["languageDecision"]["disposition"],
+        "manualOverride"
+    );
     assert_eq!(durable.chunks.len(), 1);
     assert_eq!(durable.chunks[0].content_byte_length, 320);
     assert_eq!(durable.chunks[0].sequence_start, 0);

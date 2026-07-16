@@ -25,11 +25,16 @@ def validate_create_request(
     request: Mapping[str, object],
     supported_languages: frozenset[str],
 ) -> None:
-    exact_keys(
-        request,
-        {"displayName", "metadata", "tracks", "route", "captureManifest", "chunks"},
-        "job",
-    )
+    legacy_keys = {
+        "displayName",
+        "metadata",
+        "tracks",
+        "route",
+        "captureManifest",
+        "chunks",
+    }
+    if set(request) not in (legacy_keys, legacy_keys | {"languageDecision"}):
+        raise ValueError("job fields differ from the contract")
     display_name = text(request.get("displayName"), "displayName")
     if len(display_name) > 256 or request.get("route") != "server_batch":
         raise ValueError("invalid display name or route")
@@ -82,6 +87,13 @@ def validate_create_request(
         language_tag(language, f"preferredLanguagesBcp47[{index}]")
     if languages[0].split("-", 1)[0].lower() not in supported_languages:
         raise ValueError("preferred language is unsupported")
+    if "languageDecision" in request:
+        _validate_language_decision(
+            request.get("languageDecision"),
+            locale=locale,
+            preferred_languages=languages,
+            supported_languages=supported_languages,
+        )
     for field, maximum in (
         ("appVersion", 64),
         ("platform", 64),
@@ -249,6 +261,13 @@ def selected_language(
     request: Mapping[str, object],
     supported_languages: frozenset[str],
 ) -> str:
+    decision_value = request.get("languageDecision")
+    if decision_value is not None:
+        decision = mapping(decision_value, "languageDecision")
+        selected = text(decision.get("languageBcp47"), "languageDecision.languageBcp47")
+        if selected.split("-", 1)[0].lower() not in supported_languages:
+            raise ValueError("selected language is not supported by the locked model")
+        return selected
     metadata = mapping(request.get("metadata"), "metadata")
     languages = metadata.get("preferredLanguagesBcp47")
     if not isinstance(languages, list) or not languages:
@@ -257,3 +276,31 @@ def selected_language(
     if selected.split("-", 1)[0].lower() not in supported_languages:
         raise ValueError("selected language is not supported by the locked model")
     return selected
+
+
+def _validate_language_decision(
+    value: object,
+    *,
+    locale: object,
+    preferred_languages: list[object],
+    supported_languages: frozenset[str],
+) -> None:
+    decision = mapping(value, "languageDecision")
+    exact_keys(
+        decision,
+        {"mode", "languageBcp47", "disposition"},
+        "languageDecision",
+    )
+    language = language_tag(
+        decision.get("languageBcp47"),
+        "languageDecision.languageBcp47",
+    )
+    if (
+        decision.get("mode") != "fixed"
+        or decision.get("disposition")
+        not in {"primary", "manualOverride", "detectedSuggestionConfirmed"}
+        or locale != language
+        or preferred_languages != [language]
+        or language.split("-", 1)[0].lower() not in supported_languages
+    ):
+        raise ValueError("language decision differs from fixed batch metadata")

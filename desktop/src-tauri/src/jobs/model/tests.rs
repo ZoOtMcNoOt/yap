@@ -28,6 +28,51 @@ fn database_enums_round_trip_and_reject_unknown_values() {
 }
 
 #[test]
+fn language_decision_rejects_mismatched_fixed_and_dynamic_state() {
+    assert!(RecordingLanguageDecision::try_new(
+        RecordingLanguageMode::Fixed,
+        None,
+        RecordingLanguageDisposition::Primary,
+    )
+    .is_err());
+    assert!(RecordingLanguageDecision::try_new(
+        RecordingLanguageMode::Dynamic,
+        Some("en-US".into()),
+        RecordingLanguageDisposition::ExplicitDynamic,
+    )
+    .is_err());
+    assert!(RecordingLanguageDecision::try_new(
+        RecordingLanguageMode::Fixed,
+        Some("en-US".into()),
+        RecordingLanguageDisposition::ExplicitDynamic,
+    )
+    .is_err());
+}
+
+#[test]
+fn language_decision_deserialization_rejects_inconsistent_state() {
+    for value in [
+        serde_json::json!({
+            "mode": "fixed",
+            "languageBcp47": "en-US",
+            "disposition": "explicitDynamic",
+        }),
+        serde_json::json!({
+            "mode": "dynamic",
+            "languageBcp47": "en-US",
+            "disposition": "explicitDynamic",
+        }),
+        serde_json::json!({
+            "mode": "fixed",
+            "languageBcp47": null,
+            "disposition": "primary",
+        }),
+    ] {
+        assert!(serde_json::from_value::<RecordingLanguageDecision>(value).is_err());
+    }
+}
+
+#[test]
 fn transition_policy_is_pure_and_cancellation_is_narrow() {
     assert_eq!(
         transition_policy(
@@ -186,5 +231,6 @@ fn fixture_record() -> RecordingJobRecord {
         created_at_ms: 100,
         updated_at_ms: 100,
         expires_at_ms: None,
+        language_decision: RecordingLanguageDecision::primary("en-US".into()).unwrap(),
     }
 }

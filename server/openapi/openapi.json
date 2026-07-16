@@ -1338,6 +1338,36 @@
           }
         }
       },
+      "RecordingLanguageDecision": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Immutable client language-routing choice frozen when the recording job is admitted. Dynamic mode remains unadvertised until a server capability supplies segment language tags.",
+        "required": [
+          "mode",
+          "languageBcp47",
+          "disposition"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "const": "fixed"
+          },
+          "languageBcp47": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 35,
+            "pattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$"
+          },
+          "disposition": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "manualOverride",
+              "detectedSuggestionConfirmed"
+            ]
+          }
+        }
+      },
       "TranscriptResultRevision": {
         "type": "object",
         "additionalProperties": false,
@@ -1796,7 +1826,7 @@
       "CreateRecordingJobRequest": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Phase 5 loopback batch intake accepts one imported meeting track with a non-null finite UTC retention expiry. metadata, captureManifest, and every chunk replay key MUST name one session; replay keys MUST be unique and contiguous from zero; and the accepted manifest reference and chunk declaration become immutable. An imported physical-source hint is valid only as user_declared provenance. Identity ownership is server-derived after token validation; privacyPolicyVersion unconfigured cannot authorize a team upload once policy gating ships.",
+        "description": "The fixed-language batch intake accepts one imported meeting track with a non-null finite UTC retention expiry. languageDecision is immutable and MUST exactly match localeHintBcp47 and the sole preferredLanguagesBcp47 entry. metadata, captureManifest, and every chunk replay key MUST name one session; replay keys MUST be unique and contiguous from zero; and the accepted manifest reference and chunk declaration become immutable. Dynamic mode is rejected until advertised by the capability catalog. An imported physical-source hint is valid only as user_declared provenance. Identity ownership is server-derived after token validation; privacyPolicyVersion unconfigured cannot authorize a team upload once policy gating ships.",
         "x-yap-source-identity-invariants": {
           "singleSessionIdentity": {
             "rule": "all_equal",
@@ -1838,6 +1868,20 @@
             "rule": "physical_source_requires_user_declared",
             "provenancePath": "tracks[*].source.provenance",
             "allowedObjectKind": "user_declared"
+          }
+        },
+        "x-yap-language-decision-invariants": {
+          "fixedLanguageContinuity": {
+            "rule": "all_equal",
+            "paths": [
+              "languageDecision.languageBcp47",
+              "metadata.localeHintBcp47",
+              "metadata.preferredLanguagesBcp47[0]"
+            ]
+          },
+          "immutability": {
+            "rule": "immutable_after_accept",
+            "path": "languageDecision"
           }
         },
         "allOf": [
@@ -1943,6 +1987,7 @@
         "required": [
           "displayName",
           "metadata",
+          "languageDecision",
           "tracks",
           "route",
           "captureManifest",
@@ -1974,6 +2019,9 @@
                 }
               }
             ]
+          },
+          "languageDecision": {
+            "$ref": "#/components/schemas/RecordingLanguageDecision"
           },
           "tracks": {
             "type": "array",

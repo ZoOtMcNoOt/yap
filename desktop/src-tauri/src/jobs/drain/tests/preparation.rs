@@ -32,6 +32,8 @@ fn queued_wav_is_preprocessed_into_durable_owned_replay_state() {
             created_at_ms: 1_720_000_000_000,
             updated_at_ms: 1_720_000_000_000,
             expires_at_ms: Some(1_720_604_800_000),
+            language_decision: crate::jobs::RecordingLanguageDecision::primary("en-US".into())
+                .unwrap(),
         })
         .unwrap();
     let owner = OwnerNamespace::local("i-drain-test").unwrap();
@@ -87,6 +89,7 @@ fn a_cancelled_preprocessing_race_removes_the_unattached_owned_spool() {
         &remote_jobs,
         &owner,
         UNIX_EPOCH + Duration::from_secs(1_720_000_000),
+        &crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap(),
     )
     .unwrap()
     .into_ledger_state()

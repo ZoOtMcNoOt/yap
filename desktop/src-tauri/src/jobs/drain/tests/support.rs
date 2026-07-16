@@ -21,6 +21,7 @@ pub(super) fn queued_job(job_id: &str, source: std::path::PathBuf) -> NewRecordi
         created_at_ms: 1_720_000_000_000,
         updated_at_ms: 1_720_000_000_000,
         expires_at_ms: Some(1_720_604_800_000),
+        language_decision: crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap(),
     }
 }
 

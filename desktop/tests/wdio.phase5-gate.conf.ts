@@ -126,6 +126,11 @@ function stageLicensedFixture() {
       { encoding: "utf8", flag: "wx" },
     );
     writeFileSync(
+      path.join(appDataRoot, "primary-language.json"),
+      `${JSON.stringify({ schemaVersion: 1, languageBcp47: "en-US" }, null, 2)}\n`,
+      { encoding: "utf8", flag: "wx" },
+    );
+    writeFileSync(
       path.join(evidenceDirectory, "gate-context.json"),
       `${JSON.stringify({
         schemaVersion: 1,

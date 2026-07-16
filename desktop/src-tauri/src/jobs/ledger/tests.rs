@@ -70,6 +70,10 @@ fn restart_recovers_nonterminal_jobs_and_chunks() {
     assert_eq!(recovered.len(), 1);
     assert_eq!(recovered[0].job_id, "restart-job");
     assert_eq!(recovered[0].source_path.as_deref(), Some(source.as_path()));
+    assert_eq!(
+        recovered[0].language_decision,
+        crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap()
+    );
     assert_eq!(ledger.list_chunks("restart-job").unwrap().len(), 1);
     drop(ledger);
     fs::remove_dir_all(dir).unwrap();
@@ -185,6 +189,9 @@ fn restart_database_has_exact_metadata_surface_and_no_payload_content() {
                 ("created_at_ms", "INTEGER"),
                 ("updated_at_ms", "INTEGER"),
                 ("expires_at_ms", "INTEGER"),
+                ("language_mode", "TEXT"),
+                ("language_bcp47", "TEXT"),
+                ("language_disposition", "TEXT"),
             ][..],
         ),
         (
@@ -273,6 +280,7 @@ fn imported_job_at(id: &str, source_path: std::path::PathBuf) -> NewRecordingJob
         created_at_ms: 100,
         updated_at_ms: 100,
         expires_at_ms: None,
+        language_decision: crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap(),
     }
 }
 

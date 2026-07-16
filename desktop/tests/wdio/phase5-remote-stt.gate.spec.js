@@ -171,9 +171,19 @@ describe("Phase 5 checked-head private-server gate", () => {
       liveStreaming: false,
     });
 
-    const created = await invoke("recording_jobs_pick_imports");
+    const catalog = await invoke("server_asr_capabilities");
+    expect(catalog?.catalogRevision).toMatch(/^[0-9a-f]{64}$/);
+    const created = await invoke("recording_jobs_pick_imports", {
+      languageBcp47: "en-US",
+      catalogRevision: catalog.catalogRevision,
+    });
     expect(created).toHaveLength(1);
     expect(created[0].status).toBe("queued_server");
+    expect(created[0].languageDecision).toEqual({
+      mode: "fixed",
+      languageBcp47: "en-US",
+      disposition: "primary",
+    });
     expect(canonicalPath(created[0].sourcePath)).toBe(canonicalPath(fixturePath));
     const createdJob = created[0];
     const clientJobId = createdJob.id;

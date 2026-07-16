@@ -29,6 +29,9 @@ pub(super) struct ValidatedJob {
     pub(super) created_at_ms: i64,
     pub(super) updated_at_ms: i64,
     pub(super) expires_at_ms: Option<i64>,
+    pub(super) language_mode: &'static str,
+    pub(super) language_bcp47: Option<String>,
+    pub(super) language_disposition: &'static str,
 }
 
 impl TryFrom<&NewRecordingJob> for ValidatedJob {
@@ -74,6 +77,9 @@ impl TryFrom<&NewRecordingJob> for ValidatedJob {
             created_at_ms: sqlite_integer(job.created_at_ms, "created_at_ms")?,
             updated_at_ms: sqlite_integer(job.updated_at_ms, "updated_at_ms")?,
             expires_at_ms: optional_sqlite_integer(job.expires_at_ms, "expires_at_ms")?,
+            language_mode: job.language_decision.mode.as_db(),
+            language_bcp47: job.language_decision.language_bcp47.clone(),
+            language_disposition: job.language_decision.disposition.as_db(),
         })
     }
 }

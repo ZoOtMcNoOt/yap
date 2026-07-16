@@ -4,8 +4,8 @@ use super::{
 };
 use crate::{
     jobs::{
-        NewRecordingJob, RecordingJobStatus, RecordingJobView, RecordingRoute, SessionMode,
-        SessionOrigin, SourceOwnership,
+        NewRecordingJob, RecordingJobStatus, RecordingJobView, RecordingLanguageDecision,
+        RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
     },
     media_protocol::MediaOwner,
 };
@@ -15,11 +15,28 @@ use std::{
 };
 
 impl RecordingJobs {
+    #[cfg(test)]
     pub(super) fn create_imports<P: AsRef<Path>>(
         &self,
         media: &MediaOwner,
         paths: Vec<P>,
         now_ms: u64,
+    ) -> Result<Vec<RecordingJobView>, JobCommandError> {
+        self.create_imports_with_language(
+            media,
+            paths,
+            now_ms,
+            RecordingLanguageDecision::primary("en-US".into())
+                .expect("test primary language is valid"),
+        )
+    }
+
+    pub(super) fn create_imports_with_language<P: AsRef<Path>>(
+        &self,
+        media: &MediaOwner,
+        paths: Vec<P>,
+        now_ms: u64,
+        language_decision: RecordingLanguageDecision,
     ) -> Result<Vec<RecordingJobView>, JobCommandError> {
         let _mutation = self.mutation().lock().map_err(|_| {
             command_error(
@@ -117,6 +134,7 @@ impl RecordingJobs {
                 created_at_ms: now_ms,
                 updated_at_ms: now_ms,
                 expires_at_ms: now_ms.checked_add(PENDING_JOB_LIFETIME_MS),
+                language_decision: language_decision.clone(),
             });
         }
         for record in self.ledger().insert_jobs(&new_jobs)? {

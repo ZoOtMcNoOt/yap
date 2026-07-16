@@ -1,8 +1,9 @@
 # ADR 0024: Phase 6 global language routing and timing evidence
 
 **Date:** 2026-07-16
-**Status:** Accepted decision; Phase 6 implementation and per-locale promotion
-evidence remain incomplete
+**Status:** Accepted decision; catalog and fixed-language decision slices are
+implemented, while preprocessing, LID, dynamic routing, timing, and per-locale
+promotion evidence remain incomplete
 **Deciders:** Yap product owner and implementation owner
 **Builds on:** [ADR 0003](0003-long-term-voice-architecture.md),
 [ADR 0004](0004-background-diarization-okf-agents.md),

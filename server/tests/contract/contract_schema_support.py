@@ -23,13 +23,18 @@ def make_job_request(origin: str, track_source: dict[str, Any]) -> dict[str, Any
             "triggerMode": "toggle",
             "startedAtUtc": "2026-07-12T16:00:00Z",
             "utcOffsetMinutesAtStart": None,
-            "localeHintBcp47": None,
+            "localeHintBcp47": "en-US",
             "countryCodeHint": None,
             "preferredLanguagesBcp47": ["en-US"],
             "appVersion": "0.1.0",
             "platform": "windows",
             "privacyPolicyVersion": "unconfigured",
             "retentionExpiresAtUtc": "2026-08-11T16:00:00Z",
+        },
+        "languageDecision": {
+            "mode": "fixed",
+            "languageBcp47": "en-US",
+            "disposition": "primary",
         },
         "tracks": [
             {

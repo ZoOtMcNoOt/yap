@@ -29,6 +29,7 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         &remote_jobs,
         &owner,
         UNIX_EPOCH + Duration::from_secs(1_720_000_000),
+        &crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap(),
     )
     .unwrap();
     let request = prepared.request.clone();
@@ -55,6 +56,8 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
             created_at_ms: 1_720_000_000_000,
             updated_at_ms: 1_720_000_000_000,
             expires_at_ms: Some(1_720_604_800_000),
+            language_decision: crate::jobs::RecordingLanguageDecision::primary("en-US".into())
+                .unwrap(),
         })
         .unwrap();
     ledger
@@ -179,6 +182,44 @@ fn create_imports_validates_and_native_allowlists_a_canonical_recording() {
         .unwrap()
         .contains("meeting.wav"));
     assert!(!dir.join("recording-playback-registry.json").exists());
+
+    drop(media);
+    fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn per_job_language_override_is_frozen_when_a_source_is_admitted() {
+    let dir = temp_dir("create-import-language");
+    let source = dir.join("meeting.wav");
+    fs::write(&source, b"RIFF-command-fixture").unwrap();
+    let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
+    let media = MediaOwner::new();
+    let manual = crate::jobs::RecordingLanguageDecision::manual_override("fr-FR".into()).unwrap();
+
+    let created = jobs
+        .create_imports_with_language(
+            &media,
+            vec![source.display().to_string()],
+            1_000,
+            manual.clone(),
+        )
+        .unwrap();
+    assert_eq!(created[0].language_decision, manual);
+
+    let replayed = jobs
+        .create_imports_with_language(
+            &media,
+            vec![source.display().to_string()],
+            1_001,
+            crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+        )
+        .unwrap();
+    assert_eq!(replayed[0].id, created[0].id);
+    assert_eq!(replayed[0].language_decision, manual);
+    assert_eq!(
+        jobs.snapshot(&media, 1_002).unwrap()[0].language_decision,
+        manual
+    );
 
     drop(media);
     fs::remove_dir_all(dir).unwrap();

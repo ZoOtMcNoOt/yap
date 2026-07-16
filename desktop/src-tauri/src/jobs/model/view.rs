@@ -1,6 +1,7 @@
 use super::{
     records::RecordingJobRecord,
     status::{RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin},
+    RecordingLanguageDecision,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
@@ -44,6 +45,7 @@ pub struct RecordingJobView {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     pub pipeline: RecordingPipelineState,
+    pub language_decision: RecordingLanguageDecision,
 }
 
 impl RecordingJobView {
@@ -69,6 +71,7 @@ impl RecordingJobView {
                 .clone()
                 .or_else(|| record.error_code.clone()),
             pipeline: pipeline_for(record.status, record.route),
+            language_decision: record.language_decision.clone(),
         }
     }
 }

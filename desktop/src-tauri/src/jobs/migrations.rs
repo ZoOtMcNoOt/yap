@@ -2,11 +2,12 @@ use crate::jobs::model::JobLedgerError;
 use rusqlite::{Connection, OpenFlags, TransactionBehavior};
 use std::{path::Path, time::Duration};
 
-const CURRENT_SCHEMA_VERSION: i64 = 4;
+const CURRENT_SCHEMA_VERSION: i64 = 5;
 const MIGRATION_1_SQL: &str = include_str!("../../migrations/0001_job_ledger.sql");
 const MIGRATION_2_SQL: &str = include_str!("../../migrations/0002_prepared_remote_jobs.sql");
 const MIGRATION_3_SQL: &str = include_str!("../../migrations/0003_remote_spool_cleanup.sql");
 const MIGRATION_4_SQL: &str = include_str!("../../migrations/0004_remote_create_attempt.sql");
+const MIGRATION_5_SQL: &str = include_str!("../../migrations/0005_language_decisions.sql");
 
 pub(super) fn open_file(path: &Path) -> Result<Connection, JobLedgerError> {
     open_file_with_migration_hook(path, || {})
@@ -52,21 +53,28 @@ fn migrate_with_hook(
     let version: i64 = transaction.query_row("PRAGMA user_version", [], |row| row.get(0))?;
     match version {
         CURRENT_SCHEMA_VERSION => {}
-        3 => transaction.execute_batch(MIGRATION_4_SQL)?,
+        4 => transaction.execute_batch(MIGRATION_5_SQL)?,
+        3 => {
+            transaction.execute_batch(MIGRATION_4_SQL)?;
+            transaction.execute_batch(MIGRATION_5_SQL)?;
+        }
         2 => {
             transaction.execute_batch(MIGRATION_3_SQL)?;
             transaction.execute_batch(MIGRATION_4_SQL)?;
+            transaction.execute_batch(MIGRATION_5_SQL)?;
         }
         1 => {
             transaction.execute_batch(MIGRATION_2_SQL)?;
             transaction.execute_batch(MIGRATION_3_SQL)?;
             transaction.execute_batch(MIGRATION_4_SQL)?;
+            transaction.execute_batch(MIGRATION_5_SQL)?;
         }
         0 => {
             transaction.execute_batch(MIGRATION_1_SQL)?;
             transaction.execute_batch(MIGRATION_2_SQL)?;
             transaction.execute_batch(MIGRATION_3_SQL)?;
             transaction.execute_batch(MIGRATION_4_SQL)?;
+            transaction.execute_batch(MIGRATION_5_SQL)?;
         }
         unsupported => return Err(JobLedgerError::UnsupportedSchema(unsupported)),
     }
@@ -132,7 +140,7 @@ mod tests {
                 .unwrap()
         };
 
-        assert_eq!(version, 4);
+        assert_eq!(version, 5);
         assert_eq!(foreign_keys, 1);
         assert_eq!(
             tables,
@@ -146,6 +154,14 @@ mod tests {
         );
         assert!(connection.execute(
             "INSERT INTO job_chunks (job_id, owner_namespace, session_id, track_id, sequence_start, sequence_end, content_sha256, artifact_path) VALUES ('missing', 'local:test', 'session', 'mic', 0, 1, 'hash', 'artifact')",
+            [],
+        ).is_err());
+        connection.execute(
+            "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, display_name, status, created_at_ms, updated_at_ms) VALUES ('language-check', 'meeting', 'imported_file', 'C:/language.wav', 'language.wav', 'queued_server', 1, 1)",
+            [],
+        ).unwrap();
+        assert!(connection.execute(
+            "UPDATE recording_jobs SET language_mode = 'dynamic' WHERE job_id = 'language-check'",
             [],
         ).is_err());
     }
@@ -221,7 +237,7 @@ mod tests {
             [],
             |row| row.get(0),
         ).unwrap();
-        assert_eq!((version, table_count), (4, 5));
+        assert_eq!((version, table_count), (5, 5));
         drop(connection);
         fs::remove_dir_all(dir).unwrap();
     }
@@ -255,9 +271,24 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
+        let language: (String, Option<String>, String) = connection
+            .query_row(
+                "SELECT language_mode, language_bcp47, language_disposition FROM recording_jobs WHERE job_id = 'existing'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .unwrap();
         assert_eq!(
             (version, existing.as_str(), remote_table),
-            (4, "existing.wav", 1)
+            (5, "existing.wav", 1)
+        );
+        assert_eq!(
+            language,
+            (
+                "fixed".into(),
+                Some("en-US".into()),
+                "legacy_phase5_default".into()
+            )
         );
     }
 
@@ -289,7 +320,7 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .unwrap();
-        assert_eq!(version, 4);
+        assert_eq!(version, 5);
         assert_eq!(prepared, ("{}".into(), None));
     }
 

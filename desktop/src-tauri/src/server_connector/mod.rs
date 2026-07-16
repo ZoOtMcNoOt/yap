@@ -11,6 +11,7 @@ pub use boundary::ServerConnectorBoundary;
 pub use capabilities::AsrCapabilityCatalog;
 pub(crate) use core::BatchConnectionLease;
 pub use core::ServerConnector;
+pub(crate) use desktop::current_asr_capabilities;
 pub use state::{ServerCapabilities, ServerConnectionSnapshot};
 
 fn allow_insecure_private_server() -> bool {

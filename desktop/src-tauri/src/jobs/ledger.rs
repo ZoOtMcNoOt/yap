@@ -21,7 +21,7 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-const JOB_COLUMNS: &str = "job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms";
+const JOB_COLUMNS: &str = "job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms, language_mode, language_bcp47, language_disposition";
 const MAX_TERMINAL_JOB_HISTORY: usize = 500;
 const MAX_PREPARED_REQUEST_BYTES: usize = 1024 * 1024;
 const MAX_PREPARED_CHUNKS: usize = 4096;
@@ -72,7 +72,7 @@ impl JobLedger {
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
         for job in &jobs {
             transaction.execute(
-                "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+                "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms, language_mode, language_bcp47, language_disposition) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)",
                 params![
                     job.job_id,
                     job.session_mode,
@@ -93,6 +93,9 @@ impl JobLedger {
                     job.created_at_ms,
                     job.updated_at_ms,
                     job.expires_at_ms,
+                    job.language_mode,
+                    job.language_bcp47,
+                    job.language_disposition,
                 ],
             )?;
         }
@@ -122,7 +125,7 @@ impl JobLedger {
         let mut connection = self.lock()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
         transaction.execute(
-            "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+            "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms, language_mode, language_bcp47, language_disposition) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)",
             params![
                 job.job_id,
                 job.session_mode,
@@ -143,6 +146,9 @@ impl JobLedger {
                 job.created_at_ms,
                 job.updated_at_ms,
                 job.expires_at_ms,
+                job.language_mode,
+                job.language_bcp47,
+                job.language_disposition,
             ],
         )?;
         for chunk in &chunks {

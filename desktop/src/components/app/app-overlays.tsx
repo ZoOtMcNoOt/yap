@@ -68,7 +68,11 @@ export function AppOverlays({
         liveSettingsError={settings.live.settingsError}
         liveView={settings.live.view}
         localComputeTargets={settings.compute.targets}
+        primaryLanguageError={settings.language.error}
+        primaryLanguagePending={settings.language.pending}
+        primaryLanguageStatus={settings.language.status}
         onCancelFallbackInstall={() => void settings.fallback.cancelInstall()}
+        onConfirmPrimaryLanguage={(languageBcp47) => void settings.language.confirm(languageBcp47)}
         onInstallFallback={(options) => void settings.fallback.install(options)}
         onOpenChange={onDetailsOpenChange}
         onOpenFallbackFolder={() => void settings.fallback.openFolder()}

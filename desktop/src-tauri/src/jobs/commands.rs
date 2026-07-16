@@ -104,12 +104,22 @@ pub(crate) fn recording_jobs_snapshot(
 pub(crate) async fn recording_jobs_pick_imports(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
+    connector: tauri::State<'_, crate::server_connector::ServerConnector>,
+    language_bcp47: Option<String>,
+    catalog_revision: Option<String>,
 ) -> Result<Vec<RecordingJobView>, JobCommandError> {
     ensure_main(&window)?;
     let _selection = begin_native_import_selection(&app)?;
     #[cfg(feature = "wdio")]
     if let Some(paths) = wdio_picker_override()? {
-        return import_native_paths(&app, paths);
+        return import_picked_paths(
+            &app,
+            connector.inner(),
+            paths,
+            language_bcp47,
+            catalog_revision,
+        )
+        .await;
     }
     let picker_app = app.clone();
     let selected = tauri::async_runtime::spawn_blocking(move || {
@@ -136,7 +146,38 @@ pub(crate) async fn recording_jobs_pick_imports(
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
-    import_native_paths(&app, paths)
+    import_picked_paths(
+        &app,
+        connector.inner(),
+        paths,
+        language_bcp47,
+        catalog_revision,
+    )
+    .await
+}
+
+async fn import_picked_paths(
+    app: &tauri::AppHandle,
+    connector: &crate::server_connector::ServerConnector,
+    paths: Vec<PathBuf>,
+    language_bcp47: Option<String>,
+    catalog_revision: Option<String>,
+) -> Result<Vec<RecordingJobView>, JobCommandError> {
+    match (language_bcp47, catalog_revision) {
+        (Some(language), Some(revision)) => {
+            let decision = crate::language_preferences::resolve_recording_language_decision(
+                app, connector, &language, &revision,
+            )
+            .await
+            .map_err(|message| command_error("LANGUAGE_SELECTION_INVALID", message))?;
+            import_native_paths_with_language(app, paths, decision)
+        }
+        (None, None) => import_native_paths(app, paths),
+        _ => Err(command_error(
+            "LANGUAGE_SELECTION_INVALID",
+            "Recording language and capability revision must be supplied together.",
+        )),
+    }
 }
 
 #[cfg(feature = "wdio")]
@@ -236,10 +277,28 @@ pub(crate) fn import_native_paths(
     app: &tauri::AppHandle,
     paths: Vec<PathBuf>,
 ) -> Result<Vec<RecordingJobView>, JobCommandError> {
+    let primary_language = crate::language_preferences::confirmed_primary_language()
+        .map_err(|message| command_error("PRIMARY_LANGUAGE_UNAVAILABLE", message))?
+        .ok_or_else(|| {
+            command_error(
+                "PRIMARY_LANGUAGE_REQUIRED",
+                "Confirm a primary language in Settings before adding recordings.",
+            )
+        })?;
+    let language_decision = crate::jobs::RecordingLanguageDecision::primary(primary_language)
+        .map_err(|error| command_error("PRIMARY_LANGUAGE_INVALID", error.to_string()))?;
+    import_native_paths_with_language(app, paths, language_decision)
+}
+
+fn import_native_paths_with_language(
+    app: &tauri::AppHandle,
+    paths: Vec<PathBuf>,
+    language_decision: crate::jobs::RecordingLanguageDecision,
+) -> Result<Vec<RecordingJobView>, JobCommandError> {
     let jobs = app.state::<RecordingJobs>();
     let media = app.state::<MediaOwner>();
     mutate_then_notify(
-        || jobs.create_imports(&media, paths, now_ms()?),
+        || jobs.create_imports_with_language(&media, paths, now_ms()?, language_decision),
         || emit_jobs_changed(app),
     )
 }

@@ -2,6 +2,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 
 import { audioExts, extension } from "@/lib/media-file";
 import type { RecordingJobView } from "@/lib/recording-job";
+import type { RecordingImportLanguageChoice } from "@/lib/recording-language";
 
 export const legacyRecordingQueueKey = "yap.recordingQueue.v1";
 export const maxStoredQueueJobs = 200;
@@ -64,9 +65,9 @@ export async function recordingJobsSnapshot() {
   return invoke<RecordingJobView[]>("recording_jobs_snapshot");
 }
 
-export async function pickRecordingImports() {
+export async function pickRecordingImports(choice: RecordingImportLanguageChoice) {
   if (!isTauri()) return [];
-  return invoke<RecordingJobView[]>("recording_jobs_pick_imports");
+  return invoke<RecordingJobView[]>("recording_jobs_pick_imports", choice);
 }
 
 export async function cancelRecordingJob(jobId: string) {

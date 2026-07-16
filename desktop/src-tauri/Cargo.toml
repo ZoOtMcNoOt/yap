@@ -39,6 +39,7 @@ tauri-plugin-wdio-webdriver = { version = "1", optional = true }
 time = { version = "0.3.53", default-features = false, features = ["formatting", "parsing"] }
 rusqlite = { version = "0.40.1", default-features = false, features = ["bundled"] }
 dirs = "6"
+sys-locale = "0.3.2"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

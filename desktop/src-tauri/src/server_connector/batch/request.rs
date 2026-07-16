@@ -6,6 +6,7 @@ use super::{
     validation::{valid_path_segment, valid_sha256},
     BatchClientError,
 };
+use crate::language::{RecordingLanguageDecision, RecordingLanguageMode};
 
 const MAX_CREATE_REQUEST_BYTES: usize = 1024 * 1024;
 const MAX_JOB_CHUNKS: usize = 4096;
@@ -79,6 +80,11 @@ pub(crate) struct UploadTrack {
 pub(crate) struct CreateRecordingJobRequest {
     pub display_name: String,
     pub metadata: crate::audio::session::SessionMetadata,
+    #[serde(
+        default = "legacy_phase5_language_decision",
+        skip_serializing_if = "RecordingLanguageDecision::is_legacy_phase5_default"
+    )]
+    pub language_decision: RecordingLanguageDecision,
     pub tracks: Vec<UploadTrack>,
     pub route: String,
     pub capture_manifest: CaptureManifestReference,
@@ -120,7 +126,7 @@ impl CreateRecordingJobRequest {
             || self.route != "server_batch"
             || self.metadata.mode != SessionMode::Meeting
             || self.metadata.origin != SessionOrigin::ImportedFile
-            || self.metadata.preferred_languages_bcp47.is_empty()
+            || !self.has_consistent_language_decision()
             || !valid_private_retention(&self.metadata)
             || self.tracks.len() != 1
             || self.chunks.is_empty()
@@ -198,6 +204,21 @@ impl CreateRecordingJobRequest {
         }
         true
     }
+
+    fn has_consistent_language_decision(&self) -> bool {
+        if self.language_decision.mode != RecordingLanguageMode::Fixed {
+            return false;
+        }
+        let Some(language) = self.language_decision.language_bcp47.as_deref() else {
+            return false;
+        };
+        self.metadata.locale_hint_bcp47.as_deref() == Some(language)
+            && self.metadata.preferred_languages_bcp47.as_slice() == [language]
+    }
+}
+
+fn legacy_phase5_language_decision() -> RecordingLanguageDecision {
+    RecordingLanguageDecision::legacy_phase5_default()
 }
 
 fn valid_private_retention(metadata: &crate::audio::session::SessionMetadata) -> bool {

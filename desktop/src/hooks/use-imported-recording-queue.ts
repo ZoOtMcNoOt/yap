@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { isRecordingCancellable, type RecordingJobView } from "@/lib/recording-job";
+import type { RecordingImportLanguageChoice } from "@/lib/recording-language";
 import {
   cancelRecordingJob,
   pickRecordingImports,
@@ -98,9 +99,9 @@ export function useRecordingJobs(onClear: () => void) {
     setStartupAttempt((attempt) => attempt + 1);
   }, [updateMigrationState]);
 
-  const addRecordings = useCallback(async () => {
+  const addRecordings = useCallback(async (choice: RecordingImportLanguageChoice) => {
     ensureMigrationReady();
-    const created = await pickRecordingImports();
+    const created = await pickRecordingImports(choice);
     await refresh();
     return created[created.length - 1]?.id;
   }, [ensureMigrationReady, refresh]);

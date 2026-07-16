@@ -21,6 +21,8 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         .manage(crate::server_connector::ServerConnector::new());
     builder.invoke_handler(tauri::generate_handler![
         setup::setup_status,
+        crate::language_preferences::desktop::primary_language_status,
+        crate::language_preferences::desktop::confirm_primary_language,
         history::history_catalog,
         history::history_hide_native,
         history::history_migrate_hidden_paths,

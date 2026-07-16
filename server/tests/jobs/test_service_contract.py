@@ -114,6 +114,55 @@ class RecordingJobContractTests(unittest.TestCase):
             self.assertEqual(invalid.exception.status, 400)
             self.assertEqual(invalid.exception.code, "INVALID_JOB")
 
+    def test_intake_freezes_one_consistent_language_decision(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            service = RecordingJobService(
+                Path(temporary),
+                processor=_Processor(),
+                supported_languages=("en", "fr"),
+                now=lambda: "2026-07-14T21:00:00Z",
+            )
+
+            request = _create_request()
+            request["languageDecision"] = {
+                "mode": "fixed",
+                "languageBcp47": "fr-FR",
+                "disposition": "manualOverride",
+            }
+            request["metadata"]["localeHintBcp47"] = "fr-FR"
+            request["metadata"]["preferredLanguagesBcp47"] = ["fr-FR"]
+            created = service.create(request)
+            self.assertEqual(created["status"], "accepted")
+
+            for mutation in (
+                {"languageBcp47": "fr-FR"},
+                {"mode": "dynamic", "languageBcp47": None, "disposition": "explicitDynamic"},
+                {"disposition": "legacyPhase5Default"},
+            ):
+                with self.subTest(mutation=mutation):
+                    invalid_request = _create_request()
+                    invalid_request["languageDecision"].update(mutation)
+                    with self.assertRaises(JobServiceError) as invalid:
+                        service.create(invalid_request)
+                    self.assertEqual(invalid.exception.code, "INVALID_JOB")
+
+    def test_intake_preserves_the_exact_phase5_legacy_request_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            service = RecordingJobService(
+                Path(temporary),
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: "2026-07-14T21:00:00Z",
+            )
+            request = _create_request()
+            del request["languageDecision"]
+
+            created = service.create(request, idempotency_key="legacy-phase5")
+            self.assertEqual(created["status"], "accepted")
+            self.assertEqual(
+                service.create(request, idempotency_key="legacy-phase5"), created
+            )
+
     def test_result_model_provenance_matches_the_openapi_256_character_bound(self) -> None:
         from yap_server.jobs.result_contract import validate_result_revision
 

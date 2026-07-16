@@ -1,3 +1,5 @@
+import type { RecordingLanguageDecision } from "@/lib/recording-language";
+
 export const queuedServerMessage =
   "Queued for your organization's transcription server. It will start when Yap connects.";
 
@@ -50,6 +52,7 @@ export type RecordingJobView = {
   status: RecordingJobStatus;
   route?: RecordingRoute;
   pipeline: RecordingPipelineState;
+  languageDecision?: RecordingLanguageDecision;
 };
 
 const activeRecordingStatuses = new Set<RecordingJobStatus>([

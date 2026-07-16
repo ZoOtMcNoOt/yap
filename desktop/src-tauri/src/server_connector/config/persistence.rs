@@ -13,11 +13,11 @@ use super::platform::{
 
 static NEXT_SETTINGS_ARTIFACT: AtomicU64 = AtomicU64::new(0);
 
-pub(super) fn acquire_settings_lock(path: &Path) -> Result<SettingsFileLock, ConfigError> {
+pub(crate) fn acquire_settings_lock(path: &Path) -> Result<SettingsFileLock, ConfigError> {
     open_settings_lock(path).map_err(ConfigError::SaveIo)
 }
 
-pub(super) fn acquire_settings_access_lock(path: &Path) -> Result<SettingsFileLock, ConfigError> {
+pub(crate) fn acquire_settings_access_lock(path: &Path) -> Result<SettingsFileLock, ConfigError> {
     open_settings_lock(path).map_err(ConfigError::AccessIo)
 }
 
@@ -37,7 +37,7 @@ where
     write_atomically_locked_with_hooks(path, contents, before_publish, |_| Ok(()))
 }
 
-pub(super) fn write_atomically_locked_with_hooks<BeforePublish, AfterPublish>(
+pub(crate) fn write_atomically_locked_with_hooks<BeforePublish, AfterPublish>(
     path: &Path,
     contents: &[u8],
     before_publish: BeforePublish,

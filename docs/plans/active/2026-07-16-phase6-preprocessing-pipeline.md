@@ -132,15 +132,17 @@ comparative evidence exists.
 
 ### 2. Add one Rust-owned primary-language and per-job decision flow
 
-- [ ] Persist a versioned, bounded primary BCP 47 locale under canonical app
+- [x] Persist a versioned, bounded primary BCP 47 locale under canonical app
       data with atomic/no-follow behavior and safe recovery.
-- [ ] Setup must require confirmation; the OS locale may suggest but may not
+- [x] Setup must require confirmation; the OS locale may suggest but may not
       silently save the decision.
-- [ ] Settings may edit the primary language. Imported jobs expose a visible
-      override and retain the exact user/detected/manual disposition used.
-- [ ] Fixed short recordings skip SpeechBrain and use the primary/manual
+- [ ] Settings may edit the primary language and imported jobs now freeze and
+      display the exact primary/manual disposition. Promotion remains open
+      until a second verified fixed-batch locale makes the catalog-derived
+      override selectable in the shipped catalog.
+- [x] Fixed short recordings skip SpeechBrain and use the primary/manual
       language. A job override never rewrites the saved primary language.
-- [ ] React remains a projection of native preferences and catalog state; no
+- [x] React remains a projection of native preferences and catalog state; no
       localStorage language authority or hard-coded permanent provider matrix.
 
 ### 3. Produce deterministic source-authoritative preprocessing evidence

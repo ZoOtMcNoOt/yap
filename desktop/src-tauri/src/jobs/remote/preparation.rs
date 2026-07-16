@@ -11,6 +11,7 @@ use crate::{
         OwnerNamespace, SessionId, SessionMetadata, SessionMode, SessionOrigin, TriggerMode,
     },
     jobs::{NewJobChunk, NewPreparedRemoteJob},
+    language::{RecordingLanguageDecision, RecordingLanguageMode},
     server_connector::batch::{
         CaptureChunkReference, CaptureManifestReference, ContentIdentity,
         CreateRecordingJobRequest, ServerReplayKey, UploadTrack,
@@ -78,6 +79,7 @@ struct ImportedCaptureManifest<'a> {
     session_id: &'a str,
     source: ImportedSourceIdentity<'a>,
     preprocessing: ImportedPreprocessing,
+    language_decision: &'a RecordingLanguageDecision,
     chunks: &'a [CaptureChunkReference],
 }
 
@@ -105,11 +107,21 @@ pub(in crate::jobs) fn prepare_imported_pcm_wav(
     spool_root: &Path,
     owner_namespace: &OwnerNamespace,
     started_at: SystemTime,
+    language_decision: &RecordingLanguageDecision,
 ) -> Result<PreparedRemoteJob, String> {
     validate_identifier(job_id, 128, "job ID")?;
     if display_name.is_empty() || display_name.len() > 256 {
         return Err("display name is outside the server contract".into());
     }
+    if language_decision.mode != RecordingLanguageMode::Fixed {
+        return Err(
+            "dynamic language routing is not enabled by the current server contract".into(),
+        );
+    }
+    let language_bcp47 = language_decision
+        .language_bcp47
+        .as_ref()
+        .ok_or_else(|| "fixed language routing requires a BCP-47 language".to_string())?;
     let wav = inspect_pcm_wav(source)?;
     let source_sha256 = sha256_reader(source, wav.source_bytes)?;
     source
@@ -134,9 +146,9 @@ pub(in crate::jobs) fn prepare_imported_pcm_wav(
         TriggerMode::Toggle,
         started_at,
         None,
-        Some("en-US".into()),
+        Some(language_bcp47.clone()),
         None,
-        vec!["en-US".into()],
+        vec![language_bcp47.clone()],
         Some(started_at + Duration::from_secs(RETENTION_SECONDS)),
     )?;
     metadata.privacy_policy_version = "development-only".into();
@@ -218,6 +230,7 @@ pub(in crate::jobs) fn prepare_imported_pcm_wav(
             channels: 1,
             padded_final_millisecond,
         },
+        language_decision,
         chunks: &references,
     };
     let manifest_bytes = serde_json::to_vec(&manifest)
@@ -245,6 +258,7 @@ pub(in crate::jobs) fn prepare_imported_pcm_wav(
         request: CreateRecordingJobRequest {
             display_name: display_name.into(),
             metadata,
+            language_decision: language_decision.clone(),
             tracks: vec![UploadTrack {
                 track_id,
                 source: serde_json::json!({

@@ -10,8 +10,8 @@ pub use ledger::JobLedger;
 pub use model::{
     DetachedRemoteCancellationRecord, JobChunkRecord, JobLedgerError, NewJobChunk,
     NewPreparedRemoteJob, NewRecordingJob, PreparedRemoteJobRecord, RecordingJobRecord,
-    RecordingJobStatus, RecordingJobView, RecordingRoute, SessionMode, SessionOrigin,
-    SourceOwnership,
+    RecordingJobStatus, RecordingJobView, RecordingLanguageDecision, RecordingLanguageDisposition,
+    RecordingLanguageMode, RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
 };
 
 pub(crate) use drain::RemoteJobDrain;

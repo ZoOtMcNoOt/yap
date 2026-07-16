@@ -31,6 +31,7 @@ import {
   type RecordingJobStatus,
   type RecordingJobView,
 } from "@/lib/recording-job";
+import { recordingLanguageSummary } from "@/lib/recording-language";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -210,6 +211,7 @@ function UploadCard({
   const isCancellable = isRecordingCancellable(item.status);
   const canRemove = item.status === "failed" || isCancellable;
   const removeLabel = isActive && isCancellable ? "Cancel recording" : "Remove file";
+  const language = recordingLanguageSummary(item.languageDecision);
   const detail = item.status === "complete"
       ? "Saved"
       : item.status === "partial"
@@ -243,7 +245,9 @@ function UploadCard({
 
         <AttachmentContent>
           <AttachmentTitle>{item.name}</AttachmentTitle>
-          <AttachmentDescription>{detail}</AttachmentDescription>
+          <AttachmentDescription>
+            {language ? `${detail} · ${language}` : detail}
+          </AttachmentDescription>
         </AttachmentContent>
 
         <AttachmentActions className="gap-2">

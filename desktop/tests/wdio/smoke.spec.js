@@ -278,6 +278,11 @@ describe("Yap desktop shell", () => {
       mkdirSync(directory, { recursive: true });
     }
     writeEmptyWaveFile(sourcePath);
+    writeFileSync(
+      path.join(appDataRoot, "primary-language.json"),
+      `${JSON.stringify({ schemaVersion: 1, languageBcp47: "en-US" }, null, 2)}\n`,
+      { encoding: "utf8", flag: "wx" },
+    );
 
     const firstPort = 4455;
     const secondPort = 4456;
@@ -295,6 +300,11 @@ describe("Yap desktop shell", () => {
       const created = await invokeTauriCommandInSession(firstSession, "recording_jobs_pick_imports");
       expect(created).toHaveLength(1);
       expect(created[0].status).toBe("queued_server");
+      expect(created[0].languageDecision).toEqual({
+        mode: "fixed",
+        languageBcp47: "en-US",
+        disposition: "primary",
+      });
       expect(typeof created[0].id).toBe("string");
       expect(await firstSession.execute(() =>
         window.localStorage.getItem("yap.recordingQueue.v1"))).toBeNull();
