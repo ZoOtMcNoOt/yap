@@ -239,12 +239,18 @@ History visibility, `retrying` during an explicit SSH-forward interruption, and
 gate containers were stopped. Transcript/audio content, client/session identity,
 host paths, and private evidence remain outside Git and PR output.
 
-### Remaining checked-head closure
+### Completed checked-head closure
 
 The daily Windows profile was not used as an installer lifecycle environment.
-The final PR must run hosted CI and CodeQL plus the stock NSIS lifecycle on a
-disposable Windows runner. Those hosted checks, final review, and merge remain
-pending.
+Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI
+run [`29473149087`](https://github.com/mcnatg1/yap/actions/runs/29473149087),
+CodeQL run
+[`29473147668`](https://github.com/mcnatg1/yap/actions/runs/29473147668), and
+the stock NSIS lifecycle on disposable-Windows run
+[`29473161985`](https://github.com/mcnatg1/yap/actions/runs/29473161985).
+The CodeQL matrix covered Actions, JavaScript/TypeScript, Python, and Rust.
+PR [#59](https://github.com/mcnatg1/yap/pull/59) merged the checked head as
+`a80934d844a068110e7f86b30b6e29d35146db57` on 2026-07-16.
 
 The locally gated implementation remains
 `6d55816b0406a2365376d7b2d9a7da2afecf9118`. On 2026-07-16, hosted closure
@@ -258,6 +264,6 @@ dependency, contract, build artifact, or private evidence.
 not rerun it for test-harness-only closure. The exact Python 3.12 hosted discovery
 shape passed locally with 183 tests and one intentional skip, and the affected
 release-provenance contract passed. Hosted CI, CodeQL, and disposable-Windows
-NSIS must still pass against the final exact PR head. ADR scores remain unchanged
-because the checkpoint hardens and reorganizes Phase 1–5 behavior; it does not
-supply any still-missing later product or enterprise capability.
+NSIS then passed on the final exact PR head recorded above. ADR scores remain
+unchanged because the checkpoint hardens and reorganizes Phase 1–5 behavior; it
+does not supply any still-missing later product or enterprise capability.

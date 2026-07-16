@@ -1,6 +1,6 @@
 # Spec: Testing strategy
 
-**Status:** Living verification contract (updated 2026-07-15); future phase gates activate only when their fixtures exist
+**Status:** Living verification contract (updated 2026-07-16); future phase gates activate only when their fixtures exist
 **Scope:** Cross-cutting tests for the desktop runtime, track-aware audio contracts, local fallback, source-aware diarization, server contracts, and native UI.
 
 This is the shared reference the phase specs point to for their acceptance tests.
@@ -14,7 +14,9 @@ one-time complete gate passed on exact PR head
 `4771d9be60562fa009ccecbcd3c7111b699883a5`. The
 desktop speech suite, meeting RTTM manifest, diarization benchmark harness,
 bundled llama-server, and per-OS real-model matrix described below do not exist
-yet. Their tables are target gates, not claims about active CI.
+yet. Phase 6 has aggregate public-fixture decision research, but its catalog,
+VAD/LID/alignment fixtures, components, and complete gate do not execute yet.
+Their tables are target gates, not claims about active CI.
 
 ---
 
@@ -50,6 +52,21 @@ restart replay, malformed input, worker failure, saturation, storage limits,
 and retention are covered by the complete Rust/Python matrix on the same frozen
 SHA, while the GB10 portion supplies the real image/model/runtime/WER and clean
 host-boundary evidence.
+
+### Phase 6 target boundary
+
+Focused suites cover each Phase 6 slice while the branch changes. The complete
+local/native/server/GB10 matrix runs exactly once only after the provider
+catalog, primary/per-job language flow, advisory VAD, durable stages, isolated
+LID, fixed/dynamic routing, timing evidence, migrations, docs, and focused
+reviews are ready on one frozen candidate.
+
+The gate must use license-clear public fixtures to prove contract shape,
+language decisions, representative advertised tiers, source preservation,
+restart/cancel/retry behavior, alignment failure semantics, resource ceilings,
+and clean teardown. Aggregate candidate research cannot promote a locale or
+alignment capability by itself. Private recordings, raw benchmark output, host
+paths, and scan evidence remain outside Git and hosted artifacts.
 
 ### Windows installer safety boundary
 
@@ -197,7 +214,7 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 | 3 Contract | OpenAPI/schema validation, loopback health bounds, connector failure/retry, durable client ledger restart |
 | 4 Server node | Router fairness/backpressure, immutable runtime/model/fixture locks, isolated non-root container, ARM64/CUDA attestation, WER, atomic evidence, no persistent listener |
 | 5 Remote STT | Resumable upload identity, queue drain, job state/cancel/retry, capability truth, result ingestion, tunnel-loss recovery |
-| 6 Preprocessing | mixed-session rejection, track-aware content IDs, explicit gaps, bounded windows, advisory VAD |
+| 6 Preprocessing | versioned provider/language/timing catalog; primary/per-job choice; mixed-session rejection; track-aware content IDs; exact gaps; bounded windows; advisory VAD/source preservation; two-probe LID/manual gate; fixed/dynamic routing; durable stage restart/cancel/retry; fail-closed aligned words; model/license locks; GB10 resource/accuracy/teardown evidence |
 | 7 Identity/access | Yap API token audience, `(tid, oid)` isolation, consent and withdrawal, profile-version compatibility |
 | 8 Meeting evidence | one/two/overlap/short/noisy speakers, stable result revisions, bounded clusters, no local names or persistent embeddings |
 | 9 Knowledge/agents | Google OKF conformance, permission-safe projection, citation-required Analyst, three-strike Student, RAG confidence floor |

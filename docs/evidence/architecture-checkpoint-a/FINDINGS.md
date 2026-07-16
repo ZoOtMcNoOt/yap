@@ -59,7 +59,7 @@ The added-lens conclusions are:
 | Dependency and deterministic evidence | Release-contract imports and server pool contracts now point one way and have executable guards. Toolchain, dependency, cache, container, model, and fixture identities remain locked; the one-time integrated local/native/server/GB10 matrix passed at the exact implementation candidate. |
 | Failure observability | New overload/admission failures use stable user-safe errors, while logs and public evidence exclude audio, transcript, scan, host, and exploit details. |
 | Accessibility and local control | Native window geometry remains authoritative; keyboard/chord enrollment is deliberate; reduced motion is honored on first render and subsequent preference changes. |
-| Adversarial lifecycle drills | Focused and integrated restart, cancellation, partial-publication, identity replacement, queue overload, resource-bound, tunnel-recovery, and teardown proofs passed. Hosted disposable-installer lifecycle remains a PR check. |
+| Adversarial lifecycle drills | Focused and integrated restart, cancellation, partial-publication, identity replacement, queue overload, resource-bound, tunnel-recovery, and teardown proofs passed. The hosted disposable-installer lifecycle also passed on the final PR head. |
 | Complexity movement | Every hand-written file at or above 250 lines was inspected. The 466-line shortcut owner was split by registration versus execution, shared bounded I/O retained domain-specific policy, and no replacement `utils`/`common`/`manager` catch-all was introduced. |
 
 ## Consolidated target architecture
@@ -174,13 +174,13 @@ These are closure controls, not accepted product defects:
 
 | Item | State | Evidence or required closure |
 | --- | --- | --- |
-| Documentation truth | Complete | Canonical status/architecture/roadmap/security/provenance docs describe merged Phase 5 and active Checkpoint A. The restored `docs/VOICE-OS-ARCHITECTURE.md` remains the first-class long-term frame, while genuinely superseded plans/designs stay separated. |
-| Voice OS status refresh | Owner review pending | The long-term target, diagrams, sequencing, and decisions were restored without substantive revision. Its dated implementation-status passages remain explicitly subordinate to current status/architecture and will change only after owner review. |
+| Documentation truth | Complete | Canonical status/architecture/roadmap/security/provenance docs describe merged Phase 5 and the completed checkpoint. The restored `docs/VOICE-OS-ARCHITECTURE.md` remains the first-class long-term frame, while genuinely superseded plans/designs stay separated. |
+| Voice OS status refresh | Complete | The owner approved the checkpoint status reconciliation. The long-term target remains first-class and its implementation-status passages now record the exact checkpoint closure without inflating later capability claims. |
 | File-size evidence | Complete | The complete 250-line inspection inventory and every retained >350-line cohesion justification are in `FILE-INVENTORY.md`. |
 | Link integrity | Complete | Repository-local relative Markdown link audit passes after history-preserving moves. |
 | Reviewability | Complete | The ordered commit/slice index below separates product refactors, release/provenance closure, and documentation. |
 | Local exact-head verification | Complete | The complete applicable local/native/server/GB10 matrix passed once at implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118`; private evidence stayed outside Git. |
-| Hosted closure | Pending | Open a focused PR and require the checked head to be green. If hosted checks are unavailable, record equivalent local evidence and disclose the unavailable checks. |
+| Hosted closure | Complete | Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed CI `29473149087`, CodeQL `29473147668`, and disposable-Windows NSIS `29473161985`, then merged through PR #59 as `a80934d844a068110e7f86b30b6e29d35146db57`. |
 
 ## Ordered review slices
 

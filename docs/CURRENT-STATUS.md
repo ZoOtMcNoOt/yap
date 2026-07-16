@@ -1,13 +1,14 @@
 # Current Status
 
-**As of:** 2026-07-15
+**As of:** 2026-07-16
 
-**Current work:** Architecture Checkpoint A on
-`refactor/phase1-5-architecture-checkpoint`.
+**Current work:** Phase 6 preprocessing on
+`feat/phase6-preprocessing-pipeline`.
 
-**Merged product baseline:** Phase 5 merge
-`b6677631b2cc8283f0f6466622f2dfa7cfdb38f6` from
-[PR #58](https://github.com/mcnatg1/yap/pull/58).
+**Merged product baseline:** Architecture Checkpoint A merge
+`a80934d844a068110e7f86b30b6e29d35146db57` from
+[PR #59](https://github.com/mcnatg1/yap/pull/59), preserving the gated Phase 5
+product behavior.
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -27,8 +28,9 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 3: server boundary | Merged and gated | Machine contracts, loopback health/capabilities, connector state/retry, durable desktop job ledger, canonical app-data migration, stock NSIS, and disposable-Windows lifecycle proof exist. |
 | Phase 4: private ASR node | Merged and gated | A bounded router/pool and transient isolated Cohere worker ran on GB10 using the pinned Python 3.12 / NVIDIA PyTorch 26.06 stack. This is reference-worker proof, not a production service. |
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
-| Checkpoint A | Active; local gate green | The implementation/focused review and canonical documentation reconciliation are complete. The one-time local/native/server/GB10 matrix passed at `6d55816b0406a2365376d7b2d9a7da2afecf9118`; hosted exact-head checks, disposable-Windows NSIS, review, and merge remain. No Phase 6 functionality is allowed. |
-| Phases 6–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
+| Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
+| Phase 6: preprocessing | Active; implementation not gated | [ADR 0024](adr/0024-phase6-global-language-routing.md) and the [active plan](plans/active/2026-07-16-phase6-preprocessing-pipeline.md) record the benchmark-backed language/routing/timing decision. No Phase 6 product behavior or implementation-score increase is claimed yet. |
+| Phases 7–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
 ## What executes now
 
@@ -68,12 +70,11 @@ The complete owner and trust-boundary map is
   multi-user service, or measured multi-worker capacity is shipped.
 - No Entra/MSAL token validation, tenant-derived owner, purpose grant, internal
   DNS, enterprise certificate, ZPA policy, or production firewall rule exists.
-- Phase 6 preprocessing, Phase 8 speaker inference, and Phase 9 knowledge/agent
-  behavior have not been pulled into the checkpoint.
-- The one-time Checkpoint A local/native/server/GB10 matrix passed at the exact
-  implementation candidate. Hosted CI/CodeQL, disposable-Windows NSIS, final
-  review, and merge remain; details are in
-  [checkpoint verification](evidence/architecture-checkpoint-a/VERIFICATION.md).
+- Phase 6 preprocessing remains a decision and implementation plan on the
+  current branch. Normalization/VAD, SpeechBrain LID, the server Nemotron pool,
+  dynamic language tags, and Cohere word alignment are not yet wired product
+  capabilities.
+- Phase 8 speaker inference and Phase 9 knowledge/agent behavior remain deferred.
 - Private security scans, scan identifiers, host paths, and detailed private
   findings are not repository or PR material.
 
@@ -88,10 +89,30 @@ head. Exact counts and environment observations remain in the completed
 [Phase 5 implementation record](plans/completed/2026-07-14-phase5-remote-stt.md)
 and [verification record](evidence/architecture-checkpoint-a/VERIFICATION.md).
 
+## Checkpoint A checked-head evidence
+
+Checkpoint implementation candidate
+`6d55816b0406a2365376d7b2d9a7da2afecf9118` passed its one-time complete
+local/native/server/GB10 matrix. Test-harness-only closure produced final PR
+head `2dc1c48c31928106d07cc638828f055929c33e0c`; hosted CI run
+[`29473149087`](https://github.com/mcnatg1/yap/actions/runs/29473149087),
+CodeQL run
+[`29473147668`](https://github.com/mcnatg1/yap/actions/runs/29473147668), and
+stock NSIS run
+[`29473161985`](https://github.com/mcnatg1/yap/actions/runs/29473161985)
+all passed on that exact head. It merged through PR #59 as
+`a80934d844a068110e7f86b30b6e29d35146db57`. The complete public-safe record is
+[Checkpoint A verification](evidence/architecture-checkpoint-a/VERIFICATION.md).
+
 ## Active next steps
 
-1. Commit the public-safe local-gate evidence without changing executable behavior.
-2. Open a focused PR and run hosted CI, CodeQL, and disposable-Windows NSIS.
-3. Resolve any review or hosted finding and recheck the exact PR head.
-4. Merge only the reviewed, green head.
-5. Begin Phase 6 only after Checkpoint A is merged.
+1. Finalize the Phase 6 capability/language/timing contracts and preserve the
+   complete ADR precedence map in the active plan.
+2. Implement the provider catalog and Rust-owned primary/per-job language
+   decision flow with focused contract, persistence, migration, and UX tests.
+3. Add source-authoritative VAD/durable stages, isolated LID, provider routing,
+   and fail-closed timing evidence in reviewable slices.
+4. Resolve focused correctness/security/license/maintainability findings, then
+   freeze and run the complete Phase 6 local/native/server/GB10 matrix exactly
+   once on the ready head.
+5. Merge only the reviewed exact PR head after hosted checks are green.

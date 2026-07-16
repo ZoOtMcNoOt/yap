@@ -61,7 +61,7 @@ availability.
 
 ### Active
 
-- [Architecture Checkpoint A](plans/active/2026-07-15-architecture-checkpoint-a.md)
+- [Phase 6 preprocessing pipeline](plans/active/2026-07-16-phase6-preprocessing-pipeline.md)
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
 
 ### Completed implementation records
@@ -71,6 +71,7 @@ availability.
 - [Phase 3 server contract and durable connector](plans/completed/2026-07-10-server-contract-durable-connector.md)
 - [Phase 4 private ASR node](plans/completed/2026-07-13-phase4-private-asr-node.md)
 - [Phase 5 remote STT](plans/completed/2026-07-14-phase5-remote-stt.md)
+- [Architecture Checkpoint A](plans/completed/2026-07-15-architecture-checkpoint-a.md)
 
 ### Archived plans and historical designs
 

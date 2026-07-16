@@ -1,8 +1,9 @@
 # Spec: Local Audio Preprocessing Stack
 
-**Status:** Accepted design contract; desktop capture/timeline/recording foundation verified 2026-07-11, with gated Phase 5 canonical-WAV admission, PCM extraction, and loopback batch transport merged 2026-07-15
+**Status:** Accepted design contract; desktop capture/timeline/recording foundation and the gated Phase 5 canonical-WAV path are merged. Phase 6 implementation is active under the separately linked plan and is not yet gated.
 **Scope:** Desktop-side capture and deterministic preprocessing before local fallback or server upload.
-**Amended by:** [ADR 0020](../adr/0020-meeting-capture-diarization-authority.md) and the [Source-Aware Diarization Design](source-aware-diarization.md).
+**Amended by:** [ADR 0020](../adr/0020-meeting-capture-diarization-authority.md), [ADR 0024](../adr/0024-phase6-global-language-routing.md), and the [Source-Aware Diarization Design](source-aware-diarization.md).
+**Active implementation:** [Phase 6 preprocessing plan](../plans/active/2026-07-16-phase6-preprocessing-pipeline.md).
 
 Yap should preprocess audio locally when the work is cheap, deterministic, and useful for both the local live fallback and the server path. The server owns heavy inference and enrichment. The desktop owns capture, preparation, chunk metadata, and retryable transport packaging.
 

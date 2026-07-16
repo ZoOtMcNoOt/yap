@@ -1,8 +1,13 @@
 # Architecture Checkpoint A Implementation Plan
 
-**Status:** Implementation and the one-time local/native/server/GB10 gate are
-complete at `6d55816b0406a2365376d7b2d9a7da2afecf9118`; final evidence,
-hosted exact-head checks, disposable-Windows NSIS, review, and merge remain.
+**Status:** Completed, reviewed, gated, and merged. Implementation candidate
+`6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time complete
+local/native/server/GB10 matrix. Final PR head
+`2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and the
+stock NSIS lifecycle, then merged as
+`a80934d844a068110e7f86b30b6e29d35146db57` on 2026-07-16 through
+[PR #59](https://github.com/mcnatg1/yap/pull/59). The body below preserves the
+implementation and gate contract as historical evidence, not active work.
 
 **Branch:** `refactor/phase1-5-architecture-checkpoint`
 
@@ -83,7 +88,7 @@ The evidence is in [findings](../../evidence/architecture-checkpoint-a/FINDINGS.
 [ownership](../../architecture/boundaries/PHASE-1-5-OWNERSHIP.md), and
 [file inventory](../../evidence/architecture-checkpoint-a/FILE-INVENTORY.md).
 
-## Remaining slices
+## Closure slices
 
 - [x] Reconcile only the dated implementation-status passages in the restored
       Voice OS frame after explicit owner review; do not silently revise its
@@ -92,8 +97,8 @@ The evidence is in [findings](../../evidence/architecture-checkpoint-a/FINDINGS.
       behavior.
 - [x] Open a focused PR; require hosted checks on the checked head, or disclose
       unavailable hosted checks with equivalent local evidence.
-- [ ] Run the stock NSIS lifecycle on the hosted disposable-Windows boundary.
-- [ ] Merge only after review and green exact-head evidence.
+- [x] Run the stock NSIS lifecycle on the hosted disposable-Windows boundary.
+- [x] Merge only after review and green exact-head evidence.
 
 ## One-time gate rule
 
@@ -125,6 +130,18 @@ decision is to retain `6d55816` as the locally gated implementation and not reru
 the integrated/GB10 matrix. The exact hosted server discovery shape and affected
 release-provenance contract must pass locally; hosted CI, CodeQL, and the
 disposable-Windows stock NSIS lifecycle must pass against the final PR head.
+
+Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` satisfied that
+closure: CI run
+[`29473149087`](https://github.com/mcnatg1/yap/actions/runs/29473149087),
+CodeQL run
+[`29473147668`](https://github.com/mcnatg1/yap/actions/runs/29473147668), and
+stock NSIS run
+[`29473161985`](https://github.com/mcnatg1/yap/actions/runs/29473161985)
+all passed on the exact head. PR #59 then merged that head as
+`a80934d844a068110e7f86b30b6e29d35146db57`. The focused harness corrections
+did not add product behavior, so the checkpoint did not change any ADR
+implementation score.
 
 ## Prohibited scope
 

@@ -11,8 +11,12 @@ their execution window closes.
 
 Current work:
 
-- [Architecture Checkpoint A](active/2026-07-15-architecture-checkpoint-a.md)
+- [Phase 6 preprocessing pipeline](active/2026-07-16-phase6-preprocessing-pipeline.md)
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
+
+Recently completed:
+
+- [Architecture Checkpoint A](completed/2026-07-15-architecture-checkpoint-a.md)
 
 When a plan closes, use `git mv` into `completed/` or `archived/`, repair all
 references, and update [current status](../CURRENT-STATUS.md) only when

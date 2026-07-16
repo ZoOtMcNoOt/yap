@@ -18,33 +18,36 @@ frame contains alternate or historical sequencing.
 | 3 | Server contracts, capability health, connector state/retry, durable desktop job ledger, canonical app-data/stock NSIS closure. |
 | 4 | Bounded private router/pool and isolated Cohere GPU reference worker on the pinned Python 3.12/NVIDIA stack. |
 | 5 | Real durable imported-recording batch-ASR slice through the desktop/server contract with verified native result publication. |
+| Checkpoint A | Phase 1–5 correctness, ownership, decomposition, provenance, documentation, and resource-bound review; merged after the one-time local/native/server/GB10 matrix and exact-head hosted closure. |
 
 Evidence and limits are summarized in [current status](../CURRENT-STATUS.md).
 
-## Current gate: Architecture Checkpoint A
+## Current gate: Phase 6 preprocessing
 
-Checkpoint A reviews the complete Phase 1–5 executable system before new
-product scope:
+Phase 6 turns the merged fixed-language canonical-WAV vertical slice into a
+durable preprocessing and language-aware pipeline without pulling later
+identity, diarization, knowledge, or enterprise boundaries forward:
 
-- resolve correctness/security findings;
-- establish one owner for lifecycle, persistence, window, result, retry, and
-  cancellation state;
-- remove dead/speculative machinery;
-- decompose mixed responsibilities and justify cohesive size exceptions;
-- make dependency direction explicit;
-- reconcile provenance/licenses;
-- measure before claiming efficiency gains; and
-- organize current, normative, active, completed, historical, operational, and
-  evidence documentation.
+- versioned provider/language/timing capabilities;
+- one Rust-owned primary language plus visible per-job override;
+- deterministic normalization and advisory VAD that never deletes source audio;
+- durable retryable preprocessing stages on the existing job authority;
+- isolated CPU SpeechBrain suggestions for long fixed-language recordings;
+- fixed Cohere/Nemotron routes plus explicit server Nemotron auto mode at
+  finalized utterance boundaries; and
+- fail-closed word timing, initially behind an English Cohere evidence gate.
 
-It adds no Phase 6 functionality. The active plan is
-[Architecture Checkpoint A](../plans/active/2026-07-15-architecture-checkpoint-a.md).
+The canonical decision is
+[ADR 0024](../adr/0024-phase6-global-language-routing.md). The implementation
+and one-time gate contract are in the active
+[Phase 6 plan](../plans/active/2026-07-16-phase6-preprocessing-pipeline.md).
+Within-utterance code switching, automatic cross-provider switching, named
+speaker identity, and enterprise infrastructure are not Phase 6 claims.
 
 ## Accepted later phases
 
 | Phase | Boundary | Exit direction |
 | --- | --- | --- |
-| 6 | Preprocessing | Audio normalization, VAD/chunk manifests, language identification, forced alignment, word timestamps, and durable retryable pipeline state. |
 | 7 | Identity and access | Entra/MSAL client bridge, Yap API audience/token validation, tenant-scoped `(tid, oid)` ownership, purpose grants, authorization/revocation/audit behavior. |
 | 8 | Meeting evidence | Anonymous speaker evidence, timestamped result revisions, benchmark gates, and purpose-authorized server reconciliation/naming. |
 | 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP. |

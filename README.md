@@ -4,9 +4,10 @@ Yap is a private, desktop-first transcription system: a Tauri/React client with
 an explicit local live fallback and a durable batch path to a private GPU
 server.
 
-Phases 1–5 are merged. The current branch is the post-MVP
-**Architecture Checkpoint A**, which is simplifying and documenting the
-executing foundation without adding Phase 6 features.
+Phases 1–5 and the post-MVP Architecture Checkpoint A are merged. The current
+branch is **Phase 6 preprocessing**, which is adding the benchmark-backed
+language, VAD, durable-stage, and truthful timing boundary without pulling
+identity, diarization, knowledge, or enterprise deployment forward.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.
