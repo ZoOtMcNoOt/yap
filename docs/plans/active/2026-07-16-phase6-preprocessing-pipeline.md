@@ -125,7 +125,7 @@ comparative evidence exists.
 - [x] Advertise a catalog only when its locked runtime and required artifacts
       are verified. Health remains small; catalog retrieval is separately
       bounded and versioned.
-- [ ] Keep a last-known verified native snapshot for offline explanation
+- [x] Keep a last-known verified native snapshot for offline explanation
       without treating it as current server availability.
 - [ ] Reject duplicate locales/modes, unknown tiers, invalid BCP 47 tags,
       adaptation-ready Nemotron entries, mutable revisions, and unbounded text.

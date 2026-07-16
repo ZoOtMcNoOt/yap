@@ -1,4 +1,7 @@
-use super::super::persistence::{snapshot_destination, write_atomically_with_before_publish};
+use super::super::persistence::{
+    acquire_settings_lock, snapshot_destination, write_atomically_locked_with_limit_and_hooks,
+    write_atomically_with_before_publish,
+};
 use super::*;
 
 #[test]
@@ -84,5 +87,26 @@ fn atomic_writer_rejects_oversized_configuration_before_staging() {
     assert!(!path.exists());
     assert_eq!(partial_files(&dir), Vec::<String>::new());
     assert_eq!(recovery_files(&dir), Vec::<PathBuf>::new());
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
+fn limit_aware_atomic_writer_supports_a_larger_bounded_snapshot() {
+    let dir = temp_dir("larger-bounded-snapshot");
+    let path = dir.join("asr-capabilities-snapshot.json");
+    let contents = vec![b'x'; 64 * 1024 + 1];
+    let _lock = acquire_settings_lock(&path).unwrap();
+
+    write_atomically_locked_with_limit_and_hooks(
+        &path,
+        &contents,
+        contents.len(),
+        |_, _| Ok(()),
+        |_| Ok(()),
+    )
+    .unwrap();
+
+    assert_eq!(std::fs::read(&path).unwrap(), contents);
+    drop(_lock);
     std::fs::remove_dir_all(dir).ok();
 }

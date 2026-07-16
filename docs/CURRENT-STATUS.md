@@ -72,10 +72,11 @@ The complete owner and trust-boundary map is
   DNS, enterprise certificate, ZPA policy, or production firewall rule exists.
 - Phase 6 has focused implementation slices on the current branch: a verified
   runtime may publish a bounded, fingerprinted ASR catalog through a separate
-  endpoint and native projection; a versioned Rust-owned primary language is
-  explicitly confirmed; and each imported job freezes its primary/manual
-  decision through SQLite, preprocessing manifest, and server create contract.
-  React only projects native preference/catalog truth. The shipped catalog
+  endpoint and native projection; an origin-bound last-known snapshot explains
+  offline state without becoming availability; a versioned Rust-owned primary
+  language is explicitly confirmed; and each imported job freezes its
+  primary/manual decision through SQLite, preprocessing manifest, and server
+  create contract. React only projects native preference/catalog truth. The shipped catalog
   still honestly exposes only the gated Cohere `en-US` fixed-batch route, so a
   real alternate-language override is not yet promoted. Normalization/VAD,
   SpeechBrain LID, the server Nemotron pool, dynamic language tags, Cohere word

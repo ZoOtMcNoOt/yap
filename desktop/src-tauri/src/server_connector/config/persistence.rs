@@ -4,7 +4,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use super::error::ConfigError;
 use super::persisted_file::{
-    configuration_too_large, read_persisted_file, PersistedFile, MAX_PERSISTED_CONFIG_BYTES,
+    configuration_too_large, read_persisted_file_with_limit, PersistedFile,
+    MAX_PERSISTED_CONFIG_BYTES,
 };
 use super::platform::{
     atomic_replace_same_directory, open_settings_lock, sync_parent_directory, FileIdentity,
@@ -47,7 +48,27 @@ where
     BeforePublish: FnOnce(&Path, &Path) -> std::io::Result<()>,
     AfterPublish: FnOnce(&Path) -> std::io::Result<()>,
 {
-    if contents.len() > MAX_PERSISTED_CONFIG_BYTES {
+    write_atomically_locked_with_limit_and_hooks(
+        path,
+        contents,
+        MAX_PERSISTED_CONFIG_BYTES,
+        before_publish,
+        after_publish,
+    )
+}
+
+pub(crate) fn write_atomically_locked_with_limit_and_hooks<BeforePublish, AfterPublish>(
+    path: &Path,
+    contents: &[u8],
+    maximum_bytes: usize,
+    before_publish: BeforePublish,
+    after_publish: AfterPublish,
+) -> Result<(), ConfigError>
+where
+    BeforePublish: FnOnce(&Path, &Path) -> std::io::Result<()>,
+    AfterPublish: FnOnce(&Path) -> std::io::Result<()>,
+{
+    if contents.len() > maximum_bytes {
         return Err(ConfigError::SaveIo(configuration_too_large()));
     }
 
@@ -74,7 +95,7 @@ where
         return Err(ConfigError::SaveIo(error));
     }
 
-    let destination_before = match snapshot_destination(path) {
+    let destination_before = match snapshot_destination_with_limit(path, maximum_bytes) {
         Ok(snapshot) => snapshot,
         Err(error) => {
             std::fs::remove_file(&partial).ok();
@@ -90,6 +111,7 @@ where
             contents,
             &destination_before,
             error,
+            maximum_bytes,
         ));
     }
     if let Err(error) = after_publish(path).and_then(|_| sync_parent_directory(path)) {
@@ -135,8 +157,16 @@ pub(super) enum DestinationSnapshot {
     },
 }
 
+#[cfg(test)]
 pub(super) fn snapshot_destination(path: &Path) -> std::io::Result<DestinationSnapshot> {
-    Ok(match read_persisted_file(path)? {
+    snapshot_destination_with_limit(path, MAX_PERSISTED_CONFIG_BYTES)
+}
+
+fn snapshot_destination_with_limit(
+    path: &Path,
+    maximum_bytes: usize,
+) -> std::io::Result<DestinationSnapshot> {
+    Ok(match read_persisted_file_with_limit(path, maximum_bytes)? {
         Some(PersistedFile { identity, bytes }) => DestinationSnapshot::Present { identity, bytes },
         None => DestinationSnapshot::Missing,
     })
@@ -175,17 +205,20 @@ fn reconcile_publication_failure(
     intended: &[u8],
     before: &DestinationSnapshot,
     publish_error: std::io::Error,
+    maximum_bytes: usize,
 ) -> ConfigError {
-    reconcile_publication_failure_with_parent_sync(
+    reconcile_publication_failure_with_limit_and_parent_sync(
         path,
         partial,
         intended,
         before,
         publish_error,
+        maximum_bytes,
         sync_parent_directory,
     )
 }
 
+#[cfg(test)]
 pub(super) fn reconcile_publication_failure_with_parent_sync<ParentSync>(
     path: &Path,
     partial: &Path,
@@ -197,7 +230,30 @@ pub(super) fn reconcile_publication_failure_with_parent_sync<ParentSync>(
 where
     ParentSync: Fn(&Path) -> std::io::Result<()>,
 {
-    let after = snapshot_destination(path);
+    reconcile_publication_failure_with_limit_and_parent_sync(
+        path,
+        partial,
+        intended,
+        before,
+        publish_error,
+        MAX_PERSISTED_CONFIG_BYTES,
+        parent_sync,
+    )
+}
+
+fn reconcile_publication_failure_with_limit_and_parent_sync<ParentSync>(
+    path: &Path,
+    partial: &Path,
+    intended: &[u8],
+    before: &DestinationSnapshot,
+    publish_error: std::io::Error,
+    maximum_bytes: usize,
+    parent_sync: ParentSync,
+) -> ConfigError
+where
+    ParentSync: Fn(&Path) -> std::io::Result<()>,
+{
+    let after = snapshot_destination_with_limit(path, maximum_bytes);
     if after
         .as_ref()
         .is_ok_and(|after| destination_is_proven_unchanged(before, after))

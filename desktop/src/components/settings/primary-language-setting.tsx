@@ -43,6 +43,9 @@ function preferenceDetail(status: PrimaryLanguageStatus | null, error: string) {
     return "The saved setting is invalid. Confirm a current language to replace it safely.";
   }
   if (!status.capabilityCatalog) {
+    if (status.lastKnownCapabilities) {
+      return "The server is unavailable. Its last verified language catalog is retained for explanation only; reconnect before choosing a language.";
+    }
     return "Connect to a ready transcription server to load the current language list.";
   }
   if (status.confirmedLanguageAvailable === false) {

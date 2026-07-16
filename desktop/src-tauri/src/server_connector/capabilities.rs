@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 use super::config;
 use crate::language::valid_bcp47;
 
-const MAX_CATALOG_BYTES: usize = 256 * 1024;
+pub(super) const MAX_CATALOG_BYTES: usize = 256 * 1024;
 const MAX_PROVIDERS: usize = 8;
 const MAX_CAPABILITIES_PER_PROVIDER: usize = 256;
 

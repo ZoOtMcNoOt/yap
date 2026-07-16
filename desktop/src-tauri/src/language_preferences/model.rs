@@ -1,4 +1,4 @@
-use crate::server_connector::AsrCapabilityCatalog;
+use crate::server_connector::{AsrCapabilityCatalog, LastKnownAsrCapabilities};
 
 pub(super) const CURRENT_SCHEMA_VERSION: u16 = 1;
 
@@ -19,12 +19,14 @@ pub struct PrimaryLanguageStatus {
     pub requires_confirmation: bool,
     pub preference_issue: Option<PrimaryLanguagePreferenceIssue>,
     pub capability_catalog: Option<AsrCapabilityCatalog>,
+    pub last_known_capabilities: Option<LastKnownAsrCapabilities>,
 }
 
 pub(super) fn project_status(
     confirmed_language_bcp47: Option<String>,
     os_locale: Option<&str>,
     capability_catalog: Option<AsrCapabilityCatalog>,
+    last_known_capabilities: Option<LastKnownAsrCapabilities>,
     preference_issue: Option<PrimaryLanguagePreferenceIssue>,
 ) -> PrimaryLanguageStatus {
     let suggested_language_bcp47 = (confirmed_language_bcp47.is_none()
@@ -51,6 +53,7 @@ pub(super) fn project_status(
         confirmed_language_available,
         preference_issue,
         capability_catalog,
+        last_known_capabilities,
     }
 }
 

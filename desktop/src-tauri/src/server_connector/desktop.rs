@@ -199,7 +199,29 @@ pub(crate) async fn current_asr_capabilities(
             | capabilities::AsrCatalogError::RevisionMismatch,
         ) => return Err("Server returned an incompatible ASR capability catalog.".into()),
     };
-    connector.with_current_asr_capability_lease(&lease, || Some(catalog))
+    let catalog = connector.with_current_asr_capability_lease(&lease, || catalog)?;
+    if super::capability_snapshot::save(lease.base_url(), &catalog).is_err() {
+        crate::stt::log_yap("verified ASR capability snapshot could not be updated");
+    }
+    Ok(Some(catalog))
+}
+
+pub(crate) fn last_known_asr_capabilities(
+) -> Result<Option<super::LastKnownAsrCapabilities>, String> {
+    let settings = config::load().map_err(|error| error.to_string())?;
+    if !settings.enabled {
+        return Ok(None);
+    }
+    let Some(origin) = settings.base_url else {
+        return Ok(None);
+    };
+    match super::capability_snapshot::load(&origin) {
+        Ok(snapshot) => Ok(snapshot),
+        Err(_) => {
+            crate::stt::log_yap("last-known ASR capability snapshot is unavailable");
+            Ok(None)
+        }
+    }
 }
 
 pub(super) fn load_settings(

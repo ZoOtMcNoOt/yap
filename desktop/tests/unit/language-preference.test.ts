@@ -21,6 +21,7 @@ const status: PrimaryLanguageStatus = {
   confirmedLanguageAvailable: null,
   requiresConfirmation: true,
   preferenceIssue: null,
+  lastKnownCapabilities: null,
   capabilityCatalog: {
     schemaVersion: 1,
     catalogRevision: "a".repeat(64),
@@ -84,6 +85,10 @@ describe("primary language projection", () => {
     expect(shouldRequestPrimaryLanguageSetup({
       ...status,
       capabilityCatalog: null,
+      lastKnownCapabilities: {
+        observedAtMs: 42,
+        catalog: status.capabilityCatalog!,
+      },
     })).toBe(false);
     expect(shouldRequestPrimaryLanguageSetup({
       ...status,

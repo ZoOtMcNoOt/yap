@@ -14,6 +14,10 @@ export type PrimaryLanguageStatus = {
   requiresConfirmation: boolean;
   preferenceIssue: PrimaryLanguagePreferenceIssue | null;
   capabilityCatalog: AsrCapabilityCatalog | null;
+  lastKnownCapabilities: {
+    observedAtMs: number;
+    catalog: AsrCapabilityCatalog;
+  } | null;
 };
 
 export type FixedBatchLanguageOption = {

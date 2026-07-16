@@ -41,10 +41,27 @@ fn create_file_symlink(
 fn exact_supported_os_locale_is_only_an_unconfirmed_suggestion() {
     let catalog = AsrCapabilityCatalog::parse_bounded(REPOSITORY_EXAMPLE).unwrap();
 
-    let status = project_status(None, Some("en-US"), Some(catalog), None);
+    let status = project_status(None, Some("en-US"), Some(catalog), None, None);
 
     assert_eq!(status.confirmed_language_bcp47, None);
     assert_eq!(status.suggested_language_bcp47.as_deref(), Some("en-US"));
+    assert!(status.requires_confirmation);
+}
+
+#[test]
+fn last_known_catalog_explains_offline_state_without_authorizing_a_choice() {
+    let catalog = AsrCapabilityCatalog::parse_bounded(REPOSITORY_EXAMPLE).unwrap();
+    let last_known = crate::server_connector::LastKnownAsrCapabilities {
+        observed_at_ms: 42,
+        catalog: catalog.clone(),
+    };
+
+    let status = project_status(None, Some("en-US"), None, Some(last_known.clone()), None);
+
+    assert_eq!(status.capability_catalog, None);
+    assert_eq!(status.suggested_language_bcp47, None);
+    assert_eq!(status.confirmed_language_available, None);
+    assert_eq!(status.last_known_capabilities, Some(last_known));
     assert!(status.requires_confirmation);
 }
 
@@ -87,7 +104,7 @@ fn absent_preference_load_does_not_create_a_saved_decision() {
 fn os_locale_does_not_guess_a_nearby_country_variant() {
     let catalog = AsrCapabilityCatalog::parse_bounded(REPOSITORY_EXAMPLE).unwrap();
 
-    let status = project_status(None, Some("en-CA"), Some(catalog), None);
+    let status = project_status(None, Some("en-CA"), Some(catalog), None, None);
 
     assert_eq!(status.suggested_language_bcp47, None);
     assert!(status.requires_confirmation);
@@ -97,7 +114,13 @@ fn os_locale_does_not_guess_a_nearby_country_variant() {
 fn confirmed_primary_language_suppresses_os_suggestion() {
     let catalog = AsrCapabilityCatalog::parse_bounded(REPOSITORY_EXAMPLE).unwrap();
 
-    let status = project_status(Some("fr-FR".into()), Some("en-US"), Some(catalog), None);
+    let status = project_status(
+        Some("fr-FR".into()),
+        Some("en-US"),
+        Some(catalog),
+        None,
+        None,
+    );
 
     assert_eq!(status.confirmed_language_bcp47.as_deref(), Some("fr-FR"));
     assert_eq!(status.suggested_language_bcp47, None);

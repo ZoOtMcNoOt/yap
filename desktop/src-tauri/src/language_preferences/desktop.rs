@@ -16,10 +16,12 @@ pub(crate) async fn primary_language_status(
     crate::authorization::ensure_main(&window)?;
     let catalog =
         crate::server_connector::current_asr_capabilities(&app, connector.inner()).await?;
+    let last_known = crate::server_connector::last_known_asr_capabilities()?;
     status_from(
         persistence::load(),
         sys_locale::get_locale().as_deref(),
         catalog,
+        last_known,
     )
 }
 
@@ -38,13 +40,21 @@ pub(crate) async fn confirm_primary_language(
     validate_confirmation(&language_bcp47, &catalog_revision, &catalog)
         .map_err(preference_error_message)?;
     let confirmed = persistence::save(&language_bcp47).map_err(preference_error_message)?;
-    Ok(project_status(Some(confirmed), None, Some(catalog), None))
+    let last_known = crate::server_connector::last_known_asr_capabilities()?;
+    Ok(project_status(
+        Some(confirmed),
+        None,
+        Some(catalog),
+        last_known,
+        None,
+    ))
 }
 
 fn status_from(
     loaded: Result<Option<String>, PrimaryLanguageError>,
     raw_os_locale: Option<&str>,
     catalog: Option<AsrCapabilityCatalog>,
+    last_known: Option<crate::server_connector::LastKnownAsrCapabilities>,
 ) -> Result<PrimaryLanguageStatus, String> {
     let os_locale = canonical_os_locale(raw_os_locale);
     match loaded {
@@ -52,18 +62,21 @@ fn status_from(
             confirmed,
             os_locale.as_deref(),
             catalog,
+            last_known,
             None,
         )),
         Err(PrimaryLanguageError::InvalidStoredPreference) => Ok(project_status(
             None,
             os_locale.as_deref(),
             catalog,
+            last_known,
             Some(PrimaryLanguagePreferenceIssue::InvalidStoredPreference),
         )),
         Err(PrimaryLanguageError::IncompatibleSchema(_)) => Ok(project_status(
             None,
             None,
             catalog,
+            last_known,
             Some(PrimaryLanguagePreferenceIssue::IncompatibleSchema),
         )),
         Err(error) => Err(preference_error_message(error)),
@@ -130,6 +143,7 @@ mod tests {
             Err(PrimaryLanguageError::InvalidStoredPreference),
             Some("en-US"),
             Some(catalog),
+            None,
         )
         .unwrap();
 
