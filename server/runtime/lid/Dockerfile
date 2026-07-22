@@ -1,9 +1,9 @@
-FROM --platform=linux/arm64 python:3.12.13-slim-bookworm@sha256:d50fb7611f86d04a3b0471b46d7557818d88983fc3136726336b2a4c657aa30b AS application-source
+FROM python:3.12.13-slim-bookworm@sha256:c18c7a910432dde3311fc54d02e5d5220f3ebe26fec43ff15745982863dd7b3b AS application-source
 
 COPY src/yap_server /tmp/yap-application-source/yap_server
 RUN rm -rf /tmp/yap-application-source/yap_server/evaluation
 
-FROM --platform=linux/arm64 python:3.12.13-slim-bookworm@sha256:d50fb7611f86d04a3b0471b46d7557818d88983fc3136726336b2a4c657aa30b
+FROM python:3.12.13-slim-bookworm@sha256:c18c7a910432dde3311fc54d02e5d5220f3ebe26fec43ff15745982863dd7b3b
 
 ARG YAP_CHECKED_HEAD
 

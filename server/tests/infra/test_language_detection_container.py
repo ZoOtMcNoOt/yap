@@ -22,12 +22,13 @@ class LanguageDetectionContainerContractTests(unittest.TestCase):
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
         build_check = BUILD_CHECK.read_text(encoding="utf-8")
         expected = (
-            f"FROM --platform={runtime['platform']} "
-            f"{runtime['image']}:{runtime['sourceTag']}@{runtime['indexDigest']}"
+            f"FROM {runtime['image']}:{runtime['sourceTag']}@"
+            f"{runtime['platformDigest']}"
         )
 
         self.assertIn(expected, dockerfile)
-        self.assertIn(runtime["platformDigest"], dockerfile)
+        self.assertNotIn("--platform=", dockerfile)
+        self.assertNotEqual(runtime["indexDigest"], runtime["platformDigest"])
         self.assertNotIn(":latest", dockerfile)
         self.assertNotIn("nvcr.io", dockerfile.lower())
         self.assertNotRegex(dockerfile.lower(), r"(?m)^from .*nvidia")
