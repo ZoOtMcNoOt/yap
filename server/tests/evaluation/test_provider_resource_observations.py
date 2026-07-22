@@ -10,6 +10,7 @@ import unittest
 from yap_server.evaluation.provider_resource_observations import (
     ProviderResourceSample,
     load_private_resource_samples,
+    load_private_workload_window,
     qualify_provider_resources,
     summarize_provider_resources,
 )
@@ -24,6 +25,38 @@ PLAN_PATH = SERVER_ROOT / "asr-evaluation-plan.json"
 
 
 class ProviderResourceObservationTests(unittest.TestCase):
+    def test_loads_the_sampler_owned_private_workload_window(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            cache = Path(temporary).resolve()
+            if os.name == "posix":
+                os.chmod(cache, 0o700)
+            path = cache / "workload-window.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "workloadStartMs": 100,
+                        "workloadEndMs": 1_000,
+                        "sampleCount": 5,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            if os.name == "posix":
+                os.chmod(path, 0o600)
+
+            window = load_private_workload_window(
+                path,
+                environ={"YAP_EVAL_CACHE": str(cache)},
+            )
+
+        self.assertEqual(window.workload_start_ms, 100)
+        self.assertEqual(window.workload_end_ms, 1_000)
+        self.assertEqual(window.sample_count, 5)
+        self.assertEqual(window.interval_for_sample_count(5), (100, 1_000))
+        with self.assertRaisesRegex(ValueError, "sample count differs"):
+            window.interval_for_sample_count(4)
+
     def test_summarizes_private_cgroup_series_without_paths(self) -> None:
         samples = tuple(
             ProviderResourceSample(

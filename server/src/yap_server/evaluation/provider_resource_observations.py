@@ -8,6 +8,7 @@ from pathlib import Path
 import stat
 from typing import Mapping, Sequence
 
+from yap_server.bounded_file import read_regular_file
 from yap_server.evaluation.checked_candidate import (
     admit_checked_candidate,
     bind_checked_candidate_evidence,
@@ -26,6 +27,7 @@ from yap_server.evaluation.runtime_plan import (
 
 
 _MAX_SAMPLE_FILE_BYTES = 16 * 1024 * 1024
+_MAX_WORKLOAD_WINDOW_BYTES = 4 * 1024
 _MAX_SAMPLES = 100_000
 _MAX_COUNTER_VALUE = (1 << 63) - 1
 _TAIL_FRACTION = 0.5
@@ -94,6 +96,20 @@ class ProviderResourceSample:
             raise ValueError("provider process resident-memory components differ")
 
 
+@dataclass(frozen=True, slots=True)
+class ProviderResourceWorkloadWindow:
+    workload_start_ms: int
+    workload_end_ms: int
+    sample_count: int
+
+    def interval_for_sample_count(self, actual_sample_count: int) -> tuple[int, int]:
+        if actual_sample_count != self.sample_count:
+            raise ValueError(
+                "provider resource workload window sample count differs from samples"
+            )
+        return self.workload_start_ms, self.workload_end_ms
+
+
 def load_private_resource_samples(
     path: Path,
     *,
@@ -116,6 +132,65 @@ def load_private_resource_samples(
             samples.append(_parse_sample(value))
     _validate_sample_order(samples)
     return tuple(samples)
+
+
+def load_private_workload_window(
+    path: Path,
+    *,
+    environ: Mapping[str, str] = os.environ,
+) -> ProviderResourceWorkloadWindow:
+    """Load the sampler-owned exact workload interval from the private cache."""
+
+    cache_root = _private_cache_root(environ)
+    source = _private_existing_file(path, cache_root=cache_root)
+
+    def reject_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("provider resource workload window has duplicate keys")
+            result[key] = value
+        return result
+
+    try:
+        encoded = read_regular_file(source, _MAX_WORKLOAD_WINDOW_BYTES)
+        if not encoded:
+            raise ValueError("provider resource workload window size is invalid")
+        value = json.loads(
+            encoded.decode("utf-8"),
+            object_pairs_hook=reject_duplicates,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("provider resource workload window is invalid JSON") from error
+    if not isinstance(value, dict) or set(value) != {
+        "schemaVersion",
+        "workloadStartMs",
+        "workloadEndMs",
+        "sampleCount",
+    }:
+        raise ValueError("provider resource workload window shape is invalid")
+    start = value["workloadStartMs"]
+    end = value["workloadEndMs"]
+    sample_count = value["sampleCount"]
+    if (
+        value["schemaVersion"] != 1
+        or isinstance(start, bool)
+        or not isinstance(start, int)
+        or start < 0
+        or isinstance(end, bool)
+        or not isinstance(end, int)
+        or end <= start
+        or isinstance(sample_count, bool)
+        or not isinstance(sample_count, int)
+        or sample_count < 1
+        or sample_count > _MAX_SAMPLES
+    ):
+        raise ValueError("provider resource workload window is invalid")
+    return ProviderResourceWorkloadWindow(
+        workload_start_ms=start,
+        workload_end_ms=end,
+        sample_count=sample_count,
+    )
 
 
 def summarize_provider_resources(
@@ -521,15 +596,15 @@ def _private_cache_root(environ: Mapping[str, str]) -> Path:
 
 def _private_existing_file(path: Path, *, cache_root: Path) -> Path:
     if not path.is_absolute() or path.is_symlink():
-        raise ValueError("provider resource samples must be an absolute real file")
+        raise ValueError("provider resource input must be an absolute real file")
     resolved = path.resolve(strict=True)
     if cache_root not in resolved.parents:
-        raise ValueError("provider resource samples must remain inside YAP_EVAL_CACHE")
+        raise ValueError("provider resource input must remain inside YAP_EVAL_CACHE")
     metadata = resolved.lstat()
     if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
-        raise ValueError("provider resource samples must be a real file")
+        raise ValueError("provider resource input must be a real file")
     if os.name == "posix" and stat.S_IMODE(metadata.st_mode) & 0o077:
-        raise ValueError("provider resource samples must use private permissions")
+        raise ValueError("provider resource input must use private permissions")
     return resolved
 
 
@@ -556,8 +631,9 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--checked-head", required=True)
     parser.add_argument("--repository-root", type=Path, required=True)
     parser.add_argument("--provider-serving-lock", type=Path, required=True)
-    parser.add_argument("--workload-start-ms", type=int, required=True)
-    parser.add_argument("--workload-end-ms", type=int, required=True)
+    parser.add_argument("--workload-window", type=Path)
+    parser.add_argument("--workload-start-ms", type=int)
+    parser.add_argument("--workload-end-ms", type=int)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--plan", type=Path)
     parser.add_argument("--system-id")
@@ -582,10 +658,31 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     cache_root = _private_cache_root(os.environ)
+    samples = load_private_resource_samples(arguments.samples)
+    if arguments.workload_window is not None:
+        if (
+            arguments.workload_start_ms is not None
+            or arguments.workload_end_ms is not None
+        ):
+            raise ValueError("provider resource workload interval is ambiguous")
+        workload_window = load_private_workload_window(
+            arguments.workload_window,
+        )
+        workload_start_ms, workload_end_ms = (
+            workload_window.interval_for_sample_count(len(samples))
+        )
+    else:
+        if (
+            arguments.workload_start_ms is None
+            or arguments.workload_end_ms is None
+        ):
+            raise ValueError("provider resource workload interval is required")
+        workload_start_ms = arguments.workload_start_ms
+        workload_end_ms = arguments.workload_end_ms
     evidence: dict[str, object] = summarize_provider_resources(
-        load_private_resource_samples(arguments.samples),
-        workload_start_ms=arguments.workload_start_ms,
-        workload_end_ms=arguments.workload_end_ms,
+        samples,
+        workload_start_ms=workload_start_ms,
+        workload_end_ms=workload_end_ms,
     )
     qualification_arguments = (
         arguments.plan,
