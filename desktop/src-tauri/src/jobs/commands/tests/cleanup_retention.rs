@@ -108,7 +108,7 @@ fn dismissing_failed_jobs_preserves_provenance_and_frees_capacity_after_restart(
         .create_imports(&media, vec![replacement.display().to_string()], 6_301)
         .unwrap();
     assert_eq!(imported.len(), 1);
-    assert_eq!(imported[0].status, RecordingJobStatus::QueuedServer);
+    assert_eq!(imported[0].status, RecordingJobStatus::Preflighting);
 
     drop(media);
     drop(jobs);
@@ -132,7 +132,7 @@ fn more_than_five_hundred_terminal_imports_do_not_exhaust_job_path_authority() {
                 6_500 + index as u64 * 3,
             )
             .unwrap();
-        assert_eq!(created[0].status, RecordingJobStatus::QueuedServer);
+        assert_eq!(created[0].status, RecordingJobStatus::Preflighting);
         if index % 2 == 0 {
             jobs.cancel(&media, &created[0].id, 6_501 + index as u64 * 3, || {})
                 .unwrap();
@@ -152,7 +152,7 @@ fn more_than_five_hundred_terminal_imports_do_not_exhaust_job_path_authority() {
         .create_imports(&media, vec![final_source.display().to_string()], 8_100)
         .unwrap();
 
-    assert_eq!(final_import[0].status, RecordingJobStatus::QueuedServer);
+    assert_eq!(final_import[0].status, RecordingJobStatus::Preflighting);
     assert!(sources.iter().all(|source| source.is_file()));
 
     drop(media);

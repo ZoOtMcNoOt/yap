@@ -19,6 +19,9 @@ pub(super) async fn advance_persisted_cancellation_once(
     if cleanup_next_owned_spool_once(ledger, remote_jobs_directory)? {
         return Ok(true);
     }
+    if advance_terminal_lid_preflight_cancellation_once(ledger, connector, updated_at_ms).await? {
+        return Ok(true);
+    }
     if let Some(origin) = next_persisted_cancellation_origin(ledger)? {
         let client = connector
             .persisted_cleanup_client(&origin)
@@ -48,22 +51,48 @@ pub(super) async fn advance_persisted_cancellation_once(
         Ok(origin) => origin,
         Err(_) => return Ok(false),
     };
-    if detach_changed_remote_binding_once(
-        ledger,
-        remote_jobs_directory,
-        configured_origin.as_deref(),
-        updated_at_ms,
-    )? {
+    if detach_changed_remote_binding_once(ledger, configured_origin.as_deref(), updated_at_ms)? {
         return Ok(true);
     }
     recover_abandoned_create_attempt_once(
         ledger,
-        remote_jobs_directory,
         connector,
         configured_origin.as_deref(),
         updated_at_ms,
     )
     .await
+}
+
+async fn advance_terminal_lid_preflight_cancellation_once(
+    ledger: &JobLedger,
+    connector: &ServerConnector,
+    updated_at_ms: u64,
+) -> DrainResult<bool> {
+    let Some(artifact) = ledger
+        .next_terminal_lid_preflight_dispatch()
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?
+    else {
+        return Ok(false);
+    };
+    let request_id = artifact
+        .lid_request_id
+        .as_deref()
+        .ok_or_else(|| DrainStepError::permanent("terminal LID dispatch omitted its request ID"))?;
+    let server_base_url = artifact.lid_server_base_url.as_deref().ok_or_else(|| {
+        DrainStepError::permanent("terminal LID dispatch omitted its server origin")
+    })?;
+    let client = connector
+        .batch_client_for_persisted_origin(server_base_url)
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?;
+    match client.cancel_lid_preflight(request_id).await {
+        Ok(()) => {}
+        Err(error) if error.is_not_found() => {}
+        Err(error) => return Err(DrainStepError::transient_state(error.to_string())),
+    }
+    ledger
+        .acknowledge_terminal_lid_preflight_dispatch(&artifact.job_id, request_id, updated_at_ms)
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?;
+    Ok(true)
 }
 
 fn cleanup_next_owned_spool_once(
@@ -152,14 +181,11 @@ async fn recover_cancelled_create_attempt_once(
 
 fn detach_changed_remote_binding_once(
     ledger: &JobLedger,
-    remote_jobs_directory: &Path,
     configured_origin: Option<&str>,
     updated_at_ms: u64,
 ) -> DrainResult<bool> {
     if let Some(job_id) = ledger
-        .detach_changed_remote_binding(configured_origin, updated_at_ms, |job_id| {
-            remote::reset_unattached_spool(job_id, remote_jobs_directory)
-        })
+        .detach_changed_remote_binding(configured_origin, updated_at_ms)
         .map_err(|error| error.to_string())?
     {
         debug_assert!(!job_id.is_empty());
@@ -170,7 +196,6 @@ fn detach_changed_remote_binding_once(
 
 async fn recover_abandoned_create_attempt_once(
     ledger: &JobLedger,
-    remote_jobs_directory: &Path,
     connector: &ServerConnector,
     configured_origin: Option<&str>,
     updated_at_ms: u64,
@@ -193,9 +218,7 @@ async fn recover_abandoned_create_attempt_once(
     let (request, projection) = recreate_server_job_for_cleanup(&client, &abandoned).await?;
     cancel_server_job(&client, &projection.job_id, &request).await?;
     ledger
-        .fail_abandoned_remote_create_attempt(&abandoned.job_id, origin, updated_at_ms, || {
-            remote::reset_unattached_spool(&abandoned.job_id, remote_jobs_directory)
-        })
+        .fail_abandoned_remote_create_attempt(&abandoned.job_id, origin, updated_at_ms)
         .map_err(|error| DrainStepError::permanent(error.to_string()))?;
     Ok(true)
 }
@@ -238,23 +261,6 @@ fn cleanup_owned_spool_and_ack(
         return Err(DrainStepError::permanent(missing_acknowledgement));
     }
     Ok(())
-}
-
-#[cfg(test)]
-pub(super) async fn advance_cancellation_once(
-    ledger: &JobLedger,
-    remote_jobs_directory: &Path,
-    client: &BatchApiClient,
-    updated_at_ms: u64,
-) -> DrainResult<bool> {
-    advance_cancellation_once_guarded(
-        ledger,
-        remote_jobs_directory,
-        client,
-        updated_at_ms,
-        &BatchCommitGuard::Unchecked,
-    )
-    .await
 }
 
 async fn advance_cancellation_once_guarded(

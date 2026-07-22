@@ -1,3 +1,8 @@
+import {
+  isTranscriptResultSummary,
+  type TranscriptResultSummary,
+} from "@/lib/transcript-result-summary";
+
 export type TranscriptHistoryEntry = {
   captureCommitPath?: string;
   name: string;
@@ -8,6 +13,7 @@ export type TranscriptHistoryEntry = {
   createdAt: string;
   warning?: string;
   recoveryState?: "recoverable" | "recovered";
+  resultSummary?: TranscriptResultSummary;
 };
 
 export const maxTranscriptHistoryEntries = 500;
@@ -24,7 +30,8 @@ function isHistoryEntry(value: unknown): value is TranscriptHistoryEntry {
     (entry.sessionId === undefined || typeof entry.sessionId === "string") &&
     (entry.warning === undefined || typeof entry.warning === "string") &&
     (entry.captureCommitPath === undefined || typeof entry.captureCommitPath === "string") &&
-    (entry.recoveryState === undefined || entry.recoveryState === "recoverable" || entry.recoveryState === "recovered")
+    (entry.recoveryState === undefined || entry.recoveryState === "recoverable" || entry.recoveryState === "recovered") &&
+    (entry.resultSummary === undefined || isTranscriptResultSummary(entry.resultSummary))
   );
 }
 

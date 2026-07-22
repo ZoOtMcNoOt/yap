@@ -7,6 +7,7 @@ import { isRecordingCancellable, type RecordingJobView } from "@/lib/recording-j
 import type { RecordingImportLanguageChoice } from "@/lib/recording-language";
 import {
   cancelRecordingJob,
+  confirmRecordingJobLanguage,
   pickRecordingImports,
   discardLegacyRecordingQueue,
   dismissRecordingJob,
@@ -126,6 +127,16 @@ export function useRecordingJobs(onClear: () => void) {
     await refresh();
   }, [ensureMigrationReady, refresh]);
 
+  const confirmLanguage = useCallback(async (
+    id: string,
+    languageBcp47: string,
+    catalogRevision: string,
+  ) => {
+    ensureMigrationReady();
+    await confirmRecordingJobLanguage(id, languageBcp47, catalogRevision);
+    await refresh();
+  }, [ensureMigrationReady, refresh]);
+
   const clearQueue = useCallback(async () => {
     ensureMigrationReady();
     for (const item of queue) {
@@ -142,6 +153,7 @@ export function useRecordingJobs(onClear: () => void) {
   return {
     addRecordings,
     clearQueue,
+    confirmLanguage,
     discardLegacyQueue,
     legacyDiscardAllowed,
     migrationError,

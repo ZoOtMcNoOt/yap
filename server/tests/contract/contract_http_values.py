@@ -18,48 +18,53 @@ HTTP_OPERATIONS = {
         "put",
     ): "uploadJobChunk",
     ("/v1/jobs/{jobId}/commit", "post"): "commitJob",
+    ("/v1/jobs/{jobId}/stages", "get"): "getJobStages",
+    ("/v1/jobs/{jobId}/stages/{stage}/retry", "post"): "retryJobStage",
     ("/v1/live", "get"): "connectLive",
 }
 
-PHASE_BOUNDARY = {
-    ("/v1/health", "get"): ("Implemented", "Server process"),
+OPERATION_RUNTIME = {
+    ("/v1/health", "get"): ("Implemented", "Process health"),
     ("/v1/asr/capabilities", "get"): (
-        "Implemented",
-        "Verified ASR runtime",
+        "Implemented only when locked runtime artifacts verify",
+        "Verified ASR capability catalog",
     ),
-    ("/v1/jobs", "post"): ("Contract only", "Phase 5 upload intake"),
-    ("/v1/jobs/{jobId}", "get"): ("Contract only", "Phase 5 job status"),
-    ("/v1/jobs/{jobId}", "delete"): ("Contract only", "Phase 5 cancellation"),
+    ("/v1/jobs", "post"): (
+        "Implemented in the loopback batch runtime",
+        "Batch job intake",
+    ),
+    ("/v1/jobs/{jobId}", "get"): (
+        "Implemented in the loopback batch runtime",
+        "Batch job status",
+    ),
+    ("/v1/jobs/{jobId}", "delete"): (
+        "Implemented in the loopback batch runtime",
+        "Batch job cancellation",
+    ),
     ("/v1/jobs/{jobId}/result", "get"): (
-        "Contract only",
-        "Phase 5 result retrieval",
+        "Implemented in the loopback batch runtime",
+        "Transcript result retrieval",
     ),
     (
         "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}",
         "put",
-    ): ("Contract only", "Phase 5 resumable upload"),
+    ): ("Implemented in the loopback batch runtime", "Resumable chunk upload"),
     ("/v1/jobs/{jobId}/commit", "post"): (
-        "Contract only",
-        "Phase 5 upload commit",
+        "Implemented in the loopback batch runtime",
+        "Batch upload commit",
     ),
-    ("/v1/live", "get"): ("Event schema only", "Phase 5 WSS streaming"),
-}
-
-CURRENT_BEHAVIOR = {
-    (
-        "/v1/asr/capabilities",
-        "get",
-    ): "Implemented only when locked runtime artifacts verify",
-    ("/v1/jobs", "post"): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/jobs/{jobId}", "get"): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/jobs/{jobId}", "delete"): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/jobs/{jobId}/result", "get"): "Implemented in the Phase 5 loopback batch runtime",
-    (
-        "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}",
-        "put",
-    ): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/jobs/{jobId}/commit", "post"): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/live", "get"): "Contract only; capability remains false",
+    ("/v1/jobs/{jobId}/stages", "get"): (
+        "Implemented in the loopback batch runtime",
+        "Durable server-stage projections",
+    ),
+    ("/v1/jobs/{jobId}/stages/{stage}/retry", "post"): (
+        "ASR retry implemented in the loopback batch runtime",
+        "Server-stage retry",
+    ),
+    ("/v1/live", "get"): (
+        "Contract only; capability remains false",
+        "Live WebSocket transport",
+    ),
 }
 
 CHUNK_PATH = "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}"
@@ -132,6 +137,23 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         ),
         "success": {"202": "#/components/schemas/RecordingJob"},
         "errors": ["400", "404", "409", "501"],
+    },
+    {
+        "path": "/v1/jobs/{jobId}/stages",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/ServerStageProjectionEnvelope"},
+        "errors": ["404"],
+    },
+    {
+        "path": "/v1/jobs/{jobId}/stages/{stage}/retry",
+        "method": "post",
+        "request": (
+            "application/json",
+            "#/components/schemas/RetryServerStageRequest",
+        ),
+        "success": {"202": "#/components/schemas/ServerStageProjectionEnvelope"},
+        "errors": ["400", "404", "409", "429"],
     },
     {
         "path": "/v1/live",

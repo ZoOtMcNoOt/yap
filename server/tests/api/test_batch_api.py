@@ -2,11 +2,12 @@ import hashlib
 import io
 import json
 import socket
+from concurrent.futures import Future
 from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
-from .api_fixtures import BatchJobApiTestCase, _phase5_job_request
+from .api_fixtures import BatchJobApiTestCase, _meeting_import_job_request
 
 
 class BatchJobApiTests(BatchJobApiTestCase):
@@ -15,7 +16,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
             "/v1/jobs",
             method="POST",
             headers={"Content-Type": "application/json"},
-            data=json.dumps(_phase5_job_request()).encode("utf-8"),
+            data=json.dumps(_meeting_import_job_request()).encode("utf-8"),
         )
 
         self.assertEqual(status, 400)
@@ -65,7 +66,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
                         "Content-Type": "application/json",
                         "Idempotency-Key": "job-api-storage-error",
                     },
-                    data=json.dumps(_phase5_job_request()).encode("utf-8"),
+                    data=json.dumps(_meeting_import_job_request()).encode("utf-8"),
                 )
 
         self.assertEqual(status, 500)
@@ -81,7 +82,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
         self.assertNotIn(private_path, observable_output)
 
     def test_batch_contract_runs_create_upload_commit_status_and_result(self) -> None:
-        job_request = _phase5_job_request()
+        job_request = _meeting_import_job_request()
         status, _, health_payload = self._request("/v1/health")
         self.assertEqual(status, 200)
         self.assertEqual(
@@ -108,7 +109,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
             method="PUT",
             headers={
                 "Content-Type": "application/octet-stream",
-                "Idempotency-Key": "1/s-phase5-api/track-1/0/159",
+                "Idempotency-Key": "1/s-batch-api/track-1/0/159",
                 "X-Yap-Content-SHA256": digest,
                 "X-Yap-Audio-Codec": "pcm_s16le",
                 "X-Yap-Sample-Rate-Hz": "16000",
@@ -198,7 +199,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
                 "Content-Type": "application/json",
                 "Idempotency-Key": "job-api-cancel",
             },
-            data=json.dumps(_phase5_job_request()).encode("utf-8"),
+            data=json.dumps(_meeting_import_job_request()).encode("utf-8"),
         )
         self.assertEqual(status, 202)
 
@@ -215,3 +216,53 @@ class BatchJobApiTests(BatchJobApiTestCase):
         self.assertEqual(replay_status, 202)
         self.assertEqual(cancelled["status"], "cancelled")
         self.assertEqual(replayed, cancelled)
+
+    def test_stage_routes_expose_latest_evidence_and_retry_exact_failed_asr(self) -> None:
+        request = _meeting_import_job_request()
+        created = self.jobs.create(request, idempotency_key="stage-api-create")
+        job_id = created["jobId"]
+        chunk = bytes(320)
+        self.jobs.accept_chunk(
+            self.jobs.prepare_chunk_upload(
+                job_id,
+                track_id="track-1",
+                sequence_start=0,
+                sequence_end=159,
+                idempotency_key="1/s-batch-api/track-1/0/159",
+                content_sha256=hashlib.sha256(chunk).hexdigest(),
+                audio_codec="pcm_s16le",
+                sample_rate_hz=16000,
+                channels=1,
+                content_length=len(chunk),
+            ),
+            chunk,
+        )
+        self.jobs.commit(
+            job_id,
+            {"captureManifest": request["captureManifest"], "chunkCount": 1},
+        )
+        self.processor.future.set_exception(RuntimeError("first ASR attempt failed"))
+
+        status, _, stages = self._request(f"/v1/jobs/{job_id}/stages")
+        self.assertEqual(status, 200)
+        self.assertEqual(stages["stages"][0]["state"], "failed")
+        self.processor.future = Future()
+        status, _, retried = self._request(
+            f"/v1/jobs/{job_id}/stages/asr/retry",
+            method="POST",
+            headers={"Content-Type": "application/json"},
+            data=json.dumps(
+                {
+                    "stage": "asr",
+                    "attempt": 1,
+                    "projectionRevision": stages["projectionRevision"],
+                    "captureManifestSha256": request["captureManifest"]["sha256"],
+                }
+            ).encode("utf-8"),
+        )
+
+        self.assertEqual(status, 202)
+        self.assertEqual(
+            (retried["stages"][0]["attempt"], retried["stages"][0]["state"]),
+            (2, "running"),
+        )

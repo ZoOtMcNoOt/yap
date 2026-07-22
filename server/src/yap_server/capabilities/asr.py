@@ -8,18 +8,13 @@ from typing import Any, Iterable
 from urllib.parse import urlsplit
 
 from yap_server.bounded_file import read_regular_text
+from yap_server.language_tags import canonical_bcp47
 from yap_server.pools.model_lock import ModelPoolLock, verify_model_artifacts
 
 
 _MAX_CAPABILITY_LOCK_BYTES = 256 * 1024
 _MAX_SERIALIZED_CATALOG_BYTES = 256 * 1024
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
-_BCP47 = re.compile(
-    r"^[a-z]{2,3}"
-    r"(?:-[A-Z][a-z]{3})?"
-    r"(?:-(?:[A-Z]{2}|[0-9]{3}))?"
-    r"(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$"
-)
 _EXECUTION_MODES = frozenset(
     {"dynamicBatch", "fixedBatch", "localLive", "serverLive"}
 )
@@ -93,10 +88,7 @@ def _http_url(value: Any, field: str) -> str:
 
 
 def _bcp47(value: Any, field: str) -> str:
-    language = _string(value, field)
-    if len(language) > 35 or _BCP47.fullmatch(language) is None:
-        raise ValueError(f"{field} must be a canonical BCP 47 tag")
-    return language
+    return canonical_bcp47(value, field)
 
 
 def _array(value: Any, field: str) -> list[Any]:

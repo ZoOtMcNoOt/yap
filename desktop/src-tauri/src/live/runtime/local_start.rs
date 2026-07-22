@@ -199,7 +199,7 @@ impl LiveRuntime {
 
         self.request_model_warmup()
             .map_err(|message| LiveStartFailure::new(session, message))?;
-        let Some(model) = self
+        let Some(inference) = self
             .model_warmup
             .wait_cancellable(|| !self.start_intent_is_current(intent))
             .map_err(|message| LiveStartFailure::new(session, message))?
@@ -218,7 +218,7 @@ impl LiveRuntime {
                 inner.install_stream(
                     app,
                     session,
-                    model.commit(),
+                    inference.commit(),
                     model_warmup,
                     Arc::clone(&self.active_session),
                 );

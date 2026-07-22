@@ -7,6 +7,11 @@ use super::{
     ServerConnectionSnapshot, ServerConnector,
 };
 
+struct FetchedAsrCapabilityCatalog {
+    lease: super::core::AsrCapabilityLease,
+    catalog: AsrCapabilityCatalog,
+}
+
 impl ServerConnector {
     fn synchronize_from_disk(
         &self,
@@ -170,6 +175,29 @@ pub(crate) async fn current_asr_capabilities(
     app: &tauri::AppHandle,
     connector: &ServerConnector,
 ) -> Result<Option<AsrCapabilityCatalog>, String> {
+    with_current_asr_capabilities(app, connector, |current| current.catalog().clone()).await
+}
+
+pub(crate) async fn with_current_asr_capabilities<T>(
+    app: &tauri::AppHandle,
+    connector: &ServerConnector,
+    commit: impl FnOnce(super::CurrentAsrCatalog<'_>) -> T,
+) -> Result<Option<T>, String> {
+    let Some(fetched) = fetch_current_asr_capabilities(app, connector).await? else {
+        return Ok(None);
+    };
+    // This synchronous closure runs while the connector generation is locked.
+    // Callers use it for bounded durable commits; it must never await or acquire
+    // the connector in the opposite order.
+    connector
+        .commit_current_asr_capability_catalog(&fetched.lease, fetched.catalog, commit)
+        .map(Some)
+}
+
+async fn fetch_current_asr_capabilities(
+    app: &tauri::AppHandle,
+    connector: &ServerConnector,
+) -> Result<Option<FetchedAsrCapabilityCatalog>, String> {
     connector
         .synchronize_from_disk(app)
         .map_err(|error| error.to_string())?;
@@ -199,11 +227,7 @@ pub(crate) async fn current_asr_capabilities(
             | capabilities::AsrCatalogError::RevisionMismatch,
         ) => return Err("Server returned an incompatible ASR capability catalog.".into()),
     };
-    let catalog = connector.with_current_asr_capability_lease(&lease, || catalog)?;
-    if super::capability_snapshot::save(lease.base_url(), &catalog).is_err() {
-        crate::stt::log_yap("verified ASR capability snapshot could not be updated");
-    }
-    Ok(Some(catalog))
+    Ok(Some(FetchedAsrCapabilityCatalog { lease, catalog }))
 }
 
 pub(crate) fn last_known_asr_capabilities(

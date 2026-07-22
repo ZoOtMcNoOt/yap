@@ -10,10 +10,11 @@ use std::{
 
 impl RecordingJobs {
     pub(crate) fn from_default_resources(resources: Arc<RecordingJobResources>) -> Self {
+        let selection_registry_path = resources.selection_registry_path().to_path_buf();
         Self::from_storage(
             resources,
             crate::recording_access::recording_job_playback_registry_path(),
-            crate::recording_access::recording_job_selection_registry_path(),
+            selection_registry_path,
         )
     }
 
@@ -60,6 +61,7 @@ impl RecordingJobs {
             ledger,
             owned_dir,
             authority_dir.join("remote-jobs"),
+            authority_dir.join("recording-native-selection-registry.json"),
         ));
         Self::from_resources_for_test(resources, authority_dir)
     }
@@ -69,10 +71,11 @@ impl RecordingJobs {
         resources: Arc<RecordingJobResources>,
         authority_dir: &Path,
     ) -> Self {
+        let selection_registry_path = resources.selection_registry_path().to_path_buf();
         Self::from_storage(
             resources,
             authority_dir.join("recording-job-playback-registry.json"),
-            authority_dir.join("recording-native-selection-registry.json"),
+            selection_registry_path,
         )
     }
 

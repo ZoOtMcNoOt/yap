@@ -4,11 +4,21 @@ use std::fmt::Write as _;
 use sha2::{Digest, Sha256};
 
 use super::config;
-use crate::language::valid_bcp47;
+use crate::{
+    jobs::{RecordingLanguageDecision, RecordingLanguageMode},
+    language::valid_bcp47,
+};
 
 pub(super) const MAX_CATALOG_BYTES: usize = 256 * 1024;
 const MAX_PROVIDERS: usize = 8;
 const MAX_CAPABILITIES_PER_PROVIDER: usize = 256;
+const LID_PREFLIGHT_MEDIA_TYPE: &str = "application/vnd.yap.lid-preflight.v1+octet-stream";
+const MAX_LID_PREFLIGHT_BODY_BYTES: u64 = 1024 * 1024;
+const MAX_LID_PREFLIGHT_MANIFEST_BYTES: u64 = 32 * 1024;
+const LID_SAMPLE_RATE_HZ: u64 = 16_000;
+const LID_MINIMUM_SOURCE_SAMPLES: u64 = LID_SAMPLE_RATE_HZ * 30;
+const LID_MAXIMUM_WINDOW_SAMPLES: u64 = LID_SAMPLE_RATE_HZ * 15;
+const LID_MINIMUM_VOICED_SAMPLES: u64 = LID_SAMPLE_RATE_HZ * 8;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -54,10 +64,61 @@ pub struct AsrProviderCapabilities {
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LidPreflightRuntimeCapability {
+    pub python_version: String,
+    pub cpu_only: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LidPreflightModelCapability {
+    pub id: String,
+    pub revision: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LidPreflightTransportCapability {
+    pub media_type: String,
+    pub maximum_body_bytes: u64,
+    pub maximum_manifest_bytes: u64,
+    pub maximum_response_seconds: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LidPreflightPolicyCapability {
+    pub revision: String,
+    pub sample_rate_hz: u64,
+    pub channel_count: u16,
+    pub sample_width_bytes: u16,
+    pub minimum_source_samples: u64,
+    pub maximum_windows: u16,
+    pub maximum_window_samples: u64,
+    pub minimum_voiced_samples_per_window: u64,
+    pub score_semantics: String,
+    pub user_confirmation_required: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LidPreflightCapability {
+    pub schema_version: u16,
+    pub component_id: String,
+    pub runtime: LidPreflightRuntimeCapability,
+    pub model: LidPreflightModelCapability,
+    pub transport: LidPreflightTransportCapability,
+    pub policy: LidPreflightPolicyCapability,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AsrCapabilityCatalog {
     pub schema_version: u16,
     pub catalog_revision: String,
     pub providers: Vec<AsrProviderCapabilities>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language_preflight: Option<LidPreflightCapability>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -137,6 +198,29 @@ impl AsrCapabilityCatalog {
         })
     }
 
+    pub(crate) fn lid_preflight(&self) -> Option<&LidPreflightCapability> {
+        self.language_preflight.as_ref()
+    }
+
+    pub(crate) fn supports_recording_decision(&self, decision: &RecordingLanguageDecision) -> bool {
+        match (decision.mode, decision.language_bcp47.as_deref()) {
+            (RecordingLanguageMode::Fixed, Some(language_bcp47)) => self
+                .providers
+                .iter()
+                .flat_map(|provider| &provider.capabilities)
+                .any(|capability| {
+                    capability.language_bcp47 == language_bcp47
+                        && capability.mode == AsrExecutionMode::FixedBatch
+                }),
+            (RecordingLanguageMode::Dynamic, None) => self
+                .providers
+                .iter()
+                .flat_map(|provider| &provider.capabilities)
+                .any(|capability| capability.mode == AsrExecutionMode::DynamicBatch),
+            _ => false,
+        }
+    }
+
     fn validate(&self) -> Result<(), AsrCatalogError> {
         if self.schema_version != 1
             || !lower_hex(&self.catalog_revision, 64)
@@ -172,10 +256,17 @@ impl AsrCapabilityCatalog {
                 }
             }
         }
+        if self
+            .language_preflight
+            .as_ref()
+            .is_some_and(|capability| !capability.is_valid())
+        {
+            return Err(AsrCatalogError::Malformed);
+        }
         Ok(())
     }
 
-    fn computed_revision(&self) -> Result<String, AsrCatalogError> {
+    pub(super) fn computed_revision(&self) -> Result<String, AsrCatalogError> {
         #[derive(serde::Serialize)]
         #[serde(rename_all = "camelCase")]
         struct RevisionSource<'a> {
@@ -198,6 +289,44 @@ impl AsrCapabilityCatalog {
     }
 }
 
+impl LidPreflightCapability {
+    fn is_valid(&self) -> bool {
+        self.schema_version == 1
+            && bounded_text(&self.component_id, 128)
+            && valid_python_312_patch(&self.runtime.python_version)
+            && self.runtime.cpu_only
+            && bounded_text(&self.model.id, 256)
+            && lower_hex(&self.model.revision, 40)
+            && self.transport.media_type == LID_PREFLIGHT_MEDIA_TYPE
+            && (5..=MAX_LID_PREFLIGHT_BODY_BYTES).contains(&self.transport.maximum_body_bytes)
+            && (1..=MAX_LID_PREFLIGHT_MANIFEST_BYTES)
+                .contains(&self.transport.maximum_manifest_bytes)
+            && (1..=300).contains(&self.transport.maximum_response_seconds)
+            && self
+                .transport
+                .maximum_manifest_bytes
+                .checked_add(4)
+                .is_some_and(|value| value <= self.transport.maximum_body_bytes)
+            && bounded_text(&self.policy.revision, 128)
+            && self.policy.sample_rate_hz == LID_SAMPLE_RATE_HZ
+            && self.policy.channel_count == 1
+            && self.policy.sample_width_bytes == 2
+            && self.policy.minimum_source_samples == LID_MINIMUM_SOURCE_SAMPLES
+            && self.policy.maximum_windows == 2
+            && (LID_MINIMUM_VOICED_SAMPLES..=LID_MAXIMUM_WINDOW_SAMPLES)
+                .contains(&self.policy.maximum_window_samples)
+            && (LID_MINIMUM_VOICED_SAMPLES..=self.policy.maximum_window_samples)
+                .contains(&self.policy.minimum_voiced_samples_per_window)
+            && self.policy.score_semantics == "uncalibrated-log-posterior"
+            && self
+                .policy
+                .maximum_window_samples
+                .checked_mul(u64::from(self.policy.maximum_windows))
+                .is_some_and(|minimum| minimum <= self.policy.minimum_source_samples)
+            && self.policy.user_confirmation_required
+    }
+}
+
 fn bounded_text(value: &str, maximum: usize) -> bool {
     let length = value.chars().count();
     (1..=maximum).contains(&length) && value.bytes().all(|byte| (b' '..=b'~').contains(&byte))
@@ -211,7 +340,13 @@ fn lower_hex(value: &str, length: usize) -> bool {
 }
 
 fn provider_language_code(value: &str) -> bool {
-    value.len() == 2 && value.bytes().all(|byte| byte.is_ascii_lowercase())
+    value == "auto" || valid_bcp47(value)
+}
+
+fn valid_python_312_patch(value: &str) -> bool {
+    value
+        .strip_prefix("3.12.")
+        .is_some_and(|patch| !patch.is_empty() && patch.bytes().all(|byte| byte.is_ascii_digit()))
 }
 
 fn valid_model_source(value: &str) -> bool {
@@ -226,14 +361,45 @@ fn valid_model_source(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
     use std::io::{Read, Write};
     use std::net::TcpListener;
 
-    use super::{fetch_asr_capabilities, AsrCapabilityCatalog, AsrCatalogError, MAX_CATALOG_BYTES};
+    use super::{
+        fetch_asr_capabilities, provider_language_code, AsrCapabilityCatalog, AsrCatalogError,
+        LID_PREFLIGHT_MEDIA_TYPE, MAX_CATALOG_BYTES,
+    };
     use crate::server_connector::client::bounded_client;
 
     const REPOSITORY_EXAMPLE: &[u8] =
         include_bytes!("../../../../server/openapi/examples/asr-capabilities.ok.json");
+    const INVALID_CASES: &[u8] = include_bytes!(
+        "../../../../server/openapi/examples/asr-capability-catalog.invalid-cases.json"
+    );
+
+    #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
+    struct InvalidCatalogFixture {
+        schema_version: u8,
+        base_example: String,
+        cases: Vec<InvalidCatalogCase>,
+    }
+
+    #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
+    struct InvalidCatalogCase {
+        id: String,
+        mutations: Vec<CatalogMutation>,
+        expected_native_error: String,
+        violates_open_api_schema: bool,
+    }
+
+    #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
+    struct CatalogMutation {
+        pointer: String,
+        value: serde_json::Value,
+    }
 
     #[test]
     fn repository_example_projects_as_a_bounded_verified_catalog() {
@@ -247,34 +413,56 @@ mod tests {
     }
 
     #[test]
+    fn shared_invalid_catalog_cases_fail_at_the_native_trust_boundary() {
+        let fixture: InvalidCatalogFixture = serde_json::from_slice(INVALID_CASES).unwrap();
+        assert_eq!(fixture.schema_version, 1);
+        assert_eq!(fixture.base_example, "asr-capabilities.ok.json");
+        let mut case_ids = HashSet::new();
+        let mut schema_invalid_cases = 0_usize;
+
+        for case in fixture.cases {
+            assert!(
+                case_ids.insert(case.id.clone()),
+                "duplicate case {}",
+                case.id
+            );
+            schema_invalid_cases += usize::from(case.violates_open_api_schema);
+            let mut candidate: serde_json::Value =
+                serde_json::from_slice(REPOSITORY_EXAMPLE).unwrap();
+            for mutation in case.mutations {
+                *candidate
+                    .pointer_mut(&mutation.pointer)
+                    .unwrap_or_else(|| panic!("invalid fixture pointer {}", mutation.pointer)) =
+                    mutation.value;
+            }
+            let actual =
+                AsrCapabilityCatalog::parse_bounded(&serde_json::to_vec(&candidate).unwrap());
+            let expected = match case.expected_native_error.as_str() {
+                "malformed" => AsrCatalogError::Malformed,
+                "revisionMismatch" => AsrCatalogError::RevisionMismatch,
+                other => panic!("unsupported expected native error {other}"),
+            };
+            assert_eq!(actual, Err(expected), "case {}", case.id);
+        }
+
+        assert_eq!(case_ids.len(), 6);
+        assert_eq!(schema_invalid_cases, 4);
+    }
+
+    #[test]
+    fn provider_prompt_accepts_exact_locales_and_explicit_auto_only() {
+        assert!(provider_language_code("en"));
+        assert!(provider_language_code("en-US"));
+        assert!(provider_language_code("auto"));
+        assert!(!provider_language_code("EN-us"));
+        assert!(!provider_language_code("../en-US"));
+    }
+
+    #[test]
     fn oversized_catalog_is_rejected_before_json_parsing() {
         assert_eq!(
             AsrCapabilityCatalog::parse_bounded(&vec![b' '; MAX_CATALOG_BYTES + 1]),
             Err(AsrCatalogError::ResponseTooLarge)
-        );
-    }
-
-    #[test]
-    fn altered_capability_cannot_reuse_the_server_fingerprint() {
-        let mut value: serde_json::Value = serde_json::from_slice(REPOSITORY_EXAMPLE).unwrap();
-        value["providers"][0]["capabilities"][0]["wordAlignment"] = true.into();
-        let body = serde_json::to_vec(&value).unwrap();
-
-        assert_eq!(
-            AsrCapabilityCatalog::parse_bounded(&body),
-            Err(AsrCatalogError::RevisionMismatch)
-        );
-    }
-
-    #[test]
-    fn dynamic_mode_requires_segment_language_tags() {
-        let mut value: serde_json::Value = serde_json::from_slice(REPOSITORY_EXAMPLE).unwrap();
-        value["providers"][0]["capabilities"][0]["mode"] = "dynamicBatch".into();
-        let body = serde_json::to_vec(&value).unwrap();
-
-        assert_eq!(
-            AsrCapabilityCatalog::parse_bounded(&body),
-            Err(AsrCatalogError::Malformed)
         );
     }
 
@@ -289,6 +477,43 @@ mod tests {
             AsrCapabilityCatalog::parse_bounded(&body),
             Err(AsrCatalogError::Malformed)
         );
+    }
+
+    #[test]
+    fn verified_lid_policy_is_optional_and_does_not_rewrite_provider_revision() {
+        let mut value: serde_json::Value = serde_json::from_slice(REPOSITORY_EXAMPLE).unwrap();
+        let original_revision = value["catalogRevision"].as_str().unwrap().to_owned();
+        value["languagePreflight"] = lid_capability_value();
+        let catalog = AsrCapabilityCatalog::parse_bounded(&serde_json::to_vec(&value).unwrap())
+            .expect("verified LID policy should extend the live catalog");
+
+        assert_eq!(catalog.catalog_revision, original_revision);
+        assert_eq!(catalog.computed_revision().unwrap(), original_revision);
+        let lid = catalog.lid_preflight().unwrap();
+        assert_eq!(lid.policy.revision, "speechbrain-two-window-v1");
+        assert!(lid.runtime.cpu_only);
+    }
+
+    #[test]
+    fn weakened_or_gpu_lid_policy_is_rejected() {
+        for field in ["runtime.cpuOnly", "policy.userConfirmationRequired"] {
+            let mut value: serde_json::Value = serde_json::from_slice(REPOSITORY_EXAMPLE).unwrap();
+            value["languagePreflight"] = lid_capability_value();
+            match field {
+                "runtime.cpuOnly" => {
+                    value["languagePreflight"]["runtime"]["cpuOnly"] = false.into()
+                }
+                "policy.userConfirmationRequired" => {
+                    value["languagePreflight"]["policy"]["userConfirmationRequired"] = false.into()
+                }
+                _ => unreachable!(),
+            }
+            assert_eq!(
+                AsrCapabilityCatalog::parse_bounded(&serde_json::to_vec(&value).unwrap()),
+                Err(AsrCatalogError::Malformed),
+                "{field} must fail closed"
+            );
+        }
     }
 
     #[test]
@@ -318,5 +543,35 @@ mod tests {
         server.join().unwrap();
 
         assert_eq!(catalog.providers[0].provider_id, "cohere");
+    }
+
+    fn lid_capability_value() -> serde_json::Value {
+        serde_json::json!({
+            "schemaVersion": 1,
+            "componentId": "speechbrain-lid-preflight",
+            "runtime": {"pythonVersion": "3.12.13", "cpuOnly": true},
+            "model": {
+                "id": "speechbrain/lang-id-voxlingua107-ecapa",
+                "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9"
+            },
+            "transport": {
+                "mediaType": LID_PREFLIGHT_MEDIA_TYPE,
+                "maximumBodyBytes": 1_048_576,
+                "maximumManifestBytes": 32_768,
+                "maximumResponseSeconds": 120
+            },
+            "policy": {
+                "revision": "speechbrain-two-window-v1",
+                "sampleRateHz": 16_000,
+                "channelCount": 1,
+                "sampleWidthBytes": 2,
+                "minimumSourceSamples": 480_000,
+                "maximumWindows": 2,
+                "maximumWindowSamples": 240_000,
+                "minimumVoicedSamplesPerWindow": 128_000,
+                "scoreSemantics": "uncalibrated-log-posterior",
+                "userConfirmationRequired": true
+            }
+        })
     }
 }

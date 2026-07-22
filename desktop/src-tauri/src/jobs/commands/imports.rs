@@ -1,18 +1,34 @@
 use super::{
     command_error, mint_job_id, source_error, JobCommandError, RecordingJobs, MAX_RECORDING_JOBS,
-    PENDING_JOB_LIFETIME_MS, PHASE5_REMOTE_IMPORT_EXTENSIONS,
+    PENDING_JOB_LIFETIME_MS, REMOTE_IMPORT_AUDIO_EXTENSIONS,
 };
 use crate::{
     jobs::{
-        NewRecordingJob, RecordingJobStatus, RecordingJobView, RecordingLanguageDecision,
-        RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
+        AsrCatalogBinding, NewRecordingJob, RecordingJobRecord, RecordingJobStatus,
+        RecordingJobView, RecordingLanguageDecision, RecordingRoute, SessionMode, SessionOrigin,
+        SourceOwnership,
     },
     media_protocol::MediaOwner,
+    recording_access::ValidatedRecordingJobSource,
 };
 use std::{
     collections::{HashMap, HashSet},
     path::{Path, PathBuf},
 };
+
+/// Filesystem inspection happens before a live catalog is fetched. Keeping this
+/// value independent from the connector prevents slow media inspection from
+/// extending the connector generation lock.
+pub(super) struct PreparedRecordingImports {
+    sources: Vec<ValidatedRecordingJobSource>,
+}
+
+/// The durable catalog/language commit is complete, but playback authority has
+/// not yet been projected. Projection deliberately happens after the connector
+/// lock is released.
+pub(super) struct CommittedRecordingImports {
+    entries: Vec<(RecordingJobRecord, ValidatedRecordingJobSource)>,
+}
 
 impl RecordingJobs {
     #[cfg(test)]
@@ -31,6 +47,7 @@ impl RecordingJobs {
         )
     }
 
+    #[cfg(test)]
     pub(super) fn create_imports_with_language<P: AsRef<Path>>(
         &self,
         media: &MediaOwner,
@@ -38,12 +55,18 @@ impl RecordingJobs {
         now_ms: u64,
         language_decision: RecordingLanguageDecision,
     ) -> Result<Vec<RecordingJobView>, JobCommandError> {
-        let _mutation = self.mutation().lock().map_err(|_| {
-            command_error(
-                "JOB_STATE_UNAVAILABLE",
-                "Recording job state is unavailable.",
-            )
-        })?;
+        let prepared = self.prepare_imports(paths)?;
+        let binding = AsrCatalogBinding::try_new("http://127.0.0.1:18765".into(), "a".repeat(64))
+            .expect("test catalog binding is valid");
+        let committed =
+            self.commit_prepared_imports(prepared, now_ms, language_decision, &binding)?;
+        self.project_committed_imports(media, committed, now_ms)
+    }
+
+    pub(super) fn prepare_imports<P: AsRef<Path>>(
+        &self,
+        paths: Vec<P>,
+    ) -> Result<PreparedRecordingImports, JobCommandError> {
         if paths.len() > MAX_RECORDING_JOBS {
             return Err(command_error(
                 "JOB_LIMIT_EXCEEDED",
@@ -55,7 +78,7 @@ impl RecordingJobs {
                 .extension()
                 .and_then(|extension| extension.to_str())
                 .is_none_or(|extension| {
-                    !PHASE5_REMOTE_IMPORT_EXTENSIONS
+                    !REMOTE_IMPORT_AUDIO_EXTENSIONS
                         .iter()
                         .any(|allowed| extension.eq_ignore_ascii_case(allowed))
                 })
@@ -69,13 +92,40 @@ impl RecordingJobs {
             .iter()
             .map(|path| self.validate_source(path.as_ref()))
             .collect::<Result<Vec<_>, _>>()?;
+        Ok(PreparedRecordingImports { sources })
+    }
+
+    /// Performs the bounded native-selection/catalog/ledger admission commit.
+    /// Slow media inspection has already completed, so callers may invoke this
+    /// while holding the connector generation lock.
+    pub(super) fn commit_prepared_imports(
+        &self,
+        prepared: PreparedRecordingImports,
+        now_ms: u64,
+        language_decision: RecordingLanguageDecision,
+        binding: &AsrCatalogBinding,
+    ) -> Result<CommittedRecordingImports, JobCommandError> {
+        let _mutation = self.mutation().lock().map_err(|_| {
+            command_error(
+                "JOB_STATE_UNAVAILABLE",
+                "Recording job state is unavailable.",
+            )
+        })?;
         let mut new_sources = HashSet::new();
-        for source in &sources {
-            if self
+        let mut existing_by_source = HashMap::new();
+        for source in &prepared.sources {
+            if let Some(existing) = self
                 .ledger()
                 .find_recoverable_imported_job_by_source(&source.canonical_path)?
-                .is_none()
             {
+                if existing.language_decision != language_decision {
+                    return Err(command_error(
+                        "LANGUAGE_DECISION_CONFLICT",
+                        "This recording is already queued with a different language decision. Cancel or dismiss that job before importing it with another language.",
+                    ));
+                }
+                existing_by_source.insert(source.canonical_path.clone(), existing);
+            } else {
                 new_sources.insert(source.canonical_path.clone());
             }
         }
@@ -87,26 +137,18 @@ impl RecordingJobs {
             ));
         }
 
-        for source in &sources {
-            crate::recording_access::register_native_selected_recording_job_source_at(
-                source,
-                &self.selection_registry_path,
-                self.owned_dir(),
-            )
-            .map_err(source_error)?;
-        }
-
-        let mut records_by_source = HashMap::new();
         let mut new_jobs = Vec::new();
-        for source in &sources {
-            if records_by_source.contains_key(&source.canonical_path) {
+        let mut existing_job_ids = Vec::new();
+        let mut seen_existing = HashSet::new();
+        let mut planned_new_sources = HashSet::new();
+        for source in &prepared.sources {
+            if let Some(existing) = existing_by_source.get(&source.canonical_path) {
+                if seen_existing.insert(existing.job_id.clone()) {
+                    existing_job_ids.push(existing.job_id.clone());
+                }
                 continue;
             }
-            if let Some(existing) = self
-                .ledger()
-                .find_recoverable_imported_job_by_source(&source.canonical_path)?
-            {
-                records_by_source.insert(source.canonical_path.clone(), existing);
+            if !planned_new_sources.insert(source.canonical_path.clone()) {
                 continue;
             }
             new_jobs.push(NewRecordingJob {
@@ -122,7 +164,9 @@ impl RecordingJobs {
                     .and_then(|name| name.to_str())
                     .unwrap_or("Recording")
                     .to_owned(),
-                status: RecordingJobStatus::QueuedServer,
+                // Accepted rows are durable but intentionally invisible to the
+                // background drain until native source authority is projected.
+                status: RecordingJobStatus::Accepted,
                 route: Some(RecordingRoute::ServerBatch),
                 attempt_count: 0,
                 next_attempt_at_ms: None,
@@ -135,32 +179,152 @@ impl RecordingJobs {
                 updated_at_ms: now_ms,
                 expires_at_ms: now_ms.checked_add(PENDING_JOB_LIFETIME_MS),
                 language_decision: language_decision.clone(),
+                // The setup language is provisional until the immutable owned
+                // source has been measured. Short recordings reuse it; long
+                // recordings require the language-detection/manual-confirmation path.
+                language_decision_locked: false,
+                client_stage_history_complete: false,
+                asr_catalog_binding: Some(binding.clone()),
             });
         }
-        for record in self.ledger().insert_jobs(&new_jobs)? {
+        // Retain native picker/drop proof before a durable Accepted row can
+        // exist. Accepted is still drain-ineligible; active playback and the
+        // queued transition happen only during projection below.
+        let selection = crate::recording_access::retain_native_selected_recording_job_sources_at(
+            &prepared.sources,
+            &self.selection_registry_path,
+            self.owned_dir(),
+        )
+        .map_err(source_error)?;
+        let committed = match self.ledger().commit_catalog_imports(
+            &existing_job_ids,
+            &new_jobs,
+            &language_decision,
+            binding,
+            now_ms,
+            MAX_RECORDING_JOBS,
+        ) {
+            Ok(committed) => committed,
+            Err(error) => {
+                if let Err(cleanup_error) =
+                    crate::recording_access::rollback_retained_native_selection_at(
+                        selection,
+                        &self.selection_registry_path,
+                    )
+                {
+                    super::log_registry_cleanup_failure(
+                        "rollback after rejected import commit",
+                        &cleanup_error,
+                    );
+                }
+                return Err(error.into());
+            }
+        };
+        let mut records_by_source = HashMap::new();
+        for record in committed {
             let source_path = record
                 .source_path
                 .clone()
-                .expect("new imported job has a source path");
+                .expect("committed imported job has a source path");
             records_by_source.insert(source_path, record);
         }
 
-        let mut created = Vec::with_capacity(sources.len());
+        let entries = prepared
+            .sources
+            .into_iter()
+            .map(|source| {
+                let record = records_by_source
+                    .get(&source.canonical_path)
+                    .expect("validated source has a committed job")
+                    .clone();
+                (record, source)
+            })
+            .collect();
+        Ok(CommittedRecordingImports { entries })
+    }
+
+    pub(super) fn project_committed_imports(
+        &self,
+        media: &MediaOwner,
+        committed: CommittedRecordingImports,
+        now_ms: u64,
+    ) -> Result<Vec<RecordingJobView>, JobCommandError> {
+        let _mutation = self.mutation().lock().map_err(|_| {
+            command_error(
+                "JOB_STATE_UNAVAILABLE",
+                "Recording job state is unavailable.",
+            )
+        })?;
+        let mut projected = Vec::with_capacity(committed.entries.len());
         let mut projected_by_source: HashMap<PathBuf, RecordingJobView> = HashMap::new();
-        for source in sources {
-            if let Some(projected) = projected_by_source.get(&source.canonical_path) {
-                created.push(projected.clone());
+        for (committed_record, source) in committed.entries {
+            if let Some(existing) = projected_by_source.get(&source.canonical_path) {
+                projected.push(existing.clone());
                 continue;
             }
-            let record = records_by_source
-                .get(&source.canonical_path)
-                .expect("validated source has a committed job")
-                .clone();
+            let current = self
+                .ledger()
+                .get_job(&committed_record.job_id)?
+                .ok_or_else(|| {
+                    command_error(
+                        "JOB_NOT_FOUND",
+                        "A committed recording disappeared before source authority was projected.",
+                    )
+                })?;
+            if current.source_path.as_deref() != Some(source.canonical_path.as_path())
+                || current.language_decision != committed_record.language_decision
+            {
+                return Err(command_error(
+                    "JOB_STATE_CHANGED",
+                    "A committed recording changed before source authority was projected.",
+                ));
+            }
             let source_path = source.canonical_path.clone();
-            let projected = self.project_committed_or_fail(record, source, media, now_ms)?;
-            projected_by_source.insert(source_path, projected.clone());
-            created.push(projected);
+            let view = if matches!(
+                current.status,
+                RecordingJobStatus::Complete
+                    | RecordingJobStatus::Partial
+                    | RecordingJobStatus::Cancelled
+            ) {
+                self.release_playback(&current.job_id, media);
+                RecordingJobView::from_record(&current)
+            } else {
+                if current.status == RecordingJobStatus::Accepted {
+                    let expires_at_ms = current.expires_at_ms.ok_or_else(|| {
+                        command_error(
+                            "JOB_TIME_OUT_OF_RANGE",
+                            "Accepted recording has no bounded retention deadline.",
+                        )
+                    })?;
+                    self.project_and_activate_accepted_import(
+                        current,
+                        source,
+                        media,
+                        now_ms,
+                        expires_at_ms,
+                    )?
+                } else {
+                    match crate::recording_access::register_native_selected_recording_job_source_at(
+                        &source,
+                        &self.selection_registry_path,
+                        self.owned_dir(),
+                    ) {
+                        Ok(()) => self.project_committed_or_fail(current, source, media, now_ms)?,
+                        Err(error) => {
+                            let error = source_error(error);
+                            let failed = self.ledger().fail_source_validation(
+                                &current.job_id,
+                                &error.code,
+                                now_ms,
+                            )?;
+                            self.project_failed_capability_free(&failed, media)
+                        }
+                    }
+                }
+            };
+            projected_by_source.insert(source_path, view.clone());
+            projected.push(view);
         }
-        Ok(created)
+        Ok(projected)
     }
 }

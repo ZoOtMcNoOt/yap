@@ -40,6 +40,10 @@ ADR 0021 makes HTTP/3 the gated long-term client-facing transport target while p
 ADR 0022 adopts pinned Google OKF v0.1 for Phase 9, requires a Postgres/pgvector plus typed-relationship baseline, and defines permission-safe projection gates for an optional Neo4j challenger without making any database the knowledge or authorization source-of-truth.
 ADR 0023 amends ADR 0014's absolute live-priority rule with bounded live preference so an always-ready interactive queue cannot starve accepted batch work.
 ADR 0024 defines the Phase 6 global language/provider capability catalog, primary-language and guarded LID policy, explicit Nemotron dynamic mode, and fail-closed timing evidence.
+ADR 0025 replaces the proposed common Triton ASR plane with provider-specific
+serving: Cohere batch on vLLM, Nemotron's current Transformers reference and
+future NeMo streaming candidate, local Nemotron on sherpa-onnx, and SGLang only
+for later agent/LLM workloads.
 
 ## Applicability and precedence
 
@@ -47,7 +51,7 @@ Use ADRs in this order:
 
 1. A `Superseded` decision is historical and never authorizes implementation.
 2. A later explicit `Amends` or `Supersedes` clause wins over an earlier conflicting detail.
-3. ADRs 0014–0024 define the canonical client/server architecture and phase map. Earlier ADRs remain authoritative only for the principles or deployment profile their status names.
+3. ADRs 0014–0025 define the canonical client/server architecture and phase map. Earlier ADRs remain authoritative only for the principles or deployment profile their status names.
 4. [Current architecture](../architecture/CURRENT-ARCHITECTURE.md),
    [current status](../CURRENT-STATUS.md), and the
    [roadmap](../roadmap/ROADMAP.md) are readable syntheses; they cannot silently
@@ -62,12 +66,12 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 |-----|-------|--------|
 | [0001](0001-dual-stt-backends.md) | Dual STT backends: streaming live, server batch | Accepted principle; runtime/model amended by [0014](0014-server-tier-compute-topology.md) and [0019](0019-local-streaming-model-selection.md) |
 | [0002](0002-crispasr-unified-stt-runtime.md) | CrispASR unified STT runtime (warm daemon + GGUF) | Historical runtime; active local path superseded by [0019](0019-local-streaming-model-selection.md) |
-| [0003](0003-long-term-voice-architecture.md) | Long-term voice OS — recordings, SpeechBrain LID, roadmap | Accepted principles; phase map superseded by the canonical Voice OS roadmap and language details amended by [0024](0024-phase6-global-language-routing.md) |
+| [0003](0003-long-term-voice-architecture.md) | Long-term voice OS — recordings, SpeechBrain LID, roadmap | Accepted principles; phase map superseded by the canonical Voice OS roadmap and language details amended by [0024](0024-global-language-routing.md) |
 | [0004](0004-background-diarization-okf-agents.md) | Background pipeline — diarization, micro-batches, OKF, agents | Accepted for non-diarization principles; diarization superseded by [0020](0020-meeting-capture-diarization-authority.md) |
 | [0005](0005-llama-server-agents.md) | Bundled llama-server for LLM agents (CPU-first) | Accepted for solo/local; team execution amended by [0014](0014-server-tier-compute-topology.md) |
 | [0006](0006-silero-agents-state-machine.md) | Silero VAD, agent profiles, runtime state machine | Accepted principles; active routing amended by [0014](0014-server-tier-compute-topology.md), [0019](0019-local-streaming-model-selection.md), and [0020](0020-meeting-capture-diarization-authority.md) |
-| [0007](0007-forced-alignment-engine.md) | Forced-alignment engine for word→speaker | Accepted raw-alignment principle; engine and promotion gates amended by [0024](0024-phase6-global-language-routing.md) |
-| [0008](0008-speechbrain-lid-gate.md) | SpeechBrain LID language gate | Accepted user-gate principle; model, runtime, probes, and threshold amended by [0024](0024-phase6-global-language-routing.md) |
+| [0007](0007-forced-alignment-engine.md) | Forced-alignment engine for word→speaker | Accepted raw-alignment principle; engine and promotion gates amended by [0024](0024-global-language-routing.md) |
+| [0008](0008-speechbrain-lid-gate.md) | SpeechBrain LID language gate | Accepted user-gate principle; model, runtime, probes, and threshold amended by [0024](0024-global-language-routing.md) |
 | [0009](0009-knowledge-worker-protocol.md) | Knowledge worker IPC protocol | Solo/local only; team protocol superseded by [0017](0017-knowledge-base-compiler.md) |
 | [0010](0010-okf-conversation-schema.md) | OKF conversation schema | Accepted Markdown/YAML and raw-preservation principles; canonical Phase 9 format superseded by [0022](0022-google-okf-permission-safe-projections.md) |
 | [0011](0011-vector-rag-retrieval.md) | Vector index + RAG retrieval (L6–L7) | Accepted principles; team storage/projection amended by [0017](0017-knowledge-base-compiler.md) and [0022](0022-google-okf-permission-safe-projections.md) |
@@ -83,9 +87,10 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0021](0021-http3-secure-edge-transport.md) | HTTP/3 transport evolution at the secure edge | Accepted (roadmap - gated after the Phase 5 remote transport and Phase 7 authentication baselines) |
 | [0022](0022-google-okf-permission-safe-projections.md) | Google OKF and permission-safe knowledge projections | Accepted (canonical Phase 9 knowledge format and projection boundary) |
 | [0023](0023-bounded-live-priority.md) | Bounded live priority in the server workload router | Accepted (amends ADR 0014 priority rule) |
-| [0024](0024-phase6-global-language-routing.md) | Phase 6 global language routing and timing evidence | Accepted decision; implementation and per-locale promotion evidence incomplete |
+| [0024](0024-global-language-routing.md) | Global language routing and timing evidence | Accepted decision; implementation and per-locale promotion evidence incomplete |
+| [0025](0025-provider-specific-asr-serving.md) | Provider-specific ASR serving runtimes | Accepted; Cohere vLLM adapter implemented, GB10 and NeMo promotion evidence incomplete |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 
 **Readable synthesis:** [Current architecture](../architecture/CURRENT-ARCHITECTURE.md)
-and [Phase 1–5 ownership](../architecture/boundaries/PHASE-1-5-OWNERSHIP.md)
+and [executable ownership](../architecture/boundaries/EXECUTABLE-OWNERSHIP.md)

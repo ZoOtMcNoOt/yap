@@ -1,11 +1,44 @@
 use super::super::remote;
 use super::{
     CompletedRemoteTranscript, CompletedRemoteTranscriptCatalog, JobCommandError, RecordingJobs,
+    TranscriptLanguageStatus, TranscriptResultSummary, TranscriptTimingStatus,
 };
 use crate::{
-    jobs::{RecordingJobStatus, RecordingRoute},
-    server_connector::batch::CreateRecordingJobRequest,
+    jobs::{LanguageLabelReview, RecordingJobStatus, RecordingRoute},
+    server_connector::batch::{
+        AlignmentStatus, CreateRecordingJobRequest, TranscriptResultRevision,
+    },
 };
+
+fn summarize_result(
+    result: &TranscriptResultRevision,
+    language_review: Option<&LanguageLabelReview>,
+) -> Result<TranscriptResultSummary, ()> {
+    let language = result.language.as_ref().ok_or(())?;
+    let language_status = if language.language_bcp47 == "und" {
+        let review = language_review.ok_or(())?;
+        if review.review_required_count > 0 {
+            TranscriptLanguageStatus::UnknownSegments
+        } else {
+            TranscriptLanguageStatus::Dynamic
+        }
+    } else {
+        TranscriptLanguageStatus::Fixed
+    };
+    let timing_status = match result.alignment.as_ref().map(|outcome| outcome.status) {
+        Some(AlignmentStatus::Available) => TranscriptTimingStatus::Available,
+        Some(AlignmentStatus::Unavailable) => TranscriptTimingStatus::Unavailable,
+        None => TranscriptTimingStatus::LegacyUnknown,
+    };
+    Ok(TranscriptResultSummary {
+        language_bcp47: language.language_bcp47.clone(),
+        language_status,
+        timing_status,
+        active_language_correction_count: language_review
+            .map(|review| review.active_correction_count),
+        language_review_required_count: language_review.map(|review| review.review_required_count),
+    })
+}
 
 impl RecordingJobs {
     pub(crate) fn completed_remote_transcripts(
@@ -43,12 +76,24 @@ impl RecordingJobs {
                 {
                     return Err(());
                 }
+                let language_review = (verified
+                    .result
+                    .language
+                    .as_ref()
+                    .is_some_and(|language| language.language_bcp47 == "und"))
+                .then(|| {
+                    remote::read_language_label_review(output_path, self.remote_jobs_directory())
+                })
+                .transpose()
+                .map_err(|_| ())?;
+                let result_summary = summarize_result(&verified.result, language_review.as_ref())?;
                 Ok(CompletedRemoteTranscript {
                     session_id: verified.result.session_id,
                     name: record.display_name.clone(),
                     source_path: source_path.display().to_string(),
                     output_path: output_path.display().to_string(),
                     created_at_ms: record.updated_at_ms,
+                    result_summary,
                     warning: (record.status == RecordingJobStatus::Partial)
                         .then(|| "Server transcript completed with deferred work.".into()),
                 })
@@ -72,5 +117,123 @@ impl RecordingJobs {
                 Vec::new()
             },
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    fn result_with(
+        language: serde_json::Value,
+        segments: serde_json::Value,
+    ) -> TranscriptResultRevision {
+        serde_json::from_value(json!({
+            "sessionId": "session-1",
+            "revision": 1,
+            "authority": "server_authoritative",
+            "createdAtUtc": "2026-07-18T00:00:00Z",
+            "captureManifestSha256": "a".repeat(64),
+            "previousResultSha256": null,
+            "status": "complete",
+            "language": language,
+            "transcript": "bonjour hello",
+            "languageSegments": segments,
+            "alignment": {
+                "status": "unavailable",
+                "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
+                "componentRevision": "cohere-attention-alignment-candidate-v1"
+            },
+            "alignedWords": [],
+            "modelProvenance": []
+        }))
+        .expect("summary fixture must decode")
+    }
+
+    #[test]
+    fn summary_exposes_dynamic_unknown_segments_and_unavailable_timing() {
+        let result = result_with(
+            json!({ "languageBcp47": "und", "confidence": null }),
+            json!([
+                {
+                    "index": 0,
+                    "sourceSpanIndex": 0,
+                    "text": "bonjour",
+                    "status": "detected",
+                    "languageBcp47": "fr-FR",
+                    "rawLanguageTag": "fr-FR",
+                    "reason": null
+                },
+                {
+                    "index": 1,
+                    "sourceSpanIndex": 0,
+                    "text": "hello",
+                    "status": "unknown",
+                    "languageBcp47": null,
+                    "rawLanguageTag": null,
+                    "reason": "MISSING_LANGUAGE_TAG"
+                }
+            ]),
+        );
+
+        assert_eq!(
+            summarize_result(
+                &result,
+                Some(&LanguageLabelReview {
+                    schema_version: 1,
+                    session_id: "session-1".into(),
+                    source_result_sha256: "a".repeat(64),
+                    revision: 0,
+                    active_correction_count: 0,
+                    review_required_count: 1,
+                    segments: Vec::new(),
+                })
+            ),
+            Ok(TranscriptResultSummary {
+                language_bcp47: "und".into(),
+                language_status: TranscriptLanguageStatus::UnknownSegments,
+                timing_status: TranscriptTimingStatus::Unavailable,
+                active_language_correction_count: Some(0),
+                language_review_required_count: Some(1),
+            })
+        );
+    }
+
+    #[test]
+    fn summary_promotes_reviewed_dynamic_labels_without_hiding_correction_count() {
+        let result = result_with(
+            json!({ "languageBcp47": "und", "confidence": null }),
+            json!([{
+                "index": 0,
+                "sourceSpanIndex": 0,
+                "text": "bonjour",
+                "status": "unknown",
+                "languageBcp47": null,
+                "rawLanguageTag": null,
+                "reason": "MISSING_LANGUAGE_TAG"
+            }]),
+        );
+        let review = LanguageLabelReview {
+            schema_version: 1,
+            session_id: "session-1".into(),
+            source_result_sha256: "a".repeat(64),
+            revision: 1,
+            active_correction_count: 1,
+            review_required_count: 0,
+            segments: Vec::new(),
+        };
+
+        assert_eq!(
+            summarize_result(&result, Some(&review)),
+            Ok(TranscriptResultSummary {
+                language_bcp47: "und".into(),
+                language_status: TranscriptLanguageStatus::Dynamic,
+                timing_status: TranscriptTimingStatus::Unavailable,
+                active_language_correction_count: Some(1),
+                language_review_required_count: Some(0),
+            })
+        );
     }
 }

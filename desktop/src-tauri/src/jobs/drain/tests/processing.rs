@@ -1,6 +1,53 @@
 use super::*;
 
 #[test]
+fn exact_processing_target_does_not_fall_through_to_a_neighbor_after_cancellation() {
+    let root = temp_dir("exact-processing-target");
+    let remote_jobs = root.join("remote-jobs");
+    let source_a = root.join("source-a.wav");
+    let source_b = root.join("source-b.wav");
+    write_pcm_wav(&source_a, &[0_u8; 320]);
+    write_pcm_wav(&source_b, &[0_u8; 320]);
+    let ledger = JobLedger::open_in_memory().unwrap();
+    let mut job_a = queued_job("job-exact-processing-a", source_a);
+    job_a.status = RecordingJobStatus::ServerProcessing;
+    let mut job_b = queued_job("job-exact-processing-b", source_b);
+    job_b.status = RecordingJobStatus::ServerProcessing;
+    ledger.insert_jobs(&[job_a, job_b]).unwrap();
+    ledger
+        .request_cancellation("job-exact-processing-a", 1_720_000_000_100)
+        .unwrap();
+    let client = BatchApiClient::new(
+        reqwest::Client::builder().build().unwrap(),
+        "http://127.0.0.1:9",
+    )
+    .unwrap();
+
+    tauri::async_runtime::block_on(async {
+        assert!(!advance_processing_job_once_guarded_for_test(
+            &ledger,
+            &remote_jobs,
+            &client,
+            "job-exact-processing-a",
+            1_720_000_000_200,
+            &BatchCommitGuard::Unchecked,
+        )
+        .await
+        .unwrap());
+    });
+
+    let cancelled = ledger.get_job("job-exact-processing-a").unwrap().unwrap();
+    assert_eq!(cancelled.status, RecordingJobStatus::Cancelled);
+    let neighbor = ledger.get_job("job-exact-processing-b").unwrap().unwrap();
+    assert_eq!(neighbor.status, RecordingJobStatus::ServerProcessing);
+    assert_eq!(neighbor.attempt_count, 0);
+    assert_eq!(neighbor.error_code, None);
+
+    drop(ledger);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
     let root = temp_dir("result");
     let database = root.join("jobs.sqlite3");
@@ -64,6 +111,31 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
     });
     let valid_result: crate::server_connector::batch::TranscriptResultRevision =
         serde_json::from_value(result.clone()).unwrap();
+    let mut aligned_value = result.clone();
+    aligned_value["alignment"] = serde_json::json!({
+        "status": "available",
+        "reason": null,
+        "componentRevision": "cohere-attention-en-v1"
+    });
+    aligned_value["alignedWords"] = serde_json::json!([
+        {"wordIndex": 0, "text": "Phase", "startMs": 0, "endMs": 2,
+         "turnId": null, "attribution": {"kind": "unknown"}, "confidence": null},
+        {"wordIndex": 1, "text": "five", "startMs": 2, "endMs": 4,
+         "turnId": null, "attribution": {"kind": "unknown"}, "confidence": null},
+        {"wordIndex": 2, "text": "is", "startMs": 4, "endMs": 6,
+         "turnId": null, "attribution": {"kind": "unknown"}, "confidence": null},
+        {"wordIndex": 3, "text": "connected.", "startMs": 6, "endMs": 10,
+         "turnId": null, "attribution": {"kind": "unknown"}, "confidence": null}
+    ]);
+    let aligned_result: crate::server_connector::batch::TranscriptResultRevision =
+        serde_json::from_value(aligned_value).unwrap();
+    assert!(validate_result_revision(&aligned_result, &request).is_ok());
+    let mut out_of_source = aligned_result;
+    out_of_source.aligned_words[3].end_ms = 11;
+    assert!(validate_result_revision(&out_of_source, &request).is_err());
+    let mut silent_result = valid_result.clone();
+    silent_result.transcript.clear();
+    assert!(validate_result_revision(&silent_result, &request).is_ok());
     let mut empty_result = valid_result.clone();
     empty_result.transcript = " \n\t".into();
     assert!(validate_result_revision(&empty_result, &request).is_err());

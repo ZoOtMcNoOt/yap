@@ -74,8 +74,10 @@ pub(super) fn save_to_path(
         observed_at_ms,
         catalog: catalog.clone(),
     };
-    let encoded =
-        serde_json::to_vec_pretty(&persisted).map_err(|_| CapabilitySnapshotError::Save)?;
+    // The verified catalog may legitimately approach MAX_CATALOG_BYTES. Keep
+    // the persisted wrapper compact so formatting whitespace cannot make a
+    // valid live catalog impossible to retain offline.
+    let encoded = serde_json::to_vec(&persisted).map_err(|_| CapabilitySnapshotError::Save)?;
     if encoded.len() > MAX_SNAPSHOT_BYTES {
         return Err(CapabilitySnapshotError::Save);
     }
@@ -213,6 +215,55 @@ mod tests {
         assert_eq!(
             load_from_path("http://127.0.0.1:18766", &path).unwrap(),
             None
+        );
+
+        std::fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn near_limit_verified_catalog_still_fits_the_snapshot_envelope() {
+        let directory = temp_dir("near-limit");
+        let path = directory.join("asr-capabilities-snapshot.json");
+        let mut catalog = AsrCapabilityCatalog::parse_bounded(REPOSITORY_EXAMPLE).unwrap();
+        let provider_template = catalog.providers[0].clone();
+        catalog.catalog_revision = "0".repeat(64);
+        catalog.providers = (0..8)
+            .map(|provider_index| {
+                let mut provider = provider_template.clone();
+                provider.provider_id = format!("provider-{provider_index}");
+                provider.pool_id = format!("pool-{provider_index}");
+                provider.capabilities.clear();
+                provider
+            })
+            .collect();
+
+        'fill: for capability_index in 0..256 {
+            for provider_index in 0..catalog.providers.len() {
+                let mut capability = provider_template.capabilities[0].clone();
+                capability.language_bcp47 = format!("en-v{capability_index:04}");
+                catalog.providers[provider_index]
+                    .capabilities
+                    .push(capability);
+                if serde_json::to_vec(&catalog).unwrap().len()
+                    > super::super::capabilities::MAX_CATALOG_BYTES - 512
+                {
+                    catalog.providers[provider_index].capabilities.pop();
+                    break 'fill;
+                }
+            }
+        }
+        catalog.catalog_revision = catalog.computed_revision().unwrap();
+        let encoded_catalog = serde_json::to_vec(&catalog).unwrap();
+        assert!(encoded_catalog.len() > super::super::capabilities::MAX_CATALOG_BYTES - 4 * 1024);
+        let verified = AsrCapabilityCatalog::parse_bounded(&encoded_catalog).unwrap();
+
+        save_to_path("http://127.0.0.1:18765", 42, &verified, &path).unwrap();
+        assert_eq!(
+            load_from_path("http://127.0.0.1:18765", &path)
+                .unwrap()
+                .unwrap()
+                .catalog,
+            verified
         );
 
         std::fs::remove_dir_all(directory).unwrap();

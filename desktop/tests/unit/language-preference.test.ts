@@ -9,6 +9,7 @@ import {
   fixedBatchLanguageOptions,
   initialPrimaryLanguageSelection,
   primaryLanguageStatus,
+  recordingImportLanguageOptions,
   shouldRequestPrimaryLanguageSetup,
   type PrimaryLanguageStatus,
 } from "@/language-preference";
@@ -68,6 +69,23 @@ describe("primary language projection", () => {
       {
         languageBcp47: "en-US",
         qualityTier: "transcriptionReady",
+      },
+    ]);
+  });
+
+  it("adds one catalog-derived automatic import choice without changing primary choices", () => {
+    expect(recordingImportLanguageOptions(status.capabilityCatalog)).toEqual([
+      {
+        id: "fixed:en-US",
+        languageBcp47: "en-US",
+        mode: "fixed",
+        qualityTier: "transcriptionReady",
+      },
+      {
+        id: "dynamic",
+        languageBcp47: null,
+        mode: "dynamic",
+        qualityTier: "preview",
       },
     ]);
   });

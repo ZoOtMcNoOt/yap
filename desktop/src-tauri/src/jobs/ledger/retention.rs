@@ -13,6 +13,24 @@ use super::{
     JobLedger, MAX_TERMINAL_JOB_HISTORY,
 };
 
+fn validate_remote_error_metadata(
+    error_code: &str,
+    error_message: &str,
+) -> Result<(), JobLedgerError> {
+    validate_opaque_identifier(error_code, 64, "remote error code")?;
+    if error_message.is_empty()
+        || error_message.len() > 512
+        || error_message
+            .chars()
+            .any(|character| character.is_control() && !character.is_whitespace())
+    {
+        return Err(JobLedgerError::InvalidRecord(
+            "remote error message is outside the ledger contract",
+        ));
+    }
+    Ok(())
+}
+
 impl JobLedger {
     pub fn record_remote_error(
         &self,
@@ -22,17 +40,7 @@ impl JobLedger {
         retry_at_ms: Option<u64>,
         updated_at_ms: u64,
     ) -> Result<RecordingJobRecord, JobLedgerError> {
-        validate_opaque_identifier(error_code, 64, "remote error code")?;
-        if error_message.is_empty()
-            || error_message.len() > 512
-            || error_message
-                .chars()
-                .any(|character| character.is_control() && !character.is_whitespace())
-        {
-            return Err(JobLedgerError::InvalidRecord(
-                "remote error message is outside the ledger contract",
-            ));
-        }
+        validate_remote_error_metadata(error_code, error_message)?;
         let retry_at_ms = optional_sqlite_integer(retry_at_ms, "next_attempt_at_ms")?;
         let updated_at_ms = sqlite_integer(updated_at_ms, "updated_at_ms")?;
         let mut connection = self.lock()?;
@@ -78,6 +86,61 @@ impl JobLedger {
             ],
         )?;
         let updated = query_job(&transaction, job_id)?.expect("errored remote job exists");
+        transaction.commit()?;
+        updated.try_into()
+    }
+
+    pub fn defer_remote_retry(
+        &self,
+        job_id: &str,
+        error_code: &str,
+        error_message: &str,
+        retry_at_ms: u64,
+        updated_at_ms: u64,
+    ) -> Result<RecordingJobRecord, JobLedgerError> {
+        validate_remote_error_metadata(error_code, error_message)?;
+        if retry_at_ms <= updated_at_ms {
+            return Err(JobLedgerError::InvalidRecord(
+                "remote retry deferral must be scheduled in the future",
+            ));
+        }
+        let retry_at_ms = sqlite_integer(retry_at_ms, "next_attempt_at_ms")?;
+        let updated_at_ms = sqlite_integer(updated_at_ms, "updated_at_ms")?;
+        let mut connection = self.lock()?;
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let current: RecordingJobRecord = query_job(&transaction, job_id)?
+            .ok_or_else(|| JobLedgerError::NotFound(job_id.into()))?
+            .try_into()?;
+        if current.cancellation_requested
+            || !matches!(
+                current.status,
+                RecordingJobStatus::Preprocessing
+                    | RecordingJobStatus::Uploading
+                    | RecordingJobStatus::ServerProcessing
+                    | RecordingJobStatus::Saving
+            )
+        {
+            return Err(JobLedgerError::InvalidRecord(
+                "remote retries can only be deferred for an active uncancelled job",
+            ));
+        }
+        let changed = transaction.execute(
+            "UPDATE recording_jobs SET next_attempt_at_ms = ?1, error_code = ?2, error_message = ?3, updated_at_ms = ?4 WHERE job_id = ?5 AND status = ?6 AND cancellation_requested = 0",
+            params![
+                retry_at_ms,
+                error_code,
+                error_message,
+                updated_at_ms,
+                job_id,
+                current.status.as_db(),
+            ],
+        )?;
+        if changed != 1 {
+            return Err(JobLedgerError::InvalidRecord(
+                "remote retry deferral lost its active job",
+            ));
+        }
+        let updated = query_job(&transaction, job_id)?.expect("deferred remote job exists");
         transaction.commit()?;
         updated.try_into()
     }
@@ -134,11 +197,18 @@ impl JobLedger {
 
     pub fn expire_pending_jobs(&self, now_ms: u64) -> Result<usize, JobLedgerError> {
         let now_ms = sqlite_integer(now_ms, "updated_at_ms")?;
-        let connection = self.lock()?;
-        Ok(connection.execute(
+        let mut connection = self.lock()?;
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let cancelled_lid = transaction.execute(
+            "UPDATE recording_jobs SET status = 'cancelled', cancellation_requested = 1, next_attempt_at_ms = NULL, error_code = 'PENDING_EXPIRED', error_message = NULL, updated_at_ms = ?1 WHERE expires_at_ms IS NOT NULL AND expires_at_ms <= ?1 AND status = 'preflighting' AND EXISTS (SELECT 1 FROM client_preflight_artifacts AS artifact WHERE artifact.job_id = recording_jobs.job_id AND artifact.lid_request_id IS NOT NULL)",
+            [now_ms],
+        )?;
+        let failed = transaction.execute(
             "UPDATE recording_jobs SET status = 'failed', error_code = 'PENDING_EXPIRED', error_message = NULL, updated_at_ms = ?1 WHERE expires_at_ms IS NOT NULL AND expires_at_ms <= ?1 AND status IN ('accepted', 'preflighting', 'blocked_setup_required', 'blocked_server_unavailable', 'blocked_sign_in_required', 'queued_local_fallback', 'queued_server')",
             [now_ms],
-        )?)
+        )?;
+        transaction.commit()?;
+        Ok(cancelled_lid.saturating_add(failed))
     }
 
     pub fn enforce_remote_retention(
@@ -165,9 +235,33 @@ impl JobLedger {
             "UPDATE recording_jobs SET status = 'cancelled', cancellation_requested = 0, next_attempt_at_ms = NULL, output_path = NULL, updated_at_ms = ?1 WHERE route = 'server_batch' AND expires_at_ms IS NOT NULL AND expires_at_ms <= ?1 AND status IN ('complete', 'partial')",
             [now_ms],
         )?;
+        // The filesystem cleanup below removes the private preflight spool. Its
+        // database authority must disappear in the same retention transaction,
+        // otherwise retry would trust paths that no longer exist. Unlocked jobs
+        // can safely run preflight again, so discard their incomplete attempts.
+        // Confirmed jobs retain non-audio stage evidence for audit, but cannot
+        // reuse the expired capture (the command layer rejects that retry).
+        let reset_unlocked_history = transaction.execute(
+            "UPDATE recording_jobs SET client_stage_history_complete = 0 WHERE route = 'server_batch' AND language_decision_locked = 0 AND expires_at_ms IS NOT NULL AND expires_at_ms <= ?1 AND EXISTS (SELECT 1 FROM client_preflight_artifacts AS artifact WHERE artifact.job_id = recording_jobs.job_id AND artifact.lid_request_id IS NULL)",
+            [now_ms],
+        )?;
+        transaction.execute(
+            "DELETE FROM job_stage_attempts WHERE job_id IN (SELECT artifact.job_id FROM client_preflight_artifacts AS artifact JOIN recording_jobs AS job ON job.job_id = artifact.job_id WHERE artifact.lid_request_id IS NULL AND job.route = 'server_batch' AND job.language_decision_locked = 0 AND job.expires_at_ms IS NOT NULL AND job.expires_at_ms <= ?1)",
+            [now_ms],
+        )?;
+        let cleared_client_preflights = transaction.execute(
+            "DELETE FROM client_preflight_artifacts WHERE lid_request_id IS NULL AND job_id IN (SELECT job_id FROM recording_jobs WHERE route = 'server_batch' AND expires_at_ms IS NOT NULL AND expires_at_ms <= ?1)",
+            [now_ms],
+        )?;
         prune_terminal_history(&transaction, None)?;
         transaction.commit()?;
-        Ok((job_ids, cancelled.saturating_add(expired_completed)))
+        Ok((
+            job_ids,
+            cancelled
+                .saturating_add(expired_completed)
+                .saturating_add(reset_unlocked_history)
+                .saturating_add(cleared_client_preflights),
+        ))
     }
 
     pub fn list_pending_remote_spool_cleanup(&self) -> Result<Vec<String>, JobLedgerError> {
@@ -187,6 +281,13 @@ impl JobLedger {
                 SELECT 1 FROM remote_spool_cleanup
                 UNION ALL
                 SELECT 1 FROM detached_remote_cancellations
+                UNION ALL
+                SELECT 1
+                FROM client_preflight_artifacts AS artifact
+                JOIN recording_jobs AS lid_job ON lid_job.job_id = artifact.job_id
+                WHERE artifact.lid_request_id IS NOT NULL
+                    AND (lid_job.status = 'failed'
+                        OR (lid_job.status = 'cancelled' AND lid_job.cancellation_requested = 1))
                 UNION ALL
                 SELECT 1
                 FROM prepared_remote_jobs AS prepared
@@ -220,7 +321,7 @@ pub(super) fn prune_terminal_history(
     connection: &Connection,
     protected_job_id: Option<&str>,
 ) -> Result<usize, JobLedgerError> {
-    let terminal = "status IN ('complete', 'partial', 'cancelled') AND NOT (cancellation_requested = 1 AND EXISTS (SELECT 1 FROM prepared_remote_jobs AS pending_cancel WHERE pending_cancel.job_id = recording_jobs.job_id AND (pending_cancel.server_job_id IS NOT NULL OR pending_cancel.create_attempt_base_url IS NOT NULL) AND pending_cancel.server_cancellation_acknowledged_at_ms IS NULL))";
+    let terminal = "status IN ('complete', 'partial', 'cancelled') AND NOT (cancellation_requested = 1 AND EXISTS (SELECT 1 FROM prepared_remote_jobs AS pending_cancel WHERE pending_cancel.job_id = recording_jobs.job_id AND (pending_cancel.server_job_id IS NOT NULL OR pending_cancel.create_attempt_base_url IS NOT NULL) AND pending_cancel.server_cancellation_acknowledged_at_ms IS NULL)) AND NOT (cancellation_requested = 1 AND EXISTS (SELECT 1 FROM client_preflight_artifacts AS pending_lid WHERE pending_lid.job_id = recording_jobs.job_id AND pending_lid.lid_request_id IS NOT NULL))";
     let deleted = if let Some(protected_job_id) = protected_job_id {
         let candidates = format!(
             "{terminal} AND job_id <> ?1 AND job_id NOT IN (SELECT job_id FROM recording_jobs WHERE {terminal} AND job_id <> ?1 ORDER BY updated_at_ms DESC, job_id DESC LIMIT ?2)"

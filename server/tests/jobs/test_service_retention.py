@@ -11,6 +11,8 @@ from unittest.mock import patch
 from yap_server.jobs import JobServiceError, RecordingJobService
 from yap_server.pools.batch_asr import BatchAsrPool
 
+from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
+
 from .service_fixtures import _DelayedCancellationWorker, _Processor, _create_request
 
 
@@ -36,7 +38,7 @@ class RecordingJobRetentionTests(unittest.TestCase):
 
             fresh = service.create(
                 _create_request(
-                    session_id="s-phase5-fresh",
+                    session_id="s-batch-fresh",
                     retention_expires_at_utc="2026-08-13T21:00:00Z",
                 ),
                 idempotency_key="fresh-create",
@@ -97,7 +99,13 @@ class RecordingJobRetentionTests(unittest.TestCase):
             root = Path(temporary)
             clock = {"now": "2026-07-14T21:15:00Z"}
             worker = _DelayedCancellationWorker()
-            pool = BatchAsrPool(worker, max_workers=1, max_queued=0)
+            pool = BatchAsrPool(
+                worker,
+                max_workers=1,
+                max_queued=0,
+                route_resolver=test_asr_route,
+                asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
+            )
             try:
                 service = RecordingJobService(
                     root,
@@ -116,7 +124,7 @@ class RecordingJobRetentionTests(unittest.TestCase):
                         track_id="track-1",
                         sequence_start=0,
                         sequence_end=159,
-                        idempotency_key="1/s-phase5-create/track-1/0/159",
+                        idempotency_key="1/s-batch-create/track-1/0/159",
                         content_sha256=hashlib.sha256(chunk).hexdigest(),
                         audio_codec="pcm_s16le",
                         sample_rate_hz=16000,
@@ -168,7 +176,7 @@ class RecordingJobRetentionTests(unittest.TestCase):
             with patch("yap_server.jobs.service._MAX_STORED_JOBS", 1):
                 first = service.create(_create_request())
                 with self.assertRaises(JobServiceError) as full:
-                    service.create(_create_request(session_id="s-phase5-second"))
+                    service.create(_create_request(session_id="s-batch-second"))
 
             self.assertEqual(full.exception.status, 429)
             self.assertEqual(full.exception.code, "SERVER_STORAGE_LIMIT")

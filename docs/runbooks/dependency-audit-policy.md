@@ -44,6 +44,38 @@ Linux support, or changing the Tauri/GTK dependency graph, requires
 reevaluating this alert before release and either removing the GTK path or
 upgrading it to a graph that uses `glib` 0.20.0 or later.
 
+### July 20, 2026 target classification
+
+Focused inspection of the current Phase 6 worktree produced the following
+public-safe evidence:
+
+- the exact locked `x86_64-pc-windows-msvc` graph contained 994 package lines
+  and no package line beginning with `glib v`;
+- the default host reverse-dependency query also found no reachable `glib`;
+- the target-all reverse graph reaches `glib` 0.18.5 only through the GTK 0.18,
+  WebKitGTK 2.0.2, Wry 0.55.1, and Tauri 2.11.5 desktop path; and
+- a normal locked Windows `cargo check` completed without a GLib or native
+  compiler warning, while the release-contract test continued to prove that CI
+  fails closed if any `glib` version becomes Windows-reachable.
+
+This evidence classifies the current alert as follows:
+
+- **Supported Windows product defect:** no. The affected crate is not in the
+  resolved Windows feature/target graph.
+- **Upstream target-all warning:** yes. `glib` 0.18.5 remains in the locked
+  Linux GTK/Tauri path and remains covered by `RUSTSEC-2024-0429`.
+- **Missing platform gate:** Linux release support remains gated. Yap must not
+  advertise or enable Linux release support until the GTK path is removed or
+  upgraded and the Linux build/runtime matrix passes.
+- **Pin or patch action:** none on this evidence. Yap has no direct `glib`
+  dependency, and editing or pruning lockfile entries would not change the
+  active Tauri dependency graph. A package entry in `Cargo.lock` is not proof
+  that the package is reachable for a supported target and active feature set.
+
+The classification must be repeated if Tauri/Wry features change, Linux becomes
+a supported target, or the exact Windows graph guard reports a reachable
+`glib` package.
+
 ## Ignored Advisories
 
 The CI ignore list is empty. `RUSTSEC-2026-0194` and `RUSTSEC-2026-0195` were

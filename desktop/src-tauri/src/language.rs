@@ -1,3 +1,12 @@
+pub(crate) mod acoustic_language_classification;
+pub mod live_catalog;
+pub mod live_diarization;
+pub mod live_evidence;
+pub mod span_contract;
+
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RecordingLanguageError;
 
@@ -23,7 +32,8 @@ pub enum RecordingLanguageDisposition {
     ManualOverride,
     DetectedSuggestionConfirmed,
     ExplicitDynamic,
-    LegacyPhase5Default,
+    #[serde(rename = "legacyImplicitEnglishDefault", alias = "legacyPhase5Default")]
+    LegacyImplicitEnglishDefault,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
@@ -59,7 +69,17 @@ impl RecordingLanguageDecision {
         language_bcp47: Option<String>,
         disposition: RecordingLanguageDisposition,
     ) -> Result<Self, RecordingLanguageError> {
-        let valid = match (mode, language_bcp47.as_deref(), disposition) {
+        let decision = Self {
+            mode,
+            language_bcp47,
+            disposition,
+        };
+        decision.validate()?;
+        Ok(decision)
+    }
+
+    pub(crate) fn validate(&self) -> Result<(), RecordingLanguageError> {
+        let valid = match (self.mode, self.language_bcp47.as_deref(), self.disposition) {
             (
                 RecordingLanguageMode::Fixed,
                 Some(language),
@@ -70,7 +90,7 @@ impl RecordingLanguageDecision {
             (
                 RecordingLanguageMode::Fixed,
                 Some("en-US"),
-                RecordingLanguageDisposition::LegacyPhase5Default,
+                RecordingLanguageDisposition::LegacyImplicitEnglishDefault,
             ) => true,
             (
                 RecordingLanguageMode::Dynamic,
@@ -82,11 +102,7 @@ impl RecordingLanguageDecision {
         if !valid {
             return Err(RecordingLanguageError);
         }
-        Ok(Self {
-            mode,
-            language_bcp47,
-            disposition,
-        })
+        Ok(())
     }
 
     pub fn primary(language_bcp47: String) -> Result<Self, RecordingLanguageError> {
@@ -113,18 +129,18 @@ impl RecordingLanguageDecision {
         }
     }
 
-    pub(crate) fn legacy_phase5_default() -> Self {
+    pub(crate) fn legacy_implicit_english_default() -> Self {
         Self {
             mode: RecordingLanguageMode::Fixed,
             language_bcp47: Some("en-US".into()),
-            disposition: RecordingLanguageDisposition::LegacyPhase5Default,
+            disposition: RecordingLanguageDisposition::LegacyImplicitEnglishDefault,
         }
     }
 
-    pub(crate) fn is_legacy_phase5_default(&self) -> bool {
+    pub(crate) fn is_legacy_implicit_english_default(&self) -> bool {
         self.mode == RecordingLanguageMode::Fixed
             && self.language_bcp47.as_deref() == Some("en-US")
-            && self.disposition == RecordingLanguageDisposition::LegacyPhase5Default
+            && self.disposition == RecordingLanguageDisposition::LegacyImplicitEnglishDefault
     }
 }
 

@@ -22,6 +22,9 @@ pub(super) fn queued_job(job_id: &str, source: std::path::PathBuf) -> NewRecordi
         updated_at_ms: 1_720_000_000_000,
         expires_at_ms: Some(1_720_604_800_000),
         language_decision: crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+        language_decision_locked: true,
+        client_stage_history_complete: true,
+        asr_catalog_binding: Some(crate::jobs::AsrCatalogBinding::for_test()),
     }
 }
 
@@ -108,10 +111,8 @@ pub(super) fn write_pcm_wav(path: &std::path::Path, pcm: &[u8]) {
 
 pub(super) fn temp_dir(label: &str) -> std::path::PathBuf {
     let nonce = NEXT_TEMP.fetch_add(1, Ordering::Relaxed);
-    let path = std::env::temp_dir().join(format!(
-        "yap-phase5-drain-{label}-{}-{nonce}",
-        std::process::id()
-    ));
+    let path =
+        std::env::temp_dir().join(format!("yap-drain-{label}-{}-{nonce}", std::process::id()));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).unwrap();
     path

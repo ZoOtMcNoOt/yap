@@ -25,6 +25,20 @@ export type FixedBatchLanguageOption = {
   qualityTier: AsrQualityTier;
 };
 
+export type RecordingImportLanguageOption =
+  | {
+      id: string;
+      mode: "fixed";
+      languageBcp47: string;
+      qualityTier: AsrQualityTier;
+    }
+  | {
+      id: "dynamic";
+      mode: "dynamic";
+      languageBcp47: null;
+      qualityTier: AsrQualityTier;
+    };
+
 const qualityRank: Record<AsrQualityTier, number> = {
   transcriptionReady: 3,
   broadCoverage: 2,
@@ -48,6 +62,46 @@ export function fixedBatchLanguageOptions(
     }
   }
   return [...options.values()];
+}
+
+export function fixedBatchQualityLabel(quality: AsrQualityTier): string {
+  switch (quality) {
+    case "transcriptionReady":
+      return "Transcription ready";
+    case "broadCoverage":
+      return "Broad coverage";
+    case "preview":
+      return "Preview";
+  }
+}
+
+export function recordingImportLanguageOptions(
+  catalog: AsrCapabilityCatalog | null | undefined,
+): RecordingImportLanguageOption[] {
+  const fixed = fixedBatchLanguageOptions(catalog).map((option) => ({
+    ...option,
+    id: `fixed:${option.languageBcp47}`,
+    mode: "fixed" as const,
+  }));
+  const dynamicQuality = (catalog?.providers ?? [])
+    .flatMap((provider) => provider.capabilities)
+    .filter((capability) => capability.mode === "dynamicBatch")
+    .reduce<AsrQualityTier | null>((best, capability) => (
+      best === null || qualityRank[capability.qualityTier] > qualityRank[best]
+        ? capability.qualityTier
+        : best
+    ), null);
+  return dynamicQuality === null
+    ? fixed
+    : [
+        ...fixed,
+        {
+          id: "dynamic",
+          mode: "dynamic",
+          languageBcp47: null,
+          qualityTier: dynamicQuality,
+        },
+      ];
 }
 
 export function initialPrimaryLanguageSelection(status: PrimaryLanguageStatus): string | null {

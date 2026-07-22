@@ -53,6 +53,39 @@
           "sha256": "d66831054096a7b85cc213faae5a5d6156486dfb85be57636b84da9a8bf06c15"
         }
       ]
+    },
+    {
+      "id": "torchaudio-mel-filterbank",
+      "repository": "https://github.com/pytorch/audio",
+      "revision": {
+        "status": "reviewed",
+        "value": "34c52a67e8941bbd8e6adaca0eb0b9eabec11d78",
+        "evidence": {
+          "commitUrl": "https://github.com/pytorch/audio/commit/34c52a67e8941bbd8e6adaca0eb0b9eabec11d78",
+          "licensePath": "LICENSE",
+          "licenseSha256": "93a58861a858cc108e6b6b833e08e76e8b2a66339e4a8007c8a5a8c1ff9c40d6",
+          "reviewScope": "upstream revision and license attribution",
+          "localFileEvidence": "integrity-only",
+          "upstreamFiles": [
+            {
+              "path": "src/torchaudio/functional/functional.py",
+              "sha256": "dc462a67270b2250279c47725346b26bc6cdc9dce77dd08602d0fcce68f78711"
+            }
+          ]
+        }
+      },
+      "license": "BSD-2-Clause",
+      "notice": "THIRD_PARTY_NOTICES.md",
+      "files": [
+        {
+          "path": "server/runtime/cohere-vllm/compatibility/torchaudio/functional.py",
+          "sha256": "edfc85ebae9392885e81b551670e4a833b4b4dde986df0364f9df79661b5cdb3"
+        },
+        {
+          "path": "server/runtime/cohere-vllm/compatibility/torchaudio/__init__.py",
+          "sha256": "93be1213e5ae8d9d5b1d81487e6aabd7f7ce231682116368b470226ce84fb94c"
+        }
+      ]
     }
   ]
 }

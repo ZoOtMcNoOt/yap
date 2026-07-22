@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "runtime": {
+    "image": "nvcr.io/nvidia/pytorch",
+    "sourceTag": "26.06-py3",
+    "source": "https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch/tags",
+    "platform": "linux/arm64",
+    "pythonVersion": "3.12",
+    "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+    "cudaVersion": "13.3.0",
+    "torchCudaVersion": "13.3",
+    "overlayPackages": {
+      "audioread": "3.1.0",
+      "joblib": "1.5.3",
+      "lazy-loader": "0.5",
+      "librosa": "0.11.0",
+      "msgpack": "1.2.1",
+      "narwhals": "2.24.0",
+      "pooch": "1.9.0",
+      "scikit-learn": "1.9.0",
+      "sentencepiece": "0.2.1",
+      "soundfile": "0.14.0",
+      "soxr": "1.1.0",
+      "threadpoolctl": "3.6.0",
+      "tokenizers": "0.22.2",
+      "transformers": "5.13.1"
+    },
+    "digest": "sha256:dcae8df08ef61b019b8eb109113428cba4ef0e37484c6e722406150dd5ada759",
+    "license": "NVIDIA Software License Agreement and Product-Specific Terms for NVIDIA AI Products",
+    "requirementsLock": "server/runtime/asr/requirements.lock"
+  },
+  "pool": {
+    "id": "nemotron-batch",
+    "role": "private-fixed-and-dynamic-reference-asr",
+    "productionDefault": false,
+    "engine": "transformers",
+    "model": {
+      "id": "nvidia/nemotron-3.5-asr-streaming-0.6b",
+      "revision": "f3d333391852ba876df169dcc9ba902d25b6ab0b",
+      "license": "OpenMDW-1.1",
+      "source": "https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b",
+      "distribution": {
+        "id": "nvidia/nemotron-3.5-asr-streaming-0.6b",
+        "revision": "f3d333391852ba876df169dcc9ba902d25b6ab0b",
+        "source": "https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b",
+        "provenance": "The Nemotron reference worker consumes the canonical NVIDIA revision directly. No mirror, conversion, or quantized derivative is treated as this locked model."
+      }
+    },
+    "supportedLanguages": [
+      "ar-AR",
+      "auto",
+      "bg-BG",
+      "cs-CZ",
+      "da-DK",
+      "de-DE",
+      "en-GB",
+      "en-US",
+      "es-ES",
+      "es-US",
+      "et-EE",
+      "fi-FI",
+      "fr-CA",
+      "fr-FR",
+      "hi-IN",
+      "hr-HR",
+      "hu-HU",
+      "it-IT",
+      "ja-JP",
+      "ko-KR",
+      "nb-NO",
+      "nl-NL",
+      "pl-PL",
+      "pt-BR",
+      "pt-PT",
+      "ro-RO",
+      "ru-RU",
+      "sk-SK",
+      "sv-SE",
+      "tr-TR",
+      "uk-UA",
+      "vi-VN",
+      "zh-CN"
+    ],
+    "artifacts": [
+      {
+        "path": "README.md",
+        "size": 53753,
+        "sha256": "e8335332bed2d69e790f61d7619098dc464f3075985f68856e53213c7aeddccb"
+      },
+      {
+        "path": "config.json",
+        "size": 1376,
+        "sha256": "62d186fd91f518e00e7867500f1f5819225e8ee95ea3e21b546514bf2048e845"
+      },
+      {
+        "path": "generation_config.json",
+        "size": 193,
+        "sha256": "993e5d4cb74a6fe9d6e7084a76b3313c1446740679be4676570c23b664fdc07e"
+      },
+      {
+        "path": "model.safetensors",
+        "size": 2552062944,
+        "sha256": "9eebdd6590289cb3030f310858f3df93256600a800a3e8200c5993d5f967e174"
+      },
+      {
+        "path": "processor_config.json",
+        "size": 2519,
+        "sha256": "ec47870f1091ea4f25539208387b45b902c92d0e3f997a30061ef88f73437ab0"
+      },
+      {
+        "path": "tokenizer.json",
+        "size": 752051,
+        "sha256": "3f3d481deb073b64c2082e8c7860d487a3a62774bf4e9e4faac83007e181f246"
+      },
+      {
+        "path": "tokenizer_config.json",
+        "size": 881,
+        "sha256": "5c641c5b3f50702a60082690d27c1ce7fcb5a92c4a624793bcae0f21eda3d6e0"
+      }
+    ],
+    "limitations": [
+      "Only the 19 transcription-ready and 13 broad-coverage locales accepted by ADR 0024 are enabled; adaptation-ready prompt entries are excluded.",
+      "The automatic route preserves token-level language tags as uncalibrated evidence. Missing, disabled, or structurally invalid tags remain Unknown.",
+      "This is a Transformers 5.13.1 BF16 correctness and resource reference, not a promoted Triton, NIM, NeMo toolkit service, quantized, or production-capacity runtime.",
+      "Automatic inference is limited to bounded finalized utterances; a whole long recording cannot be relabeled as one dynamic utterance.",
+      "Persistent warm residency, authenticated ownership, mixed-user capacity, and production supervision remain later gates."
+    ]
+  },
+  "fixture": {
+    "path": "server/tests/fixtures/asr/2086-149220-0033.wav",
+    "source": "https://dldata-public.s3.us-east-2.amazonaws.com/2086-149220-0033.wav",
+    "license": "CC-BY-4.0",
+    "sha256": "5fceacff0315d49cb59fcc505bcecf1ed5f2f35c2897b1e65a59f30e5d922150",
+    "goldenTranscript": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait."
+  }
+}

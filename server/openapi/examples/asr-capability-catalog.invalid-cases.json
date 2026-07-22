@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "baseExample": "asr-capabilities.ok.json",
+  "cases": [
+    {
+      "id": "noncanonical-language-tag",
+      "mutations": [
+        {
+          "pointer": "/providers/0/capabilities/0/languageBcp47",
+          "value": "EN-us"
+        }
+      ],
+      "expectedNativeError": "malformed",
+      "violatesOpenApiSchema": true
+    },
+    {
+      "id": "dynamic-without-segment-language-tags",
+      "mutations": [
+        {
+          "pointer": "/providers/0/capabilities/0/mode",
+          "value": "dynamicBatch"
+        }
+      ],
+      "expectedNativeError": "malformed",
+      "violatesOpenApiSchema": true
+    },
+    {
+      "id": "unknown-quality-tier",
+      "mutations": [
+        {
+          "pointer": "/providers/0/capabilities/0/qualityTier",
+          "value": "perfect"
+        }
+      ],
+      "expectedNativeError": "malformed",
+      "violatesOpenApiSchema": true
+    },
+    {
+      "id": "mutable-model-revision",
+      "mutations": [
+        {
+          "pointer": "/providers/0/modelRevision",
+          "value": "main"
+        }
+      ],
+      "expectedNativeError": "malformed",
+      "violatesOpenApiSchema": true
+    },
+    {
+      "id": "model-source-with-user-information",
+      "mutations": [
+        {
+          "pointer": "/providers/0/modelSource",
+          "value": "https://identity.invalid@example.com/model"
+        }
+      ],
+      "expectedNativeError": "malformed",
+      "violatesOpenApiSchema": false
+    },
+    {
+      "id": "stale-catalog-revision",
+      "mutations": [
+        {
+          "pointer": "/providers/0/capabilities/0/wordAlignment",
+          "value": true
+        }
+      ],
+      "expectedNativeError": "revisionMismatch",
+      "violatesOpenApiSchema": false
+    }
+  ]
+}

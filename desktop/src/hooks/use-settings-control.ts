@@ -2,10 +2,13 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useAcousticLanguageDetectorControl } from "@/hooks/use-acoustic-language-detector-control";
 import { useLiveControl } from "@/hooks/use-live-control";
+import { useLiveLanguageRouting } from "@/hooks/use-live-language-routing";
 import { useLocalComputeTargets } from "@/hooks/use-local-compute-targets";
 import { usePrimaryLanguage } from "@/hooks/use-primary-language";
 import { useServerConnection } from "@/hooks/use-server-connection";
+import { useSileroVadControl } from "@/hooks/use-silero-vad-control";
 import { shouldRequestPrimaryLanguageSetup } from "@/language-preference";
 import {
   isFallbackModelBusy,
@@ -60,17 +63,22 @@ export function useSettingsControl({
 
   const { refreshServerState, serverLabel } = useServerConnection();
   const primaryLanguage = usePrimaryLanguage();
+  const liveLanguageRouting = useLiveLanguageRouting();
   const live = useLiveControl();
+  const vad = useSileroVadControl();
+  const languageDetector = useAcousticLanguageDetectorControl();
   const fallbackModelBusy = isFallbackModelBusy(fallbackModel, fallbackCommandPending);
   const compute = useLocalComputeTargets(fallbackModelBusy);
   const refreshPortsRef = useRef({
     loadComputeTargets: compute.loadComputeTargets,
+    loadLiveLanguageRouting: liveLanguageRouting.load,
     loadPrimaryLanguage: primaryLanguage.load,
     refreshLiveState: live.refreshLiveState,
     refreshServerState,
   });
   refreshPortsRef.current = {
     loadComputeTargets: compute.loadComputeTargets,
+    loadLiveLanguageRouting: liveLanguageRouting.load,
     loadPrimaryLanguage: primaryLanguage.load,
     refreshLiveState: live.refreshLiveState,
     refreshServerState,
@@ -139,6 +147,7 @@ export function useSettingsControl({
         refreshPortsRef.current.refreshLiveState(),
         refreshPortsRef.current.loadComputeTargets(),
         refreshPortsRef.current.loadPrimaryLanguage().catch(() => null),
+        refreshPortsRef.current.loadLiveLanguageRouting().catch(() => null),
       ]);
       if (
         !languagePromptedRef.current &&
@@ -305,12 +314,14 @@ export function useSettingsControl({
   const confirmPrimaryLanguageSetting = useCallback(async (languageBcp47: string) => {
     try {
       await primaryLanguage.confirm(languageBcp47);
+      await liveLanguageRouting.load();
       toast.success("Primary language saved");
     } catch (error) {
       toast.error(`Language update failed: ${String(error)}`);
       await primaryLanguage.load().catch(() => null);
+      await liveLanguageRouting.load().catch(() => null);
     }
-  }, [primaryLanguage.confirm, primaryLanguage.load]);
+  }, [liveLanguageRouting.load, primaryLanguage.confirm, primaryLanguage.load]);
 
   const skipSetup = useCallback(() => {
     localStorage.setItem(setupSkipKey, "true");
@@ -318,7 +329,10 @@ export function useSettingsControl({
 
   return {
     auth,
-    busy: fallbackModelBusy || compute.computeTargetPending || primaryLanguage.pending,
+    busy: fallbackModelBusy
+      || compute.computeTargetPending
+      || primaryLanguage.pending
+      || liveLanguageRouting.pending,
     compute: {
       targets: compute.localComputeTargets,
       updateTarget: compute.updateLocalComputeTarget,
@@ -357,9 +371,12 @@ export function useSettingsControl({
       pending: primaryLanguage.pending,
       status: primaryLanguage.status,
     },
+    languageDetector,
+    languageRouting: liveLanguageRouting,
     refresh,
     serverLabel,
     setupPromptRequest,
     skipSetup,
+    vad,
   };
 }

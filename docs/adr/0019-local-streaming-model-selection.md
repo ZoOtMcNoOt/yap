@@ -1,7 +1,9 @@
 # ADR 0019: Local streaming model selection
 
 **Date:** 2026-07-08
-**Status:** Accepted (canonical Phase 2 local fallback)
+**Status:** Accepted (canonical Phase 2 local fallback; narrowly amended by
+[ADR 0024](0024-global-language-routing.md) for Phase 6 acoustic language
+evidence)
 **Amends:** [ADR 0001](0001-dual-stt-backends.md), [ADR 0002](0002-crispasr-unified-stt-runtime.md), [ADR 0003](0003-long-term-voice-architecture.md), [ADR 0006](0006-silero-agents-state-machine.md), [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0018](0018-three-repo-topology.md)
 
 ## Context
@@ -33,6 +35,23 @@ Use **Nemotron 3.5 ASR Streaming 0.6B INT8** as the single pinned local streamin
 | Punctuation | Native model punctuation; no external punctuation companion |
 | Client selector | No local model router; expose only practical compute/status controls |
 | Server routing | Server owns model fusion, larger models, batch ASR, diarization, and future routing experiments |
+
+### Phase 6 language-evidence amendment
+
+The single-local-ASR and no-ASR-router decisions remain in force. Phase 6 may
+add one separately pinned, bounded acoustic language-identification component
+beside Nemotron so offline live dictation can detect language changes and emit
+source-time language spans. That auxiliary component does not transcribe audio,
+select among local ASR models, own capture/session lifecycle, or become a second
+durable state authority. `LiveRuntime` owns its load/unload, resource budget,
+failure fallback, and every Nemotron stream transition.
+
+The amendment is promoted only with an immutable artifact/license lock,
+representative code-switch and non-speech evidence, measured incremental
+memory/CPU/energy beside the resident Nemotron model, deterministic temporal
+smoothing, and bounded stream handoff/replay behavior. Failure or ambiguity
+falls back visibly to the confirmed primary locale; it never invents a language
+decision.
 
 The local pin remains fail-closed with SHA-256 verification. Runtime startup should verify cached artifacts once, write marker files, then avoid rehashing large model files on every launch.
 

@@ -32,6 +32,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { LiveCaptureMode, LiveInputDeviceView, LiveSessionView } from "@/lib/live-session";
+import type { AcousticLanguageDetectorControl } from "@/hooks/use-acoustic-language-detector-control";
+import type { LiveLanguageRoutingControl } from "@/hooks/use-live-language-routing";
+import type { SileroVadControl } from "@/hooks/use-silero-vad-control";
 import type { FallbackModelView, LocalComputeTargetView } from "@/lib/setup-model";
 import { shouldRequestPrimaryLanguageSetup, type PrimaryLanguageStatus } from "@/language-preference";
 
@@ -42,6 +45,8 @@ export type SettingsSheetProps = {
   fallbackModel: FallbackModelView | null;
   liveBusy: boolean;
   liveInputDevices: LiveInputDeviceView[];
+  languageDetector: AcousticLanguageDetectorControl;
+  liveLanguageRouting: LiveLanguageRoutingControl;
   liveSettingsError: string;
   liveView: LiveSessionView;
   localComputeTargets: LocalComputeTargetView[];
@@ -71,6 +76,7 @@ export type SettingsSheetProps = {
   open: boolean;
   serverLabel: string;
   status: string;
+  sileroVad: SileroVadControl;
 };
 
 export function SettingsSheet({
@@ -80,6 +86,8 @@ export function SettingsSheet({
   fallbackModel,
   liveBusy,
   liveInputDevices,
+  languageDetector,
+  liveLanguageRouting,
   liveSettingsError,
   liveView,
   localComputeTargets,
@@ -109,6 +117,7 @@ export function SettingsSheet({
   open,
   serverLabel,
   status,
+  sileroVad,
 }: SettingsSheetProps) {
   const fallbackStatus = fallbackModel?.status;
   const languageSetupRequired = shouldRequestPrimaryLanguageSetup(primaryLanguageStatus);
@@ -173,12 +182,12 @@ export function SettingsSheet({
         >
           <DialogTitle className="sr-only">Settings</DialogTitle>
           <DialogDescription className="sr-only">Yap settings.</DialogDescription>
-          <div className="grid min-h-0 grid-cols-[260px_minmax(0,1fr)]">
+          <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[260px_minmax(0,1fr)] md:grid-rows-1">
             <SettingsNavigation onSelect={setSection} section={section} />
-            <div className="min-h-0 overflow-y-auto p-10">
+            <div className="min-h-0 overflow-y-auto p-4 sm:p-6 md:p-10">
               <div className="mx-auto grid max-w-[820px] gap-8">
                 <header>
-                  <h2 className="text-balance text-3xl font-medium tracking-normal">
+                  <h2 className="text-balance text-2xl font-medium tracking-normal sm:text-3xl">
                     {settingsSectionTitle(section)}
                   </h2>
                 </header>
@@ -188,6 +197,7 @@ export function SettingsSheet({
                     liveActive={liveActive}
                     liveBusy={liveBusy}
                     liveInputDevices={liveInputDevices}
+                    liveLanguageRouting={liveLanguageRouting}
                     liveOverlayAction={liveOverlayAction}
                     liveSettingsError={liveSettingsError}
                     liveView={liveView}
@@ -213,11 +223,13 @@ export function SettingsSheet({
                     busy={busy}
                     fallbackLifecycle={fallbackLifecycle}
                     fallbackLocked={liveActive}
+                    languageDetector={languageDetector}
                     liveActive={liveActive}
                     localComputeTargets={localComputeTargets}
                     onFallbackAction={runFallbackAction}
                     onSetLocalComputeTarget={onSetLocalComputeTarget}
                     server={server}
+                    sileroVad={sileroVad}
                   />
                 ) : null}
 

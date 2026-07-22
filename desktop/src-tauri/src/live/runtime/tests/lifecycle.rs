@@ -165,7 +165,7 @@ fn stop_finalizes_before_a_concurrent_start_activates_the_next_session() {
                 StreamMessage::Finish { session, done } => {
                     assert_eq!(session, expected_session);
                     finalized_for_worker.lock().unwrap().push(session);
-                    done.send(StreamFinishStatus::Completed).unwrap();
+                    done.send(StreamFinishStatus::Completed.into()).unwrap();
                     expected_session += 1;
                 }
             }

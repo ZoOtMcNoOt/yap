@@ -4,11 +4,11 @@ use std::time::{Duration, Instant};
 use crate::audio::capture::CaptureAdapter;
 use crate::audio::recording::RecordingSinkHandle;
 
-use super::super::stream::LiveStreamEngine;
 use super::asr_adapter::{
     AdapterDrainStatus, PendingAsrAdapter, SessionAsrAdapter, ASR_ADAPTER_DRAIN_TIMEOUT,
 };
 use super::capture_installation::CaptureInstallation;
+use super::inference::LiveInferenceBundle;
 use super::level_channel::LevelWorker;
 use super::stream_session::{SessionStream, StreamFinishStatus, StreamFinisher};
 use super::warmup::SharedWarmup;
@@ -49,7 +49,17 @@ impl LiveRuntimeResources {
     }
 
     pub(super) fn is_capturing(&self) -> bool {
-        self.capture.is_some()
+        if self.capture.is_some() {
+            return true;
+        }
+        #[cfg(test)]
+        {
+            self.has_capture_for_test
+        }
+        #[cfg(not(test))]
+        {
+            false
+        }
     }
 
     pub(super) fn begin_capture_session(&mut self) -> Option<u64> {
@@ -111,12 +121,12 @@ impl LiveRuntimeResources {
         &mut self,
         app: tauri::AppHandle,
         session: u64,
-        engine: LiveStreamEngine,
-        model_warmup: Arc<SharedWarmup<LiveStreamEngine>>,
+        inference: LiveInferenceBundle,
+        model_warmup: Arc<SharedWarmup<LiveInferenceBundle>>,
         active_session: Arc<AtomicU64>,
     ) {
         self.stream = Some(SessionStream::start(
-            engine,
+            inference,
             session,
             active_session,
             app,
@@ -231,6 +241,16 @@ impl LiveRuntimeResources {
 
     pub(super) fn recording_is_present(&self) -> bool {
         self.recording.is_some()
+    }
+
+    pub(super) fn append_language_evidence(
+        &self,
+        evidence: crate::language::live_evidence::LiveLanguageEvidence,
+    ) -> Result<(), String> {
+        self.recording
+            .as_ref()
+            .ok_or_else(|| "live recording is unavailable".to_string())?
+            .append_language_evidence(evidence)
     }
 
     pub(super) fn take_recording(&mut self) -> Option<RecordingSinkHandle> {

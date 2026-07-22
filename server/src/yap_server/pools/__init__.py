@@ -10,6 +10,8 @@ from yap_server.pools.batch_asr import (
     ContainerBatchAsrWorker,
     DuplicatePoolJob,
     PoolBackpressure,
+    ProviderCapacityUnavailable,
+    WorkerCancellationAcknowledged,
     WorkerExecutionError,
 )
 
@@ -19,5 +21,7 @@ __all__ = [
     "ContainerBatchAsrWorker",
     "DuplicatePoolJob",
     "PoolBackpressure",
+    "ProviderCapacityUnavailable",
+    "WorkerCancellationAcknowledged",
     "WorkerExecutionError",
 ]

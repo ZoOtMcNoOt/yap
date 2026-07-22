@@ -4,6 +4,7 @@ pub mod audio;
 mod authorization;
 mod bounded_file;
 mod commands;
+mod exclusive_file_lease;
 mod file_actions;
 mod install_identity;
 pub mod jobs;
@@ -12,6 +13,8 @@ pub mod language_preferences;
 pub mod live;
 pub(crate) mod media_protocol;
 mod paths;
+#[cfg(test)]
+mod private_evidence;
 pub(crate) mod recording_access;
 pub mod runtime;
 mod runtime_policy;

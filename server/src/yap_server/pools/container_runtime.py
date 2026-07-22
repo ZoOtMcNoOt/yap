@@ -6,13 +6,14 @@ import threading
 import time
 from typing import BinaryIO, Callable
 
+from yap_server.limits import MAX_WORKER_RESULT_BYTES
 from yap_server.pools.batch_contract import (
     WorkerContainmentError,
     WorkerExecutionError,
 )
 
 
-MAX_WORKER_OUTPUT_BYTES = 1024 * 1024
+MAX_WORKER_OUTPUT_BYTES = MAX_WORKER_RESULT_BYTES
 _PROCESS_READ_BYTES = 64 * 1024
 _CONTAINER_CLEANUP_TIMEOUT_SECONDS = 30
 _CONTAINER_ID = re.compile(r"^[0-9a-f]{12,64}$")
@@ -59,10 +60,14 @@ def reconcile_owned_containers(
     docker_binary: str,
     *,
     storage_namespace: str,
+    owner_value: str = OWNER_VALUE,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> int:
-    if CONTAINER_LABEL_VALUE.fullmatch(storage_namespace) is None:
-        raise ValueError("container storage namespace is invalid")
+    if (
+        CONTAINER_LABEL_VALUE.fullmatch(storage_namespace) is None
+        or CONTAINER_LABEL_VALUE.fullmatch(owner_value) is None
+    ):
+        raise ValueError("container owner or storage namespace is invalid")
     try:
         completed = runner(
             [
@@ -72,7 +77,7 @@ def reconcile_owned_containers(
                 "--all",
                 "--quiet",
                 "--filter",
-                f"label={OWNER_LABEL}={OWNER_VALUE}",
+                f"label={OWNER_LABEL}={owner_value}",
                 "--filter",
                 f"label={STORAGE_LABEL}={storage_namespace}",
             ],

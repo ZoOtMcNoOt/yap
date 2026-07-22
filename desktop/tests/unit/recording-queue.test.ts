@@ -1,11 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
+const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
+
+vi.mock("@tauri-apps/api/core", () => ({ invoke, isTauri: () => true }));
+
 import {
+  confirmRecordingJobLanguage,
   discardLegacyRecordingQueue,
   legacyRecordingQueueKey,
   maxStoredQueueJobs,
   migrateLegacyRecordingQueue,
   parseLegacyRecordingQueue,
+  pickRecordingImports,
 } from "@/recording-queue";
 
 function storageWith(value: string | null) {
@@ -19,6 +25,47 @@ function storageWith(value: string | null) {
 }
 
 describe("recording queue migration", () => {
+  it("sends language confirmation with the exact job and current catalog identity", async () => {
+    invoke.mockReset();
+    invoke.mockResolvedValueOnce({ id: "job-language" });
+
+    await confirmRecordingJobLanguage("job-language", "fr-FR", "a".repeat(64));
+
+    expect(invoke).toHaveBeenCalledWith("recording_job_confirm_language", {
+      catalogRevision: "a".repeat(64),
+      jobId: "job-language",
+      languageBcp47: "fr-FR",
+    });
+  });
+
+  it("binds fixed and automatic imports to an explicit catalog mode", async () => {
+    invoke.mockReset();
+    invoke.mockResolvedValue([]);
+
+    await pickRecordingImports({
+      mode: "fixed",
+      languageBcp47: "fr-FR",
+      catalogRevision: "a".repeat(64),
+    });
+    await pickRecordingImports({
+      mode: "dynamic",
+      catalogRevision: "b".repeat(64),
+    });
+
+    expect(invoke.mock.calls).toEqual([
+      ["recording_jobs_pick_imports", {
+        catalogRevision: "a".repeat(64),
+        languageBcp47: "fr-FR",
+        languageMode: "fixed",
+      }],
+      ["recording_jobs_pick_imports", {
+        catalogRevision: "b".repeat(64),
+        languageBcp47: undefined,
+        languageMode: "dynamic",
+      }],
+    ]);
+  });
+
   it("parses only supported legacy rows and bounds the newest 200 without renumbering", () => {
     const parsed = parseLegacyRecordingQueue([
       { id: 1, path: "C:/old.wav" },

@@ -9,12 +9,19 @@ import shutil
 import stat
 from typing import Callable, Mapping, Sequence
 
+from yap_server.pools.batch_contract import (
+    AsrRouteResolver,
+    DurableAsrRouting,
+    validate_asr_catalog_revision,
+)
+
 from .artifacts import (
     MAX_STATE_BYTES,
     publish_json,
     read_json_file,
     read_regular_file,
     unlink_private_regular_file,
+    unlink_owned_artifact_temporaries,
 )
 from .chunk_contract import chunk_path, find_chunk, receipt_key
 from .contract_values import (
@@ -24,9 +31,18 @@ from .contract_values import (
     mapping,
     utc_timestamp,
 )
-from .intake_contract import validate_create_request
-from .result_contract import validate_persisted_projection, validate_result_revision
+from .intake_contract import (
+    selected_batch_mode,
+    selected_language,
+    validate_create_request,
+)
+from .result_contract import (
+    capture_duration_ms,
+    validate_persisted_projection,
+    validate_result_revision,
+)
 from .state_schema import persisted_state_metadata
+from .stage_attempts import canonical_json_sha256, finish_stage, validate_stage_attempts
 
 
 _JOB_DIRECTORY = re.compile(r"^job-[0-9a-f]{32}$")
@@ -41,6 +57,11 @@ class DurableJobState:
     cancelled: set[str] = field(default_factory=set)
     create_keys: dict[str, str | None] = field(default_factory=dict)
     created_by_key: dict[str, str] = field(default_factory=dict)
+    asr_routing: dict[str, DurableAsrRouting | None] = field(default_factory=dict)
+    stage_history_complete: dict[str, bool] = field(default_factory=dict)
+    stage_attempts: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    projection_revisions: dict[str, int] = field(default_factory=dict)
+    cleanup_unverified: set[str] = field(default_factory=set)
 
 
 class RecordingJobStore:
@@ -57,12 +78,17 @@ class RecordingJobStore:
         supported_languages: Sequence[str],
         now: Callable[[], str],
         startup_worker_cleanup_verified: bool,
+        route_resolver: AsrRouteResolver,
+        asr_catalog_revision: str,
     ) -> None:
         self.root = storage_root.resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         self._supported_languages = frozenset(supported_languages)
         self._now = now
         self._startup_worker_cleanup_verified = startup_worker_cleanup_verified
+        self._route_resolver = route_resolver
+        validate_asr_catalog_revision(asr_catalog_revision)
+        self._asr_catalog_revision = asr_catalog_revision
 
     def load(self) -> DurableJobState:
         state = DurableJobState()
@@ -88,17 +114,32 @@ class RecordingJobStore:
                 receipt["replayKey"]["sequenceEnd"],
             )
         )
+        routing = state.asr_routing[job_id]
+        if routing is None and state.jobs[job_id].get("status") not in {
+            "cancelled",
+            "complete",
+            "failed",
+            "partial",
+        }:
+            raise ValueError("active persisted job is missing frozen ASR routing")
+        attempts = validate_stage_attempts(state.stage_attempts[job_id])
+        projection_revision = state.projection_revisions[job_id] + 1
         publish_json(
             self.root / "jobs" / job_id / "state.json",
             {
-                "schemaVersion": 3,
+                "schemaVersion": 5,
                 "createIdempotencyKey": state.create_keys[job_id],
                 "cancellationRequested": job_id in state.cancelled,
+                "asrRouting": None if routing is None else routing.to_persisted(),
+                "stageHistoryComplete": state.stage_history_complete[job_id],
+                "stageAttempts": attempts,
+                "projectionRevision": projection_revision,
                 "creation": state.requests[job_id],
                 "projection": state.jobs[job_id],
                 "receipts": receipts,
             },
         )
+        state.projection_revisions[job_id] = projection_revision
 
     def purge_private_audio(self, state: DurableJobState, job_id: str) -> None:
         job_root = self.root / "jobs" / job_id
@@ -115,9 +156,11 @@ class RecordingJobStore:
         self.persist(state, job_id)
         for entry in chunks_root.iterdir():
             unlink_private_regular_file(entry, "private recording chunk")
+        unlink_owned_artifact_temporaries(job_root)
         for name in (
             "input.wav",
             "input.wav.part",
+            "utterance-plan.json",
             "worker-result.json",
             "result-revision.json",
         ):
@@ -133,6 +176,11 @@ class RecordingJobStore:
         state.requests.pop(job_id, None)
         state.results.pop(job_id, None)
         state.cancelled.discard(job_id)
+        state.asr_routing.pop(job_id, None)
+        state.stage_history_complete.pop(job_id, None)
+        state.stage_attempts.pop(job_id, None)
+        state.projection_revisions.pop(job_id, None)
+        state.cleanup_unverified.discard(job_id)
         create_key = state.create_keys.pop(job_id, None)
         if create_key is not None and state.created_by_key.get(create_key) == job_id:
             state.created_by_key.pop(create_key, None)
@@ -147,11 +195,62 @@ class RecordingJobStore:
         if _JOB_DIRECTORY.fullmatch(job_id) is None:
             raise ValueError("job storage contains an invalid job directory")
         persisted = read_json_file(job_root / "state.json")
-        create_idempotency_key, cancellation_requested = persisted_state_metadata(persisted)
+        (
+            schema_version,
+            create_idempotency_key,
+            cancellation_requested,
+            persisted_asr_routing,
+            stage_history_complete,
+            stage_attempts,
+            projection_revision,
+        ) = persisted_state_metadata(persisted)
         creation = mapping(persisted.get("creation"), "persisted creation")
-        validate_create_request(creation, self._supported_languages)
+        validate_create_request(
+            creation,
+            self._supported_languages,
+            require_supported_language=False,
+        )
         projection = dict(mapping(persisted.get("projection"), "persisted projection"))
         validate_persisted_projection(job_id, creation, projection)
+        status = projection.get("status")
+        migration_needed = schema_version < 5
+        requires_worker_cleanup = False
+        legacy_processing_without_route = False
+        if schema_version in {4, 5}:
+            asr_routing = (
+                None
+                if persisted_asr_routing is None
+                else DurableAsrRouting.from_persisted(persisted_asr_routing)
+            )
+            if asr_routing is None and status not in {
+                "cancelled",
+                "complete",
+                "failed",
+                "partial",
+            }:
+                raise ValueError("active persisted job is missing frozen ASR routing")
+            if asr_routing is not None:
+                declared_catalog_revision = creation.get("asrCatalogRevision")
+                if (
+                    declared_catalog_revision is not None
+                    and declared_catalog_revision
+                    != asr_routing.asr_catalog_revision
+                ):
+                    raise ValueError(
+                        "persisted creation catalog revision differs from frozen routing"
+                    )
+        elif status in {"accepted", "uploading"}:
+            try:
+                asr_routing = self._freeze_legacy_routing(creation)
+            except (RuntimeError, ValueError):
+                asr_routing = None
+                self._quarantine_legacy_route(job_id, projection)
+        elif status == "server_processing":
+            asr_routing = None
+            requires_worker_cleanup = True
+            legacy_processing_without_route = True
+        else:
+            asr_routing = None
         chunks_root = job_root / "chunks"
         if chunks_root.is_symlink() or not chunks_root.is_dir():
             raise ValueError("persisted chunk storage is unsafe")
@@ -160,6 +259,10 @@ class RecordingJobStore:
             raise ValueError("persisted receipts must be an array")
         state.requests[job_id] = deepcopy(dict(creation))
         state.jobs[job_id] = projection
+        state.asr_routing[job_id] = asr_routing
+        state.stage_history_complete[job_id] = stage_history_complete
+        state.stage_attempts[job_id] = stage_attempts
+        state.projection_revisions[job_id] = projection_revision
         state.create_keys[job_id] = create_idempotency_key
         if create_idempotency_key is not None:
             if create_idempotency_key in state.created_by_key:
@@ -173,7 +276,47 @@ class RecordingJobStore:
             job_root,
             projection,
             cancellation_requested,
+            requires_worker_cleanup=requires_worker_cleanup,
+            legacy_processing_without_route=legacy_processing_without_route,
         )
+        if migration_needed:
+            self.persist(state, job_id)
+
+    def _freeze_legacy_routing(
+        self,
+        creation: Mapping[str, object],
+    ) -> DurableAsrRouting:
+        declared_catalog_revision = creation.get("asrCatalogRevision")
+        if (
+            declared_catalog_revision is not None
+            and declared_catalog_revision != self._asr_catalog_revision
+        ):
+            raise ValueError("legacy job declared a different ASR catalog revision")
+        language_bcp47 = selected_language(
+            creation,
+            self._supported_languages,
+        )
+        route = self._route_resolver(language_bcp47)
+        if route.execution_mode != selected_batch_mode(creation):
+            raise ValueError("legacy ASR route mode differs from its language decision")
+        return DurableAsrRouting(
+            route=route,
+            asr_catalog_revision=self._asr_catalog_revision,
+        )
+
+    def _quarantine_legacy_route(
+        self,
+        job_id: str,
+        projection: dict[str, object],
+    ) -> None:
+        projection["status"] = "failed"
+        projection["updatedAtUtc"] = self._now()
+        projection["error"] = {
+            "code": "ASR_ROUTE_UNRECOVERABLE",
+            "message": "The persisted ASR route could not be recovered safely.",
+            "retryable": False,
+            "requestId": f"job-{job_id}",
+        }
 
     def _load_receipt(
         self,
@@ -235,6 +378,9 @@ class RecordingJobStore:
         job_root: Path,
         projection: dict[str, object],
         cancellation_requested: bool,
+        *,
+        requires_worker_cleanup: bool = False,
+        legacy_processing_without_route: bool = False,
     ) -> None:
         status = projection.get("status")
         if status not in JOB_STATUSES:
@@ -249,6 +395,7 @@ class RecordingJobStore:
             cancellation_requested
             or status == "server_processing"
             or cleanup_was_unverified
+            or requires_worker_cleanup
         ) and not self._startup_worker_cleanup_verified:
             raise ValueError("persisted worker state requires verified startup cleanup")
         if cancellation_requested and status != "cancelled":
@@ -258,23 +405,50 @@ class RecordingJobStore:
             projection.pop("error", None)
             self.purge_private_audio(state, job_id)
             return
-        status = self._load_result(state, job_id, job_root, projection, status)
-        if status in {"cancelled", "failed"}:
-            if status == "cancelled":
-                state.cancelled.add(job_id)
+        result_path = job_root / "result-revision.json"
+        if legacy_processing_without_route and result_path.exists():
+            result_metadata = result_path.lstat()
+            if stat.S_ISLNK(result_metadata.st_mode) or not stat.S_ISREG(
+                result_metadata.st_mode
+            ):
+                raise ValueError("persisted result artifact is unsafe")
+        try:
+            status = self._load_result(state, job_id, job_root, projection, status)
+        except ValueError:
+            if not legacy_processing_without_route:
+                raise
+            self._quarantine_legacy_route(job_id, projection)
+            status = "failed"
+        if legacy_processing_without_route and status == "server_processing":
+            self._quarantine_legacy_route(job_id, projection)
+            status = "failed"
+        if status == "cancelled":
+            state.cancelled.add(job_id)
             self.purge_private_audio(state, job_id)
+        elif status == "failed":
+            error = projection.get("error")
+            retryable = isinstance(error, Mapping) and error.get("retryable") is True
+            latest_failed_stage = next(
+                (
+                    attempt
+                    for attempt in reversed(state.stage_attempts[job_id])
+                    if attempt.get("state") == "failed"
+                ),
+                None,
+            )
+            retains_retry_input = (
+                retryable
+                and latest_failed_stage is not None
+                and latest_failed_stage.get("retryable") is True
+                and latest_failed_stage.get("reason") == error.get("code")
+            )
+            if not retains_retry_input:
+                self.purge_private_audio(state, job_id)
         if status in {"complete", "partial"} and job_id not in state.results:
             raise ValueError("completed persisted job has no result")
-        if status == "server_processing":
-            projection["status"] = "failed"
-            projection["updatedAtUtc"] = self._now()
-            projection["error"] = {
-                "code": "SERVER_RESTARTED",
-                "message": "Server processing was interrupted by a restart.",
-                "retryable": True,
-                "requestId": f"job-{job_id}",
-            }
-            self.purge_private_audio(state, job_id)
+        # A verified startup cleanup proves that no worker from the previous
+        # process is still live. Keep durable processing intent so the service
+        # can safely re-admit it with at-least-once inference semantics.
 
     def _load_result(
         self,
@@ -294,14 +468,47 @@ class RecordingJobStore:
         if status not in {"server_processing", "complete", "partial"}:
             raise ValueError("non-processing job has an unexpected result")
         result = dict(read_json_file(result_path))
-        validate_result_revision(result, projection)
+        validate_result_revision(
+            result,
+            projection,
+            maximum_end_ms=capture_duration_ms(state.requests[job_id]),
+        )
         if status in {"complete", "partial"} and result.get("status") != status:
             raise ValueError("persisted result status differs")
         state.results[job_id] = result
         if status == "server_processing":
+            self._reconcile_published_result_stage(state, job_id, result)
             projection["status"] = result["status"]
             projection["updatedAtUtc"] = result["createdAtUtc"]
             projection.pop("error", None)
             status = projection["status"]
             self.persist(state, job_id)
         return status
+
+    def _reconcile_published_result_stage(
+        self,
+        state: DurableJobState,
+        job_id: str,
+        result: Mapping[str, object],
+    ) -> None:
+        running = next(
+            (
+                attempt
+                for attempt in reversed(state.stage_attempts[job_id])
+                if attempt["stage"] == "result_publication"
+                and attempt["state"] == "running"
+            ),
+            None,
+        )
+        if running is None:
+            return
+        finish_stage(
+            state.stage_attempts[job_id],
+            stage="result_publication",
+            attempt=int(running["attempt"]),
+            state="succeeded",
+            completed_at_utc=str(result["createdAtUtc"]),
+            retryable=False,
+            output_fingerprint_sha256=canonical_json_sha256(result),
+            evidence={"resultRevision": result["revision"], "status": result["status"]},
+        )

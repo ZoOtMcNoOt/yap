@@ -1,0 +1,335 @@
+# ADR 0025: Provider-specific ASR serving runtimes
+
+**Date:** 2026-07-21
+**Status:** Accepted; Cohere vLLM and Nemotron NeMo adapters plus checked
+container/launcher contracts implemented under focused tests, both frozen GB10
+promotion gates incomplete
+**Amends:** [ADR 0014](0014-server-tier-compute-topology.md) and
+[ADR 0024](0024-global-language-routing.md)
+
+## Context
+
+ADR 0014 and the first ADR 0024 implementation treated NVIDIA Triton Inference
+Server as a common ASR execution plane. Focused implementation showed that the
+abstraction did not match the models:
+
+- Cohere Transcribe is explicitly supported by vLLM's transcription API and its
+  model card recommends vLLM for production serving.
+- Nemotron 3.5 ASR Streaming is a cache-aware FastConformer-RNNT model exposed
+  through NVIDIA NeMo and a Transformers `AutoModelForRNNT` reference. It is not
+  a supported vLLM transcription architecture.
+- The rejected Triton Python-backend experiment serialized model calls to retain
+  output parity, duplicated request scheduling already owned by Yap and the
+  model runtime, and added a large backend/client/evidence surface without a
+  demonstrated performance advantage.
+- SGLang is still useful for later agent/LLM workloads. It is not an ASR runtime
+  for either selected ASR model.
+
+One universal model server would therefore be a false simplification. The stable
+abstraction is Yap's provider-neutral job, route, result, admission, and
+cancellation contract; the model-serving implementation remains provider
+specific behind that seam.
+
+## Decision
+
+1. **Cohere batch uses vLLM.** The candidate runtime is NVIDIA vLLM 26.06 on
+   Linux ARM64/Python 3.12, pinned by repository digest and exact package
+   versions. Yap calls the authenticated, loopback-only
+   `/v1/audio/transcriptions` interface with one independent request per job.
+   vLLM owns model residency, continuous batching, and GPU scheduling. Yap owns
+   bounded admission, durable job state, routing, cancellation intent, result
+   validation, and publication.
+2. **Nemotron is not sent through vLLM.** The pinned Transformers/BF16 path
+   remains the correctness and rollback reference. A resident NVIDIA NeMo
+   candidate now executes behind the same provider-neutral job/result contract
+   because NeMo is the model-native runtime. It remains unselected until its own
+   frozen correctness, streaming, cancellation, latency, memory, concurrency,
+   duration, and lifecycle gate passes.
+3. **Local Nemotron remains sherpa-onnx.** The Q4-or-better local artifact and
+   CPU-first fallback contract are unchanged by this server decision.
+4. **Triton Inference Server is retired from the current Yap ASR serving plane.**
+   Its implementation-only backend, client, scheduling, parity, and benchmark
+   machinery are removed. Private focused evidence remains historical evidence
+   for the rejected candidate and is not published as product data.
+5. **SGLang remains the Phase 9 agent/LLM serving candidate.** Prefix caching and
+   structured generation apply to agent workloads, not to Cohere or Nemotron
+   audio decoding.
+6. **Rust remains the target orchestration authority.** The current Python
+   service preserves the same bounded contracts until that later migration is
+   justified and gated; this ADR does not move model inference into Rust.
+
+## Runtime and security constraints
+
+- The vLLM endpoint must be an explicit numeric loopback HTTP authority. DNS
+  names, user information, paths, non-loopback addresses, and implicit ports
+  fail closed.
+- A private API key is mandatory and is passed only as process/container
+  environment, never committed or written to evidence.
+- Startup verifies the exact vLLM version, single served model identity, and all
+  immutable model artifacts before admitting work.
+- The launcher rejects root and runs the container as the invoking model-owner
+  UID/GID so private host model directories do not need broader permissions.
+- The host publishes the container only on `127.0.0.1`; the unauthenticated Yap
+  development service also remains loopback-only. SSH tunneling is the current
+  LAN-development boundary until Phase 7 authentication and later enterprise
+  network controls exist.
+- The vLLM worker rejects punctuation-off requests because the pinned Cohere
+  decoder currently fixes the `<|pnc|>` control token.
+- HTTP request bodies and responses are bounded. Cancellation explicitly shuts
+  down the active socket so a thread blocked in the response read wakes and the
+  server observes the disconnect. The pinned vLLM route then cancels its handler
+  and calls the engine abort boundary. Yap requires bounded acknowledgement; an
+  unaccounted request fences the pool.
+- The NeMo candidate accepts only an exact checked `.nemo` artifact, pinned
+  NeMo/Torch/CUDA identity, and the checked 1.12-second cache-aware profile with
+  `[56, 13]` attention context. All shared model/pipeline mutation stays on one
+  scheduler owner; Yap admits at most eight active and eight queued jobs.
+- The pinned unified NeMo wrapper accepted prompt vectors without applying them
+  in the exercised path. Yap validates prompt IDs against the checkpoint's
+  `num_prompts` bound and applies the per-request prompt projection after the
+  encoder and before RNNT decode. That correction is regression-tested against
+  the pinned source and is not represented as an upstream NeMo behavior.
+- The resident NeMo service reads only hash-bound regular WAV/utterance-plan
+  files under the same private storage root, requires its own API key, publishes
+  only numeric loopback, rejects duplicate identities and excess admission,
+  and cancels a job without cancelling its siblings.
+- Provider startup transfers worker ownership incrementally: if a later provider
+  fails to build, every earlier worker is closed before startup returns the
+  error. No partially built multi-provider registry survives.
+- NeMo connection creation is inside the bounded containment interval. If it
+  cannot be interrupted before a connection object exists, shutdown fences the
+  pool, cancels pending futures, reports `WorkerContainmentError`, and does not
+  wait forever on the blocked executor thread.
+- The schema-4 runtime plan names this executable internal boundary
+  `nemo-nemotron-finalized`: it processes bounded finalized utterances and
+  recordings through the provider-neutral worker contract. It is not the
+  unimplemented client-facing `/v1/live` WebSocket transport. The committed
+  capability catalog continues to omit unpromoted Nemotron routes; an
+  end-to-end candidate-catalog qualification must use an explicit lock outside
+  the repository and cannot be treated as promotion.
+- NVIDIA's 26.06 vLLM image omits TorchAudio even though its Cohere processor
+  imports one TorchAudio function. Yap carries only an attributed BSD-2-Clause
+  Mel-filter-bank compatibility function. A mismatched compiled TorchAudio wheel
+  is forbidden because it fails against the image's CUDA 13.3 Torch build.
+- Production Transformers, NeMo, and LID images remove the
+  `yap_server.evaluation` package. WER helpers needed by a runtime contract live
+  in the neutral `transcript_metrics` module; evaluation code and private media
+  enter only through the explicit evaluation image or qualification mount.
+- The initial GB10 candidate permits at most eight 1,024-token sequences, fixes
+  the KV cache at 1 GiB, and retains a 512 MiB upload envelope. The explicit
+  cache bound avoids vLLM's whole-device percentage heuristic reserving unified
+  memory for hundreds of impossible requests. These are frozen benchmark
+  inputs, not production capacity or four-hour performance claims.
+- `--max-num-seqs 8` bounds vLLM's active scheduler work but does not establish
+  an HTTP rejection boundary; vLLM can queue additional requests. Yap's
+  executable capacity contract therefore stays with `BatchAsrPool`: eight
+  running plus eight queued reservations and one aggregate four-hour PCM-byte
+  budget. The seventeenth slot request, or the first request beyond the PCM
+  budget, must fail before release with retryable pool backpressure and then
+  succeed after the accepted work drains. NeMo separately owns an authenticated
+  eight-active service limit and returns typed HTTP 429 for the ninth request.
+- Specialized private qualification runners distinguish typed cancellation
+  from generic failure and prove immediate recovery. The pinned vLLM
+  client-disconnect path calls the engine abort boundary, but externally freed
+  requests do not enter its finished-request histogram; the runner therefore
+  distinguishes that one-stop accounting shape from a counted abort, provider
+  completion after cancellation, and ambiguous metrics. The NeMo runner
+  compares lexical output plus fixed/automatic language-evidence contracts at
+  c1 and c8 while reporting rendered-text parity separately.
+  These are executable gate mechanics; no checked-head capacity or promotion
+  claim exists until the frozen GB10 runs pass.
+
+## Consequences
+
+### Positive
+
+- Cohere uses a runtime that natively exposes its supported transcription API
+  and continuous scheduler, eliminating Yap-owned cross-request tensor assembly.
+- Nemotron now keeps its model-native cache-aware state resident instead of
+  reloading the checkpoint per job or being forced through an LLM runtime.
+- Removing Triton-specific backend and client code reduces the Phase 6 surface
+  while preserving reusable domain contracts and process safety.
+- Provider runtimes can be replaced independently after parity and promotion
+  evidence, without changing client/server job contracts.
+
+### Costs and limitations
+
+- There are intentionally two server ASR runtime families rather than one.
+- The Cohere vLLM image needs a small, explicit compatibility shim until the
+  upstream image closes its dependency gap.
+- Nemotron carries a small pinned-source prompt-projection correction because
+  the exercised unified wrapper did not consume its accepted prompt vectors.
+- vLLM readiness proves the API/model/version surface; the checked launcher and
+  immutable image inspection remain responsible for the container identity.
+- Nemotron representative locale/duration behavior, frozen checked-head
+  capacity, persistent supervision, and enterprise deployment remain unproved.
+
+## Focused Cohere evidence (not promotion)
+
+A dirty-head development image with immutable ID
+`sha256:6adba2d79f26f57e3391cc60d4070e3ed655f1f6e02c315fb0ff0b918872279e`
+and an explicit non-gate revision label exercised the actual
+`CohereVllmBatchWorker -> authenticated loopback vLLM transcription service`
+path on GB10. Readiness matched the locked vLLM version and Cohere model. The
+public fixture produced zero normalized word errors and the exact transcript
+hash of the Transformers reference. After the initial 2,067-ms request, c2,
+c4, and c8 waves completed in 145, 370, and 303 ms respectively while retaining
+one independent result identity and one identical reference hash per request.
+Observed container memory was 3.09 GiB of the 32-GiB bound.
+
+The first cancellation probe exposed a Yap client bug: closing an
+`HTTPConnection` from another thread did not wake a Linux response read, so the
+1,892-ms acknowledgement reflected inference completion rather than prompt
+abort. Explicit socket shutdown corrected the boundary. The focused rerun
+waited until vLLM reported an active engine request, acknowledged cancellation in
+18 ms, observed the engine return to idle, recorded vLLM's abort log, published
+no result, recovered in 104 ms with the reference hash, and removed the container
+and loopback listener. Seventy-one affected local provider tests then passed with
+one expected platform skip.
+
+This evidence is sufficient to retain vLLM as the Cohere promotion candidate and
+to reject the earlier cancellation result. It does not consume the frozen Phase
+6 gate, qualify representative durations/locales or p95/p99 capacity, or promote
+the service.
+
+A later sustained dirty-head control repeated the same immutable 30-second input
+200 times through the authenticated adapter. All 200 results retained the same
+92 case-folded lexical tokens, while 11 results omitted four commas and therefore
+formed a second rendered-text identity. Disabling the V1 engine subprocess
+reproduced the same 189/11 split at the same request ordinals. The pinned
+runtime's batch-invariant CUDA mode also retained two renderings and therefore
+was rejected as a remedy. Its source confirms that `temperature=0` is greedy
+FP32-logit `argmax`, so adding a request seed would not affect this path. Exact-
+track load qualification consequently requires one lexical identity per audio
+duration and records exact rendering variance separately. Punctuation remains a
+scored representative-quality dimension; this does not waive its frozen
+threshold.
+
+A later four-repeat c8 resource control completed 1,600 Cohere requests without
+failure. The first/warm repeats processed 303.7/321.3-322.4 audio-seconds per
+wall second. Cgroup current and peak remained below 3.12/5.75 GiB, the last-half
+cgroup and entrypoint allocation-extent medians were flat within 0.7 MiB, and
+memory-event deltas were zero. This selected a predeclared GB10 vLLM ceiling; it
+does not replace the frozen representative gate.
+
+## Focused Nemotron evidence (not promotion)
+
+A dirty-head development image with immutable ID
+`sha256:555f9148431310266fa8e9d48fb93c5dd8879396164ac47202e561ebe38483bd`
+and an explicit non-gate revision label exercised the real
+`NemotronNemoBatchWorker -> authenticated loopback adapter -> one resident NeMo
+engine` path on GB10. Eight simultaneous, independently identified fixed/auto
+requests completed in 1,150 ms; the scheduler formed a model batch of eight.
+Fixed `en-US` matched all 23 normalized reference words but omitted one comma;
+automatic mode matched the exact public golden transcript after locale tags
+were treated as metadata. A separate long request was cancelled in 13 ms,
+published no result, and was followed by successful immediate recovery. The
+container and loopback listener were then absent. A follow-up focused local
+native/service/runtime/infra set passed 68 tests with two expected platform
+skips.
+
+This evidence corrects the earlier apparent server/reference difference: that
+comparison used mismatched prompt handling and counted locale metadata as
+spoken text. It does not consume the frozen Phase 6 gate, qualify other locales
+or durations, establish production capacity, or select NeMo as the default.
+
+A later focused exact-duration control used the new privacy-safe aggregate
+qualification path with repeated licensed-fixture audio. Both candidates
+completed a 30-second c2 wave plus c1 2-minute, 15-minute, two-hour, and exact
+four-hour inputs. At four hours, vLLM completed in 49,896 ms with 4.272 GiB
+current usage under 32 GiB; NeMo completed in 279,865 ms, including 275,702 ms
+inference and 2,688 ms accumulated queue time, with 2.356 GiB current usage
+under 96 GiB. Every focused run published one bounded result and removed its
+container/listener. The repeated source cannot prove transcript completeness,
+sentinel order, natural long-form quality, or comparable throughput. Those
+claims remain in the frozen sentinel-rich gate.
+
+The wall-time gap is consistent with the two deliberately different execution
+shapes. Yap sends Cohere/vLLM one offline API request, and vLLM internally splits
+long audio into bounded engine chunks that it can schedule concurrently. A
+focused 120-second request produced four successful engine-request observations
+while remaining one Yap/API request. The native NeMo candidate instead advances
+the cache-aware streaming checkpoint in 1.12-second frames across bounded
+finalized windows, so work along one recording timeline remains sequential even
+when independent recordings can batch. The current Yap service publishes only
+the finalized result; it does not expose partial transcripts. This control
+therefore gives NeMo no user-visible streaming-latency credit and must not be
+cited as client-facing streaming proof. It currently favors Cohere/vLLM for
+long-form offline throughput while leaving short/finalized-utterance latency and
+a future live transport as separate gates. vLLM queue/inference histograms are
+reported per engine request; Yap wall latency remains per API request. Those
+units are never merged or mislabeled.
+
+A four-repeat c8 NeMo resource control likewise completed 1,600 requests with
+one exact transcript identity at 268.9-274.2 audio-seconds per wall second.
+CUDA allocation stayed near 1,296 MiB (1,312 MiB maximum) and reservation stayed
+at 4,956 MiB. Cgroup current/peak stayed below 3.66/6.04 GiB. Anonymous RSS
+oscillated as GB10 unified-memory pages became resident and were reclaimed, but
+the entrypoint virtual allocation extent stabilized near 11.70 GiB with only
+0-8 KiB last-half median growth across the focused controls. Python collection
+plus `malloc_trim(0)` released
+no material RSS, and all NeMo stream/state owners were empty on completion. The
+HTTP boundary now uses bounded reusable workers instead of a fresh native thread
+per request; warm median queue time fell from about 24 ms to 3-5 ms without
+changing the independent eight-request model admission boundary.
+
+Runtime-plan schema 5 now freezes separate c8/1,600 GB10 resource contracts
+before promotion. Each requires a 60-second/200-sample tail, zero memory-event
+increments, bounded tasks/threads, fixed current/peak ceilings, and no more than
+64 MiB absolute tail growth in entrypoint virtual allocation extent. Descriptive
+physical-RSS slope remains visible, but unified-memory residency oscillation is
+not mislabeled as a live-object leak. These are dirty-head threshold-selection
+results; the checked-head qualification remains required.
+
+Both current-source profiles subsequently passed their executable eleven-check
+qualification: exact c8/1,600 request/concurrency identity, minimum tail
+coverage, current/peak and allocation-extent ceilings, allocation plateau,
+task/thread ceilings, and zero high/max/OOM/OOM-kill events. Each container and
+listener was absent afterward. This focused pass validates the contract but does
+not consume the one-time checked-head gate.
+
+A later private natural-speech intake screen used 19 original-language July
+2026 European Parliament speeches after exact media-envelope removal and the
+desktop's production Silero preprocessing path. Cohere/vLLM completed its nine
+supported locales and 711 seconds of audio at c8 in 6,919 ms model-ready wall
+time (102.76 audio-seconds/second), with 4,801/6,354/6,354-ms p50/p95/p99 API
+latency and no failures. NeMo's first run exposed a Yap policy defect rather
+than cross-request corruption: four locales deterministically failed even at
+c1 because fixed routes rejected valid alternate locale metadata emitted by the
+model. Fixed-route parsing now keeps the selected prompt authoritative, strips
+every known emitted tag, and reserves tag evidence for automatic mode. Focused
+tests passed, and the corrected c8 run completed all 18 NeMo-supported locales
+and 1,380 seconds in 9,024 ms model-ready wall time (152.93 audio-seconds/second),
+with 3,074/3,996/3,996-ms p50/p95/p99, a true maximum model batch of eight, and
+zero failed or busy requests. Its reported CUDA allocation/reservation remained
+bounded at 1,306/4,956 MiB maxima; both provider runs removed their container
+and listener.
+
+The Parliament text is revised upstream material rather than literal,
+independently adjudicated gold. Its 15.86% Cohere and 22.06% NeMo normalized
+word-error aggregates cover different locale sets and are diagnostic only;
+they neither rank the providers nor promote a locale. Source audio, references,
+per-case results, and diagnostics remain in the private external screen. Two
+independent listens, adjudication, complete source attribution, and the frozen
+representative gate remain required.
+
+## Required evidence before promotion
+
+Each frozen GB10 comparison must cover exact model/runtime identity, reference
+transcript behavior, representative locale and duration ladders, c1/c2/c4/c8
+latency and throughput, batching/state isolation, cancellation and immediate
+recovery, bounded admission, current/peak/slope memory, clean shutdown, and
+private evidence handling. Cohere and NeMo receive separate frozen gates and
+cannot inherit one another's evidence or either focused result above.
+
+## Sources
+
+- [Cohere Transcribe model card](https://huggingface.co/CohereLabs/cohere-transcribe-03-2026)
+- [vLLM supported transcription models](https://docs.vllm.ai/en/latest/models/supported_models/)
+- [vLLM speech-to-text serving API](https://docs.vllm.ai/en/stable/serving/online_serving/speech_to_text/)
+- [vLLM security guidance](https://docs.vllm.ai/en/latest/usage/security/)
+- [NVIDIA vLLM 26.06 release notes](https://docs.nvidia.com/deeplearning/frameworks/vllm-release-notes/rel-26-06.html)
+- [Nemotron 3.5 ASR Streaming model card](https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b)
+- [NVIDIA NeMo ASR inference documentation](https://docs.nvidia.com/nemo/speech/nightly/asr/inference.html)
+- [NVIDIA NeMo cache-aware streaming configuration](https://docs.nvidia.com/nemo/speech/nightly/asr/configs.html)
+- [TorchAudio v2.11.0 source and BSD-2-Clause license](https://github.com/pytorch/audio/tree/v2.11.0)

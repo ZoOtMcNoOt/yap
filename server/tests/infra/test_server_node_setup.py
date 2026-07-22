@@ -67,7 +67,7 @@ class ServerNodeSetupTests(unittest.TestCase):
         self.assertIn("YAP_APP_PORT=\n", self.env_example)
         self.assertIn("YAP_APP_CIDR=\n", self.env_example)
 
-    def test_phase_3_port_is_tunnel_only_by_default(self) -> None:
+    def test_server_port_is_tunnel_only_by_default(self) -> None:
         expected = "3389 5909 11000 11434 18765"
         self.assertIn(f': "${{YAP_TUNNEL_ONLY_PORTS:={expected}}}"', self.script)
         self.assertIn(f'YAP_TUNNEL_ONLY_PORTS="{expected}"', self.env_example)

@@ -25,7 +25,10 @@ impl StreamingRecording {
             frame.metadata.start_ms,
             frame.metadata.duration_ms,
         );
-        self.write_pcm16(&f32_to_i16_le_bytes(&frame.samples))
+        let language_source_end_sample = language_source_end_sample(frame);
+        self.write_pcm16(&f32_to_i16_le_bytes(&frame.samples))?;
+        self.language_source_end_sample = language_source_end_sample;
+        Ok(())
     }
 
     pub(super) fn append_input(&mut self, input: RecordingInput) -> Result<(), String> {
@@ -40,6 +43,19 @@ impl StreamingRecording {
             }
             RecordingInput::Gap(gap) => {
                 self.journal.observe_gap(gap)?;
+                self.persist_journal()
+            }
+            RecordingInput::LanguageEvidence(evidence) => {
+                let Some(recorded_source_end_sample) = self.language_source_end_sample else {
+                    return self
+                        .fail("recording language evidence has no compatible PCM extent".into());
+                };
+                if evidence.source_end_sample != recorded_source_end_sample {
+                    return self.fail(
+                        "recording language evidence does not cover committed PCM extent".into(),
+                    );
+                }
+                self.journal.observe_language_evidence(evidence)?;
                 self.persist_journal()
             }
         }
@@ -152,4 +168,21 @@ impl StreamingRecording {
         self.journal
             .observe_frame(track_id, sample_rate_hz, channels, sequence, start_ms);
     }
+}
+
+fn language_source_end_sample(frame: &PreparedFrame) -> Option<u64> {
+    let samples_per_millisecond =
+        u64::from(crate::language::live_evidence::LIVE_LANGUAGE_SAMPLE_RATE_HZ / 1_000);
+
+    if frame.metadata.sample_rate_hz != crate::language::live_evidence::LIVE_LANGUAGE_SAMPLE_RATE_HZ
+        || frame.metadata.channels != 1
+        || frame.metadata.sample_count != frame.samples.len()
+    {
+        return None;
+    }
+    frame
+        .metadata
+        .start_ms
+        .checked_mul(samples_per_millisecond)?
+        .checked_add(u64::try_from(frame.samples.len()).ok()?)
 }

@@ -17,15 +17,7 @@ import {
   type FixedBatchLanguageOption,
   type PrimaryLanguageStatus,
 } from "@/language-preference";
-
-function displayLanguage(languageBcp47: string) {
-  try {
-    return new Intl.DisplayNames([navigator.language], { type: "language" }).of(languageBcp47)
-      ?? languageBcp47;
-  } catch {
-    return languageBcp47;
-  }
-}
+import { formatLanguageTag, languageDisplayName } from "@/lib/language-display";
 
 function qualityLabel(option: FixedBatchLanguageOption) {
   if (option.qualityTier === "broadCoverage") return "Broad coverage";
@@ -33,8 +25,7 @@ function qualityLabel(option: FixedBatchLanguageOption) {
   return "Transcription ready";
 }
 
-function preferenceDetail(status: PrimaryLanguageStatus | null, error: string) {
-  if (error) return error;
+function preferenceDetail(status: PrimaryLanguageStatus | null) {
   if (!status) return "Checking the verified language catalog.";
   if (status.preferenceIssue === "incompatibleSchema") {
     return "This setting was written by a newer Yap version and was preserved unchanged.";
@@ -72,6 +63,7 @@ export function PrimaryLanguageSetting({
   status: PrimaryLanguageStatus | null;
 }) {
   const labelId = useId();
+  const errorId = useId();
   const options = useMemo(
     () => fixedBatchLanguageOptions(status?.capabilityCatalog),
     [status?.capabilityCatalog],
@@ -94,16 +86,17 @@ export function PrimaryLanguageSetting({
     status.preferenceIssue !== "incompatibleSchema" &&
     (status.requiresConfirmation || selection !== confirmed || status.preferenceIssue),
   );
-  const value = confirmed ? displayLanguage(confirmed) : "Not confirmed";
+  const value = confirmed ? languageDisplayName(confirmed) : "Not confirmed";
 
   return (
     <SettingsRow
-      detail={preferenceDetail(status, error)}
+      detail={preferenceDetail(status)}
       error={error || undefined}
+      errorId={errorId}
       label="Primary language"
       value={value}
     >
-      <div className="flex w-full max-w-[520px] flex-wrap justify-end gap-2">
+      <div className="flex w-full max-w-[520px] flex-wrap justify-start gap-2 md:justify-end">
         <Label className="sr-only" id={labelId}>
           Primary language
         </Label>
@@ -112,14 +105,19 @@ export function PrimaryLanguageSetting({
           onValueChange={setSelection}
           value={selection}
         >
-          <SelectTrigger aria-labelledby={labelId} className="min-w-[260px] flex-1">
+          <SelectTrigger
+            aria-describedby={error ? errorId : undefined}
+            aria-invalid={Boolean(error)}
+            aria-labelledby={labelId}
+            className="w-full min-w-0 sm:min-w-[260px] sm:flex-1"
+          >
             <SelectValue placeholder="Choose a language" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               {options.map((option) => (
                 <SelectItem key={option.languageBcp47} value={option.languageBcp47}>
-                  {displayLanguage(option.languageBcp47)} · {qualityLabel(option)}
+                  {formatLanguageTag(option.languageBcp47)} · {qualityLabel(option)}
                 </SelectItem>
               ))}
             </SelectGroup>

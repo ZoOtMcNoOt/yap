@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct CaptureSidecar {
     pub(super) schema_version: u16,
@@ -20,6 +20,8 @@ pub(super) struct CaptureSidecar {
     pub(super) directory_sync_supported: bool,
     #[serde(default)]
     pub(super) session_metadata: Option<SessionMetadata>,
+    #[serde(default)]
+    pub(super) language_evidence: Option<crate::language::live_evidence::LiveLanguageEvidence>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -61,6 +63,11 @@ impl CaptureSidecar {
             self.sequence_gap_overflow.as_ref(),
             self.sink_degraded,
         )?;
+        if let Some(evidence) = &self.language_evidence {
+            evidence
+                .validate()
+                .map_err(|error| format!("capture language evidence is invalid: {error}"))?;
+        }
         validate_artifact_name(&self.audio_file)?;
         validate_sha256(&self.audio_sha256)
     }

@@ -129,7 +129,19 @@ impl JobLedger {
             .ok_or_else(|| JobLedgerError::NotFound(job_id.into()))?
             .try_into()?;
         if current.status == RecordingJobStatus::ServerProcessing {
-            return Ok(current);
+            if current.next_attempt_at_ms.is_none()
+                && current.error_code.is_none()
+                && current.error_message.is_none()
+            {
+                return Ok(current);
+            }
+            transaction.execute(
+                "UPDATE recording_jobs SET next_attempt_at_ms = NULL, error_code = NULL, error_message = NULL, updated_at_ms = ?1 WHERE job_id = ?2 AND status = 'server_processing'",
+                params![updated_at_ms, job_id],
+            )?;
+            let updated = query_job(&transaction, job_id)?.expect("committed job exists");
+            transaction.commit()?;
+            return updated.try_into();
         }
         if current.status != RecordingJobStatus::Uploading {
             return Err(JobLedgerError::InvalidTransition {
@@ -153,7 +165,7 @@ impl JobLedger {
             ));
         }
         transaction.execute(
-            "UPDATE recording_jobs SET status = 'server_processing', updated_at_ms = ?1 WHERE job_id = ?2 AND status = 'uploading'",
+            "UPDATE recording_jobs SET status = 'server_processing', next_attempt_at_ms = NULL, error_code = NULL, error_message = NULL, updated_at_ms = ?1 WHERE job_id = ?2 AND status = 'uploading'",
             params![updated_at_ms, job_id],
         )?;
         let updated = query_job(&transaction, job_id)?.expect("committed job exists");

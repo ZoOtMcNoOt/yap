@@ -5,11 +5,16 @@ use super::{
     super::config::{self, ConfigError},
     validation::valid_path_segment,
     ApiError, BatchClientError, CaptureChunkReference, ChunkUploadReceipt,
-    CommitRecordingJobRequest, CreateRecordingJobRequest, RecordingJob, TranscriptResultRevision,
+    CommitRecordingJobRequest, CreateRecordingJobRequest, RecordingJob, RetryServerStageRequest,
+    ServerStageName, ServerStageProjectionEnvelope, TranscriptResultRevision,
+    MAX_TRANSCRIPT_RESULT_BYTES,
+};
+use crate::server_connector::lid::{
+    cancel_preflight, submit_preflight, LidPreflightError, LidPreflightRequest, LidPreflightResult,
 };
 
 const MAX_JOB_RESPONSE_BYTES: usize = 256 * 1024;
-const MAX_RESULT_RESPONSE_BYTES: usize = 2 * 1024 * 1024;
+const MAX_STAGE_RESPONSE_BYTES: usize = 32 * 1024;
 
 #[derive(Clone)]
 pub(crate) struct BatchApiClient {
@@ -32,6 +37,20 @@ impl BatchApiClient {
 
     pub(crate) fn base_url_identity(&self) -> &str {
         &self.base_url_identity
+    }
+
+    pub(crate) async fn lid_preflight(
+        &self,
+        request: &LidPreflightRequest,
+    ) -> Result<LidPreflightResult, LidPreflightError> {
+        submit_preflight(&self.client, &self.base_url, request).await
+    }
+
+    pub(crate) async fn cancel_lid_preflight(
+        &self,
+        request_id: &str,
+    ) -> Result<(), LidPreflightError> {
+        cancel_preflight(&self.client, &self.base_url, request_id).await
     }
 
     pub(crate) async fn create(
@@ -129,7 +148,56 @@ impl BatchApiClient {
             .send()
             .await
             .map_err(BatchClientError::Transport)?;
-        decode_response(response, &[StatusCode::OK], MAX_RESULT_RESPONSE_BYTES).await
+        decode_response(response, &[StatusCode::OK], MAX_TRANSCRIPT_RESULT_BYTES).await
+    }
+
+    pub(crate) async fn stages(
+        &self,
+        job_id: &str,
+    ) -> Result<ServerStageProjectionEnvelope, BatchClientError> {
+        let response = self
+            .client
+            .get(self.endpoint(&["jobs", job_id, "stages"])?)
+            .header(reqwest::header::ACCEPT, "application/json")
+            .send()
+            .await
+            .map_err(BatchClientError::Transport)?;
+        let projection: ServerStageProjectionEnvelope =
+            decode_response(response, &[StatusCode::OK], MAX_STAGE_RESPONSE_BYTES).await?;
+        if !projection.is_valid_for(job_id) {
+            return Err(BatchClientError::MalformedResponse);
+        }
+        Ok(projection)
+    }
+
+    pub(crate) async fn retry_stage(
+        &self,
+        job_id: &str,
+        stage: ServerStageName,
+        request: &RetryServerStageRequest,
+    ) -> Result<ServerStageProjectionEnvelope, BatchClientError> {
+        if request.stage != stage
+            || request.attempt == 0
+            || request.projection_revision == 0
+            || !super::validation::valid_sha256(&request.capture_manifest_sha256)
+        {
+            return Err(BatchClientError::InvalidIdentifier);
+        }
+        let response = self
+            .client
+            .post(self.endpoint(&["jobs", job_id, "stages", stage.as_path(), "retry"])?)
+            .header(reqwest::header::ACCEPT, "application/json")
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .body(serde_json::to_vec(request).map_err(BatchClientError::Encode)?)
+            .send()
+            .await
+            .map_err(BatchClientError::Transport)?;
+        let projection: ServerStageProjectionEnvelope =
+            decode_response(response, &[StatusCode::ACCEPTED], MAX_STAGE_RESPONSE_BYTES).await?;
+        if !projection.is_valid_for(job_id) {
+            return Err(BatchClientError::MalformedResponse);
+        }
+        Ok(projection)
     }
 
     pub(crate) async fn cancel(&self, job_id: &str) -> Result<RecordingJob, BatchClientError> {

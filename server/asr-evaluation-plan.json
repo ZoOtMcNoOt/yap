@@ -1,0 +1,336 @@
+{
+  "schemaVersion": 5,
+  "sampleRateHz": 16000,
+  "privateCache": {
+    "environment": "YAP_EVAL_CACHE",
+    "repositoryFallback": false
+  },
+  "systems": [
+    {
+      "id": "local-live-nemotron",
+      "mode": "localLive",
+      "status": "executable",
+      "terminologyContextSupport": "none",
+      "measurementBoundary": "desktop-prepared-audio-frame-to-final"
+    },
+    {
+      "id": "transformers-cohere-reference",
+      "mode": "serverBatch",
+      "status": "reference",
+      "terminologyContextSupport": "none",
+      "measurementBoundary": "service-create-to-result"
+    },
+    {
+      "id": "vllm-cohere-batch",
+      "mode": "serverBatch",
+      "status": "executable",
+      "terminologyContextSupport": "none",
+      "measurementBoundary": "service-create-to-result"
+    },
+    {
+      "id": "transformers-nemotron-reference",
+      "mode": "serverBatch",
+      "status": "reference",
+      "terminologyContextSupport": "none",
+      "measurementBoundary": "service-create-to-result"
+    },
+    {
+      "id": "nemo-nemotron-finalized",
+      "mode": "serverFinalizedUtterance",
+      "status": "executable",
+      "terminologyContextSupport": "none",
+      "measurementBoundary": "resident-loopback-release-to-result"
+    }
+  ],
+  "durationLadders": [
+    {
+      "id": "live-endpoint",
+      "systemIds": ["local-live-nemotron"],
+      "durationSamples": [4000, 8000, 12000, 16000, 17920, 32000, 80000, 160000, 480000],
+      "pacing": "realtime",
+      "evidenceKind": "natural"
+    },
+    {
+      "id": "server-finalized-utterance",
+      "systemIds": ["nemo-nemotron-finalized"],
+      "durationSamples": [4000, 8000, 12000, 16000, 17920, 32000, 80000, 160000, 480000],
+      "pacing": "unpaced",
+      "evidenceKind": "natural"
+    },
+    {
+      "id": "live-session",
+      "systemIds": ["local-live-nemotron"],
+      "durationSamples": [480000, 4800000, 14400000, 28800000, 57600000, 115200000],
+      "pacing": "realtime",
+      "evidenceKind": "natural-and-deterministic"
+    },
+    {
+      "id": "batch-file",
+      "systemIds": [
+        "transformers-cohere-reference",
+        "vllm-cohere-batch",
+        "transformers-nemotron-reference",
+        "nemo-nemotron-finalized"
+      ],
+      "durationSamples": [480000, 1920000, 4800000, 14400000, 28800000, 57600000, 115200000],
+      "pacing": "unpaced",
+      "evidenceKind": "natural-and-deterministic"
+    }
+  ],
+  "boundaryCases": [
+    {
+      "id": "batch-maximum-exact",
+      "systemId": "all-batch-adapters",
+      "unit": "audioSamples",
+      "values": [230400000],
+      "expected": "complete"
+    },
+    {
+      "id": "batch-maximum-plus-one",
+      "systemId": "all-batch-adapters",
+      "unit": "audioSamples",
+      "values": [230400001],
+      "expected": "reject-before-inference"
+    },
+    {
+      "id": "vllm-concurrent-request-admission",
+      "systemId": "vllm-cohere-batch",
+      "unit": "concurrentRequests",
+      "values": [1, 2, 4, 8],
+      "expected": "independent-requests-use-vllm-continuous-batching"
+    },
+    {
+      "id": "nemo-concurrent-stream-admission",
+      "systemId": "nemo-nemotron-finalized",
+      "unit": "concurrentRequests",
+      "values": [1, 2, 4, 8],
+      "expected": "independent-requests-use-native-stream-batching"
+    },
+    {
+      "id": "worker-result-envelope",
+      "systemId": "all-batch-adapters",
+      "unit": "bytes",
+      "values": [4194304, 4194305],
+      "expected": "accept-first-reject-second"
+    }
+  ],
+  "loadCases": [
+    {
+      "id": "vllm-short-tail",
+      "systemId": "vllm-cohere-batch",
+      "measurementBoundary": "vllm-http-release-to-result",
+      "mix": [{"durationSamples": 480000, "count": 200}],
+      "concurrencies": [1, 2, 4, 8],
+      "minimumCompletions": 200,
+      "expected": "complete"
+    },
+    {
+      "id": "vllm-long-waves",
+      "systemId": "vllm-cohere-batch",
+      "measurementBoundary": "service-create-to-result",
+      "mix": [{"durationSamples": 14400000, "count": 4}],
+      "concurrencies": [2],
+      "minimumCompletions": 4,
+      "expected": "complete"
+    },
+    {
+      "id": "vllm-mixed-eight",
+      "systemId": "vllm-cohere-batch",
+      "measurementBoundary": "service-create-to-result",
+      "mix": [
+        {"durationSamples": 480000, "count": 4},
+        {"durationSamples": 14400000, "count": 2},
+        {"durationSamples": 28800000, "count": 2}
+      ],
+      "concurrencies": [8],
+      "minimumCompletions": 8,
+      "expected": "complete"
+    },
+    {
+      "id": "vllm-cancelled-sibling",
+      "systemId": "vllm-cohere-batch",
+      "measurementBoundary": "vllm-http-release-to-result",
+      "mix": [
+        {"durationSamples": 524287, "count": 1},
+        {"durationSamples": 262144, "count": 1},
+        {"durationSamples": 16000, "count": 1}
+      ],
+      "concurrencies": [2],
+      "minimumCompletions": 2,
+      "expected": "cancel-dispatched-follower-record-server-outcome-leader-and-recovery-singletons"
+    },
+    {
+      "id": "vllm-slot-capacity",
+      "systemId": "vllm-cohere-batch",
+      "measurementBoundary": "yap-batch-pool-admission",
+      "mix": [{"durationSamples": 480000, "count": 17}],
+      "concurrencies": [17],
+      "minimumCompletions": 16,
+      "expected": "sixteen-complete-one-retryable-pool-busy-then-recovery"
+    },
+    {
+      "id": "transformers-reference-slot-capacity",
+      "systemId": "transformers-cohere-reference",
+      "measurementBoundary": "service-admission",
+      "mix": [{"durationSamples": 480000, "count": 4}],
+      "concurrencies": [4],
+      "minimumCompletions": 3,
+      "expected": "three-complete-one-retryable-server-busy"
+    },
+    {
+      "id": "vllm-pcm-capacity",
+      "systemId": "vllm-cohere-batch",
+      "measurementBoundary": "yap-batch-pool-admission",
+      "mix": [
+        {"durationSamples": 115200000, "count": 2},
+        {"durationSamples": 16000, "count": 1}
+      ],
+      "concurrencies": [3],
+      "minimumCompletions": 2,
+      "expected": "two-complete-one-retryable-pcm-busy-then-recovery"
+    },
+    {
+      "id": "nemotron-reference-fixed-short-tail",
+      "systemId": "transformers-nemotron-reference",
+      "measurementBoundary": "isolated-container-release-to-result",
+      "mix": [{"durationSamples": 480000, "count": 200}],
+      "concurrencies": [1, 2, 4, 8],
+      "minimumCompletions": 200,
+      "expected": "complete"
+    },
+    {
+      "id": "nemotron-reference-dynamic-parity",
+      "systemId": "transformers-nemotron-reference",
+      "measurementBoundary": "checked-contract-to-reference-result",
+      "mix": [{"durationSamples": 480000, "count": 8}],
+      "concurrencies": [1, 8],
+      "minimumCompletions": 8,
+      "expected": "exact-transcript-and-language-segment-contract-parity"
+    },
+    {
+      "id": "nemotron-reference-long-windows",
+      "systemId": "transformers-nemotron-reference",
+      "measurementBoundary": "service-create-to-result",
+      "mix": [
+        {"durationSamples": 480000, "count": 2},
+        {"durationSamples": 14400000, "count": 2}
+      ],
+      "concurrencies": [2],
+      "minimumCompletions": 4,
+      "expected": "complete-source-plan-continuity"
+    },
+    {
+      "id": "nemotron-reference-cancelled-window",
+      "systemId": "transformers-nemotron-reference",
+      "measurementBoundary": "isolated-container-release-to-result",
+      "mix": [
+        {"durationSamples": 524287, "count": 1},
+        {"durationSamples": 262144, "count": 1},
+        {"durationSamples": 16000, "count": 1}
+      ],
+      "concurrencies": [2],
+      "minimumCompletions": 2,
+      "expected": "cancel-dispatched-follower-record-server-outcome-leader-and-recovery-singletons"
+    },
+    {
+      "id": "nemo-finalized-short-tail",
+      "systemId": "nemo-nemotron-finalized",
+      "measurementBoundary": "resident-loopback-release-to-result",
+      "mix": [{"durationSamples": 480000, "count": 200}],
+      "concurrencies": [1, 2, 4, 8],
+      "minimumCompletions": 200,
+      "expected": "complete"
+    },
+    {
+      "id": "nemo-finalized-fixed-auto-parity",
+      "systemId": "nemo-nemotron-finalized",
+      "measurementBoundary": "checked-contract-to-resident-result",
+      "mix": [{"durationSamples": 480000, "count": 8}],
+      "concurrencies": [1, 8],
+      "minimumCompletions": 8,
+      "expected": "fixed-and-auto-lexical-language-contract-parity"
+    },
+    {
+      "id": "nemo-finalized-long-windows",
+      "systemId": "nemo-nemotron-finalized",
+      "measurementBoundary": "resident-loopback-release-to-result",
+      "mix": [
+        {"durationSamples": 480000, "count": 2},
+        {"durationSamples": 14400000, "count": 2}
+      ],
+      "concurrencies": [2],
+      "minimumCompletions": 4,
+      "expected": "complete-source-plan-continuity"
+    },
+    {
+      "id": "nemo-finalized-cancelled-sibling",
+      "systemId": "nemo-nemotron-finalized",
+      "measurementBoundary": "resident-loopback-release-to-result",
+      "mix": [
+        {"durationSamples": 524287, "count": 1},
+        {"durationSamples": 262144, "count": 1},
+        {"durationSamples": 16000, "count": 1}
+      ],
+      "concurrencies": [2],
+      "minimumCompletions": 2,
+      "expected": "cancel-one-preserve-sibling-and-immediate-recovery"
+    },
+    {
+      "id": "nemo-finalized-active-capacity",
+      "systemId": "nemo-nemotron-finalized",
+      "measurementBoundary": "resident-service-admission",
+      "mix": [{"durationSamples": 14400000, "count": 9}],
+      "concurrencies": [9],
+      "minimumCompletions": 8,
+      "expected": "eight-complete-one-retryable-service-busy"
+    }
+  ],
+  "resourceProfiles": [
+    {
+      "systemId": "vllm-cohere-batch",
+      "loadCaseId": "vllm-short-tail",
+      "hardwareProfile": "dgx-spark-gb10",
+      "concurrency": 8,
+      "completedRequestCount": 1600,
+      "minimumTailDurationMs": 60000,
+      "minimumTailSampleCount": 200,
+      "maximumMemoryCurrentBytes": 4294967296,
+      "maximumMemoryPeakBytes": 8589934592,
+      "maximumContainerEntrypointVirtualDataBytes": 5368709120,
+      "maximumAbsoluteTailVirtualDataWindowMedianGrowthBytes": 67108864,
+      "maximumCgroupTaskCount": 256,
+      "maximumContainerEntrypointThreadCount": 128,
+      "requireZeroMemoryEvents": true
+    },
+    {
+      "systemId": "nemo-nemotron-finalized",
+      "loadCaseId": "nemo-finalized-short-tail",
+      "hardwareProfile": "dgx-spark-gb10",
+      "concurrency": 8,
+      "completedRequestCount": 1600,
+      "minimumTailDurationMs": 60000,
+      "minimumTailSampleCount": 200,
+      "maximumMemoryCurrentBytes": 5368709120,
+      "maximumMemoryPeakBytes": 8589934592,
+      "maximumContainerEntrypointVirtualDataBytes": 15032385536,
+      "maximumAbsoluteTailVirtualDataWindowMedianGrowthBytes": 67108864,
+      "maximumCgroupTaskCount": 256,
+      "maximumContainerEntrypointThreadCount": 256,
+      "requireZeroMemoryEvents": true
+    }
+  ],
+  "requiredMetrics": [
+    "identity",
+    "accuracy",
+    "sentinelIntegrity",
+    "submitToResultLatency",
+    "realtimeFactor",
+    "queueTime",
+    "throughput",
+    "resourceCurrentAndPeak",
+    "resourceSlope",
+    "cancellationRecovery",
+    "teardown",
+    "rejectionAndRetry"
+  ]
+}

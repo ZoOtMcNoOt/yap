@@ -27,7 +27,14 @@ function requiredIsolationPath(name) {
   return value;
 }
 
-function restartSessionCapabilities(port, appDataRoot, liveRoot, modelsRoot, webviewRoot, pickerPath) {
+function recordingRecoverySessionCapabilities(
+  port,
+  appDataRoot,
+  liveRoot,
+  modelsRoot,
+  webviewRoot,
+  pickerPath,
+) {
   const capabilities = createTauriCapabilities(appBinaryPath, {
     driverProvider: "embedded",
     logLevel: "info",
@@ -123,23 +130,23 @@ async function waitForProcessExit(processId, timeoutMs = 10_000) {
   throw new Error(`Native Yap process ${processId} remained alive after ${timeoutMs}ms.`);
 }
 
-async function stopRestartSession(session, processId) {
-  console.info(`[Task 7 restart] stop process=${processId ?? "unknown"}`);
+async function terminateRecordingRecoverySession(session, processId) {
+  console.info(`[recording job restart recovery] stop process=${processId ?? "unknown"}`);
   if (processId && isProcessAlive(processId)) {
     process.kill(processId, "SIGTERM");
     await waitForProcessExit(processId);
   }
   if (processId) {
-    console.info(`[Task 7 restart] stopped process=${processId}`);
+    console.info(`[recording job restart recovery] stopped process=${processId}`);
     session.sessionId = undefined;
     // The standalone service always attempts a remote mock reset during cleanup.
     // This proof intentionally terminated the only remote session and installs no
     // mocks, so keep that impossible post-termination command local and bounded.
     session.overwriteCommand("execute", async () => undefined);
   }
-  console.info(`[Task 7 restart] cleanup start process=${processId ?? "unknown"}`);
+  console.info(`[recording job restart recovery] cleanup start process=${processId ?? "unknown"}`);
   await cleanupWdioSession(session);
-  console.info(`[Task 7 restart] cleanup complete process=${processId ?? "unknown"}`);
+  console.info(`[recording job restart recovery] cleanup complete process=${processId ?? "unknown"}`);
 }
 
 function writeEmptyWaveFile(filePath) {
@@ -292,7 +299,14 @@ describe("Yap desktop shell", () => {
     let secondProcessId;
     try {
       firstSession = await startWdioSession(
-        restartSessionCapabilities(firstPort, appDataRoot, liveRoot, modelsRoot, firstWebviewRoot, sourcePath),
+        recordingRecoverySessionCapabilities(
+          firstPort,
+          appDataRoot,
+          liveRoot,
+          modelsRoot,
+          firstWebviewRoot,
+          sourcePath,
+        ),
       );
       await firstSession.switchToWindow("main");
       expect(await firstSession.getWindowHandle()).toBe("main");
@@ -309,14 +323,21 @@ describe("Yap desktop shell", () => {
       expect(await firstSession.execute(() =>
         window.localStorage.getItem("yap.recordingQueue.v1"))).toBeNull();
       console.info(
-        `[Task 7 restart] processA=${firstProcessId} job=${created[0].id} status=${created[0].status}`,
+        `[recording job restart recovery] firstProcess=${firstProcessId} job=${created[0].id} status=${created[0].status}`,
       );
 
-      await stopRestartSession(firstSession, firstProcessId);
+      await terminateRecordingRecoverySession(firstSession, firstProcessId);
       firstSession = undefined;
 
       secondSession = await startWdioSession(
-        restartSessionCapabilities(secondPort, appDataRoot, liveRoot, modelsRoot, secondWebviewRoot, sourcePath),
+        recordingRecoverySessionCapabilities(
+          secondPort,
+          appDataRoot,
+          liveRoot,
+          modelsRoot,
+          secondWebviewRoot,
+          sourcePath,
+        ),
       );
       await secondSession.switchToWindow("main");
       expect(await secondSession.getWindowHandle()).toBe("main");
@@ -331,14 +352,14 @@ describe("Yap desktop shell", () => {
       expect(await secondSession.execute(() =>
         window.localStorage.getItem("yap.recordingQueue.v1"))).toBeNull();
       console.info(
-        `[Task 7 restart] processB=${secondProcessId} recovered=${restored.id} status=${restored.status}`,
+        `[recording job restart recovery] secondProcess=${secondProcessId} recovered=${restored.id} status=${restored.status}`,
       );
     } finally {
       if (secondSession) {
-        await stopRestartSession(secondSession, secondProcessId);
+        await terminateRecordingRecoverySession(secondSession, secondProcessId);
       }
       if (firstSession) {
-        await stopRestartSession(firstSession, firstProcessId);
+        await terminateRecordingRecoverySession(firstSession, firstProcessId);
       }
     }
   });

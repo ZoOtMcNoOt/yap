@@ -2,7 +2,14 @@ from http import HTTPStatus
 
 from yap_server.jobs import JobServiceError
 
-from .routes import CHUNK_PATH, COMMIT_PATH, JOB_PATH, RESULT_PATH
+from .routes import (
+    CHUNK_PATH,
+    COMMIT_PATH,
+    JOB_PATH,
+    RESULT_PATH,
+    STAGES_PATH,
+    STAGE_RETRY_PATH,
+)
 
 
 class JobRequestMixin:
@@ -75,6 +82,26 @@ class JobRequestMixin:
                 )
                 return
 
+            stages_match = STAGES_PATH.fullmatch(path)
+            if stages_match is not None and self.command == "GET":
+                self._send_json(
+                    HTTPStatus.OK,
+                    self._job_service.get_stages(stages_match.group("job_id")),
+                )
+                return
+
+            retry_match = STAGE_RETRY_PATH.fullmatch(path)
+            if retry_match is not None and self.command == "POST":
+                self._send_json(
+                    HTTPStatus.ACCEPTED,
+                    self._job_service.retry_stage(
+                        retry_match.group("job_id"),
+                        retry_match.group("stage"),
+                        self._request_body.read_json(),
+                    ),
+                )
+                return
+
             job_match = JOB_PATH.fullmatch(path)
             if job_match is not None and self.command == "DELETE":
                 self._send_json(
@@ -134,5 +161,5 @@ class JobRequestMixin:
         self._send_error(
             HTTPStatus.NOT_IMPLEMENTED,
             code="NOT_IMPLEMENTED",
-            message="This operation is not implemented in the Phase 5 batch slice.",
+            message="This operation is not implemented by the current batch runtime.",
         )

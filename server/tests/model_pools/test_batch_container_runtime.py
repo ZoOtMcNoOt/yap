@@ -17,6 +17,8 @@ from yap_server.pools.batch_asr import (
     WorkerExecutionError,
 )
 
+from tests.asr_route_fixtures import test_asr_route
+
 from .batch_asr_fixtures import (
     AUDIO_SHA256,
     CHECKED_HEAD,
@@ -75,6 +77,7 @@ class ContainerBatchAsrRuntimeTests(unittest.TestCase):
                 root / "result.json",
                 language="en",
                 input_sha256=AUDIO_SHA256,
+                route=test_asr_route(),
             )
 
             with (
@@ -90,7 +93,7 @@ class ContainerBatchAsrRuntimeTests(unittest.TestCase):
             remove.assert_called_once()
             docker_binary, container_name = remove.call_args.args
             self.assertEqual(docker_binary, "docker")
-            self.assertRegex(container_name, r"^yap-phase4-asr-[0-9a-f]{32}$")
+            self.assertRegex(container_name, r"^yap-batch-asr-[0-9a-f]{32}$")
 
     def test_container_cleanup_requires_removal_or_verified_absence(self) -> None:
         def missing_runner(
@@ -107,7 +110,7 @@ class ContainerBatchAsrRuntimeTests(unittest.TestCase):
 
         _force_remove_container(
             "docker",
-            "yap-phase4-asr-" + "a" * 32,
+            "yap-batch-asr-" + "a" * 32,
             runner=missing_runner,
         )
 
@@ -126,7 +129,7 @@ class ContainerBatchAsrRuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(WorkerExecutionError, "could not remove"):
             _force_remove_container(
                 "docker",
-                "yap-phase4-asr-" + "a" * 32,
+                "yap-batch-asr-" + "a" * 32,
                 runner=denied_runner,
             )
 

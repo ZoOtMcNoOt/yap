@@ -11,7 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { FixedBatchLanguageOption } from "@/language-preference";
+import {
+  fixedBatchQualityLabel,
+  type RecordingImportLanguageOption,
+} from "@/language-preference";
+import { formatLanguageTag } from "@/lib/language-display";
 import { acceptedFormats } from "@/lib/media-file";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +29,7 @@ export function DropHero({
   onLanguageChange,
   onPickFiles,
   languageOptions,
-  selectedLanguage,
+  selectedLanguageOptionId,
 }: {
   dragging: boolean;
   onDragLeave: () => void;
@@ -33,18 +37,18 @@ export function DropHero({
   onDrop: (event: DragEvent<HTMLElement>) => void;
   onOpenHelp?: () => void;
   onOpenLanguageSettings: () => void;
-  onLanguageChange: (languageBcp47: string) => void;
+  onLanguageChange: (optionId: string) => void;
   onPickFiles: () => void;
-  languageOptions: FixedBatchLanguageOption[];
-  selectedLanguage: string | null;
+  languageOptions: RecordingImportLanguageOption[];
+  selectedLanguageOptionId: string | null;
 }) {
   const languageReady = languageOptions.some(
-    (option) => option.languageBcp47 === selectedLanguage,
+    (option) => option.id === selectedLanguageOptionId,
   );
   return (
     <section
       className={cn(
-        "surface-workspace-inset mt-5 w-full border-2 border-dashed bg-[var(--surface-transcript)] transition-[border-color,background-color,box-shadow] duration-200",
+        "surface-workspace-inset mt-5 w-full border-2 border-dashed bg-[var(--surface-transcript)] transition-[border-color,background-color,box-shadow] duration-200 motion-reduce:transition-none",
         dragging ? "border-primary bg-[var(--primary-soft)] shadow-sm" : "border-border",
       )}
       onDragLeave={onDragLeave}
@@ -58,14 +62,14 @@ export function DropHero({
         <div className="max-w-md">
           <h2 className="text-lg font-semibold tracking-tight">Drop recordings here</h2>
           <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-            Choose a language, then add files to your organization's transcription server queue. Dropped files use your primary language. {acceptedFormats}.
+            Choose a fixed language or verified automatic detection, then add files to your organization's transcription server queue. Dropped files use your primary language. {acceptedFormats}.
           </p>
         </div>
         <div className="flex w-full max-w-md flex-wrap items-center justify-center gap-2">
           <Select
             disabled={!languageOptions.length}
             onValueChange={onLanguageChange}
-            value={selectedLanguage ?? undefined}
+            value={selectedLanguageOptionId ?? undefined}
           >
             <SelectTrigger aria-label="Recording language" className="min-w-[220px] flex-1">
               <SelectValue placeholder="Choose recording language" />
@@ -73,8 +77,10 @@ export function DropHero({
             <SelectContent>
               <SelectGroup>
                 {languageOptions.map((option) => (
-                  <SelectItem key={option.languageBcp47} value={option.languageBcp47}>
-                    {option.languageBcp47} · {qualityLabel(option.qualityTier)}
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.mode === "dynamic"
+                      ? `Auto-detect per segment · ${fixedBatchQualityLabel(option.qualityTier)}`
+                      : `${formatLanguageTag(option.languageBcp47)} · ${fixedBatchQualityLabel(option.qualityTier)}`}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -110,15 +116,4 @@ export function DropHero({
       </div>
     </section>
   );
-}
-
-function qualityLabel(quality: FixedBatchLanguageOption["qualityTier"]) {
-  switch (quality) {
-    case "transcriptionReady":
-      return "Transcription ready";
-    case "broadCoverage":
-      return "Broad coverage";
-    case "preview":
-      return "Preview";
-  }
 }

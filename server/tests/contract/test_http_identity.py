@@ -141,7 +141,7 @@ class ContractTests(unittest.TestCase):
                 "openapi.json",
             ),
             (
-                "batch live origin remains outside the Phase 5 profile",
+                "batch live origin remains outside the loopback batch profile",
                 contract_schema.make_job_request("live_capture", captured),
                 create_schema,
                 "openapi.json",

@@ -27,6 +27,30 @@ export type FallbackModelView = {
   modelsDir: string;
 };
 
+export type AuxiliaryModelStatus = "missing" | "ready" | "corrupted";
+
+export type AuxiliaryModelView = {
+  id: string;
+  revision: string;
+  status: AuxiliaryModelStatus;
+  installedBytes?: number | null;
+  expectedBytes: number;
+  modelPath: string;
+  installActive: boolean;
+};
+
+export type AuxiliaryModelDownloadProgress = {
+  downloadedBytes: number;
+  totalBytes?: number | null;
+  elapsedMs: number;
+};
+
+export type SileroVadStatus = AuxiliaryModelStatus;
+export type SileroVadView = AuxiliaryModelView;
+export type SileroVadDownloadProgress = AuxiliaryModelDownloadProgress;
+export type AcousticLanguageDetectorStatus = AuxiliaryModelStatus;
+export type AcousticLanguageDetectorView = AuxiliaryModelView;
+
 export type ServerConnectionState =
   | "not_set"
   | "connecting"

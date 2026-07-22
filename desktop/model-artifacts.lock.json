@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "id": "silero-vad-v4-k2-export",
+      "role": "client-advisory-vad",
+      "distribution": {
+        "source": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+        "releaseAssetId": 271935959,
+        "fileName": "silero_vad.onnx",
+        "sizeBytes": 643854,
+        "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+        "bundled": false,
+        "installedOnlyByExplicitUserAction": true,
+        "appDataRelativePath": "models/silero-vad/sha256-9e2449e1087496d8/silero_vad.onnx"
+      },
+      "lineage": {
+        "model": {
+          "repository": "https://github.com/snakers4/silero-vad",
+          "revision": "915dd3d639b8333a52e001af095f87c5b7f1e0ac",
+          "release": "v4.0",
+          "license": "MIT",
+          "licensePath": "LICENSE",
+          "licenseSha256": "2e63e9a38b6e8fc0c7bc37ce174caca1862870856c6daf5697cfb785e925520b"
+        },
+        "exporter": {
+          "repository": "https://github.com/k2-fsa/sherpa-onnx",
+          "revision": "8e51a975508fd69d3eed53d5098862201889fafd",
+          "sourcePath": "scripts/silero_vad/v4/export-onnx.py",
+          "license": "Apache-2.0",
+          "licensePath": "LICENSE",
+          "licenseSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      },
+      "runtime": {
+        "crate": "sherpa-onnx",
+        "version": "1.13.4",
+        "repository": "https://github.com/k2-fsa/sherpa-onnx",
+        "revision": "142807252687d81b40d6315f23470a1512a00de3",
+        "license": "Apache-2.0",
+        "licensePath": "LICENSE",
+        "licenseSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "nativeArchives": [
+          {
+            "platform": "windows-x86_64",
+            "releaseAssetId": 469211798,
+            "fileName": "sherpa-onnx-v1.13.4-win-x64-static-MT-Release-lib.tar.bz2",
+            "source": "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-v1.13.4-win-x64-static-MT-Release-lib.tar.bz2",
+            "sizeBytes": 119847445,
+            "sha256": "d81bd1d25112540862d2387072e76b2b6843ef962918d6b5c7db5a19c6276b4c"
+          }
+        ]
+      },
+      "notice": "THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "id": "ambernet-1.12.0-int8-qdq-acoustic-lid",
+      "role": "client-acoustic-language-identification",
+      "distribution": {
+        "files": [
+          {
+            "fileName": "ambernet-1.12.0-classifier-int8-qdq.onnx",
+            "sizeBytes": 29613392,
+            "sha256": "ef1006c7637803540e12ab01021e442382857689cbe0b1909d3128acf66a0a3e"
+          }
+        ],
+        "totalSizeBytes": 29613392,
+        "bundled": false,
+        "networkDownloadSupported": false,
+        "installedOnlyByExplicitUserAction": true,
+        "appDataRelativePath": "models/ambernet-lid/sha256-ef1006c763780354",
+        "redistributionApproval": "not-approved"
+      },
+      "lineage": {
+        "model": {
+          "catalog": "https://catalog.ngc.nvidia.com/orgs/nvidia/nemo/models/langid_ambernet/-",
+          "source": "https://api.ngc.nvidia.com/v2/models/nvidia/nemo/langid_ambernet/versions/1.12.0/files/ambernet.nemo",
+          "revision": "1.12.0",
+          "sourceFileName": "ambernet.nemo",
+          "sourceSizeBytes": 116049920,
+          "sourceSha256": "2f92d645b9ea5824d7663584fecb9ecc52557d0d700e24266747f38a61ba1681",
+          "languageLabelCount": 107,
+          "rawNewlineLabelOrderSha256": "9c64d2027a37ed72852eea368a7c81eff62efb3c39e72a1567dad35fb83d2e50",
+          "terms": [
+            "https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/",
+            "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/"
+          ],
+          "termsOwnerApproval": false
+        },
+        "conversion": {
+          "fp32Intermediate": {
+            "fileName": "ambernet-1.12.0-classifier-fp32.onnx",
+            "sizeBytes": 115697097,
+            "sha256": "859e4828ee05c81a118357616224b4a8a98187d7b1286efbe35aaa3f8b303c9e"
+          },
+          "exporter": {
+            "fileName": "export_classifier_onnx.py",
+            "sizeBytes": 3875,
+            "sha256": "92ef99fa335c38a1577152240b459618e23671ab1ebfb51366fb44eb50ccb210"
+          },
+          "quantizer": {
+            "fileName": "quantize_classifier_onnx.py",
+            "sizeBytes": 5869,
+            "sha256": "31e29c125a501f4ef3ff1926585076eb04e756a564863a3de0e9fcdcdc6db2b3",
+            "format": "QDQ",
+            "weightType": "QInt8",
+            "activationType": "QInt8",
+            "perChannel": true,
+            "calibrationMethod": "MinMax",
+            "symmetricWeights": true,
+            "symmetricActivations": true
+          },
+          "onnxContract": {
+            "opset": 17,
+            "input": {
+              "name": "processed_signal",
+              "type": "float32",
+              "shape": [1, 80, 304]
+            },
+            "output": {
+              "name": "logits",
+              "type": "float32",
+              "shape": [1, 107]
+            }
+          },
+          "frontend": {
+            "sampleRateHz": 16000,
+            "windowSamples": 48000,
+            "fftSize": 512,
+            "hannWindowSamples": 400,
+            "hopSamples": 160,
+            "melBins": 80,
+            "melScale": "Slaney",
+            "preemphasis": 0.97,
+            "normalizedFrames": 300,
+            "paddedFrames": 304
+          },
+          "calibration": {
+            "dataset": "google/fleurs",
+            "revision": "70bb2e84b976b7e960aa89f1c648e09c59f894dd",
+            "license": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "datasetCard": "https://huggingface.co/datasets/google/fleurs",
+            "exactManifestIdentitiesVerified": false,
+            "gap": "The two private calibration-manifest hashes and selected-entry hash remain to be pinned; no calibration audio is distributed with Yap."
+          },
+          "environment": {
+            "containerDigestVerified": false,
+            "packageVersionsVerified": false,
+            "gap": "The conversion container digest and complete conversion package lock remain open provenance requirements."
+          }
+        }
+      },
+      "runtime": {
+        "inferenceCrate": "ort",
+        "inferenceCrateVersion": "2.0.0-rc.12",
+        "onnxRuntimeVersion": "1.27.0",
+        "onnxRuntimeLinkage": "single static archive supplied by the pinned sherpa-onnx 1.13.4 Windows runtime",
+        "fftCrate": "realfft",
+        "fftCrateVersion": "3.5.0",
+        "intraOpThreads": 1,
+        "interOpThreads": 1
+      },
+      "evaluationStatus": "selected-bounded-client-candidate",
+      "notice": "THIRD_PARTY_NOTICES.md"
+    }
+  ]
+}

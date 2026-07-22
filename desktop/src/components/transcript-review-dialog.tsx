@@ -1,5 +1,13 @@
 import gsap from "gsap";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 
 import { TranscriptPanel } from "@/components/panels/transcript-panel";
 import {
@@ -40,6 +48,7 @@ function dialogTargetRect(): MorphRect {
 export function TranscriptReviewDialog({
   elapsedSeconds,
   item,
+  languageLabelReview,
   morphOrigin,
   onCopy,
   onOpen,
@@ -53,6 +62,7 @@ export function TranscriptReviewDialog({
 }: {
   elapsedSeconds: number;
   item?: RecordingJobView;
+  languageLabelReview?: ReactNode;
   morphOrigin?: MorphRect;
   onCopy: (item: RecordingJobView) => void;
   onOpen: (path: string) => void;
@@ -168,6 +178,7 @@ export function TranscriptReviewDialog({
             <TranscriptPanel
               elapsedSeconds={elapsedSeconds}
               item={item}
+              languageLabelReview={languageLabelReview}
               onCopy={onCopy}
               onOpen={onOpen}
               onOpenHelp={onOpenHelp}

@@ -3,8 +3,8 @@
 use std::path::Path;
 
 use crate::jobs::{
-    JobLedgerError, NewJobChunk, NewPreparedRemoteJob, NewRecordingJob, RecordingRoute,
-    SessionOrigin,
+    AsrCatalogBinding, JobLedgerError, NewJobChunk, NewPreparedRemoteJob, NewRecordingJob,
+    RecordingRoute, SessionOrigin,
 };
 
 use super::{MAX_PREPARED_CHUNKS, MAX_PREPARED_REQUEST_BYTES};
@@ -32,12 +32,19 @@ pub(super) struct ValidatedJob {
     pub(super) language_mode: &'static str,
     pub(super) language_bcp47: Option<String>,
     pub(super) language_disposition: &'static str,
+    pub(super) language_decision_locked: i64,
+    pub(super) client_stage_history_complete: i64,
+    pub(super) asr_catalog_origin: Option<String>,
+    pub(super) asr_catalog_revision: Option<String>,
 }
 
 impl TryFrom<&NewRecordingJob> for ValidatedJob {
     type Error = JobLedgerError;
 
     fn try_from(job: &NewRecordingJob) -> Result<Self, Self::Error> {
+        job.language_decision
+            .validate()
+            .map_err(|_| JobLedgerError::InvalidRecord("language_decision is inconsistent"))?;
         if job.job_id.trim().is_empty() {
             return Err(JobLedgerError::InvalidRecord("job_id must not be empty"));
         }
@@ -49,6 +56,26 @@ impl TryFrom<&NewRecordingJob> for ValidatedJob {
         if job.session_origin == SessionOrigin::ImportedFile && job.source_path.is_none() {
             return Err(JobLedgerError::InvalidRecord(
                 "imported recording jobs require source_path",
+            ));
+        }
+        let (asr_catalog_origin, asr_catalog_revision) = match &job.asr_catalog_binding {
+            Some(binding) => {
+                validate_catalog_binding(binding)?;
+                (
+                    Some(binding.origin().to_owned()),
+                    Some(binding.catalog_revision().to_owned()),
+                )
+            }
+            None if job.route == Some(RecordingRoute::ServerBatch) => {
+                return Err(JobLedgerError::InvalidRecord(
+                    "new server-batch jobs require a live ASR catalog binding",
+                ));
+            }
+            None => (None, None),
+        };
+        if job.route != Some(RecordingRoute::ServerBatch) && job.asr_catalog_binding.is_some() {
+            return Err(JobLedgerError::InvalidRecord(
+                "ASR catalog bindings belong only to server-batch jobs",
             ));
         }
         Ok(Self {
@@ -80,8 +107,21 @@ impl TryFrom<&NewRecordingJob> for ValidatedJob {
             language_mode: job.language_decision.mode.as_db(),
             language_bcp47: job.language_decision.language_bcp47.clone(),
             language_disposition: job.language_decision.disposition.as_db(),
+            language_decision_locked: i64::from(job.language_decision_locked),
+            client_stage_history_complete: i64::from(job.client_stage_history_complete),
+            asr_catalog_origin,
+            asr_catalog_revision,
         })
     }
+}
+
+pub(super) fn validate_catalog_binding(binding: &AsrCatalogBinding) -> Result<(), JobLedgerError> {
+    AsrCatalogBinding::try_new(
+        binding.origin().to_owned(),
+        binding.catalog_revision().to_owned(),
+    )
+    .map_err(JobLedgerError::InvalidRecord)?;
+    validate_server_base_url(binding.origin())
 }
 
 pub(super) struct ValidatedChunk {

@@ -8,8 +8,11 @@ export async function installQueuedServerBridge(
   await page.addInitScript((state) => {
     Object.defineProperty(globalThis, "isTauri", { value: true });
     const calls: string[] = [];
+    const languageCalls: Array<{ args: unknown; command: string }> = [];
     const shortcutCalls: Array<{ args: unknown; command: string }> = [];
-    Object.assign(globalThis, { __queuedServerBoundaryTest: { calls, shortcutCalls } });
+    Object.assign(globalThis, {
+      __queuedServerBoundaryTest: { calls, languageCalls, shortcutCalls },
+    });
     let callbackId = 0;
     const serverSnapshot = {
       apiVersion: null,
@@ -36,6 +39,52 @@ export async function installQueuedServerBridge(
       sessionOrigin: "importedFile",
       sourcePath: `C:\\recordings\\${state}-interview.wav`,
       status: "queued_server",
+    };
+    const languageCatalog = {
+      catalogRevision: "language-picker-keyboard-test-catalog-v1",
+      providers: [{
+        capabilities: ["en-US", "fr-FR"].map((languageBcp47) => ({
+          languageBcp47,
+          languageSuggestion: false,
+          mode: "fixedBatch",
+          promotionEvidenceRevision: "language-picker-keyboard-test-evidence-v1",
+          providerLanguageCode: languageBcp47.startsWith("en") ? "en" : "fr",
+          qualityTier: "transcriptionReady",
+          segmentLanguageTags: false,
+          wordAlignment: true,
+        })),
+        modelId: "test-model",
+        modelLicense: "test-license",
+        modelRevision: "0123456789abcdef0123456789abcdef01234567",
+        modelSource: "https://example.invalid/model",
+        poolId: "test-pool",
+        providerId: "test-provider",
+      }],
+      schemaVersion: 1,
+    };
+    let primaryLanguageStatus = {
+      capabilityCatalog: languageCatalog,
+      confirmedLanguageAvailable: true,
+      confirmedLanguageBcp47: "en-US",
+      lastKnownCapabilities: null,
+      preferenceIssue: null,
+      requiresConfirmation: false,
+      schemaVersion: 1,
+      suggestedLanguageBcp47: null,
+    };
+    const liveLanguageRoutingStatus = {
+      catalogRevision: "local-language-catalog-v1",
+      enabledLocales: ["en-US"],
+      preferenceIssue: null,
+      primaryLanguageBcp47: "en-US",
+      automaticLanguages: [
+        {
+          languageCode: "es",
+          locales: ["es-US"],
+          selectedLocaleBcp47: null,
+        },
+      ],
+      schemaVersion: 2,
     };
     let liveSnapshot = {
       captureMode: "pushToTalk",
@@ -78,6 +127,18 @@ export async function installQueuedServerBridge(
             modelsDir: "C:\\Yap\\models",
             status: "ready",
           };
+          if (command === "primary_language_status") return primaryLanguageStatus;
+          if (command === "confirm_primary_language") {
+            languageCalls.push({ args, command });
+            const languageBcp47 = (args as { languageBcp47?: string } | undefined)
+              ?.languageBcp47;
+            primaryLanguageStatus = {
+              ...primaryLanguageStatus,
+              confirmedLanguageBcp47: languageBcp47 ?? primaryLanguageStatus.confirmedLanguageBcp47,
+            };
+            return primaryLanguageStatus;
+          }
+          if (command === "live_language_routing_status") return liveLanguageRoutingStatus;
           if (command === "server_connection_status" || command === "refresh_server_connection") {
             return serverSnapshot;
           }
@@ -129,5 +190,15 @@ export async function shortcutCalls(page: Page) {
         shortcutCalls: Array<{ args: unknown; command: string }>;
       };
     }).__queuedServerBoundaryTest.shortcutCalls,
+  );
+}
+
+export async function languageCalls(page: Page) {
+  return page.evaluate(() =>
+    (globalThis as unknown as {
+      __queuedServerBoundaryTest: {
+        languageCalls: Array<{ args: unknown; command: string }>;
+      };
+    }).__queuedServerBoundaryTest.languageCalls,
   );
 }

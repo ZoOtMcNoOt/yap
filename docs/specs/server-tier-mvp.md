@@ -72,8 +72,8 @@ executable and advertises those capabilities dynamically.
 - A bounded thread-backed batch pool dispatches one reference job to a
   non-root, networkless, read-only container with dropped capabilities,
   `no-new-privileges`, resource and output ceilings, read-only inputs, an
-  explicitly non-executable general `/tmp`, and a private executable Triton
-  cache. Unique naming plus unconditional force-remove cleanup prevents a
+  explicitly non-executable general `/tmp`, and a private executable PyTorch
+  compiler cache. Unique naming plus unconditional force-remove cleanup prevents a
   killed or timed-out Docker client from leaving the worker container behind.
 - `server/model-pools.lock.json` pins the canonical Cohere model, its public
   byte-distribution revision, all model hashes, the licensed WER fixture, the

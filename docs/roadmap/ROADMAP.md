@@ -32,26 +32,61 @@ identity, diarization, knowledge, or enterprise boundaries forward:
 - one Rust-owned primary language plus visible per-job override;
 - deterministic normalization and advisory VAD that never deletes source audio;
 - durable retryable preprocessing stages on the existing job authority;
+- one bounded resident local acoustic-LID component, automatic offline language
+  switching, and within-utterance source-time language spans under the existing
+  Rust live-runtime owner;
 - isolated CPU SpeechBrain suggestions for long fixed-language recordings;
-- fixed Cohere/Nemotron routes plus explicit server Nemotron auto mode at
-  finalized utterance boundaries; and
+- pinned reference Cohere/Nemotron routes plus explicit server Nemotron auto
+  mode at finalized utterance boundaries, with correctness and bounded-resource
+  evidence rather than a production pool claim;
+- a digest-pinned Cohere vLLM 26.06 serving candidate behind the same worker
+  contract, promoted only by exact-output plus measured GB10 lifecycle,
+  cold/warm latency, throughput, p95/p99, memory, cancellation, teardown, and
+  concurrent-load evidence against the Transformers reference;
+- a separate Nemotron NeMo server-streaming candidate with its own correctness,
+  streaming, lifecycle, concurrency, and resource gate; and
 - fail-closed word timing, initially behind an English Cohere evidence gate.
 
-The canonical decision is
-[ADR 0024](../adr/0024-phase6-global-language-routing.md). The implementation
+The canonical decisions are
+[ADR 0024](../adr/0024-global-language-routing.md) and
+[ADR 0025](../adr/0025-provider-specific-asr-serving.md). The implementation
 and one-time gate contract are in the active
-[Phase 6 plan](../plans/active/2026-07-16-phase6-preprocessing-pipeline.md).
-Within-utterance code switching, automatic cross-provider switching, named
-speaker identity, and enterprise infrastructure are not Phase 6 claims.
+[audio preprocessing and language routing plan](../plans/active/2026-07-16-audio-preprocessing-and-language-routing.md).
+The living
+[decision and evidence queue](../plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
+preserves discussed decisions, open questions, detailed Phase 6 sub-tasks, and
+later-phase owners without authorizing phase mixing.
+Automatic cross-provider switching, named speaker identity, and enterprise
+infrastructure are not Phase 6 claims. Within-utterance language spans are a
+Phase 6 target but remain unadvertised until the frozen local evidence gate
+passes.
+Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
+SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
+and SGLang services, production multi-worker/mixed-load capacity promotion, production
+observability, and external deployment remain Phase 10.
+
+## Queued post-Phase-6 checkpoint
+
+After Phase 6 merges, a separate
+[codebase ownership and maintainability review](../plans/queued/2026-07-18-codebase-ownership-and-maintainability-review.md)
+reviews the complete Phase 1–6 executable system before Phase 7 starts. It uses
+parallel antagonistic reviewers, then applies the same ownership,
+comprehensibility, decomposition, maintainability, resource, provenance, and
+documentation standard as post-Phase-5 Checkpoint A. It adds no Phase 7 product
+functionality and closes through its own exact-head gate and reviewed PR.
+
+Phase 7 follows the same cadence: independently merge the phase, run a separate
+post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that
+checkpoint merges.
 
 ## Accepted later phases
 
 | Phase | Boundary | Exit direction |
 | --- | --- | --- |
-| 7 | Identity and access | Entra/MSAL client bridge, Yap API audience/token validation, tenant-scoped `(tid, oid)` ownership, purpose grants, authorization/revocation/audit behavior. |
+| 7 | Identity and access | Entra/MSAL client bridge, Yap API audience/token validation, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants, authorization/revocation/audit behavior, and the authenticated owner seam consumed by later batch/live admission. |
 | 8 | Meeting evidence | Anonymous speaker evidence, timestamped result revisions, benchmark gates, and purpose-authorized server reconciliation/naming. |
-| 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP. |
-| 10 | Enterprise and release | IT-managed access/network hardening, secure-edge evaluation, production publication governance, audit/deploy evidence, and eventual repo split. |
+| 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and SGLang-backed compatible reasoning/tool-output models. |
+| 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus SGLang agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
 
 Accepted ADRs remain requirements even when no premature implementation exists.
 Do not treat an unchecked historical plan box as current backlog.
@@ -67,8 +102,10 @@ platform owners and cannot be invented by a developer branch:
 - ZPA application segment, policy, App Connector placement, and redundancy;
 - production identity registration, token audience, conditional-access and
   revocation behavior;
-- persistent service supervision, backup/deletion SLA, monitoring, and capacity
-  ownership; and
+- production hosting/service-manager approval, backup/deletion SLA, enterprise
+  monitoring integration, SLO approval, and capacity authorization (Yap still
+  owns the service implementation, bounded local capacity evidence, and
+  observability instrumentation); and
 - enterprise deployment, publication, and audit approval.
 
 Until those handoffs exist, the Phase 5 SSH-forward profile remains a narrow
@@ -85,3 +122,10 @@ development boundary, not production security.
 6. Update completion scores/status only after executable evidence exists.
 7. Keep private scan material and sensitive runtime evidence out of Git, PRs,
    hosted logs, and public docs.
+8. After Phase 6 and each later phase, run the accepted separate adversarial/
+   refactor checkpoint before beginning the next phase; never mix next-phase
+   behavior into a checkpoint branch.
+9. Name runtime modules, types, functions, tests, configuration, containers,
+   and versioned contracts for the behavior they own. A phase number belongs
+   only in an actual roadmap, phase gate, phase evidence artifact, or frozen
+   backward-compatibility token; it is not a substitute for a domain name.

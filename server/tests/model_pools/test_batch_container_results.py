@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 import subprocess
 import tempfile
@@ -12,6 +13,9 @@ from yap_server.pools.batch_asr import (
     ContainerBatchAsrWorker,
     WorkerExecutionError,
 )
+from yap_server.pools.batch_result import validate_result
+
+from tests.asr_route_fixtures import test_asr_route
 
 from .batch_asr_fixtures import (
     AUDIO_SHA256,
@@ -62,12 +66,70 @@ class ContainerBatchAsrResultTests(unittest.TestCase):
                     result_path,
                     language="en",
                     input_sha256=AUDIO_SHA256,
+                    route=test_asr_route(),
                 )
             )
 
             self.assertEqual(result["jobId"], "job-1")
             self.assertEqual(json.loads(result_path.read_text(encoding="utf-8")), result)
             self.assertEqual(list(root.glob(".result.json.*.tmp")), [])
+
+    def test_accepts_a_canonical_empty_successful_transcript(self) -> None:
+        payload = valid_worker_result(self.lock)
+        payload["transcript"]["text"] = ""  # type: ignore[index]
+        job = BatchAsrJob(
+            "job-1",
+            Path("speech.wav"),
+            Path("result.json"),
+            language="en",
+            input_sha256=AUDIO_SHA256,
+            route=test_asr_route(),
+        )
+
+        validate_result(payload, job, self.lock)
+        payload["transcript"]["text"] = "   "  # type: ignore[index]
+        with self.assertRaisesRegex(WorkerExecutionError, "transcript"):
+            validate_result(payload, job, self.lock)
+
+    def test_accepts_exact_alignment_and_rejects_forged_word_evidence(self) -> None:
+        payload = valid_worker_result(self.lock)
+        payload["alignment"] = {
+            "status": "available",
+            "reason": None,
+            "componentRevision": "cohere-attention-en-v1",
+            "alignedWords": [
+                {
+                    "wordIndex": 0,
+                    "text": "hello",
+                    "startMs": 0,
+                    "endMs": 100,
+                    "turnId": None,
+                    "attribution": {"kind": "unknown"},
+                    "confidence": None,
+                }
+            ],
+        }
+        job = BatchAsrJob(
+            "job-1",
+            Path("speech.wav"),
+            Path("result.json"),
+            language="en",
+            input_sha256=AUDIO_SHA256,
+            route=test_asr_route(),
+        )
+
+        validate_result(payload, job, self.lock)
+        cases = {
+            "transcript divergence": ("text", "goodbye"),
+            "source overflow": ("endMs", 101),
+            "speaker claim": ("attribution", {"kind": "named"}),
+        }
+        for case, (field, value) in cases.items():
+            with self.subTest(case=case):
+                forged = deepcopy(payload)
+                forged["alignment"]["alignedWords"][0][field] = value
+                with self.assertRaisesRegex(WorkerExecutionError, "alignment"):
+                    validate_result(forged, job, self.lock)
 
     def test_rejects_unlocked_overlay_package_versions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -110,6 +172,7 @@ class ContainerBatchAsrResultTests(unittest.TestCase):
                         result_path,
                         language="en",
                         input_sha256=AUDIO_SHA256,
+                        route=test_asr_route(),
                     )
                 )
             self.assertFalse(result_path.exists())
@@ -150,6 +213,7 @@ class ContainerBatchAsrResultTests(unittest.TestCase):
                         root / "result.json",
                         language="en",
                         input_sha256=AUDIO_SHA256,
+                        route=test_asr_route(),
                     )
                 )
 
@@ -205,6 +269,7 @@ class ContainerBatchAsrResultTests(unittest.TestCase):
                                 result_path,
                                 language="en",
                                 input_sha256=AUDIO_SHA256,
+                                route=test_asr_route(),
                             )
                         )
                     self.assertFalse(result_path.exists())

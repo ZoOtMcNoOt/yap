@@ -105,6 +105,64 @@ impl RecordingJobs {
         }
     }
 
+    /// Jobs with an owned client-preflight or server capture no longer depend
+    /// on the external import path for their capture identity. Until Yap
+    /// publishes an owned playback artifact, hide that mutable path rather than
+    /// presenting bytes that may no longer match the immutable capture.
+    pub(super) fn project_prepared_without_external_playback(
+        &self,
+        record: crate::jobs::RecordingJobRecord,
+        media: &MediaOwner,
+    ) -> RecordingJobView {
+        self.release_playback(&record.job_id, media);
+        self.remove_all_job_authority_best_effort(
+            record.source_path.as_deref(),
+            "prepared source detachment",
+        );
+        let mut view = RecordingJobView::from_record(&record);
+        view.source_path = None;
+        view.playback_path = None;
+        view
+    }
+
+    /// Consumes native source authority retained before the Accepted commit,
+    /// then makes the import visible to the background drain. This method must
+    /// never manufacture picker authority from the ledger path. Callers hold
+    /// the shared mutation gate so cancellation cannot remove authority
+    /// between playback projection and activation.
+    pub(super) fn project_and_activate_accepted_import(
+        &self,
+        record: crate::jobs::RecordingJobRecord,
+        source: ValidatedRecordingJobSource,
+        media: &MediaOwner,
+        now_ms: u64,
+        expires_at_ms: u64,
+    ) -> Result<RecordingJobView, JobCommandError> {
+        if record.status != RecordingJobStatus::Accepted {
+            return Err(command_error(
+                "JOB_STATE_CHANGED",
+                "Only an accepted recording can complete native source admission.",
+            ));
+        }
+        let provisional =
+            self.project_committed_or_fail(record.clone(), source.clone(), media, now_ms)?;
+        if provisional.status == RecordingJobStatus::Failed {
+            return Ok(provisional);
+        }
+        // Imports without a durable language decision must pass through client
+        // preflight. Already-locked legacy jobs
+        // have satisfied that admission requirement and retain the canonical
+        // server-queue activation path.
+        let activated = if record.language_decision_locked {
+            self.ledger()
+                .accept_to_queued_server(&record.job_id, now_ms, expires_at_ms)?
+        } else {
+            self.ledger()
+                .accept_to_preflighting(&record.job_id, now_ms, expires_at_ms)?
+        };
+        self.project_committed_or_fail(activated, source, media, now_ms)
+    }
+
     pub(super) fn project_failed_capability_free(
         &self,
         record: &crate::jobs::RecordingJobRecord,

@@ -38,8 +38,10 @@
       "icons/icon.ico"
     ],
     "resources": {
+      "../model-artifacts.lock.json": "model-artifacts.lock.json",
       "../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
-      "../../THIRD_PARTY_PROVENANCE.json": "THIRD_PARTY_PROVENANCE.json"
+      "../../THIRD_PARTY_PROVENANCE.json": "THIRD_PARTY_PROVENANCE.json",
+      "../../server/runtime/asr/licenses/APACHE-2.0.txt": "licenses/APACHE-2.0.txt"
     },
     "windows": {
       "webviewInstallMode": {

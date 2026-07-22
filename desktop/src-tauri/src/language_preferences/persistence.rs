@@ -1,8 +1,14 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::{Mutex, MutexGuard},
+};
 
 use super::model::CURRENT_SCHEMA_VERSION;
 
 pub(super) const MAX_PRIMARY_LANGUAGE_BYTES: usize = 4 * 1024;
+// Serializes the preference read/write with recording-job disposition commits.
+// The process lock order is connector generation -> this gate -> job mutation.
+static PRIMARY_LANGUAGE_MUTATION: Mutex<()> = Mutex::new(());
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -32,6 +38,12 @@ pub(super) fn load() -> Result<Option<String>, PrimaryLanguageError> {
 
 pub(super) fn save(language_bcp47: &str) -> Result<String, PrimaryLanguageError> {
     save_to_path(language_bcp47, &preference_path())
+}
+
+pub(super) fn lock_mutation() -> Result<MutexGuard<'static, ()>, PrimaryLanguageError> {
+    PRIMARY_LANGUAGE_MUTATION
+        .lock()
+        .map_err(|_| PrimaryLanguageError::Access)
 }
 
 pub(super) fn load_from_path(path: &Path) -> Result<Option<String>, PrimaryLanguageError> {

@@ -6,8 +6,9 @@ server.
 
 Phases 1–5 and the post-MVP Architecture Checkpoint A are merged. The current
 branch is **Phase 6 preprocessing**, which is adding the benchmark-backed
-language, VAD, durable-stage, and truthful timing boundary without pulling
-identity, diarization, knowledge, or enterprise deployment forward.
+language, VAD, durable-stage, truthful timing, and provider-specific ASR serving
+boundary without pulling identity, diarization, knowledge, or enterprise
+deployment forward.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.
@@ -22,12 +23,22 @@ what is verified, what is still absent, and what happens next.
 - Imported Phase 5 jobs admit canonical mono PCM16/16 kHz WAV, publish an
   immutable Yap-owned spool, and persist create/upload/commit/status/result/
   cancel progress in native SQLite.
+- The active Phase 6 path records deterministic normalization and optional
+  explicitly installed/hash-verified Silero source-time evidence without
+  deleting source audio; bounded client/server stage attempts survive retry and
+  restart.
 - The development server binds to numeric loopback. A user-managed SSH forward
   can connect it to the private GB-class node; Yap does not create an external
   application endpoint.
-- The private worker uses the digest-pinned NVIDIA PyTorch 26.06 base, Python
-  3.12, the locked NVIDIA Torch/CUDA stack, and the pinned Cohere model/runtime
-  contract.
+- The merged reference worker uses the digest-pinned NVIDIA PyTorch 26.06 base,
+  Python 3.12, the locked NVIDIA Torch/CUDA stack, and transient raw
+  Transformers inference. It remains the correctness/rollback baseline rather
+  than a persistent serving engine.
+- On the active branch, Cohere batch has a digest-pinned NVIDIA vLLM 26.06
+  candidate behind the same bounded worker contract. Nemotron retains its
+  Transformers correctness path and evaluates NeMo separately for server
+  streaming. Both require their own GB10 promotion gates. SGLang remains the
+  later agent/LLM execution plane, not an ASR route.
 - Result identity, hashes, paths, sizes, authority, and transcript bytes are
   verified natively before History presents completion.
 
@@ -84,12 +95,12 @@ an exact-head release boundary, not a routine local test.
 - [Current status](docs/CURRENT-STATUS.md)
 - [Current architecture](docs/architecture/CURRENT-ARCHITECTURE.md)
 - [Long-term Voice OS architecture frame](docs/VOICE-OS-ARCHITECTURE.md)
-- [Phase 1–5 ownership map](docs/architecture/boundaries/PHASE-1-5-OWNERSHIP.md)
+- [Executable ownership map](docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md)
 - [Roadmap](docs/roadmap/ROADMAP.md)
 - [ADR index and implementation status](docs/adr/README.md)
 - [Public security posture](docs/security/SECURITY-POSTURE.md)
 - [Third-party provenance](docs/provenance/THIRD-PARTY.md)
-- [Checkpoint findings and verification](docs/evidence/architecture-checkpoint-a/FINDINGS.md)
+- [Executable ownership review findings](docs/evidence/executable-ownership-review/FINDINGS.md)
 - [Documentation index](docs/README.md)
 - [Changelog](CHANGELOG.md)
 

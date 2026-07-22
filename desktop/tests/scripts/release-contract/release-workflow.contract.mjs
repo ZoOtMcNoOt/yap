@@ -45,13 +45,19 @@ test("supported release path binds a default-branch commit to a read-only build 
   const prepare = namedStepIndex(buildSteps, "Prepare immutable release context");
   const contract = namedStepIndex(buildSteps, "Verify release contract");
   const provenance = namedStepIndex(buildSteps, "Require externally verified third-party provenance");
+  const stageSherpa = namedStepIndex(buildSteps, "Stage hash-verified sherpa native archive");
   const build = namedStepIndex(buildSteps, "Build NSIS release artifact");
   const seal = namedStepIndex(buildSteps, "Seal exact NSIS release artifact");
   const smoke = namedStepIndex(buildSteps, "Smoke the exact NSIS release artifact");
   const captureEnvironment = namedStepIndex(buildSteps, "Capture release build environment");
   const bind = namedStepIndex(buildSteps, "Bind artifact evidence to immutable commit");
   const upload = namedStepIndex(buildSteps, "Upload immutable release payload");
-  assert.ok(prepare < contract && contract < provenance && provenance < build);
+  assert.ok(
+    prepare < contract
+    && contract < provenance
+    && provenance < stageSherpa
+    && stageSherpa < build,
+  );
   assert.ok(
     build < seal
     && seal < smoke
@@ -61,6 +67,11 @@ test("supported release path binds a default-branch commit to a read-only build 
   );
   assert.match(buildSteps[provenance].run, /--require-reviewed/);
   assert.match(buildSteps[provenance].run, /--verify-upstream/);
+  assert.match(buildSteps[stageSherpa].run, /model-artifacts\.lock\.json/);
+  assert.match(buildSteps[stageSherpa].run, /Get-FileHash/);
+  assert.match(buildSteps[stageSherpa].run, /SHA256/);
+  assert.match(buildSteps[stageSherpa].run, /SHERPA_ONNX_ARCHIVE_DIR/);
+  assert.match(buildSteps[stageSherpa].run, /GITHUB_ENV/);
   assert.match(buildSteps[seal].run, /release-artifact\.mjs seal/);
   assert.match(buildSteps[seal].run, /--seal-path/);
   assert.equal(

@@ -11,6 +11,7 @@ export async function createReleaseGitFixture(prefix = "yap-release-contract-") 
     ".gitignore": ".env\n.env.*\n*.env\n/context.json\n/artifact-seal.json\n/metadata*.json\n/ambiguous.json\n/github-output.txt\n/bundle/\n/ambiguous/\n",
     "THIRD_PARTY_NOTICES.md": "fixture notices\n",
     "THIRD_PARTY_PROVENANCE.json": "{}\n",
+    "desktop/model-artifacts.lock.json": "{}\n",
     "desktop/package.json": `${JSON.stringify({ version: "0.1.0" })}\n`,
     "desktop/pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
     "desktop/src/app.ts": "export const fixture = true;\n",
@@ -18,6 +19,7 @@ export async function createReleaseGitFixture(prefix = "yap-release-contract-") 
     "desktop/src-tauri/Cargo.toml": "[package]\nname = 'fixture'\nversion = '0.1.0'\n",
     "desktop/src-tauri/rust-toolchain.toml": "[toolchain]\nchannel = '1.96.0'\n",
     "desktop/src-tauri/tauri.conf.json": `${JSON.stringify({ version: "0.1.0" })}\n`,
+    "server/runtime/asr/licenses/APACHE-2.0.txt": "fixture Apache license\n",
   };
   for (const [relativePath, contents] of Object.entries(files)) {
     const absolutePath = path.join(fixtureRoot, relativePath);

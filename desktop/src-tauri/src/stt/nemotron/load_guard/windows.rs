@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use super::super::{Artifact, NemotronPaths};
+use super::super::Artifact;
 use crate::stt::error::SttError;
 
 mod path_lease;
@@ -10,7 +10,7 @@ use path_lease::{absolute_model_root, open_directory_chain, DirectoryLease};
 use snapshot::{create_snapshot_root, SnapshotArtifact};
 
 pub(super) struct WindowsModelLoadGuard {
-    paths: NemotronPaths,
+    paths: Vec<PathBuf>,
     snapshot_root: PathBuf,
     artifacts: Vec<SnapshotArtifact>,
     directories: Vec<DirectoryLease>,
@@ -25,7 +25,7 @@ impl WindowsModelLoadGuard {
         directories.push(snapshot_directory);
         let mut snapshots = Vec::with_capacity(artifacts.len());
 
-        let built = (|| -> Result<NemotronPaths, SttError> {
+        let built = (|| -> Result<Vec<PathBuf>, SttError> {
             for artifact in artifacts {
                 snapshots.push(SnapshotArtifact::create(
                     &root.join(artifact.file),
@@ -33,7 +33,10 @@ impl WindowsModelLoadGuard {
                     artifact,
                 )?);
             }
-            super::super::paths_at(snapshot_root.clone())
+            Ok(artifacts
+                .iter()
+                .map(|artifact| snapshot_root.join(artifact.file))
+                .collect())
         })();
 
         match built {
@@ -56,8 +59,8 @@ impl WindowsModelLoadGuard {
         }
     }
 
-    pub(super) fn paths(&self) -> &NemotronPaths {
-        &self.paths
+    pub(super) fn path(&self, index: usize) -> &Path {
+        &self.paths[index]
     }
 
     pub(super) fn revalidate_after_native_load(&self) -> Result<(), SttError> {

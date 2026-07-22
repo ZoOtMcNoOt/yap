@@ -18,7 +18,7 @@ from .api_fixtures import (
     _BlockingStatusService,
     _CapturingLogger,
     _ControlledProcessor,
-    _phase5_job_request,
+    _meeting_import_job_request,
 )
 
 
@@ -77,7 +77,7 @@ class BoundedBatchJobServerTests(unittest.TestCase):
                 supported_languages=("en",),
                 now=lambda: clock["now"],
             )
-            request = _phase5_job_request()
+            request = _meeting_import_job_request()
             request["metadata"]["retentionExpiresAtUtc"] = "2026-07-15T00:00:00Z"
             created = service.create(request)
             service.cancel(created["jobId"])

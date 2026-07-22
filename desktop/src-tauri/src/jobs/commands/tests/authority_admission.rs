@@ -99,7 +99,7 @@ fn authority_failed_create_stays_capability_free_until_explicit_retry() {
     );
 
     let retried = jobs.retry(&media, &created[0].id, 1_504, || {}).unwrap();
-    assert_eq!(retried.status, RecordingJobStatus::QueuedServer);
+    assert_eq!(retried.status, RecordingJobStatus::Preflighting);
     assert_eq!(retried.source_path.as_deref(), canonical_source.to_str());
     assert!(retried.playback_path.is_some());
     assert_eq!(
@@ -208,7 +208,7 @@ fn multi_create_commits_every_row_before_returning_injected_projection_outcomes(
             assert_eq!(
                 committed
                     .iter()
-                    .filter(|job| job.status == RecordingJobStatus::QueuedServer)
+                    .filter(|job| job.status == RecordingJobStatus::Preflighting)
                     .count(),
                 1
             );
@@ -219,7 +219,7 @@ fn multi_create_commits_every_row_before_returning_injected_projection_outcomes(
     assert_eq!(created.len(), 2);
     assert_eq!(created[0].status, RecordingJobStatus::Failed);
     assert_eq!(created[0].playback_path, None);
-    assert_eq!(created[1].status, RecordingJobStatus::QueuedServer);
+    assert_eq!(created[1].status, RecordingJobStatus::Preflighting);
     assert!(created[1].playback_path.is_some());
 
     drop(media);

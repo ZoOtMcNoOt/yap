@@ -9,6 +9,7 @@ import stat
 from typing import Any
 
 from yap_server.bounded_file import read_regular_text
+from yap_server.language_tags import canonical_bcp47
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -51,6 +52,7 @@ class ModelPoolLock:
     runtime_torch_cuda_version: str
     runtime_overlay_packages: tuple[tuple[str, str], ...]
     pool_id: str
+    engine: str
     model_id: str
     model_revision: str
     model_license: str
@@ -62,6 +64,7 @@ class ModelPoolLock:
     supported_languages: tuple[str, ...]
     artifacts: tuple[LockedArtifact, ...]
     fixture: LockedFixture
+    runtime_reported_serving_version: str | None = None
 
 
 def _mapping(value: Any, field: str) -> dict[str, Any]:
@@ -114,6 +117,15 @@ def load_model_pool_lock(path: Path) -> ModelPoolLock:
         runtime.get("torchCudaVersion"),
         "runtime.torchCudaVersion",
     )
+    raw_reported_serving_version = runtime.get("reportedServingVersion")
+    runtime_reported_serving_version = (
+        None
+        if raw_reported_serving_version is None
+        else _string(
+            raw_reported_serving_version,
+            "runtime.reportedServingVersion",
+        )
+    )
     raw_overlay_packages = _mapping(
         runtime.get("overlayPackages"),
         "runtime.overlayPackages",
@@ -137,7 +149,7 @@ def load_model_pool_lock(path: Path) -> ModelPoolLock:
             )
         )
     if runtime_platform != "linux/arm64":
-        raise ValueError("the Phase 4 runtime must be pinned for linux/arm64")
+        raise ValueError("the ASR runtime must be pinned for linux/arm64")
     if runtime_image.endswith(":latest"):
         raise ValueError("runtime image cannot use latest")
     if runtime_source_tag == "latest":
@@ -156,6 +168,9 @@ def load_model_pool_lock(path: Path) -> ModelPoolLock:
 
     pool = _mapping(payload.get("pool"), "pool")
     pool_id = _string(pool.get("id"), "pool.id")
+    engine = _string(pool.get("engine"), "pool.engine")
+    if re.fullmatch(r"[a-z][a-z0-9-]{0,63}", engine) is None:
+        raise ValueError("pool.engine must be a functional lowercase identifier")
     model = _mapping(pool.get("model"), "pool.model")
     model_id = _string(model.get("id"), "pool.model.id")
     model_revision = _string(model.get("revision"), "pool.model.revision")
@@ -174,11 +189,16 @@ def load_model_pool_lock(path: Path) -> ModelPoolLock:
     raw_languages = pool.get("supportedLanguages")
     if not isinstance(raw_languages, list) or not raw_languages:
         raise ValueError("pool.supportedLanguages must be a non-empty array")
-    if not all(
-        isinstance(language, str) and re.fullmatch(r"[a-z]{2}", language)
-        for language in raw_languages
-    ):
-        raise ValueError("pool.supportedLanguages must contain ISO 639-1 codes")
+    for language in raw_languages:
+        if language == "auto":
+            continue
+        try:
+            canonical_bcp47(language, "pool.supportedLanguages entry")
+        except ValueError as error:
+            raise ValueError(
+                "pool.supportedLanguages must contain canonical provider "
+                "language codes or auto"
+            ) from error
     if raw_languages != sorted(set(raw_languages)):
         raise ValueError("pool.supportedLanguages must be sorted and unique")
 
@@ -243,6 +263,7 @@ def load_model_pool_lock(path: Path) -> ModelPoolLock:
         runtime_torch_cuda_version=runtime_torch_cuda_version,
         runtime_overlay_packages=tuple(sorted(overlay_packages)),
         pool_id=pool_id,
+        engine=engine,
         model_id=model_id,
         model_revision=model_revision,
         model_license=_string(model.get("license"), "pool.model.license"),
@@ -263,6 +284,7 @@ def load_model_pool_lock(path: Path) -> ModelPoolLock:
         supported_languages=tuple(raw_languages),
         artifacts=tuple(artifacts),
         fixture=fixture,
+        runtime_reported_serving_version=runtime_reported_serving_version,
     )
 
 
@@ -283,9 +305,13 @@ def verify_model_artifacts(lock: ModelPoolLock, model_dir: Path) -> None:
         try:
             metadata = candidate.lstat()
         except FileNotFoundError as error:
-            raise ModelArtifactError(f"missing locked artifact: {artifact.path}") from error
+            raise ModelArtifactError(
+                f"missing locked artifact: {artifact.path}"
+            ) from error
         if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
-            raise ModelArtifactError(f"locked artifact is not a regular file: {artifact.path}")
+            raise ModelArtifactError(
+                f"locked artifact is not a regular file: {artifact.path}"
+            )
         if metadata.st_size != artifact.size:
             raise ModelArtifactError(f"locked artifact size differs: {artifact.path}")
         if sha256_file(candidate) != artifact.sha256:

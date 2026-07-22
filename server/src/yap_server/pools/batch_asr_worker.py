@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import redirect_stdout
 from dataclasses import dataclass
 import hashlib
 import io
-from importlib.metadata import version as package_version
 import json
 import os
 from pathlib import Path
 import re
 import stat
 import sys
-import time
 import wave
 
 from yap_server.pools.model_lock import (
@@ -19,6 +18,7 @@ from yap_server.pools.model_lock import (
     load_model_pool_lock,
     verify_model_artifacts,
 )
+from yap_server.pools.utterance_plan import UtterancePlan, read_utterance_plan
 
 
 SAMPLE_RATE_HZ = 16000
@@ -31,7 +31,7 @@ _JOB_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 
 class WorkerInputError(ValueError):
-    """An input is outside the Phase 4 worker's bounded PCM contract."""
+    """An input is outside the batch worker's bounded PCM contract."""
 
 
 @dataclass(frozen=True)
@@ -41,6 +41,12 @@ class PcmAudio:
     frame_count: int
     duration_ms: int
     sha256: str
+
+
+@dataclass(frozen=True)
+class PcmWavSnapshot:
+    encoded_bytes: bytes
+    audio: PcmAudio
 
 
 def validate_job_id(value: str) -> str:
@@ -54,6 +60,17 @@ def read_pcm16_wav(
     *,
     max_audio_seconds: int = MAX_AUDIO_SECONDS,
 ) -> PcmAudio:
+    return read_pcm16_wav_snapshot(
+        path,
+        max_audio_seconds=max_audio_seconds,
+    ).audio
+
+
+def read_pcm16_wav_snapshot(
+    path: Path,
+    *,
+    max_audio_seconds: int = MAX_AUDIO_SECONDS,
+) -> PcmWavSnapshot:
     if max_audio_seconds < 1:
         raise ValueError("max_audio_seconds must be positive")
     try:
@@ -71,6 +88,28 @@ def read_pcm16_wav(
     with path.open("rb") as encoded:
         encoded_bytes = encoded.read(max_encoded_bytes + 1)
     if len(encoded_bytes) > max_encoded_bytes:
+        raise WorkerInputError("input audio exceeds the bounded encoded size")
+
+    return PcmWavSnapshot(
+        encoded_bytes=encoded_bytes,
+        audio=decode_pcm16_wav(
+            encoded_bytes,
+            max_audio_seconds=max_audio_seconds,
+        ),
+    )
+
+
+def decode_pcm16_wav(
+    encoded_bytes: bytes,
+    *,
+    max_audio_seconds: int = MAX_AUDIO_SECONDS,
+) -> PcmAudio:
+    if max_audio_seconds < 1:
+        raise ValueError("max_audio_seconds must be positive")
+    max_encoded_bytes = (
+        SAMPLE_RATE_HZ * max_audio_seconds * 2 + _MAX_WAV_OVERHEAD_BYTES
+    )
+    if not isinstance(encoded_bytes, bytes) or len(encoded_bytes) > max_encoded_bytes:
         raise WorkerInputError("input audio exceeds the bounded encoded size")
 
     try:
@@ -103,19 +142,6 @@ def read_pcm16_wav(
     )
 
 
-def _decoded_text(value: object) -> str:
-    if isinstance(value, str):
-        text = value
-    elif isinstance(value, (list, tuple)) and len(value) == 1 and isinstance(value[0], str):
-        text = value[0]
-    else:
-        raise RuntimeError("ASR decoder returned an unexpected result")
-    text = " ".join(text.split())
-    if not text:
-        raise RuntimeError("ASR decoder returned an empty transcript")
-    return text
-
-
 def transcribe(
     *,
     job_id: str,
@@ -124,100 +150,78 @@ def transcribe(
     audio: PcmAudio,
     language: str,
     punctuation: bool,
+    utterance_plan: UtterancePlan | None = None,
 ) -> dict[str, object]:
-    # These imports stay inside the isolated worker. Importing the health service
-    # or queue/router code never loads CUDA, Torch, NumPy, or Transformers.
-    import numpy as np
-    import torch
-    from transformers import AutoProcessor, CohereAsrForConditionalGeneration
+    if lock.pool_id == "cohere-batch":
+        if lock.engine != "transformers":
+            raise WorkerInputError(
+                "the isolated Cohere worker requires a Transformers model lock"
+            )
+        if utterance_plan is not None:
+            raise WorkerInputError("Cohere batch work does not consume an utterance plan")
+        from yap_server.pools.cohere_engine import CohereAsrEngine, CohereAsrInput
 
-    if not torch.cuda.is_available():
-        raise RuntimeError("the Phase 4 ASR worker requires an NVIDIA GPU")
+        with redirect_stdout(sys.stderr):
+            engine = CohereAsrEngine(model_dir=model_dir, lock=lock)
+            result = engine.transcribe_batch(
+                [
+                    CohereAsrInput(
+                        job_id=job_id,
+                        audio=audio,
+                        language=language,
+                        punctuation=punctuation,
+                    )
+                ]
+            )[0]
+        return result
+    if lock.pool_id == "nemotron-batch":
+        from yap_server.pools.nemotron_engine import NemotronAsrInput
 
-    load_started = time.monotonic()
-    processor = AutoProcessor.from_pretrained(
-        str(model_dir),
-        local_files_only=True,
-    )
-    model = CohereAsrForConditionalGeneration.from_pretrained(
-        str(model_dir),
-        local_files_only=True,
-        dtype=torch.bfloat16,
-    )
-    model.to("cuda")
-    model.eval()
-    torch.cuda.synchronize()
-    model_load_ms = round((time.monotonic() - load_started) * 1000)
+        if utterance_plan is None:
+            raise WorkerInputError("Nemotron batch work requires an utterance plan")
+        with redirect_stdout(sys.stderr):
+            engine = None
+            if lock.engine == "transformers":
+                from yap_server.pools.nemotron_engine import NemotronAsrEngine
 
-    samples = np.frombuffer(audio.pcm_bytes, dtype="<i2").astype(np.float32)
-    samples /= 32768.0
-    inputs = processor(
-        audio=samples,
-        sampling_rate=audio.sample_rate,
-        return_tensors="pt",
-        language=language,
-        punctuation=punctuation,
-    )
-    audio_chunk_index = inputs.get("audio_chunk_index")
-    inputs = inputs.to(device=model.device, dtype=model.dtype)
+                engine = NemotronAsrEngine(model_dir=model_dir, lock=lock)
+            elif lock.engine == "nemo":
+                from yap_server.pools.nemotron_nemo_streaming import (
+                    NemotronNemoStreamingEngine,
+                )
 
-    inference_started = time.monotonic()
-    with torch.inference_mode():
-        output = model.generate(**inputs, max_new_tokens=256)
-    torch.cuda.synchronize()
-    inference_ms = round((time.monotonic() - inference_started) * 1000)
-    transcript = _decoded_text(
-        processor.decode(
-            output,
-            skip_special_tokens=True,
-            audio_chunk_index=audio_chunk_index,
-            language=language,
-        )
-    )
-
-    return {
-        "schemaVersion": 1,
-        "jobId": job_id,
-        "model": {
-            "poolId": lock.pool_id,
-            "id": lock.model_id,
-            "revision": lock.model_revision,
-        },
-        "audio": {
-            "sha256": audio.sha256,
-            "durationMs": audio.duration_ms,
-            "sampleRateHz": audio.sample_rate,
-        },
-        "transcript": {
-            "text": transcript,
-            "language": language,
-            "punctuation": punctuation,
-        },
-        "runtime": {
-            "device": "cuda",
-            "deviceName": str(torch.cuda.get_device_name(0)),
-            "computeCapability": list(torch.cuda.get_device_capability(0)),
-            "pythonVersion": sys.version.split()[0],
-            "torchVersion": str(torch.__version__),
-            "torchCudaVersion": str(torch.version.cuda),
-            "overlayPackages": {
-                name: package_version(name)
-                for name, _expected_version in lock.runtime_overlay_packages
-            },
-            "dtype": str(model.dtype).removeprefix("torch."),
-            "modelLoadMs": model_load_ms,
-            "inferenceMs": inference_ms,
-        },
-    }
+                engine = NemotronNemoStreamingEngine(model_dir=model_dir, lock=lock)
+            else:
+                raise WorkerInputError(
+                    "Nemotron model lock selects an unsupported engine"
+                )
+            try:
+                result = engine.transcribe_recording(
+                    NemotronAsrInput(
+                        job_id=job_id,
+                        audio=audio,
+                        language=language,
+                        punctuation=punctuation,
+                    ),
+                    utterance_plan,
+                )
+            finally:
+                close = getattr(engine, "close", None)
+                if callable(close):
+                    close()
+        return result
+    raise WorkerInputError("model pool has no checked reference engine")
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run one offline Phase 4 batch-ASR job")
+    parser = argparse.ArgumentParser(description="Run one isolated offline batch-ASR job")
     parser.add_argument("--lock", default=os.environ.get("YAP_MODEL_LOCK"))
     parser.add_argument("--model-dir", required=True)
     parser.add_argument("--input", required=True)
     parser.add_argument("--job-id", required=True)
     parser.add_argument("--language", required=True)
+    parser.add_argument("--utterance-plan")
+    parser.add_argument("--utterance-plan-sha256")
     parser.add_argument("--no-punctuation", action="store_true")
     return parser
 
@@ -234,6 +238,18 @@ def main(argv: list[str] | None = None) -> int:
         model_dir = Path(arguments.model_dir).resolve(strict=True)
         verify_model_artifacts(lock, model_dir)
         audio = read_pcm16_wav(Path(arguments.input).resolve(strict=True))
+        if bool(arguments.utterance_plan) != bool(arguments.utterance_plan_sha256):
+            raise WorkerInputError(
+                "utterance plan path and identity must be supplied together"
+            )
+        utterance_plan = None
+        if arguments.utterance_plan:
+            utterance_plan = read_utterance_plan(
+                Path(arguments.utterance_plan).resolve(strict=True),
+                expected_sha256=arguments.utterance_plan_sha256,
+                expected_input_wav_sha256=audio.sha256,
+                expected_input_sample_count=audio.frame_count,
+            )
         result = transcribe(
             job_id=job_id,
             model_dir=model_dir,
@@ -241,6 +257,7 @@ def main(argv: list[str] | None = None) -> int:
             audio=audio,
             language=arguments.language,
             punctuation=not arguments.no_punctuation,
+            utterance_plan=utterance_plan,
         )
     except (OSError, ValueError) as error:
         payload = {
@@ -248,9 +265,9 @@ def main(argv: list[str] | None = None) -> int:
             "code": "WORKER_INPUT_INVALID",
             "message": str(error),
         }
-        print(json.dumps(payload, ensure_ascii=True, separators=(",", ":")), file=sys.stderr)
+        print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), file=sys.stderr)
         return 2
-    print(json.dumps(result, ensure_ascii=True, separators=(",", ":"), sort_keys=True))
+    print(json.dumps(result, ensure_ascii=False, separators=(",", ":"), sort_keys=True))
     return 0
 
 

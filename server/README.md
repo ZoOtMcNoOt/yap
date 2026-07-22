@@ -26,7 +26,7 @@ server/
   src/
     yap_server/
       api/
-      jobs/                  # Phase 5 durable loopback batch service/runtime
+      jobs/                  # Durable loopback batch-ASR service/runtime
       workload_router/
       pools/                 # bounded Phase 4 reference worker and pool
       schemas/
@@ -98,9 +98,9 @@ Phase 3 health process into a production service:
   runs each job non-root with no network, a read-only root filesystem, dropped
   capabilities, `no-new-privileges`, memory/CPU/PID/output ceilings, read-only
   model/audio mounts, an explicitly non-executable `/tmp`, and only a private
-  executable tmpfs for Triton JIT output. Every run has a unique container name
+  executable tmpfs for bounded PyTorch compiler output. Every run has a unique container name
   and an unconditional force-remove cleanup check.
-- `phase4_gate.py` connects router -> pool -> isolated worker, verifies the
+- `gb10_asr_runtime_gate.py` connects router -> pool -> isolated worker, verifies the
   immutable model and licensed fixture, executes the inspected raw image ID,
   requires input/result audio identity plus exact GB10/compute-capability/BF16
   runtime attestation, and enforces the fixture WER threshold. The wrapper
@@ -113,15 +113,25 @@ listener, or multi-worker capacity claim. Phase 5 reuses its isolated worker
 through the separate development batch runtime below; production deployment
 claims remain gated.
 
-## Phase 5 loopback batch path
+## Loopback batch-ASR path
 
-Set `YAP_PHASE5_BATCH_ENABLED=1` only on Linux with a numeric loopback bind,
+Set `YAP_BATCH_ASR_ENABLED=1` only on Linux with a numeric loopback bind,
 private mode-0700 job storage, the immutable model lock, an already verified
-model directory, `YAP_PHASE5_CHECKED_HEAD` set to the full checked SHA, and
-`YAP_PHASE5_WORKER_IMAGE` set to the custom Yap image built and revision-labeled
-from that head. The pinned NVIDIA PyTorch image is the custom Dockerfile base;
-it is not directly runnable as Yap's worker. Startup inspects the custom image
-and passes only its immutable image ID to Docker. The runtime provides durable
+model directory, and `YAP_CHECKED_HEAD` set to the full checked SHA. The merged
+Phase 5 evidence used the transient custom Transformers worker. On the active
+Phase 6 branch, `development-batch-server.sh` selects the Cohere vLLM adapter and
+requires a separately running checked `cohere-vllm-server.sh`, numeric-loopback
+endpoint, and private API key. The vLLM launcher inspects the exact ARM64 image
+ID and revision label before publishing only `127.0.0.1:18000`. The committed
+capability catalog contains Cohere only; it does not advertise the unpromoted
+Nemotron candidate. `nemotron-nemo-server.sh` exists for direct frozen
+qualification on numeric loopback with a separate private API key. Wiring that
+candidate through the development batch server additionally requires an
+explicit matching candidate capability lock outside the repository. The
+launcher verifies the ARM64 image/revision, runs as the non-root model owner,
+mounts the private job store read-only at the same absolute path, and publishes
+only `127.0.0.1:18001` by default. Candidate qualification is not product-catalog
+promotion. The runtime provides durable
 create/upload/commit/status/result and cancellation handlers, a single running
 plus two queued GPU jobs, eight bounded HTTP workers, a 512-record cap,
 one-MiB chunks, and a four-hour mono PCM16/16 kHz job cap. It performs startup
@@ -129,13 +139,87 @@ and periodic maintenance, purges cancelled/failed private audio at a safe
 lifecycle boundary, and retains completed results for the configured finite
 period.
 
+The reusable provider-qualification helpers build exact-duration inputs and
+hash-bound jobs only beneath `YAP_EVAL_CACHE`, execute synchronized bounded
+waves, and emit aggregates without paths, request IDs, transcript text, or
+transcript hashes. Focused repeated-fixture controls reached the exact four-hour
+boundary through both candidate adapters. They prove transport/runtime
+lifecycle only. Yap sends Cohere/vLLM one offline API request; vLLM may split it
+into multiple bounded engine requests and schedule those chunks concurrently.
+NeMo advances 1.12-second cache-aware frames across finalized windows, while
+this service currently publishes no partial transcript. Treat their wall times
+as provider-specific execution-shape evidence, not a streaming-UX comparison.
+The qualification output labels vLLM histograms per engine request and Yap wall
+latency per API request. The frozen sentinel-rich and representative-quality
+gates remain required before any catalog or performance claim.
+
+Build the desktop's deterministic duration inputs with
+`python -m yap_server.evaluation.local_stream_duration_suite`. Set
+`YAP_EVAL_CACHE` to an absolute private directory and pass one or more vetted
+mono PCM16/16-kHz WAVs with repeated `--source`. The command atomically creates
+the 15 plan-derived local tracks, fails if a source changes during construction,
+prints the private `suite.json` path and its SHA-256, and never places audio or
+transcript content in the repository.
+`--expect-text-case` is optional and asserts only a non-empty result for that
+exact case; it is not an accuracy score.
+
+Run a standard resident load cell with
+`python -m yap_server.evaluation.provider_runtime_qualification`. The command
+requires the plan, exact model lock, one manifest for every duration used by the
+selected cell, numeric-loopback endpoint, route languages, private output root,
+and timeout. `YAP_EVAL_CACHE` must name the absolute private cache containing
+both tracks and output; the provider API key stays in its existing environment
+variable. The runner fails closed on cancellation, fixed/automatic parity, and
+capacity cells because those require specialized semantics rather than an
+ordinary synchronized wave.
+
+Those cells have separate executable entry points:
+`provider_cancellation_qualification` requires a dispatched target, concurrent
+provider activity, typed cancellation acknowledgement, sibling isolation,
+idle read-back, and immediate recovery; for vLLM it also records the pinned
+engine's `finished_reason` counters. The pinned external-disconnect path calls
+the engine abort boundary but frees that request without adding it to the
+finished-request histogram, so the runner distinguishes that one-stop shape
+from a counted abort, a server completion after cancellation, and ambiguous
+accounting. `provider_capacity_qualification`
+tests Cohere at Yap's actual 8-running + 8-queued batch-pool owner, including
+the aggregate four-hour PCM reservation, while testing NeMo's distinct
+authenticated eight-active service boundary and typed 429. vLLM's
+`--max-num-seqs 8` is a scheduler limit that can queue work, not a Yap 429
+contract. `provider_language_parity_qualification` runs the same locked
+30-second source through fixed and automatic NeMo routes at c1 and c8 and
+requires lexical parity plus their deliberately different language-evidence
+shapes. It reports exact rendered-text parity separately because a language
+prompt may change casing or punctuation without changing the word sequence.
+Ordinary exact-track load cells apply the same distinction per audio duration:
+they require one non-empty lexical identity for every repeated immutable input
+while reporting exact rendered identity counts separately. Representative
+quality scoring still evaluates punctuation against adjudicated references, so
+this stability rule cannot turn punctuation regressions into passing quality.
+All three commands use the same private-cache and aggregate-evidence rules as
+the standard runner. Their existence does not consume the frozen checked-head
+gate.
+
+`provider_resource_observations` samples cgroup-v2 current/peak/composition,
+memory events, CPU/task counts, and the container entrypoint's RSS/thread/
+virtual-data extent without recording content or paths. NeMo response aggregates
+also retain CUDA allocated/reserved counters. Runtime-plan schema 5 contains
+separate predeclared c8/1,600 GB10 profiles; qualification requires current and
+peak ceilings, a sufficiently long sampled tail, zero memory-event increments,
+bounded tasks/threads, and no more than 64 MiB absolute tail-window growth in
+entrypoint virtual allocation extent. Cgroup RSS regression/range stays visible
+because unified-memory residency may oscillate, but it is not mislabeled as
+growing live state. Both current-source profiles pass the executable eleven-
+check contract and clean teardown; the Phase 6 requirement remains unfulfilled
+until the frozen-head run passes it.
+
 The Windows desktop reaches this profile only through an explicitly started
 SSH local forward to `127.0.0.1:18765`. No TLS endpoint, firewall opening, DNS,
 ZPA publication, service unit, automatic alias failover, authenticated owner,
 or WSS/live transport is created. See the
-[server-node runbook](../docs/runbooks/yap-server-node-setup.md#phase-5-loopback-batch-development).
-Use its foreground `phase5-batch-server.sh` launcher rather than reconstructing
-the environment ad hoc.
+[server-node runbook](../docs/runbooks/yap-server-node-setup.md#loopback-batch-development-profile).
+Use its two foreground launchers rather than reconstructing either environment
+ad hoc.
 
 This path passed the one-time Phase 5 local/native/server/GB10 gate on exact PR
 head `4771d9be60562fa009ccecbcd3c7111b699883a5` and merged as
@@ -155,9 +239,20 @@ evidence-revision, and 256-KiB output bounds still apply.
 
 The current lock intentionally advertises only the already gated Cohere
 `en-US` fixed-batch route. Research candidates and model-card language lists do
-not become executable availability. Primary-language persistence, additional
-locales/providers, dynamic mode, LID, VAD, and alignment remain unfinished
-Phase 6 work until their own runtime artifacts and benchmark revisions pass.
+not become executable availability. Primary-language persistence, local and
+server language-span contracts, advisory VAD, guarded LID paths, Nemotron fixed/
+automatic reference routes, Cohere alignment, and the Cohere vLLM adapter/image/
+launcher contract plus resident NeMo worker/service/image/launcher now have
+focused implementation evidence, but none expands this catalog. NeMo remains a
+separately gated server-streaming candidate and is not client-facing live.
+Focused GB10 resident-service probes preserved Cohere's exact Transformers
+reference hash through independent c2/c4/c8 requests and observed vLLM engine
+abort after explicit client socket shutdown; NeMo separately formed one batch of
+eight fixed/automatic requests. Both recovered and tore down, but neither result
+consumes its frozen promotion gate or establishes production capacity.
+Additional locales, automatic local routing, timing, and serving candidates
+remain unavailable until their exact runtime artifacts and promotion evidence
+pass.
 
 ## Local checks
 
@@ -178,9 +273,9 @@ hosted CI:
 
 ```bash
 YAP_CHECKED_HEAD=<full-git-sha> \
-YAP_PHASE4_MODEL_DIR=<private-model-directory> \
-YAP_PHASE4_EVIDENCE_DIR=<private-evidence-directory> \
-bash infra/yap-server-node/phase4-asr-gate.sh
+YAP_GB10_ASR_MODEL_DIR=<private-model-directory> \
+YAP_GB10_ASR_EVIDENCE_DIR=<private-evidence-directory> \
+bash infra/yap-server-node/gb10-asr-runtime-gate.sh
 ```
 
 The gate builds and runs a transient container only. It does not install a

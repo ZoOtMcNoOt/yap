@@ -1,4 +1,5 @@
 use std::sync::{atomic::Ordering, mpsc};
+use std::time::{Duration, Instant};
 
 #[cfg(test)]
 use std::sync::Arc;
@@ -57,6 +58,80 @@ impl<T> BoundedSink<T> {
                 self.state.closed.store(true, Ordering::Release);
                 self.record_drop_locked(&mut completion, "sink receiver disconnected");
                 Err(SinkSendError::Closed)
+            }
+        }
+    }
+
+    /// Publishes a terminal control item without treating transient queue
+    /// pressure as data loss. Capture hot paths continue to use `try_send`.
+    pub(crate) fn send_control_with_timeout(
+        &self,
+        mut item: T,
+        timeout: Duration,
+    ) -> Result<(), SinkSendError> {
+        let deadline = Instant::now() + timeout;
+        loop {
+            let mut completion = self
+                .state
+                .completion
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if completion.phase != SinkGatePhase::Accepting {
+                self.state.dropped_frames.fetch_add(1, Ordering::Relaxed);
+                return Err(SinkSendError::Closed);
+            }
+            let sender_guard = match self.state.sender.lock() {
+                Ok(sender) => sender,
+                Err(_) => {
+                    self.record_drop_locked(&mut completion, "sink state became unavailable");
+                    return Err(SinkSendError::Closed);
+                }
+            };
+            let Some(sender) = sender_guard.as_ref() else {
+                self.record_drop_locked(&mut completion, "sink closed");
+                return Err(SinkSendError::Closed);
+            };
+            if self.state.closed.load(Ordering::Acquire) {
+                self.record_drop_locked(&mut completion, "sink closed");
+                return Err(SinkSendError::Closed);
+            }
+            let Some(reserved_queued) = self.reserve_queue_slot() else {
+                drop(sender_guard);
+                drop(completion);
+                if Instant::now() >= deadline {
+                    self.record_terminal_control_drop("sink queue is full");
+                    return Err(SinkSendError::Full);
+                }
+                std::thread::sleep(Duration::from_millis(1));
+                continue;
+            };
+            match sender.try_send(item) {
+                Ok(()) => {
+                    self.state.published_frames.fetch_add(1, Ordering::Release);
+                    #[cfg(test)]
+                    self.run_after_publish_hook_for_test();
+                    self.state.accepted_frames.fetch_add(1, Ordering::Relaxed);
+                    self.observe_high_water_mark(reserved_queued);
+                    return Ok(());
+                }
+                Err(mpsc::TrySendError::Full(returned)) => {
+                    self.rollback_reservation();
+                    item = returned;
+                    drop(sender_guard);
+                    drop(completion);
+                    if Instant::now() >= deadline {
+                        self.record_terminal_control_drop("sink queue is full");
+                        return Err(SinkSendError::Full);
+                    }
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+                Err(mpsc::TrySendError::Disconnected(_)) => {
+                    self.state.queued_frames.store(0, Ordering::Release);
+                    self.state.published_frames.store(0, Ordering::Release);
+                    self.state.closed.store(true, Ordering::Release);
+                    self.record_drop_locked(&mut completion, "sink receiver disconnected");
+                    return Err(SinkSendError::Closed);
+                }
             }
         }
     }
@@ -205,6 +280,15 @@ impl<T> BoundedSink<T> {
                 .degradation
                 .get_or_insert_with(|| error.to_string());
         }
+    }
+
+    fn record_terminal_control_drop(&self, error: &str) {
+        let mut completion = self
+            .state
+            .completion
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.record_drop_locked(&mut completion, error);
     }
 
     fn observe_high_water_mark(&self, queued: usize) {

@@ -242,6 +242,15 @@ where
     }
 
     #[cfg(test)]
+    pub(super) fn seed_failed_for_test(&self, error: impl Into<String>) {
+        *self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+            SharedWarmupState::Failed(error.into());
+    }
+
+    #[cfg(test)]
     pub(super) fn is_empty_for_test(&self) -> bool {
         matches!(
             *self

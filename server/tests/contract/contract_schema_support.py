@@ -1,7 +1,9 @@
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+
 
 def load_json(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as handle:
@@ -266,6 +268,21 @@ def assert_schema_subset(
             raise AssertionError(
                 f"{path}: expected type {expected_types!r}, got {type(value).__name__}"
             )
+
+    if isinstance(value, str):
+        minimum_length = schema.get("minLength")
+        maximum_length = schema.get("maxLength")
+        pattern = schema.get("pattern")
+        if isinstance(minimum_length, int) and len(value) < minimum_length:
+            raise AssertionError(
+                f"{path}: length {len(value)} is below {minimum_length}"
+            )
+        if isinstance(maximum_length, int) and len(value) > maximum_length:
+            raise AssertionError(
+                f"{path}: length {len(value)} exceeds {maximum_length}"
+            )
+        if isinstance(pattern, str) and re.search(pattern, value) is None:
+            raise AssertionError(f"{path}: value does not match {pattern!r}")
 
     if isinstance(value, dict):
         required = schema.get("required", [])

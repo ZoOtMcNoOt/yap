@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest";
 import {
   allocateLoopbackPort,
   parsePlaywrightPort,
+  parsePlaywrightServerReuse,
   selectPlaywrightPort,
 } from "./playwright-port.mjs";
 
@@ -24,6 +25,23 @@ describe("Playwright port ownership", () => {
     const allocate = () => Promise.reject(new Error("must not allocate"));
     await expect(selectPlaywrightPort("49153", allocate)).resolves.toBe(49_153);
   });
+
+  test.each([
+    [undefined, false],
+    ["0", false],
+    ["1", true],
+  ])("parses explicit server reuse value %s", (value, expected) => {
+    expect(parsePlaywrightServerReuse(value)).toBe(expected);
+  });
+
+  test.each(["", "true", "false", "yes", "2"])(
+    "rejects ambiguous server reuse value %s",
+    (value) => {
+      expect(() => parsePlaywrightServerReuse(value)).toThrow(
+        /YAP_PLAYWRIGHT_REUSE_SERVER/,
+      );
+    },
+  );
 
   test("allocates and releases an available loopback port when unset", async () => {
     const port = await selectPlaywrightPort(undefined, allocateLoopbackPort);

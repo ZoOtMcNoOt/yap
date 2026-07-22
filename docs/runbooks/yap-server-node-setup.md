@@ -95,12 +95,12 @@ Run the final gate only from a clean checkout at the exact candidate SHA:
 ```bash
 cd /path/to/clean/yap-candidate
 export YAP_CHECKED_HEAD="$(git rev-parse HEAD)"
-export YAP_PHASE4_MODEL_DIR=/path/to/private/cohere-transcribe-03-2026
-export YAP_PHASE4_EVIDENCE_DIR=/path/to/private/phase4-evidence/$YAP_CHECKED_HEAD
-bash infra/yap-server-node/phase4-asr-gate.sh
+export YAP_GB10_ASR_MODEL_DIR=/path/to/private/cohere-transcribe-03-2026
+export YAP_GB10_ASR_EVIDENCE_DIR=/path/to/private/gb10-asr-runtime-evidence/$YAP_CHECKED_HEAD
+bash infra/yap-server-node/gb10-asr-runtime-gate.sh
 ```
 
-`YAP_PHASE4_EVIDENCE_DIR` is a one-shot checked-head destination and must not
+`YAP_GB10_ASR_EVIDENCE_DIR` is a one-shot checked-head destination and must not
 exist before the run. The finalizer creates it only after host-boundary
 verification and refuses to replace an existing directory or evidence file.
 Keep failed or completed directories for audit; remove one only through an
@@ -117,9 +117,9 @@ root-level effective-rule review required before any persistent or exposed
 deployment.
 The worker has no network, a read-only root filesystem, dropped capabilities,
 `no-new-privileges`, read-only model/audio mounts, a non-executable general
-`/tmp`, and a private mode-0700 executable tmpfs used only for Triton JIT
-artifacts. Do not loosen the entire root filesystem or expose a model port to
-work around JIT requirements.
+`/tmp`, and a private mode-0700 executable tmpfs used only for bounded PyTorch
+compiler artifacts. Do not loosen the entire root filesystem or expose a model
+port to work around compiler-cache requirements.
 
 The gate verifies:
 
@@ -147,7 +147,7 @@ This short fixture is a correctness gate, not a throughput or concurrency
 benchmark. Keep the image/model caches after the run unless a separate cleanup
 change is authorized.
 
-## Phase 5 Loopback Batch Development
+## Loopback Batch Development Profile
 
 The merged Phase 5 batch baseline connects Yap's
 create/upload/commit/status/result contract to the isolated Cohere worker. It
@@ -160,57 +160,129 @@ is a development profile, not an enterprise deployment:
   does not yet derive a tenant or owner from an Entra token;
 - no GB10 application firewall rule, TLS listener, DNS record, ZPA segment, or
   persistent service is created; and
-- the worker remains a transient, non-root, networkless container selected by
-  the immutable runtime/model lock and an inspected custom Yap image whose
-  revision label matches the exact Phase 5 checked head. The pinned NVIDIA
-  PyTorch image is that custom image's base, not the service's direct worker.
+- the merged Phase 5 reference worker remains a transient, non-root, networkless
+  comparison path; on the active Phase 6 branch, Cohere uses a separately
+  checked vLLM container published only to server loopback and protected by a
+  private API key, while optional Nemotron jobs use a separately checked
+  resident NeMo container on a different loopback port and API key. None is a
+  persistent supervised production service.
 
 On the Linux node, use Python 3.12 and private mode-0700 job storage. Replace
 the angle-bracket paths only with a clean staged candidate and the already
-verified private model directory; do not place model files or job storage in
-Git. Build the repository's custom worker from the pinned NVIDIA base and bind
-its revision label to the exact candidate before starting the service:
+verified private model directory; do not place model files, API keys, or job
+storage in Git. Build the repository's thin Cohere image from the immutable
+NVIDIA vLLM 26.06 base and bind its revision label to the exact candidate:
 
 ```bash
 release_root='/srv/yap-server/releases/<checked-head>'
 model_dir='/path/to/private/cohere-transcribe-03-2026'
-storage_dir='/srv/yap-server/private/phase5-jobs-<checked-head>'
+storage_dir='/srv/yap-server/private/batch-jobs-<checked-head>'
 checked_head="$(git -C "$release_root" rev-parse HEAD)"
-worker_image="yap-phase5-asr:phase5-$checked_head"
+vllm_image="yap-cohere-vllm:checked-head-$checked_head"
 
 install -d -m 0700 "$storage_dir"
 docker build \
   --pull \
-  --file "$release_root/server/runtime/asr/Dockerfile" \
-  --label "org.opencontainers.image.revision=$checked_head" \
-  --tag "$worker_image" \
+  --build-arg "YAP_CHECKED_HEAD=$checked_head" \
+  --file "$release_root/server/runtime/cohere-vllm/Dockerfile" \
+  --tag "$vllm_image" \
   "$release_root/server"
-
-cd "$release_root"
-YAP_CHECKED_HEAD="$checked_head" \
-YAP_PHASE5_WORKER_IMAGE="$worker_image" \
-YAP_PHASE5_MODEL_DIR="$model_dir" \
-YAP_PHASE5_STORAGE_DIR="$storage_dir" \
-bash infra/yap-server-node/phase5-batch-server.sh
 ```
 
-The launcher refuses a dirty or different Git head, anything other than Python
-3.12, non-0700 storage, missing model inputs, or an absent worker reference.
-The runtime then verifies the custom image's exact revision label, ARM64
-architecture, repository digest shape, and immutable image ID before accepting
-batch traffic. Run it in the foreground so `Ctrl+C`, SSH loss, and `SIGTERM`
-take the same bounded cleanup path. Do not replace `worker_image` with
-`nvcr.io/nvidia/pytorch:26.06-py3`; that is only the digest-pinned Dockerfile
-base and does not contain Yap's entrypoint or locked overlay.
+To exercise the optional resident Nemotron candidate, point a second model
+directory at the exact `.nemo` artifact in `nemotron-nemo-serving.lock.json` and
+build the thin checked image. Do not copy the checkpoint into the build context:
 
-For the one-time checked-head Phase 5 gate, run the Phase 4 inference gate on
-the same clean head first. Its generated
-`yap-phase4-asr:phase4-$checked_head` tag is the same reviewed custom Dockerfile
-and may be supplied as `YAP_PHASE5_WORKER_IMAGE` instead of rebuilding it. This
-reuse is valid only for that exact checked head; the Phase 5 runtime still
-inspects and executes its immutable image ID.
+```bash
+nemotron_model_dir='/path/to/private/nemotron-3.5-asr-streaming-0.6b'
+nemo_image="yap-nemotron-nemo:checked-head-$checked_head"
 
-The service and launcher refuse a non-numeric-loopback bind while Phase 5 batch
+docker build \
+  --pull \
+  --build-arg "YAP_CHECKED_HEAD=$checked_head" \
+  --file "$release_root/server/runtime/nemotron-nemo/Dockerfile" \
+  --tag "$nemo_image" \
+  "$release_root/server"
+```
+
+Set one private printable-ASCII API key in both foreground shells without
+writing it to a file or command argument. Start the model server first:
+
+```bash
+cd "$release_root"
+YAP_CHECKED_HEAD="$checked_head" \
+YAP_COHERE_VLLM_IMAGE="$vllm_image" \
+YAP_COHERE_MODEL_DIR="$model_dir" \
+YAP_COHERE_VLLM_API_KEY="$YAP_COHERE_VLLM_API_KEY" \
+bash infra/yap-server-node/cohere-vllm-server.sh
+```
+
+For direct Nemotron qualification, generate a different in-memory
+printable-ASCII key and start its checked foreground service in another shell.
+This does not add Nemotron to the committed product capability catalog. The
+launcher mounts the same
+private job-storage directory read-only at its absolute host path so the Yap
+worker can pass only already-owned hash-bound files:
+
+```bash
+cd "$release_root"
+YAP_CHECKED_HEAD="$checked_head" \
+YAP_NEMOTRON_NEMO_IMAGE="$nemo_image" \
+YAP_NEMOTRON_MODEL_DIR="$nemotron_model_dir" \
+YAP_BATCH_JOB_STORAGE_DIR="$storage_dir" \
+YAP_NEMOTRON_NEMO_API_KEY="$YAP_NEMOTRON_NEMO_API_KEY" \
+bash infra/yap-server-node/nemotron-nemo-server.sh
+```
+
+After the model server reports startup completion, start Yap in a second
+foreground shell with the same in-memory key; Yap performs the authenticated
+version and exact-model readiness checks before advertising batch capability:
+
+```bash
+cd "$release_root"
+YAP_CHECKED_HEAD="$checked_head" \
+YAP_ASR_MODEL_DIR="$model_dir" \
+YAP_BATCH_JOB_STORAGE_DIR="$storage_dir" \
+YAP_COHERE_VLLM_ENDPOINT="http://127.0.0.1:18000" \
+YAP_COHERE_VLLM_API_KEY="$YAP_COHERE_VLLM_API_KEY" \
+bash infra/yap-server-node/development-batch-server.sh
+```
+
+Only a frozen qualification that intentionally exercises the provider-neutral
+Yap job boundary should use the complete invocation below. Create a matching
+candidate capability lock in the restricted evaluation workspace outside Git,
+set `candidate_capability_lock` to that absolute path, and keep the file out of
+hosted logs and PRs. Omit the Nemotron lines for the ordinary committed-catalog
+development path:
+
+```bash
+cd "$release_root"
+YAP_CHECKED_HEAD="$checked_head" \
+YAP_ASR_MODEL_DIR="$model_dir" \
+YAP_BATCH_JOB_STORAGE_DIR="$storage_dir" \
+YAP_COHERE_VLLM_ENDPOINT="http://127.0.0.1:18000" \
+YAP_COHERE_VLLM_API_KEY="$YAP_COHERE_VLLM_API_KEY" \
+YAP_ASR_CAPABILITY_LOCK="$candidate_capability_lock" \
+YAP_NEMOTRON_MODEL_DIR="$nemotron_model_dir" \
+YAP_NEMOTRON_MODEL_LOCK="$release_root/server/nemotron-nemo-serving.lock.json" \
+YAP_NEMOTRON_NEMO_ENDPOINT="http://127.0.0.1:18001" \
+YAP_NEMOTRON_NEMO_API_KEY="$YAP_NEMOTRON_NEMO_API_KEY" \
+bash infra/yap-server-node/development-batch-server.sh
+```
+
+The launchers refuse a dirty or different Git head, anything other than Python
+3.12, non-0700 storage, missing model inputs, a non-ARM64 or revision-mismatched
+image, a root invoking identity, an invalid key, or a non-loopback endpoint. The
+model containers use the invoking non-root UID/GID so mode-0700 private model
+directories remain readable without widening host permissions. Run every
+configured service and Yap in the foreground so `Ctrl+C`, SSH loss, and
+`SIGTERM` follow observable teardown. Both model services are Phase 6 candidates
+and must not be installed as persistent units before their separate frozen
+lifecycle/capacity gates and later production-supervision work. An external
+candidate capability lock is qualification input, not evidence that Nemotron is
+selected or advertised.
+
+The service and launcher refuse a non-numeric-loopback bind while batch ASR
 mode is enabled; `localhost` is intentionally not accepted for private audio.
 It admits at most one running and two queued GPU jobs, eight concurrent HTTP
 request workers, 512 retained job records, one-MiB PCM chunks, and four hours
@@ -272,13 +344,13 @@ $EvidenceParent = Join-Path $env:LOCALAPPDATA 'Yap-private-gate-evidence'
 New-Item -ItemType Directory -Force -Path $EvidenceParent | Out-Null
 
 $env:YAP_CHECKED_HEAD = $CheckedHead
-$env:YAP_PHASE5_GATE_BASE_URL = 'http://127.0.0.1:18765'
-$env:YAP_PHASE5_GATE_SSH_ALIAS = 'dgx-spark-eth'
-$env:YAP_PHASE5_GATE_EVIDENCE_DIR = Join-Path $EvidenceParent $CheckedHead
-$env:YAP_PHASE5_GATE_TIMEOUT_MS = '2700000'
+$env:YAP_PRIVATE_SERVER_ASR_GATE_BASE_URL = 'http://127.0.0.1:18765'
+$env:YAP_PRIVATE_SERVER_ASR_GATE_SSH_ALIAS = 'dgx-spark-eth'
+$env:YAP_PRIVATE_SERVER_ASR_GATE_EVIDENCE_DIR = Join-Path $EvidenceParent $CheckedHead
+$env:YAP_PRIVATE_SERVER_ASR_GATE_TIMEOUT_MS = '2700000'
 
 Set-Location desktop
-pnpm test:phase5-gate
+pnpm test:private-server-asr-gate
 ```
 
 Use `dgx-spark-lan` only for the separately authorized Wi-Fi rehearsal. The
@@ -292,7 +364,7 @@ Yap listener or worker remains before treating cleanup as complete:
 
 ```powershell
 Get-NetTCPConnection -LocalPort 18765 -ErrorAction SilentlyContinue
-ssh $YapSshAlias "ss -ltnp '( sport = :18765 )' || true; docker ps --format '{{.Names}}' | grep '^yap-phase4-asr-' || true"
+ssh $YapSshAlias "ss -ltnp '( sport = :18765 )' || true; docker ps --format '{{.Names}}' | grep '^yap-batch-asr-' || true"
 ```
 
 Do not record private audio, transcripts, job storage, tokens, host snapshots,

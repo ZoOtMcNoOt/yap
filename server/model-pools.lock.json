@@ -31,7 +31,7 @@
   },
   "pool": {
     "id": "cohere-batch",
-    "role": "phase4-private-batch-asr",
+    "role": "private-batch-asr",
     "productionDefault": false,
     "engine": "transformers",
     "model": {
@@ -111,10 +111,10 @@
     ],
     "limitations": [
       "The caller must select one of the 14 locked languages; the model does not auto-detect language.",
-      "The model returns transcript text without timestamps or diarization; those remain later preprocessing and meeting-evidence phases.",
-      "The Phase 4 reference worker accepts only mono signed-PCM16 WAV at 16 kHz; Phase 5 media admission and preprocessing must produce that contract before dispatch.",
-      "One worker input is bounded to four hours, but the Phase 4 fixture is a short correctness check rather than long-recording performance evidence.",
-      "Phase 4 validates one isolated GB10 worker; higher concurrency remains a measured capacity gate.",
+      "The model returns transcript text without timestamps or diarization; preprocessing and meeting-evidence modules own those capabilities.",
+      "The reference worker accepts only mono signed-PCM16 WAV at 16 kHz; media admission and preprocessing must produce that contract before dispatch.",
+      "One worker input is bounded to four hours, but the locked fixture is a short correctness check rather than long-recording performance evidence.",
+      "The checked-head gate validates one isolated GB10 worker; higher concurrency remains a measured capacity gate.",
       "The public distribution revision is used only as a byte-identical delivery path for the canonical CohereLabs model."
     ]
   },

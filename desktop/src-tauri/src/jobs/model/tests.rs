@@ -96,6 +96,7 @@ fn transition_policy_is_pure_and_cancellation_is_narrow() {
 
     for status in [
         RecordingJobStatus::Accepted,
+        RecordingJobStatus::Preflighting,
         RecordingJobStatus::BlockedSetupRequired,
         RecordingJobStatus::BlockedServerUnavailable,
         RecordingJobStatus::BlockedSignInRequired,
@@ -113,7 +114,6 @@ fn transition_policy_is_pure_and_cancellation_is_narrow() {
         );
     }
     for status in [
-        RecordingJobStatus::Preflighting,
         RecordingJobStatus::LocalTranscribing,
         RecordingJobStatus::DiarizationQueued,
         RecordingJobStatus::DiarizationRunning,
@@ -232,5 +232,8 @@ fn fixture_record() -> RecordingJobRecord {
         updated_at_ms: 100,
         expires_at_ms: None,
         language_decision: RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+        language_decision_locked: true,
+        client_stage_history_complete: true,
+        asr_catalog_binding: Some(AsrCatalogBinding::for_test()),
     }
 }

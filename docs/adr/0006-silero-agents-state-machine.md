@@ -1,10 +1,11 @@
 # ADR 0006: Silero VAD, agent profiles, and runtime state machine
 
 **Date:** 2026-06-30
-**Status:** Accepted runtime/VAD principles; active routing is amended by ADR 0014, ADR 0019, and ADR 0020
+**Status:** Accepted runtime/VAD principles; active routing and Phase 6 preprocessing are amended by ADR 0014, ADR 0019, ADR 0020, and ADR 0024
 **Builds on:** [ADR 0004](0004-background-diarization-okf-agents.md), [ADR 0005](0005-llama-server-agents.md)
-**Amended by:** [ADR 0014](0014-server-tier-compute-topology.md) and [ADR 0019](0019-local-streaming-model-selection.md) — heavy model residency moves to the **server-side workload router** in the team profile. The current client does not keep an umbrella `RuntimeOrchestrator`: connector generations/state live in `server_connector`, durable batch transitions in `jobs`, and local live lifecycle in `live`, with shared projection enums under `runtime`. This split is the accepted "or equivalent" implementation of the orchestration responsibility. Silero VAD remains future client-side Phase 6 work. The old local `moonshine XOR cohere` state machine is historical context.
+**Amended by:** [ADR 0014](0014-server-tier-compute-topology.md) and [ADR 0019](0019-local-streaming-model-selection.md) — heavy model residency moves to the **server-side workload router** in the team profile. The current client does not keep an umbrella `RuntimeOrchestrator`: connector generations/state live in `server_connector`, durable batch transitions in `jobs`, and local live lifecycle in `live`, with shared projection enums under `runtime`. This split is the accepted "or equivalent" implementation of the orchestration responsibility. The old local `moonshine XOR cohere` state machine is historical context.
 **Amended by:** [ADR 0020](0020-meeting-capture-diarization-authority.md) - VAD remains useful for endpointing and advisory segment hints, but it is not authoritative for meeting reprocessing. Speaker work runs through an independent bounded sink and may re-evaluate activity from retained audio.
+**Amended by:** [ADR 0024](0024-global-language-routing.md) - Phase 6 now executes pinned Silero VAD over imported canonical WAV sources as bounded advisory source-time evidence. The live-microphone VAD/chunker remains a separate unimplemented target, and VAD never becomes deletion or transcription authority.
 
 ## Context
 
@@ -25,14 +26,17 @@ This ADR specifies **where Silero lives**, **scoped agent profiles**, and a **ru
 
 | Use | Owner | Implementation |
 |-----|--------|----------------|
-| **Live mic — speech/silence** | **Tauri (Rust)** | Silero VAD **ONNX** (~2 MB) via `ort` or `silero-vad` crate on a **dedicated audio thread** |
-| **Silence-anchored chunk cut** | Same Rust audio path | Trigger when silence ≥ **1.5–2 s** and speech buffer ≥ **30 s** |
-| **`vad_segments` for L3 manifest** | Rust → chunk JSON | Millisecond intervals **relative to chunk**; required field |
-| **Live STT gating** | Optional | Feed speech regions to crispasr stream; or rely on CrispASR `--vad` **only if** it does not duplicate Rust Silero (pick one path in implementation — **prefer single Silero in Rust** for chunker + segments) |
+| **Imported canonical WAV — advisory speech intervals** | **Tauri job drain (Rust)** | Implemented through the already-linked `sherpa-onnx` runtime. One bounded CPU detector reads canonical mono PCM16/16 kHz source data and emits ordered source-sample/source-millisecond intervals or an explicit unavailable/error outcome. |
+| **Live mic — speech/silence** | **Tauri live audio owner** | Target only. Reuse the pinned Silero artifact/runtime on a dedicated bounded audio worker after live-path latency and cancellation gates pass. |
+| **Silence-anchored live chunk cut** | Same live audio owner | Target only. Endpointing may suggest a cut but must not delete buffered source audio. |
+| **Durable VAD evidence** | Desktop SQLite → preprocessing contract | Component/model revision, artifact SHA-256, source sample count, bounded intervals, attempts, and explicit failure evidence are retained without making speech-only audio authoritative. |
+| **Live STT gating** | Optional future optimization | A detector may reduce decode work only after source-preservation and false-negative behavior are proved; local Nemotron remains functional without making VAD authoritative. |
 | **Meeting diarization** | Optional client evidence / server reconciliation | Client hints may be reused, but authoritative processing may re-evaluate activity; a client false negative never removes source audio |
-| **CrispASR Firered VAD** | Optional fallback | Batch/long-file paths inside crispasr only if Rust Silero not run on that audio |
 
-**Bundle:** ship `silero_vad.onnx` (or equivalent pinned Silero v4/v5 ONNX) under `%APPDATA%/com.mcnatg1.yap/models/` on Windows.
+**Artifact lifecycle:** the desktop never silently downloads the model during
+startup, import, retry, or reconnect. The user explicitly installs or imports the
+exact pinned artifact; Yap verifies byte length and SHA-256 and stores it beneath
+Tauri's canonical application-data `models/silero-vad/<digest>/` directory.
 
 **Not on hot path:** speaker evidence, alignment, or clustering.
 
@@ -167,7 +171,9 @@ Frontend asks orchestrator before starting Live, fallback, queue, or Polish — 
 ### Negative
 
 - Rust orchestrator is **real engineering** — must be built and tested.
-- Silero in Rust adds ONNX dep to Tauri (separate from crispasr/worker).
+- Silero increases native runtime and model-provenance obligations even though
+  Yap reuses its existing `sherpa-onnx` dependency rather than adding a second
+  ONNX runtime.
 - Strict mutex may **delay** background agents — acceptable tradeoff.
 
 ## Alternatives considered

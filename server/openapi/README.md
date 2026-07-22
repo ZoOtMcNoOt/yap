@@ -7,6 +7,6 @@ Server-tier contracts start here.
 - `live-events.schema.json` will describe the contract-only live event and
   reconnect vocabulary.
 
-Phase 3 implements only `GET /v1/health`. Upload, job handlers, live WSS,
+The default health-only runtime implements only `GET /v1/health`. Upload, job handlers, live WSS,
 authentication, and inference remain later phases. Keep generated clients out
 until type drift becomes real.

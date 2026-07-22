@@ -37,5 +37,6 @@ pub(crate) use persistence::{
 pub(crate) use persistence::{
     reconcile_recording_job_playback_paths_at, recording_job_playback_registry_path,
     recording_job_selection_registry_path, register_recording_job_playback_path_at_from_owned_dir,
-    remove_recording_job_playback_path_at,
+    register_recording_job_playback_paths_at_from_owned_dir, remove_recording_job_playback_path_at,
+    remove_recording_job_playback_paths_at,
 };

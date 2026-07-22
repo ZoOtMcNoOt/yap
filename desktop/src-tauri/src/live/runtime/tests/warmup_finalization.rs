@@ -152,6 +152,86 @@ fn model_mutation_lease_rejects_new_start_work_without_waiting() {
 }
 
 #[test]
+fn primary_language_mutation_invalidates_idle_warmup_state() {
+    let runtime = LiveRuntime::new();
+    runtime
+        .model_warmup
+        .seed_failed_for_test("warmup used the previous primary language");
+
+    let mutation = runtime.begin_primary_language_mutation().unwrap();
+
+    assert!(runtime.model_warmup.is_empty_for_test());
+    drop(mutation);
+}
+
+#[test]
+fn regional_language_mutation_invalidates_idle_warmup_state() {
+    let runtime = LiveRuntime::new();
+    runtime
+        .model_warmup
+        .seed_failed_for_test("warmup used the previous regional language mapping");
+
+    let mutation = runtime.begin_language_support_mutation().unwrap();
+
+    assert!(runtime.model_warmup.is_empty_for_test());
+    drop(mutation);
+}
+
+#[test]
+fn primary_language_mutation_has_an_actionable_live_busy_error() {
+    let runtime = LiveRuntime::new();
+    runtime
+        .inner
+        .lock()
+        .unwrap()
+        .mark_resources_present_for_test();
+
+    let error = match runtime.begin_primary_language_mutation() {
+        Ok(_) => panic!("active live capture unexpectedly allowed a language mutation"),
+        Err(error) => error,
+    };
+
+    assert_eq!(error, "Stop live before changing the primary language.");
+    assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+}
+
+#[test]
+fn regional_language_mutation_has_an_actionable_live_busy_error() {
+    let runtime = LiveRuntime::new();
+    runtime
+        .inner
+        .lock()
+        .unwrap()
+        .mark_resources_present_for_test();
+
+    let error = match runtime.begin_language_support_mutation() {
+        Ok(_) => panic!("active live capture unexpectedly allowed a regional-language mutation"),
+        Err(error) => error,
+    };
+
+    assert_eq!(error, "Stop live before changing local language support.");
+    assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+}
+
+#[test]
+fn local_model_mutations_are_mutually_exclusive_across_components() {
+    let runtime = LiveRuntime::new();
+    let first = runtime.begin_model_mutation().unwrap();
+
+    let second_error = match runtime.begin_model_mutation() {
+        Ok(_) => panic!("a second local-model mutation unexpectedly acquired ownership"),
+        Err(error) => error,
+    };
+
+    assert_eq!(
+        second_error,
+        "Another local model change is already in progress."
+    );
+    drop(first);
+    assert!(runtime.begin_model_mutation().is_ok());
+}
+
+#[test]
 fn concurrent_recording_finalizers_share_one_cached_result_and_one_worker_finalization() {
     let runtime = LiveRuntime::new();
     let directory =

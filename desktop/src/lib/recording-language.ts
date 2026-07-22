@@ -5,7 +5,7 @@ export type RecordingLanguageDisposition =
   | "manualOverride"
   | "detectedSuggestionConfirmed"
   | "explicitDynamic"
-  | "legacyPhase5Default";
+  | "legacyImplicitEnglishDefault";
 
 export type RecordingLanguageDecision = {
   mode: RecordingLanguageMode;
@@ -13,10 +13,16 @@ export type RecordingLanguageDecision = {
   disposition: RecordingLanguageDisposition;
 };
 
-export type RecordingImportLanguageChoice = {
-  languageBcp47: string;
-  catalogRevision: string;
-};
+export type RecordingImportLanguageChoice =
+  | {
+      mode: "fixed";
+      languageBcp47: string;
+      catalogRevision: string;
+    }
+  | {
+      mode: "dynamic";
+      catalogRevision: string;
+    };
 
 export function recordingLanguageSummary(
   decision: RecordingLanguageDecision | null | undefined,

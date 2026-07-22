@@ -1,6 +1,34 @@
 use super::*;
 
 #[test]
+fn projection_failure_after_a_durable_import_commit_still_notifies() {
+    let notified = Cell::new(false);
+
+    let result = notify_after_durable_import_commit(
+        Ok::<_, JobCommandError>(()),
+        |_| Err::<(), _>(command_error("INJECTED_FAILURE", "injected")),
+        || notified.set(true),
+    );
+
+    assert_eq!(result.unwrap_err().code, "INJECTED_FAILURE");
+    assert!(notified.get());
+}
+
+#[test]
+fn failure_before_a_durable_import_commit_does_not_notify() {
+    let notified = Cell::new(false);
+
+    let result = notify_after_durable_import_commit(
+        Err::<(), _>(command_error("INJECTED_FAILURE", "injected")),
+        |_| Ok(()),
+        || notified.set(true),
+    );
+
+    assert_eq!(result.unwrap_err().code, "INJECTED_FAILURE");
+    assert!(!notified.get());
+}
+
+#[test]
 fn mutation_adapter_notifies_even_when_the_operation_returns_an_error() {
     let notified = Cell::new(false);
 
@@ -11,6 +39,173 @@ fn mutation_adapter_notifies_even_when_the_operation_returns_an_error() {
 
     assert_eq!(result.unwrap_err().code, "INJECTED_FAILURE");
     assert!(notified.get());
+}
+
+#[test]
+fn durable_import_retains_picker_proof_but_stays_non_runnable_until_projection() {
+    let dir = temp_dir("accepted-before-source-authority");
+    let source = dir.join("meeting.wav");
+    fs::write(&source, b"RIFF-command-fixture").unwrap();
+    let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
+    let media = MediaOwner::new();
+    let decision = crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap();
+    let binding = crate::jobs::AsrCatalogBinding::for_test();
+
+    let prepared = jobs.prepare_imports(vec![source.clone()]).unwrap();
+    let committed = jobs
+        .commit_prepared_imports(prepared, 1_000, decision, &binding)
+        .unwrap();
+    let staged = jobs.ledger().list_recoverable_jobs().unwrap();
+    assert_eq!(staged.len(), 1);
+    assert_eq!(staged[0].status, RecordingJobStatus::Accepted);
+    assert!(
+        jobs.selection_registry_path.is_file(),
+        "durable staging must retain native picker proof before the Accepted row exists"
+    );
+    assert!(
+        !jobs.registry_path.exists(),
+        "active playback authority must wait for projection"
+    );
+    assert_eq!(media.active_admission_count_for_test(), 0);
+
+    let projected = jobs
+        .project_committed_imports(&media, committed, 1_001)
+        .unwrap();
+    assert_eq!(projected[0].status, RecordingJobStatus::Preflighting);
+    assert!(projected[0].playback_path.is_some());
+    assert!(jobs.selection_registry_path.is_file());
+
+    drop(media);
+    drop(jobs);
+    fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn snapshot_recovers_an_interrupted_import_only_from_retained_picker_proof() {
+    let dir = temp_dir("recover-accepted-source-authority");
+    let source = dir.join("meeting.wav");
+    fs::write(&source, b"RIFF-command-fixture").unwrap();
+    let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
+    let media = MediaOwner::new();
+    let decision = crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap();
+    let binding = crate::jobs::AsrCatalogBinding::for_test();
+
+    let prepared = jobs.prepare_imports(vec![source]).unwrap();
+    let _interrupted = jobs
+        .commit_prepared_imports(prepared, 1_000, decision, &binding)
+        .unwrap();
+    assert_eq!(
+        jobs.ledger().list_recoverable_jobs().unwrap()[0].status,
+        RecordingJobStatus::Accepted
+    );
+    assert!(jobs.selection_registry_path.is_file());
+
+    let recovered = jobs.snapshot(&media, 1_001).unwrap();
+    assert_eq!(recovered[0].status, RecordingJobStatus::Preflighting);
+    assert!(recovered[0].playback_path.is_some());
+    assert_eq!(
+        jobs.ledger().list_recoverable_jobs().unwrap()[0].status,
+        RecordingJobStatus::Preflighting
+    );
+
+    drop(media);
+    drop(jobs);
+    fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn snapshot_never_reconstructs_picker_authority_from_an_accepted_ledger_path() {
+    let dir = temp_dir("accepted-without-picker-proof");
+    let source = dir.join("meeting.wav");
+    fs::write(&source, b"RIFF-command-fixture").unwrap();
+    let canonical_source = source.canonicalize().unwrap();
+    let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
+    let media = MediaOwner::new();
+    jobs.ledger()
+        .insert_job(&NewRecordingJob {
+            job_id: "job-no-picker-proof".into(),
+            session_mode: SessionMode::Meeting,
+            session_origin: SessionOrigin::ImportedFile,
+            source_path: Some(canonical_source.clone()),
+            source_ownership: SourceOwnership::External,
+            output_path: None,
+            display_name: "meeting.wav".into(),
+            status: RecordingJobStatus::Accepted,
+            route: Some(RecordingRoute::ServerBatch),
+            attempt_count: 0,
+            next_attempt_at_ms: None,
+            cancellation_requested: false,
+            capture_commit_path: None,
+            capture_manifest_sha256: None,
+            error_code: None,
+            error_message: None,
+            created_at_ms: 1_000,
+            updated_at_ms: 1_000,
+            expires_at_ms: Some(1_000 + PENDING_JOB_LIFETIME_MS),
+            language_decision: crate::jobs::RecordingLanguageDecision::primary("en-US".into())
+                .unwrap(),
+            language_decision_locked: true,
+            client_stage_history_complete: true,
+            asr_catalog_binding: Some(crate::jobs::AsrCatalogBinding::for_test()),
+        })
+        .unwrap();
+
+    let snapshot = jobs.snapshot(&media, 1_001).unwrap();
+
+    assert_eq!(snapshot[0].status, RecordingJobStatus::Failed);
+    assert_eq!(snapshot[0].error.as_deref(), Some("SOURCE_UNSAFE"));
+    assert_eq!(snapshot[0].source_path, None);
+    assert_eq!(snapshot[0].playback_path, None);
+    assert_eq!(media.active_admission_count_for_test(), 0);
+    assert!(
+        crate::recording_access::read_registered_playback_paths(&jobs.selection_registry_path)
+            .unwrap()
+            .is_empty()
+    );
+    assert!(open_and_reveal_are_denied(
+        &jobs,
+        &canonical_source,
+        &dir.join("recording-playback-registry.json"),
+    ));
+
+    drop(media);
+    drop(jobs);
+    fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn cancellation_between_import_commit_and_projection_cannot_restore_authority() {
+    let dir = temp_dir("cancel-before-source-projection");
+    let source = dir.join("meeting.wav");
+    fs::write(&source, b"RIFF-command-fixture").unwrap();
+    let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
+    let media = MediaOwner::new();
+    let decision = crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap();
+    let binding = crate::jobs::AsrCatalogBinding::for_test();
+
+    let prepared = jobs.prepare_imports(vec![source.clone()]).unwrap();
+    let committed = jobs
+        .commit_prepared_imports(prepared, 1_000, decision, &binding)
+        .unwrap();
+    let job_id = jobs.ledger().list_recoverable_jobs().unwrap()[0]
+        .job_id
+        .clone();
+    jobs.cancel(&media, &job_id, 1_001, || {}).unwrap();
+
+    let projected = jobs
+        .project_committed_imports(&media, committed, 1_002)
+        .unwrap();
+    assert_eq!(projected[0].status, RecordingJobStatus::Cancelled);
+    assert_eq!(projected[0].playback_path, None);
+    assert!(open_and_reveal_are_denied(
+        &jobs,
+        &source,
+        &dir.join("general-playback-registry.json")
+    ));
+
+    drop(media);
+    drop(jobs);
+    fs::remove_dir_all(dir).unwrap();
 }
 
 #[test]
@@ -58,6 +253,9 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
             expires_at_ms: Some(1_720_604_800_000),
             language_decision: crate::jobs::RecordingLanguageDecision::primary("en-US".into())
                 .unwrap(),
+            language_decision_locked: true,
+            client_stage_history_complete: true,
+            asr_catalog_binding: Some(crate::jobs::AsrCatalogBinding::for_test()),
         })
         .unwrap();
     ledger
@@ -110,6 +308,9 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
             confidence: Some(0.98),
         }),
         transcript: "Catalog result.".into(),
+        language_segments: None,
+        language_span_evidence: None,
+        alignment: None,
         aligned_words: Vec::new(),
         model_provenance: vec![crate::server_connector::batch::ModelRevision {
             model_id: "CohereLabs/cohere-transcribe-03-2026".into(),
@@ -134,6 +335,16 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
     assert_eq!(
         catalog.sessions[0].output_path,
         output.display().to_string()
+    );
+    assert_eq!(
+        catalog.sessions[0].result_summary,
+        super::super::TranscriptResultSummary {
+            language_bcp47: "en-US".into(),
+            language_status: super::super::TranscriptLanguageStatus::Fixed,
+            timing_status: super::super::TranscriptTimingStatus::LegacyUnknown,
+            active_language_correction_count: None,
+            language_review_required_count: None,
+        }
     );
     assert!(catalog.maintenance_warnings.is_empty());
 
@@ -211,7 +422,7 @@ fn per_job_language_override_is_frozen_when_a_source_is_admitted() {
             &media,
             vec![source.display().to_string()],
             1_001,
-            crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+            manual.clone(),
         )
         .unwrap();
     assert_eq!(replayed[0].id, created[0].id);
@@ -221,12 +432,23 @@ fn per_job_language_override_is_frozen_when_a_source_is_admitted() {
         manual
     );
 
+    let conflict = jobs
+        .create_imports_with_language(
+            &media,
+            vec![source.display().to_string()],
+            1_003,
+            crate::jobs::RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+        )
+        .unwrap_err();
+    assert_eq!(conflict.code, "LANGUAGE_DECISION_CONFLICT");
+    assert_eq!(jobs.snapshot(&media, 1_004).unwrap().len(), 1);
+
     drop(media);
     fs::remove_dir_all(dir).unwrap();
 }
 
 #[test]
-fn create_imports_rejects_media_that_phase5_cannot_prepare() {
+fn create_imports_rejects_media_outside_the_canonical_wav_contract() {
     let dir = temp_dir("create-unsupported-remote-media");
     let source = dir.join("meeting.mp3");
     fs::write(&source, b"not admitted before remote preparation").unwrap();

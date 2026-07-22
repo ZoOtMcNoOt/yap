@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { TranscriptResultSummaryBadges } from "@/components/transcript-result-summary";
 import type { TranscriptHistoryEntry } from "@/history-model";
 
 export function HistoryEntryPreview({
@@ -70,7 +71,10 @@ export function HistoryEntryPreview({
 
   if (!onLoadPreviewText) {
     return (
-      <span className="min-w-0 truncate font-medium">{entry.name}</span>
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="truncate font-medium">{entry.name}</span>
+        <TranscriptResultSummaryBadges summary={entry.resultSummary} />
+      </span>
     );
   }
 
@@ -92,7 +96,10 @@ export function HistoryEntryPreview({
       type="button"
       variant="ghost"
     >
-      <span className="line-clamp-4 whitespace-normal text-left">{label}</span>
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="line-clamp-4 whitespace-normal text-left">{label}</span>
+        <TranscriptResultSummaryBadges summary={entry.resultSummary} />
+      </span>
     </Button>
   );
 }

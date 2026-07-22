@@ -4,12 +4,12 @@
   "info": {
     "title": "Yap Server API",
     "version": "1.0.0",
-    "description": "Normative Yap server wire contract. The default profile implements GET /v1/health. The optional Phase 5 loopback development profile implements bounded batch jobs, and its Phase 6 extension publishes a verified ASR capability catalog. Live-session operations remain contract-only."
+    "description": "Normative Yap server wire contract. The default health-only profile implements GET /v1/health. The optional loopback batch development profile implements bounded batch jobs and publishes a verified ASR capability catalog. Live-session operations remain contract-only."
   },
   "tags": [
     {
       "name": "health",
-      "description": "Implemented Phase 3 process health."
+      "description": "Implemented process health."
     },
     {
       "name": "asr",
@@ -17,11 +17,11 @@
     },
     {
       "name": "jobs",
-      "description": "Implemented only by the optional Phase 5 loopback batch profile; unavailable in the default Phase 3 profile."
+      "description": "Implemented only by the optional loopback batch profile; unavailable in the default health-only profile."
     },
     {
       "name": "live",
-      "description": "Contract-only Phase 5 WebSocket upgrade boundary."
+      "description": "Contract-only WebSocket upgrade interface."
     }
   ],
   "paths": {
@@ -31,10 +31,10 @@
           "health"
         ],
         "summary": "Read server health and implemented capabilities",
-        "description": "The only server behavior implemented in Phase 3. A capability remains false until its real handler exists.",
+        "description": "The default health-only profile implements this operation. A capability remains false until its real handler exists.",
         "operationId": "getHealth",
-        "x-yap-phase-3-behavior": "Implemented",
-        "x-yap-later-owner": "Server process",
+        "x-yap-runtime-status": "Implemented",
+        "x-yap-runtime-owner": "Process health",
         "responses": {
           "200": {
             "description": "The process is healthy.",
@@ -65,9 +65,8 @@
         "summary": "Read verified ASR capabilities",
         "description": "Returns a bounded catalog only when the active runtime's immutable model artifacts have verified. The default health-only profile fails closed with 501.",
         "operationId": "getAsrCapabilities",
-        "x-yap-phase-3-behavior": "Implemented",
-        "x-yap-later-owner": "Verified ASR runtime",
-        "x-yap-current-behavior": "Implemented only when locked runtime artifacts verify",
+        "x-yap-runtime-status": "Implemented only when locked runtime artifacts verify",
+        "x-yap-runtime-owner": "Verified ASR capability catalog",
         "responses": {
           "200": {
             "description": "The verified runtime capability catalog.",
@@ -96,11 +95,10 @@
           "jobs"
         ],
         "summary": "Create a recording job",
-        "description": "Implemented by the Phase 5 loopback-only development runtime with bounded durable intake. The request never supplies tenant or owner-subject identity; the future authenticated server derives those values from a validated token.",
+        "description": "Implemented by the loopback-only batch development runtime with bounded durable intake. The request never supplies tenant or owner-subject identity; the future authenticated server derives those values from a validated token.",
         "operationId": "createJob",
-        "x-yap-phase-3-behavior": "Contract only",
-        "x-yap-later-owner": "Phase 5 upload intake",
-        "x-yap-current-behavior": "Implemented in the Phase 5 loopback batch runtime",
+        "x-yap-runtime-status": "Implemented in the loopback batch runtime",
+        "x-yap-runtime-owner": "Batch job intake",
         "requestBody": {
           "required": true,
           "content": {
@@ -145,11 +143,10 @@
           "jobs"
         ],
         "summary": "Read recording job status",
-        "description": "Implemented by the Phase 5 loopback batch runtime as a bounded persisted job projection without transcript content.",
+        "description": "Implemented by the loopback batch runtime as a bounded persisted job projection without transcript content.",
         "operationId": "getJob",
-        "x-yap-phase-3-behavior": "Contract only",
-        "x-yap-later-owner": "Phase 5 job status",
-        "x-yap-current-behavior": "Implemented in the Phase 5 loopback batch runtime",
+        "x-yap-runtime-status": "Implemented in the loopback batch runtime",
+        "x-yap-runtime-owner": "Batch job status",
         "parameters": [
           {
             "$ref": "#/components/parameters/JobId"
@@ -179,11 +176,10 @@
           "jobs"
         ],
         "summary": "Cancel a recording job and delete its private artifacts",
-        "description": "Implemented by the Phase 5 loopback batch runtime. DELETE records a durable cancelled tombstone from any lifecycle state, prevents later upload/result resurrection, and purges private audio and transcript results immediately or when in-flight work reaches a safe boundary; it is not proof that already-running work stopped synchronously.",
+        "description": "Implemented by the loopback batch runtime. DELETE records a durable cancelled tombstone from any lifecycle state, prevents later upload/result resurrection, and purges private audio and transcript results immediately or when in-flight work reaches a safe boundary; it is not proof that already-running work stopped synchronously.",
         "operationId": "cancelJob",
-        "x-yap-phase-3-behavior": "Contract only",
-        "x-yap-later-owner": "Phase 5 cancellation",
-        "x-yap-current-behavior": "Implemented in the Phase 5 loopback batch runtime",
+        "x-yap-runtime-status": "Implemented in the loopback batch runtime",
+        "x-yap-runtime-owner": "Batch job cancellation",
         "parameters": [
           {
             "$ref": "#/components/parameters/JobId"
@@ -215,11 +211,10 @@
           "jobs"
         ],
         "summary": "Read the immutable transcript result",
-        "description": "Phase 5 result retrieval. A completed server batch job publishes one immutable TranscriptResultRevision rooted in the accepted capture-manifest hash. Status polling never embeds transcript content.",
+        "description": "A completed server batch job publishes one immutable TranscriptResultRevision rooted in the accepted capture-manifest hash. Status polling never embeds transcript content.",
         "operationId": "getJobResult",
-        "x-yap-phase-3-behavior": "Contract only",
-        "x-yap-later-owner": "Phase 5 result retrieval",
-        "x-yap-current-behavior": "Implemented in the Phase 5 loopback batch runtime",
+        "x-yap-runtime-status": "Implemented in the loopback batch runtime",
+        "x-yap-runtime-owner": "Transcript result retrieval",
         "parameters": [
           {
             "$ref": "#/components/parameters/JobId"
@@ -254,11 +249,10 @@
           "jobs"
         ],
         "summary": "Upload one immutable audio chunk",
-        "description": "Implemented by the Phase 5 loopback batch runtime. The body is raw little-endian PCM bytes. Replay identity and byte content identity are independent. The job, idempotency-key session, manifest session, track, sequence range, content hash, and PCM frame count MUST satisfy x-yap-source-identity-invariants. Every explicit Yap header and path range MUST match exactly one chunk entry in the immutable capture manifest; a mismatch is rejected before bytes are accepted.",
+        "description": "Implemented by the loopback batch runtime. The body is raw little-endian PCM bytes. Replay identity and byte content identity are independent. The job, idempotency-key session, manifest session, track, sequence range, content hash, and PCM frame count MUST satisfy x-yap-source-identity-invariants. Every explicit Yap header and path range MUST match exactly one chunk entry in the immutable capture manifest; a mismatch is rejected before bytes are accepted.",
         "operationId": "uploadJobChunk",
-        "x-yap-phase-3-behavior": "Contract only",
-        "x-yap-later-owner": "Phase 5 resumable upload",
-        "x-yap-current-behavior": "Implemented in the Phase 5 loopback batch runtime",
+        "x-yap-runtime-status": "Implemented in the loopback batch runtime",
+        "x-yap-runtime-owner": "Resumable chunk upload",
         "x-yap-replay-semantics": {
           "sameKeySameHash": "replay_success",
           "sameKeyDifferentHash": {
@@ -477,11 +471,10 @@
           "jobs"
         ],
         "summary": "Commit a complete recording upload",
-        "description": "Implemented by the Phase 5 loopback batch runtime. Commit makes the immutable capture manifest eligible for bounded server processing after every referenced chunk is present and hash-verified.",
+        "description": "Implemented by the loopback batch runtime. Commit makes the immutable capture manifest eligible for bounded server processing after every referenced chunk is present and hash-verified.",
         "operationId": "commitJob",
-        "x-yap-phase-3-behavior": "Contract only",
-        "x-yap-later-owner": "Phase 5 upload commit",
-        "x-yap-current-behavior": "Implemented in the Phase 5 loopback batch runtime",
+        "x-yap-runtime-status": "Implemented in the loopback batch runtime",
+        "x-yap-runtime-owner": "Batch upload commit",
         "parameters": [
           {
             "$ref": "#/components/parameters/JobId"
@@ -523,17 +516,102 @@
         }
       }
     },
+    "/v1/jobs/{jobId}/stages": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Read the latest durable server-stage projections",
+        "description": "Server-owned durable stage evidence. The response projects only the latest ASR, alignment, and result-publication attempts; full append-only history remains private durable state and the existing RecordingJob response remains backward compatible.",
+        "operationId": "getJobStages",
+        "x-yap-runtime-status": "Implemented in the loopback batch runtime",
+        "x-yap-runtime-owner": "Durable server-stage projections",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JobId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The latest bounded server-stage projections.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerStageProjectionEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/jobs/{jobId}/stages/{stage}/retry": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Retry one failed server-owned stage",
+        "description": "Optimistic server-stage retry. The current runtime accepts ASR retries only and requires the exact failed attempt, projection revision, and immutable capture-manifest hash. Alignment and publication remain reserved stage names until their independent retry artifacts are implemented.",
+        "operationId": "retryJobStage",
+        "x-yap-runtime-status": "ASR retry implemented in the loopback batch runtime",
+        "x-yap-runtime-owner": "Server-stage retry",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JobId"
+          },
+          {
+            "$ref": "#/components/parameters/ServerStagePath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryServerStageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "A new attempt was durably appended before work started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerStageProjectionEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/live": {
       "get": {
         "tags": [
           "live"
         ],
         "summary": "Upgrade to the Yap live event protocol",
-        "description": "The live event schema remains contract-only. Phase 5 implements the durable HTTP batch vertical slice but does not advertise a WebSocket runtime, streaming inference, or authentication.",
+        "description": "The live event schema remains contract-only. The loopback batch runtime does not advertise a WebSocket runtime, streaming inference, or authentication.",
         "operationId": "connectLive",
-        "x-yap-phase-3-behavior": "Event schema only",
-        "x-yap-later-owner": "Phase 5 WSS streaming",
-        "x-yap-current-behavior": "Contract only; capability remains false",
+        "x-yap-runtime-status": "Contract only; capability remains false",
+        "x-yap-runtime-owner": "Live WebSocket transport",
         "x-yap-live-events-schema": "./live-events.schema.json",
         "responses": {
           "101": {
@@ -579,6 +657,15 @@
         "schema": {
           "$ref": "#/components/schemas/JobId"
         }
+      },
+      "ServerStagePath": {
+        "name": "stage",
+        "in": "path",
+        "required": true,
+        "description": "Server-owned durable pipeline stage.",
+        "schema": {
+          "$ref": "#/components/schemas/ServerStageName"
+        }
       }
     },
     "responses": {
@@ -593,7 +680,7 @@
         }
       },
       "NotImplementedResponse": {
-        "description": "The operation is a frozen contract but is not implemented in Phase 3.",
+        "description": "The operation is frozen in the wire contract but is unavailable in the active runtime profile.",
         "content": {
           "application/json": {
             "schema": {
@@ -601,7 +688,7 @@
             },
             "example": {
               "code": "NOT_IMPLEMENTED",
-              "message": "This route is contract-only in Phase 3.",
+              "message": "This route is unavailable in the active runtime profile.",
               "retryable": false,
               "requestId": "req-01J..."
             }
@@ -1040,7 +1127,10 @@
         "properties": {
           "schemaVersion": {
             "type": "integer",
-            "minimum": 1
+            "enum": [
+              1,
+              2
+            ]
           },
           "sessionId": {
             "$ref": "#/components/schemas/OpaqueIdentifier"
@@ -1095,6 +1185,279 @@
             "minimum": 1
           }
         }
+      },
+      "SourceVadInterval": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "One ordered, non-overlapping half-open speech interval over the unpadded normalized source timeline. Millisecond values are deterministic projections of the sample bounds at 16 kHz.",
+        "required": [
+          "startSample",
+          "endSampleExclusive",
+          "startMs",
+          "endMs"
+        ],
+        "properties": {
+          "startSample": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 230400000
+          },
+          "endSampleExclusive": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 230400000
+          },
+          "startMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 14400000
+          },
+          "endMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 14400000
+          }
+        },
+        "x-yap-sample-interval-invariants": {
+          "bounds": "0 <= startSample < endSampleExclusive <= vad.sourceSampleCount",
+          "ordering": "intervals are monotonically ordered and do not overlap",
+          "startMs": "floor(startSample / 16)",
+          "endMs": "ceil(endSampleExclusive / 16)"
+        }
+      },
+      "VadComponentEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "revision",
+          "modelId",
+          "modelRevision",
+          "artifactSha256"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_./:-]+$"
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_./:-]+$"
+          },
+          "modelId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_./:-]+$"
+          },
+          "modelRevision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_./:-]+$"
+          },
+          "artifactSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          }
+        }
+      },
+      "NormalizationEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Deterministic imported-audio normalization evidence. The current identity transform preserves every source sample and permits only sub-millisecond terminal zero padding needed by the fixed chunk duration contract.",
+        "required": [
+          "status",
+          "componentId",
+          "componentRevision",
+          "method",
+          "inputSourceSha256",
+          "sourcePcmSha256",
+          "outputPcmSha256",
+          "audioCodec",
+          "sampleRateHz",
+          "channels",
+          "sourceSampleCount",
+          "outputSampleCount",
+          "paddingSamples",
+          "gainAppliedMilliDb",
+          "samplesModified",
+          "sourceTimePreserved"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "complete"
+          },
+          "componentId": {
+            "type": "string",
+            "const": "yap-imported-audio-normalizer"
+          },
+          "componentRevision": {
+            "type": "string",
+            "const": "canonical-pcm16-normalization-v1"
+          },
+          "method": {
+            "type": "string",
+            "const": "canonical_pcm16_identity"
+          },
+          "inputSourceSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "sourcePcmSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "outputPcmSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "audioCodec": {
+            "type": "string",
+            "const": "pcm_s16le"
+          },
+          "sampleRateHz": {
+            "type": "integer",
+            "const": 16000
+          },
+          "channels": {
+            "type": "integer",
+            "const": 1
+          },
+          "sourceSampleCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 230400000
+          },
+          "outputSampleCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 230400000
+          },
+          "paddingSamples": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 15
+          },
+          "gainAppliedMilliDb": {
+            "type": "integer",
+            "const": 0
+          },
+          "samplesModified": {
+            "type": "integer",
+            "const": 0
+          },
+          "sourceTimePreserved": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "x-yap-normalization-invariants": {
+          "length": "sourceSampleCount + paddingSamples == outputSampleCount",
+          "uploadedPcm": "outputSampleCount == sum(chunks[*].contentIdentity.byteLength) / 2"
+        }
+      },
+      "VadEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Advisory client VAD evidence. It never removes source PCM. A complete result carries bounded ordered intervals; an error carries no intervals and one bounded error code.",
+        "required": [
+          "status",
+          "component",
+          "sourceSampleCount",
+          "intervals"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "error"
+            ]
+          },
+          "component": {
+            "$ref": "#/components/schemas/VadComponentEvidence"
+          },
+          "sourceSampleCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 230400000
+          },
+          "intervals": {
+            "type": "array",
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/components/schemas/SourceVadInterval"
+            }
+          },
+          "errorCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "complete"
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "required": [
+                  "errorCode"
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "errorCode"
+              ],
+              "properties": {
+                "intervals": {
+                  "maxItems": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      "PreprocessingEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Versioned, bounded evidence for deterministic normalization and advisory VAD. All uploaded PCM remains authoritative source audio.",
+        "required": [
+          "schemaVersion",
+          "normalization",
+          "vad"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "normalization": {
+            "$ref": "#/components/schemas/NormalizationEvidence"
+          },
+          "vad": {
+            "$ref": "#/components/schemas/VadEvidence"
+          }
+        },
+        "x-yap-maximum-encoded-bytes": 524288
       },
       "ResultAuthority": {
         "type": "string",
@@ -1252,11 +1615,14 @@
         "properties": {
           "wordIndex": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 16383
           },
           "text": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "^\\S+$"
           },
           "startMs": {
             "type": "integer",
@@ -1287,6 +1653,84 @@
             "maximum": 1
           }
         }
+      },
+      "AlignmentUnavailableReason": {
+        "type": "string",
+        "enum": [
+          "ALIGNMENT_EMPTY_TRANSCRIPT",
+          "ALIGNMENT_PROVIDER_UNSUPPORTED",
+          "ALIGNMENT_LANGUAGE_UNSUPPORTED",
+          "ALIGNMENT_TOKEN_LIMIT",
+          "ALIGNMENT_WORD_LIMIT",
+          "ALIGNMENT_SOURCE_LIMIT",
+          "ALIGNMENT_TOKEN_TRANSCRIPT_DIVERGED",
+          "ALIGNMENT_EVIDENCE_INVALID",
+          "ALIGNMENT_RESULT_LIMIT",
+          "ALIGNMENT_RUNTIME_FAILED"
+        ]
+      },
+      "AlignmentOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "reason",
+          "componentRevision"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "unavailable"
+            ]
+          },
+          "reason": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AlignmentUnavailableReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "componentRevision": {
+            "type": "string",
+            "enum": [
+              "cohere-attention-en-v1",
+              "cohere-attention-alignment-candidate-v1"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "available"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "reason": {
+                  "type": "null"
+                },
+                "componentRevision": {
+                  "const": "cohere-attention-en-v1"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "reason": {
+                  "$ref": "#/components/schemas/AlignmentUnavailableReason"
+                }
+              }
+            }
+          }
+        ]
       },
       "ModelRevision": {
         "type": "object",
@@ -1339,18 +1783,142 @@
         }
       },
       "RecordingLanguageDecision": {
+        "description": "Immutable client language-routing choice frozen when the recording job is admitted. Fixed choices carry a canonical BCP-47 locale. An explicitly selected dynamic choice carries no fixed locale; its catalog locale is the BCP-47 und tag and its provider prompt remains an internal routing detail. Dynamic mode is not available unless the verified capability catalog advertises a dynamicBatch route.",
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode",
+              "languageBcp47",
+              "disposition"
+            ],
+            "properties": {
+              "mode": {
+                "type": "string",
+                "const": "fixed"
+              },
+              "languageBcp47": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 35,
+                "pattern": "^(?!und$)[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$"
+              },
+              "disposition": {
+                "type": "string",
+                "enum": [
+                  "primary",
+                  "manualOverride",
+                  "detectedSuggestionConfirmed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode",
+              "languageBcp47",
+              "disposition"
+            ],
+            "properties": {
+              "mode": {
+                "type": "string",
+                "const": "dynamic"
+              },
+              "languageBcp47": {
+                "type": "null"
+              },
+              "disposition": {
+                "type": "string",
+                "const": "explicitDynamic"
+              }
+            }
+          }
+        ]
+      },
+      "LanguageSpanBoundaryAuthority": {
+        "type": "string",
+        "description": "The component allowed to claim source-time span boundaries. clientDecision is reserved for finalized local acoustic decisions; serverUtterance binds only the server's finalized utterance windows.",
+        "enum": [
+          "clientDecision",
+          "serverUtterance"
+        ]
+      },
+      "LanguageSpanDisposition": {
+        "type": "string",
+        "enum": [
+          "confirmedPrimary",
+          "acousticInitialSelection",
+          "acousticSwitch",
+          "fallbackPrimary",
+          "serverDetected",
+          "serverUnknown"
+        ]
+      },
+      "AcousticLanguageDecisionEvidence": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Immutable client language-routing choice frozen when the recording job is admitted. Dynamic mode remains unadvertised until a server capability supplies segment language tags.",
         "required": [
-          "mode",
-          "languageBcp47",
-          "disposition"
+          "evidenceStartSample",
+          "evidenceEndSample",
+          "observationCount",
+          "minimumScore",
+          "minimumMargin"
         ],
         "properties": {
-          "mode": {
-            "type": "string",
-            "const": "fixed"
+          "evidenceStartSample": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "evidenceEndSample": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "observationCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4096
+          },
+          "minimumScore": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minimumMargin": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "LanguageSpan": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "startSample",
+          "endSample",
+          "languageBcp47",
+          "decisionRevision",
+          "disposition",
+          "componentRevision",
+          "decisionEvidence"
+        ],
+        "properties": {
+          "startSample": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "endSample": {
+            "type": "integer",
+            "minimum": 1
           },
           "languageBcp47": {
             "type": "string",
@@ -1358,12 +1926,160 @@
             "maxLength": 35,
             "pattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$"
           },
+          "decisionRevision": {
+            "type": "integer",
+            "minimum": 1
+          },
           "disposition": {
+            "$ref": "#/components/schemas/LanguageSpanDisposition"
+          },
+          "componentRevision": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "decisionEvidence": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AcousticLanguageDecisionEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "LanguageSpanEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Complete canonical-source coverage for a dynamic server result. serverUtterance means each boundary is a finalized utterance boundary; it MUST NOT be interpreted as within-utterance language diarization. Text languageSegments link to these spans through sourceSpanIndex.",
+        "required": [
+          "schemaVersion",
+          "sampleRateHz",
+          "sourceEndSample",
+          "boundaryAuthority",
+          "providerId",
+          "poolId",
+          "modelId",
+          "modelRevision",
+          "utterancePlanSha256",
+          "spans"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": 1
+          },
+          "sampleRateHz": {
+            "const": 16000
+          },
+          "sourceEndSample": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 230400015
+          },
+          "boundaryAuthority": {
+            "const": "serverUtterance"
+          },
+          "providerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          },
+          "poolId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          },
+          "modelId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[!-~]+$"
+          },
+          "modelRevision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "utterancePlanSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "spans": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/components/schemas/LanguageSpan"
+            }
+          }
+        }
+      },
+      "LanguageSegment": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "One ordered, lossless transcript fragment from a dynamic-language batch result. Detected fragments carry matching canonical languageBcp47 and rawLanguageTag values. Unknown fragments preserve their text and explain why no supported language was assigned. Non-empty fragment text joined with one space MUST equal the parent transcript exactly.",
+        "required": [
+          "index",
+          "sourceSpanIndex",
+          "text",
+          "status",
+          "languageBcp47",
+          "rawLanguageTag",
+          "reason"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sourceSpanIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Index of the finalized source-time LanguageSpan that contains this text fragment. This link does not turn token tags into source boundaries."
+          },
+          "text": {
+            "type": "string",
+            "description": "Canonical transcript text: valid UTF-8, no NUL, and whitespace collapsed to single spaces. Empty text is valid only for EMPTY_TAGGED_TRANSCRIPT."
+          },
+          "status": {
             "type": "string",
             "enum": [
-              "primary",
-              "manualOverride",
-              "detectedSuggestionConfirmed"
+              "detected",
+              "unknown"
+            ]
+          },
+          "languageBcp47": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 2,
+            "maxLength": 35,
+            "pattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$"
+          },
+          "rawLanguageTag": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 2,
+            "maxLength": 35,
+            "pattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "DISABLED_LANGUAGE_TAG",
+              "EMPTY_TAGGED_TRANSCRIPT",
+              "MISSING_LANGUAGE_TAG",
+              null
             ]
           }
         }
@@ -1371,7 +2087,53 @@
       "TranscriptResultRevision": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Immutable transcript result revision rooted in one immutable capture-manifest hash.",
+        "description": "Immutable transcript result revision rooted in one immutable capture-manifest hash. New publications include a typed alignment outcome. The alignment field may be absent only when reading an immutable result created before typed alignment evidence was introduced; such legacy results always have an empty alignedWords array.",
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "language"
+              ],
+              "properties": {
+                "language": {
+                  "type": "object",
+                  "required": [
+                    "languageBcp47"
+                  ],
+                  "properties": {
+                    "languageBcp47": {
+                      "const": "und"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "languageSegments",
+                "languageSpanEvidence"
+              ]
+            },
+            "else": {
+              "allOf": [
+                {
+                  "not": {
+                    "required": [
+                      "languageSegments"
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "required": [
+                      "languageSpanEvidence"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
         "required": [
           "sessionId",
           "revision",
@@ -1428,11 +2190,29 @@
           "transcript": {
             "type": "string"
           },
+          "languageSegments": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "description": "Required when language.languageBcp47 is und and forbidden for fixed-language results. Indices are contiguous from zero and the fragments preserve the parent transcript exactly.",
+            "items": {
+              "$ref": "#/components/schemas/LanguageSegment"
+            }
+          },
+          "languageSpanEvidence": {
+            "description": "Required with dynamic languageSegments and forbidden for fixed-language results.",
+            "$ref": "#/components/schemas/LanguageSpanEvidence"
+          },
           "alignedWords": {
             "type": "array",
+            "maxItems": 16384,
             "items": {
               "$ref": "#/components/schemas/AlignedWord"
             }
+          },
+          "alignment": {
+            "description": "Typed alignment outcome. Optional only for backward-compatible reads of immutable results created before alignment evidence was introduced.",
+            "$ref": "#/components/schemas/AlignmentOutcome"
           },
           "modelProvenance": {
             "type": "array",
@@ -1456,6 +2236,7 @@
           "status",
           "language",
           "speakerTurns",
+          "alignment",
           "alignedWords",
           "modelProvenance"
         ],
@@ -1507,9 +2288,13 @@
           },
           "alignedWords": {
             "type": "array",
+            "maxItems": 16384,
             "items": {
               "$ref": "#/components/schemas/AlignedWord"
             }
+          },
+          "alignment": {
+            "$ref": "#/components/schemas/AlignmentOutcome"
           },
           "modelProvenance": {
             "type": "array",
@@ -1551,6 +2336,27 @@
           "wordAlignment",
           "promotionEvidenceRevision"
         ],
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "const": "dynamicBatch"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "segmentLanguageTags": {
+                  "const": true
+                }
+              }
+            }
+          }
+        ],
         "properties": {
           "languageBcp47": {
             "type": "string",
@@ -1560,7 +2366,8 @@
           },
           "providerLanguageCode": {
             "type": "string",
-            "pattern": "^[a-z]{2}$"
+            "description": "Immutable provider prompt code: a canonical BCP 47 tag or the explicit automatic-language sentinel.",
+            "pattern": "^(?:auto|[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*)$"
           },
           "mode": {
             "$ref": "#/components/schemas/AsrExecutionMode"
@@ -1823,10 +2630,131 @@
           }
         }
       },
+      "ServerStageName": {
+        "type": "string",
+        "enum": [
+          "asr",
+          "alignment",
+          "result_publication"
+        ]
+      },
+      "ServerStageState": {
+        "type": "string",
+        "enum": [
+          "running",
+          "succeeded",
+          "unavailable",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "ServerStageProjection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage",
+          "attempt",
+          "state",
+          "updatedAtUtc",
+          "retryable",
+          "reason"
+        ],
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/ServerStageName"
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "state": {
+            "$ref": "#/components/schemas/ServerStageState"
+          },
+          "updatedAtUtc": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "retryable": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      },
+      "ServerStageProjectionEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "jobId",
+          "projectionRevision",
+          "historyComplete",
+          "stages"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "jobId": {
+            "$ref": "#/components/schemas/JobId"
+          },
+          "projectionRevision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "historyComplete": {
+            "type": "boolean"
+          },
+          "stages": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/ServerStageProjection"
+            }
+          }
+        }
+      },
+      "RetryServerStageRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage",
+          "attempt",
+          "projectionRevision",
+          "captureManifestSha256"
+        ],
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/ServerStageName"
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "projectionRevision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "captureManifestSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          }
+        }
+      },
       "CreateRecordingJobRequest": {
         "type": "object",
         "additionalProperties": false,
-        "description": "The fixed-language batch intake accepts one imported meeting track with a non-null finite UTC retention expiry. languageDecision is immutable and MUST exactly match localeHintBcp47 and the sole preferredLanguagesBcp47 entry. metadata, captureManifest, and every chunk replay key MUST name one session; replay keys MUST be unique and contiguous from zero; and the accepted manifest reference and chunk declaration become immutable. Dynamic mode is rejected until advertised by the capability catalog. An imported physical-source hint is valid only as user_declared provenance. Identity ownership is server-derived after token validation; privacyPolicyVersion unconfigured cannot authorize a team upload once policy gating ships.",
+        "description": "The fixed-language batch intake accepts one imported meeting track with a non-null finite UTC retention expiry. Legacy capture-manifest schema 1 forbids preprocessingEvidence and asrCatalogRevision. Schema 2 requires bounded preprocessingEvidence plus the exact verified ASR catalog revision used for admission. languageDecision is immutable and MUST exactly match localeHintBcp47 and the sole preferredLanguagesBcp47 entry. metadata, captureManifest, and every chunk replay key MUST name one session; replay keys MUST be unique and contiguous from zero; and the accepted manifest reference and chunk declaration become immutable. Dynamic mode is rejected until advertised by the capability catalog. An imported physical-source hint is valid only as user_declared provenance. Identity ownership is server-derived after token validation; privacyPolicyVersion unconfigured cannot authorize a team upload once policy gating ships.",
         "x-yap-source-identity-invariants": {
           "singleSessionIdentity": {
             "rule": "all_equal",
@@ -1879,11 +2807,98 @@
               "metadata.preferredLanguagesBcp47[0]"
             ]
           },
+          "dynamicLanguageContinuity": {
+            "rule": "schema_2_dynamic_requires_null_fixed_locale_and_und_catalog_metadata",
+            "paths": [
+              "languageDecision.mode",
+              "languageDecision.languageBcp47",
+              "languageDecision.disposition",
+              "metadata.localeHintBcp47",
+              "metadata.preferredLanguagesBcp47[0]"
+            ]
+          },
           "immutability": {
             "rule": "immutable_after_accept",
             "path": "languageDecision"
           }
         },
+        "x-yap-preprocessing-invariants": {
+          "legacyFixedLanguageUpload": "captureManifest.schemaVersion == 1, languageDecision.mode == fixed, and preprocessingEvidence and asrCatalogRevision are absent",
+          "clientPreprocessedUpload": "captureManifest.schemaVersion == 2 and preprocessingEvidence and asrCatalogRevision are present",
+          "sourceAudioAuthority": "VAD intervals are advisory and chunks preserve all source PCM"
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "captureManifest": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/CaptureManifestReference"
+                  },
+                  {
+                    "properties": {
+                      "schemaVersion": {
+                        "const": 1
+                      }
+                    }
+                  }
+                ]
+              },
+              "languageDecision": {
+                "type": "object",
+                "required": [
+                  "mode"
+                ],
+                "properties": {
+                  "mode": {
+                    "const": "fixed"
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "not": {
+                  "required": [
+                    "preprocessingEvidence"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "asrCatalogRevision"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "preprocessingEvidence",
+              "asrCatalogRevision"
+            ],
+            "properties": {
+              "captureManifest": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/CaptureManifestReference"
+                  },
+                  {
+                    "properties": {
+                      "schemaVersion": {
+                        "const": 2
+                      }
+                    }
+                  }
+                ]
+              },
+              "preprocessingEvidence": {
+                "$ref": "#/components/schemas/PreprocessingEvidence"
+              }
+            }
+          }
+        ],
         "allOf": [
           {
             "if": {
@@ -2023,6 +3038,11 @@
           "languageDecision": {
             "$ref": "#/components/schemas/RecordingLanguageDecision"
           },
+          "asrCatalogRevision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Exact verified ASR capability catalog revision used to admit a schema-2 job."
+          },
           "tracks": {
             "type": "array",
             "minItems": 1,
@@ -2037,6 +3057,9 @@
           },
           "captureManifest": {
             "$ref": "#/components/schemas/CaptureManifestReference"
+          },
+          "preprocessingEvidence": {
+            "$ref": "#/components/schemas/PreprocessingEvidence"
           },
           "chunks": {
             "type": "array",

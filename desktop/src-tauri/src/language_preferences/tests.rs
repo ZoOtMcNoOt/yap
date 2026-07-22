@@ -4,7 +4,7 @@ use super::model::{
     canonical_os_locale, project_status, validate_confirmation, CURRENT_SCHEMA_VERSION,
 };
 use super::persistence::{
-    load_from_path, save_to_path, PrimaryLanguageError, MAX_PRIMARY_LANGUAGE_BYTES,
+    load_from_path, lock_mutation, save_to_path, PrimaryLanguageError, MAX_PRIMARY_LANGUAGE_BYTES,
 };
 use crate::server_connector::AsrCapabilityCatalog;
 
@@ -230,4 +230,28 @@ fn confirmation_rejects_stale_catalog_revision() {
         validate_confirmation("en-US", &"0".repeat(64), &catalog),
         Err(PrimaryLanguageError::StaleCatalog)
     );
+}
+
+#[test]
+fn primary_language_mutations_are_serialized_through_their_durable_commit() {
+    let first = lock_mutation().unwrap();
+    let (attempting, attempted) = std::sync::mpsc::channel();
+    let (committed, observed) = std::sync::mpsc::channel();
+    let contender = std::thread::spawn(move || {
+        attempting.send(()).unwrap();
+        let _second = lock_mutation().unwrap();
+        committed.send(()).unwrap();
+    });
+
+    attempted
+        .recv_timeout(std::time::Duration::from_secs(1))
+        .unwrap();
+    assert!(observed
+        .recv_timeout(std::time::Duration::from_millis(50))
+        .is_err());
+    drop(first);
+    observed
+        .recv_timeout(std::time::Duration::from_secs(1))
+        .unwrap();
+    contender.join().unwrap();
 }

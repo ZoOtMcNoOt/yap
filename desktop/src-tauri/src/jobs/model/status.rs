@@ -242,6 +242,7 @@ pub(crate) const fn transition_policy(
         (S::Failed, S::Cancelled) => TransitionPolicy::Dismiss,
         (
             S::Accepted
+            | S::Preflighting
             | S::BlockedSetupRequired
             | S::BlockedServerUnavailable
             | S::BlockedSignInRequired

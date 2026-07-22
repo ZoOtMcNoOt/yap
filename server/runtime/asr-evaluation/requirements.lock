@@ -1,0 +1,4 @@
+rapidfuzz==3.14.5 \
+    --hash=sha256:01550fe5f60fd176aa66b7611289d46dc4aa4b1b904874c7b6d1d54e581c5ec1
+regex==2026.7.10 \
+    --hash=sha256:f3463a5f26be513a49e4d497debcf1b252a2db7b92c77d89621aa90b83d2dd38

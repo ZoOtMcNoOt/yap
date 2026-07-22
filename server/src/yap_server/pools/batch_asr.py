@@ -9,15 +9,20 @@ from typing import Callable
 from uuid import uuid4
 
 from yap_server.pools.batch_contract import (
+    AsrRouteDecision,
     BatchAsrJob,
     BatchWorker,
+    DurableAsrRouting,
     DuplicatePoolJob,
     PoolBackpressure,
     PoolFenced,
+    ProviderCapacityUnavailable,
+    WorkerCancellationAcknowledged,
     WorkerContainmentError,
     WorkerExecutionError,
 )
 from yap_server.pools.batch_pool import BatchAsrPool
+from yap_server.pools.batch_worker_registry import ProviderBatchWorkerRegistry
 from yap_server.pools.batch_result import (
     publish_result as _publish_result,
     validate_result as _validate_result,
@@ -43,6 +48,8 @@ _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _IMMUTABLE_IMAGE = re.compile(r"^(?:sha256:[0-9a-f]{64}|.+@sha256:[0-9a-f]{64})$")
 _WORKER_MEMORY_LIMIT = "96g"
 _WORKER_CPU_LIMIT = "16"
+_REFERENCE_WORKER_TMPFS_SIZE = "1g"
+_NEMO_RESTORE_TMPFS_SIZE = "4g"
 
 
 def inspect_worker_image(
@@ -99,6 +106,7 @@ def inspect_worker_image(
         "architecture": architecture,
         "repoDigests": repo_digests,
         "revision": checked_head,
+        "labels": dict(labels),
     }
 
 
@@ -140,6 +148,7 @@ class ContainerBatchAsrWorker:
             raise ValueError("worker identity must be an explicit non-root UID and GID")
         self._image = image
         self._lock = lock
+        self._temporary_filesystem_size = _worker_temporary_filesystem_size(lock)
         self._run_as_identity = f"{run_as_uid}:{run_as_gid}"
         self._run_as_uid = run_as_uid
         self._run_as_gid = run_as_gid
@@ -160,7 +169,7 @@ class ContainerBatchAsrWorker:
     def build_command(self, job: BatchAsrJob) -> list[str]:
         return self._build_command(
             job,
-            container_name=f"yap-phase4-asr-{uuid4().hex}",
+            container_name=f"yap-batch-asr-{uuid4().hex}",
         )
 
     def _build_command(
@@ -169,11 +178,44 @@ class ContainerBatchAsrWorker:
         *,
         container_name: str,
     ) -> list[str]:
-        if job.language not in self._lock.supported_languages:
+        if job.route.pool_id != self._lock.pool_id:
+            raise ValueError("batch route pool does not match the locked model")
+        if job.route.model_revision != self._lock.model_revision:
+            raise ValueError("batch route revision does not match the locked model")
+        if job.route.execution_mode == "dynamicBatch":
+            if job.route.provider_language != "auto":
+                raise ValueError("dynamic batch workers require provider language auto")
+        elif job.route.execution_mode != "fixedBatch":
+            raise ValueError("this isolated worker received an unsupported batch route")
+        if job.route.provider_language not in self._lock.supported_languages:
             raise ValueError("batch language is not supported by the locked model")
         input_path = _safe_mount_path(job.input_path.resolve(strict=True))
         if not input_path.is_file():
             raise ValueError("batch input must be a regular file")
+        plan_mount: list[str] = []
+        plan_arguments: list[str] = []
+        if job.utterance_plan_path is not None:
+            if job.utterance_plan_sha256 is None:
+                raise ValueError("batch utterance plan identity is missing")
+            plan_path = _safe_mount_path(
+                job.utterance_plan_path.resolve(strict=True)
+            )
+            if not plan_path.is_file():
+                raise ValueError("batch utterance plan must be a regular file")
+            plan_mount = [
+                "--mount",
+                f"type=bind,src={plan_path},dst=/input/utterance-plan.json,readonly",
+            ]
+            plan_arguments = [
+                "--utterance-plan",
+                "/input/utterance-plan.json",
+                "--utterance-plan-sha256",
+                job.utterance_plan_sha256,
+            ]
+        if self._lock.pool_id == "nemotron-batch" and not plan_arguments:
+            raise ValueError("Nemotron batch work requires a bounded utterance plan")
+        if self._lock.pool_id != "nemotron-batch" and plan_arguments:
+            raise ValueError("this model pool does not consume an utterance plan")
         return [
             self._docker_binary,
             "run",
@@ -212,16 +254,19 @@ class ContainerBatchAsrWorker:
             "--shm-size",
             "1g",
             "--tmpfs",
-            "/tmp:rw,nosuid,nodev,noexec,size=1g",
+            (
+                "/tmp:rw,nosuid,nodev,noexec,size="
+                f"{self._temporary_filesystem_size}"
+            ),
             "--tmpfs",
             (
-                "/triton-cache:rw,nosuid,nodev,exec,size=256m,mode=0700,"
+                "/torch-compile-cache:rw,nosuid,nodev,exec,size=256m,mode=0700,"
                 f"uid={self._run_as_uid},gid={self._run_as_gid}"
             ),
             "--device",
             "nvidia.com/gpu=all",
             "--env",
-            "TRITON_CACHE_DIR=/triton-cache",
+            "TRITON_CACHE_DIR=/torch-compile-cache",
             "--env",
             "HF_HUB_OFFLINE=1",
             "--env",
@@ -234,7 +279,10 @@ class ContainerBatchAsrWorker:
             f"type=bind,src={self._model_dir},dst=/models/asr,readonly",
             "--mount",
             f"type=bind,src={input_path},dst=/input/audio.wav,readonly",
+            *plan_mount,
             self._image,
+            "--lock",
+            f"/opt/yap-server/model-locks/{self._lock.pool_id}.json",
             "--model-dir",
             "/models/asr",
             "--input",
@@ -242,10 +290,10 @@ class ContainerBatchAsrWorker:
             "--job-id",
             job.job_id,
             "--language",
-            job.language,
+            job.route.provider_language,
+            *plan_arguments,
             *([] if job.punctuation else ["--no-punctuation"]),
         ]
-
     def run(
         self,
         job: BatchAsrJob,
@@ -254,7 +302,7 @@ class ContainerBatchAsrWorker:
         job_cancellation = cancellation or threading.Event()
         if self._shutdown.is_set() or job_cancellation.is_set():
             raise WorkerExecutionError("isolated ASR worker was cancelled")
-        container_name = f"yap-phase4-asr-{uuid4().hex}"
+        container_name = f"yap-batch-asr-{uuid4().hex}"
         command = self._build_command(job, container_name=container_name)
         if self._runner is None:
             try:
@@ -290,6 +338,17 @@ class ContainerBatchAsrWorker:
         result = dict(payload)
         _publish_result(job.result_path, result)
         return result
+
+
+def _worker_temporary_filesystem_size(lock: ModelPoolLock) -> str:
+    if lock.engine == "nemo":
+        # NeMo restores the canonical archive through a temporary extraction
+        # directory. The 2.37 GB checkpoint exceeds the smaller reference
+        # worker tmpfs before the model can become resident.
+        return _NEMO_RESTORE_TMPFS_SIZE
+    if lock.engine == "transformers":
+        return _REFERENCE_WORKER_TMPFS_SIZE
+    raise ValueError("isolated worker model lock selects an unsupported engine")
 
 
 def _is_pinned_image(image: str) -> bool:

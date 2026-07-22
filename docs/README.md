@@ -22,7 +22,7 @@ backlog.
 
 - [Current status](CURRENT-STATUS.md)
 - [Current architecture](architecture/CURRENT-ARCHITECTURE.md)
-- [Phase 1–5 ownership and trust boundaries](architecture/boundaries/PHASE-1-5-OWNERSHIP.md)
+- [Executable ownership and trust boundaries](architecture/boundaries/EXECUTABLE-OWNERSHIP.md)
 - [Roadmap](roadmap/ROADMAP.md)
 - [Changelog](../CHANGELOG.md)
 
@@ -61,17 +61,21 @@ availability.
 
 ### Active
 
-- [Phase 6 preprocessing pipeline](plans/active/2026-07-16-phase6-preprocessing-pipeline.md)
+- [Audio preprocessing and language routing](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md)
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
+
+### Queued
+
+- [Codebase ownership and maintainability review](plans/queued/2026-07-18-codebase-ownership-and-maintainability-review.md)
 
 ### Completed implementation records
 
 - [Local Nemotron live transcription](plans/completed/2026-07-05-local-nemotron-live-transcription.md)
 - [Model download UX](plans/completed/2026-07-08-model-download-ux.md)
 - [Phase 3 server contract and durable connector](plans/completed/2026-07-10-server-contract-durable-connector.md)
-- [Phase 4 private ASR node](plans/completed/2026-07-13-phase4-private-asr-node.md)
-- [Phase 5 remote STT](plans/completed/2026-07-14-phase5-remote-stt.md)
-- [Architecture Checkpoint A](plans/completed/2026-07-15-architecture-checkpoint-a.md)
+- [Private ASR node](plans/completed/2026-07-13-private-asr-node.md)
+- [Remote recording transcription](plans/completed/2026-07-14-remote-recording-transcription.md)
+- [Executable ownership and maintainability review](plans/completed/2026-07-15-executable-ownership-and-maintainability-review.md)
 
 ### Archived plans and historical designs
 
@@ -95,9 +99,9 @@ instructions. Detailed historical task reports live under
 ## Verification evidence
 
 - [Evidence policy and index](evidence/README.md)
-- [Checkpoint A findings](evidence/architecture-checkpoint-a/FINDINGS.md)
-- [Checkpoint A file inventory](evidence/architecture-checkpoint-a/FILE-INVENTORY.md)
-- [Checkpoint A verification](evidence/architecture-checkpoint-a/VERIFICATION.md)
+- [Executable ownership findings](evidence/executable-ownership-review/FINDINGS.md)
+- [Reviewed file inventory](evidence/executable-ownership-review/FILE-INVENTORY.md)
+- [Checked-head verification](evidence/executable-ownership-review/VERIFICATION.md)
 
 Private scans, scan identifiers, sensitive audio/transcript data, host paths,
 and raw machine evidence do not belong in this documentation tree, PRs, CI

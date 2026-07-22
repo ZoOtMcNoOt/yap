@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "runtime": {
+    "image": "nvcr.io/nvidia/pytorch",
+    "sourceTag": "26.06-py3",
+    "source": "https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch/tags",
+    "platform": "linux/arm64",
+    "pythonVersion": "3.12",
+    "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+    "cudaVersion": "13.3.0",
+    "torchCudaVersion": "13.3",
+    "overlayPackages": {
+      "fsspec": "2025.12.0",
+      "huggingface-hub": "1.18.0",
+      "hydra-core": "1.3.2",
+      "librosa": "0.11.0",
+      "lightning": "2.4.0",
+      "lhotse": "1.33.0",
+      "nemo_toolkit": "3.1.0+ba2cd63ef",
+      "numpy": "2.1.0",
+      "omegaconf": "2.3.0",
+      "pytorch-lightning": "2.6.5",
+      "safetensors": "0.8.0",
+      "sentencepiece": "0.2.2",
+      "soundfile": "0.14.0",
+      "tokenizers": "0.22.2",
+      "transformers": "5.14.1",
+      "webdataset": "1.0.2"
+    },
+    "digest": "sha256:dcae8df08ef61b019b8eb109113428cba4ef0e37484c6e722406150dd5ada759",
+    "license": "NVIDIA Software License Agreement and Product-Specific Terms for NVIDIA AI Products",
+    "requirementsLock": "server/runtime/nemotron-nemo/requirements.lock",
+    "nemoSource": {
+      "source": "https://github.com/NVIDIA/NeMo",
+      "revision": "ba2cd63ef8de8a3183a3c02b310c66d616b9a991",
+      "license": "Apache-2.0"
+    }
+  },
+  "pool": {
+    "id": "nemotron-batch",
+    "role": "private-fixed-and-dynamic-native-asr-candidate",
+    "productionDefault": false,
+    "engine": "nemo",
+    "model": {
+      "id": "nvidia/nemotron-3.5-asr-streaming-0.6b",
+      "revision": "f3d333391852ba876df169dcc9ba902d25b6ab0b",
+      "license": "OpenMDW-1.1",
+      "source": "https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b",
+      "distribution": {
+        "id": "nvidia/nemotron-3.5-asr-streaming-0.6b",
+        "revision": "f3d333391852ba876df169dcc9ba902d25b6ab0b",
+        "source": "https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b",
+        "provenance": "The native NeMo candidate consumes the canonical .nemo checkpoint from the exact NVIDIA model revision without conversion, mirroring, or quantization."
+      }
+    },
+    "supportedLanguages": [
+      "ar-AR",
+      "auto",
+      "bg-BG",
+      "cs-CZ",
+      "da-DK",
+      "de-DE",
+      "en-GB",
+      "en-US",
+      "es-ES",
+      "es-US",
+      "et-EE",
+      "fi-FI",
+      "fr-CA",
+      "fr-FR",
+      "hi-IN",
+      "hr-HR",
+      "hu-HU",
+      "it-IT",
+      "ja-JP",
+      "ko-KR",
+      "nb-NO",
+      "nl-NL",
+      "pl-PL",
+      "pt-BR",
+      "pt-PT",
+      "ro-RO",
+      "ru-RU",
+      "sk-SK",
+      "sv-SE",
+      "tr-TR",
+      "uk-UA",
+      "vi-VN",
+      "zh-CN"
+    ],
+    "artifacts": [
+      {
+        "path": "nemotron-3.5-asr-streaming-0.6b.nemo",
+        "size": 2368284501,
+        "sha256": "210214ed94039bf6bfbb9a047c7fa289628db75b103e2bf6381fa78285436a74"
+      }
+    ],
+    "limitations": [
+      "Only the 19 transcription-ready and 13 broad-coverage locales accepted by ADR 0024 are enabled; adaptation-ready prompt entries remain Unknown evidence.",
+      "NeMo language tags are validated against the restored checkpoint prompt catalog, retained as automatic-language evidence, and removed from spoken transcript text before scoring or publication.",
+      "The pinned unified cache-aware NeMo wrapper accepted prompt_vectors without applying them in the checked inference path. Yap therefore validates the checkpoint prompt catalog and applies the selected prompt projection after the encoder and before RNNT decoding; this first-party correction remains pinned-source regression surface.",
+      "The checked cache-aware profile uses 1.12-second chunks, [56, 13] attention context, BF16, and one scheduler owner for all shared pipeline mutation. The checkpoint rejected the generic [70, 13] profile.",
+      "On the locked public fixture, fixed en-US matched all 23 normalized reference words but omitted one comma; automatic mode matched the exact golden transcript after locale metadata was excluded from spoken text. Representative frozen-corpus promotion evidence remains incomplete.",
+      "Native checkpoint restoration took approximately 29.5 seconds in focused GB10 probes. A non-gate resident-service probe then formed one batch of eight independent requests, acknowledged cancellation in 13 milliseconds without publishing a result, recovered immediately, and released its container and loopback port; this is development evidence, not production capacity or promotion.",
+      "Automatic inference remains limited to bounded finalized utterances; a whole long recording cannot be relabeled as one dynamic utterance.",
+      "Persistent supervision, authenticated ownership, mixed-user capacity, and production deployment remain later gates.",
+      "Focused exact-duration controls completed a true 30-second c2 model batch plus c1 2-minute, 15-minute, 2-hour, and exact 4-hour finalized-window inputs. The 4-hour repeated-fixture control completed in 279.865 seconds, including 275.702 seconds inference and 2.688 seconds accumulated queue time, with 2.356 GiB current usage under the 96-GiB container ceiling and clean teardown. Repetition makes this duration/lifecycle evidence only; sentinel integrity, natural long-form quality, frozen percentiles, and promotion remain open."
+    ]
+  },
+  "fixture": {
+    "path": "server/tests/fixtures/asr/2086-149220-0033.wav",
+    "source": "https://dldata-public.s3.us-east-2.amazonaws.com/2086-149220-0033.wav",
+    "license": "CC-BY-4.0",
+    "sha256": "5fceacff0315d49cb59fcc505bcecf1ed5f2f35c2897b1e65a59f30e5d922150",
+    "goldenTranscript": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait."
+  }
+}

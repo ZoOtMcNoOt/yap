@@ -1,6 +1,6 @@
 # Spec: Testing strategy
 
-**Status:** Living verification contract (updated 2026-07-16); future phase gates activate only when their fixtures exist
+**Status:** Living verification contract (updated 2026-07-22); future phase gates activate only when their fixtures exist
 **Scope:** Cross-cutting tests for the desktop runtime, track-aware audio contracts, local fallback, source-aware diarization, server contracts, and native UI.
 
 This is the shared reference the phase specs point to for their acceptance tests.
@@ -8,15 +8,19 @@ This is the shared reference the phase specs point to for their acceptance tests
 **Current activation:** deterministic generated-tone and contract fixtures exist.
 Phase 4 also has one committed, licensed LibriSpeech WAV with a locked golden
 transcript and a standard-library WER gate for the private Cohere worker. The
-Phase 5 adds frontend, Rust, Python 3.12, API, contract, restart, reconnect,
+Phase 5 added frontend, Rust, Python 3.12, API, contract, restart, reconnect,
 cancellation, retention, result-publication, native, and GB10 coverage; its
 one-time complete gate passed on exact PR head
 `4771d9be60562fa009ccecbcd3c7111b699883a5`. The
 desktop speech suite, meeting RTTM manifest, diarization benchmark harness,
 bundled llama-server, and per-OS real-model matrix described below do not exist
-yet. Phase 6 has aggregate public-fixture decision research, but its catalog,
-VAD/LID/alignment fixtures, components, and complete gate do not execute yet.
-Their tables are target gates, not claims about active CI.
+yet. Phase 6 catalog, deterministic preprocessing/VAD, guarded server LID,
+Preview local LID/span routing, provider-specific server candidates, alignment,
+private-corpus trust, scoring, and runtime-qualification components now execute
+under focused tests. The representative private promotion corpus, target-i5
+hardware evidence, frozen checked-head GB10 comparisons, and complete Phase 6
+gate remain open. The tables below distinguish executable focused coverage from
+future phase-gate requirements; neither is a claim about ordinary hosted CI.
 
 ---
 
@@ -67,6 +71,90 @@ restart/cancel/retry behavior, alignment failure semantics, resource ceilings,
 and clean teardown. Aggregate candidate research cannot promote a locale or
 alignment capability by itself. Private recordings, raw benchmark output, host
 paths, and scan evidence remain outside Git and hosted artifacts.
+
+The local-language resource harness has two distinct development-host modes.
+Its accelerated mode measures throughput, model load, incremental memory, and
+ASR interference; its source-paced mode feeds the production-sized bounded
+local-ASR queue at ten-millisecond source cadence while concurrently sampling
+scheduler wake delay, frame loss, queue high-water, CPU use, and bounded drain.
+A developer-host affinity limit is useful evidence but cannot replace the
+actual i5-class Windows, rendered-UI/audio interference, energy, thermal, and
+sustained-session qualification.
+
+The deterministic local-duration runner starts at Yap's prepared-audio-frame
+boundary, not at the physical microphone. It binds the exact checked Git SHA,
+public runtime-plan hash, an out-of-band-hash-pinned private suite, every track
+manifest, and both raw-WAV and decoded-PCM identity. It streams ten-millisecond
+frames through the production-sized local-ASR queue, reuses the single live
+worker across start/finalize cycles, and records exact accepted/dropped/decoded
+sample counts, drain/finalization timing, and text-present booleans without
+recording transcript text. It deliberately does not replace the native
+microphone/rendered-UI target-device test or natural quick-correction accuracy
+scoring. The machine plan therefore names this boundary
+`desktop-prepared-audio-frame-to-final`; stronger microphone-to-final claims
+require the separate hardware gate.
+
+Build that suite with
+`python -m yap_server.evaluation.local_stream_duration_suite`, one or more
+repeated `--source` arguments naming vetted mono PCM16/16-kHz WAVs, and the
+external `YAP_EVAL_CACHE`. The builder reads the two local ladders from the
+validated plan, decodes and hashes each source once, rechecks raw identity
+before publishing all 15 immutable tracks as one atomic private collection, and
+prints the `suite.json` path and SHA-256 needed by the native gate.
+`--expect-text-case` is opt-in per planned case; it
+asserts only that text appears and must not be used to turn looped runtime
+controls into accuracy evidence. Source license/provenance records and natural
+references remain separately vetted private-corpus inputs.
+
+The [ASR evaluation corpus and runtime qualification](../research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md)
+owns the Phase 6 corpus tiers, provenance manifest, per-slice metrics, live and
+batch duration ladder, and risk-weighted concurrency matrix. Natural quality
+evidence and deterministic duration/load evidence are separate requirements.
+`server/asr-evaluation-plan.json` is the machine-validated runtime matrix. Every
+quality case also carries a model-revision exposure decision; public benchmark
+membership does not prove the model did not train on it. Only contractually
+excluded or post-model-freeze sealed cases support independent promotion.
+That decision covers base-model and adapter/fine-tune lineage, and transformed
+copies inherit their source exposure. Missing lineage evidence stays `unknown`.
+The manifest is not its own trust root: independent cases use the dedicated
+promotion loader, a private registry, an out-of-band registry SHA-256, and
+hash-verified candidate-lock/freeze/exposure artifacts binding the complete
+candidate set and exact case hashes. Schema v2 admits only natural source audio
+to that gate and rejects duplicate raw or decoded audio; derived and generated
+inputs stay nonpromotion. Controlled suite/condition labels make required
+acoustic slices auditable, while typed derivation recipes bind source-audio and
+recipe hashes and cannot silently masquerade as natural coverage.
+The private registry also binds an exact scorer lock and canonical per-case
+evaluation-policy digest. Promotion scoring must use `score_manifest_case`,
+which verifies the private reference, scorer lock, manifest identity, model,
+hash-pinned inference-result/runtime lock, and manifest-frozen language/metric
+policies before invoking the scorer. The inference-result lock binds the case,
+hypothesis hash, raw and decoded audio, candidate lock, exact model revision,
+and runtime identity. The adapter streams the verified PCM WAV and derives its
+duration; a self-attested manifest duration cannot dilute silence metrics.
+Private case evidence remains under `YAP_EVAL_CACHE`; public evidence is
+aggregate and omits transcript and critical-policy hashes.
+The locked public ASR fixture is therefore an exposure-unknown regression
+comparator, not a promotion holdout. Exact-duration controls are generated and
+validated outside Git under `YAP_EVAL_CACHE`; their benchmark evidence must
+report null WER, zero accuracy-sample increment, and independent-promotion
+ineligibility even when the worker returns transcript text internally.
+The Cohere vLLM gate uses independent multipart transcription requests rather
+than Yap-owned tensor batching. It measures the exact duration ladder and
+c1/c2/c4/c8 waves, verifies every response against an identity-rich request and
+reference transcript, and records server-observed concurrency, latency,
+throughput, memory, and queue behavior. Continuous batching is an internal vLLM
+optimization; Yap must never concatenate, pad, or mix audio across owners to
+manufacture a batch. Cancellation is accepted only when the client connection
+closes, bounded acknowledgement completes, siblings remain isolated, an
+immediate request recovers, and teardown leaves no listener, container, or GPU
+work attributable to the checked run. A server-side success after client
+cancellation is recorded explicitly rather than misreported as preemption.
+
+Nemotron NeMo streaming uses a separate gate because it has different state,
+cache, and streaming-boundary semantics. It cannot inherit Cohere vLLM parity or
+capacity evidence. The retired Triton batching probes remain historical negative
+evidence and are not part of the current Phase 6 matrix.
 
 ### Windows installer safety boundary
 
@@ -127,8 +215,9 @@ The active server fixture is
 `server/tests/fixtures/asr/2086-149220-0033.wav`; its source, CC BY 4.0 license,
 SHA-256, and golden transcript are locked in `server/model-pools.lock.json`.
 
-Future desktop and meeting speech fixtures should be stored under
-`desktop/tests/fixtures/` (small, license-clear audio):
+Tiny hosted-CI desktop and meeting smoke fixtures may be stored under
+`desktop/tests/fixtures/` when their license and provenance permit
+redistribution:
 
 | File | Purpose | Expectation |
 |------|---------|-------------|
@@ -142,7 +231,12 @@ Future desktop and meeting speech fixtures should be stored under
 | `meeting-overlap.wav` + RTTM | Concurrent speakers | Overlap scored explicitly; challenger promotion gate |
 | `meeting-echo-two-track/` | Future mic/system leakage | No duplicate speaker inflation; track drift and gaps represented |
 
-Golden transcripts live beside fixtures. Comparison is **WER-tolerant**, never byte-equal (quantized models drift).
+Only tiny redistributable public golden transcripts live beside fixtures. The
+comprehensive corpus, Yap-adjudicated references, hypotheses, and raw
+per-utterance results live in the private external evaluation cache and are
+addressed by hashes in the committed manifest. Comparison is **WER-tolerant**,
+never byte-equal (quantized models drift), but sentinel order, job identity,
+language tags, and fail-closed result structure remain exact.
 
 Real sidecar parity tests stay opt-in: set `YAP_PARITY_CLIP` and run the ignored
 Cargo parity tests when a licensed audio clip is available. Normal CI uses
@@ -151,13 +245,29 @@ timestamp-shape coverage without shipping private or unclear audio.
 
 ---
 
-## 3. Accuracy spot-checks (WER)
+## 3. Accuracy scoring and spot-checks
 
-- Active server implementation:
-  `yap_server.pools.phase4_gate.word_error_rate` compares normalized words
-  without adding a runtime dependency. Future suites may introduce a separately
-  locked scorer only when needed.
-- Gates (tune with real data; starting points):
+- The GB10 gate's `yap_server.evaluation.word_error_rate.word_error_rate` and desktop Rust
+  parity helper remain dependency-free, single-fixture smoke diagnostics. They
+  cannot produce multilingual promotion claims.
+- Phase 6 promotion uses the separately pinned `evaluation` extra and
+  `yap_server.evaluation.transcript_scoring`. It reports raw and normalized word
+  plus extended-grapheme edit counts, boundary-position punctuation metrics,
+  and optional hash-pinned critical-token retention, order, and exact-surface
+  metrics without transcript or policy text. It selects grapheme error for the
+  admitted whitespace-free/CJK
+  profiles, records exact Unicode/package/scorer/profile revisions, and fails
+  closed on empty primary references, policy/hash mismatch, silence-policy
+  misuse, mixed or partial critical-policy aggregation, or bounded-input/
+  alignment limits. Long recordings are scored in immutable
+  source-time segments and aggregate edit counts, not one unbounded alignment.
+- Normalized critical-token occurrence and ordered-sequence metrics catch
+  missing, excess, substituted, and reordered policy phrases. A separate
+  case/punctuation-sensitive surface metric catches acronym, number, and unit
+  form drift that normalized WER intentionally ignores. Neither establishes
+  general clinical number/unit semantic equivalence; that remains a separate
+  executable fixture and review gate.
+- Early single-fixture gates (not broad quality certification):
 
 | Path | WER gate |
 |------|----------|
@@ -166,6 +276,10 @@ timestamp-shape coverage without shipping private or unclear audio.
 
 - A regression beyond the threshold fails that backend's applicable gate. The
   private GB10 check is a phase gate, not a portable hosted-CI inference job.
+  Phase 6 promotion additionally requires frozen per-locale, per-domain,
+  meeting, acoustic, duration, and critical-token thresholds. A better macro
+  WER cannot offset a failed required slice, hallucination-on-silence,
+  cross-request leak, or long-form integrity failure.
 
 ### Diarization and identity gates
 
@@ -218,7 +332,7 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 | 7 Identity/access | Yap API token audience, `(tid, oid)` isolation, consent and withdrawal, profile-version compatibility |
 | 8 Meeting evidence | one/two/overlap/short/noisy speakers, stable result revisions, bounded clusters, no local names or persistent embeddings |
 | 9 Knowledge/agents | Google OKF conformance, permission-safe projection, citation-required Analyst, three-strike Student, RAG confidence floor |
-| 10 Enterprise/release | approved network/policy evidence, deployment rollback, publication governance, repo-boundary checks |
+| 10 Enterprise/release | authenticated multi-owner fairness/no-starvation; bounded overload/backpressure; cancellation and timeout isolation; restart recovery; fixed worker/memory ceilings; sustained mixed live/batch p50/p95 latency, throughput, and queue-age evidence on GB10; approved network/policy evidence; deployment rollback; publication governance; repo-boundary checks |
 
 ---
 
@@ -258,5 +372,5 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 ## 8. Non-goals
 
 - No cloud test infra (local-first; fixtures are committed/small).
-- No generic enterprise load laboratory in v1; targeted capture, ASR, diarization, and reconnect stress tests are required for their phases.
+- No unbounded generic enterprise load laboratory in v1. Phase 10 still requires a bounded, reproducible multi-owner mixed-load test that proves the promoted service limits and SLO evidence above.
 - No telemetry — debugging uses Tauri app-data logs (`%APPDATA%/com.mcnatg1.yap/logs/` on Windows).

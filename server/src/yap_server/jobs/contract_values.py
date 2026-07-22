@@ -4,12 +4,13 @@ from datetime import datetime, timedelta, timezone
 import re
 from typing import Mapping
 
+from yap_server.language_tags import canonical_bcp47
+
 
 MAX_CHUNKS = 4096
 MAX_TRACKS = 8
 MAX_CHUNK_BYTES = 1024 * 1024
 MAX_JOB_PCM_BYTES = 16000 * 2 * 4 * 60 * 60
-MAX_TRANSCRIPT_BYTES = 1024 * 1024
 MAX_MODEL_PROVENANCE_CHARS = 256
 MAX_PRIVATE_RETENTION = timedelta(days=30)
 MAX_CLIENT_CLOCK_SKEW = timedelta(minutes=5)
@@ -26,16 +27,26 @@ PERSISTED_ERROR_CODES = frozenset(
     {
         "ASR_RESULT_INVALID",
         "ASR_RESULT_PUBLISH_FAILED",
+        "ASR_INPUT_INTEGRITY_FAILED",
         "ASR_CLEANUP_UNVERIFIED",
+        "ASR_ROUTE_UNRECOVERABLE",
         "ASR_WORKER_FAILED",
         "SERVER_RESTARTED",
         "SERVER_STORAGE_ERROR",
+        "ASR_STAGE_ATTEMPT_LIMIT",
+    }
+)
+NONRETRYABLE_PERSISTED_ERROR_CODES = frozenset(
+    {
+        "ASR_INPUT_INTEGRITY_FAILED",
+        "ASR_RESULT_PUBLISH_FAILED",
+        "ASR_ROUTE_UNRECOVERABLE",
+        "ASR_STAGE_ATTEMPT_LIMIT",
     }
 )
 
 _OPAQUE_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_BCP47 = re.compile(r"^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$")
 COUNTRY = re.compile(r"^[A-Z]{2}$")
 
 
@@ -76,10 +87,7 @@ def valid_sha256(value: object) -> bool:
 
 
 def language_tag(value: object, field: str) -> str:
-    parsed = text(value, field)
-    if len(parsed) > 35 or _BCP47.fullmatch(parsed) is None:
-        raise ValueError(f"{field} is invalid")
-    return parsed
+    return canonical_bcp47(value, field)
 
 
 def utc_timestamp(value: object, field: str) -> datetime:

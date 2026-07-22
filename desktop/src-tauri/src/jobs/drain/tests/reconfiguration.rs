@@ -27,6 +27,7 @@ fn abandoned_create_attempt_is_recovered_and_cancelled_at_its_persisted_origin()
         .get_prepared_remote_job("job-abandoned-create")
         .unwrap()
         .unwrap();
+    let capture_manifest_sha256 = prepared.capture_manifest_sha256.clone();
     let request =
         CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json).unwrap();
     let server_job_id = "job-0123456789abcdef0123456789abcdef";
@@ -70,11 +71,19 @@ fn abandoned_create_attempt_is_recovered_and_cancelled_at_its_persisted_origin()
     let failed = ledger.get_job("job-abandoned-create").unwrap().unwrap();
     assert_eq!(failed.status, RecordingJobStatus::Failed);
     assert_eq!(failed.error_code.as_deref(), Some("REMOTE_ORIGIN_CHANGED"));
-    assert!(ledger
+    let preserved = ledger
         .get_prepared_remote_job("job-abandoned-create")
         .unwrap()
-        .is_none());
-    assert!(!remote_jobs.join("job-abandoned-create").exists());
+        .expect("abandoned-origin cleanup preserves the admitted capture");
+    assert_eq!(preserved.capture_manifest_sha256, capture_manifest_sha256);
+    assert_eq!(preserved.create_attempt_base_url, None);
+    assert_eq!(preserved.server_job_id, None);
+    assert_eq!(preserved.server_base_url, None);
+    assert!(remote_jobs.join("job-abandoned-create").is_dir());
+    assert!(!ledger
+        .list_chunks("job-abandoned-create")
+        .unwrap()
+        .is_empty());
     assert!(source.is_file(), "external source must never be deleted");
     let requests = observed.lock().unwrap();
     assert!(requests[0].starts_with("POST /v1/jobs HTTP/1.1"));
@@ -112,6 +121,7 @@ fn changed_origin_detaches_and_cancels_an_existing_server_binding() {
         .get_prepared_remote_job("job-changed-origin")
         .unwrap()
         .unwrap();
+    let capture_manifest_sha256 = prepared.capture_manifest_sha256.clone();
     let request =
         CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json).unwrap();
     let server_job_id = "job-0123456789abcdef0123456789abcdef";
@@ -170,15 +180,20 @@ fn changed_origin_detaches_and_cancels_an_existing_server_binding() {
     let failed = ledger.get_job("job-changed-origin").unwrap().unwrap();
     assert_eq!(failed.status, RecordingJobStatus::Failed);
     assert_eq!(failed.error_code.as_deref(), Some("REMOTE_ORIGIN_CHANGED"));
-    assert!(ledger
+    let preserved = ledger
         .get_prepared_remote_job("job-changed-origin")
         .unwrap()
-        .is_none());
+        .expect("changed-origin cleanup preserves the admitted capture");
+    assert_eq!(preserved.capture_manifest_sha256, capture_manifest_sha256);
+    assert_eq!(preserved.create_attempt_base_url, None);
+    assert_eq!(preserved.server_job_id, None);
+    assert_eq!(preserved.server_base_url, None);
     assert!(ledger
         .list_detached_remote_cancellations()
         .unwrap()
         .is_empty());
-    assert!(!remote_jobs.join("job-changed-origin").exists());
+    assert!(remote_jobs.join("job-changed-origin").is_dir());
+    assert!(!ledger.list_chunks("job-changed-origin").unwrap().is_empty());
     assert!(source.is_file(), "external source must never be deleted");
     assert!(observed.lock().unwrap()[0]
         .starts_with(&format!("DELETE /v1/jobs/{server_job_id} HTTP/1.1")));

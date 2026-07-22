@@ -1,8 +1,13 @@
+FROM nvcr.io/nvidia/pytorch@sha256:dcae8df08ef61b019b8eb109113428cba4ef0e37484c6e722406150dd5ada759 AS application-source
+
+COPY src/yap_server /tmp/yap-application-source/yap_server
+RUN rm -rf /tmp/yap-application-source/yap_server/evaluation
+
 FROM nvcr.io/nvidia/pytorch@sha256:dcae8df08ef61b019b8eb109113428cba4ef0e37484c6e722406150dd5ada759
 
-LABEL org.opencontainers.image.title="Yap Phase 4 private batch ASR worker" \
+LABEL org.opencontainers.image.title="Yap private batch ASR reference worker" \
       org.opencontainers.image.source="https://github.com/mcnatg1/yap" \
-      org.opencontainers.image.licenses="LicenseRef-NVIDIA-AI AND Apache-2.0 AND BSD-3-Clause AND ISC AND LGPL-2.1-or-later AND MIT"
+      org.opencontainers.image.licenses="LicenseRef-NVIDIA-AI AND OpenMDW-1.1 AND Apache-2.0 AND BSD-3-Clause AND ISC AND LGPL-2.1-or-later AND MIT"
 
 ENV PYTHONPATH=/opt/yap-server \
     YAP_MODEL_LOCK=/opt/yap-server/model-pools.lock.json \
@@ -35,11 +40,20 @@ RUN set -eu; \
     rm -f /tmp/yap-asr-requirements.lock
 
 COPY model-pools.lock.json /opt/yap-server/model-pools.lock.json
+COPY model-pools.lock.json /opt/yap-server/model-locks/cohere-batch.json
+COPY nemotron-model-pool.lock.json /opt/yap-server/nemotron-model-pool.lock.json
+COPY nemotron-model-pool.lock.json /opt/yap-server/model-locks/nemotron-batch.json
 COPY runtime/asr/THIRD_PARTY_NOTICES.md /opt/yap-server/THIRD_PARTY_NOTICES.md
 COPY runtime/asr/licenses /opt/yap-server/licenses
-COPY src/yap_server /opt/yap-server/yap_server
+COPY --from=application-source /tmp/yap-application-source/yap_server /opt/yap-server/yap_server
 
-RUN python3 -c 'import importlib.metadata as m, json, sys; import librosa, soundfile; from transformers import AutoProcessor, CohereAsrForConditionalGeneration; import torch; lock = json.load(open("/opt/yap-server/model-pools.lock.json", encoding="utf-8")); expected = lock["runtime"]["overlayPackages"]; actual = {name: m.version(name) for name in expected}; assert actual == expected, (actual, expected); assert sys.version_info[:2] == (3, 12); assert torch.__version__ == "2.13.0a0+8145d630e8.nv26.06"; assert torch.version.cuda == "13.3"' \
+# Build contexts can preserve restrictive source modes (for example 0600).
+# The worker runs as an unprivileged service user, so normalize only read and
+# directory traversal permissions; runtime state remains confined to /tmp.
+RUN test ! -e /opt/yap-server/yap_server/evaluation
+RUN chmod -R a+rX /opt/yap-server
+
+RUN python3 -c 'import importlib.metadata as m, json, sys; import librosa, soundfile; from transformers import AutoModelForRNNT, AutoProcessor, CohereAsrForConditionalGeneration; import torch; lock = json.load(open("/opt/yap-server/model-pools.lock.json", encoding="utf-8")); expected = lock["runtime"]["overlayPackages"]; actual = {name: m.version(name) for name in expected}; assert actual == expected, (actual, expected); assert sys.version_info[:2] == (3, 12); assert torch.__version__ == "2.13.0a0+8145d630e8.nv26.06"; assert torch.version.cuda == "13.3"' \
     && groupadd --gid 10001 yapworker \
     && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin yapworker
 

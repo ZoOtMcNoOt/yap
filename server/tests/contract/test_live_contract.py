@@ -68,7 +68,10 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(
             live_operation["x-yap-live-events-schema"], "./live-events.schema.json"
         )
-        self.assertEqual(live_operation["x-yap-phase-3-behavior"], "Event schema only")
+        self.assertEqual(
+            live_operation["x-yap-runtime-status"],
+            "Contract only; capability remains false",
+        )
 
     def test_live_source_identity_invariants_are_normative(self) -> None:
         live_schema = contract_schema.load_json(http_contract.LIVE_EVENTS_PATH)

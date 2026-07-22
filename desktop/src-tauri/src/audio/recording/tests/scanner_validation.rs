@@ -32,6 +32,36 @@ fn scanner_reports_audio_hash_and_sidecar_damage_separately() {
 }
 
 #[test]
+fn scanner_rejects_hash_bound_malformed_language_span_coverage() {
+    let dir = tempfile_dir("invalid-language-evidence");
+    let session = SessionId::new("s-invalid-language-evidence").unwrap();
+    let track = TrackId::new("live-microphone").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    recording
+        .append_input(recording_revision(&track, 1, 0, 16_000, 0))
+        .unwrap();
+    recording
+        .append_input(RecordingInput::PreparedFrame(prepared_frame(&session)))
+        .unwrap();
+    recording
+        .append_input(RecordingInput::LanguageEvidence(fixed_language_evidence(1)))
+        .unwrap();
+    recording.finalize().unwrap();
+
+    let sidecar_path = dir.join(format!("live-{session}.capture.json"));
+    let mut sidecar: serde_json::Value =
+        serde_json::from_slice(&fs::read(&sidecar_path).unwrap()).unwrap();
+    sidecar["languageEvidence"]["spans"][0]["endSample"] = serde_json::Value::from(2);
+    fs::write(&sidecar_path, serde_json::to_vec(&sidecar).unwrap()).unwrap();
+    rehash_capture_sidecar(&dir, &session, &sidecar_path);
+
+    let scan = scan_recordings(&dir).unwrap();
+    assert!(scan.complete.is_empty());
+    assert_eq!(scan.damaged.len(), 1);
+    fs::remove_dir_all(dir).ok();
+}
+
+#[test]
 fn scanner_rejects_hash_bound_invalid_timeline_metadata() {
     let dir = tempfile_dir("invalid-timeline-sidecar");
     let session = SessionId::new("s-invalid-timeline-sidecar").unwrap();

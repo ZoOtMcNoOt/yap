@@ -10,7 +10,7 @@ use crate::{
             BatchApiClient, CaptureChunkReference, CommitRecordingJobRequest,
             CreateRecordingJobRequest,
         },
-        BatchConnectionLease, ServerConnector,
+        AsrCatalogDispatchProof, BatchConnectionLease, ServerConnector,
     },
 };
 
@@ -38,22 +38,73 @@ pub(super) async fn advance_upload_with_lease(
     remote_jobs_directory: &Path,
     connector: &ServerConnector,
     lease: &BatchConnectionLease,
+    job_id: &str,
+    catalog_proof: Option<&AsrCatalogDispatchProof>,
     updated_at_ms: u64,
 ) -> DrainResult<bool> {
-    advance_upload_once_guarded(
+    let guard = match catalog_proof {
+        Some(proof) => BatchCommitGuard::Catalog {
+            connector,
+            lease,
+            proof,
+        },
+        None => BatchCommitGuard::Lease { connector, lease },
+    };
+    advance_upload_job_once_guarded(
         ledger,
         remote_jobs_directory,
         lease.client(),
+        Some(job_id),
         updated_at_ms,
-        &BatchCommitGuard::Lease { connector, lease },
+        &guard,
     )
     .await
 }
 
+#[cfg(test)]
 pub(super) async fn advance_upload_once_guarded(
     ledger: &JobLedger,
     remote_jobs_directory: &Path,
     client: &BatchApiClient,
+    updated_at_ms: u64,
+    guard: &BatchCommitGuard<'_>,
+) -> DrainResult<bool> {
+    advance_upload_job_once_guarded(
+        ledger,
+        remote_jobs_directory,
+        client,
+        None,
+        updated_at_ms,
+        guard,
+    )
+    .await
+}
+
+#[cfg(test)]
+pub(super) async fn advance_upload_job_once_guarded_for_test(
+    ledger: &JobLedger,
+    remote_jobs_directory: &Path,
+    client: &BatchApiClient,
+    job_id: &str,
+    updated_at_ms: u64,
+    guard: &BatchCommitGuard<'_>,
+) -> DrainResult<bool> {
+    advance_upload_job_once_guarded(
+        ledger,
+        remote_jobs_directory,
+        client,
+        Some(job_id),
+        updated_at_ms,
+        guard,
+    )
+    .await
+}
+
+async fn advance_upload_job_once_guarded(
+    ledger: &JobLedger,
+    remote_jobs_directory: &Path,
+    client: &BatchApiClient,
+    exact_job_id: Option<&str>,
     updated_at_ms: u64,
     guard: &BatchCommitGuard<'_>,
 ) -> DrainResult<bool> {
@@ -62,7 +113,8 @@ pub(super) async fn advance_upload_once_guarded(
         .map_err(|error| error.to_string())?
         .into_iter()
         .find(|job| {
-            job.status == RecordingJobStatus::Uploading
+            exact_job_id.is_none_or(|job_id| job.job_id == job_id)
+                && job.status == RecordingJobStatus::Uploading
                 && job
                     .next_attempt_at_ms
                     .is_none_or(|retry_at| retry_at <= updated_at_ms)
@@ -95,7 +147,7 @@ pub(super) async fn advance_upload_once_guarded(
 
     let Some(server_job_id) = prepared.server_job_id.as_deref() else {
         let idempotency_key = request.create_idempotency_key()?;
-        guard.commit(|| {
+        let begin_attempt = || {
             ledger
                 .begin_remote_create_attempt(
                     &candidate.job_id,
@@ -103,7 +155,17 @@ pub(super) async fn advance_upload_once_guarded(
                     updated_at_ms,
                 )
                 .map_err(|error| DrainStepError::permanent(error.to_string()))
-        })?;
+        };
+        if prepared.create_attempt_base_url.is_none() {
+            let binding = candidate.asr_catalog_binding.as_ref().ok_or_else(|| {
+                DrainStepError::transient_state(
+                    "An unstarted server job has no current ASR catalog binding.",
+                )
+            })?;
+            guard.commit_catalog(binding, begin_attempt)?;
+        } else {
+            guard.commit(begin_attempt)?;
+        }
         guard.ensure_current()?;
         let projection = client.create(&idempotency_key, &request).await?;
         validate_job_projection(&projection, &request, None, &["accepted", "uploading"])?;
@@ -172,17 +234,23 @@ pub(super) async fn advance_upload_once_guarded(
                     chunk_count: request.chunks.len(),
                 },
             )
-            .await?;
+            .await
+            .map_err(DrainStepError::from_commit_error)?;
         validate_job_projection(
             &committed,
             &request,
             Some(server_job_id),
             &["server_processing", "complete"],
-        )?;
+        )
+        .map_err(DrainStepError::durable_ambiguous_commit)?;
     }
     ledger
         .mark_remote_job_committed(&candidate.job_id, updated_at_ms)
-        .map_err(|error| DrainStepError::permanent(error.to_string()))?;
+        .map_err(|error| {
+            DrainStepError::durable_ambiguous_commit(format!(
+                "server commit was confirmed but local commit state could not be persisted: {error}"
+            ))
+        })?;
     guard.ensure_current()?;
     Ok(true)
 }
@@ -195,6 +263,8 @@ pub(super) fn validate_durable_upload_state(
 ) -> Result<(), String> {
     let session_id = request.metadata.session_id.as_str();
     if prepared.job_id != job.job_id
+        || !job.language_decision_locked
+        || job.language_decision != request.language_decision
         || prepared.capture_manifest_sha256 != request.capture_manifest.sha256
         || job.capture_manifest_sha256.as_deref() != Some(request.capture_manifest.sha256.as_str())
         || chunks.len() != request.chunks.len()

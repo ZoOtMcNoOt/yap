@@ -36,7 +36,9 @@ describe("imported recording queue surface", () => {
         <QueuePanel
           {...legacyExecutionProps}
           legacyDiscardAllowed={false}
+          languageOptions={[]}
           onClear={vi.fn()}
+          onConfirmLanguage={vi.fn()}
           onDiscardLegacyQueue={vi.fn()}
           onRemove={vi.fn()}
           onReveal={vi.fn()}
@@ -75,8 +77,10 @@ describe("imported recording queue surface", () => {
       <TooltipProvider>
         <QueuePanel
           legacyDiscardAllowed={false}
+          languageOptions={[]}
           migrationPending={false}
           onClear={vi.fn()}
+          onConfirmLanguage={vi.fn()}
           onDiscardLegacyQueue={vi.fn()}
           onRemove={vi.fn()}
           onReveal={vi.fn()}
@@ -96,9 +100,11 @@ describe("imported recording queue surface", () => {
       <TooltipProvider>
         <QueuePanel
           legacyDiscardAllowed={legacyDiscardAllowed}
+          languageOptions={[]}
           migrationError="Queued recording migration needs attention"
           migrationPending={false}
           onClear={vi.fn()}
+          onConfirmLanguage={vi.fn()}
           onDiscardLegacyQueue={vi.fn()}
           onRemove={vi.fn()}
           onReveal={vi.fn()}
@@ -115,6 +121,99 @@ describe("imported recording queue surface", () => {
     const panelSource = source("../../src/components/panels/queue-panel.tsx");
     expect(panelSource).toContain("Discard the old queue?");
     expect(panelSource).toContain("onClick={onDiscardLegacyQueue}");
+  });
+
+  it("renders a bounded language suggestion with current catalog choices", () => {
+    const item: RecordingJobView = {
+      id: "job-language-review",
+      languageDecision: {
+        disposition: "primary",
+        languageBcp47: "en-US",
+        mode: "fixed",
+      },
+      languageReview: {
+        catalogRevision: "a".repeat(64),
+        kind: "suggestion",
+        reason: "mapped_language_agreement",
+        suggestedLanguageBcp47: "fr-FR",
+      },
+      name: "meeting.wav",
+      sourcePath: "C:/meeting.wav",
+      pipeline: createInitialPipelineState(),
+      route: "serverBatch",
+      sessionMode: "meeting",
+      sessionOrigin: "importedFile",
+      status: "preflighting",
+    };
+
+    const html = renderToStaticMarkup(
+      <TooltipProvider>
+        <QueuePanel
+          languageOptions={[
+            { languageBcp47: "en-US", qualityTier: "transcriptionReady" },
+            { languageBcp47: "fr-FR", qualityTier: "broadCoverage" },
+          ]}
+          legacyDiscardAllowed={false}
+          migrationPending={false}
+          onClear={vi.fn()}
+          onConfirmLanguage={vi.fn()}
+          onDiscardLegacyQueue={vi.fn()}
+          onRemove={vi.fn()}
+          onReveal={vi.fn()}
+          onRetryMigration={vi.fn()}
+          onSelect={vi.fn()}
+          queue={[item]}
+        />
+      </TooltipProvider>,
+    );
+
+    expect(html).toContain("Confirm recording language");
+    expect(html).toContain("Yap detected");
+    expect(html).toContain("fr-FR");
+    expect(html).toContain("Use suggestion");
+    expect(html).not.toContain("mapped_language_agreement");
+  });
+
+  it("explains manual language review reasons without exposing protocol codes", () => {
+    const item: RecordingJobView = {
+      id: "job-language-review",
+      languageReview: {
+        catalogRevision: "a".repeat(64),
+        kind: "manual",
+        reason: "ambiguous_locale",
+      },
+      name: "meeting.wav",
+      sourcePath: "C:/meeting.wav",
+      pipeline: createInitialPipelineState(),
+      route: "serverBatch",
+      sessionMode: "meeting",
+      sessionOrigin: "importedFile",
+      status: "preflighting",
+    };
+
+    const html = renderToStaticMarkup(
+      <TooltipProvider>
+        <QueuePanel
+          languageOptions={[
+            { languageBcp47: "pt-BR", qualityTier: "broadCoverage" },
+            { languageBcp47: "pt-PT", qualityTier: "broadCoverage" },
+          ]}
+          legacyDiscardAllowed={false}
+          migrationPending={false}
+          onClear={vi.fn()}
+          onConfirmLanguage={vi.fn()}
+          onDiscardLegacyQueue={vi.fn()}
+          onRemove={vi.fn()}
+          onReveal={vi.fn()}
+          onRetryMigration={vi.fn()}
+          onSelect={vi.fn()}
+          queue={[item]}
+        />
+      </TooltipProvider>,
+    );
+
+    expect(html).toContain("maps to more than one available locale");
+    expect(html).not.toContain("ambiguous_locale");
   });
 
   it("wires the guarded discard owner from the recording jobs hook into the queue panel", () => {

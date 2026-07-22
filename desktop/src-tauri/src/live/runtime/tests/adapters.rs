@@ -73,9 +73,9 @@ fn asr_adapter_forwards_the_last_accepted_frame_before_it_joins() {
 
     adapter.join_after_capture().unwrap();
     match samples_rx.recv_timeout(Duration::from_secs(1)).unwrap() {
-        StreamMessage::Samples { session, samples } => {
+        StreamMessage::Samples { session, frame } => {
             assert_eq!(session, 7);
-            assert_eq!(samples, vec![0.25]);
+            assert_eq!(&*frame.samples, &[0.25]);
         }
         StreamMessage::Finish { .. } => panic!("expected the accepted frame"),
     }
@@ -94,9 +94,9 @@ fn pending_asr_adapter_keeps_bounded_pre_roll_until_the_model_is_ready() {
     adapter.join_after_capture().unwrap();
 
     match samples_rx.recv_timeout(Duration::from_secs(1)).unwrap() {
-        StreamMessage::Samples { session, samples } => {
+        StreamMessage::Samples { session, frame } => {
             assert_eq!(session, 11);
-            assert_eq!(samples, vec![0.4]);
+            assert_eq!(&*frame.samples, &[0.4]);
         }
         StreamMessage::Finish { .. } => panic!("expected queued pre-roll"),
     }
@@ -106,10 +106,7 @@ fn pending_asr_adapter_keeps_bounded_pre_roll_until_the_model_is_ready() {
 fn stalled_recognizer_times_out_stop_without_enqueuing_finish() {
     let (samples_tx, samples_rx) = mpsc::sync_channel(1);
     samples_tx
-        .try_send(StreamMessage::Samples {
-            session: 7,
-            samples: vec![0.0],
-        })
+        .try_send(StreamMessage::from_prepared(7, prepared_frame(0.0)))
         .unwrap();
     let mut adapter = SessionAsrAdapter::start(samples_tx.clone(), 7);
     let port = adapter.sink();
@@ -137,10 +134,7 @@ fn stalled_recognizer_times_out_stop_without_enqueuing_finish() {
 fn reaper_spawn_failure_retains_adapter_ownership_and_reports_a_bounded_stop() {
     let (samples_tx, samples_rx) = mpsc::sync_channel(1);
     samples_tx
-        .try_send(StreamMessage::Samples {
-            session: 7,
-            samples: vec![0.0],
-        })
+        .try_send(StreamMessage::from_prepared(7, prepared_frame(0.0)))
         .unwrap();
     let completion_gate = Arc::new(Barrier::new(2));
     let mut adapter = SessionAsrAdapter::start_with_completion_gate_for_test(
@@ -182,11 +176,11 @@ fn two_capture_sessions_use_fresh_asr_ports_and_finish_each_once_in_fifo_order()
         let mut finishes = 0;
         while finishes < 2 {
             match samples_rx.recv_timeout(Duration::from_secs(1)).unwrap() {
-                StreamMessage::Samples { session, samples } => {
+                StreamMessage::Samples { session, frame } => {
                     delivered_for_worker
                         .lock()
                         .unwrap()
-                        .push((session, samples));
+                        .push((session, frame.samples.to_vec()));
                 }
                 StreamMessage::Finish { session, done } => {
                     delivered_for_worker
@@ -194,7 +188,7 @@ fn two_capture_sessions_use_fresh_asr_ports_and_finish_each_once_in_fifo_order()
                         .unwrap()
                         .push((session, Vec::new()));
                     finishes += 1;
-                    done.send(StreamFinishStatus::Completed).unwrap();
+                    done.send(StreamFinishStatus::Completed.into()).unwrap();
                 }
             }
         }

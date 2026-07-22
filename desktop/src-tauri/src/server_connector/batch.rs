@@ -1,18 +1,30 @@
 mod client;
 mod error;
+mod preprocessing;
 mod request;
 mod response;
 mod validation;
 
 pub(crate) use client::{validate_development_batch_base_url, BatchApiClient};
 pub(crate) use error::BatchClientError;
+pub(crate) use preprocessing::{
+    validate_vad_intervals, NormalizationEvidence, PreprocessingEvidence, SourceVadInterval,
+    VadComponentEvidence, VadEvidence, MAX_VAD_INTERVALS,
+};
 pub(crate) use request::{
     CaptureChunkReference, CaptureManifestReference, CommitRecordingJobRequest, ContentIdentity,
-    CreateRecordingJobRequest, ServerReplayKey, UploadTrack,
+    CreateRecordingJobRequest, RetryServerStageRequest, ServerReplayKey, UploadTrack,
 };
-pub(crate) use response::{ApiError, ChunkUploadReceipt, RecordingJob, TranscriptResultRevision};
+pub(crate) use response::{
+    AlignmentStatus, ApiError, ChunkUploadReceipt, LanguageSegmentStatus, RecordingJob,
+    ServerStageName, ServerStageProjectionEnvelope, ServerStageState, TranscriptResultRevision,
+    MAX_TRANSCRIPT_RESULT_BYTES,
+};
 #[cfg(test)]
-pub(crate) use response::{LanguageDecision, ModelRevision};
+pub(crate) use response::{
+    AlignmentUnavailableReason, LanguageDecision, LanguageSegment, LanguageSegmentReason,
+    ModelRevision, ServerLanguageSpanEvidence,
+};
 
 #[cfg(test)]
 mod tests;

@@ -1,4 +1,4 @@
-"""Bounded Phase 5 recording-job lifecycle."""
+"""Bounded recording-job lifecycle."""
 
 from .errors import JobServiceError
 from .service import RecordingJobService

@@ -28,7 +28,10 @@ import { isRecordingFinished } from "@/lib/recording-job";
 import { workspaceCopy } from "@/lib/workspace";
 import { fireAndReport } from "@/lib/fire-and-report";
 import { cn } from "@/lib/utils";
-import { fixedBatchLanguageOptions } from "@/language-preference";
+import {
+  fixedBatchLanguageOptions,
+  recordingImportLanguageOptions,
+} from "@/language-preference";
 
 function reportRecordingAction(action: () => unknown, message: string) {
   fireAndReport(action, (error) => toast.error(`${message}: ${error.message}`));
@@ -36,7 +39,7 @@ function reportRecordingAction(action: () => unknown, message: string) {
 
 export default function App() {
   const [status, setStatus] = useState("Starting");
-  const [recordingLanguageBcp47, setRecordingLanguageBcp47] = useState<string | null>(null);
+  const [recordingLanguageOptionId, setRecordingLanguageOptionId] = useState<string | null>(null);
   const settingsRefreshRef = useRef<() => Promise<void>>(async () => undefined);
   const {
     clearTranscriptText,
@@ -50,6 +53,7 @@ export default function App() {
   const {
     addRecordings: pickImportedRecordings,
     clearQueue,
+    confirmLanguage,
     discardLegacyQueue,
     legacyDiscardAllowed,
     migrationError,
@@ -81,6 +85,7 @@ export default function App() {
     selectHistoryEntry,
     selectQueueItem,
     selectedHistoryItem,
+    selectedHistoryEntry,
     selectedHistoryOutput,
     selectedId,
     selectedItem,
@@ -136,26 +141,31 @@ export default function App() {
     () => fixedBatchLanguageOptions(languageCatalog),
     [languageCatalog],
   );
+  const importLanguageOptions = useMemo(
+    () => recordingImportLanguageOptions(languageCatalog),
+    [languageCatalog],
+  );
   const primaryLanguageBcp47 = settings.language.status?.confirmedLanguageBcp47 ?? null;
   useEffect(() => {
-    setRecordingLanguageBcp47((current) => {
-      if (current && languageOptions.some((option) => option.languageBcp47 === current)) {
+    setRecordingLanguageOptionId((current) => {
+      if (current && importLanguageOptions.some((option) => option.id === current)) {
         return current;
       }
-      return languageOptions.some((option) => option.languageBcp47 === primaryLanguageBcp47)
-        ? primaryLanguageBcp47
+      const primaryId = primaryLanguageBcp47 ? `fixed:${primaryLanguageBcp47}` : null;
+      return importLanguageOptions.some((option) => option.id === primaryId)
+        ? primaryId
         : null;
     });
-  }, [languageOptions, primaryLanguageBcp47]);
+  }, [importLanguageOptions, primaryLanguageBcp47]);
   const addRecordings = useCallback(async () => {
     const catalogRevision = languageCatalog?.catalogRevision;
-    if (!recordingLanguageBcp47 || !catalogRevision) {
+    const option = importLanguageOptions.find(({ id }) => id === recordingLanguageOptionId);
+    if (!option || !catalogRevision) {
       throw new Error("Confirm a currently supported recording language in Settings first.");
     }
-    const selectedQueueId = await pickImportedRecordings({
-      languageBcp47: recordingLanguageBcp47,
-      catalogRevision,
-    });
+    const selectedQueueId = await pickImportedRecordings(option.mode === "dynamic"
+      ? { mode: "dynamic", catalogRevision }
+      : { mode: "fixed", languageBcp47: option.languageBcp47, catalogRevision });
     if (selectedQueueId === undefined) return;
     openWorkspace("transcribe");
     selectQueueItem(selectedQueueId);
@@ -163,9 +173,17 @@ export default function App() {
     languageCatalog?.catalogRevision,
     openWorkspace,
     pickImportedRecordings,
-    recordingLanguageBcp47,
+    importLanguageOptions,
+    recordingLanguageOptionId,
     selectQueueItem,
   ]);
+  const confirmQueuedLanguage = useCallback(async (jobId: string, languageBcp47: string) => {
+    const catalogRevision = languageCatalog?.catalogRevision;
+    if (!catalogRevision) {
+      throw new Error("Current server language capabilities are unavailable.");
+    }
+    await confirmLanguage(jobId, languageBcp47, catalogRevision);
+  }, [confirmLanguage, languageCatalog?.catalogRevision]);
   settingsRefreshRef.current = settings.refresh;
   const workspace = workspaceCopy[workspaceView];
   const showQueue = workspaceView === "transcribe";
@@ -231,11 +249,13 @@ export default function App() {
           legacyDiscardAllowed={legacyDiscardAllowed}
           onClear={() => reportRecordingAction(clearQueue, "Could not clear queue")}
           onDiscardLegacyQueue={() => reportRecordingAction(discardLegacyQueue, "Could not discard old queue")}
+          onConfirmLanguage={confirmQueuedLanguage}
           onRemove={(id) => reportRecordingAction(() => removeItem(id), "Could not remove recording")}
           onReveal={(path) => void revealPath(path)}
           onRetryMigration={retryMigration}
           onSelect={selectQueueItem}
           queue={queue}
+          languageOptions={languageOptions}
           migrationError={migrationError}
           migrationPending={migrationState === "pending"}
           selectedId={selectedId}
@@ -321,12 +341,12 @@ export default function App() {
           onDragLeave={recordingDrop.onDragLeave}
           onDragOver={recordingDrop.onDragOver}
           onDrop={recordingDrop.onDrop}
-          languageOptions={languageOptions}
-          onLanguageChange={setRecordingLanguageBcp47}
+          languageOptions={importLanguageOptions}
+          onLanguageChange={setRecordingLanguageOptionId}
           onOpenHelp={() => openWorkspace("help")}
           onOpenLanguageSettings={showDetails}
           onPickFiles={() => void pickFiles()}
-          selectedLanguage={recordingLanguageBcp47}
+          selectedLanguageOptionId={recordingLanguageOptionId}
         />
       ) : null}
 
@@ -358,6 +378,7 @@ export default function App() {
         helpOpen={helpOpen}
         historyJob={historyJob}
         historyReviewOpen={workspaceView === "home" && Boolean(selectedHistoryItem)}
+        languageOptions={languageOptions}
         onDetailsOpenChange={onDetailsOpenChange}
         onHelpOpenChange={onHelpOpenChange}
         openAppPath={openAppPath}
@@ -367,6 +388,7 @@ export default function App() {
         revealPath={revealPath}
         reviewMorphOrigin={reviewMorphOrigin}
         selectedHistoryItem={selectedHistoryItem}
+        selectedHistoryEntry={selectedHistoryEntry}
         settings={settings}
         status={status}
         transcriptText={transcriptText}

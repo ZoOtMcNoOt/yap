@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.yap.local/v1/live-events.schema.json",
   "title": "Yap live event protocol",
-  "description": "Contract-only Phase 5 WebSocket event vocabulary. Every event carries a schema version, session ID, and per-direction monotonically increasing sequence. Stale event sequences are ignored. Duplicate final events with the same finalEventId are idempotent.",
+  "description": "Contract-only WebSocket event vocabulary. Every event carries a schema version, session ID, and per-direction monotonically increasing sequence. Stale event sequences are ignored. Duplicate final events with the same finalEventId are idempotent.",
   "oneOf": [
     {
       "$ref": "#/$defs/SessionStartEvent"

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use super::{Artifact, NemotronPaths};
+use super::Artifact;
 use crate::stt::error::SttError;
 
 #[cfg(windows)]
@@ -15,7 +15,7 @@ pub(crate) struct ModelLoadGuard {
 }
 
 impl ModelLoadGuard {
-    pub(super) fn open(root: &Path, artifacts: &[Artifact]) -> Result<Self, SttError> {
+    pub(crate) fn open(root: &Path, artifacts: &[Artifact]) -> Result<Self, SttError> {
         #[cfg(not(windows))]
         {
             let _ = (root, artifacts);
@@ -28,17 +28,17 @@ impl ModelLoadGuard {
         }
     }
 
-    pub(super) fn paths(&self) -> &NemotronPaths {
+    pub(crate) fn path(&self, index: usize) -> &Path {
         #[cfg(not(windows))]
         {
             unreachable!("native local model loading is unsupported off Windows")
         }
 
         #[cfg(windows)]
-        self.inner.paths()
+        self.inner.path(index)
     }
 
-    pub(super) fn revalidate_after_native_load(&self) -> Result<(), SttError> {
+    pub(crate) fn revalidate_after_native_load(&self) -> Result<(), SttError> {
         #[cfg(not(windows))]
         {
             Err(SttError::ModelCorrupt)
@@ -50,11 +50,11 @@ impl ModelLoadGuard {
 }
 
 #[cfg(windows)]
-pub(super) fn cleanup_stale_snapshots(root: &Path) -> Result<(), SttError> {
+pub(crate) fn cleanup_stale_snapshots(root: &Path) -> Result<(), SttError> {
     windows::cleanup_stale_snapshots(root)
 }
 
 #[cfg(not(windows))]
-pub(super) fn cleanup_stale_snapshots(_root: &Path) -> Result<(), SttError> {
+pub(crate) fn cleanup_stale_snapshots(_root: &Path) -> Result<(), SttError> {
     Ok(())
 }

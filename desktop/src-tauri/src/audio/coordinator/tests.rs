@@ -60,7 +60,9 @@ fn recv_recording_frame(receiver: &super::BoundedReceiver<RecordingInput>) -> Pr
     loop {
         match receiver.recv_timeout(Duration::from_secs(1)).unwrap() {
             RecordingInput::PreparedFrame(frame) => return frame,
-            RecordingInput::RevisionTransition(_) | RecordingInput::Gap(_) => {}
+            RecordingInput::RevisionTransition(_)
+            | RecordingInput::Gap(_)
+            | RecordingInput::LanguageEvidence(_) => {}
         }
     }
 }
@@ -71,7 +73,9 @@ fn recv_recording_gap(
     loop {
         match receiver.recv_timeout(Duration::from_secs(1)).unwrap() {
             RecordingInput::Gap(gap) => return gap,
-            RecordingInput::RevisionTransition(_) | RecordingInput::PreparedFrame(_) => {}
+            RecordingInput::RevisionTransition(_)
+            | RecordingInput::PreparedFrame(_)
+            | RecordingInput::LanguageEvidence(_) => {}
         }
     }
 }

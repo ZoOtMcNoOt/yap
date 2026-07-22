@@ -5,12 +5,14 @@ import path from "node:path";
 const releaseInputPaths = Object.freeze([
   "THIRD_PARTY_NOTICES.md",
   "THIRD_PARTY_PROVENANCE.json",
+  "desktop/model-artifacts.lock.json",
   "desktop/package.json",
   "desktop/pnpm-lock.yaml",
   "desktop/src-tauri/Cargo.lock",
   "desktop/src-tauri/Cargo.toml",
   "desktop/src-tauri/rust-toolchain.toml",
   "desktop/src-tauri/tauri.conf.json",
+  "server/runtime/asr/licenses/APACHE-2.0.txt",
 ]);
 
 const ignoredReleaseInputPathspecs = Object.freeze([
@@ -29,6 +31,7 @@ const ignoredReleaseInputPathspecs = Object.freeze([
   "desktop/src-tauri/Cargo.toml",
   "desktop/src-tauri/rust-toolchain.toml",
   "desktop/src-tauri/tauri.conf.json",
+  "desktop/model-artifacts.lock.json",
 ]);
 
 export function validateReleaseCoordinates(commitSha, releaseTag) {

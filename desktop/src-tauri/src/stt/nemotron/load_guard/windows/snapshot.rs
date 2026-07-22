@@ -8,7 +8,8 @@ use sha2::{Digest, Sha256};
 
 use super::path_lease::{
     map_model_path_error, metadata_is_link_or_reparse, model_file_identity, open_regular_source,
-    open_snapshot_for_identity, DirectoryLease, ModelFileIdentity, FILE_SHARE_READ_VALUE,
+    open_snapshot_for_identity, open_snapshot_for_native_read, DirectoryLease, ModelFileIdentity,
+    FILE_SHARE_READ_VALUE,
 };
 use crate::stt::error::SttError;
 use crate::stt::nemotron::Artifact;
@@ -16,10 +17,8 @@ use crate::stt::nemotron::Artifact;
 const SNAPSHOT_PREFIX: &str = ".yap-model-load-";
 static NEXT_SNAPSHOT: AtomicU64 = AtomicU64::new(0);
 
-/// A fresh file held from creation with write/delete sharing denied to other handles.
-///
-/// The retained handle intentionally remains writable by this process: closing and reopening it
-/// read-only would introduce a replacement window. Native readers receive only `path`.
+/// A hash-verified snapshot held read-only with write/delete sharing denied to other handles.
+/// Native runtimes receive only `path` and can open their own read-only handles.
 pub(super) struct SnapshotArtifact {
     path: PathBuf,
     file: File,
@@ -68,9 +67,18 @@ impl SnapshotArtifact {
             return Err(SttError::ModelCorrupt);
         }
         snapshot.sync_all().map_err(|_| SttError::ModelCorrupt)?;
-        snapshot
-            .seek(SeekFrom::Start(0))
-            .map_err(|_| SttError::ModelCorrupt)?;
+
+        // The creation handle has write access, which prevents native readers that use a
+        // conventional read-sharing mask from opening the model on Windows. Bridge through a
+        // read-only handle that temporarily permits the writer, close the writer, then acquire
+        // the final read-only lease that denies all later writes and deletes. Re-hashing through
+        // that final handle closes the brief bridge-sharing race without ever leaving the path
+        // unleased.
+        let bridge = open_snapshot_for_identity(snapshot_path)?;
+        drop(snapshot);
+        let mut snapshot = open_snapshot_for_native_read(snapshot_path)?;
+        drop(bridge);
+
         let metadata = snapshot.metadata().map_err(|_| SttError::ModelCorrupt)?;
         if !metadata.is_file()
             || metadata_is_link_or_reparse(&metadata)
@@ -78,6 +86,7 @@ impl SnapshotArtifact {
         {
             return Err(SttError::ModelCorrupt);
         }
+        verify_snapshot_contents(&mut snapshot, artifact)?;
         let identity = model_file_identity(&snapshot)?;
         Ok(Self {
             path: snapshot_path.to_path_buf(),
@@ -102,6 +111,35 @@ impl SnapshotArtifact {
         }
         Ok(())
     }
+}
+
+fn verify_snapshot_contents(file: &mut File, artifact: &Artifact) -> Result<(), SttError> {
+    file.seek(SeekFrom::Start(0))
+        .map_err(|_| SttError::ModelCorrupt)?;
+    let mut hasher = Sha256::new();
+    let mut read_bytes = 0_u64;
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        let read = file.read(&mut buffer).map_err(|_| SttError::ModelCorrupt)?;
+        if read == 0 {
+            break;
+        }
+        read_bytes = read_bytes
+            .checked_add(read as u64)
+            .ok_or(SttError::ModelCorrupt)?;
+        if read_bytes > artifact.bytes {
+            return Err(SttError::ModelCorrupt);
+        }
+        hasher.update(&buffer[..read]);
+    }
+    if read_bytes != artifact.bytes
+        || !digest_matches(hasher.finalize().as_slice(), artifact.sha256)
+    {
+        return Err(SttError::ModelCorrupt);
+    }
+    file.seek(SeekFrom::Start(0))
+        .map_err(|_| SttError::ModelCorrupt)?;
+    Ok(())
 }
 
 pub(super) fn create_snapshot_root(root: &Path) -> Result<(PathBuf, DirectoryLease), SttError> {

@@ -28,6 +28,10 @@ pub(crate) struct RecordingJobSourceAdmission {
     pub(crate) playback_path: String,
 }
 
+pub(crate) struct NativeSelectionRegistration {
+    newly_added_paths: Vec<std::path::PathBuf>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct ValidatedRecordingJobSource {
     pub(crate) canonical_path: std::path::PathBuf,
@@ -98,6 +102,71 @@ pub(crate) fn register_native_selected_recording_job_source_at(
         ));
     }
     Ok(())
+}
+
+/// Retains a picker/drop batch before its non-runnable Accepted rows are
+/// committed. This is path-scoped proof snapshot recovery may consume; it must
+/// never be reconstructed later from a ledger path alone. Every access still
+/// performs a fresh no-follow file/fingerprint check, and preprocessing freezes
+/// the accepted bytes only when it publishes the immutable Yap-owned spool.
+pub(crate) fn retain_native_selected_recording_job_sources_at(
+    sources: &[ValidatedRecordingJobSource],
+    registry_path: &std::path::Path,
+    owned_dir: &std::path::Path,
+) -> Result<NativeSelectionRegistration, RecordingJobSourceError> {
+    for source in sources {
+        let current = crate::media_protocol::inspect_media_source(&source.canonical_path)
+            .map_err(RecordingJobSourceError::Unsafe)?;
+        if current != source.fingerprint {
+            return Err(RecordingJobSourceError::Unsafe(
+                "Recording source changed after native selection.".into(),
+            ));
+        }
+    }
+    let paths = sources
+        .iter()
+        .map(|source| source.canonical_path.clone())
+        .collect::<Vec<_>>();
+    let newly_added_paths = registry::register_recording_job_playback_paths_at_from_owned_dir(
+        &paths,
+        registry_path,
+        owned_dir,
+    )
+    .map_err(RecordingJobSourceError::Unsafe)?;
+    Ok(NativeSelectionRegistration { newly_added_paths })
+}
+
+pub(crate) fn rollback_retained_native_selection_at(
+    registration: NativeSelectionRegistration,
+    registry_path: &std::path::Path,
+) -> Result<(), String> {
+    registry::remove_recording_job_playback_paths_at(&registration.newly_added_paths, registry_path)
+}
+
+/// Revalidates the file and proves that an external source crossed the native
+/// picker authority boundary before background preprocessing may read it.
+/// Yap-owned committed recordings use their existing owned-directory proof.
+pub(crate) fn validate_registered_recording_job_source_at(
+    path: &std::path::Path,
+    selection_registry_path: &std::path::Path,
+    owned_dir: &std::path::Path,
+) -> Result<ValidatedRecordingJobSource, RecordingJobSourceError> {
+    let source = validate_recording_job_source_at(path, owned_dir)?;
+    if canonical_path_is_inside_owned_live_directory(&source.canonical_path, owned_dir) {
+        return Ok(source);
+    }
+    let registered = registered_canonical_recording_path_at_with_limit(
+        &source.canonical_path,
+        selection_registry_path,
+        MAX_RECORDING_JOB_PLAYBACK_PATHS,
+    )
+    .map_err(RecordingJobSourceError::Unsafe)?;
+    if registered != source.canonical_path {
+        return Err(RecordingJobSourceError::Unsafe(
+            "Recording source changed after native selection.".into(),
+        ));
+    }
+    Ok(source)
 }
 
 pub(crate) fn authorize_registered_recording_job_source_at(

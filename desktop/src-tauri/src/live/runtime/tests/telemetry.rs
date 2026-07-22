@@ -87,10 +87,7 @@ fn stream_finisher_reports_backed_up_channel() {
 fn stream_finisher_waits_briefly_for_queue_space() {
     let (samples_tx, samples_rx) = mpsc::sync_channel(1);
     samples_tx
-        .try_send(StreamMessage::Samples {
-            session: 42,
-            samples: vec![1.0],
-        })
+        .try_send(StreamMessage::from_prepared(42, prepared_frame(1.0)))
         .unwrap();
     let worker = std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(30));
@@ -101,7 +98,7 @@ fn stream_finisher_waits_briefly_for_queue_space() {
         match samples_rx.recv().unwrap() {
             StreamMessage::Finish { session, done } => {
                 assert_eq!(session, 42);
-                done.send(StreamFinishStatus::Completed).unwrap();
+                done.send(StreamFinishStatus::Completed.into()).unwrap();
             }
             StreamMessage::Samples { .. } => panic!("expected finish message"),
         }
@@ -121,7 +118,7 @@ fn stream_finisher_reports_completed_channel() {
     let worker = std::thread::spawn(move || match samples_rx.recv().unwrap() {
         StreamMessage::Finish { session, done } => {
             assert_eq!(session, 42);
-            done.send(StreamFinishStatus::Completed).unwrap();
+            done.send(StreamFinishStatus::Completed.into()).unwrap();
         }
         StreamMessage::Samples { .. } => panic!("expected finish message"),
     });

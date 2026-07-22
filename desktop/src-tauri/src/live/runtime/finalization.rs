@@ -14,6 +14,11 @@ enum StopCompletionState<T> {
     Finalized(Box<T>),
 }
 
+struct StopCompletionLease<'a, T> {
+    completion: &'a StopCompletion<T>,
+    completed: bool,
+}
+
 pub(super) struct RecordingFinalization {
     state: Mutex<RecordingFinalizationState>,
     completed: Condvar,
@@ -72,17 +77,12 @@ where
                 StopCompletionState::Pending => {
                     *state = StopCompletionState::Finalizing;
                     drop(state);
+                    let lease = StopCompletionLease::new(self);
                     let complete = complete
                         .take()
                         .expect("one stop finalizer owns the completion");
                     let result = complete();
-                    let mut state = self
-                        .state
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner());
-                    *state = StopCompletionState::Finalized(Box::new(result.clone()));
-                    self.completed.notify_all();
-                    return result;
+                    return lease.finish(result);
                 }
                 StopCompletionState::Finalizing => {
                     drop(
@@ -93,6 +93,50 @@ where
                 }
             }
         }
+    }
+}
+
+impl<'a, T> StopCompletionLease<'a, T>
+where
+    T: Clone,
+{
+    fn new(completion: &'a StopCompletion<T>) -> Self {
+        Self {
+            completion,
+            completed: false,
+        }
+    }
+
+    fn finish(mut self, result: T) -> T {
+        // Clone before reacquiring the state lock. If cloning itself panics,
+        // Drop restores Pending and wakes another caller to retry.
+        let stored = result.clone();
+        let mut state = self
+            .completion
+            .state
+            .lock()
+            .unwrap_or_else(|lock_error| lock_error.into_inner());
+        *state = StopCompletionState::Finalized(Box::new(stored));
+        self.completed = true;
+        self.completion.completed.notify_all();
+        result
+    }
+}
+
+impl<T> Drop for StopCompletionLease<'_, T> {
+    fn drop(&mut self) {
+        if self.completed {
+            return;
+        }
+        let mut state = self
+            .completion
+            .state
+            .lock()
+            .unwrap_or_else(|lock_error| lock_error.into_inner());
+        if matches!(*state, StopCompletionState::Finalizing) {
+            *state = StopCompletionState::Pending;
+        }
+        self.completion.completed.notify_all();
     }
 }
 
@@ -223,5 +267,25 @@ impl Drop for RecordingFinalizationLease<'_> {
             };
         }
         self.finalization.completed.notify_all();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+
+    use super::StopCompletion;
+
+    #[test]
+    fn interrupted_stop_finalizer_releases_completion_for_retry() {
+        let completion = StopCompletion::<u32>::new();
+
+        let interrupted = catch_unwind(AssertUnwindSafe(|| {
+            completion.complete_with(|| panic!("synthetic interrupted stop"));
+        }));
+        assert!(interrupted.is_err());
+
+        assert_eq!(completion.complete_with(|| 7), 7);
+        assert_eq!(completion.complete_with(|| 9), 7);
     }
 }

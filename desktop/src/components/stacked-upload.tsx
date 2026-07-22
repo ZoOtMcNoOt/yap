@@ -17,6 +17,7 @@ import {
   AttachmentTrigger,
 } from "@/components/ui/attachment";
 import { Badge } from "@/components/ui/badge";
+import { LanguageReviewActions } from "@/components/language-review-actions";
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -24,6 +25,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { FixedBatchLanguageOption } from "@/language-preference";
 import {
   isRecordingActive,
   isRecordingCancellable,
@@ -39,6 +41,8 @@ type Props = {
   onRemove: (id: string) => void;
   onReveal: (path: string) => void;
   onSelect: (id: string) => void;
+  onConfirmLanguage: (jobId: string, languageBcp47: string) => Promise<void>;
+  languageOptions: FixedBatchLanguageOption[];
   selectedId?: string;
 };
 
@@ -156,7 +160,15 @@ const attachmentState = {
   cancelled: "idle",
 } as const satisfies Record<RecordingJobStatus, "idle" | "uploading" | "processing" | "error" | "done">;
 
-export function StackedUpload({ items, onRemove, onReveal, onSelect, selectedId }: Props) {
+export function StackedUpload({
+  items,
+  languageOptions,
+  onConfirmLanguage,
+  onRemove,
+  onReveal,
+  onSelect,
+  selectedId,
+}: Props) {
   if (!items.length) {
     return (
       <Empty>
@@ -180,6 +192,8 @@ export function StackedUpload({ items, onRemove, onReveal, onSelect, selectedId 
             item={item}
             key={item.id}
             offset={index}
+            languageOptions={languageOptions}
+            onConfirmLanguage={onConfirmLanguage}
             onRemove={onRemove}
             onReveal={onReveal}
             onSelect={onSelect}
@@ -194,6 +208,8 @@ function UploadCard({
   isSelected,
   item,
   offset,
+  languageOptions,
+  onConfirmLanguage,
   onRemove,
   onReveal,
   onSelect,
@@ -201,6 +217,8 @@ function UploadCard({
   isSelected: boolean;
   item: RecordingJobView;
   offset: number;
+  languageOptions: FixedBatchLanguageOption[];
+  onConfirmLanguage: (jobId: string, languageBcp47: string) => Promise<void>;
   onRemove: (id: string) => void;
   onReveal: (path: string) => void;
   onSelect: (id: string) => void;
@@ -300,6 +318,11 @@ function UploadCard({
 
         <AttachmentTrigger aria-label={`Select ${item.name}`} onClick={() => onSelect(item.id)} />
       </Attachment>
+      <LanguageReviewActions
+        item={item}
+        languageOptions={languageOptions}
+        onConfirm={onConfirmLanguage}
+      />
     </li>
   );
 }

@@ -1,8 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
-import { parsePlaywrightPort } from "./scripts/playwright-port.mjs";
+import {
+  parsePlaywrightPort,
+  parsePlaywrightServerReuse,
+} from "./scripts/playwright-port.mjs";
 
 const testPort = parsePlaywrightPort(process.env.YAP_PLAYWRIGHT_PORT);
 const testUrl = `http://127.0.0.1:${testPort}`;
+const reuseExistingServer = parsePlaywrightServerReuse(
+  process.env.YAP_PLAYWRIGHT_REUSE_SERVER,
+);
 
 export default defineConfig({
   expect: {
@@ -25,7 +31,7 @@ export default defineConfig({
   },
   webServer: {
     command: `pnpm dev --host 127.0.0.1 --port ${testPort} --strictPort`,
-    reuseExistingServer: false,
+    reuseExistingServer,
     timeout: 60_000,
     url: testUrl,
   },

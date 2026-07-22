@@ -45,6 +45,7 @@ def _lock(content: bytes) -> ModelPoolLock:
         runtime_torch_cuda_version="13.3",
         runtime_overlay_packages=(("transformers", "5.13.1"),),
         pool_id="example-batch",
+        engine="transformers",
         model_id="example/model",
         model_revision="b" * 40,
         model_license="Apache-2.0",

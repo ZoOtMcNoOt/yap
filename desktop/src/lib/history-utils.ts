@@ -5,7 +5,13 @@ export function historyEntryToRecordingJob(
   entry: TranscriptHistoryEntry,
   restoredPlaybackPath?: string,
 ): RecordingJobView {
+  const remote = entry.origin === "remote";
+  const incomplete = Boolean(entry.warning || entry.recoveryState);
+  const alignment = entry.resultSummary
+    ? entry.resultSummary.timingStatus === "available" ? "done" : "skipped"
+    : "notStarted";
   return {
+    error: entry.warning,
     id: `history:${transcriptPathIdentity(entry.outputPath)}`,
     name: entry.name,
     outputPath: entry.outputPath,
@@ -14,12 +20,15 @@ export function historyEntryToRecordingJob(
     pipeline: {
       ...createInitialPipelineState(),
       intake: "done",
+      preprocessing: remote ? "done" : "notStarted",
       transcription: "done",
-      postprocessing: entry.warning || entry.recoveryState ? "error" : "done",
+      alignment,
+      postprocessing: incomplete ? "error" : "done",
     },
-    route: "localFallback",
+    resultSummary: entry.resultSummary,
+    route: remote ? "serverBatch" : "localFallback",
     sessionMode: "dictation",
-    sessionOrigin: "liveCapture",
-    status: entry.warning || entry.recoveryState ? "partial" : "complete",
+    sessionOrigin: remote ? "importedFile" : "liveCapture",
+    status: incomplete ? "partial" : "complete",
   };
 }

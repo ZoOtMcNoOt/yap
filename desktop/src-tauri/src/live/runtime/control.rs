@@ -1,7 +1,8 @@
 use std::{sync::atomic::Ordering, time::Duration};
 
 use super::{
-    log_worker_shutdown_errors, LiveRuntime, LiveStreamEngine, ModelMutationLease, StartIntent,
+    inference::LiveInferenceBundle, log_worker_shutdown_errors, LiveRuntime, ModelMutationLease,
+    StartIntent,
 };
 
 impl LiveRuntime {
@@ -43,9 +44,26 @@ impl LiveRuntime {
     }
 
     pub(crate) fn begin_model_mutation(&self) -> Result<ModelMutationLease, String> {
+        self.begin_local_runtime_mutation("Stop live before changing local fallback.")
+    }
+
+    pub(crate) fn begin_primary_language_mutation(&self) -> Result<ModelMutationLease, String> {
+        self.begin_local_runtime_mutation("Stop live before changing the primary language.")
+    }
+
+    pub(crate) fn begin_language_support_mutation(&self) -> Result<ModelMutationLease, String> {
+        self.begin_local_runtime_mutation("Stop live before changing local language support.")
+    }
+
+    fn begin_local_runtime_mutation(
+        &self,
+        active_message: &'static str,
+    ) -> Result<ModelMutationLease, String> {
         self.cancel_pending_start();
+        self.model_mutation_active
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| "Another local model change is already in progress.".to_string())?;
         let operation = self.transition.begin_stop_owned();
-        self.model_mutation_active.store(true, Ordering::Release);
         let lease = ModelMutationLease {
             runtime: self.clone(),
             _operation: operation,
@@ -53,7 +71,7 @@ impl LiveRuntime {
 
         let mut inner = self.inner.lock().expect("live runtime poisoned");
         if inner.is_capturing() {
-            return Err("Stop live before changing local fallback.".to_string());
+            return Err(active_message.to_string());
         }
         inner.retire_stream();
         drop(inner);
@@ -78,9 +96,8 @@ impl LiveRuntime {
     }
 
     pub(super) fn request_model_warmup(&self) -> Result<bool, String> {
-        self.model_warmup.request("live-model-warmup", || {
-            LiveStreamEngine::new().map_err(|error| error.user_message().to_string())
-        })
+        self.model_warmup
+            .request("live-model-warmup", LiveInferenceBundle::load)
     }
 
     pub fn unload_if_idle(&self, threshold: Duration) {

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import unittest
 from concurrent.futures import Future
+from dataclasses import replace
 import os
 from pathlib import Path
 import tempfile
+import threading
 from unittest.mock import patch
 
 import yap_server.__main__ as server_main
@@ -12,11 +14,20 @@ from yap_server.config import ServerSettings
 from yap_server.jobs.runtime import (
     RoutedBatchProcessor,
     StorageRuntimeLease,
+    _build_provider_worker_plans,
+    _configured_model_pools,
+    build_batch_runtime,
     ensure_development_batch_bind,
-    resolve_phase5_worker_image,
+    resolve_checked_worker_image,
 )
+from yap_server.jobs.asr_worker_runtime import AsrWorkerPlan, build_asr_worker_plan
+from yap_server.jobs.contract_values import MAX_JOB_PCM_BYTES
 from yap_server.pools.batch_asr import BatchAsrJob, WorkerContainmentError
+from yap_server.pools.batch_contract import BatchJobFactory
 from yap_server.workload_router import WorkloadRouter
+
+from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
+from tests.model_pools.batch_asr_fixtures import test_lock as _test_lock
 
 
 class _Pool:
@@ -28,18 +39,56 @@ class _Pool:
         self.jobs.append(job)
         return self.future
 
+    def reserve(
+        self,
+        job_id: str,
+        *,
+        pcm_byte_length: int = 1,
+    ) -> _PoolReservation:
+        if pcm_byte_length < 1:
+            raise ValueError("test PCM reservation must be positive")
+        return _PoolReservation(self, job_id)
+
     def cancel(self, job_id: str) -> bool:
         return bool(self.jobs and self.jobs[-1].job_id == job_id)
+
+
+class _PoolReservation:
+    def __init__(self, pool: _Pool, job_id: str) -> None:
+        self._pool = pool
+        self._job_id = job_id
+        self._aborted = False
+
+    def start(self, factory: BatchJobFactory) -> Future[dict[str, object]]:
+        job = factory(threading.Event())
+        if job.job_id != self._job_id:
+            raise AssertionError("test reservation identity changed")
+        return self._pool.submit(job)
+
+    def abort(self) -> None:
+        self._aborted = True
 
 
 class _Runtime:
     def __init__(self) -> None:
         self.service = object()
+        self.lid_preflight_service = object()
         self.asr_capabilities = {"schemaVersion": 1, "providers": []}
         self.closed = False
 
     def close(self) -> None:
         self.closed = True
+
+
+class _ClosableWorker:
+    def __init__(self) -> None:
+        self.close_calls = 0
+
+    def run(self, _job, _cancellation):
+        raise AssertionError("startup cleanup test does not run work")
+
+    def close(self) -> None:
+        self.close_calls += 1
 
 
 class RoutedBatchProcessorTests(unittest.TestCase):
@@ -54,13 +103,16 @@ class RoutedBatchProcessorTests(unittest.TestCase):
             router=router,
             pool=pool,
             owner_key="development-loopback",
+            route_resolver=test_asr_route,
+            asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
         )
         job = BatchAsrJob(
-            job_id="job-phase5-runtime",
+            job_id="job-routed-batch-runtime",
             input_path=Path("input.wav"),
             result_path=Path("result.json"),
             language="en",
             input_sha256="a" * 64,
+            route=test_asr_route(),
         )
 
         returned = processor.submit(job)
@@ -79,13 +131,16 @@ class RoutedBatchProcessorTests(unittest.TestCase):
             ),
             pool=pool,
             owner_key="development-loopback",
+            route_resolver=test_asr_route,
+            asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
         )
         job = BatchAsrJob(
-            job_id="job-phase5-cancel",
+            job_id="job-routed-batch-cancel",
             input_path=Path("input.wav"),
             result_path=Path("result.json"),
             language="en",
             input_sha256="a" * 64,
+            route=test_asr_route(),
         )
         processor.submit(job)
 
@@ -113,42 +168,378 @@ class RoutedBatchProcessorTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "SSH tunnel"):
                     ensure_development_batch_bind(host)
 
-    def test_phase5_runtime_uses_the_inspected_checked_head_worker_image(self) -> None:
-        checked_head = "a" * 40
-        image_id = "sha256:" + "b" * 64
-        environ = {
-            "YAP_PHASE5_WORKER_IMAGE": f"yap-phase5-asr:phase5-{checked_head}",
-            "YAP_PHASE5_CHECKED_HEAD": checked_head,
+    def test_language_detection_cannot_start_without_the_verified_batch_runtime(self) -> None:
+        with self.assertRaisesRegex(ValueError, "requires the verified batch"):
+            build_batch_runtime(
+                {
+                    "YAP_BATCH_ASR_ENABLED": "0",
+                    "YAP_LANGUAGE_DETECTION_ENABLED": "1",
+                }
+            )
+
+    def test_runtime_configuration_loads_distinct_model_pools(self) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cohere_model = root / "cohere"
+            nemotron_model = root / "nemotron"
+            cohere_model.mkdir()
+            nemotron_model.mkdir()
+
+            configured = _configured_model_pools(
+                {
+                    "YAP_ASR_MODEL_DIR": str(cohere_model),
+                    "YAP_NEMOTRON_MODEL_DIR": str(nemotron_model),
+                },
+                server_root,
+            )
+
+        self.assertEqual(
+            [lock.pool_id for lock, _model_dir in configured],
+            ["cohere-batch", "nemotron-batch"],
+        )
+
+    def test_provider_worker_startup_closes_the_first_worker_if_the_second_fails(
+        self,
+    ) -> None:
+        first_worker = _ClosableWorker()
+        first_plan = AsrWorkerPlan(
+            worker=first_worker,
+            max_workers=1,
+            max_queued=2,
+            max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
+        )
+        cohere_lock = _test_lock()
+        nemotron_lock = replace(_test_lock(), pool_id="nemotron-batch")
+        capabilities = {
+            "providers": [
+                {"providerId": "cohere", "poolId": "cohere-batch"},
+                {"providerId": "nemotron", "poolId": "nemotron-batch"},
+            ]
         }
 
         with patch(
-            "yap_server.jobs.runtime.inspect_worker_image",
+            "yap_server.jobs.runtime.build_asr_worker_plan",
+            side_effect=(first_plan, RuntimeError("second provider failed")),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "second provider failed"):
+                _build_provider_worker_plans(
+                    {},
+                    asr_capabilities=capabilities,
+                    configured_pools=(
+                        (cohere_lock, Path("cohere-model")),
+                        (nemotron_lock, Path("nemotron-model")),
+                    ),
+                    run_as_uid=1000,
+                    run_as_gid=1000,
+                    storage_namespace="storage-test",
+                    timeout_seconds=1800,
+                )
+
+        self.assertEqual(first_worker.close_calls, 1)
+
+    def test_runtime_rejects_orphaned_nemotron_lock(self) -> None:
+        with self.assertRaisesRegex(ValueError, "NEMOTRON_MODEL_DIR"):
+            _configured_model_pools(
+                {
+                    "YAP_ASR_MODEL_DIR": str(Path.cwd()),
+                    "YAP_NEMOTRON_MODEL_LOCK": str(
+                        Path(__file__).resolve().parents[2]
+                        / "nemotron-model-pool.lock.json"
+                    ),
+                },
+                Path(__file__).resolve().parents[2],
+            )
+
+    def test_transient_runtime_uses_the_inspected_checked_head_worker_image(self) -> None:
+        checked_head = "a" * 40
+        image_id = "sha256:" + "b" * 64
+        environ = {
+            "YAP_ASR_WORKER_IMAGE": f"yap-batch-asr:checked-{checked_head}",
+            "YAP_CHECKED_HEAD": checked_head,
+        }
+
+        with patch(
+            "yap_server.jobs.asr_worker_runtime.inspect_worker_image",
             return_value={"id": image_id},
         ) as inspect:
-            resolved = resolve_phase5_worker_image(
+            resolved = resolve_checked_worker_image(
                 environ,
                 docker_binary="docker-test",
             )
 
         self.assertEqual(resolved, image_id)
         inspect.assert_called_once_with(
-            environ["YAP_PHASE5_WORKER_IMAGE"],
+            environ["YAP_ASR_WORKER_IMAGE"],
             checked_head,
             docker_binary="docker-test",
         )
 
-    def test_phase5_runtime_requires_image_and_checked_head(self) -> None:
+    def test_transient_runtime_requires_image_and_checked_head(self) -> None:
         for environ in (
             {},
-            {"YAP_PHASE5_WORKER_IMAGE": "yap-phase5-asr:test"},
+            {"YAP_ASR_WORKER_IMAGE": "yap-asr:test"},
             {
-                "YAP_PHASE5_WORKER_IMAGE": "yap-phase5-asr:test",
-                "YAP_PHASE5_CHECKED_HEAD": "not-a-commit",
+                "YAP_ASR_WORKER_IMAGE": "yap-asr:test",
+                "YAP_CHECKED_HEAD": "not-a-commit",
             },
         ):
             with self.subTest(environ=environ):
                 with self.assertRaises(ValueError):
-                    resolve_phase5_worker_image(environ, docker_binary="docker")
+                    resolve_checked_worker_image(environ, docker_binary="docker")
+
+    def test_cohere_vllm_plan_verifies_artifacts_and_readiness_before_capacity(
+        self,
+    ) -> None:
+        lock = replace(
+            _test_lock(),
+            engine="vllm",
+            runtime_overlay_packages=(("vllm", "0.22.1+test"),),
+        )
+        endpoint = "http://127.0.0.1:8000"
+        with (
+            patch(
+                "yap_server.jobs.asr_worker_runtime.verify_model_artifacts"
+            ) as verify_artifacts,
+            patch(
+                "yap_server.jobs.asr_worker_runtime.VllmTranscriptionClient"
+            ) as client_type,
+            patch(
+                "yap_server.jobs.asr_worker_runtime.CohereVllmBatchWorker"
+            ) as worker_type,
+        ):
+            plan = build_asr_worker_plan(
+                {
+                    "YAP_COHERE_ASR_RUNTIME": "vllm",
+                    "YAP_COHERE_VLLM_ENDPOINT": endpoint,
+                    "YAP_COHERE_VLLM_API_KEY": "private-test-key",
+                },
+                model_dir=Path("model"),
+                lock=lock,
+                run_as_uid=1000,
+                run_as_gid=1000,
+                storage_namespace="storage-test",
+                timeout_seconds=1800,
+            )
+
+        verify_artifacts.assert_called_once_with(lock, Path("model"))
+        client_type.assert_called_once_with(
+            endpoint=endpoint,
+            api_key="private-test-key",
+            timeout_seconds=1800,
+        )
+        worker_type.assert_called_once_with(
+            lock=lock,
+            client=client_type.return_value,
+        )
+        worker_type.return_value.verify_ready.assert_called_once_with()
+        self.assertIs(plan.worker, worker_type.return_value)
+        self.assertEqual(plan.max_workers, 8)
+        self.assertEqual(plan.max_queued, 8)
+        self.assertEqual(plan.max_inflight_pcm_bytes, MAX_JOB_PCM_BYTES)
+
+    def test_nemotron_keeps_the_transformers_reference_worker(self) -> None:
+        lock = replace(_test_lock(), pool_id="nemotron-batch")
+        image_id = "sha256:" + "e" * 64
+        with (
+            patch(
+                "yap_server.jobs.asr_worker_runtime.resolve_checked_worker_image",
+                return_value=image_id,
+            ),
+            patch(
+                "yap_server.jobs.asr_worker_runtime.reconcile_owned_containers"
+            ) as reconcile,
+            patch(
+                "yap_server.jobs.asr_worker_runtime.ContainerBatchAsrWorker"
+            ) as worker_type,
+        ):
+            plan = build_asr_worker_plan(
+                {
+                    "YAP_NEMOTRON_ASR_RUNTIME": "transformers-reference",
+                    "YAP_CHECKED_HEAD": "a" * 40,
+                },
+                model_dir=Path("model"),
+                lock=lock,
+                run_as_uid=1000,
+                run_as_gid=1000,
+                storage_namespace="storage-test",
+                timeout_seconds=1800,
+            )
+
+        worker_type.assert_called_once_with(
+            image=image_id,
+            model_dir=Path("model"),
+            lock=lock,
+            run_as_uid=1000,
+            run_as_gid=1000,
+            checked_head="a" * 40,
+            storage_namespace="storage-test",
+            docker_binary="docker",
+            timeout_seconds=1800,
+        )
+        reconcile.assert_called_once_with(
+            "docker",
+            storage_namespace="storage-test",
+        )
+        self.assertIs(plan.worker, worker_type.return_value)
+        self.assertEqual(plan.max_workers, 1)
+        self.assertEqual(plan.max_queued, 2)
+
+    def test_nemotron_nemo_reference_uses_its_dedicated_checked_image(self) -> None:
+        lock = replace(
+            _test_lock(),
+            pool_id="nemotron-batch",
+            engine="nemo",
+        )
+        image_id = "sha256:" + "f" * 64
+        source = {
+            "YAP_NEMOTRON_ASR_RUNTIME": "nemo-reference",
+            "YAP_NEMOTRON_WORKER_IMAGE": "yap-nemotron-nemo:checked",
+            "YAP_CHECKED_HEAD": "a" * 40,
+        }
+        with (
+            patch(
+                "yap_server.jobs.asr_worker_runtime.resolve_checked_worker_image",
+                return_value=image_id,
+            ) as resolve_image,
+            patch(
+                "yap_server.jobs.asr_worker_runtime.reconcile_owned_containers"
+            ),
+            patch(
+                "yap_server.jobs.asr_worker_runtime.ContainerBatchAsrWorker"
+            ) as worker_type,
+        ):
+            plan = build_asr_worker_plan(
+                source,
+                model_dir=Path("native-model"),
+                lock=lock,
+                run_as_uid=1000,
+                run_as_gid=1000,
+                storage_namespace="storage-test",
+                timeout_seconds=1800,
+            )
+
+        resolve_image.assert_called_once_with(
+            source,
+            docker_binary="docker",
+            image_env="YAP_NEMOTRON_WORKER_IMAGE",
+        )
+        worker_type.assert_called_once_with(
+            image=image_id,
+            model_dir=Path("native-model"),
+            lock=lock,
+            run_as_uid=1000,
+            run_as_gid=1000,
+            checked_head="a" * 40,
+            storage_namespace="storage-test",
+            docker_binary="docker",
+            timeout_seconds=1800,
+        )
+        self.assertIs(plan.worker, worker_type.return_value)
+        self.assertEqual(plan.max_workers, 1)
+        self.assertEqual(plan.max_queued, 2)
+
+    def test_nemotron_resident_plan_verifies_artifacts_and_readiness(self) -> None:
+        lock = replace(
+            _test_lock(),
+            pool_id="nemotron-batch",
+            engine="nemo",
+            runtime_overlay_packages=(("nemo_toolkit", "3.1.0+test"),),
+        )
+        endpoint = "http://127.0.0.1:18001"
+        with (
+            patch(
+                "yap_server.jobs.asr_worker_runtime.verify_model_artifacts"
+            ) as verify_artifacts,
+            patch(
+                "yap_server.jobs.asr_worker_runtime.NemotronNemoClient"
+            ) as client_type,
+            patch(
+                "yap_server.jobs.asr_worker_runtime.NemotronNemoBatchWorker"
+            ) as worker_type,
+        ):
+            plan = build_asr_worker_plan(
+                {
+                    "YAP_NEMOTRON_ASR_RUNTIME": "nemo-resident",
+                    "YAP_NEMOTRON_NEMO_ENDPOINT": endpoint,
+                    "YAP_NEMOTRON_NEMO_API_KEY": "private-test-key",
+                },
+                model_dir=Path("native-model"),
+                lock=lock,
+                run_as_uid=1000,
+                run_as_gid=1000,
+                storage_namespace="storage-test",
+                timeout_seconds=1800,
+            )
+
+        verify_artifacts.assert_called_once_with(lock, Path("native-model"))
+        client_type.assert_called_once_with(
+            endpoint=endpoint,
+            api_key="private-test-key",
+            timeout_seconds=1800,
+        )
+        worker_type.assert_called_once_with(
+            lock=lock,
+            client=client_type.return_value,
+        )
+        worker_type.return_value.verify_ready.assert_called_once_with()
+        self.assertIs(plan.worker, worker_type.return_value)
+        self.assertEqual(plan.max_workers, 8)
+        self.assertEqual(plan.max_queued, 8)
+        self.assertEqual(plan.max_inflight_pcm_bytes, MAX_JOB_PCM_BYTES)
+
+    def test_runtime_and_model_lock_engines_must_agree(self) -> None:
+        cases = (
+            (
+                "cohere vLLM with Transformers lock",
+                _test_lock(),
+                {"YAP_COHERE_ASR_RUNTIME": "vllm"},
+            ),
+            (
+                "Nemotron NeMo with Transformers lock",
+                replace(_test_lock(), pool_id="nemotron-batch"),
+                {"YAP_NEMOTRON_ASR_RUNTIME": "nemo-reference"},
+            ),
+            (
+                "Nemotron resident NeMo with Transformers lock",
+                replace(_test_lock(), pool_id="nemotron-batch"),
+                {"YAP_NEMOTRON_ASR_RUNTIME": "nemo-resident"},
+            ),
+            (
+                "Nemotron Transformers with NeMo lock",
+                replace(
+                    _test_lock(),
+                    pool_id="nemotron-batch",
+                    engine="nemo",
+                ),
+                {"YAP_NEMOTRON_ASR_RUNTIME": "transformers-reference"},
+            ),
+        )
+        for label, lock, source in cases:
+            with self.subTest(label=label):
+                with self.assertRaisesRegex(ValueError, "model lock selects"):
+                    build_asr_worker_plan(
+                        source,
+                        model_dir=Path("model"),
+                        lock=lock,
+                        run_as_uid=1000,
+                        run_as_gid=1000,
+                        storage_namespace="storage-test",
+                        timeout_seconds=1800,
+                    )
+
+    def test_nemotron_cannot_be_silently_sent_to_vllm(self) -> None:
+        lock = replace(_test_lock(), pool_id="nemotron-batch")
+        with self.assertRaisesRegex(ValueError, "NEMOTRON_ASR_RUNTIME"):
+            build_asr_worker_plan(
+                {"YAP_NEMOTRON_ASR_RUNTIME": "vllm"},
+                model_dir=Path("model"),
+                lock=lock,
+                run_as_uid=1000,
+                run_as_gid=1000,
+                storage_namespace="storage-test",
+                timeout_seconds=1800,
+            )
 
 
 class ServerMainTests(unittest.TestCase):
@@ -174,6 +565,7 @@ class ServerMainTests(unittest.TestCase):
         serve.assert_called_once_with(
             settings,
             job_service=runtime.service,
+            lid_preflight_service=runtime.lid_preflight_service,
             asr_capabilities=runtime.asr_capabilities,
         )
         self.assertTrue(runtime.closed)

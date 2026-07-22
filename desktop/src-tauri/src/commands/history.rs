@@ -5,7 +5,10 @@ mod visibility;
 
 use std::collections::HashSet;
 
-use crate::jobs::commands::{JobCommandError, RecordingJobs};
+use crate::jobs::{
+    commands::{emit_jobs_changed, JobCommandError, RecordingJobs, TranscriptResultSummary},
+    LanguageLabelReview,
+};
 use catalog::{
     collect_history_catalog, project_history_catalog, resolve_current_native_identity,
     select_hidden_path_migration,
@@ -34,6 +37,8 @@ pub(crate) struct HistoryCatalogSession {
     origin: HistoryOrigin,
     output_path: String,
     recovery_state: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    result_summary: Option<TranscriptResultSummary>,
     session_id: String,
     source_path: String,
     warning: Option<String>,
@@ -161,6 +166,61 @@ pub(crate) fn history_migrate_hidden_paths(
     Ok(HiddenHistoryMigration {
         migrated_output_paths,
     })
+}
+
+#[tauri::command]
+pub(crate) fn history_language_label_review(
+    window: tauri::WebviewWindow,
+    jobs: tauri::State<'_, RecordingJobs>,
+    identity: NativeHistoryIdentity,
+) -> Result<LanguageLabelReview, JobCommandError> {
+    ensure_history_authorized(&window)?;
+    let current = resolve_remote_history_identity(&jobs, &identity)?;
+    jobs.language_label_review(&current.output_path)
+}
+
+#[tauri::command]
+pub(crate) fn history_append_language_label_correction(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    jobs: tauri::State<'_, RecordingJobs>,
+    identity: NativeHistoryIdentity,
+    expected_revision: u64,
+    segment_index: u64,
+    replacement_language_bcp47: Option<String>,
+) -> Result<LanguageLabelReview, JobCommandError> {
+    ensure_history_authorized(&window)?;
+    let current = resolve_remote_history_identity(&jobs, &identity)?;
+    let review = jobs.append_language_label_correction(
+        &current.output_path,
+        expected_revision,
+        segment_index,
+        replacement_language_bcp47,
+    )?;
+    emit_jobs_changed(&app);
+    Ok(review)
+}
+
+fn resolve_remote_history_identity(
+    jobs: &RecordingJobs,
+    identity: &NativeHistoryIdentity,
+) -> Result<NativeHistoryIdentity, JobCommandError> {
+    if !valid_native_identity(identity) || identity.origin != HistoryOrigin::Remote {
+        return Err(stale_history_identity_error());
+    }
+    let remote = jobs.completed_remote_transcripts()?;
+    remote
+        .sessions
+        .into_iter()
+        .find(|session| {
+            session.session_id == identity.session_id && session.output_path == identity.output_path
+        })
+        .map(|session| NativeHistoryIdentity {
+            origin: HistoryOrigin::Remote,
+            session_id: session.session_id,
+            output_path: session.output_path,
+        })
+        .ok_or_else(stale_history_identity_error)
 }
 
 fn ensure_history_authorized(window: &tauri::WebviewWindow) -> Result<(), JobCommandError> {

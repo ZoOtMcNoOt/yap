@@ -6,14 +6,20 @@ mod client;
 pub mod config;
 mod core;
 mod desktop;
+pub(crate) mod lid;
 mod state;
 
 pub use boundary::ServerConnectorBoundary;
 pub use capabilities::AsrCapabilityCatalog;
+pub(crate) use capabilities::LidPreflightCapability;
 pub(crate) use capability_snapshot::LastKnownAsrCapabilities;
-pub(crate) use core::BatchConnectionLease;
 pub use core::ServerConnector;
-pub(crate) use desktop::{current_asr_capabilities, last_known_asr_capabilities};
+pub(crate) use core::{
+    AsrCatalogDispatchProof, BatchConnectionLease, CurrentAsrCatalog, LidPreflightDispatchProof,
+};
+pub(crate) use desktop::{
+    current_asr_capabilities, last_known_asr_capabilities, with_current_asr_capabilities,
+};
 pub use state::{ServerCapabilities, ServerConnectionSnapshot};
 
 fn allow_insecure_private_server() -> bool {

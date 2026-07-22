@@ -1,5 +1,6 @@
 pub mod commands;
 mod drain;
+mod language_preflight;
 mod ledger;
 mod migrations;
 mod model;
@@ -7,15 +8,23 @@ mod remote;
 mod resources;
 
 pub use ledger::JobLedger;
+pub(crate) use ledger::LidPreflightDispatchFailure;
 pub use model::{
-    DetachedRemoteCancellationRecord, JobChunkRecord, JobLedgerError, NewJobChunk,
-    NewPreparedRemoteJob, NewRecordingJob, PreparedRemoteJobRecord, RecordingJobRecord,
-    RecordingJobStatus, RecordingJobView, RecordingLanguageDecision, RecordingLanguageDisposition,
-    RecordingLanguageMode, RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
+    AsrCatalogBinding, ClientPreflightArtifactRecord, ClientStageAttemptRecord, ClientStageName,
+    ClientStageState, DetachedRemoteCancellationRecord, JobChunkRecord, JobLedgerError,
+    NewClientPreflightArtifact, NewJobChunk, NewPreparedRemoteJob, NewRecordingJob,
+    PreparedRemoteJobRecord, RecordingJobRecord, RecordingJobStatus, RecordingJobView,
+    RecordingLanguageDecision, RecordingLanguageDisposition, RecordingLanguageMode,
+    RecordingLanguageReview, RecordingLanguageReviewKind, RecordingRoute, SessionMode,
+    SessionOrigin, SourceOwnership,
 };
 
 pub(crate) use drain::RemoteJobDrain;
+pub(crate) use model::{ClientStageFinish, ClientStageStart};
+pub(crate) use remote::LanguageLabelReview;
 pub(crate) use resources::RecordingJobResources;
+
+pub(crate) const REMOTE_STAGE_RETRY_REQUESTED: &str = "REMOTE_STAGE_RETRY_REQUESTED";
 
 pub(crate) fn start_remote_job_drain(
     app: &tauri::AppHandle,

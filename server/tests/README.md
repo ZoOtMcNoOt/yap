@@ -1,7 +1,7 @@
 # Server tests
 
 The server tier has portable contract/API/job-service/router/pool tests plus
-the private checked-head GB10 inference boundary. The Phase 5 foreground
+the private checked-head GB10 inference boundary. The private-server foreground
 launcher contract is also checked without starting Docker or a service.
 
 ```text

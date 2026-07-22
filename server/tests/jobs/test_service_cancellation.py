@@ -10,6 +10,8 @@ from pathlib import Path
 from yap_server.jobs import JobServiceError, RecordingJobService
 from yap_server.pools.batch_asr import BatchAsrPool, WorkerExecutionError
 
+from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
+
 from .service_fixtures import (
     _ActiveCancellationWorker,
     _Processor,
@@ -41,7 +43,7 @@ class RecordingJobCancellationTests(unittest.TestCase):
                     track_id="track-1",
                     sequence_start=0,
                     sequence_end=159,
-                    idempotency_key="1/s-phase5-create/track-1/0/159",
+                    idempotency_key="1/s-batch-create/track-1/0/159",
                     content_sha256=hashlib.sha256(bytes(320)).hexdigest(),
                     audio_codec="pcm_s16le",
                     sample_rate_hz=16000,
@@ -55,7 +57,13 @@ class RecordingJobCancellationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             worker = _ActiveCancellationWorker()
-            pool = BatchAsrPool(worker, max_workers=1, max_queued=0)
+            pool = BatchAsrPool(
+                worker,
+                max_workers=1,
+                max_queued=0,
+                route_resolver=test_asr_route,
+                asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
+            )
             try:
                 service = RecordingJobService(
                     root,
@@ -72,7 +80,7 @@ class RecordingJobCancellationTests(unittest.TestCase):
                         track_id="track-1",
                         sequence_start=0,
                         sequence_end=159,
-                        idempotency_key="1/s-phase5-create/track-1/0/159",
+                        idempotency_key="1/s-batch-create/track-1/0/159",
                         content_sha256=hashlib.sha256(chunk).hexdigest(),
                         audio_codec="pcm_s16le",
                         sample_rate_hz=16000,
@@ -105,7 +113,13 @@ class RecordingJobCancellationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             worker = _UnverifiedCleanupWorker()
-            pool = BatchAsrPool(worker, max_workers=1, max_queued=0)
+            pool = BatchAsrPool(
+                worker,
+                max_workers=1,
+                max_queued=0,
+                route_resolver=test_asr_route,
+                asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
+            )
             try:
                 service = RecordingJobService(
                     root,
@@ -122,7 +136,7 @@ class RecordingJobCancellationTests(unittest.TestCase):
                         track_id="track-1",
                         sequence_start=0,
                         sequence_end=159,
-                        idempotency_key="1/s-phase5-create/track-1/0/159",
+                        idempotency_key="1/s-batch-create/track-1/0/159",
                         content_sha256=hashlib.sha256(chunk).hexdigest(),
                         audio_codec="pcm_s16le",
                         sample_rate_hz=16000,
@@ -160,6 +174,21 @@ class RecordingJobCancellationTests(unittest.TestCase):
                     )
                 )
                 self.assertTrue(state["cancellationRequested"])
+
+                stages = service.get_stages(created["jobId"])
+                with self.assertRaises(JobServiceError) as retry:
+                    service.retry_stage(
+                        created["jobId"],
+                        "asr",
+                        {
+                            "stage": "asr",
+                            "attempt": stages["stages"][0]["attempt"],
+                            "projectionRevision": stages["projectionRevision"],
+                            "captureManifestSha256": request["captureManifest"]["sha256"],
+                        },
+                    )
+                self.assertEqual(retry.exception.code, "STAGE_NOT_RETRYABLE")
+                self.assertEqual(pool.outstanding_count, 0)
 
                 with self.assertRaisesRegex(ValueError, "startup cleanup"):
                     RecordingJobService(
@@ -199,7 +228,7 @@ class RecordingJobCancellationTests(unittest.TestCase):
                     track_id="track-1",
                     sequence_start=0,
                     sequence_end=159,
-                    idempotency_key="1/s-phase5-create/track-1/0/159",
+                    idempotency_key="1/s-batch-create/track-1/0/159",
                     content_sha256=hashlib.sha256(chunk).hexdigest(),
                     audio_codec="pcm_s16le",
                     sample_rate_hz=16000,

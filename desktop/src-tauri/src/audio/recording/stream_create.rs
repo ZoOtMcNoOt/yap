@@ -148,6 +148,7 @@ impl StreamingRecording {
             journal_growth_stopped: false,
             journal_terminal_written: false,
             data_bytes: 0,
+            language_source_end_sample: None,
             samples_since_sync: 0,
             sync_interval_samples: DEFAULT_SYNC_INTERVAL_SAMPLES,
             data_limit: u64::from(u32::MAX),

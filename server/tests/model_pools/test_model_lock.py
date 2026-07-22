@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from yap_server.language_tags import canonical_bcp47
 from yap_server.pools.model_lock import (
     ModelArtifactError,
     load_model_pool_lock,
@@ -13,6 +14,10 @@ from yap_server.pools.model_lock import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 MODEL_LOCK = REPO_ROOT / "server" / "model-pools.lock.json"
+NEMOTRON_MODEL_LOCK = REPO_ROOT / "server" / "nemotron-model-pool.lock.json"
+NEMOTRON_NEMO_SERVING_LOCK = (
+    REPO_ROOT / "server" / "nemotron-nemo-serving.lock.json"
+)
 
 
 class ModelPoolLockTests(unittest.TestCase):
@@ -21,6 +26,7 @@ class ModelPoolLockTests(unittest.TestCase):
 
         self.assertEqual(lock.schema_version, 1)
         self.assertEqual(lock.pool_id, "cohere-batch")
+        self.assertEqual(lock.engine, "transformers")
         self.assertEqual(lock.model_id, "CohereLabs/cohere-transcribe-03-2026")
         self.assertEqual(len(lock.model_revision), 40)
         self.assertEqual(lock.model_license, "Apache-2.0")
@@ -83,6 +89,111 @@ class ModelPoolLockTests(unittest.TestCase):
         self.assertRegex(lock.fixture.sha256, r"^[0-9a-f]{64}$")
         self.assertTrue((REPO_ROOT / lock.fixture.path).is_file())
 
+    def test_nemotron_reference_lock_pins_the_direct_transformers_artifacts(self) -> None:
+        lock = load_model_pool_lock(NEMOTRON_MODEL_LOCK)
+
+        self.assertEqual(lock.pool_id, "nemotron-batch")
+        self.assertEqual(lock.engine, "transformers")
+        self.assertEqual(
+            lock.model_id,
+            "nvidia/nemotron-3.5-asr-streaming-0.6b",
+        )
+        self.assertEqual(
+            lock.model_revision,
+            "f3d333391852ba876df169dcc9ba902d25b6ab0b",
+        )
+        self.assertEqual(lock.model_license, "OpenMDW-1.1")
+        self.assertEqual(lock.model_distribution_id, lock.model_id)
+        self.assertEqual(lock.model_distribution_revision, lock.model_revision)
+        self.assertEqual(lock.runtime_python_version, "3.12")
+        self.assertEqual(lock.runtime_torch_version, "2.13.0a0+8145d630e8.nv26.06")
+        self.assertEqual(dict(lock.runtime_overlay_packages)["transformers"], "5.13.1")
+        self.assertIn("auto", lock.supported_languages)
+        self.assertEqual(len(lock.supported_languages), 33)
+        enabled_locales = set(lock.supported_languages) - {"auto"}
+        self.assertEqual(
+            enabled_locales,
+            {
+                "ar-AR",
+                "bg-BG",
+                "cs-CZ",
+                "da-DK",
+                "de-DE",
+                "en-GB",
+                "en-US",
+                "es-ES",
+                "es-US",
+                "et-EE",
+                "fi-FI",
+                "fr-CA",
+                "fr-FR",
+                "hi-IN",
+                "hr-HR",
+                "hu-HU",
+                "it-IT",
+                "ja-JP",
+                "ko-KR",
+                "nb-NO",
+                "nl-NL",
+                "pl-PL",
+                "pt-BR",
+                "pt-PT",
+                "ro-RO",
+                "ru-RU",
+                "sk-SK",
+                "sv-SE",
+                "tr-TR",
+                "uk-UA",
+                "vi-VN",
+                "zh-CN",
+            },
+        )
+        self.assertEqual(
+            {canonical_bcp47(locale, "enabled locale") for locale in enabled_locales},
+            enabled_locales,
+        )
+        self.assertTrue(
+            enabled_locales.isdisjoint(
+                {"enGB", "esES", "hi-HI", "ja-JA", "ko-KO", "sl-SL", "zh-ZH"}
+            )
+        )
+        self.assertEqual(
+            {artifact.path for artifact in lock.artifacts},
+            {
+                "README.md",
+                "config.json",
+                "generation_config.json",
+                "model.safetensors",
+                "processor_config.json",
+                "tokenizer.json",
+                "tokenizer_config.json",
+            },
+        )
+
+    def test_native_nemo_lock_pins_the_checkpoint_and_python_312_runtime(self) -> None:
+        lock = load_model_pool_lock(NEMOTRON_NEMO_SERVING_LOCK)
+
+        self.assertEqual(lock.pool_id, "nemotron-batch")
+        self.assertEqual(lock.engine, "nemo")
+        self.assertEqual(lock.model_id, "nvidia/nemotron-3.5-asr-streaming-0.6b")
+        self.assertEqual(lock.model_revision, "f3d333391852ba876df169dcc9ba902d25b6ab0b")
+        self.assertEqual(lock.runtime_image, "nvcr.io/nvidia/pytorch")
+        self.assertEqual(lock.runtime_source_tag, "26.06-py3")
+        self.assertEqual(lock.runtime_python_version, "3.12")
+        self.assertEqual(lock.runtime_torch_version, "2.13.0a0+8145d630e8.nv26.06")
+        self.assertEqual(lock.runtime_torch_cuda_version, "13.3")
+        self.assertEqual(dict(lock.runtime_overlay_packages)["nemo_toolkit"], "3.1.0+ba2cd63ef")
+        self.assertEqual(
+            [(artifact.path, artifact.size, artifact.sha256) for artifact in lock.artifacts],
+            [
+                (
+                    "nemotron-3.5-asr-streaming-0.6b.nemo",
+                    2_368_284_501,
+                    "210214ed94039bf6bfbb9a047c7fa289628db75b103e2bf6381fa78285436a74",
+                )
+            ],
+        )
+
     def test_verifies_every_artifact_without_trusting_file_names(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -112,6 +223,7 @@ class ModelPoolLockTests(unittest.TestCase):
                         },
                         "pool": {
                             "id": "example-batch",
+                            "engine": "transformers",
                             "model": {
                                 "id": "example/model",
                                 "revision": "b" * 40,

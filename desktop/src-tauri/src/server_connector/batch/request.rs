@@ -4,9 +4,12 @@ use time::{format_description::well_known::Rfc3339, Duration, OffsetDateTime};
 
 use super::{
     validation::{valid_path_segment, valid_sha256},
-    BatchClientError,
+    BatchClientError, PreprocessingEvidence,
 };
 use crate::language::{RecordingLanguageDecision, RecordingLanguageMode};
+
+#[cfg(test)]
+mod test_fixture;
 
 const MAX_CREATE_REQUEST_BYTES: usize = 1024 * 1024;
 const MAX_JOB_CHUNKS: usize = 4096;
@@ -81,13 +84,17 @@ pub(crate) struct CreateRecordingJobRequest {
     pub display_name: String,
     pub metadata: crate::audio::session::SessionMetadata,
     #[serde(
-        default = "legacy_phase5_language_decision",
-        skip_serializing_if = "RecordingLanguageDecision::is_legacy_phase5_default"
+        default = "legacy_implicit_english_language_decision",
+        skip_serializing_if = "RecordingLanguageDecision::is_legacy_implicit_english_default"
     )]
     pub language_decision: RecordingLanguageDecision,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub asr_catalog_revision: Option<String>,
     pub tracks: Vec<UploadTrack>,
     pub route: String,
     pub capture_manifest: CaptureManifestReference,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preprocessing_evidence: Option<PreprocessingEvidence>,
     pub chunks: Vec<CaptureChunkReference>,
 }
 
@@ -135,10 +142,21 @@ impl CreateRecordingJobRequest {
             return false;
         }
         let session_id = self.metadata.session_id.as_str();
-        if self.capture_manifest.schema_version != 1
-            || self.capture_manifest.session_id != session_id
+        let manifest_contract_is_valid = match self.capture_manifest.schema_version {
+            1 => self.preprocessing_evidence.is_none() && self.asr_catalog_revision.is_none(),
+            2 => {
+                self.preprocessing_evidence.is_some()
+                    && self
+                        .asr_catalog_revision
+                        .as_deref()
+                        .is_some_and(valid_sha256)
+            }
+            _ => false,
+        };
+        if self.capture_manifest.session_id != session_id
             || !valid_sha256(&self.capture_manifest.sha256)
-            || self.capture_manifest.byte_length == 0
+            || !(1..=MAX_CREATE_REQUEST_BYTES as u64).contains(&self.capture_manifest.byte_length)
+            || !manifest_contract_is_valid
         {
             return false;
         }
@@ -202,7 +220,10 @@ impl CreateRecordingJobRequest {
             expected_sequence_start = next_sequence;
             expected_start_ms = next_start_ms;
         }
-        true
+        match &self.preprocessing_evidence {
+            None => true,
+            Some(evidence) => evidence.is_valid_for_output_samples(total_pcm_bytes / 2),
+        }
     }
 
     fn has_consistent_language_decision(&self) -> bool {
@@ -217,8 +238,8 @@ impl CreateRecordingJobRequest {
     }
 }
 
-fn legacy_phase5_language_decision() -> RecordingLanguageDecision {
-    RecordingLanguageDecision::legacy_phase5_default()
+fn legacy_implicit_english_language_decision() -> RecordingLanguageDecision {
+    RecordingLanguageDecision::legacy_implicit_english_default()
 }
 
 fn valid_private_retention(metadata: &crate::audio::session::SessionMetadata) -> bool {
@@ -243,4 +264,13 @@ fn valid_private_retention(metadata: &crate::audio::session::SessionMetadata) ->
 pub(crate) struct CommitRecordingJobRequest {
     pub capture_manifest: CaptureManifestReference,
     pub chunk_count: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct RetryServerStageRequest {
+    pub stage: super::ServerStageName,
+    pub attempt: u64,
+    pub projection_revision: u64,
+    pub capture_manifest_sha256: String,
 }

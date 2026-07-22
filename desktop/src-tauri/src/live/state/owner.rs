@@ -269,6 +269,30 @@ impl LiveSessionState {
         })
     }
 
+    pub fn mark_language_routing_degraded(&self) -> LiveSessionView {
+        self.update(|view| {
+            if !is_live_session_started(view.status) {
+                return;
+            }
+            view.transcription_degraded = true;
+            view.error = Some(
+                "Automatic language switching is unavailable. Continuing in your primary language."
+                    .into(),
+            );
+        })
+    }
+
+    pub fn mark_local_transcription_unavailable(&self) -> LiveSessionView {
+        self.update(|view| {
+            if !is_live_session_started(view.status) {
+                return;
+            }
+            view.transcription_degraded = true;
+            view.error =
+                Some("Local transcription stopped unexpectedly. Audio will still be saved.".into());
+        })
+    }
+
     pub fn return_to_listening(&self) -> LiveSessionView {
         self.update(|view| {
             if matches!(

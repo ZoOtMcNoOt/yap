@@ -59,6 +59,8 @@ fn native_load_uses_a_verified_snapshot_when_the_installed_model_changes() {
 #[cfg(windows)]
 #[test]
 fn load_lease_keeps_snapshot_artifacts_immutable_until_the_engine_retires() {
+    use std::os::windows::fs::OpenOptionsExt;
+
     let dir = TestDir::new();
     for artifact in TEST_ARTIFACTS {
         write_verified_artifact(dir.path(), artifact);
@@ -77,10 +79,16 @@ fn load_lease_keeps_snapshot_artifacts_immutable_until_the_engine_retires() {
         .write(true)
         .open(&snapshot)
         .is_err());
+    let native_reader = std::fs::OpenOptions::new()
+        .read(true)
+        .share_mode(0x0000_0001)
+        .open(&snapshot)
+        .expect("a native-style read handle must coexist with the immutable lease");
     assert!(std::fs::OpenOptions::new()
         .write(true)
         .open(&original)
         .is_ok());
+    drop(native_reader);
     drop(loaded);
     assert!(!snapshot_root.exists());
 }

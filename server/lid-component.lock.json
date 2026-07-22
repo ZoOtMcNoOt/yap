@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 2,
+  "component": {
+    "id": "speechbrain-lid-preflight",
+    "role": "assistive-batch-language-suggestion",
+    "runtime": {
+      "image": "python",
+      "sourceTag": "3.12.13-slim-bookworm",
+      "source": "https://hub.docker.com/_/python",
+      "platform": "linux/arm64",
+      "indexDigest": "sha256:d50fb7611f86d04a3b0471b46d7557818d88983fc3136726336b2a4c657aa30b",
+      "platformDigest": "sha256:c18c7a910432dde3311fc54d02e5d5220f3ebe26fec43ff15745982863dd7b3b",
+      "pythonVersion": "3.12.13",
+      "cpuOnly": true,
+      "packages": {
+        "speechbrain": "1.1.0",
+        "torch": "2.11.0+cpu",
+        "torchaudio": "2.11.0+cpu"
+      },
+      "requirementsLock": "server/runtime/lid/requirements.lock",
+      "requirementsSha256": "a43d9ba7bacae96cdefbf81c9caadd40d3557570164a28a4d74e860e8ea104d6"
+    },
+    "model": {
+      "id": "speechbrain/lang-id-voxlingua107-ecapa",
+      "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa",
+      "labelCount": 107,
+      "artifacts": [
+        {
+          "path": "classifier.ckpt",
+          "size": 762555,
+          "sha256": "a50d9024ff58d317031c9787d4c6c614d454a87a8ef32f9d36338cd3ff57adbc"
+        },
+        {
+          "path": "embedding_model.ckpt",
+          "size": 84474355,
+          "sha256": "ab750d5c06d713477045fa798fab5d33e959dbc0dfe4de510a9a47844c79a19a"
+        },
+        {
+          "path": "hyperparams.yaml",
+          "size": 1519,
+          "sha256": "88fec9791a8416a152fb10834327e18d38e5bf7a351e9b714e08cdc4af05de6f"
+        },
+        {
+          "path": "label_encoder.txt",
+          "size": 2204,
+          "sha256": "9f566d83c4f19168be4a0bf86c0c7dac7d3264a95105bcbf33a7c32b83ccc17f"
+        }
+      ]
+    },
+    "policy": {
+      "revision": "speechbrain-two-window-v1",
+      "sampleRateHz": 16000,
+      "channelCount": 1,
+      "sampleWidthBytes": 2,
+      "minimumSourceSamples": 480000,
+      "maximumWindows": 2,
+      "maximumWindowSamples": 240000,
+      "minimumVoicedSamplesPerWindow": 128000,
+      "scoreSemantics": "uncalibrated-log-posterior",
+      "userConfirmationRequired": true
+    }
+  }
+}

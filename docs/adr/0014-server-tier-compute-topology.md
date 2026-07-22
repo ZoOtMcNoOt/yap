@@ -8,7 +8,9 @@
 **Amended by:** [ADR 0020](0020-meeting-capture-diarization-authority.md) (track-aware capture, optional local anonymous evidence, and server-authoritative reconciliation replace the ADR 0015 profile split)
 **Amended by:** [ADR 0021](0021-http3-secure-edge-transport.md) (HTTP/3 is the gated future client-facing edge; the bounded application service remains private with TCP fallback)
 **Amended by:** [ADR 0023](0023-bounded-live-priority.md) (interactive live work remains preferred, but a ready batch job must run after a bounded live-dispatch streak)
-**Implementation status:** Client capture/local fallback, machine-readable HTTP/live contracts, the bounded loopback capability-health service, desktop connector state, and the durable SQLite imported-job ledger exist. Phase 4 supplied the bounded router and transient isolated Cohere worker. Phase 5 connected them to durable loopback create/upload/commit/status/result/cancel, reconnect/restart recovery, and verified native History publication; exact PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the one-time local/native/server/GB10 gate and merged. WSS/live, authenticated sessions, persistent production supervision, external application networking, long-recording and multi-worker capacity, and the TLS/QUIC edge are not implemented.
+**Amended by:** [ADR 0024](0024-global-language-routing.md) (Phase 6 proves engine-neutral ASR routes with reference workers)
+**Amended by:** [ADR 0025](0025-provider-specific-asr-serving.md) (Cohere batch uses vLLM; Nemotron retains a Transformers reference and a separately gated NeMo streaming candidate; SGLang remains agent/LLM-only; Rust retains orchestration authority)
+**Implementation status:** Client capture/local fallback, machine-readable HTTP/live contracts, the bounded loopback capability-health service, desktop connector state, and the durable SQLite imported-job ledger exist. Phase 4 supplied the bounded router and transient isolated Cohere worker. Phase 5 connected them to durable loopback create/upload/commit/status/result/cancel, reconnect/restart recovery, and verified native History publication; exact PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the one-time local/native/server/GB10 gate and merged. Phase 6 now has pinned Transformers references, a bounded authenticated Cohere vLLM adapter/image/launcher with focused exact-reference/c2/c4/c8/engine-abort/recovery evidence, and a resident native NeMo worker/service/image/launcher with its own focused c8/cancellation/recovery evidence. The earlier Triton experiment is retired. Both frozen provider lifecycle/capacity gates remain incomplete. WSS/live, authenticated sessions, persistent production supervision, external application networking, representative long-recording and multi-worker capacity, and the TLS/QUIC edge are not implemented.
 
 ## Context
 
@@ -35,7 +37,7 @@ Yap supports two deployment profiles. Neither profile is deleted. The team profi
 | Target | Individual users with local live fallback | Org teams on a shared GB-class server node |
 | STT (live) | Local Nemotron INT8 (`sherpa-onnx`) | Server-hosted streaming ASR pool |
 | STT (batch) | Queue/block every imported recording when offline; no local file-ASR path | Server Cohere batch pool (concurrent GPU workers) |
-| LLM | Future local llama-server (`-ngl 0`); not shipped | Future server LLM pool (Scribe/polish/agents on GPU) |
+| LLM | Future local llama-server (`-ngl 0`); not shipped | Future SGLang agent/LLM pool (Scribe/polish/agents on GPU) |
 | Diarization | Optional local anonymous evidence; no durable voice profiles | Server-authoritative reconciliation and purpose-authorized identity (ADR 0020, canonical Phase 8) |
 | Knowledge base | Local OKF markdown (legacy phase map) | `yap-knowledge` Git repo + KB compiler (ADR 0017, canonical Phase 9) |
 | Auth | None / local | Entra ID / MSAL (ADR 0016, canonical Phase 7) |
@@ -65,12 +67,12 @@ flowchart TB
     Client["yap-desktop client\n(mic · VAD · Opus · hotkey · UI)"]
 
     subgraph Server["yap-server - GB-class node (org LAN/VPN)"]
-        Router["Workload Router\n(per-tenant queues · fairness · backpressure)"]
+        Router["Rust orchestration target\n(per-tenant queues · sessions · fairness · backpressure)"]
 
         subgraph Pools["Model Pools"]
-            ASR["Streaming ASR pool\nGPU\n(Wispr-style WSS)"]
-            Batch["Cohere batch pool\nMultiple concurrent workers\nGPU-accelerated"]
-            LLM["LLM pool\nScribe · polish · agents\n(GPU, multi-tenant)"]
+            ASR["NeMo Nemotron candidate\nstreaming ASR · GPU"]
+            Batch["vLLM Cohere plane\nbatch ASR · GPU"]
+            LLM["SGLang agent/LLM plane\nprefix cache · structured output · GPU"]
         end
 
         KB["Knowledge compiler\n(ADR 0017)"]
@@ -105,10 +107,10 @@ C4Container
     }
 
     System_Boundary(serverBoundary, "yap-server") {
-        Container(router, "Workload router", "Service", "Queues, fairness, backpressure")
-        Container(asr, "Streaming ASR pool", "GPU", "Live WSS tokens")
-        Container(batch, "Cohere batch pool", "GPU workers", "Large recording jobs")
-        Container(llm, "LLM pool", "GPU workers", "Scribe, polish, agents")
+        Container(router, "Orchestration plane", "Rust target", "Durable sessions, admission, queues, fairness, cancellation")
+        Container(asr, "Streaming ASR", "NeMo candidate", "Live partial/final tokens after promotion")
+        Container(batch, "Batch ASR", "vLLM + Cohere", "Large recording jobs")
+        Container(llm, "Agent/LLM inference", "SGLang", "Scribe, polish, agents, structured outputs")
         Container(kbCompiler, "KB compiler", "Service", "Permission-filtered OKF view")
         ContainerDb(storage, "Compiled stores", "Postgres, Redis, vector DB, S3", "Identity, jobs, permissions, retrieval")
     }
@@ -140,10 +142,10 @@ C4Deployment
     }
 
     Deployment_Node(gbNode, "GB-class server node", "DGX Spark GB10 now; GB300-class later") {
-        Container(router, "Workload router", "Service", "Queues, fairness, backpressure")
-        Container(asr, "Streaming ASR pool", "GPU", "Live WSS tokens")
-        Container(batch, "Cohere batch pool", "GPU workers", "Large recording jobs")
-        Container(llm, "LLM pool", "GPU workers", "Scribe, polish, agents")
+        Container(router, "Orchestration plane", "Rust target", "Durable sessions, admission, queues, fairness, cancellation")
+        Container(asr, "Streaming ASR", "NeMo candidate", "Live partial/final tokens after promotion")
+        Container(batch, "Batch ASR", "vLLM + Cohere", "Large recording jobs")
+        Container(llm, "Agent/LLM inference", "SGLang", "Scribe, polish, agents, structured outputs")
         Container(kbCompiler, "KB compiler", "Service", "Permission-filtered OKF view")
         ContainerDb(postgres, "Postgres", "Database", "Identity, jobs, permissions")
         ContainerDb(redis, "Redis", "Cache", "Hot queues and permission cache")
@@ -182,9 +184,9 @@ C4Deployment
 
 | Pool | Model | Mode | Notes |
 |------|-------|------|-------|
-| **Streaming ASR pool** | Server-selected GPU ASR | Live mic, real-time WSS | Wispr-Flow-style; thin client streams Opus chunks; server returns partial/final tokens |
-| **Cohere batch pool** | Cohere Transcribe (GPU) | File / queue jobs | Multiple concurrent workers; expected to improve on the 26-min CPU result, subject to GB10 benchmarks |
-| **LLM pool** | Scribe/polish + agent models (GPU) | Scribe polish, Student/Curator/Analyst/Coordinator | Multi-tenant; `-ngl` not 0 on GPU |
+| **Streaming ASR** | Nemotron through a separately gated NeMo runtime | Live mic, real-time WSS | The resident cache-aware candidate now handles bounded finalized jobs behind an authenticated loopback adapter. It is not selected and does not implement client-facing live/WSS transport. NeMo owns model state after promotion; Rust retains session authority. |
+| **Batch ASR** | Cohere through vLLM | File / queue jobs | vLLM owns warm residency, continuous batching, and GPU scheduling. Rust retains admission, fairness, retries, cancellation intent, and durable jobs. |
+| **Agent/LLM** | SGLang-hosted agent models | Scribe polish, Student/Curator/Analyst/Coordinator | Prefix caching, continuous batching, quantization, and structured output are model-specific promotion gates; SGLang is not an ASR route. |
 
 Exact-head Phase 4 evidence covers only the Cohere row's single-worker reference
 seam: executable candidate `309a2d427707e3483b2649f13940bd48dfaee836`
@@ -193,6 +195,88 @@ BF16 on an NVIDIA GB10 with WER `0.0`. That proves real CUDA inference, the
 locked runtime/model path, teardown, and unchanged observed host boundaries; it
 does not establish 45-minute throughput, warm-pool behavior, or safe
 concurrency. The streaming and LLM rows remain targets.
+
+The checked transient Cohere worker remains the correctness and rollback
+reference. The selected Phase 6 serving candidate is now a digest-pinned NVIDIA
+vLLM 26.06 image behind Yap's existing `BatchWorker` seam. The adapter verifies
+the immutable model artifacts, exact vLLM version, exact served model identity,
+API-key-protected loopback interface, bounded response, and cancellation
+acknowledgement before publishing the existing result envelope. The pinned
+image's Cohere import requires one attributed Mel-filter-bank compatibility
+function because the image omits TorchAudio; a mismatched binary TorchAudio wheel
+is not accepted. A focused resident-service probe matched the Transformers
+reference hash across independent c2/c4/c8 requests. After an active-engine
+read-back, explicit client socket shutdown produced an 18-ms acknowledgement,
+vLLM's engine-abort log, and a zero-running-request read-back; immediate recovery
+and teardown passed. The representative frozen gate remains open.
+
+Nemotron 3.5 is cache-aware FastConformer-RNNT. The exact Transformers/BF16 path
+remains the correctness and rollback reference. A pinned resident NeMo
+candidate now restores the canonical `.nemo` checkpoint once, keeps all shared
+pipeline mutation on one scheduler owner, and exposes bounded independent jobs
+through a separate authenticated numeric-loopback adapter. The exercised NeMo
+wrapper accepted but did not apply prompt vectors, so Yap validates the
+checkpoint catalog and projects the selected prompt after encoding and before
+RNNT decode. Focused c8/cancellation/recovery evidence exists, but the frozen
+representative gate and client-facing live transport do not. Nemotron is not
+sent through vLLM or SGLang. Phase 7 owns authenticated owner derivation.
+Persistent supervision, production mixed-user capacity, and enterprise
+observability remain Phase 10 promotion gates.
+
+#### Retired Triton experiment (historical evidence)
+
+The 2026-07-21 focused GB10 comparison rejected the first Triton Python-backend
+configuration before the frozen matrix. Repeated 30-second Cohere input produced
+singleton output identical to the transient reference, while true Triton batches
+changed four words in the authoritative transcript. The Nemotron adapter accepted
+scheduler batches but invoked the engine as serial singletons, so it supplied no
+model-level batching gain and doubled request latency at c4. The fail-closed
+benchmark now hashes the complete authoritative result, including alignment.
+This evidence is retained as the reason the common Triton ASR plane was retired
+by ADR 0025; it is not an active implementation claim.
+
+The bounded successor uses `single-resident-queued-v1`, one GPU instance per
+model, `max_batch_size: 1`, and a bounded ordered queue. Focused dirty-source
+evidence restored exact authoritative parity for Cohere fixed, Nemotron fixed,
+and Nemotron dynamic routes. Eight-request c4 controls retained one stable
+authoritative identity and singleton server execution; queued cancellation was
+acknowledged before model execution without disrupting the leader or immediate
+recovery. Both resident models attributed 6,490 MiB across the Triton GPU
+processes, reinforcing that this is a server profile rather than a client
+runtime. That successor proved the neutral worker/result contracts but supplied
+no model-level batching advantage. Its implementation has been removed; the
+private evidence remains historical and does not establish production capacity.
+
+#### Production serving responsibility split
+
+The accepted production target has four replaceable responsibilities:
+
+1. **vLLM is the Cohere batch execution plane.** It owns Cohere model loading,
+   continuous batching, GPU scheduling, and inference health behind an
+   authenticated loopback adapter.
+2. **NeMo is the Nemotron server-streaming candidate.** Its resident bounded-job
+   adapter is implemented, but it must pass a separate frozen model-native
+   streaming/representative-workload gate before selection. The Transformers
+   worker remains the comparison and rollback reference.
+3. **SGLang is the agent/LLM execution plane.** It serves compatible reasoning
+   and tool-output models once Phase 9 supplies real agent workloads. Prefix
+   caching is useful for repeated system/context prefixes, not for ASR audio.
+4. **Rust is the authoritative orchestration plane.** It owns authenticated
+   session/job identity, admission and fairness policy, flow control, retries,
+   cancellation, durable stage transitions, and result validation. It reaches
+   vLLM, NeMo, and SGLang through bounded versioned network adapters rather than
+   sharing model-runtime memory or state.
+
+This split can remove Yap-specific container-spawn and inference-scheduler code
+while materially improving warm-start latency, throughput, and GPU utilization
+under concurrent load. It does not remove domain contracts, security boundaries,
+artifact provenance, or recovery behavior. Phase 6 keeps the checked transient
+worker as the comparison and rollback baseline while implementing Cohere vLLM
+behind the same engine-neutral seam. vLLM becomes the promoted batch adapter only
+after exact-model correctness, isolation, cancellation, concurrency, latency,
+throughput, memory, and observed GB10 gates pass. NeMo receives its own streaming
+gate. Phase 10 then owns persistent supervised production deployment and capacity
+promotion.
 
 #### Client/server protocol shape
 
@@ -318,26 +402,34 @@ On `Connected` loss, live dictation may switch to local fallback with a visible 
 
 - [x] `server/` staging area, machine-readable Phase 3 contract, and loopback capability-health process in the MVP monorepo (ADR 0018; split to `yap-server` in canonical Phase 10)
 - [x] Client capability-health connector: validated settings, bounded HTTP checks, fail-closed state/capability projection, generation safety, and retry cancellation
-- [x] Rust-owned SQLite imported-job ledger with restart recovery, bounded terminal history, and native picker/drop source admission; historical localStorage path rows are not migrated automatically
+- [x] Rust-owned SQLite imported-job ledger with restart recovery, bounded terminal history, native picker/drop source admission, and a metadata-only write probe that gates the in-memory drain circuit after persistence failure; historical localStorage path rows are not migrated automatically
 - [x] Reference workload router: bounded per-owner queues, bounded live
   priority, round-robin fairness, backpressure, and pool dispatch
-- [ ] Production workload router: auth-derived ownership, durable queues,
-  concurrent admission, cancellation, recovery, and service integration
-- [ ] Streaming ASR pool: GPU ASR, WSS endpoint
+- [ ] Production workload router: Phase 7 supplies auth-derived owner/admission
+  identity; Phase 10 adds durable queues, concurrent admission, cancellation,
+  recovery, service integration, and measured multi-owner fairness/backpressure
+- [ ] Streaming ASR pool (Phase 10 after the Phase 7 identity seam): GPU ASR,
+  authenticated WSS endpoint, bounded mixed-load scheduling, and capacity/SLO evidence
 - [x] Cohere batch reference pool: one bounded isolated GPU worker, immutable
   model/runtime lock, licensed WER fixture, and transient clean-head GB10 gate
   harness; exact executable candidate
   `309a2d427707e3483b2649f13940bd48dfaee836` passed the one-time gate
+- [x] Phase 6 provider-serving seams under focused tests: pinned Transformers
+  references, the authenticated loopback Cohere vLLM worker/image contract, and
+  the resident authenticated NeMo worker/service/image/launcher. The retired
+  Triton experiment remains historical evidence only. Both frozen GB10 provider
+  comparisons remain incomplete; no persistent production pool is selected.
 - [x] Durable Phase 5 batch service: restart-safe job/chunk/result state,
   cancellation, bounded single-worker dispatch, retention, and recovery
-- [ ] Cohere production pool: authenticated ownership, warm/multiple workers,
-  measured capacity, persistent supervision, and production observability
+- [ ] Cohere production pool (Phase 10 after the Phase 7 identity baseline):
+  authenticated ownership, warm/multiple workers, measured mixed-load capacity,
+  persistent supervision, and production observability
 - [x] Development HTTP batch transport: approved loopback origin,
   create/upload/commit/status/result/cancel, durable reconnect drain, bounded
   retry, immutable result verification, and native History projection; exact
   PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the complete Phase 5 gate
-- [ ] Production client transport: authenticated external HTTP batch plus WSS
-  live path and managed deployment profile
+- [ ] Production client transport (Phase 10 after the Phase 7 identity seam):
+  authenticated external HTTP batch plus WSS live path and managed deployment profile
 - [ ] Local-fallback logic: auto-switch on server unreachability
 
 ## Open questions

@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from yap_server.jobs import JobServiceError, RecordingJobService
+from yap_server.jobs.processing_input import BatchInputStorageError
 
 from .service_fixtures import _ControlledProcessor, _Processor, _create_request
 
@@ -31,7 +32,7 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
                     track_id="track-1",
                     sequence_start=0,
                     sequence_end=159,
-                    idempotency_key="1/s-phase5-create/track-1/0/159",
+                    idempotency_key="1/s-batch-create/track-1/0/159",
                     content_sha256=hashlib.sha256(chunk).hexdigest(),
                     audio_codec="pcm_s16le",
                     sample_rate_hz=16000,
@@ -75,7 +76,7 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
                     track_id="track-1",
                     sequence_start=0,
                     sequence_end=159,
-                    idempotency_key="1/s-phase5-create/track-1/0/159",
+                    idempotency_key="1/s-batch-create/track-1/0/159",
                     content_sha256=hashlib.sha256(chunk).hexdigest(),
                     audio_codec="pcm_s16le",
                     sample_rate_hz=16000,
@@ -129,7 +130,7 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
                 track_id="track-1",
                 sequence_start=0,
                 sequence_end=159,
-                idempotency_key="1/s-phase5-create/track-1/0/159",
+                idempotency_key="1/s-batch-create/track-1/0/159",
                 content_sha256=hashlib.sha256(chunk).hexdigest(),
                 audio_codec="pcm_s16le",
                 sample_rate_hz=16000,
@@ -149,7 +150,7 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
                 [],
             )
 
-    def test_cancellation_during_commit_cannot_dispatch_or_restore_processing(self) -> None:
+    def test_cancellation_after_durable_commit_wins_over_processing(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             processor = _ControlledProcessor()
             service = RecordingJobService(
@@ -167,7 +168,7 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
                     track_id="track-1",
                     sequence_start=0,
                     sequence_end=159,
-                    idempotency_key="1/s-phase5-create/track-1/0/159",
+                    idempotency_key="1/s-batch-create/track-1/0/159",
                     content_sha256=hashlib.sha256(chunk).hexdigest(),
                     audio_codec="pcm_s16le",
                     sample_rate_hz=16000,
@@ -180,15 +181,15 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
             release_publish = threading.Event()
             outcome: dict[str, object] = {}
 
-            from yap_server.jobs import service as service_module
+            from yap_server.jobs import processing_input as processing_input_module
 
-            original_publish_wav = service_module._publish_wav
+            original_publish_wav = processing_input_module.publish_wav
 
-            def blocked_publish_wav(path: Path, chunks: list[Path]) -> None:
+            def blocked_publish_wav(*args: object, **kwargs: object) -> str:
                 entered_publish.set()
                 if not release_publish.wait(timeout=2):
                     raise TimeoutError("test WAV publication was not released")
-                original_publish_wav(path, chunks)
+                return original_publish_wav(*args, **kwargs)
 
             def commit() -> None:
                 try:
@@ -208,7 +209,11 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
                 except Exception as error:  # pragma: no cover - assertion below reports it
                     outcome["cancel_error"] = error
 
-            with patch.object(service_module, "_publish_wav", blocked_publish_wav):
+            with patch.object(
+                processing_input_module,
+                "publish_wav",
+                blocked_publish_wav,
+            ):
                 committing = threading.Thread(target=commit)
                 committing.start()
                 self.assertTrue(entered_publish.wait(timeout=2))
@@ -223,9 +228,10 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
             self.assertFalse(cancelling.is_alive())
             self.assertNotIn("error", outcome)
             self.assertNotIn("cancel_error", outcome)
-            self.assertEqual(outcome["projection"], outcome["cancelled"])
+            self.assertEqual(outcome["projection"]["status"], "server_processing")
+            self.assertEqual(outcome["cancelled"]["status"], "cancelled")
             self.assertEqual(service.get(created["jobId"])["status"], "cancelled")
-            self.assertEqual(processor.jobs, [])
+            self.assertEqual(len(processor.jobs), 1)
             job_root = Path(temporary) / "jobs" / created["jobId"]
             self.assertFalse((job_root / "input.wav").exists())
             self.assertEqual(list((job_root / "chunks").iterdir()), [])
@@ -248,7 +254,7 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
                     track_id="track-1",
                     sequence_start=0,
                     sequence_end=159,
-                    idempotency_key="1/s-phase5-create/track-1/0/159",
+                    idempotency_key="1/s-batch-create/track-1/0/159",
                     content_sha256=hashlib.sha256(chunk).hexdigest(),
                     audio_codec="pcm_s16le",
                     sample_rate_hz=16000,
@@ -261,9 +267,9 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
             release_publish = threading.Event()
             outcome: dict[str, object] = {}
 
-            from yap_server.jobs import service as service_module
+            from yap_server.jobs import processing_input as processing_input_module
 
-            def failing_publish_wav(_path: Path, _chunks: list[Path]) -> None:
+            def failing_publish_wav(*_args: object, **_kwargs: object) -> str:
                 entered_publish.set()
                 if not release_publish.wait(timeout=2):
                     raise TimeoutError("test WAV publication was not released")
@@ -287,7 +293,11 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
                 except Exception as error:  # pragma: no cover - asserted below
                     outcome["cancel_error"] = error
 
-            with patch.object(service_module, "_publish_wav", failing_publish_wav):
+            with patch.object(
+                processing_input_module,
+                "publish_wav",
+                failing_publish_wav,
+            ):
                 committing = threading.Thread(target=commit)
                 committing.start()
                 self.assertTrue(entered_publish.wait(timeout=2))
@@ -302,10 +312,10 @@ class RecordingJobCancellationRaceTests(unittest.TestCase):
             self.assertFalse(cancelling.is_alive())
             self.assertNotIn("cancel_error", outcome)
             self.assertEqual(outcome["cancelled"]["status"], "cancelled")
-            self.assertIsInstance(outcome.get("error"), OSError)
+            self.assertIsInstance(outcome.get("error"), BatchInputStorageError)
             self.assertEqual(
                 str(outcome["error"]),
-                "injected WAV publication failure",
+                "private input publication failed",
             )
             self.assertEqual(service.get(created["jobId"])["status"], "cancelled")
             self.assertEqual(processor.jobs, [])

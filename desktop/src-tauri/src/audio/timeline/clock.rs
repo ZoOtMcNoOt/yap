@@ -88,6 +88,7 @@ pub enum RecordingInput {
     PreparedFrame(PreparedFrame),
     RevisionTransition(RecordingRevisionTransition),
     Gap(AudioGap),
+    LanguageEvidence(crate::language::live_evidence::LiveLanguageEvidence),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

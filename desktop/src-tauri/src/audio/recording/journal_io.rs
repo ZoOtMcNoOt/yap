@@ -152,6 +152,9 @@ pub(super) fn apply_journal_delta(
     journal.sequence_gaps.truncate(delta.gap_start_index);
     journal.sequence_gaps.extend(delta.sequence_gaps);
     journal.sequence_gap_overflow = delta.sequence_gap_overflow;
+    if let Some(evidence) = delta.language_evidence {
+        journal.observe_language_evidence(evidence)?;
+    }
     journal.sink_degraded |= delta.sink_degraded;
     Ok(())
 }

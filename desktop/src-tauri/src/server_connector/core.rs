@@ -6,19 +6,31 @@ use std::{
     time::Duration,
 };
 
-use crate::runtime;
+use crate::{jobs::AsrCatalogBinding, runtime};
 
 use super::{
     batch, client, config,
     state::{self, ConnectorInner, SettingsDisposition},
-    ServerConnectionSnapshot,
+    AsrCapabilityCatalog, ServerConnectionSnapshot,
 };
 
 pub struct ServerConnector {
     pub(super) client: reqwest::Client,
     pub(super) inner: Mutex<ConnectorInner>,
     pub(super) generation: AtomicU64,
+    asr_request_sequence: AtomicU64,
+    latest_asr_commit: AtomicU64,
+    latest_asr_catalog: Mutex<Option<CommittedAsrCatalog>>,
     settings_save_active: Arc<AtomicBool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CommittedAsrCatalog {
+    generation: u64,
+    base_url: String,
+    request_sequence: u64,
+    catalog_revision: String,
+    lid_policy_revision: Option<String>,
 }
 
 #[derive(Debug)]
@@ -35,6 +47,67 @@ pub(crate) struct BatchConnectionLease {
 pub(crate) struct AsrCapabilityLease {
     generation: u64,
     base_url: String,
+    request_sequence: u64,
+}
+
+pub(crate) struct CurrentAsrCatalog<'a> {
+    catalog: &'a AsrCapabilityCatalog,
+    binding: AsrCatalogBinding,
+    dispatch_proof: AsrCatalogDispatchProof,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct AsrCatalogDispatchProof {
+    generation: u64,
+    base_url: String,
+    request_sequence: u64,
+    catalog_revision: String,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct LidPreflightDispatchProof {
+    generation: u64,
+    base_url: String,
+    request_sequence: u64,
+    catalog_revision: String,
+    policy_revision: String,
+}
+
+pub(crate) struct CurrentLidPreflight {
+    dispatch_proof: LidPreflightDispatchProof,
+}
+
+impl CurrentAsrCatalog<'_> {
+    pub(crate) fn catalog(&self) -> &AsrCapabilityCatalog {
+        self.catalog
+    }
+
+    pub(crate) fn binding(&self) -> &AsrCatalogBinding {
+        &self.binding
+    }
+
+    pub(crate) fn dispatch_proof(&self) -> AsrCatalogDispatchProof {
+        self.dispatch_proof.clone()
+    }
+
+    pub(crate) fn lid_preflight_dispatch(&self) -> Option<CurrentLidPreflight> {
+        let capability = self.catalog.lid_preflight()?;
+        Some(CurrentLidPreflight {
+            dispatch_proof: LidPreflightDispatchProof {
+                generation: self.dispatch_proof.generation,
+                base_url: self.dispatch_proof.base_url.clone(),
+                request_sequence: self.dispatch_proof.request_sequence,
+                catalog_revision: self.dispatch_proof.catalog_revision.clone(),
+                policy_revision: capability.policy.revision.clone(),
+            },
+        })
+    }
+}
+
+impl CurrentLidPreflight {
+    pub(crate) fn dispatch_proof(&self) -> LidPreflightDispatchProof {
+        self.dispatch_proof.clone()
+    }
 }
 
 impl AsrCapabilityLease {
@@ -55,6 +128,9 @@ impl Default for ServerConnector {
             client: client::bounded_client().expect("bounded server connector client must build"),
             inner: Mutex::new(ConnectorInner::default()),
             generation: AtomicU64::new(0),
+            asr_request_sequence: AtomicU64::new(0),
+            latest_asr_commit: AtomicU64::new(0),
+            latest_asr_catalog: Mutex::new(None),
             settings_save_active: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -63,6 +139,13 @@ impl Default for ServerConnector {
 impl ServerConnector {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub(crate) fn batch_client_for_persisted_origin(
+        &self,
+        base_url: &str,
+    ) -> Result<batch::BatchApiClient, batch::BatchClientError> {
+        batch::BatchApiClient::new(self.client.clone(), base_url)
     }
 
     pub(super) fn begin_settings_save(&self) -> Result<SettingsSaveLease, String> {
@@ -179,9 +262,17 @@ impl ServerConnector {
             return None;
         }
         let base_url = inner.configured_base_url(generation)?;
+        let request_sequence = self
+            .asr_request_sequence
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
+                current.checked_add(1)
+            })
+            .ok()?
+            .checked_add(1)?;
         Some(AsrCapabilityLease {
             generation,
             base_url,
+            request_sequence,
         })
     }
 
@@ -223,9 +314,94 @@ impl ServerConnector {
         Ok(commit())
     }
 
-    pub(crate) fn with_current_asr_capability_lease<T>(
+    pub(crate) fn with_current_batch_catalog_proof<T>(
+        &self,
+        lease: &BatchConnectionLease,
+        proof: &AsrCatalogDispatchProof,
+        binding: &AsrCatalogBinding,
+        commit: impl FnOnce() -> T,
+    ) -> Result<T, String> {
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        let latest_sequence = self.latest_asr_commit.load(Ordering::Acquire);
+        let catalog_is_current = latest_sequence == proof.request_sequence
+            || (latest_sequence > proof.request_sequence
+                && self
+                    .latest_asr_catalog
+                    .lock()
+                    .expect("ASR catalog identity poisoned")
+                    .as_ref()
+                    .is_some_and(|latest| {
+                        latest.generation == proof.generation
+                            && latest.base_url == proof.base_url
+                            && latest.request_sequence == latest_sequence
+                            && latest.catalog_revision == proof.catalog_revision
+                    }));
+        let current = lease.generation == proof.generation
+            && lease.base_url == proof.base_url
+            && proof.base_url == binding.origin()
+            && proof.catalog_revision == binding.catalog_revision()
+            && self.generation.load(Ordering::Acquire) == lease.generation
+            && inner.generation() == lease.generation
+            && inner.configured_base_url(lease.generation).as_deref()
+                == Some(lease.base_url.as_str())
+            && snapshot.state == runtime::state::ServerConnectorState::Ready
+            && snapshot.capabilities.batch_jobs
+            && snapshot.capabilities.job_status
+            && catalog_is_current;
+        if !current {
+            return Err("Server connection or ASR catalog changed before batch dispatch.".into());
+        }
+        Ok(commit())
+    }
+
+    pub(crate) fn with_current_lid_preflight_proof<T>(
+        &self,
+        lease: &BatchConnectionLease,
+        proof: &LidPreflightDispatchProof,
+        commit: impl FnOnce() -> T,
+    ) -> Result<T, String> {
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        let latest_sequence = self.latest_asr_commit.load(Ordering::Acquire);
+        let lid_contract_is_current = latest_sequence == proof.request_sequence
+            || (latest_sequence > proof.request_sequence
+                && self
+                    .latest_asr_catalog
+                    .lock()
+                    .expect("ASR catalog identity poisoned")
+                    .as_ref()
+                    .is_some_and(|latest| {
+                        latest.generation == proof.generation
+                            && latest.base_url == proof.base_url
+                            && latest.request_sequence == latest_sequence
+                            && latest.catalog_revision == proof.catalog_revision
+                            && latest.lid_policy_revision.as_deref()
+                                == Some(proof.policy_revision.as_str())
+                    }));
+        let current = lease.generation == proof.generation
+            && lease.base_url == proof.base_url
+            && self.generation.load(Ordering::Acquire) == lease.generation
+            && inner.generation() == lease.generation
+            && inner.configured_base_url(lease.generation).as_deref()
+                == Some(lease.base_url.as_str())
+            && snapshot.state == runtime::state::ServerConnectorState::Ready
+            && snapshot.capabilities.batch_jobs
+            && snapshot.capabilities.job_status
+            && lid_contract_is_current;
+        if !current {
+            return Err(
+                "Server connection or language-preflight contract changed before dispatch.".into(),
+            );
+        }
+        Ok(commit())
+    }
+
+    fn with_current_asr_capability_lease<T>(
         &self,
         lease: &AsrCapabilityLease,
+        catalog_revision: &str,
+        lid_policy_revision: Option<&str>,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
         let inner = self.inner.lock().expect("server connector poisoned");
@@ -234,11 +410,122 @@ impl ServerConnector {
             && inner.generation() == lease.generation
             && inner.configured_base_url(lease.generation).as_deref()
                 == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready;
+            && snapshot.state == runtime::state::ServerConnectorState::Ready
+            && lease.request_sequence > self.latest_asr_commit.load(Ordering::Acquire);
         if !current {
-            return Err("Server connection changed before the ASR catalog could commit.".into());
+            return Err("Server connection or ASR catalog freshness changed before commit.".into());
         }
-        Ok(commit())
+        let committed = commit();
+        *self
+            .latest_asr_catalog
+            .lock()
+            .expect("ASR catalog identity poisoned") = Some(CommittedAsrCatalog {
+            generation: lease.generation,
+            base_url: lease.base_url.clone(),
+            request_sequence: lease.request_sequence,
+            catalog_revision: catalog_revision.to_owned(),
+            lid_policy_revision: lid_policy_revision.map(str::to_owned),
+        });
+        self.latest_asr_commit
+            .store(lease.request_sequence, Ordering::Release);
+        Ok(committed)
+    }
+
+    pub(crate) fn commit_current_asr_capability_catalog<T>(
+        &self,
+        lease: &AsrCapabilityLease,
+        catalog: AsrCapabilityCatalog,
+        commit: impl FnOnce(CurrentAsrCatalog<'_>) -> T,
+    ) -> Result<T, String> {
+        let catalog_revision = catalog.catalog_revision.clone();
+        let lid_policy_revision = catalog
+            .lid_preflight()
+            .map(|capability| capability.policy.revision.clone());
+        self.with_current_asr_capability_lease(
+            lease,
+            &catalog_revision,
+            lid_policy_revision.as_deref(),
+            || {
+                if super::capability_snapshot::save(lease.base_url(), &catalog).is_err() {
+                    crate::stt::log_yap("verified ASR capability snapshot could not be updated");
+                }
+                let binding = AsrCatalogBinding::try_new(
+                    lease.base_url.clone(),
+                    catalog.catalog_revision.clone(),
+                )
+                .expect("verified ASR catalog lease has a valid durable identity");
+                let dispatch_proof = AsrCatalogDispatchProof {
+                    generation: lease.generation,
+                    base_url: lease.base_url.clone(),
+                    request_sequence: lease.request_sequence,
+                    catalog_revision: catalog.catalog_revision.clone(),
+                };
+                commit(CurrentAsrCatalog {
+                    catalog: &catalog,
+                    binding,
+                    dispatch_proof,
+                })
+            },
+        )
+    }
+
+    #[cfg(test)]
+    pub(super) fn commit_current_asr_capability_catalog_with<T>(
+        &self,
+        lease: &AsrCapabilityLease,
+        catalog: AsrCapabilityCatalog,
+        publish: impl FnOnce(&str, &AsrCapabilityCatalog),
+        commit: impl FnOnce(&AsrCapabilityCatalog) -> T,
+    ) -> Result<T, String> {
+        let catalog_revision = catalog.catalog_revision.clone();
+        let lid_policy_revision = catalog
+            .lid_preflight()
+            .map(|capability| capability.policy.revision.clone());
+        self.with_current_asr_capability_lease(
+            lease,
+            &catalog_revision,
+            lid_policy_revision.as_deref(),
+            || {
+                publish(lease.base_url(), &catalog);
+                commit(&catalog)
+            },
+        )
+    }
+
+    #[cfg(test)]
+    pub(super) fn commit_current_asr_capability_catalog_for_test<T>(
+        &self,
+        lease: &AsrCapabilityLease,
+        catalog: AsrCapabilityCatalog,
+        commit: impl FnOnce(CurrentAsrCatalog<'_>) -> T,
+    ) -> Result<T, String> {
+        let catalog_revision = catalog.catalog_revision.clone();
+        let lid_policy_revision = catalog
+            .lid_preflight()
+            .map(|capability| capability.policy.revision.clone());
+        self.with_current_asr_capability_lease(
+            lease,
+            &catalog_revision,
+            lid_policy_revision.as_deref(),
+            || {
+                let binding = AsrCatalogBinding::try_new(
+                    lease.base_url.clone(),
+                    catalog.catalog_revision.clone(),
+                )
+                .expect("verified test catalog lease has a valid durable identity");
+                let dispatch_proof = AsrCatalogDispatchProof {
+                    generation: lease.generation,
+                    base_url: lease.base_url.clone(),
+                    request_sequence: lease.request_sequence,
+                    catalog_revision: catalog.catalog_revision.clone(),
+                };
+                commit(CurrentAsrCatalog {
+                    catalog: &catalog,
+                    binding,
+                    dispatch_proof,
+                })
+            },
+        )
     }
 
     pub(super) fn begin_health_request_with<Project>(

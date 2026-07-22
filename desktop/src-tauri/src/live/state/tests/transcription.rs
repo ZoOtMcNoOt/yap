@@ -44,6 +44,53 @@ fn backpressure_warning_does_not_reopen_idle_sessions() {
 }
 
 #[test]
+fn language_routing_warning_is_visible_only_during_an_active_session() {
+    let state = LiveSessionState::new(LiveSettings {
+        overlay_enabled: true,
+        hotkey: Some("Ctrl+Shift+Space".into()),
+        paste_hotkey: None,
+        capture_mode: LiveCaptureMode::PushToTalk,
+        input_device_id: None,
+    });
+
+    let idle = state.mark_language_routing_degraded();
+    assert_eq!(idle.error, None);
+    assert!(!idle.transcription_degraded);
+
+    state.update(|view| view.status = LiveSessionStatus::Listening);
+    let warning = state.mark_language_routing_degraded();
+    assert_eq!(
+        warning.error.as_deref(),
+        Some("Automatic language switching is unavailable. Continuing in your primary language.")
+    );
+    assert!(warning.transcription_degraded);
+}
+
+#[test]
+fn terminal_local_transcription_failure_keeps_capture_stoppable_and_visible() {
+    let state = LiveSessionState::new(LiveSettings {
+        overlay_enabled: true,
+        hotkey: Some("Ctrl+Shift+Space".into()),
+        paste_hotkey: None,
+        capture_mode: LiveCaptureMode::Toggle,
+        input_device_id: None,
+    });
+    assert_eq!(state.mark_local_transcription_unavailable().error, None);
+
+    state.update(|view| {
+        view.status = LiveSessionStatus::Listening;
+        view.route = LiveRoute::LocalFallback;
+    });
+    let failed = state.mark_local_transcription_unavailable();
+    assert_eq!(failed.status, LiveSessionStatus::Listening);
+    assert!(failed.transcription_degraded);
+    assert_eq!(
+        failed.error.as_deref(),
+        Some("Local transcription stopped unexpectedly. Audio will still be saved.")
+    );
+}
+
+#[test]
 fn stale_stream_text_does_not_reopen_idle_session() {
     let state = LiveSessionState::new(LiveSettings {
         overlay_enabled: true,
