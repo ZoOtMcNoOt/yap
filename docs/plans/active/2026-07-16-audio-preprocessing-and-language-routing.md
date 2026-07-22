@@ -924,6 +924,15 @@ HTTP 429 responses now remain typed through durable completion as retryable
 committed catalog continues to omit Nemotron; an end-to-end candidate-catalog
 run requires a matching explicit lock outside the repository.
 
+The provider input builder now derives a single 18-track immutable suite from
+the machine plan rather than relying on an operator-assembled manifest list. It
+deduplicates the finalized-utterance and batch ladders plus every resident
+standard/cancellation/capacity load duration, adds the exact four-hour boundary,
+and binds the plus-one rejection boundary, ordered requirement provenance, plan
+hash, and every track-manifest hash in private `suite.json`. Focused tests prove
+the selection and privacy-safe manifest contract. Building these inputs is not
+runtime evidence and does not consume the frozen gate.
+
 The standard resident-load runner is now executable from the locked plan and
 requires every exact-duration track and result beneath the real private
 `YAP_EVAL_CACHE`. Its public-safe aggregate records an explicit overall and

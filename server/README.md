@@ -163,6 +163,15 @@ transcript content in the repository.
 `--expect-text-case` is optional and asserts only a non-empty result for that
 exact case; it is not an accuracy score.
 
+Build the resident-provider runtime inputs with
+`python -m yap_server.evaluation.provider_duration_suite` under the same private
+`YAP_EVAL_CACHE` boundary. The builder derives one immutable track for every
+unique duration required by the vLLM and NeMo ladders, standard/specialized load
+cells, and the exact four-hour boundary. Its `suite.json` binds the public plan,
+ordered requirement provenance, every track-manifest hash, and the plus-one
+rejection boundary without recording source paths or transcripts. Building the
+suite prepares inputs only; it does not execute or satisfy a provider gate.
+
 Run a standard resident load cell with
 `python -m yap_server.evaluation.provider_runtime_qualification`. The command
 requires the plan, exact model lock, one manifest for every duration used by the
