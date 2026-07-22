@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+import runpy
 
 from yap_server.pools.model_lock import load_model_pool_lock
 
@@ -15,6 +16,21 @@ MELSCALE_COMPATIBILITY = (
     / "torchaudio"
     / "functional.py"
 )
+PYTORCH_FINALIZER_PATCH = (
+    SERVER_ROOT
+    / "runtime"
+    / "cohere-vllm"
+    / "compatibility"
+    / "patch_pytorch_library_finalizer.py"
+)
+PYTORCH_LICENSE = (
+    SERVER_ROOT
+    / "runtime"
+    / "cohere-vllm"
+    / "licenses"
+    / "PYTORCH-BSD-3-Clause.txt"
+)
+THIRD_PARTY_NOTICES = SERVER_ROOT / "runtime/cohere-vllm/THIRD_PARTY_NOTICES.md"
 
 
 class CohereVllmContainerContractTests(unittest.TestCase):
@@ -70,6 +86,38 @@ class CohereVllmContainerContractTests(unittest.TestCase):
         self.assertIn("def melscale_fbanks(", compatibility)
         for unsupported in ("resample", "spectrogram", "rnnt_loss", "load"):
             self.assertNotIn(f"def {unsupported}(", compatibility)
+
+    def test_backports_the_upstream_pytorch_finalizer_fix_exactly(self) -> None:
+        dockerfile = DOCKERFILE.read_text(encoding="utf-8")
+        self.assertTrue(PYTORCH_FINALIZER_PATCH.is_file())
+        patcher = runpy.run_path(str(PYTORCH_FINALIZER_PATCH))
+        patch_source = patcher["patch_pytorch_library_source"]
+        original = (
+            "        namespace = getattr(torch.ops, ns)\n"
+            "        if not hasattr(namespace, name):\n"
+            "            continue\n"
+        )
+
+        patched = patch_source(original)
+
+        self.assertIn("if name not in vars(namespace):", patched)
+        self.assertNotIn("if not hasattr(namespace, name):", patched)
+        with self.assertRaisesRegex(RuntimeError, "exact pinned source"):
+            patch_source(patched)
+        self.assertIn(
+            "python3 /opt/yap-vllm-compatibility/"
+            "patch_pytorch_library_finalizer.py",
+            dockerfile,
+        )
+        self.assertIn("BSD-3-Clause", dockerfile)
+        notices = THIRD_PARTY_NOTICES.read_text(encoding="utf-8")
+        self.assertIn("c5f8ebc91a8727a9056734f73329c217328b8989", notices)
+        self.assertIn("BSD-3-Clause", notices)
+        self.assertTrue(PYTORCH_LICENSE.is_file())
+        self.assertIn(
+            "Redistribution and use in source and binary forms",
+            PYTORCH_LICENSE.read_text(encoding="utf-8"),
+        )
 
     def test_exposes_one_bounded_authenticated_cohere_serving_profile(self) -> None:
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
