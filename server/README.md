@@ -187,6 +187,11 @@ must name the absolute private cache containing both tracks and output; the
 provider API key stays in its existing environment variable. The runner fails
 closed on cancellation, fixed/automatic parity, and capacity cells because those
 require specialized semantics rather than an ordinary synchronized wave.
+For the predeclared c8 resource profiles, the same command may select one
+planned `--concurrency` and a bounded `--repeat-count`. Repetition is rejected
+unless exactly one plan-owned concurrency is explicit; eight repeats of the
+200-request short-tail cell therefore produce the required 1,600 completions
+without changing the plan or synthesizing a different workload.
 
 Those cells have separate executable entry points:
 `provider_cancellation_qualification` requires a dispatched target, concurrent

@@ -946,6 +946,14 @@ re-read before evidence publication. Focused tests cover full and cell-specific
 admission, pre-publication read-back, and wrong-digest failure; no private suite
 has been built or runtime cell consumed yet.
 
+The standard runner can now select one or more existing plan concurrencies and,
+only when exactly one is explicit, repeat that cell up to a fixed bound. This
+makes each schema-5 c8/1,600 resource profile executable as eight repetitions of
+its unchanged 200-request short-tail cell. Evidence records selected
+concurrencies, repeat count, per-run repetition, and the aggregate completed
+request count. Focused tests cover valid selection and fail-closed unplanned or
+unbounded requests; no GB10 workload was consumed.
+
 The standard resident-load runner is now executable from the locked plan and
 requires every exact-duration track and result beneath the real private
 `YAP_EVAL_CACHE`. Its public-safe aggregate records an explicit overall and

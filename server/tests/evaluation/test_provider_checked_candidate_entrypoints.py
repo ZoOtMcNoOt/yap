@@ -30,7 +30,14 @@ class ProviderCheckedCandidateEntrypointTests(unittest.TestCase):
             (
                 provider_runtime_qualification,
                 "run_resident_provider_load_case",
-                ["--timeout-seconds-per-wave", "30"],
+                [
+                    "--timeout-seconds-per-wave",
+                    "30",
+                    "--concurrency",
+                    "8",
+                    "--repeat-count",
+                    "8",
+                ],
             ),
             (
                 provider_capacity_qualification,
@@ -154,6 +161,12 @@ class ProviderCheckedCandidateEntrypointTests(unittest.TestCase):
                 candidate.verify_unchanged.assert_called_once_with()
                 duration_tracks.indexed_tracks.assert_called_once_with()
                 self.assertIs(run.call_args.kwargs["tracks"], exact_tracks)
+                if module is provider_runtime_qualification:
+                    self.assertEqual(
+                        run.call_args.kwargs["selected_concurrencies"],
+                        (8,),
+                    )
+                    self.assertEqual(run.call_args.kwargs["repeat_count"], 8)
                 load_tracks.assert_called_once_with(
                     suite_path=output_root / "suite.json",
                     expected_suite_sha256="b" * 64,

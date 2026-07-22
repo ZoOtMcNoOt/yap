@@ -144,6 +144,8 @@ class VllmQualificationMetricsObserver:
 @dataclass(frozen=True, slots=True)
 class ProviderLoadQualification:
     load_case: RuntimeLoadCase
+    selected_concurrencies: tuple[int, ...]
+    repeat_count: int
     runs: tuple[dict[str, object], ...]
 
     @property
@@ -155,6 +157,12 @@ class ProviderLoadQualification:
         )
 
     def public_evidence(self) -> dict[str, object]:
+        completed_request_count = 0
+        for run in self.runs:
+            outcomes = run.get("outcomes")
+            completed = outcomes.get("completed") if isinstance(outcomes, Mapping) else 0
+            if isinstance(completed, int) and not isinstance(completed, bool):
+                completed_request_count += completed
         evidence: dict[str, object] = {
             "schemaVersion": 1,
             "loadCaseId": self.load_case.identifier,
@@ -162,6 +170,9 @@ class ProviderLoadQualification:
             "measurementBoundary": self.load_case.measurement_boundary,
             "expected": self.load_case.expected,
             "minimumCompletions": self.load_case.minimum_completions,
+            "selectedConcurrencies": list(self.selected_concurrencies),
+            "repeatCount": self.repeat_count,
+            "completedRequestCount": completed_request_count,
             "passed": self.passed,
             "runs": list(self.runs),
         }
@@ -176,6 +187,8 @@ def run_provider_load_case(
     *,
     load_case_id: str,
     timeout_seconds_per_wave: float,
+    selected_concurrencies: tuple[int, ...] | None = None,
+    repeat_count: int = 1,
     metrics_observer: ProviderMetricsObserver | None = None,
 ) -> ProviderLoadQualification:
     """Execute one plan cell while keeping paths and transcript identity private."""
@@ -185,56 +198,83 @@ def run_provider_load_case(
         raise ValueError(
             "runtime load case requires its specialized qualification runner"
         )
+    concurrencies = _selected_concurrencies(load_case, selected_concurrencies)
+    if (
+        isinstance(repeat_count, bool)
+        or not isinstance(repeat_count, int)
+        or not 1 <= repeat_count <= 32
+    ):
+        raise ValueError("provider load repetition count is invalid")
+    if repeat_count > 1 and (
+        selected_concurrencies is None or len(concurrencies) != 1
+    ):
+        raise ValueError(
+            "repeated provider load requires one explicit planned concurrency"
+        )
     runs: list[dict[str, object]] = []
-    for concurrency in load_case.concurrencies:
-        requests: list[QualificationRequest] = []
-        ordinal = 0
-        for item in load_case.mix:
-            for _index in range(item.count):
-                request = request_factory.create(
-                    load_case_id=load_case.identifier,
-                    concurrency=concurrency,
-                    ordinal=ordinal,
-                    duration_samples=item.duration_samples,
-                )
-                if request.audio_samples != item.duration_samples:
-                    raise ValueError(
-                        "qualification request duration differs from the runtime plan"
+    for repetition in range(1, repeat_count + 1):
+        request_load_case_id = (
+            load_case.identifier
+            if repeat_count == 1
+            else f"{load_case.identifier}-repeat-{repetition}"
+        )
+        for concurrency in concurrencies:
+            requests: list[QualificationRequest] = []
+            ordinal = 0
+            for item in load_case.mix:
+                for _index in range(item.count):
+                    request = request_factory.create(
+                        load_case_id=request_load_case_id,
+                        concurrency=concurrency,
+                        ordinal=ordinal,
+                        duration_samples=item.duration_samples,
                     )
-                requests.append(request)
-                ordinal += 1
-        metrics_token = (
-            metrics_observer.before_run(concurrency=concurrency)
-            if metrics_observer is not None
-            else None
-        )
-        load = run_bounded_load(
-            worker,
-            tuple(requests),
-            concurrency=concurrency,
-            timeout_seconds_per_wave=timeout_seconds_per_wave,
-        )
-        summary = summarize_runtime_load(load)
-        outcomes = summary.get("outcomes")
-        completed = outcomes.get("completed") if isinstance(outcomes, dict) else None
-        if metrics_observer is not None:
-            summary["providerMetrics"] = metrics_observer.after_run(
-                metrics_token,
-                completed_requests=completed if isinstance(completed, int) else 0,
-                maximum_audio_samples=max(
-                    request.audio_samples for request in requests
-                ),
+                    if request.audio_samples != item.duration_samples:
+                        raise ValueError(
+                            "qualification request duration differs from the runtime plan"
+                        )
+                    requests.append(request)
+                    ordinal += 1
+            metrics_token = (
+                metrics_observer.before_run(concurrency=concurrency)
+                if metrics_observer is not None
+                else None
             )
-        summary["minimumCompletionsMet"] = (
-            isinstance(completed, int)
-            and completed >= load_case.minimum_completions
-        )
-        summary["expectationMet"] = _standard_expectation_met(
-            summary,
-            request_count=len(requests),
-        )
-        runs.append(summary)
-    return ProviderLoadQualification(load_case=load_case, runs=tuple(runs))
+            load = run_bounded_load(
+                worker,
+                tuple(requests),
+                concurrency=concurrency,
+                timeout_seconds_per_wave=timeout_seconds_per_wave,
+            )
+            summary = summarize_runtime_load(load)
+            outcomes = summary.get("outcomes")
+            completed = (
+                outcomes.get("completed") if isinstance(outcomes, dict) else None
+            )
+            if metrics_observer is not None:
+                summary["providerMetrics"] = metrics_observer.after_run(
+                    metrics_token,
+                    completed_requests=completed if isinstance(completed, int) else 0,
+                    maximum_audio_samples=max(
+                        request.audio_samples for request in requests
+                    ),
+                )
+            summary["repetition"] = repetition
+            summary["minimumCompletionsMet"] = (
+                isinstance(completed, int)
+                and completed >= load_case.minimum_completions
+            )
+            summary["expectationMet"] = _standard_expectation_met(
+                summary,
+                request_count=len(requests),
+            )
+            runs.append(summary)
+    return ProviderLoadQualification(
+        load_case=load_case,
+        selected_concurrencies=concurrencies,
+        repeat_count=repeat_count,
+        runs=tuple(runs),
+    )
 
 
 def run_resident_provider_load_case(
@@ -248,6 +288,8 @@ def run_resident_provider_load_case(
     provider_language: str,
     output_root: Path,
     timeout_seconds_per_wave: float,
+    selected_concurrencies: tuple[int, ...] | None = None,
+    repeat_count: int = 1,
     environ: Mapping[str, str] = os.environ,
 ) -> ProviderLoadQualification:
     """Run one standard resident-provider plan cell from private locked tracks."""
@@ -299,6 +341,8 @@ def run_resident_provider_load_case(
             plan,
             load_case_id=load_case_id,
             timeout_seconds_per_wave=timeout_seconds_per_wave,
+            selected_concurrencies=selected_concurrencies,
+            repeat_count=repeat_count,
             metrics_observer=metrics_observer,
         )
     finally:
@@ -324,6 +368,26 @@ def _standard_expectation_met(
         )
         and _provider_metrics_match(summary.get("providerMetrics"))
     )
+
+
+def _selected_concurrencies(
+    load_case: RuntimeLoadCase,
+    selected: tuple[int, ...] | None,
+) -> tuple[int, ...]:
+    if selected is None:
+        return load_case.concurrencies
+    if (
+        not selected
+        or len(set(selected)) != len(selected)
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or value not in load_case.concurrencies
+            for value in selected
+        )
+    ):
+        raise ValueError("selected provider concurrency differs from the runtime plan")
+    return selected
 
 
 def _lexical_stability_matches(value: object) -> bool:
@@ -490,6 +554,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--provider-language", required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--timeout-seconds-per-wave", type=float, required=True)
+    parser.add_argument("--concurrency", type=int, action="append")
+    parser.add_argument("--repeat-count", type=int, default=1)
     return parser
 
 
@@ -518,6 +584,10 @@ def main(argv: list[str] | None = None) -> int:
         provider_language=arguments.provider_language,
         output_root=arguments.output_root,
         timeout_seconds_per_wave=arguments.timeout_seconds_per_wave,
+        selected_concurrencies=(
+            tuple(arguments.concurrency) if arguments.concurrency is not None else None
+        ),
+        repeat_count=arguments.repeat_count,
     )
     verify_provider_load_case_tracks_unchanged(
         duration_tracks,

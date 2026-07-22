@@ -204,6 +204,65 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
             2,
         )
 
+    def test_selects_a_planned_concurrency_for_bounded_repeated_resource_load(self) -> None:
+        plan = load_runtime_evaluation_plan(
+            SERVER_ROOT / "asr-evaluation-plan.json"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            qualification = run_provider_load_case(
+                _Worker(),
+                _Factory(Path(directory)),
+                plan,
+                load_case_id="vllm-long-waves",
+                timeout_seconds_per_wave=1,
+                selected_concurrencies=(2,),
+                repeat_count=3,
+            )
+            evidence = qualification.public_evidence()
+
+        self.assertTrue(qualification.passed)
+        self.assertEqual(evidence["selectedConcurrencies"], [2])
+        self.assertEqual(evidence["repeatCount"], 3)
+        self.assertEqual(evidence["completedRequestCount"], 12)
+        self.assertEqual(
+            [run["repetition"] for run in qualification.runs],
+            [1, 2, 3],
+        )
+
+    def test_rejects_unplanned_concurrency_and_unbounded_repetition(self) -> None:
+        plan = load_runtime_evaluation_plan(
+            SERVER_ROOT / "asr-evaluation-plan.json"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            factory = _Factory(Path(directory))
+            with self.assertRaisesRegex(ValueError, "differs from the runtime plan"):
+                run_provider_load_case(
+                    _Worker(),
+                    factory,
+                    plan,
+                    load_case_id="vllm-long-waves",
+                    timeout_seconds_per_wave=1,
+                    selected_concurrencies=(8,),
+                )
+            with self.assertRaisesRegex(ValueError, "repetition count"):
+                run_provider_load_case(
+                    _Worker(),
+                    factory,
+                    plan,
+                    load_case_id="vllm-long-waves",
+                    timeout_seconds_per_wave=1,
+                    repeat_count=33,
+                )
+            with self.assertRaisesRegex(ValueError, "one explicit planned concurrency"):
+                run_provider_load_case(
+                    _Worker(),
+                    factory,
+                    plan,
+                    load_case_id="vllm-long-waves",
+                    timeout_seconds_per_wave=1,
+                    repeat_count=2,
+                )
+
     def test_refuses_to_misreport_a_specialized_scenario_as_a_plain_load(self) -> None:
         plan = load_runtime_evaluation_plan(
             SERVER_ROOT / "asr-evaluation-plan.json"
