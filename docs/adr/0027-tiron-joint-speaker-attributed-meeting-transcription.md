@@ -33,10 +33,17 @@ SpeechBrain, or most other runtime dependencies. No published result establishes
 DGX Spark latency, memory, concurrency, cancellation, long-session stability,
 or Yap's multilingual requirements.
 
-The model's eight-speaker limit is local to one 30-second inference window. It
-must not be confused with the number of people in a meeting. ADR 0020 retains a
-dynamic session roster with an initial target of 32 anonymous speakers and a
-safety ceiling of 64.
+The released route has two distinct eight-speaker bounds. The model exposes at
+most eight speaker tokens in one 30-second inference window, and the pinned
+reference harness also sets `MAX_GLOBAL_SPEAKERS = 8` for the linked
+whole-meeting result. Neither bound is the same as an attendee count: a meeting
+may have more than 15 invited participants while only five people speak. A
+recording with more than eight distinct talkers is nevertheless outside the
+released harness's whole-meeting contract even when no single window contains
+more than eight. ADR 0020 retains a dynamic product roster with an initial
+target of 32 anonymous speakers and a safety ceiling of 64, so meeting-scale
+reconciliation above eight is additional Yap work rather than a capability
+that ordinary chunking already provides.
 
 ## Decision
 
@@ -104,49 +111,96 @@ Words receive source-time intervals only through a separately validated timing
 path. Named identity remains a later, purpose-authorized reconciliation step;
 an ECAPA similarity cannot manufacture a person's name.
 
-### 4. Treat window capacity and meeting capacity separately
+### 4. Treat attendance, window capacity, and speaking-roster capacity separately
 
 Tiron may represent at most eight distinct speaker slots in one 30-second
-decode window. A meeting may still contain 15, 32, or more participants when
-only a subset speaks in each window; the cross-window linker is responsible for
-reusing stable session identities as people leave, return, or first speak late.
+decode window. The released harness may also publish at most eight global
+speaker identities for the complete meeting. Phase 8 first reproduces that
+pinned eight-window/eight-global baseline without silently raising a constant
+or relabeling the result as a larger-roster proof.
+
+A meeting may contain 15, 32, or more attendees while only a subset ever
+speaks. Attendance metadata does not consume a model speaker slot and must not
+cause Yap to invent speech or anonymous identities. Conversely, a meeting with
+nine distinct talkers is above the released global limit even if they take
+turns across widely separated windows.
+
+For more than eight distinct talkers across a meeting, Phase 8 will evaluate a
+separately switchable, Yap-owned **speaker-epoch reconciler**. It preserves the
+model's 30-second source windows, groups them into bounded activity epochs at
+recorded source-time boundaries, links at most eight anonymous voices inside
+each epoch, and cross-references only high-confidence ECAPA evidence across
+epochs. Overlap-derived cannot-link evidence prevents incompatible epoch
+identities from being merged. Rust owns the resulting 32-target/64-ceiling
+session roster; an ambiguous cross-epoch match remains a separate anonymous or
+`Unknown` identity instead of being forced. Known attendance can become a
+purpose-authorized naming suggestion later, but it is never acoustic evidence.
+Epoch duration, silence-boundary, overlap-guard, candidate-pruning, and
+confidence policies are deterministic, bounded, and frozen before hypotheses
+are inspected. Embeddings and exemplars remain request-scoped and are discarded
+after the revision is validated.
+
+This extension is a hypothesis until it passes the frozen gate. If it does not
+beat the ASR-plus-diarization fallback, more-than-eight-talker meetings remain a
+typed unsupported/degraded route. No epoch boundary can recover a ninth talker
+that the model failed to represent inside one 30-second window.
 
 Phase 8 must explicitly test and report:
 
-- meetings with more than 15 global speakers;
-- late arrivals and long gaps before a speaker returns;
+- more-than-15-attendee meetings in which no more than eight people speak, with
+  no identities invented from the attendee list;
+- nine-, sixteen-, and thirty-two-talker sessions in which no 30-second window
+  exceeds eight, including late arrivals and long gaps before a speaker
+  returns;
 - windows containing one through eight distinct talkers; and
 - pressure cases with more than eight distinct talkers inside one window.
 
-Staggered windows provide useful cross-evidence but do not prove that an
-over-capacity region was decoded completely. Reaching or plausibly exceeding
-the local cap produces a typed degraded/partial region and preserves source
-audio for fallback or reprocessing. Yap must not merge, drop, or invent a
-speaker merely to stay under the cap.
+The pinned harness, the speaker-epoch extension, and the ASR-plus-diarization
+fallback are scored separately from byte-identical source audio. Staggered
+windows provide useful cross-evidence but do not prove that an over-capacity
+region was decoded completely. Reaching or plausibly exceeding either the
+window cap or the selected route's global cap produces a typed
+degraded/partial region and preserves source audio for fallback or
+reprocessing. Yap must not merge, drop, or invent a speaker merely to stay
+under a cap.
 
 ### 5. Promote against a frozen messy-meeting acceptance suite
 
 The Phase 8 corpus manifest, scoring policy, slice thresholds, and baseline/
-fallback configurations are frozen before Tiron hypotheses are inspected. The suite has
-two evidence classes:
+fallback configurations are frozen before Tiron hypotheses are inspected. The
+suite has three separately reported evidence classes:
 
 - **Public comparators:** immutable, rights-reviewed subsets of AMI, ICSI, and
   the open NOTSOFAR-1 material. Because Tiron publishes results on those
   corpora, they diagnose regressions and reproduce upstream claims but cannot
   independently promote the route.
 - **Independent acceptance evidence:** a sealed, license-clear,
-  Yap-adjudicated messy-meeting holdout whose source audio, transcript, speaker
-  timeline, known defects, reviewer disagreement, transformations, and hashes
-  are retained in the private evaluation cache. Private audio, references,
-  hypotheses, and raw receipts never enter Git or hosted CI.
+  Yap-adjudicated natural messy-meeting holdout whose source audio, transcript,
+  speaker timeline, known defects, reviewer disagreement, transformations, and
+  hashes are retained in the private evaluation cache. Private audio,
+  references, hypotheses, and raw receipts never enter Git or hosted CI.
+- **Constructed controls:** license-cleared mixtures and timeline transforms
+  targeting rare attendance, speaking-roster, overlap, transport, and capacity
+  shapes. They expose deterministic edge cases but cannot replace the natural
+  holdout.
+
+The **messy-meeting suite** is the single frozen Phase 8 acceptance contract,
+not the name of one downloadable corpus. It combines those public comparators,
+the sealed independent holdout, and license-cleared constructed controls for
+rare roster/capacity shapes. Every candidate route consumes the same immutable
+source/timeline manifest, and results from the three evidence classes remain
+separately reported.
 
 The suite covers close-talk and far-field audio, natural and constructed
 overlap, interruptions and sub-1.6-second turns, mumbling and disfluency,
 noise/reverb/echo/clipping, virtual-meeting codec/jitter/drop transformations,
 late arrivals, repeated speakers across distant windows, silence, and long
-meetings. It includes one/two/four/eight-speaker windows, more-than-eight
-pressure windows, more-than-15-person sessions, and every locale the route
-would advertise.
+meetings. It separately includes one/two/four/eight-speaker windows,
+more-than-eight pressure windows, more-than-15-attendee sessions with a small
+active subset, nine/sixteen/thirty-two-talker cross-epoch sessions, and every
+locale the route would advertise. Licensed constructed controls may supply
+roster-pressure shapes that are impractical to collect naturally, but they do
+not replace natural messy-meeting evidence.
 
 Accuracy reporting includes at least cpWER, time-constrained or
 speaker-attributed WER as appropriate to the reference, overlap-region
@@ -202,8 +256,10 @@ networking, and enterprise deployment handoffs.
   lifecycle work beyond a plain Whisper invocation.
 - Published quality evidence is currently English-only, while Yap requires
   global language evidence.
-- Eight window-local speaker slots create a real degraded-result case that the
-  product and scorer must expose.
+- Eight window-local and eight released global speaker slots create distinct
+  degraded-result cases that the product and scorer must expose.
+- Supporting larger speaking rosters requires a separately qualified
+  cross-epoch reconciliation layer; chunking alone is not the solution.
 - The reference harness is not a production service and requires substantial
   decomposition, dependency locking, concurrency control, and cancellation
   hardening.
@@ -246,14 +302,17 @@ replace the model behind the stable contract.
 
 1. Freeze the messy-meeting manifest, rights/provenance ledger, scorer versions,
    thresholds, and private holdout before model output is revealed.
-2. Lock the complete Tiron/ECAPA/Python 3.12 runtime and reproduce upstream
-   public-comparator behavior on GB10.
+2. Lock the complete Tiron/ECAPA/Python 3.12 runtime and reproduce the pinned
+   eight-window/eight-global public-comparator behavior on GB10.
 3. Implement a bounded provider-specific worker with cancellation, teardown,
    capacity diagnostics, and no runtime downloads.
 4. Add the Rust adapter and validated immutable meeting-result revision path.
-5. Run focused contract/runtime work while developing, then the complete
+5. Implement the speaker-epoch reconciler behind an independent switch, then
+   compare the pinned baseline, extension, and fallback on byte-identical
+   messy-meeting evidence.
+6. Run focused contract/runtime work while developing, then the complete
    frozen Phase 8 matrix once.
-6. Perform the required post-phase adversarial/refactor checkpoint before
+7. Perform the required post-phase adversarial/refactor checkpoint before
    Phase 9 begins.
 
 ## References

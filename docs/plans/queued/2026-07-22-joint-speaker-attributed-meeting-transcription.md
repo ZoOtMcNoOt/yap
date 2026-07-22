@@ -36,7 +36,8 @@ overlap and long multi-participant meetings.
 - Replacing local Nemotron dictation or local anonymous speaker evidence.
 - Claiming named biometric identity from Tiron or ECAPA output.
 - Promoting every Whisper language because a tokenizer exposes its tag.
-- Hiding more-than-eight-speaker window pressure through arbitrary chunking.
+- Hiding either Tiron's eight-speaker window cap or the released harness's
+  eight-speaker global cap through arbitrary chunking.
 - Copying the upstream inference harness into Yap unchanged.
 - Shipping a persistent production service or enterprise deployment in Phase 8.
 
@@ -65,7 +66,8 @@ The required suite contains:
 | Acoustic | close-talk, far-field, room reverb, echo, clipping, AGC, noise, silence |
 | Speech | mumbling/reduced speech, false starts, interruptions, short turns, long monologues |
 | Overlap | no overlap, brief overlap, sustained two-speaker overlap, three-or-more overlap |
-| Session roster | 1, 2, 4, 8, and more than 15 global speakers with late arrivals and returns |
+| Attendance roster | 16/32/64 attendees with no more than eight actual talkers; no invented acoustic identities |
+| Speaking roster | 1/2/4/8 and 9/16/32 distinct talkers, including late arrivals, long-gap returns, and at most eight per ordinary window |
 | Window roster | 1–8 distinct talkers and explicit more-than-8 pressure inside 30 seconds |
 | Transport | clean source plus fixed codec, sample-rate, jitter, drop, and gap transformations |
 | Duration | short correction-sized excerpts, 15/30-minute meetings, 2-hour meeting, supported maximum |
@@ -81,6 +83,8 @@ The required suite contains:
   timestamp, speaker-slot, or language output.
 - [ ] Run the staggered second pass by default initially and expose its
   diagnostics so the gate can compare one-pass and two-pass behavior.
+- [ ] Preserve window-local speaker nodes and bounded ECAPA evidence so a later
+  session reconciler does not depend on already-capped global labels.
 - [ ] Pin the ECAPA artifact locally and forbid implicit network fetches.
 - [ ] Bound request audio, decoded tokens, windows, segments, embeddings,
   exemplars, speakers, queues, threads, GPU work, and temporary artifacts.
@@ -105,13 +109,25 @@ The required suite contains:
 ### 4. Make participant scale explicit
 
 - [ ] Preserve ADR 0020's dynamic session target of 32 speakers and safety
-  ceiling of 64 independently from Tiron's eight slots per window.
-- [ ] Verify cross-window linking when a participant returns after long gaps or
-  speaks in non-adjacent windows.
+  ceiling of 64 independently from Tiron's eight slots per window and the
+  pinned harness's eight-identity global cap.
+- [ ] Reproduce the unmodified eight-window/eight-global baseline before
+  implementing any larger-roster extension.
+- [ ] Implement a separately switchable, bounded speaker-epoch reconciler that
+  groups source windows at explicit timeline boundaries and cross-references
+  only high-confidence anonymous embeddings across epochs.
+- [ ] Freeze deterministic epoch duration, silence-boundary, overlap-guard,
+  candidate-pruning, and confidence policies before inspecting hypotheses; keep
+  embeddings/exemplars request-scoped and discard them after validation.
+- [ ] Preserve overlap cannot-link evidence, leave ambiguous cross-epoch
+  matches separate/`Unknown`, and never use the attendee list as acoustic
+  evidence.
+- [ ] Verify linking when a participant returns after long gaps or speaks in
+  non-adjacent epochs.
 - [ ] Use staggered views as evidence, not as proof that a cap-pressure region
   is complete.
-- [ ] Detect a reached or plausibly exceeded local slot cap and publish a typed
-  degraded/partial region.
+- [ ] Detect a reached or plausibly exceeded local slot cap or selected-route
+  global cap and publish a typed degraded/partial region.
 - [ ] Retain source audio and schedule fallback/reprocessing without silently
   dropping, merging, or inventing speakers.
 - [ ] Prove bounded memory and speaker state on a four-hour/64-speaker synthetic
@@ -119,8 +135,9 @@ The required suite contains:
 
 ### 5. Compare quality and runtime on the same source
 
-- [ ] Run Tiron and the ASR-plus-diarization fallback from byte-identical
-  source audio and the same gap/timeline manifest.
+- [ ] Run the pinned Tiron harness, Yap speaker-epoch extension, and
+  ASR-plus-diarization fallback from byte-identical source audio and the same
+  gap/timeline manifest.
 - [ ] Report cpWER and time-constrained/speaker-attributed WER, overlap word
   deletion/recall, DER/JER where compatible, speaker-count error, timestamp
   error, speaker merge/split/fragmentation, and per-locale slices.

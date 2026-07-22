@@ -433,12 +433,16 @@ joint speaker-attributed meeting transcription. No Tiron worker, ECAPA lock,
 speaker-attributed scorer, or production result path executes today. The local
 anonymous-speaker path and ASR-plus-diarization fallback remain separate.
 
-Tiron's capacity is eight window-local speaker slots per 30-second decode, not
-eight people per meeting. Yap retains ADR 0020's dynamic 32-speaker target and
-64-speaker safety ceiling through cross-window linking. Phase 8 must test
-more-than-15-person sessions and explicitly degrade/reprocess a window that
-reaches or plausibly exceeds eight distinct talkers; chunking cannot be treated
-as proof that such a region was decoded completely.
+Tiron's model capacity is eight window-local speaker slots per 30-second
+decode, and the pinned reference harness separately caps the published global
+meeting roster at eight. Neither limit is an attendee count. Yap retains ADR
+0020's dynamic 32-speaker target and 64-speaker safety ceiling, but reaching it
+requires the separately gated ADR 0027 speaker-epoch reconciler or the
+ASR-plus-diarization fallback; ordinary chunking does not lift the released
+global cap. Phase 8 must distinguish more-than-15-attendee sessions with a
+small active subset from nine/sixteen/thirty-two-talker sessions, and must
+explicitly degrade/reprocess a window that reaches or plausibly exceeds eight
+distinct talkers.
 
 The frozen Phase 8 gate will score AMI/ICSI/NOTSOFAR public comparators
 separately from an independently adjudicated private messy-meeting holdout.

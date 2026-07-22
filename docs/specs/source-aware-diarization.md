@@ -215,15 +215,20 @@ The EEND challenger must also improve macro DER by at least 10% relative and ove
 [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
 selects `Trelis/tiron` as the independent server development baseline. It
 jointly decodes transcript, timestamps, and up to eight window-local speaker
-slots, then links them across 30-second windows. It does not replace the local
-baseline above. The server route remains unadvertised until a complete runtime
-lock and frozen messy-meeting gate prove the following additional properties:
+slots. The pinned harness links those slots across 30-second windows but also
+caps its whole-meeting result at eight global identities. A separately gated
+Yap speaker-epoch reconciler is required before the route can claim more than
+eight distinct talkers; a larger attendee list alone is not such a claim. It
+does not replace the local baseline above. The server route remains
+unadvertised until a complete runtime lock and frozen messy-meeting gate prove
+the following additional properties:
 
 | Server joint-ASR gate | Required evidence |
 | --- | --- |
 | Speaker-attributed transcript quality | cpWER plus time-constrained or speaker-attributed WER on every required slice |
 | Overlap preservation | Explicit overlap-region word deletion/recall and no hidden flattening |
-| Global roster stability | Return/late-arrival linking, merge/split/fragmentation error, and sessions with more than 15 speakers |
+| Released baseline | Reproduce the pinned eight-window/eight-global behavior before evaluating extensions |
+| Global roster stability | Return/late-arrival linking, merge/split/fragmentation error, >15-attendee/small-active-subset controls, and 9/16/32-talker cross-epoch sessions |
 | Window capacity | One through eight talkers plus typed degraded behavior above eight in a 30-second window |
 | Language | Separate result for every advertised locale; tokenizer support alone is insufficient |
 | Server resources | Cold/warm latency, RTF, VRAM/RAM, and c1/c2/c4/c8 admission/tail latency on GB10 |
@@ -426,9 +431,10 @@ Client transient embedding and exemplar types must not implement ordinary persis
 
 - One speaker, two speakers, short interjections, overlapping speech, noise, echo leakage, late arrivals, and more than four global speakers.
 - Tiron-specific server cases cover one through eight distinct speakers in a
-  30-second window, explicit more-than-eight pressure, more-than-15-person
-  sessions, long-gap returns, staggered-window disagreement, and one-pass versus
-  two-pass diagnostics.
+  30-second window, explicit more-than-eight pressure, the released
+  eight-global harness cap, more-than-15-attendee sessions with a small active
+  subset, 9/16/32-talker cross-epoch sessions, long-gap returns,
+  staggered-window disagreement, and one-pass versus two-pass diagnostics.
 - Unknown remains unknown when evidence is insufficient.
 - Candidate evidence remains visually unknown; repeated qualified evidence may become a stable `Speaker N` but never a name.
 - Speaker labels remain stable within one result revision.
@@ -518,7 +524,9 @@ result path, licensed speech/WER fixture, and hosted Phase 5 gate now exist.
 - The licensed fixture manifest, RTTM annotations, and reference-hardware benchmark report exist before a model is promoted.
 - The server Tiron baseline publishes no result until Rust validates its source
   bounds, overlap, model/runtime provenance, capture lineage, and revision.
-- The eight-slot window cap is distinct from the dynamic session roster;
-  over-capacity regions are typed partial/degraded results, never silent loss.
+- The eight-slot window cap and released eight-identity global cap are distinct
+  from the dynamic product session roster. Larger speaking rosters require the
+  separately qualified speaker-epoch reconciler or fallback; over-capacity
+  regions are typed partial/degraded results, never silent loss.
 - Public comparator results and independent messy-meeting promotion evidence are
   reported separately.

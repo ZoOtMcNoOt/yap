@@ -113,13 +113,17 @@ The first local implementation reuses the existing `sherpa-onnx` runtime for spe
 Exact multi-stream inference must have a state budget. Candidate pruning or one-to-one per-window assignment replaces exhaustive joint assignment when the budget would be exceeded. A more complex backend is promoted only after it beats the baseline on licensed meeting fixtures and remains within CPU, memory, latency, and licensing budgets.
 
 ADR 0027 selects Tiron as the separate Phase 8 server development baseline for
-joint speaker-attributed meeting transcription. Its eight speaker slots are
-window-local and do not replace the dynamic 32-speaker product target or
-64-speaker safety ceiling. Cross-window linking may maintain a larger meeting
-roster; a window that reaches or plausibly exceeds its local capacity remains
-explicitly degraded and eligible for fallback/reprocessing. This selection
-does not change the lightweight local anonymous baseline or allow server model
-output to bypass this ADR's source, revision, privacy, and identity contracts.
+joint speaker-attributed meeting transcription. The pinned release exposes
+eight window-local speaker slots and its reference harness also caps the linked
+meeting result at eight global identities. Those limits do not replace the
+dynamic 32-speaker product target or 64-speaker safety ceiling. ADR 0027
+therefore requires an independently gated Yap speaker-epoch reconciler before
+claiming larger speaking rosters; attendee count alone is not speaker count.
+A window that reaches or plausibly exceeds local capacity, or a larger-roster
+route that cannot reconcile safely, remains explicitly degraded and eligible
+for fallback/reprocessing. This selection does not change the lightweight
+local anonymous baseline or allow server model output to bypass this ADR's
+source, revision, privacy, and identity contracts.
 
 ### 7. Keep server reconciliation authoritative but optional for capture
 
