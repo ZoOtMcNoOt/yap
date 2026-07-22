@@ -10,12 +10,14 @@ from typing import Callable
 from yap_server.limits import MAX_WORKER_RESULT_BYTES
 from yap_server.pools.authenticated_loopback_http import (
     HttpConnection,
+    LoopbackHttpResponseStatusError,
     decode_bounded_json_response,
     parse_numeric_loopback_http_endpoint,
     validate_private_api_key,
 )
 from yap_server.pools.batch_contract import (
     ProviderCapacityUnavailable,
+    ProviderServiceUnavailable,
     WorkerCancellationAcknowledged,
     WorkerContainmentError,
     WorkerExecutionError,
@@ -86,13 +88,20 @@ class NemotronNemoClient:
     def readiness_capacity(self, lock: ModelPoolLock) -> dict[str, int]:
         """Return the authenticated bounded admission snapshot."""
 
-        status, payload = self._request_json(
-            method="GET",
-            path=NEMOTRON_NEMO_READY_PATH,
-            body=None,
-            timeout_seconds=_READINESS_TIMEOUT_SECONDS,
-            accepted_statuses=frozenset({200}),
-        )
+        try:
+            status, payload = self._request_json(
+                method="GET",
+                path=NEMOTRON_NEMO_READY_PATH,
+                body=None,
+                timeout_seconds=_READINESS_TIMEOUT_SECONDS,
+                accepted_statuses=frozenset({200}),
+            )
+        except LoopbackHttpResponseStatusError as error:
+            if error.status == 503:
+                raise ProviderServiceUnavailable(
+                    "resident Nemotron NeMo is not ready"
+                ) from error
+            raise
         if status != 200 or not _matches_readiness(payload, lock):
             raise WorkerExecutionError(
                 "resident Nemotron NeMo identity differs from the model lock"
@@ -373,12 +382,13 @@ class NemotronNemoClient:
         timeout_seconds: float,
         accepted_statuses: frozenset[int],
     ) -> tuple[int, object]:
-        connection = self._connection_factory(
-            self._host,
-            self._port,
-            timeout_seconds,
-        )
+        connection: HttpConnection | None = None
         try:
+            connection = self._connection_factory(
+                self._host,
+                self._port,
+                timeout_seconds,
+            )
             return self._send_json(
                 connection,
                 method=method,
@@ -388,12 +398,17 @@ class NemotronNemoClient:
             )
         except WorkerExecutionError:
             raise
-        except BaseException as error:
+        except (OSError, http.client.HTTPException) as error:
+            raise ProviderServiceUnavailable(
+                "resident Nemotron NeMo HTTP request failed"
+            ) from error
+        except Exception as error:
             raise WorkerExecutionError(
                 "resident Nemotron NeMo HTTP request failed"
             ) from error
         finally:
-            connection.close()
+            if connection is not None:
+                connection.close()
 
     def _send_json(
         self,

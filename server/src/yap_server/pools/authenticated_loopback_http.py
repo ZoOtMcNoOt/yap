@@ -33,6 +33,14 @@ class HttpConnection(Protocol):
     def close(self) -> None: ...
 
 
+class LoopbackHttpResponseStatusError(WorkerExecutionError):
+    """Preserve an unaccepted loopback response status without its body."""
+
+    def __init__(self, *, component: str, status: int) -> None:
+        self.status = status
+        super().__init__(f"{component} request returned an unexpected status")
+
+
 def parse_numeric_loopback_http_endpoint(
     endpoint: str,
     *,
@@ -88,6 +96,11 @@ def decode_bounded_json_response(
 ) -> tuple[int, object]:
     if maximum_bytes <= 0 or not accepted_statuses:
         raise ValueError("HTTP response bounds are invalid")
+    if response.status not in accepted_statuses:
+        raise LoopbackHttpResponseStatusError(
+            component=component,
+            status=response.status,
+        )
     content_type = response.getheader("Content-Type")
     if not isinstance(content_type, str) or not content_type.lower().startswith(
         "application/json"
@@ -111,8 +124,6 @@ def decode_bounded_json_response(
         raise WorkerExecutionError(
             f"{component} response length differs from its header"
         )
-    if response.status not in accepted_statuses:
-        raise WorkerExecutionError(f"{component} request returned an unexpected status")
     try:
         payload = json.loads(encoded, object_pairs_hook=_unique_json_object)
     except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:

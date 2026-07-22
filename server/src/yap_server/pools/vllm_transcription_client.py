@@ -12,6 +12,7 @@ from yap_server.limits import MAX_WORKER_RESULT_BYTES
 from yap_server.pools.authenticated_loopback_http import (
     HttpConnection as _HttpConnection,
     HttpResponse as _HttpResponse,
+    LoopbackHttpResponseStatusError,
     decode_bounded_json_response,
     parse_numeric_loopback_http_endpoint,
     validate_private_api_key,
@@ -22,6 +23,7 @@ from yap_server.pools.batch_asr_worker import (
 )
 from yap_server.pools.batch_contract import (
     ProviderCapacityUnavailable,
+    ProviderServiceUnavailable,
     WorkerCancellationAcknowledged,
     WorkerContainmentError,
     WorkerExecutionError,
@@ -281,24 +283,36 @@ class VllmTranscriptionClient:
     def _get_json(self, path: str, *, authenticated: bool) -> object:
         if self._shutdown.is_set():
             raise WorkerExecutionError("vLLM client is closed")
-        connection = self._connection_factory(
-            self._host,
-            self._port,
-            _READINESS_TIMEOUT_SECONDS,
-        )
+        connection: _CancellableHttpConnection | None = None
         try:
+            connection = self._connection_factory(
+                self._host,
+                self._port,
+                _READINESS_TIMEOUT_SECONDS,
+            )
             connection.putrequest("GET", path)
             connection.putheader("Accept", "application/json")
             if authenticated:
                 connection.putheader("Authorization", f"Bearer {self._api_key}")
             connection.endheaders()
             return _decode_json_response(connection.getresponse())
+        except LoopbackHttpResponseStatusError as error:
+            if error.status == 503:
+                raise ProviderServiceUnavailable(
+                    "vLLM is not ready"
+                ) from error
+            raise
         except WorkerExecutionError:
             raise
-        except BaseException as error:
+        except (OSError, http.client.HTTPException) as error:
+            raise ProviderServiceUnavailable(
+                "vLLM readiness endpoint is unavailable"
+            ) from error
+        except Exception as error:
             raise WorkerExecutionError("vLLM readiness probe failed") from error
         finally:
-            connection.close()
+            if connection is not None:
+                connection.close()
 
     def _post_transcription(
         self,

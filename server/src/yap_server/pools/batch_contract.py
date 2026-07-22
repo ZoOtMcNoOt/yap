@@ -34,6 +34,10 @@ class WorkerExecutionError(RuntimeError):
     """Raised when the isolated GPU worker fails or returns invalid output."""
 
 
+class ProviderServiceUnavailable(WorkerExecutionError):
+    """Raised when a resident provider is unreachable or not ready."""
+
+
 class ProviderCapacityUnavailable(WorkerExecutionError):
     """Raised when a resident inference provider rejects bounded admission."""
 

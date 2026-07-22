@@ -13,6 +13,7 @@ import wave
 
 from yap_server.pools.batch_contract import (
     ProviderCapacityUnavailable,
+    ProviderServiceUnavailable,
     WorkerCancellationAcknowledged,
     WorkerContainmentError,
     WorkerExecutionError,
@@ -144,6 +145,61 @@ class NemotronNemoServiceTests(unittest.TestCase):
             finally:
                 client.close()
                 _stop(server, server_thread, application)
+
+    def test_readiness_preserves_a_transient_service_unavailable_status(self) -> None:
+        lock = _native_lock()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            application = NemotronNemoApplication(
+                engine=_FakeEngine(lock),  # type: ignore[arg-type]
+                lock=lock,
+                storage_root=root,
+            )
+            server, server_thread = _serve(application, api_key="private-test-key")
+            client = NemotronNemoClient(
+                endpoint=f"http://127.0.0.1:{server.server_port}",
+                api_key="private-test-key",
+                timeout_seconds=2,
+            )
+            try:
+                application.request_shutdown()
+                with self.assertRaisesRegex(
+                    ProviderServiceUnavailable,
+                    "not ready",
+                ):
+                    client.verify_ready(lock)
+            finally:
+                client.close()
+                _stop(server, server_thread, application)
+
+    def test_readiness_retries_transport_failure_but_not_client_defects(self) -> None:
+        lock = _native_lock()
+
+        def unavailable(_host: str, _port: int, _timeout: float):
+            raise ConnectionRefusedError("not listening")
+
+        unavailable_client = NemotronNemoClient(
+            endpoint="http://127.0.0.1:18001",
+            api_key="private-test-key",
+            timeout_seconds=2,
+            connection_factory=unavailable,
+        )
+        with self.assertRaises(ProviderServiceUnavailable):
+            unavailable_client.verify_ready(lock)
+
+        def broken(_host: str, _port: int, _timeout: float):
+            raise RuntimeError("broken factory")
+
+        broken_client = NemotronNemoClient(
+            endpoint="http://127.0.0.1:18001",
+            api_key="private-test-key",
+            timeout_seconds=2,
+            connection_factory=broken,
+        )
+        with self.assertRaisesRegex(WorkerExecutionError, "request failed") as caught:
+            broken_client.verify_ready(lock)
+
+        self.assertNotIsInstance(caught.exception, ProviderServiceUnavailable)
 
     def test_http_requests_reuse_bounded_worker_threads(self) -> None:
         lock = _native_lock()
@@ -376,8 +432,12 @@ class NemotronNemoServiceTests(unittest.TestCase):
                 timeout_seconds=1,
             )
             try:
-                with self.assertRaises(WorkerExecutionError):
+                with self.assertRaises(WorkerExecutionError) as caught:
                     client.verify_ready(lock)
+                self.assertNotIsInstance(
+                    caught.exception,
+                    ProviderServiceUnavailable,
+                )
             finally:
                 client.close()
                 _stop(server, server_thread, application)

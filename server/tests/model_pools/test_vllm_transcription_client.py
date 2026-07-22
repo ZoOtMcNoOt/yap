@@ -9,6 +9,7 @@ import unittest
 
 from yap_server.pools.batch_contract import (
     ProviderCapacityUnavailable,
+    ProviderServiceUnavailable,
     WorkerCancellationAcknowledged,
     WorkerExecutionError,
 )
@@ -173,8 +174,81 @@ class VllmTranscriptionClientTests(unittest.TestCase):
             connection_factory=_ConnectionFactory(version),
         )
 
-        with self.assertRaisesRegex(WorkerExecutionError, "differs from the lock"):
+        with self.assertRaisesRegex(WorkerExecutionError, "differs from the lock") as caught:
             client.verify_ready(lock)
+
+        self.assertNotIsInstance(caught.exception, ProviderServiceUnavailable)
+
+    def test_readiness_preserves_a_transient_service_unavailable_status(self) -> None:
+        lock = replace(
+            _test_lock(),
+            runtime_overlay_packages=(("vllm", "0.22.1+test"),),
+            runtime_reported_serving_version="0.22.1+test.dev",
+        )
+        client = VllmTranscriptionClient(
+            endpoint="http://127.0.0.1:8000",
+            api_key="private-test-key",
+            timeout_seconds=2,
+            connection_factory=_ConnectionFactory(
+                _Connection(_Response(503, {"error": "loading"}))
+            ),
+        )
+
+        with self.assertRaisesRegex(ProviderServiceUnavailable, "not ready"):
+            client.verify_ready(lock)
+
+    def test_readiness_does_not_retry_authentication_failure(self) -> None:
+        lock = replace(
+            _test_lock(),
+            runtime_overlay_packages=(("vllm", "0.22.1+test"),),
+            runtime_reported_serving_version="0.22.1+test.dev",
+        )
+        client = VllmTranscriptionClient(
+            endpoint="http://127.0.0.1:8000",
+            api_key="wrong-key",
+            timeout_seconds=2,
+            connection_factory=_ConnectionFactory(
+                _Connection(_Response(401, {"error": "unauthorized"}))
+            ),
+        )
+
+        with self.assertRaises(WorkerExecutionError) as caught:
+            client.verify_ready(lock)
+
+        self.assertNotIsInstance(caught.exception, ProviderServiceUnavailable)
+
+    def test_readiness_retries_transport_failure_but_not_client_defects(self) -> None:
+        lock = replace(
+            _test_lock(),
+            runtime_overlay_packages=(("vllm", "0.22.1+test"),),
+            runtime_reported_serving_version="0.22.1+test.dev",
+        )
+
+        def unavailable(_host: str, _port: int, _timeout: float) -> _Connection:
+            raise ConnectionRefusedError("not listening")
+
+        unavailable_client = VllmTranscriptionClient(
+            endpoint="http://127.0.0.1:8000",
+            api_key="private-test-key",
+            timeout_seconds=2,
+            connection_factory=unavailable,
+        )
+        with self.assertRaises(ProviderServiceUnavailable):
+            unavailable_client.verify_ready(lock)
+
+        def broken(_host: str, _port: int, _timeout: float) -> _Connection:
+            raise RuntimeError("broken factory")
+
+        broken_client = VllmTranscriptionClient(
+            endpoint="http://127.0.0.1:8000",
+            api_key="private-test-key",
+            timeout_seconds=2,
+            connection_factory=broken,
+        )
+        with self.assertRaisesRegex(WorkerExecutionError, "probe failed") as caught:
+            broken_client.verify_ready(lock)
+
+        self.assertNotIsInstance(caught.exception, ProviderServiceUnavailable)
 
     def test_transcription_sends_one_bounded_multipart_request(self) -> None:
         connection = _Connection(
