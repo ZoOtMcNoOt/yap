@@ -608,6 +608,18 @@ next-phase cadence.
 
 - Promote licensed multi-speaker/overlap evaluation sets and exact meeting
   metrics before selecting diarization components.
+- Evaluate joint multi-speaker ASR as a server-side challenger rather than
+  assuming that diarization plus single-speaker ASR is always the best overlap
+  path. `Trelis/tiron` is queued at model revision
+  `aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc` with public Apache-2.0 metadata
+  and a 3,087,229,512-byte weight artifact whose LFS SHA-256 is
+  `921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e`;
+  its reference harness is queued at
+  `5b3766ac64ff3a8d98443e0a850d1ce569952520`. This source inspection is not
+  promotion evidence: training/adaptation lineage is undisclosed, published
+  quality evidence is English-only and self-reported, resource/concurrency
+  evidence is absent, and the harness has unpinned runtime/model dependencies
+  plus oversized linking surfaces that must not be copied into Yap unchanged.
 - Add revisioned anonymous speaker evidence, source-time word/speaker
   intersection, reconciliation, and purpose-authorized naming.
 - Keep audio/transcript authority and user corrections revisioned; do not infer
@@ -711,6 +723,7 @@ graph and Rust-native runtime contract enter the desktop dependency graph.
 | OQ-28 | What diagnostic evidence can be retained without leaking private audio or transcripts? | Redaction schema, bounded metrics, event correlation, local retention/deletion, crash evidence, hosted-log review, and user controls | Record hashes, counts, timings, typed states, and model revisions; keep raw audio/transcripts and private scan output outside Git and hosted artifacts |
 | OQ-29 | Which networking work is developer-owned versus an IT/security handoff? | LAN and SSH-tunnel rehearsal, authenticated API contract, threat model, DNS/certificate/ZPA/firewall/conditional-access ownership, and deployment approvals | Preserve loopback/LAN/tunnel development; record enterprise controls as explicit Phase 10 handoffs or blockers |
 | OQ-30 | How do language spans interact with Phase 8 speaker diarization and overlap? | Independent source-time contracts, span intersection rules, overlap representation, revision precedence, and multilingual multi-speaker fixtures | Keep language and speaker evidence separate and composable; neither model may infer the other's identity or erase overlapping evidence |
+| OQ-31 | Does a joint multi-speaker ASR such as Tiron outperform the accepted ASR-plus-diarization baseline for server meeting reconciliation? | Immutable model/harness/dependency provenance; disclosed training exposure; independently licensed close/far/overlap fixtures; cpWER and speaker-attributed WER; overlap deletion/recall; speaker-count and timestamp error; English and per-locale quality; one- and two-pass latency, RTF, VRAM/RAM, c1/c2/c4/c8 admission, cancellation, teardown, and long-meeting identity stability | Keep Tiron as a Phase 8 server challenger. Do not replace the local anonymous baseline, current Phase 6 providers, or the model-independent result contract unless frozen independent evidence earns that narrower route. |
 
 ## Closed discussion items
 
