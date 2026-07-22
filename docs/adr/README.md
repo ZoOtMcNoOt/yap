@@ -46,6 +46,10 @@ separately gated resident NeMo streaming candidate, local Nemotron on
 sherpa-onnx, and SGLang only for later agent/LLM workloads.
 ADR 0026 replaces the executing SpeechBrain batch-language preflight with one
 verify-only AmberNet artifact and a strict five-region, user-confirmed policy.
+ADR 0027 selects Tiron as the Phase 8 server baseline for joint
+speaker-attributed meeting transcription while preserving Yap's local
+anonymous-speaker path, ASR-plus-diarization fallback, and model-independent
+result authority.
 
 ## Applicability and precedence
 
@@ -53,7 +57,7 @@ Use ADRs in this order:
 
 1. A `Superseded` decision is historical and never authorizes implementation.
 2. A later explicit `Amends` or `Supersedes` clause wins over an earlier conflicting detail.
-3. ADRs 0014–0026 define the canonical client/server architecture and phase map. Earlier ADRs remain authoritative only for the principles or deployment profile their status names.
+3. ADRs 0014–0027 define the canonical client/server architecture and phase map. Earlier ADRs remain authoritative only for the principles or deployment profile their status names.
 4. [Current architecture](../architecture/CURRENT-ARCHITECTURE.md),
    [current status](../CURRENT-STATUS.md), and the
    [roadmap](../roadmap/ROADMAP.md) are readable syntheses; they cannot silently
@@ -92,6 +96,7 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0024](0024-global-language-routing.md) | Global language routing and timing evidence | Accepted decision; provider serving amended by [0025](0025-provider-specific-asr-serving.md) and batch preflight amended by [0026](0026-ambernet-batch-language-preflight.md); implementation and per-locale promotion evidence incomplete |
 | [0025](0025-provider-specific-asr-serving.md) | Provider-specific ASR serving runtimes | Accepted; Cohere vLLM and resident Nemotron NeMo candidates implemented, both frozen GB10 promotion gates incomplete |
 | [0026](0026-ambernet-batch-language-preflight.md) | AmberNet batch language preflight | Accepted; focused exact-commit ARM64 image/resource evidence exists, final frozen-head repetition and complete Phase 6 gate incomplete |
+| [0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) | Tiron joint speaker-attributed meeting transcription | Accepted Phase 8 server development baseline; runtime and production promotion evidence absent |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

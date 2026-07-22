@@ -19,8 +19,10 @@ Preview local LID/span routing, provider-specific server candidates, alignment,
 private-corpus trust, scoring, and runtime-qualification components now execute
 under focused tests. The representative private promotion corpus, target-i5
 hardware evidence, frozen checked-head GB10 comparisons, and complete Phase 6
-gate remain open. The tables below distinguish executable focused coverage from
-future phase-gate requirements; neither is a claim about ordinary hosted CI.
+gate remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
+baseline, but no Tiron worker or meeting scorer executes yet. The tables below
+distinguish executable focused coverage from future phase-gate requirements;
+neither is a claim about ordinary hosted CI.
 
 ---
 
@@ -311,7 +313,36 @@ Starting targets from the source-aware design:
 
 Named-identity gates remain inactive until the purpose-authorized server identity phase exists. Anonymous clustering must never manufacture a name to improve a metric.
 
-The approved diarization suite is a checked-in `desktop/tests/fixtures/diarization/manifest.json` plus license/provenance records, SHA-256 hashes, audio, transcripts, and RTTM annotations for the meeting cases above. The baseline cannot be accepted while any required fixture or license record is missing. The initial client reference profile is Windows 11 x64, CPU-only, 4 physical cores/8 threads in the Intel Core i5-1135G7 performance class, 16 GB RAM, normal process priority, and the OS balanced power plan. Every benchmark result records exact CPU, RAM, OS build, runtime/model revisions, and power mode.
+The future approved diarization suite is rooted at
+`desktop/tests/fixtures/diarization/manifest.json` and binds
+license/provenance records, SHA-256 hashes, redistributable smoke audio,
+transcripts, and RTTM annotations for the meeting cases above. It does not
+exist yet. Comprehensive or private meeting media and references remain in the
+external private cache and are addressed only by public-safe hashes. No
+baseline can be accepted while any required fixture, private registry, or
+license record is missing. The initial client reference profile is Windows 11
+x64, CPU-only, 4 physical cores/8 threads in the Intel Core i5-1135G7
+performance class, 16 GB RAM, normal process priority, and the OS balanced
+power plan. Every benchmark result records exact CPU, RAM, OS build,
+runtime/model revisions, and power mode.
+
+The Phase 8 server meeting gate adds a frozen **messy-meeting acceptance
+suite**. AMI, ICSI, and open NOTSOFAR-1 subsets are exposure-known public
+comparators for Tiron; they cannot independently promote it. A separate sealed,
+license-clear, Yap-adjudicated holdout supplies independent evidence. Before
+model output is revealed, its manifest freezes sources, hashes, defects,
+reviewer/adjudication receipts, transformations, scorer versions, slice
+thresholds, and normalization/collar/permutation policies.
+
+Required server metrics include cpWER, time-constrained or speaker-attributed
+WER, overlap-region word deletion/recall, DER/JER where compatible,
+speaker-count error, timestamp error, and speaker merge/split/fragmentation.
+Required runtime metrics include cold/warm latency, RTF, VRAM/RAM,
+c1/c2/c4/c8 admission and p50/p95/p99, cancellation and cross-request
+isolation, restart/teardown, and duration-dependent memory plus speaker-linking
+stability. The suite covers more-than-15-person sessions separately from
+Tiron's one-to-eight window-local slots and includes an explicit more-than-eight
+talker pressure case.
 
 The supported-load callback test runs 48 kHz stereo capture converted to the required prepared format while local ASR, recording, and anonymous speaker evidence are active. It includes deterministic queue saturation and a four-hour accelerated timeline. Hardware-specific performance gates run on the pinned reference host; portable CI still runs deterministic contract, fixture-shape, and loss-accounting tests.
 
@@ -343,7 +374,7 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 | 5 Remote STT | Resumable upload identity, queue drain, job state/cancel/retry, capability truth, result ingestion, tunnel-loss recovery |
 | 6 Preprocessing | versioned provider/language/timing catalog; primary/per-job choice; mixed-session rejection; track-aware content IDs; exact gaps; bounded windows; advisory VAD/source preservation; verify-only AmberNet five-region strict-agreement/manual gate including exact long-tail selection; fixed/dynamic routing; durable stage restart/cancel/retry; fail-closed aligned words; model/license locks; AMD64/ARM64 frontend parity plus checked-head GB10 resource/accuracy/teardown evidence |
 | 7 Identity/access | Yap API token audience, `(tid, oid)` isolation, consent and withdrawal, profile-version compatibility |
-| 8 Meeting evidence | one/two/overlap/short/noisy speakers, stable result revisions, bounded clusters, no local names or persistent embeddings |
+| 8 Meeting evidence | local one/two/overlap/short/noisy anonymous evidence; pinned Tiron joint speaker-attributed server baseline; messy-meeting public comparators plus independent holdout; 1–8 and over-capacity window pressure; >15-person session linking; stable result revisions; bounded clusters; no local names or persistent embeddings |
 | 9 Knowledge/agents | Google OKF conformance, permission-safe projection, citation-required Analyst, three-strike Student, RAG confidence floor |
 | 10 Enterprise/release | authenticated multi-owner fairness/no-starvation; bounded overload/backpressure; cancellation and timeout isolation; restart recovery; fixed worker/memory ceilings; sustained mixed live/batch p50/p95 latency, throughput, and queue-age evidence on GB10; approved network/policy evidence; deployment rollback; publication governance; repo-boundary checks |
 
@@ -370,6 +401,16 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 - Speaker-turn and aligned-word intervals are end-exclusive, monotonic, bounded by the capture timeline, and preserve overlap.
 - Alignment failure leaves timestamped speaker turns intact and omits or marks word timing unavailable.
 - The local baseline passes the absolute DER, speaker-count, CPU, RSS, latency, and callback-drop gates before release.
+- The server Tiron route consumes the same source timeline as the fallback,
+  preserves concurrent segments, and cannot publish malformed speaker tokens,
+  out-of-bounds timestamps, or a result whose runtime/capture identity differs
+  from the admitted job.
+- The eight-speaker decode-window cap is tested independently from the 32-target/
+  64-ceiling session roster. Reaching or plausibly exceeding the local cap
+  yields an explicit partial/degraded region and retained source for fallback.
+- Public Tiron benchmark corpora remain comparator-only; promotion uses the
+  separately frozen independent messy-meeting holdout and fails on any required
+  overlap, locale, capacity, isolation, or lifecycle slice.
 - Server reconciliation appends a revision and cannot silently overwrite a user correction.
 - Contact import and transcript renaming create no biometric enrollment.
 - Unenrolled, withdrawn, expired, cross-tenant, and incompatible-model profiles cannot match; enrollment, matching, and adaptation grants are checked separately, and matching-grant withdrawal denies naming without requiring profile deletion.

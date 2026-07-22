@@ -15,9 +15,10 @@ Current work:
 - [Audio preprocessing and language routing](active/2026-07-16-audio-preprocessing-and-language-routing.md)
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
 
-Queued next:
+Queued work (activate only in roadmap order):
 
 - [Codebase ownership and maintainability review](queued/2026-07-18-codebase-ownership-and-maintainability-review.md)
+- [Joint speaker-attributed meeting transcription](queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
 
 Recently completed:
 

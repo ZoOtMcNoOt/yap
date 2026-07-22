@@ -425,6 +425,28 @@ shows effective correction and remaining-review counts only after the complete
 chain verifies, and React renders the list in bounded pages rather than creating
 one DOM row per possible segment.
 
+## Accepted meeting direction, not current execution
+
+[ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
+selects pinned `Trelis/tiron` as the Phase 8 server development baseline for
+joint speaker-attributed meeting transcription. No Tiron worker, ECAPA lock,
+speaker-attributed scorer, or production result path executes today. The local
+anonymous-speaker path and ASR-plus-diarization fallback remain separate.
+
+Tiron's capacity is eight window-local speaker slots per 30-second decode, not
+eight people per meeting. Yap retains ADR 0020's dynamic 32-speaker target and
+64-speaker safety ceiling through cross-window linking. Phase 8 must test
+more-than-15-person sessions and explicitly degrade/reprocess a window that
+reaches or plausibly exceeds eight distinct talkers; chunking cannot be treated
+as proof that such a region was decoded completely.
+
+The frozen Phase 8 gate will score AMI/ICSI/NOTSOFAR public comparators
+separately from an independently adjudicated private messy-meeting holdout.
+Accuracy, overlap, locale, capacity pressure, long-session stability,
+c1/c2/c4/c8 isolation, cancellation, and teardown all remain promotion gates.
+The model emits evidence only; Rust continues to own source validation, durable
+jobs, admission, cancellation, immutable revisions, and publication.
+
 ## Persistence and recovery
 
 | Durable boundary | Recovery invariant |

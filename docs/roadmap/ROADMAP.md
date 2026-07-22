@@ -87,12 +87,20 @@ checkpoint merges.
 | Phase | Boundary | Exit direction |
 | --- | --- | --- |
 | 7 | Identity and access | Entra/MSAL client bridge, Yap API audience/token validation, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants, authorization/revocation/audit behavior, and the authenticated owner seam consumed by later batch/live admission. |
-| 8 | Meeting evidence | Anonymous speaker evidence, timestamped result revisions, benchmark gates, and purpose-authorized server reconciliation/naming. |
+| 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron joint speaker-attributed server baseline, timestamped result revisions, a frozen messy-meeting gate with more-than-15-person and over-capacity-window pressure, ASR-plus-diarization fallback, and purpose-authorized server reconciliation/naming. |
 | 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and SGLang-backed compatible reasoning/tool-output models. |
 | 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus SGLang agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
 
 Accepted ADRs remain requirements even when no premature implementation exists.
 Do not treat an unchecked historical plan box as current backlog.
+
+Phase 8 follows
+[ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
+and the queued
+[joint speaker-attributed meeting transcription plan](../plans/queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
+Selecting the development baseline does not advertise or production-promote
+the route before its independent accuracy, capacity, lifecycle, and privacy
+evidence exists.
 
 ## Enterprise handoffs
 

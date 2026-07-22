@@ -4,6 +4,7 @@
 **Status:** Accepted (roadmap - canonical Phase 8)
 **Supersedes:** [ADR 0015](0015-two-pass-diarization-speaker-identity.md)
 **Supersedes diarization details in:** [ADR 0004](0004-background-diarization-okf-agents.md)
+**Server meeting baseline selected by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md)
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md), [ADR 0007](0007-forced-alignment-engine.md), [ADR 0009](0009-knowledge-worker-protocol.md), [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0016](0016-auth-identity-bridge.md), [ADR 0018](0018-three-repo-topology.md), and the [Local Audio Preprocessing Stack](../specs/local-audio-preprocessing-stack.md)
 **Implementation status:** Source-aware capture, immutable recording/evidence/result contracts, and the durable imported-job ledger are implemented. The gated Phase 5 path strictly admits already-canonical mono PCM16/16 kHz WAV input, extracts an immutable single-track PCM spool, provides durable loopback upload/reconnect, publishes verified server-authoritative results, and applies seven-day pending-source plus finite completed-result retention. General media conversion, diarization, named identity, system loopback, server reconciliation of speaker evidence, and purpose grants remain unimplemented.
 
@@ -110,6 +111,15 @@ Session speaker storage is dynamic. The initial product target is 32 anonymous s
 The first local implementation reuses the existing `sherpa-onnx` runtime for speaker embeddings and a measurable anonymous clustering baseline. That baseline does not ship merely because it runs: it must pass the accuracy, callback-drop, CPU, memory, and local-ASR latency gates in the source-aware design. SphereVBx-PF is the preferred clustering challenger because it avoids a separately trained PLDA backend. EEND-VC with MS-SphereVBx remains an overlap-quality challenger, not an initial dependency.
 
 Exact multi-stream inference must have a state budget. Candidate pruning or one-to-one per-window assignment replaces exhaustive joint assignment when the budget would be exceeded. A more complex backend is promoted only after it beats the baseline on licensed meeting fixtures and remains within CPU, memory, latency, and licensing budgets.
+
+ADR 0027 selects Tiron as the separate Phase 8 server development baseline for
+joint speaker-attributed meeting transcription. Its eight speaker slots are
+window-local and do not replace the dynamic 32-speaker product target or
+64-speaker safety ceiling. Cross-window linking may maintain a larger meeting
+roster; a window that reaches or plausibly exceeds its local capacity remains
+explicitly degraded and eligible for fallback/reprocessing. This selection
+does not change the lightweight local anonymous baseline or allow server model
+output to bypass this ADR's source, revision, privacy, and identity contracts.
 
 ### 7. Keep server reconciliation authoritative but optional for capture
 
@@ -234,12 +244,16 @@ Steps 1–4 are cross-phase client/server prerequisites and ship during canonica
 6. Add the Rust-owned reconnect ledger with the real server connector.
 7. Add server reconciliation, purpose grants, deletion tombstones, and authorized identity matching.
 8. Specify Windows system loopback separately.
-9. Benchmark SphereVBx-PF and overlap-aware challengers before promotion.
+9. Implement and benchmark the ADR 0027 Tiron server baseline against the
+   ASR-plus-diarization fallback on the frozen messy-meeting suite; retain
+   SphereVBx-PF and EEND/MS-SphereVBx as local/fallback challengers.
 
 ## References
 
 - Delcroix et al., [Multi-Stream Extension of Variational Bayesian HMM Clustering](https://arxiv.org/abs/2305.13580)
 - Palka et al., [SphereVBx: Spherical Variational Bayes Clustering for Simplified EEND-VC Diarization](https://arxiv.org/abs/2606.24528)
+- [Trelis/tiron model card](https://huggingface.co/Trelis/tiron)
+- [TrelisResearch/tiron reference harness](https://github.com/TrelisResearch/tiron)
 - [BUTSpeechFIT/VBx](https://github.com/BUTSpeechFIT/VBx)
 - [DiariZen VBx implementation](https://github.com/BUTSpeechFIT/DiariZen/blob/main/diarizen/clustering/VBx.py)
 - European Commission, [GDPR sensitive-data overview](https://commission.europa.eu/law/law-topic/data-protection/rules-business-and-organisations/legal-grounds-processing-data/sensitive-data/what-personal-data-considered-sensitive_en)

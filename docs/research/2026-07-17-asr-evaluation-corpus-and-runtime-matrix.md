@@ -114,6 +114,7 @@ evidence that must be pinned before a real promotion.
 | Nemotron 3.5 ASR v1 | FLEURS, Common Voice, MLS | `known_training` and `known_evaluation` from NVIDIA's model card; exact sample overlap is not disclosed | Comparator/regression only |
 | Nemotron 3.5 ASR v1 | Other pre-existing public corpora | `unknown` unless NVIDIA or a corpus owner supplies split-level evidence | Comparator/regression only |
 | Cohere Transcribe 03-2026 locked revision | Every pre-existing public corpus | `unknown`; Cohere's disclosed aggregate data description does not identify enough sources | Comparator/regression only |
+| Tiron revision `aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc` | AMI, ICSI, and NOTSOFAR-1 | `known_evaluation`; the publisher reports and may have selected behavior against these corpora | Comparator/regression and upstream reproduction only |
 | Any frozen candidate | Sealed Yap Reality Set recorded afterward | `created_after_model_freeze`, provided chain of custody proves the date and no later tuning uses it | Independent promotion holdout until retired |
 
 The first viable public-source contribution to that Reality Set is the
@@ -204,9 +205,9 @@ parser test. Dataset contents remain outside Git.
 | [Google FLEURS](https://huggingface.co/datasets/google/fleurs) | ASR and LID for every locale Yap advertises | 102 languages, parallel prompts, speaker metadata, CC BY 4.0 | **Adopt as comparator only.** It is listed in Nemotron 3.5 training and evaluation, is short read speech, and does not prove meetings, spontaneous speech, noise, or long form. |
 | [Mozilla Common Voice scripted and spontaneous speech](https://commonvoice.mozilla.org/en/datasets) | Speaker/accent diversity, short utterances, spontaneous responses, very short and low-energy slices | Community validated; current data is CC0 | **Adopt with access controls as comparator only for Nemotron.** Nemotron lists it in training/evaluation; Cohere exposure is unknown. Exact download terms can prohibit speaker re-identification and re-hosting/re-sharing. Use only from a private external cache after recording the exact release terms. |
 | [Multilingual LibriSpeech](https://www.openslr.org/94/) | Eight-language read-speech regression | Established multilingual corpus, CC BY 4.0 | **Adopt as comparator only.** Nemotron lists MLS in training and evaluation; it is neither spontaneous nor an independent release gate. |
-| [AMI Meeting Corpus](https://groups.inf.ed.ac.uk/ami/corpus/) | Multi-part four-person meetings, close-talk versus far-field, overlap, disfluency, mostly non-native English | 100 hours, synchronized channels, manual speaker transcripts, CC BY 4.0 | **One official evaluation meeting segment is now pinned as a comparator.** The corpus documents known transcript/data problems; retain the upstream defect caveat and require Yap adjudication before any quality threshold or promotion claim. |
-| [ICSI Meeting Corpus](https://groups.inf.ed.ac.uk/ami/icsi/) | Natural technical meetings, long sessions, mixed versus close channels, spontaneous/reduced speech | About 70 hours with orthographic transcripts and speech-quality annotations, CC BY 4.0 | Older recording domain and formats; speaker/timing parser must be verified. Adopt a stratified official subset. |
-| [NOTSOFAR-1](https://github.com/microsoft/NOTSOFAR1-CHALLENGE) | Real far-field office meetings, 4-8 attendees, commercial devices, room/acoustic diversity, speaker-attributed scoring | Exact ground-truth evaluation subsets, real and simulated data, CC BY 4.0 | Use only the current open-research subsets. Exclude challenge-only Dev-set-2 and documented faulty Rockfall device data; record the exact release because annotations are still being upgraded. |
+| [AMI Meeting Corpus](https://groups.inf.ed.ac.uk/ami/corpus/) | Multi-part four-person meetings, close-talk versus far-field, overlap, disfluency, mostly non-native English | 100 hours, synchronized channels, manual speaker transcripts, CC BY 4.0 | **One official evaluation meeting segment is now pinned as a comparator.** The corpus documents known transcript/data problems; retain the upstream defect caveat and require Yap adjudication before any quality threshold or promotion claim. Tiron publishes AMI results, so AMI is comparator-only for that route. |
+| [ICSI Meeting Corpus](https://groups.inf.ed.ac.uk/ami/icsi/) | Natural technical meetings, long sessions, mixed versus close channels, spontaneous/reduced speech | About 70 hours with orthographic transcripts and speech-quality annotations, CC BY 4.0 | Older recording domain and formats; speaker/timing parser must be verified. Adopt a stratified official subset. Tiron publishes ICSI results, so it cannot independently promote that route. |
+| [NOTSOFAR-1](https://github.com/microsoft/NOTSOFAR1-CHALLENGE) | Real far-field office meetings, 4-8 attendees, commercial devices, room/acoustic diversity, speaker-attributed scoring | Exact ground-truth evaluation subsets, real and simulated data, CC BY 4.0 | Use only the current open-research subsets. Exclude challenge-only Dev-set-2 and documented faulty Rockfall device data; record the exact release because annotations are still being upgraded. Tiron publishes NOTSOFAR-1 results, so this is comparator-only for that route. |
 | [LibriCSS](https://github.com/chenzhuo1011/libri_css) | Controlled overlap, continuous input, far-field replay, chunk/order stress | Potentially useful constructed meeting-like engineering stress | **Hold.** The repository's MIT text covers software and notes original LibriSpeech's CC BY 4.0 license, but does not expressly license the separately distributed new distant-microphone recordings. Do not ingest until the downloaded archive or authors establish the data rights. |
 | [PriMock57](https://github.com/babylonhealth/primock57) | Medical terminology, clinician-patient turns, accents, disfluency, diarized long conversations | 57 simulated consultations/8h38m, manual utterance transcripts, separate channels, CC BY 4.0 | Mock UK primary care, not patients, device specialists, Medtronic vocabulary, or clinical validation. Adopt as public domain-specific regression only. |
 | [Corti Med-Dictate](https://huggingface.co/datasets/corti/med-dictate) | Medical dictation, spoken formatting, terminology, numbers, and 107-450-second English/German/French recordings | Forty evaluation-only recordings totaling about 1h54m, made with contributor consent; the dataset card states that it contains no real patient data or PHI and supplies raw/formatted references plus medical-term lists. | **Adopt as a medical comparator only.** It predates the exact Nemotron freeze, is not a clinical or Medtronic holdout, prohibits training/fine-tuning and clinical use, and has contributor-withdrawal obligations. Snapshot the complete Corti license/addendum and keep the corpus private; do not redistribute it through Yap artifacts. |
@@ -369,6 +370,13 @@ overlap-specific WER, speaker-attributed metrics, source-time drift, and time-
 quartile completeness therefore remain unavailable rather than inferred.
 Independent reference review and the frozen representative gate remain open.
 
+Under [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md),
+this exact AMI source becomes one public Phase 8 Tiron reproduction input, not
+the messy-meeting promotion holdout. Phase 8 must add compatible speaker-aware
+references/scoring without treating the flat deterministic overlap ordering
+above as unique truth. ICSI and NOTSOFAR-1 join the public comparator class;
+the independent acceptance suite remains separately sealed and adjudicated.
+
 ### Sources not in the enterprise baseline
 
 - Earnings-21/22 transcripts have explicit CC BY-SA terms, but those files do
@@ -489,6 +497,7 @@ cannot conceal a failing row.
 | Natural long single-speaker speech | ICSI/AMI single-speaker spans; cleared Earnings-21 candidate | No skipped, duplicated, reordered, or cross-chunk words; entity/number preservation |
 | Close and far multi-speaker meetings | AMI, ICSI, NOTSOFAR-1 | WER plus speaker-attributed meeting metrics; channel/source-time identity retained |
 | Simultaneous/overlapping speech | LibriCSS, NOTSOFAR-1, AMI overlap regions | ORC/cp/tcpWER as applicable; overlap slice reported separately |
+| Participant and window-speaker scale | Independent messy-meeting holdout plus licensed constructed controls | More-than-15-person session linking; late arrivals and returns; one through eight distinct Tiron window slots; explicit typed degradation when more than eight talkers occur within 30 seconds |
 | Medical conversation and terminology | PriMock57 plus future approved use-context holdout | General WER plus medical entity, negation, number, dose/unit, and speaker-turn error rates |
 | Every advertised locale | FLEURS plus exact-locale Common Voice where available | Per-locale WER/CER and language tag accuracy; no macro average may promote a failed locale |
 | Related/unsupported language and code switch | FLEURS/Common Voice controls plus licensed natural and explicit constructed switch boundaries | Correct unknown/manual-review behavior; per-span language accuracy, source-time switch-boundary error, false-switch rate, and no duplicated/dropped transcript text gate the Phase 6 intra-utterance claim |
@@ -707,9 +716,11 @@ profile.
 - For meetings, use the pinned NIST SCTK/MeetEval-compatible scorer appropriate
   to what actually executes: SISO WER for Phase 6's flat text, and tcORC-WER
   only when timestamped speaker-agnostic multi-stream output exists. Phase 8
-  adds tcpWER/cpWER, DER/JER, overlap/collar policy, speaker-count error, and
-  per-speaker macro reporting. Forced-aligned source timings are derived, not
-  timestamp gold.
+  adds tcpWER/cpWER, speaker-attributed WER, DER/JER where compatible,
+  overlap-region word deletion/recall, overlap/collar policy, speaker-count and
+  window-capacity error, speaker merge/split/fragmentation, and per-speaker
+  macro reporting. Forced-aligned source timings are derived, not timestamp
+  gold.
 - The canonical Phase 6 promotion scorer is
   `yap_server.evaluation.transcript_scoring`, installed through the pinned
   `evaluation` extra. It reports raw NFC and normalized

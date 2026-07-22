@@ -6,6 +6,7 @@ container/launcher contracts implemented under focused tests, both frozen GB10
 promotion gates incomplete
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md) and
 [ADR 0024](0024-global-language-routing.md)
+**Meeting serving amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 selects a separate Tiron joint speaker-attributed worker without changing the Phase 6 Cohere/Nemotron gates)
 
 ## Context
 

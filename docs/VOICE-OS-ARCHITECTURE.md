@@ -13,13 +13,13 @@ snapshot last reconciled 2026-07-16
 > review; checkpoint cleanup may repair classification and links but must not
 > silently redefine the target.
 
-**Authority:** Decisions are normative according to status in [ADR 0001–0026](adr/README.md). This doc is the readable synthesis of the full Voice OS flowchart + reconciled Yap decisions.
+**Authority:** Decisions are normative according to status in [ADR 0001–0027](adr/README.md). This doc is the readable synthesis of the full Voice OS flowchart + reconciled Yap decisions.
 
 For implementation truth rather than decision intent, use the living [ADR implementation status audit](ADR-IMPLEMENTATION-STATUS.md). An accepted ADR or a documented flowchart node is not proof that its code exists.
 
 > **2026-07-08 — Local model reset:** Yap keeps one local live/offline fallback model: Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. Client-side fusion routing is rejected; model routing belongs on the server.
 
-> **ADR precedence:** ADR 0014-0026 define the current thin-client, server, local-fallback, meeting-processing, transport-evolution, knowledge-projection, bounded-priority, Phase 6 language/timing, provider-specific serving, and batch-language preflight direction. ADR 0020 supersedes conflicting diarization details in ADR 0004 and ADR 0015. ADR 0021 makes HTTP/3 a gated future secure-edge target without changing the bounded Phase 3 loopback service. ADR 0022 adopts pinned Google OKF v0.1, requires a permission-safe Postgres/pgvector plus typed-relationship baseline, and makes Neo4j an optional benchmark-gated challenger; no database becomes the knowledge or authorization source-of-truth. ADR 0023 amends absolute live priority so ready batch work cannot starve. ADR 0024 defines primary-language, guarded language, server Nemotron auto, and fail-closed timing behavior. ADR 0025 retires the universal Triton ASR plane in favor of provider-specific vLLM/NeMo serving. ADR 0026 replaces the executing SpeechBrain batch preflight with one verify-only AmberNet artifact and a strict five-region, user-confirmed decision. SGLang remains for compatible agent/LLM inference, and Rust remains the orchestration target. The desktop owns capture, deterministic preprocessing, recording, hotkey/UI, local live fallback, optional anonymous speaker evidence, and future transport packaging. The server owns official long-recording STT, authoritative meeting reconciliation, purpose-authorized named identity, team storage, KB compilation, and agent workloads.
+> **ADR precedence:** ADR 0014-0027 define the current thin-client, server, local-fallback, meeting-processing, transport-evolution, knowledge-projection, bounded-priority, Phase 6 language/timing, provider-specific serving, batch-language preflight, and Phase 8 joint meeting-ASR direction. ADR 0020 supersedes conflicting diarization details in ADR 0004 and ADR 0015. ADR 0021 makes HTTP/3 a gated future secure-edge target without changing the bounded Phase 3 loopback service. ADR 0022 adopts pinned Google OKF v0.1, requires a permission-safe Postgres/pgvector plus typed-relationship baseline, and makes Neo4j an optional benchmark-gated challenger; no database becomes the knowledge or authorization source-of-truth. ADR 0023 amends absolute live priority so ready batch work cannot starve. ADR 0024 defines primary-language, guarded language, server Nemotron auto, and fail-closed timing behavior. ADR 0025 retires the universal Triton ASR plane in favor of provider-specific vLLM/NeMo serving. ADR 0026 replaces the executing SpeechBrain batch preflight with one verify-only AmberNet artifact and a strict five-region, user-confirmed decision. ADR 0027 selects pinned Tiron as the Phase 8 server development baseline for joint speaker-attributed meeting transcription without promoting it before independent evidence. SGLang remains for compatible agent/LLM inference, and Rust remains the orchestration target. The desktop owns capture, deterministic preprocessing, recording, hotkey/UI, local live fallback, optional anonymous speaker evidence, and future transport packaging. The server owns official long-recording STT, authoritative meeting reconciliation, purpose-authorized named identity, team storage, KB compilation, and agent workloads.
 
 ---
 
@@ -36,7 +36,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | **Critical path isolation** | Live stays fast; heavy work (diarization, OKF, agents) never blocks typing. |
 | **Right model per job** | Nemotron INT8 for local live/offline fallback; server router for official recordings/live; **LLM pool** for polish/agents — not one model for everything. |
 | **Revisioned diarization** | Local results may use anonymous `Unknown` and `Speaker N`; server reconciliation may refine boundaries and attach purpose-authorized names. |
-| **Model-agnostic diarizer** | Existing `sherpa-onnx` APIs provide the first local baseline; SphereVBx-PF and overlap-aware models must earn promotion through benchmarks. |
+| **Model-independent meeting authority** | Existing `sherpa-onnx` APIs provide the first local anonymous baseline; Tiron is the selected Phase 8 server development baseline, while Yap contracts and frozen messy-meeting evidence still control promotion and replacement. |
 | **Graceful degradation** | Dual-track Scribe, quarantine folder, RAG confidence gates, offline fallback to local sidecar — production-minded. |
 | **Recordings as moat** | Journalists/researchers already have files; Cohere batch (GPU-accelerated in team profile) is differentiated vs pure dictation apps. |
 
@@ -80,7 +80,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | STT (live) | Local Nemotron INT8 (`sherpa-onnx`) | Server streaming ASR pool (WSS) |
 | STT (batch) | Queue/block when offline; official larger recordings use the server path | Current Cohere batch route plus evidence-gated Cohere/vLLM and Nemotron/NeMo candidates |
 | LLM | No shipped local LLM; development Polish currently calls Ollama | Future server LLM pool (GPU, multi-tenant) |
-| Diarization | Optional local `Unknown` / `Speaker N`; no durable profiles | Server-authoritative reconciliation; algorithms selected by benchmark (ADR 0020) |
+| Diarization | Optional local `Unknown` / `Speaker N`; no durable profiles | Tiron joint speaker-attributed development baseline plus ASR/diarization fallback; server-authoritative reconciliation and evidence-gated promotion (ADR 0020/0027) |
 | Identity | Per-transcript contact labels only; no biometric matching | Entra ID / MSAL + explicit voice enrollment (ADR 0016/0020) |
 | Knowledge base | Future Google OKF Markdown with local SQLite retrieval | Future `yap-knowledge` Git + deterministic compiler + Postgres permissions/relationships + pgvector baseline; optional Neo4j challenger (Phase 9, ADR 0017/0022) |
 | Network | None required for live fallback; server required for official recordings | LAN/VPN to the GB-class server node; future HTTP/3 secure edge with HTTP/2 or HTTP/1.1 fallback |
@@ -89,7 +89,7 @@ The **client shell** (`yap-desktop`) is identical in both profiles. Mic capture,
 
 The on-prem GB-class server node is **org-owned hardware on an org-controlled LAN** — not a public cloud service. The current profile is DGX Spark GB10; a future GB300-class node should be a capacity/profile change, not a product architecture change. This is consistent with the "no cloud STT" principle for regulated/clinical orgs.
 
-Details: [ADR 0014](adr/0014-server-tier-compute-topology.md) (topology) · [ADR 0020](adr/0020-meeting-capture-diarization-authority.md) (meeting capture and diarization) · [ADR 0016](adr/0016-auth-identity-bridge.md) (auth and purpose-authorized identity) · [ADR 0017](adr/0017-knowledge-base-compiler.md) (KB compiler) · [ADR 0018](adr/0018-three-repo-topology.md) (repos) · [ADR 0021](adr/0021-http3-secure-edge-transport.md) (gated HTTP/3 edge) · [ADR 0022](adr/0022-google-okf-permission-safe-projections.md) (Google OKF and permission-safe graph/vector views) · [ADR 0023](adr/0023-bounded-live-priority.md) (bounded live preference) · [ADR 0024](adr/0024-global-language-routing.md) (Phase 6 language/provider/timing boundary) · [ADR 0025](adr/0025-provider-specific-asr-serving.md) (provider-specific ASR serving)
+Details: [ADR 0014](adr/0014-server-tier-compute-topology.md) (topology) · [ADR 0020](adr/0020-meeting-capture-diarization-authority.md) (meeting capture and diarization) · [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Tiron server meeting baseline) · [ADR 0016](adr/0016-auth-identity-bridge.md) (auth and purpose-authorized identity) · [ADR 0017](adr/0017-knowledge-base-compiler.md) (KB compiler) · [ADR 0018](adr/0018-three-repo-topology.md) (repos) · [ADR 0021](adr/0021-http3-secure-edge-transport.md) (gated HTTP/3 edge) · [ADR 0022](adr/0022-google-okf-permission-safe-projections.md) (Google OKF and permission-safe graph/vector views) · [ADR 0023](adr/0023-bounded-live-priority.md) (bounded live preference) · [ADR 0024](adr/0024-global-language-routing.md) (Phase 6 language/provider/timing boundary) · [ADR 0025](adr/0025-provider-specific-asr-serving.md) (provider-specific ASR serving)
 
 ---
 
@@ -102,14 +102,14 @@ Details: [ADR 0014](adr/0014-server-tier-compute-topology.md) (topology) · [ADR
 3. **One warm local sherpa recognizer**; server router owns heavier model residency.
 4. **Language decision** = confirmed primary/manual language for short fixed work, bounded verify-only AmberNet suggestion for longer fixed recordings, or an explicit Nemotron auto mode; never silent provider switching.
 5. **Meeting enrichment** = independent bounded sinks and revisioned results; never block dictation.
-6. **Diarization** = local anonymous evidence when available; server-authoritative reconciliation and purpose-authorized names.
+6. **Meeting speakers** = local anonymous evidence when available; pinned Tiron joint speaker-attributed server baseline with ASR/diarization fallback; server-authoritative reconciliation and purpose-authorized names.
 7. **Align raw STT**, never polished LLM text, before word→speaker intersection.
 8. **On-prem GPU** = "our hardware, our network" — not cloud; extends local-first trust to the org's LAN (team profile).
 9. **Auth** = Entra ID / MSAL; `(tid, oid)` principal key; Yap API audience validation; explicit consent before any durable voice profile.
 10. **KB compiler** = pinned Google OKF/Git source-of-truth + deterministic compile → Postgres permission/relationship ledger + pgvector baseline + optional Redis; Neo4j must earn promotion.
 11. **Transport evolution** = bounded loopback service now; authenticated HTTP/3 secure edge later, with TCP fallback and benchmark gates.
 
-Details: [ADR 0001](adr/0001-dual-stt-backends.md) · [0002](adr/0002-crispasr-unified-stt-runtime.md) · [0003](adr/0003-long-term-voice-architecture.md) · [0004](adr/0004-background-diarization-okf-agents.md) · [0005](adr/0005-llama-server-agents.md) · [0006](adr/0006-silero-agents-state-machine.md) · [0014](adr/0014-server-tier-compute-topology.md) · [0016](adr/0016-auth-identity-bridge.md) · [0017](adr/0017-knowledge-base-compiler.md) · [0018](adr/0018-three-repo-topology.md) · [0019](adr/0019-local-streaming-model-selection.md) · [0020](adr/0020-meeting-capture-diarization-authority.md) · [0021](adr/0021-http3-secure-edge-transport.md) · [0022](adr/0022-google-okf-permission-safe-projections.md) · [0023](adr/0023-bounded-live-priority.md) · [0024](adr/0024-global-language-routing.md) · [0025](adr/0025-provider-specific-asr-serving.md)
+Details: [ADR 0001](adr/0001-dual-stt-backends.md) · [0002](adr/0002-crispasr-unified-stt-runtime.md) · [0003](adr/0003-long-term-voice-architecture.md) · [0004](adr/0004-background-diarization-okf-agents.md) · [0005](adr/0005-llama-server-agents.md) · [0006](adr/0006-silero-agents-state-machine.md) · [0014](adr/0014-server-tier-compute-topology.md) · [0016](adr/0016-auth-identity-bridge.md) · [0017](adr/0017-knowledge-base-compiler.md) · [0018](adr/0018-three-repo-topology.md) · [0019](adr/0019-local-streaming-model-selection.md) · [0020](adr/0020-meeting-capture-diarization-authority.md) · [0021](adr/0021-http3-secure-edge-transport.md) · [0022](adr/0022-google-okf-permission-safe-projections.md) · [0023](adr/0023-bounded-live-priority.md) · [0024](adr/0024-global-language-routing.md) · [0025](adr/0025-provider-specific-asr-serving.md) · [0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
 
 ---
 
@@ -151,7 +151,7 @@ flowchart TB
     Handoff["Async handoff<br/>capture/gaps current · transport deferred"]
 
     subgraph L3["L3 — background enrich · Phase 8"]
-        L3n["Anonymous speaker timeline · result revisions<br/>server reconciliation when connected"]
+        L3n["Anonymous speaker timeline · result revisions<br/>Tiron server baseline · ASR/diarization fallback"]
     end
 
     L4["L4 — OKF knowledge_base/ · Phase 9"]
@@ -355,7 +355,7 @@ flowchart TB
 
     subgraph L3["L3 — meeting evidence and authoritative reconciliation · Phases 8–9"]
         Align["Forced align · raw text only · server final"]
-        Diar["Local Unknown / Speaker N<br/>server algorithm selected by benchmark"]
+        Diar["Local Unknown / Speaker N<br/>Tiron joint server baseline · fallback retained"]
         Intersect["Revisioned word-to-speaker timeline"]
         Archivist["Archivist · OKF markdown + YAML · no LLM"]
         Stitch["Session stitch · merge chunks → one conversation"]
@@ -602,7 +602,7 @@ All intervals are end-exclusive on the monotonic session timeline. Speaker turns
 1. **Validate** schema, session, track, timing, content identity, and gaps.
 2. **Preserve** raw audio and raw text as immutable inputs.
 3. **Project local evidence** to `Unknown` or session-scoped `Speaker N` when the optional client path is available.
-4. **Reconcile on the server** from retained source audio; align raw text and publish a new result revision.
+4. **Reconcile on the server** from retained source audio; use the pinned Tiron joint speaker-attributed baseline first, retain the ASR/diarization fallback, align raw text when separately validated, and publish a new result revision.
 5. **Attach names only** through purpose-authorized, tenant-scoped profiles with model and calibration provenance.
 
 ### Back-pressure
@@ -861,7 +861,7 @@ timeline
 | **Checkpoint A** | Phase 1-5 foundation | Review the complete executable Phase 1-5 system, resolve correctness/security and duplicate-ownership findings, remove dead or speculative machinery, decompose mixed responsibilities, measure justified efficiency changes, and organize current/normative/historical documentation without adding Phase 6 functionality. | Post-Phase-5 architecture checkpoint |
 | **6** | preprocessing | Audio normalization, advisory VAD/chunk manifests, primary/per-job language decisions, guarded LID, fixed/dynamic server routing, fail-closed word timing, and retryable pipeline state. | ADR 0003/0004/0006/0007/0008/0014/0019/0020/0023/0024/0025 |
 | **7** | identity/access | Entra/MSAL bridge, Yap API audience, purpose grants, tenant-scoped identity, permission hooks, and the authenticated owner seam required by later batch/live admission. | Old Phase 9; ADR 0016/0020 |
-| **8** | meeting evidence | Local anonymous speaker evidence, timestamped result revisions, server reconciliation, and purpose-authorized named identity. | Old 7b/10; ADR 0020 |
+| **8** | meeting evidence | Local anonymous speaker evidence, pinned Tiron joint speaker-attributed server baseline, frozen messy-meeting gate, timestamped result revisions, server reconciliation, and purpose-authorized named identity. | Old 7b/10; ADR 0020/0027 |
 | **9** | knowledge | Pinned Google OKF, KB compiler, agents, GraphRAG/vector retrieval, MCP, and permission-safe virtual views. | Old 7c-7e/11; ADR 0010/0011/0012/0017/0022 |
 | **10** | enterprise/release | Service-integrated production router, authenticated external batch and WSS/live transport, supervised warm/multi-worker pools, measured mixed-load capacity/SLO evidence, observability, Zscaler/corporate access hardening, HTTP/3 secure-edge evaluation, publication governance/evidence, audit/deploy runbooks, and eventual repo split. | Old 7+/12; ADR 0013/0014/0018/0021/0023/0025 |
 
@@ -878,7 +878,7 @@ timeline
 | **Checkpoint A** | Merged and verified | Exact implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time complete local/native/server/GB10 gate. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS, then merged as `a80934d844a068110e7f86b30b6e29d35146db57` through PR #59. Private security evidence remains outside Git. |
 | **6** | Active; catalog/language/durable-stage/VAD/local-span/server-runtime slices implemented, phase not gated | ADRs 0024–0026 and the active plan define the provider catalog, primary language, one bounded resident local acoustic-LID/span engine, verify-only five-region AmberNet batch preflight, explicit server Nemotron auto mode, fail-closed alignment, and provider-specific serving gates. Rust-owned fixed decisions, durable stages, advisory Silero VAD, one-owner local AmberNet/Nemotron switching, source-time spans, strict user-confirmed batch suggestions, pinned reference routes, Cohere vLLM and Nemotron NeMo candidates, and correction/history contracts execute under focused tests. The local automatic route remains an explicit default-off Preview because its frozen natural-switch target failed. The server batch preflight independently samples source start through exact tail and abstains unless five positive-margin AmberNet regions agree; focused real-model and AMD64/ARM64 parity evidence and a source-exact ARM64 worker/resource/teardown smoke for `c6862262fa36a83bcd40a7bffa65ec6429ec097e` exist, while the old SpeechBrain receipt is historical. The shipped catalog still advertises only gated Cohere `en-US` with `wordAlignment: false`. A second fixed locale, target-i5 local interference/sustained lifecycle, the final frozen-head AmberNet ARM64 repetition, timing promotion, frozen vLLM/NeMo gates, representative locale/duration evidence, accessibility rerun, and the complete Phase 6 matrix remain unfinished. Removing Preview requires new independent natural/noisy evidence. Phase 6 does not claim server live, authenticated admission, or a persistent supervised mixed-load production service. |
 | **7** | Planned | Auth/identity design exists but requires the corrected Yap API token audience, `(tid, oid)` key, purpose-grant records, and a server entrypoint. |
-| **8** | Capture prerequisites implemented; diarization deferred | ADR 0020 and the source-aware design are canonical. Track/timeline/recording prerequisites are implemented; the anonymous speaker model, real benchmark, result production, and server reconciliation are not. |
+| **8** | Capture prerequisites implemented; meeting inference deferred | ADR 0020, ADR 0027, and the source-aware design are canonical. Track/timeline/recording prerequisites are implemented and Tiron is selected as the server development baseline; the local anonymous model, Tiron worker, frozen messy-meeting benchmark, result production, and server reconciliation do not exist. |
 | **9** | Planned | Google OKF conformance, KB compiler, Postgres permission/relationship ledger, pgvector baseline, optional Neo4j challenger, agents, RAG, and MCP wait on preprocessing, identity, and diarization outputs. |
 | **10** | Later | Persistent supervised model services, warm/multi-worker and mixed-load capacity promotion, observability, corporate access hardening, HTTP/3 edge promotion, production publication governance, and repo split come after the remote transport and authentication baselines are real. Stock installer packaging and disposable-Windows lifecycle proof exist; production release governance remains later work. |
 
@@ -888,7 +888,7 @@ isolated Phase 4 worker is already connected to desktop jobs.
 
 Solo/local fallback and team/server mode share concepts, but the server path is now canonical for the main roadmap.
 
-**Sequencing rule:** ADR 0020 spans both foundation and feature work. Its contract/manifest and independent recording-sink slices are pulled forward into the Phase 1 desktop foundation because Phase 3–5 server work must consume stable capture artifacts. Phase 8 begins with anonymous speaker inference and result reconciliation; it must not force a rewrite of capture or upload.
+**Sequencing rule:** ADR 0020 spans both foundation and feature work. Its contract/manifest and independent recording-sink slices are pulled forward into the Phase 1 desktop foundation because Phase 3–5 server work must consume stable capture artifacts. Phase 8 begins with local anonymous evidence and the ADR 0027 Tiron server baseline; both publish through the existing result authority and must not force a rewrite of capture or upload.
 
 **Capture persistence rule:** current `live-s-...` sessions use one canonical recording contract (`PreparedFrame`, atomic `RevisionTransition`, and exact `Gap`) and are complete only after immutable sidecar/commit publication. Partial artifacts are recoverable/deletable. Pre-release timestamp-era recordings remain untouched and unindexed; no migration adapter or alternate fixture path is planned.
 
@@ -939,7 +939,7 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 | **5** Remote STT | Long-recording upload + server STT routing | Recording queue UX; remote/local policy |
 | **6** Preprocessing | Versioned provider/language/timing catalog; primary/per-job decision; advisory VAD/chunks; bounded LID; pinned reference fixed/dynamic routes; fail-closed word timing; durable stages; Cohere vLLM lifecycle/capacity evidence; and a separate Nemotron NeMo streaming gate—not authenticated or persistent supervised production capacity | [ADR 0024](adr/0024-global-language-routing.md); [ADR 0025](adr/0025-provider-specific-asr-serving.md); preprocessing spec; active Phase 6 plan; OpenAPI/result contracts |
 | **7** Identity/access | Entra sign-in, Yap API token validation, replacement of the fixed development owner, purpose grants, tenant-scoped identity DB | [ADR 0016](adr/0016-auth-identity-bridge.md); enrollment UX |
-| **8** Meeting evidence | Anonymous local labels, timestamped result revisions, benchmark gates, server reconciliation | [ADR 0020](adr/0020-meeting-capture-diarization-authority.md); [source-aware design](specs/source-aware-diarization.md) |
+| **8** Meeting evidence | Anonymous local labels, pinned Tiron joint server baseline, frozen messy-meeting public/independent evidence, window-capacity and global-roster pressure, timestamped result revisions, server reconciliation | [ADR 0020](adr/0020-meeting-capture-diarization-authority.md); [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md); [source-aware design](specs/source-aware-diarization.md) |
 | **9** Knowledge/agents | Google OKF profile, deterministic compiler, Postgres/pgvector relationship/vector baseline, optional Neo4j challenger, RAG, MCP | ADR 0022 conformance/isolation/generation and challenger-promotion gates; permission compile SLA |
 | **10** Enterprise/release | Persistent supervised model services, warm/multi-worker and mixed-load capacity promotion, observability, Zscaler/corp access, HTTP/3 secure-edge benchmark/promotion, packaging, repo split | ADR 0021 transport evidence; capacity/SLO evidence; CI/CD migration; cross-repo link update |
 
@@ -1024,11 +1024,14 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 **Meeting evidence and diarization (Phase 8)**
 
 - [x] Evidence/result contracts restrict local attribution to `Unknown` / `Speaker N` and support immutable revisions
+- [x] Tiron selected as the server development baseline with immutable upstream identities; no runtime/promotion claim yet
 - [ ] Production speaker inference and result publication
 - [ ] Transient client embeddings; no passive contact/profile enrollment
 - [ ] Server-authoritative reconciliation and purpose-authorized identity
 - [ ] Align raw STT only
-- [ ] Benchmark baseline, SphereVBx-PF, and overlap-aware challenger before promotion
+- [ ] Freeze the messy-meeting suite before hypotheses; separate public AMI/ICSI/NOTSOFAR comparators from the independent holdout
+- [ ] Prove 1–8 window slots, explicit >8 pressure, >15-person session linking, overlap, locales, long duration, c1/c2/c4/c8 isolation, cancellation, and teardown
+- [ ] Compare Tiron with the ASR-plus-diarization fallback; retain SphereVBx-PF and EEND/MS-SphereVBx as local/fallback challengers
 
 ---
 
@@ -1058,6 +1061,7 @@ Current implementation ownership and completeness for all decisions: [ADR implem
 | Three-repo topology (`yap-desktop` / `yap-server` / `yap-knowledge`) | [0018](adr/0018-three-repo-topology.md) |
 | Local Nemotron INT8 streaming fallback | [0019](adr/0019-local-streaming-model-selection.md) |
 | Meeting capture, anonymous evidence, server reconciliation, contact/privacy boundary | [0020](adr/0020-meeting-capture-diarization-authority.md) |
+| Tiron joint speaker-attributed server meeting baseline and messy-meeting promotion gate | [0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) |
 | HTTP/3 secure-edge evolution with TCP fallback and benchmark gates | [0021](adr/0021-http3-secure-edge-transport.md) |
 | Google OKF v0.1, Yap enterprise profile, Postgres/pgvector baseline, and permission-safe projection gates | [0022](adr/0022-google-okf-permission-safe-projections.md) |
 | Bounded live priority and owner-fair router amendment | [0023](adr/0023-bounded-live-priority.md) |
@@ -1076,8 +1080,11 @@ Current implementation ownership and completeness for all decisions: [ADR implem
 | [Local LLM sidecar](specs/local-llm-sidecar.md) | polish/Scribe |
 | [Live dictation client](specs/live-dictation-client-ux.md) | 1–2 |
 | [Server tier MVP](specs/server-tier-mvp.md) | 3–4 |
-| [Source-aware diarization design](specs/source-aware-diarization.md) | Foundation slices in 1/3/5; anonymous evidence in 8 |
+| [Source-aware diarization design](specs/source-aware-diarization.md) | Foundation slices in 1/3/5; local anonymous evidence and Tiron-based server meeting inference in 8 |
 | [Testing strategy](specs/testing-strategy.md) | all |
+
+Queued Phase 8 execution:
+[joint speaker-attributed meeting transcription](plans/queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
 
 ## Related documents
 

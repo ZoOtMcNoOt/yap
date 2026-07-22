@@ -23,6 +23,26 @@ reviewed behavior donor. It must never be conflated with the MIT
 the 2026-07-12 audit did not authorize or incorporate donor code. See the
 [Freeflow/Meetily reuse audit](../research/2026-07-12-freeflow-meetily-reuse-audit.md).
 
+## Queued Phase 8 source
+
+ADR 0027 selects `Trelis/tiron` as a future server development baseline; no
+Tiron code, model, or dependency is incorporated or shipped today. The source
+inspection records model revision
+`aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc`, the 3,087,229,512-byte weight
+artifact SHA-256
+`921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e`, and
+reference-harness revision `5b3766ac64ff3a8d98443e0a850d1ce569952520`.
+Both public repositories declare Apache-2.0 metadata.
+
+That metadata is an intake fact, not a complete shipping review. Before Phase
+8 execution, Yap must pin and review the full model/adaptation lineage, ECAPA
+artifact, Torch, Transformers, SpeechBrain, audio dependencies, transitive
+native libraries, notices, and redistribution/deployment terms. The reference
+harness's unpinned dependencies and implicit model fetches are not accepted
+runtime behavior. Any selectively adapted source must be added to the
+machine-readable provenance manifest with exact upstream/local hashes and
+license text before merge.
+
 ## Dependency and runtime provenance
 
 - Frontend packages are declared in `desktop/package.json` and frozen by

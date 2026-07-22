@@ -67,6 +67,7 @@ availability.
 ### Queued
 
 - [Codebase ownership and maintainability review](plans/queued/2026-07-18-codebase-ownership-and-maintainability-review.md)
+- [Joint speaker-attributed meeting transcription](plans/queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
 
 ### Completed implementation records
 

@@ -30,7 +30,9 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Active; partial implementation not gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Under focused tests, the catalog, primary/fixed decisions, durable preprocessing, advisory Silero VAD, default-off local AmberNet/Nemotron switching Preview, source-time spans, verify-only server AmberNet five-region suggestion/confirmation, pinned server Nemotron references, fail-closed Cohere timing, Cohere vLLM candidate, and resident Nemotron NeMo candidate execute. The local Preview's frozen natural-switch target failed and remains a visible limitation; development-host resource results are not target-i5 qualification. The replacement server preflight verifies one NGC-governed AmberNet artifact, samples five six-second regions from source start through exact tail, requires strict all-five agreement and positive margins, and independently rechecks the decision in Rust before user confirmation. Focused Windows real-model and disposable ARM64 parity evidence exists. Exact executable commit `c6862262fa36a83bcd40a7bffa65ec6429ec097e` passed a focused real ARM64 worker/resource/teardown smoke at 111,591,424 peak cgroup bytes, six peak PIDs, 682,363 CPU microseconds, and 0.842-second cold wall time with no throttling, OOM, or retained container; this is not the final frozen-head gate. The older SpeechBrain GB10 receipt remains historical only. Provider smokes and private comparators remain non-promotion evidence. A second fixed locale, the final frozen-head AmberNet ARM64 repetition, target-i5 local interference/sustained lifecycle, frozen Cohere vLLM and Nemotron NeMo gates, timing promotion, representative duration/locale evidence, accessibility rerun, and the complete Phase 6 matrix remain open. |
-| Phases 7–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
+| Phase 7: identity/access | Planned | Entra/MSAL, token-derived ownership, purpose grants, and authorization remain unimplemented. |
+| Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron as the server development baseline while retaining local anonymous evidence and an ASR-plus-diarization fallback. No Tiron worker, scorer, messy-meeting promotion result, or production speaker result path exists. |
+| Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
 The local exact-duration runner is implemented but not yet consumed. It starts
 at the truthful prepared-audio-frame boundary, streams ten-millisecond frames
@@ -154,7 +156,9 @@ dirty-head result.
 
 The complete owner and trust-boundary map is
 [executable ownership map](architecture/boundaries/EXECUTABLE-OWNERSHIP.md). The
-focused Phase 6 ownership deltas are recorded in ADRs 0024–0026 and the active plan.
+focused Phase 6 ownership deltas are recorded in ADRs 0024–0026 and the active
+plan. ADR 0027 records a future Phase 8 decision only; it is not executing
+ownership.
 
 ## What is not claimed
 
@@ -210,7 +214,10 @@ focused Phase 6 ownership deltas are recorded in ADRs 0024–0026 and the active
   tensor batching changed a Cohere transcript and its parity-preserving profile
   serialized model execution without a demonstrated throughput gain. Server
   live remains false.
-- Phase 8 speaker inference and Phase 9 knowledge/agent behavior remain deferred.
+- Phase 8 Tiron/local speaker inference, the frozen messy-meeting gate, speaker
+  result publication, and reconciliation remain deferred; selecting the server
+  development baseline is not implementation or production promotion. Phase 9
+  knowledge/agent behavior also remains deferred.
 - Private security scans, scan identifiers, host paths, and detailed private
   findings are not repository or PR material.
 

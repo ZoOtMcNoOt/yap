@@ -12,7 +12,8 @@ observed runtime behavior.
 
 **Current delivery authority:** [roadmap](../../roadmap/ROADMAP.md),
 [ADR 0024](../../adr/0024-global-language-routing.md),
-[ADR 0026](../../adr/0026-ambernet-batch-language-preflight.md), and the
+[ADR 0026](../../adr/0026-ambernet-batch-language-preflight.md),
+[ADR 0027](../../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md), and the
 [audio preprocessing and language routing plan](2026-07-16-audio-preprocessing-and-language-routing.md).
 
 ## How to use this queue
@@ -57,6 +58,7 @@ observed runtime behavior.
 | D-20 | GLib/platform warnings | GLib is not a Yap application architecture choice; it may enter through platform/native dependencies. Do not edit a lockfile merely to hide warnings. Classify each warning as a real supported-target defect, upstream-only warning, or missing native-platform gate, then fix/pin/patch only with reproducible evidence. | Open platform-debt audit; current phase closure or exact affected phase | P6-10 below |
 | D-21 | LAN, SSH, Wi-Fi, and enterprise networking | Preserve LAN/loopback development and the SSH-tunnel rehearsal. DNS, certificates, ZPA, firewall policy, conditional access, production hosting, and deployment remain explicit IT/security handoffs. | Accepted; developer rehearsal now, external handoff Phase 10 | ADR 0021, roadmap |
 | D-22 | Security and enterprise readiness | Secure coding, bounded inputs, provenance, privacy, cancellation, and fail-closed contracts are product work now. Enterprise certification, production access policy, formal deployment approval, and managed network controls cannot be claimed early. | Accepted split; every phase plus Phase 10 handoff | Roadmap |
+| D-23 | Joint speaker-attributed meeting ASR | Use pinned `Trelis/tiron` as the Phase 8 server development baseline. Keep the local anonymous-speaker path, ASR-plus-diarization fallback, Rust result authority, and model-replacement seam. Distinguish its eight window-local speaker slots from Yap's 32-target/64-ceiling session roster, and expose over-capacity regions rather than hiding them. | Accepted direction; Phase 8 implementation and production gate remain future work | ADR 0027 and queued joint speaker-attributed meeting plan |
 
 ## Current Phase 6 implementation queue
 
@@ -608,18 +610,24 @@ next-phase cadence.
 
 - Promote licensed multi-speaker/overlap evaluation sets and exact meeting
   metrics before selecting diarization components.
-- Evaluate joint multi-speaker ASR as a server-side challenger rather than
-  assuming that diarization plus single-speaker ASR is always the best overlap
-  path. `Trelis/tiron` is queued at model revision
+- Implement joint multi-speaker ASR as the selected server development baseline
+  rather than assuming that diarization plus single-speaker ASR is always the
+  best overlap path. `Trelis/tiron` is accepted at model revision
   `aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc` with public Apache-2.0 metadata
   and a 3,087,229,512-byte weight artifact whose LFS SHA-256 is
   `921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e`;
   its reference harness is queued at
   `5b3766ac64ff3a8d98443e0a850d1ce569952520`. This source inspection is not
-  promotion evidence: training/adaptation lineage is undisclosed, published
+  production-promotion evidence: training/adaptation lineage is undisclosed, published
   quality evidence is English-only and self-reported, resource/concurrency
   evidence is absent, and the harness has unpinned runtime/model dependencies
   plus oversized linking surfaces that must not be copied into Yap unchanged.
+- Freeze the messy-meeting manifest and thresholds before model output, then
+  score public AMI/ICSI/NOTSOFAR comparators separately from an independently
+  adjudicated private holdout. Include more-than-15-person sessions, one through
+  eight talkers per window, explicit over-capacity pressure, overlap, late
+  arrivals/returns, far-field/noise/virtual transport, locales, duration, and
+  c1/c2/c4/c8 lifecycle/isolation evidence.
 - Add revisioned anonymous speaker evidence, source-time word/speaker
   intersection, reconciliation, and purpose-authorized naming.
 - Keep audio/transcript authority and user corrections revisioned; do not infer
@@ -723,7 +731,7 @@ graph and Rust-native runtime contract enter the desktop dependency graph.
 | OQ-28 | What diagnostic evidence can be retained without leaking private audio or transcripts? | Redaction schema, bounded metrics, event correlation, local retention/deletion, crash evidence, hosted-log review, and user controls | Record hashes, counts, timings, typed states, and model revisions; keep raw audio/transcripts and private scan output outside Git and hosted artifacts |
 | OQ-29 | Which networking work is developer-owned versus an IT/security handoff? | LAN and SSH-tunnel rehearsal, authenticated API contract, threat model, DNS/certificate/ZPA/firewall/conditional-access ownership, and deployment approvals | Preserve loopback/LAN/tunnel development; record enterprise controls as explicit Phase 10 handoffs or blockers |
 | OQ-30 | How do language spans interact with Phase 8 speaker diarization and overlap? | Independent source-time contracts, span intersection rules, overlap representation, revision precedence, and multilingual multi-speaker fixtures | Keep language and speaker evidence separate and composable; neither model may infer the other's identity or erase overlapping evidence |
-| OQ-31 | Does a joint multi-speaker ASR such as Tiron outperform the accepted ASR-plus-diarization baseline for server meeting reconciliation? | Immutable model/harness/dependency provenance; disclosed training exposure; independently licensed close/far/overlap fixtures; cpWER and speaker-attributed WER; overlap deletion/recall; speaker-count and timestamp error; English and per-locale quality; one- and two-pass latency, RTF, VRAM/RAM, c1/c2/c4/c8 admission, cancellation, teardown, and long-meeting identity stability | Keep Tiron as a Phase 8 server challenger. Do not replace the local anonymous baseline, current Phase 6 providers, or the model-independent result contract unless frozen independent evidence earns that narrower route. |
+| OQ-31 | Does the selected Tiron development baseline earn general or only narrow production promotion? | Immutable model/harness/dependency provenance; disclosed training exposure; frozen messy-meeting public comparators plus independent holdout; cpWER and speaker-attributed WER; overlap deletion/recall; speaker-count, capacity-pressure, timestamp, and identity-fragmentation error; per-locale quality; one- and two-pass latency, RTF, VRAM/RAM, c1/c2/c4/c8 admission, cancellation, isolation, teardown, and long-meeting stability | Implement Tiron first in Phase 8, but retain the ASR-plus-diarization fallback and keep the route unadvertised until every required slice passes. The local anonymous baseline, current Phase 6 providers, and model-independent result contract do not change. |
 
 ## Closed discussion items
 
@@ -737,6 +745,9 @@ graph and Rust-native runtime contract enter the desktop dependency graph.
   from presentation, but correctness/accessibility ownership stays gated now.
 - Adaptation-ready Nemotron languages are excluded rather than advertised as a
   future fine-tuning promise.
+- Tiron is the accepted Phase 8 server development baseline for joint
+  speaker-attributed meeting transcription. Production breadth remains an open
+  evidence question; public model-card benchmarks alone do not promote it.
 - Automatic offline language switching, one bounded live-session-resident local acoustic-LID
   model, and within-utterance source-time language spans are required Phase 6
   outcomes. Their exact candidate and thresholds remain evidence-gated, not
