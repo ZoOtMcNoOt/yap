@@ -42,7 +42,7 @@ observed runtime behavior.
 | D-05 | Concurrent users | Reference-worker concurrency is measured now, including c1/c2/c4/c8, queueing, tail latency, cancellation isolation, memory, and duration buckets. Authenticated multi-owner fairness and production mixed live/batch capacity require Phase 7 identity and the Phase 10 service gate. | Accepted split; Phases 6, 7, and 10 | ADR 0023, ADR 0024, roadmap |
 | D-06 | Fixed live language | Setup/Settings owns one confirmed primary locale. Local Nemotron applies that exact supported locale to native stream creation and reset; unsupported locales fail visibly. It never silently falls back to English or automatic detection. | Implemented on active Phase 6 branch; gate pending | ADR 0024, current architecture |
 | D-07 | Local dynamic language detection | Phase 6 must add one bounded acoustic-LID model that remains resident while local live inference is warm/active, automatic offline switching, and within-utterance source-time language spans. `LiveRuntime` remains the sole lifecycle owner and continues to use one local Nemotron ASR; the LID component owns evidence only, not transcript, capture, or durable state. Initial selection and sustained switching use the accepted three-observation, `0.40`-margin policy over the confirmed primary plus explicit alternates. Current selection is restricted to immutable released checkpoints. | Accepted bounded candidate implemented with AmberNet 1.12.0 QDQ INT8 as an explicit, default-off Preview. The representative natural-switch quality target completed and failed; target-i5 resource/interference, lifecycle safety, and checked-head gates remain open. Removing Preview requires new independent quality evidence. | ADR 0019 amendment, ADR 0024, dynamic-language evaluation |
-| D-08 | Server language detection | AmberNet 1.12.0 INT8 QDQ is the verify-only, CPU-isolated, user-confirmed suggestion for longer fixed-language imports. It samples five strict source-stratified six-second regions and abstains unless all five agree. Server Nemotron automatic tags execute separately as finalized-utterance evidence. The shared versioned span contract distinguishes `clientDecision` from `serverUtterance`, binds server spans to the model/utterance plan, and links text fragments without claiming terminal tags are within-utterance language diarization. | Focused implementation exists; exact checked-head ARM64 resources and representative/frozen promotion gates remain open in Phase 6 | ADR 0024, ADR 0026 |
+| D-08 | Server language detection | AmberNet 1.12.0 INT8 QDQ is the verify-only, CPU-isolated, user-confirmed suggestion for longer fixed-language imports. It samples five strict source-stratified six-second regions and abstains unless all five agree. Server Nemotron automatic tags execute separately as finalized-utterance evidence. The shared versioned span contract distinguishes `clientDecision` from `serverUtterance`, binds server spans to the model/utterance plan, and links text fragments without claiming terminal tags are within-utterance language diarization. | Focused implementation and one exact-commit ARM64 resource smoke exist; the final frozen-head repetition and representative/promotion gates remain open in Phase 6 | ADR 0024, ADR 0026 |
 | D-09 | Global language coverage | Advertise only exact out-of-box, benchmarked locales. Nemotron's eight adaptation-ready locales are not planned capabilities. Broad coverage remains visibly lower-confidence until locale-specific evidence promotes it. | Accepted; Phase 6 | ADR 0024 |
 | D-10 | Client/server preprocessing | The client owns capture/source admission, deterministic normalization, source identity, optional advisory VAD, bounded local acoustic LID, source-time language spans, and durable client evidence. The server owns heavyweight verification, ASR, alignment, and official result production. Redundant server validation may reconcile or reject evidence but must not create a second client-state authority or erase client history. | Accepted boundary; Phase 6 | ADR 0020, ADR 0024, current architecture |
 | D-11 | Terminology | Present terminology under Dictation/Personalization, but store it in one model-independent terminology domain. Compile one versioned session snapshot into ASR hints/context first, deterministic casing/acronym normalization second, grammar-SLM preservation constraints third, and later OKF glossary projections. The SLM must not be the source of truth or reconstruct terms lost during decoding. | Boundary accepted; schema, scope, privacy, and delivery phase remain open | Section below; Phase 9 ADR amendment required before implementation |
@@ -129,9 +129,13 @@ zero-choice state rather than inferred model support.
 - [x] Prove by immutable runtime contract that the LID component is CPU-only and
   cannot consume an ASR GPU slot; bound duration, queue, cancellation, cleanup,
   and teardown in focused tests.
-- [ ] Build the exact checked-head ARM64 image and measure cgroup peak memory,
-  CPU, cold latency, cancellation, and teardown under one CPU/512 MiB on GB10
-  inside the final Phase 6 resource gate.
+- [x] Build exact executable commit
+  `c6862262fa36a83bcd40a7bffa65ec6429ec097e` on ARM64 GB10 and measure the real
+  worker under one CPU/512 MiB: 111,591,424 peak cgroup bytes, six peak PIDs,
+  682,363 CPU microseconds, 0.842-second cold wall time, no throttling/OOM, and
+  complete teardown.
+- [ ] Repeat the exact source/image/resource/teardown proof at the final frozen
+  checked head inside the one-time Phase 6 resource gate.
 
 Focused 2026-07-22 replacement evidence reconstructed the fixed NeMo frontend,
 proved the exact Windows AMD64 and disposable Linux ARM64 frontend/logit parity,
@@ -139,9 +143,10 @@ loaded the real 29.6 MB INT8 QDQ graph under one-thread CPU ONNX Runtime, and
 exercised the strict five-region decision in focused Python and Rust suites.
 Private reports and the model remain outside Git. The prior source-exact
 SpeechBrain run at `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` remains only a
-historical containment receipt. Exact checked-head AmberNet ARM64 image/resource
-execution, target-i5 behavior, representative promotion, and the complete
-resource gate remain open.
+historical containment receipt. The focused ARM64 worker receipt closes basic
+feasibility for exact executable commit `c6862262fa36a83bcd40a7bffa65ec6429ec097e`;
+the final frozen-head repetition, target-i5 behavior, representative promotion,
+and the complete resource gate remain open.
 
 ### P6-04 — Local language spans and fixed/dynamic ASR
 

@@ -20,10 +20,12 @@ at executable commit `fcccf21e785b116b92cd8e46150a36b9b5ee91db`.
 The isolated SpeechBrain component also has a historical source-exact receipt at
 `04266c4bbffd0fd31eaf2afd0bcce42e0248344f`, but ADR 0026 supersedes that
 runtime. The replacement AmberNet path has focused Windows real-model and
-cross-architecture frontend/logit parity evidence; its exact checked-head ARM64
-image/resource smoke remains open. None of those results satisfies the separate
-frozen representative, duration, concurrency, promotion, or complete Phase 6
-gates.
+cross-architecture frontend/logit parity evidence. Exact executable commit
+`c6862262fa36a83bcd40a7bffa65ec6429ec097e` also passed a focused ARM64 build,
+real-artifact `ContainerLidWorker` execution, locked-resource measurement, and
+teardown smoke. The final frozen checked-head repetition remains open. None of
+those results satisfies the separate frozen representative, duration,
+concurrency, promotion, or complete Phase 6 gates.
 Fail-closed English
 Cohere attention alignment also executes and has current-source contained GB10
 lifecycle evidence without being advertised. The tiny SpeechFlow LID13 challenger
@@ -593,10 +595,13 @@ legacy rows remain readable without claiming history they never recorded.
 - [x] Bound the worker to a non-root, networkless, read-only, one-thread CPU
       container with one CPU, 512 MiB memory/swap, 64 PIDs, and bounded output,
       temporary storage, queueing, cancellation, cleanup, and teardown.
-- [ ] Build the exact checked-head ARM64 image on GB10, execute the real imported
-      artifact through `ContainerLidWorker`, measure cgroup peak memory/CPU and
-      cold latency under the locked limits, and prove teardown without an owned
-      container/listener.
+- [x] Build exact executable commit
+      `c6862262fa36a83bcd40a7bffa65ec6429ec097e` on ARM64 GB10, execute the real
+      imported artifact through `ContainerLidWorker`, measure cgroup peak
+      memory/CPU and cold latency under the locked limits, and prove teardown
+      without an owned container/listener.
+- [ ] Repeat that source-exact image/resource/teardown check at the final frozen
+      Phase 6 head inside the one-time complete gate.
 - [ ] Retain representative fixed-language/long-tail evidence and the complete
       one-time Phase 6 resource/matrix gates as open until the branch is frozen.
 
@@ -608,8 +613,14 @@ fencing, redacted HTTP errors, user confirmation, retention, retry, and
 cancellation. A focused Windows real-model smoke loaded the exact graph under
 one-thread CPU ONNX Runtime; a disposable ARM64 comparison reproduced the
 frontend within the recorded tolerance and produced identical full logits. The
-private reports and model remain outside Git. These are implementation evidence,
-not checked-head ARM64 resource or Phase 6 completion evidence.
+later source-exact ARM64 worker smoke for
+`c6862262fa36a83bcd40a7bffa65ec6429ec097e` peaked at 111,591,424 cgroup bytes,
+six PIDs, and 682,363 CPU microseconds under one CPU, 512 MiB, no network, and a
+read-only root. Cold container wall time was 0.842 seconds; no throttling,
+memory-limit event, OOM, listener, or retained owned container remained. The
+private reports and model remain outside Git. These are focused implementation/
+resource evidence, not final frozen-head or Phase 6 completion evidence; the
+synthetic silence workload is not accuracy evidence.
 
 The superseded SpeechBrain image receipt at
 `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` remains historical evidence that the

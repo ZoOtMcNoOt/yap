@@ -647,8 +647,11 @@ resident-memory, battery/thermal, packaging, and rollback evidence.
 5. [x] Replace the superseded SpeechBrain component with the verify-only
        AmberNet 1.12.0 INT8 QDQ artifact, five-region client/server contract,
        and small CPU ONNX Runtime image. Retain the historical SpeechBrain
-       receipt while keeping exact checked-head ARM64 resources, representative
-       promotion, and complete phase evidence in the final Phase 6 gate.
+       receipt. Exact executable commit
+       `c6862262fa36a83bcd40a7bffa65ec6429ec097e` passed the focused ARM64
+       image/resource/teardown smoke; keep its final frozen-head repetition,
+       representative promotion, and complete phase evidence in the final
+       Phase 6 gate.
 6. [x] Preserve Whisper-tiny and the other released candidates as measured
        comparators; implement the accepted AmberNet 1.12.0 QDQ INT8 component
        with exact frontend/label/runtime identity and a verified local-import

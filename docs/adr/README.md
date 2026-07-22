@@ -91,7 +91,7 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0023](0023-bounded-live-priority.md) | Bounded live priority in the server workload router | Accepted (amends ADR 0014 priority rule) |
 | [0024](0024-global-language-routing.md) | Global language routing and timing evidence | Accepted decision; provider serving amended by [0025](0025-provider-specific-asr-serving.md) and batch preflight amended by [0026](0026-ambernet-batch-language-preflight.md); implementation and per-locale promotion evidence incomplete |
 | [0025](0025-provider-specific-asr-serving.md) | Provider-specific ASR serving runtimes | Accepted; Cohere vLLM and resident Nemotron NeMo candidates implemented, both frozen GB10 promotion gates incomplete |
-| [0026](0026-ambernet-batch-language-preflight.md) | AmberNet batch language preflight | Accepted; focused implementation evidence exists, exact checked-head ARM64 resource evidence and complete Phase 6 gate incomplete |
+| [0026](0026-ambernet-batch-language-preflight.md) | AmberNet batch language preflight | Accepted; focused exact-commit ARM64 image/resource evidence exists, final frozen-head repetition and complete Phase 6 gate incomplete |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

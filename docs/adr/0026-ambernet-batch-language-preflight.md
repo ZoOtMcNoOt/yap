@@ -2,8 +2,10 @@
 
 **Date:** 2026-07-22
 **Status:** Accepted; client/server contract and isolated CPU implementation
-execute under focused tests, exact checked-head ARM64 resource evidence and the
-complete Phase 6 gate remain incomplete
+execute under focused tests, and exact executable commit
+`c6862262fa36a83bcd40a7bffa65ec6429ec097e` passed a focused ARM64 image,
+resource, and teardown smoke. The final frozen checked-head repeat and complete
+Phase 6 gate remain incomplete
 **Builds on:** [ADR 0020](0020-meeting-capture-diarization-authority.md),
 [ADR 0024](0024-global-language-routing.md), and
 [ADR 0025](0025-provider-specific-asr-serving.md)
@@ -38,6 +40,15 @@ QDQ export found that:
   switch without creating a fixed-language suggestion for those mixed files;
 - relaxed majority rules created false tail suggestions and were rejected; and
 - one one-thread Windows session added roughly 43 MB RSS in the focused smoke.
+
+The exact executable commit later built on the ARM64 Spark and ran the real
+verify-only artifact through Yap's actual `ContainerLidWorker` boundary. Under
+one CPU, 512 MiB, 64 PIDs, no network, a read-only root, and one-thread runtime
+settings, the synthetic contract workload peaked at 111,591,424 cgroup bytes
+(about 106.4 MiB), six PIDs, and 682,363 CPU microseconds with no throttling,
+memory-limit event, OOM, or retained container. Cold container wall time was
+0.842 seconds. The owner-private receipt is outside Git; the synthetic silence
+workload is execution/resource evidence, not language-accuracy evidence.
 
 Those are implementation-selection observations, not locale qualification,
 target-client proof, production capacity, or completion of the Phase 6 gate.
@@ -203,8 +214,10 @@ The executing files include the component lock and isolated runtime under
 under `desktop/src-tauri/src/server_connector/lid`.
 
 Focused unit, contract, materialization, transport, and real-model smokes may
-support this ADR while the branch changes. The accepted Phase 6 claim still
-requires one frozen checked-head local/native/server/GB10 matrix, exact ARM64
-container/resource evidence, the remaining locale and end-to-end duration
-gates, reviewed documentation reconciliation, and a green checked-head PR. No
-focused smoke is relabeled as phase completion or production multi-user proof.
+support this ADR while the branch changes. The ARM64 focused receipt above closes
+the immediate image/limit feasibility question for its exact executable commit;
+it does not replace the final frozen-head repetition. The accepted Phase 6 claim
+still requires one frozen checked-head local/native/server/GB10 matrix, the
+remaining locale and end-to-end duration gates, reviewed documentation
+reconciliation, and a green checked-head PR. No focused smoke is relabeled as
+phase completion or production multi-user proof.
