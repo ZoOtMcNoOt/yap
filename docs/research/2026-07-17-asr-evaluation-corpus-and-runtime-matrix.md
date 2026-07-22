@@ -204,7 +204,7 @@ parser test. Dataset contents remain outside Git.
 | [Google FLEURS](https://huggingface.co/datasets/google/fleurs) | ASR and LID for every locale Yap advertises | 102 languages, parallel prompts, speaker metadata, CC BY 4.0 | **Adopt as comparator only.** It is listed in Nemotron 3.5 training and evaluation, is short read speech, and does not prove meetings, spontaneous speech, noise, or long form. |
 | [Mozilla Common Voice scripted and spontaneous speech](https://commonvoice.mozilla.org/en/datasets) | Speaker/accent diversity, short utterances, spontaneous responses, very short and low-energy slices | Community validated; current data is CC0 | **Adopt with access controls as comparator only for Nemotron.** Nemotron lists it in training/evaluation; Cohere exposure is unknown. Exact download terms can prohibit speaker re-identification and re-hosting/re-sharing. Use only from a private external cache after recording the exact release terms. |
 | [Multilingual LibriSpeech](https://www.openslr.org/94/) | Eight-language read-speech regression | Established multilingual corpus, CC BY 4.0 | **Adopt as comparator only.** Nemotron lists MLS in training and evaluation; it is neither spontaneous nor an independent release gate. |
-| [AMI Meeting Corpus](https://groups.inf.ed.ac.uk/ami/corpus/) | Approximately 45-minute four-person meetings, close-talk versus far-field, overlap, disfluency, mostly non-native English | 100 hours, synchronized channels, manual speaker transcripts, CC BY 4.0 | Scenario-heavy and documents known transcript/data problems. Adopt the official split plus a Yap-adjudicated subset; preserve source problem annotations. |
+| [AMI Meeting Corpus](https://groups.inf.ed.ac.uk/ami/corpus/) | Multi-part four-person meetings, close-talk versus far-field, overlap, disfluency, mostly non-native English | 100 hours, synchronized channels, manual speaker transcripts, CC BY 4.0 | **One official evaluation meeting segment is now pinned as a comparator.** The corpus documents known transcript/data problems; retain the upstream defect caveat and require Yap adjudication before any quality threshold or promotion claim. |
 | [ICSI Meeting Corpus](https://groups.inf.ed.ac.uk/ami/icsi/) | Natural technical meetings, long sessions, mixed versus close channels, spontaneous/reduced speech | About 70 hours with orthographic transcripts and speech-quality annotations, CC BY 4.0 | Older recording domain and formats; speaker/timing parser must be verified. Adopt a stratified official subset. |
 | [NOTSOFAR-1](https://github.com/microsoft/NOTSOFAR1-CHALLENGE) | Real far-field office meetings, 4-8 attendees, commercial devices, room/acoustic diversity, speaker-attributed scoring | Exact ground-truth evaluation subsets, real and simulated data, CC BY 4.0 | Use only the current open-research subsets. Exclude challenge-only Dev-set-2 and documented faulty Rockfall device data; record the exact release because annotations are still being upgraded. |
 | [LibriCSS](https://github.com/chenzhuo1011/libri_css) | Controlled overlap, continuous input, far-field replay, chunk/order stress | Potentially useful constructed meeting-like engineering stress | **Hold.** The repository's MIT text covers software and notes original LibriSpeech's CC BY 4.0 license, but does not expressly license the separately distributed new distant-microphone recordings. Do not ingest until the downloaded archive or authors establish the data rights. |
@@ -291,6 +291,39 @@ evaluation caches; only this transcript-free aggregate is recorded here. The
 run is a descriptive Cohere regression baseline. It does not establish clean
 model exposure, locale promotion, spontaneous/noisy/meeting quality, long-form
 correctness, Cohere vLLM parity, concurrency capacity, or a production SLO.
+
+### First immutable long-meeting comparator: AMI `ES2004a`
+
+The public `ami-meeting-comparator.lock.json` freezes AMI annotation release
+1.6.2 and meeting `ES2004a`, which appears in the official unseen-scenario and
+full-corpus ASR evaluation sets. It binds the 22,887,865-byte annotation ZIP,
+both 33,579,394-byte PCM16/16-kHz mono recordings, the four exact speaker-word
+XML members, CC BY 4.0 provenance, and the close-headset-mix and distant
+Array1-channel-1 conditions. The recordings each contain 16,789,675 samples
+(1,049.3546875 seconds). Raw audio and annotation text remain exclusively in
+the owner-private external `YAP_EVAL_CACHE`.
+
+The Python 3.12 boundary rejects path escape, normalized or case-insensitive
+duplicate members, links/devices, encryption, unsupported compression, unsafe
+expansion ratios, changed hashes/sizes/counts, active XML declarations,
+non-sample-aligned or non-monotonic timing, duplicate source IDs, and a changed
+PCM shape. It preserves the four speaker timelines and labels its deterministic
+start/end/agent/source ordering as a scoring policy rather than a unique true
+ordering for overlap. Aggregate inspection of the real ARM-private artifacts
+found 3,135 word elements, 60 vocal sounds, 57 disfluency markers, six gaps,
+and 764 word elements involved in positive cross-speaker overlap. Focused ARM
+implementation inspections completed in under one second with under 128 MiB
+peak RSS and emitted no transcript text, audio, or private path.
+
+This closes corpus acquisition and parser verification, not long-form model
+quality. AMI describes the references as manual transcription supplemented by
+forced alignment and publishes known data problems, so they are not asserted
+to be infallible ground truth. Exposure remains `unknown`, the comparator is
+promotion-ineligible, and the unreviewed deterministic flat reference cannot
+set a Phase 6 quality threshold. The next focused evidence step must run the
+locked candidate routes, keep hypotheses and references private, report
+completeness/omission/duplication/order and overlap slices, and obtain the
+declared Yap reference review before any pass/fail claim.
 
 ### Sources not in the enterprise baseline
 
@@ -760,7 +793,10 @@ approved-private, authenticated mixed-owner and enterprise deployment profile.
 - [NIST SCTK](https://github.com/usnistgov/SCTK)
 - [MeetEval](https://github.com/fgnt/meeteval)
 - [Streaming ASR quality and stability metrics](https://research.google/pubs/analyzing-the-quality-and-stability-of-a-streaming-end-to-end-on-device-speech-recognizer/)
+- [AMI official download and CC BY 4.0 terms](https://groups.inf.ed.ac.uk/ami/download/)
+- [AMI official scenario and ASR splits](https://groups.inf.ed.ac.uk/ami/corpus/datasets.shtml)
 - [AMI transcription process and known limitations](https://groups.inf.ed.ac.uk/ami/corpus/transcription.shtml)
+- [AMI documented corpus data problems](https://groups.inf.ed.ac.uk/ami/corpus/dataproblems.shtml)
 - [Nemotron 3.5 training and evaluation datasets](https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b#training-and-evaluation-datasets)
 - [Locked Nemotron 3.5 model contract](https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b/tree/f3d333391852ba876df169dcc9ba902d25b6ab0b)
 - [Nemotron English training and leaderboard datasets](https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b#datasets)
