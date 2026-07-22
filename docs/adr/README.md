@@ -42,8 +42,8 @@ ADR 0023 amends ADR 0014's absolute live-priority rule with bounded live prefere
 ADR 0024 defines the Phase 6 global language/provider capability catalog, primary-language and guarded LID policy, explicit Nemotron dynamic mode, and fail-closed timing evidence.
 ADR 0025 replaces the proposed common Triton ASR plane with provider-specific
 serving: Cohere batch on vLLM, Nemotron's current Transformers reference and
-future NeMo streaming candidate, local Nemotron on sherpa-onnx, and SGLang only
-for later agent/LLM workloads.
+separately gated resident NeMo streaming candidate, local Nemotron on
+sherpa-onnx, and SGLang only for later agent/LLM workloads.
 
 ## Applicability and precedence
 
@@ -88,7 +88,7 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0022](0022-google-okf-permission-safe-projections.md) | Google OKF and permission-safe knowledge projections | Accepted (canonical Phase 9 knowledge format and projection boundary) |
 | [0023](0023-bounded-live-priority.md) | Bounded live priority in the server workload router | Accepted (amends ADR 0014 priority rule) |
 | [0024](0024-global-language-routing.md) | Global language routing and timing evidence | Accepted decision; implementation and per-locale promotion evidence incomplete |
-| [0025](0025-provider-specific-asr-serving.md) | Provider-specific ASR serving runtimes | Accepted; Cohere vLLM adapter implemented, GB10 and NeMo promotion evidence incomplete |
+| [0025](0025-provider-specific-asr-serving.md) | Provider-specific ASR serving runtimes | Accepted; Cohere vLLM and resident Nemotron NeMo candidates implemented, both frozen GB10 promotion gates incomplete |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

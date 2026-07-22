@@ -1347,6 +1347,16 @@ full-matrix accessibility rerun remains part of the one-time Phase 6 gate.
 
 ### 10. Reconcile evidence and close the exact head
 
+A pre-gate documentation reconciliation on 2026-07-22 checked the current
+architecture, Voice OS synthesis, roadmap, ADR index/status, root and server
+READMEs, OpenAPI ownership, and server-node runbook against the executing
+provider split. It restored ADR 0025 cross-references, amended ADR 0007 with the
+implemented fail-closed Cohere timing path, raised only that evidence-backed ADR
+implementation score from 10 to 100, and made the superseded Triton research
+snapshot explicitly historical. Focused alignment verification passed 29 tests
+plus 20 subtests. The checklist remains open until the frozen gate determines
+the final promotion claims and the exact head receives one last read-back.
+
 - [x] Resolve focused correctness, security, privacy, license/provenance,
       maintainability, accessibility, and resource-bound findings.
 - [ ] Update ADR implementation scores only for behavior proved by executable

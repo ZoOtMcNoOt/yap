@@ -36,9 +36,9 @@ what is verified, what is still absent, and what happens next.
   than a persistent serving engine.
 - On the active branch, Cohere batch has a digest-pinned NVIDIA vLLM 26.06
   candidate behind the same bounded worker contract. Nemotron retains its
-  Transformers correctness path and evaluates NeMo separately for server
-  streaming. Both require their own GB10 promotion gates. SGLang remains the
-  later agent/LLM execution plane, not an ASR route.
+  Transformers correctness path and has a separate resident NeMo server-
+  streaming candidate. Both require their own GB10 promotion gates. SGLang
+  remains the later agent/LLM execution plane, not an ASR route.
 - Result identity, hashes, paths, sizes, authority, and transcript bytes are
   verified natively before History presents completion.
 

@@ -9,12 +9,15 @@ separate NeMo streaming candidate for Nemotron, SGLang for later agent/LLM
 workloads, and Yap/Rust-owned orchestration. The analysis below is retained as
 historical decision evidence; it is not the current implementation authority.
 
-**Reconciled:** 2026-07-16 against the executing worker and current upstream
-model/runtime surfaces. A same-day performance amendment brings a Triton 26.06
-candidate into Phase 6 while retaining this worker as the comparison baseline.
+**Historical snapshot state:** On 2026-07-16 this record was reconciled against
+the then-executing worker and upstream model/runtime surfaces, and a same-day
+amendment brought a Triton 26.06 candidate into Phase 6. ADR 0025 later replaced
+that recommendation; statements below about selecting or promoting Triton are
+past decision evidence only.
 
-**Decision:** Keep the checked NVIDIA PyTorch 26.06, Python 3.12, CUDA 13.3,
-Transformers, and BF16 path as the executable Phase 5 baseline. This is a raw
+**Historical decision at this snapshot:** Keep the checked NVIDIA PyTorch
+26.06, Python 3.12, CUDA 13.3, Transformers, and BF16 path as the executable
+Phase 5 baseline. This is a raw
 one-job Transformers worker, not a persistent inference server. Treat NVIDIA
 Triton Server 26.06 as the cross-provider ASR serving candidate, with raw Python,
 NeMo/Transformers, or vLLM used only as model-specific backends that pass their
@@ -32,10 +35,10 @@ and the NIM is ineligible for Yap's GB10 target rather than silently ignored.
 SGLang remains a candidate for later text/agent pools, not a current exact-model
 route for either Yap ASR provider.
 
-This record evaluates runtime choices and authorizes implementation of a
+At this snapshot, the record evaluated runtime choices and authorized a
 digest-pinned Phase 6 Triton candidate behind the existing worker interface. It
-does not replace the locked Phase 4/5 runtime or claim performance until the
-exact candidate is measured on GB10.
+did not replace the locked Phase 4/5 runtime or claim performance until the
+exact candidate was measured on GB10. ADR 0025 now governs implementation.
 
 ## Yap Requirements
 
@@ -62,7 +65,7 @@ alone is never sufficient.
 | Candidate | What it provides | Fit for Yap's current/planned ASR routes | Main cost or risk |
 | --- | --- | --- | --- |
 | NVIDIA PyTorch `26.06-py3` + Transformers/BF16 | Python 3.12, CUDA 13.3, prerelease NVIDIA Torch 2.13, Torch-TensorRT 2.13, TensorRT 11, Model Optimizer, and a flexible PyTorch execution surface | Best known-correct baseline. Yap has already pinned its ARM64 digest, overlay, model artifacts, WER fixture, isolation command, and GB10 result | Cold model/container startup per job and no continuous batching; the broad framework image needs Yap's overlay and containment |
-| NVIDIA Triton Server `26.06-py3` | Python 3.12, CUDA 13.3, TensorRT 11, ONNX Runtime, PyTorch 2 dynamic batching, Python/vLLM backends, concurrent and dynamic/sequence scheduling, health/metrics, Performance Analyzer, and Model Analyzer | Selected Phase 6 cross-provider serving candidate. Exact Cohere and Nemotron backends can preserve their model-specific runtime while Triton supplies warm residency, concurrency, batching, and measurement | Neither exact ASR route is drop-in proven. Yap must pin the image/backend environments, preserve offline artifacts, implement audio/result adapters, tune variable-length batching, constrain shared memory/model control, and retain Rust-owned admission, fairness, cancellation, and durable state |
+| NVIDIA Triton Server `26.06-py3` | Python 3.12, CUDA 13.3, TensorRT 11, ONNX Runtime, PyTorch 2 dynamic batching, Python/vLLM backends, concurrent and dynamic/sequence scheduling, health/metrics, Performance Analyzer, and Model Analyzer | Historical Phase 6 cross-provider serving candidate, later retired by ADR 0025. The attempted backends preserved model-specific execution but did not demonstrate a useful common serving plane. | Neither exact ASR route was drop-in proven. Yap had to pin the image/backend environments, preserve offline artifacts, implement audio/result adapters, tune variable-length batching, constrain shared memory/model control, and retain Rust-owned admission, fairness, cancellation, and durable state. |
 | NVIDIA vLLM `26.06-py3` | Python 3.12, vLLM 0.22.1, Transformers 5.6, Torch 2.13, CUDA 13.3, continuous batching, and an OpenAI-compatible transcription API | Best next **Cohere-only** performance experiment. The current vLLM developer roster lists `CohereAsrForConditionalGeneration` and the exact Cohere Transcribe model | The roster does not itself prove that the NVIDIA 0.22.1 image loads the model; vLLM 0.19 has an open Cohere load issue, and Yap has no GB10 accuracy/latency/cleanup evidence. NVIDIA also warns about default GPU allocation on unified-memory systems such as DGX Spark. It does not add Nemotron 3.5 RNNT support |
 | Upstream vLLM `0.25.1` | A concrete upstream source/runtime comparison point | Confirms that Cohere is an active supported transcription architecture | Its build pins Torch 2.11.0, which conflicts with Yap's checked NVIDIA Torch 2.13 worker. It must not be pip-installed over that image; the Cohere publisher's vLLM 0.19 recipe also has an open upstream load issue |
 | NeMo toolkit or Transformers 5.13+ | Exact NVIDIA-supported implementations for Nemotron 3.5 cache-aware FastConformer-RNNT | Current DGX Spark Phase 6 candidates for a separately pinned Nemotron reference worker and `target_lang=auto` route | No Yap server worker/lock, route correctness, GB10 resource, cancellation, or teardown evidence existed at this research checkpoint; current implementation status is authoritative in ADR 0025 |
@@ -85,9 +88,10 @@ WER, multilingual behavior, punctuation, long-audio stability, or licensing
 and byte provenance. Quantization is therefore benchmark-gated rather than a
 Phase 5 default.
 
-The first Cohere Triton backend should retain the unquantized BF16 model and the
-checked Python 3.12/NVIDIA PyTorch 26.06 environment. That isolates warm serving,
-scheduling, and batching effects without changing weights or precision. A
+The historical first Cohere Triton backend was intended to retain the
+unquantized BF16 model and the checked Python 3.12/NVIDIA PyTorch 26.06
+environment. That isolates warm serving, scheduling, and batching effects
+without changing weights or precision. A
 separately pinned vLLM backend remains a Cohere-specific challenger only after
 the raw backend has established contract parity. Only if measured memory,
 throughput, or latency creates a real need should the same harness evaluate FP8
@@ -95,11 +99,13 @@ or a Blackwell-native four-bit format. Every candidate needs a newly pinned
 model artifact identity; a community checkpoint is not inherited as trusted
 merely because it names the canonical model as its base.
 
-Phase 6 now proves a pinned Triton adapter and bounded concurrent performance,
-but that comparison does not make authenticated ownership or persistent
-supervised mixed live/batch production capacity a Phase 6 claim. Phase 7 owns
-authenticated owner derivation; Phase 10 owns supervised multi-worker service,
-production capacity/SLO promotion, and enterprise observability.
+The later pre-ADR 0025 implementation proved a pinned Triton adapter and bounded
+concurrent behavior, but the provider-specific comparison rejected it and its
+implementation was removed. That historical comparison never made
+authenticated ownership or persistent supervised mixed live/batch production
+capacity a Phase 6 claim. Phase 7 owns authenticated owner derivation; Phase 10
+owns supervised multi-worker service, production capacity/SLO promotion, and
+enterprise observability.
 
 The first measured Python-backend profile demonstrated why model-valid batching
 must be proved rather than assumed: Cohere cross-request batches changed exact
@@ -113,7 +119,7 @@ This is a viable frozen-comparison candidate, not a production selection; true
 model batching remains a separate challenger that must prove both exact output
 and material workload improvement.
 
-## Promotion Benchmark
+## Historical Promotion Benchmark
 
 A Triton, vLLM-backend, or quantized candidate can replace the baseline only
 after a disposable, digest-pinned GB10 run records all of the following against

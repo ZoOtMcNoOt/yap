@@ -3,9 +3,25 @@
 **Date:** 2026-06-30
 **Status:** Accepted alignment principle (canonical Phase 6); exact engine requires benchmark revalidation
 **Builds on:** [ADR 0004](0004-background-diarization-okf-agents.md) (resolves the aligner "TBD"), [ADR 0002](0002-crispasr-unified-stt-runtime.md) (CrispASR runtime)
-**Amended by:** [ADR 0020](0020-meeting-capture-diarization-authority.md) - alignment consumes revisioned source-aware diarization results. Its resource gate is measured with the selected diarization path rather than a fixed WeSpeaker companion.
+**Amended by:** [ADR 0020](0020-meeting-capture-diarization-authority.md) - alignment consumes revisioned source-aware diarization results. Its resource gate is measured with the selected diarization path rather than a fixed WeSpeaker companion. [ADR 0024](0024-global-language-routing.md) - the historical Canary/Wav2Vec2 engine choice is replaced by provider- and language-gated timing evidence, initially through Cohere decoder attention with fail-closed unavailable results.
 
 > **Applicability:** Align raw STT and preserve word timestamps. The historical Canary/Wav2Vec2 engine selection is a benchmark candidate, not permission to add either runtime without current accuracy, licensing, CPU, memory, and packaging evidence.
+
+## Current implementation status
+
+ADR 0024 now owns the exact Phase 6 timing path. The server implements one
+bounded English Cohere decoder-attention candidate with finite checks,
+monotonic DTW, raw-transcript reconciliation, and source-bounded result
+validation. Unsupported languages, invalid attention evidence, or any contract
+failure publish `alignedWords: []` with a typed unavailable reason; they never
+receive invented timing. Focused tests and a contained GB10 lifecycle proof
+exist, but the frozen checked-head latency, memory, representative-quality, and
+boundary-error gate has not run. The capability catalog therefore remains
+`wordAlignment: false`.
+
+The original decision text below is retained as historical rationale. Its
+Canary, Wav2Vec2, CrispASR, and fixed-footprint details do not override ADR
+0024 or authorize another runtime.
 
 ## Context
 
