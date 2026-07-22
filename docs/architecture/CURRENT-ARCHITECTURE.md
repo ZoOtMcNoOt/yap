@@ -364,6 +364,15 @@ latency remain explicitly different units. Repeated-fixture controls do not
 prove sentinel integrity, natural long-form quality, frozen percentiles, or
 promotion.
 
+The Cohere image at exact executable commit
+`da9f7682d6337df0d1bfb26e069781d8a64ec726` also includes a fail-closed
+backport of the exact PyTorch upstream weak-reference-finalizer fix. A
+source-exact ARM64 no-device reproducer and a real locked-model/public-fixture
+lifecycle no longer emitted the prior finalizer traceback; the real lifecycle
+also emitted no semaphore warning, observed engine/API shutdown, exited zero,
+and released its container and loopback listener. This is focused implementation
+evidence, not the still-open frozen provider or Phase 6 gate.
+
 At exact executable commit `2caf1969000154ffba24511a5c35b57f7f975036`, a
 natural AMI follow-up used the desktop production normalizer and Silero evidence,
 reverified its chunk stream through server input preparation,

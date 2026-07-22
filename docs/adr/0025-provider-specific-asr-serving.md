@@ -274,12 +274,32 @@ overlap, and not independently reviewed, so this is descriptive evidence only.
 It proves that throughput and task accuracy require separate gates and that no
 provider may be labeled the universal quality route.
 
-The vLLM container completed both results and shut down its engine, container,
-and listener, but the pinned upstream Torch/vLLM process emitted a weakref-time
+The AMI run completed both results and shut down its engine, container, and
+listener, but its pinned upstream Torch/vLLM process emitted a weakref-time
 `UnicodeDecodeError` plus one leaked-semaphore warning during interpreter exit.
-No result or teardown invariant failed. The warning is retained as a focused
-runtime diagnostic and must be classified or eliminated before the frozen gate
-can call vLLM shutdown log-clean; it is not hidden as a successful log claim.
+No result or teardown invariant failed. Investigation reproduced the same
+finalizer traceback by invoking the pinned vLLM CLI without a GPU, before a Yap
+request or model load, and traced it to PyTorch upstream commit
+[`c5f8ebc91a8727a9056734f73329c217328b8989`](https://github.com/pytorch/pytorch/commit/c5f8ebc91a8727a9056734f73329c217328b8989).
+Exact executable commit `da9f7682d6337df0d1bfb26e069781d8a64ec726`
+applies that exact BSD-3-Clause one-line behavior change at image build time and
+fails closed if the digest-pinned PyTorch source differs.
+
+A private source-exact ARM64 follow-up built image
+`sha256:e8f3540f84e15eb1e4532fd63bab03e6b5f5e4744d393d3645172ea6e0da4905`,
+verified every locked model artifact, served the public fixture with zero
+normalized word errors, observed 2.968 GiB container usage, and completed both
+EngineCore and FastAPI shutdown with launcher exit zero. Neither the finalizer
+traceback nor a semaphore warning recurred, and the container and loopback
+listener were absent afterward. The separate no-device CLI reproducer retained
+its expected device-selection failure but also exited without the finalizer
+trace. Transcript-free private log/summary receipts are bound by SHA-256
+`60d31fffbb0e780cbe84a04be13cfffc7b7b8610361393f761879fe1ea275bd4`,
+`e9c691a483deb8f5d51675b6f9ebc12300c6e9768cc02eaa49f494bdc0880c2f`,
+and `d3888d7c25965066c0ede37cc34d2abeb742d27abb2137055ace703ff484206c`.
+This closes the focused exit diagnostic without hiding it; the frozen provider
+gate must still repeat log-clean lifecycle and resource assertions on its own
+exact candidate.
 
 A four-repeat c8 NeMo resource control likewise completed 1,600 requests with
 one exact transcript identity at 268.9-274.2 audio-seconds per wall second.

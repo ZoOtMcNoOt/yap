@@ -1123,9 +1123,20 @@ per-case output, host paths, and raw receipts remain in the private evaluation
 root. Both containers and listeners were absent afterward. The vLLM engine
 completed shutdown but its pinned upstream Torch/vLLM process emitted a
 weakref-time `UnicodeDecodeError` and one leaked-semaphore warning during
-interpreter exit; that diagnostic must be classified or eliminated before the
-frozen gate can claim log-clean teardown. This focused comparison does not close
-the provider, meeting, locale, duration, or complete Phase 6 gates.
+interpreter exit. The same finalizer traceback reproduced with the pinned vLLM
+CLI before a model or Yap request and matched PyTorch upstream fix
+`c5f8ebc91a8727a9056734f73329c217328b8989`. Exact executable commit
+`da9f7682d6337df0d1bfb26e069781d8a64ec726` now applies that exact
+BSD-3-Clause backport at image build time with pinned-source assertions. A
+source-exact ARM64 no-device reproducer and a separate real-model/public-fixture
+lifecycle both omitted the finalizer trace; the real lifecycle also omitted the
+semaphore warning, exited zero after observed engine/API shutdown, and removed
+its container/listener. The real run verified all model artifact hashes,
+returned zero normalized public-fixture word errors, and observed 2.968 GiB
+container usage. Private log/summary hashes are recorded in ADR 0025. This
+focused correction does not close the provider, meeting, locale, duration, or
+complete Phase 6 gates; the frozen exact candidate must repeat log-clean
+lifecycle assertions.
 
 #### Retired Triton experiment — historical negative evidence
 
