@@ -215,10 +215,14 @@ All three commands use the same private-cache, clean checked-head/input
 read-back, and aggregate-evidence rules as the standard runner. Their existence
 does not consume the frozen checked-head gate.
 
-`provider_resource_observations` samples cgroup-v2 current/peak/composition,
-memory events, CPU/task counts, and the container entrypoint's RSS/thread/
-virtual-data extent without recording content or paths. NeMo response aggregates
-also retain CUDA allocated/reserved counters. Runtime-plan schema 5 contains
+`resident_provider_resource_sampler` resolves only a checked-head, non-root,
+Yap-owned vLLM or NeMo container and writes private 250-ms cgroup-v2 and
+entrypoint observations until explicit workload-start, workload-end, and stop
+markers close the interval. `provider_resource_observations` then validates and
+summarizes current/peak/composition, memory events, CPU/task counts, and the
+container entrypoint's RSS/thread/virtual-data extent without publishing content
+or paths. NeMo response aggregates also retain CUDA allocated/reserved counters.
+Runtime-plan schema 5 contains
 separate predeclared c8/1,600 GB10 profiles; qualification requires current and
 peak ceilings, a sufficiently long sampled tail, zero memory-event increments,
 bounded tasks/threads, and no more than 64 MiB absolute tail-window growth in
@@ -228,7 +232,9 @@ growing live state. Both current-source profiles pass the executable eleven-
 check contract and clean teardown; the Phase 6 requirement remains unfulfilled
 until the frozen-head run passes it. The command requires the checked head,
 repository root, and provider-serving lock and performs the same pre/post
-candidate read-back before publishing its aggregate.
+candidate read-back before publishing its aggregate. Raw JSONL and sampler
+control files must remain beneath the private `YAP_EVAL_CACHE`; they are never a
+repository artifact.
 
 The Windows desktop reaches this profile only through an explicitly started
 SSH local forward to `127.0.0.1:18765`. No TLS endpoint, firewall opening, DNS,

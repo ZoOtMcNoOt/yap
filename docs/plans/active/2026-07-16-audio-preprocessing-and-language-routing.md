@@ -1072,6 +1072,14 @@ counters, and zero memory-event increments. Both containers and listeners were
 absent afterward. This is focused contract enforcement, not the one-time frozen
 Phase 6 run.
 
+The reproducible resource path now includes a checked-in cgroup-v2 sampler rather
+than depending on the earlier manual collection helper. It resolves only the two
+Yap-owned checked-head container names, rejects root or moved processes, reads
+the unified cgroup and entrypoint counters through bounded real files, and closes
+one private JSONL series through explicit workload start/end/stop markers. The
+existing strict observation qualifier round-trips that schema. Focused portable
+tests pass; no resident model or frozen resource profile was run by this change.
+
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness
 passed, the public fixture matched the Transformers reference transcript hash
