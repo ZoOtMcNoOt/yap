@@ -17,8 +17,9 @@ const MAX_LID_PREFLIGHT_BODY_BYTES: u64 = 1024 * 1024;
 const MAX_LID_PREFLIGHT_MANIFEST_BYTES: u64 = 32 * 1024;
 const LID_SAMPLE_RATE_HZ: u64 = 16_000;
 const LID_MINIMUM_SOURCE_SAMPLES: u64 = LID_SAMPLE_RATE_HZ * 30;
-const LID_MAXIMUM_WINDOW_SAMPLES: u64 = LID_SAMPLE_RATE_HZ * 15;
-const LID_MINIMUM_VOICED_SAMPLES: u64 = LID_SAMPLE_RATE_HZ * 8;
+const LID_MAXIMUM_WINDOW_SAMPLES: u64 = LID_SAMPLE_RATE_HZ * 6;
+const LID_MINIMUM_VOICED_SAMPLES: u64 = 51_200;
+const LID_STRATIFIED_REGION_COUNT: u16 = 5;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -296,7 +297,7 @@ impl LidPreflightCapability {
             && valid_python_312_patch(&self.runtime.python_version)
             && self.runtime.cpu_only
             && bounded_text(&self.model.id, 256)
-            && lower_hex(&self.model.revision, 40)
+            && immutable_lid_model_revision(&self.model.revision)
             && self.transport.media_type == LID_PREFLIGHT_MEDIA_TYPE
             && (5..=MAX_LID_PREFLIGHT_BODY_BYTES).contains(&self.transport.maximum_body_bytes)
             && (1..=MAX_LID_PREFLIGHT_MANIFEST_BYTES)
@@ -312,17 +313,23 @@ impl LidPreflightCapability {
             && self.policy.channel_count == 1
             && self.policy.sample_width_bytes == 2
             && self.policy.minimum_source_samples == LID_MINIMUM_SOURCE_SAMPLES
-            && self.policy.maximum_windows == 2
-            && (LID_MINIMUM_VOICED_SAMPLES..=LID_MAXIMUM_WINDOW_SAMPLES)
-                .contains(&self.policy.maximum_window_samples)
-            && (LID_MINIMUM_VOICED_SAMPLES..=self.policy.maximum_window_samples)
-                .contains(&self.policy.minimum_voiced_samples_per_window)
-            && self.policy.score_semantics == "uncalibrated-log-posterior"
+            && self.policy.maximum_windows == LID_STRATIFIED_REGION_COUNT
+            && self.policy.maximum_window_samples == LID_MAXIMUM_WINDOW_SAMPLES
+            && self.policy.minimum_voiced_samples_per_window == LID_MINIMUM_VOICED_SAMPLES
+            && self.policy.score_semantics == "mean-logit-log-softmax"
             && self
                 .policy
                 .maximum_window_samples
                 .checked_mul(u64::from(self.policy.maximum_windows))
                 .is_some_and(|minimum| minimum <= self.policy.minimum_source_samples)
+            && self
+                .policy
+                .maximum_window_samples
+                .checked_mul(u64::from(self.policy.sample_width_bytes))
+                .and_then(|bytes| bytes.checked_mul(u64::from(self.policy.maximum_windows)))
+                .and_then(|bytes| bytes.checked_add(self.transport.maximum_manifest_bytes))
+                .and_then(|bytes| bytes.checked_add(4))
+                .is_some_and(|maximum| maximum <= self.transport.maximum_body_bytes)
             && self.policy.user_confirmation_required
     }
 }
@@ -337,6 +344,19 @@ fn lower_hex(value: &str, length: usize) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+fn immutable_lid_model_revision(value: &str) -> bool {
+    if lower_hex(value, 40) {
+        return true;
+    }
+    let parts = value.split('.').collect::<Vec<_>>();
+    parts.len() == 3
+        && parts.iter().all(|part| {
+            !part.is_empty()
+                && part.bytes().all(|byte| byte.is_ascii_digit())
+                && (part == &"0" || !part.starts_with('0'))
+        })
 }
 
 fn provider_language_code(value: &str) -> bool {
@@ -490,7 +510,7 @@ mod tests {
         assert_eq!(catalog.catalog_revision, original_revision);
         assert_eq!(catalog.computed_revision().unwrap(), original_revision);
         let lid = catalog.lid_preflight().unwrap();
-        assert_eq!(lid.policy.revision, "speechbrain-two-window-v1");
+        assert_eq!(lid.policy.revision, "ambernet-stratified-five-region-v1");
         assert!(lid.runtime.cpu_only);
     }
 
@@ -548,11 +568,11 @@ mod tests {
     fn lid_capability_value() -> serde_json::Value {
         serde_json::json!({
             "schemaVersion": 1,
-            "componentId": "speechbrain-lid-preflight",
+            "componentId": "ambernet-batch-language-preflight",
             "runtime": {"pythonVersion": "3.12.13", "cpuOnly": true},
             "model": {
-                "id": "speechbrain/lang-id-voxlingua107-ecapa",
-                "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9"
+                "id": "nvidia/nemo/langid_ambernet",
+                "revision": "1.12.0"
             },
             "transport": {
                 "mediaType": LID_PREFLIGHT_MEDIA_TYPE,
@@ -561,15 +581,15 @@ mod tests {
                 "maximumResponseSeconds": 120
             },
             "policy": {
-                "revision": "speechbrain-two-window-v1",
+                "revision": "ambernet-stratified-five-region-v1",
                 "sampleRateHz": 16_000,
                 "channelCount": 1,
                 "sampleWidthBytes": 2,
                 "minimumSourceSamples": 480_000,
-                "maximumWindows": 2,
-                "maximumWindowSamples": 240_000,
-                "minimumVoicedSamplesPerWindow": 128_000,
-                "scoreSemantics": "uncalibrated-log-posterior",
+                "maximumWindows": 5,
+                "maximumWindowSamples": 96_000,
+                "minimumVoicedSamplesPerWindow": 51_200,
+                "scoreSemantics": "mean-logit-log-softmax",
                 "userConfirmationRequired": true
             }
         })

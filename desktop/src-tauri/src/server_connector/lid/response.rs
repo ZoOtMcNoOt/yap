@@ -70,7 +70,7 @@ pub(super) struct ExpectedLidResponse {
     pub(super) catalog_revision: String,
     pub(super) capability: LidPreflightCapability,
     pub(super) supported_fixed_locales: Vec<String>,
-    pub(super) observations: [ExpectedObservation; 2],
+    pub(super) observations: [ExpectedObservation; 5],
 }
 
 pub(super) struct ExpectedObservation {
@@ -162,6 +162,7 @@ pub(super) fn decode_lid_response(
 
     let mut observations = Vec::with_capacity(expected.observations.len());
     let mut detected_codes = Vec::with_capacity(expected.observations.len());
+    let mut ambiguous_model_output = false;
     for (wire_observation, expected_observation) in
         wire.observations.into_iter().zip(&expected.observations)
     {
@@ -197,6 +198,7 @@ pub(super) fn decode_lid_response(
             return Err(LidPreflightError::MalformedResponse);
         }
         detected_codes.push(code);
+        ambiguous_model_output |= wire_observation.score_margin == 0.0;
         observations.push(LidPreflightObservation {
             index: wire_observation.index,
             probe_sha256: wire_observation.probe_sha256,
@@ -210,8 +212,11 @@ pub(super) fn decode_lid_response(
         });
     }
 
-    let (expected_status, expected_reason, expected_suggestion) =
-        expected_decision(&detected_codes, &expected.supported_fixed_locales);
+    let (expected_status, expected_reason, expected_suggestion) = expected_decision(
+        &detected_codes,
+        ambiguous_model_output,
+        &expected.supported_fixed_locales,
+    );
     if wire.status != expected_status
         || wire.reason != expected_reason
         || wire.suggested_locale != expected_suggestion
@@ -251,12 +256,16 @@ pub(super) fn decode_lid_response(
 
 fn expected_decision(
     codes: &[Option<String>],
+    ambiguous_model_output: bool,
     supported_fixed_locales: &[String],
 ) -> (LidPreflightStatus, &'static str, Option<String>) {
+    if ambiguous_model_output {
+        return (LidPreflightStatus::Manual, "ambiguous_model_output", None);
+    }
     if codes.iter().any(Option::is_none) {
         return (LidPreflightStatus::Manual, "invalid_model_label", None);
     }
-    if codes[0] != codes[1] {
+    if codes.iter().skip(1).any(|code| code != &codes[0]) {
         return (LidPreflightStatus::Manual, "language_disagreement", None);
     }
     let code = codes[0].as_deref().expect("checked language code");
@@ -276,15 +285,13 @@ fn expected_decision(
 }
 
 fn language_code(raw_label: &str) -> Option<String> {
-    let (code, name) = raw_label.split_once(": ")?;
-    if !(2..=3).contains(&code.len())
-        || !code.bytes().all(|byte| byte.is_ascii_lowercase())
-        || name.is_empty()
+    if !(2..=3).contains(&raw_label.len())
+        || !raw_label.bytes().all(|byte| byte.is_ascii_lowercase())
     {
         return None;
     }
     Some(
-        match code {
+        match raw_label {
             "in" => "id",
             "iw" => "he",
             "ji" => "yi",

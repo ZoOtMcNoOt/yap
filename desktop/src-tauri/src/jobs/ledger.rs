@@ -12,7 +12,7 @@ mod remote_state;
 mod retention;
 mod row_mapping;
 
-pub(crate) use client_preflight::LidPreflightDispatchFailure;
+pub(crate) use client_preflight::{LidPreflightDispatchFailure, LidPreflightDispatchStart};
 
 use self::records::{path_text, ValidatedChunk, ValidatedJob};
 use self::retention::prune_terminal_history;

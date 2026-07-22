@@ -1,3 +1,2 @@
-speechbrain==1.1.0
-torch==2.11.0+cpu
-torchaudio==2.11.0+cpu
+numpy==2.4.6
+onnxruntime==1.27.0

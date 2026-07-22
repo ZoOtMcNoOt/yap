@@ -18,11 +18,9 @@ from yap_server.lid.component_lock import (
 REPO_ROOT = Path(__file__).resolve().parents[3]
 COMPONENT_LOCK = REPO_ROOT / "server" / "lid-component.lock.json"
 EXPECTED_ARTIFACTS = {
-    "classifier.ckpt",
-    "embedding_model.ckpt",
-    "hyperparams.yaml",
-    "label_encoder.txt",
+    "ambernet-1.12.0-classifier-int8-qdq.onnx",
 }
+MODEL_FILE = next(iter(EXPECTED_ARTIFACTS))
 
 
 def _payload() -> dict[str, object]:
@@ -41,36 +39,44 @@ class LidComponentLockTests(unittest.TestCase):
     ) -> None:
         lock = load_lid_component_lock(COMPONENT_LOCK)
 
-        self.assertEqual(lock.schema_version, 2)
-        self.assertEqual(lock.component_id, "speechbrain-lid-preflight")
+        self.assertEqual(lock.schema_version, 3)
+        self.assertEqual(lock.component_id, "ambernet-batch-language-preflight")
         self.assertEqual(lock.runtime.platform, "linux/arm64")
         self.assertEqual(lock.runtime.python_version, "3.12.13")
         self.assertTrue(lock.runtime.cpu_only)
         self.assertEqual(
             dict(lock.runtime.packages),
             {
-                "speechbrain": "1.1.0",
-                "torch": "2.11.0+cpu",
-                "torchaudio": "2.11.0+cpu",
+                "numpy": "2.4.6",
+                "onnxruntime": "1.27.0",
             },
         )
         self.assertEqual(
             lock.model.model_id,
-            "speechbrain/lang-id-voxlingua107-ecapa",
+            "nvidia/nemo/langid_ambernet",
         )
         self.assertEqual(
             lock.model.revision,
-            "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+            "1.12.0",
         )
-        self.assertEqual(lock.model.license, "Apache-2.0")
+        self.assertEqual(lock.model.license, "NVIDIA-NGC-Terms")
+        self.assertEqual(lock.model.distribution_policy, "verify-only-import")
+        self.assertEqual(lock.model.redistribution_approval, "not-approved")
+        self.assertEqual(lock.model.frontend_revision, "nemo-fixed-3s-v1")
+        self.assertEqual(
+            lock.model.label_order_sha256,
+            "9c64d2027a37ed72852eea368a7c81eff62efb3c39e72a1567dad35fb83d2e50",
+        )
         self.assertEqual(lock.model.label_count, 107)
         self.assertEqual(
             {artifact.path for artifact in lock.model.artifacts},
             EXPECTED_ARTIFACTS,
         )
         self.assertEqual(lock.policy.sample_rate_hz, 16_000)
-        self.assertEqual(lock.policy.maximum_windows, 2)
-        self.assertEqual(lock.policy.maximum_window_samples, 240_000)
+        self.assertEqual(lock.policy.maximum_windows, 5)
+        self.assertEqual(lock.policy.maximum_window_samples, 96_000)
+        self.assertEqual(lock.policy.minimum_voiced_samples_per_window, 51_200)
+        self.assertEqual(lock.policy.score_semantics, "mean-logit-log-softmax")
         self.assertTrue(lock.policy.user_confirmation_required)
         self.assertEqual(
             verify_lid_requirements(lock, REPO_ROOT),
@@ -106,10 +112,10 @@ class LidComponentLockTests(unittest.TestCase):
             lock = load_lid_component_lock(_write_lock(root, payload))
             verify_lid_model_artifacts(lock, model_dir)
 
-            (model_dir / "classifier.ckpt").write_bytes(b"tampered")
+            (model_dir / MODEL_FILE).write_bytes(b"tampered")
             with self.assertRaisesRegex(
                 LidComponentArtifactError,
-                "classifier.ckpt",
+                MODEL_FILE,
             ):
                 verify_lid_model_artifacts(lock, model_dir)
 
@@ -134,19 +140,19 @@ class LidComponentLockTests(unittest.TestCase):
                 (model_dir / str(artifact["path"])).write_bytes(content)
             lock = load_lid_component_lock(_write_lock(root, payload))
 
-            (model_dir / "classifier.ckpt").unlink()
+            (model_dir / MODEL_FILE).unlink()
             with self.assertRaisesRegex(LidComponentArtifactError, "missing"):
                 verify_lid_model_artifacts(lock, model_dir)
 
-            (model_dir / "classifier.ckpt").mkdir()
+            (model_dir / MODEL_FILE).mkdir()
             with self.assertRaisesRegex(LidComponentArtifactError, "regular file"):
                 verify_lid_model_artifacts(lock, model_dir)
 
-            (model_dir / "classifier.ckpt").rmdir()
-            target = root / "outside.ckpt"
-            target.write_bytes(b"locked:classifier.ckpt")
+            (model_dir / MODEL_FILE).rmdir()
+            target = root / "outside.onnx"
+            target.write_bytes(f"locked:{MODEL_FILE}".encode())
             try:
-                os.symlink(target, model_dir / "classifier.ckpt")
+                os.symlink(target, model_dir / MODEL_FILE)
             except OSError:
                 return
             with self.assertRaisesRegex(LidComponentArtifactError, "regular file"):
@@ -157,7 +163,7 @@ class LidComponentLockTests(unittest.TestCase):
             (
                 "artifact traversal",
                 lambda value: value["component"]["model"]["artifacts"][0].update(
-                    {"path": "../classifier.ckpt"}
+                    {"path": "../classifier.onnx"}
                 ),
             ),
             (
@@ -184,10 +190,10 @@ class LidComponentLockTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     load_lid_component_lock(_write_lock(Path(directory), payload))
 
-    def test_rejects_gpu_packages_or_a_false_cpu_only_claim(self) -> None:
+    def test_rejects_unpinned_packages_or_a_false_cpu_only_claim(self) -> None:
         mutations = (
             lambda value: value["component"]["runtime"]["packages"].update(
-                {"torch": "2.11.0"}
+                {"numpy": "2.4"}
             ),
             lambda value: value["component"]["runtime"].update(
                 {"cpuOnly": False}

@@ -64,7 +64,8 @@ router decisions remain intact
 **Constrained by:** [ADR 0019](0019-local-streaming-model-selection.md),
 [ADR 0020](0020-meeting-capture-diarization-authority.md), and
 [ADR 0023](0023-bounded-live-priority.md)
-**Amended by:** [ADR 0025](0025-provider-specific-asr-serving.md)
+**Amended by:** [ADR 0025](0025-provider-specific-asr-serving.md) and
+[ADR 0026](0026-ambernet-batch-language-preflight.md)
 
 ## Context
 
@@ -100,9 +101,10 @@ slice, but it is not the intended global product:
   `fcccf21e785b116b92cd8e46150a36b9b5ee91db` ran the locked Cohere and Nemotron
   models through Yap's real vLLM and NeMo adapters and cleaned up their
   containers/listeners. A separate source-exact run at
-  `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` exercised the isolated SpeechBrain
-  CPU image through the real `ContainerLidWorker` over both bounded probes.
-  These close image/model/adapter execution prerequisites only; frozen resource,
+  `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` exercised the now-superseded
+  SpeechBrain CPU image through the real `ContainerLidWorker` over both bounded
+  probes. That receipt remains historical evidence. These close only the named
+  image/model/adapter execution prerequisites; frozen current-runtime resource,
   representative, duration, concurrency, and promotion gates remain open.
 - Cohere does not return dependable word timestamps. Downstream meeting
   evidence needs timing, but invented or structurally invalid word intervals
@@ -205,8 +207,9 @@ Setup asks the user to confirm one primary language/locale from the current
 capability list. The OS locale may preselect a suggestion, but it is not saved
 as the user's decision until confirmed. The setting remains editable.
 
-- Outside explicit dynamic mode, recordings with less than eight voiced seconds
-  use the primary language and do not run the separate SpeechBrain LID probe.
+- Outside explicit dynamic mode, recordings under the accepted batch-preflight
+  duration or speech-evidence bounds use the primary/manual language and do not
+  run the separate LID component.
 - Local live warmup loads the confirmed primary locale, validates it against the
   exact 32-locale out-of-box Nemotron allowlist, and applies it to every native
   stream, including streams recreated after reset. Unsupported locales fail
@@ -226,39 +229,33 @@ as the user's decision until confirmed. The setting remains editable.
   language.
 - Country/locale is never inferred from IP address or physical location.
 
-### 4. Use SpeechBrain only for bounded batch preflight
+### 4. Use AmberNet only for bounded batch preflight
 
-The accepted LID candidate is
-`speechbrain/lang-id-voxlingua107-ecapa` at immutable revision
-`0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9`, under Apache-2.0.
+[ADR 0026](0026-ambernet-batch-language-preflight.md) now owns the exact model,
+runtime, artifact-delivery, probe-selection, and score semantics for this
+boundary. In summary:
 
-It runs in a separate CPU-only Python 3.12 component pinned to SpeechBrain
-1.1.0 and the matched PyTorch/TorchAudio 2.11 CPU pair. It does not modify the
-NVIDIA 26.06 ASR image, consume an ASR GPU slot, or enter the desktop installer.
-Production images and weights are staged and hash-verified before the networkless
-runtime starts; an implicit production download is prohibited.
+1. The server verifies one explicitly imported AmberNet 1.12.0 INT8 QDQ ONNX
+   artifact; it neither bundles nor downloads the NGC-governed model.
+2. A CPU-only Python 3.12/NumPy/ONNX Runtime worker runs networkless, non-root,
+   one-threaded, and without an ASR GPU slot.
+3. Recordings under 30 seconds use the primary/manual route. Longer recordings
+   require five exact six-second regions stratified from source start through
+   the exact tail, with at least 3.2 seconds of VAD speech in every region.
+4. Each region runs as two independent fixed three-second inferences. Yap
+   averages logits only inside that region; it never concatenates requests or
+   pads one user's input with another user's audio.
+5. All five normalized labels must agree, every margin must be strictly
+   positive, and the language must map to exactly one enabled fixed locale.
+   Every other outcome opens the manual picker.
+6. Store the immutable component identity, raw label, mapped locale, source
+   offsets, probe digest, log score, margin, and user disposition. Never call
+   the score calibrated confidence.
+7. A supported suggestion only pre-fills the picker. The user confirms it before
+   a fixed-language ASR job commits, and the saved primary is never rewritten.
 
-SpeechBrain is assistive preflight, not routing authority:
-
-1. Select a continuous window of at most 15 seconds near the first usable speech
-   and, for a long recording, another near the temporal middle.
-2. Use advisory Silero VAD intervals to require at least eight voiced seconds in
-   each probe. Energy alone cannot prove speech.
-3. Cap work at two windows and preserve their source offsets as decision
-   provenance. Never remove the corresponding source audio.
-4. A recording shorter than the threshold uses the primary/manual language. A
-   long recording needs mapped-language agreement across both usable windows.
-5. Missing speech, disagreement, an unsupported label, or an ambiguous locale
-   opens the manual picker. No "closest" language is selected automatically.
-6. Store the model/revision, raw label, mapped locale, window offsets, top score,
-   score margin, and user disposition. The model's softmax-like score is not
-   called calibrated confidence.
-7. A supported suggestion merely pre-fills the picker. The user confirms it
-   before a fixed-language ASR job is committed.
-
-This replaces ADR 0008's fixed `0.70` threshold and raw start-window shortcut.
-Systematic related-language confusions cannot be made safe by one scalar
-threshold.
+This preserves ADR 0008's user-gate principle while superseding its SpeechBrain,
+download, two-window, and fixed-threshold details.
 
 ### 5. Add bounded client-local language diarization and offline switching
 
@@ -389,8 +386,8 @@ finalized speech segment.
   terminal tag provides independent server evidence; it is reconciled with any
   client `LanguageSpan` input rather than silently replacing client history.
 - Nemotron auto mode may evaluate a short finalized utterance because its tag is
-  produced by the same transcription pass. The eight-voiced-second SpeechBrain
-  threshold is not applied to this path, and Yap does not describe the emitted
+  produced by the same transcription pass. The separate batch-preflight
+  duration/speech thresholds are not applied to this path, and Yap does not describe the emitted
   tag as calibrated confidence.
 - Missing, disabled, adaptation-ready, or structurally invalid tags produce an
   `Unknown` language segment and visible review state.
@@ -647,10 +644,11 @@ resident-memory, battery/thermal, packaging, and rollback evidence.
 3. [ ] Enable a real selectable per-job alternate locale after a second fixed
        route passes its promotion gate.
 4. [x] Produce advisory Silero VAD segments without deleting source audio.
-5. [x] Package the pinned CPU SpeechBrain component and immutable model lock;
-       retain the source-exact GB10 image-execution receipt and keep peak RSS,
-       sustained CPU, representative promotion, and complete resource evidence
-       in the final Phase 6 gate.
+5. [x] Replace the superseded SpeechBrain component with the verify-only
+       AmberNet 1.12.0 INT8 QDQ artifact, five-region client/server contract,
+       and small CPU ONNX Runtime image. Retain the historical SpeechBrain
+       receipt while keeping exact checked-head ARM64 resources, representative
+       promotion, and complete phase evidence in the final Phase 6 gate.
 6. [x] Preserve Whisper-tiny and the other released candidates as measured
        comparators; implement the accepted AmberNet 1.12.0 QDQ INT8 component
        with exact frontend/label/runtime identity and a verified local-import

@@ -7,34 +7,32 @@ license and metadata files remain installed in the image.
 
 ## Direct runtime dependencies
 
-- **SpeechBrain 1.1.0** — Apache-2.0. Source:
-  <https://github.com/speechbrain/speechbrain/tree/v1.1.0>.
-- **PyTorch 2.11.0+cpu** — BSD-3-Clause. Source:
-  <https://github.com/pytorch/pytorch/tree/v2.11.0>.
-- **TorchAudio 2.11.0+cpu** — BSD-2-Clause. Source:
-  <https://github.com/pytorch/audio/tree/v2.11.0>.
+- **NumPy 2.4.6** — BSD-3-Clause. Source:
+  <https://github.com/numpy/numpy/tree/v2.4.6>.
+- **ONNX Runtime 1.27.0** — MIT. Source:
+  <https://github.com/microsoft/onnxruntime/tree/v1.27.0>.
 
-The standard Apache License 2.0 text is shipped at
-`licenses/APACHE-2.0.txt`. PyTorch and TorchAudio license texts and attribution
-material are preserved in their installed wheel metadata.
+The installed wheel metadata retains the applicable license texts and
+attribution material.
 
 ## Language-identification model
 
-- Model: `speechbrain/lang-id-voxlingua107-ecapa`
-- Immutable revision: `0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9`
-- License: Apache-2.0
+- Model: `nvidia/nemo/langid_ambernet`
+- Release: `1.12.0`
 - Source:
-  <https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa/tree/0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9>
+  <https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/langid_ambernet>
+- Terms: NVIDIA NGC Terms of Use
 
-The model weights are not embedded in this image or fetched at runtime. Four
-required artifacts are staged separately, then checked by exact byte size and
-SHA-256 against `lid-component.lock.json` before the classifier loads.
+The model is not embedded in the image or fetched by the application.
+Redistribution approval is not granted. An operator must explicitly import the exact INT8 QDQ ONNX
+artifact, after which Yap checks its byte size and SHA-256 against
+`lid-component.lock.json` before loading it. Importing the artifact remains
+subject to NVIDIA's applicable NGC terms.
 
 ## Transitive dependencies
 
 The image includes the exact transitive distributions selected for Python 3.12
 on Linux ARM64. Their versions, distribution sources, and accepted wheel hashes
-are recorded in `runtime/lid/requirements.lock`. Their upstream licenses include
-Apache-2.0, BSD-family, ISC, MIT, MPL-2.0, and Python-family terms. Package
-license files and metadata installed from the locked wheels are part of the
-runtime image and must not be removed during image minimization.
+are recorded in `runtime/lid/requirements.lock`. Package license files and
+metadata installed from the locked wheels are part of the runtime image and
+must not be removed during image minimization.

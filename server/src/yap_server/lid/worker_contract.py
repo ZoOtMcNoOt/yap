@@ -141,7 +141,7 @@ def load_lid_worker_request(
     if not isinstance(raw_probes, list) or not (
         1 <= len(raw_probes) <= lock.policy.maximum_windows
     ):
-        raise WorkerInputError("probes must contain one or two bounded windows")
+        raise WorkerInputError("probes must contain one to five bounded regions")
 
     probes: list[LidProbeReference] = []
     for position, raw_probe in enumerate(raw_probes):
@@ -186,8 +186,8 @@ def load_lid_worker_request(
         span = end - start
         if end > source_samples or span < 1:
             raise WorkerInputError("probe offsets must stay inside the source")
-        if span > lock.policy.maximum_window_samples:
-            raise WorkerInputError("probe exceeds the locked window bound")
+        if span != lock.policy.maximum_window_samples:
+            raise WorkerInputError("probe differs from the locked region length")
         if (
             voiced < lock.policy.minimum_voiced_samples_per_window
             or voiced > span

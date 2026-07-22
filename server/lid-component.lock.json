@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "component": {
-    "id": "speechbrain-lid-preflight",
+    "id": "ambernet-batch-language-preflight",
     "role": "assistive-batch-language-suggestion",
     "runtime": {
       "image": "python",
@@ -13,52 +13,40 @@
       "pythonVersion": "3.12.13",
       "cpuOnly": true,
       "packages": {
-        "speechbrain": "1.1.0",
-        "torch": "2.11.0+cpu",
-        "torchaudio": "2.11.0+cpu"
+        "numpy": "2.4.6",
+        "onnxruntime": "1.27.0"
       },
       "requirementsLock": "server/runtime/lid/requirements.lock",
-      "requirementsSha256": "a43d9ba7bacae96cdefbf81c9caadd40d3557570164a28a4d74e860e8ea104d6"
+      "requirementsSha256": "747b9fdd516a0662b91e3f9a5fa6a1fc1ab5607039149df72b507fb1d9654bc0"
     },
     "model": {
-      "id": "speechbrain/lang-id-voxlingua107-ecapa",
-      "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
-      "license": "Apache-2.0",
-      "source": "https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa",
+      "id": "nvidia/nemo/langid_ambernet",
+      "revision": "1.12.0",
+      "license": "NVIDIA-NGC-Terms",
+      "source": "https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/langid_ambernet",
+      "distributionPolicy": "verify-only-import",
+      "redistributionApproval": "not-approved",
+      "frontendRevision": "nemo-fixed-3s-v1",
       "labelCount": 107,
+      "labelOrderSha256": "9c64d2027a37ed72852eea368a7c81eff62efb3c39e72a1567dad35fb83d2e50",
       "artifacts": [
         {
-          "path": "classifier.ckpt",
-          "size": 762555,
-          "sha256": "a50d9024ff58d317031c9787d4c6c614d454a87a8ef32f9d36338cd3ff57adbc"
-        },
-        {
-          "path": "embedding_model.ckpt",
-          "size": 84474355,
-          "sha256": "ab750d5c06d713477045fa798fab5d33e959dbc0dfe4de510a9a47844c79a19a"
-        },
-        {
-          "path": "hyperparams.yaml",
-          "size": 1519,
-          "sha256": "88fec9791a8416a152fb10834327e18d38e5bf7a351e9b714e08cdc4af05de6f"
-        },
-        {
-          "path": "label_encoder.txt",
-          "size": 2204,
-          "sha256": "9f566d83c4f19168be4a0bf86c0c7dac7d3264a95105bcbf33a7c32b83ccc17f"
+          "path": "ambernet-1.12.0-classifier-int8-qdq.onnx",
+          "size": 29613392,
+          "sha256": "ef1006c7637803540e12ab01021e442382857689cbe0b1909d3128acf66a0a3e"
         }
       ]
     },
     "policy": {
-      "revision": "speechbrain-two-window-v1",
+      "revision": "ambernet-stratified-five-region-v1",
       "sampleRateHz": 16000,
       "channelCount": 1,
       "sampleWidthBytes": 2,
       "minimumSourceSamples": 480000,
-      "maximumWindows": 2,
-      "maximumWindowSamples": 240000,
-      "minimumVoicedSamplesPerWindow": 128000,
-      "scoreSemantics": "uncalibrated-log-posterior",
+      "maximumWindows": 5,
+      "maximumWindowSamples": 96000,
+      "minimumVoicedSamplesPerWindow": 51200,
+      "scoreSemantics": "mean-logit-log-softmax",
       "userConfirmationRequired": true
     }
   }

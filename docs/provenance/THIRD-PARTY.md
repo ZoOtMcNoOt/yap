@@ -64,9 +64,13 @@ the 2026-07-12 audit did not authorize or incorporate donor code. See the
 - The executing resident NeMo service is separately frozen by
   `server/nemotron-nemo-serving.lock.json`; its runtime notices ship from
   `server/runtime/nemotron-nemo/THIRD_PARTY_NOTICES.md`.
-- The executing SpeechBrain language-suggestion service is separately frozen by
-  `server/lid-component.lock.json`; its runtime notices ship from
-  `server/runtime/lid/THIRD_PARTY_NOTICES.md`.
+- The executing server batch-language suggestion is separately frozen by
+  `server/lid-component.lock.json`: one exact AmberNet 1.12.0 INT8 QDQ artifact,
+  NeMo-compatible frontend/label order, Python 3.12, NumPy, and CPU ONNX Runtime.
+  The model is not bundled, mirrored, or fetched; redistribution remains
+  unapproved and an operator import is verified under the applicable NGC terms.
+  Runtime notices ship from `server/runtime/lid/THIRD_PARTY_NOTICES.md`. The old
+  SpeechBrain/Torch component is retained only in history and a recoverable ref.
 - Shared full license texts and the Transformers reference-worker notices ship
   from `server/runtime/asr/licenses/` and
   `server/runtime/asr/THIRD_PARTY_NOTICES.md`. The production ASR, NeMo, and LID

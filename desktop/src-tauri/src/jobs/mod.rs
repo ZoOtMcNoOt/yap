@@ -8,7 +8,7 @@ mod remote;
 mod resources;
 
 pub use ledger::JobLedger;
-pub(crate) use ledger::LidPreflightDispatchFailure;
+pub(crate) use ledger::{LidPreflightDispatchFailure, LidPreflightDispatchStart};
 pub use model::{
     AsrCatalogBinding, ClientPreflightArtifactRecord, ClientStageAttemptRecord, ClientStageName,
     ClientStageState, DetachedRemoteCancellationRecord, JobChunkRecord, JobLedgerError,

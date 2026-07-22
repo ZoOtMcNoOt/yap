@@ -160,6 +160,9 @@ impl PreparedClientPreflight {
         let probes = [
             read_probe_pcm(&self.manifest, spool_root, &windows[0])?,
             read_probe_pcm(&self.manifest, spool_root, &windows[1])?,
+            read_probe_pcm(&self.manifest, spool_root, &windows[2])?,
+            read_probe_pcm(&self.manifest, spool_root, &windows[3])?,
+            read_probe_pcm(&self.manifest, spool_root, &windows[4])?,
         ];
         let source =
             LidPreflightSourceIdentity::try_new(request_id, source_samples, source_pcm_sha256)

@@ -15,16 +15,13 @@ from yap_server.bounded_file import read_regular_text
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
-_REVISION = re.compile(r"^[0-9a-f]{40}$")
 _PACKAGE_VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
-_CPU_PACKAGE_VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+\+cpu$")
+_MODEL_REVISION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 _SAFE_PATH_PART = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
-_EXPECTED_ARTIFACTS = {
-    "classifier.ckpt",
-    "embedding_model.ckpt",
-    "hyperparams.yaml",
-    "label_encoder.txt",
-}
+_EXPECTED_ARTIFACTS = {"ambernet-1.12.0-classifier-int8-qdq.onnx"}
+_EXPECTED_LABEL_ORDER_SHA256 = (
+    "9c64d2027a37ed72852eea368a7c81eff62efb3c39e72a1567dad35fb83d2e50"
+)
 _MAX_COMPONENT_LOCK_BYTES = 256 * 1024
 _MAX_REQUIREMENTS_LOCK_BYTES = 4 * 1024 * 1024
 _HASH_BLOCK_BYTES = 4 * 1024 * 1024
@@ -62,7 +59,11 @@ class LidModelLock:
     revision: str
     license: str
     source: str
+    distribution_policy: str
+    redistribution_approval: str
+    frontend_revision: str
     label_count: int
+    label_order_sha256: str
     artifacts: tuple[LockedLidArtifact, ...]
 
 
@@ -224,26 +225,16 @@ def _load_runtime(raw: Any) -> LidRuntimeLock:
     raw_packages = _mapping(runtime["packages"], "component.runtime.packages")
     _exact_keys(
         raw_packages,
-        {"speechbrain", "torch", "torchaudio"},
+        {"numpy", "onnxruntime"},
         "component.runtime.packages",
     )
-    speechbrain = _string(
-        raw_packages["speechbrain"],
-        "component.runtime.packages.speechbrain",
-    )
-    torch = _string(raw_packages["torch"], "component.runtime.packages.torch")
-    torchaudio = _string(
-        raw_packages["torchaudio"],
-        "component.runtime.packages.torchaudio",
-    )
-    if not _PACKAGE_VERSION.fullmatch(speechbrain):
-        raise ValueError("SpeechBrain must use an exact release version")
-    if not _CPU_PACKAGE_VERSION.fullmatch(torch) or not _CPU_PACKAGE_VERSION.fullmatch(
-        torchaudio
+    if any(
+        not _PACKAGE_VERSION.fullmatch(
+            _string(version, f"component.runtime.packages.{name}")
+        )
+        for name, version in raw_packages.items()
     ):
-        raise ValueError("torch and torchaudio must use exact +cpu builds")
-    if torch.removesuffix("+cpu") != torchaudio.removesuffix("+cpu"):
-        raise ValueError("torch and torchaudio versions must match")
+        raise ValueError("LID packages must use exact release versions")
 
     return LidRuntimeLock(
         image=_string(runtime["image"], "component.runtime.image"),
@@ -276,12 +267,23 @@ def _load_model(raw: Any) -> LidModelLock:
     model = _mapping(raw, "component.model")
     _exact_keys(
         model,
-        {"id", "revision", "license", "source", "labelCount", "artifacts"},
+        {
+            "id",
+            "revision",
+            "license",
+            "source",
+            "distributionPolicy",
+            "redistributionApproval",
+            "frontendRevision",
+            "labelCount",
+            "labelOrderSha256",
+            "artifacts",
+        },
         "component.model",
     )
     revision = _string(model["revision"], "component.model.revision")
-    if not _REVISION.fullmatch(revision):
-        raise ValueError("component.model.revision must be a full immutable commit")
+    if not _MODEL_REVISION.fullmatch(revision):
+        raise ValueError("component.model.revision must be an exact release")
     raw_artifacts = model["artifacts"]
     if not isinstance(raw_artifacts, list):
         raise ValueError("component.model.artifacts must be an array")
@@ -311,13 +313,48 @@ def _load_model(raw: Any) -> LidModelLock:
         "component.model.labelCount",
     )
     if label_count != 107:
-        raise ValueError("the pinned VoxLingua107 model must expose 107 labels")
+        raise ValueError("the pinned AmberNet model must expose 107 labels")
+    model_id = _string(model["id"], "component.model.id")
+    if model_id != "nvidia/nemo/langid_ambernet" or revision != "1.12.0":
+        raise ValueError("the AmberNet model identity differs from the accepted export")
+    license_name = _string(model["license"], "component.model.license")
+    if license_name != "NVIDIA-NGC-Terms":
+        raise ValueError("the AmberNet NGC terms must remain explicit")
+    distribution_policy = _string(
+        model["distributionPolicy"],
+        "component.model.distributionPolicy",
+    )
+    redistribution_approval = _string(
+        model["redistributionApproval"],
+        "component.model.redistributionApproval",
+    )
+    if (
+        distribution_policy != "verify-only-import"
+        or redistribution_approval != "not-approved"
+    ):
+        raise ValueError("AmberNet must remain an explicit verify-only import")
+    frontend_revision = _string(
+        model["frontendRevision"],
+        "component.model.frontendRevision",
+    )
+    if frontend_revision != "nemo-fixed-3s-v1":
+        raise ValueError("the AmberNet frontend revision differs")
+    label_order_sha256 = _sha256(
+        model["labelOrderSha256"],
+        "component.model.labelOrderSha256",
+    )
+    if label_order_sha256 != _EXPECTED_LABEL_ORDER_SHA256:
+        raise ValueError("the AmberNet label order differs")
     return LidModelLock(
-        model_id=_string(model["id"], "component.model.id"),
+        model_id=model_id,
         revision=revision,
-        license=_string(model["license"], "component.model.license"),
+        license=license_name,
         source=_https_url(model["source"], "component.model.source"),
+        distribution_policy=distribution_policy,
+        redistribution_approval=redistribution_approval,
+        frontend_revision=frontend_revision,
         label_count=label_count,
+        label_order_sha256=label_order_sha256,
         artifacts=tuple(artifacts),
     )
 
@@ -370,20 +407,22 @@ def _load_policy(raw: Any) -> LidPolicyLock:
     )
     if (sample_rate, channel_count, sample_width) != (16_000, 1, 2):
         raise ValueError("the LID input contract must be mono PCM16 at 16 kHz")
-    if maximum_windows != 2:
-        raise ValueError("the LID policy permits exactly two bounded probes")
-    if maximum_window_samples > sample_rate * 15:
-        raise ValueError("an LID probe cannot exceed 15 seconds")
+    if maximum_windows != 5:
+        raise ValueError("the LID policy requires exactly five bounded regions")
+    if maximum_window_samples != sample_rate * 6:
+        raise ValueError("each AmberNet region must be exactly six seconds")
     if minimum_voiced_samples > maximum_window_samples:
         raise ValueError("minimum voiced samples cannot exceed the probe window")
-    if minimum_source_samples < maximum_windows * maximum_window_samples:
-        raise ValueError("the source must be long enough for disjoint LID probes")
+    if minimum_source_samples != maximum_windows * maximum_window_samples:
+        raise ValueError("the source minimum must cover five disjoint LID regions")
+    if minimum_voiced_samples != 51_200:
+        raise ValueError("the locked region speech threshold differs")
     score_semantics = _string(
         policy["scoreSemantics"],
         "component.policy.scoreSemantics",
     )
-    if score_semantics != "uncalibrated-log-posterior":
-        raise ValueError("LID scores must remain explicitly uncalibrated")
+    if score_semantics != "mean-logit-log-softmax":
+        raise ValueError("LID scores must use the locked aggregated semantics")
     confirmation_required = _boolean(
         policy["userConfirmationRequired"],
         "component.policy.userConfirmationRequired",
@@ -415,7 +454,7 @@ def load_lid_component_lock(path: Path) -> LidComponentLock:
         "root",
     )
     _exact_keys(payload, {"schemaVersion", "component"}, "root")
-    if payload["schemaVersion"] != 2:
+    if payload["schemaVersion"] != 3:
         raise ValueError("unsupported LID component lock schema")
     component = _mapping(payload["component"], "component")
     _exact_keys(
@@ -424,7 +463,7 @@ def load_lid_component_lock(path: Path) -> LidComponentLock:
         "component",
     )
     return LidComponentLock(
-        schema_version=2,
+        schema_version=3,
         component_id=_string(component["id"], "component.id"),
         role=_string(component["role"], "component.role"),
         runtime=_load_runtime(component["runtime"]),
@@ -528,6 +567,18 @@ def verify_lid_model_artifacts(
         raise LidComponentArtifactError("model root is missing") from error
     if not root.is_dir():
         raise LidComponentArtifactError("model root is not a directory")
+    expected_names = {artifact.path for artifact in lock.model.artifacts}
+    try:
+        actual_names = {entry.name for entry in root.iterdir()}
+    except OSError as error:
+        raise LidComponentArtifactError("model root could not be enumerated") from error
+    missing_names = sorted(expected_names - actual_names)
+    if missing_names:
+        raise LidComponentArtifactError(
+            f"missing locked model artifacts: {missing_names}"
+        )
+    if actual_names - expected_names:
+        raise LidComponentArtifactError("model root contains unexpected artifacts")
     for artifact in lock.model.artifacts:
         candidate = root / artifact.path
         _resolved_regular_file(candidate, root, artifact.path)

@@ -16,7 +16,7 @@ LOCK_PATH = REPO_ROOT / "server" / "lid-component.lock.json"
 
 
 class _Worker:
-    def __init__(self, labels: tuple[str, str]) -> None:
+    def __init__(self, labels: tuple[str, ...]) -> None:
         self.labels = labels
         self.calls = 0
 
@@ -32,13 +32,13 @@ class _Worker:
         return {
             "schemaVersion": 1,
             "requestId": request.request_id,
-            "componentId": "speechbrain-lid-preflight",
+            "componentId": "ambernet-batch-language-preflight",
             "model": {
-                "id": "speechbrain/lang-id-voxlingua107-ecapa",
-                "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+                "id": "nvidia/nemo/langid_ambernet",
+                "revision": "1.12.0",
             },
-            "policyRevision": "speechbrain-two-window-v1",
-            "scoreSemantics": "uncalibrated-log-posterior",
+            "policyRevision": "ambernet-stratified-five-region-v1",
+            "scoreSemantics": "mean-logit-log-softmax",
             "sourceSamples": request.source_samples,
             "observations": [
                 {
@@ -61,7 +61,7 @@ class LidPreflightTests(unittest.TestCase):
         self.lock = load_lid_component_lock(LOCK_PATH)
 
     def test_agreement_returns_only_an_unconfirmed_picker_suggestion(self) -> None:
-        worker = _Worker(("fr: French", "fr: French"))
+        worker = _Worker(("fr",) * 5)
         engine = LidPreflightEngine(
             lock=self.lock,
             worker=worker,
@@ -77,10 +77,7 @@ class LidPreflightTests(unittest.TestCase):
                 source_wav=source,
                 work_root=root,
                 request_id="lid-preflight-1",
-                vad_intervals=(
-                    SourceVadInterval(0, 240_000),
-                    SourceVadInterval(320_000, 560_000),
-                ),
+                vad_intervals=(SourceVadInterval(0, 600_000),),
             )
 
             self.assertEqual(result["status"], "suggestion")
@@ -88,13 +85,13 @@ class LidPreflightTests(unittest.TestCase):
             self.assertTrue(result["userConfirmationRequired"])
             self.assertEqual(
                 [item["mappedLocale"] for item in result["observations"]],
-                ["fr-FR", "fr-FR"],
+                ["fr-FR"] * 5,
             )
             self.assertEqual(result["component"]["runtime"]["cpuOnly"], True)
             self.assertFalse((root / "lid-preflight-1").exists())
 
     def test_short_recording_uses_manual_primary_path_without_inference(self) -> None:
-        worker = _Worker(("en: English", "en: English"))
+        worker = _Worker(("en",) * 5)
         engine = LidPreflightEngine(
             lock=self.lock,
             worker=worker,
@@ -118,8 +115,8 @@ class LidPreflightTests(unittest.TestCase):
         self.assertEqual(result["observations"], [])
         self.assertEqual(worker.calls, 0)
 
-    def test_disagreement_fails_closed_and_keeps_both_raw_labels(self) -> None:
-        worker = _Worker(("en: English", "fr: French"))
+    def test_disagreeing_tail_fails_closed_and_keeps_all_raw_labels(self) -> None:
+        worker = _Worker(("en", "en", "en", "en", "fr"))
         engine = LidPreflightEngine(
             lock=self.lock,
             worker=worker,
@@ -135,10 +132,7 @@ class LidPreflightTests(unittest.TestCase):
                 source_wav=source,
                 work_root=root,
                 request_id="lid-preflight-disagreement",
-                vad_intervals=(
-                    SourceVadInterval(0, 240_000),
-                    SourceVadInterval(320_000, 560_000),
-                ),
+                vad_intervals=(SourceVadInterval(0, 600_000),),
             )
 
         self.assertEqual(result["status"], "manual")
@@ -146,7 +140,7 @@ class LidPreflightTests(unittest.TestCase):
         self.assertIsNone(result["suggestedLocale"])
         self.assertEqual(
             [item["rawLabel"] for item in result["observations"]],
-            ["en: English", "fr: French"],
+            ["en", "en", "en", "en", "fr"],
         )
 
 

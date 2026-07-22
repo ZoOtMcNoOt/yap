@@ -4,7 +4,7 @@
 and public aggregate benchmark evidence are complete. The bounded verified ASR
 catalog, frozen language decision, local primary-language conditioning, durable-
 stage, normalization, imported-file advisory VAD, local language spans, and
-isolated SpeechBrain preflight slices now execute alongside pinned server
+isolated verify-only AmberNet batch-preflight slices now execute alongside pinned server
 Nemotron fixed/automatic Transformers reference routes and a Cohere vLLM
 adapter/image/launcher contract with focused Python 3.12, OpenAPI, Rust, and
 TypeScript coverage. The pinned resident Nemotron NeMo adapter, cache-aware
@@ -15,14 +15,15 @@ allocation extent, CUDA allocation/reservation, task/thread counts, and memory
 events; version 5 of the runtime plan freezes separate GB10 ceilings for the
 vLLM and NeMo candidates before the checked-head run. The retired Triton
 experiment remains negative evidence.
-Source-exact focused GB10 image smokes now also exist for Cohere vLLM and
-Nemotron NeMo at executable commit
-`fcccf21e785b116b92cd8e46150a36b9b5ee91db`, and for the isolated SpeechBrain
-component at executable commit
-`04266c4bbffd0fd31eaf2afd0bcce42e0248344f`. They prove that the locked full
-models execute through Yap's real adapters with clean container/listener
-teardown. They do not satisfy the separate frozen representative, resource,
-duration, concurrency, promotion, or complete Phase 6 gates.
+Source-exact focused GB10 image smokes exist for Cohere vLLM and Nemotron NeMo
+at executable commit `fcccf21e785b116b92cd8e46150a36b9b5ee91db`.
+The isolated SpeechBrain component also has a historical source-exact receipt at
+`04266c4bbffd0fd31eaf2afd0bcce42e0248344f`, but ADR 0026 supersedes that
+runtime. The replacement AmberNet path has focused Windows real-model and
+cross-architecture frontend/logit parity evidence; its exact checked-head ARM64
+image/resource smoke remains open. None of those results satisfies the separate
+frozen representative, duration, concurrency, promotion, or complete Phase 6
+gates.
 Fail-closed English
 Cohere attention alignment also executes and has current-source contained GB10
 lifecycle evidence without being advertised. The tiny SpeechFlow LID13 challenger
@@ -129,8 +130,8 @@ It is a routing aid; this plan and ADR 0024 remain the Phase 6 authority.
 - [ADR 0007](../../adr/0007-forced-alignment-engine.md): align raw ASR output,
   not polished text. The historical exact engine choice is amended by ADR 0024.
 - [ADR 0008](../../adr/0008-speechbrain-lid-gate.md): LID is an assistive,
-  user-gated batch decision. ADR 0024 replaces its fixed threshold, raw
-  start-window shortcut, and desktop-runtime assumption.
+  user-gated batch decision. ADR 0026 supersedes its SpeechBrain model/runtime,
+  download, two-window, and fixed-threshold details.
 - [ADR 0014](../../adr/0014-server-tier-compute-topology.md): the client stays
   thin and the private server owns heavy model pools and official inference.
 - [ADR 0018](../../adr/0018-three-repo-topology.md): Phase 6 remains in the
@@ -147,12 +148,16 @@ It is a routing aid; this plan and ADR 0024 remain the Phase 6 authority.
   Phase 5/6 development path still has one fixed `development-loopback` owner;
   it does not claim authenticated multi-tenant fairness.
 - [ADR 0024](../../adr/0024-global-language-routing.md): the provider
-  catalog, primary-language policy, local language-span engine, SpeechBrain
+  catalog, primary-language policy, local language-span engine, guarded batch
   preflight, Nemotron auto mode, alignment gates, and benchmark-backed
   exclusions are canonical for Phase 6.
 - [ADR 0025](../../adr/0025-provider-specific-asr-serving.md): Cohere batch uses
   the gated vLLM candidate, Nemotron keeps the Transformers reference and gates
   NeMo streaming independently, Triton is retired, and SGLang stays outside ASR.
+- [ADR 0026](../../adr/0026-ambernet-batch-language-preflight.md): the server
+  verifies one imported AmberNet artifact, samples five strict start-to-tail
+  regions, recomputes the decision at both client/server boundaries, and always
+  requires user confirmation.
 
 ### Superseded or intentionally ignored details
 
@@ -495,8 +500,9 @@ capacity remain later gates.
       display the exact primary/manual disposition.
 - [ ] Promote a second verified fixed-batch locale so the catalog-derived
       per-job override is selectable in the shipped catalog.
-- [x] Fixed short recordings skip SpeechBrain and use the primary/manual
-      language. A job override never rewrites the saved primary language.
+- [x] Recordings below the locked batch-preflight duration/speech bounds skip
+      AmberNet and use the primary/manual language. A job override never
+      rewrites the saved primary language.
 - [x] Local warmup requires the confirmed primary locale, validates the exact
       32-locale out-of-box allowlist, applies it to stream creation/reset, fails
       unsupported locales visibly, and invalidates idle warm state before a
@@ -510,7 +516,7 @@ then admits the exact unlocked row to `preflighting`. Snapshot recovery consumes
 retained proof and cannot reconstruct selection authority from a ledger path;
 cancellation cannot re-register authority. Preflight creates one immutable
 Yap-owned normalization/VAD artifact, uses the configured language for short
-recordings, or dispatches the bounded SpeechBrain probe for long recordings.
+recordings, or dispatches the bounded AmberNet preflight for long recordings.
 The exact decision is frozen only after durable user-confirmation evidence, then
 the same capture is promoted to remote upload. Already-locked Phase 5 rows retain
 their direct server-queue compatibility path. Restart cancellation reconciles a
@@ -561,51 +567,55 @@ result-publication attempts. Both authorities retain fingerprints, component
 revisions, retryability, evidence hashes, terminal outcomes, and bounded history;
 legacy rows remain readable without claiming history they never recorded.
 
-### 5. Add the isolated SpeechBrain batch preflight
+### 5. Add the isolated AmberNet batch preflight
 
-- [x] Build a separate CPU-only Python 3.12 component pinned to SpeechBrain
-      1.1.0, `torch==2.11.0+cpu`, `torchaudio==2.11.0+cpu`, and model revision
-      `0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9`.
-- [x] Pin hashes/licenses and stage artifacts before a networkless production
-      invocation. Do not modify the NVIDIA ASR image or desktop installer.
-- [x] Probe at most two speech-rich windows, each at most 15 seconds and with at
-      least eight voiced seconds. Preserve exact source offsets.
-- [x] Treat scores as uncalibrated evidence. Silence, disagreement, unsupported
-      or ambiguous locale mapping, and unusable probes require manual choice.
-- [x] A supported agreement pre-fills the picker only; user confirmation remains
-      required before fixed-language commit.
+- [x] Supersede the SpeechBrain/Torch component with a separate CPU-only Python
+      3.12.13 component pinned to NumPy 2.4.6, ONNX Runtime 1.27.0, and the exact
+      AmberNet 1.12.0 static INT8 QDQ graph/frontend/107-label contract.
+- [x] Make model delivery verify-only: accept one explicitly imported regular
+      artifact with the locked size/SHA-256, reject any extra file, and expose no
+      bundle, mirror, download, synchronization, or fallback path while NGC
+      redistribution authority remains unapproved.
+- [x] Select exactly five six-second regions at deterministic 0/25/50/75/tail
+      positions for recordings of at least 30 seconds. Require 51,200 VAD speech
+      samples in every region and preserve exact source offsets and probe hashes.
+- [x] Split each region into two independent three-second graph executions,
+      average logits only within the region, and use stable log-softmax evidence.
+      Never concatenate, pad, or batch across requests.
+- [x] Require all five normalized language labels to agree, every margin to be
+      strictly positive, and the result to map to one enabled fixed locale.
+      Silence, missing regions, disagreement, invalid/unsupported labels,
+      ambiguous locale mapping, timeout, cancellation, component failure, or a
+      client/server decision mismatch require manual choice.
+- [x] Keep the suggestion assistive: persist immutable component/source evidence,
+      prefill the picker only, require user confirmation, and never rewrite the
+      saved primary locale.
+- [x] Bound the worker to a non-root, networkless, read-only, one-thread CPU
+      container with one CPU, 512 MiB memory/swap, 64 PIDs, and bounded output,
+      temporary storage, queueing, cancellation, cleanup, and teardown.
+- [ ] Build the exact checked-head ARM64 image on GB10, execute the real imported
+      artifact through `ContainerLidWorker`, measure cgroup peak memory/CPU and
+      cold latency under the locked limits, and prove teardown without an owned
+      container/listener.
+- [ ] Retain representative fixed-language/long-tail evidence and the complete
+      one-time Phase 6 resource/matrix gates as open until the branch is frozen.
 
-The server component is an ARM64 non-root/offline Python 3.12.13 image with a
-hash-locked CPU dependency set and immutable model artifact lock. Lock schema 2
-also binds the checkpoint's exact 107-label output contract; the worker applies
-that count to SpeechBrain's categorical encoder before inference and rejects a
-different encoder or score-vector width. The desktop
-persists request identity and origin before POST, verifies response/catalog/
-source identity, records bounded evidence, and reconciles cancellation after a
-restart. Focused Python 3.12 and Rust tests cover lock validation, materializing
-only the selected probes, backpressure, cleanup fencing, redacted HTTP errors,
-user confirmation, retention, retry, and cancellation.
+The desktop and server independently compute the same five source regions and
+decision. Focused Python and Rust tests cover the four-hour selector bound
+without duration-sized work, exact tail placement, graph/frontend/label identity,
+model-directory verification, request materialization, backpressure, cleanup
+fencing, redacted HTTP errors, user confirmation, retention, retry, and
+cancellation. A focused Windows real-model smoke loaded the exact graph under
+one-thread CPU ONNX Runtime; a disposable ARM64 comparison reproduced the
+frontend within the recorded tolerance and produced identical full logits. The
+private reports and model remain outside Git. These are implementation evidence,
+not checked-head ARM64 resource or Phase 6 completion evidence.
 
-At exact executable source SHA
-`04266c4bbffd0fd31eaf2afd0bcce42e0248344f`, the platform-manifest-pinned image
-`sha256:bd40223cd296447a91be55f480713f8cb767628302d5e770d543fbafe1aeca4f`
-built without the earlier constant-platform warning and ran the real
-`ContainerLidWorker` on GB10. The offline CPU worker admitted two bounded
-eight-second probes from one exact 30-second source, returned the expected
-English raw label for both, and left no owned container or listener. The
-owner-restricted receipt remains outside Git. This closes the missing
-source-exact image-execution prerequisite; checked-head peak RSS, sustained CPU,
-representative promotion, and the complete one-time Phase 6 resource gate remain
-open.
-
-A 2026-07-22 dirty-source ARM64 build (`yap-lid:focused-4e36c3-v2`, image ID
-`sha256:cca5fc10e8ab6d457852579de9328275d8e5aa905713aa54000a0db4a76f47f5`)
-passed the image build check and a networkless, read-only real-checkpoint worker
-smoke under four CPU and 2 GiB limits. Both bounded private probes produced the
-same English label, and the prior inferred-label-count warning was absent. The
-20 directly affected Python 3.12 contract tests also passed. This is focused
-implementation evidence only: it neither measures container peak RSS nor
-satisfies the clean checked-head Phase 6 resource/image gate.
+The superseded SpeechBrain image receipt at
+`04266c4bbffd0fd31eaf2afd0bcce42e0248344f` remains historical evidence that the
+older containment path executed and tore down. It is not evidence for the
+current AmberNet artifact, dependency set, five-region policy, or resource
+limits.
 
 ### 6. Add local language spans and route fixed/dynamic ASR without hidden providers
 

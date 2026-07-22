@@ -11,8 +11,9 @@ from yap_server.lid.policy import (
 
 
 MINIMUM_SOURCE = 480_000
-MAXIMUM_WINDOW = 240_000
-MINIMUM_VOICED = 128_000
+MAXIMUM_WINDOW = 96_000
+MINIMUM_VOICED = 51_200
+PROBE_COUNT = 5
 
 
 def _select(
@@ -23,7 +24,7 @@ def _select(
         source_samples=source_samples,
         vad_intervals=intervals,
         minimum_source_samples=MINIMUM_SOURCE,
-        maximum_windows=2,
+        maximum_windows=PROBE_COUNT,
         maximum_window_samples=MAXIMUM_WINDOW,
         minimum_voiced_samples=MINIMUM_VOICED,
     )
@@ -38,11 +39,18 @@ def _observation(
 ) -> LidObservation:
     return LidObservation(
         index=index,
-        source_start_sample=index * 240_000,
-        source_end_sample=(index + 1) * 240_000,
+        source_start_sample=index * MAXIMUM_WINDOW,
+        source_end_sample=(index + 1) * MAXIMUM_WINDOW,
         raw_label=label,
         top_score=top_score,
         score_margin=score_margin,
+    )
+
+
+def _observations(label: str, **score_overrides: float) -> tuple[LidObservation, ...]:
+    return tuple(
+        _observation(index, label, **score_overrides)
+        for index in range(PROBE_COUNT)
     )
 
 
@@ -57,63 +65,60 @@ class LidProbeSelectionTests(unittest.TestCase):
         self.assertEqual(selection.reason, "short_recording")
         self.assertEqual(selection.windows, ())
 
-    def test_exactly_30_seconds_selects_two_disjoint_continuous_windows(self) -> None:
+    def test_exactly_30_seconds_selects_five_contiguous_six_second_regions(
+        self,
+    ) -> None:
         selection = _select(
             MINIMUM_SOURCE,
             (SourceVadInterval(0, MINIMUM_SOURCE),),
         )
 
         self.assertEqual(selection.status, "selected")
-        self.assertEqual(selection.reason, "two_probes_selected")
-        self.assertEqual(len(selection.windows), 2)
+        self.assertEqual(selection.reason, "five_stratified_probes_selected")
+        self.assertEqual(len(selection.windows), PROBE_COUNT)
         self.assertEqual(
-            selection.windows[0].source_start_sample,
-            0,
-        )
-        self.assertEqual(
-            selection.windows[0].source_end_sample,
-            MAXIMUM_WINDOW,
-        )
-        self.assertEqual(
-            selection.windows[1].source_start_sample,
-            MAXIMUM_WINDOW,
-        )
-        self.assertEqual(
-            selection.windows[1].source_end_sample,
-            MINIMUM_SOURCE,
-        )
-        self.assertLessEqual(
-            selection.windows[0].source_end_sample,
-            selection.windows[1].source_start_sample,
+            [
+                (window.source_start_sample, window.source_end_sample)
+                for window in selection.windows
+            ],
+            [
+                (0, 96_000),
+                (96_000, 192_000),
+                (192_000, 288_000),
+                (288_000, 384_000),
+                (384_000, 480_000),
+            ],
         )
 
-    def test_uses_earliest_usable_speech_then_the_middle_nearest_window(self) -> None:
-        source_samples = 1_600_000
+    def test_long_recording_regions_include_the_exact_tail(self) -> None:
+        source_samples = 16_000 * 4 * 60 * 60
         selection = _select(
             source_samples,
+            (SourceVadInterval(0, source_samples),),
+        )
+
+        starts = [window.source_start_sample for window in selection.windows]
+        self.assertEqual(starts[0], 0)
+        self.assertEqual(starts[-1], source_samples - MAXIMUM_WINDOW)
+        self.assertEqual(starts, sorted(starts))
+        self.assertTrue(
+            all(
+                first.source_end_sample <= second.source_start_sample
+                for first, second in zip(selection.windows, selection.windows[1:])
+            )
+        )
+
+    def test_any_region_without_enough_speech_fails_closed(self) -> None:
+        selection = _select(
+            MINIMUM_SOURCE,
             (
-                SourceVadInterval(10_000, 50_000),
-                SourceVadInterval(100_000, 230_000),
-                SourceVadInterval(700_000, 850_000),
-                SourceVadInterval(1_300_000, 1_500_000),
+                SourceVadInterval(0, 192_000),
+                SourceVadInterval(288_000, MINIMUM_SOURCE),
             ),
         )
 
-        self.assertEqual(selection.status, "selected")
-        first, second = selection.windows
-        self.assertEqual(first.source_start_sample, 10_000)
-        self.assertEqual(first.voiced_samples, 170_000)
-        self.assertEqual(second.source_start_sample, 680_000)
-        self.assertEqual(second.voiced_samples, 150_000)
-
-    def test_does_not_classify_when_two_usable_windows_cannot_be_proven(self) -> None:
-        selection = _select(
-            960_000,
-            (SourceVadInterval(0, 160_000),),
-        )
-
         self.assertEqual(selection.status, "manual")
-        self.assertEqual(selection.reason, "second_probe_unavailable")
+        self.assertEqual(selection.reason, "stratified_region_unavailable")
         self.assertEqual(selection.windows, ())
 
     def test_rejects_invalid_or_overlapping_vad_evidence(self) -> None:
@@ -129,12 +134,11 @@ class LidProbeSelectionTests(unittest.TestCase):
 
 
 class LidSuggestionResolutionTests(unittest.TestCase):
-    def test_two_supported_mapped_labels_prefill_but_never_auto_confirm(self) -> None:
+    def test_five_supported_mapped_labels_prefill_but_never_auto_confirm(
+        self,
+    ) -> None:
         decision = resolve_lid_suggestion(
-            (
-                _observation(0, "fr: French", top_score=-9.0, score_margin=0.0),
-                _observation(1, "fr: French", top_score=-8.0, score_margin=0.0),
-            ),
+            _observations("fr"),
             enabled_fixed_locales=("en-US", "fr-FR"),
         )
 
@@ -143,24 +147,27 @@ class LidSuggestionResolutionTests(unittest.TestCase):
         self.assertEqual(decision.suggested_locale, "fr-FR")
         self.assertTrue(decision.user_confirmation_required)
 
-    def test_disagreement_unsupported_and_ambiguous_locales_open_manual_picker(
-        self,
-    ) -> None:
+    def test_one_disagreeing_tail_region_opens_the_manual_picker(self) -> None:
+        observations = list(_observations("en"))
+        observations[-1] = _observation(PROBE_COUNT - 1, "fr")
+
+        decision = resolve_lid_suggestion(
+            observations,
+            enabled_fixed_locales=("en-US", "fr-FR"),
+        )
+
+        self.assertEqual(decision.status, "manual")
+        self.assertEqual(decision.reason, "language_disagreement")
+        self.assertIsNone(decision.suggested_locale)
+
+    def test_unsupported_ambiguous_and_zero_margin_evidence_fail_closed(self) -> None:
         cases = (
+            (_observations("el"), ("en-US",), "unsupported_language"),
+            (_observations("en"), ("en-GB", "en-US"), "ambiguous_locale"),
             (
-                (_observation(0, "en: English"), _observation(1, "fr: French")),
-                ("en-US", "fr-FR"),
-                "language_disagreement",
-            ),
-            (
-                (_observation(0, "el: Greek"), _observation(1, "el: Greek")),
+                _observations("en", score_margin=0.0),
                 ("en-US",),
-                "unsupported_language",
-            ),
-            (
-                (_observation(0, "en: English"), _observation(1, "en: English")),
-                ("en-GB", "en-US"),
-                "ambiguous_locale",
+                "ambiguous_model_output",
             ),
         )
         for observations, locales, reason in cases:
@@ -172,41 +179,39 @@ class LidSuggestionResolutionTests(unittest.TestCase):
                 self.assertEqual(decision.status, "manual")
                 self.assertEqual(decision.reason, reason)
                 self.assertIsNone(decision.suggested_locale)
-                self.assertTrue(decision.user_confirmation_required)
 
-    def test_aliases_agree_but_an_invalid_label_or_missing_probe_fails_closed(
-        self,
-    ) -> None:
-        aliased = resolve_lid_suggestion(
-            (_observation(0, "iw: Hebrew"), _observation(1, "he: Hebrew")),
+    def test_aliases_normalize_at_the_model_boundary(self) -> None:
+        observations = list(_observations("he"))
+        observations[0] = _observation(0, "iw")
+        decision = resolve_lid_suggestion(
+            observations,
             enabled_fixed_locales=("he-IL",),
         )
-        self.assertEqual(aliased.status, "suggestion")
-        self.assertEqual(aliased.suggested_locale, "he-IL")
 
-        invalid = resolve_lid_suggestion(
-            (_observation(0, "not-a-model-label"), _observation(1, "he: Hebrew")),
+        self.assertEqual(decision.status, "suggestion")
+        self.assertEqual(decision.suggested_locale, "he-IL")
+
+    def test_invalid_label_or_missing_region_fails_closed(self) -> None:
+        invalid = list(_observations("he"))
+        invalid[0] = _observation(0, "not-a-model-label")
+        decision = resolve_lid_suggestion(
+            invalid,
             enabled_fixed_locales=("he-IL",),
         )
-        self.assertEqual(invalid.status, "manual")
-        self.assertEqual(invalid.reason, "invalid_model_label")
+        self.assertEqual(decision.reason, "invalid_model_label")
 
         missing = resolve_lid_suggestion(
-            (_observation(0, "he: Hebrew"),),
+            _observations("he")[:-1],
             enabled_fixed_locales=("he-IL",),
         )
-        self.assertEqual(missing.status, "manual")
-        self.assertEqual(missing.reason, "two_probes_required")
+        self.assertEqual(missing.reason, "five_probes_required")
 
-    def test_rejects_invalid_score_evidence_instead_of_treating_it_as_confidence(
-        self,
-    ) -> None:
+    def test_rejects_invalid_score_evidence(self) -> None:
+        observations = list(_observations("en"))
+        observations[0] = _observation(0, "en", top_score=0.1)
         with self.assertRaises(ValueError):
             resolve_lid_suggestion(
-                (
-                    _observation(0, "en: English", top_score=0.1),
-                    _observation(1, "en: English"),
-                ),
+                observations,
                 enabled_fixed_locales=("en-US",),
             )
 

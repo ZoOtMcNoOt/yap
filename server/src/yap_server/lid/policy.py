@@ -4,7 +4,7 @@ from bisect import bisect_left, bisect_right
 from dataclasses import dataclass
 import math
 import re
-from typing import Iterable, Sequence
+from typing import Sequence
 
 from yap_server.language_tags import canonical_bcp47
 
@@ -12,7 +12,8 @@ from yap_server.language_tags import canonical_bcp47
 _MAX_SOURCE_SAMPLES = 16_000 * 4 * 60 * 60
 _MAX_VAD_INTERVALS = 4_096
 _MAX_LOCALES = 256
-_MODEL_LABEL = re.compile(r"^([a-z]{2,3}): ([^\r\n]+)$")
+_MODEL_LABEL = re.compile(r"^[a-z]{2,3}$")
+_STRATIFIED_PROBE_COUNT = 5
 _LANGUAGE_ALIASES = {
     "in": "id",
     "iw": "he",
@@ -163,16 +164,6 @@ def _candidate_window(
     )
 
 
-def _unique(values: Iterable[int]) -> tuple[int, ...]:
-    seen: set[int] = set()
-    result: list[int] = []
-    for value in values:
-        if value not in seen:
-            seen.add(value)
-            result.append(value)
-    return tuple(result)
-
-
 def select_lid_probe_windows(
     *,
     source_samples: int,
@@ -182,7 +173,7 @@ def select_lid_probe_windows(
     maximum_window_samples: int,
     minimum_voiced_samples: int,
 ) -> LidProbeSelection:
-    """Select two deterministic, disjoint source windows without concatenation."""
+    """Select five deterministic regions spanning the complete recording."""
 
     source_samples = _integer(source_samples, "source_samples", minimum=1)
     if source_samples > _MAX_SOURCE_SAMPLES:
@@ -203,8 +194,8 @@ def select_lid_probe_windows(
         "minimum_voiced_samples",
         minimum=1,
     )
-    if maximum_windows != 2:
-        raise ValueError("the accepted LID policy requires exactly two probes")
+    if maximum_windows != _STRATIFIED_PROBE_COUNT:
+        raise ValueError("the accepted LID policy requires exactly five probes")
     if minimum_voiced_samples > maximum_window_samples:
         raise ValueError("minimum voiced samples exceed the probe window")
     if minimum_source_samples < maximum_windows * maximum_window_samples:
@@ -214,94 +205,31 @@ def select_lid_probe_windows(
     if source_samples < minimum_source_samples:
         return LidProbeSelection("manual", "short_recording", ())
 
-    first_candidates = _unique(
-        value
-        for interval in intervals
-        for value in (
-            interval.start_sample,
-            max(0, interval.end_sample_exclusive - maximum_window_samples),
+    maximum_start = source_samples - maximum_window_samples
+    windows: list[LidProbeWindow] = []
+    for index in range(_STRATIFIED_PROBE_COUNT):
+        # Integer half-up rounding is mirrored by the native client. The first
+        # region begins at zero and the fifth ends at the exact source tail.
+        start = (maximum_start * index + 2) // 4
+        window = _candidate_window(
+            index=index,
+            start=start,
+            source_samples=source_samples,
+            maximum_window_samples=maximum_window_samples,
+            minimum_voiced_samples=minimum_voiced_samples,
+            timeline=timeline,
         )
-    )
-    first = next(
-        (
-            window
-            for start in first_candidates
-            if (
-                window := _candidate_window(
-                    index=0,
-                    start=start,
-                    source_samples=source_samples,
-                    maximum_window_samples=maximum_window_samples,
-                    minimum_voiced_samples=minimum_voiced_samples,
-                    timeline=timeline,
-                )
+        if window is None:
+            return LidProbeSelection(
+                "manual",
+                "stratified_region_unavailable",
+                (),
             )
-            is not None
-        ),
-        None,
-    )
-    if first is None:
-        return LidProbeSelection("manual", "first_probe_unavailable", ())
-
-    midpoint = source_samples // 2
-    raw_second_candidates = _unique(
-        (
-            max(
-                first.source_end_sample,
-                midpoint - maximum_window_samples // 2,
-            ),
-            first.source_end_sample,
-            *(
-                value
-                for interval in intervals
-                for value in (
-                    max(first.source_end_sample, interval.start_sample),
-                    max(
-                        first.source_end_sample,
-                        interval.end_sample_exclusive - maximum_window_samples,
-                    ),
-                )
-            ),
-        )
-    )
-    ranked_second_candidates = sorted(
-        raw_second_candidates,
-        key=lambda start: (
-            abs(
-                (
-                    start
-                    + min(source_samples, start + maximum_window_samples)
-                )
-                // 2
-                - midpoint
-            ),
-            start,
-        ),
-    )
-    second = next(
-        (
-            window
-            for start in ranked_second_candidates
-            if (
-                window := _candidate_window(
-                    index=1,
-                    start=start,
-                    source_samples=source_samples,
-                    maximum_window_samples=maximum_window_samples,
-                    minimum_voiced_samples=minimum_voiced_samples,
-                    timeline=timeline,
-                )
-            )
-            is not None
-        ),
-        None,
-    )
-    if second is None:
-        return LidProbeSelection("manual", "second_probe_unavailable", ())
+        windows.append(window)
     return LidProbeSelection(
         "selected",
-        "two_probes_selected",
-        (first, second),
+        "five_stratified_probes_selected",
+        tuple(windows),
     )
 
 
@@ -343,8 +271,8 @@ def _manual(
 def _validated_observations(
     observations: Sequence[LidObservation],
 ) -> tuple[LidObservation, ...]:
-    if len(observations) > 2:
-        raise ValueError("LID observations exceed the two-probe bound")
+    if len(observations) > _STRATIFIED_PROBE_COUNT:
+        raise ValueError("LID observations exceed the five-probe bound")
     result: list[LidObservation] = []
     previous_end = 0
     for position, observation in enumerate(observations):
@@ -396,11 +324,9 @@ def _validated_observations(
 def _language_code(raw_label: object) -> str | None:
     if not isinstance(raw_label, str) or len(raw_label) > 128:
         return None
-    matched = _MODEL_LABEL.fullmatch(raw_label)
-    if matched is None or not raw_label.isprintable():
+    if _MODEL_LABEL.fullmatch(raw_label) is None or not raw_label.isprintable():
         return None
-    code = matched.group(1)
-    return _LANGUAGE_ALIASES.get(code, code)
+    return _LANGUAGE_ALIASES.get(raw_label, raw_label)
 
 
 def map_lid_label_to_enabled_locales(
@@ -424,17 +350,19 @@ def resolve_lid_suggestion(
     *,
     enabled_fixed_locales: Sequence[str],
 ) -> LidSuggestionDecision:
-    """Resolve two labels to a picker suggestion, never routing authority."""
+    """Resolve five region labels to a suggestion, never routing authority."""
 
     validated = _validated_observations(observations)
     locales = validate_enabled_fixed_locales(enabled_fixed_locales)
-    if len(validated) != 2:
-        return _manual("two_probes_required", validated)
+    if len(validated) != _STRATIFIED_PROBE_COUNT:
+        return _manual("five_probes_required", validated)
+    if any(item.score_margin <= 0.0 for item in validated):
+        return _manual("ambiguous_model_output", validated)
 
     codes = tuple(_language_code(item.raw_label) for item in validated)
     if any(code is None for code in codes):
         return _manual("invalid_model_label", validated)
-    if codes[0] != codes[1]:
+    if any(code != codes[0] for code in codes[1:]):
         return _manual("language_disagreement", validated)
     code = codes[0]
     candidates = map_lid_label_to_enabled_locales(

@@ -53,14 +53,15 @@ fn restart_reconciles_a_terminal_lid_request_against_its_persisted_origin() {
         )
         .unwrap();
     ledger
-        .begin_lid_preflight_dispatch(
-            "job-terminal-lid",
-            "lid-request-restart",
-            &base_url,
-            &"a".repeat(64),
-            "speechbrain-policy-v1",
-            30,
-        )
+        .begin_lid_preflight_dispatch(crate::jobs::LidPreflightDispatchStart {
+            job_id: "job-terminal-lid",
+            request_id: "lid-request-restart",
+            server_base_url: &base_url,
+            catalog_revision: &"a".repeat(64),
+            component_id: "ambernet-batch-language-preflight",
+            policy_revision: "ambernet-stratified-five-region-v1",
+            started_at_ms: 30,
+        })
         .unwrap();
     ledger.request_cancellation("job-terminal-lid", 40).unwrap();
     drop(ledger);

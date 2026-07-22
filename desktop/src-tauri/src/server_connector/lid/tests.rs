@@ -17,30 +17,44 @@ use super::{
 
 const CATALOG_REVISION: &str = "16a89b24cf036dda7b1272b88c066baafea2262743dcaaebc8a66b7b76c3d09f";
 const SOURCE_PCM_SHA256: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-const FIRST_WAV_SHA256: &str = "2fab96a5c20b3675930a4a32b5c9f3528b398cbc5e456c102b5fb76f23941f21";
-const SECOND_WAV_SHA256: &str = "9644fe8b8d4790dfc2213331f1317fdcf1660598bcb830d572eabd187fe3d75f";
+const REGION_WAV_SHA256: &str = "5ec432a9c59a66bf04f259cc63fe1cbe954133cc13792b1bbb57d485db18bb94";
 
 #[test]
-fn selector_matches_the_accepted_two_window_policy_and_fails_manual() {
+fn selector_spans_five_regions_and_fails_manual_when_one_lacks_speech() {
     let catalog = catalog_with_lid();
     let capability = catalog.lid_preflight().unwrap();
     let full_voice = vec![SourceVadInterval::from_samples(0, 480_000).unwrap()];
     let selection = select_lid_probe_windows(capability, 480_000, &full_voice).unwrap();
     let windows = selection.windows().unwrap();
     assert_eq!(windows[0].source_start_sample(), 0);
-    assert_eq!(windows[0].source_end_sample(), 240_000);
-    assert_eq!(windows[1].source_start_sample(), 240_000);
-    assert_eq!(windows[1].source_end_sample(), 480_000);
-    assert_eq!(windows[0].voiced_samples(), 240_000);
-    assert_eq!(windows[1].voiced_samples(), 240_000);
+    assert_eq!(windows.len(), 5);
+    for (index, window) in windows.iter().enumerate() {
+        assert_eq!(window.source_start_sample(), index as u64 * 96_000);
+        assert_eq!(window.source_end_sample(), (index as u64 + 1) * 96_000);
+        assert_eq!(window.voiced_samples(), 96_000);
+    }
 
     let short = select_lid_probe_windows(capability, 479_999, &[]).unwrap();
     assert_eq!(short.manual_reason(), Some(LidManualReason::ShortRecording));
-    let one_probe = vec![SourceVadInterval::from_samples(0, 160_000).unwrap()];
-    let manual = select_lid_probe_windows(capability, 960_000, &one_probe).unwrap();
+    let missing_middle = vec![
+        SourceVadInterval::from_samples(0, 192_000).unwrap(),
+        SourceVadInterval::from_samples(288_000, 480_000).unwrap(),
+    ];
+    let manual = select_lid_probe_windows(capability, 480_000, &missing_middle).unwrap();
     assert_eq!(
         manual.manual_reason(),
-        Some(LidManualReason::SecondProbeUnavailable)
+        Some(LidManualReason::StratifiedRegionUnavailable)
+    );
+
+    let long_samples = 16_000 * 4 * 60 * 60;
+    let long_voice = vec![SourceVadInterval::from_samples(0, long_samples).unwrap()];
+    let long = select_lid_probe_windows(capability, long_samples, &long_voice).unwrap();
+    let long_windows = long.windows().unwrap();
+    assert_eq!(long_windows[0].source_start_sample(), 0);
+    assert_eq!(
+        long_windows[4].source_end_sample(),
+        long_samples,
+        "the fifth region must cover the exact recording tail"
     );
 }
 
@@ -56,11 +70,14 @@ fn envelope_is_bounded_digest_bound_and_contains_no_local_paths() {
     assert_eq!(manifest["requestId"], "job-lid-client");
     assert_eq!(manifest["sourcePcmSha256"], SOURCE_PCM_SHA256);
     assert_eq!(manifest["catalogRevision"], CATALOG_REVISION);
-    assert_eq!(manifest["policyRevision"], "speechbrain-two-window-v1");
-    assert_eq!(manifest["probes"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        manifest["policyRevision"],
+        "ambernet-stratified-five-region-v1"
+    );
+    assert_eq!(manifest["probes"].as_array().unwrap().len(), 5);
     assert_eq!(
         manifest["probes"][0]["pcmSha256"],
-        "bad662ada862615b24543db809a1d3774caf4cd54adf33612606a53334371294"
+        "9257719ca0fe28b5431d68d79957cbfe09d367593ccf2a115ba20193e8a7dfdc"
     );
     assert_eq!(body.len(), 4 + manifest_length + 960_000);
     let encoded = String::from_utf8_lossy(&body[..4 + manifest_length]);
@@ -77,8 +94,8 @@ fn response_is_rebound_to_source_component_policy_and_server_decision() {
     assert_eq!(result.status, LidPreflightStatus::Suggestion);
     assert_eq!(result.suggested_locale.as_deref(), Some("en-US"));
     assert!(result.user_confirmation_required);
-    assert_eq!(result.observations.len(), 2);
-    assert_eq!(result.observations[0].probe_sha256, FIRST_WAV_SHA256);
+    assert_eq!(result.observations.len(), 5);
+    assert_eq!(result.observations[0].probe_sha256, REGION_WAV_SHA256);
 
     for mutation in ["source", "policy", "mapping", "confirmation"] {
         let mut invalid = valid_response();
@@ -95,6 +112,33 @@ fn response_is_rebound_to_source_component_policy_and_server_decision() {
             .decode_response(&serde_json::to_vec(&invalid).unwrap())
             .is_err());
     }
+
+    let mut disagreement = valid_response();
+    disagreement["status"] = "manual".into();
+    disagreement["reason"] = "language_disagreement".into();
+    disagreement["suggestedLocale"] = serde_json::Value::Null;
+    disagreement["observations"][4]["rawLabel"] = "zz".into();
+    disagreement["observations"][4]["mappedLocale"] = serde_json::Value::Null;
+    assert_eq!(
+        request
+            .decode_response(&serde_json::to_vec(&disagreement).unwrap())
+            .unwrap()
+            .status,
+        LidPreflightStatus::Manual
+    );
+
+    let mut ambiguous = valid_response();
+    ambiguous["status"] = "manual".into();
+    ambiguous["reason"] = "ambiguous_model_output".into();
+    ambiguous["suggestedLocale"] = serde_json::Value::Null;
+    ambiguous["observations"][0]["scoreMargin"] = 0.0.into();
+    assert_eq!(
+        request
+            .decode_response(&serde_json::to_vec(&ambiguous).unwrap())
+            .unwrap()
+            .status,
+        LidPreflightStatus::Manual
+    );
 }
 
 #[test]
@@ -172,7 +216,7 @@ fn request_fixture() -> LidPreflightRequest {
         )
         .unwrap(),
         &selection,
-        [b"\x01\x00".repeat(240_000), b"\x02\x00".repeat(240_000)],
+        std::array::from_fn(|_| b"\x01\x00".repeat(96_000)),
     )
     .unwrap()
 }
@@ -184,11 +228,11 @@ fn catalog_with_lid() -> AsrCapabilityCatalog {
     .unwrap();
     value["languagePreflight"] = serde_json::json!({
         "schemaVersion": 1,
-        "componentId": "speechbrain-lid-preflight",
+        "componentId": "ambernet-batch-language-preflight",
         "runtime": {"pythonVersion": "3.12.13", "cpuOnly": true},
         "model": {
-            "id": "speechbrain/lang-id-voxlingua107-ecapa",
-            "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9"
+            "id": "nvidia/nemo/langid_ambernet",
+            "revision": "1.12.0"
         },
         "transport": {
             "mediaType": "application/vnd.yap.lid-preflight.v1+octet-stream",
@@ -197,15 +241,15 @@ fn catalog_with_lid() -> AsrCapabilityCatalog {
             "maximumResponseSeconds": 120
         },
         "policy": {
-            "revision": "speechbrain-two-window-v1",
+            "revision": "ambernet-stratified-five-region-v1",
             "sampleRateHz": 16_000,
             "channelCount": 1,
             "sampleWidthBytes": 2,
             "minimumSourceSamples": 480_000,
-            "maximumWindows": 2,
-            "maximumWindowSamples": 240_000,
-            "minimumVoicedSamplesPerWindow": 128_000,
-            "scoreSemantics": "uncalibrated-log-posterior",
+            "maximumWindows": 5,
+            "maximumWindowSamples": 96_000,
+            "minimumVoicedSamplesPerWindow": 51_200,
+            "scoreSemantics": "mean-logit-log-softmax",
             "userConfirmationRequired": true
         }
     });
@@ -213,6 +257,21 @@ fn catalog_with_lid() -> AsrCapabilityCatalog {
 }
 
 fn valid_response() -> serde_json::Value {
+    let observations = (0..5)
+        .map(|index| {
+            serde_json::json!({
+                "index": index,
+                "probeSha256": REGION_WAV_SHA256,
+                "sourceStartSample": index * 96_000,
+                "sourceEndSample": (index + 1) * 96_000,
+                "voicedSamples": 96_000,
+                "rawLabel": "en",
+                "topScore": -0.1 - f64::from(index) / 100.0,
+                "scoreMargin": 1.0,
+                "mappedLocale": "en-US"
+            })
+        })
+        .collect::<Vec<_>>();
     serde_json::json!({
         "schemaVersion": 1,
         "requestId": "job-lid-client",
@@ -224,39 +283,16 @@ fn valid_response() -> serde_json::Value {
         "sourcePcmSha256": SOURCE_PCM_SHA256,
         "catalogRevision": CATALOG_REVISION,
         "component": {
-            "id": "speechbrain-lid-preflight",
+            "id": "ambernet-batch-language-preflight",
             "runtime": {"pythonVersion": "3.12.13", "cpuOnly": true},
             "model": {
-                "id": "speechbrain/lang-id-voxlingua107-ecapa",
-                "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9"
+                "id": "nvidia/nemo/langid_ambernet",
+                "revision": "1.12.0"
             },
-            "policyRevision": "speechbrain-two-window-v1",
-            "scoreSemantics": "uncalibrated-log-posterior"
+            "policyRevision": "ambernet-stratified-five-region-v1",
+            "scoreSemantics": "mean-logit-log-softmax"
         },
-        "observations": [
-            {
-                "index": 0,
-                "probeSha256": FIRST_WAV_SHA256,
-                "sourceStartSample": 0,
-                "sourceEndSample": 240_000,
-                "voicedSamples": 240_000,
-                "rawLabel": "en: English",
-                "topScore": -0.1,
-                "scoreMargin": 1.0,
-                "mappedLocale": "en-US"
-            },
-            {
-                "index": 1,
-                "probeSha256": SECOND_WAV_SHA256,
-                "sourceStartSample": 240_000,
-                "sourceEndSample": 480_000,
-                "voicedSamples": 240_000,
-                "rawLabel": "en: English",
-                "topScore": -0.2,
-                "scoreMargin": 0.9,
-                "mappedLocale": "en-US"
-            }
-        ]
+        "observations": observations
     })
 }
 

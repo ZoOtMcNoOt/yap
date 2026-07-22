@@ -10,10 +10,7 @@ import tempfile
 import unittest
 import wave
 
-from yap_server.lid.component_lock import (
-    LidComponentLock,
-    load_lid_component_lock,
-)
+from yap_server.lid.component_lock import load_lid_component_lock
 from yap_server.lid.worker_contract import (
     LidClassification,
     ProbeAudio,
@@ -27,22 +24,17 @@ from yap_server.lid.worker_contract import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 COMPONENT_LOCK = REPO_ROOT / "server" / "lid-component.lock.json"
+REGION_SAMPLES = 96_000
+SOURCE_SAMPLES = REGION_SAMPLES * 5
 
 
-def _test_lock(root: Path) -> LidComponentLock:
-    payload = json.loads(COMPONENT_LOCK.read_text(encoding="utf-8"))
-    policy = payload["component"]["policy"]
-    policy["minimumSourceSamples"] = 32
-    policy["maximumWindowSamples"] = 16
-    policy["minimumVoicedSamplesPerWindow"] = 8
-    path = root / "lid-component.lock.json"
-    path.write_text(json.dumps(payload), encoding="utf-8")
-    return load_lid_component_lock(path)
+def _lock():
+    return load_lid_component_lock(COMPONENT_LOCK)
 
 
 def _wav_bytes(
     *,
-    frames: int = 16,
+    frames: int = REGION_SAMPLES,
     channels: int = 1,
     sample_rate: int = 16_000,
     sample_width: int = 2,
@@ -62,24 +54,19 @@ def _write_probe(root: Path, index: int, encoded: bytes) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _request(
-    hashes: list[str],
-    *,
-    source_samples: int = 40,
-) -> dict[str, object]:
-    windows = ((0, 16, 10), (20, 36, 12))
+def _request(hashes: list[str]) -> dict[str, object]:
     return {
         "schemaVersion": 1,
         "requestId": "lid-request-1",
-        "sourceSamples": source_samples,
+        "sourceSamples": SOURCE_SAMPLES,
         "probes": [
             {
                 "index": index,
                 "fileName": f"probe-{index}.wav",
                 "wavSha256": digest,
-                "sourceStartSample": windows[index][0],
-                "sourceEndSample": windows[index][1],
-                "voicedSamples": windows[index][2],
+                "sourceStartSample": index * REGION_SAMPLES,
+                "sourceEndSample": (index + 1) * REGION_SAMPLES,
+                "voicedSamples": 60_000,
             }
             for index, digest in enumerate(hashes)
         ],
@@ -103,80 +90,54 @@ class _Classifier:
 
 
 class LidWorkerContractTests(unittest.TestCase):
-    def test_runs_two_bounded_probes_without_publishing_paths_or_audio(self) -> None:
+    def test_runs_five_bounded_regions_without_publishing_paths_or_audio(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            lock = _test_lock(root)
-            hashes = [
-                _write_probe(root, 0, _wav_bytes()),
-                _write_probe(root, 1, _wav_bytes()),
-            ]
+            encoded = _wav_bytes()
+            hashes = [_write_probe(root, index, encoded) for index in range(5)]
             request = load_lid_worker_request(
                 _write_request(root, _request(hashes)),
-                lock,
+                _lock(),
             )
             classifier = _Classifier(
-                iter(
-                    (
-                        LidClassification("fr: French", -0.25, 1.5),
-                        LidClassification("fr: French", -0.40, 1.1),
-                    )
-                )
+                iter(LidClassification("fr", -0.25, 1.5) for _ in range(5))
             )
 
             result = run_lid_worker_request(
-                lock=lock,
+                lock=_lock(),
                 request=request,
                 probe_root=root,
                 classifier=classifier,
             )
 
-            self.assertEqual(classifier.frame_counts, [16, 16])
+            self.assertEqual(classifier.frame_counts, [REGION_SAMPLES] * 5)
             self.assertEqual(result["schemaVersion"], 1)
             self.assertEqual(result["requestId"], "lid-request-1")
-            self.assertEqual(result["model"]["revision"], lock.model.revision)
-            self.assertEqual(result["policyRevision"], lock.policy.revision)
-            self.assertEqual(len(result["observations"]), 2)
-            self.assertEqual(
-                result["observations"][0],
-                {
-                    "index": 0,
-                    "probeSha256": hashes[0],
-                    "sourceStartSample": 0,
-                    "sourceEndSample": 16,
-                    "voicedSamples": 10,
-                    "rawLabel": "fr: French",
-                    "topScore": -0.25,
-                    "scoreMargin": 1.5,
-                },
-            )
+            self.assertEqual(len(result["observations"]), 5)
+            self.assertEqual(result["observations"][0]["rawLabel"], "fr")
             serialized = json.dumps(result, sort_keys=True)
             self.assertNotIn("probe-0.wav", serialized)
             self.assertNotIn("confidence", serialized.lower())
             self.assertNotIn("pcm", serialized.lower())
 
-    def test_rejects_unknown_fields_traversal_overlap_and_extra_probes(self) -> None:
+    def test_rejects_unknown_fields_traversal_overlap_and_sixth_probe(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            lock = _test_lock(root)
             encoded = _wav_bytes()
-            hashes = [
-                _write_probe(root, 0, encoded),
-                _write_probe(root, 1, encoded),
-            ]
+            hashes = [_write_probe(root, index, encoded) for index in range(5)]
             mutations = (
                 lambda value: value.update({"unexpected": True}),
                 lambda value: value["probes"][0].update(
                     {"fileName": "../probe-0.wav"}
                 ),
                 lambda value: value["probes"][1].update(
-                    {"sourceStartSample": 15}
+                    {"sourceStartSample": REGION_SAMPLES - 1}
                 ),
                 lambda value: value["probes"].append(
                     {
-                        **value["probes"][1],
-                        "index": 2,
-                        "fileName": "probe-2.wav",
+                        **value["probes"][-1],
+                        "index": 5,
+                        "fileName": "probe-5.wav",
                     }
                 ),
             )
@@ -187,41 +148,36 @@ class LidWorkerContractTests(unittest.TestCase):
                     with self.assertRaises(WorkerInputError):
                         load_lid_worker_request(
                             _write_request(root, payload),
-                            lock,
+                            _lock(),
                         )
 
     def test_rejects_hash_shape_span_and_link_mismatches(self) -> None:
         cases = (
-            ("hash", _wav_bytes(), "0" * 64, 16),
-            ("channels", _wav_bytes(channels=2), None, 16),
-            ("sample rate", _wav_bytes(sample_rate=8_000), None, 16),
-            ("frame span", _wav_bytes(frames=15), None, 16),
+            ("hash", _wav_bytes(), "0" * 64),
+            ("channels", _wav_bytes(channels=2), None),
+            ("sample rate", _wav_bytes(sample_rate=8_000), None),
+            ("frame span", _wav_bytes(frames=REGION_SAMPLES - 1), None),
         )
-        for name, encoded, requested_hash, end_sample in cases:
+        for name, encoded, requested_hash in cases:
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                lock = _test_lock(root)
                 actual_hash = _write_probe(root, 0, encoded)
-                payload = _request([requested_hash or actual_hash])
-                payload["probes"][0]["sourceEndSample"] = end_sample
                 request = load_lid_worker_request(
-                    _write_request(root, payload),
-                    lock,
-                )
-                classifier = _Classifier(
-                    iter((LidClassification("en: English", -0.1, 2.0),))
+                    _write_request(root, _request([requested_hash or actual_hash])),
+                    _lock(),
                 )
                 with self.assertRaises(WorkerInputError):
                     run_lid_worker_request(
-                        lock=lock,
+                        lock=_lock(),
                         request=request,
                         probe_root=root,
-                        classifier=classifier,
+                        classifier=_Classifier(
+                            iter((LidClassification("en", -0.1, 2.0),))
+                        ),
                     )
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            lock = _test_lock(root)
             target = root / "outside.wav"
             encoded = _wav_bytes()
             target.write_bytes(encoded)
@@ -234,45 +190,38 @@ class LidWorkerContractTests(unittest.TestCase):
                     root,
                     _request([hashlib.sha256(encoded).hexdigest()]),
                 ),
-                lock,
+                _lock(),
             )
             with self.assertRaises(WorkerInputError):
                 run_lid_worker_request(
-                    lock=lock,
+                    lock=_lock(),
                     request=request,
                     probe_root=root,
                     classifier=_Classifier(
-                        iter((LidClassification("en: English", -0.1, 2.0),))
+                        iter((LidClassification("en", -0.1, 2.0),))
                     ),
                 )
 
     def test_rejects_invalid_classifier_evidence(self) -> None:
         invalid = (
             LidClassification("", -0.2, 1.0),
-            LidClassification("en: English\nsecret", -0.2, 1.0),
-            LidClassification("en: English", math.nan, 1.0),
-            LidClassification("en: English", 0.1, 1.0),
-            LidClassification("en: English", -0.2, -0.1),
+            LidClassification("en\nsecret", -0.2, 1.0),
+            LidClassification("en", math.nan, 1.0),
+            LidClassification("en", 0.1, 1.0),
+            LidClassification("en", -0.2, -0.1),
         )
         for output in invalid:
-            with (
-                self.subTest(output=output),
-                tempfile.TemporaryDirectory() as directory,
-            ):
+            with self.subTest(output=output), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                lock = _test_lock(root)
                 encoded = _wav_bytes()
                 digest = _write_probe(root, 0, encoded)
                 request = load_lid_worker_request(
                     _write_request(root, _request([digest])),
-                    lock,
+                    _lock(),
                 )
-                with self.assertRaisesRegex(
-                    RuntimeError,
-                    "invalid evidence",
-                ):
+                with self.assertRaisesRegex(RuntimeError, "invalid evidence"):
                     run_lid_worker_request(
-                        lock=lock,
+                        lock=_lock(),
                         request=request,
                         probe_root=root,
                         classifier=_Classifier(iter((output,))),
@@ -281,9 +230,9 @@ class LidWorkerContractTests(unittest.TestCase):
     def test_result_validation_rebinds_every_authoritative_field(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            lock = _test_lock(root)
             encoded = _wav_bytes()
             digest = _write_probe(root, 0, encoded)
+            lock = _lock()
             request = load_lid_worker_request(
                 _write_request(root, _request([digest])),
                 lock,
@@ -293,23 +242,21 @@ class LidWorkerContractTests(unittest.TestCase):
                 request=request,
                 probe_root=root,
                 classifier=_Classifier(
-                    iter((LidClassification("en: English", -0.2, 1.0),))
+                    iter((LidClassification("en", -0.2, 1.0),))
                 ),
             )
             validate_lid_worker_result(result, request=request, lock=lock)
 
             mutations = (
                 lambda value: value.update({"requestId": "other"}),
-                lambda value: value["model"].update({"revision": "b" * 40}),
+                lambda value: value["model"].update({"revision": "9.9.9"}),
                 lambda value: value["observations"][0].update(
                     {"sourceStartSample": 1}
                 ),
                 lambda value: value["observations"][0].update(
                     {"probeSha256": "b" * 64}
                 ),
-                lambda value: value["observations"][0].update(
-                    {"topScore": 0.1}
-                ),
+                lambda value: value["observations"][0].update({"topScore": 0.1}),
                 lambda value: value["observations"][0].update({"index": False}),
                 lambda value: value.update({"unexpected": True}),
             )

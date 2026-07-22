@@ -320,14 +320,14 @@ fn changed_catalog_revision_revokes_an_older_dispatch_proof() {
 #[test]
 fn same_lid_policy_refresh_does_not_starve_a_ready_preflight_proof() {
     let connector = ready_batch_connector("http://127.0.0.1:18765");
-    let catalog = catalog_with_lid("speechbrain-two-window-v1");
+    let catalog = catalog_with_lid("ambernet-stratified-five-region-v1");
     let first_lease = connector.asr_capability_lease().unwrap();
     let proof = connector
         .commit_current_asr_capability_catalog_for_test(&first_lease, catalog.clone(), |current| {
             let lid = current.lid_preflight_dispatch().unwrap();
             assert_eq!(
                 current.catalog().lid_preflight().unwrap().policy.revision,
-                "speechbrain-two-window-v1"
+                "ambernet-stratified-five-region-v1"
             );
             lid.dispatch_proof()
         })
@@ -349,7 +349,7 @@ fn same_lid_policy_refresh_does_not_starve_a_ready_preflight_proof() {
 #[test]
 fn changed_lid_policy_revokes_only_the_older_preflight_proof() {
     let connector = ready_batch_connector("http://127.0.0.1:18765");
-    let catalog = catalog_with_lid("speechbrain-two-window-v1");
+    let catalog = catalog_with_lid("ambernet-stratified-five-region-v1");
     let first_lease = connector.asr_capability_lease().unwrap();
     let (binding, asr_proof, lid_proof) = connector
         .commit_current_asr_capability_catalog_for_test(&first_lease, catalog, |current| {
@@ -364,7 +364,7 @@ fn changed_lid_policy_revokes_only_the_older_preflight_proof() {
     connector
         .commit_current_asr_capability_catalog_for_test(
             &refresh_lease,
-            catalog_with_lid("speechbrain-two-window-v2"),
+            catalog_with_lid("ambernet-stratified-five-region-v2"),
             |_| (),
         )
         .unwrap();
@@ -385,7 +385,7 @@ fn removed_lid_capability_revokes_an_older_preflight_proof() {
     let proof = connector
         .commit_current_asr_capability_catalog_for_test(
             &first_lease,
-            catalog_with_lid("speechbrain-two-window-v1"),
+            catalog_with_lid("ambernet-stratified-five-region-v1"),
             |current| current.lid_preflight_dispatch().unwrap().dispatch_proof(),
         )
         .unwrap();
@@ -405,11 +405,11 @@ fn catalog_with_lid(policy_revision: &str) -> AsrCapabilityCatalog {
     let mut value: serde_json::Value = serde_json::from_slice(ASR_CATALOG_EXAMPLE).unwrap();
     value["languagePreflight"] = serde_json::json!({
         "schemaVersion": 1,
-        "componentId": "speechbrain-lid-preflight",
+        "componentId": "ambernet-batch-language-preflight",
         "runtime": {"pythonVersion": "3.12.13", "cpuOnly": true},
         "model": {
-            "id": "speechbrain/lang-id-voxlingua107-ecapa",
-            "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9"
+            "id": "nvidia/nemo/langid_ambernet",
+            "revision": "1.12.0"
         },
         "transport": {
             "mediaType": "application/vnd.yap.lid-preflight.v1+octet-stream",
@@ -423,10 +423,10 @@ fn catalog_with_lid(policy_revision: &str) -> AsrCapabilityCatalog {
             "channelCount": 1,
             "sampleWidthBytes": 2,
             "minimumSourceSamples": 480_000,
-            "maximumWindows": 2,
-            "maximumWindowSamples": 240_000,
-            "minimumVoicedSamplesPerWindow": 128_000,
-            "scoreSemantics": "uncalibrated-log-posterior",
+            "maximumWindows": 5,
+            "maximumWindowSamples": 96_000,
+            "minimumVoicedSamplesPerWindow": 51_200,
+            "scoreSemantics": "mean-logit-log-softmax",
             "userConfirmationRequired": true
         }
     });

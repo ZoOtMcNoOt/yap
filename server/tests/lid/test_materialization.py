@@ -23,15 +23,18 @@ class LidMaterializationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.lock = load_lid_component_lock(LOCK_PATH)
 
-    def test_extracts_two_continuous_source_windows_without_concatenation(self) -> None:
+    def test_extracts_five_continuous_source_regions_without_concatenation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             source = root / "source.wav"
             samples = tuple((index % 32_000) - 16_000 for index in range(600_000))
             _write_pcm16_wav(source, samples)
             selection = _selection(
-                (16_000, 256_000, 160_000),
-                (320_000, 560_000, 144_000),
+                (0, 96_000, 60_000),
+                (126_000, 222_000, 60_000),
+                (252_000, 348_000, 60_000),
+                (378_000, 474_000, 60_000),
+                (504_000, 600_000, 60_000),
             )
 
             materialized = materialize_lid_worker_request(
@@ -45,10 +48,16 @@ class LidMaterializationTests(unittest.TestCase):
             request = load_lid_worker_request(materialized.request_path, self.lock)
             self.assertEqual(request, materialized.request)
             self.assertEqual(request.source_samples, len(samples))
-            self.assertEqual(len(request.probes), 2)
+            self.assertEqual(len(request.probes), 5)
             for probe, expected in zip(
                 request.probes,
-                ((16_000, 256_000), (320_000, 560_000)),
+                (
+                    (0, 96_000),
+                    (126_000, 222_000),
+                    (252_000, 348_000),
+                    (378_000, 474_000),
+                    (504_000, 600_000),
+                ),
                 strict=True,
             ):
                 encoded = (materialized.root / probe.file_name).read_bytes()
@@ -79,11 +88,17 @@ class LidMaterializationTests(unittest.TestCase):
                 writer.writeframes(b"\x00\x00" * 4 * 600_000)
 
             for selection in (
-                _selection((0, 240_000, 128_000), (240_000, 480_000, 128_000)),
+                _selection(
+                    (0, 96_000, 60_000),
+                    (96_000, 192_000, 60_000),
+                    (192_000, 288_000, 60_000),
+                    (288_000, 384_000, 60_000),
+                    (384_000, 480_000, 60_000),
+                ),
                 LidProbeSelection(
                     status="selected",
-                    reason="two_probes_selected",
-                    windows=(LidProbeWindow(0, 0, 240_001, 128_000),),
+                    reason="five_stratified_probes_selected",
+                    windows=(LidProbeWindow(0, 0, 96_001, 60_000),),
                 ),
             ):
                 with self.subTest(selection=selection):
@@ -116,8 +131,11 @@ class LidMaterializationTests(unittest.TestCase):
                     destination=destination,
                     request_id="lid-request-3",
                     selection=_selection(
-                        (0, 240_000, 128_000),
-                        (300_000, 540_000, 128_000),
+                        (0, 96_000, 60_000),
+                        (126_000, 222_000, 60_000),
+                        (252_000, 348_000, 60_000),
+                        (378_000, 474_000, 60_000),
+                        (504_000, 600_000, 60_000),
                     ),
                     lock=self.lock,
                     ensure_active=ensure_active,
@@ -145,8 +163,11 @@ class LidMaterializationTests(unittest.TestCase):
                     destination=destination,
                     request_id="lid-request-4",
                     selection=_selection(
-                        (0, 240_000, 128_000),
-                        (300_000, 540_000, 128_000),
+                        (0, 96_000, 60_000),
+                        (126_000, 222_000, 60_000),
+                        (252_000, 348_000, 60_000),
+                        (378_000, 474_000, 60_000),
+                        (504_000, 600_000, 60_000),
                     ),
                     lock=self.lock,
                 )
@@ -156,7 +177,7 @@ class LidMaterializationTests(unittest.TestCase):
 def _selection(*windows: tuple[int, int, int]) -> LidProbeSelection:
     return LidProbeSelection(
         status="selected",
-        reason="two_probes_selected",
+        reason="five_stratified_probes_selected",
         windows=tuple(
             LidProbeWindow(index, start, end, voiced)
             for index, (start, end, voiced) in enumerate(windows)

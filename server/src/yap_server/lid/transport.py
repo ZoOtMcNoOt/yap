@@ -125,7 +125,7 @@ def parse_lid_preflight_envelope(
         raise LidTransportStaleError("LID preflight policy revision is stale")
     raw_probes = root["probes"]
     if not isinstance(raw_probes, list) or len(raw_probes) != lock.policy.maximum_windows:
-        raise LidTransportError("LID preflight requires exactly two probes")
+        raise LidTransportError("LID preflight requires exactly five regions")
 
     cursor = manifest_end
     probes: list[LidTransportProbe] = []
@@ -167,7 +167,7 @@ def parse_lid_preflight_envelope(
             index != position
             or start < previous_end
             or end > source_samples
-            or not 1 <= span <= lock.policy.maximum_window_samples
+            or span != lock.policy.maximum_window_samples
             or not lock.policy.minimum_voiced_samples_per_window <= voiced <= span
         ):
             raise LidTransportError("LID preflight probe window is invalid")

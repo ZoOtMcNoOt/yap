@@ -13,7 +13,7 @@ from .component_lock import (
     load_lid_component_lock,
     verify_lid_model_artifacts,
 )
-from .speechbrain_classifier import SpeechBrainClassifier
+from .ambernet_classifier import AmberNetClassifier
 from .worker_contract import (
     LidClassifier,
     WorkerInputError,
@@ -31,9 +31,9 @@ def execute_lid_worker(
     model_dir: Path,
     request_path: Path,
     probe_dir: Path,
-    classifier_loader: ClassifierLoader = SpeechBrainClassifier.load,
+    classifier_loader: ClassifierLoader = AmberNetClassifier.load,
 ) -> dict[str, Any]:
-    """Verify all immutable inputs before loading or invoking SpeechBrain."""
+    """Verify all immutable inputs before loading or invoking AmberNet."""
 
     lock = load_lid_component_lock(lock_path)
     try:
@@ -56,7 +56,7 @@ def execute_lid_worker(
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run one offline, assistive SpeechBrain LID preflight",
+        description="Run one offline, assistive AmberNet LID preflight",
     )
     parser.add_argument(
         "--lock",

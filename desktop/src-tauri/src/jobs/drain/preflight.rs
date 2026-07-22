@@ -6,7 +6,7 @@ use crate::{
     jobs::{
         language_preflight::{language_preflight_outcome, LanguagePreflightOutcome},
         remote, AsrCatalogBinding, JobLedger, JobLedgerError, LidPreflightDispatchFailure,
-        RecordingJobRecord, RecordingJobStatus,
+        LidPreflightDispatchStart, RecordingJobRecord, RecordingJobStatus,
     },
     server_connector::{
         batch::BatchApiClient, lid::LidPreflightError, AsrCapabilityCatalog,
@@ -442,14 +442,18 @@ async fn dispatch(
             })?;
         connector
             .with_current_lid_preflight_proof(&lease, proof, || {
-                drain.resources.ledger().begin_lid_preflight_dispatch(
-                    &job.job_id,
-                    request.request_id(),
-                    base_url,
-                    &snapshot.catalog.catalog_revision,
-                    &policy_revision,
-                    now_ms,
-                )
+                drain
+                    .resources
+                    .ledger()
+                    .begin_lid_preflight_dispatch(LidPreflightDispatchStart {
+                        job_id: &job.job_id,
+                        request_id: request.request_id(),
+                        server_base_url: base_url,
+                        catalog_revision: &snapshot.catalog.catalog_revision,
+                        component_id: request.component_id(),
+                        policy_revision: &policy_revision,
+                        started_at_ms: now_ms,
+                    })
             })
             .map_err(|detail| ClientPreflightAdvanceError { detail })??
     };

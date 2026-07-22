@@ -28,6 +28,9 @@ _ALLOWED_ARTIFACTS = frozenset(
         _REQUEST_STAGING_FILE_NAME,
         "probe-0.wav",
         "probe-1.wav",
+        "probe-2.wav",
+        "probe-3.wav",
+        "probe-4.wav",
     }
 )
 
@@ -129,7 +132,7 @@ def materialize_lid_pcm_request(
     _validate_materialization_start(destination, request_id, lock)
     selection = LidProbeSelection(
         status="selected",
-        reason="two_probes_selected",
+        reason="five_stratified_probes_selected",
         windows=tuple(
             LidProbeWindow(
                 index=probe.index,
@@ -266,7 +269,7 @@ def _validate_selection(
     if (
         not isinstance(selection, LidProbeSelection)
         or selection.status != "selected"
-        or selection.reason != "two_probes_selected"
+        or selection.reason != "five_stratified_probes_selected"
         or len(selection.windows) != lock.policy.maximum_windows
         or source_samples < lock.policy.minimum_source_samples
     ):
@@ -292,8 +295,7 @@ def _validate_selection(
             or window.source_start_sample < previous_end
             or window.source_start_sample < 0
             or window.source_end_sample > source_samples
-            or span < 1
-            or span > lock.policy.maximum_window_samples
+            or span != lock.policy.maximum_window_samples
             or window.voiced_samples < lock.policy.minimum_voiced_samples_per_window
             or window.voiced_samples > span
         ):

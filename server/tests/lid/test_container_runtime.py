@@ -47,9 +47,11 @@ class LidContainerRuntimeTests(unittest.TestCase):
             self.assertIn("--cap-drop ALL", rendered)
             self.assertIn("no-new-privileges", rendered)
             self.assertIn("--user 10001:10001", rendered)
-            self.assertIn("--pids-limit 128", rendered)
-            self.assertIn("--memory 2g --memory-swap 2g", rendered)
-            self.assertIn("--cpus 4", rendered)
+            self.assertIn("--pids-limit 64", rendered)
+            self.assertIn("--memory 512m --memory-swap 512m", rendered)
+            self.assertIn("--cpus 1", rendered)
+            self.assertIn("OMP_NUM_THREADS=1", rendered)
+            self.assertIn("OPENBLAS_NUM_THREADS=1", rendered)
             self.assertIn("/models/lid,readonly", rendered)
             self.assertIn("/request,readonly", rendered)
             self.assertNotIn("--device", command)
@@ -178,13 +180,13 @@ def _worker(model: Path, **overrides: object) -> ContainerLidWorker:
 
 def _write_request(root: Path, _lock: object) -> Path:
     probes: list[dict[str, object]] = []
-    for index, start in enumerate((0, 240_000)):
+    for index, start in enumerate(range(0, 480_000, 96_000)):
         output = io.BytesIO()
         with wave.open(output, "wb") as writer:
             writer.setnchannels(1)
             writer.setsampwidth(2)
             writer.setframerate(16_000)
-            writer.writeframes(b"\x00\x00" * 128_000)
+            writer.writeframes(b"\x00\x00" * 96_000)
         encoded = output.getvalue()
         file_name = f"probe-{index}.wav"
         (root / file_name).write_bytes(encoded)
@@ -194,8 +196,8 @@ def _write_request(root: Path, _lock: object) -> Path:
                 "fileName": file_name,
                 "wavSha256": hashlib.sha256(encoded).hexdigest(),
                 "sourceStartSample": start,
-                "sourceEndSample": start + 128_000,
-                "voicedSamples": 128_000,
+                "sourceEndSample": start + 96_000,
+                "voicedSamples": 96_000,
             }
         )
     request_path = root / "request.json"
@@ -229,7 +231,7 @@ def _result(request: object, lock: object) -> dict[str, object]:
                 "sourceStartSample": probe.source_start_sample,
                 "sourceEndSample": probe.source_end_sample,
                 "voicedSamples": probe.voiced_samples,
-                "rawLabel": "en: English",
+                "rawLabel": "en",
                 "topScore": -0.1,
                 "scoreMargin": 1.2,
             }

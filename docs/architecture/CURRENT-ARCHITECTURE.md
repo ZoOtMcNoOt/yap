@@ -2,8 +2,9 @@
 
 This document describes the merged executable Phase 1–5 system plus the focused
 Phase 6 catalog, fixed-language decision, local primary-language conditioning,
-durable-stage, normalization, and imported-file advisory-VAD slices that execute
-on the active branch. The
+durable-stage, normalization, imported-file advisory VAD, local language-span,
+and verify-only AmberNet batch-preflight slices that execute on the active
+branch. The
 [Voice OS architecture](../VOICE-OS-ARCHITECTURE.md) remains the first-class
 long-term frame; accepted future work is sequenced by the
 [roadmap](../roadmap/ROADMAP.md) and ADRs, not promoted into current-state
@@ -328,15 +329,19 @@ misclassified three of the four spans, while whole-clip FP32 and INT8 scores
 were 322/340 and 323/340 respectively. The failed route is therefore recorded
 as a short-window/domain limitation rather than an INT8 regression; it is not
 retuned, and it blocks removing the Preview label or making a natural-switch
-quality claim. The isolated SpeechBrain CPU preflight now executes behind the
-server capability catalog: at most two speech-rich windows are copied into a
-transient non-root, offline Python 3.12 worker, and its uncalibrated suggestion
-remains inert until the user confirms it. Request origin/identity, cleanup,
-restart cancellation, and evidence are durable and bounded. At exact executable
-source SHA `04266c4bbffd0fd31eaf2afd0bcce42e0248344f`, the platform-manifest-pinned
-image exercised the real `ContainerLidWorker` on both bounded probes and removed
-its owned container/listener; the private receipt stays outside Git. Peak RSS,
-sustained CPU, target-i5 behavior, and the complete resource gate remain open. A
+quality claim. The isolated server batch preflight now verifies one explicitly
+imported AmberNet 1.12.0 INT8 QDQ artifact and exposes no bundle or download
+path. Client and server independently select five exact six-second regions from
+source start through exact tail; every region needs 3.2 seconds of advisory VAD
+speech, two independent fixed three-second graph executions, a positive margin,
+and the same normalized language as all other regions. Any missing, mixed,
+unsupported, or ambiguous evidence stays manual, and a valid suggestion remains
+inert until the user confirms it. The non-root/offline Python 3.12 NumPy/CPU-ORT
+worker is limited to one thread, one CPU, 512 MiB, bounded PIDs/temp/output, and
+one running plus two queued requests. Focused Windows real-model and disposable
+ARM64 frontend/logit parity evidence exists; the exact checked-head ARM64 image,
+cgroup peak resource/cold-latency result, and teardown gate remain open. The old
+SpeechBrain two-probe GB10 receipt remains historical evidence only. A
 server Nemotron
 worker, explicit automatic-job language tags, fail-closed Cohere attention
 alignment, the Cohere vLLM adapter, and the resident NeMo worker/service/image/

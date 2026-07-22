@@ -33,8 +33,9 @@ class LanguageDetectionContainerContractTests(unittest.TestCase):
         self.assertNotIn("nvcr.io", dockerfile.lower())
         self.assertNotRegex(dockerfile.lower(), r"(?m)^from .*nvidia")
         self.assertIn("sys.version_info[:3] == (3, 12, 13)", build_check)
-        self.assertIn("torch.version.cuda is None", build_check)
-        self.assertIn("not torch.cuda.is_available()", build_check)
+        self.assertIn('"CPUExecutionProvider" in providers', build_check)
+        self.assertIn('"CUDAExecutionProvider" not in providers', build_check)
+        self.assertIn('"TensorrtExecutionProvider" not in providers', build_check)
 
     def test_container_installs_only_the_hash_locked_cpu_environment(self) -> None:
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
@@ -42,17 +43,13 @@ class LanguageDetectionContainerContractTests(unittest.TestCase):
 
         self.assertIn("--require-hashes", dockerfile)
         self.assertIn("runtime/lid/requirements.lock", dockerfile)
-        self.assertIn("speechbrain==1.1.0", requirements)
-        self.assertIn("torch==2.11.0+cpu", requirements)
-        self.assertIn("torchaudio==2.11.0+cpu", requirements)
+        self.assertIn("numpy==2.4.6", requirements)
+        self.assertIn("onnxruntime==1.27.0", requirements)
+        self.assertNotIn("speechbrain==", requirements)
+        self.assertNotIn("torch==", requirements)
+        self.assertNotIn("torchaudio==", requirements)
         self.assertNotRegex(requirements, r"(?m)^nvidia-")
         self.assertNotRegex(requirements, r"(?m)^triton==")
-        for digest in (
-            "0f1bc7d5c5ce07b9ed752a9d931a4858180f825f4d079b44035a0aed645f4dd2",
-            "70ecb2659af6373b7c5336e692e665605b0201ea21ff51aaea47e1d75ea6b5aa",
-            "b9dd2c6ac144001dc6dac38b564c1de73ac26ef0c195d5037c4a94990b0e2b5a",
-        ):
-            self.assertIn(f"--hash=sha256:{digest}", requirements)
         self.assertGreater(
             len(re.findall(r"--hash=sha256:[0-9a-f]{64}", requirements)),
             30,
@@ -86,9 +83,9 @@ class LanguageDetectionContainerContractTests(unittest.TestCase):
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
 
         self.assertIn("USER 10001:10001", dockerfile)
-        self.assertIn("HF_HUB_OFFLINE=1", dockerfile)
-        self.assertIn("TRANSFORMERS_OFFLINE=1", dockerfile)
-        self.assertIn("HF_HUB_DISABLE_TELEMETRY=1", dockerfile)
+        self.assertIn("OMP_NUM_THREADS=1", dockerfile)
+        self.assertIn("OPENBLAS_NUM_THREADS=1", dockerfile)
+        self.assertNotRegex(dockerfile, r"(?im)\b(curl|wget)\b")
         self.assertNotRegex(dockerfile, r"(?im)^COPY .*\.(ckpt|pt|pth|onnx)")
         self.assertNotIn("huggingface-cli", dockerfile)
         self.assertNotIn("snapshot_download", dockerfile)
@@ -104,14 +101,13 @@ class LanguageDetectionContainerContractTests(unittest.TestCase):
         lock = json.loads(LOCK_PATH.read_text(encoding="utf-8"))["component"]
 
         for text in (
-            "SpeechBrain 1.1.0",
-            "PyTorch 2.11.0+cpu",
-            "TorchAudio 2.11.0+cpu",
+            "NumPy 2.4.6",
+            "ONNX Runtime 1.27.0",
             lock["model"]["id"],
             lock["model"]["revision"],
-            "Apache-2.0",
-            "BSD-2-Clause",
+            "NVIDIA NGC Terms of Use",
             "BSD-3-Clause",
+            "Redistribution approval is not granted",
         ):
             self.assertIn(text, notice)
 

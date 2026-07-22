@@ -37,6 +37,16 @@ pub(crate) struct LidPreflightDispatchFailure<'a> {
     pub(crate) completed_at_ms: u64,
 }
 
+pub(crate) struct LidPreflightDispatchStart<'a> {
+    pub(crate) job_id: &'a str,
+    pub(crate) request_id: &'a str,
+    pub(crate) server_base_url: &'a str,
+    pub(crate) catalog_revision: &'a str,
+    pub(crate) component_id: &'a str,
+    pub(crate) policy_revision: &'a str,
+    pub(crate) started_at_ms: u64,
+}
+
 impl JobLedger {
     pub(crate) fn attach_client_preflight_artifact(
         &self,
@@ -281,14 +291,19 @@ impl JobLedger {
 
     pub(crate) fn begin_lid_preflight_dispatch(
         &self,
-        job_id: &str,
-        request_id: &str,
-        server_base_url: &str,
-        catalog_revision: &str,
-        policy_revision: &str,
-        started_at_ms: u64,
+        start: LidPreflightDispatchStart<'_>,
     ) -> Result<u64, JobLedgerError> {
+        let LidPreflightDispatchStart {
+            job_id,
+            request_id,
+            server_base_url,
+            catalog_revision,
+            component_id,
+            policy_revision,
+            started_at_ms,
+        } = start;
         validate_opaque_identifier(request_id, 128, "LID preflight request ID")?;
+        validate_opaque_identifier(component_id, 128, "LID preflight component ID")?;
         validate_opaque_identifier(policy_revision, 128, "LID preflight policy revision")?;
         super::records::validate_server_base_url(server_base_url)?;
         if !valid_sha256(catalog_revision) {
@@ -323,7 +338,7 @@ impl JobLedger {
             &ClientStageStart {
                 stage: ClientStageName::LidPreflight,
                 input_fingerprint_sha256: artifact.source_pcm_sha256,
-                component_id: "speechbrain-language-id".into(),
+                component_id: component_id.into(),
                 component_revision: policy_revision.into(),
                 started_at_ms,
             },

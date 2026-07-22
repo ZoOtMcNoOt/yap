@@ -59,7 +59,7 @@ impl LidPreflightRequest {
         catalog: &AsrCapabilityCatalog,
         source: LidPreflightSourceIdentity,
         selection: &LidProbeSelection,
-        pcm_probes: [Vec<u8>; 2],
+        pcm_probes: [Vec<u8>; 5],
     ) -> Result<Self, LidPreflightError> {
         let capability = catalog.lid_preflight().ok_or_else(|| {
             LidPreflightError::invalid("server did not advertise language preflight")
@@ -77,8 +77,8 @@ impl LidPreflightRequest {
             ));
         }
 
-        let mut encoded_probes = Vec::with_capacity(2);
-        let mut expected_observations = Vec::with_capacity(2);
+        let mut encoded_probes = Vec::with_capacity(5);
+        let mut expected_observations = Vec::with_capacity(5);
         for (position, (window, pcm)) in windows.iter().zip(pcm_probes.iter()).enumerate() {
             if usize::from(window.index()) != position {
                 return Err(LidPreflightError::invalid(
@@ -199,6 +199,10 @@ impl LidPreflightRequest {
 
     pub(crate) fn request_id(&self) -> &str {
         &self.expected.request_id
+    }
+
+    pub(crate) fn component_id(&self) -> &str {
+        &self.expected.capability.component_id
     }
 
     pub(in crate::server_connector) fn body(&self) -> &[u8] {

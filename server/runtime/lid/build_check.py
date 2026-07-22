@@ -6,7 +6,8 @@ import importlib.metadata as metadata
 from pathlib import Path
 import sys
 
-import torch
+import numpy
+import onnxruntime
 
 from yap_server.lid.component_lock import (
     load_lid_component_lock,
@@ -15,9 +16,8 @@ from yap_server.lid.component_lock import (
 
 
 EXPECTED_PACKAGES = {
-    "speechbrain": "1.1.0",
-    "torch": "2.11.0+cpu",
-    "torchaudio": "2.11.0+cpu",
+    "numpy": "2.4.6",
+    "onnxruntime": "1.27.0",
 }
 IMAGE_ROOT = Path("/opt/yap-repo")
 
@@ -26,8 +26,11 @@ def main() -> None:
     actual = {name: metadata.version(name) for name in EXPECTED_PACKAGES}
     assert actual == EXPECTED_PACKAGES, (actual, EXPECTED_PACKAGES)
     assert sys.version_info[:3] == (3, 12, 13)
-    assert torch.version.cuda is None
-    assert not torch.cuda.is_available()
+    assert numpy.__version__ == EXPECTED_PACKAGES["numpy"]
+    providers = set(onnxruntime.get_available_providers())
+    assert "CPUExecutionProvider" in providers
+    assert "CUDAExecutionProvider" not in providers
+    assert "TensorrtExecutionProvider" not in providers
     lock = load_lid_component_lock(
         IMAGE_ROOT / "server" / "lid-component.lock.json"
     )

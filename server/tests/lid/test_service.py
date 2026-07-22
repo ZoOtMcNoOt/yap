@@ -37,13 +37,13 @@ class _Worker:
         return {
             "schemaVersion": 1,
             "requestId": request.request_id,
-            "componentId": "speechbrain-lid-preflight",
+            "componentId": "ambernet-batch-language-preflight",
             "model": {
-                "id": "speechbrain/lang-id-voxlingua107-ecapa",
-                "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+                "id": "nvidia/nemo/langid_ambernet",
+                "revision": "1.12.0",
             },
-            "policyRevision": "speechbrain-two-window-v1",
-            "scoreSemantics": "uncalibrated-log-posterior",
+            "policyRevision": "ambernet-stratified-five-region-v1",
+            "scoreSemantics": "mean-logit-log-softmax",
             "sourceSamples": request.source_samples,
             "observations": [
                 {
@@ -52,7 +52,7 @@ class _Worker:
                     "sourceStartSample": probe.source_start_sample,
                     "sourceEndSample": probe.source_end_sample,
                     "voicedSamples": probe.voiced_samples,
-                    "rawLabel": "en: English",
+                    "rawLabel": "en",
                     "topScore": -0.1,
                     "scoreMargin": 1.0,
                 }
@@ -144,21 +144,23 @@ class LidPreflightServiceTests(unittest.TestCase):
 
 
 def _envelope(lock: object, request_id: str) -> bytes:
-    pcm = (b"\x01\x00" * 128_000, b"\x02\x00" * 128_000)
+    pcm = tuple(bytes((index + 1, 0)) * 96_000 for index in range(5))
     probes = []
-    for index, (start, body) in enumerate(zip((0, 240_000), pcm, strict=True)):
+    for index, (start, body) in enumerate(
+        zip(range(0, 480_000, 96_000), pcm, strict=True)
+    ):
         probes.append(
             {
                 "index": index,
                 "sourceStartSample": start,
-                "sourceEndSample": start + 128_000,
-                "voicedSamples": 128_000,
+                "sourceEndSample": start + 96_000,
+                "voicedSamples": 96_000,
                 "pcmByteLength": len(body),
                 "pcmSha256": hashlib.sha256(body).hexdigest(),
                 "vadIntervals": [
                     {
                         "startSample": start,
-                        "endSampleExclusive": start + 128_000,
+                        "endSampleExclusive": start + 96_000,
                     }
                 ],
             }

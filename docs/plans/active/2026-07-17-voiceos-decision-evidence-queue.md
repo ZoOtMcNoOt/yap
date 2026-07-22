@@ -11,7 +11,8 @@ or the active phase plan.
 observed runtime behavior.
 
 **Current delivery authority:** [roadmap](../../roadmap/ROADMAP.md),
-[ADR 0024](../../adr/0024-global-language-routing.md), and the
+[ADR 0024](../../adr/0024-global-language-routing.md),
+[ADR 0026](../../adr/0026-ambernet-batch-language-preflight.md), and the
 [audio preprocessing and language routing plan](2026-07-16-audio-preprocessing-and-language-routing.md).
 
 ## How to use this queue
@@ -37,11 +38,11 @@ observed runtime behavior.
 | D-01 | Replaceable ASR models | Rust-owned job/session contracts and the versioned capability catalog remain stable while Cohere, Nemotron, Qwen, or another provider is replaced behind a worker adapter. No model owns durable job identity or UI state. | Accepted; Phases 6 and 10 | ADR 0014, ADR 0024, Phase 6 plan |
 | D-02 | Python and GPU base | Use Python 3.12 for checked NVIDIA workers. Phase 4/5 Transformers references use the pinned NVIDIA PyTorch 26.06 environment. Cohere's separate Phase 6 candidate uses digest-pinned `nvcr.io/nvidia/vllm:26.06-py3`, whose executable GB10 identity is Python 3.12, NVIDIA Torch 2.13 alpha/CUDA 13.3, and vLLM 0.22.1. Do not drift to Python 3.13/3.14 or mix packages across the two images without a new gate. | Accepted; Phase 6 | ADR 0014, ADR 0025, Phase 6 plan |
 | D-03 | Serving split | Cohere batch uses vLLM, Nemotron retains a Transformers reference and evaluates NeMo for server streaming, SGLang is reserved for compatible agent/LLM reasoning and structured tool output, and Rust owns orchestration, admission, state, cancellation, and validation. Triton is retired from the current ASR plane. | Accepted target; prove vLLM and NeMo independently in Phase 6, SGLang in Phase 9, production integration in Phase 10 | ADR 0025, roadmap |
-| D-04 | GPU versus CPU | ASR performance work belongs on GPU. CPU-only isolation is intentional only for bounded light preprocessing such as Silero VAD and the proposed SpeechBrain batch suggestion; it is not a plan to run the main server ASR on CPU. | Accepted; Phase 6 | ADR 0024, Phase 6 plan |
+| D-04 | GPU versus CPU | ASR performance work belongs on GPU. CPU-only isolation is intentional only for bounded light preprocessing such as Silero VAD and the accepted AmberNet batch suggestion; it is not a plan to run the main server ASR on CPU. | Accepted; Phase 6 | ADR 0024, ADR 0026, Phase 6 plan |
 | D-05 | Concurrent users | Reference-worker concurrency is measured now, including c1/c2/c4/c8, queueing, tail latency, cancellation isolation, memory, and duration buckets. Authenticated multi-owner fairness and production mixed live/batch capacity require Phase 7 identity and the Phase 10 service gate. | Accepted split; Phases 6, 7, and 10 | ADR 0023, ADR 0024, roadmap |
 | D-06 | Fixed live language | Setup/Settings owns one confirmed primary locale. Local Nemotron applies that exact supported locale to native stream creation and reset; unsupported locales fail visibly. It never silently falls back to English or automatic detection. | Implemented on active Phase 6 branch; gate pending | ADR 0024, current architecture |
 | D-07 | Local dynamic language detection | Phase 6 must add one bounded acoustic-LID model that remains resident while local live inference is warm/active, automatic offline switching, and within-utterance source-time language spans. `LiveRuntime` remains the sole lifecycle owner and continues to use one local Nemotron ASR; the LID component owns evidence only, not transcript, capture, or durable state. Initial selection and sustained switching use the accepted three-observation, `0.40`-margin policy over the confirmed primary plus explicit alternates. Current selection is restricted to immutable released checkpoints. | Accepted bounded candidate implemented with AmberNet 1.12.0 QDQ INT8 as an explicit, default-off Preview. The representative natural-switch quality target completed and failed; target-i5 resource/interference, lifecycle safety, and checked-head gates remain open. Removing Preview requires new independent quality evidence. | ADR 0019 amendment, ADR 0024, dynamic-language evaluation |
-| D-08 | Server language detection | SpeechBrain remains a bounded, user-confirmed suggestion for longer fixed-language imports. Server Nemotron automatic tags now execute as independent finalized-utterance evidence. The shared versioned span contract distinguishes `clientDecision` from `serverUtterance`, binds server spans to the model/utterance plan, and links text fragments without claiming terminal tags are within-utterance language diarization. | Implemented contract; representative/frozen promotion gates remain open in Phase 6 | ADR 0024 |
+| D-08 | Server language detection | AmberNet 1.12.0 INT8 QDQ is the verify-only, CPU-isolated, user-confirmed suggestion for longer fixed-language imports. It samples five strict source-stratified six-second regions and abstains unless all five agree. Server Nemotron automatic tags execute separately as finalized-utterance evidence. The shared versioned span contract distinguishes `clientDecision` from `serverUtterance`, binds server spans to the model/utterance plan, and links text fragments without claiming terminal tags are within-utterance language diarization. | Focused implementation exists; exact checked-head ARM64 resources and representative/frozen promotion gates remain open in Phase 6 | ADR 0024, ADR 0026 |
 | D-09 | Global language coverage | Advertise only exact out-of-box, benchmarked locales. Nemotron's eight adaptation-ready locales are not planned capabilities. Broad coverage remains visibly lower-confidence until locale-specific evidence promotes it. | Accepted; Phase 6 | ADR 0024 |
 | D-10 | Client/server preprocessing | The client owns capture/source admission, deterministic normalization, source identity, optional advisory VAD, bounded local acoustic LID, source-time language spans, and durable client evidence. The server owns heavyweight verification, ASR, alignment, and official result production. Redundant server validation may reconcile or reject evidence but must not create a second client-state authority or erase client history. | Accepted boundary; Phase 6 | ADR 0020, ADR 0024, current architecture |
 | D-11 | Terminology | Present terminology under Dictation/Personalization, but store it in one model-independent terminology domain. Compile one versioned session snapshot into ASR hints/context first, deterministic casing/acronym normalization second, grammar-SLM preservation constraints third, and later OKF glossary projections. The SLM must not be the source of truth or reconstruct terms lost during decoding. | Boundary accepted; schema, scope, privacy, and delivery phase remain open | Section below; Phase 9 ADR amendment required before implementation |
@@ -108,16 +109,18 @@ tests and 29 settings, accessibility, recording-queue, language-display, and
 transcript-summary tests. An empty promoted alternate set remains a truthful
 zero-choice state rather than inferred model support.
 
-### P6-03 — Preprocessing authority and SpeechBrain suggestion
+### P6-03 — Preprocessing authority and AmberNet batch suggestion
 
 - [x] Preserve full source bytes and source-time identity through normalization
   and advisory Silero VAD.
 - [x] Persist bounded client-stage attempts and typed failure evidence.
-- [x] Freeze the SpeechBrain 1.1.0/Python 3.12/CPU Torch-TorchAudio component,
-  model revision, hashes, license, mapping table, and networkless image.
+- [x] Supersede the SpeechBrain runtime with the AmberNet 1.12.0/Python 3.12/
+  NumPy/CPU ONNX Runtime component; lock its exact graph, frontend, 107-label
+  order, hashes, NGC terms, and networkless image contract.
 - [x] Admit only hash-verified source windows derived from durable VAD evidence.
-- [x] Select at most two continuous windows of at most 15 seconds with at least
-  eight voiced seconds; preserve exact source offsets.
+- [x] Select exactly five continuous six-second regions spanning start through
+  exact tail, each with at least 51,200 VAD speech samples; preserve exact source
+  offsets and probe hashes.
 - [x] Persist raw label, mapped locale, score, margin, component revision, and
   window evidence without calling the score calibrated confidence.
 - [x] Route silence, disagreement, unsupported/ambiguous labels, timeout,
@@ -126,21 +129,19 @@ zero-choice state rather than inferred model support.
 - [x] Prove by immutable runtime contract that the LID component is CPU-only and
   cannot consume an ASR GPU slot; bound duration, queue, cancellation, cleanup,
   and teardown in focused tests.
-- [ ] Measure checked-head peak RSS and sustained CPU on GB10 inside the final
-  Phase 6 resource gate.
+- [ ] Build the exact checked-head ARM64 image and measure cgroup peak memory,
+  CPU, cold latency, cancellation, and teardown under one CPU/512 MiB on GB10
+  inside the final Phase 6 resource gate.
 
-Focused 2026-07-22 evidence first built the dirty-source ARM64 image as
-`yap-lid:focused-4e36c3-v2`, enforced the immutable 107-label encoder/output
-contract, and completed a hardened networkless real-checkpoint worker smoke
-without SpeechBrain's prior inferred-label-count warning. Twenty directly
-affected Python 3.12 tests passed. A later source-exact GB10 run at executable
-commit `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` built the platform-manifest-
-pinned image and exercised the real `ContainerLidWorker` over two bounded
-eight-second probes; both returned the expected English raw label and teardown
-left no owned container or listener. The owner-restricted receipt remains
-outside Git. This closes image execution only: checked-head peak RSS, sustained
-CPU, target-i5 behavior, representative promotion, and the complete resource
-gate remain open.
+Focused 2026-07-22 replacement evidence reconstructed the fixed NeMo frontend,
+proved the exact Windows AMD64 and disposable Linux ARM64 frontend/logit parity,
+loaded the real 29.6 MB INT8 QDQ graph under one-thread CPU ONNX Runtime, and
+exercised the strict five-region decision in focused Python and Rust suites.
+Private reports and the model remain outside Git. The prior source-exact
+SpeechBrain run at `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` remains only a
+historical containment receipt. Exact checked-head AmberNet ARM64 image/resource
+execution, target-i5 behavior, representative promotion, and the complete
+resource gate remain open.
 
 ### P6-04 — Local language spans and fixed/dynamic ASR
 

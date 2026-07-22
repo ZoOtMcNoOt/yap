@@ -25,7 +25,7 @@ class LidTransportTests(unittest.TestCase):
     def setUp(self) -> None:
         self.lock = load_lid_component_lock(LOCK_PATH)
 
-    def test_parses_and_materializes_only_two_digest_bound_pcm_spans(self) -> None:
+    def test_parses_and_materializes_five_digest_bound_pcm_regions(self) -> None:
         manifest, pcm = _fixture(self.lock)
         request = parse_lid_preflight_envelope(
             _encode(manifest, pcm),
@@ -33,9 +33,9 @@ class LidTransportTests(unittest.TestCase):
             expected_catalog_revision=CATALOG_REVISION,
         )
         self.assertEqual(request.request_id, "job-lid-transport")
-        self.assertEqual(len(request.probes), 2)
+        self.assertEqual(len(request.probes), 5)
         self.assertEqual(request.probes[0].pcm_bytes, pcm[0])
-        self.assertEqual(request.probes[1].pcm_bytes, pcm[1])
+        self.assertEqual(request.probes[4].pcm_bytes, pcm[4])
 
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -51,7 +51,7 @@ class LidTransportTests(unittest.TestCase):
             self.assertEqual(persisted.source_samples, 480_000)
             self.assertEqual(
                 [probe.voiced_samples for probe in persisted.probes],
-                [128_000, 128_000],
+                [96_000] * 5,
             )
             remove_materialized_lid_request(materialized)
             self.assertEqual(list(root.iterdir()), [])
@@ -62,7 +62,7 @@ class LidTransportTests(unittest.TestCase):
             lambda value: value.__setitem__("policyRevision", "stale"),
             lambda value: value["probes"][0].__setitem__("pcmSha256", "0" * 64),
             lambda value: value["probes"][0].__setitem__("pcmByteLength", 2),
-            lambda value: value["probes"][0].__setitem__("voicedSamples", 128_001),
+            lambda value: value["probes"][0].__setitem__("voicedSamples", 96_001),
         )
         for mutate in mutations:
             with self.subTest(mutate=mutate):
@@ -108,22 +108,24 @@ class LidTransportTests(unittest.TestCase):
             )
 
 
-def _fixture(lock: object) -> tuple[dict[str, object], tuple[bytes, bytes]]:
-    pcm = (b"\x01\x00" * 128_000, b"\x02\x00" * 128_000)
+def _fixture(lock: object) -> tuple[dict[str, object], tuple[bytes, ...]]:
+    pcm = tuple(bytes((index + 1, 0)) * 96_000 for index in range(5))
     probes = []
-    for index, (start, body) in enumerate(zip((0, 240_000), pcm, strict=True)):
+    for index, (start, body) in enumerate(
+        zip(range(0, 480_000, 96_000), pcm, strict=True)
+    ):
         probes.append(
             {
                 "index": index,
                 "sourceStartSample": start,
-                "sourceEndSample": start + 128_000,
-                "voicedSamples": 128_000,
+                "sourceEndSample": start + 96_000,
+                "voicedSamples": 96_000,
                 "pcmByteLength": len(body),
                 "pcmSha256": hashlib.sha256(body).hexdigest(),
                 "vadIntervals": [
                     {
                         "startSample": start,
-                        "endSampleExclusive": start + 128_000,
+                        "endSampleExclusive": start + 96_000,
                     }
                 ],
             }
@@ -142,7 +144,7 @@ def _fixture(lock: object) -> tuple[dict[str, object], tuple[bytes, bytes]]:
     )
 
 
-def _encode(manifest: dict[str, object], pcm: tuple[bytes, bytes]) -> bytes:
+def _encode(manifest: dict[str, object], pcm: tuple[bytes, ...]) -> bytes:
     encoded = json.dumps(manifest, separators=(",", ":")).encode("utf-8")
     return len(encoded).to_bytes(4, "big") + encoded + b"".join(pcm)
 

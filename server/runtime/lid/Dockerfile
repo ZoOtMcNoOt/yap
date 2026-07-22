@@ -7,23 +7,22 @@ FROM python:3.12.13-slim-bookworm@sha256:c18c7a910432dde3311fc54d02e5d5220f3ebe2
 
 ARG YAP_CHECKED_HEAD
 
-LABEL org.opencontainers.image.title="Yap isolated SpeechBrain LID preflight" \
+LABEL org.opencontainers.image.title="Yap isolated AmberNet LID preflight" \
       org.opencontainers.image.source="https://github.com/mcnatg1/yap" \
-      org.opencontainers.image.licenses="Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND ISC AND MIT AND MPL-2.0" \
+      org.opencontainers.image.licenses="Apache-2.0 AND BSD-3-Clause AND MIT" \
       org.opencontainers.image.revision="${YAP_CHECKED_HEAD}" \
       com.mcnatg1.yap.base-platform-digest="sha256:c18c7a910432dde3311fc54d02e5d5220f3ebe26fec43ff15745982863dd7b3b"
 
 ENV PYTHONPATH=/opt/yap-repo/server/src \
     YAP_LID_COMPONENT_LOCK=/opt/yap-repo/server/lid-component.lock.json \
-    HF_HUB_OFFLINE=1 \
-    TRANSFORMERS_OFFLINE=1 \
-    HF_HUB_DISABLE_TELEMETRY=1 \
     DO_NOT_TRACK=1 \
     HOME=/tmp/yap-lid \
-    HF_HOME=/tmp/huggingface \
     XDG_CACHE_HOME=/tmp/cache \
-    TORCH_HOME=/tmp/torch \
     TMPDIR=/tmp \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 

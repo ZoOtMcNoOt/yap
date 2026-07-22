@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::server_connector::{
     batch::{validate_vad_intervals, SourceVadInterval},
     LidPreflightCapability,
@@ -8,21 +6,20 @@ use crate::server_connector::{
 use super::LidPreflightError;
 
 const MAX_SOURCE_SAMPLES: u64 = 16_000 * 4 * 60 * 60;
+const STRATIFIED_PROBE_COUNT: usize = 5;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum LidManualReason {
     ShortRecording,
-    FirstProbeUnavailable,
-    SecondProbeUnavailable,
+    StratifiedRegionUnavailable,
 }
 
 impl LidManualReason {
     pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::ShortRecording => "short_recording",
-            Self::FirstProbeUnavailable => "first_probe_unavailable",
-            Self::SecondProbeUnavailable => "second_probe_unavailable",
+            Self::StratifiedRegionUnavailable => "stratified_region_unavailable",
         }
     }
 }
@@ -31,7 +28,7 @@ impl LidManualReason {
 pub(crate) enum LidProbeSelection {
     Selected {
         source_samples: u64,
-        windows: [LidProbeWindow; 2],
+        windows: Box<[LidProbeWindow; STRATIFIED_PROBE_COUNT]>,
     },
     Manual {
         source_samples: u64,
@@ -48,7 +45,7 @@ impl LidProbeSelection {
         }
     }
 
-    pub(crate) fn windows(&self) -> Option<&[LidProbeWindow; 2]> {
+    pub(crate) fn windows(&self) -> Option<&[LidProbeWindow; STRATIFIED_PROBE_COUNT]> {
         match self {
             Self::Selected { windows, .. } => Some(windows),
             Self::Manual { .. } => None,
@@ -120,85 +117,35 @@ pub(crate) fn select_lid_probe_windows(
         });
     }
     let timeline = VadTimeline::new(vad_intervals)?;
-    let mut seen = HashSet::new();
-    let mut first_candidates = Vec::with_capacity(vad_intervals.len().saturating_mul(2));
-    for interval in vad_intervals {
-        for start in [
-            interval.start_sample,
-            interval
-                .end_sample_exclusive
-                .saturating_sub(policy.maximum_window_samples),
-        ] {
-            if seen.insert(start) {
-                first_candidates.push(start);
-            }
-        }
-    }
-    let first = first_candidates.into_iter().find_map(|start| {
-        candidate_window(
-            0,
+    let maximum_start = source_samples - policy.maximum_window_samples;
+    let mut selected = Vec::with_capacity(STRATIFIED_PROBE_COUNT);
+    for index in 0..STRATIFIED_PROBE_COUNT {
+        let start = maximum_start
+            .checked_mul(index as u64)
+            .and_then(|value| value.checked_add(2))
+            .ok_or_else(|| LidPreflightError::invalid("probe position overflowed"))?
+            / 4;
+        let Some(window) = candidate_window(
+            index as u16,
             start,
             source_samples,
             policy.maximum_window_samples,
             policy.minimum_voiced_samples_per_window,
             &timeline,
-        )
-    });
-    let Some(first) = first else {
-        return Ok(LidProbeSelection::Manual {
-            source_samples,
-            reason: LidManualReason::FirstProbeUnavailable,
-        });
-    };
-
-    let midpoint = source_samples / 2;
-    let centered = midpoint
-        .saturating_sub(policy.maximum_window_samples / 2)
-        .max(first.source_end_sample);
-    seen.clear();
-    let mut second_candidates = Vec::with_capacity(vad_intervals.len().saturating_mul(2) + 2);
-    for start in [centered, first.source_end_sample] {
-        if seen.insert(start) {
-            second_candidates.push(start);
-        }
+        ) else {
+            return Ok(LidProbeSelection::Manual {
+                source_samples,
+                reason: LidManualReason::StratifiedRegionUnavailable,
+            });
+        };
+        selected.push(window);
     }
-    for interval in vad_intervals {
-        for start in [
-            interval.start_sample.max(first.source_end_sample),
-            interval
-                .end_sample_exclusive
-                .saturating_sub(policy.maximum_window_samples)
-                .max(first.source_end_sample),
-        ] {
-            if seen.insert(start) {
-                second_candidates.push(start);
-            }
-        }
-    }
-    second_candidates.sort_by_key(|start| {
-        let end = source_samples.min(start.saturating_add(policy.maximum_window_samples));
-        let center = start.saturating_add(end) / 2;
-        (center.abs_diff(midpoint), *start)
-    });
-    let second = second_candidates.into_iter().find_map(|start| {
-        candidate_window(
-            1,
-            start,
-            source_samples,
-            policy.maximum_window_samples,
-            policy.minimum_voiced_samples_per_window,
-            &timeline,
-        )
-    });
-    let Some(second) = second else {
-        return Ok(LidProbeSelection::Manual {
-            source_samples,
-            reason: LidManualReason::SecondProbeUnavailable,
-        });
-    };
+    let windows = selected
+        .try_into()
+        .map_err(|_| LidPreflightError::invalid("probe count is invalid"))?;
     Ok(LidProbeSelection::Selected {
         source_samples,
-        windows: [first, second],
+        windows: Box::new(windows),
     })
 }
 

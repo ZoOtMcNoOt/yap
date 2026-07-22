@@ -96,13 +96,11 @@ class LidRuntimeTests(unittest.TestCase):
                 runtime.capabilities,
                 {
                     "schemaVersion": 1,
-                    "componentId": "speechbrain-lid-preflight",
+                    "componentId": "ambernet-batch-language-preflight",
                     "runtime": {"pythonVersion": "3.12.13", "cpuOnly": True},
                     "model": {
-                        "id": "speechbrain/lang-id-voxlingua107-ecapa",
-                        "revision": (
-                            "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9"
-                        ),
+                        "id": "nvidia/nemo/langid_ambernet",
+                        "revision": "1.12.0",
                     },
                     "transport": {
                         "mediaType": (
@@ -113,15 +111,15 @@ class LidRuntimeTests(unittest.TestCase):
                         "maximumResponseSeconds": 120,
                     },
                     "policy": {
-                        "revision": "speechbrain-two-window-v1",
+                        "revision": "ambernet-stratified-five-region-v1",
                         "sampleRateHz": 16_000,
                         "channelCount": 1,
                         "sampleWidthBytes": 2,
                         "minimumSourceSamples": 480_000,
-                        "maximumWindows": 2,
-                        "maximumWindowSamples": 240_000,
-                        "minimumVoicedSamplesPerWindow": 128_000,
-                        "scoreSemantics": "uncalibrated-log-posterior",
+                        "maximumWindows": 5,
+                        "maximumWindowSamples": 96_000,
+                        "minimumVoicedSamplesPerWindow": 51_200,
+                        "scoreSemantics": "mean-logit-log-softmax",
                         "userConfirmationRequired": True,
                     },
                 },

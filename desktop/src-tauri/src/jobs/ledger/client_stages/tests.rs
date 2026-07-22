@@ -205,14 +205,15 @@ fn language_confirmation_updates_the_decision_and_stage_atomically() {
 fn preflight_confirmation_uses_the_latest_nonretryable_lid_attempt() {
     let ledger = ledger_with_client_preflight("latest-lid-attempt", 1_000);
     let attempt = ledger
-        .begin_lid_preflight_dispatch(
-            "latest-lid-attempt",
-            "lid-request-1",
-            "http://127.0.0.1:18765",
-            &"a".repeat(64),
-            "speechbrain-policy-v1",
-            30,
-        )
+        .begin_lid_preflight_dispatch(super::super::LidPreflightDispatchStart {
+            job_id: "latest-lid-attempt",
+            request_id: "lid-request-1",
+            server_base_url: "http://127.0.0.1:18765",
+            catalog_revision: &"a".repeat(64),
+            component_id: "ambernet-batch-language-preflight",
+            policy_revision: "ambernet-stratified-five-region-v1",
+            started_at_ms: 30,
+        })
         .unwrap();
     ledger
         .fail_lid_preflight_dispatch(super::super::LidPreflightDispatchFailure {
@@ -234,6 +235,7 @@ fn preflight_confirmation_uses_the_latest_nonretryable_lid_attempt() {
         .unwrap();
     assert_eq!(retryable.reason.as_deref(), Some("TRANSPORT_FAILED"));
     assert_eq!(retryable.retryable, Some(true));
+    assert_eq!(retryable.component_id, "ambernet-batch-language-preflight");
     assert!(matches!(
         language_preflight_outcome(&ledger, "latest-lid-attempt").unwrap(),
         LanguagePreflightOutcome::RetryableFailure { attempt: 1, .. }
@@ -282,14 +284,15 @@ fn preflight_confirmation_uses_the_latest_nonretryable_lid_attempt() {
 fn terminal_lid_dispatch_is_reconciled_before_retry_or_pruning() {
     let ledger = ledger_with_client_preflight("terminal-lid", 60);
     ledger
-        .begin_lid_preflight_dispatch(
-            "terminal-lid",
-            "lid-request-terminal",
-            "http://127.0.0.1:18765",
-            &"a".repeat(64),
-            "speechbrain-policy-v1",
-            30,
-        )
+        .begin_lid_preflight_dispatch(super::super::LidPreflightDispatchStart {
+            job_id: "terminal-lid",
+            request_id: "lid-request-terminal",
+            server_base_url: "http://127.0.0.1:18765",
+            catalog_revision: &"a".repeat(64),
+            component_id: "ambernet-batch-language-preflight",
+            policy_revision: "ambernet-stratified-five-region-v1",
+            started_at_ms: 30,
+        })
         .unwrap();
 
     assert_eq!(ledger.expire_pending_jobs(61).unwrap(), 1);

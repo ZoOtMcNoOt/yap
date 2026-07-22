@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-07-21
+**As of:** 2026-07-22
 
 **Current work:** Phase 6 preprocessing on
 `feat/phase6-preprocessing-pipeline`.
@@ -29,7 +29,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 4: private ASR node | Merged and gated | A bounded router/pool and transient isolated Cohere worker ran on GB10 using the pinned Python 3.12 / NVIDIA PyTorch 26.06 stack. This is reference-worker proof, not a production service. |
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
-| Phase 6: preprocessing | Active; partial implementation not gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local offline language switching/within-utterance spans, guarded server preflight, language/routing/timing, and provider-specific ASR serving. The catalog, fixed-language decisions, local primary conditioning, durable stages, normalization, advisory Silero VAD, exact AmberNet 1.12.0 QDQ INT8 local-import lifecycle, bounded exact-once local switching, visible primary fallback, hash-bound source-time span evidence, shared local/server span schema with distinct boundary authority, isolated CPU SpeechBrain suggestion/confirmation, pinned server Nemotron fixed/automatic reference routes, fail-closed Cohere timing, the Cohere vLLM adapter/image/launcher contract, and a pinned resident Nemotron NeMo adapter/image/launcher execute under focused tests. Historical Whisper, ECAPA, SpeechFlow, FireRedLID, AmberNet natural/noisy, and retired Triton experiments remain recorded. The later accepted AmberNet policy froze three observations and a `0.40` margin before consuming a distinct 58-clip holdout once: 54 correct alternate decisions, one abstention, three wrong alternates, and zero false alternates when the primary was correct. This is a deliberate, default-off Preview with fail-visible primary fallback, not a claim that the original natural/noisy gate passed or that each locale is quality-qualified. Focused release-mode i7-13850HX profiles routed the same hash-locked 38.4-second source through resident Nemotron plus AmberNet/Silero. The eight-logical-CPU paced run lost no frames, drained in 864 ms, averaged 1.765 cores, and measured 0.752 ms p95 scheduler wake delay. A four-logical-CPU repeat also lost no frames, drained in 911 ms, averaged 1.773 cores, and measured 8.023 ms p95 wake delay; its accelerated combined pass used 3.71 of four cores. This is development-host evidence, not target-i5, rendered-UI, energy/thermal, or sustained-session qualification. The consumed clean German-English route target completed and failed 0/4 required natural transitions while preserving exact source coverage and primary fallback; it fixes the Preview quality boundary and is not retuned or called an unfinished pass. Focused resident-service GB10 probes retained the locked public-fixture behavior: Cohere vLLM matched the Transformers reference hash with zero normalized word errors, isolated c2/c4/c8 requests, acknowledged an engine-active cancellation in 18 ms with abort/idle read-back, recovered, and tore down; NeMo formed a batch of eight independent fixed/auto requests, acknowledged cancellation in 13 ms without publication, recovered, and tore down. These are dirty-head implementation results, not promotion or production capacity. Source-exact image smokes subsequently ran both full provider models through their real Yap adapters at `fcccf21e785b116b92cd8e46150a36b9b5ee91db` and the SpeechBrain worker at `04266c4bbffd0fd31eaf2afd0bcce42e0248344f`; all left no owned container/listener. They close basic image/model/adapter execution only. A contained current-source Cohere timing proof produced WER 0.0 and deterministic source-bounded words. The locked FLEURS `es-419` Cohere comparator also completed all 908 private GB10 cases at 3.5549% normalized WER and 181.04 audio seconds per wall second under the pinned Python 3.12/NVIDIA runtime. Comparator evidence does not promote a locale or production route. Target-i5 AmberNet/Nemotron interference, sustained-session/restart/cancellation evidence, SpeechBrain peak RSS/sustained CPU, the frozen Cohere vLLM comparison, the frozen Nemotron NeMo representative locale/duration/lifecycle gate, timing promotion, representative duration/concurrency evidence, and the complete Phase 6 gate remain open. |
+| Phase 6: preprocessing | Active; partial implementation not gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Under focused tests, the catalog, primary/fixed decisions, durable preprocessing, advisory Silero VAD, default-off local AmberNet/Nemotron switching Preview, source-time spans, verify-only server AmberNet five-region suggestion/confirmation, pinned server Nemotron references, fail-closed Cohere timing, Cohere vLLM candidate, and resident Nemotron NeMo candidate execute. The local Preview's frozen natural-switch target failed and remains a visible limitation; development-host resource results are not target-i5 qualification. The replacement server preflight verifies one NGC-governed AmberNet artifact, samples five six-second regions from source start through exact tail, requires strict all-five agreement and positive margins, and independently rechecks the decision in Rust before user confirmation. Focused Windows real-model and disposable ARM64 parity evidence exists, while the older SpeechBrain GB10 receipt remains historical only. Provider smokes and private comparators remain non-promotion evidence. A second fixed locale, exact checked-head AmberNet ARM64 resource/cold-latency/teardown result, target-i5 local interference/sustained lifecycle, frozen Cohere vLLM and Nemotron NeMo gates, timing promotion, representative duration/locale evidence, accessibility rerun, and the complete Phase 6 matrix remain open. |
 | Phases 7–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
 The local exact-duration runner is implemented but not yet consumed. It starts
@@ -154,7 +154,7 @@ dirty-head result.
 
 The complete owner and trust-boundary map is
 [executable ownership map](architecture/boundaries/EXECUTABLE-OWNERSHIP.md). The
-focused Phase 6 ownership deltas are recorded in ADR 0024 and the active plan.
+focused Phase 6 ownership deltas are recorded in ADRs 0024–0026 and the active plan.
 
 ## What is not claimed
 
@@ -192,13 +192,12 @@ focused Phase 6 ownership deltas are recorded in ADR 0024 and the active plan.
   natural-switch quality target failed and fixes the Preview boundary rather
   than remaining an unfinished pass. Target-i5 resource/interference,
   sustained lifecycle, and complete checked-head gates are unfinished. The
-  isolated SpeechBrain CPU preflight, durable
-  desktop request/retry/cancellation path, and explicit user confirmation now
-  execute under focused Python 3.12/Rust/React tests. Its platform-manifest-
-  pinned image also ran the real `ContainerLidWorker` at exact executable commit
-  `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` on GB10 and tore down cleanly;
-  peak RSS, sustained CPU, target-i5, representative, and full-gate evidence
-  remain open. The server Nemotron fixed/automatic routes,
+  isolated AmberNet CPU batch preflight, durable desktop request/retry/
+  cancellation path, strict five-region agreement, and explicit user
+  confirmation execute under focused Python 3.12/Rust/React tests. Windows
+  real-model and disposable ARM64 parity smokes exist, but the exact checked-head
+  image/resource/cold-latency/teardown result remains open. The old SpeechBrain
+  GB10 receipt is historical, not current-runtime evidence. The server Nemotron fixed/automatic routes,
   dynamic server tags, fail-closed Cohere word alignment, and the Cohere vLLM
   adapter/image/launcher contract and the resident Nemotron NeMo worker/service/
   image/launcher now execute under focused evidence. They remain unadvertised
@@ -249,11 +248,11 @@ and reviewable sub-tasks. The active Phase 6 plan remains the delivery authority
    decision slices while closing their remaining validation and second-locale
    UX gaps.
 2. Preserve the completed source-authoritative normalization/VAD, durable-stage,
-   and isolated SpeechBrain preflight slices. The source-exact LID image smoke is
-   complete; finish its peak-resource evidence and the implemented bounded
-   resident acoustic-LID route's target-i5, sustained-lifecycle, and
+   and verify-only AmberNet five-region preflight slices. Finish the exact
+   checked-head ARM64 image/resource/cold-latency/teardown smoke and the bounded
+   resident local acoustic-LID route's target-i5, sustained-lifecycle, and
    representative span/resource gates without reopening the accepted model
-   decision.
+   decisions.
 3. Preserve the pinned reference Cohere/Nemotron routes, shared boundary-
    explicit language-span contract, and fail-closed timing implementation while
    closing representative local spans and frozen-head timing-promotion evidence.

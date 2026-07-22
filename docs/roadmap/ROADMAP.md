@@ -35,7 +35,9 @@ identity, diarization, knowledge, or enterprise boundaries forward:
 - one bounded resident local acoustic-LID component, automatic offline language
   switching, and within-utterance source-time language spans under the existing
   Rust live-runtime owner;
-- isolated CPU SpeechBrain suggestions for long fixed-language recordings;
+- one verify-only AmberNet 1.12.0 INT8 QDQ artifact in an isolated CPU runtime,
+  with five strict start-to-tail regions and explicit user confirmation for long
+  fixed-language recordings;
 - pinned reference Cohere/Nemotron routes plus explicit server Nemotron auto
   mode at finalized utterance boundaries, with correctness and bounded-resource
   evidence rather than a production pool claim;
@@ -48,8 +50,9 @@ identity, diarization, knowledge, or enterprise boundaries forward:
 - fail-closed word timing, initially behind an English Cohere evidence gate.
 
 The canonical decisions are
-[ADR 0024](../adr/0024-global-language-routing.md) and
-[ADR 0025](../adr/0025-provider-specific-asr-serving.md). The implementation
+[ADR 0024](../adr/0024-global-language-routing.md),
+[ADR 0025](../adr/0025-provider-specific-asr-serving.md), and
+[ADR 0026](../adr/0026-ambernet-batch-language-preflight.md). The implementation
 and one-time gate contract are in the active
 [audio preprocessing and language routing plan](../plans/active/2026-07-16-audio-preprocessing-and-language-routing.md).
 The living
