@@ -23,6 +23,7 @@ import {
   requireAbsoluteWindowsPath,
   sameWindowsPath,
 } from "./wdio/windows-path-safety.js";
+import { validateTargetClientNativeResourceEvidence } from "./wdio/target-client-native-resource-evidence.js";
 import { validateTargetClientPowerThermalEvidence } from "./wdio/target-client-power-thermal-evidence.js";
 
 // Cohesion note: preflight and finalization intentionally share one captured
@@ -195,26 +196,30 @@ function requireReleaseBinary() {
 function requireNativeResourceEvidence() {
   const contextPath = path.join(evidenceRoot, "resource-gate-context.json");
   const profilePath = path.join(evidenceRoot, "resident-language-routing-profile.json");
-  if (!existsSync(contextPath) || !existsSync(profilePath)) {
+  const logPath = path.join(evidenceRoot, "native-resource-gate.log");
+  if (!existsSync(contextPath) || !existsSync(profilePath) || !existsSync(logPath)) {
     throw new Error("The rendered-UI gate requires the completed native resource gate first.");
   }
+  requireRealFile(contextPath, "Native resource context");
+  requireRealFile(profilePath, "Native resource profile");
+  requireRealFile(logPath, "Native resource log");
   const context = JSON.parse(readFileSync(contextPath, "utf8"));
-  if (context.status !== "passed" || context.checkedHead !== checkedHead) {
-    throw new Error("Native resource evidence does not belong to this checked head.");
-  }
+  const profile = JSON.parse(readFileSync(profilePath, "utf8"));
   const processors = os.cpus();
-  if (
-    processors.length !== context.logicalProcessors
-    || processors[0]?.model.trim() !== context.processorName
-    || !context.processorName.includes(context.expectedProcessorToken)
-  ) {
-    throw new Error("Native resource evidence does not belong to this target machine.");
-  }
+  validateTargetClientNativeResourceEvidence(context, profile, {
+    checkedHead,
+    logicalProcessors: processors.length,
+    processorName: processors[0]?.model.trim(),
+  });
   const profileSha256 = createHash("sha256")
     .update(readFileSync(profilePath))
     .digest("hex");
   if (profileSha256 !== context.profileSha256) {
     throw new Error("Native resource evidence changed after publication.");
+  }
+  const logSha256 = createHash("sha256").update(readFileSync(logPath)).digest("hex");
+  if (logSha256 !== context.logSha256) {
+    throw new Error("Native resource log changed after publication.");
   }
 }
 
