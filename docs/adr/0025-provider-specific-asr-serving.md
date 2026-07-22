@@ -1,9 +1,10 @@
 # ADR 0025: Provider-specific ASR serving runtimes
 
 **Date:** 2026-07-21
-**Status:** Accepted; Cohere vLLM and Nemotron NeMo adapters plus checked
-container/launcher contracts implemented under focused tests, both frozen GB10
-promotion gates incomplete
+**Status:** Accepted; Cohere vLLM and Nemotron NeMo adapters, checked
+container/launcher contracts, and a sequential lifecycle-gate composition are
+implemented under focused tests; the frozen GB10 execution and both promotion
+decisions remain incomplete
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md) and
 [ADR 0024](0024-global-language-routing.md)
 **Meeting serving amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 selects a separate Tiron joint speaker-attributed worker without changing the Phase 6 Cohere/Nemotron gates)
@@ -70,10 +71,21 @@ specific behind that seam.
   immutable model artifacts before admitting work.
 - The launcher rejects root and runs the container as the invoking model-owner
   UID/GID so private host model directories do not need broader permissions.
-- The host publishes the container only on `127.0.0.1`; the unauthenticated Yap
-  development service also remains loopback-only. SSH tunneling is the current
-  LAN-development boundary until Phase 7 authentication and later enterprise
-  network controls exist.
+- Docker publishes no provider-container port. Each foreground launcher owns a
+  `setsid`-isolated `socat` process group with a fixed 32-connection child and
+  backlog ceiling that forwards one numeric `127.0.0.1` port to the
+  container-private address. The unauthenticated Yap development service also
+  remains loopback-only. SSH tunneling is the current LAN-development boundary
+  until Phase 7 authentication and later enterprise network controls exist.
+  The proxy starts with a cleared environment and therefore does not inherit
+  either provider API key.
+- Each resident launcher also requires an existing internal Docker bridge whose
+  owner and exact revision labels match the checked head. The checked lifecycle
+  wrapper owns that temporary network and removes it before evidence
+  publication; the provider containers have no external egress through it. The
+  launcher requires `socat`, `setsid`, `ss`, and `ps`, validates the exact
+  loopback listener, and terminates the complete proxy process group before
+  returning.
 - The vLLM worker rejects punctuation-off requests because the pinned Cohere
   decoder currently fixes the `<|pnc|>` control token.
 - HTTP request bodies and responses are bounded. Cancellation explicitly shuts
@@ -139,6 +151,9 @@ specific behind that seam.
   c1 and c8 while reporting rendered-text parity separately.
   These are executable gate mechanics; no checked-head capacity or promotion
   claim exists until the frozen GB10 runs pass.
+- Exact readiness retries only typed transport/startup unavailability. A wrong
+  API key, runtime version, served model, or malformed readiness response fails
+  immediately instead of being hidden behind the startup timeout.
 
 ## Consequences
 
@@ -397,6 +412,33 @@ These focused smokes establish source-exact container, model, adapter, and
 teardown integration. They do not satisfy the frozen reference comparison,
 representative locale/duration, p50/p95/p99, resource, capacity, failure,
 cancellation, recovery, rollback, or promotion requirements below.
+
+## Executable lifecycle composition (not consumed)
+
+The checked `resident-provider-lifecycle-gate.sh` now composes the frozen
+resident-service mechanics without merging the provider runtimes. It verifies
+already-present Cohere and Nemotron artifacts, builds exact-head ARM64 images,
+creates one temporary internal bridge, and runs vLLM and NeMo sequentially. For
+each service it verifies absent Docker port publication, blocked external
+container reachability, the launcher-owned loopback proxy, exact-model
+readiness; the plan-owned duration,
+ordinary load, cancellation, capacity, and language cells; and a c8/1,600
+cgroup profile. The finalizer rejects a partial concurrency ladder, an omitted
+four-hour batch boundary, a changed duration suite/head, failed child evidence,
+an unclean launcher exit, or any remaining provider container, proxy, launcher,
+listener, or network.
+
+All source audio, transcripts, raw resource series, logs, and host snapshots
+stay in the owner-private external cache. The aggregate contains only bounded
+facts and child-evidence hashes. Focused portable tests and shell syntax checks
+prove the orchestration contract; no GB10 workload was run by this
+implementation slice. It therefore does not satisfy the evidence below or
+change either provider's promotion status.
+
+The cgroup profile measures the provider container; it does not attribute the
+launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall
+latency does traverse the proxy. Whole-route/whole-host capacity and persistent
+proxy supervision remain part of the Phase 10 system gate.
 
 ## Required evidence before promotion
 

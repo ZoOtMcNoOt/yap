@@ -58,7 +58,7 @@ observed runtime behavior.
 | D-20 | GLib/platform warnings | GLib is not a Yap application architecture choice; it may enter through platform/native dependencies. Do not edit a lockfile merely to hide warnings. Classify each warning as a real supported-target defect, upstream-only warning, or missing native-platform gate, then fix/pin/patch only with reproducible evidence. | Open platform-debt audit; current phase closure or exact affected phase | P6-10 below |
 | D-21 | LAN, SSH, Wi-Fi, and enterprise networking | Preserve LAN/loopback development and the SSH-tunnel rehearsal. DNS, certificates, ZPA, firewall policy, conditional access, production hosting, and deployment remain explicit IT/security handoffs. | Accepted; developer rehearsal now, external handoff Phase 10 | ADR 0021, roadmap |
 | D-22 | Security and enterprise readiness | Secure coding, bounded inputs, provenance, privacy, cancellation, and fail-closed contracts are product work now. Enterprise certification, production access policy, formal deployment approval, and managed network controls cannot be claimed early. | Accepted split; every phase plus Phase 10 handoff | Roadmap |
-| D-23 | Joint speaker-attributed meeting ASR | Use pinned `Trelis/tiron` as the Phase 8 server development baseline. Keep the local anonymous-speaker path, ASR-plus-diarization fallback, Rust result authority, and model-replacement seam. Distinguish its eight window-local speaker slots from Yap's 32-target/64-ceiling session roster, and expose over-capacity regions rather than hiding them. | Accepted direction; Phase 8 implementation and production gate remain future work | ADR 0027 and queued joint speaker-attributed meeting plan |
+| D-23 | Joint speaker-attributed meeting ASR | Use pinned `Trelis/tiron` as the Phase 8 server development baseline. Keep the local anonymous-speaker path, ASR-plus-diarization fallback, Rust result authority, and model-replacement seam. Reproduce its eight window-local/eight released-global limits first; qualify a separate Yap speaker-epoch reconciler before claiming the 32-target/64-ceiling product roster, and expose over-capacity regions rather than hiding them. | Accepted direction; Phase 8 implementation and production gate remain future work | ADR 0027 and queued joint speaker-attributed meeting plan |
 
 ## Current Phase 6 implementation queue
 
@@ -491,6 +491,19 @@ second fixed-locale promotion, representative corpus matrix, independent
 Reality Set, Cohere vLLM parity, long-duration correctness, or concurrency/capacity
 gate.
 
+The checked resident-provider lifecycle wrapper now composes both provider
+qualification families sequentially on a temporary exact-head internal Docker
+bridge. Each container has no Docker-published port or external egress; its
+launcher owns a bounded numeric-loopback proxy process group. The wrapper
+requires the complete plan-owned duration/load/specialized/resource child set,
+rejects incomplete concurrency or the missing exact four-hour batch boundary,
+and publishes only after clean container/proxy/listener/network teardown and a
+clean launcher exit.
+Startup retry is limited to typed service unavailability; permanent auth/model/
+runtime mismatches fail immediately. Focused portable and shell-contract checks
+pass, but the wrapper has not run on the frozen GB10 head and does not close the
+representative-quality or complete Phase 6 gate.
+
 ### P6-08 — Review UI and model-independent terminology hooks
 
 - [x] Complete keyboard, focus, label, contrast, reduced-motion, and narrow-
@@ -624,10 +637,11 @@ next-phase cadence.
   plus oversized linking surfaces that must not be copied into Yap unchanged.
 - Freeze the messy-meeting manifest and thresholds before model output, then
   score public AMI/ICSI/NOTSOFAR comparators separately from an independently
-  adjudicated private holdout. Include more-than-15-person sessions, one through
-  eight talkers per window, explicit over-capacity pressure, overlap, late
-  arrivals/returns, far-field/noise/virtual transport, locales, duration, and
-  c1/c2/c4/c8 lifecycle/isolation evidence.
+  adjudicated private holdout. Distinguish more-than-15-attendee sessions with
+  a small active subset from 9/16/32-talker cross-epoch sessions; also include
+  one through eight talkers per window, explicit over-capacity pressure,
+  overlap, late arrivals/returns, far-field/noise/virtual transport, locales,
+  duration, and c1/c2/c4/c8 lifecycle/isolation evidence.
 - Add revisioned anonymous speaker evidence, source-time word/speaker
   intersection, reconciliation, and purpose-authorized naming.
 - Keep audio/transcript authority and user corrections revisioned; do not infer
@@ -731,7 +745,7 @@ graph and Rust-native runtime contract enter the desktop dependency graph.
 | OQ-28 | What diagnostic evidence can be retained without leaking private audio or transcripts? | Redaction schema, bounded metrics, event correlation, local retention/deletion, crash evidence, hosted-log review, and user controls | Record hashes, counts, timings, typed states, and model revisions; keep raw audio/transcripts and private scan output outside Git and hosted artifacts |
 | OQ-29 | Which networking work is developer-owned versus an IT/security handoff? | LAN and SSH-tunnel rehearsal, authenticated API contract, threat model, DNS/certificate/ZPA/firewall/conditional-access ownership, and deployment approvals | Preserve loopback/LAN/tunnel development; record enterprise controls as explicit Phase 10 handoffs or blockers |
 | OQ-30 | How do language spans interact with Phase 8 speaker diarization and overlap? | Independent source-time contracts, span intersection rules, overlap representation, revision precedence, and multilingual multi-speaker fixtures | Keep language and speaker evidence separate and composable; neither model may infer the other's identity or erase overlapping evidence |
-| OQ-31 | Does the selected Tiron development baseline earn general or only narrow production promotion? | Immutable model/harness/dependency provenance; disclosed training exposure; frozen messy-meeting public comparators plus independent holdout; cpWER and speaker-attributed WER; overlap deletion/recall; speaker-count, capacity-pressure, timestamp, and identity-fragmentation error; per-locale quality; one- and two-pass latency, RTF, VRAM/RAM, c1/c2/c4/c8 admission, cancellation, isolation, teardown, and long-meeting stability | Implement Tiron first in Phase 8, but retain the ASR-plus-diarization fallback and keep the route unadvertised until every required slice passes. The local anonymous baseline, current Phase 6 providers, and model-independent result contract do not change. |
+| OQ-31 | Does the selected Tiron development baseline earn general or only narrow production promotion? | Immutable model/harness/dependency provenance; disclosed training exposure; frozen messy-meeting public comparators plus independent holdout; reproduction of the eight-window/eight-global baseline; separately scored speaker-epoch extension; cpWER and speaker-attributed WER; overlap deletion/recall; speaker-count, capacity-pressure, timestamp, and identity-fragmentation error; per-locale quality; one- and two-pass latency, RTF, VRAM/RAM, c1/c2/c4/c8 admission, cancellation, isolation, teardown, and long-meeting stability | Implement Tiron first in Phase 8, but retain the ASR-plus-diarization fallback and keep the route unadvertised until every required slice passes. The local anonymous baseline, current Phase 6 providers, and model-independent result contract do not change. |
 
 ## Closed discussion items
 

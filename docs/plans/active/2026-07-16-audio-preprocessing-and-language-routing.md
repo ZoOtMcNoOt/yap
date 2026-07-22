@@ -1099,6 +1099,24 @@ one private JSONL series through explicit workload start/end/stop markers. The
 existing strict observation qualifier round-trips that schema. Focused portable
 tests pass; no resident model or frozen resource profile was run by this change.
 
+The resident-service lifecycle composition is now executable but likewise
+unconsumed. One clean-head wrapper verifies the two already-present model
+directories, builds exact-head ARM64 images, creates a temporary checked
+internal Docker bridge, runs each container without a Docker-published port or
+external egress, owns a bounded numeric-loopback proxy, and runs vLLM then NeMo sequentially. Typed startup
+unavailability may retry; wrong authentication, runtime version, model identity,
+or malformed readiness fails immediately. The wrapper consumes the plan-owned
+duration, standard, cancellation, capacity, language-parity, and c8/1,600
+resource cells, then removes the provider and network before finalization. Its
+aggregate rejects an incomplete concurrency set, omitted exact four-hour batch
+boundary, changed suite/head, failed child, unclean launcher exit, or retained
+container, proxy, launcher, listener, or network. All raw inputs/logs/samples/snapshots remain in the private
+external cache. Focused Python and shell-contract checks pass; no GB10 workload,
+representative-quality decision, promotion, or one-time Phase 6 matrix was
+consumed by this implementation. Container cgroup samples exclude the small
+host proxy process group; request wall latency includes it, and whole-host
+capacity remains a later system gate.
+
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness
 passed, the public fixture matched the Transformers reference transcript hash

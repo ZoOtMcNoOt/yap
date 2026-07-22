@@ -122,15 +122,20 @@ Phase 5 evidence used the transient custom Transformers worker. On the active
 Phase 6 branch, `development-batch-server.sh` selects the Cohere vLLM adapter and
 requires a separately running checked `cohere-vllm-server.sh`, numeric-loopback
 endpoint, and private API key. The vLLM launcher inspects the exact ARM64 image
-ID and revision label before publishing only `127.0.0.1:18000`. The committed
+ID and revision label, requires a checked internal Docker bridge, runs the
+container without a Docker-published port, and owns a bounded `socat` process
+group that forwards only `127.0.0.1:18000` to the container-private address.
+The committed
 capability catalog contains Cohere only; it does not advertise the unpromoted
 Nemotron candidate. `nemotron-nemo-server.sh` exists for direct frozen
 qualification on numeric loopback with a separate private API key. Wiring that
 candidate through the development batch server additionally requires an
 explicit matching candidate capability lock outside the repository. The
-launcher verifies the ARM64 image/revision, runs as the non-root model owner,
-mounts the private job store read-only at the same absolute path, and publishes
-only `127.0.0.1:18001` by default. Candidate qualification is not product-catalog
+launcher verifies the ARM64 image/revision and the same internal-network
+owner/revision contract, runs as the non-root model owner,
+mounts the private job store read-only at the same absolute path, and exposes
+only the bounded `127.0.0.1:18001` proxy by default. Candidate qualification is
+not product-catalog
 promotion. The runtime provides durable
 create/upload/commit/status/result and cancellation handlers, a single running
 plus two queued GPU jobs, eight bounded HTTP workers, a 512-record cap,
@@ -253,6 +258,26 @@ repository root, and provider-serving lock and performs the same pre/post
 candidate read-back before publishing its aggregate. Raw JSONL and sampler
 control files must remain beneath the private `YAP_EVAL_CACHE`; they are never a
 repository artifact.
+
+`resident-provider-lifecycle-gate.sh` is the checked GB10 composition for these
+provider-owned cells. It requires one clean full SHA, a dedicated private cache,
+the provider duration suite plus its separately supplied digest, two already
+verified model directories, and separate in-memory API keys. It builds and
+launches the two
+checked images sequentially on a temporary internal Docker bridge, verifies no
+Docker-published port and blocked container egress, owns each loopback proxy,
+retries only typed transient startup unavailability, and fails immediately on
+wrong auth, runtime, or model identity. The wrapper runs the exact duration, standard,
+specialized, and c8/1,600 resource cells, then publishes an aggregate only when
+every child is complete and no provider container, launcher, listener, or
+network remains. Focused tests establish the composition contract; the frozen
+GB10 wrapper has not yet been consumed and does not by itself satisfy
+representative quality or the complete Phase 6 matrix. See the server-node
+runbook for the exact private invocation and evidence boundary.
+
+Container cgroup samples deliberately measure the provider container, not the
+small host proxy process group. API wall latency includes the loopback proxy;
+whole-host CPU/RAM capacity and persistent supervision remain Phase 10 evidence.
 
 The Windows desktop reaches this profile only through an explicitly started
 SSH local forward to `127.0.0.1:18765`. No TLS endpoint, firewall opening, DNS,

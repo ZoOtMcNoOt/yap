@@ -396,8 +396,10 @@ long-meeting and overlap evidence.
 These paths remain unadvertised/unselected:
 the catalog still exposes only Cohere `en-US` with `wordAlignment: false`, and
 the frozen vLLM comparison, frozen representative Nemotron NeMo gate, and
-complete Phase 6 gate have not run. Both candidate launchers publish only
-numeric loopback and require separate private API keys; this does not implement
+complete Phase 6 gate have not run. Both candidate containers stay on an
+egress-blocked internal bridge with no Docker-published port; their launchers
+own bounded numeric-loopback proxy process groups and require separate private
+API keys. This does not implement
 the still-false live capability. Phase 6 does not claim authenticated ownership
 or a persistent supervised mixed-load production service. Phase 7 owns
 authenticated tenant/user identity. Phase 10 owns production supervision,

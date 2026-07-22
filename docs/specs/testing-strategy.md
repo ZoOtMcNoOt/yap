@@ -136,6 +136,23 @@ transport and lifecycle and carries no representative-accuracy claim. Natural
 WER, deterministic long-form sentinel integrity, concurrency, and provider
 promotion remain independent evidence even when every duration completes.
 
+The resident-provider lifecycle wrapper is the checked-head owner for the
+launched-image and teardown boundary. It verifies already-present model assets,
+builds exact-head ARM64 images, creates a labeled internal Docker bridge, runs
+the containers with no Docker-published port or external egress, owns bounded
+numeric-loopback proxy process groups, and runs vLLM and NeMo sequentially. It
+requires typed exact-model readiness, the
+complete plan-owned duration/load/specialized cells, and each c8/1,600 resource
+profile. Finalization rejects missing/extra children, partial concurrency,
+omitted exact-maximum batch evidence, stale head/suite hashes, changed host
+listener/firewall/service-unit state, or a retained provider container,
+proxy, launcher, or network. Raw samples, service logs, host snapshots, audio, and
+transcripts stay in the dedicated mode-0700 external cache. Focused contract
+tests do not consume this GB10 gate, representative quality, or the complete
+Phase 6 matrix. Provider cgroup samples exclude host-proxy CPU/RSS, while
+request wall latency includes the proxy; the Phase 10 system gate owns
+whole-host and persistent-supervision evidence.
+
 That decision covers base-model and adapter/fine-tune lineage, and transformed
 copies inherit their source exposure. Missing lineage evidence stays `unknown`.
 The manifest is not its own trust root: independent cases use the dedicated
@@ -360,9 +377,11 @@ speaker-count error, timestamp error, and speaker merge/split/fragmentation.
 Required runtime metrics include cold/warm latency, RTF, VRAM/RAM,
 c1/c2/c4/c8 admission and p50/p95/p99, cancellation and cross-request
 isolation, restart/teardown, and duration-dependent memory plus speaker-linking
-stability. The suite covers more-than-15-person sessions separately from
-Tiron's one-to-eight window-local slots and includes an explicit more-than-eight
-talker pressure case.
+stability. The suite covers more-than-15-attendee sessions with a small active
+subset separately from Tiron's one-to-eight window-local slots and released
+eight-identity global cap. It distinguishes attendee count from 9/16/32
+distinct talkers across epochs and includes an explicit more-than-eight-talker
+window pressure case.
 
 The supported-load callback test runs 48 kHz stereo capture converted to the required prepared format while local ASR, recording, and anonymous speaker evidence are active. It includes deterministic queue saturation and a four-hour accelerated timeline. Hardware-specific performance gates run on the pinned reference host; portable CI still runs deterministic contract, fixture-shape, and loss-accounting tests.
 
@@ -394,7 +413,7 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 | 5 Remote STT | Resumable upload identity, queue drain, job state/cancel/retry, capability truth, result ingestion, tunnel-loss recovery |
 | 6 Preprocessing | versioned provider/language/timing catalog; primary/per-job choice; mixed-session rejection; track-aware content IDs; exact gaps; bounded windows; advisory VAD/source preservation; verify-only AmberNet five-region strict-agreement/manual gate including exact long-tail selection; fixed/dynamic routing; durable stage restart/cancel/retry; fail-closed aligned words; model/license locks; AMD64/ARM64 frontend parity plus checked-head GB10 resource/accuracy/teardown evidence |
 | 7 Identity/access | Yap API token audience, `(tid, oid)` isolation, consent and withdrawal, profile-version compatibility |
-| 8 Meeting evidence | local one/two/overlap/short/noisy anonymous evidence; pinned Tiron joint speaker-attributed server baseline; messy-meeting public comparators plus independent holdout; 1–8 and over-capacity window pressure; >15-person session linking; stable result revisions; bounded clusters; no local names or persistent embeddings |
+| 8 Meeting evidence | local one/two/overlap/short/noisy anonymous evidence; pinned Tiron eight-window/eight-global server baseline; separately switched speaker-epoch extension; messy-meeting public comparators plus independent holdout; 1–8 and over-capacity window pressure; >15-attendee/small-active-subset and 9/16/32-talker cross-epoch cases; stable result revisions; bounded clusters; no local names or persistent embeddings |
 | 9 Knowledge/agents | Google OKF conformance, permission-safe projection, citation-required Analyst, three-strike Student, RAG confidence floor |
 | 10 Enterprise/release | authenticated multi-owner fairness/no-starvation; bounded overload/backpressure; cancellation and timeout isolation; restart recovery; fixed worker/memory ceilings; sustained mixed live/batch p50/p95 latency, throughput, and queue-age evidence on GB10; approved network/policy evidence; deployment rollback; publication governance; repo-boundary checks |
 
@@ -425,9 +444,11 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
   preserves concurrent segments, and cannot publish malformed speaker tokens,
   out-of-bounds timestamps, or a result whose runtime/capture identity differs
   from the admitted job.
-- The eight-speaker decode-window cap is tested independently from the 32-target/
-  64-ceiling session roster. Reaching or plausibly exceeding the local cap
-  yields an explicit partial/degraded region and retained source for fallback.
+- The eight-speaker decode-window cap and released eight-identity global cap
+  are tested independently from the 32-target/64-ceiling product roster. The
+  larger roster requires a separately switched and qualified speaker-epoch
+  reconciler. Reaching or plausibly exceeding a selected route's cap yields an
+  explicit partial/degraded region and retained source for fallback.
 - Public Tiron benchmark corpora remain comparator-only; promotion uses the
   separately frozen independent messy-meeting holdout and fails on any required
   overlap, locale, capacity, isolation, or lifecycle slice.

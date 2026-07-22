@@ -257,7 +257,8 @@ owner's state but may not recreate its transition logic.
 - **Transient state:** explicit import/download operation, load guard, warm
   recognizer/detector, isolated worker process/container, and pool reservation.
 - **Trust boundary:** pinned revisions/hashes, local artifact replacement,
-  container identity, worker protocol, and model output bounds.
+  container identity, checked internal-network identity, worker protocol, and
+  model output bounds.
 - **Dependencies/events:** setup/model progress events; live runtime adapter;
   server pool and completion contract.
 - **Failure/recovery:** approved downloads and import-only artifacts publish
@@ -275,18 +276,23 @@ owner's state but may not recreate its transition logic.
 - **Authoritative owner:** desktop lifecycle resources for native tasks;
   fixed shortcut/native-import dispatchers for process-lifetime event work; and
   `server/pools/container_runtime.py` plus `batch_asr_worker.py` for the
-  transient reference worker.
+  transient reference worker. The two provider-specific foreground launchers
+  own their resident containers and bounded loopback-proxy process groups; the
+  lifecycle gate owns only their sequential qualification run and temporary
+  internal bridge.
 - **Persisted state:** no process handle is durable; durable job/cancellation
   state drives restart behavior.
-- **Transient state:** task handles, child/container identity, timeouts, and
-  cleanup guards. Shortcut/import worker counts and queue capacities are fixed;
-  they end with the desktop process rather than being dynamically multiplied.
+- **Transient state:** task handles, child/container identity, proxy process
+  group and fixed child ceiling, timeouts, and cleanup guards. Shortcut/import
+  worker counts and queue capacities are fixed; they end with the desktop
+  process rather than being dynamically multiplied.
 - **Trust boundary:** subprocess environment, image/revision identity, resource
   ceilings, filesystem mounts, and termination.
 - **Dependencies/events:** job pool invokes runtime; lifecycle errors become
   safe status/failure projections.
-- **Failure/recovery:** handles are reaped/force-cleaned; restart relies on
-  durable state rather than pretending a child survived.
+- **Failure/recovery:** handles and complete proxy process groups are
+  reaped/force-cleaned; restart relies on durable state rather than pretending a
+  child survived.
 - **Cancellation:** explicit terminate/kill fallback with bounded wait.
 - **Duplicate owner:** installer-only containment was retired; real runtime
   process safety remains.
@@ -396,8 +402,8 @@ owner's state but may not recreate its transition logic.
 - **Persisted state:** tracked fixtures/contracts only; generated results, scan
   material, private media, and machine-local evidence are ignored.
 - **Transient state:** OS-assigned loopback test servers, exact isolated WDIO app
-  processes, browser contexts, disposable installer environments, and GB10
-  containers.
+  processes, browser contexts, disposable installer environments, GB10
+  containers, and the checked temporary resident-provider network.
 - **Trust boundary:** toolchain versions, cache keys, process cleanup, artifact
   hashes, checked-head identity, and the private evaluation registry's separately
   supplied digest. Independent ASR cases require registry-authorized human roles
@@ -410,7 +416,8 @@ owner's state but may not recreate its transition logic.
   source material only through the explicit evaluation image/mount boundary.
 - **Failure/recovery:** runners fail closed on stale/partial evidence, avoid
   inherited fixed-port assumptions, and clean up only their owned
-  processes/listeners.
+  processes/listeners/networks. Resident-provider final evidence additionally
+  requires the exact child set and clean host-boundary read-back.
 - **Cancellation:** harnesses terminate owned children and reject inherited
   evidence after a code change.
 - **Duplicate owner:** none after release-contract decomposition; the facade,

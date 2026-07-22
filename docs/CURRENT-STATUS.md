@@ -31,7 +31,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Active; partial implementation not gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Under focused tests, the catalog, primary/fixed decisions, durable preprocessing, advisory Silero VAD, default-off local AmberNet/Nemotron switching Preview, source-time spans, verify-only server AmberNet five-region suggestion/confirmation, pinned server Nemotron references, fail-closed Cohere timing, Cohere vLLM candidate, and resident Nemotron NeMo candidate execute. The local Preview's frozen natural-switch target failed and remains a visible limitation; development-host resource results are not target-i5 qualification. The replacement server preflight verifies one NGC-governed AmberNet artifact, samples five six-second regions from source start through exact tail, requires strict all-five agreement and positive margins, and independently rechecks the decision in Rust before user confirmation. Focused Windows real-model and disposable ARM64 parity evidence exists. Exact executable commit `c6862262fa36a83bcd40a7bffa65ec6429ec097e` passed a focused real ARM64 worker/resource/teardown smoke at 111,591,424 peak cgroup bytes, six peak PIDs, 682,363 CPU microseconds, and 0.842-second cold wall time with no throttling, OOM, or retained container; this is not the final frozen-head gate. The older SpeechBrain GB10 receipt remains historical only. Provider smokes and private comparators remain non-promotion evidence. A second fixed locale, the final frozen-head AmberNet ARM64 repetition, target-i5 local interference/sustained lifecycle, frozen Cohere vLLM and Nemotron NeMo gates, timing promotion, representative duration/locale evidence, accessibility rerun, and the complete Phase 6 matrix remain open. |
 | Phase 7: identity/access | Planned | Entra/MSAL, token-derived ownership, purpose grants, and authorization remain unimplemented. |
-| Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron as the server development baseline while retaining local anonymous evidence and an ASR-plus-diarization fallback. No Tiron worker, scorer, messy-meeting promotion result, or production speaker result path exists. |
+| Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
 The local exact-duration runner is implemented but not yet consumed. It starts
@@ -61,6 +61,19 @@ vLLM or Nemotron NeMo unpaced ladders, runs each exact duration once at c1, and
 can include the four-hour boundary only for batch. Its evidence explicitly says
 `duration-transport-and-lifecycle` and `representativeAccuracyClaim: false`;
 quality, sentinel integrity, concurrency, and promotion remain separate.
+
+The sequential resident-provider lifecycle wrapper is also executable under
+focused tests but remains unconsumed. It verifies already-present models, builds
+both exact-head ARM64 images, launches each provider separately without a
+Docker-published port on a temporary internal bridge, owns a bounded host
+loopback proxy, verifies blocked container egress, and distinguishes transient
+startup from permanent
+identity/auth failures, runs the plan-owned duration/load/cancellation/capacity/
+resource cells, and publishes only after complete child evidence, clean
+launcher/proxy exit, and clean host teardown. Its private cache retains raw
+logs, samples, and snapshots outside
+Git. This closes the orchestration gap, not the frozen GB10, representative
+quality, provider-promotion, or complete Phase 6 gates.
 
 The provider-qualification code now separates ordinary load, cancellation,
 capacity, and fixed/automatic-language semantics. vLLM cancellation evidence

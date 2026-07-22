@@ -162,10 +162,11 @@ is a development profile, not an enterprise deployment:
   persistent service is created; and
 - the merged Phase 5 reference worker remains a transient, non-root, networkless
   comparison path; on the active Phase 6 branch, Cohere uses a separately
-  checked vLLM container published only to server loopback and protected by a
-  private API key, while optional Nemotron jobs use a separately checked
-  resident NeMo container on a different loopback port and API key. None is a
-  persistent supervised production service.
+  checked vLLM container with no Docker-published port or external egress. A
+  bounded launcher-owned proxy exposes only server loopback and the private API
+  key remains mandatory. Optional Nemotron jobs use the same shape on a
+  different loopback port and API key. None is a persistent supervised
+  production service.
 
 On the Linux node, use Python 3.12 and private mode-0700 job storage. Replace
 the angle-bracket paths only with a clean staged candidate and the already
@@ -205,6 +206,29 @@ docker build \
   "$release_root/server"
 ```
 
+Create one checked, temporary internal bridge for the foreground model
+containers. The launchers reject the default Docker bridge, a non-internal
+network, or a network whose owner/revision labels do not match the candidate.
+The containers therefore have no registry or Internet egress. Docker 29 on the
+qualified GB10 did not make an `--internal` bridge's requested published port
+reachable, so the checked launchers intentionally publish no Docker ports.
+They require `socat` 1.8+, `setsid`, `ss`, and `ps`; each launcher starts one
+bounded process group that forwards only numeric IPv4 loopback to the fixed
+container-private address. The proxy process starts with a cleared environment
+and does not inherit the provider API key:
+
+```bash
+inference_network="yap-private-inference-${checked_head:0:12}"
+docker network create \
+  --driver bridge \
+  --internal \
+  --label io.yap.owner=private-inference \
+  --label "io.yap.revision=$checked_head" \
+  "$inference_network"
+```
+
+Re-establish `checked_head` and `inference_network` from the same clean release
+in each foreground terminal; do not persist either API key in a shell file.
 Set one private printable-ASCII API key in both foreground shells without
 writing it to a file or command argument. Start the model server first:
 
@@ -214,6 +238,7 @@ YAP_CHECKED_HEAD="$checked_head" \
 YAP_COHERE_VLLM_IMAGE="$vllm_image" \
 YAP_COHERE_MODEL_DIR="$model_dir" \
 YAP_COHERE_VLLM_API_KEY="$YAP_COHERE_VLLM_API_KEY" \
+YAP_PRIVATE_INFERENCE_NETWORK="$inference_network" \
 bash infra/yap-server-node/cohere-vllm-server.sh
 ```
 
@@ -231,6 +256,7 @@ YAP_NEMOTRON_NEMO_IMAGE="$nemo_image" \
 YAP_NEMOTRON_MODEL_DIR="$nemotron_model_dir" \
 YAP_BATCH_JOB_STORAGE_DIR="$storage_dir" \
 YAP_NEMOTRON_NEMO_API_KEY="$YAP_NEMOTRON_NEMO_API_KEY" \
+YAP_PRIVATE_INFERENCE_NETWORK="$inference_network" \
 bash infra/yap-server-node/nemotron-nemo-server.sh
 ```
 
@@ -270,17 +296,62 @@ YAP_NEMOTRON_NEMO_API_KEY="$YAP_NEMOTRON_NEMO_API_KEY" \
 bash infra/yap-server-node/development-batch-server.sh
 ```
 
-The launchers refuse a dirty or different Git head, anything other than Python
-3.12, non-0700 storage, missing model inputs, a non-ARM64 or revision-mismatched
-image, a root invoking identity, an invalid key, or a non-loopback endpoint. The
-model containers use the invoking non-root UID/GID so mode-0700 private model
-directories remain readable without widening host permissions. Run every
+The lifecycle wrapper refuses a dirty or different Git head. The foreground
+launchers refuse a non-ARM64 or revision-mismatched image, a root invoking
+identity, an invalid key, missing/invalid inputs, an unchecked network, a busy
+loopback port, or a missing/unbounded proxy prerequisite. They verify that the
+container joined only the named internal bridge and that the proxy listener is
+exactly numeric IPv4 loopback. The model containers use the invoking non-root
+UID/GID so mode-0700 private model directories remain readable without widening
+host permissions. Run every
 configured service and Yap in the foreground so `Ctrl+C`, SSH loss, and
-`SIGTERM` follow observable teardown. Both model services are Phase 6 candidates
+`SIGTERM` stop the container, its log follower, and the complete proxy process
+group through observable teardown. Both model services are Phase 6 candidates
 and must not be installed as persistent units before their separate frozen
 lifecycle/capacity gates and later production-supervision work. An external
 candidate capability lock is qualification input, not evidence that Nemotron is
-selected or advertised.
+selected or advertised. After both foreground model containers are stopped,
+remove the temporary network explicitly with
+`docker network rm "$inference_network"`; a successful removal is part of the
+manual teardown read-back.
+
+The checked resident-provider lifecycle wrapper composes the provider-owned
+cells without turning them into one universal serving runtime. Run it only from
+the frozen clean candidate on the GB10 after building the plan-derived provider
+duration suite inside a dedicated, mode-0700 `YAP_EVAL_CACHE`. Keep the suite,
+raw samples, service logs, host snapshots, and final evidence outside Git and
+hosted artifacts:
+
+```bash
+cd "$release_root"
+YAP_CHECKED_HEAD="$checked_head" \
+YAP_EVAL_CACHE="$private_provider_gate_cache" \
+YAP_PROVIDER_DURATION_SUITE="$provider_duration_suite" \
+YAP_PROVIDER_DURATION_SUITE_SHA256="$provider_duration_suite_sha256" \
+YAP_COHERE_MODEL_DIR="$model_dir" \
+YAP_NEMOTRON_MODEL_DIR="$nemotron_model_dir" \
+YAP_COHERE_VLLM_API_KEY="$YAP_COHERE_VLLM_API_KEY" \
+YAP_NEMOTRON_NEMO_API_KEY="$YAP_NEMOTRON_NEMO_API_KEY" \
+bash infra/yap-server-node/resident-provider-lifecycle-gate.sh
+```
+
+That wrapper verifies already-present model artifacts without downloading,
+builds both checked ARM64 images, creates and later removes its own internal
+bridge, verifies that Docker published no provider port and that a fixed
+external-address probe is blocked from each container, and runs Cohere then
+NeMo so the two models do not overlap in memory.
+For each provider it records exact-model readiness, plan-owned duration/load,
+cancellation, capacity, and c8/1,600 resource evidence. Final publication
+requires the exact child set, unchanged checked head, unchanged listener,
+firewall, and Yap-service snapshots, and no remaining provider container,
+proxy, launcher, or network. Readiness timing starts at the first exact-model probe
+after Docker reports the container running; it is not image-build,
+launcher-to-ready, or production cold-start evidence. The wrapper is only the
+resident-provider lifecycle component of the one-time Phase 6 matrix.
+Representative quality, target-i5 behavior, accessibility, and the other
+Phase 6 gates remain separate. Provider cgroup evidence excludes the small host
+proxy process group, while API wall latency includes it; whole-host CPU/RAM and
+persistent supervision remain Phase 10 evidence.
 
 The service and launcher refuse a non-numeric-loopback bind while batch ASR
 mode is enabled; `localhost` is intentionally not accepted for private audio.

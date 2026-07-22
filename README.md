@@ -36,9 +36,13 @@ what is verified, what is still absent, and what happens next.
   than a persistent serving engine.
 - On the active branch, Cohere batch has a digest-pinned NVIDIA vLLM 26.06
   candidate behind the same bounded worker contract. Nemotron retains its
-  Transformers correctness path and has a separate resident NeMo server-
-  streaming candidate. Both require their own GB10 promotion gates. SGLang
-  remains the later agent/LLM execution plane, not an ASR route.
+  Transformers correctness path and has a separate resident NeMo finalized-ASR
+  candidate. Their checked launchers keep each container on an exact-head
+  internal Docker bridge with no published port or external egress, then expose
+  it through one bounded launcher-owned proxy on numeric host loopback. A
+  sequential lifecycle-gate wrapper is implemented under focused tests but has
+  not consumed the frozen GB10 or provider-promotion gates. SGLang remains the
+  later agent/LLM execution plane, not an ASR route.
 - Result identity, hashes, paths, sizes, authority, and transcript bytes are
   verified natively before History presents completion.
 
