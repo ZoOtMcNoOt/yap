@@ -260,6 +260,27 @@ a future live transport as separate gates. vLLM queue/inference histograms are
 reported per engine request; Yap wall latency remains per API request. Those
 units are never merged or mislabeled.
 
+At exact executable commit `2caf1969000154ffba24511a5c35b57f7f975036`, a
+natural long-meeting comparison used both 17.49-minute AMI `ES2004a` conditions
+after the desktop production normalizer and Silero VAD,
+then rebuilt the exact chunk stream and 37-window plans through the server's
+production input-preparation boundary. Cohere/vLLM completed close/far in
+8.615/4.473 seconds; NeMo/Nemotron completed them in 18.065/16.858 seconds.
+The lexical result did not follow the synthetic throughput ordering:
+NeMo/Nemotron measured 26.046%/37.919% normalized WER versus
+Cohere/vLLM at 46.250%/42.367%. Cohere/vLLM retained higher punctuation F1.
+The reference is public, exposure-unknown, known-defective, flat-ordered across
+overlap, and not independently reviewed, so this is descriptive evidence only.
+It proves that throughput and task accuracy require separate gates and that no
+provider may be labeled the universal quality route.
+
+The vLLM container completed both results and shut down its engine, container,
+and listener, but the pinned upstream Torch/vLLM process emitted a weakref-time
+`UnicodeDecodeError` plus one leaked-semaphore warning during interpreter exit.
+No result or teardown invariant failed. The warning is retained as a focused
+runtime diagnostic and must be classified or eliminated before the frozen gate
+can call vLLM shutdown log-clean; it is not hidden as a successful log claim.
+
 A four-repeat c8 NeMo resource control likewise completed 1,600 requests with
 one exact transcript identity at 268.9-274.2 audio-seconds per wall second.
 CUDA allocation stayed near 1,296 MiB (1,312 MiB maximum) and reservation stayed

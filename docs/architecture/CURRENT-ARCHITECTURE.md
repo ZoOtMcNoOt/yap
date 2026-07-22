@@ -344,8 +344,7 @@ ARM64 frontend/logit parity evidence exists. Exact executable commit
 boundary at 111,591,424 peak cgroup bytes, six peak PIDs, 682,363 CPU
 microseconds, and 0.842-second cold wall time with no throttling, OOM, or retained
 container. The final frozen-head repetition remains open. The old SpeechBrain
-two-probe GB10 receipt remains historical evidence only. A
-server Nemotron
+two-probe GB10 receipt remains historical evidence only. A server Nemotron
 worker, explicit automatic-job language tags, fail-closed Cohere attention
 alignment, the Cohere vLLM adapter, and the resident NeMo worker/service/image/
 launcher now execute as locked focused slices. Separate focused GB10 service
@@ -364,6 +363,21 @@ client-facing streaming evidence. Engine-chunk histograms and API-request wall
 latency remain explicitly different units. Repeated-fixture controls do not
 prove sentinel integrity, natural long-form quality, frozen percentiles, or
 promotion.
+
+At exact executable commit `2caf1969000154ffba24511a5c35b57f7f975036`, a
+natural AMI follow-up used the desktop production normalizer and Silero evidence,
+reverified its chunk stream through server input preparation,
+and built 37 contiguous utterance windows for each 17.49-minute close/far
+recording. Cohere/vLLM completed in 8.615/4.473 seconds but measured
+46.250%/42.367% normalized WER; NeMo/Nemotron completed in
+18.065/16.858 seconds and measured 26.046%/37.919%. The promotion-ineligible,
+known-defective public reference cannot select a default, but it establishes an
+important architectural constraint: offline throughput, lexical quality, and
+punctuation quality are separate provider capabilities. The catalog and router
+must not encode a universal "accuracy model" label. Neither result exposed
+speaker or timestamp output, so Phase 8 meeting inference and reconciliation
+remain separate rather than being fabricated from the flat transcript.
+
 These paths remain unadvertised/unselected:
 the catalog still exposes only Cohere `en-US` with `wordAlignment: false`, and
 the frozen vLLM comparison, frozen representative Nemotron NeMo gate, and

@@ -73,8 +73,9 @@ The merged Phase 5 path requires one explicit language and sends every accepted
 recording to the locked Cohere batch worker. That is a valid narrow vertical
 slice, but it is not the intended global product:
 
-- Cohere covers 14 languages and remains the accuracy-first batch choice where
-  it is supported.
+- Cohere covers 14 languages, while Nemotron covers a broader out-of-box set.
+  Neither provider is a universal accuracy tier; route quality depends on the
+  language, acoustic condition, duration, and workload proven by Yap evidence.
 - NVIDIA Nemotron 3.5 ASR Streaming 0.6B exposes 19 transcription-ready and 13
   broad-coverage locales out of the box, supports streaming and batch use, and
   can emit language tags in `target_lang=auto` mode.
@@ -139,11 +140,12 @@ decision. Dynamic work requires an equally explicit mode choice. Models remain
 replaceable behind the capability and worker contracts; changing a model must
 not change durable job, result, or UI ownership.
 
-For fixed-language batch work, prefer Cohere for its supported languages when
-the user selects accuracy-first processing. Use Nemotron for enabled locales
-outside Cohere's matrix and for an explicit fast/broad-coverage choice. An
-automatic/mixed-language job stays on Nemotron for its complete lifetime; Yap
-does not silently switch ASR providers between utterances.
+For fixed-language batch work, use only a route promoted for the selected
+locale and workload. If multiple routes become eligible, the frozen
+representative evidence—not a model-family label—must select or describe the
+quality/latency tradeoff. Use Nemotron for enabled locales outside Cohere's
+matrix. An automatic/mixed-language job stays on Nemotron for its complete
+lifetime; Yap does not silently switch ASR providers between utterances.
 
 On a fixed Nemotron route, the immutable user/LID-selected prompt remains the
 language authority. The model may emit a different known locale tag for an
@@ -189,7 +191,7 @@ Nemotron's 32 out-of-box locales are eligible for the Phase 6 catalog:
 | Transcription-ready | `en-US`, `en-GB`, `es-US`, `es-ES`, `fr-FR`, `fr-CA`, `it-IT`, `pt-BR`, `pt-PT`, `nl-NL`, `de-DE`, `tr-TR`, `ru-RU`, `ar-AR`, `hi-IN`, `ja-JP`, `ko-KR`, `vi-VN`, `uk-UA` |
 | Broad-coverage | `pl-PL`, `sv-SE`, `cs-CZ`, `nb-NO`, `da-DK`, `bg-BG`, `fi-FI`, `hr-HR`, `sk-SK`, `zh-CN`, `hu-HU`, `ro-RO`, `et-EE` |
 
-Cohere adds accuracy-first overlap and one useful non-overlapping current
+Cohere adds overlapping provider coverage and one useful non-overlapping current
 capability, Greek (`el-GR`). The resulting catalog can represent 33 locale
 entries across 29 language families. Availability is not the same as an
 enterprise accuracy certification: broad-coverage entries must retain their
@@ -526,7 +528,14 @@ candidate before promotion.
 The existing English ASR comparison also remains relevant: Cohere used about
 3.85 GiB and produced 1.302% mean WER on eight fixtures; Nemotron used about
 1.19 GiB and produced 5.446% mean WER while loading much faster. That evidence
-supports provider choice rather than replacing either model with the other.
+supports provider choice rather than replacing either model with the other. At
+exact executable commit `2caf1969000154ffba24511a5c35b57f7f975036`, an AMI
+`ES2004a` long-meeting comparator reversed that ordering:
+NeMo/Nemotron measured 31.983% aggregate normalized WER across close and far
+conditions versus Cohere/vLLM at 44.308%, while Cohere/vLLM completed each
+condition faster and produced higher punctuation F1. AMI is public, exposure-
+unknown, known-defective, and promotion-ineligible, so this result rejects a
+blanket accuracy ranking without itself changing the promoted catalog.
 
 ## Options considered
 
@@ -549,9 +558,10 @@ separate sustained-switch policy, and pass a new disjoint behavior gate.
 ### Nemotron auto mode for every request — rejected
 
 Short utterances and Greek need different handling, auto mode has no calibrated
-confidence, and Cohere retains a material accuracy advantage on its supported
-batch languages. The user's chosen primary language is a stronger prior for
-short snippets.
+confidence, and fixed prompts remain the stronger prior for short snippets.
+Automatic mode also cannot inherit a fixed-route quality result. The user's
+chosen primary language therefore remains authoritative outside explicit
+dynamic mode.
 
 ### Two-model voting on every probe — deferred
 

@@ -68,6 +68,19 @@ class AmiWordTimeline:
         )
 
 
+def render_ami_scoring_reference(timeline: AmiWordTimeline) -> str:
+    """Serialize every ordered word element for transcript scoring.
+
+    Spaces delimit source elements, including punctuation elements. Yap's word
+    and punctuation scorers interpret those marks at word boundaries, so this
+    form is deterministic without pretending to recover speaker turns.
+    """
+
+    if not isinstance(timeline, AmiWordTimeline) or not timeline.words:
+        raise ValueError("AMI scoring reference requires a non-empty timeline")
+    return " ".join(word.text for word in timeline.merged_words)
+
+
 def parse_ami_word_timeline(
     annotation_archive: bytes,
     lock: AmiMeetingCorpusLock,

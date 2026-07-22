@@ -192,9 +192,10 @@ It is a routing aid; this plan and ADR 0024 remain the Phase 6 authority.
   Yap-owned spool, persists one native job ledger, and drains create/upload/
   commit/status/result/cancel over the numeric-loopback development contract.
 - The Phase 5 isolated Cohere worker and its immutable NVIDIA 26.06/Python 3.12
-  lock remain the accuracy-first supported path. It is raw Transformers/BF16
-  inference in a transient one-job container. The pool has one running slot and
-  two queued slots; it is not a warm or continuously batched model service.
+  lock remain the only supported narrow fixed-language baseline. It is raw
+  Transformers/BF16 inference in a transient one-job container. The pool has one
+  running slot and two queued slots; it is not a warm or continuously batched
+  model service or a universal accuracy tier.
 - Local live fallback remains the in-process pinned `sherpa-onnx` Nemotron
   bundle. Its native stream accepts the confirmed BCP 47 primary-language
   option, which Yap applies on creation and reset. Automatic tags are filtered
@@ -791,11 +792,12 @@ limits.
       server may independently verify/reconcile evidence but may not silently
       rewrite client history or create a second client-state owner.
 
-- [x] Keep Cohere accuracy-first for its enabled fixed-language catalog and add
-      a pinned server Nemotron reference worker for enabled fixed broad/fast
-      routes. Select between the exact DGX Spark NeMo toolkit service and
-      Transformers candidates with locked-model correctness/resource evidence; do not
-      substitute a generic vLLM/SGLang path or an unsupported NIM profile.
+- [x] Retain Cohere for its enabled fixed-language baseline and add a pinned
+      server Nemotron reference worker for enabled fixed broad/fast routes.
+      Describe or select overlapping routes only from locale- and workload-
+      specific evidence. Select between the exact DGX Spark NeMo toolkit service
+      and Transformers candidates with locked-model correctness/resource evidence;
+      do not substitute a generic vLLM/SGLang path or an unsupported NIM profile.
 - [x] Add explicit Nemotron `target_lang=auto` dynamic mode. Preserve a valid
       emitted locale tag for every finalized segment.
 - [x] Keep server terminal-tag changes bounded by finalized VAD/endpoint
@@ -1100,6 +1102,30 @@ locale, or complete Phase 6 gates above.
 The executable review/registry contract described above is now ready to admit
 those private artifacts, but it cannot manufacture them and does not convert
 this screen into gold or promotion evidence.
+
+At exact executable source SHA
+`2caf1969000154ffba24511a5c35b57f7f975036`, a focused natural long-meeting
+comparison ran both complete 17.49-minute AMI `ES2004a` conditions through the
+desktop production normalizer and Silero VAD, reverified all client chunks and
+canonical PCM through server input preparation, and built 37 contiguous
+utterance windows per condition. Cohere/vLLM completed the close/far conditions
+in 8.615/4.473 seconds with 46.250%/42.367% normalized WER and
+25.496%/29.021% punctuation F1. NeMo/Nemotron completed in 18.065/16.858
+seconds with 26.046%/37.919% normalized WER and 11.621%/10.191% punctuation
+F1. This one comparator therefore favors Nemotron lexical accuracy and Cohere
+throughput/punctuation; it invalidates a universal accuracy label without
+promoting either provider.
+
+The AMI reference is public, exposure-unknown, known-defective, flat-ordered
+across overlapping speakers, and not independently reviewed. Neither route
+returned timestamps or speaker identity in this run. References, hypotheses,
+per-case output, host paths, and raw receipts remain in the private evaluation
+root. Both containers and listeners were absent afterward. The vLLM engine
+completed shutdown but its pinned upstream Torch/vLLM process emitted a
+weakref-time `UnicodeDecodeError` and one leaked-semaphore warning during
+interpreter exit; that diagnostic must be classified or eliminated before the
+frozen gate can claim log-clean teardown. This focused comparison does not close
+the provider, meeting, locale, duration, or complete Phase 6 gates.
 
 #### Retired Triton experiment — historical negative evidence
 

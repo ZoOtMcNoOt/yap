@@ -315,15 +315,59 @@ and 764 word elements involved in positive cross-speaker overlap. Focused ARM
 implementation inspections completed in under one second with under 128 MiB
 peak RSS and emitted no transcript text, audio, or private path.
 
-This closes corpus acquisition and parser verification, not long-form model
-quality. AMI describes the references as manual transcription supplemented by
-forced alignment and publishes known data problems, so they are not asserted
-to be infallible ground truth. Exposure remains `unknown`, the comparator is
-promotion-ineligible, and the unreviewed deterministic flat reference cannot
-set a Phase 6 quality threshold. The next focused evidence step must run the
-locked candidate routes, keep hypotheses and references private, report
-completeness/omission/duplication/order and overlap slices, and obtain the
-declared Yap reference review before any pass/fail claim.
+At exact executable commit
+`2caf1969000154ffba24511a5c35b57f7f975036`, the desktop's production imported-
+audio normalizer and pinned Silero model processed both complete recordings.
+The close mix retained 151 speech intervals and 736.861 speech seconds; the
+far-field channel retained 130 intervals and 620.361 speech seconds. Each
+16,789,675-sample source became a 16,789,680-sample canonical PCM stream with
+five declared alignment-padding samples and no modified source sample. The
+server's production `BatchInputPreparation` then reverified every 30-second
+client chunk and the normalized PCM hash before creating 37 contiguous
+utterance windows per condition. Close mix used 25 VAD-silence and 11 hard
+30-second boundaries; far field used 32 VAD-silence and four hard boundaries.
+Both plans ended once at end-of-input and preserved every canonical sample.
+
+The same prepared inputs then ran through exact-head images
+`sha256:4076085166bfc002a0d40c8e01a2a72ab0bcaadbd940ec4d65ab9bb9fbb3dc04`
+for Cohere/vLLM and
+`sha256:4bf0e605eb14722555d0aa9724798b9f68ce236ad70a7c20500d92698d43c43e`
+for native NeMo/Nemotron. The executable AMI reference renderer retained all
+3,135 ordered XML word elements, including 521 punctuation elements, and the
+pinned transcript scorer reduced that to 2,653 normalized word units per
+condition. Results were:
+
+| Provider and condition | Model-ready wall | Normalized WER | Insertions / deletions / substitutions | Punctuation F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Cohere/vLLM, close mix | 8.615 s | 46.250% | 403 / 746 / 78 | 25.496% |
+| Cohere/vLLM, far field | 4.473 s | 42.367% | 76 / 886 / 162 | 29.021% |
+| NeMo/Nemotron, close mix | 18.065 s | 26.046% | 10 / 568 / 113 | 11.621% |
+| NeMo/Nemotron, far field | 16.858 s | 37.919% | 11 / 777 / 218 | 10.191% |
+
+Across the two conditions, Cohere/vLLM measured 44.308% normalized WER and
+38.591% normalized grapheme error, while NeMo/Nemotron measured 31.983% and
+24.952%. NeMo/Nemotron was materially better on lexical accuracy for this one
+meeting; Cohere/vLLM was faster and produced the higher punctuation F1. This
+refutes a universal "Cohere is the accuracy route" assumption but does not
+promote Nemotron or establish a general provider ranking.
+
+The private vLLM and NeMo receipts are bound by SHA-256
+`7ebc4dce83fc4e750b5024b2bf70806f6b93624a4e63827b6d3d793a0f52cae8` and
+`bdb5fefc618265d82101120c50e84a7c830c7ebaa4d50bfa774aa399a55a02b4`;
+the transcript-free score evidence is
+`bc2428bd2f56a29d44156c508f9825a7590874c55fa564ab016c48b20b7041c1`.
+References, hypotheses, paths, and per-case provider results remain private.
+Both containers and both listeners were absent afterward.
+
+This is descriptive long-meeting evidence, not a quality gate. AMI describes
+the references as manual transcription supplemented by forced alignment and
+publishes known data problems, so they are not asserted to be infallible ground
+truth. Exposure remains `unknown`, the comparator is promotion-ineligible, and
+the unreviewed deterministic flat reference cannot set a Phase 6 threshold.
+Neither provider returned timestamps or speaker identities in this run;
+overlap-specific WER, speaker-attributed metrics, source-time drift, and time-
+quartile completeness therefore remain unavailable rather than inferred.
+Independent reference review and the frozen representative gate remain open.
 
 ### Sources not in the enterprise baseline
 

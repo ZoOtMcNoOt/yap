@@ -11,6 +11,7 @@ from yap_server.evaluation.ami_meeting_corpus import (
     load_ami_word_timeline,
 )
 from yap_server.evaluation.ami_meeting_lock import load_ami_meeting_corpus_lock
+from yap_server.evaluation.ami_word_timeline import render_ami_scoring_reference
 from tests.evaluation.ami_meeting_fixture import build_ami_meeting_fixture
 
 
@@ -84,6 +85,14 @@ class AmiMeetingCorpusTests(unittest.TestCase):
         )
         self.assertNotIn("Alpha", repr(timeline))
         self.assertNotIn("Alpha", repr(timeline.words[0]))
+        self.assertEqual(
+            render_ami_scoring_reference(timeline),
+            "Alpha Bravo Charlie .",
+        )
+
+    def test_scoring_reference_requires_a_real_nonempty_timeline(self) -> None:
+        with self.assertRaisesRegex(ValueError, "non-empty timeline"):
+            render_ami_scoring_reference(None)  # type: ignore[arg-type]
 
     def test_audio_loader_uses_the_existing_four_hour_pcm_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

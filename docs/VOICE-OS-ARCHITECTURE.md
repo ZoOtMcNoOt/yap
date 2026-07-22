@@ -78,7 +78,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 |-----------|------------------------|-------------------|
 | Target | Individual users with local live fallback | Org teams on a shared GB-class server node |
 | STT (live) | Local Nemotron INT8 (`sherpa-onnx`) | Server streaming ASR pool (WSS) |
-| STT (batch) | Queue/block when offline; official larger recordings use the server path | Server Cohere batch pool (concurrent GPU workers) |
+| STT (batch) | Queue/block when offline; official larger recordings use the server path | Current Cohere batch route plus evidence-gated Cohere/vLLM and Nemotron/NeMo candidates |
 | LLM | No shipped local LLM; development Polish currently calls Ollama | Future server LLM pool (GPU, multi-tenant) |
 | Diarization | Optional local `Unknown` / `Speaker N`; no durable profiles | Server-authoritative reconciliation; algorithms selected by benchmark (ADR 0020) |
 | Identity | Per-transcript contact labels only; no biometric matching | Entra ID / MSAL + explicit voice enrollment (ADR 0016/0020) |
@@ -95,7 +95,8 @@ Details: [ADR 0014](adr/0014-server-tier-compute-topology.md) (topology) · [ADR
 
 ## Core decisions (summary)
 
-1. **Recordings → server Cohere** (accuracy, multilingual, long files).
+1. **Recordings → a verified server ASR route** (current narrow Cohere baseline;
+   select Cohere or Nemotron only by locale- and workload-specific evidence).
 2. **Live mic / offline fallback → Nemotron INT8** (confirmed supported primary
    locale; no implicit auto mode).
 3. **One warm local sherpa recognizer**; server router owns heavier model residency.
@@ -144,7 +145,7 @@ flowchart TB
 
     subgraph L2["L2 — critical path"]
         Live["Live mic → Nemotron EN → overlay + inject"]
-        Batch["File drop → server Cohere path / queue → History"]
+        Batch["File drop → verified server ASR path / queue → History"]
     end
 
     Handoff["Async handoff<br/>capture/gaps current · transport deferred"]
@@ -672,8 +673,8 @@ processing may revise VAD decisions from retained source.
 
 ```
 Idle ↔ FallbackReady ↔ FallbackRunning  (local Nemotron INT8)
-Idle ↔ ServerQueued ↔ ServerUploading   (GB-class server Cohere)
-         client does not load local Cohere in PR3
+Idle ↔ ServerQueued ↔ ServerUploading   (verified GB-class ASR route)
+         client does not load server batch models
 ```
 
 ### Desktop implementation guardrails
@@ -716,7 +717,7 @@ These rules prevent the repeated UI and runtime churn we have been seeing. They 
 | **Local live fallback (executes)** | Pinned `sherpa-onnx` export over the exact 32-locale out-of-box Nemotron allowlist | Warmup requires the confirmed primary locale and applies it to creation/reset; unsupported locales fail visibly. Nemotron's public result exposes no automatic tag, so the optional Phase 6 branch path uses a separately pinned acoustic detector rather than hidden model output |
 | **Local live dynamic (executes on the unpromoted Phase 6 branch)** | The same single Nemotron ASR plus one bounded resident native acoustic-LID component | `LiveRuntime` owns both lifecycles; LID emits revisioned source-time spans with bounded decision evidence, and confirmed switches partition held source audio exactly once before finalize/reset. Independent detector-history and ASR-commit cursors share source frames without replay. Ambiguity or failure holds/returns visibly to the confirmed primary locale |
 | **Fixed batch (executes)** | Cohere 14-language Phase 5 worker plus the unpromoted Phase 6 preflight boundary | One explicit preferred language; recordings meeting the 30-second/speech bounds may run five start-to-tail AmberNet regions, but any disagreement/ambiguity remains manual and the job stays blocked until the user confirms a supported locale |
-| **Fixed batch (remaining Phase 6 target)** | Tiered provider catalog: Cohere accuracy-first overlap plus Nemotron out-of-box locales | Promote the additional fixed routes and make their catalog-derived choices selectable without changing the executing confirmation boundary |
+| **Fixed batch (remaining Phase 6 target)** | Tiered provider catalog: overlapping Cohere/Nemotron routes plus Nemotron out-of-box locales | Promote only independently gated locale/workload routes and make their catalog-derived choices selectable without changing the executing confirmation boundary |
 | **Dynamic batch/utterances (executes on the unpromoted Phase 6 branch)** | One server Nemotron job over its enabled 32 out-of-box locales | Explicit `target_lang=auto`; retain one tag per finalized utterance, mark missing/invalid/disabled tags `Unknown`, and do not switch ASR providers inside the job. History corrections are separate strict-schema, hash-chained revisions; they never rewrite source audio or the server result |
 
 The Phase 6 union catalog can represent 33 locale entries across 29 language
@@ -727,6 +728,15 @@ Yap has no language fine-tuning plan. Within-utterance language spans execute on
 the unpromoted Phase 6 branch under focused tests and one constructed pinned-
 model diagnostic; they become a product claim only after the frozen natural and
 constructed switch-point, continuity, latency, memory, and energy gate.
+
+A focused exact-source AMI `ES2004a` comparison reinforces the provider-neutral
+boundary without promoting a route. On the same 17.49-minute close-headset mix and
+far-field channel after production client preprocessing, Nemotron/NeMo produced
+lower normalized lexical WER, while Cohere/vLLM completed faster and produced
+higher punctuation F1. The public reference is exposure-unknown, known-defective,
+flat-ordered across overlap, and not independently reviewed. Consequently the
+result rejects a universal accuracy label but cannot select a default or replace
+the frozen representative provider gates.
 
 Current Cohere batch codes remain `en`, `fr`, `de`, `it`, `es`, `pt`, `el`,
 `nl`, `pl`, `zh`, `ja`, `ko`, `vi`, and `ar`. The versioned server catalog,
