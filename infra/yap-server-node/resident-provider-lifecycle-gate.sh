@@ -1,0 +1,687 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "$script_dir/../.." && pwd)"
+
+: "${YAP_CHECKED_HEAD:?Set YAP_CHECKED_HEAD to the exact 40-character candidate SHA}"
+: "${YAP_EVAL_CACHE:?Set YAP_EVAL_CACHE to the private mode-0700 evaluation cache}"
+: "${YAP_PROVIDER_DURATION_SUITE:?Set the private provider duration suite path}"
+: "${YAP_PROVIDER_DURATION_SUITE_SHA256:?Set the out-of-band provider suite SHA-256}"
+: "${YAP_COHERE_MODEL_DIR:?Set the verified Cohere model directory}"
+: "${YAP_NEMOTRON_MODEL_DIR:?Set the verified Nemotron model directory}"
+: "${YAP_COHERE_VLLM_API_KEY:?Set the private Cohere vLLM API key}"
+: "${YAP_NEMOTRON_NEMO_API_KEY:?Set the private Nemotron NeMo API key}"
+: "${YAP_RESIDENT_PROVIDER_EVIDENCE_DIR:=$YAP_EVAL_CACHE/resident-provider-lifecycle/$YAP_CHECKED_HEAD}"
+: "${YAP_PROVIDER_READY_TIMEOUT_SECONDS:=1800}"
+: "${YAP_PROVIDER_TIMEOUT_SECONDS:=1800}"
+: "${YAP_COHERE_VLLM_PORT:=18000}"
+: "${YAP_NEMOTRON_NEMO_PORT:=18001}"
+
+for provider_port in "$YAP_COHERE_VLLM_PORT" "$YAP_NEMOTRON_NEMO_PORT"; do
+  if [[ ! "$provider_port" =~ ^[0-9]+$ ]] \
+    || [ "$provider_port" -lt 1024 ] \
+    || [ "$provider_port" -gt 65535 ]; then
+    echo "Resident provider ports must be unprivileged TCP ports" >&2
+    exit 2
+  fi
+done
+if [ "$YAP_COHERE_VLLM_PORT" = "$YAP_NEMOTRON_NEMO_PORT" ]; then
+  echo "Resident providers require distinct loopback ports" >&2
+  exit 2
+fi
+
+plan_path="$repo_root/server/asr-evaluation-plan.json"
+vllm_lock="$repo_root/server/cohere-vllm-serving.lock.json"
+nemo_lock="$repo_root/server/nemotron-nemo-serving.lock.json"
+vllm_image="yap-cohere-vllm:checked-head-$YAP_CHECKED_HEAD"
+nemo_image="yap-nemotron-nemo:checked-head-$YAP_CHECKED_HEAD"
+network_name="yap-private-inference-${YAP_CHECKED_HEAD:0:12}"
+vllm_endpoint="http://127.0.0.1:$YAP_COHERE_VLLM_PORT"
+nemo_endpoint="http://127.0.0.1:$YAP_NEMOTRON_NEMO_PORT"
+
+active_container=""
+launcher_pid=""
+sampler_pid=""
+network_owned=false
+
+verify_clean_head() {
+  local actual_head worktree_status inside_worktree
+  if ! inside_worktree="$(
+    git -C "$repo_root" rev-parse --is-inside-work-tree 2>/dev/null
+  )" || [ "$inside_worktree" != "true" ]; then
+    echo "Resident provider lifecycle gate requires a Git worktree" >&2
+    return 1
+  fi
+  actual_head="$(git -C "$repo_root" rev-parse HEAD)"
+  if [ "$actual_head" != "$YAP_CHECKED_HEAD" ]; then
+    echo "checked head does not match the repository HEAD" >&2
+    return 1
+  fi
+  worktree_status="$(
+    git -C "$repo_root" status --porcelain=v1 --untracked-files=normal
+  )"
+  if [ -n "$worktree_status" ]; then
+    echo "Resident provider lifecycle gate requires a clean checked head" >&2
+    return 1
+  fi
+}
+
+stop_owned_runtime() {
+  set +e
+  if [ -n "$sampler_pid" ] && kill -0 "$sampler_pid" 2>/dev/null; then
+    kill -TERM "$sampler_pid" 2>/dev/null
+    wait "$sampler_pid" 2>/dev/null
+  fi
+  sampler_pid=""
+  if [ -n "$active_container" ] \
+    && docker container inspect "$active_container" >/dev/null 2>&1; then
+    docker stop --time 10 "$active_container" >/dev/null 2>&1
+  fi
+  if [ -n "$launcher_pid" ] && kill -0 "$launcher_pid" 2>/dev/null; then
+    kill -TERM "$launcher_pid" 2>/dev/null
+  fi
+  if [ -n "$launcher_pid" ]; then
+    wait "$launcher_pid" 2>/dev/null
+  fi
+  active_container=""
+  launcher_pid=""
+  if [ "$network_owned" = true ]; then
+    docker network rm "$network_name" >/dev/null 2>&1
+    network_owned=false
+  fi
+  set -e
+}
+
+cleanup() {
+  local status="$?"
+  trap - EXIT
+  stop_owned_runtime
+  exit "$status"
+}
+trap cleanup EXIT
+
+capture_host_boundary() {
+  local target="$1"
+  install -d -m 0700 "$target"
+  if ! command -v ss >/dev/null 2>&1; then
+    echo "Resident provider lifecycle gate requires ss" >&2
+    return 1
+  fi
+  ss -H -lntu | LC_ALL=C sort >"$target/listeners.txt"
+
+  if command -v ufw >/dev/null 2>&1; then
+    local firewall_probe="$target/.firewall-probe"
+    if { sudo -n ufw status verbose; } >"$firewall_probe" 2>/dev/null; then
+      {
+        printf '%s\n' "tool=ufw-status"
+        cat "$firewall_probe"
+      } >"$target/firewall.txt"
+    else
+      rm -f -- "$firewall_probe"
+      {
+        printf '%s\n' "tool=ufw-config-metadata"
+        stat -Lc '%n|%d|%i|%s|%Y|%Z|%a|%U|%G' \
+          /etc/default/ufw \
+          /etc/ufw/ufw.conf \
+          /etc/ufw/user.rules \
+          /etc/ufw/user6.rules
+        systemctl show ufw --property=ActiveState,SubState,UnitFileState
+      } >"$target/firewall.txt"
+    fi
+    rm -f -- "$firewall_probe"
+  elif command -v nft >/dev/null 2>&1; then
+    {
+      printf '%s\n' "tool=nft"
+      sudo -n nft --stateless list ruleset
+    } >"$target/firewall.txt"
+  elif command -v iptables-save >/dev/null 2>&1; then
+    {
+      printf '%s\n' "tool=iptables-save"
+      sudo -n iptables-save
+    } >"$target/firewall.txt"
+  else
+    echo "Resident provider lifecycle gate cannot observe the firewall" >&2
+    return 1
+  fi
+
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl list-unit-files --type=service --no-legend --no-pager \
+      | awk '$1 ~ /^yap.*\.service$/ { print }' \
+      | LC_ALL=C sort >"$target/services.txt"
+  else
+    printf '%s\n' "systemd-unavailable" >"$target/services.txt"
+  fi
+
+  {
+    for name in yap-cohere-vllm yap-nemotron-nemo; do
+      if docker container inspect "$name" >/dev/null 2>&1; then
+        docker container inspect --format '{{.Name}}|{{.State.Status}}' "$name"
+      fi
+    done
+  } | LC_ALL=C sort >"$target/containers.txt"
+  {
+    pgrep -af '[c]ohere-vllm-server\.sh|[n]emotron-nemo-server\.sh' || true
+    pgrep -af '[d]ocker logs --follow (yap-cohere-vllm|yap-nemotron-nemo)' || true
+    for provider_port in "$YAP_COHERE_VLLM_PORT" "$YAP_NEMOTRON_NEMO_PORT"; do
+      pgrep -af "[s]ocat.*TCP4-LISTEN:${provider_port}," || true
+    done
+  } | LC_ALL=C sort -u >"$target/runtime-processes.txt"
+  if docker network inspect "$network_name" >/dev/null 2>&1; then
+    docker network inspect --format '{{.Name}}|{{.Internal}}' "$network_name" \
+      >"$target/networks.txt"
+  else
+    : >"$target/networks.txt"
+  fi
+}
+
+wait_for_container() {
+  local container="$1"
+  local deadline=$((SECONDS + 60))
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    if [ -n "$launcher_pid" ] && ! kill -0 "$launcher_pid" 2>/dev/null; then
+      wait "$launcher_pid" || true
+      echo "Resident provider launcher exited before creating its container" >&2
+      return 1
+    fi
+    if [ "$(
+      docker container inspect --format '{{.State.Running}}' "$container" 2>/dev/null || true
+    )" = "true" ]; then
+      return 0
+    fi
+    sleep 0.1
+  done
+  echo "Resident provider container did not start" >&2
+  return 1
+}
+
+verify_private_container_network() {
+  local container="$1"
+  local network_mode
+  network_mode="$(
+    docker container inspect \
+      --format '{{.HostConfig.NetworkMode}}' \
+      "$container"
+  )"
+  if [ "$network_mode" != "$network_name" ]; then
+    echo "Resident provider joined an unexpected Docker network" >&2
+    return 1
+  fi
+  if [ -n "$(docker port "$container")" ]; then
+    echo "Resident provider exposed a Docker-published port" >&2
+    return 1
+  fi
+  if ! docker exec "$container" python3 -c '
+import socket
+import sys
+
+probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+probe.settimeout(2.0)
+try:
+    result = probe.connect_ex(("1.1.1.1", 443))
+finally:
+    probe.close()
+sys.exit(1 if result == 0 else 0)
+'; then
+    echo "Resident provider unexpectedly reached an external address" >&2
+    return 1
+  fi
+}
+
+wait_for_file() {
+  local path="$1"
+  local timeout_seconds="$2"
+  local deadline=$((SECONDS + timeout_seconds))
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    if [ -f "$path" ] && [ ! -L "$path" ]; then
+      return 0
+    fi
+    if [ -n "$sampler_pid" ] && ! kill -0 "$sampler_pid" 2>/dev/null; then
+      wait "$sampler_pid" || true
+      echo "Resident provider resource sampler exited before readiness" >&2
+      return 1
+    fi
+    sleep 0.1
+  done
+  echo "Resident provider resource sampler did not become ready" >&2
+  return 1
+}
+
+stop_provider() {
+  local container="$1"
+  local port="$2"
+  local deadline launcher_status=0
+  if ! docker container inspect "$container" >/dev/null 2>&1; then
+    echo "Resident provider container disappeared before explicit teardown" >&2
+    return 1
+  fi
+  docker stop --time 10 "$container" >/dev/null
+  if [ -n "$launcher_pid" ]; then
+    set +e
+    wait "$launcher_pid"
+    launcher_status="$?"
+    set -e
+  fi
+  launcher_pid=""
+  deadline=$((SECONDS + 60))
+  while docker container inspect "$container" >/dev/null 2>&1; do
+    if [ "$SECONDS" -ge "$deadline" ]; then
+      echo "Resident provider container remained after teardown" >&2
+      return 1
+    fi
+    sleep 0.1
+  done
+  active_container=""
+  if ss -H -ltn | awk -v port=":$port" '$4 ~ port "$" { found=1 } END { exit !found }'; then
+    echo "Resident provider listener remained after teardown" >&2
+    return 1
+  fi
+  if [ "$launcher_status" -ne 0 ]; then
+    echo "Resident provider launcher reported unclean teardown" >&2
+    return 1
+  fi
+}
+
+move_child_evidence() {
+  local source="$1"
+  local destination="$2"
+  if [ ! -f "$source" ] || [ -L "$source" ] || [ -e "$destination" ]; then
+    echo "Resident provider child evidence publication is invalid" >&2
+    return 1
+  fi
+  mv -- "$source" "$destination"
+  chmod 0600 "$destination"
+}
+
+run_standard() {
+  local provider="$1"
+  local logical_name="$2"
+  local load_case="$3"
+  local model_lock="$4"
+  local endpoint="$5"
+  local catalog_language="$6"
+  local provider_language="$7"
+  local repeat_count="$8"
+  shift 8
+  local output_root="$gate_root/workloads/$provider-$logical_name"
+  local destination="$provider_evidence_root/$provider/$logical_name.json"
+  local arguments=(
+    "--plan" "$plan_path"
+    "--checked-head" "$YAP_CHECKED_HEAD"
+    "--repository-root" "$repo_root"
+    "--load-case" "$load_case"
+    "--model-lock" "$model_lock"
+    "--duration-suite" "$YAP_PROVIDER_DURATION_SUITE"
+    "--duration-suite-sha256" "$YAP_PROVIDER_DURATION_SUITE_SHA256"
+    "--endpoint" "$endpoint"
+    "--catalog-language" "$catalog_language"
+    "--provider-language" "$provider_language"
+    "--output-root" "$output_root"
+    "--timeout-seconds-per-wave" "$YAP_PROVIDER_TIMEOUT_SECONDS"
+    "--repeat-count" "$repeat_count"
+  )
+  local concurrency
+  for concurrency in "$@"; do
+    arguments+=("--concurrency" "$concurrency")
+  done
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.evaluation.provider_runtime_qualification \
+      "${arguments[@]}" \
+      >"$gate_root/logs/$provider-$logical_name.json"
+  move_child_evidence "$output_root/evidence.json" "$destination"
+}
+
+run_cancellation() {
+  local provider="$1" logical_name="$2" load_case="$3" model_lock="$4"
+  local endpoint="$5" catalog_language="$6" provider_language="$7"
+  local output_root="$gate_root/workloads/$provider-$logical_name"
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.evaluation.provider_cancellation_qualification \
+      --plan "$plan_path" \
+      --checked-head "$YAP_CHECKED_HEAD" \
+      --repository-root "$repo_root" \
+      --load-case "$load_case" \
+      --model-lock "$model_lock" \
+      --duration-suite "$YAP_PROVIDER_DURATION_SUITE" \
+      --duration-suite-sha256 "$YAP_PROVIDER_DURATION_SUITE_SHA256" \
+      --endpoint "$endpoint" \
+      --catalog-language "$catalog_language" \
+      --provider-language "$provider_language" \
+      --output-root "$output_root" \
+      --timeout-seconds "$YAP_PROVIDER_TIMEOUT_SECONDS" \
+      >"$gate_root/logs/$provider-$logical_name.json"
+  move_child_evidence \
+    "$output_root/evidence.json" \
+    "$provider_evidence_root/$provider/$logical_name.json"
+}
+
+run_capacity() {
+  local provider="$1" logical_name="$2" load_case="$3" model_lock="$4"
+  local endpoint="$5" catalog_language="$6" provider_language="$7"
+  local output_root="$gate_root/workloads/$provider-$logical_name"
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.evaluation.provider_capacity_qualification \
+      --plan "$plan_path" \
+      --checked-head "$YAP_CHECKED_HEAD" \
+      --repository-root "$repo_root" \
+      --load-case "$load_case" \
+      --model-lock "$model_lock" \
+      --duration-suite "$YAP_PROVIDER_DURATION_SUITE" \
+      --duration-suite-sha256 "$YAP_PROVIDER_DURATION_SUITE_SHA256" \
+      --endpoint "$endpoint" \
+      --catalog-language "$catalog_language" \
+      --provider-language "$provider_language" \
+      --output-root "$output_root" \
+      --timeout-seconds "$YAP_PROVIDER_TIMEOUT_SECONDS" \
+      >"$gate_root/logs/$provider-$logical_name.json"
+  move_child_evidence \
+    "$output_root/evidence.json" \
+    "$provider_evidence_root/$provider/$logical_name.json"
+}
+
+run_duration_ladder() {
+  local provider="$1" logical_name="$2" system_id="$3" ladder="$4"
+  local model_lock="$5" endpoint="$6" catalog_language="$7"
+  local provider_language="$8" include_maximum="$9"
+  local output_root="$gate_root/workloads/$provider-$logical_name"
+  local arguments=(
+    "--plan" "$plan_path"
+    "--checked-head" "$YAP_CHECKED_HEAD"
+    "--repository-root" "$repo_root"
+    "--system-id" "$system_id"
+    "--duration-ladder" "$ladder"
+    "--model-lock" "$model_lock"
+    "--duration-suite" "$YAP_PROVIDER_DURATION_SUITE"
+    "--duration-suite-sha256" "$YAP_PROVIDER_DURATION_SUITE_SHA256"
+    "--endpoint" "$endpoint"
+    "--catalog-language" "$catalog_language"
+    "--provider-language" "$provider_language"
+    "--output-root" "$output_root"
+    "--timeout-seconds-per-duration" "$YAP_PROVIDER_TIMEOUT_SECONDS"
+  )
+  if [ "$include_maximum" = true ]; then
+    arguments+=("--include-exact-maximum")
+  fi
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.evaluation.resident_provider_duration_qualification \
+      "${arguments[@]}" \
+      >"$gate_root/logs/$provider-$logical_name.json"
+  move_child_evidence \
+    "$output_root/evidence.json" \
+    "$provider_evidence_root/$provider/$logical_name.json"
+}
+
+run_resource_profile() {
+  local provider="$1" system_id="$2" container="$3" model_lock="$4"
+  local endpoint="$5" catalog_language="$6" provider_language="$7"
+  local load_case="$8"
+  local raw_root="$gate_root/raw/$provider-resource"
+  local control_root="$raw_root/control"
+  local sample_path="$raw_root/samples.jsonl"
+  install -d -m 0700 "$raw_root" "$control_root"
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.evaluation.resident_provider_resource_sampler \
+      --container "$container" \
+      --checked-head "$YAP_CHECKED_HEAD" \
+      --output "$sample_path" \
+      --control-directory "$control_root" \
+      --interval-ms 250 \
+      >"$raw_root/sampler.json" &
+  sampler_pid="$!"
+  wait_for_file "$control_root/ready.json" 30
+  install -m 0600 /dev/null "$control_root/workload-start"
+  local workload_status=0
+  set +e
+  run_standard \
+    "$provider" resource-load "$load_case" "$model_lock" "$endpoint" \
+    "$catalog_language" "$provider_language" 8 8
+  workload_status="$?"
+  set -e
+  install -m 0600 /dev/null "$control_root/workload-end"
+  install -m 0600 /dev/null "$control_root/stop"
+  local sampler_status=0
+  set +e
+  wait "$sampler_pid"
+  sampler_status="$?"
+  set -e
+  sampler_pid=""
+  if [ "$workload_status" -ne 0 ] || [ "$sampler_status" -ne 0 ]; then
+    echo "Resident provider resource workload or sampler failed" >&2
+    return 1
+  fi
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.evaluation.provider_resource_observations \
+      --samples "$sample_path" \
+      --workload-window "$control_root/workload-window.json" \
+      --checked-head "$YAP_CHECKED_HEAD" \
+      --repository-root "$repo_root" \
+      --provider-serving-lock "$model_lock" \
+      --output "$provider_evidence_root/$provider/resources.json" \
+      --plan "$plan_path" \
+      --system-id "$system_id" \
+      "--completed-request-count" "1600" \
+      "--concurrency" "8" \
+      >"$raw_root/resources.json"
+}
+
+run_readiness() {
+  local provider="$1" system_id="$2" model_lock="$3" endpoint="$4"
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.evaluation.resident_provider_readiness \
+      --checked-head "$YAP_CHECKED_HEAD" \
+      --repository-root "$repo_root" \
+      --system-id "$system_id" \
+      --model-lock "$model_lock" \
+      --endpoint "$endpoint" \
+      --timeout-seconds "$YAP_PROVIDER_READY_TIMEOUT_SECONDS" \
+      --poll-seconds 1 \
+      --output "$provider_evidence_root/$provider/readiness.json" \
+      >"$gate_root/logs/$provider-readiness.json"
+}
+
+run_vllm_qualification() {
+  run_duration_ladder \
+    vllm duration-batch vllm-cohere-batch batch-file "$vllm_lock" \
+    "$vllm_endpoint" en en true
+  run_standard \
+    vllm short-tail vllm-short-tail "$vllm_lock" "$vllm_endpoint" en en 1 1 2 4
+  run_standard \
+    vllm long-waves vllm-long-waves "$vllm_lock" "$vllm_endpoint" en en 1 2
+  run_standard \
+    vllm mixed-eight vllm-mixed-eight "$vllm_lock" "$vllm_endpoint" en en 1 8
+  run_cancellation \
+    vllm cancellation vllm-cancelled-sibling "$vllm_lock" "$vllm_endpoint" en en
+  run_capacity \
+    vllm slot-capacity vllm-slot-capacity "$vllm_lock" "$vllm_endpoint" en en
+  run_capacity \
+    vllm pcm-capacity vllm-pcm-capacity "$vllm_lock" "$vllm_endpoint" en en
+  run_resource_profile \
+    vllm vllm-cohere-batch yap-cohere-vllm "$vllm_lock" "$vllm_endpoint" \
+    en en vllm-short-tail
+}
+
+run_nemo_qualification() {
+  run_duration_ladder \
+    nemo duration-finalized nemo-nemotron-finalized server-finalized-utterance \
+    "$nemo_lock" "$nemo_endpoint" en-US en-US false
+  run_duration_ladder \
+    nemo duration-batch nemo-nemotron-finalized batch-file "$nemo_lock" \
+    "$nemo_endpoint" en-US en-US true
+  run_standard \
+    nemo short-tail nemo-finalized-short-tail "$nemo_lock" "$nemo_endpoint" \
+    en-US en-US 1 1 2 4
+  run_standard \
+    nemo long-windows nemo-finalized-long-windows "$nemo_lock" "$nemo_endpoint" \
+    en-US en-US 1 2
+  local parity_root="$gate_root/workloads/nemo-language-parity"
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.evaluation.provider_language_parity_qualification \
+      --plan "$plan_path" \
+      --checked-head "$YAP_CHECKED_HEAD" \
+      --repository-root "$repo_root" \
+      --load-case nemo-finalized-fixed-auto-parity \
+      --model-lock "$nemo_lock" \
+      --duration-suite "$YAP_PROVIDER_DURATION_SUITE" \
+      --duration-suite-sha256 "$YAP_PROVIDER_DURATION_SUITE_SHA256" \
+      --endpoint "$nemo_endpoint" \
+      --fixed-catalog-language en-US \
+      --fixed-provider-language en-US \
+      --automatic-catalog-language und \
+      --output-root "$parity_root" \
+      --timeout-seconds-per-wave "$YAP_PROVIDER_TIMEOUT_SECONDS" \
+      >"$gate_root/logs/nemo-language-parity.json"
+  move_child_evidence \
+    "$parity_root/evidence.json" \
+    "$provider_evidence_root/nemo/language-parity.json"
+  run_cancellation \
+    nemo cancellation nemo-finalized-cancelled-sibling "$nemo_lock" \
+    "$nemo_endpoint" en-US en-US
+  run_capacity \
+    nemo active-capacity nemo-finalized-active-capacity "$nemo_lock" \
+    "$nemo_endpoint" en-US en-US
+  run_resource_profile \
+    nemo nemo-nemotron-finalized yap-nemotron-nemo "$nemo_lock" "$nemo_endpoint" \
+    en-US en-US nemo-finalized-short-tail
+}
+
+if [[ ! "$YAP_CHECKED_HEAD" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "YAP_CHECKED_HEAD must be a full lowercase Git SHA" >&2
+  exit 2
+fi
+if [[ ! "$YAP_PROVIDER_DURATION_SUITE_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+  echo "YAP_PROVIDER_DURATION_SUITE_SHA256 must be a lowercase SHA-256" >&2
+  exit 2
+fi
+for value in "$YAP_PROVIDER_READY_TIMEOUT_SECONDS" "$YAP_PROVIDER_TIMEOUT_SECONDS"; do
+  if [[ ! "$value" =~ ^[0-9]+$ ]] || [ "$value" -lt 1 ] || [ "$value" -gt 3600 ]; then
+    echo "Resident provider timeouts must be integers from 1 through 3600" >&2
+    exit 2
+  fi
+done
+if ! command -v python3.12 >/dev/null 2>&1 \
+  || [ "$(python3.12 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')" != "3.12" ]; then
+  echo "Resident provider lifecycle gate requires Python 3.12" >&2
+  exit 2
+fi
+verify_clean_head
+
+eval_cache="$(readlink -f -- "$YAP_EVAL_CACHE")"
+if [ -L "$YAP_EVAL_CACHE" ] || [ ! -d "$eval_cache" ] \
+  || [ "$(stat -Lc '%a' "$eval_cache")" != "700" ]; then
+  echo "YAP_EVAL_CACHE must be a real mode-0700 directory" >&2
+  exit 2
+fi
+case "$eval_cache" in
+  "$repo_root"|"$repo_root"/*)
+    echo "YAP_EVAL_CACHE must remain outside the repository" >&2
+    exit 2
+    ;;
+esac
+suite_path="$(readlink -f -- "$YAP_PROVIDER_DURATION_SUITE")"
+case "$suite_path" in
+  "$eval_cache"/*) ;;
+  *)
+    echo "Provider duration suite must remain inside YAP_EVAL_CACHE" >&2
+    exit 2
+    ;;
+esac
+if [ -L "$YAP_PROVIDER_DURATION_SUITE" ] || [ ! -f "$suite_path" ]; then
+  echo "Provider duration suite must be a real file" >&2
+  exit 2
+fi
+YAP_PROVIDER_DURATION_SUITE="$suite_path"
+export YAP_PROVIDER_DURATION_SUITE YAP_EVAL_CACHE
+
+gate_root="$(readlink -m -- "$YAP_RESIDENT_PROVIDER_EVIDENCE_DIR")"
+case "$gate_root" in
+  "$eval_cache"/*) ;;
+  *)
+    echo "Resident provider evidence must remain inside YAP_EVAL_CACHE" >&2
+    exit 2
+    ;;
+esac
+if [ -e "$gate_root" ] || [ -L "$YAP_RESIDENT_PROVIDER_EVIDENCE_DIR" ]; then
+  echo "Resident provider lifecycle evidence directory already exists" >&2
+  exit 2
+fi
+install -d -m 0700 "$(dirname -- "$gate_root")"
+install -d -m 0700 \
+  "$gate_root" \
+  "$gate_root/logs" \
+  "$gate_root/raw" \
+  "$gate_root/workloads" \
+  "$gate_root/provider-evidence" \
+  "$gate_root/provider-evidence/vllm" \
+  "$gate_root/provider-evidence/nemo"
+provider_evidence_root="$gate_root/provider-evidence"
+
+capture_host_boundary "$gate_root/before"
+
+PYTHONPATH="$repo_root/server/src" python3.12 -m yap_server.pools.model_assets \
+  --lock "$vllm_lock" --model-dir "$YAP_COHERE_MODEL_DIR" --verify-only
+PYTHONPATH="$repo_root/server/src" python3.12 -m yap_server.pools.model_assets \
+  --lock "$nemo_lock" --model-dir "$YAP_NEMOTRON_MODEL_DIR" --verify-only
+
+docker build \
+  --pull \
+  --build-arg "YAP_CHECKED_HEAD=$YAP_CHECKED_HEAD" \
+  --file "$repo_root/server/runtime/cohere-vllm/Dockerfile" \
+  --tag "$vllm_image" \
+  "$repo_root/server"
+docker build \
+  --pull \
+  --build-arg "YAP_CHECKED_HEAD=$YAP_CHECKED_HEAD" \
+  --file "$repo_root/server/runtime/nemotron-nemo/Dockerfile" \
+  --tag "$nemo_image" \
+  "$repo_root/server"
+
+docker network create \
+  --driver bridge \
+  --internal \
+  --label io.yap.owner=private-inference \
+  --label "io.yap.revision=$YAP_CHECKED_HEAD" \
+  "$network_name" \
+  >"$gate_root/logs/network-create.txt"
+network_owned=true
+export YAP_PRIVATE_INFERENCE_NETWORK="$network_name"
+
+YAP_COHERE_VLLM_IMAGE="$vllm_image" \
+YAP_COHERE_VLLM_PORT="$YAP_COHERE_VLLM_PORT" \
+bash "$script_dir/cohere-vllm-server.sh" \
+  >"$gate_root/logs/vllm-service.log" 2>&1 &
+launcher_pid="$!"
+active_container="yap-cohere-vllm"
+wait_for_container "$active_container"
+verify_private_container_network "$active_container"
+run_readiness vllm vllm-cohere-batch "$vllm_lock" "$vllm_endpoint"
+run_vllm_qualification
+stop_provider "yap-cohere-vllm" "$YAP_COHERE_VLLM_PORT"
+
+YAP_NEMOTRON_NEMO_IMAGE="$nemo_image" \
+YAP_BATCH_JOB_STORAGE_DIR="$eval_cache" \
+YAP_NEMOTRON_NEMO_PORT="$YAP_NEMOTRON_NEMO_PORT" \
+bash "$script_dir/nemotron-nemo-server.sh" \
+  >"$gate_root/logs/nemo-service.log" 2>&1 &
+launcher_pid="$!"
+active_container="yap-nemotron-nemo"
+wait_for_container "$active_container"
+verify_private_container_network "$active_container"
+run_readiness nemo nemo-nemotron-finalized "$nemo_lock" "$nemo_endpoint"
+run_nemo_qualification
+stop_provider "yap-nemotron-nemo" "$YAP_NEMOTRON_NEMO_PORT"
+
+docker network rm "$network_name" >"$gate_root/logs/network-remove.txt"
+network_owned=false
+capture_host_boundary "$gate_root/after"
+verify_clean_head
+
+PYTHONPATH="$repo_root/server/src" \
+  python3.12 -m yap_server.evaluation.resident_provider_lifecycle_evidence \
+    --before "$gate_root/before" \
+    --after "$gate_root/after" \
+    --provider-evidence-root "$provider_evidence_root" \
+    --checked-head "$YAP_CHECKED_HEAD" \
+    --output "$gate_root/evidence.json" \
+    >"$gate_root/logs/lifecycle-evidence.json"
+
+printf '%s\n' "$gate_root/evidence.json"
