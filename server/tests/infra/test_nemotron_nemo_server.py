@@ -20,16 +20,20 @@ class NemotronNemoServerContractTests(unittest.TestCase):
             "YAP_NEMOTRON_MODEL_DIR:?",
             "YAP_BATCH_JOB_STORAGE_DIR:?",
             "YAP_NEMOTRON_NEMO_API_KEY:?",
+            "YAP_PRIVATE_INFERENCE_NETWORK:?",
             "org.opencontainers.image.revision",
             'architecture" != "arm64"',
             'run_as_uid="$(id -u)"',
             'run_as_gid="$(id -g)"',
             '--user "$run_as_uid:$run_as_gid"',
             "must run as a non-root model owner",
-            "127.0.0.1:${YAP_NEMOTRON_NEMO_PORT}:8000",
+            "private-container-loopback-proxy.sh",
+            "run_private_container_with_loopback_proxy",
+            '"$YAP_NEMOTRON_NEMO_PORT"',
             "--env YAP_NEMOTRON_NEMO_API_KEY",
             "export YAP_NEMOTRON_NEMO_API_KEY",
             "--pull never",
+            '--network "$YAP_PRIVATE_INFERENCE_NETWORK"',
             "--read-only",
             "--cap-drop ALL",
             "no-new-privileges",
@@ -53,6 +57,11 @@ class NemotronNemoServerContractTests(unittest.TestCase):
         )
         self.assertNotIn("nohup", script)
         self.assertNotIn("0.0.0.0:${YAP_NEMOTRON_NEMO_PORT}", script)
+        self.assertNotIn("--publish", script)
+        self.assertIn("docker network inspect", script)
+        self.assertIn('network_internal" != "true"', script)
+        self.assertIn("io.yap.owner", script)
+        self.assertIn("io.yap.revision", script)
 
     def test_api_key_is_only_inherited_through_process_environment(self) -> None:
         script = SERVER_LAUNCH.read_text(encoding="utf-8")

@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+# shellcheck source=private-container-loopback-proxy.sh
+source "$script_dir/private-container-loopback-proxy.sh"
+
 : "${YAP_CHECKED_HEAD:?Set YAP_CHECKED_HEAD to the exact 40-character candidate SHA}"
 : "${YAP_NEMOTRON_NEMO_IMAGE:?Set YAP_NEMOTRON_NEMO_IMAGE to the checked-head image}"
 : "${YAP_NEMOTRON_MODEL_DIR:?Set YAP_NEMOTRON_MODEL_DIR to the verified model directory}"
 : "${YAP_BATCH_JOB_STORAGE_DIR:?Set YAP_BATCH_JOB_STORAGE_DIR to the private job directory}"
 : "${YAP_NEMOTRON_NEMO_API_KEY:?Set the private resident NeMo API key}"
+: "${YAP_PRIVATE_INFERENCE_NETWORK:?Set the checked internal inference network}"
 : "${YAP_NEMOTRON_NEMO_PORT:=18001}"
 
 if [[ ! "$YAP_CHECKED_HEAD" =~ ^[0-9a-f]{40}$ ]]; then
@@ -49,6 +54,24 @@ if [ "$run_as_uid" -eq 0 ] || [ "$run_as_gid" -eq 0 ]; then
   echo "The resident NeMo launcher must run as a non-root model owner" >&2
   exit 2
 fi
+if [[ ! "$YAP_PRIVATE_INFERENCE_NETWORK" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$ ]]; then
+  echo "YAP_PRIVATE_INFERENCE_NETWORK is invalid" >&2
+  exit 2
+fi
+network_identity="$(
+  docker network inspect \
+    --format '{{.Internal}}|{{.Driver}}|{{index .Labels "io.yap.owner"}}|{{index .Labels "io.yap.revision"}}' \
+    "$YAP_PRIVATE_INFERENCE_NETWORK"
+)"
+IFS='|' read -r network_internal network_driver network_owner network_revision \
+  <<<"$network_identity"
+if [ "$network_internal" != "true" ] \
+  || [ "$network_driver" != "bridge" ] \
+  || [ "$network_owner" != "private-inference" ] \
+  || [ "$network_revision" != "$YAP_CHECKED_HEAD" ]; then
+  echo "YAP_PRIVATE_INFERENCE_NETWORK is not the checked internal network" >&2
+  exit 2
+fi
 
 image_id="$(docker image inspect --format '{{.Id}}' "$YAP_NEMOTRON_NEMO_IMAGE")"
 architecture="$(docker image inspect --format '{{.Architecture}}' "$YAP_NEMOTRON_NEMO_IMAGE")"
@@ -75,12 +98,20 @@ if docker container inspect yap-nemotron-nemo >/dev/null 2>&1; then
 fi
 
 export YAP_NEMOTRON_NEMO_API_KEY
-exec docker run \
+run_private_container_with_loopback_proxy \
+  yap-nemotron-nemo \
+  "$YAP_PRIVATE_INFERENCE_NETWORK" \
+  "$YAP_NEMOTRON_NEMO_PORT" \
+  8000 \
+  -- \
+  docker run \
+  --detach \
   --rm \
   --name yap-nemotron-nemo \
   --label io.yap.owner=private-inference \
   --label "io.yap.revision=$YAP_CHECKED_HEAD" \
   --pull never \
+  --network "$YAP_PRIVATE_INFERENCE_NETWORK" \
   --user "$run_as_uid:$run_as_gid" \
   --read-only \
   --cap-drop ALL \
@@ -97,7 +128,6 @@ exec docker run \
   --tmpfs /tmp:rw,nosuid,nodev,noexec,size=4g,mode=1777 \
   --tmpfs "/torch-compile-cache:rw,nosuid,nodev,exec,size=256m,mode=0700,uid=$run_as_uid,gid=$run_as_gid" \
   --device nvidia.com/gpu=all \
-  --publish "127.0.0.1:${YAP_NEMOTRON_NEMO_PORT}:8000" \
   --env YAP_NEMOTRON_NEMO_API_KEY \
   --env HF_HUB_OFFLINE=1 \
   --env TRANSFORMERS_OFFLINE=1 \
