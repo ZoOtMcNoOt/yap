@@ -702,7 +702,12 @@ resident-memory, battery/thermal, packaging, and rollback evidence.
         results behind per-language gates. Keep catalog `wordAlignment: false`
         until the frozen-head accuracy/latency/memory promotion gate passes.
 12. [ ] Validate every advertised locale/tier on representative public and
-       approved private-domain fixtures before changing a quality claim.
+       approved private-domain fixtures before changing a quality claim. The
+       fail-closed case-level human-reference registry contract now executes,
+       including authorized independent roles, blind-assignment proof, exact
+       human exact-locale basis, reviewed rights/defects, and separate artifact
+       hashes. No real second-locale receipt or private trust anchor exists yet,
+       so this item and the ADR score remain open.
 13. [ ] Run the complete Phase 6 local/native/server/GB10 matrix exactly once on
        the ready head, then require hosted exact-head review before merge.
 

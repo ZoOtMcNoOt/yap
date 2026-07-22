@@ -262,6 +262,22 @@ hold because its current dataset repository does not state an audio/data
 license. Raw audio, references, model output, and acquisition receipts remain
 outside Git.
 
+The promotion loader now implements the review boundary without claiming that
+the reviews exist. Every `independentPromotion` case, whether post-freeze or
+contractually excluded, requires one case-level, transcript-free receipt bound
+to the exact candidate set, locale, timestamp, reference, rights, and known
+defects. Its private registry separately authorizes the two listeners,
+adjudicator, locale reviewer, and rights decision owner and hash-pins the blind
+assignment, listener, adjudication, human exact-locale, rights, source-identity,
+attribution, and preprocessing artifacts. Duplicate JSON keys, replacement or
+oversize artifacts, silent listener overrides, and locale subtags supported only
+by a base-language marker fail closed. Opened-handle containment and a portable
+artifact-path grammar reject raced junction escapes and Windows alternate data
+streams. Source URI/retrieval time, suite/condition labels, speaker/timing
+metadata, and audio shape must also match the reviewed case. The real
+second-locale selection, human work, selection freshness/consumption record, and
+out-of-band registry trust anchor remain open.
+
 The private GB10 comparator then ran the exact locked Cohere revision through a
 20-case screen and all 908 cases under the Python 3.12.3/NVIDIA PyTorch 26.06,
 Torch 2.13/CUDA 13.3/BF16 contract. The full 3 h 5 min 26.1 s source completed
@@ -1046,6 +1062,9 @@ promotion-ineligible diagnostics. No audio, reference, transcript, per-case
 identity, or raw diagnostic entered Git. This closes an implementation defect
 and adds representative intake evidence; it does not check the frozen provider,
 locale, or complete Phase 6 gates above.
+The executable review/registry contract described above is now ready to admit
+those private artifacts, but it cannot manufacture them and does not convert
+this screen into gold or promotion evidence.
 
 #### Retired Triton experiment — historical negative evidence
 

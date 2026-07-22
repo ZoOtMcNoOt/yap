@@ -119,7 +119,17 @@ copies inherit their source exposure. Missing lineage evidence stays `unknown`.
 The manifest is not its own trust root: independent cases use the dedicated
 promotion loader, a private registry, an out-of-band registry SHA-256, and
 hash-verified candidate-lock/freeze/exposure artifacts binding the complete
-candidate set and exact case hashes. Schema v2 admits only natural source audio
+candidate set and exact case hashes. Every independent case also requires one
+case-level human-reference receipt. The registry authorizes two distinct
+listeners and an independent adjudicator, plus locale-reviewer and rights-owner
+roles, and separately pins the blind assignment, reviews, adjudication, locale
+basis, rights decision, source identity, attribution, and preprocessing
+artifacts. Reviewed rights, known defects, locale, fractional recording time,
+source URI/retrieval time, suite/condition labels, audio shape, speaker/timing
+metadata, and candidate exposure set must match the manifest exactly. Artifact
+reads recheck opened-handle cache containment, reject nonportable/alternate-stream
+paths, and enforce per-file plus aggregate bounds. Schema v2 admits only natural
+source audio
 to that gate and rejects duplicate raw or decoded audio; derived and generated
 inputs stay nonpromotion. Controlled suite/condition labels make required
 acoustic slices auditable, while typed derivation recipes bind source-audio and
@@ -134,6 +144,9 @@ and runtime identity. The adapter streams the verified PCM WAV and derives its
 duration; a self-attested manifest duration cannot dilute silence metrics.
 Private case evidence remains under `YAP_EVAL_CACHE`; public evidence is
 aggregate and omits transcript and critical-policy hashes.
+No production review registry, trust anchor, or human-reviewed second-locale
+case is tracked in Git; implementing the fail-closed loader does not satisfy
+that Phase 6 evidence requirement.
 The locked public ASR fixture is therefore an exposure-unknown regression
 comparator, not a promotion holdout. Exact-duration controls are generated and
 validated outside Git under `YAP_EVAL_CACHE`; their benchmark evidence must

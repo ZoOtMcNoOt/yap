@@ -1,15 +1,44 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import stat
 from typing import Mapping
 
+from yap_server.evaluation.evaluation_receipt_fields import (
+    bounded_identifiers as _bounded_identifiers,
+    exact_object as _object,
+    https_uri as _https_uri,
+    identifier as _identifier,
+    model_id as _model_id,
+    nonnegative_int as _nonnegative_int,
+    positive_int as _positive_int,
+    sha256 as _sha256,
+    utc as _utc,
+)
+from yap_server.evaluation.private_evaluation_artifact import (
+    read_bounded_regular_file,
+    read_json_object_with_identity,
+)
+from yap_server.evaluation.promotion_reference_review import (
+    validate_promotion_reference_review,
+)
+from yap_server.evaluation.reference_review_registry import (
+    TrustedReferenceReview,
+    TrustedReviewParticipant,
+    index_trusted_reference_reviews,
+    load_trusted_reference_reviews,
+    load_trusted_review_participants,
+    trusted_review_participant_roles,
+)
+from yap_server.evaluation.transcript_reference_review import (
+    TranscriptReferenceReviewReceipt,
+)
 from yap_server.language_tags import canonical_bcp47
 
 
@@ -17,9 +46,13 @@ _MAX_MANIFEST_BYTES = 4 * 1024 * 1024
 _MAX_TRUST_ARTIFACT_BYTES = 16 * 1024 * 1024
 _PROMOTION_REGISTRY_DIGEST_ENV = "YAP_EVAL_PROMOTION_REGISTRY_SHA256"
 _PROMOTION_CONTEXT_SEAL = object()
-_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
-_MODEL_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,255}$")
-_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_PORTABLE_ARTIFACT_SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+_WINDOWS_RESERVED_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL"}
+    | {f"COM{index}" for index in range(1, 10)}
+    | {f"LPT{index}" for index in range(1, 10)}
+)
+_MAX_REGISTRY_ARTIFACT_BYTES = 64 * 1024 * 1024
 _PURPOSES = frozenset(
     {"comparator", "regression", "independentPromotion", "runtimeOnly"}
 )
@@ -173,6 +206,8 @@ class _TrustedPromotionContext:
     scorer_lock_sha256: str
     expected_models: tuple[_TrustedCandidateModel, ...]
     verified_exposures: tuple[_TrustedCaseExposure, ...]
+    verified_reference_reviews: tuple[TrustedReferenceReview, ...]
+    trusted_review_participants: tuple[TrustedReviewParticipant, ...]
     _seal: object
 
 
@@ -212,6 +247,7 @@ def load_promotion_corpus_manifest_with_identity(
         private_manifest,
         "ASR corpus manifest",
         _MAX_MANIFEST_BYTES,
+        containment_root=cache_root,
     )
     _validate_corpus_manifest(payload, promotion_context=promotion_context)
     return payload, manifest_sha256
@@ -223,12 +259,14 @@ def _read_json_object(
     maximum_bytes: int,
     *,
     expected_sha256: str | None = None,
+    containment_root: Path | None = None,
 ) -> dict[str, object]:
     return _read_json_object_with_identity(
         path,
         field,
         maximum_bytes,
         expected_sha256=expected_sha256,
+        containment_root=containment_root,
     )[0]
 
 
@@ -238,30 +276,15 @@ def _read_json_object_with_identity(
     maximum_bytes: int,
     *,
     expected_sha256: str | None = None,
+    containment_root: Path | None = None,
 ) -> tuple[dict[str, object], str]:
-    if path.is_symlink():
-        raise ValueError(f"{field} must be a real file")
-    resolved = path.resolve(strict=True)
-    metadata = resolved.lstat()
-    if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
-        raise ValueError(f"{field} must be a real file")
-    if not 1 <= metadata.st_size <= maximum_bytes:
-        raise ValueError(f"{field} size is invalid")
-    body = resolved.read_bytes()
-    if len(body) != metadata.st_size:
-        raise ValueError(f"{field} changed while it was read")
-    if (
-        expected_sha256 is not None
-        and hashlib.sha256(body).hexdigest() != expected_sha256
-    ):
-        raise ValueError(f"{field} differs from its out-of-band digest")
-    try:
-        payload = json.loads(body)
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ValueError(f"{field} is not valid JSON") from error
-    if not isinstance(payload, dict):
-        raise ValueError(f"{field} must be an object")
-    return dict(payload), hashlib.sha256(body).hexdigest()
+    return read_json_object_with_identity(
+        path,
+        maximum_bytes=maximum_bytes,
+        field=field,
+        expected_sha256=expected_sha256,
+        containment_root=containment_root,
+    )
 
 
 def validate_corpus_manifest(value: object) -> None:
@@ -319,6 +342,7 @@ def _validate_corpus_manifest(
         trusted_scorer_lock_sha256,
         trusted_models,
         trusted_exposures,
+        trusted_reference_reviews,
     ) = _trusted_context_indexes(promotion_context)
     root = _object(
         value,
@@ -428,7 +452,7 @@ def _validate_corpus_manifest(
         corpus_release = _identifier(corpus["release"], "corpus release")
         corpus_split = _identifier(corpus["split"], "corpus split")
         source_item_id = _identifier(corpus["itemId"], "corpus source item ID")
-        _https_uri(corpus["sourceUri"], "corpus source URI")
+        source_uri = _https_uri(corpus["sourceUri"], "corpus source URI")
         retrieved_at = _utc(corpus["retrievedAtUtc"], "corpus retrieval time")
 
         audio = _object(
@@ -449,7 +473,7 @@ def _validate_corpus_manifest(
         if audio_sha256 in audio_hashes:
             raise ValueError("audio SHA-256 must identify only one corpus case")
         audio_hashes.add(audio_sha256)
-        _positive_int(audio["byteLength"], "audio byte length")
+        audio_byte_length = _positive_int(audio["byteLength"], "audio byte length")
         decoded_pcm_sha256 = _sha256(
             audio["decodedPcmSha256"],
             "decoded PCM SHA-256",
@@ -457,12 +481,14 @@ def _validate_corpus_manifest(
         if decoded_pcm_sha256 in decoded_pcm_hashes:
             raise ValueError("decoded PCM SHA-256 must identify only one corpus case")
         decoded_pcm_hashes.add(decoded_pcm_sha256)
-        _positive_int(audio["durationSamples"], "audio duration samples")
+        duration_samples = _positive_int(
+            audio["durationSamples"], "audio duration samples"
+        )
         sample_rate = _positive_int(audio["sampleRateHz"], "audio sample rate")
         channels = _positive_int(audio["channels"], "audio channels")
         if sample_rate > 384_000 or channels > 8:
             raise ValueError("corpus audio shape exceeds the evaluation bounds")
-        _identifier(audio["codec"], "audio codec")
+        audio_codec = _identifier(audio["codec"], "audio codec")
         recorded_at = (
             None
             if audio["recordedAtUtc"] is None
@@ -488,8 +514,12 @@ def _validate_corpus_manifest(
             "corpus reference",
         )
         reference_sha256 = _sha256(reference["sha256"], "reference SHA-256")
-        _enum(reference["tier"], _REFERENCE_TIERS, "reference tier")
-        _identifier(reference["revision"], "reference revision")
+        reference_tier = _enum(
+            reference["tier"], _REFERENCE_TIERS, "reference tier"
+        )
+        reference_revision = _identifier(
+            reference["revision"], "reference revision"
+        )
         language_bcp47 = canonical_bcp47(
             reference["languageBcp47"],
             "reference languageBcp47",
@@ -550,7 +580,9 @@ def _validate_corpus_manifest(
             raise ValueError("overlap evidence requires at least two speakers")
         if "multiSpeaker" in condition_labels and speaker_count < 2:
             raise ValueError("multi-speaker evidence requires at least two speakers")
-        _enum(reference["timingKind"], _TIMING_KINDS, "reference timing kind")
+        timing_kind = _enum(
+            reference["timingKind"], _TIMING_KINDS, "reference timing kind"
+        )
         adjudication_state = _enum(
             reference["adjudicationState"],
             _ADJUDICATION_STATES,
@@ -570,8 +602,10 @@ def _validate_corpus_manifest(
             },
             "corpus rights",
         )
-        _identifier(rights["licenseId"], "license ID")
-        _sha256(rights["licenseTextSha256"], "license text SHA-256")
+        license_id = _identifier(rights["licenseId"], "license ID")
+        license_text_sha256 = _sha256(
+            rights["licenseTextSha256"], "license text SHA-256"
+        )
         audio_decision = _enum(
             rights["audioDecision"], _RIGHTS_DECISIONS, "audio rights decision"
         )
@@ -585,14 +619,22 @@ def _validate_corpus_manifest(
             _RIGHTS_CAPABILITIES,
             "commercial-use decision",
         )
-        _enum(
+        redistribution = _enum(
             rights["redistribution"],
             _RIGHTS_CAPABILITIES,
             "redistribution decision",
         )
-        if not isinstance(rights["reidentificationProhibited"], bool):
+        reidentification_prohibited = rights["reidentificationProhibited"]
+        if not isinstance(reidentification_prohibited, bool):
             raise ValueError("reidentification policy must be a boolean")
-        _bounded_text_array(case["knownDefects"], "known defects", allow_empty=True)
+        known_defects = _bounded_text_array(
+            case["knownDefects"], "known defects", allow_empty=True
+        )
+        known_defect_codes = (
+            _bounded_identifiers(known_defects, "known defect codes")
+            if purpose == "independentPromotion"
+            else tuple(known_defects)
+        )
 
         exposures: dict[tuple[str, str], tuple[str, str, str]] = {}
         for exposure_value in _array(case["modelExposure"], "model exposure"):
@@ -674,16 +716,39 @@ def _validate_corpus_manifest(
                 models=models,
                 trusted_models=trusted_models,
                 trusted_exposures=trusted_exposures,
+                trusted_reference_reviews=trusted_reference_reviews,
                 case_id=case_id,
                 corpus_id=corpus_id,
                 corpus_release=corpus_release,
                 corpus_split=corpus_split,
                 source_item_id=source_item_id,
+                source_uri=source_uri,
+                suite_ids=suite_ids,
+                condition_labels=condition_labels,
                 audio_sha256=audio_sha256,
+                audio_byte_length=audio_byte_length,
                 decoded_pcm_sha256=decoded_pcm_sha256,
+                duration_samples=duration_samples,
+                sample_rate_hz=sample_rate,
+                channels=channels,
+                audio_codec=audio_codec,
                 reference_sha256=reference_sha256,
                 evaluation_policy_sha256=case_evaluation_policy_sha256,
+                language_bcp47=language_bcp47,
+                reference_tier=reference_tier,
+                reference_revision=reference_revision,
+                speaker_count=speaker_count,
+                timing_kind=timing_kind,
                 recorded_at=recorded_at,
+                retrieved_at=retrieved_at,
+                license_id=license_id,
+                license_text_sha256=license_text_sha256,
+                audio_rights_decision=audio_decision,
+                reference_rights_decision=reference_decision,
+                commercial_use=commercial_use,
+                redistribution=redistribution,
+                reidentification_prohibited=reidentification_prohibited,
+                known_defect_codes=known_defect_codes,
                 exposures=exposures,
             )
         if purpose == "runtimeOnly" and asset_kind == "natural":
@@ -715,25 +780,46 @@ def _load_trusted_promotion_context(
             "promotion registry",
             _MAX_MANIFEST_BYTES,
             expected_sha256=expected_registry_sha256,
+            containment_root=cache_root,
         ),
         {
             "schemaVersion",
             "scorerLockPath",
             "scorerLockSha256",
             "candidateModels",
+            "trustedReviewParticipants",
             "verifiedExposures",
+            "verifiedReferenceReviews",
         },
         "promotion registry",
     )
-    if root["schemaVersion"] != 1:
+    if root["schemaVersion"] != 2:
         raise ValueError("promotion registry schema is unsupported")
+    verified_artifact_bytes = 0
+
+    def verify_registry_artifact(
+        relative_value: object,
+        expected_sha256: str,
+        field: str,
+    ) -> bytes:
+        nonlocal verified_artifact_bytes
+        body = _verified_registry_artifact(
+            registry.parent,
+            cache_root,
+            relative_value,
+            expected_sha256,
+            field,
+        )
+        verified_artifact_bytes += len(body)
+        if verified_artifact_bytes > _MAX_REGISTRY_ARTIFACT_BYTES:
+            raise ValueError("promotion registry artifact budget exceeded")
+        return body
+
     scorer_lock_sha256 = _sha256(
         root["scorerLockSha256"],
         "trusted scorer lock SHA-256",
     )
-    _verified_registry_artifact(
-        registry.parent,
-        cache_root,
+    verify_registry_artifact(
         root["scorerLockPath"],
         scorer_lock_sha256,
         "trusted scorer lock",
@@ -758,9 +844,7 @@ def _load_trusted_promotion_context(
             model["candidateLockSha256"],
             "trusted candidate lock SHA-256",
         )
-        _verified_registry_artifact(
-            registry.parent,
-            cache_root,
+        verify_registry_artifact(
             model["candidateLockPath"],
             candidate_lock_sha256,
             "trusted candidate lock",
@@ -769,9 +853,7 @@ def _load_trusted_promotion_context(
             model["freezeEvidenceSha256"],
             "trusted freeze-evidence SHA-256",
         )
-        _verified_registry_artifact(
-            registry.parent,
-            cache_root,
+        verify_registry_artifact(
             model["freezeEvidencePath"],
             freeze_evidence_sha256,
             "trusted freeze evidence",
@@ -791,6 +873,12 @@ def _load_trusted_promotion_context(
                 freeze_evidence_sha256=freeze_evidence_sha256,
             )
         )
+
+    participants = load_trusted_review_participants(
+        root["trustedReviewParticipants"],
+        verify_artifact=verify_registry_artifact,
+    )
+    participant_roles = trusted_review_participant_roles(participants)
 
     exposures: list[_TrustedCaseExposure] = []
     for value in _array(root["verifiedExposures"], "trusted case exposures"):
@@ -820,9 +908,7 @@ def _load_trusted_promotion_context(
             exposure["evidenceSha256"],
             "trusted exposure evidence SHA-256",
         )
-        _verified_registry_artifact(
-            registry.parent,
-            cache_root,
+        verify_registry_artifact(
             exposure["evidencePath"],
             evidence_sha256,
             "trusted exposure evidence",
@@ -835,6 +921,11 @@ def _load_trusted_promotion_context(
                 recorded_at_value,
                 "trusted exposure recording time",
             )
+        )
+        status = _enum(
+            exposure["status"],
+            _EXPOSURE_STATES,
+            "trusted exposure status",
         )
         exposures.append(
             _TrustedCaseExposure(
@@ -879,11 +970,7 @@ def _load_trusted_promotion_context(
                     exposure["modelRevision"],
                     "trusted exposure model revision",
                 ),
-                status=_enum(
-                    exposure["status"],
-                    _EXPOSURE_STATES,
-                    "trusted exposure status",
-                ),
+                status=status,
                 recorded_at_utc=recorded_at_utc,
                 evidence_uri=_evidence_uri(
                     exposure["evidenceUri"],
@@ -892,10 +979,18 @@ def _load_trusted_promotion_context(
                 evidence_sha256=evidence_sha256,
             )
         )
+
+    reference_reviews = load_trusted_reference_reviews(
+        root["verifiedReferenceReviews"],
+        participant_roles=participant_roles,
+        verify_artifact=verify_registry_artifact,
+    )
     context = _TrustedPromotionContext(
         scorer_lock_sha256=scorer_lock_sha256,
         expected_models=tuple(candidates),
         verified_exposures=tuple(exposures),
+        verified_reference_reviews=reference_reviews,
+        trusted_review_participants=participants,
         _seal=_PROMOTION_CONTEXT_SEAL,
     )
     _trusted_context_indexes(context)
@@ -928,7 +1023,12 @@ def _private_file(
     maximum_bytes: int,
     field: str,
 ) -> Path:
-    if not path.is_absolute() or path.is_symlink():
+    _drive, path_without_drive = os.path.splitdrive(str(path))
+    if (
+        not path.is_absolute()
+        or path.is_symlink()
+        or ":" in path_without_drive
+    ):
         raise ValueError(f"{field} must be an absolute real file")
     resolved = path.resolve(strict=True)
     if cache_root not in resolved.parents:
@@ -947,28 +1047,40 @@ def _verified_registry_artifact(
     relative_value: object,
     expected_sha256: str,
     field: str,
-) -> None:
+) -> bytes:
     if not isinstance(relative_value, str) or not relative_value:
         raise ValueError(f"{field} path is invalid")
-    relative = Path(relative_value)
-    if relative.is_absolute() or ".." in relative.parts:
-        raise ValueError(f"{field} path is invalid")
+    relative = _portable_registry_path(relative_value, field)
     artifact = _private_file(
         registry_root / relative,
         cache_root=cache_root,
         maximum_bytes=_MAX_TRUST_ARTIFACT_BYTES,
         field=field,
     )
-    if _sha256_file(artifact) != expected_sha256:
+    body = read_bounded_regular_file(
+        artifact,
+        maximum_bytes=_MAX_TRUST_ARTIFACT_BYTES,
+        field=field,
+        containment_root=cache_root,
+    )
+    if hashlib.sha256(body).hexdigest() != expected_sha256:
         raise ValueError(f"{field} differs from the trusted registry")
+    return body
 
 
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as source:
-        for body in iter(lambda: source.read(1024 * 1024), b""):
-            digest.update(body)
-    return digest.hexdigest()
+def _portable_registry_path(value: object, field: str) -> Path:
+    if not isinstance(value, str) or not value or len(value) > 1024:
+        raise ValueError(f"{field} path is invalid")
+    portable = PurePosixPath(value)
+    if not portable.parts or portable.is_absolute() or str(portable) != value:
+        raise ValueError(f"{field} path is invalid")
+    for segment in portable.parts:
+        if (
+            _PORTABLE_ARTIFACT_SEGMENT.fullmatch(segment) is None
+            or segment.split(".", 1)[0].upper() in _WINDOWS_RESERVED_NAMES
+        ):
+            raise ValueError(f"{field} path is invalid")
+    return Path(*portable.parts)
 
 
 def _trusted_context_indexes(
@@ -977,9 +1089,10 @@ def _trusted_context_indexes(
     str | None,
     dict[tuple[str, str], tuple[str, datetime, str]],
     dict[tuple[str, str, str], tuple[_TrustedCaseExposure, datetime | None]],
+    dict[str, tuple[str, TranscriptReferenceReviewReceipt]],
 ]:
     if context is None:
-        return None, {}, {}
+        return None, {}, {}, {}
     if (
         not isinstance(context, _TrustedPromotionContext)
         or context._seal is not _PROMOTION_CONTEXT_SEAL
@@ -993,6 +1106,7 @@ def _trusted_context_indexes(
     )
 
     models: dict[tuple[str, str], tuple[str, datetime, str]] = {}
+    trusted_review_participant_roles(context.trusted_review_participants)
     for candidate in context.expected_models:
         if not isinstance(candidate, _TrustedCandidateModel):
             raise ValueError("trusted candidate model is invalid")
@@ -1060,7 +1174,10 @@ def _trusted_context_indexes(
         )
         _sha256(exposure.evidence_sha256, "trusted exposure evidence SHA-256")
         exposures[key] = (exposure, recorded_at)
-    return scorer_lock_sha256, models, exposures
+    reference_reviews = index_trusted_reference_reviews(
+        context.verified_reference_reviews
+    )
+    return scorer_lock_sha256, models, exposures, reference_reviews
 
 
 def _require_trusted_promotion(
@@ -1071,16 +1188,41 @@ def _require_trusted_promotion(
         tuple[str, str, str],
         tuple[_TrustedCaseExposure, datetime | None],
     ],
+    trusted_reference_reviews: dict[
+        str, tuple[str, TranscriptReferenceReviewReceipt]
+    ],
     case_id: str,
     corpus_id: str,
     corpus_release: str,
     corpus_split: str,
     source_item_id: str,
+    source_uri: str,
+    suite_ids: tuple[str, ...],
+    condition_labels: tuple[str, ...],
     audio_sha256: str,
+    audio_byte_length: int,
     decoded_pcm_sha256: str,
+    duration_samples: int,
+    sample_rate_hz: int,
+    channels: int,
+    audio_codec: str,
     reference_sha256: str,
     evaluation_policy_sha256: str,
+    language_bcp47: str,
+    reference_tier: str,
+    reference_revision: str,
+    speaker_count: int,
+    timing_kind: str,
     recorded_at: datetime | None,
+    retrieved_at: datetime,
+    license_id: str,
+    license_text_sha256: str,
+    audio_rights_decision: str,
+    reference_rights_decision: str,
+    commercial_use: str,
+    redistribution: str,
+    reidentification_prohibited: bool,
+    known_defect_codes: tuple[str, ...],
     exposures: dict[tuple[str, str], tuple[str, str, str]],
 ) -> None:
     if not trusted_models and not trusted_exposures:
@@ -1129,53 +1271,62 @@ def _require_trusted_promotion(
             raise ValueError(
                 "trusted post-freeze evidence requires a later original recording"
             )
-
-
-def _object(value: object, keys: set[str], field: str) -> Mapping[str, object]:
-    if not isinstance(value, Mapping) or set(value) != keys:
-        raise ValueError(f"{field} fields differ from the contract")
-    return value
+    reference_review = trusted_reference_reviews.get(case_id)
+    if reference_review is None:
+        raise ValueError("independent promotion requires a human review receipt")
+    _receipt_sha256, receipt = reference_review
+    validate_promotion_reference_review(
+        receipt,
+        case_id=case_id,
+        corpus_id=corpus_id,
+        corpus_release=corpus_release,
+        corpus_split=corpus_split,
+        source_item_id=source_item_id,
+        source_uri=source_uri,
+        suite_ids=suite_ids,
+        condition_labels=condition_labels,
+        audio_sha256=audio_sha256,
+        audio_byte_length=audio_byte_length,
+        decoded_pcm_sha256=decoded_pcm_sha256,
+        duration_samples=duration_samples,
+        sample_rate_hz=sample_rate_hz,
+        channels=channels,
+        audio_codec=audio_codec,
+        reference_sha256=reference_sha256,
+        evaluation_policy_sha256=evaluation_policy_sha256,
+        language_bcp47=language_bcp47,
+        reference_tier=reference_tier,
+        reference_revision=reference_revision,
+        speaker_count=speaker_count,
+        timing_kind=timing_kind,
+        recorded_at=recorded_at,
+        retrieved_at=retrieved_at,
+        license_id=license_id,
+        license_text_sha256=license_text_sha256,
+        audio_rights_decision=audio_rights_decision,
+        reference_rights_decision=reference_rights_decision,
+        commercial_use=commercial_use,
+        redistribution=redistribution,
+        reidentification_prohibited=reidentification_prohibited,
+        known_defect_codes=known_defect_codes,
+        candidate_models={
+            identity: (candidate_lock_sha256, freeze_evidence_sha256)
+            for identity, (
+                candidate_lock_sha256,
+                _frozen_at,
+                freeze_evidence_sha256,
+            ) in trusted_models.items()
+        },
+        exposure_statuses={
+            identity: status
+            for identity, (status, _evidence_uri, _evidence_sha256) in exposures.items()
+        },
+    )
 
 
 def _array(value: object, field: str) -> list[object]:
     if not isinstance(value, list) or not value:
         raise ValueError(f"{field} must be a non-empty array")
-    return value
-
-
-def _identifier(value: object, field: str) -> str:
-    if not isinstance(value, str) or _IDENTIFIER.fullmatch(value) is None:
-        raise ValueError(f"{field} is invalid")
-    return value
-
-
-def _model_id(value: object, field: str) -> str:
-    if not isinstance(value, str) or _MODEL_ID.fullmatch(value) is None:
-        raise ValueError(f"{field} is invalid")
-    return value
-
-
-def _sha256(value: object, field: str) -> str:
-    if not isinstance(value, str) or _SHA256.fullmatch(value) is None:
-        raise ValueError(f"{field} is invalid")
-    return value
-
-
-def _positive_int(value: object, field: str) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or value < 1:
-        raise ValueError(f"{field} must be a positive integer")
-    return value
-
-
-def _nonnegative_int(value: object, field: str) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
-        raise ValueError(f"{field} must be a nonnegative integer")
-    return value
-
-
-def _https_uri(value: object, field: str) -> str:
-    if not isinstance(value, str) or not value.startswith("https://"):
-        raise ValueError(f"{field} must be an HTTPS URI")
     return value
 
 
@@ -1190,18 +1341,6 @@ def _canonical_utc_text(value: object, field: str) -> str:
     if not isinstance(value, str):
         raise ValueError(f"{field} is invalid")
     return value
-
-
-def _utc(value: object, field: str) -> datetime:
-    if not isinstance(value, str) or not value.endswith("Z"):
-        raise ValueError(f"{field} must be UTC")
-    try:
-        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
-    except ValueError as error:
-        raise ValueError(f"{field} is invalid") from error
-    if parsed.tzinfo != timezone.utc:
-        raise ValueError(f"{field} must be UTC")
-    return parsed
 
 
 def _bounded_text_array(value: object, field: str, *, allow_empty: bool) -> list[str]:
@@ -1256,10 +1395,13 @@ def _validate_derivation(
         allow_empty=True,
     )
     sources = tuple(
-        _sha256(source, "derivation source audio SHA-256") for source in raw_sources
+        _sha256(source, "derivation source audio SHA-256")
+        for source in raw_sources
     )
     if tuple(sorted(set(sources))) != sources:
-        raise ValueError("derivation source audio SHA-256 values must be unique and sorted")
+        raise ValueError(
+            "derivation source audio SHA-256 values must be unique and sorted"
+        )
     if operation == "generateSilence":
         if sources:
             raise ValueError("generated silence cannot claim a source recording")

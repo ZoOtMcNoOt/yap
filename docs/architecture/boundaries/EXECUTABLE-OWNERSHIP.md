@@ -399,7 +399,11 @@ owner's state but may not recreate its transition logic.
   processes, browser contexts, disposable installer environments, and GB10
   containers.
 - **Trust boundary:** toolchain versions, cache keys, process cleanup, artifact
-  hashes, and checked-head identity.
+  hashes, checked-head identity, and the private evaluation registry's separately
+  supplied digest. Independent ASR cases require registry-authorized human roles
+  and separately pinned assignment/review/adjudication/locale/rights artifacts;
+  neither the public manifest nor an individual model exposure can self-authorize
+  promotion.
 - **Dependencies/events:** focused suites feed the final matrix; hosted workflows
   validate the exact PR head. Production ASR, NeMo, and LID images exclude the
   `yap_server.evaluation` package; private qualification adds evaluation code or

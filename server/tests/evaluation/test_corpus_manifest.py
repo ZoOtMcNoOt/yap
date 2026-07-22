@@ -10,15 +10,20 @@ import unittest
 from unittest.mock import patch
 import wave
 
+from yap_server.evaluation import corpus_manifest as corpus_manifest_module
 from yap_server.evaluation.corpus_manifest import (
-    evaluation_policy_sha256,
+    load_corpus_manifest,
     load_promotion_corpus_manifest,
     validate_corpus_manifest,
 )
 from yap_server.evaluation.manifest_scoring import score_manifest_case
 from yap_server.evaluation.transcript_scoring import (
     critical_token_set_sha256,
-    current_scorer_lock,
+)
+from tests.evaluation.promotion_registry_fixture import (
+    file_sha256 as _sha256,
+    promotion_registry_fixture as _promotion_fixture,
+    write_json as _write_json,
 )
 
 
@@ -142,17 +147,6 @@ def _manifest(
     }
 
 
-def _write_json(path: Path, value: object) -> None:
-    path.write_text(
-        json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True),
-        encoding="utf-8",
-    )
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def _bind_pcm16_wav(
     manifest: dict[str, object],
     path: Path,
@@ -223,93 +217,6 @@ def _inference_result_lock(
     return path
 
 
-def _promotion_fixture(
-    root: Path,
-    manifest: dict[str, object],
-) -> tuple[Path, Path, dict[str, str]]:
-    root.mkdir(mode=0o700, parents=True, exist_ok=True)
-    scorer_lock_path = root / "scorer.lock.json"
-    _write_json(scorer_lock_path, current_scorer_lock())
-    manifest["scorerLockSha256"] = _sha256(scorer_lock_path)
-    registry_models: list[dict[str, object]] = []
-    candidate_models = manifest["candidateModels"]  # type: ignore[assignment]
-    for index, model in enumerate(candidate_models):
-        lock_path = root / f"candidate-{index}.lock.json"
-        freeze_path = root / f"candidate-{index}.freeze.json"
-        lock_path.write_bytes(f"candidate-lock-{index}".encode())
-        freeze_path.write_bytes(f"freeze-evidence-{index}".encode())
-        model["candidateLockSha256"] = _sha256(lock_path)
-        model["freezeEvidenceSha256"] = _sha256(freeze_path)
-        registry_models.append(
-            {
-                "id": model["id"],
-                "revision": model["revision"],
-                "candidateLockPath": lock_path.name,
-                "candidateLockSha256": model["candidateLockSha256"],
-                "frozenAtUtc": model["frozenAtUtc"],
-                "freezeEvidencePath": freeze_path.name,
-                "freezeEvidenceSha256": model["freezeEvidenceSha256"],
-            }
-        )
-
-    registry_exposures: list[dict[str, object]] = []
-    exposure_index = 0
-    for case in manifest["cases"]:  # type: ignore[union-attr]
-        corpus = case["corpus"]
-        audio = case["audio"]
-        reference = case["reference"]
-        for exposure in case["modelExposure"]:
-            evidence_path = root / f"exposure-{exposure_index}.json"
-            evidence_path.write_bytes(f"exposure-evidence-{exposure_index}".encode())
-            exposure["evidenceSha256"] = _sha256(evidence_path)
-            registry_exposures.append(
-                {
-                    "caseId": case["id"],
-                    "corpusId": corpus["id"],
-                    "corpusRelease": corpus["release"],
-                    "corpusSplit": corpus["split"],
-                    "sourceItemId": corpus["itemId"],
-                    "audioSha256": audio["sha256"],
-                    "decodedPcmSha256": audio["decodedPcmSha256"],
-                    "referenceSha256": reference["sha256"],
-                    "evaluationPolicySha256": evaluation_policy_sha256(
-                        language_bcp47=reference["languageBcp47"],
-                        scoring_profile=reference["scoringProfile"],
-                        punctuation_profile=reference["punctuationProfile"],
-                        critical_token_set_sha256=reference[
-                            "criticalTokenSetSha256"
-                        ],
-                    ),
-                    "modelId": exposure["modelId"],
-                    "modelRevision": exposure["modelRevision"],
-                    "status": exposure["status"],
-                    "recordedAtUtc": audio["recordedAtUtc"],
-                    "evidenceUri": exposure["evidenceUri"],
-                    "evidencePath": evidence_path.name,
-                    "evidenceSha256": exposure["evidenceSha256"],
-                }
-            )
-            exposure_index += 1
-
-    registry_path = root / "promotion-registry.json"
-    _write_json(
-        registry_path,
-        {
-            "schemaVersion": 1,
-            "scorerLockPath": scorer_lock_path.name,
-            "scorerLockSha256": manifest["scorerLockSha256"],
-            "candidateModels": registry_models,
-            "verifiedExposures": registry_exposures,
-        },
-    )
-    manifest_path = root / "corpus-manifest.json"
-    _write_json(manifest_path, manifest)
-    environ = {
-        "YAP_EVAL_CACHE": str(root),
-        "YAP_EVAL_PROMOTION_REGISTRY_SHA256": _sha256(registry_path),
-    }
-    return manifest_path, registry_path, environ
-
 
 def _load_promotion(
     manifest_path: Path,
@@ -321,6 +228,53 @@ def _load_promotion(
 
 
 class CorpusManifestExposureTests(unittest.TestCase):
+    def test_manifest_loader_rejects_duplicate_json_keys(self) -> None:
+        encoded = json.dumps(
+            _manifest(purpose="comparator", exposure="unknown"),
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+        encoded = encoded.replace(
+            b'"schemaVersion":2',
+            b'"schemaVersion":999,"schemaVersion":2',
+            1,
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "duplicate-key-manifest.json"
+            path.write_bytes(encoded)
+
+            with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
+                load_corpus_manifest(path)
+
+    def test_registry_artifact_hashing_rechecks_the_bounded_open(self) -> None:
+        maximum_bytes = 16 * 1024 * 1024
+        oversized = b"x" * (maximum_bytes + 1)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            artifact = root / "exposure-proof.bin"
+            artifact.write_bytes(b"initial")
+            original_private_file = corpus_manifest_module._private_file
+
+            def replace_after_initial_check(*args, **kwargs):
+                resolved = original_private_file(*args, **kwargs)
+                resolved.write_bytes(oversized)
+                return resolved
+
+            with patch.object(
+                corpus_manifest_module,
+                "_private_file",
+                side_effect=replace_after_initial_check,
+            ):
+                with self.assertRaisesRegex(ValueError, "size"):
+                    corpus_manifest_module._verified_registry_artifact(
+                        root,
+                        root,
+                        artifact.name,
+                        hashlib.sha256(oversized).hexdigest(),
+                        "trusted exposure evidence",
+                    )
+
     def test_promotion_manifest_must_remain_in_the_private_cache(self) -> None:
         manifest = _manifest(
             purpose="independentPromotion",
@@ -337,6 +291,62 @@ class CorpusManifestExposureTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "inside YAP_EVAL_CACHE"):
                 _load_promotion(outside_manifest, registry_path, environ)
+
+    def test_registry_artifact_paths_use_a_portable_non_ads_grammar(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="contractually_excluded",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest_path, registry_path, environ = _promotion_fixture(
+                Path(temporary),
+                manifest,
+            )
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["scorerLockPath"] = "carrier.json:hidden-review"
+            _write_json(registry_path, registry)
+            environ["YAP_EVAL_PROMOTION_REGISTRY_SHA256"] = _sha256(registry_path)
+
+            with self.assertRaisesRegex(ValueError, "path is invalid"):
+                _load_promotion(manifest_path, registry_path, environ)
+
+    def test_duplicate_review_cases_fail_before_private_artifact_io(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="contractually_excluded",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest_path, registry_path, environ = _promotion_fixture(root, manifest)
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            review = registry["verifiedReferenceReviews"][0]
+            registry["verifiedReferenceReviews"].append(deepcopy(review))
+            (root / review["reviewReceiptPath"]).unlink()
+            _write_json(registry_path, registry)
+            environ["YAP_EVAL_PROMOTION_REGISTRY_SHA256"] = _sha256(registry_path)
+
+            with self.assertRaisesRegex(ValueError, "case IDs must be unique"):
+                _load_promotion(manifest_path, registry_path, environ)
+
+    def test_registry_preserves_the_receipt_specific_size_bound(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="contractually_excluded",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest_path, registry_path, environ = _promotion_fixture(root, manifest)
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            review = registry["verifiedReferenceReviews"][0]
+            review_path = root / review["reviewReceiptPath"]
+            body = review_path.read_bytes()
+            review_path.write_bytes(body + b" " * (512 * 1024 + 1 - len(body)))
+            review["reviewReceiptSha256"] = _sha256(review_path)
+            _write_json(registry_path, registry)
+            environ["YAP_EVAL_PROMOTION_REGISTRY_SHA256"] = _sha256(registry_path)
+
+            with self.assertRaisesRegex(ValueError, "review receipt size"):
+                _load_promotion(manifest_path, registry_path, environ)
 
     def test_promotion_registry_binds_scorer_and_case_evaluation_policy(
         self,
@@ -488,7 +498,351 @@ class CorpusManifestExposureTests(unittest.TestCase):
                         registry_path,
                         environ,
                     )
-                self.assertEqual(loaded["cases"][0]["purpose"], "independentPromotion")
+                self.assertEqual(
+                    loaded["cases"][0]["purpose"], "independentPromotion"
+                )
+
+    def test_every_independent_claim_requires_a_hash_bound_human_review(self) -> None:
+        for exposure in ("created_after_model_freeze", "contractually_excluded"):
+            with (
+                self.subTest(exposure=exposure),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                manifest = _manifest(
+                    purpose="independentPromotion",
+                    exposure=exposure,
+                )
+                manifest_path, registry_path, environ = _promotion_fixture(
+                    Path(directory),
+                    manifest,
+                    include_reference_review=False,
+                )
+                with self.assertRaisesRegex(ValueError, "review receipt"):
+                    _load_promotion(manifest_path, registry_path, environ)
+
+    def test_one_case_review_is_not_duplicated_as_model_exposure_evidence(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="created_after_model_freeze",
+        )
+        second_model = deepcopy(manifest["candidateModels"][0])  # type: ignore[index]
+        second_model["id"] = "candidate/second-model"
+        second_model["revision"] = "revision-2"
+        manifest["candidateModels"].append(second_model)  # type: ignore[union-attr]
+        second_exposure = deepcopy(
+            manifest["cases"][0]["modelExposure"][0]  # type: ignore[index]
+        )
+        second_exposure["modelId"] = second_model["id"]
+        second_exposure["modelRevision"] = second_model["revision"]
+        manifest["cases"][0]["modelExposure"].append(  # type: ignore[index]
+            second_exposure
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest_path, registry_path, environ = _promotion_fixture(
+                Path(temporary),
+                manifest,
+            )
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(registry["schemaVersion"], 2)
+            self.assertEqual(len(registry["verifiedReferenceReviews"]), 1)
+            review_path = registry["verifiedReferenceReviews"][0][
+                "reviewReceiptPath"
+            ]
+            exposure_paths = {
+                exposure["evidencePath"]
+                for exposure in registry["verifiedExposures"]
+            }
+            self.assertEqual(len(exposure_paths), 2)
+            self.assertNotIn(review_path, exposure_paths)
+            _load_promotion(manifest_path, registry_path, environ)
+
+    def test_reviewed_rights_and_known_defects_bind_the_promoted_case(self) -> None:
+        rights_mutations = {
+            "licenseId": "different-approved-license",
+            "licenseTextSha256": "1" * 64,
+            "redistribution": "allowed",
+            "reidentificationProhibited": False,
+        }
+        for field, value in rights_mutations.items():
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary:
+                manifest = _manifest(
+                    purpose="independentPromotion",
+                    exposure="created_after_model_freeze",
+                )
+                manifest_path, registry_path, environ = _promotion_fixture(
+                    Path(temporary),
+                    manifest,
+                )
+                changed = json.loads(manifest_path.read_text(encoding="utf-8"))
+                changed["cases"][0]["rights"][field] = value
+                _write_json(manifest_path, changed)
+
+                with self.assertRaisesRegex(ValueError, "review.*rights"):
+                    _load_promotion(manifest_path, registry_path, environ)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest = _manifest(
+                purpose="independentPromotion",
+                exposure="created_after_model_freeze",
+            )
+            manifest_path, registry_path, environ = _promotion_fixture(
+                Path(temporary),
+                manifest,
+            )
+            changed = json.loads(manifest_path.read_text(encoding="utf-8"))
+            changed["cases"][0]["knownDefects"] = ["speaker-overlap-omitted"]
+            _write_json(manifest_path, changed)
+
+            with self.assertRaisesRegex(ValueError, "known defects"):
+                _load_promotion(manifest_path, registry_path, environ)
+
+    def test_independent_review_uses_known_defect_codes_without_breaking_comparators(
+        self,
+    ) -> None:
+        for defects in (["free form defect"], ["duplicate", "duplicate"]):
+            with self.subTest(defects=defects):
+                comparator = _manifest(purpose="comparator", exposure="unknown")
+                comparator["cases"][0]["knownDefects"] = defects  # type: ignore[index]
+                validate_corpus_manifest(comparator)
+
+                promotion = _manifest(
+                    purpose="independentPromotion",
+                    exposure="contractually_excluded",
+                )
+                promotion["cases"][0]["knownDefects"] = defects  # type: ignore[index]
+                with self.assertRaisesRegex(ValueError, "known defect codes"):
+                    validate_corpus_manifest(promotion)
+
+    def test_review_binds_source_coverage_and_audio_metadata(self) -> None:
+        mutations = (
+            (("corpus", "sourceUri"), "https://example.invalid/other-source"),
+            (("corpus", "retrievedAtUtc"), "2026-07-04T00:00:00Z"),
+            (("suiteIds",), ["approved-private", "asr-runtime-promotion"]),
+            (("conditionLabels",), ["clean", "farField", "readSpeech"]),
+            (("audio", "byteLength"), 32_046),
+            (("audio", "durationSamples"), 16_001),
+            (("audio", "sampleRateHz"), 8_000),
+            (("audio", "channels"), 2),
+            (("audio", "codec"), "flac"),
+            (("reference", "tier"), "approvedPrivate"),
+            (("reference", "revision"), "reference-2"),
+            (("reference", "speakerCount"), 2),
+            (("reference", "timingKind"), "manual"),
+        )
+        for field_path, value in mutations:
+            with (
+                self.subTest(field_path=field_path),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                manifest = _manifest(
+                    purpose="independentPromotion",
+                    exposure="created_after_model_freeze",
+                )
+                manifest_path, registry_path, environ = _promotion_fixture(
+                    Path(temporary),
+                    manifest,
+                )
+                changed = json.loads(manifest_path.read_text(encoding="utf-8"))
+                target = changed["cases"][0]
+                for field in field_path[:-1]:
+                    target = target[field]
+                target[field_path[-1]] = value
+                _write_json(manifest_path, changed)
+
+                with self.assertRaisesRegex(ValueError, "human review receipt"):
+                    _load_promotion(manifest_path, registry_path, environ)
+
+    def test_review_participants_require_registry_authorization(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="created_after_model_freeze",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest_path, registry_path, environ = _promotion_fixture(root, manifest)
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            participant = next(
+                item
+                for item in registry["trustedReviewParticipants"]
+                if item["participantId"] == "reviewer-a"
+            )
+            participant["roles"] = ["adjudicator"]
+            authorization_path = root / participant["authorizationPath"]
+            _write_json(
+                authorization_path,
+                {
+                    "schemaVersion": 1,
+                    "participantId": "reviewer-a",
+                    "roles": ["adjudicator"],
+                },
+            )
+            participant["authorizationSha256"] = _sha256(authorization_path)
+            _write_json(registry_path, registry)
+            environ["YAP_EVAL_PROMOTION_REGISTRY_SHA256"] = _sha256(registry_path)
+
+            with self.assertRaisesRegex(ValueError, "authorized listener"):
+                _load_promotion(manifest_path, registry_path, environ)
+
+    def test_review_support_artifacts_are_independently_hash_bound(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="created_after_model_freeze",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest_path, registry_path, environ = _promotion_fixture(root, manifest)
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            artifact = registry["verifiedReferenceReviews"][0][
+                "supportingArtifacts"
+            ][0]
+            (root / artifact["artifactPath"]).write_bytes(b"tampered support")
+
+            with self.assertRaisesRegex(ValueError, "trusted registry"):
+                _load_promotion(manifest_path, registry_path, environ)
+
+    def test_blind_assignment_excludes_peer_reviews_and_model_hypotheses(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="created_after_model_freeze",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest_path, registry_path, environ = _promotion_fixture(root, manifest)
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            reference_review = registry["verifiedReferenceReviews"][0]
+            assignment = next(
+                artifact
+                for artifact in reference_review["supportingArtifacts"]
+                if artifact["kind"] == "blindAssignment"
+            )
+            assignment_path = root / assignment["artifactPath"]
+            assignment_payload = json.loads(
+                assignment_path.read_text(encoding="utf-8")
+            )
+            assignment_payload["excludedInputs"] = ["modelHypotheses"]
+            _write_json(assignment_path, assignment_payload)
+            assignment["artifactSha256"] = _sha256(assignment_path)
+
+            review_path = root / reference_review["reviewReceiptPath"]
+            review_payload = json.loads(review_path.read_text(encoding="utf-8"))
+            review_payload["preparation"]["assignmentSha256"] = assignment[
+                "artifactSha256"
+            ]
+            for listener in review_payload["reviews"]:
+                listener["assignmentSha256"] = assignment["artifactSha256"]
+            _write_json(review_path, review_payload)
+            reference_review["reviewReceiptSha256"] = _sha256(review_path)
+            _write_json(registry_path, registry)
+            environ["YAP_EVAL_PROMOTION_REGISTRY_SHA256"] = _sha256(registry_path)
+
+            with self.assertRaisesRegex(ValueError, "independent listener inputs"):
+                _load_promotion(manifest_path, registry_path, environ)
+
+    def test_listener_artifact_decision_matches_the_review_packet(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="created_after_model_freeze",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest_path, registry_path, environ = _promotion_fixture(root, manifest)
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            listener = next(
+                artifact
+                for artifact in registry["verifiedReferenceReviews"][0][
+                    "supportingArtifacts"
+                ]
+                if artifact["kind"] == "listenerReview"
+            )
+            listener_path = root / listener["artifactPath"]
+            listener_payload = json.loads(listener_path.read_text(encoding="utf-8"))
+            listener_payload["decision"] = "exclude"
+            _write_json(listener_path, listener_payload)
+            listener["artifactSha256"] = _sha256(listener_path)
+
+            review_entry = registry["verifiedReferenceReviews"][0]
+            review_path = root / review_entry["reviewReceiptPath"]
+            review_payload = json.loads(review_path.read_text(encoding="utf-8"))
+            reviewer_id = listener["participantId"]
+            packet_listener = next(
+                item
+                for item in review_payload["reviews"]
+                if item["reviewerId"] == reviewer_id
+            )
+            previous_receipt_sha256 = packet_listener["receiptSha256"]
+            packet_listener["receiptSha256"] = listener["artifactSha256"]
+            review_payload["adjudication"]["reviewReceiptSha256s"] = [
+                listener["artifactSha256"]
+                if value == previous_receipt_sha256
+                else value
+                for value in review_payload["adjudication"][
+                    "reviewReceiptSha256s"
+                ]
+            ]
+            _write_json(review_path, review_payload)
+            review_entry["reviewReceiptSha256"] = _sha256(review_path)
+            _write_json(registry_path, registry)
+            environ["YAP_EVAL_PROMOTION_REGISTRY_SHA256"] = _sha256(registry_path)
+
+            with self.assertRaisesRegex(ValueError, "does not match the review packet"):
+                _load_promotion(manifest_path, registry_path, environ)
+
+    def test_source_identity_receipt_cannot_relabel_the_recording_time(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="created_after_model_freeze",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest_path, registry_path, environ = _promotion_fixture(root, manifest)
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            review_entry = registry["verifiedReferenceReviews"][0]
+            source_identity = next(
+                artifact
+                for artifact in review_entry["supportingArtifacts"]
+                if artifact["kind"] == "sourceIdentity"
+            )
+            source_path = root / source_identity["artifactPath"]
+            source_payload = json.loads(source_path.read_text(encoding="utf-8"))
+            source_payload["recordedAtUtc"] = "2020-01-01T00:00:00Z"
+            _write_json(source_path, source_payload)
+            source_identity["artifactSha256"] = _sha256(source_path)
+
+            review_path = root / review_entry["reviewReceiptPath"]
+            review_payload = json.loads(review_path.read_text(encoding="utf-8"))
+            review_payload["source"]["sourceIdentityReceiptSha256"] = (
+                source_identity["artifactSha256"]
+            )
+            _write_json(review_path, review_payload)
+            review_entry["reviewReceiptSha256"] = _sha256(review_path)
+            _write_json(registry_path, registry)
+            environ["YAP_EVAL_PROMOTION_REGISTRY_SHA256"] = _sha256(registry_path)
+
+            with self.assertRaisesRegex(ValueError, "source identity receipt"):
+                _load_promotion(manifest_path, registry_path, environ)
+
+    def test_matching_fractional_recording_time_remains_exact(self) -> None:
+        manifest = _manifest(
+            purpose="independentPromotion",
+            exposure="created_after_model_freeze",
+        )
+        manifest["cases"][0]["audio"]["recordedAtUtc"] = (  # type: ignore[index]
+            "2026-07-02T00:00:00.500Z"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest_path, registry_path, environ = _promotion_fixture(
+                Path(temporary),
+                manifest,
+            )
+
+            loaded = _load_promotion(manifest_path, registry_path, environ)
+
+            self.assertEqual(
+                loaded["cases"][0]["audio"]["recordedAtUtc"],
+                "2026-07-02T00:00:00.500Z",
+            )
 
     def test_independent_claim_cannot_trust_its_own_manifest_evidence(self) -> None:
         manifest = _manifest(
@@ -960,7 +1314,7 @@ class ManifestScoringTests(unittest.TestCase):
             changed_case["audio"]["durationSamples"] = 16_000 * 60 * 60 * 4
             _write_json(manifest_path, changed_manifest)
             with patch.dict(os.environ, environ, clear=False):
-                with self.assertRaisesRegex(ValueError, "audio shape"):
+                with self.assertRaisesRegex(ValueError, "human review receipt"):
                     score_manifest_case(
                         manifest_path=manifest_path,
                         registry_path=registry_path,

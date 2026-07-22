@@ -63,14 +63,33 @@ The corpus manifest cannot attest to its own cleanliness. The only supported
 `independentPromotion` entrypoint loads a reviewed registry under
 `YAP_EVAL_CACHE`, verifies it against the separately supplied
 `YAP_EVAL_PROMOTION_REGISTRY_SHA256` trust anchor, and hash-checks every private
-candidate-lock, freeze, and exposure-evidence artifact before constructing an
-internal promotion context. That context freezes the exact candidate-lock
+candidate-lock, freeze, exposure-evidence, participant-authorization, and
+reference-review artifact before constructing an internal promotion context.
+Every independent case, including contractually excluded material, requires one
+case-level transcript-free review receipt rather than copying the same receipt
+into each model exposure. The registry authorizes two distinct listeners, an
+independent adjudicator, a locale reviewer, and a rights decision owner, and
+separately pins the blind assignment, listener, adjudication, locale, rights,
+source-identity, attribution, and preprocessing artifacts referenced by the
+receipt. The blind assignment must exclude peer reviews and model hypotheses. A
+BCP 47 tag with locale subtags requires human exact-locale adjudication; a base
+source language marker cannot establish `es-ES`, `en-GB`, `zh-Hans`, or another
+specific locale.
+That context freezes the exact candidate-lock
 SHA-256, model ID/revision, freeze time and freeze-evidence hash, then binds each
 exposure decision and evidence URI to the case ID, corpus release/split/item,
 raw and decoded audio hashes, reference hash, original recording time, and
 evidence hash. Ordinary manifest validation never accepts an independent claim.
 Candidate omission, a backdated freeze, invented or changed exclusion evidence,
 registry tampering, or any binding mismatch fails closed.
+Receipt and registry JSON reject duplicate keys, and bounded artifact identity
+is checked on the same opened file handle used for the read. That handle must
+remain inside the private cache, including across reparse-point races; portable
+artifact paths reject NTFS alternate streams, duplicate review IDs fail before
+artifact I/O, and a registry-wide byte budget bounds work. Source URI/retrieval time,
+suite/condition labels, audio shape, speaker/timing metadata, reviewed rights,
+reidentification policy, known-defect codes, and fractional UTC timestamps must
+match the promoted case exactly.
 Schema v2 permits only natural source recordings as independent quality cases;
 concatenated, looped, perturbed, and generated inputs remain comparator or
 runtime evidence. Repeated raw or decoded audio may appear only once per
@@ -85,6 +104,10 @@ No reviewed promotion registry or trust-anchor value is present in this
 repository today. The public comparator and runtime paths therefore remain
 promotion-ineligible, and loading an independent manifest without the private,
 out-of-band-pinned registry fails.
+The executable schema prevents duplicate case reviews inside one registry, but
+does not invent a cross-registry consumed-case ledger. Selection freshness,
+one-time holdout consumption, and retirement after tuning remain external human
+evidence that must be pinned before a real promotion.
 
 | Candidate revision | Public source | Exposure decision | Permitted claim |
 | --- | --- | --- | --- |
@@ -325,13 +348,16 @@ public artifacts.
 classification and prevents unknown/exposed cases from being labeled as
 independent promotion evidence. Independent claims additionally require
 `load_promotion_corpus_manifest`, a private registry, its out-of-band SHA-256,
-and verified candidate-lock/freeze/exposure artifacts; values copied from the
-manifest are not a trust source. The loader compares the complete candidate set
-and case-bound exposure evidence, admits only natural source audio, rejects
-repeated raw or decoded audio, and requires source release/split/item identity,
-hashes, duration/format, reference tier and adjudication, license-scope
-decisions, known defects, and a later original recording timestamp for a
-post-freeze claim.
+verified candidate-lock/freeze/exposure artifacts, and one independently pinned
+human-reference review per promotion case; values copied from the manifest are
+not a trust source. The review registry authorizes participant roles and binds
+separate blind-assignment, listener, adjudication, exact-locale, rights-owner,
+source-identity, attribution, and preprocessing receipts. The loader compares
+the complete candidate set and case-bound exposure evidence, admits only natural
+source audio, rejects repeated raw or decoded audio, and requires source
+release/split/item identity, hashes, duration/format, reference tier and
+adjudication, exact reviewed rights and known defects, and a later original
+recording timestamp for a post-freeze claim.
 The registry also binds the exact scorer-lock digest and a canonical per-case
 evaluation-policy digest covering language, primary profile, punctuation
 profile, and critical-token policy identity. `score_manifest_case` is the only
@@ -360,14 +386,18 @@ text, and fixes `accuracySampleIncrement` to zero. A runtime adapter accepts a
 runtime track only when every source is covered by the locked fixture
 provenance, suppresses WER, and emits `independentPromotionEligible: false`.
 
-The adjudication workflow preserves the upstream reference and records all
-changes separately. Two independent reviewers mark words, meaningful
-non-speech events, overlap, speaker, inaudible spans, and source time. An
-adjudicator resolves disagreements. The signed reference revision includes the
-normalization policy, reviewer roles, disagreement counts, allowed alternatives,
-and hashes. Domain experts separately review medical/device entities and units.
-Adjudication improves label quality but does not cure model exposure; those are
-separate manifest decisions.
+The executable packet preserves upstream and final reference hashes, two
+independent listener results, and an adjudicated result; any changed listener
+decision or reference hash requires explicit reason codes. It includes an
+evaluation-policy digest, participant roles, human exact-locale basis, rights
+decision owner, known-defect codes, and artifact hashes without placing
+transcript text or paths in Git; the registry separately pins the scorer
+implementation lock. A versioned contract for word/non-speech/overlap/speaker/
+inaudible/source-time annotations and allowed transcript alternatives remains
+open workflow/evidence work and is not accepted by the current scorer. Domain
+experts must separately review medical/device entities and units before those
+claims can pass. Adjudication improves label quality but does not cure model
+exposure; those are separate manifest decisions.
 
 ## Coverage matrix
 

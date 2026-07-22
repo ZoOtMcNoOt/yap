@@ -147,6 +147,23 @@ reference worker. Its successful 908-case GB10 run is descriptive regression
 evidence and does not own runtime routing, model promotion, capacity, or product
 result publication.
 
+Independent-promotion loading additionally uses a private, out-of-band-digest-
+pinned registry. It binds the complete frozen candidate/exposure set and one
+case-level human-reference receipt, authorizes the required listener,
+adjudicator, locale, and rights roles, and verifies separate blind-assignment,
+review, adjudication, locale, rights, attribution, and preprocessing artifacts.
+The source-identity receipt separately binds the corpus item and source URI,
+snapshot, original recording/retrieval times, upstream URIs, and
+original/reference/legal hashes. The receipt also fixes suite/condition labels,
+speaker/timing metadata, and canonical audio shape. Bounded same-open reads
+verify the opened handle remains inside the private cache; portable paths reject
+Windows alternate streams, while duplicate JSON keys, replacement, excessive
+aggregate I/O, and oversize fail closed. The receipt must match exact rights,
+defects, locale, and timestamp. No real
+reviewed registry or second-locale gold case exists yet, so this executing trust
+boundary is not promotion evidence and leaves the representative Phase 6 gate
+open.
+
 ADR 0025 replaces the attempted universal ASR plane with provider-specific
 runtimes behind Yap's existing worker-neutral contracts. Cohere batch now has a
 digest-pinned NVIDIA vLLM 26.06 candidate: vLLM owns model residency and

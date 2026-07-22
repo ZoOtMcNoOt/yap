@@ -313,6 +313,15 @@ per-case results, and diagnostics remain in the private external screen. Two
 independent listens, adjudication, complete source attribution, and the frozen
 representative gate remain required.
 
+The shared promotion loader now has an executable case-level review contract:
+both post-freeze and contractually excluded cases require two registry-authorized
+listeners, an independent adjudicator, an authorized locale reviewer and rights
+decision owner, and separately hash-pinned support artifacts. This prevents
+either provider's model exposure record from doubling as human-reference
+proof. No such real private
+receipt or trust anchor exists yet, so neither provider's evidence status or ADR
+completion score changes.
+
 ## Source-exact image smokes (not promotion)
 
 At executable commit `fcccf21e785b116b92cd8e46150a36b9b5ee91db`, the full
