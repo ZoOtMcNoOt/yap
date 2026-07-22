@@ -167,6 +167,18 @@ function requireOutsideRepository(candidate: string, label: string) {
   }
 }
 
+function requireInsideEvidenceRoot(candidate: string, label: string) {
+  const relative = path.relative(evidenceRoot, candidate);
+  if (
+    relative === ""
+    || relative === ".."
+    || relative.startsWith(`..${path.sep}`)
+    || path.isAbsolute(relative)
+  ) {
+    throw new Error(`${label} must stay beneath the protected target-client evidence root.`);
+  }
+}
+
 function requireReleaseBinary() {
   const expected = path.join(desktopRoot, "src-tauri", "target", "release", binaryName);
   if (!sameWindowsPath(appBinaryPath, expected)) {
@@ -269,6 +281,7 @@ requireStimulusIdentity();
 requireOutsideRepository(evidenceRoot, "Target-client evidence");
 requireOutsideRepository(modelsRoot, "Target-client models");
 requireOutsideRepository(powerThermalEvidencePath, "Target-client power/thermal evidence");
+requireInsideEvidenceRoot(powerThermalEvidencePath, "Target-client power/thermal evidence");
 requireRealDirectory(evidenceRoot, "Target-client evidence root");
 requireRealDirectory(modelsRoot, "Target-client models root");
 requireRealFile(powerThermalEvidencePath, "Target-client power/thermal evidence");
