@@ -302,7 +302,7 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
                 ),
                 patch(
                     "yap_server.evaluation.provider_runtime_qualification."
-                    "_resident_metrics_observer",
+                    "resident_metrics_observer",
                     return_value=None,
                 ),
             ):

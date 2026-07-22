@@ -129,6 +129,13 @@ Only the selected cell's audio is admitted, the loaded tracks are reused by the
 runner, and the suite plus selected audio are re-read before evidence is
 published.
 
+The resident exact-duration runner selects only the matching unpaced plan
+ladder, executes each duration once at c1, and may add the exact four-hour
+boundary only to `batch-file`. Its aggregate is explicitly scoped to duration
+transport and lifecycle and carries no representative-accuracy claim. Natural
+WER, deterministic long-form sentinel integrity, concurrency, and provider
+promotion remain independent evidence even when every duration completes.
+
 That decision covers base-model and adapter/fine-tune lineage, and transformed
 copies inherit their source exposure. Missing lineage evidence stays `unknown`.
 The manifest is not its own trust root: independent cases use the dedicated

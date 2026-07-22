@@ -172,6 +172,19 @@ ordered requirement provenance, every track-manifest hash, and the plus-one
 rejection boundary without recording source paths or transcripts. Building the
 suite prepares inputs only; it does not execute or satisfy a provider gate.
 
+Run one resident provider's plan-owned duration ladder with
+`python -m yap_server.evaluation.resident_provider_duration_qualification`.
+The command accepts only the Cohere vLLM batch ladder or the Nemotron NeMo
+finalized-utterance/batch ladders; the exact four-hour boundary may be added only
+to a batch run. It executes each selected duration once at c1, binds the clean
+checked head, serving lock, plan, private suite, and selected audio, and repeats
+the candidate and input read-back before atomically publishing private aggregate
+evidence. The aggregate labels its scope as duration transport and lifecycle and
+sets `representativeAccuracyClaim` to false. A passing run therefore proves that
+the exact inputs completed and published bounded results through that resident
+provider; representative WER, long-form sentinel integrity, concurrency, and
+promotion remain separate gates.
+
 Run a standard resident load cell with
 `python -m yap_server.evaluation.provider_runtime_qualification`. The command
 requires `--checked-head`, the absolute `--repository-root`, the plan, exact

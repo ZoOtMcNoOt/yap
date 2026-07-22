@@ -264,7 +264,7 @@ def run_provider_load_case(
                 isinstance(completed, int)
                 and completed >= load_case.minimum_completions
             )
-            summary["expectationMet"] = _standard_expectation_met(
+            summary["expectationMet"] = standard_provider_expectation_met(
                 summary,
                 request_count=len(requests),
             )
@@ -319,7 +319,7 @@ def run_resident_provider_load_case(
         timeout_seconds=timeout_seconds_per_wave,
         lock=lock,
     )
-    metrics_observer = _resident_metrics_observer(
+    metrics_observer = resident_metrics_observer(
         system_id=load_case.system_id,
         endpoint=endpoint,
     )
@@ -349,7 +349,7 @@ def run_resident_provider_load_case(
         worker.close()
 
 
-def _standard_expectation_met(
+def standard_provider_expectation_met(
     summary: Mapping[str, object],
     *,
     request_count: int,
@@ -507,7 +507,7 @@ def build_resident_worker(
     raise ValueError("runtime load case is not a resident provider scenario")
 
 
-def _resident_metrics_observer(
+def resident_metrics_observer(
     *,
     system_id: str,
     endpoint: str,

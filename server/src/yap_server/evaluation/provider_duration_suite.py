@@ -71,11 +71,27 @@ class LoadedProviderDurationSuite:
     cache_root: Path
     tracks: tuple[tuple[int, LoadedDurationTrack], ...]
 
+    def indexed_tracks_for(
+        self,
+        duration_samples: Sequence[int],
+    ) -> dict[int, LoadedDurationTrack]:
+        selected = self._tracks_for(duration_samples)
+        return {duration: track for duration, track in selected}
+
     def manifest_paths_for(self, duration_samples: Sequence[int]) -> tuple[Path, ...]:
         """Return each requested duration once, preserving caller order."""
 
+        return tuple(
+            track.audio_path.parent / "manifest.json"
+            for _duration, track in self._tracks_for(duration_samples)
+        )
+
+    def _tracks_for(
+        self,
+        duration_samples: Sequence[int],
+    ) -> tuple[tuple[int, LoadedDurationTrack], ...]:
         indexed = dict(self.tracks)
-        selected: list[Path] = []
+        selected: list[tuple[int, LoadedDurationTrack]] = []
         seen: set[int] = set()
         for value in duration_samples:
             duration = _positive_int(value, "requested provider duration")
@@ -84,7 +100,7 @@ class LoadedProviderDurationSuite:
             track = indexed.get(duration)
             if track is None:
                 raise ValueError("provider duration suite omitted a requested track")
-            selected.append(track.audio_path.parent / "manifest.json")
+            selected.append((duration, track))
             seen.add(duration)
         if not selected:
             raise ValueError("provider duration selection must not be empty")
@@ -103,7 +119,7 @@ class ProviderLoadCaseDurationTracks:
     def indexed_tracks(self) -> dict[int, LoadedDurationTrack]:
         """Return a fresh exact-duration index for one qualification runner."""
 
-        indexed = dict(self.suite.tracks)
+        indexed = self.suite.indexed_tracks_for(self.duration_samples)
         if set(indexed) != set(self.duration_samples):
             raise ValueError("provider duration tracks differ from the selected load case")
         return indexed
@@ -120,11 +136,29 @@ def bind_provider_load_case_tracks(
     evidence: Mapping[str, object],
     tracks: ProviderLoadCaseDurationTracks,
 ) -> dict[str, object]:
+    return bind_provider_duration_suite(
+        evidence,
+        suite=tracks.suite,
+        duration_samples=tracks.duration_samples,
+    )
+
+
+def bind_provider_duration_suite(
+    evidence: Mapping[str, object],
+    *,
+    suite: LoadedProviderDurationSuite,
+    duration_samples: Sequence[int],
+) -> dict[str, object]:
+    selected_durations = list(suite.indexed_tracks_for(duration_samples))
     bound = dict(evidence)
     if "durationSuite" in bound:
         raise ValueError("provider evidence already contains a duration-suite binding")
     bound.pop("evidenceSha256", None)
-    bound["durationSuite"] = tracks.public_identity()
+    bound["durationSuite"] = {
+        "sha256": suite.suite_sha256,
+        "planSha256": suite.plan_sha256,
+        "selectedDurationSamples": selected_durations,
+    }
     return bound
 
 
@@ -133,16 +167,29 @@ def verify_provider_load_case_tracks_unchanged(
     *,
     plan_path: Path,
 ) -> None:
+    verify_provider_duration_suite_unchanged(
+        tracks.suite,
+        duration_samples=tracks.duration_samples,
+        plan_path=plan_path,
+    )
+
+
+def verify_provider_duration_suite_unchanged(
+    suite: LoadedProviderDurationSuite,
+    *,
+    duration_samples: Sequence[int],
+    plan_path: Path,
+) -> None:
     """Re-read a private suite and its selected audio before publishing evidence."""
 
     current = load_provider_duration_suite(
-        suite_path=tracks.suite.suite_path,
-        expected_sha256=tracks.suite.suite_sha256,
+        suite_path=suite.suite_path,
+        expected_sha256=suite.suite_sha256,
         plan_path=plan_path,
-        required_duration_samples=tracks.duration_samples,
-        environ={"YAP_EVAL_CACHE": str(tracks.suite.cache_root)},
+        required_duration_samples=duration_samples,
+        environ={"YAP_EVAL_CACHE": str(suite.cache_root)},
     )
-    if current != tracks.suite:
+    if current != suite:
         raise ValueError("provider duration suite changed during qualification")
 
 

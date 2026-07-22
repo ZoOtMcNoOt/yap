@@ -23,7 +23,7 @@ CHECKED_HEAD = "a" * 40
 
 
 class ProviderCheckedCandidateEntrypointTests(unittest.TestCase):
-    def test_every_provider_entrypoint_requires_and_publishes_a_checked_candidate(
+    def test_every_provider_load_case_entrypoint_binds_a_checked_candidate(
         self,
     ) -> None:
         cases = (

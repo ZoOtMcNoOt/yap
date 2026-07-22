@@ -933,7 +933,7 @@ hash, and every track-manifest hash in private `suite.json`. Focused tests prove
 the selection and privacy-safe manifest contract. Building these inputs is not
 runtime evidence and does not consume the frozen gate.
 
-The four provider workload CLIs now require that suite plus its out-of-band
+The five provider workload CLIs now require that suite plus its out-of-band
 SHA-256 instead of accepting an operator-assembled list of track manifests. The
 loader performs bounded duplicate-key-safe reads, requires the private real
 cache/collection boundary, matches the exact current plan and ordered
@@ -953,6 +953,17 @@ its unchanged 200-request short-tail cell. Evidence records selected
 concurrencies, repeat count, per-run repetition, and the aggregate completed
 request count. Focused tests cover valid selection and fail-closed unplanned or
 unbounded requests; no GB10 workload was consumed.
+
+The exact-duration entry point is also executable but unconsumed. It selects
+only a plan-owned unpaced ladder for the matching resident provider, permits the
+exact four-hour boundary only with `batch-file`, and executes every selected
+duration once at c1 through the normal checked worker contract. Its aggregate
+binds the clean head, serving lock, plan, suite, and selected audio before and
+after execution, reports provider metrics, and explicitly declares
+`qualificationScope: duration-transport-and-lifecycle` plus
+`representativeAccuracyClaim: false`. It cannot substitute repeated-looped audio
+for sentinel integrity, representative quality, concurrency, or provider
+promotion evidence.
 
 The standard resident-load runner is now executable from the locked plan and
 requires every exact-duration track and result beneath the real private
@@ -974,7 +985,7 @@ detected `en-US` source-span evidence; exact rendered-text parity remains a
 separate diagnostic. Focused portable tests cover these
 runners, but their frozen GB10 executions and promotion decisions remain open.
 
-All four provider workload entry points plus the resource-qualification entry
+All five provider workload entry points plus the resource-qualification entry
 point now require the full candidate Git SHA and absolute repository root. A
 shared guard admits only the exact clean worktree, hash-binds the runtime plan
 and selected provider-serving lock, then repeats both Git-state and input reads

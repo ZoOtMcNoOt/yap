@@ -55,6 +55,13 @@ licensed fixture, so this is duration/lifecycle evidence only; sentinel-rich
 long-form correctness, representative quality, frozen p50/p95/p99 capacity, and
 provider promotion remain open.
 
+The checked-head resident exact-duration runner is now executable under focused
+tests but has not consumed the frozen gate. It selects only the plan-owned Cohere
+vLLM or Nemotron NeMo unpaced ladders, runs each exact duration once at c1, and
+can include the four-hour boundary only for batch. Its evidence explicitly says
+`duration-transport-and-lifecycle` and `representativeAccuracyClaim: false`;
+quality, sentinel integrity, concurrency, and promotion remain separate.
+
 The provider-qualification code now separates ordinary load, cancellation,
 capacity, and fixed/automatic-language semantics. vLLM cancellation evidence
 retains engine finish reasons and recognizes that the pinned external-disconnect
