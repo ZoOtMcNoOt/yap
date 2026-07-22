@@ -174,10 +174,13 @@ suite prepares inputs only; it does not execute or satisfy a provider gate.
 
 Run a standard resident load cell with
 `python -m yap_server.evaluation.provider_runtime_qualification`. The command
-requires the plan, exact model lock, one manifest for every duration used by the
-selected cell, numeric-loopback endpoint, route languages, private output root,
-and timeout. `YAP_EVAL_CACHE` must name the absolute private cache containing
-both tracks and output; the provider API key stays in its existing environment
+requires `--checked-head`, the absolute `--repository-root`, the plan, exact
+provider-serving lock, one manifest for every duration used by the selected
+cell, numeric-loopback endpoint, route languages, private output root, and
+timeout. It admits only that exact clean Git head, hashes the plan and serving
+lock, and repeats the Git/input read-back before publishing a rehashed candidate
+envelope. `YAP_EVAL_CACHE` must name the absolute private cache containing both
+tracks and output; the provider API key stays in its existing environment
 variable. The runner fails closed on cancellation, fixed/automatic parity, and
 capacity cells because those require specialized semantics rather than an
 ordinary synchronized wave.
@@ -205,9 +208,9 @@ they require one non-empty lexical identity for every repeated immutable input
 while reporting exact rendered identity counts separately. Representative
 quality scoring still evaluates punctuation against adjudicated references, so
 this stability rule cannot turn punctuation regressions into passing quality.
-All three commands use the same private-cache and aggregate-evidence rules as
-the standard runner. Their existence does not consume the frozen checked-head
-gate.
+All three commands use the same private-cache, clean checked-head/input
+read-back, and aggregate-evidence rules as the standard runner. Their existence
+does not consume the frozen checked-head gate.
 
 `provider_resource_observations` samples cgroup-v2 current/peak/composition,
 memory events, CPU/task counts, and the container entrypoint's RSS/thread/
@@ -220,7 +223,9 @@ entrypoint virtual allocation extent. Cgroup RSS regression/range stays visible
 because unified-memory residency may oscillate, but it is not mislabeled as
 growing live state. Both current-source profiles pass the executable eleven-
 check contract and clean teardown; the Phase 6 requirement remains unfulfilled
-until the frozen-head run passes it.
+until the frozen-head run passes it. The command requires the checked head,
+repository root, and provider-serving lock and performs the same pre/post
+candidate read-back before publishing its aggregate.
 
 The Windows desktop reaches this profile only through an explicitly started
 SSH local forward to `127.0.0.1:18765`. No TLS endpoint, firewall opening, DNS,

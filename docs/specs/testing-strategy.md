@@ -116,6 +116,14 @@ evidence and deterministic duration/load evidence are separate requirements.
 quality case also carries a model-revision exposure decision; public benchmark
 membership does not prove the model did not train on it. Only contractually
 excluded or post-model-freeze sealed cases support independent promotion.
+
+Resident-provider qualification aggregates additionally bind the full checked
+Git head, clean worktree state, runtime-plan hash, and exact provider-serving
+lock hash. The runner reads those identities before work and again before
+publishing the evidence envelope. This prevents an otherwise valid private
+result from being relabeled as evidence for a later candidate; the enclosing
+GB10 lifecycle gate must still attest the launched image and teardown boundary.
+
 That decision covers base-model and adapter/fine-tune lineage, and transformed
 copies inherit their source exposure. Missing lineage evidence stays `unknown`.
 The manifest is not its own trust root: independent cases use the dedicated

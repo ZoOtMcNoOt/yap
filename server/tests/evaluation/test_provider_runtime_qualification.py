@@ -15,6 +15,7 @@ from yap_server.evaluation.provider_runtime_qualification import (
     VllmQualificationMetricsObserver,
     run_provider_load_case,
     run_resident_provider_load_case,
+    validate_resident_provider_lock,
 )
 from yap_server.evaluation.runtime_plan import load_runtime_evaluation_plan
 from yap_server.evaluation.vllm_runtime_metrics import (
@@ -22,6 +23,7 @@ from yap_server.evaluation.vllm_runtime_metrics import (
     VllmMetricsSnapshot,
 )
 from yap_server.pools.batch_contract import AsrRouteDecision, BatchAsrJob
+from yap_server.pools.model_lock import load_model_pool_lock
 
 
 SERVER_ROOT = Path(__file__).resolve().parents[2]
@@ -56,6 +58,31 @@ class _Worker:
         }
         job.result_path.write_text(json.dumps(result), encoding="utf-8")
         return result
+
+
+class ProviderServingLockTests(unittest.TestCase):
+    def test_only_the_matching_serving_lock_is_admitted(self) -> None:
+        validate_resident_provider_lock(
+            "vllm-cohere-batch",
+            load_model_pool_lock(SERVER_ROOT / "cohere-vllm-serving.lock.json"),
+        )
+        validate_resident_provider_lock(
+            "nemo-nemotron-finalized",
+            load_model_pool_lock(SERVER_ROOT / "nemotron-nemo-serving.lock.json"),
+        )
+
+        for system_id, lock_name in (
+            ("vllm-cohere-batch", "model-pools.lock.json"),
+            ("nemo-nemotron-finalized", "nemotron-model-pool.lock.json"),
+            ("vllm-cohere-batch", "nemotron-nemo-serving.lock.json"),
+            ("nemo-nemotron-finalized", "cohere-vllm-serving.lock.json"),
+        ):
+            with self.subTest(system_id=system_id, lock_name=lock_name):
+                with self.assertRaisesRegex(ValueError, "provider-serving lock"):
+                    validate_resident_provider_lock(
+                        system_id,
+                        load_model_pool_lock(SERVER_ROOT / lock_name),
+                    )
 
 
 class _Factory:

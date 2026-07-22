@@ -953,6 +953,16 @@ detected `en-US` source-span evidence; exact rendered-text parity remains a
 separate diagnostic. Focused portable tests cover these
 runners, but their frozen GB10 executions and promotion decisions remain open.
 
+All four provider workload entry points plus the resource-qualification entry
+point now require the full candidate Git SHA and absolute repository root. A
+shared guard admits only the exact clean worktree, hash-binds the runtime plan
+and selected provider-serving lock, then repeats both Git-state and input reads
+before any evidence file is published. The final candidate envelope replaces
+and recomputes the aggregate evidence hash. Focused tests cover clean admission,
+dirty/head/input drift rejection, the complete binding, and every entry point.
+This closes stale-development-evidence reuse in the runner contract; it does not
+attest the separately launched image or consume any GB10 workload.
+
 Focused dirty-head GB10 duration controls completed 30-second c2 plus c1
 2-minute, 15-minute, two-hour, and exact four-hour repeated-fixture inputs for
 both candidates. The four-hour vLLM control took 49,896 ms with 4.272 GiB

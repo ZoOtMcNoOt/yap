@@ -8,6 +8,10 @@ from pathlib import Path
 import stat
 from typing import Mapping, Sequence
 
+from yap_server.evaluation.checked_candidate import (
+    admit_checked_candidate,
+    bind_checked_candidate_evidence,
+)
 from yap_server.evaluation.provider_runtime_qualification import (
     write_private_evidence,
 )
@@ -549,6 +553,9 @@ def _parser() -> argparse.ArgumentParser:
         description="Summarize private resident-provider cgroup observations",
     )
     parser.add_argument("--samples", type=Path, required=True)
+    parser.add_argument("--checked-head", required=True)
+    parser.add_argument("--repository-root", type=Path, required=True)
+    parser.add_argument("--provider-serving-lock", type=Path, required=True)
     parser.add_argument("--workload-start-ms", type=int, required=True)
     parser.add_argument("--workload-end-ms", type=int, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -561,6 +568,19 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
+    plan_path = (
+        arguments.plan.resolve(strict=True) if arguments.plan is not None else None
+    )
+    serving_lock_path = arguments.provider_serving_lock.resolve(strict=True)
+    candidate = admit_checked_candidate(
+        repository_root=arguments.repository_root,
+        checked_head=arguments.checked_head,
+        input_paths=(
+            (serving_lock_path,)
+            if plan_path is None
+            else (plan_path, serving_lock_path)
+        ),
+    )
     cache_root = _private_cache_root(os.environ)
     evidence: dict[str, object] = summarize_provider_resources(
         load_private_resource_samples(arguments.samples),
@@ -578,7 +598,7 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError(
                 "provider resource qualification arguments must be provided together"
             )
-        plan = load_runtime_evaluation_plan(arguments.plan)
+        plan = load_runtime_evaluation_plan(plan_path)
         profile = select_runtime_resource_profile(plan, arguments.system_id)
         evidence = qualify_provider_resources(
             evidence,
@@ -586,6 +606,8 @@ def main(argv: list[str] | None = None) -> int:
             completed_request_count=arguments.completed_request_count,
             concurrency=arguments.concurrency,
         )
+    candidate.verify_unchanged()
+    evidence = bind_checked_candidate_evidence(evidence, candidate)
     output = _private_output(arguments.output, cache_root=cache_root)
     write_private_evidence(output, evidence)
     print(json.dumps(evidence, ensure_ascii=True, separators=(",", ":"), sort_keys=True))

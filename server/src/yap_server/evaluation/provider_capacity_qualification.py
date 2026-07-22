@@ -10,6 +10,10 @@ import threading
 import time
 from typing import Mapping, Protocol
 
+from yap_server.evaluation.checked_candidate import (
+    admit_checked_candidate,
+    bind_checked_candidate_evidence,
+)
 from yap_server.evaluation.provider_qualification_requests import (
     LockedProviderRequestFactory,
 )
@@ -24,6 +28,7 @@ from yap_server.evaluation.provider_runtime_qualification import (
     build_resident_worker,
     load_exact_tracks,
     resident_provider_configuration,
+    validate_resident_provider_lock,
     write_private_evidence,
 )
 from yap_server.evaluation.runtime_plan import (
@@ -337,6 +342,7 @@ def run_resident_provider_capacity_case(
     if set(tracks) != expected_durations:
         raise ValueError("duration tracks differ from the capacity load case")
     lock = load_model_pool_lock(model_lock_path)
+    validate_resident_provider_lock(load_case.system_id, lock)
     request_factory = LockedProviderRequestFactory(
         system_id=load_case.system_id,
         provider_id=provider_id,
@@ -546,6 +552,8 @@ def _parser() -> argparse.ArgumentParser:
         description="Run one private resident-provider capacity qualification",
     )
     parser.add_argument("--plan", type=Path, required=True)
+    parser.add_argument("--checked-head", required=True)
+    parser.add_argument("--repository-root", type=Path, required=True)
     parser.add_argument("--load-case", required=True)
     parser.add_argument("--model-lock", type=Path, required=True)
     parser.add_argument(
@@ -564,10 +572,17 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
+    plan_path = arguments.plan.resolve(strict=True)
+    model_lock_path = arguments.model_lock.resolve(strict=True)
+    candidate = admit_checked_candidate(
+        repository_root=arguments.repository_root,
+        checked_head=arguments.checked_head,
+        input_paths=(plan_path, model_lock_path),
+    )
     qualification = run_resident_provider_capacity_case(
-        plan_path=arguments.plan,
+        plan_path=plan_path,
         load_case_id=arguments.load_case,
-        model_lock_path=arguments.model_lock,
+        model_lock_path=model_lock_path,
         track_manifest_paths=tuple(arguments.track_manifest),
         endpoint=arguments.endpoint,
         catalog_language=arguments.catalog_language,
@@ -575,7 +590,11 @@ def main(argv: list[str] | None = None) -> int:
         output_root=arguments.output_root,
         timeout_seconds=arguments.timeout_seconds,
     )
-    evidence = qualification.public_evidence()
+    candidate.verify_unchanged()
+    evidence = bind_checked_candidate_evidence(
+        qualification.public_evidence(),
+        candidate,
+    )
     write_private_evidence(arguments.output_root / "evidence.json", evidence)
     print(json.dumps(evidence, ensure_ascii=True, separators=(",", ":"), sort_keys=True))
     return 0 if qualification.passed else 1

@@ -7,6 +7,10 @@ import os
 from pathlib import Path
 from typing import Mapping, Protocol
 
+from yap_server.evaluation.checked_candidate import (
+    admit_checked_candidate,
+    bind_checked_candidate_evidence,
+)
 from yap_server.evaluation.duration_tracks import (
     LoadedDurationTrack,
     load_duration_track,
@@ -46,6 +50,14 @@ _RESIDENT_PROVIDER_IDS = {
 _RESIDENT_API_KEY_ENVIRONMENTS = {
     "vllm-cohere-batch": "YAP_COHERE_VLLM_API_KEY",
     "nemo-nemotron-finalized": "YAP_NEMOTRON_NEMO_API_KEY",
+}
+_RESIDENT_LOCK_BOUNDARIES = {
+    "vllm-cohere-batch": ("cohere-batch", "vllm", "nvcr.io/nvidia/vllm"),
+    "nemo-nemotron-finalized": (
+        "nemotron-batch",
+        "nemo",
+        "nvcr.io/nvidia/pytorch",
+    ),
 }
 
 
@@ -257,6 +269,7 @@ def run_resident_provider_load_case(
     if not api_key:
         raise ValueError(f"{api_key_environment} is required for qualification")
     lock = load_model_pool_lock(model_lock_path)
+    validate_resident_provider_lock(load_case.system_id, lock)
     worker = build_resident_worker(
         system_id=load_case.system_id,
         endpoint=endpoint,
@@ -345,6 +358,24 @@ def resident_provider_configuration(system_id: str) -> tuple[str, str]:
     if provider_id is None or api_key_environment is None:
         raise ValueError("runtime load case is not a resident provider scenario")
     return provider_id, api_key_environment
+
+
+def validate_resident_provider_lock(
+    system_id: str,
+    lock: ModelPoolLock,
+) -> None:
+    expected = _RESIDENT_LOCK_BOUNDARIES.get(system_id)
+    if expected is None:
+        raise ValueError("runtime load case is not a resident provider scenario")
+    expected_pool, expected_engine, expected_image = expected
+    if (
+        lock.pool_id != expected_pool
+        or lock.engine != expected_engine
+        or lock.runtime_image != expected_image
+        or lock.runtime_platform != "linux/arm64"
+        or lock.runtime_python_version != "3.12"
+    ):
+        raise ValueError("qualification requires the matching provider-serving lock")
 
 
 def load_exact_tracks(
@@ -439,6 +470,8 @@ def _parser() -> argparse.ArgumentParser:
         description="Run one private resident-provider load qualification",
     )
     parser.add_argument("--plan", type=Path, required=True)
+    parser.add_argument("--checked-head", required=True)
+    parser.add_argument("--repository-root", type=Path, required=True)
     parser.add_argument("--load-case", required=True)
     parser.add_argument("--model-lock", type=Path, required=True)
     parser.add_argument(
@@ -457,10 +490,17 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
+    plan_path = arguments.plan.resolve(strict=True)
+    model_lock_path = arguments.model_lock.resolve(strict=True)
+    candidate = admit_checked_candidate(
+        repository_root=arguments.repository_root,
+        checked_head=arguments.checked_head,
+        input_paths=(plan_path, model_lock_path),
+    )
     qualification = run_resident_provider_load_case(
-        plan_path=arguments.plan,
+        plan_path=plan_path,
         load_case_id=arguments.load_case,
-        model_lock_path=arguments.model_lock,
+        model_lock_path=model_lock_path,
         track_manifest_paths=tuple(arguments.track_manifest),
         endpoint=arguments.endpoint,
         catalog_language=arguments.catalog_language,
@@ -468,7 +508,11 @@ def main(argv: list[str] | None = None) -> int:
         output_root=arguments.output_root,
         timeout_seconds_per_wave=arguments.timeout_seconds_per_wave,
     )
-    evidence = qualification.public_evidence()
+    candidate.verify_unchanged()
+    evidence = bind_checked_candidate_evidence(
+        qualification.public_evidence(),
+        candidate,
+    )
     write_private_evidence(arguments.output_root / "evidence.json", evidence)
     print(json.dumps(evidence, ensure_ascii=True, separators=(",", ":"), sort_keys=True))
     return 0 if qualification.passed else 1
