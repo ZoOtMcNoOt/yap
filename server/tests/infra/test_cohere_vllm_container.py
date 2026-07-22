@@ -51,8 +51,18 @@ class CohereVllmContainerContractTests(unittest.TestCase):
         )
         self.assertIn("PYTHONPATH=/opt/yap-vllm-compatibility", dockerfile)
         self.assertIn(
-            "from vllm.model_executor.models.cohere_asr import "
-            "CohereAsrForConditionalGeneration",
+            'm.distribution("vllm").locate_file('
+            '"vllm/model_executor/models/cohere_asr.py")',
+            dockerfile,
+        )
+        self.assertIn('"class CohereAsrForConditionalGeneration"', dockerfile)
+        self.assertIn(
+            "from torchaudio.functional import melscale_fbanks",
+            dockerfile,
+        )
+        self.assertIn("chmod -R a+rX", dockerfile)
+        self.assertNotIn(
+            "from vllm.model_executor.models.cohere_asr import",
             dockerfile,
         )
         self.assertIn("SPDX-License-Identifier: BSD-2-Clause", compatibility)
