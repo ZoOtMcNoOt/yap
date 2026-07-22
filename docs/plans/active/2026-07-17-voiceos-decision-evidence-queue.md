@@ -129,13 +129,18 @@ zero-choice state rather than inferred model support.
 - [ ] Measure checked-head peak RSS and sustained CPU on GB10 inside the final
   Phase 6 resource gate.
 
-Focused 2026-07-22 evidence built the dirty-source ARM64 image as
+Focused 2026-07-22 evidence first built the dirty-source ARM64 image as
 `yap-lid:focused-4e36c3-v2`, enforced the immutable 107-label encoder/output
 contract, and completed a hardened networkless real-checkpoint worker smoke
 without SpeechBrain's prior inferred-label-count warning. Twenty directly
-affected Python 3.12 tests passed. The final checked-head image/resource item
-remains open; shell-observed container wall time is not peak-RSS or target-i5
-evidence.
+affected Python 3.12 tests passed. A later source-exact GB10 run at executable
+commit `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` built the platform-manifest-
+pinned image and exercised the real `ContainerLidWorker` over two bounded
+eight-second probes; both returned the expected English raw label and teardown
+left no owned container or listener. The owner-restricted receipt remains
+outside Git. This closes image execution only: checked-head peak RSS, sustained
+CPU, target-i5 behavior, representative promotion, and the complete resource
+gate remain open.
 
 ### P6-04 — Local language spans and fixed/dynamic ASR
 
@@ -324,6 +329,16 @@ evidence.
 - [ ] Promote each runtime only on its own frozen checked-head evidence with
   rollback proof; keep Yap/Rust authoritative for jobs, sessions, routes,
   retry, admission, and validation.
+
+Focused source-exact GB10 integration at executable commit
+`fcccf21e785b116b92cd8e46150a36b9b5ee91db` ran the full locked Cohere model
+through `VllmTranscriptionClient` and the full locked Nemotron model through
+`NemotronNemoBatchWorker`. Both returned bounded hash-receipted results and left
+no owned container or listener. The Cohere image also ran as the intended
+non-root runtime identity. Receipts remain in owner-restricted evidence outside
+Git. These smokes close basic checked-image/model/adapter execution only; they do
+not close the still-unchecked reference, representative, percentile, resource,
+capacity, failure, rollback, or promotion requirements above.
 
 #### Retired Triton evidence
 

@@ -15,6 +15,14 @@ allocation extent, CUDA allocation/reservation, task/thread counts, and memory
 events; version 5 of the runtime plan freezes separate GB10 ceilings for the
 vLLM and NeMo candidates before the checked-head run. The retired Triton
 experiment remains negative evidence.
+Source-exact focused GB10 image smokes now also exist for Cohere vLLM and
+Nemotron NeMo at executable commit
+`fcccf21e785b116b92cd8e46150a36b9b5ee91db`, and for the isolated SpeechBrain
+component at executable commit
+`04266c4bbffd0fd31eaf2afd0bcce42e0248344f`. They prove that the locked full
+models execute through Yap's real adapters with clean container/listener
+teardown. They do not satisfy the separate frozen representative, resource,
+duration, concurrency, promotion, or complete Phase 6 gates.
 Fail-closed English
 Cohere attention alignment also executes and has current-source contained GB10
 lifecycle evidence without being advertised. The tiny SpeechFlow LID13 challenger
@@ -560,8 +568,19 @@ persists request identity and origin before POST, verifies response/catalog/
 source identity, records bounded evidence, and reconciles cancellation after a
 restart. Focused Python 3.12 and Rust tests cover lock validation, materializing
 only the selected probes, backpressure, cleanup fencing, redacted HTTP errors,
-user confirmation, retention, retry, and cancellation. Building and exercising
-the checked-head image on GB10 remains part of the one-time Phase 6 gate.
+user confirmation, retention, retry, and cancellation.
+
+At exact executable source SHA
+`04266c4bbffd0fd31eaf2afd0bcce42e0248344f`, the platform-manifest-pinned image
+`sha256:bd40223cd296447a91be55f480713f8cb767628302d5e770d543fbafe1aeca4f`
+built without the earlier constant-platform warning and ran the real
+`ContainerLidWorker` on GB10. The offline CPU worker admitted two bounded
+eight-second probes from one exact 30-second source, returned the expected
+English raw label for both, and left no owned container or listener. The
+owner-restricted receipt remains outside Git. This closes the missing
+source-exact image-execution prerequisite; checked-head peak RSS, sustained CPU,
+representative promotion, and the complete one-time Phase 6 resource gate remain
+open.
 
 A 2026-07-22 dirty-source ARM64 build (`yap-lid:focused-4e36c3-v2`, image ID
 `sha256:cca5fc10e8ab6d457852579de9328275d8e5aa905713aa54000a0db4a76f47f5`)
@@ -801,6 +820,20 @@ switch promotion and the frozen runtime parity rerun remain open.
 - [ ] Promote each provider runtime only on its own frozen checked-head evidence
       with rollback proof and review. Persistent supervised multi-owner capacity
       remains Phase 10.
+
+At exact executable source SHA
+`fcccf21e785b116b92cd8e46150a36b9b5ee91db`, focused GB10 smokes exercised both
+full locked models through Yap's production adapters. The non-root Cohere image
+`sha256:761d78efa390f84168827fb5f1075faa7720053efbc122fa74d76273d4a483bf`
+ran `VllmTranscriptionClient`, produced a bounded hash-receipted result, and
+cleanly removed its container and listener. The Nemotron image
+`sha256:174003c3ae20347be46df255a3965ffaf5d0dd08ab21c77c2e07a9736611bfeb`
+ran `NemotronNemoBatchWorker` against an exact 30-second track, returned a
+bounded `en-US` result, and also tore down cleanly. The private receipts remain
+outside Git. These source-exact integration smokes do not prove the full
+reference comparison, representative locale/duration matrix, percentile or
+resource ceilings, failure/capacity behavior, or rollback, so the frozen
+provider checkboxes remain open.
 
 The local duration runner is now executable but has not been consumed. It
 streams the plan's exact 250-ms, 500-ms, 750-ms, one-second, 1.12-second,

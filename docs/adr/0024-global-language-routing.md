@@ -96,6 +96,14 @@ slice, but it is not the intended global product:
   cache-aware scheduler, authenticated adapter, image, and launcher also execute
   under focused tests; it remains a candidate rather than a selected live
   service.
+- Source-exact focused GB10 smokes at executable commit
+  `fcccf21e785b116b92cd8e46150a36b9b5ee91db` ran the locked Cohere and Nemotron
+  models through Yap's real vLLM and NeMo adapters and cleaned up their
+  containers/listeners. A separate source-exact run at
+  `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` exercised the isolated SpeechBrain
+  CPU image through the real `ContainerLidWorker` over both bounded probes.
+  These close image/model/adapter execution prerequisites only; frozen resource,
+  representative, duration, concurrency, and promotion gates remain open.
 - Cohere does not return dependable word timestamps. Downstream meeting
   evidence needs timing, but invented or structurally invalid word intervals
   are worse than an explicit unavailable result.
@@ -640,7 +648,9 @@ resident-memory, battery/thermal, packaging, and rollback evidence.
        route passes its promotion gate.
 4. [x] Produce advisory Silero VAD segments without deleting source audio.
 5. [x] Package the pinned CPU SpeechBrain component and immutable model lock;
-       keep checked-head image execution in the final Phase 6 gate.
+       retain the source-exact GB10 image-execution receipt and keep peak RSS,
+       sustained CPU, representative promotion, and complete resource evidence
+       in the final Phase 6 gate.
 6. [x] Preserve Whisper-tiny and the other released candidates as measured
        comparators; implement the accepted AmberNet 1.12.0 QDQ INT8 component
        with exact frontend/label/runtime identity and a verified local-import

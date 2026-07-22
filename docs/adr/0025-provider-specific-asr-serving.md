@@ -313,6 +313,24 @@ per-case results, and diagnostics remain in the private external screen. Two
 independent listens, adjudication, complete source attribution, and the frozen
 representative gate remain required.
 
+## Source-exact image smokes (not promotion)
+
+At executable commit `fcccf21e785b116b92cd8e46150a36b9b5ee91db`, the full
+locked Cohere model ran through Yap's real `VllmTranscriptionClient` in the
+non-root image
+`sha256:761d78efa390f84168827fb5f1075faa7720053efbc122fa74d76273d4a483bf`.
+It produced one bounded hash-receipted public-fixture result and removed its
+container and listener. The full locked Nemotron model separately ran through
+`NemotronNemoBatchWorker` in image
+`sha256:174003c3ae20347be46df255a3965ffaf5d0dd08ab21c77c2e07a9736611bfeb`
+against an exact 30-second track, produced a bounded `en-US` result, and also
+tore down cleanly. Owner-restricted receipts remain outside Git.
+
+These focused smokes establish source-exact container, model, adapter, and
+teardown integration. They do not satisfy the frozen reference comparison,
+representative locale/duration, p50/p95/p99, resource, capacity, failure,
+cancellation, recovery, rollback, or promotion requirements below.
+
 ## Required evidence before promotion
 
 Each frozen GB10 comparison must cover exact model/runtime identity, reference

@@ -175,6 +175,12 @@ preserving execution serialized model calls without a demonstrated throughput
 gain. SGLang remains a later agent/LLM choice, and persistent supervised
 production deployment remains Phase 10 work.
 
+Source-exact focused GB10 smokes at executable commit
+`fcccf21e785b116b92cd8e46150a36b9b5ee91db` additionally ran each full locked
+model through its real Yap adapter and left no owned container or listener. They
+close basic image/model/adapter integration only; the frozen comparisons and
+promotion gates above remain open.
+
 Provider admission has two explicit owners. Cohere's resident vLLM process
 uses `--max-num-seqs 8` for active scheduling and may queue internally; it is
 not treated as a reliable HTTP 429 source. Yap's batch pool therefore owns the
@@ -309,7 +315,12 @@ quality claim. The isolated SpeechBrain CPU preflight now executes behind the
 server capability catalog: at most two speech-rich windows are copied into a
 transient non-root, offline Python 3.12 worker, and its uncalibrated suggestion
 remains inert until the user confirms it. Request origin/identity, cleanup,
-restart cancellation, and evidence are durable and bounded. A server Nemotron
+restart cancellation, and evidence are durable and bounded. At exact executable
+source SHA `04266c4bbffd0fd31eaf2afd0bcce42e0248344f`, the platform-manifest-pinned
+image exercised the real `ContainerLidWorker` on both bounded probes and removed
+its owned container/listener; the private receipt stays outside Git. Peak RSS,
+sustained CPU, target-i5 behavior, and the complete resource gate remain open. A
+server Nemotron
 worker, explicit automatic-job language tags, fail-closed Cohere attention
 alignment, the Cohere vLLM adapter, and the resident NeMo worker/service/image/
 launcher now execute as locked focused slices. Separate focused GB10 service
