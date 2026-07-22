@@ -12,7 +12,7 @@ use super::super::{
     stream::{self, LiveStreamEngine, StreamLanguageTransition, StreamMessage},
 };
 use super::inference::LiveInferenceBundle;
-use super::language_session::{LanguageFramePlan, LiveLanguageSession};
+use super::language_session::{LanguageFramePlan, ResidentLanguageSession};
 use super::session_identity::active_session_matches;
 use super::stream_events::{LiveStreamEventSink, TauriLiveStreamEventSink};
 use super::warmup::SharedWarmup;
@@ -72,7 +72,7 @@ impl From<StreamFinishStatus> for StreamFinishReport {
 
 struct StreamWorker {
     engine: LiveStreamEngine,
-    language: LiveLanguageSession,
+    language: ResidentLanguageSession,
     buffer: Vec<f32>,
     buffer_start: usize,
     profile: StreamProfile,
@@ -303,7 +303,7 @@ impl StreamWorker {
         } = inference;
         Self {
             engine,
-            language: LiveLanguageSession::new(
+            language: ResidentLanguageSession::new(
                 language_pipeline,
                 primary_language_bcp47,
                 initial_language_degradation,

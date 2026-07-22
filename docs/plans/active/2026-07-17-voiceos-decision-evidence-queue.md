@@ -281,10 +281,19 @@ gate remain open.
   diagnostic closed an overlapping-window retention defect, accepted the
   boundary within 250 ms, and routed all 192,000 samples exactly once;
   representative continuity proof remains below.
-- [ ] Prove offline switching and within-utterance spans on natural and
-  constructed switch points, related languages, short speech, noise, silence,
-  overlap, rapid false-switch pressure, restart, cancellation, and resource
-  exhaustion.
+- [x] Prove the deterministic Rust-owner safety layer for offline switching and
+  within-utterance spans: exact-once constructed handoff, short-speech flush,
+  rapid/false-switch and ambiguity hold, weak/no-speech and unsupported-label
+  fallback, overlapping detector retention, detector-failure drain, transactional
+  holdback-exhaustion fallback, pending-state cancellation/restart isolation, and
+  visible primary operation when detector artifacts are unavailable. Focused
+  verification passed 123 language-related tests with eight real-model/private
+  collectors intentionally ignored.
+- [ ] Complete target-i5 installed-artifact offline execution, sustained-session
+  restart/cancellation, rendered-UI/capture interference, energy/thermal, and
+  resource-teardown evidence. Preserve the completed natural, constructed,
+  related-language, noise, silence, and overlap results as-is; the failed natural
+  quality target remains the Preview limitation and is not rerun.
 - [x] Carry one versioned span contract into server work. Independent server
   evidence may be reconciled or rejected but cannot silently mutate the client
   decision history.

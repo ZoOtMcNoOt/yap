@@ -6,10 +6,13 @@ use crate::{
             LiveLanguageDegradation, LiveLanguageEvidence, LiveLanguageMode, LiveLanguageStatus,
         },
     },
+    stt::ambernet_language_detector::AmberNetSileroLanguageDetector,
 };
 
 use super::super::{
-    language_pipeline::{LanguagePipelineBatch, LanguagePipelineError, ResidentLanguagePipeline},
+    language_pipeline::{
+        LanguagePipelineBatch, LanguagePipelineError, LanguageWindowDetector, LiveLanguagePipeline,
+    },
     language_router::{LanguageAudioAction, LanguageRoutingError},
     source_audio::{observed_frame_range, SourceAudioError},
 };
@@ -27,8 +30,11 @@ pub(super) struct LanguageFinishPlan {
 }
 
 /// Session-scoped policy state around one resident detector instance.
-pub(super) struct LiveLanguageSession {
-    pipeline: Option<ResidentLanguagePipeline>,
+pub(super) struct LiveLanguageSession<D>
+where
+    D: LanguageWindowDetector,
+{
+    pipeline: Option<LiveLanguagePipeline<D>>,
     primary_language_bcp47: String,
     mode: LiveLanguageMode,
     initial_degradation: Option<LiveLanguageDegradation>,
@@ -38,9 +44,14 @@ pub(super) struct LiveLanguageSession {
     source_end_sample: Option<u64>,
 }
 
-impl LiveLanguageSession {
+pub(super) type ResidentLanguageSession = LiveLanguageSession<AmberNetSileroLanguageDetector>;
+
+impl<D> LiveLanguageSession<D>
+where
+    D: LanguageWindowDetector,
+{
     pub(super) fn new(
-        pipeline: Option<ResidentLanguagePipeline>,
+        pipeline: Option<LiveLanguagePipeline<D>>,
         primary_language_bcp47: String,
         initial_degradation: Option<LiveLanguageDegradation>,
         mode: LiveLanguageMode,
@@ -108,7 +119,7 @@ impl LiveLanguageSession {
                 self.source_end_sample = self
                     .pipeline
                     .as_ref()
-                    .and_then(ResidentLanguagePipeline::source_end_sample);
+                    .and_then(LiveLanguagePipeline::source_end_sample);
                 let actions = self.commit_batch(batch)?;
                 Ok(LanguageFramePlan {
                     actions,
@@ -122,7 +133,7 @@ impl LiveLanguageSession {
                     self.source_end_sample = self
                         .pipeline
                         .as_ref()
-                        .and_then(ResidentLanguagePipeline::source_end_sample);
+                        .and_then(LiveLanguagePipeline::source_end_sample);
                 }
                 let mut actions = self.commit_batch(failure.committed_batch)?;
                 let degradation = classify_pipeline_error(&failure.error);

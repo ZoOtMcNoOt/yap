@@ -66,6 +66,7 @@ mod capture_loss;
 mod capture_recording;
 mod capture_safety;
 mod language_evidence;
+mod language_session_safety;
 mod lifecycle;
 mod local_stream_duration_evidence;
 mod resident_language_routing_resources;

@@ -668,11 +668,15 @@ resident-memory, battery/thermal, packaging, and rollback evidence.
        Whisper-tiny route remains rejected and cannot be retuned. The later
        natural German-English product-route target also completed and failed;
        that failure fixes the Preview quality boundary and is not rerun or
-       converted into a pass criterion. This item now requires target-i5
-       interference, lifecycle/resource, deterministic safety, and complete
-       checked-head gate evidence for the accepted AmberNet route rather than
-       another open-ended model search. Those remain explicit Phase 6 blockers;
-       removing Preview requires a future independent quality gate.
+       converted into a pass criterion. Deterministic Rust-owner safety now
+       covers short flush, rapid/ambiguous evidence, exact-once handoff,
+       detector failure, holdback exhaustion, pending-state reset across
+       cancelled or restarted sessions, and missing-artifact fallback under
+       focused tests. Target-i5 interference, sustained installed-artifact
+       lifecycle and resource evidence, and the complete checked-head gate remain
+       required for the accepted AmberNet route instead of another open-ended
+       model search. Those are explicit Phase 6 blockers; removing Preview
+       requires a future independent quality gate.
        The deterministic local duration runner is implemented at the narrower
        prepared-audio-frame-to-final boundary with exact checked-head, plan,
        private-suite, manifest, WAV, PCM, bounded-queue, and decoded-sample

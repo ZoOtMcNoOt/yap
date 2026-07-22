@@ -745,13 +745,27 @@ satisfies the clean checked-head Phase 6 resource/image gate.
       six-second English plus six-second Japanese pinned-model diagnostic found
       and closed the overlapping-window retention bug, accepted the constructed
       switch within 250 ms, and routed all 192,000 samples exactly once.
-- [ ] Finish the within-utterance Preview safety gate on constructed switch
-      points, rapid/false switches, related languages, noise, silence, overlap,
-      restart, cancellation, and offline-only operation. The consumed clean
-      natural product-route quality target failed 0/4 must-detect transitions;
-      exact source coverage and fallback passed. That completed failure remains
-      the advertised quality boundary and blocks removing Preview, but it is not
-      rerun or silently treated as an unfinished Phase 6 pass condition.
+- [x] Finish the deterministic within-utterance Preview safety contract at the
+      Rust session owner. Existing policy and routing tests cover stable and
+      rapid/false switches, ambiguity, weak/no-speech evidence, unsupported
+      labels, overlapping detector windows, exact-once handoff, and pending-state
+      reset. Session-boundary tests now additionally prove sub-window correction
+      flush, admitted-audio drain after detector failure, transactional primary
+      fallback on holdback exhaustion, pending-state reset across cancelled or
+      restarted sessions, and visible primary operation when local detector
+      artifacts are unavailable.
+      Focused verification passed 123 language-related tests; eight real-model or
+      private collectors remained intentionally ignored.
+- [ ] Complete the remaining real-runtime Preview release boundary on the target
+      i5-class Windows system: installed-artifact offline-only operation,
+      sustained sessions, restart/cancellation, rendered-UI and capture
+      interference, energy/thermal behavior, and bounded resource teardown. The
+      completed constructed, related-language, noisy, silence, and overlap
+      results plus the consumed clean natural result remain their recorded
+      evidence—including the natural product-route failure at 0/4 must-detect
+      transitions. Exact source coverage and fallback passed. Do not rerun or
+      relabel that completed quality result; it blocks removing Preview, not
+      completion of the remaining safety gate.
 - [x] Use the same versioned span contract for local and server workflows. A
       server may independently verify/reconcile evidence but may not silently
       rewrite client history or create a second client-state owner.
