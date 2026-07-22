@@ -47,6 +47,11 @@ export async function registerLiveSessionEventListeners(_tauri, options = {}) {
       state.unlisteners.push(
         await event.listen("live-session-saved", ({ payload }) => state.saved.push(payload)),
       );
+      if (options.includeSessions === true) {
+        state.unlisteners.push(
+          await event.listen("live-session", ({ payload }) => state.sessions.push(payload)),
+        );
+      }
     }
     return state.unlisteners.length;
   } catch (registrationError) {

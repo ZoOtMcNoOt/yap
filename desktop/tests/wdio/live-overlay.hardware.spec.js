@@ -7,7 +7,10 @@ import {
   waitForLiveSessionSavedEvent,
 } from "./live-session-event-listeners.js";
 import { classifyNativeReadiness } from "./native-microphone-readiness.js";
+import { createTargetClientLanguageRoutingHardwareGate } from "./target-client-language-routing-hardware.js";
 
+// Cohesion note: this spec keeps one ordered cross-window capture/save/delete
+// transaction together. Target-client policy lives in its own gate module.
 const lifecycleAssertions = [
   "overlay-context start and stop without main-window UI interaction",
   "armed/listening/speaking -> saving -> idle lifecycle ordering",
@@ -20,6 +23,7 @@ const lifecycleAssertions = [
 
 const recordingRoot = process.env.YAP_LIVE_RECORDINGS_DIR;
 if (!recordingRoot) throw new Error("WDIO requires an isolated YAP_LIVE_RECORDINGS_DIR.");
+const targetClient = createTargetClientLanguageRoutingHardwareGate({ browser, recordingRoot });
 
 async function switchToWindow(label) {
   const windows = await browser.tauri.listWindows();
@@ -65,6 +69,7 @@ async function nativeReadiness() {
 async function readLifecycleEvidence() {
   let overlay = { levels: [], sessions: [] };
   let saved = [];
+  let mainSessions = [];
   if (await switchToWindow("live-overlay")) {
     overlay = await browser.tauri.execute(() => {
       const state = globalThis.__yapLiveSessionEventListeners;
@@ -74,11 +79,15 @@ async function readLifecycleEvidence() {
     });
   }
   if (await switchToWindow("main")) {
-    saved = await browser.tauri.execute(() =>
-      globalThis.__yapLiveSessionEventListeners?.saved ?? []);
+    const main = await browser.tauri.execute(() => ({
+      saved: globalThis.__yapLiveSessionEventListeners?.saved ?? [],
+      sessions: globalThis.__yapLiveSessionEventListeners?.sessions ?? [],
+    }));
+    saved = main.saved;
+    mainSessions = main.sessions;
   }
   await switchToWindow("live-overlay");
-  return { ...overlay, saved };
+  return { ...overlay, mainSessions, saved };
 }
 
 async function cleanupWindowListeners(label, counts) {
@@ -213,9 +222,21 @@ describe("Yap live overlay hardware capture", () => {
     if (errors.length > 0) throw new AggregateError(errors, "Hardware capture cleanup failed");
   });
 
+  it("cancels early starts and recovers for later local sessions", async function () {
+    if (!targetClient.enabled) this.skip();
+    await targetClient.runRestartCancellation({
+      classifyReadiness: classifyNativeReadiness,
+      nativeReadiness,
+    });
+  });
+
   it("captures and saves one session entirely from the overlay context", async function () {
+    const configuredRouting = await targetClient.configureLanguageRouting();
     const readiness = classifyNativeReadiness(await nativeReadiness());
     if (readiness.action === "skip") {
+      if (targetClient.enabled) {
+        throw new Error(`Target-client native readiness failed: ${readiness.reason}.`);
+      }
       console.warn(
         `[Optional native hardware skip] ${readiness.reason}. Unproven assertions: ${lifecycleAssertions.join("; ")}`,
       );
@@ -225,13 +246,16 @@ describe("Yap live overlay hardware capture", () => {
     let primaryError;
     let runStartedAtMs;
     let teardown;
+    let targetEvidence;
+    let uiResponsiveness;
     try {
+      await targetClient.assertResidentRuntimeReady(configuredRouting);
       await showIdleOverlay();
       await browser.tauri.switchWindow("main");
       expect(await browser.tauri.execute(
         registerLiveSessionEventListeners,
-        { target: "main" },
-      )).toBe(1);
+        { includeSessions: targetClient.enabled, target: "main" },
+      )).toBe(targetClient.enabled ? 2 : 1);
       await browser.tauri.switchWindow("live-overlay");
       expect(await browser.tauri.execute(
         registerLiveSessionEventListeners,
@@ -254,6 +278,7 @@ describe("Yap live overlay hardware capture", () => {
         document.querySelector("[data-overlay-surface]")?.getAttribute("data-overlay-surface") === "expanded"));
       const startButton = await browser.$('[aria-label="Start dictating"]');
       await startButton.waitForDisplayed();
+      await targetClient.startResponsivenessSampler();
       runStartedAtMs = Date.now();
       await startButton.click();
 
@@ -266,7 +291,7 @@ describe("Yap live overlay hardware capture", () => {
         timeout: 20_000,
         timeoutMsg: "live-session and live-level did not report active capture",
       });
-      await browser.pause(750);
+      await browser.pause(targetClient.activeCaptureMs);
 
       const finishButton = await browser.$('[aria-label="Finish recording"]');
       await finishButton.waitForDisplayed();
@@ -289,6 +314,7 @@ describe("Yap live overlay hardware capture", () => {
       });
 
       const evidence = await readLifecycleEvidence();
+      uiResponsiveness = await targetClient.stopResponsivenessSampler();
       const statuses = evidence.sessions.map(({ status }) => status);
       const activeIndex = statuses.findIndex((status) => ["armed", "listening", "speaking"].includes(status));
       const savingIndex = statuses.indexOf("saving", activeIndex + 1);
@@ -299,6 +325,7 @@ describe("Yap live overlay hardware capture", () => {
       expect(evidence.sessions[idleIndex].error).toBeNull();
       expect(evidence.levels.length).toBeGreaterThan(0);
       expect(evidence.levels.some(({ level }) => Number.isFinite(level))).toBe(true);
+      targetClient.assertSustainedEvidence({ evidence, statuses, uiResponsiveness });
       expect(evidence.saved).toHaveLength(1);
       expect(evidence.sessions.every((session) =>
         !("partialText" in session)
@@ -325,16 +352,29 @@ describe("Yap live overlay hardware capture", () => {
       expect(compact.island).toEqual(compact.root);
       expect(await browser.tauri.execute(() =>
         globalThis.__yapLiveSessionEventListeners.saved.length)).toBe(0);
+      targetEvidence = { configuredRouting, evidence, statuses, uiResponsiveness };
     } catch (error) {
       primaryError = error;
     } finally {
+      if (!uiResponsiveness) {
+        try {
+          uiResponsiveness = await targetClient.stopResponsivenessSampler();
+        } catch {
+          // Preserve the primary lifecycle failure; missing sampler evidence is
+          // already fatal to the required target-client path.
+        }
+      }
       teardown = await cleanupLifecycle(runStartedAtMs);
     }
 
     const errors = [primaryError, ...teardown.errors].filter(Boolean);
     if (errors.length > 0) throw new AggregateError(errors, "Hardware lifecycle evidence failed");
     expect(teardown.saved).toHaveLength(1);
-    expect(teardown.listenerCleanupCounts).toEqual({ main: [1, 0], overlay: [2, 0] });
+    expect(teardown.listenerCleanupCounts).toEqual({
+      main: [targetClient.enabled ? 2 : 1, 0],
+      overlay: [2, 0],
+    });
     assertRecordingRootEmpty(recordingRoot);
+    targetClient.publishEvidence(targetEvidence);
   });
 });

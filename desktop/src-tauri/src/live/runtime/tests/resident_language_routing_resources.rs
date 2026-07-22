@@ -32,6 +32,8 @@ const RESPONSIVENESS_TICK: Duration = Duration::from_millis(10);
 const MAXIMUM_RESPONSIVENESS_P95_DELAY_US: u128 = 50_000;
 const MAXIMUM_RESPONSIVENESS_DELAY_US: u128 = 250_000;
 const MAXIMUM_PACED_DRAIN_MS: u128 = 6_000;
+const MAXIMUM_PACED_SESSION_CYCLES: usize = 32;
+const MAXIMUM_SUSTAINED_PRIVATE_BYTE_GROWTH: i64 = 64 * 1_024 * 1_024;
 
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -83,16 +85,36 @@ struct ResidentLanguageRoutingProfile {
     language_switches: usize,
     routed_samples: usize,
     paced: PacedResidentLanguageRoutingProfile,
+    sustained: SustainedResidentLanguageRoutingProfile,
     after_nemotron_warmup: ProcessResourceSnapshot,
     after_baseline_asr: ProcessResourceSnapshot,
     after_language_pipeline: ProcessResourceSnapshot,
     after_resident_asr: ProcessResourceSnapshot,
     after_combined_routing: ProcessResourceSnapshot,
     after_paced_routing: ProcessResourceSnapshot,
+    after_sustained_routing: ProcessResourceSnapshot,
     after_pipeline_drop: ProcessResourceSnapshot,
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SustainedResidentLanguageRoutingProfile {
+    requested_cycles: usize,
+    completed_cycles: usize,
+    all_cycles_passed: bool,
+    maximum_queue_high_water_mark: usize,
+    maximum_drain_wall_ms: u128,
+    maximum_responsiveness_p95_delay_us: u128,
+    maximum_responsiveness_delay_us: u128,
+    private_byte_growth: i64,
+    maximum_cycle_end_private_byte_growth: i64,
+    private_byte_growth_limit: i64,
+    memory_plateau_gate_passed: bool,
+    sustained_gate_passed: bool,
+    cycles: Vec<PacedResidentLanguageRoutingProfile>,
+}
+
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct PacedResidentLanguageRoutingProfile {
     frame_samples: usize,
@@ -188,6 +210,18 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
     assert!(
         (1..=crate::stt::nemotron::INFERENCE_THREADS).contains(&local_asr_threads),
         "local ASR threads must stay within the supported profile range"
+    );
+    let paced_session_cycles = std::env::var("YAP_TEST_LOCAL_ROUTING_SESSION_CYCLES")
+        .ok()
+        .map(|value| {
+            value
+                .parse::<usize>()
+                .expect("paced session cycles must be an integer")
+        })
+        .unwrap_or(1);
+    assert!(
+        (1..=MAXIMUM_PACED_SESSION_CYCLES).contains(&paced_session_cycles),
+        "paced session cycles must stay within the bounded profile range"
     );
 
     let nemotron_load_started = Instant::now();
@@ -299,6 +333,78 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
     );
     let after_paced_routing = process_resource_snapshot();
 
+    let mut sustained_cycles = Vec::with_capacity(paced_session_cycles);
+    let mut sustained_cycle_ends = Vec::with_capacity(paced_session_cycles);
+    sustained_cycles.push(paced.clone());
+    sustained_cycle_ends.push(after_paced_routing);
+    for _ in 1..paced_session_cycles {
+        engine.reset();
+        pipeline
+            .reset_session()
+            .expect("the resident language pipeline must reset between paced sessions");
+        let before_cycle = process_resource_snapshot();
+        sustained_cycles.push(run_paced_resident_path(
+            &mut engine,
+            &mut pipeline,
+            &samples,
+            audio_ms,
+            process_logical_processor_budget(),
+            before_cycle,
+        ));
+        sustained_cycle_ends.push(process_resource_snapshot());
+    }
+    let after_sustained_routing = sustained_cycle_ends
+        .last()
+        .copied()
+        .unwrap_or(after_paced_routing);
+    let sustained_private_byte_growth = signed_byte_delta(
+        after_sustained_routing.private_bytes,
+        after_paced_routing.private_bytes,
+    );
+    let maximum_cycle_end_private_byte_growth = sustained_cycle_ends
+        .iter()
+        .map(|snapshot| {
+            signed_byte_delta(snapshot.private_bytes, after_paced_routing.private_bytes)
+        })
+        .max()
+        .unwrap_or(0);
+    let all_cycles_passed = sustained_cycles.iter().all(|cycle| cycle.paced_gate_passed);
+    let sustained = SustainedResidentLanguageRoutingProfile {
+        requested_cycles: paced_session_cycles,
+        completed_cycles: sustained_cycles.len(),
+        all_cycles_passed,
+        maximum_queue_high_water_mark: sustained_cycles
+            .iter()
+            .map(|cycle| cycle.queue_high_water_mark)
+            .max()
+            .unwrap_or(0),
+        maximum_drain_wall_ms: sustained_cycles
+            .iter()
+            .map(|cycle| cycle.drain_wall_ms)
+            .max()
+            .unwrap_or(0),
+        maximum_responsiveness_p95_delay_us: sustained_cycles
+            .iter()
+            .map(|cycle| cycle.responsiveness_p95_delay_us)
+            .max()
+            .unwrap_or(0),
+        maximum_responsiveness_delay_us: sustained_cycles
+            .iter()
+            .map(|cycle| cycle.responsiveness_maximum_delay_us)
+            .max()
+            .unwrap_or(0),
+        private_byte_growth: sustained_private_byte_growth,
+        maximum_cycle_end_private_byte_growth,
+        private_byte_growth_limit: MAXIMUM_SUSTAINED_PRIVATE_BYTE_GROWTH,
+        memory_plateau_gate_passed: sustained_private_byte_growth
+            <= MAXIMUM_SUSTAINED_PRIVATE_BYTE_GROWTH
+            && maximum_cycle_end_private_byte_growth <= MAXIMUM_SUSTAINED_PRIVATE_BYTE_GROWTH,
+        sustained_gate_passed: all_cycles_passed
+            && sustained_private_byte_growth <= MAXIMUM_SUSTAINED_PRIVATE_BYTE_GROWTH
+            && maximum_cycle_end_private_byte_growth <= MAXIMUM_SUSTAINED_PRIVATE_BYTE_GROWTH,
+        cycles: sustained_cycles,
+    };
+
     drop(pipeline);
     let after_pipeline_drop = process_resource_snapshot();
     let baseline_asr_rtf = baseline_asr_wall_ms as f64 / audio_ms as f64;
@@ -319,7 +425,7 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
         average_cpu_cores(combined_routing_cpu_ms, combined_routing_wall_ms);
     pipeline_push_us.sort_unstable();
     let profile = ResidentLanguageRoutingProfile {
-        schema_version: 4,
+        schema_version: 5,
         component_revision,
         audio_fixture_sha256: fixture_sha256,
         audio_fixture_byte_length: fixture_metadata.len(),
@@ -367,12 +473,14 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
         language_switches,
         routed_samples,
         paced,
+        sustained,
         after_nemotron_warmup,
         after_baseline_asr,
         after_language_pipeline,
         after_resident_asr,
         after_combined_routing,
         after_paced_routing,
+        after_sustained_routing,
         after_pipeline_drop,
     };
     persist_private_profile_if_requested(&profile);
@@ -387,6 +495,10 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
     assert!(
         profile.paced.paced_gate_passed,
         "paced local path lost audio, exceeded the scheduler budget, or failed to drain"
+    );
+    assert!(
+        profile.sustained.sustained_gate_passed,
+        "sustained local path lost audio, exceeded a responsiveness/drain budget, or failed to reach a memory plateau"
     );
 }
 

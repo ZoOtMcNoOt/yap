@@ -77,6 +77,35 @@ describe("transactional live-session event listeners", () => {
     }
   });
 
+  it("can add full main-window lifecycle evidence without changing the default listener", async () => {
+    const priorTauri = globalThis.__TAURI__;
+    const handlers = new Map();
+    globalThis.__TAURI__ = {
+      event: {
+        async listen(name, callback) {
+          handlers.set(name, callback);
+          return () => undefined;
+        },
+      },
+    };
+
+    try {
+      await expect(registerLiveSessionEventListeners({}, {
+        includeSessions: true,
+        target: "main",
+      })).resolves.toBe(2);
+      handlers.get("live-session")({ payload: { route: "localFallback", status: "listening" } });
+      handlers.get("live-session-saved")({ payload: { name: "live-s-1-2-3" } });
+      expect(globalThis.__yapLiveSessionEventListeners.sessions).toEqual([
+        { route: "localFallback", status: "listening" },
+      ]);
+      expect(globalThis.__yapLiveSessionEventListeners.saved).toEqual([{ name: "live-s-1-2-3" }]);
+    } finally {
+      globalThis.__TAURI__ = priorTauri;
+      delete globalThis.__yapLiveSessionEventListeners;
+    }
+  });
+
   it("retains a rejecting unlistener for a later successful retry", async () => {
     let rejectOnceAttempts = 0;
     const priorTauri = globalThis.__TAURI__;

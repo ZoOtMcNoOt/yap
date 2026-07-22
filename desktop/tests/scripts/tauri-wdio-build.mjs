@@ -8,11 +8,16 @@ import { resolvePackageManagerCommand } from "./package-manager-command.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const source = path.join(root, "tests", "wdio", "capabilities", "wdio.json");
 const generated = path.join(root, "src-tauri", "capabilities", "wdio.generated.json");
+const argumentsSet = new Set(process.argv.slice(2));
+if ([...argumentsSet].some((argument) => argument !== "--release")) {
+  throw new Error("tauri-wdio-build accepts only the optional --release argument.");
+}
+const release = argumentsSet.has("--release");
 const packageManager = resolvePackageManagerCommand({
   args: [
     "tauri",
     "build",
-    "--debug",
+    ...(release ? [] : ["--debug"]),
     "--features",
     "wdio",
     "--config",
