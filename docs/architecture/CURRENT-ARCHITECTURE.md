@@ -386,6 +386,12 @@ punctuation quality are separate provider capabilities. The catalog and router
 must not encode a universal "accuracy model" label. Neither result exposed
 speaker or timestamp output, so Phase 8 meeting inference and reconciliation
 remain separate rather than being fabricated from the flat transcript.
+The lower Open ASR AMI figure on Cohere's model card is not a contradictory
+measurement: it comes from 12,643 duration-sorted individual-headset utterances
+of at most 26.2 seconds under fixed-English row scoring, rather than either
+complete 17.49-minute mixed/far-field condition. That public short-form protocol
+is useful for regression diagnosis but cannot replace Yap's representative
+long-meeting and overlap evidence.
 
 These paths remain unadvertised/unselected:
 the catalog still exposes only Cohere `en-US` with `wordAlignment: false`, and

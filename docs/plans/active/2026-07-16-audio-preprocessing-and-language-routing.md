@@ -1120,7 +1120,16 @@ The AMI reference is public, exposure-unknown, known-defective, flat-ordered
 across overlapping speakers, and not independently reviewed. Neither route
 returned timestamps or speaker identity in this run. References, hypotheses,
 per-case output, host paths, and raw receipts remain in the private evaluation
-root. Both containers and listeners were absent afterward. The vLLM engine
+root. Cohere's published 8.15% Open ASR AMI result is a different short-form
+protocol: immutable dataset revision
+`470b2948906c624f828a7349d92b92ec80e84fe0` contains 12,643 sorted
+individual-headset utterances no longer than 26.2 seconds, and upstream runner
+`b6117f86f73edbca3b5dfc9960d0eb65d685258e` evaluates them in batches of 64
+with fixed English normalization. It does not exercise a complete mixed or
+far-field meeting, cross-speaker overlap ordering, or Yap's long-form input
+preparation. Replaying that public set would remain comparator-only evidence
+and is therefore not inserted into the frozen promotion gate. Both containers
+and listeners were absent afterward. The vLLM engine
 completed shutdown but its pinned upstream Torch/vLLM process emitted a
 weakref-time `UnicodeDecodeError` and one leaked-semaphore warning during
 interpreter exit. The same finalizer traceback reproduced with the pinned vLLM

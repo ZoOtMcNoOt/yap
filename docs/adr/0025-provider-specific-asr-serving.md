@@ -274,6 +274,22 @@ overlap, and not independently reviewed, so this is descriptive evidence only.
 It proves that throughput and task accuracy require separate gates and that no
 provider may be labeled the universal quality route.
 
+This result is not comparable to Cohere's much lower Open ASR Leaderboard AMI
+number. The published leaderboard runner uses the immutable
+`hf-audio/esb-datasets-test-only-sorted` AMI revision
+`470b2948906c624f828a7349d92b92ec80e84fe0`: 12,643 duration-sorted,
+individual-headset utterance rows from 0.04 through 26.2 seconds, not a complete
+mixed close-talk or far-field meeting. The original Cohere runner at
+`f73e3a2ce10b37dfab10af0e115707ca8791da8e` batches 64 rows, supplies fixed
+English, and scores English-normalized row references; follow-up
+`b6117f86f73edbca3b5dfc9960d0eb65d685258e` removes its pre-release model
+revision override. Cohere's model-card table reports 8.15% AMI WER while the
+Hub evaluation metadata reports 8.13%; the gated raw evaluation receipt is not
+publicly readable. Those short-form values neither diagnose the Yap long-form
+runtime nor waive its representative meeting gate. A separate full public
+leaderboard replay would remain exposure-unknown comparator evidence, so it is
+not added to the frozen promotion workload.
+
 The AMI run completed both results and shut down its engine, container, and
 listener, but its pinned upstream Torch/vLLM process emitted a weakref-time
 `UnicodeDecodeError` plus one leaked-semaphore warning during interpreter exit.
@@ -393,6 +409,8 @@ cannot inherit one another's evidence or either focused result above.
 ## Sources
 
 - [Cohere Transcribe model card](https://huggingface.co/CohereLabs/cohere-transcribe-03-2026)
+- [Open ASR Leaderboard Cohere runner](https://github.com/huggingface/open_asr_leaderboard/tree/b6117f86f73edbca3b5dfc9960d0eb65d685258e/cohere_asr)
+- [Immutable Open ASR AMI utterance set](https://huggingface.co/datasets/hf-audio/open-asr-leaderboard/tree/470b2948906c624f828a7349d92b92ec80e84fe0/ami)
 - [vLLM supported transcription models](https://docs.vllm.ai/en/latest/models/supported_models/)
 - [vLLM speech-to-text serving API](https://docs.vllm.ai/en/stable/serving/online_serving/speech_to_text/)
 - [vLLM security guidance](https://docs.vllm.ai/en/latest/usage/security/)
