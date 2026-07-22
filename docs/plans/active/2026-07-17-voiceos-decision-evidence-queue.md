@@ -301,7 +301,15 @@ and the complete resource gate remain open.
   restart/cancellation, rendered-UI/capture interference, energy/thermal, and
   resource-teardown evidence. Preserve the completed natural, constructed,
   related-language, noise, silence, and overlap results as-is; the failed natural
-  quality target remains the Preview limitation and is not rerun.
+  quality target remains the Preview limitation and is not rerun. A checked-head
+  native repeated-session collector and a release-mode physical-microphone/
+  rendered-UI gate now implement the frozen boundaries without retaining audio
+  or transcript text. They reject the wrong CPU, an online default route,
+  dirty/different source, repository-local evidence, missing artifacts,
+  degraded routing, missed responsiveness budgets, or retained model snapshots.
+  Neither has been consumed on the actual i5-1135G7, and the separate paired
+  calibrated energy/thermal comparison remains required, so this item stays
+  open under the [target-client language-routing runbook](../../runbooks/target-client-language-routing-qualification.md).
 - [x] Carry one versioned span contract into server work. Independent server
   evidence may be reconciled or rejected but cannot silently mutate the client
   decision history.

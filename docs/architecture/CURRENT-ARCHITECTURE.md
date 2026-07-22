@@ -311,7 +311,10 @@ accelerated and paced runtime proxies, not rendered-UI, battery, thermal, or
 i5-1135G7 evidence. The route is therefore available only as an explicit,
 default-off Preview; target-i5 resource and interference, sustained-session,
 restart, cancellation, and the complete checked-head gate still gate Phase 6
-release. A deterministic duration runner now streams the machine plan's exact
+release. Fail-closed checked-head native repeated-session and release-mode
+physical-microphone/rendered-UI collectors now encode that target boundary but
+remain unconsumed on the actual i5-1135G7; calibrated energy/thermal evidence is
+still a separate required channel. A deterministic duration runner now streams the machine plan's exact
 short and 30-second-to-two-hour ladders from the prepared-audio-frame boundary
 through the production bounded adapter, the same single live worker, and
 finalization. It locks the checked head, plan, private suite, manifests, raw WAV,

@@ -683,11 +683,17 @@ resident-memory, battery/thermal, packaging, and rollback evidence.
        covers short flush, rapid/ambiguous evidence, exact-once handoff,
        detector failure, holdback exhaustion, pending-state reset across
        cancelled or restarted sessions, and missing-artifact fallback under
-       focused tests. Target-i5 interference, sustained installed-artifact
-       lifecycle and resource evidence, and the complete checked-head gate remain
-       required for the accepted AmberNet route instead of another open-ended
-       model search. Those are explicit Phase 6 blockers; removing Preview
-       requires a future independent quality gate.
+       focused tests. The [target-client qualification runbook](../runbooks/target-client-language-routing-qualification.md)
+       composes fail-closed checked-head native repeated-session and release-
+       mode physical-microphone/rendered-UI collectors that encode the
+       i5-1135G7 boundary, including wrong-hardware/offline/external-evidence,
+       early-stop/restart, responsiveness, and teardown checks. They remain
+       unconsumed on the actual target, and the paired calibrated energy/thermal
+       channel remains separate. Target-i5 interference, sustained installed-
+       artifact lifecycle/resource evidence, and the complete checked-head gate
+       therefore remain required for the accepted AmberNet route instead of
+       another open-ended model search. Those are explicit Phase 6 blockers;
+       removing Preview requires a future independent quality gate.
        The deterministic local duration runner is implemented at the narrower
        prepared-audio-frame-to-final boundary with exact checked-head, plan,
        private-suite, manifest, WAV, PCM, bounded-queue, and decoded-sample

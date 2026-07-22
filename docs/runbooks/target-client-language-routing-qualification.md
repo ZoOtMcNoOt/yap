@@ -1,0 +1,213 @@
+# Target-client language-routing qualification
+
+This runbook closes the real Windows client safety boundary for the resident
+Nemotron, Silero, and AmberNet live path. It does **not** rerun the consumed
+natural-switch quality target, remove the Preview label, or replace the complete
+Phase 6 gate.
+
+The qualification has three independent evidence channels. A result is
+incomplete unless all three belong to the same clean checked head and target
+machine:
+
+1. the prepared-audio native resource and repeated-session collector;
+2. a physical-microphone and rendered-UI run through the release-mode WDIO
+   binary; and
+3. a paired energy/thermal lab measurement.
+
+All raw logs, audio, screenshots, ETL traces, power reports, and aggregate JSON
+stay in a current-user-only directory outside the repository. Git and hosted CI
+receive only code, plans, and the final non-sensitive status claim after review.
+
+## Frozen target and prerequisites
+
+- Windows on the actual Intel Core i5-1135G7 target with eight logical
+  processors. Affinity-limiting a larger development host is not equivalent.
+- A clean candidate SHA with Node 24, pnpm, Rust, the Tauri build dependencies,
+  and all crates/packages already cached locally.
+- Verified local installations of the pinned Nemotron INT8, Silero, and
+  AmberNet QDQ INT8 artifacts under one private models root. No gate step may
+  download or substitute model bytes.
+- A license-cleared mono 16-kHz WAV for the native collector, plus an exact
+  lowercase SHA-256.
+- A license-cleared spoken-audio stimulus for the physical microphone run,
+  identified by SHA-256 and a bounded SPDX-style license identifier. Play it
+  acoustically from a separate offline device; do not use a virtual microphone
+  for the physical-capture claim.
+- No active non-loopback interface with a default gateway. A direct private
+  interface without a gateway is allowed. The native gate checks this before
+  and after inference and never changes adapter state itself.
+
+Prepare caches while online, verify the candidate, and then disconnect the
+target before creating evidence. If the offline build attempts dependency or
+model retrieval, the run fails rather than silently broadening the boundary.
+
+## 1. Native resource and repeated-session gate
+
+Create an unused evidence path beneath an existing private parent outside the
+checkout. The script applies a current-user-only ACL before writing evidence.
+
+```powershell
+$Head = (git rev-parse HEAD).Trim()
+$Evidence = 'D:\private-yap-evidence\target-client\' + $Head
+$Models = 'D:\private-yap-models'
+$Fixture = 'D:\private-yap-fixtures\live-routing-38s.wav'
+$FixtureSha256 = '<lowercase-sha256>'
+
+pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+  -File .\desktop\tests\scripts\resident-language-routing-resource-gate.ps1 `
+  -CheckedHead $Head `
+  -ModelsDirectory $Models `
+  -AudioFixture $Fixture `
+  -AudioFixtureSha256 $FixtureSha256 `
+  -EvidenceDirectory $Evidence `
+  -SessionCycles 12
+```
+
+The collector uses the production-sized bounded queue and ten-millisecond
+source cadence with the executable two-thread Nemotron default. It requires:
+
+- exact source accounting and zero dropped frames in every cycle;
+- combined inference below real time;
+- scheduler-delay p95 at or below 50 ms and maximum at or below 250 ms;
+- drain at or below six seconds;
+- all requested start/reset cycles to pass; and
+- no more than 64 MiB private-byte growth from the first completed paced cycle
+  to any later cycle end or the final cycle.
+
+The resulting `resource-gate-context.json` deliberately records neither the
+models path nor the audio path. The profile contains aggregate counts and
+resource measurements, never transcript text.
+
+This boundary begins at prepared audio. It is not microphone, rendered-UI,
+energy, or thermal evidence; its context file states those exclusions.
+
+## 2. Physical microphone and rendered UI
+
+Build the test-instrumented release binary from the same clean head while the
+host remains offline:
+
+```powershell
+Push-Location .\desktop
+pnpm test:desktop:build:release
+```
+
+Complete the paired measurement in section 3 against this exact binary before
+starting the final UI run, and save its validated aggregate beneath the same
+ACL-protected evidence root. Then run:
+
+```powershell
+$PowerThermalEvidence = Join-Path $Evidence 'power-thermal-evidence.json'
+
+$env:YAP_CHECKED_HEAD = $Head
+$env:YAP_TARGET_CLIENT_EVIDENCE_DIR = $Evidence
+$env:YAP_MODELS_DIR = $Models
+$env:APP_BINARY = (Resolve-Path '.\src-tauri\target\release\yap-desktop.exe').Path
+$env:YAP_HARDWARE_ACTIVE_CAPTURE_MS = '900000'
+$env:YAP_TARGET_CLIENT_STIMULUS_SHA256 = '<lowercase-sha256>'
+$env:YAP_TARGET_CLIENT_STIMULUS_LICENSE = 'CC-BY-4.0'
+$env:YAP_TARGET_CLIENT_POWER_THERMAL_EVIDENCE_FILE = $PowerThermalEvidence
+
+pnpm test:target-client-language-routing-ui
+Pop-Location
+```
+
+The specialized WDIO configuration refuses a dirty or different head. It
+independently revalidates the native context, profile, and log hashes; the exact
+i5 token; eight logical processors; two ASR threads; and all 12 sustained
+cycles. It also requires the power/thermal aggregate beneath the protected
+evidence root and verifies that no model-load snapshots remain. It never copies
+private model or recording bytes into the checkout.
+
+During the 15-minute capture, keep the stimulus audible at a representative
+near-field level and interact normally with the machine. The gate requires the
+physical microphone, speaking state, local-fallback route, both resident
+language-support artifacts, at least two enabled locales, no degraded/error
+state, four early-stop/restart recovery cycles, UI timer-delay p95 at or
+below 50 ms, UI maximum delay at or below 250 ms, exact save/idle lifecycle
+ordering, and deletion of all captured recording artifacts. The early-stop
+path issues stop while start is still outstanding, so it exercises the real
+`cancel_pending_start` boundary before proving later sessions recover. The
+aggregate JSON contains no transcript text. Failure screenshots and driver
+logs remain under the external private evidence root.
+
+The release-mode binary includes the WDIO capability solely for this disposable
+qualification build. It is not the distributable production artifact.
+
+## 3. Energy and thermal comparison
+
+Run matched 15-minute trials on the same target, power plan, charge band,
+display level, acoustic stimulus, and checked-head binary:
+
+1. Nemotron live capture with automatic language routing disabled; and
+2. Nemotron live capture with the pinned Silero/AmberNet route enabled.
+
+Freeze the measurement setup before either trial. Follow Microsoft's current
+[device-under-test setup for battery-life measurements](https://learn.microsoft.com/en-us/windows-hardware/test/assessments/device-under-test-setup-for-battery-life)
+and use the Windows ADK
+[Energy Efficiency assessment](https://learn.microsoft.com/en-us/windows-hardware/test/assessments/energy-efficiency)
+or a calibrated external power meter. A bounded
+[WPR trace](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/wpr-command-line-options)
+supplies CPU scheduling and throttling context. `powercfg /srumutil` may be kept
+as supplemental system energy-estimation evidence, but its aggregate export is
+not by itself the matched short-window authority.
+
+The frozen acceptance limits are:
+
+- at most 0.5 W application-idle package-power increase;
+- at most 15% active energy increase from enabling Silero/AmberNet beside the
+  same Nemotron workload;
+- at least 10 C minimum headroom to the platform-reported thermal limit; and
+- no observed thermal throttling.
+
+If the target exposes no trustworthy temperature or throttling channel, record
+that limitation in the private lab notes and keep this qualification open; an
+`unavailable` value cannot create a passing aggregate. CPU time is not a
+substitute for calibrated energy or thermal evidence. Raw ADK/WPR/meter output
+and exact tool versions remain private and hash-addressed.
+
+The final aggregate follows the versioned
+[`target-client-power-thermal-evidence` schema](../../desktop/tests/fixtures/target-client-power-thermal-evidence.schema.json).
+For example:
+
+```json
+{
+  "schemaVersion": 1,
+  "checkedHead": "<40-lowercase-hex>",
+  "processorName": "11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz",
+  "appBinarySha256": "<64-lowercase-hex>",
+  "stimulusSha256": "<64-lowercase-hex>",
+  "measurementBoundary": "nemotron-only-vs-nemotron-plus-silero-ambernet",
+  "measurementMethod": "windows-adk-energy-efficiency+wpr",
+  "measurementToolVersion": "Windows ADK 10.1 plus WPR 10.1",
+  "powerPlanGuid": "381b4222-f694-41f0-9685-ff5bb260df2e",
+  "baselineDurationMs": 900000,
+  "candidateDurationMs": 900000,
+  "idlePackagePowerDeltaWatts": 0.3,
+  "activeEnergyOverheadPercent": 9.5,
+  "temperatureTelemetry": "measured",
+  "thermalLimitSource": "OEM EC sensor and platform TjMax",
+  "minimumThermalHeadroomC": 15,
+  "thermalThrottlingObserved": false,
+  "rawEvidenceSha256": ["<64-lowercase-hex>"],
+  "transcriptTextRecorded": false
+}
+```
+
+The UI gate rejects unknown fields, identity or binary mismatches, duplicate raw
+receipts, short trials, unavailable telemetry, throttling, or any metric outside
+the frozen limits. It copies only this path-free aggregate into the private run
+root and rehashes the source receipt at completion.
+
+## Completion and interpretation
+
+An engineer reviews the three evidence channels together, checks their SHA and
+machine identity, and confirms that cleanup left no recordings, model
+snapshots, background Yap processes, or listeners. Only then may the Phase 6
+documents mark the target-client safety item complete.
+
+Passing this runbook means the accepted AmberNet route is safe enough to remain
+an explicit default-off Preview on the target. The previously consumed 0/4
+natural-switch result still prevents a stronger automatic-switching quality
+claim. Any change to model bytes, frontend, thread count, queue size, routing
+policy, UI ownership, or capture lifecycle invalidates the affected channel and
+requires a new checked-head qualification.

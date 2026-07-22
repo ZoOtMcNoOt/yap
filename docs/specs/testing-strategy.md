@@ -83,6 +83,18 @@ A developer-host affinity limit is useful evidence but cannot replace the
 actual i5-class Windows, rendered-UI/audio interference, energy, thermal, and
 sustained-session qualification.
 
+The target-client qualification is now executable as three deliberately
+separate evidence channels under the
+[target-client language-routing runbook](../runbooks/target-client-language-routing-qualification.md).
+The native collector rejects non-i5-1135G7 hardware, a dirty/different head,
+online default-gateway interfaces, and in-repository evidence before it starts
+model inference. Its bounded repeated-session mode does not claim physical
+capture or UI behavior. The release-mode WDIO path then consumes the same
+checked-head native receipt and proves a 15-minute physical-microphone/rendered-
+UI lifecycle without retaining transcript or recording content. A matched
+power/thermal lab comparison remains independently required; unavailable
+thermal telemetry is a blocker, not an inferred pass.
+
 The deterministic local-duration runner starts at Yap's prepared-audio-frame
 boundary, not at the physical microphone. It binds the exact checked Git SHA,
 public runtime-plan hash, an out-of-band-hash-pinned private suite, every track

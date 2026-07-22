@@ -782,7 +782,17 @@ limits.
       i5-class Windows system: installed-artifact offline-only operation,
       sustained sessions, restart/cancellation, rendered-UI and capture
       interference, energy/thermal behavior, and bounded resource teardown. The
-      completed constructed, related-language, noisy, silence, and overlap
+      checked-head native repeated-session and release-mode physical-microphone/
+      rendered-UI collectors are now implemented and fail closed on the wrong
+      hardware, an online default route, dirty/different source, in-repository
+      evidence, missing resident artifacts, degraded routing, responsiveness
+      limits, or retained private/model-snapshot content. They are composed by
+      the [target-client qualification runbook](../../runbooks/target-client-language-routing-qualification.md)
+      but have not been consumed on the actual i5-1135G7. The paired calibrated
+      energy/thermal channel also remains
+      unconsumed and cannot be replaced by CPU time or this i7 development host.
+      Therefore this item remains open.
+      The completed constructed, related-language, noisy, silence, and overlap
       results plus the consumed clean natural result remain their recorded
       evidence—including the natural product-route failure at 0/4 must-detect
       transitions. Exact source coverage and fallback passed. Do not rerun or
