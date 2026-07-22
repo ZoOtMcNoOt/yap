@@ -15,6 +15,7 @@ from yap_server.evaluation.provider_runtime_qualification import (
     VllmQualificationMetricsObserver,
     run_provider_load_case,
     run_resident_provider_load_case,
+    validate_exact_tracks,
     validate_resident_provider_lock,
 )
 from yap_server.evaluation.runtime_plan import load_runtime_evaluation_plan
@@ -237,11 +238,6 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
             with (
                 patch(
                     "yap_server.evaluation.provider_runtime_qualification."
-                    "load_exact_tracks",
-                    return_value={14_400_000: track},
-                ),
-                patch(
-                    "yap_server.evaluation.provider_runtime_qualification."
                     "build_resident_worker",
                     return_value=worker,
                 ),
@@ -255,7 +251,7 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
                     plan_path=SERVER_ROOT / "asr-evaluation-plan.json",
                     load_case_id="vllm-long-waves",
                     model_lock_path=SERVER_ROOT / "cohere-vllm-serving.lock.json",
-                    track_manifest_paths=(cache / "manifest.json",),
+                    tracks={14_400_000: track},
                     endpoint="http://127.0.0.1:18000",
                     catalog_language="en-US",
                     provider_language="en",
@@ -278,7 +274,7 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
                 plan_path=SERVER_ROOT / "asr-evaluation-plan.json",
                 load_case_id="nemo-finalized-fixed-auto-parity",
                 model_lock_path=SERVER_ROOT / "nemotron-nemo-serving.lock.json",
-                track_manifest_paths=(Path("unused"),),
+                tracks={},
                 endpoint="http://127.0.0.1:18001",
                 catalog_language="und",
                 provider_language="auto",
@@ -286,6 +282,16 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
                 timeout_seconds_per_wave=1,
                 environ={},
             )
+
+    def test_exact_track_index_rejects_empty_and_mismatched_durations(self) -> None:
+        track = LoadedDurationTrack(
+            audio_path=Path("C:/private/audio.wav"),
+            manifest={"audio": {"durationSamples": 16_000}},
+        )
+        with self.assertRaisesRegex(ValueError, "requires duration tracks"):
+            validate_exact_tracks({})
+        with self.assertRaisesRegex(ValueError, "identities are invalid"):
+            validate_exact_tracks({8_000: track})
 
     def test_vllm_metrics_must_match_the_exact_completed_request_count(self) -> None:
         plan = load_runtime_evaluation_plan(

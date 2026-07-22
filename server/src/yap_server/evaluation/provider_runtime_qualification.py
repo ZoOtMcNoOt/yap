@@ -11,9 +11,11 @@ from yap_server.evaluation.checked_candidate import (
     admit_checked_candidate,
     bind_checked_candidate_evidence,
 )
-from yap_server.evaluation.duration_tracks import (
-    LoadedDurationTrack,
-    load_duration_track,
+from yap_server.evaluation.duration_tracks import LoadedDurationTrack
+from yap_server.evaluation.provider_duration_suite import (
+    bind_provider_load_case_tracks,
+    load_provider_load_case_tracks,
+    verify_provider_load_case_tracks_unchanged,
 )
 from yap_server.evaluation.provider_qualification_requests import (
     LockedProviderRequestFactory,
@@ -240,7 +242,7 @@ def run_resident_provider_load_case(
     plan_path: Path,
     load_case_id: str,
     model_lock_path: Path,
-    track_manifest_paths: tuple[Path, ...],
+    tracks: Mapping[int, LoadedDurationTrack],
     endpoint: str,
     catalog_language: str,
     provider_language: str,
@@ -259,11 +261,9 @@ def run_resident_provider_load_case(
         raise ValueError(
             "runtime load case requires its specialized qualification runner"
         )
-    if not track_manifest_paths:
-        raise ValueError("resident provider qualification requires duration tracks")
-    tracks = load_exact_tracks(track_manifest_paths)
+    exact_tracks = validate_exact_tracks(tracks)
     expected_durations = {item.duration_samples for item in load_case.mix}
-    if set(tracks) != expected_durations:
+    if set(exact_tracks) != expected_durations:
         raise ValueError("duration tracks differ from the selected runtime load case")
     api_key = environ.get(api_key_environment, "")
     if not api_key:
@@ -289,7 +289,7 @@ def run_resident_provider_load_case(
             catalog_language=catalog_language,
             provider_language=provider_language,
             lock=lock,
-            tracks=tracks,
+            tracks=exact_tracks,
             output_root=output_root,
             environ=environ,
         )
@@ -378,23 +378,32 @@ def validate_resident_provider_lock(
         raise ValueError("qualification requires the matching provider-serving lock")
 
 
-def load_exact_tracks(
-    manifest_paths: tuple[Path, ...],
+def validate_exact_tracks(
+    tracks: Mapping[int, LoadedDurationTrack],
 ) -> dict[int, LoadedDurationTrack]:
-    tracks: dict[int, LoadedDurationTrack] = {}
-    for manifest_path in manifest_paths:
-        track = load_duration_track(manifest_path)
+    """Copy and validate an already admitted exact-duration track index."""
+
+    validated: dict[int, LoadedDurationTrack] = {}
+    for declared_duration, track in tracks.items():
+        if not isinstance(track, LoadedDurationTrack):
+            raise ValueError("qualification duration-track values are invalid")
         audio = track.manifest.get("audio")
         duration = audio.get("durationSamples") if isinstance(audio, dict) else None
         if (
-            isinstance(duration, bool)
+            isinstance(declared_duration, bool)
+            or not isinstance(declared_duration, int)
+            or declared_duration < 1
+            or isinstance(duration, bool)
             or not isinstance(duration, int)
             or duration < 1
-            or duration in tracks
+            or duration != declared_duration
+            or duration in validated
         ):
             raise ValueError("qualification duration-track identities are invalid")
-        tracks[duration] = track
-    return tracks
+        validated[duration] = track
+    if not validated:
+        raise ValueError("resident provider qualification requires duration tracks")
+    return validated
 
 
 def build_resident_worker(
@@ -474,12 +483,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--repository-root", type=Path, required=True)
     parser.add_argument("--load-case", required=True)
     parser.add_argument("--model-lock", type=Path, required=True)
-    parser.add_argument(
-        "--track-manifest",
-        type=Path,
-        action="append",
-        required=True,
-    )
+    parser.add_argument("--duration-suite", type=Path, required=True)
+    parser.add_argument("--duration-suite-sha256", required=True)
     parser.add_argument("--endpoint", required=True)
     parser.add_argument("--catalog-language", required=True)
     parser.add_argument("--provider-language", required=True)
@@ -497,20 +502,33 @@ def main(argv: list[str] | None = None) -> int:
         checked_head=arguments.checked_head,
         input_paths=(plan_path, model_lock_path),
     )
+    duration_tracks = load_provider_load_case_tracks(
+        suite_path=arguments.duration_suite,
+        expected_suite_sha256=arguments.duration_suite_sha256,
+        plan_path=plan_path,
+        load_case_id=arguments.load_case,
+    )
     qualification = run_resident_provider_load_case(
         plan_path=plan_path,
         load_case_id=arguments.load_case,
         model_lock_path=model_lock_path,
-        track_manifest_paths=tuple(arguments.track_manifest),
+        tracks=duration_tracks.indexed_tracks(),
         endpoint=arguments.endpoint,
         catalog_language=arguments.catalog_language,
         provider_language=arguments.provider_language,
         output_root=arguments.output_root,
         timeout_seconds_per_wave=arguments.timeout_seconds_per_wave,
     )
+    verify_provider_load_case_tracks_unchanged(
+        duration_tracks,
+        plan_path=plan_path,
+    )
     candidate.verify_unchanged()
     evidence = bind_checked_candidate_evidence(
-        qualification.public_evidence(),
+        bind_provider_load_case_tracks(
+            qualification.public_evidence(),
+            duration_tracks,
+        ),
         candidate,
     )
     write_private_evidence(arguments.output_root / "evidence.json", evidence)

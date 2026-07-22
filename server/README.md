@@ -175,15 +175,18 @@ suite prepares inputs only; it does not execute or satisfy a provider gate.
 Run a standard resident load cell with
 `python -m yap_server.evaluation.provider_runtime_qualification`. The command
 requires `--checked-head`, the absolute `--repository-root`, the plan, exact
-provider-serving lock, one manifest for every duration used by the selected
-cell, numeric-loopback endpoint, route languages, private output root, and
-timeout. It admits only that exact clean Git head, hashes the plan and serving
-lock, and repeats the Git/input read-back before publishing a rehashed candidate
-envelope. `YAP_EVAL_CACHE` must name the absolute private cache containing both
-tracks and output; the provider API key stays in its existing environment
-variable. The runner fails closed on cancellation, fixed/automatic parity, and
-capacity cells because those require specialized semantics rather than an
-ordinary synchronized wave.
+provider-serving lock, `--duration-suite`, its out-of-band
+`--duration-suite-sha256`, numeric-loopback endpoint, route languages, private
+output root, and timeout. It admits only that exact clean Git head, validates the
+suite against the current plan, loads only the cell's required audio durations,
+hands those admitted tracks directly to the runner, then re-reads the suite and
+selected audio before publishing a rehashed candidate envelope. It separately
+hashes the plan and serving lock and repeats the Git/input read-back.
+`YAP_EVAL_CACHE`
+must name the absolute private cache containing both tracks and output; the
+provider API key stays in its existing environment variable. The runner fails
+closed on cancellation, fixed/automatic parity, and capacity cells because those
+require specialized semantics rather than an ordinary synchronized wave.
 
 Those cells have separate executable entry points:
 `provider_cancellation_qualification` requires a dispatched target, concurrent

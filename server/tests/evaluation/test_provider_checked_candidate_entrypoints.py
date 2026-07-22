@@ -60,13 +60,18 @@ class ProviderCheckedCandidateEntrypointTests(unittest.TestCase):
         for module, run_name, extra_arguments in cases:
             with self.subTest(module=module.__name__):
                 candidate = mock.Mock()
+                output_root = Path("C:/private") / module.__name__.rsplit(".", 1)[-1]
+                exact_tracks = {480_000: mock.sentinel.loaded_track}
+                duration_tracks = mock.Mock(
+                    manifest_paths=(output_root / "track.json",),
+                )
+                duration_tracks.indexed_tracks.return_value = exact_tracks
                 qualification = mock.Mock(passed=True)
                 qualification.public_evidence.return_value = {
                     "schemaVersion": 1,
                     "passed": True,
                     "evidenceSha256": "0" * 64,
                 }
-                output_root = Path("C:/private") / module.__name__.rsplit(".", 1)[-1]
                 arguments = [
                     "--plan",
                     str(PLAN_PATH),
@@ -78,8 +83,10 @@ class ProviderCheckedCandidateEntrypointTests(unittest.TestCase):
                     "test-case",
                     "--model-lock",
                     str(MODEL_LOCK_PATH),
-                    "--track-manifest",
-                    str(output_root / "track.json"),
+                    "--duration-suite",
+                    str(output_root / "suite.json"),
+                    "--duration-suite-sha256",
+                    "b" * 64,
                     "--endpoint",
                     "http://127.0.0.1:18000",
                     "--output-root",
@@ -106,7 +113,25 @@ class ProviderCheckedCandidateEntrypointTests(unittest.TestCase):
                         module,
                         run_name,
                         return_value=qualification,
-                    ),
+                    ) as run,
+                    mock.patch.object(
+                        module,
+                        "load_provider_load_case_tracks",
+                        return_value=duration_tracks,
+                    ) as load_tracks,
+                    mock.patch.object(
+                        module,
+                        "bind_provider_load_case_tracks",
+                        return_value={
+                            "schemaVersion": 1,
+                            "passed": True,
+                            "durationSuite": {"sha256": "b" * 64},
+                        },
+                    ) as bind_tracks,
+                    mock.patch.object(
+                        module,
+                        "verify_provider_load_case_tracks_unchanged",
+                    ) as verify_tracks,
                     mock.patch.object(
                         module,
                         "bind_checked_candidate_evidence",
@@ -127,8 +152,28 @@ class ProviderCheckedCandidateEntrypointTests(unittest.TestCase):
                     ),
                 )
                 candidate.verify_unchanged.assert_called_once_with()
-                bind.assert_called_once_with(
+                duration_tracks.indexed_tracks.assert_called_once_with()
+                self.assertIs(run.call_args.kwargs["tracks"], exact_tracks)
+                load_tracks.assert_called_once_with(
+                    suite_path=output_root / "suite.json",
+                    expected_suite_sha256="b" * 64,
+                    plan_path=PLAN_PATH.resolve(strict=True),
+                    load_case_id="test-case",
+                )
+                verify_tracks.assert_called_once_with(
+                    duration_tracks,
+                    plan_path=PLAN_PATH.resolve(strict=True),
+                )
+                bind_tracks.assert_called_once_with(
                     qualification.public_evidence.return_value,
+                    duration_tracks,
+                )
+                bind.assert_called_once_with(
+                    {
+                        "schemaVersion": 1,
+                        "passed": True,
+                        "durationSuite": {"sha256": "b" * 64},
+                    },
                     candidate,
                 )
                 write.assert_called_once_with(

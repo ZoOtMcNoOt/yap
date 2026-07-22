@@ -123,6 +123,11 @@ lock hash. The runner reads those identities before work and again before
 publishing the evidence envelope. This prevents an otherwise valid private
 result from being relabeled as evidence for a later candidate; the enclosing
 GB10 lifecycle gate must still attest the launched image and teardown boundary.
+Every provider workload also consumes one out-of-band-hash-pinned duration suite
+derived from that plan; ad hoc track-manifest lists are not a gate interface.
+Only the selected cell's audio is admitted, the loaded tracks are reused by the
+runner, and the suite plus selected audio are re-read before evidence is
+published.
 
 That decision covers base-model and adapter/fine-tune lineage, and transformed
 copies inherit their source exposure. Missing lineage evidence stays `unknown`.

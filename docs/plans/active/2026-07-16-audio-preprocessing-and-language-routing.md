@@ -933,6 +933,19 @@ hash, and every track-manifest hash in private `suite.json`. Focused tests prove
 the selection and privacy-safe manifest contract. Building these inputs is not
 runtime evidence and does not consume the frozen gate.
 
+The four provider workload CLIs now require that suite plus its out-of-band
+SHA-256 instead of accepting an operator-assembled list of track manifests. The
+loader performs bounded duplicate-key-safe reads, requires the private real
+cache/collection boundary, matches the exact current plan and ordered
+requirement provenance, rejects unexpected collection entries, and admits only
+the durations used by the selected cell. Each aggregate binds the suite, plan,
+and selected duration identities before the checked-candidate hash is computed.
+The admitted tracks are handed directly to the workload runner rather than
+hashed a second time at runner entry, and the suite plus selected audio are
+re-read before evidence publication. Focused tests cover full and cell-specific
+admission, pre-publication read-back, and wrong-digest failure; no private suite
+has been built or runtime cell consumed yet.
+
 The standard resident-load runner is now executable from the locked plan and
 requires every exact-duration track and result beneath the real private
 `YAP_EVAL_CACHE`. Its public-safe aggregate records an explicit overall and
