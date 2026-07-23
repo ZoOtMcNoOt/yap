@@ -320,8 +320,11 @@ pub(crate) fn run() {
                 let quit = app_handle.state::<live::actions::QuitCoordinator>();
                 if !quit.exit_authorized() {
                     stt::log_yap("process exit reached degraded live shutdown fallback");
-                    live_runtime_for_exit.shutdown();
                 }
+                // Authorized quit finalizes the active capture, but the runtime
+                // can still own resident warmup models. Always retire it before
+                // process exit so model-load snapshots release deterministically.
+                live_runtime_for_exit.shutdown();
             }
             _ => {}
         });
