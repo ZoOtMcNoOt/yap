@@ -418,6 +418,15 @@ distinct fixed/automatic contracts and records text parity for Phase 8 rather
 than promoting it. Because this changes the runtime-plan identity, rebuild or
 rebind the private suite under a new out-of-band SHA before the next exact-head
 run.
+
+Exact head `2b9118ead1df1f3220da65846c2aa8949d90d83d` consumed that rebound
+suite and passed every provider child. Exact teardown also completed, but the
+finalizer rejected the otherwise-correct NeMo long-window evidence because its
+stale expectation named only the 15-minute member while the plan selects both
+30-second and 15-minute inputs. No aggregate was published. The finalizer now
+requires both durations and rejects either partial selection; use a new
+exact-head evidence directory for the corrected rerun rather than relabeling the
+failed receipt.
 Representative quality, current-host client Preview resource/lifecycle behavior,
 accessibility, and the other Phase 6 gates remain separate. Low-end physical
 client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host

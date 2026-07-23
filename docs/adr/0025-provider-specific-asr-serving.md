@@ -522,6 +522,17 @@ real without promoting Nemotron wording; Phase 8 compares that behavior with
 Tiron. The changed runtime-plan identity requires a new hash-bound private
 duration-suite envelope and exact-head rerun.
 
+Exact head `2b9118ead1df1f3220da65846c2aa8949d90d83d` consumed that new
+18-track suite and passed every Cohere and NeMo child requirement. The NeMo
+long-window child correctly bound its four completed requests to the plan's two
+30-second and two 15-minute inputs. Exact teardown removed both providers,
+loopback proxies, listeners, and the temporary network. Final publication then
+failed closed because the aggregate finalizer still expected the long-window
+suite selection to contain only 15 minutes. No final aggregate was written.
+The finalizer now requires the complete `(30 seconds, 15 minutes)` selection and
+has an explicit regression for an omitted short member. This is evidence-contract
+repair, not a provider promotion; another exact-head lifecycle run is required.
+
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall
 latency does traverse the proxy. Whole-route/whole-host capacity and persistent

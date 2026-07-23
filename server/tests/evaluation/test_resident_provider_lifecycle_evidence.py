@@ -40,7 +40,7 @@ BATCH_DURATION_SAMPLES = [
 STANDARD_LOADS = {
     "vllm-short-tail": ([1, 2, 4], 1, 600, [480_000]),
     "nemo-finalized-short-tail": ([1, 2, 4], 1, 600, [480_000]),
-    "nemo-finalized-long-windows": ([2], 1, 4, [14_400_000]),
+    "nemo-finalized-long-windows": ([2], 1, 4, [480_000, 14_400_000]),
 }
 ARTIFACTS = (
     ("vllm", "readiness.json", "readiness", "vllm-cohere-batch", "readiness"),
@@ -215,6 +215,7 @@ class ResidentProviderLifecycleEvidenceTests(unittest.TestCase):
             "partial-load",
             "wrong-resource-scope",
             "wrong-request-scope",
+            "partial-long-window-suite",
             "missing-maximum",
         ):
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
@@ -242,6 +243,12 @@ class ResidentProviderLifecycleEvidenceTests(unittest.TestCase):
                     value["qualificationScope"] = "provider-behavior"
                 elif mutation == "wrong-request-scope":
                     value["qualificationScope"] = "provider-behavior"
+                elif mutation == "partial-long-window-suite":
+                    target = evidence_root / "nemo" / "long-windows.json"
+                    value = json.loads(target.read_text(encoding="utf-8"))
+                    value["durationSuite"]["selectedDurationSamples"] = [
+                        14_400_000
+                    ]
                 else:
                     target = evidence_root / "vllm" / "duration-batch.json"
                     value = json.loads(target.read_text(encoding="utf-8"))

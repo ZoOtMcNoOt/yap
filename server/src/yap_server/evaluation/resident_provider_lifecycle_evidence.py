@@ -76,6 +76,10 @@ _BATCH_DURATION_SAMPLES = (
     115_200_000,
     230_400_000,
 )
+_LONG_WINDOW_DURATION_SAMPLES = (
+    480_000,
+    14_400_000,
+)
 
 
 _CHILD_REQUIREMENTS = {
@@ -141,7 +145,7 @@ _CHILD_REQUIREMENTS = {
         selected_concurrencies=(2,),
         repeat_count=1,
         completed_request_count=4,
-        duration_samples=(14_400_000,),
+        duration_samples=_LONG_WINDOW_DURATION_SAMPLES,
         qualification_scope="request-lifecycle",
     ),
     "nemo/language-contract.json": _ChildRequirement(

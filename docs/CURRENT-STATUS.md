@@ -69,8 +69,9 @@ already-present model directories without starting a service. This closes input
 preparation only: no provider runtime cell, lifecycle wrapper, frozen gate, or
 promotion claim was consumed.
 
-The sequential resident-provider lifecycle wrapper is also executable under
-focused tests but remains unconsumed. It verifies already-present models, builds
+The sequential resident-provider lifecycle wrapper is executable under focused
+tests and has been consumed by failed-closed exact-head GB10 runs, but it has not
+yet published a complete final aggregate. It verifies already-present models, builds
 both exact-head ARM64 images, launches each provider separately without a
 Docker-published port on a temporary internal bridge, owns a bounded host
 loopback proxy, verifies blocked container egress, and distinguishes transient
@@ -107,6 +108,18 @@ changing the decode boundary. Cleanup was exact. The renamed
 `nemo-finalized-fixed-auto-contract` cell now gates only the identity-rich
 language contracts and records text parity for Phase 8. A new plan-bound private
 suite and exact-head rerun remain open.
+
+Exact head `2b9118ead1df1f3220da65846c2aa8949d90d83d` loaded the new
+plan-bound 18-track suite and passed all 18 Cohere/NeMo child cells, including
+the corrected fixed/automatic contract, both four-hour transport cells, 600-result
+short-tail cells, the mixed 30-second/15-minute NeMo window, cancellation,
+capacity, and c8/1,600 resource profiles. Both providers, their proxies,
+listeners, and the temporary network were removed. The final aggregate failed
+closed because its stale mixed-window expectation required only 15 minutes even
+though the plan and child evidence correctly selected both 30-second and
+15-minute inputs. No aggregate was published. The finalizer and its regression
+fixture now require the complete mixed-duration selection; a new exact-head run
+remains required.
 
 Focused resource controls now complete four consecutive c8/400-request repeats
 per resident provider. vLLM processed the warm repeats at about 321-322 audio-

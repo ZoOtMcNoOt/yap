@@ -1223,6 +1223,17 @@ and exact-text parity with `lexicalParityRequired: false`. Provider quality stay
 in Phase 8's Tiron comparison. The changed plan hash requires a new private
 suite envelope and another exact-head lifecycle run.
 
+Exact head `2b9118ead1df1f3220da65846c2aa8949d90d83d` then consumed the new
+18-track suite and passed all 18 Cohere/NeMo children. That includes both exact
+four-hour transport boundaries, both 600-result short-tail cells, the corrected
+fixed/automatic language contract, the mixed 30-second/15-minute NeMo window,
+cancellation, capacity, and both c8/1,600 resource profiles. Teardown was exact.
+The final aggregate did not publish because its stale fixture expected the
+long-window duration-suite binding to contain only 15 minutes; the executable
+plan and child correctly contained both 30 seconds and 15 minutes. The finalizer
+and regression fixture now require the whole mixed selection. A new exact-head
+run remains required, and neither provider is promoted.
+
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness
 passed, the public fixture matched the Transformers reference transcript hash
