@@ -1,6 +1,13 @@
 import path from "node:path";
 
 const defaultPrivateServerAsrGateTimeoutMs = 2_700_000;
+const inFlightRemotePipelineStages = new Map([
+  ["queued_server", ["notStarted", "notStarted"]],
+  ["preflighting", ["running", "notStarted"]],
+  ["preprocessing", ["running", "notStarted"]],
+  ["uploading", ["done", "notStarted"]],
+  ["server_processing", ["done", "running"]],
+]);
 
 function stripExtendedWindowsPrefix(candidate) {
   if (/^\\\\\?\\UNC\\/i.test(candidate)) return `\\\\${candidate.slice(8)}`;
@@ -19,6 +26,18 @@ function normalizeWindowsPath(candidate) {
 export function sameWindowsPath(left, right) {
   return normalizeWindowsPath(left).toLocaleLowerCase("en-US")
     === normalizeWindowsPath(right).toLocaleLowerCase("en-US");
+}
+
+export function isValidInFlightRemotePipeline(job) {
+  const expectedStages = inFlightRemotePipelineStages.get(job?.status);
+  if (!expectedStages || job.route !== "serverBatch") return false;
+  const [preprocessing, transcription] = expectedStages;
+  return job.pipeline?.intake === "done"
+    && job.pipeline.preprocessing === preprocessing
+    && job.pipeline.transcription === transcription
+    && job.pipeline.alignment === "notStarted"
+    && job.pipeline.diarization === "notStarted"
+    && job.pipeline.postprocessing === "notStarted";
 }
 
 export function matchCompletedRemoteTranscript(job, catalog) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isValidInFlightRemotePipeline,
   matchCompletedRemoteTranscript,
   matchesVerifiedHistoryDialog,
   resolvePrivateServerAsrGateTimeout,
@@ -14,6 +15,47 @@ describe("private-server ASR gate support", () => {
 
   it("treats Windows case and extended-length prefixes as the same path", () => {
     expect(sameWindowsPath("C:\\Private\\Evidence", "\\\\?\\c:\\private\\evidence\\")).toBe(true);
+  });
+
+  it("accepts every legitimate in-flight server pipeline projection", () => {
+    const pipeline = {
+      intake: "done",
+      preprocessing: "notStarted",
+      transcription: "notStarted",
+      alignment: "notStarted",
+      diarization: "notStarted",
+      postprocessing: "notStarted",
+    };
+    const job = {
+      route: "serverBatch",
+      status: "queued_server",
+      pipeline,
+    };
+    const expectedStages = new Map([
+      ["queued_server", ["notStarted", "notStarted"]],
+      ["preflighting", ["running", "notStarted"]],
+      ["preprocessing", ["running", "notStarted"]],
+      ["uploading", ["done", "notStarted"]],
+      ["server_processing", ["done", "running"]],
+    ]);
+
+    for (const [status, [preprocessing, transcription]] of expectedStages) {
+      expect(isValidInFlightRemotePipeline({
+        ...job,
+        status,
+        pipeline: { ...pipeline, preprocessing, transcription },
+      })).toBe(true);
+    }
+    expect(isValidInFlightRemotePipeline({
+      ...job,
+      status: "preflighting",
+      pipeline,
+    })).toBe(false);
+    expect(isValidInFlightRemotePipeline({
+      ...job,
+      status: "complete",
+      pipeline: { ...pipeline, preprocessing: "done", transcription: "done" },
+    })).toBe(false);
   });
 
   it("joins only a fully processed remote job to its terminal History entry", () => {

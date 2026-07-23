@@ -10,6 +10,7 @@ import {
 import path from "node:path";
 
 import {
+  isValidInFlightRemotePipeline,
   matchCompletedRemoteTranscript,
   matchesVerifiedHistoryDialog,
 } from "./private-server-asr-gate-support.js";
@@ -184,19 +185,12 @@ describe("checked-head private-server ASR gate", () => {
       catalogRevision: catalog.catalogRevision,
     });
     expect(created).toHaveLength(1);
-    expect(created[0].status).toBe("queued_server");
+    expect(created[0].status).toBe("preflighting");
+    expect(isValidInFlightRemotePipeline(created[0])).toBe(true);
     expect(created[0].languageDecision).toEqual({
       mode: "fixed",
       languageBcp47: "en-US",
       disposition: "primary",
-    });
-    expect(created[0].pipeline).toEqual({
-      intake: "done",
-      preprocessing: "notStarted",
-      transcription: "notStarted",
-      alignment: "notStarted",
-      diarization: "notStarted",
-      postprocessing: "notStarted",
     });
     expect(canonicalPath(created[0].sourcePath)).toBe(canonicalPath(fixturePath));
     const createdJob = created[0];
@@ -216,8 +210,7 @@ describe("checked-head private-server ASR gate", () => {
     const interruptedSnapshot = await invoke("recording_jobs_snapshot");
     const interruptedJob = interruptedSnapshot.find((candidate) => candidate.id === clientJobId);
     expect(interruptedJob).toBeDefined();
-    expect(["queued_server", "preprocessing", "uploading", "server_processing"])
-      .toContain(interruptedJob.status);
+    expect(isValidInFlightRemotePipeline(interruptedJob)).toBe(true);
     observedStatuses.add(interruptedJob.status);
     observedPreprocessingStates.add(interruptedJob.pipeline.preprocessing);
 
