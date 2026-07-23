@@ -51,6 +51,15 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
         self.assertIn(
             'YAP_BATCH_JOB_STORAGE_DIR="$YAP_BATCH_JOB_STORAGE_DIR"', script
         )
+        for language_detection_setting in (
+            'YAP_LANGUAGE_DETECTION_ENABLED="$YAP_LANGUAGE_DETECTION_ENABLED"',
+            'YAP_LANGUAGE_DETECTION_COMPONENT_LOCK="$YAP_LANGUAGE_DETECTION_COMPONENT_LOCK"',
+            'YAP_LANGUAGE_DETECTION_MODEL_DIR="$YAP_LANGUAGE_DETECTION_MODEL_DIR"',
+            'YAP_LANGUAGE_DETECTION_TIMEOUT_SECONDS="$YAP_LANGUAGE_DETECTION_TIMEOUT_SECONDS"',
+            'YAP_LANGUAGE_DETECTION_DOCKER_BINARY="$YAP_LANGUAGE_DETECTION_DOCKER_BINARY"',
+            'YAP_LANGUAGE_DETECTION_WORKER_IMAGE="$YAP_LANGUAGE_DETECTION_WORKER_IMAGE"',
+        ):
+            self.assertIn(language_detection_setting, script)
         self.assertIn('storage_mode="$(stat -Lc \'%a\'', script)
         self.assertIn('if [ "$storage_mode" != "700" ]', script)
         for forbidden in (
@@ -86,6 +95,13 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
         )
         self.assertIn(
             "candidate capability locks must remain outside the repository",
+            script,
+        )
+        self.assertIn('YAP_LANGUAGE_DETECTION_ENABLED:=0', script)
+        self.assertIn('YAP_LANGUAGE_DETECTION_MODEL_DIR:?', script)
+        self.assertIn('YAP_LANGUAGE_DETECTION_WORKER_IMAGE:?', script)
+        self.assertIn(
+            "YAP_LANGUAGE_DETECTION_ENABLED must be 0 or 1",
             script,
         )
         self.assertNotIn("nvcr.io/nvidia/pytorch", script)

@@ -206,6 +206,23 @@ docker build \
   "$release_root/server"
 ```
 
+To exercise the accepted Phase 6 server language-preflight path, build the
+small checked AmberNet worker separately and point it at the already verified
+private model directory. The model is mounted at request time and must not be
+copied into the image or repository:
+
+```bash
+lid_model_dir='/path/to/private/ambernet-1.12.0-int8-qdq'
+lid_image="yap-lid:checked-head-$checked_head"
+
+docker build \
+  --pull \
+  --build-arg "YAP_CHECKED_HEAD=$checked_head" \
+  --file "$release_root/server/runtime/lid/Dockerfile" \
+  --tag "$lid_image" \
+  "$release_root/server"
+```
+
 Create one checked, temporary internal bridge for the foreground model
 containers. The launchers reject the default Docker bridge, a non-internal
 network, or a network whose owner/revision labels do not match the candidate.
@@ -271,8 +288,16 @@ YAP_ASR_MODEL_DIR="$model_dir" \
 YAP_BATCH_JOB_STORAGE_DIR="$storage_dir" \
 YAP_COHERE_VLLM_ENDPOINT="http://127.0.0.1:18000" \
 YAP_COHERE_VLLM_API_KEY="$YAP_COHERE_VLLM_API_KEY" \
+YAP_LANGUAGE_DETECTION_ENABLED=1 \
+YAP_LANGUAGE_DETECTION_MODEL_DIR="$lid_model_dir" \
+YAP_LANGUAGE_DETECTION_WORKER_IMAGE="$lid_image" \
 bash infra/yap-server-node/development-batch-server.sh
 ```
+
+Omit the three language-detection variables only when intentionally testing
+the explicit manual-review fallback. In that mode the server does not
+advertise `languagePreflight`, and the client must not advance as though a
+language preflight had succeeded.
 
 Only a frozen qualification that intentionally exercises the provider-neutral
 Yap job boundary should use the complete invocation below. Create a matching

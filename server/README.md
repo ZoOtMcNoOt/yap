@@ -125,6 +125,12 @@ endpoint, and private API key. The vLLM launcher inspects the exact ARM64 image
 ID and revision label, requires a checked internal Docker bridge, runs the
 container without a Docker-published port, and owns a bounded `socat` process
 group that forwards only `127.0.0.1:18000` to the container-private address.
+The same foreground launcher can enable the verified AmberNet language
+preflight by passing `YAP_LANGUAGE_DETECTION_ENABLED=1`, the private
+verify-only model directory, and an exact-head `server/runtime/lid` image.
+When those inputs are absent, the server does not advertise
+`languagePreflight`; clients then retain the recording for explicit language
+review instead of silently bypassing the unavailable check.
 The committed
 capability catalog contains Cohere only; it does not advertise the unpromoted
 Nemotron candidate. `nemotron-nemo-server.sh` exists for direct frozen
