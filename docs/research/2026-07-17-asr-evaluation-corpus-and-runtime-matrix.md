@@ -498,9 +498,13 @@ exposure; those are separate manifest decisions.
 
 ## Coverage matrix
 
-The promotion subset must cover each row with multiple speakers where the
-source permits. One recording may satisfy several rows, but an aggregate score
-cannot conceal a failing row.
+This is the roadmap-wide coverage matrix, not a requirement that every row
+activate in Phase 6. A promotion subset must cover every row owned by the
+capability being promoted; one recording may satisfy several active rows, but an
+aggregate score cannot conceal a failing row. Phase 6 owns single-speaker
+dictation/batch, locale, language-routing, duration, and provider-runtime rows.
+Phase 8 activates the multi-speaker meeting, overlap, speaking-roster, speaker-
+attributed, and virtual-meeting rows under ADR 0027.
 
 | Use condition | Primary evidence | Required assertions |
 | --- | --- | --- |
@@ -851,9 +855,11 @@ not called a live-object leak.
    candidate and thresholds, then run the one-time complete Phase 6 matrix.
 
 The initial Phase 6 promotion subset should be hours, not hundreds of hours, but
-must contain every coverage row and advertised locale. The extended suite runs
-before a model/runtime promotion or major decoder change. Phase 10 adds the
-approved-private, authenticated mixed-owner and enterprise deployment profile.
+must contain every Phase 6-active coverage row and advertised locale. Phase 8
+adds the independently adjudicated meeting, overlap, speaking-roster, speaker-
+attributed, and virtual-transport rows. The extended suite runs before a model/
+runtime promotion or major decoder change. Phase 10 adds the approved-private,
+authenticated mixed-owner and enterprise deployment profile.
 
 ## Primary references
 

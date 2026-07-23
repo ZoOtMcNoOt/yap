@@ -1621,11 +1621,14 @@ It must prove at least:
    duplicate/dropped transcript text, and no path manufactures confidence;
 7. VAD failure preserves source audio and bounded transport; alignment failure
    publishes an explicit unavailable result rather than fabricated timing;
-8. the provenance-locked promotion subset exercises every advertised
-   locale/tier plus clean/noisy, spontaneous/reduced, same-utterance switch
-   points, meeting/overlap, medical-mock, silence, and long-form slices without
-   publishing audio/transcripts or promoting an unmeasured broad-coverage or
-   language-boundary quality claim;
+8. the provenance-locked Phase 6 promotion subset exercises every advertised
+   locale/tier plus clean/noisy single-speaker, spontaneous/reduced,
+   same-utterance switch-point, medical-mock, silence, critical-token, and long-
+   form slices without publishing audio/transcripts or promoting an unmeasured
+   broad-coverage or language-boundary quality claim. The completed AMI close/
+   far run remains diagnostic only; independent multi-speaker, overlap,
+   speaker-attributed, and virtual-meeting promotion belongs to Phase 8 under
+   ADR 0027;
 9. GB10 uses the exact locked Python 3.12/NVIDIA runtime, records WER/CER/LID/
    alignment, streaming stability, exact-duration integrity, concurrency, and
    single-reference-worker resource ceilings appropriate to the promoted
