@@ -436,7 +436,7 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "specialized"):
             run_resident_provider_load_case(
                 plan_path=SERVER_ROOT / "asr-evaluation-plan.json",
-                load_case_id="nemo-finalized-fixed-auto-parity",
+                load_case_id="nemo-finalized-fixed-auto-contract",
                 model_lock_path=SERVER_ROOT / "nemotron-nemo-serving.lock.json",
                 tracks={},
                 endpoint="http://127.0.0.1:18001",

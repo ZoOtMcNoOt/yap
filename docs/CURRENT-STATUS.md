@@ -91,11 +91,22 @@ distinct. Its 17-request capacity cell now targets the truthful Yap owner:
 eight running plus eight queued batch-pool reservations, not an invented vLLM
 429; aggregate PCM reservation is gated at the same owner. NeMo retains its
 separate authenticated eight-active plus one-429 service cell. The fixed/auto
-runner compares lexical output from the same locked source at c1/c8, including
-source-span evidence, while reporting exact punctuation/casing parity
-separately. Focused dirty-head GB10 controls passed all of these semantic cells,
+runner requires the distinct identity-rich fixed and automatic source-span
+contracts from the same locked source at c1/c8, while recording lexical and
+exact punctuation/casing parity separately for later provider promotion.
+Focused dirty-head GB10 controls passed all of these semantic cells,
 including rejection/retry and clean teardown. The private frozen representative
 quality, percentile, resource-slope, and promotion decisions remain open.
+
+Exact head `27108e1f591920b5a62496f988ae9ee7b335f2ce` passed the complete Cohere
+lifecycle and teardown, then NeMo readiness, both duration ladders, short-tail,
+and 15-minute request lifecycle. Its fixed and automatic paths each completed
+16 c1/c8 results with correct automatic `en-US` source-time evidence, but the
+checker incorrectly required lexical equality despite automatic segmentation
+changing the decode boundary. Cleanup was exact. The renamed
+`nemo-finalized-fixed-auto-contract` cell now gates only the identity-rich
+language contracts and records text parity for Phase 8. A new plan-bound private
+suite and exact-head rerun remain open.
 
 Focused resource controls now complete four consecutive c8/400-request repeats
 per resident provider. vLLM processed the warm repeats at about 321-322 audio-

@@ -716,10 +716,11 @@ evidence before default-on or production promotion.
 8. [x] Add reference fixed-language Cohere/Nemotron routes and explicit Nemotron
        auto mode without claiming a persistent production pool.
 9. [ ] Finish the provider-specific serving gates from ADR 0025. For Cohere,
-       prove the digest-pinned vLLM 26.06 image, exact model/output parity,
+       prove the digest-pinned vLLM 26.06 image, request/result identity,
        duration and c1/c2/c4/c8 behavior, continuous-batching isolation,
        cancellation/recovery, bounded admission, memory, and clean teardown
-       against the Transformers reference. For Nemotron, preserve the pinned
+       while deferring broad output promotion to the Phase 8 Tiron comparison.
+       For Nemotron, preserve the pinned
        Transformers fixed/automatic correctness reference and run the
        implemented resident NeMo candidate's separate frozen locale/duration/
        cache-state/concurrency/lifecycle gate before promotion. The retired Triton

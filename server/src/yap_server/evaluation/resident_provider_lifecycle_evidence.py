@@ -144,10 +144,11 @@ _CHILD_REQUIREMENTS = {
         duration_samples=(14_400_000,),
         qualification_scope="request-lifecycle",
     ),
-    "nemo/language-parity.json": _ChildRequirement(
+    "nemo/language-contract.json": _ChildRequirement(
         "load",
         "nemo-nemotron-finalized",
-        "nemo-finalized-fixed-auto-parity",
+        "nemo-finalized-fixed-auto-contract",
+        qualification_scope="request-lifecycle",
     ),
     "nemo/cancellation.json": _ChildRequirement(
         "load",

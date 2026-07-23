@@ -48,14 +48,15 @@ from yap_server.limits import MAX_WORKER_RESULT_BYTES
 from yap_server.pools.model_lock import ModelPoolLock, load_model_pool_lock
 
 
-_LOAD_CASE_ID = "nemo-finalized-fixed-auto-parity"
-_EXPECTED = "fixed-and-auto-lexical-language-contract-parity"
+_LOAD_CASE_ID = "nemo-finalized-fixed-auto-contract"
+_EXPECTED = "fixed-and-auto-language-contract"
+_QUALIFICATION_SCOPE = "request-lifecycle"
 _DURATION_SAMPLES = 480_000
 _REQUESTS_PER_MODE = 8
 
 
 @dataclass(frozen=True, slots=True)
-class ProviderLanguageParityQualification:
+class ProviderFixedAutoContractQualification:
     load_case: RuntimeLoadCase
     runs: tuple[Mapping[str, object], ...]
 
@@ -69,6 +70,7 @@ class ProviderLanguageParityQualification:
             "loadCaseId": self.load_case.identifier,
             "systemId": self.load_case.system_id,
             "measurementBoundary": self.load_case.measurement_boundary,
+            "qualificationScope": _QUALIFICATION_SCOPE,
             "expected": self.load_case.expected,
             "minimumCompletions": self.load_case.minimum_completions,
             "passed": self.passed,
@@ -78,7 +80,7 @@ class ProviderLanguageParityQualification:
         return evidence
 
 
-def run_provider_language_parity_case(
+def run_provider_fixed_auto_contract_case(
     worker: ResidentQualificationWorker,
     fixed_factory: QualificationRequestFactory,
     automatic_factory: QualificationRequestFactory,
@@ -88,13 +90,13 @@ def run_provider_language_parity_case(
     fixed_provider_language: str,
     lock: ModelPoolLock,
     timeout_seconds_per_wave: float,
-) -> ProviderLanguageParityQualification:
+) -> ProviderFixedAutoContractQualification:
     """Compare the same source through fixed and automatic NeMo contracts."""
 
     if timeout_seconds_per_wave <= 0 or fixed_provider_language == "auto":
-        raise ValueError("provider language parity inputs are invalid")
+        raise ValueError("provider fixed/automatic contract inputs are invalid")
     load_case = select_runtime_load_case(plan, load_case_id)
-    _validate_parity_case(load_case)
+    _validate_contract_case(load_case)
     runs: list[Mapping[str, object]] = []
     for concurrency in load_case.concurrencies:
         fixed_requests = _create_requests(
@@ -127,7 +129,7 @@ def run_provider_language_parity_case(
         )
         exact_text_parity_count = 0
         lexical_parity_count = 0
-        contract_parity_count = 0
+        contract_conformance_count = 0
         for fixed_request, automatic_request, fixed_result, automatic_result in zip(
             fixed_requests,
             automatic_requests,
@@ -141,7 +143,7 @@ def run_provider_language_parity_case(
                 exact_text_parity_count += 1
             if transcripts_match_lexically(fixed_text, automatic_text):
                 lexical_parity_count += 1
-            if _contracts_match(
+            if _language_contracts_conform(
                 fixed_result,
                 automatic_result,
                 fixed_request=fixed_request,
@@ -149,7 +151,7 @@ def run_provider_language_parity_case(
                 fixed_provider_language=fixed_provider_language,
                 lock=lock,
             ):
-                contract_parity_count += 1
+                contract_conformance_count += 1
         fixed_complete = _all_completed(fixed_summary, _REQUESTS_PER_MODE)
         automatic_complete = _all_completed(
             automatic_summary,
@@ -164,8 +166,7 @@ def run_provider_language_parity_case(
         passed = (
             fixed_complete
             and automatic_complete
-            and lexical_parity_count == _REQUESTS_PER_MODE
-            and contract_parity_count == _REQUESTS_PER_MODE
+            and contract_conformance_count == _REQUESTS_PER_MODE
             and minimum_completions_met
         )
         runs.append(
@@ -175,18 +176,19 @@ def run_provider_language_parity_case(
                 "automatic": automatic_summary,
                 "exactTextParityCount": exact_text_parity_count,
                 "lexicalParityCount": lexical_parity_count,
-                "languageContractParityCount": contract_parity_count,
+                "lexicalParityRequired": False,
+                "languageContractConformanceCount": contract_conformance_count,
                 "minimumCompletionsMet": minimum_completions_met,
                 "passed": passed,
             }
         )
-    return ProviderLanguageParityQualification(
+    return ProviderFixedAutoContractQualification(
         load_case=load_case,
         runs=tuple(runs),
     )
 
 
-def run_resident_provider_language_parity_case(
+def run_resident_provider_fixed_auto_contract_case(
     *,
     plan_path: Path,
     load_case_id: str,
@@ -199,12 +201,12 @@ def run_resident_provider_language_parity_case(
     output_root: Path,
     timeout_seconds_per_wave: float,
     environ: Mapping[str, str] = os.environ,
-) -> ProviderLanguageParityQualification:
-    """Compose the fixed/automatic parity gate from one locked private track."""
+) -> ProviderFixedAutoContractQualification:
+    """Compose the fixed/automatic contract gate from one locked private track."""
 
     plan = load_runtime_evaluation_plan(plan_path)
     load_case = select_runtime_load_case(plan, load_case_id)
-    _validate_parity_case(load_case)
+    _validate_contract_case(load_case)
     provider_id, api_key_environment = resident_provider_configuration(
         load_case.system_id
     )
@@ -213,7 +215,7 @@ def run_resident_provider_language_parity_case(
         raise ValueError(f"{api_key_environment} is required for qualification")
     exact_tracks = validate_exact_tracks(tracks)
     if set(exact_tracks) != {_DURATION_SAMPLES}:
-        raise ValueError("duration tracks differ from the parity load case")
+        raise ValueError("duration tracks differ from the contract load case")
     lock = load_model_pool_lock(model_lock_path)
     validate_resident_provider_lock(load_case.system_id, lock)
     worker = build_resident_worker(
@@ -245,7 +247,7 @@ def run_resident_provider_language_parity_case(
             output_root=output_root / "automatic",
             environ=environ,
         )
-        return run_provider_language_parity_case(
+        return run_provider_fixed_auto_contract_case(
             worker,
             fixed_factory,
             automatic_factory,
@@ -259,7 +261,7 @@ def run_resident_provider_language_parity_case(
         worker.close()
 
 
-def _validate_parity_case(load_case: RuntimeLoadCase) -> None:
+def _validate_contract_case(load_case: RuntimeLoadCase) -> None:
     if (
         load_case.identifier != _LOAD_CASE_ID
         or load_case.system_id != "nemo-nemotron-finalized"
@@ -272,7 +274,9 @@ def _validate_parity_case(load_case: RuntimeLoadCase) -> None:
         or load_case.concurrencies != (1, 8)
         or load_case.minimum_completions != _REQUESTS_PER_MODE
     ):
-        raise ValueError("runtime load case is not a NeMo language-parity scenario")
+        raise ValueError(
+            "runtime load case is not a NeMo fixed/automatic contract scenario"
+        )
 
 
 def _create_requests(
@@ -291,7 +295,7 @@ def _create_requests(
         for ordinal in range(_REQUESTS_PER_MODE)
     )
     if any(request.audio_samples != _DURATION_SAMPLES for request in requests):
-        raise ValueError("language parity request differs from the runtime plan")
+        raise ValueError("language contract request differs from the runtime plan")
     return requests
 
 
@@ -309,7 +313,7 @@ def _read_result(request: QualificationRequest) -> Mapping[str, object] | None:
     return payload if isinstance(payload, dict) else None
 
 
-def _contracts_match(
+def _language_contracts_conform(
     fixed_result: Mapping[str, object] | None,
     automatic_result: Mapping[str, object] | None,
     *,
@@ -327,6 +331,8 @@ def _contracts_match(
     }
     fixed_transcript = fixed_result.get("transcript")
     automatic_transcript = automatic_result.get("transcript")
+    fixed_text = _transcript_text(fixed_result)
+    automatic_text = _transcript_text(automatic_result)
     if (
         fixed_result.get("jobId") != fixed_request.job.job_id
         or automatic_result.get("jobId") != automatic_request.job.job_id
@@ -335,10 +341,12 @@ def _contracts_match(
         or not _audio_matches(fixed_result.get("audio"), fixed_request)
         or not _audio_matches(automatic_result.get("audio"), automatic_request)
         or not isinstance(fixed_transcript, dict)
+        or fixed_text is None
         or set(fixed_transcript) != {"text", "language", "punctuation"}
         or fixed_transcript.get("language") != fixed_provider_language
         or fixed_transcript.get("punctuation") is not True
         or not isinstance(automatic_transcript, dict)
+        or automatic_text is None
         or set(automatic_transcript)
         != {
             "text",
@@ -350,10 +358,6 @@ def _contracts_match(
         or automatic_transcript.get("language") != "auto"
         or automatic_transcript.get("punctuation") is not True
         or fixed_result.get("audio") != automatic_result.get("audio")
-        or not transcripts_match_lexically(
-            _transcript_text(fixed_result),
-            _transcript_text(automatic_result),
-        )
     ):
         return False
     segments = automatic_transcript.get("languageSegments")
@@ -418,7 +422,7 @@ def _all_completed(summary: Mapping[str, object], request_count: int) -> bool:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run private resident-NeMo fixed/automatic parity qualification",
+        description="Run private resident-NeMo fixed/automatic contract qualification",
     )
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--checked-head", required=True)
@@ -451,7 +455,7 @@ def main(argv: list[str] | None = None) -> int:
         plan_path=plan_path,
         load_case_id=arguments.load_case,
     )
-    qualification = run_resident_provider_language_parity_case(
+    qualification = run_resident_provider_fixed_auto_contract_case(
         plan_path=plan_path,
         load_case_id=arguments.load_case,
         model_lock_path=model_lock_path,

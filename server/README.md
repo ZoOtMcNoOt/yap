@@ -203,7 +203,7 @@ hashes the plan and serving lock and repeats the Git/input read-back.
 `YAP_EVAL_CACHE`
 must name the absolute private cache containing both tracks and output; the
 provider API key stays in its existing environment variable. The runner fails
-closed on cancellation, fixed/automatic parity, and capacity cells because those
+closed on cancellation, fixed/automatic contracts, and capacity cells because those
 require specialized semantics rather than an ordinary synchronized wave.
 For the predeclared c8 resource profiles, the same command may select one
 planned `--concurrency` and a bounded `--repeat-count`. Repetition is rejected
@@ -224,16 +224,17 @@ tests Cohere at Yap's actual 8-running + 8-queued batch-pool owner, including
 the aggregate four-hour PCM reservation, while testing NeMo's distinct
 authenticated eight-active service boundary and typed 429. vLLM's
 `--max-num-seqs 8` is a scheduler limit that can queue work, not a Yap 429
-contract. `provider_language_parity_qualification` runs the same locked
+contract. `provider_fixed_auto_contract_qualification` runs the same locked
 30-second source through fixed and automatic NeMo routes at c1 and c8 and
-requires lexical parity plus their deliberately different language-evidence
-shapes. It reports exact rendered-text parity separately because a language
-prompt may change casing or punctuation without changing the word sequence.
-Ordinary exact-track load cells apply the same distinction per audio duration:
-they require one non-empty lexical identity for every repeated immutable input
-while reporting exact rendered identity counts separately. Representative
-quality scoring still evaluates punctuation against adjudicated references, so
-this stability rule cannot turn punctuation regressions into passing quality.
+requires both deliberately different language-evidence shapes to conform to
+their identity-rich contracts. It records lexical and exact rendered-text
+parity without promoting either: automatic segmentation may legitimately alter
+wording, casing, or punctuation, and Phase 8 owns provider-quality comparison.
+Exact-track load cells report lexical and rendered identities per audio
+duration. Provider-behavior promotion scope requires one non-empty lexical
+identity; request/resource lifecycle scopes retain the observations without
+promoting them. Representative quality scoring still evaluates punctuation
+against adjudicated references.
 All three commands use the same private-cache, clean checked-head/input
 read-back, and aggregate-evidence rules as the standard runner. Their existence
 does not consume the frozen checked-head gate.

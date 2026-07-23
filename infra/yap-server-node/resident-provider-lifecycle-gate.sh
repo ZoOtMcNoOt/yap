@@ -526,13 +526,13 @@ run_nemo_qualification() {
   run_standard \
     nemo long-windows nemo-finalized-long-windows "$nemo_lock" "$nemo_endpoint" \
     en-US en-US 1 request-lifecycle 2
-  local parity_root="$gate_root/workloads/nemo-language-parity"
+  local contract_root="$gate_root/workloads/nemo-language-contract"
   PYTHONPATH="$repo_root/server/src" \
-    python3.12 -m yap_server.evaluation.provider_language_parity_qualification \
+    python3.12 -m yap_server.evaluation.provider_fixed_auto_contract_qualification \
       --plan "$plan_path" \
       --checked-head "$YAP_CHECKED_HEAD" \
       --repository-root "$repo_root" \
-      --load-case nemo-finalized-fixed-auto-parity \
+      --load-case nemo-finalized-fixed-auto-contract \
       --model-lock "$nemo_lock" \
       --duration-suite "$YAP_PROVIDER_DURATION_SUITE" \
       --duration-suite-sha256 "$YAP_PROVIDER_DURATION_SUITE_SHA256" \
@@ -540,12 +540,12 @@ run_nemo_qualification() {
       --fixed-catalog-language en-US \
       --fixed-provider-language en-US \
       --automatic-catalog-language und \
-      --output-root "$parity_root" \
+      --output-root "$contract_root" \
       --timeout-seconds-per-wave "$YAP_PROVIDER_TIMEOUT_SECONDS" \
-      >"$gate_root/logs/nemo-language-parity.json"
+      >"$gate_root/logs/nemo-language-contract.json"
   move_child_evidence \
-    "$parity_root/evidence.json" \
-    "$provider_evidence_root/nemo/language-parity.json"
+    "$contract_root/evidence.json" \
+    "$provider_evidence_root/nemo/language-contract.json"
   run_cancellation \
     nemo cancellation nemo-finalized-cancelled-sibling "$nemo_lock" \
     "$nemo_endpoint" en-US en-US

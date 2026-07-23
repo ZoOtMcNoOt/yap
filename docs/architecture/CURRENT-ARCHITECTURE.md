@@ -231,6 +231,12 @@ idle read-back at the planned concurrency. They report lexical variance without
 requiring deterministic wording from repeated audio. Provider-behavior remains
 a later model-promotion boundary, including the Phase 8 Tiron comparison.
 
+The NeMo fixed/automatic qualification follows the same separation. Both paths
+must publish valid job/audio/model/language results; automatic output must also
+carry detected locale segments and model/plan-bound source-time spans. Lexical
+and rendered-text parity are observations, not Phase 6 contract conditions,
+because automatic segmentation changes the decoding boundary.
+
 Provider resource ownership is also explicit. The cgroup supplies current,
 peak, task, and memory-event truth; the container entrypoint supplies RSS,
 anonymous/file/shared composition, thread count, and virtual allocation extent;

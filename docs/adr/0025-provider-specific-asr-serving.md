@@ -146,9 +146,9 @@ specific behind that seam.
   client-disconnect path calls the engine abort boundary, but externally freed
   requests do not enter its finished-request histogram; the runner therefore
   distinguishes that one-stop accounting shape from a counted abort, provider
-  completion after cancellation, and ambiguous metrics. The NeMo runner
-  compares lexical output plus fixed/automatic language-evidence contracts at
-  c1 and c8 while reporting rendered-text parity separately.
+  completion after cancellation, and ambiguous metrics. The NeMo runner proves
+  the distinct fixed/automatic language-evidence contracts at c1 and c8 while
+  recording lexical and rendered-text parity for later provider promotion.
   These are executable gate mechanics; no checked-head capacity or promotion
   claim exists until the frozen GB10 runs pass.
 - Exact readiness retries only typed transport/startup unavailability. A wrong
@@ -502,6 +502,25 @@ all identity-rich results and idle-provider read-back, and records rather than
 promotes lexical stability. `provider-behavior` remains available for the
 Phase 8 Tiron comparison. No request, capacity, resource, or teardown boundary
 was weakened, and a new exact-head run is required.
+
+Exact head `27108e1f591920b5a62496f988ae9ee7b335f2ce` then passed the complete
+Cohere lifecycle and exact teardown. NeMo passed readiness, both duration
+ladders, the 600-result short-tail cell, and the four-result 15-minute cell. The
+15-minute results retained three lexical identities but every request/result
+contract passed, as required by `request-lifecycle`. The next fixed/automatic
+cell completed 16 fixed and 16 automatic results across c1/c8. Every automatic
+result carried detected `en-US` source-time evidence, but automatic segmentation
+changed wording, so none matched the fixed transcript lexically. The runner had
+incorrectly included lexical equality inside its language-contract predicate;
+cleanup was exact and no final aggregate published.
+
+That cell is now named `nemo-finalized-fixed-auto-contract` and expects
+`fixed-and-auto-language-contract`. It requires all fixed and automatic
+identity/language/span contracts and records lexical/rendered parity with
+`lexicalParityRequired: false`. This keeps the Phase 6 automatic-route contract
+real without promoting Nemotron wording; Phase 8 compares that behavior with
+Tiron. The changed runtime-plan identity requires a new hash-bound private
+duration-suite envelope and exact-head rerun.
 
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall

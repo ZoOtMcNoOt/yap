@@ -405,6 +405,19 @@ model determinism rather than cross-request ownership, the wrapper now applies
 `request-lifecycle` to the Phase 6 short/long standard cells and records lexical
 variance. `provider-behavior` remains a later provider-promotion scope. A new
 exact-head run is required.
+
+At exact head `27108e1f591920b5a62496f988ae9ee7b335f2ce`, the full Cohere lifecycle
+passed and tore down. NeMo then passed readiness, both duration ladders,
+short-tail, and its 15-minute request-lifecycle cell. The fixed/automatic cell
+completed 16 results per mode across c1/c8 with correct detected `en-US`
+source-time evidence, but automatic segmentation changed wording and produced
+zero lexical matches with fixed decoding. The old checker conflated text parity
+with language-contract conformance, so the gate stopped closed and cleaned up
+exactly. The corrected `nemo-finalized-fixed-auto-contract` cell requires the
+distinct fixed/automatic contracts and records text parity for Phase 8 rather
+than promoting it. Because this changes the runtime-plan identity, rebuild or
+rebind the private suite under a new out-of-band SHA before the next exact-head
+run.
 Representative quality, current-host client Preview resource/lifecycle behavior,
 accessibility, and the other Phase 6 gates remain separate. Low-end physical
 client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host

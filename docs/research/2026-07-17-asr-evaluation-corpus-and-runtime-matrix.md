@@ -622,17 +622,19 @@ capacity. Those remain later gates.
 The standard resident-provider runner executes only ordinary complete and
 complete-source load cells. It requires track audio and results under the
 private external cache and emits explicit expectation decisions. Cancellation,
-fixed/automatic parity, and admission cells deliberately fail closed at this
+fixed/automatic contracts, and admission cells deliberately fail closed at this
 entry point until specialized runners observe their exact named behavior; a
 generic wave and a satisfied minimum-completion count are not sufficient proof.
-The fixed/automatic NeMo cell requires identical case-folded lexical tokens and
-complete source-span/language-contract parity while retaining exact rendered
-text parity as a separate diagnostic. This avoids misclassifying deterministic
-prompt-dependent casing or punctuation as different recognized words.
+The fixed/automatic NeMo request-lifecycle cell requires complete identity-rich
+fixed and source-span/dynamic language contracts while retaining lexical and
+exact rendered-text parity as diagnostics. Automatic segmentation may alter
+wording, so text parity remains provider-promotion evidence for the Phase 8
+Tiron comparison rather than a Phase 6 lifecycle assertion.
 
 The ordinary exact-track runner also groups completed results by audio duration.
-Every repeated immutable input must retain one non-empty lexical identity;
-exact rendered identity count remains visible as a separate aggregate. A
+Provider-behavior scope requires one non-empty lexical identity; request- and
+resource-lifecycle scopes record lexical and exact rendered identities without
+promoting them. A
 focused 200-request Cohere/vLLM repetition produced 189 copies of one rendering
 and 11 of a second, with all 92 lexical tokens identical and the difference
 limited to four commas. Neither disabling the V1 engine subprocess nor enabling

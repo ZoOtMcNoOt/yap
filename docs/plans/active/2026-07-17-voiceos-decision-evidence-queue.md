@@ -575,6 +575,18 @@ identity, completion, concurrency, idle-provider, and teardown requirements
 remain, while lexical variance is recorded for Phase 8's Tiron comparison rather
 than promoted now. A new exact-head run remains open.
 
+Exact head `27108e1f591920b5a62496f988ae9ee7b335f2ce` passed the full Cohere
+lifecycle and exact teardown, then NeMo readiness, both duration ladders,
+short-tail, and 15-minute request lifecycle. The fixed and automatic NeMo paths
+each completed 16 c1/c8 results with correct automatic `en-US` source-time
+evidence, but automatic segmentation changed wording and produced zero lexical
+matches. The checker incorrectly made lexical equality part of language-contract
+conformance; cleanup was exact. The renamed
+`nemo-finalized-fixed-auto-contract` cell now gates only the identity-rich
+fixed/automatic language contracts and records text parity for the Phase 8 Tiron
+comparison. Its changed plan identity requires a newly hash-bound private suite
+and exact-head rerun.
+
 ### P6-08 — Review UI and model-independent terminology hooks
 
 - [x] Complete keyboard, focus, label, contrast, reduced-motion, and narrow-

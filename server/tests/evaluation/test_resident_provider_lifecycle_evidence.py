@@ -54,7 +54,7 @@ ARTIFACTS = (
     ("nemo", "readiness.json", "readiness", "nemo-nemotron-finalized", "readiness"),
     ("nemo", "short-tail.json", "load", "nemo-nemotron-finalized", "nemo-finalized-short-tail"),
     ("nemo", "long-windows.json", "load", "nemo-nemotron-finalized", "nemo-finalized-long-windows"),
-    ("nemo", "language-parity.json", "load", "nemo-nemotron-finalized", "nemo-finalized-fixed-auto-parity"),
+    ("nemo", "language-contract.json", "load", "nemo-nemotron-finalized", "nemo-finalized-fixed-auto-contract"),
     ("nemo", "cancellation.json", "load", "nemo-nemotron-finalized", "nemo-finalized-cancelled-sibling"),
     ("nemo", "active-capacity.json", "load", "nemo-nemotron-finalized", "nemo-finalized-active-capacity"),
     ("nemo", "duration-finalized.json", "duration", "nemo-nemotron-finalized", "server-finalized-utterance"),
@@ -134,6 +134,8 @@ def _artifact(kind: str, system_id: str, identity: str) -> dict[str, object]:
                     "completedRequestCount": completions,
                 }
             )
+        elif identity == "nemo-finalized-fixed-auto-contract":
+            value["qualificationScope"] = "request-lifecycle"
         if kind == "resource":
             value.update(
                 {

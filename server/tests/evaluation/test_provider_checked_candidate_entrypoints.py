@@ -9,7 +9,7 @@ from unittest import mock
 from yap_server.evaluation import (
     provider_cancellation_qualification,
     provider_capacity_qualification,
-    provider_language_parity_qualification,
+    provider_fixed_auto_contract_qualification,
     provider_resource_observations,
     provider_runtime_qualification,
 )
@@ -50,8 +50,8 @@ class ProviderCheckedCandidateEntrypointTests(unittest.TestCase):
                 ["--timeout-seconds", "30"],
             ),
             (
-                provider_language_parity_qualification,
-                "run_resident_provider_language_parity_case",
+                provider_fixed_auto_contract_qualification,
+                "run_resident_provider_fixed_auto_contract_case",
                 [
                     "--fixed-catalog-language",
                     "en-US",
@@ -100,7 +100,7 @@ class ProviderCheckedCandidateEntrypointTests(unittest.TestCase):
                     str(output_root),
                     *extra_arguments,
                 ]
-                if module is not provider_language_parity_qualification:
+                if module is not provider_fixed_auto_contract_qualification:
                     arguments.extend(
                         [
                             "--catalog-language",

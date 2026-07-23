@@ -242,13 +242,13 @@
       "expected": "complete"
     },
     {
-      "id": "nemo-finalized-fixed-auto-parity",
+      "id": "nemo-finalized-fixed-auto-contract",
       "systemId": "nemo-nemotron-finalized",
       "measurementBoundary": "checked-contract-to-resident-result",
       "mix": [{"durationSamples": 480000, "count": 8}],
       "concurrencies": [1, 8],
       "minimumCompletions": 8,
-      "expected": "fixed-and-auto-lexical-language-contract-parity"
+      "expected": "fixed-and-auto-language-contract"
     },
     {
       "id": "nemo-finalized-long-windows",

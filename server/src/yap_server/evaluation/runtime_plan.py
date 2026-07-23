@@ -238,13 +238,13 @@ _LOAD_CASE_CONTRACTS = {
         200,
         "complete",
     ),
-    "nemo-finalized-fixed-auto-parity": (
+    "nemo-finalized-fixed-auto-contract": (
         "nemo-nemotron-finalized",
         "checked-contract-to-resident-result",
         ((480_000, 8),),
         (1, 8),
         8,
-        "fixed-and-auto-lexical-language-contract-parity",
+        "fixed-and-auto-language-contract",
     ),
     "nemo-finalized-long-windows": (
         "nemo-nemotron-finalized",

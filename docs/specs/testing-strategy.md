@@ -170,6 +170,13 @@ cross-request mixing. A `resource-lifecycle` load adds the frozen resource
 profile and teardown requirements while likewise recording transcript variance
 without converting lifecycle evidence into a model-promotion gate.
 
+The resident NeMo fixed/automatic cell is likewise request-lifecycle evidence.
+It requires both result shapes, model/audio/job identity, fixed locale, automatic
+language segments, and model/plan-bound source-time spans at c1/c8. Lexical and
+exact-text parity are recorded but not required: automatic utterance
+segmentation can alter decoding, and provider-quality comparison belongs to the
+Phase 8 Tiron gate.
+
 The resident-provider lifecycle wrapper is the checked-head owner for the
 launched-image and teardown boundary. It verifies already-present model assets,
 builds exact-head ARM64 images, creates a labeled internal Docker bridge, runs

@@ -1013,11 +1013,11 @@ ambiguous accounting. Capacity treats vLLM's `--max-num-seqs 8` as a
 scheduler limit rather than a 429 contract and tests the real Yap owner: eight
 running plus eight queued slots and the aggregate four-hour PCM reservation,
 with retry after drain. NeMo separately proves eight authenticated active
-requests, one typed service 429, and retry. Fixed/automatic NeMo parity runs the
-same locked 30-second source at c1 and c8, requiring lexical transcript parity,
-fixed `en-US` without dynamic fields, and automatic `auto` with complete
-detected `en-US` source-span evidence; exact rendered-text parity remains a
-separate diagnostic. Focused portable tests cover these
+requests, one typed service 429, and retry. The fixed/automatic NeMo contract runner uses the
+same locked 30-second source at c1 and c8, requiring fixed `en-US` without
+dynamic fields and automatic `auto` with complete detected `en-US` source-span
+evidence. Lexical and exact rendered-text parity remain diagnostics for later
+provider promotion, not Phase 6 request-lifecycle conditions. Focused portable tests cover these
 runners, but their frozen GB10 executions and promotion decisions remain open.
 
 All five provider workload entry points plus the resource-qualification entry
@@ -1141,7 +1141,7 @@ internal Docker bridge, runs each container without a Docker-published port or
 external egress, owns a bounded numeric-loopback proxy, and runs vLLM then NeMo sequentially. Typed startup
 unavailability may retry; wrong authentication, runtime version, model identity,
 or malformed readiness fails immediately. The wrapper consumes the plan-owned
-duration, candidate-safety load, cancellation, capacity, language-parity, and
+duration, candidate-safety load, cancellation, capacity, language-contract, and
 c8/1,600 resource cells, then removes the provider and network before
 finalization. The Cohere candidate-safety set deliberately excludes the retained
 `vllm-long-waves` and `vllm-mixed-eight` provider-promotion comparators. Its
@@ -1205,6 +1205,23 @@ completion, provider-idle, concurrency, and teardown requirements while merely
 reporting lexical variance. `provider-behavior` remains available for Phase 8's
 Tiron comparison. A new exact-head run remains open and neither provider is
 promoted.
+
+Exact head `27108e1f591920b5a62496f988ae9ee7b335f2ce` passed every Cohere child and
+exact teardown. NeMo then passed readiness, both duration ladders, all 600
+short-tail results, and all four 15-minute request-lifecycle results. The latter
+reported three lexical identities without losing any identity-rich result.
+Across c1/c8 the subsequent fixed and automatic paths each completed 16 results,
+and every automatic result carried detected `en-US` source-time evidence. None
+matched the fixed path lexically because automatic segmentation changed wording.
+The specialized checker had embedded lexical equality inside language-contract
+conformance, so it failed and cleaned up before later NeMo cells.
+
+The corrected plan cell is `nemo-finalized-fixed-auto-contract` with
+`fixed-and-auto-language-contract` semantics. It requires all fixed/automatic
+job, audio, model, language, segment, and span contracts while recording lexical
+and exact-text parity with `lexicalParityRequired: false`. Provider quality stays
+in Phase 8's Tiron comparison. The changed plan hash requires a new private
+suite envelope and another exact-head lifecycle run.
 
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness

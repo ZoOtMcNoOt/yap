@@ -217,14 +217,13 @@ vLLM scheduler's eight-sequence limit can queue work and is not treated as an
 HTTP rejection contract. Yap's batch pool owns the executable 8-running +
 8-queued and aggregate four-hour PCM admission limit; NeMo separately owns an
 authenticated eight-active service boundary with typed ninth-request 429.
-Cancellation, capacity, and fixed/automatic NeMo parity use distinct private
+Cancellation, capacity, and fixed/automatic NeMo contracts use distinct private
 qualification runners so a completion total cannot substitute for the named
-behavior. The NeMo comparison gates on lexical and language-contract parity
-while reporting prompt-dependent rendered punctuation/casing separately; vLLM
+behavior. The NeMo request-lifecycle cell gates on both valid language contracts
+while reporting lexical and rendered-text parity separately; vLLM
 cancellation distinguishes its pinned externally freed request accounting from
-provider completion. Exact-track load cells likewise require one lexical
-identity per repeated audio duration while retaining exact rendering counts and
-independent punctuation-quality scoring. These mechanics are implemented, while
+provider completion. Provider-behavior promotion cells retain lexical stability
+and independent punctuation-quality scoring. These mechanics are implemented, while
 their frozen GB10
 evidence and candidate promotion remain open. The
 retired Triton experiment
