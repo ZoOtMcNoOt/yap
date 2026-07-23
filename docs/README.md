@@ -93,6 +93,8 @@ instructions. Detailed historical task reports live under
 - [Server-node setup](runbooks/yap-server-node-setup.md)
 - [Dependency audit policy](runbooks/dependency-audit-policy.md)
 - [Repository housekeeping](runbooks/repo-housekeeping.md)
+- [Target-client language-routing qualification](runbooks/target-client-language-routing-qualification.md)
+- [Independent transcript-reference review](runbooks/independent-transcript-reference-review.md)
 - [Research index](research/README.md)
 - [Public security posture](security/SECURITY-POSTURE.md)
 - [Third-party provenance](provenance/THIRD-PARTY.md)
