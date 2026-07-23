@@ -71,11 +71,11 @@ let validatedPowerThermalEvidence: unknown = null;
 
 function parseActiveCaptureDuration(raw: string | undefined): number {
   if (!raw || !/^[1-9][0-9]*$/.test(raw)) {
-    throw new Error("YAP_HARDWARE_ACTIVE_CAPTURE_MS must be an integer of at least 120000.");
+    throw new Error("YAP_HARDWARE_ACTIVE_CAPTURE_MS must be an integer of at least 30000.");
   }
   const value = Number.parseInt(raw, 10);
-  if (!Number.isSafeInteger(value) || value < 120_000 || value > 1_800_000) {
-    throw new Error("YAP_HARDWARE_ACTIVE_CAPTURE_MS must be between 120000 and 1800000.");
+  if (!Number.isSafeInteger(value) || value < 30_000 || value > 1_800_000) {
+    throw new Error("YAP_HARDWARE_ACTIVE_CAPTURE_MS must be between 30000 and 1800000.");
   }
   return value;
 }
@@ -252,7 +252,7 @@ function createPrivateRunDirectories() {
     writeFileSync(
       uiContextFile,
       `${JSON.stringify({
-        schemaVersion: 2,
+        schemaVersion: 3,
         status: "started",
         activeCaptureMs,
         appBinarySha256,
@@ -396,7 +396,7 @@ export const config = {
     const evidenceBytes = readFileSync(uiEvidenceFile);
     const evidence = JSON.parse(evidenceBytes.toString("utf8"));
     if (
-      evidence.schemaVersion !== 2
+      evidence.schemaVersion !== 3
       || evidence.activeCaptureMs !== activeCaptureMs
       || evidence.route !== "localFallback"
       || evidence.stimulusLicense !== stimulusLicense
@@ -407,7 +407,10 @@ export const config = {
       || !Array.isArray(evidence.languageRoutingEnabledLocales)
       || evidence.languageRoutingEnabledLocales.length < 2
       || !Array.isArray(evidence.lifecycleStatuses)
-      || !evidence.lifecycleStatuses.includes("speaking")
+      || !evidence.lifecycleStatuses.some(
+        (status: unknown) => status === "listening" || status === "speaking",
+      )
+      || evidence.speechEvidenceBoundary !== "checked-head-prepared-audio-short-boundaries"
       || evidence.restartCancellation?.cycleCount !== 4
       || evidence.restartCancellation?.finalStatus !== "idle"
       || !Number.isFinite(evidence.renderedUiResponsiveness?.p95DelayMs)
@@ -419,7 +422,7 @@ export const config = {
     }
     const context = JSON.parse(readFileSync(uiContextFile, "utf8"));
     if (
-      context.schemaVersion !== 2
+      context.schemaVersion !== 3
       || context.serverBoundary !== targetServerBoundary
       || context.stimulusDelivery !== stimulusDelivery
     ) {

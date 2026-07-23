@@ -9,13 +9,18 @@ complete Phase 6 gate.
 The Phase 6 qualification has two evidence channels. A result is incomplete
 unless both belong to the same clean checked head and Windows machine:
 
-1. the prepared-audio native resource and repeated-session collector;
-2. a two-minute physical-microphone and rendered-UI smoke through the
-   release-mode WDIO binary while the launcher plays the licensed stimulus.
+1. the prepared-audio native resource, repeated-session, and short-boundary
+   speech/transcription collectors;
+2. a 30-second unattended default-microphone and rendered-UI lifecycle smoke
+   through the release-mode WDIO binary while the launcher plays the licensed
+   stimulus.
 
-The separate prepared-audio `short-boundaries` collector closes the
-250-ms-through-30-second duration contract on that same clean head. It is not a
-third physical-host channel and does not duplicate the two-minute UI smoke.
+The prepared-audio `short-boundaries` collector closes the
+250-ms-through-30-second speech, routing, transcription, and duration contract
+on that same clean head. The rendered-UI smoke independently covers the real
+capture device, window lifecycle, responsiveness, save/delete, and teardown; it
+does not depend on the current Windows output device acoustically reaching the
+current microphone.
 
 A paired energy/thermal measurement on a representative low-end physical
 device is a separate default-on and Phase 10 hardware-certification boundary.
@@ -43,7 +48,7 @@ receive only code, plans, and the final non-sensitive status claim after review.
   rights/provenance lock and must produce text in the one-second-through-
   30-second cases during focused verification. One file may serve both roles
   only when it satisfies both formats and purposes.
-- A license-cleared spoken-audio stimulus for the physical microphone smoke,
+- A license-cleared spoken-audio stimulus for the default-microphone lifecycle smoke,
   identified by SHA-256 and a bounded SPDX-style license identifier. The
   private launcher plays it through the current Windows output device while
   the production microphone adapter captures the acoustic result; it does not
@@ -181,7 +186,7 @@ $env:YAP_CHECKED_HEAD = $Head
 $env:YAP_TARGET_CLIENT_EVIDENCE_DIR = $Evidence
 $env:YAP_MODELS_DIR = $Models
 $env:APP_BINARY = (Resolve-Path '.\src-tauri\target\release\yap-desktop.exe').Path
-$env:YAP_HARDWARE_ACTIVE_CAPTURE_MS = '120000'
+$env:YAP_HARDWARE_ACTIVE_CAPTURE_MS = '30000'
 $env:YAP_TARGET_CLIENT_SERVER_ORIGIN = 'http://127.0.0.1:18765'
 $env:YAP_TARGET_CLIENT_STIMULUS_SHA256 = '<lowercase-sha256>'
 $env:YAP_TARGET_CLIENT_STIMULUS_LICENSE = 'CC-BY-4.0'
@@ -199,18 +204,20 @@ observed processor identity and processor count; two ASR threads; and all 12
 sustained cycles. It verifies that no model-load snapshots remain and never
 copies private model or recording bytes into the checkout.
 
-During the two-minute capture, the automated acoustic stimulus must make the
-default physical microphone reach the speaking state. The gate requires the
-isolated disabled-server profile, absent loopback server listener,
-local-fallback route, both resident language-support artifacts, at least two
-enabled locales, no degraded/error state, four early-stop/restart recovery
-cycles, UI timer-delay p95 at or below 50 ms, UI maximum delay at or below
-250 ms, exact save/idle lifecycle ordering, and deletion of all captured
-recording artifacts. The early-stop path issues stop while start is still
-outstanding, so it exercises the real `cancel_pending_start` boundary before
-proving later sessions recover. The aggregate JSON contains no transcript text.
-Failure screenshots and driver logs remain under the external private evidence
-root.
+During the 30-second capture, the gate requires active microphone capture and
+finite level events but does not require a positive level or `speaking` state:
+same-host output may legitimately be isolated from a headset microphone. The
+preceding prepared-audio collector supplies the speech-bearing evidence. The UI
+gate still requires the isolated disabled-server profile, absent loopback
+server listener, local-fallback route, both resident language-support
+artifacts, at least two enabled locales, no degraded/error state, four
+early-stop/restart recovery cycles, UI timer-delay p95 at or below 50 ms, UI
+maximum delay at or below 250 ms, exact save/idle lifecycle ordering, and
+deletion of all captured recording artifacts. The early-stop path issues stop
+while start is still outstanding, so it exercises the real
+`cancel_pending_start` boundary before proving later sessions recover. The
+aggregate JSON contains no transcript text. Failure screenshots and driver
+logs remain under the external private evidence root.
 
 The release-mode binary includes the WDIO capability solely for this disposable
 qualification build. It is not the distributable production artifact.

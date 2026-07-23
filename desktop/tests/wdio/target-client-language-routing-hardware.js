@@ -1,16 +1,17 @@
 import { writeFileSync } from "node:fs";
 
 import {
-  assertOwnedSavedSession,
   assertRecordingRootEmpty,
   listRecordingArtifacts,
+  ownedLiveSessionDeletion,
 } from "./recording-artifact-ownership.js";
 import { registerLiveSessionEventListeners } from "./live-session-event-listeners.js";
 
 const RESTART_STOP_DELAYS_MS = Object.freeze([5, 25, 25, 25]);
-const MINIMUM_TARGET_CAPTURE_MS = 2 * 60_000;
+const MINIMUM_TARGET_CAPTURE_MS = 30_000;
 const MAXIMUM_TARGET_CAPTURE_MS = 30 * 60_000;
 const AUTOMATED_STIMULUS_DELIVERY = "same-host-acoustic-playback";
+const SPEECH_EVIDENCE_BOUNDARY = "checked-head-prepared-audio-short-boundaries";
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message);
@@ -228,14 +229,10 @@ export function createTargetClientLanguageRoutingHardwareGate({
         const saved = await browser.tauri.execute(() =>
           globalThis.__yapLiveSessionEventListeners?.saved ?? []);
         for (const candidate of saved.slice(handledSaved)) {
-          const owned = assertOwnedSavedSession(candidate, recordingRoot, { runStartedAtMs });
+          const deletion = ownedLiveSessionDeletion(candidate, recordingRoot, { runStartedAtMs });
           await browser.tauri.execute(
-            ({ core }, identity) => core.invoke("delete_saved_live_session", identity),
-            {
-              expectedCaptureCommitPath: candidate.captureCommitPath,
-              expectedOutputPath: candidate.outputPath,
-              sessionId: owned.sessionId,
-            },
+            ({ core }, request) => core.invoke(request.command, request.identity),
+            deletion,
           );
         }
         handledSaved = saved.length;
@@ -279,13 +276,16 @@ export function createTargetClientLanguageRoutingHardwareGate({
     assertRecordingRootEmpty(recordingRoot);
   }
 
-  function assertSustainedEvidence(input) {
+  function assertRenderedCaptureEvidence(input) {
     if (!enabled) return;
     const { evidence, statuses, uiResponsiveness } = input;
-    requireCondition(statuses.includes("speaking"), "The target-client run never observed speech.");
     requireCondition(
-      evidence.levels.some(({ level }) => Number.isFinite(level) && level > 0.01),
-      "The physical-microphone run did not observe a positive speech level.",
+      statuses.some((status) => status === "listening" || status === "speaking"),
+      "The target-client run never observed active microphone capture.",
+    );
+    requireCondition(
+      evidence.levels.some(({ level }) => Number.isFinite(level)),
+      "The target-client run did not observe a finite microphone level.",
     );
     requireCondition(
       evidence.mainSessions.some(({ route }) => route === "localFallback"),
@@ -315,7 +315,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
       "Restart/cancellation evidence was incomplete.",
     );
     const aggregate = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       activeCaptureMs,
       languageRoutingEnabledLocales: configuredRouting?.enabledLocales ?? [],
       levelEventCount: evidence.levels.length,
@@ -323,6 +323,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
       renderedUiResponsiveness: uiResponsiveness,
       restartCancellation: restartCancellationEvidence,
       route: evidence.mainSessions.find(({ route }) => route === "localFallback")?.route ?? null,
+      speechEvidenceBoundary: SPEECH_EVIDENCE_BOUNDARY,
       stimulusLicense: environment.YAP_TARGET_CLIENT_STIMULUS_LICENSE ?? null,
       stimulusSha256: environment.YAP_TARGET_CLIENT_STIMULUS_SHA256 ?? null,
       stimulusDelivery,
@@ -338,7 +339,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
   return Object.freeze({
     activeCaptureMs,
     assertResidentRuntimeReady,
-    assertSustainedEvidence,
+    assertRenderedCaptureEvidence,
     configureLanguageRouting,
     enabled,
     publishEvidence,

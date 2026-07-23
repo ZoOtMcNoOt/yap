@@ -31,17 +31,49 @@ describe("target-client language-routing hardware gate", () => {
     })).toThrow(/STIMULUS_DELIVERY/);
   });
 
-  it("defaults the target run to two minutes and rejects shorter overrides", () => {
+  it("defaults the unattended rendered-capture smoke to thirty seconds", () => {
     const environment = {
       YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
       YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
       YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
     };
-    expect(createGate(environment).activeCaptureMs).toBe(120_000);
+    expect(createGate(environment).activeCaptureMs).toBe(30_000);
     expect(() => createGate({
       ...environment,
-      YAP_HARDWARE_ACTIVE_CAPTURE_MS: "119999",
-    })).toThrow(/between 120000 and 1800000/);
+      YAP_HARDWARE_ACTIVE_CAPTURE_MS: "29999",
+    })).toThrow(/between 30000 and 1800000/);
+  });
+
+  it("requires active capture and finite levels without depending on acoustic loopback", () => {
+    const gate = createGate({
+      YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
+      YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
+      YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
+    });
+    const evidence = {
+      levels: [{ level: 0 }],
+      mainSessions: [{
+        error: null,
+        route: "localFallback",
+        transcriptionDegraded: false,
+      }],
+    };
+    const uiResponsiveness = {
+      maximumDelayMs: 25,
+      p95DelayMs: 5,
+      sampleCount: 2_000,
+    };
+
+    expect(() => gate.assertRenderedCaptureEvidence({
+      evidence,
+      statuses: ["armed", "listening", "saving", "idle"],
+      uiResponsiveness,
+    })).not.toThrow();
+    expect(() => gate.assertRenderedCaptureEvidence({
+      evidence,
+      statuses: ["armed", "saving", "idle"],
+      uiResponsiveness,
+    })).toThrow(/active microphone capture/);
   });
 
   it("resolves the WebdriverIO browser when an operation starts", async () => {

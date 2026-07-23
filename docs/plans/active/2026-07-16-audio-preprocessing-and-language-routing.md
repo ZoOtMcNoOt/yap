@@ -821,7 +821,8 @@ limits.
       retained private/model-snapshot content. They are composed by
       the [target-client qualification runbook](../../runbooks/target-client-language-routing-qualification.md)
       but have not been consumed on the final checked head. The launcher
-      automates a two-minute same-host acoustic microphone/UI smoke; a longer
+      automates a 30-second default-microphone/UI lifecycle smoke; the checked-
+      head prepared-audio profile owns speech/transcription evidence. A longer
       manual physical-device soak and calibrated low-end energy/thermal
       evidence cannot be inferred from this development host and are deferred
       to default-on or Phase 10 release qualification. They do not block this
@@ -921,7 +922,8 @@ or is rejected.
       Do not inherit Cohere or Phase 6 candidate-safety evidence.
 - [ ] Run the proportional Phase 6 duration plan: deterministic 250-ms through
       30-second local-live boundaries through the hash-bound `short-boundaries`
-      profile, one automated two-minute physical-microphone/rendered-UI smoke,
+      profile, one automated 30-second default-microphone/rendered-UI lifecycle
+      smoke,
       and the already-completed model-neutral server candidate-safety duration,
       admission, cancellation, resource, and teardown controls. Retain the
       `complete-local-duration-ladders` profile through two hours for default-on

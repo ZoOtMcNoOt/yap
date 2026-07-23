@@ -698,12 +698,14 @@ evidence before default-on or production promotion.
        cancelled or restarted sessions, and missing-artifact fallback under
        focused tests. The [target-client qualification runbook](../runbooks/target-client-language-routing-qualification.md)
        composes fail-closed checked-head native repeated-session and release-
-       mode physical-microphone/rendered-UI collectors. They bind the observed
+       mode default-microphone/rendered-UI collectors. They bind the observed
        Windows processor and processor count, a direct local-runtime boundary
        with no server client, an isolated UI profile with no configured or
        listening numeric-loopback server, early-stop/restart, responsiveness,
        and teardown checks without pretending one host is another. The private
-       launcher supplies a two-minute same-host acoustic stimulus automatically.
+       launcher supplies a 30-second unattended default-microphone/UI lifecycle
+       smoke; the checked-head prepared-audio profile owns speech, routing, and
+       transcription evidence.
        Current-host interference, repeated installed-artifact lifecycle/resource
        evidence, and the complete checked-head gate remain required for the
        accepted AmberNet Preview instead of another open-ended model search.
@@ -719,9 +721,10 @@ evidence before default-on or production promotion.
        `complete-local-duration-ladders` profile from the validated plan and
        atomically publishes only that private collection from vetted external
        PCM16 sources. Phase 6 consumes the short-boundary profile and the
-       current-host automated physical-microphone/rendered-UI smoke; that
-       physical capture runs for two minutes under the isolated no-server
-       profile. Longer manual and multi-hour real-time Preview soaks move to
+       current-host automated default-microphone/rendered-UI lifecycle smoke;
+       that capture runs for 30 seconds under the isolated no-server profile and
+       does not require Windows output to feed the selected microphone. Longer
+       manual and multi-hour real-time Preview soaks move to
        default-on or Phase 10 release qualification, so this item and the ADR
        score stay open only for the proportional gate.
 8. [x] Add reference fixed-language Cohere/Nemotron routes and explicit Nemotron

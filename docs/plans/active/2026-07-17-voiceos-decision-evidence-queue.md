@@ -47,7 +47,7 @@ observed runtime behavior.
 | D-09 | Global language coverage | Advertise only exact out-of-box, benchmarked locales. Nemotron's eight adaptation-ready locales are not planned capabilities. Broad coverage remains visibly lower-confidence until locale-specific evidence promotes it. | Accepted; Phase 6 | ADR 0024 |
 | D-10 | Client/server preprocessing | The client owns capture/source admission, deterministic normalization, source identity, optional advisory VAD, bounded local acoustic LID, source-time language spans, and durable client evidence. The server owns heavyweight verification, ASR, alignment, and official result production. Redundant server validation may reconcile or reject evidence but must not create a second client-state authority or erase client history. | Accepted boundary; Phase 6 | ADR 0020, ADR 0024, current architecture |
 | D-11 | Terminology | Present terminology under Dictation/Personalization, but store it in one model-independent terminology domain. Compile one versioned session snapshot into ASR hints/context first, deterministic casing/acronym normalization second, grammar-SLM preservation constraints third, and later OKF glossary projections. The SLM must not be the source of truth or reconstruct terms lost during decoding. | Boundary accepted; schema, scope, privacy, and delivery phase remain open | Section below; Phase 9 ADR amendment required before implementation |
-| D-12 | Evaluation coverage | Separate natural transcript quality from deterministic runtime-duration/load tests. Phase 6 keeps deterministic local quick-correction boundaries, one automated two-minute physical-microphone/rendered-UI smoke under an isolated no-server profile, model-neutral custody/lifecycle checks, and one contract smoke for the currently advertised Cohere `en-US` route. Longer manual physical-device and multi-hour real-time Preview runs plus broad provider natural-quality, accent, terminology, future-locale, long-batch, multi-speaker, overlap, speaker-attributed, and virtual-meeting campaigns activate with default-on/Phase 10 release qualification or the Phase 8 Tiron/fallback selection gate as appropriate. | Accepted proportional split; one exact-source AMI close/far long-meeting diagnostic and the resident-provider candidate-safety lifecycle are complete without creating a Phase 6 promotion claim. The automated current-host local gate and final contract/full-matrix gates remain incomplete; broad provider and meeting promotion belongs to Phase 8. | ASR evaluation corpus and runtime qualification; ADR 0027 |
+| D-12 | Evaluation coverage | Separate natural transcript quality from deterministic runtime-duration/load tests. Phase 6 keeps deterministic local quick-correction speech/transcription boundaries, one unattended 30-second default-microphone/rendered-UI lifecycle smoke under an isolated no-server profile, model-neutral custody/lifecycle checks, and one contract smoke for the currently advertised Cohere `en-US` route. Longer manual physical-device and multi-hour real-time Preview runs plus broad provider natural-quality, accent, terminology, future-locale, long-batch, multi-speaker, overlap, speaker-attributed, and virtual-meeting campaigns activate with default-on/Phase 10 release qualification or the Phase 8 Tiron/fallback selection gate as appropriate. | Accepted proportional split; one exact-source AMI close/far long-meeting diagnostic and the resident-provider candidate-safety lifecycle are complete without creating a Phase 6 promotion claim. The automated current-host local gate and final contract/full-matrix gates remain incomplete; broad provider and meeting promotion belongs to Phase 8. | ASR evaluation corpus and runtime qualification; ADR 0027 |
 | D-13 | Training/test exposure | Public corpora named in a model's training or evaluation are comparators, not independent promotion evidence. Use provenance locks, exposure classification, sealed post-freeze adjudicated holdouts, and exact audio/reference hashes. | Accepted; Phase 6 and later release gates | ASR evaluation corpus and runtime qualification |
 | D-14 | Model challengers | Retain Cohere and Nemotron as separate checked candidates without a universal quality label. The focused AMI comparator favored Nemotron lexical accuracy and Cohere throughput/punctuation for one meeting, so the frozen locale/workload gates—not family labels—must select routes. Do not expand Cohere solely to populate the language picker. Phase 8 will determine whether pinned Tiron earns a narrow meeting route, a broader batch-provider replacement, or neither; Qwen3-ASR-1.7B, VibeVoice, Riva/NIM, and other challengers still require their own later review. | Phase 6 closes only its current provider contracts and advertised route; Tiron remains unimplemented and unpromoted until Phase 8 evidence exists | ADR 0027, dynamic-language evaluation, later roadmap |
 | D-15 | Quantization | Never promote a local derivative below Q4. Treat Q4 as the most aggressive allowed format, not a blanket replacement for a passing Q8/INT8 or higher-precision artifact. Choose per exact model, target CPU, duration, and quality/latency/memory/battery gate. | Floor accepted; per-provider evidence remains open in Phases 6 and 10 | Phase 6 plan and ADR 0024 |
@@ -320,8 +320,8 @@ selection.
   the numeric-loopback development origin, configured server state in the
   isolated profile, dirty/different source, repository-local evidence, missing
   artifacts, degraded routing, missed responsiveness budgets, or retained
-  model snapshots. The launcher supplies a two-minute same-host acoustic
-  stimulus automatically.
+  model snapshots. The launcher supplies a 30-second unattended capture/UI
+  lifecycle smoke while prepared audio supplies speech/transcription evidence.
   Neither has been consumed on the final checked head, so this item stays open
   under the [target-client language-routing runbook](../../runbooks/target-client-language-routing-qualification.md).
   A longer manual physical-device soak and the separate calibrated low-end
@@ -488,12 +488,13 @@ provider-neutral contract.
   250/500/750-ms cases; require speech-bearing one-second-through-30-second
   cases to produce text. Do not invent phoneme or raw-accuracy evidence without
   exact timestamped references; score those in the Phase 8 selected-model
-  quality gate. Run one automated two-minute physical-microphone/rendered-UI
-  local-live smoke on the current host under the isolated no-server profile;
-  do not duplicate it at the prepared-audio boundary. Keep longer manual
+  quality gate. Run one unattended 30-second default-microphone/rendered-UI
+  local-live lifecycle smoke on the current host under the isolated no-server
+  profile; keep speech/transcription assertions at the prepared-audio boundary.
+  Keep longer manual
   physical-device and real-time Preview soaks for default-on or Phase 10
   release qualification.
-- [ ] Include the two-minute automated local-live smoke explicitly in the
+- [ ] Include the 30-second unattended local-live lifecycle smoke explicitly in the
   machine-validated Phase 6 matrix. Reuse the existing bounded 30-second,
   15-minute, two-hour, and supported-maximum server controls only when Phase 8
   compares Tiron with a surviving provider; do not rerun them merely to polish
@@ -534,7 +535,7 @@ identity before publication, and the runtime-plan validator freezes every load
 cell plus its pacing, evidence, unit, and metric semantics. Four native runner
 contract tests, 13 Python builder/track tests, 16 runtime-plan tests, and the
 59-test runtime lifecycle slice pass; the ignored multi-hour evidence run has
-not been consumed. Current-host automated physical-microphone/rendered-UI
+not been consumed. Current-host automated default-microphone/rendered-UI
 behavior remains open; natural quick-correction accuracy stays a later
 selected-model gate rather than being manufactured from truncated clips. This
 checklist is not promoted.

@@ -97,9 +97,10 @@ Only these six actions remain on the Phase 6 critical path.
       loopback server origin.
 - [ ] Run the 12-cycle native resource/restart collector and the nine-case
       250-ms-through-30-second prepared-audio boundary profile.
-- [ ] Run the two-minute release-mode physical-microphone/rendered-UI smoke
-      while the launcher plays the licensed stimulus through the current
-      Windows output device.
+- [ ] Run the 30-second unattended release-mode default-microphone/rendered-UI
+      lifecycle smoke while the launcher plays the licensed stimulus through
+      the current Windows output device. Keep speech/transcription assertions
+      at the preceding prepared-audio boundary.
 - [ ] Verify the isolated app profile has no configured server, the local route
       remains authoritative, and no recording, model snapshot, process, or
       listener remains.
