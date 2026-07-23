@@ -27,6 +27,9 @@ CHECKED_HEAD = "a" * 40
 
 
 class _Worker:
+    def __init__(self, transcript: str = "private transcript") -> None:
+        self.transcript = transcript
+
     def run(
         self,
         job: BatchAsrJob,
@@ -34,7 +37,7 @@ class _Worker:
     ) -> dict[str, object]:
         result: dict[str, object] = {
             "jobId": job.job_id,
-            "transcript": {"text": "private transcript"},
+            "transcript": {"text": self.transcript},
             "runtime": {"queueMs": 1, "inferenceMs": 2, "batchSize": 1},
         }
         job.result_path.write_text(json.dumps(result), encoding="utf-8")
@@ -108,6 +111,30 @@ class ResidentProviderDurationQualificationTests(unittest.TestCase):
         encoded = json.dumps(evidence)
         self.assertNotIn("private transcript", encoded)
         self.assertRegex(str(evidence["evidenceSha256"]), r"^[0-9a-f]{64}$")
+
+    def test_duration_transport_accepts_a_valid_empty_asr_result(self) -> None:
+        selected = select_provider_duration_plan(
+            load_runtime_evaluation_plan(PLAN_PATH),
+            system_id="nemo-nemotron-finalized",
+            ladder_id="server-finalized-utterance",
+            include_exact_maximum=False,
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            qualification = run_provider_duration_plan(
+                _Worker(""),
+                _Factory(Path(temporary)),
+                selected,
+                timeout_seconds_per_duration=1,
+            )
+
+        self.assertTrue(qualification.passed)
+        self.assertEqual(len(qualification.runs), 9)
+        self.assertTrue(
+            all(run["outcomes"]["completed"] == 1 for run in qualification.runs)
+        )
+        self.assertTrue(
+            all(run["nonemptyTranscriptCount"] == 0 for run in qualification.runs)
+        )
 
     def test_rejects_a_ladder_or_maximum_outside_the_provider_contract(self) -> None:
         plan = load_runtime_evaluation_plan(PLAN_PATH)

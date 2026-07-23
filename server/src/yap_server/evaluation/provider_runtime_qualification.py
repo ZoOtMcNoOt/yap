@@ -391,6 +391,7 @@ def standard_provider_expectation_met(
     *,
     request_count: int,
     require_lexical_stability: bool = True,
+    require_nonempty_transcript: bool = True,
 ) -> bool:
     outcomes = summary.get("outcomes")
     if not isinstance(outcomes, Mapping):
@@ -401,6 +402,10 @@ def standard_provider_expectation_met(
         and outcomes.get("busy") == 0
         and outcomes.get("failed") == 0
         and summary.get("resultPublishedCount") == request_count
+        and (
+            not require_nonempty_transcript
+            or summary.get("nonemptyTranscriptCount") == request_count
+        )
         and (
             not require_lexical_stability
             or _lexical_stability_matches(

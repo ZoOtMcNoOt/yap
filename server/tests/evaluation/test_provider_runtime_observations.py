@@ -102,6 +102,7 @@ class ProviderRuntimeObservationTests(unittest.TestCase):
         self.assertEqual(summary["requestCount"], 4)
         self.assertEqual(summary["outcomes"]["completed"], 4)  # type: ignore[index]
         self.assertEqual(summary["resultPublishedCount"], 4)
+        self.assertEqual(summary["nonemptyTranscriptCount"], 4)
         self.assertEqual(summary["transcriptIdentityCount"], 1)
         self.assertEqual(summary["lexicalTranscriptIdentityCount"], 1)
         self.assertEqual(
@@ -163,6 +164,22 @@ class ProviderRuntimeObservationTests(unittest.TestCase):
             hashlib.sha256(b"stable public fixture output").hexdigest(),
             encoded,
         )
+
+    def test_canonical_empty_transcript_is_a_completed_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            wave = run_concurrent_wave(
+                _Worker(transcript_for_job=lambda _job_id: ""),
+                (_request(root, 0),),
+                timeout_seconds=1,
+            )
+            summary = summarize_runtime_wave(wave)
+
+        self.assertEqual(summary["outcomes"]["completed"], 1)  # type: ignore[index]
+        self.assertEqual(summary["resultPublishedCount"], 1)
+        self.assertEqual(summary["nonemptyTranscriptCount"], 0)
+        self.assertEqual(summary["transcriptIdentityCount"], 1)
+        self.assertEqual(summary["lexicalTranscriptIdentityCount"], 1)
 
     def test_summary_separates_rendering_variance_from_lexical_drift(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

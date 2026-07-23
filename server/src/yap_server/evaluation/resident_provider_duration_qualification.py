@@ -224,6 +224,7 @@ def run_provider_duration_plan(
         summary["expectationMet"] = standard_provider_expectation_met(
             summary,
             request_count=1,
+            require_nonempty_transcript=False,
         )
         runs.append(summary)
     return ProviderDurationQualification(plan=plan, runs=tuple(runs))

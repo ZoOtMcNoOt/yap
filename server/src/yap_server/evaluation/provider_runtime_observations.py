@@ -18,10 +18,13 @@ from yap_server.pools.batch_contract import (
     ProviderCapacityUnavailable,
     WorkerCancellationAcknowledged,
 )
+from yap_server.transcript_text import canonical_transcript
 
 
 _SAMPLE_RATE_HZ = 16_000
 _SHA256_LENGTH = 64
+_EMPTY_TRANSCRIPT_SHA256 = hashlib.sha256(b"").hexdigest()
+_EMPTY_LEXICAL_TRANSCRIPT_SHA256 = hashlib.sha256(b"[]").hexdigest()
 
 ObservationOutcome = Literal["completed", "cancelled", "busy", "failed"]
 
@@ -314,6 +317,10 @@ def summarize_runtime_wave(wave: RuntimeWave) -> dict[str, object]:
         "resultPublishedCount": sum(
             item.result_published for item in wave.observations
         ),
+        "nonemptyTranscriptCount": sum(
+            item.transcript_sha256 != _EMPTY_TRANSCRIPT_SHA256
+            for item in completed
+        ),
         "completedAudioSeconds": round(audio_seconds, 6),
         "wallMs": wave.wall_ms,
         "latencyMs": _distribution(latencies),
@@ -366,8 +373,10 @@ def _completed_observation(
         raise ValueError("runtime result identity is invalid")
     transcript = result.get("transcript")
     text = transcript.get("text") if isinstance(transcript, dict) else None
-    if not isinstance(text, str) or not text.strip():
-        raise ValueError("runtime result transcript is invalid")
+    try:
+        text = canonical_transcript(text, "runtime result transcript")
+    except ValueError as error:
+        raise ValueError("runtime result transcript is invalid") from error
     runtime = result.get("runtime")
     runtime = runtime if isinstance(runtime, dict) else {}
     return RequestObservation(
@@ -377,7 +386,11 @@ def _completed_observation(
         outcome="completed",
         result_published=request.job.result_path.is_file(),
         transcript_sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(),
-        lexical_transcript_sha256=lexical_transcript_sha256(text),
+        lexical_transcript_sha256=(
+            lexical_transcript_sha256(text)
+            if text
+            else _EMPTY_LEXICAL_TRANSCRIPT_SHA256
+        ),
         queue_ms=_optional_nonnegative_int(runtime.get("queueMs")),
         inference_ms=_optional_nonnegative_int(runtime.get("inferenceMs")),
         max_batch_size=_optional_positive_int(runtime.get("batchSize")),

@@ -210,6 +210,11 @@ cancellation, capacity, and fixed/automatic-language runners so completion
 counts cannot stand in for the named semantics. The frozen GB10 evidence is
 still open.
 
+The production result contract permits canonical empty ASR text. Duration-
+transport evidence therefore counts a published empty result as completed for
+silent or too-short audio, while provider-behavior and resource-lifecycle cells
+still require non-empty output from their speech-bearing fixtures.
+
 Provider-behavior exact-track evidence separates recognized-word stability from
 rendered formatting. Repeated immutable input is grouped by audio duration and
 must retain one non-empty lexical identity; exact casing/punctuation identities

@@ -1178,6 +1178,17 @@ explicit `resource-lifecycle` scope that reports lexical variance without making
 it a model-promotion condition, and the observation stays open for at least 125
 seconds. The new exact-head rerun remains open.
 
+Exact head `63318e51d569a1851f1a6daf8d1b707c353f2fa8` then passed the full
+corrected Cohere lifecycle and sequential teardown. NeMo reached exact-model
+readiness, but its finalized-duration aggregate reported only 2/9 completions
+even though all nine worker result files existed: seven short/silent cases
+returned the canonical empty transcript allowed by Yap's production result
+contract, and the generic observation harness had treated those valid results
+as failures. Exact
+cleanup passed. Duration-transport now accepts published canonical empty text;
+provider-behavior and resource-lifecycle scopes still require non-empty speech-
+fixture output. A new exact-head run remains open and no provider is promoted.
+
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness
 passed, the public fixture matched the Transformers reference transcript hash

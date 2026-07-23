@@ -470,6 +470,21 @@ promotion. Its observation remains open for at least 125 seconds so the last-
 half tail exceeds 60 seconds even when inference is faster. A new exact-head run
 is required and neither provider is promoted.
 
+At exact head `63318e51d569a1851f1a6daf8d1b707c353f2fa8`, the complete corrected
+Cohere lifecycle passed and tore down before NeMo began. NeMo exact-model
+readiness passed, but the finalized-duration cell reported only 2/9 completions
+although the worker wrote all nine result files. Seven short/silent cases carried
+canonical empty transcripts, which Yap's production result contract explicitly
+allows; the generic runtime observer had incorrectly reclassified them as
+execution failures. Cleanup was exact.
+
+The observation boundary now preserves that production semantic. A published
+canonical empty transcript counts as completed for
+`duration-transport-and-lifecycle`, which carries no accuracy claim. Provider-
+behavior and resource-lifecycle speech fixtures still require non-empty output.
+The private failed receipt remains regression evidence, a new exact-head run is
+required, and neither provider is promoted.
+
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall
 latency does traverse the proxy. Whole-route/whole-host capacity and persistent

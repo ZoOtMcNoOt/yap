@@ -155,7 +155,10 @@ ladder, executes each duration once at c1, and may add the exact four-hour
 boundary only to `batch-file`. Its aggregate is explicitly scoped to duration
 transport and lifecycle and carries no representative-accuracy claim. Natural
 WER, deterministic long-form sentinel integrity, concurrency, and provider
-promotion remain independent evidence even when every duration completes.
+promotion remain independent evidence even when every duration completes. A
+canonical empty transcript is a valid completed transport result for silence or
+audio too short to decode; provider-behavior and resource-lifecycle loads still
+require every speech-bearing result to be non-empty.
 
 Provider-behavior exact-track loads require one non-empty lexical identity per
 repeated audio duration and report formatting identities separately. A

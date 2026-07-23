@@ -204,6 +204,18 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
             2,
         )
 
+        with tempfile.TemporaryDirectory() as directory:
+            empty = run_provider_load_case(
+                _Worker(lambda _job_id: ""),
+                _Factory(Path(directory)),
+                plan,
+                load_case_id="vllm-long-waves",
+                timeout_seconds_per_wave=1,
+            )
+        self.assertFalse(empty.passed)
+        self.assertEqual(empty.runs[0]["outcomes"]["completed"], 4)
+        self.assertEqual(empty.runs[0]["nonemptyTranscriptCount"], 0)
+
     def test_selects_a_planned_concurrency_for_bounded_repeated_resource_load(self) -> None:
         plan = load_runtime_evaluation_plan(
             SERVER_ROOT / "asr-evaluation-plan.json"

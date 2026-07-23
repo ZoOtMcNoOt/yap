@@ -380,6 +380,17 @@ wrapper now labels that load `resource-lifecycle`, records lexical variance
 without treating it as provider promotion, and keeps the resource observation
 open for at least 125 seconds. No ceiling, request count, concurrency, or teardown
 requirement was lowered. A new exact-head run remains required.
+
+At exact head `63318e51d569a1851f1a6daf8d1b707c353f2fa8`, the complete corrected
+Cohere lifecycle passed and was torn down before NeMo started. NeMo readiness
+passed, but its finalized-duration cell was mislabeled failed: the worker wrote
+all nine result files, while seven short/silent cases carried canonical empty
+transcripts and the generic observation harness counted only the two non-empty
+results as completed. Cleanup was exact. The harness now counts canonical empty
+text as a completed result only for `duration-transport-and-lifecycle`;
+provider-behavior and resource-lifecycle scopes still require non-empty output.
+The private failed receipt remains regression evidence and a new exact-head run
+is required.
 Representative quality, current-host client Preview resource/lifecycle behavior,
 accessibility, and the other Phase 6 gates remain separate. Low-end physical
 client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host

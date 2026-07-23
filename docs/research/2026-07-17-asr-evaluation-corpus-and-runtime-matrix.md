@@ -551,6 +551,11 @@ single-clip track is valid only for duration, lifecycle, load, and resource
 behavior; it cannot establish long-form transcript quality, sentinel order, or
 independent generalization.
 
+Duration transport treats a published canonical empty transcript as a completed
+ASR result because short or silent audio may legitimately contain no spoken
+tokens. That does not satisfy a speech-quality, provider-behavior, or resource-
+lifecycle fixture, all of which retain their non-empty-output requirement.
+
 The candidate-safety wrapper keeps provider-behavior and resource-lifecycle
 claims distinct. Short-tail c1/c2/c4 runs require one lexical identity. The
 c8/1,600 resource run still records identity counts but gates completions,

@@ -553,6 +553,16 @@ uses an explicit `resource-lifecycle` scope that records rather than promotes
 transcript stability, and guarantees a minimum 125-second observation. A new
 exact-head run remains required.
 
+At exact head `63318e51d569a1851f1a6daf8d1b707c353f2fa8`, Cohere passed its full
+corrected lifecycle and sequential teardown. NeMo readiness passed, then the
+finalized-duration harness reported 2/9 completions despite all nine result
+files being written by the worker; seven short/silent cases correctly contained
+canonical empty text, which Yap's production contract permits. Exact cleanup passed. The
+observation harness now accepts empty published text only for duration transport
+and continues to require non-empty output for provider-behavior and resource-
+lifecycle speech fixtures. The next exact-head run and complete Phase 6 gate
+remain open.
+
 ### P6-08 — Review UI and model-independent terminology hooks
 
 - [x] Complete keyboard, focus, label, contrast, reduced-motion, and narrow-
