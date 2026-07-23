@@ -281,6 +281,64 @@ fn preflight_confirmation_uses_the_latest_nonretryable_lid_attempt() {
 }
 
 #[test]
+fn preflight_confirmation_accepts_a_retryable_advisory_vad_outcome() {
+    let ledger = ledger_with_job_state("advisory-vad-unavailable", false);
+    ledger
+        .accept_to_preflighting("advisory-vad-unavailable", 10, 1_000)
+        .unwrap();
+    let normalization = NormalizationEvidence::canonical_pcm16_identity(
+        "b".repeat(64),
+        INPUT_SHA.into(),
+        INPUT_SHA.into(),
+        320_000,
+        320_000,
+        0,
+    );
+    let vad = VadEvidence::error(
+        VadComponentEvidence::for_test("test-vad", "test-v1"),
+        320_000,
+        "artifact_unavailable",
+    );
+    ledger
+        .attach_client_preflight_artifact(
+            "advisory-vad-unavailable",
+            &NewClientPreflightArtifact {
+                manifest_path: std::env::temp_dir()
+                    .join("advisory-vad-unavailable-client-preflight.json"),
+                manifest_sha256: OUTPUT_SHA.into(),
+                source_pcm_sha256: INPUT_SHA.into(),
+                source_sample_count: 320_000,
+            },
+            &PreprocessingEvidence::new(normalization, vad),
+            20,
+        )
+        .unwrap();
+    ledger
+        .record_manual_lid_preflight(
+            "advisory-vad-unavailable",
+            "short_recording",
+            &"a".repeat(64),
+            "ambernet-stratified-five-region-v1",
+            30,
+        )
+        .unwrap();
+
+    let confirmed = ledger
+        .confirm_language_decision(
+            "advisory-vad-unavailable",
+            &RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+            INPUT_SHA,
+            31,
+            Some(serde_json::json!({"action": "confirmed_import_selection"})),
+            Some(&AsrCatalogBinding::for_test()),
+        )
+        .unwrap();
+
+    assert!(confirmed.language_decision_locked);
+    assert!(confirmed.client_stage_history_complete);
+}
+
+#[test]
 fn terminal_lid_dispatch_is_reconciled_before_retry_or_pruning() {
     let ledger = ledger_with_client_preflight("terminal-lid", 60);
     ledger

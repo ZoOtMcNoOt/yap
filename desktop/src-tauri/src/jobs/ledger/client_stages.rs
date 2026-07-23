@@ -196,6 +196,8 @@ pub(super) fn has_completed_client_preflight_stages(
     job_id: &str,
     require_user_confirmation: bool,
 ) -> Result<bool, JobLedgerError> {
+    // A terminal VAD attempt is complete evidence even when its failure is
+    // retryable: VAD is advisory and must not block retained source audio.
     let completed_stages: i64 = transaction.query_row(
         "WITH latest AS (
             SELECT stage, MAX(attempt) AS attempt
@@ -209,12 +211,11 @@ pub(super) fn has_completed_client_preflight_stages(
           ON latest.stage = stage_attempt.stage
          AND latest.attempt = stage_attempt.attempt
         WHERE stage_attempt.job_id = ?1
-          AND stage_attempt.retryable = 0
           AND (
-            (stage_attempt.stage = 'normalization' AND stage_attempt.state = 'succeeded')
+            (stage_attempt.stage = 'normalization' AND stage_attempt.state = 'succeeded' AND stage_attempt.retryable = 0)
             OR (stage_attempt.stage = 'vad' AND stage_attempt.state IN ('succeeded', 'unavailable', 'failed'))
-            OR (stage_attempt.stage = 'lid_preflight' AND stage_attempt.state IN ('succeeded', 'unavailable', 'failed'))
-            OR (stage_attempt.stage = 'user_confirmation' AND stage_attempt.state = 'succeeded')
+            OR (stage_attempt.stage = 'lid_preflight' AND stage_attempt.state IN ('succeeded', 'unavailable', 'failed') AND stage_attempt.retryable = 0)
+            OR (stage_attempt.stage = 'user_confirmation' AND stage_attempt.state = 'succeeded' AND stage_attempt.retryable = 0)
           )",
         [job_id],
         |row| row.get(0),
