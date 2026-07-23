@@ -50,7 +50,7 @@ receive only code, plans, and the final non-sensitive status claim after review.
   install or use a virtual microphone.
 - No listener at the admitted development batch origin
   `http://127.0.0.1:18765`. The rendered-UI channel also requires a fresh
-  isolated app profile whose server connector is disabled and unset.
+  isolated app profile whose server connector is disabled and has no base URL.
 
 Prepare caches while connected and verify the candidate before creating
 evidence. The native collector loads only already-installed local artifacts and

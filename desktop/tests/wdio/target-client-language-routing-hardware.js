@@ -111,8 +111,8 @@ export function createTargetClientLanguageRoutingHardwareGate({
       status.serverSettings.schemaVersion === 1
         && status.serverSettings.enabled === false
         && status.serverSettings.baseUrl === null
-        && status.serverConnection.state === "not_set",
-      "The target-client gate requires an isolated profile with no configured server.",
+        && status.serverConnection.state === "disabled",
+      "The target-client gate requires an isolated profile with the server disabled and no base URL.",
     );
   }
 

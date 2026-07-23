@@ -78,4 +78,40 @@ describe("target-client language-routing hardware gate", () => {
       enabledLocales: ["en-US", "de-DE"],
     });
   });
+
+  it("requires the connector state that corresponds to disabled server settings", async () => {
+    const status = {
+      acousticLanguageDetector: { status: "ready" },
+      languageRouting: {
+        enabledLocales: ["en-US", "de-DE"],
+        preferenceIssue: null,
+      },
+      model: { status: "ready" },
+      serverConnection: { state: "disabled" },
+      serverSettings: { schemaVersion: 1, enabled: false, baseUrl: null },
+      silero: { status: "ready" },
+    };
+    const gate = createTargetClientLanguageRoutingHardwareGate({
+      browser: {
+        tauri: {
+          execute: async () => status,
+          switchWindow: async () => {},
+        },
+      },
+      environment: {
+        YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
+        YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
+        YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
+      },
+      recordingRoot: "C:\\private-yap-recordings",
+    });
+
+    await expect(gate.assertResidentRuntimeReady({
+      enabledLocales: ["en-US", "de-DE"],
+    })).resolves.toBeUndefined();
+    status.serverConnection.state = "not_set";
+    await expect(gate.assertResidentRuntimeReady({
+      enabledLocales: ["en-US", "de-DE"],
+    })).rejects.toThrow(/server disabled and no base URL/);
+  });
 });
