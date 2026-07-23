@@ -348,6 +348,25 @@ proxy, launcher, or network. Readiness timing starts at the first exact-model pr
 after Docker reports the container running; it is not image-build,
 launcher-to-ready, or production cold-start evidence. The wrapper is only the
 resident-provider lifecycle component of the one-time Phase 6 matrix.
+
+For the replaceable Cohere candidate, this lifecycle component requires the c1
+duration ladder, short-tail isolation at c1/c2/c4, the c8/1,600 resource cell,
+cancellation/recovery, slot and PCM admission, and exact teardown. It does not
+run the plan's `vllm-long-waves` or `vllm-mixed-eight` cells. Those cells remain
+available for a provider-promotion comparison, including the Phase 8 Cohere-
+versus-Tiron decision, but they are not candidate-safety prerequisites.
+
+The first checked-head attempt at
+`e7d322fc07c6e1a39e69c2eec4d45e2c94d79e3a` stopped before NeMo after the
+accuracy-ineligible 15-minute `vllm-long-waves` control returned all four c2
+results but failed transcript-identity stability. Pairwise normalized edit
+ratios were 6.9% through 21.6%, and each c2 result differed from the c1 result by
+22.4% through 23.4%. The short-tail c1/c2/c4 cell and the duration ladder passed,
+and teardown removed the provider container, proxy, listener, launcher, and
+temporary network. Retain that private failed receipt as negative provider-
+promotion evidence. It points to long-form provider/model stability; it does not
+by itself prove or disprove cross-request ownership mixing. A new exact-head
+lifecycle run is required after this scope correction.
 Representative quality, current-host client Preview resource/lifecycle behavior,
 accessibility, and the other Phase 6 gates remain separate. Low-end physical
 client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host

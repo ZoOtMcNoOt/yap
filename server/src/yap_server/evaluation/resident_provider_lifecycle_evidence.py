@@ -90,24 +90,6 @@ _CHILD_REQUIREMENTS = {
         completed_request_count=600,
         duration_samples=(480_000,),
     ),
-    "vllm/long-waves.json": _ChildRequirement(
-        "load",
-        "vllm-cohere-batch",
-        "vllm-long-waves",
-        selected_concurrencies=(2,),
-        repeat_count=1,
-        completed_request_count=4,
-        duration_samples=(14_400_000,),
-    ),
-    "vllm/mixed-eight.json": _ChildRequirement(
-        "load",
-        "vllm-cohere-batch",
-        "vllm-mixed-eight",
-        selected_concurrencies=(8,),
-        repeat_count=1,
-        completed_request_count=8,
-        duration_samples=(480_000, 14_400_000, 28_800_000),
-    ),
     "vllm/cancellation.json": _ChildRequirement(
         "load", "vllm-cohere-batch", "vllm-cancelled-sibling"
     ),

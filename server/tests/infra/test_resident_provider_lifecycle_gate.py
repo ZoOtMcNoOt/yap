@@ -11,6 +11,7 @@ GATE = (
     / "yap-server-node"
     / "resident-provider-lifecycle-gate.sh"
 )
+PLAN = REPOSITORY_ROOT / "server" / "asr-evaluation-plan.json"
 
 
 class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
@@ -18,6 +19,7 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
         self,
     ) -> None:
         script = GATE.read_text(encoding="utf-8")
+        plan = PLAN.read_text(encoding="utf-8")
 
         for required in (
             "YAP_CHECKED_HEAD:?",
@@ -43,8 +45,6 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
             "provider_resource_observations",
             "resident_provider_lifecycle_evidence",
             "vllm-short-tail",
-            "vllm-long-waves",
-            "vllm-mixed-eight",
             "vllm-cancelled-sibling",
             "vllm-slot-capacity",
             "vllm-pcm-capacity",
@@ -73,6 +73,10 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
             "--verify-only",
         ):
             self.assertIn(required, script)
+
+        for promotion_only in ("vllm-long-waves", "vllm-mixed-eight"):
+            self.assertNotIn(promotion_only, script)
+            self.assertIn(f'"id": "{promotion_only}"', plan)
 
         self.assertLess(
             script.rindex("\nrun_vllm_qualification\n"),

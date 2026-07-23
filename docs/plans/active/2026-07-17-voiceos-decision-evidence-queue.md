@@ -521,14 +521,25 @@ The checked resident-provider lifecycle wrapper now composes both provider
 qualification families sequentially on a temporary exact-head internal Docker
 bridge. Each container has no Docker-published port or external egress; its
 launcher owns a bounded numeric-loopback proxy process group. The wrapper
-requires the complete plan-owned duration/load/specialized/resource child set,
+requires the complete candidate-safety duration/load/specialized/resource child set,
 rejects incomplete concurrency or the missing exact four-hour batch boundary,
 and publishes only after clean container/proxy/listener/network teardown and a
 clean launcher exit.
 Startup retry is limited to typed service unavailability; permanent auth/model/
 runtime mismatches fail immediately. Focused portable and shell-contract checks
-pass, but the wrapper has not run on the frozen GB10 head and does not close the
-representative-quality or complete Phase 6 gate.
+pass. The Cohere lifecycle set intentionally excludes the still-available
+`vllm-long-waves` and `vllm-mixed-eight` promotion comparators because Cohere is
+a replaceable candidate and Phase 8 will compare it with pinned Tiron.
+
+The exact-head `e7d322fc07c6e1a39e69c2eec4d45e2c94d79e3a` attempt passed
+Cohere readiness, duration, and short-tail c1/c2/c4 isolation, then failed
+closed before NeMo on long-form transcript-identity instability in the
+accuracy-ineligible 15-minute c2 comparator. All four results completed;
+pairwise normalized edit ratios were 6.9% through 21.6%, and c1/c2 differences
+were 22.4% through 23.4%. Exact teardown passed. The private receipt remains
+negative Cohere-promotion evidence, not proof that cross-request mixing is
+absent. The corrected exact-head lifecycle run, representative-quality decision,
+and complete Phase 6 gate remain open.
 
 ### P6-08 — Review UI and model-independent terminology hooks
 

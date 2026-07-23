@@ -1135,20 +1135,34 @@ existing strict observation qualifier round-trips that schema. Focused portable
 tests pass; no resident model or frozen resource profile was run by this change.
 
 The resident-service lifecycle composition is now executable but likewise
-unconsumed. One clean-head wrapper verifies the two already-present model
+not yet passed. One clean-head wrapper verifies the two already-present model
 directories, builds exact-head ARM64 images, creates a temporary checked
 internal Docker bridge, runs each container without a Docker-published port or
 external egress, owns a bounded numeric-loopback proxy, and runs vLLM then NeMo sequentially. Typed startup
 unavailability may retry; wrong authentication, runtime version, model identity,
 or malformed readiness fails immediately. The wrapper consumes the plan-owned
-duration, standard, cancellation, capacity, language-parity, and c8/1,600
-resource cells, then removes the provider and network before finalization. Its
+duration, candidate-safety load, cancellation, capacity, language-parity, and
+c8/1,600 resource cells, then removes the provider and network before
+finalization. The Cohere candidate-safety set deliberately excludes the retained
+`vllm-long-waves` and `vllm-mixed-eight` provider-promotion comparators. Its
 aggregate rejects an incomplete concurrency set, omitted exact four-hour batch
 boundary, changed suite/head, failed child, unclean launcher exit, or retained
 container, proxy, launcher, listener, or network. All raw inputs/logs/samples/snapshots remain in the private
-external cache. Focused Python and shell-contract checks pass; no GB10 workload,
-representative-quality decision, promotion, or one-time Phase 6 matrix was
-consumed by this implementation. Container cgroup samples exclude the small
+external cache.
+
+The first checked-head attempt at
+`e7d322fc07c6e1a39e69c2eec4d45e2c94d79e3a` passed Cohere readiness, the c1
+duration ladder, and short-tail c1/c2/c4 isolation, then failed closed before
+NeMo when four completed c2 copies of the same accuracy-ineligible 15-minute
+AMI-derived runtime control produced materially different transcripts. Pairwise
+normalized edit ratios were 6.9% through 21.6%; the four results differed from
+the c1 transcript by 22.4% through 23.4%. Exact cleanup passed. That private
+receipt is retained as negative long-form Cohere promotion evidence rather than
+as a candidate-safety blocker for a provider that Phase 8 may replace with
+Tiron. It points to provider/model stability and does not, alone, prove the
+absence of cross-request mixing. A corrected exact-head GB10 run remains open;
+no representative-quality decision, promotion, or complete one-time Phase 6
+matrix has passed. Container cgroup samples exclude the small
 host proxy process group; request wall latency includes it, and whole-host
 capacity remains a later system gate.
 

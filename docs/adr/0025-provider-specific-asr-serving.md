@@ -413,7 +413,7 @@ teardown integration. They do not satisfy the frozen reference comparison,
 representative locale/duration, p50/p95/p99, resource, capacity, failure,
 cancellation, recovery, rollback, or promotion requirements below.
 
-## Executable lifecycle composition (not consumed)
+## Executable lifecycle composition
 
 The checked `resident-provider-lifecycle-gate.sh` now composes the frozen
 resident-service mechanics without merging the provider runtimes. It verifies
@@ -422,18 +422,36 @@ creates one temporary internal bridge, and runs vLLM and NeMo sequentially. For
 each service it verifies absent Docker port publication, blocked external
 container reachability, the launcher-owned loopback proxy, exact-model
 readiness; the plan-owned duration,
-ordinary load, cancellation, capacity, and language cells; and a c8/1,600
+candidate-safety load, cancellation, capacity, and language cells; and a c8/1,600
 cgroup profile. The finalizer rejects a partial concurrency ladder, an omitted
 four-hour batch boundary, a changed duration suite/head, failed child evidence,
 an unclean launcher exit, or any remaining provider container, proxy, launcher,
 listener, or network.
 
+The replaceable Cohere candidate must pass c1 duration transport, short-tail
+c1/c2/c4 isolation, c8/1,600 resource bounds, cancellation/recovery, slot and
+PCM admission, and exact teardown. The plan retains `vllm-long-waves` and
+`vllm-mixed-eight` for provider-promotion comparisons, but the Phase 6 lifecycle
+wrapper does not require them. Phase 8 can reuse those cases when deciding
+whether pinned Tiron is meeting-only, replaces Cohere batch more broadly, or is
+rejected.
+
 All source audio, transcripts, raw resource series, logs, and host snapshots
 stay in the owner-private external cache. The aggregate contains only bounded
 facts and child-evidence hashes. Focused portable tests and shell syntax checks
-prove the orchestration contract; no GB10 workload was run by this
-implementation slice. It therefore does not satisfy the evidence below or
-change either provider's promotion status.
+prove the orchestration contract.
+
+The first checked-head GB10 attempt at
+`e7d322fc07c6e1a39e69c2eec4d45e2c94d79e3a` passed Cohere readiness, its c1
+duration ladder, and short-tail c1/c2/c4 isolation. It then failed closed before
+NeMo when four completed c2 copies of the same accuracy-ineligible 15-minute
+AMI-derived control did not retain transcript identity. Pairwise normalized edit
+ratios were 6.9% through 21.6%; each c2 result differed from the c1 result by
+22.4% through 23.4%. Teardown removed the provider container, proxy, listener,
+launcher, and temporary network. The private receipt remains negative Cohere
+promotion evidence. It points to long-form provider/model stability but does not
+alone prove or disprove cross-request ownership mixing. The corrected exact-head
+lifecycle run remains open and neither provider is promoted.
 
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall

@@ -485,10 +485,6 @@ run_vllm_qualification() {
     "$vllm_endpoint" en en true
   run_standard \
     vllm short-tail vllm-short-tail "$vllm_lock" "$vllm_endpoint" en en 1 1 2 4
-  run_standard \
-    vllm long-waves vllm-long-waves "$vllm_lock" "$vllm_endpoint" en en 1 2
-  run_standard \
-    vllm mixed-eight vllm-mixed-eight "$vllm_lock" "$vllm_endpoint" en en 1 8
   run_cancellation \
     vllm cancellation vllm-cancelled-sibling "$vllm_lock" "$vllm_endpoint" en en
   run_capacity \

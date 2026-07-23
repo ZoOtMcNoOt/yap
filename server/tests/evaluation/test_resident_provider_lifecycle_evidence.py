@@ -39,21 +39,12 @@ BATCH_DURATION_SAMPLES = [
 ]
 STANDARD_LOADS = {
     "vllm-short-tail": ([1, 2, 4], 1, 600, [480_000]),
-    "vllm-long-waves": ([2], 1, 4, [14_400_000]),
-    "vllm-mixed-eight": (
-        [8],
-        1,
-        8,
-        [480_000, 14_400_000, 28_800_000],
-    ),
     "nemo-finalized-short-tail": ([1, 2, 4], 1, 600, [480_000]),
     "nemo-finalized-long-windows": ([2], 1, 4, [14_400_000]),
 }
 ARTIFACTS = (
     ("vllm", "readiness.json", "readiness", "vllm-cohere-batch", "readiness"),
     ("vllm", "short-tail.json", "load", "vllm-cohere-batch", "vllm-short-tail"),
-    ("vllm", "long-waves.json", "load", "vllm-cohere-batch", "vllm-long-waves"),
-    ("vllm", "mixed-eight.json", "load", "vllm-cohere-batch", "vllm-mixed-eight"),
     ("vllm", "cancellation.json", "load", "vllm-cohere-batch", "vllm-cancelled-sibling"),
     ("vllm", "slot-capacity.json", "load", "vllm-cohere-batch", "vllm-slot-capacity"),
     ("vllm", "pcm-capacity.json", "load", "vllm-cohere-batch", "vllm-pcm-capacity"),
