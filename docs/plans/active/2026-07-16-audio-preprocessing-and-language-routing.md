@@ -26,9 +26,14 @@ cross-architecture frontend/logit parity evidence. Exact executable commit
 real-artifact `ContainerLidWorker` execution, locked-resource measurement, and
 teardown smoke. Exact executable head
 `a21964c19e56648e9fddcb5200de419e59a7687c` then passed the final source-exact
-ARM64 production-worker repetition. None of those component results satisfies
-the current-host Preview lifecycle, final advertised-route contract smoke, or
-complete Phase 6 gates.
+ARM64 production-worker repetition. Exact executable head
+`05d1b82017447df04d46ccc8fa729c5a6a0d0b13` subsequently passed the focused
+assembled Windows-desktop/private-server route through durable preprocessing,
+one tunnel interruption and recovery, server-authoritative result publication,
+verified History review, and complete remote teardown. That closes the focused
+advertised-route integration smoke without promoting a provider or completing
+the Phase 6 gate. The current-host offline Preview lifecycle, accessibility
+rerun, and complete frozen Phase 6 matrix remain open.
 Fail-closed English
 Cohere attention alignment also executes and has current-source contained GB10
 lifecycle evidence without being advertised. The tiny SpeechFlow LID13 challenger
@@ -1683,7 +1688,7 @@ serialization uses `legacyImplicitEnglishDefault`; `legacyPhase5Default` and
 The reusable checked-head tools are named `gb10-asr-runtime-gate`,
 `isolated_runtime_evidence`, and `private-server-asr-gate`; the OpenAPI records
 functional runtime status/ownership instead of phase-numbered extension keys.
-Focused verification passed 99 Python tests plus 80 subtests, four desktop gate
+Focused verification passed 99 Python tests plus 80 subtests, five desktop gate
 helper tests, TypeScript checking, Rust compatibility tests, and strict Clippy.
 Focused accessibility evidence now covers unique labels and error descriptions,
 live atomic errors, reduced-motion styling, non-color language/timing status,
@@ -1702,8 +1707,18 @@ provider split. It restored ADR 0025 cross-references, amended ADR 0007 with the
 implemented fail-closed Cohere timing path, raised only that evidence-backed ADR
 implementation score from 10 to 100, and made the superseded Triton research
 snapshot explicitly historical. Focused alignment verification passed 29 tests
-plus 20 subtests. The checklist remains open until the frozen gate determines
-the final promotion claims and the exact head receives one last read-back.
+plus 20 subtests. A 2026-07-23 focused assembled-system run then validated exact
+executable head `05d1b82017447df04d46ccc8fa729c5a6a0d0b13` from the Windows
+desktop through durable preprocessing, interruption/recovery, the advertised
+private-server route, server-authoritative publication, History review, and
+remote teardown. It exposed and closed two integration-only blockers: advisory
+VAD evidence could incorrectly hold a job in preflight, and the gate expected a
+completed job to remain in the recoverable queue instead of following it into
+History. Focused follow-up verification passed five desktop gate files with 30
+tests, seven Rust client-stage ledger tests, JavaScript syntax checking,
+TypeScript checking, and whitespace validation. The checklist remains open
+until the offline current-host qualification and frozen complete gate determine
+the final claims and the exact candidate receives one last read-back.
 
 - [x] Resolve focused correctness, security, privacy, license/provenance,
       maintainability, accessibility, and resource-bound findings.

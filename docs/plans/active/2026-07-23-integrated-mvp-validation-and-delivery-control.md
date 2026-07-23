@@ -32,8 +32,16 @@ complexity.
 - Phases 1–5 and Architecture Checkpoint A are merged at baseline
   `a80934d844a068110e7f86b30b6e29d35146db57`.
 - Phase 6 remains on `feat/phase6-preprocessing-pipeline`.
-- The last executable head before this control document is
-  `16ef0827b3688b90dd66c4c560b0db8508be80f6`.
+- Exact executable head `05d1b82017447df04d46ccc8fa729c5a6a0d0b13`
+  passed the focused connected desktop/private-server vertical slice. The real
+  Windows desktop preserved its immutable job across a tunnel interruption,
+  verified its durable preprocessing manifest, completed the advertised
+  Cohere `en-US` server route, retired the completed job from the recoverable
+  queue, opened the verified result through History, and left no owned remote
+  container, network, process, or listener. The private schema-2 receipt remains
+  outside Git; its public-safe SHA-256 is
+  `8fe9236459a160fe2a66b6f905fa4ec86d721e0b9d7147783503152fdcbde466`.
+  This is focused development evidence, not the frozen complete Phase 6 gate.
 - The model-neutral Cohere vLLM and Nemotron NeMo candidate-safety lifecycle
   already passed on GB10 at `a21964c19e56648e9fddcb5200de419e59a7687c`.
   Neither provider is promoted.
@@ -102,13 +110,20 @@ process-only block merely to keep the connection open.
 
 ### 3. Validate the integrated MVP while connected
 
-- [ ] Run the existing checked-head desktop/private-server ASR gate through the
+- [x] Run the existing checked-head desktop/private-server ASR gate through the
       real SSH-forwarded GB10 route.
-- [ ] Confirm import, durable preprocessing, fixed language decision, upload,
+- [x] Confirm import, durable preprocessing, fixed language decision, upload,
       server processing, authoritative result publication, History rendering,
       interruption, reconnect, and cleanup in one observed workflow.
-- [ ] Treat a failure here as architecture or product evidence. Fix the narrow
+- [x] Treat a failure here as architecture or product evidence. Fix the narrow
       cause before considering provider optimization.
+
+The focused run exposed and closed two integration blockers: retryable advisory
+VAD evidence incorrectly prevented preserved audio from advancing, and the gate
+incorrectly expected completed jobs to remain in the recoverable queue. The
+fixes preserve the documented owners: required language stages remain
+fail-closed, advisory VAD remains non-authoritative, and verified History plus
+the immutable result artifact are terminal truth.
 
 ### 4. Freeze the Phase 6 candidate
 

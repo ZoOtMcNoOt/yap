@@ -162,9 +162,9 @@ Windows alternate streams, while duplicate JSON keys, replacement, excessive
 aggregate I/O, and oversize fail closed. The receipt must match exact rights,
 defects, locale, and timestamp. No real reviewed production registry exists
 yet, so this executing trust boundary is not provider-promotion evidence. Phase
-6 retains the resident services as replaceable candidates and runs only the
-advertised-route contract smoke plus runtime-safety gate; any later route
-promotion must supply the complete reviewed registry.
+6 retains the resident services as replaceable candidates and uses the
+advertised-route contract smoke plus runtime-safety gate only as integrated MVP
+evidence; any later route promotion must supply the complete reviewed registry.
 
 ADR 0025 replaces the attempted universal ASR plane with provider-specific
 runtimes behind Yap's existing worker-neutral contracts. Cohere batch now has a
@@ -202,6 +202,15 @@ Source-exact focused GB10 smokes at executable commit
 model through its real Yap adapter and left no owned container or listener. They
 close basic image/model/adapter integration only; the frozen comparisons and
 promotion gates above remain open.
+
+Exact executable head `05d1b82017447df04d46ccc8fa729c5a6a0d0b13` passed the
+focused assembled Windows-desktop/private-server slice. A real desktop import
+produced a durable capture/preprocessing manifest; the immutable job survived
+one SSH-tunnel interruption and recovery; the advertised fixed `en-US` Cohere
+route published a verified server-authoritative result; the desktop opened that
+same result from History; and teardown retained no owned remote resource. This
+is end-to-end contract and lifecycle evidence for the integrated MVP, not
+provider promotion, broad quality evidence, or completion of the Phase 6 gate.
 
 Provider admission has two explicit owners. Cohere's resident vLLM process
 uses `--max-num-seqs 8` for active scheduling and may queue internally; it is
