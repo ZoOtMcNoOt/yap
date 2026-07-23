@@ -9,8 +9,9 @@ Nemotron fixed/automatic Transformers reference routes and a Cohere vLLM
 adapter/image/launcher contract with focused Python 3.12, OpenAPI, Rust, and
 TypeScript coverage. The pinned resident Nemotron NeMo adapter, cache-aware
 scheduler, authenticated loopback service, checked image, and launcher also now
-execute under focused tests; its independent frozen promotion gate remains
-open. The resource harness now distinguishes cgroup residency, entrypoint RSS/
+execute under focused tests. Their model-neutral candidate-safety lifecycle
+passed at exact GB10 head `a21964c19e56648e9fddcb5200de419e59a7687c`;
+provider promotion remains Phase 8 work. The resource harness now distinguishes cgroup residency, entrypoint RSS/
 allocation extent, CUDA allocation/reservation, task/thread counts, and memory
 events; version 5 of the runtime plan freezes separate GB10 ceilings for the
 vLLM and NeMo candidates before the checked-head run. The retired Triton
@@ -23,9 +24,11 @@ runtime. The replacement AmberNet path has focused Windows real-model and
 cross-architecture frontend/logit parity evidence. Exact executable commit
 `c6862262fa36a83bcd40a7bffa65ec6429ec097e` also passed a focused ARM64 build,
 real-artifact `ContainerLidWorker` execution, locked-resource measurement, and
-teardown smoke. The final frozen checked-head repetition remains open. None of
-those results satisfies the separate frozen representative, duration,
-concurrency, promotion, or complete Phase 6 gates.
+teardown smoke. Exact executable head
+`a21964c19e56648e9fddcb5200de419e59a7687c` then passed the final source-exact
+ARM64 production-worker repetition. None of those component results satisfies
+the separate representative suggestion-quality, advertised-route duration, or
+complete Phase 6 gates.
 Fail-closed English
 Cohere attention alignment also executes and has current-source contained GB10
 lifecycle evidence without being advertised. The tiny SpeechFlow LID13 challenger
@@ -611,8 +614,14 @@ legacy rows remain readable without claiming history they never recorded.
       imported artifact through `ContainerLidWorker`, measure cgroup peak
       memory/CPU and cold latency under the locked limits, and prove teardown
       without an owned container/listener.
-- [ ] Repeat that source-exact image/resource/teardown check at the final frozen
-      Phase 6 head inside the one-time complete gate.
+- [x] Repeat that source-exact image/resource/teardown check at exact executable
+      head `a21964c19e56648e9fddcb5200de419e59a7687c`: the production worker used
+      one CPU, 512 MiB, 64 PIDs, no network, a read-only root, and one-thread
+      pools; five contract observations completed in 788 ms wall/670,672 CPU
+      microseconds with 111,902,720 bytes current/peak cgroup memory, six peak
+      PIDs, zero memory events, and complete teardown. The private aggregate
+      evidence SHA-256 is
+      `37fb2cad6c83c5e4084d07af18e1c9645cb758a29867d443bea368bdaf42bad7`.
 - [ ] Retain representative fixed-language/long-tail evidence and the complete
       one-time Phase 6 resource/matrix gates as open until the branch is frozen.
 
@@ -1022,8 +1031,10 @@ requests, one typed service 429, and retry. The fixed/automatic NeMo contract ru
 same locked 30-second source at c1 and c8, requiring fixed `en-US` without
 dynamic fields and automatic `auto` with complete detected `en-US` source-span
 evidence. Lexical and exact rendered-text parity remain diagnostics for later
-provider promotion, not Phase 6 request-lifecycle conditions. Focused portable tests cover these
-runners, but their frozen GB10 executions and promotion decisions remain open.
+provider promotion, not Phase 6 request-lifecycle conditions. Focused portable
+tests cover these runners, and their exact-head GB10 candidate-safety executions
+passed at `a21964c19e56648e9fddcb5200de419e59a7687c`; promotion decisions remain
+Phase 8 work.
 
 All five provider workload entry points plus the resource-qualification entry
 point now require the full candidate Git SHA and absolute repository root. A
@@ -1042,8 +1053,9 @@ current usage under 32 GiB. The four-hour NeMo control took 279,865 ms with
 275,702 ms inference, 2,688 ms accumulated queue time, and 2.356 GiB current
 usage under 96 GiB. All runs published bounded results and left their containers
 and listeners absent. These are duration/lifecycle controls, not natural
-long-form quality, sentinel-integrity, frozen percentile, or promotion evidence;
-the corresponding checkboxes remain open.
+long-form quality, sentinel-integrity, frozen percentile, or promotion evidence.
+Those provider-selection questions remain open for Phase 8 rather than blocking
+the Phase 6 candidate-safety boundary.
 
 That wall-time comparison is execution-shape evidence rather than a general
 model ranking. Yap gives vLLM one offline API request; vLLM splits long audio

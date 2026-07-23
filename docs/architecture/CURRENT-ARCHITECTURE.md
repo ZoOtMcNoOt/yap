@@ -379,8 +379,14 @@ ARM64 frontend/logit parity evidence exists. Exact executable commit
 `c6862262fa36a83bcd40a7bffa65ec6429ec097e` also passed the real ARM64 worker
 boundary at 111,591,424 peak cgroup bytes, six peak PIDs, 682,363 CPU
 microseconds, and 0.842-second cold wall time with no throttling, OOM, or retained
-container. The final frozen-head repetition remains open. The old SpeechBrain
-two-probe GB10 receipt remains historical evidence only. A server Nemotron
+container. Exact executable head
+`a21964c19e56648e9fddcb5200de419e59a7687c` then passed the final source-exact
+ARM64 repetition through the production worker command: 788 ms wall time,
+670,672 CPU microseconds, 111,902,720 bytes current/peak cgroup memory, six peak
+PIDs, zero memory events, and complete container/network/process/listener/request
+cleanup. This is component lifecycle evidence, not representative suggestion
+quality or phase completion. The old SpeechBrain two-probe GB10 receipt remains
+historical evidence only. A server Nemotron
 worker, explicit automatic-job language tags, fail-closed Cohere attention
 alignment, the Cohere vLLM adapter, and the resident NeMo worker/service/image/
 launcher now execute as locked focused slices. Separate focused GB10 service

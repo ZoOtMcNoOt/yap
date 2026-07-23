@@ -670,9 +670,11 @@ evidence before default-on or production promotion.
        and small CPU ONNX Runtime image. Retain the historical SpeechBrain
        receipt. Exact executable commit
        `c6862262fa36a83bcd40a7bffa65ec6429ec097e` passed the focused ARM64
-       image/resource/teardown smoke; keep its final frozen-head repetition,
-       representative promotion, and complete phase evidence in the final
-       Phase 6 gate.
+       image/resource/teardown smoke. Exact executable head
+       `a21964c19e56648e9fddcb5200de419e59a7687c` then passed the final
+       source-exact ARM64 repetition under the production worker limits; retain
+       representative suggestion-quality and complete phase evidence in the
+       final Phase 6 gate.
 6. [x] Preserve Whisper-tiny and the other released candidates as measured
        comparators; implement the accepted AmberNet 1.12.0 QDQ INT8 component
        with exact frontend/label/runtime identity and a verified local-import

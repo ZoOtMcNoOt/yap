@@ -2,10 +2,10 @@
 
 **Date:** 2026-07-22
 **Status:** Accepted; client/server contract and isolated CPU implementation
-execute under focused tests, and exact executable commit
-`c6862262fa36a83bcd40a7bffa65ec6429ec097e` passed a focused ARM64 image,
-resource, and teardown smoke. The final frozen checked-head repeat and complete
-Phase 6 gate remain incomplete
+execute under focused tests. Exact executable head
+`a21964c19e56648e9fddcb5200de419e59a7687c` passed the final source-exact ARM64
+image, resource, lifecycle, and teardown repetition. Representative suggestion
+quality and the complete Phase 6 gate remain incomplete
 **Builds on:** [ADR 0020](0020-meeting-capture-diarization-authority.md),
 [ADR 0024](0024-global-language-routing.md), and
 [ADR 0025](0025-provider-specific-asr-serving.md)
@@ -214,10 +214,20 @@ The executing files include the component lock and isolated runtime under
 under `desktop/src-tauri/src/server_connector/lid`.
 
 Focused unit, contract, materialization, transport, and real-model smokes may
-support this ADR while the branch changes. The ARM64 focused receipt above closes
-the immediate image/limit feasibility question for its exact executable commit;
-it does not replace the final frozen-head repetition. The accepted Phase 6 claim
-still requires one frozen checked-head local/native/server/GB10 matrix, the
-remaining locale and end-to-end duration gates, reviewed documentation
-reconciliation, and a green checked-head PR. No focused smoke is relabeled as
-phase completion or production multi-user proof.
+support this ADR while the branch changes. The final source-exact ARM64
+repetition used the production `ContainerLidWorker` command builder at executable
+head `a21964c19e56648e9fddcb5200de419e59a7687c`: one CPU, 512 MiB memory/swap,
+64 PIDs, no network, a read-only root, and one-thread pools. It completed five
+synthetic contract observations in 788 ms wall time, consumed 670,672 CPU
+microseconds, reached 111,902,720 bytes current/peak cgroup memory and six peak
+PIDs, emitted no memory events, and left no owned container, network, process,
+listener, or request directory. The private evidence aggregate has SHA-256
+`37fb2cad6c83c5e4084d07af18e1c9645cb758a29867d443bea368bdaf42bad7`;
+audio, transcripts, host paths, and raw receipts remain outside Git.
+
+That closes the frozen-head component repetition, not Phase 6 or representative
+language-suggestion quality. The accepted phase claim still requires one frozen
+checked-head local/native/server/GB10 matrix, the remaining advertised-route and
+end-to-end duration gates, reviewed documentation reconciliation, and a green
+checked-head PR. No component smoke is relabeled as phase completion or
+production multi-user proof.
