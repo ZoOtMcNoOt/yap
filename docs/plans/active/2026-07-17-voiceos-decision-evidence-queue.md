@@ -452,12 +452,17 @@ provider-neutral contract.
   Torch 2.13/CUDA 13.3/BF16, and true batches of at most eight. Preserve only
   transcript-free aggregates in repository documentation; keep case evidence
   and the exact execution receipt in owner-restricted external caches.
-- [ ] Freeze the rights/provenance record and exact manifest for each fixture
+- [x] Freeze the rights/provenance record and exact manifest for each fixture
   actually admitted to the bounded Phase 6 gate; do not build a speculative
-  registry for future provider campaigns.
+  registry for future provider campaigns. The checked public LibriSpeech fixture
+  is bound by `server/model-pools.lock.json`; the local duration and
+  physical-microphone inputs trace to the CC-BY-4.0 AMI `ES2004a` close-mix
+  artifact in `server/ami-meeting-comparator.lock.json`; and every private
+  `short-boundaries` derivative manifest binds that source hash plus its own
+  audio, decoded-PCM, case, segment, plan, and suite identities.
 - [x] Separate comparator-only corpora from independent promotion evidence and
   record model training/evaluation exposure.
-- [ ] **Phase 8 provider-selection backlog, not a Phase 6 blocker:** add broad
+- **Phase 8 provider-selection backlog, not a Phase 6 blocker:** add broad
   natural single-speaker mumbling, spontaneous dictation, accents, clean/noisy/
   far-field speech, silence/non-speech, terminology, names, numbers, units, and
   unspoken-continuation negatives for Cohere only if it remains a contender and
@@ -467,7 +472,7 @@ provider-neutral contract.
   the Phase 8 Tiron/fallback gate under ADR 0027. Retain the completed AMI
   close/far run as diagnostic provider evidence only; it does not block or
   create a Phase 6 meeting-quality claim.
-- [ ] **Phase 8 provider-selection backlog, not a Phase 6 blocker:** cover every
+- **Phase 8 provider-selection backlog, not a Phase 6 blocker:** cover every
   locale proposed by the selected replacement individually; a macro average
   cannot hide a failed locale or broad-coverage tier. Phase 6 retains only a
   contract/capability smoke for the currently advertised Cohere `en-US` route.
@@ -484,10 +489,19 @@ provider-neutral contract.
   15-minute, two-hour, and supported-maximum server controls only when Phase 8
   compares Tiron with a surviving provider; do not rerun them merely to polish
   Cohere.
-- [ ] Exercise c1/c2/c4/c8 compatible and mixed loads, queue/capacity edges,
+- [x] Exercise c1/c2/c4/c8 compatible and mixed loads, queue/capacity edges,
   restart, retry, cancellation, and teardown.
-- [ ] Lower any advertised four-hour ceiling that the frozen candidate does not
-      actually prove.
+- [x] Verify the advertised four-hour boundary at its exact claimed scope, or
+      lower it if the candidate cannot prove that scope.
+
+Exact GB10 head `a21964c19e56648e9fddcb5200de419e59a7687c` closes those
+server candidate-safety items. Its 18 children covered Cohere c1/c2/c4 and c8
+resource behavior; NeMo c1/c2/c4, c1/c8 fixed/automatic behavior, mixed
+30-second/15-minute inputs, c8 resources; both duration ladders through the
+exact four-hour batch boundary; bounded admission, retry/recovery, cancellation,
+and exact teardown. The four-hour claim remains transport, admission, resource,
+and lifecycle evidence only—not representative long-form quality, a local-live
+duration, provider promotion, or production capacity.
 
 One focused exact-source comparator now covers the full 17.49-minute AMI
 `ES2004a` close-headset mix and far-field channel through production client
@@ -517,14 +531,15 @@ promoted.
 
 Focused Python 3.12.13 verification on 2026-07-22 passed 22 corpus-manifest
 tests, including private-trust-registry enforcement. Unknown, training-exposed,
-evaluation-exposed, derived, or
-repeated public cases remain comparator-only; an independent claim requires a
-private out-of-band-pinned registry, exact candidate/freeze/exposure artifacts,
-natural source audio recorded after the frozen model where applicable, and a
-case-bound scoring policy. The real rights registry and exact admitted-corpus
-manifests remain open until their candidate locks, releases, licenses, hashes,
-and private evidence actually exist. Schema support for a condition or suite is
-not evidence that its required natural cases have been admitted or passed.
+evaluation-exposed, derived, or repeated public cases remain comparator-only; an
+independent promotion claim requires a private out-of-band-pinned registry,
+exact candidate/freeze/exposure artifacts, natural source audio recorded after
+the frozen model where applicable, and a case-bound scoring policy. Phase 6's
+bounded gate fixtures are now locked as recorded above. The broader real rights
+registry and admitted-corpus manifests remain Phase 8 provider-promotion work
+until their candidate locks, releases, licenses, hashes, and private evidence
+actually exist. Schema support for a condition or suite is not evidence that
+its required natural cases have been admitted or passed.
 
 Focused verification also passed 17 FLEURS source/comparator/evaluation-runtime
 tests and inspected the full private 908-case `es-419` test archive without

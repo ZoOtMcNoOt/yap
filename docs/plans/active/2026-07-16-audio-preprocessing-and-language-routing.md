@@ -895,24 +895,25 @@ or is rejected.
 - [x] Retain the Transformers Cohere/Nemotron reference paths and remove the
       retired Triton backend, client, scheduler, parity, and benchmark machinery.
       Preserve the private Triton results as historical negative evidence.
-- [ ] If Cohere remains a serious Phase 8 promotion candidate, run its complete
-      representative-quality and rollback comparison against Tiron. The Phase 6
-      candidate-safety lifecycle is not a substitute for that model decision.
-- [ ] In that later promotion comparison, measure Cohere cold/warm latency, queue
-      time, p50/p95/p99, audio-seconds/second, GPU/CPU/private memory, model-output
-      behavior, and representative quality. Continuous batching stays internal
-      to vLLM; Yap never concatenates or pads one owner's audio into another
-      request.
+- **Phase 8 provider-selection work:** If Cohere remains a serious promotion
+      candidate, run its complete representative-quality and rollback
+      comparison against Tiron. The Phase 6 candidate-safety lifecycle is not a
+      substitute for that model decision.
+- **Phase 8 provider-selection work:** In that comparison, measure Cohere
+      cold/warm latency, queue time, p50/p95/p99, audio-seconds/second,
+      GPU/CPU/private memory, model-output behavior, and representative quality.
+      Continuous batching stays internal to vLLM; Yap never concatenates or pads
+      one owner's audio into another request.
 - [x] Implement the pinned Nemotron NeMo candidate behind the same provider-
       neutral contract: exact `.nemo`/runtime/config identity, one scheduler
       owner, bounded independent requests, authenticated numeric-loopback
       transport, job-specific cancellation, fail-closed result validation, and
       checked container/launcher boundaries. Do not send Nemotron through vLLM
       or inherit Cohere proof.
-- [ ] If Nemotron remains a serious Phase 8 promotion candidate, run its
-      independent representative locale/quality, output-behavior, percentile,
-      and rollback comparison before selecting it. Do not inherit Cohere or
-      Phase 6 candidate-safety evidence.
+- **Phase 8 provider-selection work:** If Nemotron remains a serious promotion
+      candidate, run its independent representative locale/quality,
+      output-behavior, percentile, and rollback comparison before selecting it.
+      Do not inherit Cohere or Phase 6 candidate-safety evidence.
 - [ ] Run the proportional Phase 6 duration plan: deterministic 250-ms through
       30-second local-live boundaries through the hash-bound `short-boundaries`
       profile, one 15-minute real-time physical-microphone/rendered-UI soak, and
