@@ -27,7 +27,7 @@ real-artifact `ContainerLidWorker` execution, locked-resource measurement, and
 teardown smoke. Exact executable head
 `a21964c19e56648e9fddcb5200de419e59a7687c` then passed the final source-exact
 ARM64 production-worker repetition. None of those component results satisfies
-the separate representative suggestion-quality, advertised-route duration, or
+the current-host Preview lifecycle, final advertised-route contract smoke, or
 complete Phase 6 gates.
 Fail-closed English
 Cohere attention alignment also executes and has current-source contained GB10
@@ -867,8 +867,9 @@ switch promotion and the frozen runtime parity rerun remain open.
 ### 7. Prove the provider-specific ASR runtimes
 
 Phase 6 qualifies these replaceable candidates only far enough to prove the
-bounded server contract, current advertised `en-US` regression, deterministic
-duration/concurrency safety, cancellation/recovery, resources, and teardown.
+bounded server contract, current advertised `en-US` contract compatibility,
+deterministic duration/concurrency safety, cancellation/recovery, resources, and
+teardown.
 It does not promote either resident service or run a broad Cohere natural-
 quality campaign. Phase 8 reuses bounded single-speaker/long-batch controls when
 deciding whether Tiron is meeting-only, replaces Cohere batch work more broadly,
@@ -904,12 +905,14 @@ or is rejected.
       independent representative locale/quality, output-behavior, percentile,
       and rollback comparison before selecting it. Do not inherit Cohere or
       Phase 6 candidate-safety evidence.
-- [ ] Run the accepted duration plan: 250-ms through 30-second local-live
-      endpoints; 30-second through two-hour real-time local-live sessions;
-      30-second through two-hour batch; compatible and mixed c1/c2/c4/c8 work;
-      capacity and duration edges; and the exact supported maximum. Either
-      qualify the current four-hour transport ceiling or lower the product
-      claim to the longest duration that passes end to end.
+- [ ] Run the proportional Phase 6 duration plan: deterministic 250-ms through
+      30-second local-live boundaries, one 15-minute real-time local-live soak,
+      and the already-completed model-neutral server candidate-safety duration,
+      admission, cancellation, resource, and teardown controls. Retain the
+      30-second-through-two-hour local suite for default-on or Phase 10 release
+      qualification instead of spending several wall-clock hours on a
+      default-off Preview. Reuse bounded long-batch controls in Phase 8 when
+      comparing Tiron with any surviving Cohere route.
 - [x] Keep both resident provider runtimes unpromoted in Phase 6. Any later
       promotion requires route-specific frozen evidence, rollback proof, and
       review; persistent supervised multi-owner capacity remains Phase 10.
@@ -1769,13 +1772,14 @@ It must prove at least:
    duplicate/dropped transcript text, and no path manufactures confidence;
 7. VAD failure preserves source audio and bounded transport; alignment failure
    publishes an explicit unavailable result rather than fabricated timing;
-8. the bounded current advertised `en-US` regression passes without publishing
-   audio or transcripts, while completed local switching evidence remains
-   honestly classified as Preview. No broad Cohere natural-quality campaign or
-   unmeasured locale/tier claim enters the gate. The completed AMI close/far run
-   remains diagnostic only; provider-promotion subsets and independent multi-
-   speaker, overlap, speaker-attributed, and virtual-meeting promotion belong to
-   the later selected route and Phase 8 under ADR 0027;
+8. the current advertised `en-US` route passes its bounded
+   contract/capability smoke without publishing audio or transcripts, while
+   completed local switching evidence remains honestly classified as Preview.
+   No new Cohere natural-quality or long-duration campaign and no unmeasured
+   locale/tier claim enters the gate. The completed AMI close/far run remains
+   diagnostic only; provider-promotion subsets and independent multi-speaker,
+   overlap, speaker-attributed, and virtual-meeting promotion belong to the
+   later selected route and Phase 8 under ADR 0027;
 9. GB10 uses the exact locked Python 3.12/NVIDIA runtime, records the bounded
    regression, streaming stability, exact-duration integrity, concurrency, and
    candidate resource ceilings, and leaves no owned container, process, model

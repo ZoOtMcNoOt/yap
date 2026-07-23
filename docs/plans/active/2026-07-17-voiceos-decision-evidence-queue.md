@@ -47,7 +47,7 @@ observed runtime behavior.
 | D-09 | Global language coverage | Advertise only exact out-of-box, benchmarked locales. Nemotron's eight adaptation-ready locales are not planned capabilities. Broad coverage remains visibly lower-confidence until locale-specific evidence promotes it. | Accepted; Phase 6 | ADR 0024 |
 | D-10 | Client/server preprocessing | The client owns capture/source admission, deterministic normalization, source identity, optional advisory VAD, bounded local acoustic LID, source-time language spans, and durable client evidence. The server owns heavyweight verification, ASR, alignment, and official result production. Redundant server validation may reconcile or reject evidence but must not create a second client-state authority or erase client history. | Accepted boundary; Phase 6 | ADR 0020, ADR 0024, current architecture |
 | D-11 | Terminology | Present terminology under Dictation/Personalization, but store it in one model-independent terminology domain. Compile one versioned session snapshot into ASR hints/context first, deterministic casing/acronym normalization second, grammar-SLM preservation constraints third, and later OKF glossary projections. The SLM must not be the source of truth or reconstruct terms lost during decoding. | Boundary accepted; schema, scope, privacy, and delivery phase remain open | Section below; Phase 9 ADR amendment required before implementation |
-| D-12 | Evaluation coverage | Separate natural transcript quality from deterministic runtime-duration/load tests. Phase 6 keeps local quick-correction/duration custody, 15-minute live, 30-second-to-two-hour batch, the supported maximum-duration boundary, and one bounded regression for the currently advertised Cohere `en-US` route. Broad provider natural-quality, accent, terminology, future-locale, multi-speaker, overlap, speaker-attributed, and virtual-meeting campaigns activate with the Phase 8 Tiron/fallback selection gate. | Accepted split; one exact-source AMI close/far long-meeting diagnostic is complete without creating a Phase 6 meeting-quality claim. The bounded Phase 6 regression/duration gate remains incomplete; broad provider and meeting promotion belongs to Phase 8. | ASR evaluation corpus and runtime qualification; ADR 0027 |
+| D-12 | Evaluation coverage | Separate natural transcript quality from deterministic runtime-duration/load tests. Phase 6 keeps deterministic local quick-correction boundaries, one 15-minute real-time live soak, model-neutral custody/lifecycle checks, and one contract smoke for the currently advertised Cohere `en-US` route. Multi-hour real-time Preview runs and broad provider natural-quality, accent, terminology, future-locale, long-batch, multi-speaker, overlap, speaker-attributed, and virtual-meeting campaigns activate with default-on/Phase 10 release qualification or the Phase 8 Tiron/fallback selection gate as appropriate. | Accepted proportional split; one exact-source AMI close/far long-meeting diagnostic and the resident-provider candidate-safety lifecycle are complete without creating a Phase 6 promotion claim. The current-host local/15-minute and final contract/full-matrix gates remain incomplete; broad provider and meeting promotion belongs to Phase 8. | ASR evaluation corpus and runtime qualification; ADR 0027 |
 | D-13 | Training/test exposure | Public corpora named in a model's training or evaluation are comparators, not independent promotion evidence. Use provenance locks, exposure classification, sealed post-freeze adjudicated holdouts, and exact audio/reference hashes. | Accepted; Phase 6 and later release gates | ASR evaluation corpus and runtime qualification |
 | D-14 | Model challengers | Retain Cohere and Nemotron as separate checked candidates without a universal quality label. The focused AMI comparator favored Nemotron lexical accuracy and Cohere throughput/punctuation for one meeting, so the frozen locale/workload gates—not family labels—must select routes. Do not expand Cohere solely to populate the language picker. Phase 8 will determine whether pinned Tiron earns a narrow meeting route, a broader batch-provider replacement, or neither; Qwen3-ASR-1.7B, VibeVoice, Riva/NIM, and other challengers still require their own later review. | Phase 6 closes only its current provider contracts and advertised route; Tiron remains unimplemented and unpromoted until Phase 8 evidence exists | ADR 0027, dynamic-language evaluation, later roadmap |
 | D-15 | Quantization | Never promote a local derivative below Q4. Treat Q4 as the most aggressive allowed format, not a blanket replacement for a passing Q8/INT8 or higher-precision artifact. Choose per exact model, target CPU, duration, and quality/latency/memory/battery gate. | Floor accepted; per-provider evidence remains open in Phases 6 and 10 | Phase 6 plan and ADR 0024 |
@@ -428,10 +428,11 @@ the implemented contract slices, not the unchecked frozen-head resource gate.
 
 ### P6-07 — Quality, duration, and concurrency evidence
 
-The Phase 6 merge gate keeps the current advertised `en-US` regression and the
-deterministic duration, concurrency, cancellation, resource, and teardown
-boundaries. It does not promote the resident Cohere or Nemotron services and
-therefore does not consume an exhaustive Cohere natural-quality campaign.
+The Phase 6 merge gate keeps a contract smoke for the current advertised
+`en-US` route and the deterministic duration, concurrency, cancellation,
+resource, and teardown boundaries. It does not promote the resident Cohere or
+Nemotron services and therefore does not consume another Cohere natural-quality
+or long-duration campaign.
 Rights-adjudicated broad natural coverage below remains reusable promotion work
 for whichever provider survives the Phase 8 Tiron comparison; unchecked
 promotion-only items do not block retaining the current candidates behind the
@@ -465,17 +466,20 @@ provider-neutral contract.
   create a Phase 6 meeting-quality claim.
 - [ ] **Phase 8 provider-selection backlog, not a Phase 6 blocker:** cover every
   locale proposed by the selected replacement individually; a macro average
-  cannot hide a failed locale or broad-coverage tier. Phase 6 retains only its
-  bounded regression for the currently advertised Cohere `en-US` route.
+  cannot hide a failed locale or broad-coverage tier. Phase 6 retains only a
+  contract/capability smoke for the currently advertised Cohere `en-US` route.
 - [ ] Run deterministic local-live endpoints at 250 ms, 500 ms, 750 ms, one
   second, the 1.12-second Nemotron chunk boundary, two seconds, and through 30
   seconds. Record shortcut-release-to-final-text latency, blank-result rate,
   leading/trailing phoneme clipping, and raw accuracy for natural quick
-  corrections. Then run real-time local-live sessions from 30 seconds through
-  two hours and batch inputs from 30 seconds through two hours plus the exact
-  supported maximum.
-- [ ] Include 15-minute continuous live, 15-minute batch, 30-second batch, and
-  two-hour batch cases explicitly in the machine-validated matrix.
+  corrections. Run one 15-minute real-time local-live session on the current
+  host. Keep longer real-time Preview soaks for default-on or Phase 10 release
+  qualification.
+- [ ] Include the 15-minute continuous local-live case explicitly in the
+  machine-validated Phase 6 matrix. Reuse the existing bounded 30-second,
+  15-minute, two-hour, and supported-maximum server controls only when Phase 8
+  compares Tiron with a surviving provider; do not rerun them merely to polish
+  Cohere.
 - [ ] Exercise c1/c2/c4/c8 compatible and mixed loads, queue/capacity edges,
   restart, retry, cancellation, and teardown.
 - [ ] Lower any advertised four-hour ceiling that the frozen candidate does not

@@ -673,8 +673,8 @@ evidence before default-on or production promotion.
        image/resource/teardown smoke. Exact executable head
        `a21964c19e56648e9fddcb5200de419e59a7687c` then passed the final
        source-exact ARM64 repetition under the production worker limits; retain
-       representative suggestion-quality and complete phase evidence in the
-       final Phase 6 gate.
+       its accepted abstaining behavior and complete phase evidence in the final
+       Phase 6 gate; do not start another open-ended accuracy campaign.
 6. [x] Preserve Whisper-tiny and the other released candidates as measured
        comparators; implement the accepted AmberNet 1.12.0 QDQ INT8 component
        with exact frontend/label/runtime identity and a verified local-import
@@ -714,9 +714,11 @@ evidence before default-on or production promotion.
        private-suite, manifest, WAV, PCM, bounded-queue, and decoded-sample
        accounting. Its companion builder derives all ordered cases from the
        validated plan and atomically publishes the private collection from
-       vetted external PCM16 sources. Its multi-hour run and the current-host
-       physical-microphone/rendered-UI gate remain unconsumed, so this item and
-       the ADR score stay open.
+       vetted external PCM16 sources. Phase 6 consumes deterministic
+       short-boundary coverage, one 15-minute real-time local soak, and the
+       current-host physical-microphone/rendered-UI gate. Multi-hour real-time
+       Preview soaks move to default-on or Phase 10 release qualification, so
+       this item and the ADR score stay open only for the proportional gate.
 8. [x] Add reference fixed-language Cohere/Nemotron routes and explicit Nemotron
        auto mode without claiming a persistent production pool.
 9. [x] Finish the bounded provider-specific candidate-safety gate from ADR 0025.
@@ -737,15 +739,15 @@ evidence before default-on or production promotion.
         results behind per-language gates. Keep catalog `wordAlignment: false`;
         any later selected route must pass its own accuracy/latency/memory
         promotion gate before advertising alignment.
-12. [ ] Validate every advertised locale/tier on representative public and
-       approved private-domain fixtures before changing a quality claim. The
-       fail-closed case-level human-reference registry contract now executes,
-       including authorized independent roles, blind-assignment proof, exact
-       human exact-locale basis, reviewed rights/defects, and separate artifact
-       hashes. Phase 6 advertises only the existing gated `en-US` route and does
-       not require a ceremonial second-locale promotion. Its final checked-head
-       parity and the bounded advertised `en-US` regression still keep this
-       item and the ADR score open.
+12. [x] Do not expand any provider quality claim in Phase 6. The fail-closed
+       case-level human-reference registry contract executes, including
+       authorized independent roles, blind-assignment proof, exact human
+       locale basis, reviewed rights/defects, and separate artifact hashes.
+       Phase 6 advertises only the existing gated `en-US` route, requires a
+       final contract/capability smoke rather than another Cohere quality
+       campaign, and does not require a ceremonial second-locale promotion.
+       If Cohere remains a Phase 8 contender, validate its representative
+       quality and long-duration behavior against Tiron before changing claims.
 13. [ ] Run the complete Phase 6 local/native/server/GB10 matrix exactly once on
        the ready head, then require hosted exact-head review before merge.
 

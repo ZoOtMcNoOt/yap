@@ -163,7 +163,7 @@ aggregate I/O, and oversize fail closed. The receipt must match exact rights,
 defects, locale, and timestamp. No real reviewed production registry exists
 yet, so this executing trust boundary is not provider-promotion evidence. Phase
 6 retains the resident services as replaceable candidates and runs only the
-bounded advertised-route regression plus runtime-safety gate; any later route
+advertised-route contract smoke plus runtime-safety gate; any later route
 promotion must supply the complete reviewed registry.
 
 ADR 0025 replaces the attempted universal ASR plane with provider-specific
@@ -341,19 +341,22 @@ is saturation evidence rather than an interactive workload claim. These are
 accelerated and paced prepared-audio runtime proxies, not rendered-UI or
 sustained release-lifecycle evidence. The route is available only as an
 explicit, default-off Preview because its frozen natural-switch target failed;
-current-host resource and interference, sustained-session, restart,
+current-host resource and interference, one 15-minute sustained session, restart,
 cancellation, and the complete checked-head gate still gate Phase 6 release.
 Fail-closed checked-head native repeated-session and release-mode physical-
 microphone/rendered-UI collectors bind the observed Windows processor and
 processor count but remain unconsumed on the final checked head. Representative
 low-end physical battery/thermal certification is deferred to default-on or
-Phase 10 release qualification and cannot be inferred from this Preview gate. A deterministic duration runner now streams the machine plan's exact
-short and 30-second-to-two-hour ladders from the prepared-audio-frame boundary
-through the production bounded adapter, the same single live worker, and
-finalization. It locks the checked head, plan, private suite, manifests, raw WAV,
-and decoded PCM without retaining transcript text or paths. The multi-hour run
-has not been consumed and does not replace current-host physical-microphone,
-rendered-UI, resource, or natural-accuracy evidence. A separately frozen clean German-English
+Phase 10 release qualification and cannot be inferred from this Preview gate. A
+deterministic duration runner can stream the machine plan's exact short and
+30-second-to-two-hour ladders from the prepared-audio-frame boundary through the
+production bounded adapter, the same single live worker, and finalization. It
+locks the checked head, plan, private suite, manifests, raw WAV, and decoded PCM
+without retaining transcript text or paths. Phase 6 consumes deterministic
+short-boundary coverage and one 15-minute real-time soak; multi-hour real-time
+Preview runs remain available for default-on or Phase 10 release qualification
+and do not replace current-host physical-microphone, rendered-UI, resource, or
+natural-accuracy evidence. A separately frozen clean German-English
 representative set then retained
 exact source coverage and the required primary-language fallback but detected
 zero of four required natural alternate-language spans and matched neither the
