@@ -23,7 +23,10 @@ const lifecycleAssertions = [
 
 const recordingRoot = process.env.YAP_LIVE_RECORDINGS_DIR;
 if (!recordingRoot) throw new Error("WDIO requires an isolated YAP_LIVE_RECORDINGS_DIR.");
-const targetClient = createTargetClientLanguageRoutingHardwareGate({ browser, recordingRoot });
+const targetClient = createTargetClientLanguageRoutingHardwareGate({
+  browserProvider: () => globalThis.browser,
+  recordingRoot,
+});
 
 async function switchToWindow(label) {
   const windows = await browser.tauri.listWindows();

@@ -33,7 +33,8 @@ function boundedCaptureDuration(raw, enabled) {
 }
 
 export function createTargetClientLanguageRoutingHardwareGate({
-  browser,
+  browser: configuredBrowser,
+  browserProvider = () => configuredBrowser,
   environment = process.env,
   recordingRoot,
 }) {
@@ -55,8 +56,18 @@ export function createTargetClientLanguageRoutingHardwareGate({
     );
   }
 
+  function requireActiveBrowser() {
+    const activeBrowser = browserProvider();
+    requireCondition(
+      activeBrowser?.tauri,
+      "The target-client gate requires an active WebdriverIO Tauri browser.",
+    );
+    return activeBrowser;
+  }
+
   async function configureLanguageRouting() {
     if (!enabled) return null;
+    const browser = requireActiveBrowser();
     await browser.tauri.switchWindow("main");
     return browser.tauri.execute(async ({ core }) => {
       const current = await core.invoke("live_language_routing_status");
@@ -72,6 +83,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
 
   async function assertResidentRuntimeReady(configuredRouting) {
     if (!enabled) return;
+    const browser = requireActiveBrowser();
     await browser.tauri.switchWindow("main");
     const status = await browser.tauri.execute(async ({ core }) => ({
       acousticLanguageDetector: await core.invoke("acoustic_language_detector_status"),
@@ -106,6 +118,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
 
   async function startResponsivenessSampler() {
     if (!enabled) return null;
+    const browser = requireActiveBrowser();
     await browser.tauri.switchWindow("live-overlay");
     return browser.tauri.execute((_tauri, tickMs) => {
       if (globalThis.__yapUiResponsivenessSampler) {
@@ -125,6 +138,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
 
   async function stopResponsivenessSampler() {
     if (!enabled) return null;
+    const browser = requireActiveBrowser();
     await browser.tauri.switchWindow("live-overlay");
     return browser.tauri.execute(() => {
       const state = globalThis.__yapUiResponsivenessSampler;
@@ -150,6 +164,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
 
   async function runRestartCancellation({ classifyReadiness, nativeReadiness }) {
     requireCondition(enabled, "The target-client restart gate is not enabled.");
+    const browser = requireActiveBrowser();
     await configureLanguageRouting();
     const readiness = classifyReadiness(await nativeReadiness());
     requireCondition(

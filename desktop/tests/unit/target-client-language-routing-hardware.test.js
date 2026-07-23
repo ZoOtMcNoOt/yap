@@ -43,4 +43,39 @@ describe("target-client language-routing hardware gate", () => {
       YAP_HARDWARE_ACTIVE_CAPTURE_MS: "119999",
     })).toThrow(/between 120000 and 1800000/);
   });
+
+  it("resolves the WebdriverIO browser when an operation starts", async () => {
+    let activeBrowser;
+    const gate = createTargetClientLanguageRoutingHardwareGate({
+      browserProvider: () => activeBrowser,
+      environment: {
+        YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
+        YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
+        YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
+      },
+      recordingRoot: "C:\\private-yap-recordings",
+    });
+    activeBrowser = {
+      tauri: {
+        execute: async (operation) => operation({
+          core: {
+            invoke: async (command) => {
+              if (command === "live_language_routing_status") {
+                return {
+                  automaticLanguages: [{ languageCode: "de", locales: ["de-DE"] }],
+                  catalogRevision: "catalog-test",
+                };
+              }
+              return { enabledLocales: ["en-US", "de-DE"] };
+            },
+          },
+        }),
+        switchWindow: async () => {},
+      },
+    };
+
+    await expect(gate.configureLanguageRouting()).resolves.toEqual({
+      enabledLocales: ["en-US", "de-DE"],
+    });
+  });
 });
