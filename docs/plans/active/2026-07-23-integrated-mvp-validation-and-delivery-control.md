@@ -70,15 +70,15 @@ Only these six actions remain on the Phase 6 critical path.
 
 ### 1. Finish connected pre-gate preparation
 
-- [ ] Reuse the existing desktop/private-server ASR vertical-slice gate. Add
+- [x] Reuse the existing desktop/private-server ASR vertical-slice gate. Add
       only missing assertions needed to prove the executing Phase 6
       preprocessing and language-decision path; do not create a second
       end-to-end harness.
-- [ ] Lock rights, provenance, and hashes for only the fixtures admitted to the
+- [x] Lock rights, provenance, and hashes for only the fixtures admitted to the
       Phase 6 gate.
-- [ ] Run focused checks for any final assertion, accessibility, documentation,
+- [x] Run focused checks for any final assertion, accessibility, documentation,
       or gate-harness correction while the candidate is still changing.
-- [ ] Remove stale completion wording. Do not add broad Cohere, Tiron, or
+- [x] Remove stale completion wording. Do not add broad Cohere, Tiron, or
       AmberNet research to Phase 6.
 
 ### 2. Run one bounded offline Windows session

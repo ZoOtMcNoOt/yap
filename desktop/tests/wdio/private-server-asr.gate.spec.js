@@ -190,11 +190,21 @@ describe("checked-head private-server ASR gate", () => {
       languageBcp47: "en-US",
       disposition: "primary",
     });
+    expect(created[0].pipeline).toEqual({
+      intake: "done",
+      preprocessing: "notStarted",
+      transcription: "notStarted",
+      alignment: "notStarted",
+      diarization: "notStarted",
+      postprocessing: "notStarted",
+    });
     expect(canonicalPath(created[0].sourcePath)).toBe(canonicalPath(fixturePath));
     const createdJob = created[0];
     const clientJobId = createdJob.id;
     const observedStatuses = new Set([createdJob.status]);
+    const observedPreprocessingStates = new Set([createdJob.pipeline.preprocessing]);
     let history;
+    let terminalJob;
     let terminalFailure;
 
     const interruptedTunnel = tunnelProcess;
@@ -209,6 +219,7 @@ describe("checked-head private-server ASR gate", () => {
     expect(["queued_server", "preprocessing", "uploading", "server_processing"])
       .toContain(interruptedJob.status);
     observedStatuses.add(interruptedJob.status);
+    observedPreprocessingStates.add(interruptedJob.pipeline.preprocessing);
 
     tunnelProcess = await startTunnel(requireSshAlias());
     const restoredConnection = await invoke("refresh_server_connection");
@@ -221,6 +232,7 @@ describe("checked-head private-server ASR gate", () => {
         const job = snapshot.find((candidate) => candidate.id === clientJobId);
         if (job) {
           observedStatuses.add(job.status);
+          observedPreprocessingStates.add(job.pipeline.preprocessing);
         }
         if (job && ["failed", "cancelled"].includes(job.status)) {
           terminalFailure = new Error(
@@ -235,7 +247,8 @@ describe("checked-head private-server ASR gate", () => {
           );
           return true;
         }
-        history = matchCompletedRemoteTranscript(createdJob, catalog);
+        history = matchCompletedRemoteTranscript(job, catalog);
+        if (history) terminalJob = job;
         return Boolean(history);
       },
       {
@@ -247,6 +260,16 @@ describe("checked-head private-server ASR gate", () => {
 
     if (terminalFailure) throw terminalFailure;
     expect(createdJob.route).toBe("serverBatch");
+    expect(terminalJob).toBeDefined();
+    expect(terminalJob.languageDecision).toEqual(createdJob.languageDecision);
+    expect(terminalJob.pipeline).toEqual({
+      intake: "done",
+      preprocessing: "done",
+      transcription: "done",
+      alignment: "notStarted",
+      diarization: "notStarted",
+      postprocessing: "done",
+    });
     expect(history).toBeDefined();
     expect(history.warning).toBeNull();
     expect(canonicalPath(history.sourcePath)).toBe(canonicalPath(fixturePath));
@@ -300,7 +323,7 @@ describe("checked-head private-server ASR gate", () => {
     writeFileSync(
       path.join(evidenceDirectory, "native-vertical-slice.json"),
       `${JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: 2,
         checkedHead,
         fixtureSha256,
         clientJobId,
@@ -313,6 +336,8 @@ describe("checked-head private-server ASR gate", () => {
         transcriptBytes: Buffer.byteLength(result.transcript, "utf8"),
         modelProvenance: result.modelProvenance,
         observedStatuses: [...observedStatuses].sort(),
+        observedPreprocessingStates: [...observedPreprocessingStates].sort(),
+        terminalPipeline: terminalJob.pipeline,
         tunnelInterruptionState: interruptedConnection.state,
         tunnelRestoredState: restoredConnection.state,
         immutableJobSurvivedTunnelInterruption: true,

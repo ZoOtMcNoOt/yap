@@ -16,12 +16,20 @@ describe("private-server ASR gate support", () => {
     expect(sameWindowsPath("C:\\Private\\Evidence", "\\\\?\\c:\\private\\evidence\\")).toBe(true);
   });
 
-  it("joins the created remote job to its terminal History entry by session and source", () => {
-    const createdJob = {
+  it("joins only a fully processed remote job to its terminal History entry", () => {
+    const completedJob = {
       id: "job-0123456789abcdef01234567",
       route: "serverBatch",
       sourcePath: "C:\\fixture.wav",
-      status: "queued_server",
+      status: "complete",
+      pipeline: {
+        intake: "done",
+        preprocessing: "done",
+        transcription: "done",
+        alignment: "notStarted",
+        diarization: "notStarted",
+        postprocessing: "done",
+      },
     };
     const historyEntry = {
       name: "fixture.wav",
@@ -31,7 +39,7 @@ describe("private-server ASR gate support", () => {
       sourcePath: "\\\\?\\c:\\fixture.wav",
     };
     const matched = matchCompletedRemoteTranscript(
-      createdJob,
+      completedJob,
       {
         maintenanceWarnings: [],
         sessions: [historyEntry],
@@ -40,23 +48,36 @@ describe("private-server ASR gate support", () => {
 
     expect(matched).toBe(historyEntry);
     expect(matchCompletedRemoteTranscript(
-      { ...createdJob, route: "localFallback" },
+      { ...completedJob, status: "queued_server" },
+      { maintenanceWarnings: [], sessions: [historyEntry] },
+    )).toBeUndefined();
+    for (const stage of ["intake", "preprocessing", "transcription", "postprocessing"]) {
+      expect(matchCompletedRemoteTranscript(
+        {
+          ...completedJob,
+          pipeline: { ...completedJob.pipeline, [stage]: "running" },
+        },
+        { maintenanceWarnings: [], sessions: [historyEntry] },
+      )).toBeUndefined();
+    }
+    expect(matchCompletedRemoteTranscript(
+      { ...completedJob, route: "localFallback" },
       { maintenanceWarnings: [], sessions: [historyEntry] },
     )).toBeUndefined();
     expect(matchCompletedRemoteTranscript(
-      { ...createdJob, id: "job-not-a-minted-id" },
+      { ...completedJob, id: "job-not-a-minted-id" },
       { maintenanceWarnings: [], sessions: [historyEntry] },
     )).toBeUndefined();
     expect(matchCompletedRemoteTranscript(
-      createdJob,
+      completedJob,
       { maintenanceWarnings: [], sessions: [{ ...historyEntry, sessionId: "s-other" }] },
     )).toBeUndefined();
     expect(matchCompletedRemoteTranscript(
-      createdJob,
+      completedJob,
       { maintenanceWarnings: [], sessions: [{ ...historyEntry, sourcePath: "C:\\other.wav" }] },
     )).toBeUndefined();
     expect(matchCompletedRemoteTranscript(
-      createdJob,
+      completedJob,
       { maintenanceWarnings: [], sessions: [{ ...historyEntry, origin: "live" }] },
     )).toBeUndefined();
   });

@@ -24,6 +24,11 @@ export function sameWindowsPath(left, right) {
 export function matchCompletedRemoteTranscript(job, catalog) {
   if (
     job?.route !== "serverBatch"
+    || job.status !== "complete"
+    || job.pipeline?.intake !== "done"
+    || job.pipeline?.preprocessing !== "done"
+    || job.pipeline?.transcription !== "done"
+    || job.pipeline?.postprocessing !== "done"
     || !/^job-[0-9a-f]{24}$/.test(job.id)
     || typeof job.sourcePath !== "string"
     || !Array.isArray(catalog?.sessions)
