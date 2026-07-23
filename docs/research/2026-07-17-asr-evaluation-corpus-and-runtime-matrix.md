@@ -242,6 +242,11 @@ intake diagnostics, not a provider ranking, locale promotion, or independent
 quality gate. Audio, references, transcripts, case identities, and raw evidence
 stay outside Git; two independent listens, adjudication, attribution, and the
 frozen registry decision remain mandatory.
+The complete 245-file intake/evidence tree was preserved outside the volatile
+boundary on 2026-07-22 by copying it into an owner-only persistent external
+cache and verifying an exact source/copy tree-hash match. That is preservation
+evidence, not human-reference review or promotion evidence; no private path or
+digest is recorded here.
 
 ### First immutable public comparator: FLEURS `es-419`
 

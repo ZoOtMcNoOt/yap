@@ -1193,6 +1193,12 @@ locale, or complete Phase 6 gates above.
 The executable review/registry contract described above is now ready to admit
 those private artifacts, but it cannot manufacture them and does not convert
 this screen into gold or promotion evidence.
+On 2026-07-22 the complete 245-file intake/evidence tree was copied out of
+volatile storage into an owner-only persistent external cache, then rehashed as
+a tree with an exact source/copy match. No private path, digest, audio,
+reference, hypothesis, or raw receipt entered Git. This preservation step does
+not satisfy the still-missing independent listens, adjudication, attribution,
+or registry decision.
 
 At exact executable source SHA
 `2caf1969000154ffba24511a5c35b57f7f975036`, a focused natural long-meeting
