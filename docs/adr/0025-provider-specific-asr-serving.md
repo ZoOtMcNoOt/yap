@@ -523,15 +523,26 @@ Tiron. The changed runtime-plan identity requires a new hash-bound private
 duration-suite envelope and exact-head rerun.
 
 Exact head `2b9118ead1df1f3220da65846c2aa8949d90d83d` consumed that new
-18-track suite and passed every Cohere and NeMo child requirement. The NeMo
-long-window child correctly bound its four completed requests to the plan's two
-30-second and two 15-minute inputs. Exact teardown removed both providers,
-loopback proxies, listeners, and the temporary network. Final publication then
-failed closed because the aggregate finalizer still expected the long-window
-suite selection to contain only 15 minutes. No final aggregate was written.
-The finalizer now requires the complete `(30 seconds, 15 minutes)` selection and
-has an explicit regression for an omitted short member. This is evidence-contract
-repair, not a provider promotion; another exact-head lifecycle run is required.
+18-track suite and passed all Cohere children plus nine of ten NeMo children.
+The final NeMo workload completed 1,600/1,600 c8 requests and passed every
+memory, allocation-extent, observation-duration, sample-count, and memory-event
+check. Its separate resource aggregate failed because cgroup tasks and
+entrypoint threads reached 262 against the frozen 256 ceiling. The process had
+63 tasks when freshly ready, reached 222 in an isolated c8 wave, entered the
+full gate's final cell at 224 after the earlier lifecycle cases, and added 38
+native-library waiters immediately. CPU averaged about one core, so this is
+redundant pool residency rather than 262 busy workers. Exact teardown removed
+both providers, loopback proxies, listeners, and the temporary network.
+
+No final aggregate was written. An independent finalizer replay also exposed a
+stale evidence expectation: the NeMo long-window child correctly bound its four
+requests to two 30-second and two 15-minute inputs, while the finalizer expected
+only the 15-minute member. It now requires the complete mixed selection and has
+an omitted-member regression. The runtime separately caps BLAS/OpenMP/Rayon and
+PyTorch pools at the eight-stream model bound and derives 18 HTTP workers from
+the eight-active-request contract instead of retaining an unrelated 32-worker
+constant. Both corrections need new exact-head evidence and do not promote a
+provider.
 
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall

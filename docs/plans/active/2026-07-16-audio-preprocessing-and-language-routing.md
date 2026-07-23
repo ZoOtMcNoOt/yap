@@ -1224,15 +1224,22 @@ in Phase 8's Tiron comparison. The changed plan hash requires a new private
 suite envelope and another exact-head lifecycle run.
 
 Exact head `2b9118ead1df1f3220da65846c2aa8949d90d83d` then consumed the new
-18-track suite and passed all 18 Cohere/NeMo children. That includes both exact
-four-hour transport boundaries, both 600-result short-tail cells, the corrected
-fixed/automatic language contract, the mixed 30-second/15-minute NeMo window,
-cancellation, capacity, and both c8/1,600 resource profiles. Teardown was exact.
-The final aggregate did not publish because its stale fixture expected the
-long-window duration-suite binding to contain only 15 minutes; the executable
-plan and child correctly contained both 30 seconds and 15 minutes. The finalizer
-and regression fixture now require the whole mixed selection. A new exact-head
-run remains required, and neither provider is promoted.
+18-track suite and passed all Cohere children plus nine of ten NeMo children.
+The NeMo c8 resource workload completed 1,600/1,600 and passed memory,
+allocation, timing, sampling, and memory-event controls, but its resource
+aggregate failed at 262 tasks/entrypoint threads against the frozen 256 ceiling.
+A fresh ready process used 63 tasks and an isolated c8 wave reached 222; the
+full lifecycle entered the last cell at 224, then created 38 native-library
+waiters in its first sample. Teardown was exact and no aggregate published.
+
+Replaying the finalizer independently exposed a second stale contract before a
+future successful resource child could publish: the mixed long-window child
+correctly selected both 30 seconds and 15 minutes, while the finalizer expected
+only 15 minutes. It now requires both members and rejects either partial suite.
+The server image now caps BLAS/OpenMP/Rayon and PyTorch pools at eight, and the
+service derives 18 HTTP workers from the eight-active-request contract instead
+of keeping 32. New exact-head focused and lifecycle runs remain required, and
+neither provider is promoted.
 
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness

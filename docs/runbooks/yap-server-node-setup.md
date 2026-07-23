@@ -420,13 +420,17 @@ rebind the private suite under a new out-of-band SHA before the next exact-head
 run.
 
 Exact head `2b9118ead1df1f3220da65846c2aa8949d90d83d` consumed that rebound
-suite and passed every provider child. Exact teardown also completed, but the
-finalizer rejected the otherwise-correct NeMo long-window evidence because its
+suite and passed all Cohere children plus nine of ten NeMo children. The NeMo
+resource workload completed 1,600/1,600, but its separate resource observation
+recorded 262 tasks and entrypoint threads against the frozen 256 ceiling. Every
+memory, allocation, timing, sampling, and memory-event check passed. Exact
+teardown completed and no aggregate published. An independent finalizer replay
+also rejected the otherwise-correct mixed long-window evidence because its
 stale expectation named only the 15-minute member while the plan selects both
-30-second and 15-minute inputs. No aggregate was published. The finalizer now
-requires both durations and rejects either partial selection; use a new
-exact-head evidence directory for the corrected rerun rather than relabeling the
-failed receipt.
+30-second and 15-minute inputs. The finalizer now requires both durations; the
+runtime now caps native/PyTorch pools at eight and derives 18 HTTP workers from
+the eight-active-request contract. Use a new exact-head evidence directory for
+the focused and full corrected reruns rather than relabeling the failed receipt.
 Representative quality, current-host client Preview resource/lifecycle behavior,
 accessibility, and the other Phase 6 gates remain separate. Low-end physical
 client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host

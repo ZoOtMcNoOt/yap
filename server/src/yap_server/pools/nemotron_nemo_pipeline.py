@@ -18,6 +18,7 @@ from yap_server.pools.nemo_stream_scheduler import (
 NEMOTRON_STREAMING_ATTENTION_CONTEXT = (56, 13)
 NEMOTRON_STREAMING_CHUNK_SECONDS = 1.12
 NEMOTRON_STREAMING_MAX_STREAMS = 8
+NEMOTRON_CPU_THREAD_COUNT = NEMOTRON_STREAMING_MAX_STREAMS
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,11 +45,13 @@ class NemotronNemoPipeline:
             label="Nemotron NeMo streaming configuration",
             suffix=".yaml",
         )
-        from nemo.utils import logging as nemo_logging
         import torch
 
         if not torch.cuda.is_available():
             raise RuntimeError("Nemotron NeMo streaming requires an NVIDIA GPU")
+        _configure_torch_thread_pools(torch)
+        from nemo.utils import logging as nemo_logging
+
         nemo_logging.setLevel(logging.ERROR)
         torch.set_grad_enabled(False)
 
@@ -270,6 +273,18 @@ def _validated_prompt_dictionary(
     if "auto" not in validated:
         raise RuntimeError("Nemotron NeMo prompt catalog is invalid")
     return validated
+
+
+def _configure_torch_thread_pools(torch_module) -> None:
+    """Bound CPU pools to the same concurrency as the GPU stream scheduler."""
+
+    torch_module.set_num_threads(NEMOTRON_CPU_THREAD_COUNT)
+    torch_module.set_num_interop_threads(NEMOTRON_CPU_THREAD_COUNT)
+    if (
+        torch_module.get_num_threads() != NEMOTRON_CPU_THREAD_COUNT
+        or torch_module.get_num_interop_threads() != NEMOTRON_CPU_THREAD_COUNT
+    ):
+        raise RuntimeError("Nemotron NeMo CPU thread pools are not bounded")
 
 
 def _resident_stream_ids(pipeline) -> set[int]:

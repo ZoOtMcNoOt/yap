@@ -7,7 +7,10 @@ import threading
 import unittest
 
 from yap_server.pools.nemotron_nemo_pipeline import (
+    NEMOTRON_CPU_THREAD_COUNT,
+    NEMOTRON_STREAMING_MAX_STREAMS,
     NemotronNemoPipeline,
+    _configure_torch_thread_pools,
     _is_locked_streaming_profile,
     _validated_prompt_dictionary,
     _validated_runtime_file,
@@ -77,6 +80,15 @@ class _Cuda:
 
 
 class NemotronNemoPipelineTests(unittest.TestCase):
+    def test_cpu_thread_pools_match_the_gpu_stream_bound(self) -> None:
+        torch = _ThreadedTorch()
+
+        _configure_torch_thread_pools(torch)
+
+        self.assertEqual(NEMOTRON_CPU_THREAD_COUNT, NEMOTRON_STREAMING_MAX_STREAMS)
+        self.assertEqual(torch.intraop, NEMOTRON_STREAMING_MAX_STREAMS)
+        self.assertEqual(torch.interop, NEMOTRON_STREAMING_MAX_STREAMS)
+
     def test_prompt_dictionary_accepts_aliases_but_bounds_integer_ids(self) -> None:
         self.assertEqual(
             _validated_prompt_dictionary(
@@ -198,6 +210,24 @@ def _runtime(*, pipeline: _Pipeline, scheduler: _Scheduler, cuda: _Cuda):
     runtime._scheduler = scheduler
     runtime._torch = SimpleNamespace(cuda=cuda)
     return runtime
+
+
+class _ThreadedTorch:
+    def __init__(self) -> None:
+        self.intraop = 20
+        self.interop = 20
+
+    def set_num_threads(self, value: int) -> None:
+        self.intraop = value
+
+    def set_num_interop_threads(self, value: int) -> None:
+        self.interop = value
+
+    def get_num_threads(self) -> int:
+        return self.intraop
+
+    def get_num_interop_threads(self) -> int:
+        return self.interop
 
 
 def _locked_profile() -> SimpleNamespace:

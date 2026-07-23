@@ -48,7 +48,7 @@ from yap_server.pools.utterance_plan import read_utterance_plan
 
 _API_KEY_ENV = "YAP_NEMOTRON_NEMO_API_KEY"
 _REQUEST_TIMEOUT_SECONDS = 10.0
-_MAX_HTTP_REQUEST_WORKERS = 32
+_MAX_HTTP_REQUEST_WORKERS = NEMOTRON_NEMO_MAX_ACTIVE_REQUESTS * 2 + 2
 
 
 class NemotronNemoRequestCancelled(RuntimeError):
@@ -187,7 +187,7 @@ class NemotronNemoApplication:
 
 class _NemotronNemoHttpServer(HTTPServer):
     allow_reuse_address = False
-    request_queue_size = 32
+    request_queue_size = _MAX_HTTP_REQUEST_WORKERS
 
     def __init__(
         self,

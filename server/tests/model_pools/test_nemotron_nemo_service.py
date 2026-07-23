@@ -20,10 +20,14 @@ from yap_server.pools.batch_contract import (
 )
 from yap_server.pools.nemotron_engine import NemotronInferenceCancelled
 from yap_server.pools.nemotron_nemo_client import NemotronNemoClient
-from yap_server.pools.nemotron_nemo_protocol import NemotronNemoServiceRequest
+from yap_server.pools.nemotron_nemo_protocol import (
+    NEMOTRON_NEMO_MAX_ACTIVE_REQUESTS,
+    NemotronNemoServiceRequest,
+)
 from yap_server.pools.nemotron_nemo_service import (
     NemotronNemoApplication,
     NemotronNemoServiceBusy,
+    _MAX_HTTP_REQUEST_WORKERS,
     _NemotronNemoHttpServer,
 )
 from yap_server.pools.utterance_plan import (
@@ -113,6 +117,16 @@ class _FakeEngine:
 
 
 class NemotronNemoServiceTests(unittest.TestCase):
+    def test_http_workers_are_bounded_but_leave_control_request_capacity(self) -> None:
+        self.assertEqual(
+            _MAX_HTTP_REQUEST_WORKERS,
+            NEMOTRON_NEMO_MAX_ACTIVE_REQUESTS * 2 + 2,
+        )
+        self.assertGreater(
+            _MAX_HTTP_REQUEST_WORKERS,
+            NEMOTRON_NEMO_MAX_ACTIVE_REQUESTS,
+        )
+
     def test_authenticated_client_verifies_identity_and_transcribes(self) -> None:
         lock = _native_lock()
         with tempfile.TemporaryDirectory() as directory:

@@ -110,16 +110,21 @@ language contracts and records text parity for Phase 8. A new plan-bound private
 suite and exact-head rerun remain open.
 
 Exact head `2b9118ead1df1f3220da65846c2aa8949d90d83d` loaded the new
-plan-bound 18-track suite and passed all 18 Cohere/NeMo child cells, including
-the corrected fixed/automatic contract, both four-hour transport cells, 600-result
-short-tail cells, the mixed 30-second/15-minute NeMo window, cancellation,
-capacity, and c8/1,600 resource profiles. Both providers, their proxies,
-listeners, and the temporary network were removed. The final aggregate failed
-closed because its stale mixed-window expectation required only 15 minutes even
-though the plan and child evidence correctly selected both 30-second and
-15-minute inputs. No aggregate was published. The finalizer and its regression
-fixture now require the complete mixed-duration selection; a new exact-head run
-remains required.
+plan-bound 18-track suite and passed all Cohere children plus nine of ten NeMo
+children. NeMo completed all 1,600 c8 resource requests and passed its memory,
+allocation-extent, duration, sample-count, and memory-event checks, but the
+resource observation failed closed at 262 cgroup tasks/entrypoint threads
+against the frozen 256 ceiling. A fresh ready process measured 63 tasks and a
+focused c8 wave reached 222; the complete preceding lifecycle entered its final
+cell at 224 and reached 262, exposing cumulative native-library pools rather
+than failed requests or active CPU saturation. Both providers, their proxies,
+listeners, and the temporary network were removed, and no aggregate published.
+An independent finalizer replay also found a stale mixed-window expectation:
+the plan and child correctly selected both 30-second and 15-minute inputs while
+the aggregate expected only 15 minutes. The finalizer now requires both members;
+the runtime now bounds BLAS/OpenMP/Rayon and PyTorch pools to eight and derives
+18 HTTP workers from the eight-active-request contract. New exact-head focused
+and lifecycle evidence remain required.
 
 Focused resource controls now complete four consecutive c8/400-request repeats
 per resident provider. vLLM processed the warm repeats at about 321-322 audio-

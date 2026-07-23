@@ -109,6 +109,15 @@ class NemotronNemoContainerContractTests(unittest.TestCase):
             self.assertIn(expected, config)
         self.assertNotIn("[70, 13]", config)
         self.assertNotIn("EuroLLM", config)
+        for expected in (
+            "OMP_NUM_THREADS=8",
+            "MKL_NUM_THREADS=8",
+            "OPENBLAS_NUM_THREADS=8",
+            "NUMEXPR_NUM_THREADS=8",
+            "RAYON_NUM_THREADS=8",
+            "TOKENIZERS_PARALLELISM=false",
+        ):
+            self.assertIn(expected, dockerfile)
 
     def test_preserves_each_stream_prompt_at_the_decoder_boundary(self) -> None:
         source = PIPELINE_SOURCE.read_text(encoding="utf-8")
