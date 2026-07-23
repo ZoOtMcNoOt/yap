@@ -659,8 +659,8 @@ evidence before default-on or production promotion.
        from the verified catalog. It currently presents only the advertised,
        gated Cohere `en-US` route. Do not manufacture a second choice or
        promote a Cohere-specific locale merely to populate the control while
-       provider replacement remains under evaluation; any later alternate must pass its
-       own model/runtime/locale gate first.
+       provider replacement remains under evaluation; any later alternate must
+       pass its own model/runtime/locale gate first.
 4. [x] Produce advisory Silero VAD segments without deleting source audio.
 5. [x] Replace the superseded SpeechBrain component with the verify-only
        AmberNet 1.12.0 INT8 QDQ artifact, five-region client/server contract,

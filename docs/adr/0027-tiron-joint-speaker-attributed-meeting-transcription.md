@@ -57,8 +57,11 @@ The selection is deliberately narrow:
 
 - Tiron is server-only and processes meeting recordings on the private GPU
   tier.
-- It does not replace local Nemotron dictation, the local anonymous-speaker
-  baseline, or the Phase 6 Cohere/Nemotron provider routes.
+- It does not replace local Nemotron dictation or the local anonymous-speaker
+  baseline. The Phase 6 provider routes remain current until Phase 8 evidence
+  explicitly decides whether Tiron stays meeting-only, replaces Cohere batch
+  work more broadly, or is rejected. Tiron cannot inherit an advertised route
+  by assumption.
 - It does not own durable job identity, capture history, user corrections,
   authentication, admission, cancellation, or result publication.
 - It is not advertised or made authoritative until the frozen Phase 8 gate
@@ -310,9 +313,12 @@ replace the model behind the stable contract.
 5. Implement the speaker-epoch reconciler behind an independent switch, then
    compare the pinned baseline, extension, and fallback on byte-identical
    messy-meeting evidence.
-6. Run focused contract/runtime work while developing, then the complete
+6. Reuse a bounded frozen single-speaker/long-batch control to compare Tiron
+   with the current Cohere batch route, then record an explicit meeting-only,
+   broader-replacement, or no-replacement decision.
+7. Run focused contract/runtime work while developing, then the complete
    frozen Phase 8 matrix once.
-7. Perform the required post-phase adversarial/refactor checkpoint before
+8. Perform the required post-phase adversarial/refactor checkpoint before
    Phase 9 begins.
 
 ## References
