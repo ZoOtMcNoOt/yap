@@ -29,7 +29,8 @@ durable preprocessing and language-aware pipeline without pulling later
 identity, diarization, knowledge, or enterprise boundaries forward:
 
 - versioned provider/language/timing capabilities;
-- one Rust-owned primary language plus visible per-job override;
+- one Rust-owned primary language plus a visible catalog-derived per-job
+  recording-language selector that never invents an unpromoted alternate;
 - deterministic normalization and advisory VAD that never deletes source audio;
 - durable retryable preprocessing stages on the existing job authority;
 - one bounded resident local acoustic-LID component, automatic offline language

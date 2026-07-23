@@ -655,8 +655,12 @@ evidence before default-on or production promotion.
 2. [x] Add explicit primary-language confirmation, condition/reset local live
        streams with that locale, invalidate stale warm state on preference
        changes, and freeze the primary/manual disposition into each imported job.
-3. [ ] Enable a real selectable per-job alternate locale after a second fixed
-       route passes its promotion gate.
+3. [x] Keep the visible per-job recording-language selector derived entirely
+       from the verified catalog. It currently presents only the advertised,
+       gated Cohere `en-US` route. Do not manufacture a second choice or
+       promote a Cohere-specific locale merely to populate the control while
+       provider replacement remains under evaluation; any later alternate must pass its
+       own model/runtime/locale gate first.
 4. [x] Produce advisory Silero VAD segments without deleting source audio.
 5. [x] Replace the superseded SpeechBrain component with the verify-only
        AmberNet 1.12.0 INT8 QDQ artifact, five-region client/server contract,
@@ -733,8 +737,10 @@ evidence before default-on or production promotion.
        fail-closed case-level human-reference registry contract now executes,
        including authorized independent roles, blind-assignment proof, exact
        human exact-locale basis, reviewed rights/defects, and separate artifact
-       hashes. No real second-locale receipt or private trust anchor exists yet,
-       so this item and the ADR score remain open.
+       hashes. Phase 6 advertises only the existing gated `en-US` route and does
+       not require a ceremonial second-locale promotion. Its final checked-head
+       parity and representative single-speaker evidence still keep this item
+       and the ADR score open.
 13. [ ] Run the complete Phase 6 local/native/server/GB10 matrix exactly once on
        the ready head, then require hosted exact-head review before merge.
 

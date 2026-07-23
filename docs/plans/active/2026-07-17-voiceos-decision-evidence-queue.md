@@ -49,7 +49,7 @@ observed runtime behavior.
 | D-11 | Terminology | Present terminology under Dictation/Personalization, but store it in one model-independent terminology domain. Compile one versioned session snapshot into ASR hints/context first, deterministic casing/acronym normalization second, grammar-SLM preservation constraints third, and later OKF glossary projections. The SLM must not be the source of truth or reconstruct terms lost during decoding. | Boundary accepted; schema, scope, privacy, and delivery phase remain open | Section below; Phase 9 ADR amendment required before implementation |
 | D-12 | Evaluation coverage | Separate natural transcript quality from deterministic runtime-duration/load tests. Phase 6 covers short mumbling, clean/noisy spontaneous single-speaker speech, accents, every advertised locale, terminology/numbers, silence, 15-minute live, 30-second-to-two-hour batch, and the supported maximum duration. Multi-speaker meetings, overlap, speaker-attributed scoring, and virtual-meeting transport activate with the Phase 8 Tiron/fallback gate. | Accepted split; one exact-source AMI close/far long-meeting diagnostic is complete without creating a Phase 6 meeting-quality claim. The Phase 6 single-speaker corpus and frozen gate remain incomplete; Phase 8 owns independent meeting promotion. | ASR evaluation corpus and runtime qualification; ADR 0027 |
 | D-13 | Training/test exposure | Public corpora named in a model's training or evaluation are comparators, not independent promotion evidence. Use provenance locks, exposure classification, sealed post-freeze adjudicated holdouts, and exact audio/reference hashes. | Accepted; Phase 6 and later release gates | ASR evaluation corpus and runtime qualification |
-| D-14 | Model challengers | Retain Cohere and Nemotron as separate checked candidates without a universal quality label. The focused AMI comparator favored Nemotron lexical accuracy and Cohere throughput/punctuation for one meeting, so the frozen locale/workload gates—not family labels—must select routes. Qwen3-ASR-1.7B, VibeVoice, Riva/NIM, and other challengers require a later provider review; none is promoted by a model card or blocks the frozen Phase 6 routes. | Current providers remain unpromoted in Phase 6; other challengers are queued for the appropriate Phase 9/10 provider and deployment work | Dynamic-language evaluation, later roadmap |
+| D-14 | Model challengers | Retain Cohere and Nemotron as separate checked candidates without a universal quality label. The focused AMI comparator favored Nemotron lexical accuracy and Cohere throughput/punctuation for one meeting, so the frozen locale/workload gates—not family labels—must select routes. Do not expand Cohere solely to populate the language picker. Phase 8 will determine whether pinned Tiron earns a narrow meeting route, a broader batch-provider replacement, or neither; Qwen3-ASR-1.7B, VibeVoice, Riva/NIM, and other challengers still require their own later review. | Phase 6 closes only its current provider contracts and advertised route; Tiron remains unimplemented and unpromoted until Phase 8 evidence exists | ADR 0027, dynamic-language evaluation, later roadmap |
 | D-15 | Quantization | Never promote a local derivative below Q4. Treat Q4 as the most aggressive allowed format, not a blanket replacement for a passing Q8/INT8 or higher-precision artifact. Choose per exact model, target CPU, duration, and quality/latency/memory/battery gate. | Floor accepted; per-provider evidence remains open in Phases 6 and 10 | Phase 6 plan and ADR 0024 |
 | D-16 | NIM/Riva and DGX Spark | A serving product is usable only when its exact model/hardware support matrix and license/deployment contract include DGX Spark. Conflicting marketing/performance data does not override the support matrix. | Deferred challenger; do not block Phase 6 reference work | Phase 5 runtime evaluation, Phase 6 plan |
 | D-17 | UI fluidity and ownership | Visual polish and motion can change later without replacing the backbone, but there must remain one tray-owned island/window and one state owner per domain. Invisible hit regions, duplicate state, accessibility regressions, or slow hot paths are correctness issues rather than cosmetic debt. | Accepted; focused UX closure in each phase, release polish in Phase 10 | Voice OS architecture, roadmap |
@@ -88,7 +88,7 @@ catalog fingerprint remain schema-valid but fail at the stricter native trust
 boundary; a verified origin-bound snapshot can explain offline state but cannot
 authorize a language choice.
 
-### P6-02 — Primary language and real alternate-locale UX
+### P6-02 — Primary language and catalog-derived recording choice
 
 - [x] Require an explicitly confirmed primary locale before local live warmup.
 - [x] Apply the exact supported locale to every local stream and reset.
@@ -100,9 +100,12 @@ authorize a language choice.
   native-owned ordered set, and explain that enabled alternates trade broader
   switching for more ambiguity; do not conflate this with a server batch
   provider's fixed-locale catalog.
-- [ ] Promote a second fixed-batch locale through exact model/runtime/catalog
-  evidence.
-- [ ] Enable the catalog-derived per-job locale picker only after that promotion.
+- [x] Keep the Phase 6 catalog at its existing advertised, gated Cohere
+  `en-US` route; do not add a provider-specific locale merely to manufacture a
+  second choice.
+- [x] Keep the per-job recording-language picker catalog-derived and visible.
+  It presents exactly the advertised routes and gains a real alternate only
+  after a later candidate passes its own model/runtime/locale gate.
 - [x] Display fixed, broad-coverage, unsupported, suggested, dynamic, and unknown
   states without hiding provider or evidence limitations.
 
@@ -499,8 +502,8 @@ seconds per case. The private GB10 run then completed the frozen all-case Cohere
 route in 61.455 measured seconds at 181.04 audio seconds per wall second with
 3.5549% normalized word error rate. It used 113 batches of eight and one batch
 of four under the locked Python 3.12.3/NVIDIA Torch/CUDA/BF16 runtime. This
-closes one exact public comparator execution, not the real rights registry,
-second fixed-locale promotion, representative corpus matrix, independent
+closes one exact public comparator execution, not the real rights registry, a
+future alternate-route promotion, representative corpus matrix, independent
 Reality Set, Cohere vLLM parity, long-duration correctness, or concurrency/capacity
 gate.
 
@@ -758,7 +761,7 @@ graph and Rust-native runtime contract enter the desktop dependency graph.
 | OQ-28 | What diagnostic evidence can be retained without leaking private audio or transcripts? | Redaction schema, bounded metrics, event correlation, local retention/deletion, crash evidence, hosted-log review, and user controls | Record hashes, counts, timings, typed states, and model revisions; keep raw audio/transcripts and private scan output outside Git and hosted artifacts |
 | OQ-29 | Which networking work is developer-owned versus an IT/security handoff? | LAN and SSH-tunnel rehearsal, authenticated API contract, threat model, DNS/certificate/ZPA/firewall/conditional-access ownership, and deployment approvals | Preserve loopback/LAN/tunnel development; record enterprise controls as explicit Phase 10 handoffs or blockers |
 | OQ-30 | How do language spans interact with Phase 8 speaker diarization and overlap? | Independent source-time contracts, span intersection rules, overlap representation, revision precedence, and multilingual multi-speaker fixtures | Keep language and speaker evidence separate and composable; neither model may infer the other's identity or erase overlapping evidence |
-| OQ-31 | Does the selected Tiron development baseline earn general or only narrow production promotion? | Immutable model/harness/dependency provenance; disclosed training exposure; frozen messy-meeting public comparators plus independent holdout; reproduction of the eight-window/eight-global baseline; separately scored speaker-epoch extension; cpWER and speaker-attributed WER; overlap deletion/recall; speaker-count, capacity-pressure, timestamp, and identity-fragmentation error; per-locale quality; one- and two-pass latency, RTF, VRAM/RAM, c1/c2/c4/c8 admission, cancellation, isolation, teardown, and long-meeting stability | Implement Tiron first in Phase 8, but retain the ASR-plus-diarization fallback and keep the route unadvertised until every required slice passes. The local anonymous baseline, current Phase 6 providers, and model-independent result contract do not change. |
+| OQ-31 | Does the selected Tiron development baseline earn general or only narrow production promotion? | Immutable model/harness/dependency provenance; disclosed training exposure; frozen messy-meeting public comparators plus independent holdout; reproduction of the eight-window/eight-global baseline; separately scored speaker-epoch extension; cpWER and speaker-attributed WER; overlap deletion/recall; speaker-count, capacity-pressure, timestamp, and identity-fragmentation error; per-locale quality; single-speaker and long-batch controls; one- and two-pass latency, RTF, VRAM/RAM, c1/c2/c4/c8 admission, cancellation, isolation, teardown, and long-meeting stability | Implement Tiron first in Phase 8, but retain the ASR-plus-diarization fallback and keep the route unadvertised until every required slice passes. Explicitly decide from evidence whether it replaces only meeting-oriented Cohere work, broader fixed-batch work, or neither. The local Nemotron path and model-independent result contract do not change. |
 
 ## Closed discussion items
 
@@ -775,6 +778,9 @@ graph and Rust-native runtime contract enter the desktop dependency graph.
 - Tiron is the accepted Phase 8 server development baseline for joint
   speaker-attributed meeting transcription. Production breadth remains an open
   evidence question; public model-card benchmarks alone do not promote it.
+- Phase 6 does not add a second Cohere locale merely to populate the recording-
+  language selector. The control remains catalog-derived, and Phase 8 evidence
+  decides whether Tiron replaces any Cohere batch workload.
 - Automatic offline language switching, one bounded live-session-resident local acoustic-LID
   model, and within-utterance source-time language spans are required Phase 6
   outcomes. Their exact candidate and thresholds remain evidence-gated, not

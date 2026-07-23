@@ -274,7 +274,10 @@ fresh fingerprint; byte identity becomes immutable when preprocessing publishes
 the verified Yap-owned spool. The path registry does not claim that an external
 file can never change after selection.
 
-The catalog still promotes only the locked Cohere `en-US` fixed-batch route.
+The visible per-job recording-language selector derives from the catalog, which
+still advertises only the locked, gated Cohere `en-US` fixed-batch route. It
+does not manufacture a second option while later provider replacement remains
+unproved.
 The optional, explicitly imported AmberNet 1.12.0 QDQ INT8 plus Silero local
 language path now loads once beside the single Nemotron ASR under `LiveRuntime`.
 The exact native frontend, one-thread static-ORT session, immutable 107-label

@@ -251,8 +251,9 @@ digest, safe membership, float32 WAV shape, batch contract, runtime identity,
 private atomic results, and aggregate duration without emitting paths or
 transcripts. Its evaluation locale is `es-419`; the Cohere route remains
 provider code `es`. It is a comparator only and cannot be relabeled as
-`es-US`/`es-ES` or used alone to promote the still-missing second fixed-batch
-locale.
+`es-US`/`es-ES` or used alone to promote a future fixed-batch locale. The
+product-owner decision does not require a second Cohere locale for Phase 6
+while the batch-provider replacement question remains open.
 
 Source vetting identified European Parliament original-language plenary
 speeches recorded on 7-9 July 2026 as the first feasible public contribution to
@@ -503,8 +504,11 @@ capacity remain later gates.
       silently save the decision.
 - [x] Settings may edit the primary language and imported jobs freeze and
       display the exact primary/manual disposition.
-- [ ] Promote a second verified fixed-batch locale so the catalog-derived
-      per-job override is selectable in the shipped catalog.
+- [x] Keep the catalog-derived recording-language selector visible and
+      model-independent. It currently offers only the advertised, gated Cohere
+      `en-US` route and must gain an alternate only from a later route-specific
+      promotion; Phase 6 does not add a Cohere locale solely to populate the
+      selector.
 - [x] Recordings below the locked batch-preflight duration/speech bounds skip
       AmberNet and use the primary/manual language. A job override never
       rewrites the saved primary language.
