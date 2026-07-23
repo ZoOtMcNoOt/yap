@@ -137,7 +137,7 @@ function Get-DefaultGatewayInterfaces {
 }
 
 function Assert-OfflineBoundary {
-    $gatewayInterfaces = Get-DefaultGatewayInterfaces
+    $gatewayInterfaces = @(Get-DefaultGatewayInterfaces)
     if ($gatewayInterfaces.Count -gt 0) {
         throw "The target-client resource gate requires an offline host. Active default-gateway interfaces: $($gatewayInterfaces -join ', ')."
     }
