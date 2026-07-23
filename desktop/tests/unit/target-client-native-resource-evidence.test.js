@@ -19,11 +19,12 @@ function validContext() {
     logicalProcessorBudget: 8,
     logicalProcessors: 8,
     modelsDirectoryRecorded: false,
+    nativeTimeoutSeconds: 1_200,
     networkBoundary: "direct-local-runtime-with-no-server-client",
     processorConstraint: null,
     processorName: expected.processorName,
     profileSha256: "d".repeat(64),
-    schemaVersion: 3,
+    schemaVersion: 4,
     sessionCycles: 12,
     status: "passed",
   };
@@ -70,10 +71,11 @@ describe("target-client native resource evidence", () => {
       .toMatchObject({ logicalProcessors: 28 });
   });
 
-  it("rejects relaxed CPU, thread, or cycle settings", () => {
+  it("rejects relaxed CPU, thread, cycle, or watchdog settings", () => {
     for (const [contextPatch, profilePatch] of [
       [{ processorConstraint: "Ryzen 3 1200" }, {}],
       [{ sessionCycles: 2 }, { sustained: { ...validProfile().sustained, requestedCycles: 2 } }],
+      [{ nativeTimeoutSeconds: 3_600 }, {}],
       [{}, { localAsrThreads: 8 }],
     ]) {
       expect(() => validateTargetClientNativeResourceEvidence(

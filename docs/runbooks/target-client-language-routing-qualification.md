@@ -77,7 +77,8 @@ pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass `
   -AudioFixture $Fixture `
   -AudioFixtureSha256 $FixtureSha256 `
   -EvidenceDirectory $Evidence `
-  -SessionCycles 12
+  -SessionCycles 12 `
+  -NativeTimeoutSeconds 1200
 ```
 
 The collector uses the production-sized bounded queue and ten-millisecond
@@ -101,6 +102,8 @@ uses and records the actual host.
 
 This boundary begins at prepared audio. It is not microphone, rendered-UI,
 energy, or thermal evidence; its context file states those exclusions.
+The Cargo child also has a 1,200-second process-tree watchdog, so a worker panic
+or native deadlock fails the gate instead of leaving an unbounded test process.
 
 ## 2. Prepared-audio short-boundary gate
 

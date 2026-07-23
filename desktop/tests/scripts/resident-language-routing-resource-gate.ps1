@@ -30,7 +30,10 @@ param(
     [int]$SessionCycles = 12,
 
     [ValidateRange(1, 32)]
-    [int]$AudioRepeat = 1
+    [int]$AudioRepeat = 1,
+
+    [ValidateRange(300, 3600)]
+    [int]$NativeTimeoutSeconds = 1200
 )
 
 Set-StrictMode -Version Latest
@@ -185,7 +188,7 @@ $contextPath = Join-Path $evidence 'resource-gate-context.json'
 $profilePath = Join-Path $evidence 'resident-language-routing-profile.json'
 $logPath = Join-Path $evidence 'native-resource-gate.log'
 $context = [ordered]@{
-    schemaVersion = 3
+    schemaVersion = 4
     status = 'started'
     checkedHead = $CheckedHead
     processorName = $processorName
@@ -193,6 +196,7 @@ $context = [ordered]@{
     logicalProcessors = $logicalProcessors
     logicalProcessorBudget = $logicalProcessorBudget
     sessionCycles = $SessionCycles
+    nativeTimeoutSeconds = $NativeTimeoutSeconds
     audioFixtureSha256 = $AudioFixtureSha256
     modelsDirectoryRecorded = $false
     audioFixturePathRecorded = $false
@@ -224,19 +228,56 @@ foreach ($entry in $environment.GetEnumerator()) {
 }
 
 try {
-    Push-Location (Join-Path $repositoryRoot 'desktop\src-tauri')
+    $nativeWorkingDirectory = Join-Path $repositoryRoot 'desktop\src-tauri'
+    $nativeStandardOutput = Join-Path $evidence '.native-resource.stdout.tmp'
+    $nativeStandardError = Join-Path $evidence '.native-resource.stderr.tmp'
+    $cargo = Get-Command cargo -CommandType Application -ErrorAction Stop
+    $nativeProcess = $null
+    $nativeTimedOut = $false
     try {
+        $nativeProcess = Start-Process `
+            -FilePath $cargo.Source `
+            -ArgumentList @(
+                'test',
+                '--release',
+                'resident_language_routing_profiles_nemotron_interference_and_teardown',
+                '--',
+                '--ignored',
+                '--nocapture'
+            ) `
+            -WorkingDirectory $nativeWorkingDirectory `
+            -RedirectStandardOutput $nativeStandardOutput `
+            -RedirectStandardError $nativeStandardError `
+            -NoNewWindow `
+            -PassThru
+        if (-not $nativeProcess.WaitForExit($NativeTimeoutSeconds * 1000)) {
+            $nativeTimedOut = $true
+            $nativeProcess.Kill($true)
+            $nativeProcess.WaitForExit()
+        }
+        $nativeExitCode = $nativeProcess.ExitCode
         $nativeOutput = @(
-            & cargo test --release resident_language_routing_profiles_nemotron_interference_and_teardown -- --ignored --nocapture 2>&1
+            if (Test-Path -LiteralPath $nativeStandardOutput) {
+                Get-Content -LiteralPath $nativeStandardOutput
+            }
+            if (Test-Path -LiteralPath $nativeStandardError) {
+                Get-Content -LiteralPath $nativeStandardError
+            }
         )
-        $nativeExitCode = $LASTEXITCODE
+        $nativeOutput | Set-Content -LiteralPath $logPath -Encoding utf8NoBOM
+        if ($nativeTimedOut) {
+            throw "The native target-client resource collector exceeded its $NativeTimeoutSeconds-second wall-clock limit."
+        }
+        if ($nativeExitCode -ne 0) {
+            throw "The native target-client resource collector failed with exit code $nativeExitCode."
+        }
     }
     finally {
-        Pop-Location
-    }
-    $nativeOutput | Set-Content -LiteralPath $logPath -Encoding utf8NoBOM
-    if ($nativeExitCode -ne 0) {
-        throw "The native target-client resource collector failed with exit code $nativeExitCode."
+        if ($nativeProcess -and -not $nativeProcess.HasExited) {
+            $nativeProcess.Kill($true)
+            $nativeProcess.WaitForExit()
+        }
+        Remove-Item -LiteralPath $nativeStandardOutput, $nativeStandardError -Force -ErrorAction SilentlyContinue
     }
 }
 finally {

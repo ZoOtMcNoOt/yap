@@ -23,6 +23,7 @@ const CONTEXT_KEYS = new Set([
   "logicalProcessorBudget",
   "logicalProcessors",
   "modelsDirectoryRecorded",
+  "nativeTimeoutSeconds",
   "networkBoundary",
   "processorConstraint",
   "processorName",
@@ -52,7 +53,7 @@ export function validateTargetClientNativeResourceEvidence(contextValue, profile
     unknown.length === 0,
     `Native resource context contains unsupported fields: ${unknown.join(", ")}.`,
   );
-  requireCondition(context.schemaVersion === 3, "Native resource context schemaVersion must be 3.");
+  requireCondition(context.schemaVersion === 4, "Native resource context schemaVersion must be 4.");
   requireCondition(context.status === "passed", "Native resource context is not passed.");
   requireCondition(CHECKED_HEAD.test(context.checkedHead), "Native resource checkedHead must be a SHA-1.");
   requireCondition(context.checkedHead === expected.checkedHead, "Native resource head does not match.");
@@ -76,6 +77,10 @@ export function validateTargetClientNativeResourceEvidence(contextValue, profile
   requireCondition(
     context.sessionCycles === TARGET_SESSION_CYCLES,
     "Native resource evidence must contain exactly 12 repeated sessions.",
+  );
+  requireCondition(
+    context.nativeTimeoutSeconds === 1_200,
+    "Native resource evidence must use the 1200-second process watchdog.",
   );
   requireCondition(context.boundary === BOUNDARY, "Native resource boundary does not match.");
   requireCondition(

@@ -24,6 +24,7 @@ use std::{
 };
 
 const SAMPLE_RATE_HZ: u32 = 16_000;
+const PROFILE_PRIMARY_LANGUAGE_BCP47: &str = "en-US";
 const MINIMUM_PROFILE_AUDIO_SECONDS: u64 = 30;
 const MAXIMUM_PROFILE_AUDIO_SECONDS: u64 = 120;
 const MAXIMUM_PROFILE_AUDIO_BYTES: u64 = 4 * 1_024 * 1_024;
@@ -225,30 +226,31 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
     );
 
     let nemotron_load_started = Instant::now();
-    let mut engine =
-        LiveStreamEngine::new_for_language_with_test_thread_budget("en-US", local_asr_threads)
-            .expect("the pinned local Nemotron model must load");
+    let mut engine = LiveStreamEngine::new_for_language_with_test_thread_budget(
+        PROFILE_PRIMARY_LANGUAGE_BCP47,
+        local_asr_threads,
+    )
+    .expect("the pinned local Nemotron model must load");
     let nemotron_load_ms = nemotron_load_started.elapsed().as_millis();
 
     let (_warmup_wall_ms, warmup_text_seen) = transcribe_samples(&mut engine, &samples);
     assert!(warmup_text_seen, "Nemotron warmup emitted no text");
-    engine.reset();
+    reset_engine_to_profile_primary(&mut engine);
     let after_nemotron_warmup = process_resource_snapshot();
 
     let (baseline_asr_wall_ms, baseline_text_seen) = transcribe_samples(&mut engine, &samples);
     assert!(baseline_text_seen, "baseline Nemotron emitted no text");
     let after_baseline_asr = process_resource_snapshot();
-    engine.reset();
+    reset_engine_to_profile_primary(&mut engine);
 
-    let alternates = available_automatic_alternates("en-US").into_iter().fold(
-        BTreeMap::new(),
-        |mut by_base, locale| {
+    let alternates = available_automatic_alternates(PROFILE_PRIMARY_LANGUAGE_BCP47)
+        .into_iter()
+        .fold(BTreeMap::new(), |mut by_base, locale| {
             by_base.entry(base_language(locale)).or_insert(locale);
             by_base
-        },
-    );
+        });
     let catalog = LocalLanguageCatalog::nemotron_with_explicit_alternates(
-        "en-US",
+        PROFILE_PRIMARY_LANGUAGE_BCP47,
         alternates.values().copied(),
     )
     .expect("the frozen automatic-language catalog must be valid");
@@ -266,7 +268,7 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
         "Nemotron emitted no text while the language pipeline was resident"
     );
     let after_resident_asr = process_resource_snapshot();
-    engine.reset();
+    reset_engine_to_profile_primary(&mut engine);
 
     let combined_started = Instant::now();
     let mut routed_samples = 0;
@@ -318,7 +320,7 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
     assert_eq!(routed_samples, samples.len());
     let after_combined_routing = process_resource_snapshot();
 
-    engine.reset();
+    reset_engine_to_profile_primary(&mut engine);
     pipeline
         .reset_session()
         .expect("the resident language pipeline must reset before paced input");
@@ -338,7 +340,7 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
     sustained_cycles.push(paced.clone());
     sustained_cycle_ends.push(after_paced_routing);
     for _ in 1..paced_session_cycles {
-        engine.reset();
+        reset_engine_to_profile_primary(&mut engine);
         pipeline
             .reset_session()
             .expect("the resident language pipeline must reset between paced sessions");
@@ -588,13 +590,12 @@ where
         }
         let source_wall_ms = source_started.elapsed().as_millis();
         frames.close();
-        let worker_result = worker
-            .join()
-            .expect("paced local inference worker must not panic");
+        let worker_result = worker.join();
         responsiveness_done.store(true, Ordering::Release);
         let responsiveness_delays = heartbeat
             .join()
             .expect("responsiveness sampler must not panic");
+        let worker_result = worker_result.expect("paced local inference worker must not panic");
         (source_wall_ms, worker_result, responsiveness_delays)
     });
     let completion_wall_ms = started.elapsed().as_millis();
@@ -692,6 +693,12 @@ fn source_duration(samples: usize) -> Duration {
             .saturating_mul(1_000_000_000)
             / u64::from(SAMPLE_RATE_HZ),
     )
+}
+
+fn reset_engine_to_profile_primary(engine: &mut LiveStreamEngine) {
+    engine
+        .reset_for_language(PROFILE_PRIMARY_LANGUAGE_BCP47)
+        .expect("the resource profile must reset Nemotron to its primary language");
 }
 
 fn sleep_until(deadline: Instant) {
