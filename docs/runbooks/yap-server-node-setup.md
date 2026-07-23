@@ -436,6 +436,22 @@ and the full c8/1,600 resource profile with a 97-task/thread maximum, all eleven
 frozen checks, unchanged 256 ceiling, and exact teardown. This validates the
 resource correction only; it does not replace the complete sequential lifecycle
 gate.
+
+The complete sequential lifecycle subsequently passed at exact head
+`a21964c19e56648e9fddcb5200de419e59a7687c`. Its plan-bound 18-track suite used
+plan SHA `d82a770c77d879c5f9d3bd5098e5933ef91f9162971e9f660bf06552c829926f`,
+and the bounded aggregate published with evidence SHA
+`a6931acc127f2ca74e6d3a4c8c9aa6c93e33289f1d1312a4626d659dfcbeb9cb`.
+All 18 children passed. The final NeMo c8/1,600 cell reached 105 tasks and
+entrypoint threads against unchanged 256 ceilings, recorded zero memory events,
+and stayed within its frozen memory and allocation limits. The mixed long-window
+cell selected both 30 seconds and 15 minutes. Finalization and a separate read-
+back found no provider container, temporary network, runtime process, or listener
+on 18000/18001. Keep the raw suite, child evidence, logs, and samples private;
+only these bounded facts belong in repository status. This result closes the
+Phase 6 resident-provider candidate-safety component but does not install either
+service persistently or promote Cohere/NeMo over a later Tiron comparison.
+
 Representative quality, current-host client Preview resource/lifecycle behavior,
 accessibility, and the other Phase 6 gates remain separate. Low-end physical
 client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host

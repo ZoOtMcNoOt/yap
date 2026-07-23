@@ -538,8 +538,8 @@ accuracy-ineligible 15-minute c2 comparator. All four results completed;
 pairwise normalized edit ratios were 6.9% through 21.6%, and c1/c2 differences
 were 22.4% through 23.4%. Exact teardown passed. The private receipt remains
 negative Cohere-promotion evidence, not proof that cross-request mixing is
-absent. The corrected exact-head lifecycle run, representative-quality decision,
-and complete Phase 6 gate remain open.
+absent. At that point the corrected exact-head lifecycle, representative-quality
+decision, and complete Phase 6 gate remained open.
 
 The subsequent exact-head
 `5b56929889925c933c63374a8d7ab282b6b82a3f` attempt passed every Cohere child
@@ -551,7 +551,7 @@ reported three lexical identities. Exact cleanup again passed and NeMo did not
 start. The corrected wrapper preserves every ceiling/count/concurrency boundary,
 uses an explicit `resource-lifecycle` scope that records rather than promotes
 transcript stability, and guarantees a minimum 125-second observation. A new
-exact-head run remains required.
+exact-head run remained required at that point.
 
 At exact head `63318e51d569a1851f1a6daf8d1b707c353f2fa8`, Cohere passed its full
 corrected lifecycle and sequential teardown. NeMo readiness passed, then the
@@ -560,8 +560,8 @@ files being written by the worker; seven short/silent cases correctly contained
 canonical empty text, which Yap's production contract permits. Exact cleanup passed. The
 observation harness now accepts empty published text only for duration transport
 and continues to require non-empty output for provider-behavior, request-
-lifecycle, and resource-lifecycle speech fixtures. The next exact-head run and
-complete Phase 6 gate remain open.
+lifecycle, and resource-lifecycle speech fixtures. At that point the next exact-
+head run and complete Phase 6 gate remained open.
 
 At exact head `4ffec120f212d20a26e314108940989c1b6e93a5`, Cohere passed the complete
 corrected lifecycle and teardown; NeMo passed readiness and both duration
@@ -573,7 +573,7 @@ identity measured model determinism rather than cross-request ownership. The
 Phase 6 standard short/long cells now use `request-lifecycle`: all result,
 identity, completion, concurrency, idle-provider, and teardown requirements
 remain, while lexical variance is recorded for Phase 8's Tiron comparison rather
-than promoted now. A new exact-head run remains open.
+than promoted now. A new exact-head run remained open at that point.
 
 Exact head `27108e1f591920b5a62496f988ae9ee7b335f2ce` passed the full Cohere
 lifecycle and exact teardown, then NeMo readiness, both duration ladders,
@@ -586,6 +586,15 @@ conformance; cleanup was exact. The renamed
 fixed/automatic language contracts and records text parity for the Phase 8 Tiron
 comparison. Its changed plan identity requires a newly hash-bound private suite
 and exact-head rerun.
+
+The subsequent plan-bound reruns exposed and corrected a cumulative native-
+thread-pool excess and a stale mixed-window finalizer expectation without raising
+the frozen 256 task/thread ceilings. Exact GB10 head
+`a21964c19e56648e9fddcb5200de419e59a7687c` then passed all 18 composed Cohere
+vLLM/Nemotron NeMo candidate-safety children and exact teardown. This closes the
+resident-provider Phase 6 component only. Both replaceable providers remain
+unpromoted; representative quality, output determinism, percentiles, rollback,
+and the Cohere-versus-Tiron replacement decision remain Phase 8 work.
 
 ### P6-08 — Review UI and model-independent terminology hooks
 

@@ -877,24 +877,24 @@ or is rejected.
 - [x] Retain the Transformers Cohere/Nemotron reference paths and remove the
       retired Triton backend, client, scheduler, parity, and benchmark machinery.
       Preserve the private Triton results as historical negative evidence.
-- [ ] Build and run the checked Cohere vLLM image with the full locked model on
-      GB10. Prove exact reference output, runtime identity, model residency,
-      readiness, failure behavior, and clean teardown before performance claims.
-- [ ] Measure Cohere cold/warm latency, queue time, p50/p95/p99, audio-seconds/
-      second, GPU/CPU/private memory, c1/c2/c4/c8 isolation, cancellation and
-      immediate recovery, duration edges, and bounded admission against the
-      Transformers reference. Continuous batching stays internal to vLLM; Yap
-      never concatenates or pads one owner's audio into another request.
+- [ ] If Cohere remains a serious Phase 8 promotion candidate, run its complete
+      representative-quality and rollback comparison against Tiron. The Phase 6
+      candidate-safety lifecycle is not a substitute for that model decision.
+- [ ] In that later promotion comparison, measure Cohere cold/warm latency, queue
+      time, p50/p95/p99, audio-seconds/second, GPU/CPU/private memory, model-output
+      behavior, and representative quality. Continuous batching stays internal
+      to vLLM; Yap never concatenates or pads one owner's audio into another
+      request.
 - [x] Implement the pinned Nemotron NeMo candidate behind the same provider-
       neutral contract: exact `.nemo`/runtime/config identity, one scheduler
       owner, bounded independent requests, authenticated numeric-loopback
       transport, job-specific cancellation, fail-closed result validation, and
       checked container/launcher boundaries. Do not send Nemotron through vLLM
       or inherit Cohere proof.
-- [ ] Run Nemotron's independent frozen correctness, cache-state, finalized-
-      boundary, representative locale/duration, cancellation, latency,
-      c1/c2/c4/c8 isolation/throughput, memory, admission, recovery, rollback,
-      and lifecycle gate before selecting it.
+- [ ] If Nemotron remains a serious Phase 8 promotion candidate, run its
+      independent representative locale/quality, output-behavior, percentile,
+      and rollback comparison before selecting it. Do not inherit Cohere or
+      Phase 6 candidate-safety evidence.
 - [ ] Run the accepted duration plan: 250-ms through 30-second local-live
       endpoints; 30-second through two-hour real-time local-live sessions;
       30-second through two-hour batch; compatible and mixed c1/c2/c4/c8 work;
@@ -904,6 +904,11 @@ or is rejected.
 - [x] Keep both resident provider runtimes unpromoted in Phase 6. Any later
       promotion requires route-specific frozen evidence, rollback proof, and
       review; persistent supervised multi-owner capacity remains Phase 10.
+- [x] Run the composed model-neutral Phase 6 candidate-safety lifecycle. Exact
+      GB10 head `a21964c19e56648e9fddcb5200de419e59a7687c` passed all 18
+      Cohere vLLM/Nemotron NeMo duration, identity, language-contract,
+      cancellation, admission, resource, and teardown children without promoting
+      either provider.
 
 At exact executable source SHA
 `fcccf21e785b116b92cd8e46150a36b9b5ee91db`, focused GB10 smokes exercised both
@@ -1134,8 +1139,8 @@ one private JSONL series through explicit workload start/end/stop markers. The
 existing strict observation qualifier round-trips that schema. Focused portable
 tests pass; no resident model or frozen resource profile was run by this change.
 
-The resident-service lifecycle composition is now executable but likewise
-not yet passed. One clean-head wrapper verifies the two already-present model
+The resident-service lifecycle composition is executable and has now passed at
+one exact clean GB10 head. The wrapper verifies the two already-present model
 directories, builds exact-head ARM64 images, creates a temporary checked
 internal Docker bridge, runs each container without a Docker-published port or
 external egress, owns a bounded numeric-loopback proxy, and runs vLLM then NeMo sequentially. Typed startup
@@ -1160,7 +1165,8 @@ the c1 transcript by 22.4% through 23.4%. Exact cleanup passed. That private
 receipt is retained as negative long-form Cohere promotion evidence rather than
 as a candidate-safety blocker for a provider that Phase 8 may replace with
 Tiron. It points to provider/model stability and does not, alone, prove the
-absence of cross-request mixing. A corrected exact-head GB10 run remains open;
+absence of cross-request mixing. A corrected exact-head GB10 run remained open
+at that point;
 no representative-quality decision, promotion, or complete one-time Phase 6
 matrix has passed. Container cgroup samples exclude the small
 host proxy process group; request wall latency includes it, and whole-host
@@ -1176,7 +1182,7 @@ repeat reported three lexical identities. Exact teardown passed and NeMo did not
 start. The correction does not lower thresholds: resource evidence now uses an
 explicit `resource-lifecycle` scope that reports lexical variance without making
 it a model-promotion condition, and the observation stays open for at least 125
-seconds. The new exact-head rerun remains open.
+seconds. The new exact-head rerun remained open at that point.
 
 Exact head `63318e51d569a1851f1a6daf8d1b707c353f2fa8` then passed the full
 corrected Cohere lifecycle and sequential teardown. NeMo reached exact-model
@@ -1187,8 +1193,8 @@ contract, and the generic observation harness had treated those valid results
 as failures. Exact
 cleanup passed. Duration-transport now accepts published canonical empty text;
 provider-behavior, request-lifecycle, and resource-lifecycle scopes still
-require non-empty speech-fixture output. A new exact-head run remains open and
-no provider is promoted.
+require non-empty speech-fixture output. A new exact-head run remained open at
+that point, and no provider was promoted.
 
 Exact head `4ffec120f212d20a26e314108940989c1b6e93a5` passed Cohere's complete
 corrected lifecycle and exact teardown, then passed NeMo readiness and both
@@ -1203,8 +1209,8 @@ therefore uses a distinct `request-lifecycle` scope for standard short/long
 cells: it keeps identity, result publication, non-empty speech output,
 completion, provider-idle, concurrency, and teardown requirements while merely
 reporting lexical variance. `provider-behavior` remains available for Phase 8's
-Tiron comparison. A new exact-head run remains open and neither provider is
-promoted.
+Tiron comparison. A new exact-head run remained open at that point, and neither
+provider was promoted.
 
 Exact head `27108e1f591920b5a62496f988ae9ee7b335f2ce` passed every Cohere child and
 exact teardown. NeMo then passed readiness, both duration ladders, all 600
@@ -1245,7 +1251,25 @@ eleven checks over 147.583 seconds. Fresh readiness used 34 tasks and both
 workloads peaked at 97 tasks/entrypoint threads; current/peak cgroup memory stayed
 near 3.61/6.03 GiB, CPU averaged 1.013 cores, memory-event deltas were zero, and
 teardown was exact. The 256 ceiling was not raised. A complete sequential
-exact-head lifecycle run remains required, and neither provider is promoted.
+exact-head lifecycle run still remained required at that point, and neither
+provider was promoted.
+
+Exact head `a21964c19e56648e9fddcb5200de419e59a7687c` then passed the complete
+sequential candidate-safety lifecycle against the plan-bound 18-track suite.
+All 18 child artifacts passed and the bounded aggregate published as evidence
+SHA `a6931acc127f2ca74e6d3a4c8c9aa6c93e33289f1d1312a4626d659dfcbeb9cb`.
+The run covered Cohere duration, c1/c2/c4 short-tail isolation, cancellation,
+slot/PCM admission, and c8/1,600 resources, then tore Cohere down before starting
+NeMo. NeMo covered finalized and batch duration ladders through the exact four-
+hour transport boundary, c1/c2/c4 short-tail and 15-minute request lifecycle,
+fixed/automatic language contracts at c1/c8, mixed 30-second/15-minute long
+windows, cancellation, active capacity, and c8/1,600 resources. The final NeMo
+resource cell reached 105 tasks/entrypoint threads against unchanged 256
+ceilings, recorded zero memory events, and passed all frozen memory/tail checks.
+Finalization and an independent read-back found no provider container, temporary
+network, runtime process, proxy/listener, or ports 18000/18001. This consumes the
+Phase 6 resident-provider component only; broad quality, output determinism,
+rollback, and Cohere-versus-Tiron promotion evidence remain Phase 8 work.
 
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness

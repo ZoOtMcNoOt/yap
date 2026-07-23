@@ -11,8 +11,10 @@ promoting it. The accepted local route is exposed on the active branch only as
 an explicit, default-off **Preview**: its consumed representative natural-switch
 quality target failed and remains a visible limitation rather than a
 qualification claim. Current-host release/resource/lifecycle evidence,
-per-locale quality evidence, the frozen Cohere vLLM comparison, the separate Nemotron NeMo
-streaming gate, and the complete Phase 6 gate remain incomplete.
+per-locale quality evidence, and the complete Phase 6 gate remain incomplete.
+The separate Cohere vLLM/Nemotron NeMo candidate-safety lifecycle passed at
+exact GB10 head `a21964c19e56648e9fddcb5200de419e59a7687c`; neither service was
+promoted, and broad model-quality/replacement evidence remains Phase 8 work.
 SpeechFlow LID13 and FireRedLID have now failed behavior and payload preflight;
 Whisper base also failed broad global-top behavior, and both official base and
 tiny Q5_1 routes failed client throughput preflight. The frozen narrow
@@ -715,16 +717,14 @@ evidence before default-on or production promotion.
        the ADR score stay open.
 8. [x] Add reference fixed-language Cohere/Nemotron routes and explicit Nemotron
        auto mode without claiming a persistent production pool.
-9. [ ] Finish the provider-specific serving gates from ADR 0025. For Cohere,
-       prove the digest-pinned vLLM 26.06 image, request/result identity,
-       duration and c1/c2/c4/c8 behavior, continuous-batching isolation,
-       cancellation/recovery, bounded admission, memory, and clean teardown
-       while deferring broad output promotion to the Phase 8 Tiron comparison.
-       For Nemotron, preserve the pinned
-       Transformers fixed/automatic correctness reference and run the
-       implemented resident NeMo candidate's separate frozen locale/duration/
-       cache-state/concurrency/lifecycle gate before promotion. The retired Triton
-       experiment remains negative evidence: cross-request tensor batching
+9. [x] Finish the bounded provider-specific candidate-safety gate from ADR 0025.
+       Exact GB10 head `a21964c19e56648e9fddcb5200de419e59a7687c`
+       passed Cohere vLLM and resident NeMo request/result identity, duration,
+       concurrency, cancellation/recovery, bounded admission, resource, language-
+       contract, and exact-teardown cells. This does not promote either route:
+       broad output determinism, representative locale/quality, rollback, and
+       Cohere-versus-Tiron replacement evidence remain Phase 8 work. The retired
+       Triton experiment remains negative evidence: cross-request tensor batching
        changed a Cohere transcript, and the parity-preserving singleton profile
        serialized model execution without a demonstrated throughput gain.
 10. [x] Extend local/session and server/result contracts with source-bounded,

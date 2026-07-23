@@ -2,9 +2,10 @@
 
 **Date:** 2026-07-21
 **Status:** Accepted; Cohere vLLM and Nemotron NeMo adapters, checked
-container/launcher contracts, and a sequential lifecycle-gate composition are
-implemented under focused tests; the frozen GB10 execution and both promotion
-decisions remain incomplete
+container/launcher contracts, and the sequential candidate-safety lifecycle are
+implemented and passed at exact GB10 head
+`a21964c19e56648e9fddcb5200de419e59a7687c`; neither replaceable provider is
+promoted, and broad model-quality/replacement decisions remain Phase 8 work
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md) and
 [ADR 0024](0024-global-language-routing.md)
 **Meeting serving amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 selects a separate Tiron joint speaker-attributed worker without changing the Phase 6 Cohere/Nemotron gates)
@@ -351,8 +352,8 @@ before promotion. Each requires a 60-second/200-sample tail, zero memory-event
 increments, bounded tasks/threads, fixed current/peak ceilings, and no more than
 64 MiB absolute tail growth in entrypoint virtual allocation extent. Descriptive
 physical-RSS slope remains visible, but unified-memory residency oscillation is
-not mislabeled as a live-object leak. These are dirty-head threshold-selection
-results; the checked-head qualification remains required.
+not mislabeled as a live-object leak. These were dirty-head threshold-selection
+results; the checked-head qualification still remained required at that point.
 
 Both current-source profiles subsequently passed their executable eleven-check
 qualification: exact c8/1,600 request/concurrency identity, minimum tail
@@ -452,8 +453,8 @@ ratios were 6.9% through 21.6%; each c2 result differed from the c1 result by
 22.4% through 23.4%. Teardown removed the provider container, proxy, listener,
 launcher, and temporary network. The private receipt remains negative Cohere
 promotion evidence. It points to long-form provider/model stability but does not
-alone prove or disprove cross-request ownership mixing. The corrected exact-head
-lifecycle run remains open and neither provider is promoted.
+alone prove or disprove cross-request ownership mixing. At that point the
+corrected exact-head lifecycle remained open, and neither provider was promoted.
 
 The next exact-head attempt at
 `5b56929889925c933c63374a8d7ab282b6b82a3f` passed Cohere readiness, duration,
@@ -470,7 +471,7 @@ request/result, provider-idle read-back, the frozen resource thresholds, and
 teardown, while reporting lexical variance without treating it as model
 promotion. Its observation remains open for at least 125 seconds so the last-
 half tail exceeds 60 seconds even when inference is faster. A new exact-head run
-is required and neither provider is promoted.
+was required at that point, and neither provider was promoted.
 
 At exact head `63318e51d569a1851f1a6daf8d1b707c353f2fa8`, the complete corrected
 Cohere lifecycle passed and tore down before NeMo began. NeMo exact-model
@@ -485,8 +486,8 @@ canonical empty transcript counts as completed for
 `duration-transport-and-lifecycle`, which carries no accuracy claim. Provider-
 behavior, request-lifecycle, and resource-lifecycle speech fixtures still
 require non-empty output.
-The private failed receipt remains regression evidence, a new exact-head run is
-required, and neither provider is promoted.
+The private failed receipt remains regression evidence; a new exact-head run was
+required at that point, and neither provider was promoted.
 
 At exact head `4ffec120f212d20a26e314108940989c1b6e93a5`, Cohere passed its complete
 corrected lifecycle and clean teardown. NeMo then passed readiness and both
@@ -501,7 +502,7 @@ Phase 6 now labels its short/long standard cells `request-lifecycle`, requires
 all identity-rich results and idle-provider read-back, and records rather than
 promotes lexical stability. `provider-behavior` remains available for the
 Phase 8 Tiron comparison. No request, capacity, resource, or teardown boundary
-was weakened, and a new exact-head run is required.
+was weakened, and a new exact-head run was required at that point.
 
 Exact head `27108e1f591920b5a62496f988ae9ee7b335f2ce` then passed the complete
 Cohere lifecycle and exact teardown. NeMo passed readiness, both duration
@@ -541,7 +542,7 @@ only the 15-minute member. It now requires the complete mixed selection and has
 an omitted-member regression. The runtime separately caps BLAS/OpenMP/Rayon and
 PyTorch pools at the eight-stream model bound and derives 18 HTTP workers from
 the eight-active-request contract instead of retaining an unrelated 32-worker
-constant. Both corrections need new exact-head evidence and do not promote a
+constant. Both corrections needed new exact-head evidence and did not promote a
 provider.
 
 Focused exact-head evidence at
@@ -553,7 +554,25 @@ observation. Fresh readiness used 34 tasks and both workloads peaked at 97
 cgroup tasks/entrypoint threads; maximum current/peak memory was about
 3.61/6.03 GiB, average CPU use was 1.013 cores, memory events remained zero, and
 teardown was exact. This did not raise the 256 ceiling and is not provider
-promotion. The complete sequential lifecycle gate remains open.
+promotion. At that point the complete sequential lifecycle gate remained open.
+
+The complete sequential candidate-safety lifecycle then passed at exact head
+`a21964c19e56648e9fddcb5200de419e59a7687c`. The plan-bound private suite used
+plan SHA `d82a770c77d879c5f9d3bd5098e5933ef91f9162971e9f660bf06552c829926f`;
+the bounded aggregate has evidence SHA
+`a6931acc127f2ca74e6d3a4c8c9aa6c93e33289f1d1312a4626d659dfcbeb9cb`.
+All 18 child artifacts passed. Cohere completed its duration, short-tail,
+cancellation/recovery, slot/PCM admission, and resource cells before exact
+teardown; NeMo completed both duration ladders through the four-hour transport
+boundary, short/long request lifecycle, fixed/automatic language contracts,
+cancellation, active-capacity, and resource cells. NeMo's c8/1,600 resource
+observation reached 105 cgroup tasks and entrypoint threads against unchanged
+256 ceilings, recorded zero memory events, and stayed within the frozen memory
+limits. The mixed long-window child selected both 30 seconds and 15 minutes.
+Finalization and an independent read-back found no owned provider container,
+network, runtime process, or listener. This closes only Phase 6's bounded
+resident-provider candidate-safety component; it does not select either service
+or pull Cohere-versus-Tiron quality work forward from Phase 8.
 
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall
@@ -562,12 +581,14 @@ proxy supervision remain part of the Phase 10 system gate.
 
 ## Required evidence before promotion
 
-Each frozen GB10 comparison must cover exact model/runtime identity, reference
-transcript behavior, representative locale and duration ladders, c1/c2/c4/c8
-latency and throughput, batching/state isolation, cancellation and immediate
-recovery, bounded admission, current/peak/slope memory, clean shutdown, and
-private evidence handling. Cohere and NeMo receive separate frozen gates and
-cannot inherit one another's evidence or either focused result above.
+Any later provider-promotion comparison must cover exact model/runtime identity,
+independently reviewed reference behavior, representative locales and durations,
+c1/c2/c4/c8 latency and throughput, batching/state isolation, cancellation and
+immediate recovery, bounded admission, current/peak/slope memory, clean shutdown,
+rollback, and private evidence handling. Cohere and NeMo cannot inherit one
+another's evidence or treat the Phase 6 candidate-safety result as model
+promotion. Phase 8 owns the Cohere-versus-Tiron breadth for whichever routes are
+still serious candidates.
 
 ## Sources
 

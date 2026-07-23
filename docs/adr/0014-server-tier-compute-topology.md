@@ -11,7 +11,7 @@
 **Amended by:** [ADR 0024](0024-global-language-routing.md) (Phase 6 proves engine-neutral ASR routes with reference workers)
 **Amended by:** [ADR 0025](0025-provider-specific-asr-serving.md) (Cohere batch uses vLLM; Nemotron retains a Transformers reference and a separately gated NeMo streaming candidate; SGLang remains agent/LLM-only; Rust retains orchestration authority)
 **Amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 adds one server-only Tiron joint speaker-attributed meeting worker behind the same Rust-owned job/result authority)
-**Implementation status:** Client capture/local fallback, machine-readable HTTP/live contracts, the bounded loopback capability-health service, desktop connector state, and the durable SQLite imported-job ledger exist. Phase 4 supplied the bounded router and transient isolated Cohere worker. Phase 5 connected them to durable loopback create/upload/commit/status/result/cancel, reconnect/restart recovery, and verified native History publication; exact PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the one-time local/native/server/GB10 gate and merged. Phase 6 now has pinned Transformers references, a bounded authenticated Cohere vLLM adapter/image/launcher with focused exact-reference/c2/c4/c8/engine-abort/recovery evidence, and a resident native NeMo worker/service/image/launcher with its own focused c8/cancellation/recovery evidence. The earlier Triton experiment is retired. Both frozen provider lifecycle/capacity gates remain incomplete. WSS/live, authenticated sessions, persistent production supervision, external application networking, representative long-recording and multi-worker capacity, and the TLS/QUIC edge are not implemented.
+**Implementation status:** Client capture/local fallback, machine-readable HTTP/live contracts, the bounded loopback capability-health service, desktop connector state, and the durable SQLite imported-job ledger exist. Phase 4 supplied the bounded router and transient isolated Cohere worker. Phase 5 connected them to durable loopback create/upload/commit/status/result/cancel, reconnect/restart recovery, and verified native History publication; exact PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the one-time local/native/server/GB10 gate and merged. Phase 6 now has pinned Transformers references, a bounded authenticated Cohere vLLM adapter/image/launcher, and a resident native NeMo worker/service/image/launcher. Their composed candidate-safety lifecycle passed all 18 child cells with exact teardown at GB10 head `a21964c19e56648e9fddcb5200de419e59a7687c`. The earlier Triton experiment is retired. Neither replaceable provider is promoted; representative model-quality/replacement work remains Phase 8. WSS/live, authenticated sessions, persistent production supervision, external application networking, representative long-recording promotion evidence, multi-worker capacity, and the TLS/QUIC edge are not implemented.
 
 ## Context
 
@@ -418,8 +418,10 @@ On `Connected` loss, live dictation may switch to local fallback with a visible 
 - [x] Phase 6 provider-serving seams under focused tests: pinned Transformers
   references, the authenticated loopback Cohere vLLM worker/image contract, and
   the resident authenticated NeMo worker/service/image/launcher. The retired
-  Triton experiment remains historical evidence only. Both frozen GB10 provider
-  comparisons remain incomplete; no persistent production pool is selected.
+  Triton experiment remains historical evidence only. Exact GB10 head
+  `a21964c19e56648e9fddcb5200de419e59a7687c` passed their composed 18-child
+  candidate-safety lifecycle and teardown. Provider-promotion comparisons remain
+  Phase 8 work; no persistent production pool is selected.
 - [x] Durable Phase 5 batch service: restart-safe job/chunk/result state,
   cancellation, bounded single-worker dispatch, retention, and recovery
 - [ ] Cohere production pool (Phase 10 after the Phase 7 identity baseline):

@@ -186,10 +186,13 @@ probes preserved Cohere's Transformers reference hash across c2/c4/c8 and
 exercised vLLM's disconnect-to-engine-abort boundary, while NeMo formed one
 batch of eight isolated fixed/auto requests; both recovered and tore down. A
 later source-backed metrics control confirmed that the pinned external abort is
-not added to vLLM's finished-request histogram. Checked-head representative
-parity/locale/duration, percentile, admission, and memory-slope gates remain open
-for selection. Neither candidate has been promoted. The earlier Triton
-Python-backend experiment remains historical negative evidence because parity-
+not added to vLLM's finished-request histogram. Exact GB10 head
+`a21964c19e56648e9fddcb5200de419e59a7687c` subsequently passed the composed
+18-child duration, identity, language-contract, cancellation, admission,
+resource, and teardown candidate-safety lifecycle. Representative parity/
+locale/quality, frozen percentiles, and rollback remain open for any later
+provider-selection comparison. Neither candidate has been promoted. The earlier
+Triton Python-backend experiment remains historical negative evidence because parity-
 preserving execution serialized model calls without a demonstrated throughput
 gain. SGLang remains a later agent/LLM choice, and persistent supervised
 production deployment remains Phase 10 work.
@@ -207,8 +210,8 @@ executable 8-running + 8-queued and aggregate-PCM rejection boundary. NeMo's
 authenticated adapter independently owns eight active requests and a typed
 ninth-request 429. The private qualification layer now has distinct standard,
 cancellation, capacity, and fixed/automatic-language runners so completion
-counts cannot stand in for the named semantics. The frozen GB10 evidence is
-still open.
+counts cannot stand in for the named semantics. Their composed frozen GB10
+candidate-safety evidence passed at `a21964c19e56648e9fddcb5200de419e59a7687c`.
 
 The production result contract permits canonical empty ASR text. Duration-
 transport evidence therefore counts a published empty result as completed for
@@ -249,8 +252,10 @@ at least 125 seconds so the last-half tail cannot fall below the predeclared
 and range remain visible because unified-memory residency can oscillate, but
 they are not substituted for allocation growth. Focused results selected these
 thresholds, and both current-source profiles pass their eleven focused checks
-plus clean teardown. Only the frozen checked-head run can satisfy the Phase 6
-gate.
+plus clean teardown. The frozen checked-head candidate-safety run passed all
+18 children at `a21964c19e56648e9fddcb5200de419e59a7687c`; the complete Phase 6
+gate still includes separate client, AmberNet, advertised-route, accessibility,
+and full-matrix evidence.
 
 The server's dynamic health response advertises batch/status only when the
 Phase 5 runtime actually initializes. Live streaming remains false and
@@ -402,7 +407,8 @@ source-exact ARM64 no-device reproducer and a real locked-model/public-fixture
 lifecycle no longer emitted the prior finalizer traceback; the real lifecycle
 also emitted no semaphore warning, observed engine/API shutdown, exited zero,
 and released its container and loopback listener. This is focused implementation
-evidence, not the still-open frozen provider or Phase 6 gate.
+evidence that predates the later passed provider candidate-safety lifecycle; it
+is not the complete Phase 6 gate.
 
 At exact executable commit `2caf1969000154ffba24511a5c35b57f7f975036`, a
 natural AMI follow-up used the desktop production normalizer and Silero evidence,
@@ -425,9 +431,10 @@ is useful for regression diagnosis but cannot replace Yap's representative
 long-meeting and overlap evidence.
 
 These paths remain unadvertised/unselected:
-the catalog still exposes only Cohere `en-US` with `wordAlignment: false`, and
-the frozen vLLM comparison, frozen representative Nemotron NeMo gate, and
-complete Phase 6 gate have not run. Both candidate containers stay on an
+the catalog still exposes only Cohere `en-US` with `wordAlignment: false`. The
+model-neutral provider candidate-safety lifecycle passed, but representative
+provider-promotion comparisons and the complete Phase 6 gate have not run. Both
+candidate containers stay on an
 egress-blocked internal bridge with no Docker-published port; their launchers
 own bounded numeric-loopback proxy process groups and require separate private
 API keys. This does not implement
