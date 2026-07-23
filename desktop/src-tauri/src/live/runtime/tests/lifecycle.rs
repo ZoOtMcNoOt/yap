@@ -60,6 +60,19 @@ fn cancelling_a_start_intent_preserves_the_active_session_for_final_drain() {
 }
 
 #[test]
+fn cancellation_before_a_deferred_start_worker_runs_prevents_the_start() {
+    let runtime = LiveRuntime::new();
+    let intent = runtime.capture_start_intent();
+
+    runtime.cancel_pending_start();
+
+    assert_eq!(
+        runtime.run_start_lifecycle(intent, || "unexpected start"),
+        None
+    );
+}
+
+#[test]
 fn cancellation_after_capture_handoff_keeps_the_recording_for_stop_cataloging() {
     let runtime = LiveRuntime::new();
     let directory = std::env::temp_dir().join(format!(
