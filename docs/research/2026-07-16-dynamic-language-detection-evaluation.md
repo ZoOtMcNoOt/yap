@@ -704,18 +704,22 @@ and has SHA-256
 `76dc85c9f9a375d8a04012b82be622676dadd06603415860e8d24445f2703c2d`.
 
 That profile establishes development-host lifecycle, exact-source routing, and
-under-real-time interference evidence only. It is not target-i5 qualification,
-contains no language transition, and supplies no calibrated energy or thermal
-evidence.
+under-real-time interference evidence only. It is not sustained current-host
+release/UI evidence, contains no language transition, and supplies no
+representative low-end physical battery or thermal certification.
 
 The explicit tradeoff has now been made. Phase 6 no longer requires another
-model search, but it still requires representative target-i5 incremental memory,
-CPU/latency, ASR-interference, sustained-session, cancellation/restart, and
-natural/noisy transition evidence for the accepted route. The rejected
-Whisper-tiny English/Spanish qualification may not be retuned or reused. Until
-the complete checked-head gate passes, fixed-primary operation remains the
-visible safe fallback whenever the optional AmberNet artifact is unavailable or
-uncertain, and Phase 6 must not claim universal or zero-error switching.
+model search, but it still requires current-host installed-artifact incremental
+memory, CPU/latency, ASR-interference, sustained-session, cancellation/restart,
+and release UI/capture evidence for the accepted Preview route. The consumed
+natural/noisy transition result remains a completed failure that fixes the
+Preview boundary; it is not an unfinished gate to retune. Representative
+low-end physical battery/thermal certification remains a later default-on and
+Phase 10 release requirement. The rejected Whisper-tiny English/Spanish
+qualification may not be retuned or reused. Until the complete checked-head
+gate passes, fixed-primary operation remains the visible safe fallback whenever
+the optional AmberNet artifact is unavailable or uncertain, and Phase 6 must
+not claim universal or zero-error switching.
 
 Text LID does not solve this routing problem. It can cheaply flag a completed
 transcript for review, but it cannot recover the intended acoustic language when

@@ -10,8 +10,8 @@ contained GB10 lifecycle proof exercised the current timing source without
 promoting it. The accepted local route is exposed on the active branch only as
 an explicit, default-off **Preview**: its consumed representative natural-switch
 quality target failed and remains a visible limitation rather than a
-qualification claim. Target-i5 resource/lifecycle evidence, per-locale quality
-evidence, the frozen Cohere vLLM comparison, the separate Nemotron NeMo
+qualification claim. Current-host release/resource/lifecycle evidence,
+per-locale quality evidence, the frozen Cohere vLLM comparison, the separate Nemotron NeMo
 streaming gate, and the complete Phase 6 gate remain incomplete.
 SpeechFlow LID13 and FireRedLID have now failed behavior and payload preflight;
 Whisper base also failed broad global-top behavior, and both official base and
@@ -41,8 +41,11 @@ delay. A four-logical-CPU repeat also lost no frames, reached 45/64 queued
 frames, drained in 911 ms, averaged 1.773 cores during source-paced input, and
 measured 8.023 ms p95/45.864 ms maximum scheduler wake delay. Its accelerated
 combined pass used 3.71 of four cores and is not an interactive-use claim. This
-is not target-i5, rendered-UI, energy, or thermal evidence; those gates,
-sustained lifecycle evidence, and the complete Phase 6 gate remain open. The
+is development-host prepared-audio evidence, not rendered-UI or sustained
+release-lifecycle evidence; those current-host gates and the complete Phase 6
+gate remain open. It is also not minimum-device, battery, or thermal
+certification, which is required before default-on or enterprise release rather
+than for this explicit Preview. The
 natural/noisy transition result is a completed failure accepted only under the
 Preview boundary, not an unfinished pass claim. The
 released `parakeet-rs` Nemotron adapter still hides
@@ -506,7 +509,7 @@ evidence, not language certification.
 | Official SpeechBrain ECAPA QDQ INT8 diagnostics | FP32 produced 989/990 correct clean enabled-pair development decisions and 49/58 exact natural decisions. The U8S8 and S8S8 QDQ graphs collapsed to 365/990 and 399/990 clean decisions and retained no non-empty zero-wrong natural threshold. | Each INT8 graph was approximately 22.8 MB and averaged 39.4/42.7 ms versus FP32 61.8 ms on the development host. Both are rejected; Q8 failure is not evidence that a Q4 derivative would work. |
 | SpeechFlow LID13 | The 13-language-plus-`other` release passed size/latency preflight but failed behavior preflight. At the best strict two-second development threshold, FLEURS retained 354 correct/11 wrong/625 abstentions and natural English/Spanish retained 8 correct/1 wrong/47 abstentions. Four-second grouped linear calibration reached 768/801 FLEURS decisions but produced 9 correct/2 wrong on the small exact natural slice; zero wrong retained only 2/11 natural windows. | Apache-2.0, 5,428,476-byte release, 1,047,440 parameters, and one-thread 22.021 ms mean/24.952 ms p95/25.974 ms p99 two-second inference. Rejected before qualification; no product runtime or model added. |
 | FireRedLID | Publisher reports more than 100 languages, 20-plus Chinese dialects, and 97.18% utterance accuracy over 82 FLEURS languages; Yap did not run inference. | Apache-2.0, but the published checkpoint payload is 3,550,103,418 bytes and no documented small native client artifact exists. Rejected at client payload preflight; archive size is not claimed as runtime memory. |
-| NVIDIA LangID AmberNet | The official FP32 model reached 322/340 whole-clip decisions on Yap's out-of-training-domain FLEURS development comparator. The exact native frontend plus static INT8 graph reached 323/340, including 276/280 supported cases; that one-case difference is parity/noise, not evidence that INT8 is more accurate. A frozen abstaining development policy routed 265/280 supported cases with zero wrong routes and held all 60 controls, but the same candidate detected 0/4 natural transitions on one recording and only 7/12 constructed 15 dB SNR transitions. A second natural recording plus clean/control development search found no policy satisfying the original zero-false transition gate. The later accepted `0.40`-margin/three-observation policy was frozen on 29 calibration clips and then consumed a distinct 58-clip holdout once: 54 correct alternates, one abstention, three wrong alternates, and zero false alternates when the primary was correct. A separately frozen clean German-English product-route set then passed exact source coverage and primary fallback but detected 0/4 required natural alternate spans and matched neither boundary. The exact implemented-detector post-failure diagnostic saw 68 speech-qualified alternate-region windows, only five alternate top labels, and one alternate observation above the `0.40` margin; the earlier FP32 diagnostic also misclassified three spans. This is a deliberate bounded product tradeoff and a model/domain limitation, not a quantization regression or a retroactive pass of the earlier natural/noisy gate. | Official 116,049,920-byte/28,926,299-parameter `.nemo`; exact 29,613,392-byte static QDQ INT8 classifier; native three-second-window median/p95 33.90/38.83 ms on the development Windows host. Yap implements the exact native frontend, one-thread ORT session, 107-label boundary map, and verified local-import lifecycle. This is not target-i5 ASR-interference evidence. The artifact is not bundled or network-downloaded, and NGC redistribution obligations remain open. |
+| NVIDIA LangID AmberNet | The official FP32 model reached 322/340 whole-clip decisions on Yap's out-of-training-domain FLEURS development comparator. The exact native frontend plus static INT8 graph reached 323/340, including 276/280 supported cases; that one-case difference is parity/noise, not evidence that INT8 is more accurate. A frozen abstaining development policy routed 265/280 supported cases with zero wrong routes and held all 60 controls, but the same candidate detected 0/4 natural transitions on one recording and only 7/12 constructed 15 dB SNR transitions. A second natural recording plus clean/control development search found no policy satisfying the original zero-false transition gate. The later accepted `0.40`-margin/three-observation policy was frozen on 29 calibration clips and then consumed a distinct 58-clip holdout once: 54 correct alternates, one abstention, three wrong alternates, and zero false alternates when the primary was correct. A separately frozen clean German-English product-route set then passed exact source coverage and primary fallback but detected 0/4 required natural alternate spans and matched neither boundary. The exact implemented-detector post-failure diagnostic saw 68 speech-qualified alternate-region windows, only five alternate top labels, and one alternate observation above the `0.40` margin; the earlier FP32 diagnostic also misclassified three spans. This is a deliberate bounded product tradeoff and a model/domain limitation, not a quantization regression or a retroactive pass of the earlier natural/noisy gate. | Official 116,049,920-byte/28,926,299-parameter `.nemo`; exact 29,613,392-byte static QDQ INT8 classifier; native three-second-window median/p95 33.90/38.83 ms on the development Windows host. Yap implements the exact native frontend, one-thread ORT session, 107-label boundary map, and verified local-import lifecycle. This is not sustained current-host release/UI evidence or representative low-end physical-device certification. The artifact is not bundled or network-downloaded, and NGC redistribution obligations remain open. |
 | Cohere attention alignment | Held-out English start MAE 74.71 ms, end MAE 68.53 ms, minimum exact-word transcript coverage 93.33%; zero-based heads `(0, 5)` and `(1, 6)` with reflected median width 3 | A contained, non-promotion GB10 lifecycle proof on current source produced WER 0.0, 23 source-bounded words, identical transcript/alignment hashes across two runs, stable `sdpa`, 2,306/159 ms wall time, and 4,190,281,728-byte peak allocation; English-only evidence |
 
 SpeechBrain confidently confused examples of Russian/Belarusian,
@@ -604,10 +607,11 @@ enterprise baseline.
 
 No local model derivative below Q4 may be promoted. Q4 is the most aggressive
 allowed quantization, not a blanket requirement to replace a more accurate Q8,
-INT8, FP16, or FP32 artifact that still passes the target CPU and memory gate.
+INT8, FP16, or FP32 artifact that still passes its CPU and memory gate.
 The current local Nemotron ASR remains the tested INT8 sherpa-onnx artifact.
-Every future format must pass model-specific accuracy, i5-class CPU latency,
-resident-memory, battery/thermal, packaging, and rollback evidence.
+Every future format must pass model-specific accuracy, representative low-end
+physical CPU latency, resident-memory, battery/thermal, packaging, and rollback
+evidence before default-on or production promotion.
 
 ## Consequences
 
@@ -685,22 +689,24 @@ resident-memory, battery/thermal, packaging, and rollback evidence.
        cancelled or restarted sessions, and missing-artifact fallback under
        focused tests. The [target-client qualification runbook](../runbooks/target-client-language-routing-qualification.md)
        composes fail-closed checked-head native repeated-session and release-
-       mode physical-microphone/rendered-UI collectors that encode the
-       i5-1135G7 boundary, including wrong-hardware/offline/external-evidence,
-       early-stop/restart, responsiveness, and teardown checks. They remain
-       unconsumed on the actual target, and the paired calibrated energy/thermal
-       channel remains separate. Target-i5 interference, sustained installed-
-       artifact lifecycle/resource evidence, and the complete checked-head gate
-       therefore remain required for the accepted AmberNet route instead of
-       another open-ended model search. Those are explicit Phase 6 blockers;
-       removing Preview requires a future independent quality gate.
+       mode physical-microphone/rendered-UI collectors. They bind the observed
+       Windows processor and processor count, offline/external-evidence
+       boundary, early-stop/restart, responsiveness, and teardown checks
+       without pretending one host is another. Current-host interference,
+       sustained installed-artifact lifecycle/resource evidence, and the
+       complete checked-head gate remain required for the accepted AmberNet
+       Preview instead of another open-ended model search. Representative
+       low-end physical-device battery/thermal certification is deferred to the
+       default-on and Phase 10 release boundary; it is not a Phase 6 Preview
+       blocker. Removing Preview still requires a future independent quality
+       gate.
        The deterministic local duration runner is implemented at the narrower
        prepared-audio-frame-to-final boundary with exact checked-head, plan,
        private-suite, manifest, WAV, PCM, bounded-queue, and decoded-sample
        accounting. Its companion builder derives all ordered cases from the
        validated plan and atomically publishes the private collection from
-       vetted external PCM16 sources. Its multi-hour run and the physical
-       microphone/rendered-UI/target-i5 gate remain unconsumed, so this item and
+       vetted external PCM16 sources. Its multi-hour run and the current-host
+       physical-microphone/rendered-UI gate remain unconsumed, so this item and
        the ADR score stay open.
 8. [x] Add reference fixed-language Cohere/Nemotron routes and explicit Nemotron
        auto mode without claiming a persistent production pool.

@@ -18,10 +18,10 @@ param(
     [string]$EvidenceDirectory,
 
     [ValidatePattern('^[A-Za-z0-9()@._ +\-]{3,128}$')]
-    [string]$ExpectedProcessorToken = 'i5-1135G7',
+    [string]$ExpectedProcessorToken,
 
-    [ValidateRange(1, 256)]
-    [int]$ExpectedLogicalProcessors = 8,
+    [ValidateRange(0, 256)]
+    [int]$ExpectedLogicalProcessors = 0,
 
     [ValidateRange(2, 32)]
     [int]$SessionCycles = 12,
@@ -143,12 +143,27 @@ if (-not $IsWindows) {
 }
 
 $processorName = Get-ProcessorName
-if ($processorName.IndexOf($ExpectedProcessorToken, [StringComparison]::OrdinalIgnoreCase) -lt 0) {
-    throw "This machine is not the frozen target processor. Expected '$ExpectedProcessorToken'; observed '$processorName'."
+$processorConstraint = if ([string]::IsNullOrWhiteSpace($ExpectedProcessorToken)) {
+    $null
+}
+else {
+    $ExpectedProcessorToken.Trim()
+}
+if (
+    $null -ne $processorConstraint -and
+    $processorName.IndexOf($processorConstraint, [StringComparison]::OrdinalIgnoreCase) -lt 0
+) {
+    throw "This machine does not satisfy the requested processor constraint '$processorConstraint'; observed '$processorName'."
 }
 $logicalProcessors = [Environment]::ProcessorCount
-if ($logicalProcessors -ne $ExpectedLogicalProcessors) {
-    throw "The target processor must expose exactly $ExpectedLogicalProcessors logical processors; observed $logicalProcessors."
+$logicalProcessorBudget = if ($ExpectedLogicalProcessors -eq 0) {
+    $logicalProcessors
+}
+else {
+    $ExpectedLogicalProcessors
+}
+if ($logicalProcessors -ne $logicalProcessorBudget) {
+    throw "The host must expose exactly $logicalProcessorBudget logical processors; observed $logicalProcessors."
 }
 
 $repositoryRoot = [IO.Path]::GetFullPath(
@@ -186,13 +201,13 @@ $contextPath = Join-Path $evidence 'resource-gate-context.json'
 $profilePath = Join-Path $evidence 'resident-language-routing-profile.json'
 $logPath = Join-Path $evidence 'native-resource-gate.log'
 $context = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = 2
     status = 'started'
     checkedHead = $CheckedHead
     processorName = $processorName
-    expectedProcessorToken = $ExpectedProcessorToken
+    processorConstraint = $processorConstraint
     logicalProcessors = $logicalProcessors
-    expectedLogicalProcessors = $ExpectedLogicalProcessors
+    logicalProcessorBudget = $logicalProcessorBudget
     sessionCycles = $SessionCycles
     audioFixtureSha256 = $AudioFixtureSha256
     modelsDirectoryRecorded = $false
@@ -252,7 +267,7 @@ $profile = Get-Content -LiteralPath $profilePath -Raw | ConvertFrom-Json
 if (
     $profile.schemaVersion -ne 5 -or
     $profile.audioFixtureSha256 -ne $AudioFixtureSha256 -or
-    $profile.logicalProcessorBudget -ne $ExpectedLogicalProcessors -or
+    $profile.logicalProcessorBudget -ne $logicalProcessorBudget -or
     $profile.localAsrThreads -ne 2 -or
     $profile.sustained.requestedCycles -ne $SessionCycles -or
     $profile.sustained.completedCycles -ne $SessionCycles -or

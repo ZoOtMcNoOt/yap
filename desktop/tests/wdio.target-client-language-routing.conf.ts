@@ -48,10 +48,12 @@ const appBinaryPath = requireAbsoluteWindowsPath(
   process.env.APP_BINARY,
   "Target-client release binary",
 );
-const powerThermalEvidencePath = requireAbsoluteWindowsPath(
-  process.env.YAP_TARGET_CLIENT_POWER_THERMAL_EVIDENCE_FILE,
-  "Target-client power/thermal evidence file",
-);
+const powerThermalEvidencePath = process.env.YAP_TARGET_CLIENT_POWER_THERMAL_EVIDENCE_FILE
+  ? requireAbsoluteWindowsPath(
+    process.env.YAP_TARGET_CLIENT_POWER_THERMAL_EVIDENCE_FILE,
+    "Target-client power/thermal evidence file",
+  )
+  : null;
 const activeCaptureMs = parseActiveCaptureDuration(process.env.YAP_HARDWARE_ACTIVE_CAPTURE_MS);
 const runRoot = path.join(evidenceRoot, "rendered-ui-and-microphone");
 const appDataRoot = path.join(runRoot, "app-data");
@@ -62,7 +64,7 @@ const uiEvidenceFile = path.join(runRoot, "rendered-ui-evidence.json");
 const uiContextFile = path.join(runRoot, "rendered-ui-context.json");
 const powerThermalSummaryFile = path.join(runRoot, "power-thermal-evidence.json");
 let appBinarySha256 = "";
-let validatedPowerThermalEvidence;
+let validatedPowerThermalEvidence: unknown = null;
 
 function parseActiveCaptureDuration(raw: string | undefined): number {
   if (!raw || !/^[1-9][0-9]*$/.test(raw)) {
@@ -245,20 +247,25 @@ function createPrivateRunDirectories() {
         activeCaptureMs,
         appBinarySha256,
         checkedHead,
-        powerThermalEvidenceSha256: createHash("sha256")
-          .update(readFileSync(powerThermalEvidencePath))
-          .digest("hex"),
+        physicalPowerThermalStatus: powerThermalEvidencePath
+          ? "passed"
+          : "deferred-to-default-on-hardware-certification",
+        powerThermalEvidenceSha256: powerThermalEvidencePath
+          ? createHash("sha256").update(readFileSync(powerThermalEvidencePath)).digest("hex")
+          : null,
         stimulusLicense,
         stimulusSha256,
         transcriptTextRecorded: false,
       }, null, 2)}\n`,
       { encoding: "utf8", flag: "wx" },
     );
-    writeFileSync(
-      powerThermalSummaryFile,
-      `${JSON.stringify(validatedPowerThermalEvidence, null, 2)}\n`,
-      { encoding: "utf8", flag: "wx" },
-    );
+    if (validatedPowerThermalEvidence) {
+      writeFileSync(
+        powerThermalSummaryFile,
+        `${JSON.stringify(validatedPowerThermalEvidence, null, 2)}\n`,
+        { encoding: "utf8", flag: "wx" },
+      );
+    }
   }
   for (const directory of [runRoot, appDataRoot, recordingRoot, webviewRoot, outputDirectory]) {
     requireRealDirectory(directory, "Target-client gate directory");
@@ -285,23 +292,25 @@ requireOfflineBoundary();
 requireStimulusIdentity();
 requireOutsideRepository(evidenceRoot, "Target-client evidence");
 requireOutsideRepository(modelsRoot, "Target-client models");
-requireOutsideRepository(powerThermalEvidencePath, "Target-client power/thermal evidence");
-requireInsideEvidenceRoot(powerThermalEvidencePath, "Target-client power/thermal evidence");
 requireRealDirectory(evidenceRoot, "Target-client evidence root");
 requireRealDirectory(modelsRoot, "Target-client models root");
-requireRealFile(powerThermalEvidencePath, "Target-client power/thermal evidence");
 requireReleaseBinary();
 requireNativeResourceEvidence();
 appBinarySha256 = createHash("sha256").update(readFileSync(appBinaryPath)).digest("hex");
-validatedPowerThermalEvidence = validateTargetClientPowerThermalEvidence(
-  JSON.parse(readFileSync(powerThermalEvidencePath, "utf8")),
-  {
-    appBinarySha256,
-    checkedHead,
-    processorName: os.cpus()[0]?.model.trim(),
-    stimulusSha256,
-  },
-);
+if (powerThermalEvidencePath) {
+  requireOutsideRepository(powerThermalEvidencePath, "Target-client power/thermal evidence");
+  requireInsideEvidenceRoot(powerThermalEvidencePath, "Target-client power/thermal evidence");
+  requireRealFile(powerThermalEvidencePath, "Target-client power/thermal evidence");
+  validatedPowerThermalEvidence = validateTargetClientPowerThermalEvidence(
+    JSON.parse(readFileSync(powerThermalEvidencePath, "utf8")),
+    {
+      appBinarySha256,
+      checkedHead,
+      processorName: os.cpus()[0]?.model.trim(),
+      stimulusSha256,
+    },
+  );
+}
 createPrivateRunDirectories();
 
 process.env.YAP_APP_DATA_DIR = appDataRoot;
@@ -400,15 +409,27 @@ export const config = {
     if (finalBinarySha256 !== context.appBinarySha256) {
       throw new Error("The target-client release binary changed during qualification.");
     }
-    const finalPowerThermalEvidenceSha256 = createHash("sha256")
-      .update(readFileSync(powerThermalEvidencePath))
-      .digest("hex");
-    if (finalPowerThermalEvidenceSha256 !== context.powerThermalEvidenceSha256) {
-      throw new Error("The power/thermal evidence changed during qualification.");
+    let powerThermalSummarySha256 = null;
+    if (powerThermalEvidencePath) {
+      const finalPowerThermalEvidenceSha256 = createHash("sha256")
+        .update(readFileSync(powerThermalEvidencePath))
+        .digest("hex");
+      if (
+        context.physicalPowerThermalStatus !== "passed"
+        || finalPowerThermalEvidenceSha256 !== context.powerThermalEvidenceSha256
+      ) {
+        throw new Error("The power/thermal evidence changed during qualification.");
+      }
+      powerThermalSummarySha256 = createHash("sha256")
+        .update(readFileSync(powerThermalSummaryFile))
+        .digest("hex");
+    } else if (
+      context.physicalPowerThermalStatus !== "deferred-to-default-on-hardware-certification"
+      || context.powerThermalEvidenceSha256 !== null
+      || existsSync(powerThermalSummaryFile)
+    ) {
+      throw new Error("The Preview-only run invented physical power/thermal evidence.");
     }
-    const powerThermalSummarySha256 = createHash("sha256")
-      .update(readFileSync(powerThermalSummaryFile))
-      .digest("hex");
     writeFileSync(
       uiContextFile,
       `${JSON.stringify({

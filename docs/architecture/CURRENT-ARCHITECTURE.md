@@ -295,7 +295,7 @@ oversubscribed: two threads improved the combined path to `0.431` RTF while
 using 61.844 CPU-seconds, or about 1.61 logical-core equivalents when spread
 over continuous real-time source arrival. A one-thread diagnostic remained
 below real time at `0.484` RTF with lower CPU use but materially slower model
-load. The executable default is therefore two threads pending the actual target
+load. The executable default is therefore two threads pending the final checked-head
 gate. A follow-on source-paced proxy delivered all 3,840 ten-millisecond frames
 without loss through the production-sized 64-frame local-ASR queue, reached a
 42-frame high-water mark, completed 864 ms after the 38.4-second source ended,
@@ -307,20 +307,22 @@ no frames, reached 45/64 queued frames, drained in 911 ms, averaged 1.773 logica
 cores during paced input, and measured 8.023 ms p95/45.864 ms maximum scheduler
 wake delay. Its unpaced combined pass consumed 3.71 of four logical cores, which
 is saturation evidence rather than an interactive workload claim. These are
-accelerated and paced runtime proxies, not rendered-UI, battery, thermal, or
-i5-1135G7 evidence. The route is therefore available only as an explicit,
-default-off Preview; target-i5 resource and interference, sustained-session,
-restart, cancellation, and the complete checked-head gate still gate Phase 6
-release. Fail-closed checked-head native repeated-session and release-mode
-physical-microphone/rendered-UI collectors now encode that target boundary but
-remain unconsumed on the actual i5-1135G7; calibrated energy/thermal evidence is
-still a separate required channel. A deterministic duration runner now streams the machine plan's exact
+accelerated and paced prepared-audio runtime proxies, not rendered-UI or
+sustained release-lifecycle evidence. The route is available only as an
+explicit, default-off Preview because its frozen natural-switch target failed;
+current-host resource and interference, sustained-session, restart,
+cancellation, and the complete checked-head gate still gate Phase 6 release.
+Fail-closed checked-head native repeated-session and release-mode physical-
+microphone/rendered-UI collectors bind the observed Windows processor and
+processor count but remain unconsumed on the final checked head. Representative
+low-end physical battery/thermal certification is deferred to default-on or
+Phase 10 release qualification and cannot be inferred from this Preview gate. A deterministic duration runner now streams the machine plan's exact
 short and 30-second-to-two-hour ladders from the prepared-audio-frame boundary
 through the production bounded adapter, the same single live worker, and
 finalization. It locks the checked head, plan, private suite, manifests, raw WAV,
 and decoded PCM without retaining transcript text or paths. The multi-hour run
-has not been consumed and does not replace physical-microphone, rendered-UI,
-target-i5, or natural-accuracy evidence. A separately frozen clean German-English
+has not been consumed and does not replace current-host physical-microphone,
+rendered-UI, resource, or natural-accuracy evidence. A separately frozen clean German-English
 representative set then retained
 exact source coverage and the required primary-language fallback but detected
 zero of four required natural alternate-language spans and matched neither the

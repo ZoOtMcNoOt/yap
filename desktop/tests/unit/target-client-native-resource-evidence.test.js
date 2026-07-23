@@ -15,14 +15,14 @@ function validContext() {
     boundary: "desktop-prepared-audio-frame-to-final-resource-profile",
     checkedHead: expected.checkedHead,
     exclusions: ["physical-microphone", "rendered-ui", "energy", "thermal"],
-    expectedLogicalProcessors: 8,
-    expectedProcessorToken: "i5-1135G7",
     logSha256: "c".repeat(64),
+    logicalProcessorBudget: 8,
     logicalProcessors: 8,
     modelsDirectoryRecorded: false,
+    processorConstraint: null,
     processorName: expected.processorName,
     profileSha256: "d".repeat(64),
-    schemaVersion: 1,
+    schemaVersion: 2,
     sessionCycles: 12,
     status: "passed",
   };
@@ -48,7 +48,7 @@ function validProfile() {
 }
 
 describe("target-client native resource evidence", () => {
-  it("accepts the exact frozen target contract", () => {
+  it("accepts the recorded Windows host without claiming a different CPU", () => {
     expect(validateTargetClientNativeResourceEvidence(
       validContext(),
       validProfile(),
@@ -56,9 +56,22 @@ describe("target-client native resource evidence", () => {
     )).toMatchObject({ sessionCycles: 12, logicalProcessors: 8 });
   });
 
+  it("accepts a larger recorded host when the profile uses the same processor budget", () => {
+    const context = {
+      ...validContext(),
+      logicalProcessorBudget: 28,
+      logicalProcessors: 28,
+    };
+    const profile = { ...validProfile(), logicalProcessorBudget: 28 };
+    const largerHost = { ...expected, logicalProcessors: 28 };
+
+    expect(validateTargetClientNativeResourceEvidence(context, profile, largerHost))
+      .toMatchObject({ logicalProcessors: 28 });
+  });
+
   it("rejects relaxed CPU, thread, or cycle settings", () => {
     for (const [contextPatch, profilePatch] of [
-      [{ expectedProcessorToken: "Intel" }, {}],
+      [{ processorConstraint: "Ryzen 3 1200" }, {}],
       [{ sessionCycles: 2 }, { sustained: { ...validProfile().sustained, requestedCycles: 2 } }],
       [{}, { localAsrThreads: 8 }],
     ]) {

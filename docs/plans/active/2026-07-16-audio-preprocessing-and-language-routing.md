@@ -58,12 +58,14 @@ after teardown. A four-logical-CPU repeat also lost no frames, reached 45/64
 queued frames, drained in 911 ms, averaged 1.773 logical cores during paced
 input, and measured 8.023 ms p95/45.864 ms maximum scheduler wake delay. Its
 unpaced combined pass used 3.71 of four cores and is saturation evidence, not an
-interactive-use claim. These proxies are not target-i5, rendered-UI, energy,
-or thermal qualification. The separately frozen representative natural-switch
+interactive-use claim. These proxies are not rendered-UI, sustained release-
+lifecycle, minimum-device, battery, or thermal qualification. The separately frozen representative natural-switch
 quality target completed and failed; that accepted limitation fixes the route
 as an explicit, default-off Preview rather than remaining an unfinished pass
-claim. Target-i5 resource/interference, sustained lifecycle, timing promotion/
-UX, and the complete Phase 6 gate are not complete.
+claim. Current-host resource/interference, sustained lifecycle, timing
+promotion/UX, and the complete Phase 6 gate are not complete. Representative
+low-end physical battery/thermal certification is deferred until default-on or
+Phase 10 release qualification.
 
 The completed enabled-language development search tested 26,460 bounded
 SpeechBrain policies and found no candidate meeting the full safety, coverage,
@@ -697,9 +699,10 @@ limits.
       drained in 911 ms, averaged 1.773 cores during paced input, and measured
       8.023 ms p95/45.864 ms maximum scheduler wake delay. Its accelerated
       combined pass used 3.71 of four cores. Private aggregate JSON remains
-      outside Git. Target-i5 rendered UI/audio interference,
-      resource/energy/thermal behavior, sustained-session, restart/cancellation,
-      redistribution, and packaging evidence remain open. Explicit 250 ms,
+       outside Git. Current-host rendered UI/audio interference, sustained-
+       session, restart/cancellation, redistribution, and packaging evidence
+       remain open. Representative low-end physical energy/thermal evidence is
+       a later default-on and Phase 10 release boundary. Explicit 250 ms,
       500 ms, 750 ms, one-second,
       1.12-second, and two-second natural correction gates must measure release-
       to-final latency, blank results, phoneme clipping, and raw accuracy. These
@@ -778,20 +781,22 @@ limits.
       artifacts are unavailable.
       Focused verification passed 123 language-related tests; eight real-model or
       private collectors remained intentionally ignored.
-- [ ] Complete the remaining real-runtime Preview release boundary on the target
-      i5-class Windows system: installed-artifact offline-only operation,
+- [ ] Complete the remaining real-runtime Preview release boundary on the
+      available Windows system: installed-artifact offline-only operation,
       sustained sessions, restart/cancellation, rendered-UI and capture
-      interference, energy/thermal behavior, and bounded resource teardown. The
+      interference, and bounded resource teardown. The
       checked-head native repeated-session and release-mode physical-microphone/
-      rendered-UI collectors are now implemented and fail closed on the wrong
-      hardware, an online default route, dirty/different source, in-repository
+      rendered-UI collectors are implemented and bind the actual processor and
+      processor count. They fail closed on an optional named-hardware
+      constraint, an online default route, dirty/different source, in-repository
       evidence, missing resident artifacts, degraded routing, responsiveness
       limits, or retained private/model-snapshot content. They are composed by
       the [target-client qualification runbook](../../runbooks/target-client-language-routing-qualification.md)
-      but have not been consumed on the actual i5-1135G7. The paired calibrated
-      energy/thermal channel also remains
-      unconsumed and cannot be replaced by CPU time or this i7 development host.
-      Therefore this item remains open.
+      but have not been consumed on the final checked head. Calibrated low-end
+      physical energy/thermal evidence cannot be inferred from this development
+      host and is deferred to default-on or Phase 10 release qualification;
+      it does not block this explicit Preview. The current-host safety item
+      remains open until the two executable channels pass.
       The completed constructed, related-language, noisy, silence, and overlap
       results plus the consumed clean natural result remain their recorded
       evidence—including the natural product-route failure at 0/4 must-detect
@@ -921,7 +926,7 @@ out-of-band-pinned private suite, every track manifest, raw WAV identity, and
 decoded PCM identity; it emits no transcript or path. Its truthful boundary is
 prepared audio frame to final, not physical microphone to final. Focused
 contract/lifecycle tests pass, but the multi-hour checked-head execution,
-natural short-correction references, and target-i5 microphone/UI/resource gate
+natural short-correction references, and current-host microphone/UI/resource gate
 remain open, so the duration checkbox and ADR score do not change.
 
 The provider qualification implementation now builds immutable exact-duration

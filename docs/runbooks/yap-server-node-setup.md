@@ -348,8 +348,9 @@ proxy, launcher, or network. Readiness timing starts at the first exact-model pr
 after Docker reports the container running; it is not image-build,
 launcher-to-ready, or production cold-start evidence. The wrapper is only the
 resident-provider lifecycle component of the one-time Phase 6 matrix.
-Representative quality, target-i5 behavior, accessibility, and the other
-Phase 6 gates remain separate. Provider cgroup evidence excludes the small host
+Representative quality, current-host client Preview resource/lifecycle behavior,
+accessibility, and the other Phase 6 gates remain separate. Low-end physical
+client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host
 proxy process group, while API wall latency includes it; whole-host CPU/RAM and
 persistent supervision remain Phase 10 evidence.
 

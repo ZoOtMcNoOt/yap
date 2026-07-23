@@ -1,7 +1,6 @@
 const SHA256 = /^[0-9a-f]{64}$/;
 const CHECKED_HEAD = /^[0-9a-f]{40}$/;
-const TARGET_PROCESSOR_TOKEN = "i5-1135G7";
-const TARGET_LOGICAL_PROCESSORS = 8;
+const PROCESSOR_TOKEN = /^[A-Za-z0-9()@._ +\-]{3,128}$/;
 const TARGET_ASR_THREADS = 2;
 const TARGET_SESSION_CYCLES = 12;
 const PRIVATE_BYTE_GROWTH_LIMIT = 64 * 1024 * 1024;
@@ -13,11 +12,11 @@ const CONTEXT_KEYS = new Set([
   "boundary",
   "checkedHead",
   "exclusions",
-  "expectedLogicalProcessors",
-  "expectedProcessorToken",
   "logSha256",
+  "logicalProcessorBudget",
   "logicalProcessors",
   "modelsDirectoryRecorded",
+  "processorConstraint",
   "processorName",
   "profileSha256",
   "schemaVersion",
@@ -45,21 +44,26 @@ export function validateTargetClientNativeResourceEvidence(contextValue, profile
     unknown.length === 0,
     `Native resource context contains unsupported fields: ${unknown.join(", ")}.`,
   );
-  requireCondition(context.schemaVersion === 1, "Native resource context schemaVersion must be 1.");
+  requireCondition(context.schemaVersion === 2, "Native resource context schemaVersion must be 2.");
   requireCondition(context.status === "passed", "Native resource context is not passed.");
   requireCondition(CHECKED_HEAD.test(context.checkedHead), "Native resource checkedHead must be a SHA-1.");
   requireCondition(context.checkedHead === expected.checkedHead, "Native resource head does not match.");
   requireCondition(context.processorName === expected.processorName, "Native resource processor does not match.");
   requireCondition(
-    context.expectedProcessorToken === TARGET_PROCESSOR_TOKEN
-      && context.processorName.toLowerCase().includes(TARGET_PROCESSOR_TOKEN.toLowerCase()),
-    "Native resource evidence does not use the frozen i5-1135G7 target.",
+    context.processorConstraint === null
+      || (
+        PROCESSOR_TOKEN.test(context.processorConstraint)
+        && context.processorName.toLowerCase().includes(context.processorConstraint.toLowerCase())
+      ),
+    "Native resource evidence does not satisfy its optional processor constraint.",
   );
   requireCondition(
-    context.logicalProcessors === TARGET_LOGICAL_PROCESSORS
-      && context.expectedLogicalProcessors === TARGET_LOGICAL_PROCESSORS
+    Number.isSafeInteger(context.logicalProcessors)
+      && context.logicalProcessors >= 1
+      && context.logicalProcessors <= 256
+      && context.logicalProcessorBudget === context.logicalProcessors
       && context.logicalProcessors === expected.logicalProcessors,
-    "Native resource evidence does not use the frozen eight-logical-processor target.",
+    "Native resource evidence does not match the recorded logical-processor budget.",
   );
   requireCondition(
     context.sessionCycles === TARGET_SESSION_CYCLES,
@@ -84,8 +88,8 @@ export function validateTargetClientNativeResourceEvidence(contextValue, profile
     "Native profile and context disagree on the audio fixture.",
   );
   requireCondition(
-    profile.logicalProcessorBudget === TARGET_LOGICAL_PROCESSORS,
-    "Native profile processor budget does not match the frozen target.",
+    profile.logicalProcessorBudget === context.logicalProcessorBudget,
+    "Native profile processor budget does not match the recorded host.",
   );
   requireCondition(
     profile.localAsrThreads === TARGET_ASR_THREADS,

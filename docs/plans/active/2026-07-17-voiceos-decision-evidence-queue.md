@@ -42,7 +42,7 @@ observed runtime behavior.
 | D-04 | GPU versus CPU | ASR performance work belongs on GPU. CPU-only isolation is intentional only for bounded light preprocessing such as Silero VAD and the accepted AmberNet batch suggestion; it is not a plan to run the main server ASR on CPU. | Accepted; Phase 6 | ADR 0024, ADR 0026, Phase 6 plan |
 | D-05 | Concurrent users | Reference-worker concurrency is measured now, including c1/c2/c4/c8, queueing, tail latency, cancellation isolation, memory, and duration buckets. Authenticated multi-owner fairness and production mixed live/batch capacity require Phase 7 identity and the Phase 10 service gate. | Accepted split; Phases 6, 7, and 10 | ADR 0023, ADR 0024, roadmap |
 | D-06 | Fixed live language | Setup/Settings owns one confirmed primary locale. Local Nemotron applies that exact supported locale to native stream creation and reset; unsupported locales fail visibly. It never silently falls back to English or automatic detection. | Implemented on active Phase 6 branch; gate pending | ADR 0024, current architecture |
-| D-07 | Local dynamic language detection | Phase 6 must add one bounded acoustic-LID model that remains resident while local live inference is warm/active, automatic offline switching, and within-utterance source-time language spans. `LiveRuntime` remains the sole lifecycle owner and continues to use one local Nemotron ASR; the LID component owns evidence only, not transcript, capture, or durable state. Initial selection and sustained switching use the accepted three-observation, `0.40`-margin policy over the confirmed primary plus explicit alternates. Current selection is restricted to immutable released checkpoints. | Accepted bounded candidate implemented with AmberNet 1.12.0 QDQ INT8 as an explicit, default-off Preview. The representative natural-switch quality target completed and failed; target-i5 resource/interference, lifecycle safety, and checked-head gates remain open. Removing Preview requires new independent quality evidence. | ADR 0019 amendment, ADR 0024, dynamic-language evaluation |
+| D-07 | Local dynamic language detection | Phase 6 must add one bounded acoustic-LID model that remains resident while local live inference is warm/active, automatic offline switching, and within-utterance source-time language spans. `LiveRuntime` remains the sole lifecycle owner and continues to use one local Nemotron ASR; the LID component owns evidence only, not transcript, capture, or durable state. Initial selection and sustained switching use the accepted three-observation, `0.40`-margin policy over the confirmed primary plus explicit alternates. Current selection is restricted to immutable released checkpoints. | Accepted bounded candidate implemented with AmberNet 1.12.0 QDQ INT8 as an explicit, default-off Preview. The representative natural-switch quality target completed and failed; current-host resource/interference, lifecycle safety, and checked-head gates remain open. Low-end physical battery/thermal certification moves to default-on or Phase 10 release qualification. Removing Preview requires new independent quality evidence. | ADR 0019 amendment, ADR 0024, dynamic-language evaluation |
 | D-08 | Server language detection | AmberNet 1.12.0 INT8 QDQ is the verify-only, CPU-isolated, user-confirmed suggestion for longer fixed-language imports. It samples five strict source-stratified six-second regions and abstains unless all five agree. Server Nemotron automatic tags execute separately as finalized-utterance evidence. The shared versioned span contract distinguishes `clientDecision` from `serverUtterance`, binds server spans to the model/utterance plan, and links text fragments without claiming terminal tags are within-utterance language diarization. | Focused implementation and one exact-commit ARM64 resource smoke exist; the final frozen-head repetition and representative/promotion gates remain open in Phase 6 | ADR 0024, ADR 0026 |
 | D-09 | Global language coverage | Advertise only exact out-of-box, benchmarked locales. Nemotron's eight adaptation-ready locales are not planned capabilities. Broad coverage remains visibly lower-confidence until locale-specific evidence promotes it. | Accepted; Phase 6 | ADR 0024 |
 | D-10 | Client/server preprocessing | The client owns capture/source admission, deterministic normalization, source identity, optional advisory VAD, bounded local acoustic LID, source-time language spans, and durable client evidence. The server owns heavyweight verification, ASR, alignment, and official result production. Redundant server validation may reconcile or reject evidence but must not create a second client-state authority or erase client history. | Accepted boundary; Phase 6 | ADR 0020, ADR 0024, current architecture |
@@ -147,7 +147,7 @@ Private reports and the model remain outside Git. The prior source-exact
 SpeechBrain run at `04266c4bbffd0fd31eaf2afd0bcce42e0248344f` remains only a
 historical containment receipt. The focused ARM64 worker receipt closes basic
 feasibility for exact executable commit `c6862262fa36a83bcd40a7bffa65ec6429ec097e`;
-the final frozen-head repetition, target-i5 behavior, representative promotion,
+the final frozen-head repetition, current-host Preview behavior, representative promotion,
 and the complete resource gate remain open.
 
 ### P6-04 — Local language spans and fixed/dynamic ASR
@@ -274,10 +274,10 @@ and the complete resource gate remain open.
   logical-CPU repeat also lost no frames, reached 45/64 queued frames, drained
   in 911 ms, averaged 1.773 cores during paced input, and measured 8.023 ms
   p95/45.864 ms maximum scheduler wake delay. Its accelerated combined pass
-  used 3.71 of four cores. These proxies do not close the item: actual
-  i5-1135G7 rendered UI/audio
-  interference, energy, thermal, and sustained-session evidence remain
-  required.
+  used 3.71 of four cores. These proxies do not close the item: current-host
+  rendered UI/audio interference and sustained-session evidence remain
+  required. Low-end physical energy/thermal evidence is deferred to the
+  default-on and Phase 10 release boundary.
 - [x] Implement one `LiveRuntime`-owned language engine with bounded speech-
   masked windows, deterministic smoothing, minimum evidence, hysteresis,
   lookahead, and visible primary-locale fallback.
@@ -297,19 +297,21 @@ and the complete resource gate remain open.
   visible primary operation when detector artifacts are unavailable. Focused
   verification passed 123 language-related tests with eight real-model/private
   collectors intentionally ignored.
-- [ ] Complete target-i5 installed-artifact offline execution, sustained-session
-  restart/cancellation, rendered-UI/capture interference, energy/thermal, and
+- [ ] Complete current-host installed-artifact offline execution, sustained-session
+  restart/cancellation, rendered-UI/capture interference, and
   resource-teardown evidence. Preserve the completed natural, constructed,
   related-language, noise, silence, and overlap results as-is; the failed natural
   quality target remains the Preview limitation and is not rerun. A checked-head
   native repeated-session collector and a release-mode physical-microphone/
   rendered-UI gate now implement the frozen boundaries without retaining audio
-  or transcript text. They reject the wrong CPU, an online default route,
+  or transcript text. They bind the actual processor and count, reject any
+  explicitly requested hardware constraint that does not match, an online default route,
   dirty/different source, repository-local evidence, missing artifacts,
   degraded routing, missed responsiveness budgets, or retained model snapshots.
-  Neither has been consumed on the actual i5-1135G7, and the separate paired
-  calibrated energy/thermal comparison remains required, so this item stays
-  open under the [target-client language-routing runbook](../../runbooks/target-client-language-routing-qualification.md).
+  Neither has been consumed on the final checked head, so this item stays open
+  under the [target-client language-routing runbook](../../runbooks/target-client-language-routing-qualification.md).
+  The separate calibrated low-end physical energy/thermal comparison remains a
+  default-on and Phase 10 release requirement, not a Preview merge blocker.
 - [x] Carry one versioned span contract into server work. Independent server
   evidence may be reconciled or rejected but cannot silently mutate the client
   decision history.
@@ -471,8 +473,7 @@ identity before publication, and the runtime-plan validator freezes every load
 cell plus its pacing, evidence, unit, and metric semantics. Four native runner
 contract tests, 13 Python builder/track tests, 16 runtime-plan tests, and the
 59-test runtime lifecycle slice pass; the ignored multi-hour evidence run has
-not been consumed. Physical
-microphone/rendered-UI behavior, target-i5 resources, and natural
+not been consumed. Current-host physical-microphone/rendered-UI behavior and natural
 quick-correction accuracy therefore remain open and this checklist is not
 promoted.
 
@@ -697,7 +698,7 @@ next-phase cadence.
 
 | ID | Question | Evidence required before closure | Default while open |
 | --- | --- | --- | --- |
-| OQ-01 | Which exact acoustic-LID model and native format should power required local switching? | Immutable released artifact, compatible commercial use and explicit redistribution boundary, exact locale mapping, representative span accuracy and boundary error, packaging, CPU latency, incremental memory/energy, and ASR interference beside Nemotron | **Selected for the Phase 6 candidate:** NVIDIA AmberNet 1.12.0 static QDQ INT8, exact 29,613,392-byte graph and NeMo-compatible native frontend, three observations, `0.40` margin, full-label abstention, and user-selected Nemotron regional locales. The original natural/noisy gate failed; the product owner deliberately accepted that limitation instead of continuing model research. A distinct 58-clip holdout was consumed once after policy freeze and produced 54 correct alternates, one abstention, three wrong alternates, and zero false alternates when the primary was correct. A later frozen clean German-English product-route set preserved exact source coverage and primary fallback but detected 0/4 required natural alternate spans and matched neither boundary. Post-failure diagnosis found only five alternate labels and one above-margin observation across 68 speech-qualified alternate-region windows; earlier FP32 behavior and 322/340 versus 323/340 whole-clip parity show this is not an INT8 regression. Do not retune against the consumed set. The original aggregate, owner-restricted ACL, and hash receipt remain private; an audit-only native test revalidated the recorded aggregate without audio or model inference. All native gate collectors now use one no-clobber publisher that applies private permissions before writing evidence bytes. The artifact is verified local-import only while NGC redistribution review remains open. The local control is therefore explicit, default-off Preview behavior. Target-i5 resource/interference, lifecycle safety, and complete checked-head evidence still gate Phase 6; the completed failed natural result blocks only stronger quality claims or removal of Preview. |
+| OQ-01 | Which exact acoustic-LID model and native format should power required local switching? | Immutable released artifact, compatible commercial use and explicit redistribution boundary, exact locale mapping, representative span accuracy and boundary error, packaging, CPU latency, incremental memory/energy, and ASR interference beside Nemotron | **Selected for the Phase 6 candidate:** NVIDIA AmberNet 1.12.0 static QDQ INT8, exact 29,613,392-byte graph and NeMo-compatible native frontend, three observations, `0.40` margin, full-label abstention, and user-selected Nemotron regional locales. The original natural/noisy gate failed; the product owner deliberately accepted that limitation instead of continuing model research. A distinct 58-clip holdout was consumed once after policy freeze and produced 54 correct alternates, one abstention, three wrong alternates, and zero false alternates when the primary was correct. A later frozen clean German-English product-route set preserved exact source coverage and primary fallback but detected 0/4 required natural alternate spans and matched neither boundary. Post-failure diagnosis found only five alternate labels and one above-margin observation across 68 speech-qualified alternate-region windows; earlier FP32 behavior and 322/340 versus 323/340 whole-clip parity show this is not an INT8 regression. Do not retune against the consumed set. The original aggregate, owner-restricted ACL, and hash receipt remain private; an audit-only native test revalidated the recorded aggregate without audio or model inference. All native gate collectors now use one no-clobber publisher that applies private permissions before writing evidence bytes. The artifact is verified local-import only while NGC redistribution review remains open. The local control is therefore explicit, default-off Preview behavior. Current-host resource/interference, lifecycle safety, and complete checked-head evidence still gate Phase 6; low-end physical battery/thermal certification moves to default-on or Phase 10 release qualification. The completed failed natural result blocks only stronger quality claims or removal of Preview. |
 
 The completed AmberNet trial started from original waveform, preserved the
 checkpoint feature configuration and all 107 logits, treated disabled-language

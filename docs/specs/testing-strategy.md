@@ -17,8 +17,8 @@ bundled llama-server, and per-OS real-model matrix described below do not exist
 yet. Phase 6 catalog, deterministic preprocessing/VAD, guarded server LID,
 Preview local LID/span routing, provider-specific server candidates, alignment,
 private-corpus trust, scoring, and runtime-qualification components now execute
-under focused tests. The representative private promotion corpus, target-i5
-hardware evidence, frozen checked-head GB10 comparisons, and complete Phase 6
+under focused tests. The representative private promotion corpus, current-host
+release/resource evidence, frozen checked-head GB10 comparisons, and complete Phase 6
 gate remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
 baseline, but no Tiron worker or meeting scorer executes yet. The tables below
 distinguish executable focused coverage from future phase-gate requirements;
@@ -79,21 +79,25 @@ Its accelerated mode measures throughput, model load, incremental memory, and
 ASR interference; its source-paced mode feeds the production-sized bounded
 local-ASR queue at ten-millisecond source cadence while concurrently sampling
 scheduler wake delay, frame loss, queue high-water, CPU use, and bounded drain.
-A developer-host affinity limit is useful evidence but cannot replace the
-actual i5-class Windows, rendered-UI/audio interference, energy, thermal, and
-sustained-session qualification.
+A developer-host affinity limit is useful diagnostic evidence but cannot
+replace current-host rendered-UI/audio interference and sustained-session
+qualification. It also cannot be relabeled as representative low-end physical
+battery or thermal certification.
 
-The target-client qualification is now executable as three deliberately
+The Phase 6 target-client qualification is executable as two deliberately
 separate evidence channels under the
 [target-client language-routing runbook](../runbooks/target-client-language-routing-qualification.md).
-The native collector rejects non-i5-1135G7 hardware, a dirty/different head,
+The native collector records and validates the actual Windows processor and
+processor count; an optional named-hardware constraint remains available for
+later physical-device certification. It also rejects a dirty/different head,
 online default-gateway interfaces, and in-repository evidence before it starts
 model inference. Its bounded repeated-session mode does not claim physical
 capture or UI behavior. The release-mode WDIO path then consumes the same
 checked-head native receipt and proves a 15-minute physical-microphone/rendered-
 UI lifecycle without retaining transcript or recording content. A matched
-power/thermal lab comparison remains independently required; unavailable
-thermal telemetry is a blocker, not an inferred pass.
+low-end physical power/thermal comparison may accompany this gate but is
+required only before default-on or Phase 10 release qualification; missing
+telemetry can never be turned into a passing hardware-certification claim.
 
 The deterministic local-duration runner starts at Yap's prepared-audio-frame
 boundary, not at the physical microphone. It binds the exact checked Git SHA,
