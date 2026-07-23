@@ -559,9 +559,21 @@ finalized-duration harness reported 2/9 completions despite all nine result
 files being written by the worker; seven short/silent cases correctly contained
 canonical empty text, which Yap's production contract permits. Exact cleanup passed. The
 observation harness now accepts empty published text only for duration transport
-and continues to require non-empty output for provider-behavior and resource-
-lifecycle speech fixtures. The next exact-head run and complete Phase 6 gate
-remain open.
+and continues to require non-empty output for provider-behavior, request-
+lifecycle, and resource-lifecycle speech fixtures. The next exact-head run and
+complete Phase 6 gate remain open.
+
+At exact head `4ffec120f212d20a26e314108940989c1b6e93a5`, Cohere passed the complete
+corrected lifecycle and teardown; NeMo passed readiness and both duration
+ladders. The NeMo short-tail cell then completed and published 600/600 non-empty
+results, but two of 200 c4 results differed from the other 198 by one word. c1
+and c2 were lexically stable, every result retained its job/audio/model/output
+identity, and cleanup was exact. The cell repeated one audio input, so lexical
+identity measured model determinism rather than cross-request ownership. The
+Phase 6 standard short/long cells now use `request-lifecycle`: all result,
+identity, completion, concurrency, idle-provider, and teardown requirements
+remain, while lexical variance is recorded for Phase 8's Tiron comparison rather
+than promoted now. A new exact-head run remains open.
 
 ### P6-08 — Review UI and model-independent terminology hooks
 

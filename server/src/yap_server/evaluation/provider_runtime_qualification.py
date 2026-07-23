@@ -47,9 +47,14 @@ _STANDARD_EXPECTATIONS = frozenset(
     }
 )
 _PROVIDER_BEHAVIOR_SCOPE = "provider-behavior"
+_REQUEST_LIFECYCLE_SCOPE = "request-lifecycle"
 _RESOURCE_LIFECYCLE_SCOPE = "resource-lifecycle"
 _QUALIFICATION_SCOPES = frozenset(
-    {_PROVIDER_BEHAVIOR_SCOPE, _RESOURCE_LIFECYCLE_SCOPE}
+    {
+        _PROVIDER_BEHAVIOR_SCOPE,
+        _REQUEST_LIFECYCLE_SCOPE,
+        _RESOURCE_LIFECYCLE_SCOPE,
+    }
 )
 _RESIDENT_PROVIDER_IDS = {
     "vllm-cohere-batch": "cohere",

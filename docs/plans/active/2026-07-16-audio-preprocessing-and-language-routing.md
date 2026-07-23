@@ -1186,8 +1186,25 @@ returned the canonical empty transcript allowed by Yap's production result
 contract, and the generic observation harness had treated those valid results
 as failures. Exact
 cleanup passed. Duration-transport now accepts published canonical empty text;
-provider-behavior and resource-lifecycle scopes still require non-empty speech-
-fixture output. A new exact-head run remains open and no provider is promoted.
+provider-behavior, request-lifecycle, and resource-lifecycle scopes still
+require non-empty speech-fixture output. A new exact-head run remains open and
+no provider is promoted.
+
+Exact head `4ffec120f212d20a26e314108940989c1b6e93a5` passed Cohere's complete
+corrected lifecycle and exact teardown, then passed NeMo readiness and both
+duration ladders through the exact four-hour transport boundary. NeMo's
+short-tail c1/c2/c4 cell completed and published all 600 non-empty results. One
+lexical output appeared 198 times at c4 and a one-word variant appeared twice;
+c1 and c2 each produced one lexical identity. All result envelopes remained
+bound to the originating job, input-audio hash, model lock, and result path, and
+cleanup was exact. That repeated-single-input cell cannot prove cross-request
+mixing; its failed predicate was model-output determinism. The Phase 6 wrapper
+therefore uses a distinct `request-lifecycle` scope for standard short/long
+cells: it keeps identity, result publication, non-empty speech output,
+completion, provider-idle, concurrency, and teardown requirements while merely
+reporting lexical variance. `provider-behavior` remains available for Phase 8's
+Tiron comparison. A new exact-head run remains open and neither provider is
+promoted.
 
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness

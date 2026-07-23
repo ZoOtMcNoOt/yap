@@ -52,6 +52,7 @@ class _ChildRequirement:
     completed_request_count: int | None = None
     duration_samples: tuple[int, ...] = ()
     exact_maximum_included: bool | None = None
+    qualification_scope: str | None = None
 
 
 _FINALIZED_DURATION_SAMPLES = (
@@ -89,6 +90,7 @@ _CHILD_REQUIREMENTS = {
         repeat_count=1,
         completed_request_count=600,
         duration_samples=(480_000,),
+        qualification_scope="request-lifecycle",
     ),
     "vllm/cancellation.json": _ChildRequirement(
         "load", "vllm-cohere-batch", "vllm-cancelled-sibling"
@@ -130,6 +132,7 @@ _CHILD_REQUIREMENTS = {
         repeat_count=1,
         completed_request_count=600,
         duration_samples=(480_000,),
+        qualification_scope="request-lifecycle",
     ),
     "nemo/long-windows.json": _ChildRequirement(
         "load",
@@ -139,6 +142,7 @@ _CHILD_REQUIREMENTS = {
         repeat_count=1,
         completed_request_count=4,
         duration_samples=(14_400_000,),
+        qualification_scope="request-lifecycle",
     ),
     "nemo/language-parity.json": _ChildRequirement(
         "load",
@@ -379,6 +383,11 @@ def _validate_child(
             != requirement.completed_request_count
         ):
             raise ValueError("resident provider standard load evidence is incomplete")
+        if (
+            requirement.qualification_scope is not None
+            and value.get("qualificationScope") != requirement.qualification_scope
+        ):
+            raise ValueError("resident provider load scope is invalid")
         if requirement.kind == "resource-load" and value.get(
             "qualificationScope"
         ) != "resource-lifecycle":

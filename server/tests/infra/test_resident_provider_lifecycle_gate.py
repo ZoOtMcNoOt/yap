@@ -62,6 +62,7 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
             "workload-start",
             "workload-end",
             "workload-window.json",
+            "request-lifecycle",
             "resource-lifecycle",
             "125000 - observation_elapsed_ms",
             "capture_host_boundary",

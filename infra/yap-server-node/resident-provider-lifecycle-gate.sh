@@ -501,7 +501,7 @@ run_vllm_qualification() {
     "$vllm_endpoint" en en true
   run_standard \
     vllm short-tail vllm-short-tail "$vllm_lock" "$vllm_endpoint" \
-    en en 1 provider-behavior 1 2 4
+    en en 1 request-lifecycle 1 2 4
   run_cancellation \
     vllm cancellation vllm-cancelled-sibling "$vllm_lock" "$vllm_endpoint" en en
   run_capacity \
@@ -522,10 +522,10 @@ run_nemo_qualification() {
     "$nemo_endpoint" en-US en-US true
   run_standard \
     nemo short-tail nemo-finalized-short-tail "$nemo_lock" "$nemo_endpoint" \
-    en-US en-US 1 provider-behavior 1 2 4
+    en-US en-US 1 request-lifecycle 1 2 4
   run_standard \
     nemo long-windows nemo-finalized-long-windows "$nemo_lock" "$nemo_endpoint" \
-    en-US en-US 1 provider-behavior 2
+    en-US en-US 1 request-lifecycle 2
   local parity_root="$gate_root/workloads/nemo-language-parity"
   PYTHONPATH="$repo_root/server/src" \
     python3.12 -m yap_server.evaluation.provider_language_parity_qualification \

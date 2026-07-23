@@ -350,9 +350,11 @@ launcher-to-ready, or production cold-start evidence. The wrapper is only the
 resident-provider lifecycle component of the one-time Phase 6 matrix.
 
 For the replaceable Cohere candidate, this lifecycle component requires the c1
-duration ladder, short-tail isolation at c1/c2/c4, the c8/1,600 resource cell,
-cancellation/recovery, slot and PCM admission, and exact teardown. It does not
-run the plan's `vllm-long-waves` or `vllm-mixed-eight` cells. Those cells remain
+duration ladder, short-tail request/result isolation at c1/c2/c4, the c8/1,600
+resource cell, cancellation/recovery, slot and PCM admission, and exact
+teardown. These `request-lifecycle` cells record lexical variance without
+turning repeated-output determinism into a Phase 6 promotion requirement. It
+does not run the plan's `vllm-long-waves` or `vllm-mixed-eight` cells. Those cells remain
 available for a provider-promotion comparison, including the Phase 8 Cohere-
 versus-Tiron decision, but they are not candidate-safety prerequisites.
 
@@ -388,9 +390,21 @@ all nine result files, while seven short/silent cases carried canonical empty
 transcripts and the generic observation harness counted only the two non-empty
 results as completed. Cleanup was exact. The harness now counts canonical empty
 text as a completed result only for `duration-transport-and-lifecycle`;
-provider-behavior and resource-lifecycle scopes still require non-empty output.
+provider-behavior, request-lifecycle, and resource-lifecycle scopes still
+require non-empty output.
 The private failed receipt remains regression evidence and a new exact-head run
 is required.
+
+At exact head `4ffec120f212d20a26e314108940989c1b6e93a5`, Cohere passed its complete
+lifecycle and exact teardown. NeMo passed readiness and both duration ladders,
+then completed and published all 600 non-empty short-tail results. Its c1/c2
+outputs were lexically stable; two of 200 c4 outputs differed by one word while
+remaining correctly bound to their jobs, audio identity, model lock, and output
+paths. Cleanup was exact. Because repeated copies of one audio input measure
+model determinism rather than cross-request ownership, the wrapper now applies
+`request-lifecycle` to the Phase 6 short/long standard cells and records lexical
+variance. `provider-behavior` remains a later provider-promotion scope. A new
+exact-head run is required.
 Representative quality, current-host client Preview resource/lifecycle behavior,
 accessibility, and the other Phase 6 gates remain separate. Low-end physical
 client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host

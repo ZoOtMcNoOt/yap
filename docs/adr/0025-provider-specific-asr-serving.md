@@ -429,10 +429,12 @@ an unclean launcher exit, or any remaining provider container, proxy, launcher,
 listener, or network.
 
 The replaceable Cohere candidate must pass c1 duration transport, short-tail
-c1/c2/c4 isolation, c8/1,600 resource bounds, cancellation/recovery, slot and
-PCM admission, and exact teardown. The plan retains `vllm-long-waves` and
-`vllm-mixed-eight` for provider-promotion comparisons, but the Phase 6 lifecycle
-wrapper does not require them. Phase 8 can reuse those cases when deciding
+c1/c2/c4 request/result isolation, c8/1,600 resource bounds,
+cancellation/recovery, slot and PCM admission, and exact teardown. These
+Phase 6 request-lifecycle cells record lexical variance but do not require
+identical model output from repeated audio. The plan retains `vllm-long-waves`
+and `vllm-mixed-eight` for provider-promotion comparisons, but the Phase 6
+lifecycle wrapper does not require them. Phase 8 can reuse those cases when deciding
 whether pinned Tiron is meeting-only, replaces Cohere batch more broadly, or is
 rejected.
 
@@ -481,9 +483,25 @@ execution failures. Cleanup was exact.
 The observation boundary now preserves that production semantic. A published
 canonical empty transcript counts as completed for
 `duration-transport-and-lifecycle`, which carries no accuracy claim. Provider-
-behavior and resource-lifecycle speech fixtures still require non-empty output.
+behavior, request-lifecycle, and resource-lifecycle speech fixtures still
+require non-empty output.
 The private failed receipt remains regression evidence, a new exact-head run is
 required, and neither provider is promoted.
+
+At exact head `4ffec120f212d20a26e314108940989c1b6e93a5`, Cohere passed its complete
+corrected lifecycle and clean teardown. NeMo then passed readiness and both
+duration ladders, including the exact four-hour transport boundary. Its
+c1/c2/c4 short-tail cell completed and published 600/600 non-empty results;
+c1 and c2 each had one lexical identity, while two of 200 c4 results differed
+from the other 198 by one word. Every worker result remained bound to its job,
+audio hash, model lock, and output path, and cleanup was exact. Repeated copies
+of one audio input cannot establish cross-request mixing, so requiring one
+lexical identity here was a misplaced model-determinism promotion test.
+Phase 6 now labels its short/long standard cells `request-lifecycle`, requires
+all identity-rich results and idle-provider read-back, and records rather than
+promotes lexical stability. `provider-behavior` remains available for the
+Phase 8 Tiron comparison. No request, capacity, resource, or teardown boundary
+was weakened, and a new exact-head run is required.
 
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall

@@ -1020,16 +1020,18 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 - [x] Durable bounded client/server stage attempts with idempotent retry/restart
   admission on the existing job authorities
 - [ ] Complete the digest-pinned Cohere vLLM candidate-safety gate with frozen
-  exact-output and GB10 lifecycle, single-user/concurrent latency, throughput,
-  memory, cancellation, and teardown evidence against the Transformers
-  reference; retain it as unpromoted while Phase 8 evaluates Tiron replacement
+  request/result identity and GB10 lifecycle, single-user/concurrent latency,
+  throughput, memory, cancellation, and teardown evidence; retain output
+  determinism and representative quality for the Phase 8 Tiron comparison and
+  keep the route unpromoted
 - [x] Implement the pinned resident Nemotron NeMo worker/service/image/launcher
   behind the provider-neutral job/result contract with bounded independent
   requests, prompt/catalog validation, and job-specific cancellation
-- [ ] Complete Nemotron NeMo's independent frozen correctness, streaming,
+- [ ] Complete Nemotron NeMo's independent request-lifecycle, streaming,
   fixed/auto regression, duration, cancellation, latency, memory, c1/c2/c4/c8
-  isolation/throughput, admission, recovery, and lifecycle candidate-safety gate;
-  retain it as unpromoted
+  identity/isolation/throughput, admission, recovery, and lifecycle gate; retain
+  provider-behavior quality and output determinism for later promotion evidence
+  and keep the route unpromoted
 
 **Meeting evidence and diarization (Phase 8)**
 

@@ -116,11 +116,13 @@ consume the still-open frozen qualification.
 The sustained Cohere exact-track control also resolved its two reported
 transcript identities: all 200 requests retained the same 92 lexical tokens,
 while 11 omitted four commas. Neither in-process V1 execution nor vLLM's pinned
-batch-invariant mode removed the rendering split. Standard load evidence now
-requires one lexical identity per repeated audio duration and reports exact
-rendering counts separately; the still-open representative-quality gate keeps
-punctuation scoring independent. No serving candidate is promoted by this
-dirty-head result.
+batch-invariant mode removed the rendering split. Provider-behavior promotion
+evidence requires one lexical identity per repeated audio duration and reports
+exact rendering counts separately. Phase 6 request-lifecycle evidence records
+that variance while requiring identity-rich results, non-empty speech output,
+planned concurrency, provider-idle read-back, and teardown. The still-open
+representative-quality gate keeps punctuation scoring independent. No serving
+candidate is promoted by this dirty-head result.
 
 ## What executes now
 
@@ -297,12 +299,12 @@ and reviewable sub-tasks. The active Phase 6 plan remains the delivery authority
    explicit language-span contract, and fail-closed timing implementation while
    closing representative local spans and frozen-head timing-promotion evidence.
 4. Preserve the provider-neutral worker contract while completing Cohere's
-   digest-pinned vLLM lifecycle, exact-output, duration, c1/c2/c4/c8,
-   cancellation, memory, and teardown comparison against the Transformers
-   reference. Freeze and run the implemented Nemotron NeMo candidate's separate
-   fixed/auto regression, duration, cache-state, and lifecycle comparison. Keep
-   both services unpromoted pending the later route-selection evidence and do
-   not revive retired Triton.
+   digest-pinned vLLM request/result identity, duration, c1/c2/c4/c8,
+   cancellation, memory, and teardown lifecycle. Freeze and run the implemented
+   Nemotron NeMo candidate's separate fixed/auto regression, duration,
+   cache-state, and lifecycle boundary. Keep lexical determinism and broad model
+   quality in the Phase 8 Tiron comparison; keep both current services
+   unpromoted and do not revive retired Triton.
 5. Resolve focused correctness/security/license/maintainability findings, then
    freeze and run the complete Phase 6 local/native/server/GB10 matrix exactly
    once on the ready head.

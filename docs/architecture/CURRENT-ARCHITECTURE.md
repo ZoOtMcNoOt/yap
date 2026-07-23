@@ -212,8 +212,9 @@ still open.
 
 The production result contract permits canonical empty ASR text. Duration-
 transport evidence therefore counts a published empty result as completed for
-silent or too-short audio, while provider-behavior and resource-lifecycle cells
-still require non-empty output from their speech-bearing fixtures.
+silent or too-short audio, while provider-behavior, request-lifecycle, and
+resource-lifecycle cells still require non-empty output from their speech-
+bearing fixtures.
 
 Provider-behavior exact-track evidence separates recognized-word stability from
 rendered formatting. Repeated immutable input is grouped by audio duration and
@@ -222,6 +223,13 @@ are reported separately and punctuation remains part of representative
 reference scoring. Resource-lifecycle loads explicitly report but do not gate on
 lexical variance; they gate request/result completion, provider idle state,
 resource ceilings, and teardown instead.
+
+Phase 6 standard short/long loads use a separate `request-lifecycle` scope.
+They require every result to retain its job, input-audio, model, and output-path
+identity, require non-empty output for the speech fixture, and require provider
+idle read-back at the planned concurrency. They report lexical variance without
+requiring deterministic wording from repeated audio. Provider-behavior remains
+a later model-promotion boundary, including the Phase 8 Tiron comparison.
 
 Provider resource ownership is also explicit. The cgroup supplies current,
 peak, task, and memory-event truth; the container entrypoint supplies RSS,

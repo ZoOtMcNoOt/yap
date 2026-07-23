@@ -157,15 +157,18 @@ transport and lifecycle and carries no representative-accuracy claim. Natural
 WER, deterministic long-form sentinel integrity, concurrency, and provider
 promotion remain independent evidence even when every duration completes. A
 canonical empty transcript is a valid completed transport result for silence or
-audio too short to decode; provider-behavior and resource-lifecycle loads still
-require every speech-bearing result to be non-empty.
+audio too short to decode; provider-behavior, request-lifecycle, and resource-
+lifecycle loads still require every speech-bearing result to be non-empty.
 
 Provider-behavior exact-track loads require one non-empty lexical identity per
-repeated audio duration and report formatting identities separately. A
-`resource-lifecycle` load has a narrower contract: all requests and results,
-provider-idle read-back, resource ceilings, and teardown must pass while any
-transcript variance remains recorded without converting the resource
-measurement into a model-promotion gate.
+repeated audio duration and report formatting identities separately. They are
+model-promotion evidence, not the Phase 6 replacement-candidate boundary. A
+`request-lifecycle` load instead requires every identity-rich job/result,
+non-empty speech-fixture output, provider-idle read-back, and planned concurrency
+while recording lexical variance; repeating the same input cannot prove
+cross-request mixing. A `resource-lifecycle` load adds the frozen resource
+profile and teardown requirements while likewise recording transcript variance
+without converting lifecycle evidence into a model-promotion gate.
 
 The resident-provider lifecycle wrapper is the checked-head owner for the
 launched-image and teardown boundary. It verifies already-present model assets,

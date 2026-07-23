@@ -553,12 +553,16 @@ independent generalization.
 
 Duration transport treats a published canonical empty transcript as a completed
 ASR result because short or silent audio may legitimately contain no spoken
-tokens. That does not satisfy a speech-quality, provider-behavior, or resource-
-lifecycle fixture, all of which retain their non-empty-output requirement.
+tokens. That does not satisfy a speech-quality, provider-behavior, request-
+lifecycle, or resource-lifecycle fixture, all of which retain their non-empty-
+output requirement.
 
-The candidate-safety wrapper keeps provider-behavior and resource-lifecycle
-claims distinct. Short-tail c1/c2/c4 runs require one lexical identity. The
-c8/1,600 resource run still records identity counts but gates completions,
+The candidate-safety wrapper keeps request-lifecycle, provider-behavior, and
+resource-lifecycle claims distinct. Phase 6 short/long c1/c2/c4 runs require
+identity-rich published results and record lexical variance; repeated copies of
+one input measure model determinism, not cross-request ownership. Provider-
+behavior retains the one-lexical-identity rule for later promotion evidence. The
+c8/1,600 resource run records identity counts but gates completions,
 provider-idle state, a minimum 125-second observation window, predeclared
 current/peak/allocation/task/thread/event ceilings, and teardown. It does not
 promote or rank a replaceable ASR model.

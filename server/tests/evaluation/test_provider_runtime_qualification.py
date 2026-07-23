@@ -277,6 +277,40 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
         )
         self.assertTrue(all(run["expectationMet"] for run in qualification.runs))
 
+    def test_request_lifecycle_records_but_does_not_promote_lexical_stability(
+        self,
+    ) -> None:
+        plan = load_runtime_evaluation_plan(
+            SERVER_ROOT / "asr-evaluation-plan.json"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            qualification = run_provider_load_case(
+                _Worker(
+                    lambda job_id: (
+                        "private altered transcript"
+                        if job_id.endswith("3")
+                        else "private transcript"
+                    )
+                ),
+                _Factory(Path(directory)),
+                plan,
+                load_case_id="vllm-long-waves",
+                timeout_seconds_per_wave=1,
+                qualification_scope="request-lifecycle",
+            )
+            evidence = qualification.public_evidence()
+
+        self.assertTrue(qualification.passed)
+        self.assertEqual(evidence["qualificationScope"], "request-lifecycle")
+        self.assertEqual(evidence["completedRequestCount"], 4)
+        self.assertTrue(
+            all(not run["lexicalStabilityRequired"] for run in qualification.runs)
+        )
+        self.assertTrue(
+            all(not run["lexicalStabilityMet"] for run in qualification.runs)
+        )
+        self.assertTrue(all(run["expectationMet"] for run in qualification.runs))
+
     def test_rejects_unplanned_concurrency_and_unbounded_repetition(self) -> None:
         plan = load_runtime_evaluation_plan(
             SERVER_ROOT / "asr-evaluation-plan.json"
