@@ -247,6 +247,13 @@ boundary on 2026-07-22 by copying it into an owner-only persistent external
 cache and verifying an exact source/copy tree-hash match. That is preservation
 evidence, not human-reference review or promotion evidence; no private path or
 digest is recorded here.
+A source-only Spanish handoff packet was also built in the owner-only cache. It
+contains seven files: canonical audio, the upstream reference, four exact
+source/derivation/preprocessing records, and a manifest that binds every input
+by byte length and SHA-256 while explicitly excluding model hypotheses, peer
+reviews, and provider scores. The manifest retains base language `es` and marks
+the exact locale as requiring human adjudication. No reviewer, adjudication, or
+promotion result is inferred from preparing this packet.
 
 ### First immutable public comparator: FLEURS `es-419`
 

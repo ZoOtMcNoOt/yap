@@ -1199,6 +1199,12 @@ a tree with an exact source/copy match. No private path, digest, audio,
 reference, hypothesis, or raw receipt entered Git. This preservation step does
 not satisfy the still-missing independent listens, adjudication, attribution,
 or registry decision.
+A separate owner-only seven-file Spanish review-source packet now contains only
+the canonical audio, upstream reference, source/derivation/preprocessing
+receipts, and a byte/hash inventory. Its manifest explicitly excludes model
+hypotheses, peer reviews, and provider scores and leaves the exact locale at
+`requiresHumanAdjudication`. It is ready for a later blind assignment, but it is
+not a listener receipt, an adjudicated reference, or promotion evidence.
 
 At exact executable source SHA
 `2caf1969000154ffba24511a5c35b57f7f975036`, a focused natural long-meeting
