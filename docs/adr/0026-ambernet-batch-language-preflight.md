@@ -5,7 +5,8 @@
 execute under focused tests. Exact executable head
 `a21964c19e56648e9fddcb5200de419e59a7687c` passed the final source-exact ARM64
 image, resource, lifecycle, and teardown repetition. Representative suggestion
-quality and the complete Phase 6 gate remain incomplete
+quality remains unpromoted and is not a Phase 6 product claim; the complete
+Phase 6 gate remains incomplete
 **Builds on:** [ADR 0020](0020-meeting-capture-diarization-authority.md),
 [ADR 0024](0024-global-language-routing.md), and
 [ADR 0025](0025-provider-specific-asr-serving.md)
@@ -226,8 +227,11 @@ listener, or request directory. The private evidence aggregate has SHA-256
 audio, transcripts, host paths, and raw receipts remain outside Git.
 
 That closes the frozen-head component repetition, not Phase 6 or representative
-language-suggestion quality. The accepted phase claim still requires one frozen
-checked-head local/native/server/GB10 matrix, the remaining advertised-route and
-end-to-end duration gates, reviewed documentation reconciliation, and a green
-checked-head PR. No component smoke is relabeled as phase completion or
-production multi-user proof.
+language-suggestion quality. Because the suggestion is assistive, requires
+explicit user confirmation, and falls back visibly to the manual picker on
+every ambiguous or failed outcome, Phase 6 does not make or require a broad
+accuracy-promotion claim for it. The accepted phase claim still requires one
+frozen checked-head local/native/server/GB10 matrix, the remaining
+advertised-route and end-to-end duration gates, reviewed documentation
+reconciliation, and a green checked-head PR. No component smoke is relabeled as
+phase completion or production multi-user proof.

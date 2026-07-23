@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-07-22
+**As of:** 2026-07-23
 
 **Current work:** Phase 6 preprocessing on
 `feat/phase6-preprocessing-pipeline`.
@@ -350,28 +350,23 @@ all passed on that exact head. It merged through PR #59 as
 The living [decision and evidence queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 preserves the detailed discussion register, open questions, later-phase owners,
 and reviewable sub-tasks. The active Phase 6 plan remains the delivery authority.
+The concise
+[integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
+is the ordered closeout checklist: validate the complete workflow before broad
+provider optimization or non-blocking architecture work.
 
-1. Preserve the executing catalog, primary-language, visible catalog-derived
-   recording-language selector, and frozen per-job decision slices while
-   closing their remaining advertised-route validation. Do not manufacture a
-   second Cohere locale.
-2. Preserve the completed source-authoritative normalization/VAD, durable-stage,
-   and verify-only AmberNet five-region preflight slices, including the passed
-   final source-exact ARM64 worker repetition. Finish the bounded
-   resident local acoustic-LID route's current-host, sustained-lifecycle, and
-   representative span/resource gates without reopening the accepted model
-   decisions.
-3. Preserve the pinned reference Cohere/Nemotron routes, shared boundary-
-   explicit language-span contract, and fail-closed timing implementation while
-   closing representative local spans. Keep provider-specific timing promotion
-   with the Phase 8 Tiron comparison rather than polishing a replaceable Phase 6
-   candidate.
-4. Preserve the provider-neutral worker contract and the completed exact-head
-   Cohere vLLM/Nemotron NeMo candidate-safety lifecycle. Keep lexical
-   determinism, representative quality, and the broader replacement decision in
-   the Phase 8 Tiron comparison; keep both current services unpromoted and do
-   not revive retired Triton.
-5. Resolve focused correctness/security/license/maintainability findings, then
-   freeze and run the complete Phase 6 local/native/server/GB10 matrix exactly
-   once on the ready head.
-6. Merge only the reviewed exact PR head after hosted checks are green.
+1. Finish connected pre-gate preparation and fixture provenance without
+   creating another evaluation campaign.
+2. Run one bounded offline Windows session for the local fallback and
+   default-off language-switching Preview, then reconnect immediately.
+3. Run the existing desktop/private-server ASR vertical slice while connected
+   to validate preprocessing, interruption/recovery, server inference, result
+   publication, and History together.
+4. Reconcile claims, freeze one exact Phase 6 candidate, and run the complete
+   applicable matrix exactly once.
+5. Merge only the reviewed exact PR head after hosted checks are green.
+
+Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
+point. Checkpoint B reviews broadly but changes narrowly before that integrated
+decision: concrete blockers are fixed, while non-blocking optimization is
+recorded rather than allowed to delay the MVP.

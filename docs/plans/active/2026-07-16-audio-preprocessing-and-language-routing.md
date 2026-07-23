@@ -622,8 +622,11 @@ legacy rows remain readable without claiming history they never recorded.
       PIDs, zero memory events, and complete teardown. The private aggregate
       evidence SHA-256 is
       `37fb2cad6c83c5e4084d07af18e1c9645cb758a29867d443bea368bdaf42bad7`.
-- [ ] Retain representative fixed-language/long-tail evidence and the complete
-      one-time Phase 6 resource/matrix gates as open until the branch is frozen.
+- [x] Classify representative fixed-language/long-tail suggestion quality as
+      unpromoted rather than starting another Phase 6 evaluation campaign. The
+      executing path remains assistive, user-confirmed, and manual on ambiguity
+      or failure. Keep the complete one-time Phase 6 resource/matrix gate open
+      until the branch is frozen.
 
 The desktop and server independently compute the same five source regions and
 decision. Focused Python and Rust tests cover the four-hour selector bound
