@@ -15,7 +15,10 @@ pub use sink_types::{
 };
 
 pub const RECORDING_QUEUE_CAPACITY: usize = 128;
-pub const LOCAL_ASR_QUEUE_CAPACITY: usize = 64;
+// Ten seconds of ten-millisecond frames keeps microphone pre-roll bounded
+// while covering resident-model warmup and per-session routing reset on
+// slower clients.
+pub const LOCAL_ASR_QUEUE_CAPACITY: usize = 1_024;
 pub const EVIDENCE_QUEUE_CAPACITY: usize = 32;
 pub const SERVER_TRANSPORT_QUEUE_CAPACITY: usize = 64;
 pub(super) const TARGET_SAMPLE_RATE_HZ: u32 = 16_000;

@@ -138,7 +138,7 @@ pub(super) fn run_capture_worker(
                 outcome.error
             ));
         }
-        coordinator.close();
+        coordinator.handoff_recording_completion();
     };
 }
 

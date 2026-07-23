@@ -1,4 +1,5 @@
 use super::*;
+use crate::audio::frame::AudioGap;
 
 #[test]
 fn sustained_preconfiguration_loss_is_bounded_and_finalizes_partial_with_audio() {
@@ -314,4 +315,46 @@ fn sink_workers_shutdown_after_ports_close() {
     coordinator.close();
 
     worker.join().unwrap();
+}
+
+#[test]
+fn capture_handoff_closes_frame_sinks_but_keeps_recording_control_open() {
+    let (recording, recording_rx) = bounded_sink(SinkKind::Recording, 4);
+    let (local_asr, local_asr_rx) = bounded_sink(SinkKind::LocalAsr, 4);
+    let mut coordinator = Coordinator::new(
+        session(),
+        track(),
+        CoordinatorPorts {
+            recording: recording.clone(),
+            local_asr: Some(local_asr.clone()),
+            speaker_evidence: None,
+            server_transport: None,
+        },
+    );
+
+    coordinator.handoff_recording_completion();
+    drop(coordinator);
+
+    assert!(!recording.outcome().closed);
+    assert!(local_asr.outcome().closed);
+    assert!(recording
+        .send_control_with_timeout(
+            RecordingInput::Gap(AudioGap {
+                session_id: session(),
+                track_id: track(),
+                start_ms: 0,
+                duration_ms: 10,
+                source_position_frames: 0,
+                dropped_frames: 480,
+                cause: GapCause::SinkUnavailable,
+                generation: 1,
+            }),
+            Duration::from_millis(50),
+        )
+        .is_ok());
+    assert!(recording_rx.recv_timeout(Duration::from_millis(50)).is_ok());
+    assert!(local_asr_rx
+        .recv_timeout(Duration::from_millis(10))
+        .is_err());
+    recording.close();
 }

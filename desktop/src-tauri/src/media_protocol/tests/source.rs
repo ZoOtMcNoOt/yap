@@ -26,6 +26,25 @@ fn admitted_source_lease_is_not_retargeted_by_path_replacement() {
 }
 
 #[test]
+fn removable_source_lease_does_not_block_owned_recording_deletion() {
+    let directory = TestDirectory::new("removable-source");
+    let path = directory.join("meeting.wav");
+    std::fs::write(&path, b"original bytes").unwrap();
+    let owner = MediaOwner::with_capacity_for_test(4);
+    let admission = owner
+        .admit_with_path_removal(&path, 32 * 1024 * 1024)
+        .unwrap();
+
+    crate::audio::recording::remove_regular_artifact(path.parent().unwrap(), "meeting.wav")
+        .unwrap();
+    assert!(!path.exists());
+
+    let response = request(&admission.url, "GET", None);
+    assert_eq!(response.status, 200);
+    assert_eq!(response.body, b"original bytes");
+}
+
+#[test]
 fn preprocessing_opens_the_exact_validated_source_without_following_replacements() {
     let directory = TestDirectory::new("preprocessing-source");
     let path = directory.join("meeting.wav");

@@ -11,7 +11,10 @@ use std::{
 
 use admission::{token_from_url, MediaEntry, MediaOwnerInner};
 use server::MediaServer;
-use source::{authorize_playback_source, AuthorizedMediaSource};
+use source::{
+    authorize_playback_source, authorize_playback_source_allowing_path_removal,
+    AuthorizedMediaSource,
+};
 
 pub(crate) use source::{
     inspect_media_source, open_unchanged_media_source, MediaSourceFingerprint,
@@ -88,6 +91,15 @@ impl MediaOwner {
         waveform_byte_limit: u64,
     ) -> Result<MediaAdmission, String> {
         let source = authorize_playback_source(path, None)?;
+        self.admit_authorized(source, waveform_byte_limit)
+    }
+
+    pub(crate) fn admit_with_path_removal(
+        &self,
+        path: &Path,
+        waveform_byte_limit: u64,
+    ) -> Result<MediaAdmission, String> {
+        let source = authorize_playback_source_allowing_path_removal(path)?;
         self.admit_authorized(source, waveform_byte_limit)
     }
 
