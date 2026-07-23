@@ -7,6 +7,7 @@ import {
   registerLiveSessionEventListeners,
   waitForLiveSessionSavedEvent,
 } from "./live-session-event-listeners.js";
+import { gracefullyExitWdioApp } from "./graceful-wdio-app-exit.js";
 import { classifyNativeReadiness } from "./native-microphone-readiness.js";
 import { createTargetClientLanguageRoutingHardwareGate } from "./target-client-language-routing-hardware.js";
 
@@ -182,6 +183,12 @@ async function cleanupLifecycle(runStartedAtMs) {
 
 describe("Yap live overlay hardware capture", () => {
   let overlayWasEnabled;
+
+  after(async () => {
+    if (targetClient.enabled) {
+      await gracefullyExitWdioApp(browser);
+    }
+  });
 
   beforeEach(async () => {
     assertRecordingRootEmpty(recordingRoot);
