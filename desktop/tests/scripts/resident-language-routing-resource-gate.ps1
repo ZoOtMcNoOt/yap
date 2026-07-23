@@ -56,7 +56,12 @@ function Resolve-ExistingRealPath {
         if (($current.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
             throw "$Label must not use a link or reparse redirect in its directory chain."
         }
-        $current = $current.Parent
+        $current = if ($current -is [IO.FileInfo]) {
+            $current.Directory
+        }
+        else {
+            $current.Parent
+        }
     }
     return $resolved
 }
