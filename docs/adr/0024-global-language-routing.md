@@ -710,15 +710,17 @@ evidence before default-on or production promotion.
        blocker. Removing Preview still requires a future independent quality
        gate.
        The deterministic local duration runner is implemented at the narrower
-       prepared-audio-frame-to-final boundary with exact checked-head, plan,
-       private-suite, manifest, WAV, PCM, bounded-queue, and decoded-sample
-       accounting. Its companion builder derives all ordered cases from the
-       validated plan and atomically publishes the private collection from
-       vetted external PCM16 sources. Phase 6 consumes deterministic
-       short-boundary coverage, one 15-minute real-time local soak, and the
-       current-host physical-microphone/rendered-UI gate. Multi-hour real-time
-       Preview soaks move to default-on or Phase 10 release qualification, so
-       this item and the ADR score stay open only for the proportional gate.
+       prepared-audio-frame-to-final boundary with exact checked-head, functional
+       profile, plan, private-suite, manifest, WAV, PCM, bounded-queue, and
+       decoded-sample accounting. Its companion builder derives either the nine
+       `short-boundaries` cases or the retained 15-case
+       `complete-local-duration-ladders` profile from the validated plan and
+       atomically publishes only that private collection from vetted external
+       PCM16 sources. Phase 6 consumes the short-boundary profile and the
+       current-host physical-microphone/rendered-UI gate; that physical capture
+       is the one 15-minute real-time local soak. Multi-hour real-time Preview
+       soaks move to default-on or Phase 10 release qualification, so this item
+       and the ADR score stay open only for the proportional gate.
 8. [x] Add reference fixed-language Cohere/Nemotron routes and explicit Nemotron
        auto mode without claiming a persistent production pool.
 9. [x] Finish the bounded provider-specific candidate-safety gate from ADR 0025.

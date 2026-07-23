@@ -1,5 +1,8 @@
 use serde::Serialize;
-use std::path::PathBuf;
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use crate::private_evidence::publish_private_json;
 
@@ -10,6 +13,7 @@ pub(super) struct LocalStreamDurationEvidence {
     pub(super) checked_head: String,
     pub(super) plan_sha256: String,
     pub(super) suite_sha256: String,
+    pub(super) qualification_profile: String,
     pub(super) model_artifact_lock_sha256: String,
     pub(super) model_id: &'static str,
     pub(super) primary_language_bcp47: &'static str,
@@ -52,9 +56,16 @@ pub(super) struct LocalStreamDurationCaseEvidence {
     pub(super) passed: bool,
 }
 
-pub(super) fn required_checked_head() -> String {
+pub(super) fn required_checked_head(repository_root: &Path) -> String {
     let checked_head = required_string("YAP_CHECKED_HEAD");
     assert!(valid_checked_head(&checked_head));
+    let actual_head = git_output(repository_root, &["rev-parse", "HEAD"]);
+    let worktree_status = git_output(
+        repository_root,
+        &["status", "--porcelain=v1", "--untracked-files=normal"],
+    );
+    validate_repository_identity(&checked_head, &actual_head, &worktree_status)
+        .unwrap_or_else(|error| panic!("{error}"));
     checked_head
 }
 
@@ -76,9 +87,54 @@ fn checked_head_requires_one_full_lowercase_git_sha() {
     assert!(valid_checked_head(&"a".repeat(40)));
 }
 
+#[test]
+fn repository_identity_requires_the_exact_clean_head() {
+    let expected = "a".repeat(40);
+    assert!(validate_repository_identity(&expected, &expected, "").is_ok());
+    assert_eq!(
+        validate_repository_identity(&expected, &"b".repeat(40), ""),
+        Err("YAP_CHECKED_HEAD does not match the checked-out repository HEAD")
+    );
+    assert_eq!(
+        validate_repository_identity(&expected, &expected, " M source.rs"),
+        Err("local duration evidence requires a clean checked head")
+    );
+}
+
 fn valid_checked_head(value: &str) -> bool {
     value.len() == 40
         && value
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+fn validate_repository_identity(
+    expected_head: &str,
+    actual_head: &str,
+    worktree_status: &str,
+) -> Result<(), &'static str> {
+    if actual_head.trim() != expected_head {
+        return Err("YAP_CHECKED_HEAD does not match the checked-out repository HEAD");
+    }
+    if !worktree_status.trim().is_empty() {
+        return Err("local duration evidence requires a clean checked head");
+    }
+    Ok(())
+}
+
+fn git_output(repository_root: &Path, arguments: &[&str]) -> String {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repository_root)
+        .args(arguments)
+        .output()
+        .expect("git must be available for local duration evidence");
+    assert!(
+        output.status.success(),
+        "git failed while checking local duration evidence identity"
+    );
+    String::from_utf8(output.stdout)
+        .expect("git output must be UTF-8")
+        .trim_end()
+        .to_owned()
 }

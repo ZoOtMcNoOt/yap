@@ -18,10 +18,15 @@ from yap_server.evaluation.runtime_plan import (
 )
 
 
-_COLLECTION_ID = "local-stream-duration-suite-v1"
 _MANIFEST_NAME = "suite.json"
 _LOCAL_LADDER_IDS = ("live-endpoint", "live-session")
 _LOCAL_SYSTEM_ID = "local-live-nemotron"
+_PROFILE_COLLECTION_IDS = {
+    "short-boundaries": "local-stream-short-boundaries-v1",
+    "complete-local-duration-ladders": (
+        "local-stream-complete-duration-ladders-v1"
+    ),
+}
 _DEFAULT_PLAN_PATH = Path(__file__).resolve().parents[3] / "asr-evaluation-plan.json"
 
 
@@ -37,14 +42,18 @@ class BuiltLocalStreamDurationSuite:
     suite_path: Path
     suite_sha256: str
     case_count: int
+    qualification_profile: str
 
 
 def select_local_stream_duration_cases(
     plan: Mapping[str, object],
+    *,
+    qualification_profile: str,
 ) -> tuple[LocalStreamDurationCase, ...]:
-    """Select the two local-live ladders in their frozen plan order."""
+    """Select one supported local-live qualification profile in plan order."""
 
     validate_runtime_evaluation_plan(plan)
+    _collection_id_for_profile(qualification_profile)
     raw_ladders = plan["durationLadders"]
     if not isinstance(raw_ladders, list):
         raise RuntimeError("validated duration ladders changed shape")
@@ -63,6 +72,8 @@ def select_local_stream_duration_cases(
         durations = ladder["durationSamples"]
         if not isinstance(durations, list):
             raise RuntimeError("validated local duration samples changed shape")
+        if qualification_profile == "short-boundaries" and ladder_id != "live-endpoint":
+            continue
         for duration_samples in durations:
             if not isinstance(duration_samples, int) or isinstance(
                 duration_samples, bool
@@ -81,6 +92,7 @@ def select_local_stream_duration_cases(
 def build_local_stream_duration_suite(
     *,
     source_paths: Sequence[Path],
+    qualification_profile: str,
     expect_text_case_ids: frozenset[str] = frozenset(),
     plan_path: Path = _DEFAULT_PLAN_PATH,
     environ: Mapping[str, str] = os.environ,
@@ -88,7 +100,11 @@ def build_local_stream_duration_suite(
     """Build the hash-bound private inputs for the desktop duration gate."""
 
     snapshot = load_runtime_evaluation_plan_snapshot(plan_path)
-    cases = select_local_stream_duration_cases(snapshot.plan)
+    collection_id = _collection_id_for_profile(qualification_profile)
+    cases = select_local_stream_duration_cases(
+        snapshot.plan,
+        qualification_profile=qualification_profile,
+    )
     planned_case_ids = {case.case_id for case in cases}
     if any(not isinstance(case_id, str) for case_id in expect_text_case_ids):
         raise ValueError("expect-text case IDs must be text")
@@ -108,7 +124,8 @@ def build_local_stream_duration_suite(
         if set(manifests) != planned_case_ids:
             raise RuntimeError("duration-track manifests differ from the local plan")
         suite = {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
+            "qualificationProfile": qualification_profile,
             "planSha256": snapshot.sha256,
             "cases": [
                 {
@@ -127,7 +144,7 @@ def build_local_stream_duration_suite(
         return _MANIFEST_NAME, suite_bytes
 
     destination = build_duration_track_collection(
-        collection_id=_COLLECTION_ID,
+        collection_id=collection_id,
         tracks=[
             DurationTrackSpec(
                 case_id=case.case_id,
@@ -145,7 +162,20 @@ def build_local_stream_duration_suite(
         suite_path=destination / _MANIFEST_NAME,
         suite_sha256=hashlib.sha256(suite_bytes).hexdigest(),
         case_count=len(cases),
+        qualification_profile=qualification_profile,
     )
+
+
+def _collection_id_for_profile(qualification_profile: object) -> str:
+    if not isinstance(qualification_profile, str):
+        raise ValueError("unsupported local duration qualification profile")
+    collection_id = _PROFILE_COLLECTION_IDS.get(qualification_profile)
+    if collection_id is None:
+        raise ValueError(
+            "unsupported local duration qualification profile: "
+            f"{qualification_profile}"
+        )
+    return collection_id
 
 
 def _canonical_json_bytes(value: object) -> bytes:
@@ -160,6 +190,12 @@ def _parser() -> argparse.ArgumentParser:
         description="Build the private local-stream exact-duration suite"
     )
     parser.add_argument("--plan", type=Path, default=_DEFAULT_PLAN_PATH)
+    parser.add_argument(
+        "--profile",
+        dest="qualification_profile",
+        choices=tuple(_PROFILE_COLLECTION_IDS),
+        required=True,
+    )
     parser.add_argument("--source", action="append", type=Path, required=True)
     parser.add_argument("--expect-text-case", action="append", default=[])
     return parser
@@ -172,6 +208,7 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("expect-text case IDs must be unique")
     result = build_local_stream_duration_suite(
         source_paths=arguments.source,
+        qualification_profile=arguments.qualification_profile,
         expect_text_case_ids=frozenset(expectation_ids),
         plan_path=arguments.plan,
     )
@@ -179,6 +216,7 @@ def main(argv: list[str] | None = None) -> int:
         json.dumps(
             {
                 "caseCount": result.case_count,
+                "qualificationProfile": result.qualification_profile,
                 "suitePath": str(result.suite_path),
                 "suiteSha256": result.suite_sha256,
             },

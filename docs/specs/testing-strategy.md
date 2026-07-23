@@ -117,10 +117,14 @@ require the separate hardware gate.
 Build that suite with
 `python -m yap_server.evaluation.local_stream_duration_suite`, one or more
 repeated `--source` arguments naming vetted mono PCM16/16-kHz WAVs, and the
-external `YAP_EVAL_CACHE`. The builder reads the two local ladders from the
-validated plan, decodes and hashes each source once, rechecks raw identity
-before publishing all 15 immutable tracks as one atomic private collection, and
-prints the `suite.json` path and SHA-256 needed by the native gate.
+external `YAP_EVAL_CACHE`. The required `--profile short-boundaries` selection
+reads the nine 250-ms-through-30-second cases from the validated plan. The
+separate `--profile complete-local-duration-ladders` selection retains all 15
+cases for default-on or Phase 10 release qualification. Each functional profile
+has a distinct immutable collection identity. The builder decodes and hashes
+each source once, rechecks raw identity before publishing the selected cases as
+one atomic private collection, and prints the `suite.json` path and SHA-256
+needed by the native gate.
 `--expect-text-case` is opt-in per planned case; it
 asserts only that text appears and must not be used to turn looped runtime
 controls into accuracy evidence. Source license/provenance records and natural

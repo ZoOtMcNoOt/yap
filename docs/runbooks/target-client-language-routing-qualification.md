@@ -12,6 +12,10 @@ unless both belong to the same clean checked head and Windows machine:
 2. a physical-microphone and rendered-UI run through the release-mode WDIO
    binary.
 
+The separate prepared-audio `short-boundaries` collector closes the
+250-ms-through-30-second duration contract on that same clean head. It is not a
+third physical-host channel and does not duplicate the 15-minute UI soak.
+
 A paired energy/thermal measurement on a representative low-end physical
 device is a separate default-on and Phase 10 hardware-certification boundary.
 It may accompany a Phase 6 run, but its absence does not block merging an
@@ -33,7 +37,9 @@ receive only code, plans, and the final non-sensitive status claim after review.
   AmberNet QDQ INT8 artifacts under one private models root. No gate step may
   download or substitute model bytes.
 - A license-cleared mono 16-kHz WAV for the native collector, plus an exact
-  lowercase SHA-256.
+  lowercase SHA-256, and a vetted mono PCM16/16-kHz WAV for the prepared-audio
+  boundary suite. One file may serve both roles only when it satisfies both
+  formats.
 - A license-cleared spoken-audio stimulus for the physical microphone run,
   identified by SHA-256 and a bounded SPDX-style license identifier. Play it
   acoustically from a separate offline device; do not use a virtual microphone
@@ -90,7 +96,52 @@ uses and records the actual host.
 This boundary begins at prepared audio. It is not microphone, rendered-UI,
 energy, or thermal evidence; its context file states those exclusions.
 
-## 2. Physical microphone and rendered UI
+## 2. Prepared-audio short-boundary gate
+
+Before disconnecting, build only the nine immutable boundary inputs in the
+external private cache. Do not select the retained complete two-hour profile for
+the Phase 6 Preview gate:
+
+```powershell
+$DurationSource = 'D:\private-yap-fixtures\duration-source-pcm16.wav'
+$env:PYTHONPATH = (Resolve-Path '.\server\src').Path
+$env:YAP_EVAL_CACHE = 'D:\private-yap-evaluation-cache'
+$DurationBuild = (
+  uv run --isolated --no-project --python 3.12 python `
+    -m yap_server.evaluation.local_stream_duration_suite `
+    --profile short-boundaries `
+    --source $DurationSource
+) | ConvertFrom-Json
+```
+
+After the native resource script creates the protected evidence directory and
+while the machine is still offline, run the prepared-audio collector:
+
+```powershell
+$env:YAP_CHECKED_HEAD = $Head
+$env:YAP_MODELS_DIR = $Models
+$env:YAP_TEST_LOCAL_DURATION_PROFILE = 'short-boundaries'
+$env:YAP_TEST_LOCAL_DURATION_SUITE = $DurationBuild.suitePath
+$env:YAP_TEST_LOCAL_DURATION_SUITE_SHA256 = $DurationBuild.suiteSha256
+$env:YAP_TEST_LOCAL_DURATION_EVIDENCE = Join-Path `
+  $Evidence 'local-stream-short-boundaries.json'
+
+Push-Location .\desktop\src-tauri
+cargo test --locked --lib `
+  local_stream_duration_ladders_preserve_audio_and_finalize `
+  -- --ignored --nocapture
+Pop-Location
+```
+
+The collector independently rejects a different or dirty Git head, an
+unrecognized profile, altered plan/suite/track/audio identity, paths inside the
+repository, dropped audio, incomplete finalization, or degraded/unavailable
+inference. It runs for roughly the sum of the nine source durations—under one
+minute plus inference/finalization overhead—not for two hours. Its versioned
+private aggregate records the functional profile but no source path or
+transcript text.
+
+## 3. Physical microphone and rendered UI
 
 Build the test-instrumented release binary from the same clean head while the
 host remains offline:
@@ -212,10 +263,12 @@ root and rehashes the source receipt at completion.
 
 ## Completion and interpretation
 
-An engineer reviews the native and rendered-UI channels together, checks their
+An engineer reviews the native and rendered-UI channels together, verifies the
+separate short-boundary aggregate belongs to the same clean head, checks their
 SHA and machine identity, and confirms that cleanup left no recordings, model
 snapshots, background Yap processes, or listeners. Only then may the Phase 6
-documents mark the current-host Preview safety item complete.
+documents mark the current-host Preview safety and proportional-duration items
+complete.
 
 Passing the two Phase 6 channels means the accepted AmberNet route is safe
 enough to remain an explicit default-off Preview on the tested Windows host.

@@ -34,20 +34,23 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
-The local exact-duration runner remains available for later release
-qualification. It starts at the truthful prepared-audio-frame boundary, streams
-ten-millisecond frames through Yap's production bounded adapter and single live
-worker, and can cycle finalization across the machine plan's
-250-ms-to-30-second and 30-second-to-two-hour ladders. Exact head, plan, private
-suite, manifests, raw WAV, and decoded PCM are hash-bound; evidence contains no
-transcript or path. Its companion Python builder can atomically publish the
-15-case private suite from caller-supplied vetted sources under external
+The local exact-duration runner starts at the truthful prepared-audio-frame
+boundary, streams ten-millisecond frames through Yap's production bounded
+adapter and single live worker, and cycles finalization across one explicitly
+selected, hash-bound functional profile. The Phase 6 `short-boundaries` profile
+contains only the nine 250-ms-through-30-second cases. The separate
+`complete-local-duration-ladders` profile retains all 15 cases through two hours
+for later release qualification. Exact head, profile, plan, private suite,
+manifests, raw WAV, and decoded PCM are hash-bound; evidence contains no
+transcript or path. The companion Python builder atomically publishes only the
+selected private suite from caller-supplied vetted sources under external
 `YAP_EVAL_CACHE`.
 
 Phase 6 does not spend several wall-clock hours qualifying a default-off Preview
 or a replaceable server provider. Its remaining runtime evidence is the
-deterministic short-boundary matrix, one 15-minute real-time local soak, and the
-current-host physical-microphone/rendered-UI resource and lifecycle check.
+deterministic short-boundary matrix plus the current-host
+physical-microphone/rendered-UI resource and lifecycle check, whose capture is
+the one 15-minute real-time local soak.
 Longer real-time local soaks remain available for default-on or Phase 10 release
 qualification. Broad server-provider duration and output-behavior comparison
 belongs to the Phase 8 Tiron decision.

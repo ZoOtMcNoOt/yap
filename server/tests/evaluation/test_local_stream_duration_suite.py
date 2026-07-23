@@ -20,22 +20,33 @@ PLAN_PATH = SERVER_ROOT / "asr-evaluation-plan.json"
 
 
 class LocalStreamDurationSuiteTests(unittest.TestCase):
-    def test_selects_both_local_ladders_in_frozen_order(self) -> None:
+    def test_selects_short_boundaries_without_duplicate_realtime_soak(self) -> None:
         cases = select_local_stream_duration_cases(
-            load_runtime_evaluation_plan(PLAN_PATH)
+            load_runtime_evaluation_plan(PLAN_PATH),
+            qualification_profile="short-boundaries",
         )
 
-        self.assertEqual(len(cases), 15)
+        self.assertEqual(len(cases), 9)
         self.assertEqual(cases[0].case_id, "live-endpoint-4000-samples")
         self.assertEqual(cases[4].duration_samples, 17_920)
         self.assertEqual(cases[8].case_id, "live-endpoint-480000-samples")
+
+    def test_complete_profile_retains_both_local_ladders_in_frozen_order(
+        self,
+    ) -> None:
+        cases = select_local_stream_duration_cases(
+            load_runtime_evaluation_plan(PLAN_PATH),
+            qualification_profile="complete-local-duration-ladders",
+        )
+
+        self.assertEqual(len(cases), 15)
         self.assertEqual(cases[9].case_id, "live-session-480000-samples")
         self.assertEqual(cases[-1].duration_samples, 115_200_000)
 
     def test_builder_binds_plan_track_hashes_order_and_text_expectations(self) -> None:
         captured: dict[str, object] = {}
         with tempfile.TemporaryDirectory() as temporary:
-            destination = Path(temporary) / "local-stream-duration-suite-v1"
+            destination = Path(temporary) / "local-stream-short-boundaries-v1"
 
             def fake_build_collection(**arguments: object) -> Path:
                 captured.update(arguments)
@@ -64,6 +75,7 @@ class LocalStreamDurationSuiteTests(unittest.TestCase):
                 result = build_local_stream_duration_suite(
                     source_paths=[Path("licensed-source.wav")],
                     expect_text_case_ids=frozenset({expected_text_case}),
+                    qualification_profile="short-boundaries",
                     plan_path=PLAN_PATH,
                     environ={"YAP_EVAL_CACHE": str(Path(temporary) / "cache")},
                 )
@@ -72,11 +84,28 @@ class LocalStreamDurationSuiteTests(unittest.TestCase):
         self.assertIsInstance(manifest_bytes, bytes)
         suite = json.loads(manifest_bytes)
         tracks = captured["tracks"]
+        self.assertEqual(
+            captured["collection_id"],
+            "local-stream-short-boundaries-v1",
+        )
         self.assertEqual(captured["manifest_name"], "suite.json")
-        self.assertEqual(set(suite), {"schemaVersion", "planSha256", "cases"})
+        self.assertEqual(
+            set(suite),
+            {
+                "schemaVersion",
+                "qualificationProfile",
+                "planSha256",
+                "cases",
+            },
+        )
+        self.assertEqual(suite["schemaVersion"], 2)
+        self.assertEqual(
+            suite["qualificationProfile"],
+            "short-boundaries",
+        )
         self.assertNotIn("licensed-source.wav", manifest_bytes.decode("utf-8"))
         self.assertNotIn("transcript", manifest_bytes.decode("utf-8").lower())
-        self.assertEqual(len(tracks), 15)  # type: ignore[arg-type]
+        self.assertEqual(len(tracks), 9)  # type: ignore[arg-type]
         self.assertEqual(
             [case["caseId"] for case in suite["cases"]],
             [track.case_id for track in tracks],  # type: ignore[union-attr]
@@ -103,7 +132,11 @@ class LocalStreamDurationSuiteTests(unittest.TestCase):
             result.suite_sha256,
             hashlib.sha256(manifest_bytes).hexdigest(),
         )
-        self.assertEqual(result.case_count, 15)
+        self.assertEqual(result.case_count, 9)
+        self.assertEqual(
+            result.qualification_profile,
+            "short-boundaries",
+        )
 
     def test_unknown_text_expectation_fails_before_track_creation(self) -> None:
         with mock.patch.object(
@@ -114,6 +147,27 @@ class LocalStreamDurationSuiteTests(unittest.TestCase):
                 build_local_stream_duration_suite(
                     source_paths=[Path("licensed-source.wav")],
                     expect_text_case_ids=frozenset({"unknown-case"}),
+                    qualification_profile="short-boundaries",
+                    plan_path=PLAN_PATH,
+                    environ={"YAP_EVAL_CACHE": "C:\\private"},
+                )
+
+        build_collection.assert_not_called()
+
+    def test_unknown_qualification_profile_fails_before_track_creation(
+        self,
+    ) -> None:
+        with mock.patch.object(
+            local_stream_duration_suite,
+            "build_duration_track_collection",
+        ) as build_collection:
+            with self.assertRaisesRegex(
+                ValueError,
+                "unsupported local duration qualification profile",
+            ):
+                build_local_stream_duration_suite(
+                    source_paths=[Path("licensed-source.wav")],
+                    qualification_profile="phase-six",
                     plan_path=PLAN_PATH,
                     environ={"YAP_EVAL_CACHE": "C:\\private"},
                 )

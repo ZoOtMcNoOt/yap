@@ -348,14 +348,15 @@ microphone/rendered-UI collectors bind the observed Windows processor and
 processor count but remain unconsumed on the final checked head. Representative
 low-end physical battery/thermal certification is deferred to default-on or
 Phase 10 release qualification and cannot be inferred from this Preview gate. A
-deterministic duration runner can stream the machine plan's exact short and
-30-second-to-two-hour ladders from the prepared-audio-frame boundary through the
-production bounded adapter, the same single live worker, and finalization. It
-locks the checked head, plan, private suite, manifests, raw WAV, and decoded PCM
-without retaining transcript text or paths. Phase 6 consumes deterministic
-short-boundary coverage and one 15-minute real-time soak; multi-hour real-time
-Preview runs remain available for default-on or Phase 10 release qualification
-and do not replace current-host physical-microphone, rendered-UI, resource, or
+deterministic duration runner can stream one explicit functional profile from
+the prepared-audio-frame boundary through the production bounded adapter, the
+same single live worker, and finalization. It locks the checked head, profile,
+plan, private suite, manifests, raw WAV, and decoded PCM without retaining
+transcript text or paths. Phase 6 consumes the nine 250-ms-through-30-second
+`short-boundaries` cases. The physical-microphone/rendered-UI channel supplies
+the single 15-minute real-time soak. The separate 15-case
+`complete-local-duration-ladders` profile remains available for default-on or
+Phase 10 release qualification and does not replace current-host resource or
 natural-accuracy evidence. A separately frozen clean German-English
 representative set then retained
 exact source coverage and the required primary-language fallback but detected

@@ -906,13 +906,14 @@ or is rejected.
       and rollback comparison before selecting it. Do not inherit Cohere or
       Phase 6 candidate-safety evidence.
 - [ ] Run the proportional Phase 6 duration plan: deterministic 250-ms through
-      30-second local-live boundaries, one 15-minute real-time local-live soak,
-      and the already-completed model-neutral server candidate-safety duration,
+      30-second local-live boundaries through the hash-bound `short-boundaries`
+      profile, one 15-minute real-time physical-microphone/rendered-UI soak, and
+      the already-completed model-neutral server candidate-safety duration,
       admission, cancellation, resource, and teardown controls. Retain the
-      30-second-through-two-hour local suite for default-on or Phase 10 release
-      qualification instead of spending several wall-clock hours on a
-      default-off Preview. Reuse bounded long-batch controls in Phase 8 when
-      comparing Tiron with any surviving Cohere route.
+      `complete-local-duration-ladders` profile through two hours for default-on
+      or Phase 10 release qualification instead of spending several wall-clock
+      hours on a default-off Preview. Reuse bounded long-batch controls in Phase
+      8 when comparing Tiron with any surviving Cohere route.
 - [x] Keep both resident provider runtimes unpromoted in Phase 6. Any later
       promotion requires route-specific frozen evidence, rollback proof, and
       review; persistent supervised multi-owner capacity remains Phase 10.
@@ -936,17 +937,20 @@ reference comparison, representative locale/duration matrix, percentile or
 resource ceilings, failure/capacity behavior, or rollback, so the frozen
 provider checkboxes remain open.
 
-The local duration runner is now executable but has not been consumed. It
-streams the plan's exact 250-ms, 500-ms, 750-ms, one-second, 1.12-second,
-two/five/ten/30-second and 30-second-to-two-hour cases in ten-millisecond frames
-through the real bounded local-ASR adapter, one live worker, and finalization.
-The companion `local_stream_duration_suite` builder validates and hashes the
-same public plan, decodes and hashes a caller-supplied set of vetted private
-PCM16 sources once, rechecks raw source identity before publication, and
-atomically publishes all 15 immutable tracks plus `suite.json` beneath external
-`YAP_EVAL_CACHE/runtime-tracks`. Its output provides the suite path and
-out-of-band SHA required by the ignored native gate; neither the builder nor the
-gate emits source paths or transcripts into checked evidence.
+The local duration runner is executable but has not been consumed. It accepts
+one explicit, hash-bound functional profile. `short-boundaries` streams the
+plan's exact 250-ms, 500-ms, 750-ms, one-second, 1.12-second,
+two/five/ten/30-second cases in ten-millisecond frames through the real bounded
+local-ASR adapter, one live worker, and finalization.
+`complete-local-duration-ladders` retains the additional 30-second-through-two-
+hour cases for later release qualification. The companion
+`local_stream_duration_suite` builder validates and hashes the same public plan,
+decodes and hashes a caller-supplied set of vetted private PCM16 sources once,
+rechecks raw source identity before publication, and atomically publishes only
+the selected immutable tracks plus a versioned `suite.json` beneath external
+`YAP_EVAL_CACHE/runtime-tracks`. Its output provides the profile, suite path,
+and out-of-band SHA required by the ignored native gate; neither the builder nor
+the gate emits source paths or transcripts into checked evidence.
 
 The runtime-plan validator now fails closed on duplicate ladder, boundary, or
 metric entries; altered pacing/evidence/unit semantics; and the complete shape
@@ -958,9 +962,10 @@ The runner fails closed on a full `YAP_CHECKED_HEAD`, the public plan hash, an
 out-of-band-pinned private suite, every track manifest, raw WAV identity, and
 decoded PCM identity; it emits no transcript or path. Its truthful boundary is
 prepared audio frame to final, not physical microphone to final. Focused
-contract/lifecycle tests pass, but the multi-hour checked-head execution,
-natural short-correction references, and current-host microphone/UI/resource gate
-remain open, so the duration checkbox and ADR score do not change.
+contract/lifecycle tests pass, but the checked-head `short-boundaries`
+execution, natural short-correction references, and current-host
+microphone/UI/resource gate remain open, so the duration checkbox and ADR score
+do not change.
 
 The provider qualification implementation now builds immutable exact-duration
 tracks and hash-bound provider jobs only in a private external cache, executes

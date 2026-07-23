@@ -161,8 +161,12 @@ gates remain required before any catalog or performance claim.
 Build the desktop's deterministic duration inputs with
 `python -m yap_server.evaluation.local_stream_duration_suite`. Set
 `YAP_EVAL_CACHE` to an absolute private directory and pass one or more vetted
-mono PCM16/16-kHz WAVs with repeated `--source`. The command atomically creates
-the 15 plan-derived local tracks, fails if a source changes during construction,
+mono PCM16/16-kHz WAVs with repeated `--source`. Select
+`--profile short-boundaries` for the nine 250-ms-through-30-second Phase 6
+boundary cases. Select `--profile complete-local-duration-ladders` only for the
+later full 15-case release qualification. The selected functional profile is
+embedded in the versioned suite manifest and uses a distinct immutable
+collection ID. The command fails if a source changes during construction,
 prints the private `suite.json` path and its SHA-256, and never places audio or
 transcript content in the repository.
 `--expect-text-case` is optional and asserts only a non-empty result for that

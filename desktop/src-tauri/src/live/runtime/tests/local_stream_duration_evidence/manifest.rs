@@ -7,6 +7,8 @@ use super::SAMPLE_RATE_HZ;
 const MAXIMUM_SUITE_BYTES: usize = 64 * 1_024;
 const MAXIMUM_TRACK_MANIFEST_BYTES: usize = 4 * 1_024 * 1_024;
 const MAXIMUM_TRACK_SEGMENTS: usize = 4_096;
+const SHORT_BOUNDARIES: &str = "short-boundaries";
+const COMPLETE_LOCAL_DURATION_LADDERS: &str = "complete-local-duration-ladders";
 
 pub(super) struct LoadedLocalDurationSuite {
     pub(super) definition: LocalDurationSuite,
@@ -20,6 +22,7 @@ pub(super) struct LoadedLocalDurationSuite {
 pub(super) struct LocalDurationSuite {
     schema_version: u8,
     plan_sha256: String,
+    pub(super) qualification_profile: String,
     pub(super) cases: Vec<LocalDurationSuiteCase>,
 }
 
@@ -92,7 +95,14 @@ pub(super) fn load_local_duration_suite() -> LoadedLocalDurationSuite {
     assert_eq!(sha256(&suite_bytes), suite_sha256);
     let definition: LocalDurationSuite =
         serde_json::from_slice(&suite_bytes).expect("local duration suite must be valid JSON");
-    let (plan_sha256, planned_cases) = planned_local_duration_cases();
+    let expected_profile = required_string("YAP_TEST_LOCAL_DURATION_PROFILE");
+    assert!(
+        supported_qualification_profile(&expected_profile),
+        "local duration qualification profile is unsupported"
+    );
+    assert_eq!(definition.qualification_profile, expected_profile);
+    let (plan_sha256, planned_cases) =
+        planned_local_duration_cases(&definition.qualification_profile);
     validate_suite(&definition, &plan_sha256, &planned_cases);
     let root = suite_path
         .parent()
@@ -182,7 +192,11 @@ fn validate_track_manifest(manifest: &DurationTrackManifest, definition: &LocalD
     assert_eq!(expected_output_start, definition.duration_samples);
 }
 
-fn planned_local_duration_cases() -> (String, Vec<PlannedDurationCase>) {
+fn planned_local_duration_cases(qualification_profile: &str) -> (String, Vec<PlannedDurationCase>) {
+    assert!(
+        supported_qualification_profile(qualification_profile),
+        "local duration qualification profile is unsupported"
+    );
     let path = repository_root().join("server/asr-evaluation-plan.json");
     let bytes = crate::bounded_file::read_bytes(&path, 256 * 1_024)
         .expect("runtime evaluation plan must be readable");
@@ -204,6 +218,9 @@ fn planned_local_duration_cases() -> (String, Vec<PlannedDurationCase>) {
             serde_json::json!(["local-live-nemotron"])
         );
         assert_eq!(ladder["pacing"], "realtime");
+        if qualification_profile == SHORT_BOUNDARIES && ladder_id != "live-endpoint" {
+            continue;
+        }
         for duration in ladder["durationSamples"]
             .as_array()
             .expect("local duration ladder must contain sample counts")
@@ -222,8 +239,11 @@ fn planned_local_duration_cases() -> (String, Vec<PlannedDurationCase>) {
 }
 
 fn validate_suite(suite: &LocalDurationSuite, plan_sha256: &str, planned: &[PlannedDurationCase]) {
-    assert_eq!(suite.schema_version, 1);
+    assert_eq!(suite.schema_version, 2);
     assert_eq!(suite.plan_sha256, plan_sha256);
+    assert!(supported_qualification_profile(
+        &suite.qualification_profile
+    ));
     assert_eq!(suite.cases.len(), planned.len());
     for (definition, expected) in suite.cases.iter().zip(planned) {
         assert_eq!(definition.ladder_id, expected.ladder_id);
@@ -231,6 +251,10 @@ fn validate_suite(suite: &LocalDurationSuite, plan_sha256: &str, planned: &[Plan
         assert_eq!(definition.duration_samples, expected.duration_samples);
         assert!(valid_sha256(&definition.track_manifest_sha256));
     }
+}
+
+fn supported_qualification_profile(value: &str) -> bool {
+    matches!(value, SHORT_BOUNDARIES | COMPLETE_LOCAL_DURATION_LADDERS)
 }
 
 pub(super) fn repository_root() -> PathBuf {
@@ -288,14 +312,17 @@ fn valid_identifier(value: &str) -> bool {
 }
 
 #[test]
-fn machine_plan_exposes_the_complete_local_duration_ladders() {
-    let (_, cases) = planned_local_duration_cases();
-    assert_eq!(cases.len(), 15);
-    assert_eq!(cases[0].duration_samples, 4_000);
-    assert_eq!(cases[4].duration_samples, 17_920);
-    assert_eq!(cases[8].duration_samples, 480_000);
-    assert_eq!(cases[9].case_id, "live-session-480000-samples");
-    assert_eq!(cases[14].duration_samples, 115_200_000);
+fn qualification_profiles_select_proportional_and_complete_duration_cases() {
+    let (_, proportional) = planned_local_duration_cases(SHORT_BOUNDARIES);
+    assert_eq!(proportional.len(), 9);
+    assert_eq!(proportional[0].duration_samples, 4_000);
+    assert_eq!(proportional[4].duration_samples, 17_920);
+    assert_eq!(proportional[8].duration_samples, 480_000);
+
+    let (_, complete) = planned_local_duration_cases(COMPLETE_LOCAL_DURATION_LADDERS);
+    assert_eq!(complete.len(), 15);
+    assert_eq!(complete[9].case_id, "live-session-480000-samples");
+    assert_eq!(complete[14].duration_samples, 115_200_000);
 }
 
 #[test]

@@ -65,9 +65,10 @@ struct DurationEventSnapshot {
 #[test]
 #[ignore = "requires a private hash-bound local-duration suite, pinned Nemotron artifacts, and an external evidence destination"]
 fn local_stream_duration_ladders_preserve_audio_and_finalize() {
+    let repository = repository_root();
+    let checked_head = required_checked_head(&repository);
     let suite = load_local_duration_suite();
-    let checked_head = required_checked_head();
-    let model_lock = repository_root().join("desktop/model-artifacts.lock.json");
+    let model_lock = repository.join("desktop/model-artifacts.lock.json");
     let model_artifact_lock_sha256 =
         crate::stt::model::sha256_file(&model_lock).expect("model artifact lock must be readable");
     let logical_processor_budget = std::thread::available_parallelism()
@@ -116,11 +117,13 @@ fn local_stream_duration_ladders_preserve_audio_and_finalize() {
         .expect("local duration worker must stop cleanly");
 
     let all_cases_passed = cases.iter().all(|case| case.passed);
+    let qualification_profile = suite.definition.qualification_profile.clone();
     let evidence = LocalStreamDurationEvidence {
-        schema_version: 1,
+        schema_version: 2,
         checked_head,
         plan_sha256: suite.plan_sha256,
         suite_sha256: suite.suite_sha256,
+        qualification_profile,
         model_artifact_lock_sha256,
         model_id: crate::stt::nemotron::MODEL_ID,
         primary_language_bcp47: "en-US",
@@ -134,7 +137,8 @@ fn local_stream_duration_ladders_preserve_audio_and_finalize() {
     };
     persist_private_evidence(&evidence);
     eprintln!(
-        "local_stream_duration_summary={{\"caseCount\":{},\"allCasesPassed\":{}}}",
+        "local_stream_duration_summary={{\"qualificationProfile\":\"{}\",\"caseCount\":{},\"allCasesPassed\":{}}}",
+        evidence.qualification_profile,
         evidence.cases.len(),
         evidence.all_cases_passed
     );
