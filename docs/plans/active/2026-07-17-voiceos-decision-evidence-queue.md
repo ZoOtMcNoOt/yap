@@ -251,10 +251,11 @@ and the complete resource gate remain open.
   natural/noisy transition threshold passed. No further model search is needed
   for Phase 6 unless the accepted route fails a remaining release-blocking gate.
 - [ ] Measure the accepted AmberNet/Silero route's incremental resident/private
-  memory, CPU, energy, load time, window latency, and ASR interference beside
-  the loaded Nemotron model on the target i5-class Windows profile. Development-
-  host latency and prior Whisper measurements remain comparators, not target
-  evidence.
+  memory, CPU, load time, window latency, and ASR interference beside the loaded
+  Nemotron model in the current-host release/UI Preview gate. Development-host
+  prepared-audio and prior Whisper measurements remain comparators, not that
+  final checked-head evidence. Representative low-end physical energy/thermal
+  certification remains a later default-on and Phase 10 release boundary.
 
   A private release-mode development proxy now restricts the process to eight
   logical CPUs and records aggregate metrics without retaining transcript text
@@ -726,7 +727,7 @@ set. The private reference/export path remains separate; only the exact static
 graph and Rust-native runtime contract enter the desktop dependency graph.
 
 | OQ-02 | Does Qwen3-ASR-1.7B replace Cohere or Nemotron for server batch? | Exact GB10 WER/CER, terminology, locale, duration, p95/p99, concurrency, memory, cancellation, timestamps/alignment, license and worker-contract parity | Keep existing gated routes; challenger only |
-| OQ-03 | Which quantization is promoted per model? | Same fixtures and representative i5-class/GB10 hardware across quality, latency, throughput, memory, battery/thermal, cold load, long duration, and concurrency | Never use below Q4. Preserve the checked format unless a Q4-or-higher candidate wins its model-specific gate; current local Nemotron stays INT8. |
+| OQ-03 | Which quantization is promoted per model? | Same fixtures and representative low-end physical client/GB10 hardware across quality, latency, throughput, memory, battery/thermal, cold load, long duration, and concurrency | Never use below Q4. Preserve the checked format unless a Q4-or-higher candidate wins its model-specific gate; current local Nemotron stays INT8. |
 | OQ-04 | When should terminology ship? | ADR-defined scope/authority/privacy plus model-independent API and ASR/normalizer/SLM/OKF contract tests | Benchmark provider hooks in Phase 6; implement canonical domain in its approved later phase |
 | OQ-05 | Does the accepted initial-route and sustained-switch policy pass its remaining promotion gates? | Disjoint short/long switch fixtures, false-switch rate, boundary error, ASR latency/stability, noise/silence/related-language pressure, CPU/energy, and exact-once holdback tests | Use the implemented three-observation/`0.40`-margin policy for both initial and sustained decisions over three-second windows at a 500-ms hop. Never switch from one observation; keep the primary locale on abstention or insufficient evidence. |
 | OQ-06 | Does the implemented exact-once holdback handoff remain preferable after representative switch-point testing? | Source-time holdback bound, finalize/reset ordering, duplicate/drop detection, finalized-segment continuity, restart and cancellation races | Keep finalized text immutable and partition held audio once; introduce replay/provisional replacement only if evidence proves the simpler contract insufficient |

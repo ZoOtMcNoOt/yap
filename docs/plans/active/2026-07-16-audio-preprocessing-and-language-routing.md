@@ -734,8 +734,8 @@ limits.
       permissive inherited directory ACL.
 - [x] Enforce the local quantization floor: never promote a derivative below
       Q4. Choose Q4, Q8/INT8, or higher precision per exact model only when the
-      representative accuracy, i5-class CPU latency, resident memory, battery,
-      and lifecycle gate passes. Preserve the tested local Nemotron INT8 route;
+      representative accuracy, low-end physical client CPU latency, resident
+      memory, battery, and lifecycle gate passes. Preserve the tested local Nemotron INT8 route;
       do not rewrite its decision while evaluating an auxiliary detector.
 - [x] Persist an explicit automatic-routing set containing the confirmed primary
       language plus user-enabled alternates from the executable local catalog.
