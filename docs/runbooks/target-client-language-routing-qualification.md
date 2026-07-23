@@ -1,20 +1,21 @@
 # Target-client language-routing qualification
 
-This runbook closes the Phase 6 Windows Preview safety boundary for the
-resident Nemotron, Silero, and AmberNet live path. It does **not** rerun the
+This runbook closes the automated Phase 6 Windows Preview safety boundary for
+the resident Nemotron, Silero, and AmberNet live path. It does **not** rerun the
 consumed natural-switch quality target, remove the Preview label, certify a
-minimum physical device, or replace the complete Phase 6 gate.
+minimum physical device, prove whole-host network isolation, or replace the
+complete Phase 6 gate.
 
 The Phase 6 qualification has two evidence channels. A result is incomplete
 unless both belong to the same clean checked head and Windows machine:
 
 1. the prepared-audio native resource and repeated-session collector;
-2. a physical-microphone and rendered-UI run through the release-mode WDIO
-   binary.
+2. a two-minute physical-microphone and rendered-UI smoke through the
+   release-mode WDIO binary while the launcher plays the licensed stimulus.
 
 The separate prepared-audio `short-boundaries` collector closes the
 250-ms-through-30-second duration contract on that same clean head. It is not a
-third physical-host channel and does not duplicate the 15-minute UI soak.
+third physical-host channel and does not duplicate the two-minute UI smoke.
 
 A paired energy/thermal measurement on a representative low-end physical
 device is a separate default-on and Phase 10 hardware-certification boundary.
@@ -42,17 +43,20 @@ receive only code, plans, and the final non-sensitive status claim after review.
   rights/provenance lock and must produce text in the one-second-through-
   30-second cases during focused verification. One file may serve both roles
   only when it satisfies both formats and purposes.
-- A license-cleared spoken-audio stimulus for the physical microphone run,
-  identified by SHA-256 and a bounded SPDX-style license identifier. Play it
-  acoustically from a separate offline device; do not use a virtual microphone
-  for the physical-capture claim.
-- No active non-loopback interface with a default gateway. A direct private
-  interface without a gateway is allowed. The native gate checks this before
-  and after inference and never changes adapter state itself.
+- A license-cleared spoken-audio stimulus for the physical microphone smoke,
+  identified by SHA-256 and a bounded SPDX-style license identifier. The
+  private launcher plays it through the current Windows output device while
+  the production microphone adapter captures the acoustic result; it does not
+  install or use a virtual microphone.
+- No listener at the admitted development batch origin
+  `http://127.0.0.1:18765`. The rendered-UI channel also requires a fresh
+  isolated app profile whose server connector is disabled and unset.
 
-Prepare caches while online, verify the candidate, and then disconnect the
-target before creating evidence. If the offline build attempts dependency or
-model retrieval, the run fails rather than silently broadening the boundary.
+Prepare caches while connected and verify the candidate before creating
+evidence. The native collector loads only already-installed local artifacts and
+has no server client. The rendered-UI gate checks the loopback listener before
+and after execution. This proves the MVP local route without changing Wi-Fi
+state; it is not a claim that the whole Windows host was offline.
 
 ## 1. Native resource and repeated-session gate
 
@@ -100,9 +104,9 @@ energy, or thermal evidence; its context file states those exclusions.
 
 ## 2. Prepared-audio short-boundary gate
 
-Before disconnecting, build only the nine immutable boundary inputs in the
-external private cache. Do not select the retained complete two-hour profile for
-the Phase 6 Preview gate:
+Before running the qualification, build only the nine immutable boundary inputs
+in the external private cache. Do not select the retained complete two-hour
+profile for the Phase 6 Preview gate:
 
 ```powershell
 $DurationSource = 'D:\private-yap-fixtures\duration-source-pcm16.wav'
@@ -122,8 +126,8 @@ $DurationBuild = (
 ) | ConvertFrom-Json
 ```
 
-After the native resource script creates the protected evidence directory and
-while the machine is still offline, run the prepared-audio collector:
+After the native resource script creates the protected evidence directory, run
+the prepared-audio collector from the same clean head:
 
 ```powershell
 $env:YAP_CHECKED_HEAD = $Head
@@ -160,8 +164,7 @@ reference.
 
 ## 3. Physical microphone and rendered UI
 
-Build the test-instrumented release binary from the same clean head while the
-host remains offline:
+Build the test-instrumented release binary from the same clean head:
 
 ```powershell
 Push-Location .\desktop
@@ -175,31 +178,36 @@ $env:YAP_CHECKED_HEAD = $Head
 $env:YAP_TARGET_CLIENT_EVIDENCE_DIR = $Evidence
 $env:YAP_MODELS_DIR = $Models
 $env:APP_BINARY = (Resolve-Path '.\src-tauri\target\release\yap-desktop.exe').Path
-$env:YAP_HARDWARE_ACTIVE_CAPTURE_MS = '900000'
+$env:YAP_HARDWARE_ACTIVE_CAPTURE_MS = '120000'
+$env:YAP_TARGET_CLIENT_SERVER_ORIGIN = 'http://127.0.0.1:18765'
 $env:YAP_TARGET_CLIENT_STIMULUS_SHA256 = '<lowercase-sha256>'
 $env:YAP_TARGET_CLIENT_STIMULUS_LICENSE = 'CC-BY-4.0'
+$env:YAP_TARGET_CLIENT_STIMULUS_DELIVERY = 'same-host-acoustic-playback'
 
 pnpm test:target-client-language-routing-ui
 Pop-Location
 ```
 
-The specialized WDIO configuration refuses a dirty or different head. It
+The private launcher starts and stops a bounded `SoundPlayer` job for the
+licensed WAV around the WDIO command. The specialized WDIO configuration
+refuses a dirty or different head. It
 independently revalidates the native context, profile, and log hashes; the
 observed processor identity and processor count; two ASR threads; and all 12
 sustained cycles. It verifies that no model-load snapshots remain and never
 copies private model or recording bytes into the checkout.
 
-During the 15-minute capture, keep the stimulus audible at a representative
-near-field level and interact normally with the machine. The gate requires the
-physical microphone, speaking state, local-fallback route, both resident
-language-support artifacts, at least two enabled locales, no degraded/error
-state, four early-stop/restart recovery cycles, UI timer-delay p95 at or
-below 50 ms, UI maximum delay at or below 250 ms, exact save/idle lifecycle
-ordering, and deletion of all captured recording artifacts. The early-stop
-path issues stop while start is still outstanding, so it exercises the real
-`cancel_pending_start` boundary before proving later sessions recover. The
-aggregate JSON contains no transcript text. Failure screenshots and driver
-logs remain under the external private evidence root.
+During the two-minute capture, the automated acoustic stimulus must make the
+default physical microphone reach the speaking state. The gate requires the
+isolated disabled-server profile, absent loopback server listener,
+local-fallback route, both resident language-support artifacts, at least two
+enabled locales, no degraded/error state, four early-stop/restart recovery
+cycles, UI timer-delay p95 at or below 50 ms, UI maximum delay at or below
+250 ms, exact save/idle lifecycle ordering, and deletion of all captured
+recording artifacts. The early-stop path issues stop while start is still
+outstanding, so it exercises the real `cancel_pending_start` boundary before
+proving later sessions recover. The aggregate JSON contains no transcript text.
+Failure screenshots and driver logs remain under the external private evidence
+root.
 
 The release-mode binary includes the WDIO capability solely for this disposable
 qualification build. It is not the distributable production artifact.
@@ -289,8 +297,9 @@ complete.
 
 Passing the two Phase 6 channels means the accepted AmberNet route is safe
 enough to remain an explicit default-off Preview on the tested Windows host.
-It does not certify an i5, battery life, thermals, or a minimum supported
-device. The previously consumed 0/4
+It does not certify whole-host network isolation, an i5, battery life,
+thermals, a 15-minute physical-device soak, or a minimum supported device. The
+previously consumed 0/4
 natural-switch result still prevents a stronger automatic-switching quality
 claim. Physical low-end hardware certification remains required before the
 feature becomes default-on and in the Phase 10 release matrix. Any change to

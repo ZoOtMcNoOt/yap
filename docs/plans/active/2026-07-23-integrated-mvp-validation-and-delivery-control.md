@@ -53,9 +53,9 @@ complexity.
 
 Phase 6 is ready to merge when one clean exact head proves all of the following:
 
-1. Local dictation remains usable with no server or default network route,
-   preserves the primary-language fallback, and safely contains the optional
-   AmberNet language-switching Preview.
+1. Local dictation remains usable in a fresh isolated profile with no
+   configured or listening server, preserves the primary-language fallback,
+   and safely contains the optional AmberNet language-switching Preview.
 2. The real desktop imports a licensed recording and carries it through durable
    preprocessing, the loopback SSH-forwarded private server, ASR, result
    publication, and the History UI, including one network interruption and
@@ -89,24 +89,30 @@ Only these six actions remain on the Phase 6 critical path.
 - [x] Remove stale completion wording. Do not add broad Cohere, Tiron, or
       AmberNet research to Phase 6.
 
-### 2. Run one bounded offline Windows session
+### 2. Run one bounded automated Windows session
 
-- [ ] While connected, verify the clean head, cached dependencies, installed
-      Nemotron/Silero/AmberNet artifacts, private evidence paths, and licensed
-      acoustic stimulus.
-- [ ] Launch the self-contained local collectors before changing connectivity.
-- [ ] Disconnect only the Windows target's Wi-Fi/default route for the actual
-      offline proof. The direct no-gateway private Ethernet link may remain.
-- [ ] Run the 12-cycle native resource/restart collector, the nine-case
-      250-ms-through-30-second prepared-audio boundary profile, and the single
-      15-minute physical-microphone/rendered-UI soak.
-- [ ] Reconnect immediately after the local collectors finish, then inspect
-      their private evidence while connected.
+- [ ] Verify the clean head, cached dependencies, installed
+      Nemotron/Silero/AmberNet artifacts, private evidence paths, licensed
+      acoustic stimulus, and absence of a listener at the admitted numeric-
+      loopback server origin.
+- [ ] Run the 12-cycle native resource/restart collector and the nine-case
+      250-ms-through-30-second prepared-audio boundary profile.
+- [ ] Run the two-minute release-mode physical-microphone/rendered-UI smoke
+      while the launcher plays the licensed stimulus through the current
+      Windows output device.
+- [ ] Verify the isolated app profile has no configured server, the local route
+      remains authoritative, and no recording, model snapshot, process, or
+      listener remains.
+- [ ] Inspect the private evidence without requiring a Wi-Fi state change or
+      manual stimulus control.
 
-The current checked gate intentionally requires a host with no default gateway.
-Do not disconnect the machine for ordinary development, server validation, or
-model research. Do not weaken the offline claim by substituting an unverified
-process-only block merely to keep the connection open.
+This is the integrated-MVP boundary, not representative hardware
+certification. Numeric-loopback server absence plus an isolated disabled-server
+profile proves that the observed local path did not use the connected private
+server; the direct native collector has no server client. A longer manual
+physical-device soak and matched battery/thermal work remain required before
+default-on or Phase 10 release certification. Keeping Wi-Fi connected does not
+turn this evidence into an enterprise-networking or production-online claim.
 
 ### 3. Validate the integrated MVP while connected
 

@@ -1,3 +1,6 @@
+#requires -Version 7.4
+#requires -PSEdition Core
+
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
@@ -120,29 +123,6 @@ function Get-ProcessorName {
     return $name.Trim()
 }
 
-function Get-DefaultGatewayInterfaces {
-    return @(
-        [Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() |
-            Where-Object {
-                $_.OperationalStatus -eq [Net.NetworkInformation.OperationalStatus]::Up -and
-                $_.NetworkInterfaceType -ne [Net.NetworkInformation.NetworkInterfaceType]::Loopback -and
-                $_.NetworkInterfaceType -ne [Net.NetworkInformation.NetworkInterfaceType]::Tunnel -and
-                @($_.GetIPProperties().GatewayAddresses | Where-Object {
-                    -not $_.Address.Equals([Net.IPAddress]::Any) -and
-                    -not $_.Address.Equals([Net.IPAddress]::IPv6Any)
-                }).Count -gt 0
-            } |
-            ForEach-Object { $_.Name }
-    )
-}
-
-function Assert-OfflineBoundary {
-    $gatewayInterfaces = @(Get-DefaultGatewayInterfaces)
-    if ($gatewayInterfaces.Count -gt 0) {
-        throw "The target-client resource gate requires an offline host. Active default-gateway interfaces: $($gatewayInterfaces -join ', ')."
-    }
-}
-
 if (-not $IsWindows) {
     throw 'The target-client resource gate runs only on Windows.'
 }
@@ -198,7 +178,6 @@ if (Test-Path -LiteralPath $evidence) {
 $evidenceParent = Resolve-ExistingRealPath -Path (Split-Path -Parent $evidence) -PathType Container -Label 'EvidenceDirectory parent'
 Assert-PathOutsideRepository -Candidate $evidenceParent -RepositoryRoot $repositoryRoot
 
-Assert-OfflineBoundary
 New-Item -ItemType Directory -Path $evidence -ErrorAction Stop | Out-Null
 Set-PrivateDirectoryAcl -Path $evidence
 
@@ -206,7 +185,7 @@ $contextPath = Join-Path $evidence 'resource-gate-context.json'
 $profilePath = Join-Path $evidence 'resident-language-routing-profile.json'
 $logPath = Join-Path $evidence 'native-resource-gate.log'
 $context = [ordered]@{
-    schemaVersion = 2
+    schemaVersion = 3
     status = 'started'
     checkedHead = $CheckedHead
     processorName = $processorName
@@ -218,9 +197,11 @@ $context = [ordered]@{
     modelsDirectoryRecorded = $false
     audioFixturePathRecorded = $false
     boundary = 'desktop-prepared-audio-frame-to-final-resource-profile'
+    networkBoundary = 'direct-local-runtime-with-no-server-client'
     exclusions = @(
         'physical-microphone'
         'rendered-ui'
+        'server-transport'
         'energy'
         'thermal'
     )
@@ -264,7 +245,6 @@ finally {
     }
 }
 
-Assert-OfflineBoundary
 if (-not (Test-Path -LiteralPath $profilePath -PathType Leaf)) {
     throw 'The native resource collector did not publish its aggregate profile.'
 }

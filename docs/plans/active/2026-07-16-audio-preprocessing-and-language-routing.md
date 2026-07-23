@@ -32,8 +32,8 @@ assembled Windows-desktop/private-server route through durable preprocessing,
 one tunnel interruption and recovery, server-authoritative result publication,
 verified History review, and complete remote teardown. That closes the focused
 advertised-route integration smoke without promoting a provider or completing
-the Phase 6 gate. The current-host offline Preview lifecycle, accessibility
-rerun, and complete frozen Phase 6 matrix remain open.
+the Phase 6 gate. The current-host automated no-server Preview lifecycle,
+accessibility rerun, and complete frozen Phase 6 matrix remain open.
 Fail-closed English
 Cohere attention alignment also executes and has current-source contained GB10
 lifecycle evidence without being advertised. The tiny SpeechFlow LID13 challenger
@@ -809,21 +809,24 @@ limits.
       Focused verification passed 123 language-related tests; eight real-model or
       private collectors remained intentionally ignored.
 - [ ] Complete the remaining real-runtime Preview release boundary on the
-      available Windows system: installed-artifact offline-only operation,
-      sustained sessions, restart/cancellation, rendered-UI and capture
-      interference, and bounded resource teardown. The
+      available Windows system: installed-artifact local operation with no
+      configured or listening server, repeated sessions, restart/cancellation,
+      rendered-UI and capture interference, and bounded resource teardown. The
       checked-head native repeated-session and release-mode physical-microphone/
       rendered-UI collectors are implemented and bind the actual processor and
       processor count. They fail closed on an optional named-hardware
-      constraint, an online default route, dirty/different source, in-repository
-      evidence, missing resident artifacts, degraded routing, responsiveness
-      limits, or retained private/model-snapshot content. They are composed by
+      constraint, a listening numeric-loopback server, configured server state
+      in the isolated profile, dirty/different source, in-repository evidence,
+      missing resident artifacts, degraded routing, responsiveness limits, or
+      retained private/model-snapshot content. They are composed by
       the [target-client qualification runbook](../../runbooks/target-client-language-routing-qualification.md)
-      but have not been consumed on the final checked head. Calibrated low-end
-      physical energy/thermal evidence cannot be inferred from this development
-      host and is deferred to default-on or Phase 10 release qualification;
-      it does not block this explicit Preview. The current-host safety item
-      remains open until the two executable channels pass.
+      but have not been consumed on the final checked head. The launcher
+      automates a two-minute same-host acoustic microphone/UI smoke; a longer
+      manual physical-device soak and calibrated low-end energy/thermal
+      evidence cannot be inferred from this development host and are deferred
+      to default-on or Phase 10 release qualification. They do not block this
+      explicit Preview. The current-host safety item remains open until the two
+      executable channels pass.
       The completed constructed, related-language, noisy, silence, and overlap
       results plus the consumed clean natural result remain their recorded
       evidence—including the natural product-route failure at 0/4 must-detect
@@ -918,13 +921,14 @@ or is rejected.
       Do not inherit Cohere or Phase 6 candidate-safety evidence.
 - [ ] Run the proportional Phase 6 duration plan: deterministic 250-ms through
       30-second local-live boundaries through the hash-bound `short-boundaries`
-      profile, one 15-minute real-time physical-microphone/rendered-UI soak, and
-      the already-completed model-neutral server candidate-safety duration,
+      profile, one automated two-minute physical-microphone/rendered-UI smoke,
+      and the already-completed model-neutral server candidate-safety duration,
       admission, cancellation, resource, and teardown controls. Retain the
       `complete-local-duration-ladders` profile through two hours for default-on
-      or Phase 10 release qualification instead of spending several wall-clock
-      hours on a default-off Preview. Reuse bounded long-batch controls in Phase
-      8 when comparing Tiron with any surviving Cohere route.
+      or Phase 10 release qualification together with a longer manual
+      physical-device soak instead of spending that wall-clock time on a
+      default-off Preview. Reuse bounded long-batch controls in Phase 8 when
+      comparing Tiron with any surviving Cohere route.
 - [x] Keep both resident provider runtimes unpromoted in Phase 6. Any later
       promotion requires route-specific frozen evidence, rollback proof, and
       review; persistent supervised multi-owner capacity remains Phase 10.
@@ -949,7 +953,7 @@ resource ceilings, failure/capacity behavior, or rollback, so the frozen
 provider checkboxes remain open.
 
 The local duration runner is executable but has not been consumed at the final
-offline candidate gate. It accepts
+automated candidate gate. It accepts
 one explicit, hash-bound functional profile. `short-boundaries` streams the
 plan's exact 250-ms, 500-ms, 750-ms, one-second, 1.12-second,
 two/five/ten/30-second cases in ten-millisecond frames through the real bounded
@@ -975,7 +979,7 @@ out-of-band-pinned private suite, every track manifest, raw WAV identity, and
 decoded PCM identity; it emits no transcript or path. Its truthful boundary is
 prepared audio frame to final, not physical microphone to final. Focused
 contract/lifecycle tests pass, but the checked-head `short-boundaries`
-offline execution and current-host microphone/UI/resource gate remain open, so
+execution and current-host no-server microphone/UI/resource gate remain open, so
 the duration checkbox and ADR score do not change. A focused connected
 diagnostic at exact clean head
 `a7ff69edf6a2138d15c69986cdf17ea2013ac0ad` used the locked CC-BY-4.0

@@ -8,8 +8,9 @@ import {
 import { registerLiveSessionEventListeners } from "./live-session-event-listeners.js";
 
 const RESTART_STOP_DELAYS_MS = Object.freeze([5, 25, 25, 25]);
-const MINIMUM_TARGET_CAPTURE_MS = 15 * 60_000;
+const MINIMUM_TARGET_CAPTURE_MS = 2 * 60_000;
 const MAXIMUM_TARGET_CAPTURE_MS = 30 * 60_000;
+const AUTOMATED_STIMULUS_DELIVERY = "same-host-acoustic-playback";
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message);
@@ -42,10 +43,16 @@ export function createTargetClientLanguageRoutingHardwareGate({
     environment.YAP_HARDWARE_ACTIVE_CAPTURE_MS,
     enabled,
   );
+  const stimulusDelivery = environment.YAP_TARGET_CLIENT_STIMULUS_DELIVERY;
   let restartCancellationEvidence = null;
 
   if (enabled && !evidenceFile) {
     throw new Error("YAP_TARGET_CLIENT_UI_EVIDENCE_FILE is required for the target-client gate.");
+  }
+  if (enabled && stimulusDelivery !== AUTOMATED_STIMULUS_DELIVERY) {
+    throw new Error(
+      `YAP_TARGET_CLIENT_STIMULUS_DELIVERY must be ${AUTOMATED_STIMULUS_DELIVERY}.`,
+    );
   }
 
   async function configureLanguageRouting() {
@@ -70,6 +77,8 @@ export function createTargetClientLanguageRoutingHardwareGate({
       acousticLanguageDetector: await core.invoke("acoustic_language_detector_status"),
       languageRouting: await core.invoke("live_language_routing_status"),
       model: await core.invoke("fallback_model_status"),
+      serverConnection: await core.invoke("server_connection_status"),
+      serverSettings: await core.invoke("server_settings"),
       silero: await core.invoke("silero_vad_status"),
     }));
     requireCondition(status.model.status === "ready", "Nemotron was not ready for qualification.");
@@ -85,6 +94,13 @@ export function createTargetClientLanguageRoutingHardwareGate({
     requireCondition(
       status.languageRouting.enabledLocales.length > 1 && configuredRouting?.enabledLocales.length > 1,
       "The target-client gate requires a primary locale and a German alternate.",
+    );
+    requireCondition(
+      status.serverSettings.schemaVersion === 1
+        && status.serverSettings.enabled === false
+        && status.serverSettings.baseUrl === null
+        && status.serverConnection.state === "not_set",
+      "The target-client gate requires an isolated profile with no configured server.",
     );
   }
 
@@ -284,7 +300,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
       "Restart/cancellation evidence was incomplete.",
     );
     const aggregate = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       activeCaptureMs,
       languageRoutingEnabledLocales: configuredRouting?.enabledLocales ?? [],
       levelEventCount: evidence.levels.length,
@@ -294,6 +310,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
       route: evidence.mainSessions.find(({ route }) => route === "localFallback")?.route ?? null,
       stimulusLicense: environment.YAP_TARGET_CLIENT_STIMULUS_LICENSE ?? null,
       stimulusSha256: environment.YAP_TARGET_CLIENT_STIMULUS_SHA256 ?? null,
+      stimulusDelivery,
       targetClientGate: true,
       transcriptTextRecorded: false,
     };

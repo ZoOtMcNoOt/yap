@@ -5,7 +5,14 @@ const TARGET_ASR_THREADS = 2;
 const TARGET_SESSION_CYCLES = 12;
 const PRIVATE_BYTE_GROWTH_LIMIT = 64 * 1024 * 1024;
 const BOUNDARY = "desktop-prepared-audio-frame-to-final-resource-profile";
-const EXCLUSIONS = Object.freeze(["physical-microphone", "rendered-ui", "energy", "thermal"]);
+const NETWORK_BOUNDARY = "direct-local-runtime-with-no-server-client";
+const EXCLUSIONS = Object.freeze([
+  "physical-microphone",
+  "rendered-ui",
+  "server-transport",
+  "energy",
+  "thermal",
+]);
 const CONTEXT_KEYS = new Set([
   "audioFixturePathRecorded",
   "audioFixtureSha256",
@@ -16,6 +23,7 @@ const CONTEXT_KEYS = new Set([
   "logicalProcessorBudget",
   "logicalProcessors",
   "modelsDirectoryRecorded",
+  "networkBoundary",
   "processorConstraint",
   "processorName",
   "profileSha256",
@@ -44,7 +52,7 @@ export function validateTargetClientNativeResourceEvidence(contextValue, profile
     unknown.length === 0,
     `Native resource context contains unsupported fields: ${unknown.join(", ")}.`,
   );
-  requireCondition(context.schemaVersion === 2, "Native resource context schemaVersion must be 2.");
+  requireCondition(context.schemaVersion === 3, "Native resource context schemaVersion must be 3.");
   requireCondition(context.status === "passed", "Native resource context is not passed.");
   requireCondition(CHECKED_HEAD.test(context.checkedHead), "Native resource checkedHead must be a SHA-1.");
   requireCondition(context.checkedHead === expected.checkedHead, "Native resource head does not match.");
@@ -70,6 +78,10 @@ export function validateTargetClientNativeResourceEvidence(contextValue, profile
     "Native resource evidence must contain exactly 12 repeated sessions.",
   );
   requireCondition(context.boundary === BOUNDARY, "Native resource boundary does not match.");
+  requireCondition(
+    context.networkBoundary === NETWORK_BOUNDARY,
+    "Native resource network boundary does not match.",
+  );
   requireCondition(
     JSON.stringify(context.exclusions) === JSON.stringify(EXCLUSIONS),
     "Native resource exclusions do not match the prepared-audio boundary.",

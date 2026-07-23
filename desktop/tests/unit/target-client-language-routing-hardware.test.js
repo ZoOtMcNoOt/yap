@@ -24,15 +24,23 @@ describe("target-client language-routing hardware gate", () => {
     })).toThrow(/UI_EVIDENCE_FILE/);
   });
 
-  it("defaults the target run to fifteen minutes and rejects shorter overrides", () => {
-    const environment = {
+  it("requires the automated acoustic stimulus delivery contract", () => {
+    expect(() => createGate({
       YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
       YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
+    })).toThrow(/STIMULUS_DELIVERY/);
+  });
+
+  it("defaults the target run to two minutes and rejects shorter overrides", () => {
+    const environment = {
+      YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
+      YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
+      YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
     };
-    expect(createGate(environment).activeCaptureMs).toBe(900_000);
+    expect(createGate(environment).activeCaptureMs).toBe(120_000);
     expect(() => createGate({
       ...environment,
-      YAP_HARDWARE_ACTIVE_CAPTURE_MS: "899999",
-    })).toThrow(/between 900000 and 1800000/);
+      YAP_HARDWARE_ACTIVE_CAPTURE_MS: "119999",
+    })).toThrow(/between 120000 and 1800000/);
   });
 });

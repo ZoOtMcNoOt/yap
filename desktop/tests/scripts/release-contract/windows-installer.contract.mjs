@@ -80,6 +80,7 @@ test("Windows release automation requires PowerShell 7.4 Core", async () => {
   const powerShellFiles = [
     "desktop/tests/scripts/bind-pnpm-cache-store.ps1",
     "desktop/tests/scripts/native-window-recovery.test.ps1",
+    "desktop/tests/scripts/resident-language-routing-resource-gate.ps1",
     "desktop/tests/scripts/smoke-nsis.ps1",
     "desktop/tests/wdio/native-window-recovery.psm1",
   ];

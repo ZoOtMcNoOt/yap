@@ -92,14 +92,20 @@ separate evidence channels under the
 The native collector records and validates the actual Windows processor and
 processor count; an optional named-hardware constraint remains available for
 later physical-device certification. It also rejects a dirty/different head,
-online default-gateway interfaces, and in-repository evidence before it starts
-model inference. Its bounded repeated-session mode does not claim physical
-capture or UI behavior. The release-mode WDIO path then consumes the same
-checked-head native receipt and proves a 15-minute physical-microphone/rendered-
-UI lifecycle without retaining transcript or recording content. A matched
-low-end physical power/thermal comparison may accompany this gate but is
-required only before default-on or Phase 10 release qualification; missing
-telemetry can never be turned into a passing hardware-certification claim.
+in-repository evidence, missing model artifacts, and altered fixture identity
+before it starts model inference. Its bounded repeated-session mode has no
+server client and does not claim physical capture or UI behavior. The
+release-mode WDIO path then consumes the same checked-head native receipt,
+requires a fresh profile with no configured server and no listener at the
+numeric-loopback development origin, and proves a two-minute
+physical-microphone/rendered-UI smoke while the launcher supplies the licensed
+stimulus through the current Windows output device. It retains no transcript or
+recording content. This application-level no-server boundary keeps Wi-Fi
+available to the operator and does not claim whole-host network isolation. A
+matched low-end physical power/thermal comparison and longer manual
+physical-device soak remain required only before default-on or Phase 10 release
+qualification; missing telemetry can never be turned into a passing
+hardware-certification claim.
 
 The deterministic local-duration runner starts at Yap's prepared-audio-frame
 boundary, not at the physical microphone. It binds the exact checked Git SHA,

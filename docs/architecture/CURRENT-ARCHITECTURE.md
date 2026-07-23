@@ -350,20 +350,23 @@ is saturation evidence rather than an interactive workload claim. These are
 accelerated and paced prepared-audio runtime proxies, not rendered-UI or
 sustained release-lifecycle evidence. The route is available only as an
 explicit, default-off Preview because its frozen natural-switch target failed;
-current-host resource and interference, one 15-minute sustained session, restart,
-cancellation, and the complete checked-head gate still gate Phase 6 release.
+current-host resource and interference, one automated two-minute microphone/UI
+smoke under an isolated no-server profile, restart, cancellation, and the
+complete checked-head gate still gate Phase 6 release.
 Fail-closed checked-head native repeated-session and release-mode physical-
 microphone/rendered-UI collectors bind the observed Windows processor and
 processor count but remain unconsumed on the final checked head. Representative
-low-end physical battery/thermal certification is deferred to default-on or
-Phase 10 release qualification and cannot be inferred from this Preview gate. A
+longer physical-device, low-end battery, and thermal certification is deferred
+to default-on or Phase 10 release qualification and cannot be inferred from
+this Preview gate. A
 deterministic duration runner can stream one explicit functional profile from
 the prepared-audio-frame boundary through the production bounded adapter, the
 same single live worker, and finalization. It locks the checked head, profile,
 plan, private suite, manifests, raw WAV, and decoded PCM without retaining
 transcript text or paths. Phase 6 consumes the nine 250-ms-through-30-second
 `short-boundaries` cases. The physical-microphone/rendered-UI channel supplies
-the single 15-minute real-time soak. The separate 15-case
+the automated two-minute acoustic smoke while requiring no configured or
+listening numeric-loopback server. The separate 15-case
 `complete-local-duration-ladders` profile remains available for default-on or
 Phase 10 release qualification and does not replace current-host resource or
 natural-accuracy evidence. A separately frozen clean German-English

@@ -36,6 +36,9 @@ const worker = Boolean(process.env.WDIO_WORKER_ID);
 const checkedHead = process.env.YAP_CHECKED_HEAD ?? "";
 const stimulusSha256 = process.env.YAP_TARGET_CLIENT_STIMULUS_SHA256 ?? "";
 const stimulusLicense = process.env.YAP_TARGET_CLIENT_STIMULUS_LICENSE ?? "";
+const stimulusDelivery = process.env.YAP_TARGET_CLIENT_STIMULUS_DELIVERY ?? "";
+const targetServerOrigin = process.env.YAP_TARGET_CLIENT_SERVER_ORIGIN ?? "";
+const targetServerBoundary = "isolated-profile-with-no-loopback-server-listener";
 const evidenceRoot = requireAbsoluteWindowsPath(
   process.env.YAP_TARGET_CLIENT_EVIDENCE_DIR,
   "Target-client evidence root",
@@ -68,11 +71,11 @@ let validatedPowerThermalEvidence: unknown = null;
 
 function parseActiveCaptureDuration(raw: string | undefined): number {
   if (!raw || !/^[1-9][0-9]*$/.test(raw)) {
-    throw new Error("YAP_HARDWARE_ACTIVE_CAPTURE_MS must be an integer of at least 900000.");
+    throw new Error("YAP_HARDWARE_ACTIVE_CAPTURE_MS must be an integer of at least 120000.");
   }
   const value = Number.parseInt(raw, 10);
-  if (!Number.isSafeInteger(value) || value < 900_000 || value > 1_800_000) {
-    throw new Error("YAP_HARDWARE_ACTIVE_CAPTURE_MS must be between 900000 and 1800000.");
+  if (!Number.isSafeInteger(value) || value < 120_000 || value > 1_800_000) {
+    throw new Error("YAP_HARDWARE_ACTIVE_CAPTURE_MS must be between 120000 and 1800000.");
   }
   return value;
 }
@@ -83,6 +86,11 @@ function requireStimulusIdentity() {
   }
   if (!/^[A-Za-z0-9.+-]{2,64}$/.test(stimulusLicense)) {
     throw new Error("YAP_TARGET_CLIENT_STIMULUS_LICENSE must be a bounded license identifier.");
+  }
+  if (stimulusDelivery !== "same-host-acoustic-playback") {
+    throw new Error(
+      "YAP_TARGET_CLIENT_STIMULUS_DELIVERY must be same-host-acoustic-playback.",
+    );
   }
 }
 
@@ -105,37 +113,39 @@ function requireCleanCheckedHead() {
   if (status) throw new Error("The target-client UI gate requires a clean checked head.");
 }
 
-function requireOfflineBoundary() {
+function requireTargetServerUnavailable() {
+  if (targetServerOrigin !== "http://127.0.0.1:18765") {
+    throw new Error(
+      "YAP_TARGET_CLIENT_SERVER_ORIGIN must be exactly http://127.0.0.1:18765.",
+    );
+  }
   const script = String.raw`
-$gateways = @(
-  [Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() |
-    Where-Object {
-      $_.OperationalStatus -eq [Net.NetworkInformation.OperationalStatus]::Up -and
-      $_.NetworkInterfaceType -ne [Net.NetworkInformation.NetworkInterfaceType]::Loopback -and
-      $_.NetworkInterfaceType -ne [Net.NetworkInformation.NetworkInterfaceType]::Tunnel -and
-      @($_.GetIPProperties().GatewayAddresses | Where-Object {
-        -not $_.Address.Equals([Net.IPAddress]::Any) -and
-        -not $_.Address.Equals([Net.IPAddress]::IPv6Any)
-      }).Count -gt 0
-    } |
-    ForEach-Object { $_.Name }
-)
-if ($gateways.Count -gt 0) {
-  [Console]::Error.WriteLine(($gateways -join ', '))
-  exit 1
-}
+const net = require("node:net");
+const socket = net.createConnection({ host: "127.0.0.1", port: 18765 });
+const timer = setTimeout(() => {
+  socket.destroy();
+  process.exit(0);
+}, 750);
+socket.once("connect", () => {
+  clearTimeout(timer);
+  socket.destroy();
+  process.exit(1);
+});
+socket.once("error", () => {
+  clearTimeout(timer);
+  process.exit(0);
+});
 `;
   try {
     execFileSync(
-      "pwsh.exe",
-      ["-NoProfile", "-NonInteractive", "-Command", script],
+      process.execPath,
+      ["-e", script],
       { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
     );
-  } catch (error) {
-    const stderr = typeof error === "object" && error && "stderr" in error
-      ? String(error.stderr).trim()
-      : "unknown interface";
-    throw new Error(`The target-client UI gate requires an offline host: ${stderr}.`);
+  } catch {
+    throw new Error(
+      "The target-client UI gate requires no listener at http://127.0.0.1:18765.",
+    );
   }
 }
 
@@ -242,7 +252,7 @@ function createPrivateRunDirectories() {
     writeFileSync(
       uiContextFile,
       `${JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: 2,
         status: "started",
         activeCaptureMs,
         appBinarySha256,
@@ -253,8 +263,10 @@ function createPrivateRunDirectories() {
         powerThermalEvidenceSha256: powerThermalEvidencePath
           ? createHash("sha256").update(readFileSync(powerThermalEvidencePath)).digest("hex")
           : null,
+        serverBoundary: targetServerBoundary,
         stimulusLicense,
         stimulusSha256,
+        stimulusDelivery,
         transcriptTextRecorded: false,
       }, null, 2)}\n`,
       { encoding: "utf8", flag: "wx" },
@@ -288,7 +300,7 @@ function assertNoRetainedModelSnapshots() {
 }
 
 requireCleanCheckedHead();
-requireOfflineBoundary();
+requireTargetServerUnavailable();
 requireStimulusIdentity();
 requireOutsideRepository(evidenceRoot, "Target-client evidence");
 requireOutsideRepository(modelsRoot, "Target-client models");
@@ -371,7 +383,7 @@ export const config = {
   onComplete() {
     const artifacts = listRecordingArtifacts(recordingRoot);
     rmSync(recordingRoot, { force: true, recursive: true });
-    requireOfflineBoundary();
+    requireTargetServerUnavailable();
     assertNoRetainedModelSnapshots();
     if (artifacts.length > 0) {
       throw new Error(
@@ -384,11 +396,12 @@ export const config = {
     const evidenceBytes = readFileSync(uiEvidenceFile);
     const evidence = JSON.parse(evidenceBytes.toString("utf8"));
     if (
-      evidence.schemaVersion !== 1
+      evidence.schemaVersion !== 2
       || evidence.activeCaptureMs !== activeCaptureMs
       || evidence.route !== "localFallback"
       || evidence.stimulusLicense !== stimulusLicense
       || evidence.stimulusSha256 !== stimulusSha256
+      || evidence.stimulusDelivery !== stimulusDelivery
       || evidence.targetClientGate !== true
       || evidence.transcriptTextRecorded !== false
       || !Array.isArray(evidence.languageRoutingEnabledLocales)
@@ -405,6 +418,13 @@ export const config = {
       throw new Error("The target-client UI aggregate did not satisfy its frozen contract.");
     }
     const context = JSON.parse(readFileSync(uiContextFile, "utf8"));
+    if (
+      context.schemaVersion !== 2
+      || context.serverBoundary !== targetServerBoundary
+      || context.stimulusDelivery !== stimulusDelivery
+    ) {
+      throw new Error("The target-client UI context did not preserve its automated boundary.");
+    }
     const finalBinarySha256 = createHash("sha256").update(readFileSync(appBinaryPath)).digest("hex");
     if (finalBinarySha256 !== context.appBinarySha256) {
       throw new Error("The target-client release binary changed during qualification.");
