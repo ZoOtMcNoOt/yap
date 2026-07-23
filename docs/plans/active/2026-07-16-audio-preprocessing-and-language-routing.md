@@ -1238,8 +1238,14 @@ correctly selected both 30 seconds and 15 minutes, while the finalizer expected
 only 15 minutes. It now requires both members and rejects either partial suite.
 The server image now caps BLAS/OpenMP/Rayon and PyTorch pools at eight, and the
 service derives 18 HTTP workers from the eight-active-request contract instead
-of keeping 32. New exact-head focused and lifecycle runs remain required, and
-neither provider is promoted.
+of keeping 32. Exact head `17a727f272943e6bc57a4253247e7e824855c086`
+passed the focused correction: c8/200 completed in 18.930 seconds at 316.957
+audio-seconds/second, then the unchanged c8/1,600 resource qualifier passed all
+eleven checks over 147.583 seconds. Fresh readiness used 34 tasks and both
+workloads peaked at 97 tasks/entrypoint threads; current/peak cgroup memory stayed
+near 3.61/6.03 GiB, CPU averaged 1.013 cores, memory-event deltas were zero, and
+teardown was exact. The 256 ceiling was not raised. A complete sequential
+exact-head lifecycle run remains required, and neither provider is promoted.
 
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness

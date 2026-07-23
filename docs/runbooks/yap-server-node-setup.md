@@ -430,7 +430,12 @@ stale expectation named only the 15-minute member while the plan selects both
 30-second and 15-minute inputs. The finalizer now requires both durations; the
 runtime now caps native/PyTorch pools at eight and derives 18 HTTP workers from
 the eight-active-request contract. Use a new exact-head evidence directory for
-the focused and full corrected reruns rather than relabeling the failed receipt.
+the corrected rerun rather than relabeling the failed receipt. Focused exact-head
+`17a727f272943e6bc57a4253247e7e824855c086` evidence has already passed c8/200
+and the full c8/1,600 resource profile with a 97-task/thread maximum, all eleven
+frozen checks, unchanged 256 ceiling, and exact teardown. This validates the
+resource correction only; it does not replace the complete sequential lifecycle
+gate.
 Representative quality, current-host client Preview resource/lifecycle behavior,
 accessibility, and the other Phase 6 gates remain separate. Low-end physical
 client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host

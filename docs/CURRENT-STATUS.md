@@ -123,8 +123,15 @@ An independent finalizer replay also found a stale mixed-window expectation:
 the plan and child correctly selected both 30-second and 15-minute inputs while
 the aggregate expected only 15 minutes. The finalizer now requires both members;
 the runtime now bounds BLAS/OpenMP/Rayon and PyTorch pools to eight and derives
-18 HTTP workers from the eight-active-request contract. New exact-head focused
-and lifecycle evidence remain required.
+18 HTTP workers from the eight-active-request contract. Exact head
+`17a727f272943e6bc57a4253247e7e824855c086` then passed a focused c8/200
+request-lifecycle wave in 18.930 seconds at 316.957 audio-seconds/second and a
+focused c8/1,600 resource profile with all eleven frozen checks. Fresh readiness
+used 34 tasks; both workloads peaked at 97 tasks/entrypoint threads, versus 222
+and 262 before the correction. Maximum current/peak cgroup memory was about
+3.61/6.03 GiB, average CPU use was 1.013 cores, memory-event deltas were zero,
+and teardown was exact. The frozen 256 ceiling did not change. The complete
+exact-head lifecycle evidence remains required.
 
 Focused resource controls now complete four consecutive c8/400-request repeats
 per resident provider. vLLM processed the warm repeats at about 321-322 audio-

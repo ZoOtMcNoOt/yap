@@ -544,6 +544,17 @@ the eight-active-request contract instead of retaining an unrelated 32-worker
 constant. Both corrections need new exact-head evidence and do not promote a
 provider.
 
+Focused exact-head evidence at
+`17a727f272943e6bc57a4253247e7e824855c086` now closes the resource correction
+itself. A c8/200 request-lifecycle wave completed in 18.930 seconds at 316.957
+audio-seconds/second with a real model batch of eight. The unchanged c8/1,600
+resource qualifier then passed all eleven frozen checks in a 147.583-second
+observation. Fresh readiness used 34 tasks and both workloads peaked at 97
+cgroup tasks/entrypoint threads; maximum current/peak memory was about
+3.61/6.03 GiB, average CPU use was 1.013 cores, memory events remained zero, and
+teardown was exact. This did not raise the 256 ceiling and is not provider
+promotion. The complete sequential lifecycle gate remains open.
+
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall
 latency does traverse the proxy. Whole-route/whole-host capacity and persistent
