@@ -4,7 +4,7 @@ mod validation;
 
 pub(in crate::live::recordings) use model::{
     admit_deletion_artifact, build_deletion_intent, deletion_intent_name, DeletionArtifact,
-    DeletionIntent, DELETION_INTENT_SCHEMA_VERSION,
+    DeletionIntent, CANCELLED_START_DELETION_REASON, DELETION_INTENT_SCHEMA_VERSION,
 };
 pub(in crate::live::recordings) use publication::write_deletion_intent_with_publication_barrier_while_owned;
 #[cfg(test)]

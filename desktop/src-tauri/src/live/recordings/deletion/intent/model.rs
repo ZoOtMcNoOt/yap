@@ -8,6 +8,7 @@ use super::super::super::transcripts::{
 use super::validation::validate_deletion_intent;
 
 pub(in crate::live::recordings) const DELETION_INTENT_SCHEMA_VERSION: u16 = 1;
+pub(in crate::live::recordings) const CANCELLED_START_DELETION_REASON: &str = "cancelled-start";
 pub(super) const MAX_DELETION_ARTIFACTS: usize = 128;
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -37,7 +38,10 @@ pub(in crate::live::recordings) fn build_deletion_intent(
     capture: &recording::CommittedCapture,
     reason: &str,
 ) -> Result<DeletionIntent, String> {
-    if reason != "manual" && reason != "expired-meeting-retention" {
+    if reason != "manual"
+        && reason != "expired-meeting-retention"
+        && reason != CANCELLED_START_DELETION_REASON
+    {
         return Err("unsupported recording deletion reason".into());
     }
     let manifest = &capture.manifest;

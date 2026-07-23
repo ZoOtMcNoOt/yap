@@ -1,4 +1,8 @@
 use super::*;
+use crate::audio::{
+    coordinator::{bounded_sink, SinkKind},
+    recording::{CaptureStatus, RecordingSinkHandle},
+};
 
 #[test]
 fn transcript_text_prefers_final_then_partial() {
@@ -16,6 +20,74 @@ fn completed_transcript_text_never_promotes_a_partial() {
 
     view.final_text = Some("final".into());
     assert_eq!(completed_transcript_text(&view).as_deref(), Some("final"));
+}
+
+#[test]
+fn header_only_live_capture_without_text_is_discarded() {
+    let dir = test_dir("discard-header-only-capture");
+    let session = SessionId::new("s-header-only-capture").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session).unwrap();
+    let capture = recording.finalize().unwrap();
+
+    assert!(!capture
+        .committed
+        .as_ref()
+        .unwrap()
+        .manifest
+        .contains_pcm_audio());
+    let saved = save_finalized_capture_to_dir(&dir, &live_view(None, None), Some(capture)).unwrap();
+
+    assert!(saved.is_none());
+    assert!(recording::scan_recordings(&dir).unwrap().is_empty());
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0);
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
+fn header_only_live_capture_preserves_existing_text_without_fabricating_audio() {
+    let dir = test_dir("preserve-header-only-transcript");
+    let session = SessionId::new("s-header-only-transcript").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    let capture = recording.finalize().unwrap();
+
+    let saved = save_finalized_capture_to_dir(
+        &dir,
+        &live_view(Some("keep this transcript"), None),
+        Some(capture),
+    )
+    .unwrap()
+    .unwrap();
+
+    assert_eq!(saved.session_id, session.as_str());
+    assert_eq!(saved.source_path, saved.output_path);
+    assert!(saved.capture_commit_path.is_none());
+    assert!(saved
+        .warning
+        .as_deref()
+        .unwrap_or_default()
+        .contains("no PCM audio"));
+    assert_eq!(
+        std::fs::read_to_string(dir.join(format!("live-{session}.txt"))).unwrap(),
+        "keep this transcript\n"
+    );
+    assert!(recording::scan_recordings(&dir).unwrap().is_empty());
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
+fn cancelled_partial_capture_is_removed_from_recovery() {
+    let dir = test_dir("discard-cancelled-partial-capture");
+    let session = SessionId::new("s-cancelled-partial-capture").unwrap();
+    let (sink, receiver) = bounded_sink(SinkKind::Recording, 1);
+    let recording = RecordingSinkHandle::spawn(dir.clone(), session, sink, receiver);
+    let capture = recording.abort("live start cancelled").unwrap();
+
+    assert_eq!(capture.status, CaptureStatus::Partial);
+    discard_cancelled_capture_in_dir(&dir, &capture).unwrap();
+
+    assert!(recording::scan_recordings(&dir).unwrap().is_empty());
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0);
+    std::fs::remove_dir_all(dir).ok();
 }
 
 #[test]

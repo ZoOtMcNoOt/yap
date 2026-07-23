@@ -63,6 +63,20 @@ const AUDIO_SAVE_FAILED_WARNING: &str = "Live audio could not be saved. Transcri
 const TRANSCRIPT_DEGRADED_WARNING: &str = "Live transcript may be incomplete. Audio was saved.";
 const PARTIAL_RECOVERY_TTL: Duration = Duration::from_secs(24 * 60 * 60);
 
+pub(crate) fn discard_cancelled_capture_in_dir(
+    dir: &Path,
+    capture: &RecordingFinalizeResult,
+) -> Result<(), String> {
+    if let Some(committed) = capture.committed.as_ref() {
+        return deletion::delete_committed_session_in_dir(
+            dir,
+            committed,
+            deletion::CANCELLED_START_DELETION_REASON,
+        );
+    }
+    recovery::discard_recoverable_session_artifacts_in_dir(dir, &capture.session_id)
+}
+
 #[derive(Clone, Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SavedLiveSession {

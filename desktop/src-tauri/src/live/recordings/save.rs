@@ -119,6 +119,22 @@ where
     let Some(capture) = capture else {
         return Ok(None);
     };
+    if capture
+        .committed
+        .as_ref()
+        .is_some_and(|committed| !committed.manifest.contains_pcm_audio())
+    {
+        discard_cancelled_capture_in_dir(dir, &capture)?;
+        return match transcript_text(view) {
+            Some(_) => save_unavailable_capture_transcript_to_dir(
+                dir,
+                view,
+                capture.session_id,
+                "Live capture contained no PCM audio.".into(),
+            ),
+            None => Ok(None),
+        };
+    }
     std::fs::create_dir_all(dir)
         .map_err(|err| format!("Failed to create live recordings folder: {err}"))?;
     let name = format!("live-{}", capture.session_id);

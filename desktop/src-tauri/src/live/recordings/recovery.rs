@@ -3,7 +3,9 @@ mod deletion;
 mod repair;
 
 pub(super) use catalog::{damaged_commit_warnings, list_recoverable_live_sessions_from_scan};
-pub(super) use deletion::delete_recoverable_live_session_in_dir;
+pub(super) use deletion::{
+    delete_recoverable_live_session_in_dir, discard_recoverable_session_artifacts_in_dir,
+};
 pub(super) use repair::{recover_live_session_in_dir, saved_recovered_session};
 
 #[cfg(test)]

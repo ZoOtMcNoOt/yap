@@ -99,8 +99,7 @@ impl LiveRuntime {
         if !self.start_intent_is_current(intent)
             || self.active_session.load(Ordering::Acquire) != session
         {
-            let _ = recording_handle.abort("live start cancelled before capture opened");
-            return Ok(None);
+            return discard_cancelled_recording(&recording_directory, &recording_handle, session);
         }
         let capture = match CaptureAdapter::open(
             resolved.device,
@@ -136,13 +135,15 @@ impl LiveRuntime {
             }
         };
         let mut inner = self.inner.lock().expect("live runtime poisoned");
-        if !inner.can_install_capture(session, self.active_session.load(Ordering::SeqCst)) {
+        if !self.start_intent_is_current(intent)
+            || !inner.can_install_capture(session, self.active_session.load(Ordering::SeqCst))
+        {
             inner.mark_used();
             drop(inner);
             if let Err(error) = capture.shutdown() {
                 crate::stt::log_yap(&format!("live capture shutdown failed: {error}"));
             }
-            let _ = recording_handle.finalize();
+            discard_cancelled_recording(&recording_directory, &recording_handle, session)?;
             drop(level);
             return Ok(None);
         }
@@ -229,4 +230,17 @@ impl LiveRuntime {
         .unwrap_or(Ok(false))
         .map_err(|message| LiveStartFailure::new(session, message))
     }
+}
+
+fn discard_cancelled_recording(
+    recording_directory: &std::path::Path,
+    recording: &RecordingSinkHandle,
+    session: u64,
+) -> Result<Option<LocalCaptureStart>, LiveStartFailure> {
+    let capture = recording
+        .finalize()
+        .map_err(|message| LiveStartFailure::new(session, message))?;
+    recordings::discard_cancelled_capture_in_dir(recording_directory, &capture)
+        .map_err(|message| LiveStartFailure::new(session, message))?;
+    Ok(None)
 }

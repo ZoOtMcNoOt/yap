@@ -24,6 +24,10 @@ pub struct CaptureCommitManifest {
 }
 
 impl CaptureCommitManifest {
+    pub(crate) fn contains_pcm_audio(&self) -> bool {
+        self.audio_bytes > WAV_HEADER_BYTES
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self.schema_version != CAPTURE_SCHEMA_VERSION {
             return Err("unsupported capture commit schema".into());

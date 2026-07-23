@@ -27,6 +27,14 @@ pub(in crate::live::recordings) fn delete_recoverable_live_session_in_dir(
     )
 }
 
+pub(in crate::live::recordings) fn discard_recoverable_session_artifacts_in_dir(
+    dir: &Path,
+    session_id: &crate::audio::session::SessionId,
+) -> Result<(), String> {
+    let _ownership = session_mutation_ownership();
+    delete_recoverable_session_artifacts_while_owned(dir, session_id, None)
+}
+
 pub(in crate::live::recordings) fn delete_recoverable_live_session_in_dir_with_mutation_barrier<F>(
     dir: &Path,
     session_id: String,
