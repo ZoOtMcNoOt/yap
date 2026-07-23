@@ -247,7 +247,10 @@ task/thread, and memory-event ceilings for vLLM and NeMo. NeMo reports CUDA
 allocation/reservation per completed request and reuses bounded HTTP workers;
 its separate model scheduler still owns at most eight active streams. Physical
 RSS residency/reclaim oscillation on unified-memory GB10 remains reported, while
-tail virtual allocation growth is the boundedness gate. These thresholds have
+tail virtual allocation growth is the boundedness gate. The resource-lifecycle
+scope records transcript variance without turning that resource measurement
+into provider-promotion evidence, and a minimum 125-second observation window
+guarantees at least 60 seconds in its last-half tail. These thresholds have
 focused evidence and both current-source profiles pass all eleven resource
 checks plus clean teardown, but neither has passed the one-time checked-head
 matrix.

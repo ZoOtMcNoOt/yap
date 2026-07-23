@@ -56,11 +56,14 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
             "server-finalized-utterance",
             "batch-file",
             '"--repeat-count" "$repeat_count"',
+            '"--qualification-scope" "$qualification_scope"',
             '"--completed-request-count" "1600"',
             '"--concurrency" "8"',
             "workload-start",
             "workload-end",
             "workload-window.json",
+            "resource-lifecycle",
+            "125000 - observation_elapsed_ms",
             "capture_host_boundary",
             "verify_private_container_network",
             "runtime-processes.txt",
@@ -95,7 +98,7 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
             script.index("resident_provider_lifecycle_evidence"),
         )
         self.assertIn(
-            '"$catalog_language" "$provider_language" 8 8',
+            '"$catalog_language" "$provider_language" 8 resource-lifecycle 8',
             script,
         )
 

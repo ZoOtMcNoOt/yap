@@ -1166,6 +1166,18 @@ matrix has passed. Container cgroup samples exclude the small
 host proxy process group; request wall latency includes it, and whole-host
 capacity remains a later system gate.
 
+The following exact-head attempt at
+`5b56929889925c933c63374a8d7ab282b6b82a3f` progressed through every Cohere
+candidate-safety child before the resource finalizer. All 1,600 c8 requests
+completed; current, peak, allocation, task, thread, and memory-event checks
+passed. The run failed because a 116.317-second workload yielded a 57.798-second
+last-half tail below the frozen 60-second coverage and because a resource-only
+repeat reported three lexical identities. Exact teardown passed and NeMo did not
+start. The correction does not lower thresholds: resource evidence now uses an
+explicit `resource-lifecycle` scope that reports lexical variance without making
+it a model-promotion condition, and the observation stays open for at least 125
+seconds. The new exact-head rerun remains open.
+
 A focused dirty-head GB10 proof now also exercises the actual resident Cohere
 worker through vLLM's authenticated loopback transcription API. Exact readiness
 passed, the public fixture matched the Transformers reference transcript hash

@@ -453,6 +453,23 @@ promotion evidence. It points to long-form provider/model stability but does not
 alone prove or disprove cross-request ownership mixing. The corrected exact-head
 lifecycle run remains open and neither provider is promoted.
 
+The next exact-head attempt at
+`5b56929889925c933c63374a8d7ab282b6b82a3f` passed Cohere readiness, duration,
+short-tail c1/c2/c4, cancellation/recovery, slot admission, and PCM admission.
+The c8 resource workload completed 1,600/1,600 requests and passed every memory,
+allocation, task, thread, and memory-event ceiling. It failed before NeMo because
+its 116.317-second observation produced only 57.798 seconds in the last-half tail
+against the frozen 60-second minimum, while one resource-only repeat reported
+three lexical identities. Cleanup was exact.
+
+This exposed conflated gate semantics rather than a reason to lower a ceiling.
+The resource workload now declares `resource-lifecycle`: it still requires every
+request/result, provider-idle read-back, the frozen resource thresholds, and
+teardown, while reporting lexical variance without treating it as model
+promotion. Its observation remains open for at least 125 seconds so the last-
+half tail exceeds 60 seconds even when inference is faster. A new exact-head run
+is required and neither provider is promoted.
+
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall
 latency does traverse the proxy. Whole-route/whole-host capacity and persistent

@@ -157,14 +157,23 @@ transport and lifecycle and carries no representative-accuracy claim. Natural
 WER, deterministic long-form sentinel integrity, concurrency, and provider
 promotion remain independent evidence even when every duration completes.
 
+Provider-behavior exact-track loads require one non-empty lexical identity per
+repeated audio duration and report formatting identities separately. A
+`resource-lifecycle` load has a narrower contract: all requests and results,
+provider-idle read-back, resource ceilings, and teardown must pass while any
+transcript variance remains recorded without converting the resource
+measurement into a model-promotion gate.
+
 The resident-provider lifecycle wrapper is the checked-head owner for the
 launched-image and teardown boundary. It verifies already-present model assets,
 builds exact-head ARM64 images, creates a labeled internal Docker bridge, runs
 the containers with no Docker-published port or external egress, owns bounded
 numeric-loopback proxy process groups, and runs vLLM and NeMo sequentially. It
-requires typed exact-model readiness, the
-complete plan-owned duration/load/specialized cells, and each c8/1,600 resource
-profile. Finalization rejects missing/extra children, partial concurrency,
+requires typed exact-model readiness, the bounded candidate-safety duration/
+load/specialized cells, and each c8/1,600 resource profile. The resource
+observation window is at least 125 seconds, so its last-half tail exceeds the
+predeclared 60-second minimum even when the provider gets faster. Finalization
+rejects missing/extra children, partial concurrency,
 omitted exact-maximum batch evidence, stale head/suite hashes, changed host
 listener/firewall/service-unit state, or a retained provider container,
 proxy, launcher, or network. Raw samples, service logs, host snapshots, audio, and

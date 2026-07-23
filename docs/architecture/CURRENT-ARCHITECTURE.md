@@ -210,12 +210,13 @@ cancellation, capacity, and fixed/automatic-language runners so completion
 counts cannot stand in for the named semantics. The frozen GB10 evidence is
 still open.
 
-Exact-track load evidence separates recognized-word stability from rendered
-formatting. Repeated immutable input is grouped by audio duration and must retain
-one non-empty lexical identity; exact casing/punctuation identities are reported
-separately and punctuation remains part of representative reference scoring.
-This boundary reflects observed sustained Cohere/vLLM behavior and does not
-weaken the still-open quality gate.
+Provider-behavior exact-track evidence separates recognized-word stability from
+rendered formatting. Repeated immutable input is grouped by audio duration and
+must retain one non-empty lexical identity; exact casing/punctuation identities
+are reported separately and punctuation remains part of representative
+reference scoring. Resource-lifecycle loads explicitly report but do not gate on
+lexical variance; they gate request/result completion, provider idle state,
+resource ceilings, and teardown instead.
 
 Provider resource ownership is also explicit. The cgroup supplies current,
 peak, task, and memory-event truth; the container entrypoint supplies RSS,
@@ -223,7 +224,9 @@ anonymous/file/shared composition, thread count, and virtual allocation extent;
 NeMo responses additionally supply CUDA allocated/reserved and peak counters.
 Runtime-plan schema 5 binds each candidate to a c8/1,600 GB10 profile with
 current/peak and task/thread ceilings, zero memory-event increments, and a
-64-MiB tail bound on virtual allocation-extent growth. Physical RSS regression
+64-MiB tail bound on virtual allocation-extent growth. Its observation window is
+at least 125 seconds so the last-half tail cannot fall below the predeclared
+60-second coverage merely because inference gets faster. Physical RSS regression
 and range remain visible because unified-memory residency can oscillate, but
 they are not substituted for allocation growth. Focused results selected these
 thresholds, and both current-source profiles pass their eleven focused checks

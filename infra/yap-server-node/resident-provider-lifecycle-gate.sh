@@ -302,7 +302,8 @@ run_standard() {
   local catalog_language="$6"
   local provider_language="$7"
   local repeat_count="$8"
-  shift 8
+  local qualification_scope="$9"
+  shift 9
   local output_root="$gate_root/workloads/$provider-$logical_name"
   local destination="$provider_evidence_root/$provider/$logical_name.json"
   local arguments=(
@@ -319,6 +320,7 @@ run_standard() {
     "--output-root" "$output_root"
     "--timeout-seconds-per-wave" "$YAP_PROVIDER_TIMEOUT_SECONDS"
     "--repeat-count" "$repeat_count"
+    "--qualification-scope" "$qualification_scope"
   )
   local concurrency
   for concurrency in "$@"; do
@@ -429,14 +431,28 @@ run_resource_profile() {
       >"$raw_root/sampler.json" &
   sampler_pid="$!"
   wait_for_file "$control_root/ready.json" 30
+  local observation_start_ms observation_elapsed_ms observation_remaining_ms
+  observation_start_ms="$((
+    $(python3.12 -c 'import time; print(time.monotonic_ns() // 1_000_000)')
+  ))"
   install -m 0600 /dev/null "$control_root/workload-start"
   local workload_status=0
   set +e
   run_standard \
     "$provider" resource-load "$load_case" "$model_lock" "$endpoint" \
-    "$catalog_language" "$provider_language" 8 8
+    "$catalog_language" "$provider_language" 8 resource-lifecycle 8
   workload_status="$?"
   set -e
+  if [ "$workload_status" -eq 0 ]; then
+    observation_elapsed_ms=$((
+      $(python3.12 -c 'import time; print(time.monotonic_ns() // 1_000_000)')
+      - observation_start_ms
+    ))
+    observation_remaining_ms=$(( 125000 - observation_elapsed_ms ))
+    if [ "$observation_remaining_ms" -gt 0 ]; then
+      sleep "$(( (observation_remaining_ms + 999) / 1000 ))"
+    fi
+  fi
   install -m 0600 /dev/null "$control_root/workload-end"
   install -m 0600 /dev/null "$control_root/stop"
   local sampler_status=0
@@ -484,7 +500,8 @@ run_vllm_qualification() {
     vllm duration-batch vllm-cohere-batch batch-file "$vllm_lock" \
     "$vllm_endpoint" en en true
   run_standard \
-    vllm short-tail vllm-short-tail "$vllm_lock" "$vllm_endpoint" en en 1 1 2 4
+    vllm short-tail vllm-short-tail "$vllm_lock" "$vllm_endpoint" \
+    en en 1 provider-behavior 1 2 4
   run_cancellation \
     vllm cancellation vllm-cancelled-sibling "$vllm_lock" "$vllm_endpoint" en en
   run_capacity \
@@ -505,10 +522,10 @@ run_nemo_qualification() {
     "$nemo_endpoint" en-US en-US true
   run_standard \
     nemo short-tail nemo-finalized-short-tail "$nemo_lock" "$nemo_endpoint" \
-    en-US en-US 1 1 2 4
+    en-US en-US 1 provider-behavior 1 2 4
   run_standard \
     nemo long-windows nemo-finalized-long-windows "$nemo_lock" "$nemo_endpoint" \
-    en-US en-US 1 2
+    en-US en-US 1 provider-behavior 2
   local parity_root="$gate_root/workloads/nemo-language-parity"
   PYTHONPATH="$repo_root/server/src" \
     python3.12 -m yap_server.evaluation.provider_language_parity_qualification \

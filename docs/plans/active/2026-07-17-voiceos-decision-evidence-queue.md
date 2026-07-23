@@ -541,6 +541,18 @@ negative Cohere-promotion evidence, not proof that cross-request mixing is
 absent. The corrected exact-head lifecycle run, representative-quality decision,
 and complete Phase 6 gate remain open.
 
+The subsequent exact-head
+`5b56929889925c933c63374a8d7ab282b6b82a3f` attempt passed every Cohere child
+through its c8 resource workload. All 1,600 requests completed and all memory,
+allocation, task, thread, and event ceilings passed, but the final resource
+qualification failed: its 116.317-second observation produced a 57.798-second
+last-half tail below the 60-second contract, and one resource-only repeat
+reported three lexical identities. Exact cleanup again passed and NeMo did not
+start. The corrected wrapper preserves every ceiling/count/concurrency boundary,
+uses an explicit `resource-lifecycle` scope that records rather than promotes
+transcript stability, and guarantees a minimum 125-second observation. A new
+exact-head run remains required.
+
 ### P6-08 — Review UI and model-independent terminology hooks
 
 - [x] Complete keyboard, focus, label, contrast, reduced-motion, and narrow-

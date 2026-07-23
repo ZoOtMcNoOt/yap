@@ -551,6 +551,13 @@ single-clip track is valid only for duration, lifecycle, load, and resource
 behavior; it cannot establish long-form transcript quality, sentinel order, or
 independent generalization.
 
+The candidate-safety wrapper keeps provider-behavior and resource-lifecycle
+claims distinct. Short-tail c1/c2/c4 runs require one lexical identity. The
+c8/1,600 resource run still records identity counts but gates completions,
+provider-idle state, a minimum 125-second observation window, predeclared
+current/peak/allocation/task/thread/event ceilings, and teardown. It does not
+promote or rank a replaceable ASR model.
+
 For the desktop row, deterministic replay begins at the prepared-audio-frame
 boundary. The runner streams ten-millisecond frames through the production
 bounded local-ASR adapter, one live worker, and finalization; it does not load a

@@ -367,6 +367,19 @@ temporary network. Retain that private failed receipt as negative provider-
 promotion evidence. It points to long-form provider/model stability; it does not
 by itself prove or disprove cross-request ownership mixing. A new exact-head
 lifecycle run is required after this scope correction.
+
+The next exact-head attempt at
+`5b56929889925c933c63374a8d7ab282b6b82a3f` passed Cohere readiness, duration,
+short-tail c1/c2/c4, cancellation/recovery, slot admission, and PCM admission.
+Its c8 resource load completed all 1,600 requests and passed every current,
+peak, allocation, task, thread, and memory-event ceiling. It still failed closed
+before NeMo for two test-contract reasons: one repeat reported three lexical
+identities, and the faster 116.317-second observation left only 57.798 seconds
+in a last-half tail whose minimum is 60 seconds. Cleanup was exact. The corrected
+wrapper now labels that load `resource-lifecycle`, records lexical variance
+without treating it as provider promotion, and keeps the resource observation
+open for at least 125 seconds. No ceiling, request count, concurrency, or teardown
+requirement was lowered. A new exact-head run remains required.
 Representative quality, current-host client Preview resource/lifecycle behavior,
 accessibility, and the other Phase 6 gates remain separate. Low-end physical
 client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host

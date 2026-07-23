@@ -31,6 +31,7 @@ from yap_server.evaluation.runtime_plan import (
     RuntimeLoadCase,
     load_runtime_evaluation_plan,
     select_runtime_load_case,
+    select_runtime_resource_profile,
 )
 from yap_server.evaluation.vllm_runtime_metrics import (
     VllmMetricsSnapshot,
@@ -44,6 +45,11 @@ _STANDARD_EXPECTATIONS = frozenset(
         "complete",
         "complete-source-plan-continuity",
     }
+)
+_PROVIDER_BEHAVIOR_SCOPE = "provider-behavior"
+_RESOURCE_LIFECYCLE_SCOPE = "resource-lifecycle"
+_QUALIFICATION_SCOPES = frozenset(
+    {_PROVIDER_BEHAVIOR_SCOPE, _RESOURCE_LIFECYCLE_SCOPE}
 )
 _RESIDENT_PROVIDER_IDS = {
     "vllm-cohere-batch": "cohere",
@@ -144,6 +150,7 @@ class VllmQualificationMetricsObserver:
 @dataclass(frozen=True, slots=True)
 class ProviderLoadQualification:
     load_case: RuntimeLoadCase
+    qualification_scope: str
     selected_concurrencies: tuple[int, ...]
     repeat_count: int
     runs: tuple[dict[str, object], ...]
@@ -168,6 +175,7 @@ class ProviderLoadQualification:
             "loadCaseId": self.load_case.identifier,
             "systemId": self.load_case.system_id,
             "measurementBoundary": self.load_case.measurement_boundary,
+            "qualificationScope": self.qualification_scope,
             "expected": self.load_case.expected,
             "minimumCompletions": self.load_case.minimum_completions,
             "selectedConcurrencies": list(self.selected_concurrencies),
@@ -189,6 +197,7 @@ def run_provider_load_case(
     timeout_seconds_per_wave: float,
     selected_concurrencies: tuple[int, ...] | None = None,
     repeat_count: int = 1,
+    qualification_scope: str = _PROVIDER_BEHAVIOR_SCOPE,
     metrics_observer: ProviderMetricsObserver | None = None,
 ) -> ProviderLoadQualification:
     """Execute one plan cell while keeping paths and transcript identity private."""
@@ -198,6 +207,9 @@ def run_provider_load_case(
         raise ValueError(
             "runtime load case requires its specialized qualification runner"
         )
+    if qualification_scope not in _QUALIFICATION_SCOPES:
+        raise ValueError("provider qualification scope is invalid")
+    require_lexical_stability = qualification_scope == _PROVIDER_BEHAVIOR_SCOPE
     concurrencies = _selected_concurrencies(load_case, selected_concurrencies)
     if (
         isinstance(repeat_count, bool)
@@ -211,6 +223,21 @@ def run_provider_load_case(
         raise ValueError(
             "repeated provider load requires one explicit planned concurrency"
         )
+    if qualification_scope == _RESOURCE_LIFECYCLE_SCOPE:
+        resource_profile = select_runtime_resource_profile(
+            plan,
+            load_case.system_id,
+        )
+        requests_per_run = sum(item.count for item in load_case.mix)
+        if (
+            load_case.identifier != resource_profile.load_case_id
+            or concurrencies != (resource_profile.concurrency,)
+            or repeat_count * requests_per_run
+            != resource_profile.completed_request_count
+        ):
+            raise ValueError(
+                "resource lifecycle scope differs from the runtime resource profile"
+            )
     runs: list[dict[str, object]] = []
     for repetition in range(1, repeat_count + 1):
         request_load_case_id = (
@@ -264,13 +291,21 @@ def run_provider_load_case(
                 isinstance(completed, int)
                 and completed >= load_case.minimum_completions
             )
+            lexical_stability_met = _lexical_stability_matches(
+                summary.get("transcriptStabilityByAudioDuration")
+            )
+            if not require_lexical_stability:
+                summary["lexicalStabilityRequired"] = False
+                summary["lexicalStabilityMet"] = lexical_stability_met
             summary["expectationMet"] = standard_provider_expectation_met(
                 summary,
                 request_count=len(requests),
+                require_lexical_stability=require_lexical_stability,
             )
             runs.append(summary)
     return ProviderLoadQualification(
         load_case=load_case,
+        qualification_scope=qualification_scope,
         selected_concurrencies=concurrencies,
         repeat_count=repeat_count,
         runs=tuple(runs),
@@ -290,6 +325,7 @@ def run_resident_provider_load_case(
     timeout_seconds_per_wave: float,
     selected_concurrencies: tuple[int, ...] | None = None,
     repeat_count: int = 1,
+    qualification_scope: str = _PROVIDER_BEHAVIOR_SCOPE,
     environ: Mapping[str, str] = os.environ,
 ) -> ProviderLoadQualification:
     """Run one standard resident-provider plan cell from private locked tracks."""
@@ -343,6 +379,7 @@ def run_resident_provider_load_case(
             timeout_seconds_per_wave=timeout_seconds_per_wave,
             selected_concurrencies=selected_concurrencies,
             repeat_count=repeat_count,
+            qualification_scope=qualification_scope,
             metrics_observer=metrics_observer,
         )
     finally:
@@ -353,6 +390,7 @@ def standard_provider_expectation_met(
     summary: Mapping[str, object],
     *,
     request_count: int,
+    require_lexical_stability: bool = True,
 ) -> bool:
     outcomes = summary.get("outcomes")
     if not isinstance(outcomes, Mapping):
@@ -363,8 +401,11 @@ def standard_provider_expectation_met(
         and outcomes.get("busy") == 0
         and outcomes.get("failed") == 0
         and summary.get("resultPublishedCount") == request_count
-        and _lexical_stability_matches(
-            summary.get("transcriptStabilityByAudioDuration")
+        and (
+            not require_lexical_stability
+            or _lexical_stability_matches(
+                summary.get("transcriptStabilityByAudioDuration")
+            )
         )
         and _provider_metrics_match(summary.get("providerMetrics"))
     )
@@ -556,6 +597,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout-seconds-per-wave", type=float, required=True)
     parser.add_argument("--concurrency", type=int, action="append")
     parser.add_argument("--repeat-count", type=int, default=1)
+    parser.add_argument(
+        "--qualification-scope",
+        choices=sorted(_QUALIFICATION_SCOPES),
+        default=_PROVIDER_BEHAVIOR_SCOPE,
+    )
     return parser
 
 
@@ -588,6 +634,7 @@ def main(argv: list[str] | None = None) -> int:
             tuple(arguments.concurrency) if arguments.concurrency is not None else None
         ),
         repeat_count=arguments.repeat_count,
+        qualification_scope=arguments.qualification_scope,
     )
     verify_provider_load_case_tracks_unchanged(
         duration_tracks,

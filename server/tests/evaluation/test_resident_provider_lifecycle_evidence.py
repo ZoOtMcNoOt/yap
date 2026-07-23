@@ -118,6 +118,7 @@ def _artifact(kind: str, system_id: str, identity: str) -> dict[str, object]:
         if kind == "resource-load":
             value.update(
                 {
+                    "qualificationScope": "resource-lifecycle",
                     "selectedConcurrencies": [8],
                     "repeatCount": 8,
                     "completedRequestCount": 1600,
@@ -209,6 +210,7 @@ class ResidentProviderLifecycleEvidenceTests(unittest.TestCase):
             "wrong-head",
             "wrong-suite",
             "partial-load",
+            "wrong-resource-scope",
             "missing-maximum",
         ):
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
@@ -230,6 +232,10 @@ class ResidentProviderLifecycleEvidenceTests(unittest.TestCase):
                 elif mutation == "partial-load":
                     value["selectedConcurrencies"] = [1]
                     value["completedRequestCount"] = 200
+                elif mutation == "wrong-resource-scope":
+                    target = evidence_root / "vllm" / "resource-load.json"
+                    value = json.loads(target.read_text(encoding="utf-8"))
+                    value["qualificationScope"] = "provider-behavior"
                 else:
                     target = evidence_root / "vllm" / "duration-batch.json"
                     value = json.loads(target.read_text(encoding="utf-8"))

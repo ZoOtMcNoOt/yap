@@ -379,6 +379,10 @@ def _validate_child(
             != requirement.completed_request_count
         ):
             raise ValueError("resident provider standard load evidence is incomplete")
+        if requirement.kind == "resource-load" and value.get(
+            "qualificationScope"
+        ) != "resource-lifecycle":
+            raise ValueError("resident provider resource load scope is invalid")
         if requirement.kind == "resource" and (
             value.get("hardwareProfile") != "dgx-spark-gb10"
             or value.get("concurrency") != 8
