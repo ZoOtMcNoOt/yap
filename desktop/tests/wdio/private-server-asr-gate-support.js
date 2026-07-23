@@ -40,26 +40,21 @@ export function isValidInFlightRemotePipeline(job) {
     && job.pipeline.postprocessing === "notStarted";
 }
 
-export function matchCompletedRemoteTranscript(job, catalog) {
+export function matchCompletedRemoteHistoryEntry(jobIdentity, catalog) {
   if (
-    job?.route !== "serverBatch"
-    || job.status !== "complete"
-    || job.pipeline?.intake !== "done"
-    || job.pipeline?.preprocessing !== "done"
-    || job.pipeline?.transcription !== "done"
-    || job.pipeline?.postprocessing !== "done"
-    || !/^job-[0-9a-f]{24}$/.test(job.id)
-    || typeof job.sourcePath !== "string"
+    jobIdentity?.route !== "serverBatch"
+    || !/^job-[0-9a-f]{24}$/.test(jobIdentity.id)
+    || typeof jobIdentity.sourcePath !== "string"
     || !Array.isArray(catalog?.sessions)
   ) {
     return undefined;
   }
-  const sessionId = `s-${job.id.slice("job-".length)}`;
+  const sessionId = `s-${jobIdentity.id.slice("job-".length)}`;
   return catalog.sessions.find(
     (session) => session?.origin === "remote"
       && session?.sessionId === sessionId
       && typeof session.sourcePath === "string"
-      && sameWindowsPath(session.sourcePath, job.sourcePath),
+      && sameWindowsPath(session.sourcePath, jobIdentity.sourcePath),
   );
 }
 

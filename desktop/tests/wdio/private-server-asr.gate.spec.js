@@ -11,7 +11,7 @@ import path from "node:path";
 
 import {
   isValidInFlightRemotePipeline,
-  matchCompletedRemoteTranscript,
+  matchCompletedRemoteHistoryEntry,
   matchesVerifiedHistoryDialog,
 } from "./private-server-asr-gate-support.js";
 
@@ -214,7 +214,7 @@ describe("checked-head private-server ASR gate", () => {
     const observedStatuses = new Set([createdJob.status]);
     const observedPreprocessingStates = new Set([createdJob.pipeline.preprocessing]);
     let history;
-    let terminalJob;
+    let completedJobRetiredFromRecoverableQueue = false;
     let terminalFailure;
 
     const interruptedTunnel = tunnelProcess;
@@ -256,9 +256,9 @@ describe("checked-head private-server ASR gate", () => {
           );
           return true;
         }
-        history = matchCompletedRemoteTranscript(job, catalog);
-        if (history) terminalJob = job;
-        return Boolean(history);
+        history = matchCompletedRemoteHistoryEntry(createdJob, catalog);
+        completedJobRetiredFromRecoverableQueue = !job && Boolean(history);
+        return completedJobRetiredFromRecoverableQueue;
       },
       {
         interval: 1_000,
@@ -269,16 +269,7 @@ describe("checked-head private-server ASR gate", () => {
 
     if (terminalFailure) throw terminalFailure;
     expect(createdJob.route).toBe("serverBatch");
-    expect(terminalJob).toBeDefined();
-    expect(terminalJob.languageDecision).toEqual(createdJob.languageDecision);
-    expect(terminalJob.pipeline).toEqual({
-      intake: "done",
-      preprocessing: "done",
-      transcription: "done",
-      alignment: "notStarted",
-      diarization: "notStarted",
-      postprocessing: "done",
-    });
+    expect(completedJobRetiredFromRecoverableQueue).toBe(true);
     expect(history).toBeDefined();
     expect(history.warning).toBeNull();
     expect(canonicalPath(history.sourcePath)).toBe(canonicalPath(fixturePath));
@@ -302,12 +293,35 @@ describe("checked-head private-server ASR gate", () => {
     expect(result.authority).toBe("server_authoritative");
     expect(result.status).toBe("complete");
     expect(result.transcript.trim().length).toBeGreaterThan(0);
+    expect(result.language?.languageBcp47).toBe(createdJob.languageDecision.languageBcp47);
     expect(result.modelProvenance).toContainEqual({
       calibrationRevision: "asr-not-applicable",
       modelId: expectedModelId,
       revision: expectedModelRevision,
     });
 
+    const captureManifestPath = path.join(
+      path.dirname(path.dirname(transcriptPath)),
+      "capture-manifest.json",
+    );
+    const captureManifestMetadata = lstatSync(captureManifestPath);
+    expect(captureManifestMetadata.isSymbolicLink()).toBe(false);
+    expect(captureManifestMetadata.isFile()).toBe(true);
+    const captureManifestBytes = readFileSync(captureManifestPath);
+    expect(createHash("sha256").update(captureManifestBytes).digest("hex"))
+      .toBe(result.captureManifestSha256);
+    const captureManifest = JSON.parse(captureManifestBytes.toString("utf8"));
+    expect(captureManifest.source?.sha256).toBe(fixtureSha256);
+    expect(captureManifest.preprocessing?.normalization?.status).toBe("complete");
+    expect(["complete", "error"]).toContain(captureManifest.preprocessing?.vad?.status);
+    expect(captureManifest.languageDecision).toEqual(createdJob.languageDecision);
+    expect(captureManifest.chunks?.length).toBeGreaterThan(0);
+
+    const reviewButton = await browser.$(
+      `[aria-label=${JSON.stringify(`Review recording ${history.name}`)}]`,
+    );
+    await reviewButton.waitForDisplayed({ timeout: 15_000 });
+    await reviewButton.click();
     await browser.waitUntil(
       async () => {
         const dialogs = await browser.execute(() => (
@@ -346,7 +360,9 @@ describe("checked-head private-server ASR gate", () => {
         modelProvenance: result.modelProvenance,
         observedStatuses: [...observedStatuses].sort(),
         observedPreprocessingStates: [...observedPreprocessingStates].sort(),
-        terminalPipeline: terminalJob.pipeline,
+        captureManifestSha256: result.captureManifestSha256,
+        durablePreprocessingManifestVerified: true,
+        completedJobRetiredFromRecoverableQueue,
         tunnelInterruptionState: interruptedConnection.state,
         tunnelRestoredState: restoredConnection.state,
         immutableJobSurvivedTunnelInterruption: true,
