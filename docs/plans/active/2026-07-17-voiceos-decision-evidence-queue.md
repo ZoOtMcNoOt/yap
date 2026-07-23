@@ -478,12 +478,15 @@ provider-neutral contract.
   contract/capability smoke for the currently advertised Cohere `en-US` route.
 - [ ] Run deterministic local-live endpoints at 250 ms, 500 ms, 750 ms, one
   second, the 1.12-second Nemotron chunk boundary, two seconds, and through 30
-  seconds. Record shortcut-release-to-final-text latency, blank-result rate,
-  leading/trailing phoneme clipping, and raw accuracy for natural quick
-  corrections through the `short-boundaries` profile. Run one 15-minute
-  physical-microphone/rendered-UI local-live session on the current host; do not
-  duplicate that soak at the prepared-audio boundary. Keep longer real-time
-  Preview soaks for default-on or Phase 10 release qualification.
+  seconds. Record completion, dropped frames, text presence, and release-to-
+  final timing through the `short-boundaries` profile. Permit blank sub-word
+  250/500/750-ms cases; require speech-bearing one-second-through-30-second
+  cases to produce text. Do not invent phoneme or raw-accuracy evidence without
+  exact timestamped references; score those in the Phase 8 selected-model
+  quality gate. Run one 15-minute physical-microphone/rendered-UI local-live
+  session on the current host; do not duplicate that soak at the prepared-audio
+  boundary. Keep longer real-time Preview soaks for default-on or Phase 10
+  release qualification.
 - [ ] Include the 15-minute continuous local-live case explicitly in the
   machine-validated Phase 6 matrix. Reuse the existing bounded 30-second,
   15-minute, two-hour, and supported-maximum server controls only when Phase 8

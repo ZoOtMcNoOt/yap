@@ -727,12 +727,14 @@ limits.
        outside Git. Current-host rendered UI/audio interference, sustained-
        session, restart/cancellation, redistribution, and packaging evidence
        remain open. Representative low-end physical energy/thermal evidence is
-       a later default-on and Phase 10 release boundary. Explicit 250 ms,
-      500 ms, 750 ms, one-second,
-      1.12-second, and two-second natural correction gates must measure release-
-      to-final latency, blank results, phoneme clipping, and raw accuracy. These
-      are explicit Phase 6 gates for the selected route, not deferred completion
-      claims.
+       a later default-on and Phase 10 release boundary. The proportional MVP
+      gate must record completion, loss, text presence, and release-to-final
+      latency at 250 ms, 500 ms, 750 ms, one second, 1.12 seconds, two seconds,
+      and the retained longer short cases. Sub-word 250/500/750-ms inputs may
+      finish blank; one-second-through-30-second speech-bearing cases must
+      produce text. Timestamped phoneme-clipping and raw-accuracy scoring remain
+      in the Phase 8 selected-model quality gate rather than being fabricated
+      from truncated audio without exact references.
       The first separately frozen clean German-English product-route set has now
       been consumed once. It preserved exact source coverage and the required
       primary fallback but detected 0/4 must-detect natural alternate spans and
@@ -946,7 +948,8 @@ reference comparison, representative locale/duration matrix, percentile or
 resource ceilings, failure/capacity behavior, or rollback, so the frozen
 provider checkboxes remain open.
 
-The local duration runner is executable but has not been consumed. It accepts
+The local duration runner is executable but has not been consumed at the final
+offline candidate gate. It accepts
 one explicit, hash-bound functional profile. `short-boundaries` streams the
 plan's exact 250-ms, 500-ms, 750-ms, one-second, 1.12-second,
 two/five/ten/30-second cases in ten-millisecond frames through the real bounded
@@ -972,9 +975,14 @@ out-of-band-pinned private suite, every track manifest, raw WAV identity, and
 decoded PCM identity; it emits no transcript or path. Its truthful boundary is
 prepared audio frame to final, not physical microphone to final. Focused
 contract/lifecycle tests pass, but the checked-head `short-boundaries`
-execution, natural short-correction references, and current-host
-microphone/UI/resource gate remain open, so the duration checkbox and ADR score
-do not change.
+offline execution and current-host microphone/UI/resource gate remain open, so
+the duration checkbox and ADR score do not change. A focused connected
+diagnostic at exact clean head
+`a7ff69edf6a2138d15c69986cdf17ea2013ac0ad` used the locked CC-BY-4.0
+LibriSpeech fixture and passed all nine cases with zero dropped frames. The
+250/500/750-ms cases completed blank; every speech-bearing one-second-through-
+30-second case produced text. The strengthened private suite now requires those
+six text-bearing outcomes without retaining transcript content.
 
 The provider qualification implementation now builds immutable exact-duration
 tracks and hash-bound provider jobs only in a private external cache, executes

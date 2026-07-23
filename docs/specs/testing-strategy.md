@@ -127,8 +127,11 @@ one atomic private collection, and prints the `suite.json` path and SHA-256
 needed by the native gate.
 `--expect-text-case` is opt-in per planned case; it
 asserts only that text appears and must not be used to turn looped runtime
-controls into accuracy evidence. Source license/provenance records and natural
-references remain separately vetted private-corpus inputs.
+controls into accuracy evidence. The Phase 6 `short-boundaries` gate permits
+blank 250/500/750-ms inputs and requires text for the speech-bearing one-second,
+1.12-second, two-second, five-second, ten-second, and 30-second cases. Source
+license/provenance records and natural references remain separately vetted
+private-corpus inputs.
 
 The [ASR evaluation corpus and runtime qualification](../research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md)
 owns the reusable corpus tiers, provenance manifest, per-slice metrics, live

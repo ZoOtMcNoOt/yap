@@ -37,9 +37,11 @@ receive only code, plans, and the final non-sensitive status claim after review.
   AmberNet QDQ INT8 artifacts under one private models root. No gate step may
   download or substitute model bytes.
 - A license-cleared mono 16-kHz WAV for the native collector, plus an exact
-  lowercase SHA-256, and a vetted mono PCM16/16-kHz WAV for the prepared-audio
-  boundary suite. One file may serve both roles only when it satisfies both
-  formats.
+  lowercase SHA-256, and a vetted, speech-bearing mono PCM16/16-kHz WAV for the
+  prepared-audio boundary suite. The prepared-audio source must have an exact
+  rights/provenance lock and must produce text in the one-second-through-
+  30-second cases during focused verification. One file may serve both roles
+  only when it satisfies both formats and purposes.
 - A license-cleared spoken-audio stimulus for the physical microphone run,
   identified by SHA-256 and a bounded SPDX-style license identifier. Play it
   acoustically from a separate offline device; do not use a virtual microphone
@@ -110,7 +112,13 @@ $DurationBuild = (
   uv run --isolated --no-project --python 3.12 python `
     -m yap_server.evaluation.local_stream_duration_suite `
     --profile short-boundaries `
-    --source $DurationSource
+    --source $DurationSource `
+    --expect-text-case live-endpoint-16000-samples `
+    --expect-text-case live-endpoint-17920-samples `
+    --expect-text-case live-endpoint-32000-samples `
+    --expect-text-case live-endpoint-80000-samples `
+    --expect-text-case live-endpoint-160000-samples `
+    --expect-text-case live-endpoint-480000-samples
 ) | ConvertFrom-Json
 ```
 
@@ -140,6 +148,15 @@ inference. It runs for roughly the sum of the nine source durations—under one
 minute plus inference/finalization overhead—not for two hours. Its versioned
 private aggregate records the functional profile but no source path or
 transcript text.
+
+The 250-ms, 500-ms, and 750-ms cases prove bounded stop/finalization and record
+whether text appeared; a blank result at those sub-word boundaries is allowed.
+The one-second, 1.12-second, two-second, five-second, ten-second, and 30-second
+cases must produce text. This is the integrated MVP's quick-correction
+availability boundary, not word-error-rate or phoneme-alignment evidence.
+Timestamped reference scoring belongs to the Phase 8 selected-model quality
+gate; it must not be manufactured from a truncated clip without an exact
+reference.
 
 ## 3. Physical microphone and rendered UI
 
