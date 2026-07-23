@@ -1,6 +1,6 @@
 # Spec: Testing strategy
 
-**Status:** Living verification contract (updated 2026-07-22); future phase gates activate only when their fixtures exist
+**Status:** Living verification contract (updated 2026-07-23); future phase gates activate only when their fixtures exist
 **Scope:** Cross-cutting tests for the desktop runtime, track-aware audio contracts, local fallback, source-aware diarization, server contracts, and native UI.
 
 This is the shared reference the phase specs point to for their acceptance tests.
@@ -17,9 +17,11 @@ bundled llama-server, and per-OS real-model matrix described below do not exist
 yet. Phase 6 catalog, deterministic preprocessing/VAD, guarded server LID,
 Preview local LID/span routing, provider-specific server candidates, alignment,
 private-corpus trust, scoring, and runtime-qualification components now execute
-under focused tests. The representative private promotion corpus, current-host
-release/resource evidence, frozen checked-head GB10 comparisons, and complete Phase 6
-gate remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
+under focused tests. Exact head
+`74322bf42c22058ffa88620f28cd4bf118ad8c01` passed the focused current-host
+release/resource qualification. The representative provider-promotion corpus,
+frozen Phase 8 comparisons, and complete Phase 6 gate remain open. ADR 0027
+selects Tiron as the future Phase 8 server meeting
 baseline, but no Tiron worker or meeting scorer executes yet. The tables below
 distinguish executable focused coverage from future phase-gate requirements;
 neither is a claim about ordinary hosted CI.

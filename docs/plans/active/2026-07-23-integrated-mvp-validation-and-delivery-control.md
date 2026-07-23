@@ -42,6 +42,18 @@ complexity.
   outside Git; its public-safe SHA-256 is
   `8fe9236459a160fe2a66b6f905fa4ec86d721e0b9d7147783503152fdcbde466`.
   This is focused development evidence, not the frozen complete Phase 6 gate.
+- Exact executable head `74322bf42c22058ffa88620f28cd4bf118ad8c01`
+  passed the focused target-client qualification. Twelve paced native cycles
+  and all nine 250-ms-through-30-second prepared-audio cases completed with zero
+  dropped frames. The unattended 30-second release-mode UI run remained on
+  `localFallback`, recovered from four early cancellations, saved and deleted
+  the captured session, exited through the production tray path, and retained
+  no recording, model snapshot, Yap/driver process, or port-18765 listener. The
+  private native-profile, duration, and UI-evidence SHA-256 receipts are
+  `17e5a92766ecd317506eefb0d3bc60c5541f87919e00332eca0b777afbc60dd0`,
+  `71a2457ec98af40f176a45d7cb41e861c094cfaed011fb3780af997727018c4d`,
+  and `22612670fa7ab2f6eb9ace7f731ad2a0fb554314faade948005136483e4b41c3`.
+  This remains focused pre-gate evidence, not the complete Phase 6 matrix.
 - The model-neutral Cohere vLLM and Nemotron NeMo candidate-safety lifecycle
   already passed on GB10 at `a21964c19e56648e9fddcb5200de419e59a7687c`.
   Neither provider is promoted.
@@ -91,20 +103,20 @@ Only these six actions remain on the Phase 6 critical path.
 
 ### 2. Run one bounded automated Windows session
 
-- [ ] Verify the clean head, cached dependencies, installed
+- [x] Verify the clean head, cached dependencies, installed
       Nemotron/Silero/AmberNet artifacts, private evidence paths, licensed
       acoustic stimulus, and absence of a listener at the admitted numeric-
       loopback server origin.
-- [ ] Run the 12-cycle native resource/restart collector and the nine-case
+- [x] Run the 12-cycle native resource/restart collector and the nine-case
       250-ms-through-30-second prepared-audio boundary profile.
-- [ ] Run the 30-second unattended release-mode default-microphone/rendered-UI
+- [x] Run the 30-second unattended release-mode default-microphone/rendered-UI
       lifecycle smoke while the launcher plays the licensed stimulus through
       the current Windows output device. Keep speech/transcription assertions
       at the preceding prepared-audio boundary.
-- [ ] Verify the isolated app profile has no configured server, the local route
+- [x] Verify the isolated app profile has no configured server, the local route
       remains authoritative, and no recording, model snapshot, process, or
       listener remains.
-- [ ] Inspect the private evidence without requiring a Wi-Fi state change or
+- [x] Inspect the private evidence without requiring a Wi-Fi state change or
       manual stimulus control.
 
 This is the integrated-MVP boundary, not representative hardware

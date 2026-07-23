@@ -62,8 +62,11 @@ preserves discussed decisions, open questions, detailed Phase 6 sub-tasks, and
 later-phase owners without authorizing phase mixing.
 Automatic cross-provider switching, named speaker identity, and enterprise
 infrastructure are not Phase 6 claims. Within-utterance language spans are a
-Phase 6 target but remain unadvertised until the frozen local evidence gate
-passes.
+Phase 6 target and remain an explicit default-off Preview because the frozen
+natural-switch quality target failed. Exact head
+`74322bf42c22058ffa88620f28cd4bf118ad8c01` passed the focused no-server local
+resource/lifecycle gate; candidate review, the complete Phase 6 matrix, hosted
+checks, and merge remain open.
 Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
 SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
 and SGLang services, production multi-worker/mixed-load capacity promotion, production

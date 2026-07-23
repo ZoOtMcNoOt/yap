@@ -32,8 +32,13 @@ assembled Windows-desktop/private-server route through durable preprocessing,
 one tunnel interruption and recovery, server-authoritative result publication,
 verified History review, and complete remote teardown. That closes the focused
 advertised-route integration smoke without promoting a provider or completing
-the Phase 6 gate. The current-host automated no-server Preview lifecycle,
-accessibility rerun, and complete frozen Phase 6 matrix remain open.
+the Phase 6 gate. Exact executable head
+`74322bf42c22058ffa88620f28cd4bf118ad8c01` subsequently passed the focused
+current-host automated no-server Preview lifecycle: 12/12 paced native cycles
+and all nine short-boundary cases completed without drops, and the unattended
+release-mode UI run proved cancellation recovery, local fallback, save/delete,
+production quit, and complete recording/model/process/listener teardown. The
+accessibility rerun and complete frozen Phase 6 matrix remain open.
 Fail-closed English
 Cohere attention alignment also executes and has current-source contained GB10
 lifecycle evidence without being advertised. The tiny SpeechFlow LID13 challenger
@@ -70,8 +75,10 @@ interactive-use claim. These proxies are not rendered-UI, sustained release-
 lifecycle, minimum-device, battery, or thermal qualification. The separately frozen representative natural-switch
 quality target completed and failed; that accepted limitation fixes the route
 as an explicit, default-off Preview rather than remaining an unfinished pass
-claim. Current-host resource/interference, sustained lifecycle, timing
-promotion/UX, and the complete Phase 6 gate are not complete. Representative
+claim. Current-host resource/interference and sustained lifecycle passed the
+focused target-client gate at
+`74322bf42c22058ffa88620f28cd4bf118ad8c01`; the complete Phase 6 gate is not
+complete. Representative
 low-end physical battery/thermal certification is deferred until default-on or
 Phase 10 release qualification.
 
@@ -808,7 +815,7 @@ limits.
       artifacts are unavailable.
       Focused verification passed 123 language-related tests; eight real-model or
       private collectors remained intentionally ignored.
-- [ ] Complete the remaining real-runtime Preview release boundary on the
+- [x] Complete the remaining real-runtime Preview release boundary on the
       available Windows system: installed-artifact local operation with no
       configured or listening server, repeated sessions, restart/cancellation,
       rendered-UI and capture interference, and bounded resource teardown. The
@@ -819,15 +826,20 @@ limits.
       in the isolated profile, dirty/different source, in-repository evidence,
       missing resident artifacts, degraded routing, responsiveness limits, or
       retained private/model-snapshot content. They are composed by
-      the [target-client qualification runbook](../../runbooks/target-client-language-routing-qualification.md)
-      but have not been consumed on the final checked head. The launcher
+      the [target-client qualification runbook](../../runbooks/target-client-language-routing-qualification.md).
+      Exact executable head
+      `74322bf42c22058ffa88620f28cd4bf118ad8c01` consumed both channels:
+      12/12 paced native cycles and all nine prepared-audio cases completed
+      without drops, while the unattended UI run proved four-cycle cancellation
+      recovery, local fallback, save/delete, production quit, and complete
+      recording/model/process/listener teardown. The launcher
       automates a 30-second default-microphone/UI lifecycle smoke; the checked-
       head prepared-audio profile owns speech/transcription evidence. A longer
       manual physical-device soak and calibrated low-end energy/thermal
       evidence cannot be inferred from this development host and are deferred
       to default-on or Phase 10 release qualification. They do not block this
-      explicit Preview. The current-host safety item remains open until the two
-      executable channels pass.
+      explicit Preview. The current-host safety item is complete; removing the
+      Preview label still requires different independent quality evidence.
       The completed constructed, related-language, noisy, silence, and overlap
       results plus the consumed clean natural result remain their recorded
       evidence—including the natural product-route failure at 0/4 must-detect
@@ -920,7 +932,7 @@ or is rejected.
       candidate, run its independent representative locale/quality,
       output-behavior, percentile, and rollback comparison before selecting it.
       Do not inherit Cohere or Phase 6 candidate-safety evidence.
-- [ ] Run the proportional Phase 6 duration plan: deterministic 250-ms through
+- [x] Run the proportional Phase 6 duration plan: deterministic 250-ms through
       30-second local-live boundaries through the hash-bound `short-boundaries`
       profile, one automated 30-second default-microphone/rendered-UI lifecycle
       smoke,
@@ -954,8 +966,8 @@ reference comparison, representative locale/duration matrix, percentile or
 resource ceilings, failure/capacity behavior, or rollback, so the frozen
 provider checkboxes remain open.
 
-The local duration runner is executable but has not been consumed at the final
-automated candidate gate. It accepts
+The local duration runner was consumed by the focused target-client gate at
+exact executable head `74322bf42c22058ffa88620f28cd4bf118ad8c01`. It accepts
 one explicit, hash-bound functional profile. `short-boundaries` streams the
 plan's exact 250-ms, 500-ms, 750-ms, one-second, 1.12-second,
 two/five/ten/30-second cases in ten-millisecond frames through the real bounded
@@ -980,9 +992,10 @@ The runner fails closed on a full `YAP_CHECKED_HEAD`, the public plan hash, an
 out-of-band-pinned private suite, every track manifest, raw WAV identity, and
 decoded PCM identity; it emits no transcript or path. Its truthful boundary is
 prepared audio frame to final, not physical microphone to final. Focused
-contract/lifecycle tests pass, but the checked-head `short-boundaries`
-execution and current-host no-server microphone/UI/resource gate remain open, so
-the duration checkbox and ADR score do not change. A focused connected
+contract/lifecycle tests pass. The checked-head `short-boundaries` execution and
+current-host no-server microphone/UI/resource gate passed with zero dropped
+frames and complete teardown, so the duration checkbox and ADR score may now
+reflect that evidence. A focused connected
 diagnostic at exact clean head
 `a7ff69edf6a2138d15c69986cdf17ea2013ac0ad` used the locked CC-BY-4.0
 LibriSpeech fixture and passed all nine cases with zero dropped frames. The
@@ -1731,16 +1744,20 @@ VAD evidence could incorrectly hold a job in preflight, and the gate expected a
 completed job to remain in the recoverable queue instead of following it into
 History. Focused follow-up verification passed five desktop gate files with 30
 tests, seven Rust client-stage ledger tests, JavaScript syntax checking,
-TypeScript checking, and whitespace validation. The checklist remains open
-until the offline current-host qualification and frozen complete gate determine
-the final claims and the exact candidate receives one last read-back.
+TypeScript checking, and whitespace validation. The later focused target-client
+qualification passed at exact head
+`74322bf42c22058ffa88620f28cd4bf118ad8c01`; the checklist remains open until
+the frozen complete gate determines the final claims and the exact candidate
+receives one last read-back.
 
 - [x] Resolve focused correctness, security, privacy, license/provenance,
       maintainability, accessibility, and resource-bound findings.
-- [ ] Update ADR implementation scores only for behavior proved by executable
+- [x] Update ADR implementation scores only for behavior proved by executable
       tests and observed runtime evidence.
-- [ ] Reconcile current architecture, Voice OS synthesis, roadmap, status,
-      OpenAPI, runbooks, and this plan with what actually executes.
+- [x] Reconcile current architecture, Voice OS synthesis, roadmap, status,
+      OpenAPI, runbooks, and this plan with what actually executes. The OpenAPI
+      contract remains unchanged because this closure changes only local runtime
+      lifecycle and qualification behavior.
 - [ ] Freeze one Phase 6 candidate and run the complete applicable local/native/
       server/GB10 matrix exactly once.
 - [ ] Open a focused PR, require hosted exact-head CI/CodeQL and any applicable

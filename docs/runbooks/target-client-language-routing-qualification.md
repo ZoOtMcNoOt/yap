@@ -6,6 +6,22 @@ consumed natural-switch quality target, remove the Preview label, certify a
 minimum physical device, prove whole-host network isolation, or replace the
 complete Phase 6 gate.
 
+## Last consumed result
+
+Exact executable head `74322bf42c22058ffa88620f28cd4bf118ad8c01`
+passed both channels on 2026-07-23. Twelve paced native cycles and all nine
+250-ms-through-30-second cases completed with zero dropped frames. The
+unattended release-mode UI run remained on `localFallback`, recovered from four
+early cancellations, saved and deleted the captured session, exited through the
+production tray action, and retained no recording, model snapshot, Yap/driver
+process, or port-18765 listener. The private native-profile, duration, and UI
+evidence SHA-256 receipts are
+`17e5a92766ecd317506eefb0d3bc60c5541f87919e00332eca0b777afbc60dd0`,
+`71a2457ec98af40f176a45d7cb41e861c094cfaed011fb3780af997727018c4d`,
+and `22612670fa7ab2f6eb9ace7f731ad2a0fb554314faade948005136483e4b41c3`.
+This is focused target-client evidence, not the complete Phase 6 matrix or
+physical power/thermal certification.
+
 The Phase 6 qualification has two evidence channels. A result is incomplete
 unless both belong to the same clean checked head and Windows machine:
 

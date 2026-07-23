@@ -350,12 +350,13 @@ is saturation evidence rather than an interactive workload claim. These are
 accelerated and paced prepared-audio runtime proxies, not rendered-UI or
 sustained release-lifecycle evidence. The route is available only as an
 explicit, default-off Preview because its frozen natural-switch target failed;
-current-host resource and interference, one unattended 30-second microphone/UI
-lifecycle smoke under an isolated no-server profile, restart, cancellation, and the
-complete checked-head gate still gate Phase 6 release.
-Fail-closed checked-head native repeated-session and release-mode physical-
+exact head `74322bf42c22058ffa88620f28cd4bf118ad8c01` later passed the
+focused current-host resource, restart/cancellation, no-server, and unattended
+30-second microphone/UI lifecycle gate. The complete checked-head Phase 6 matrix
+still gates release.
+Fail-closed checked-head native repeated-session and release-mode default-
 microphone/rendered-UI collectors bind the observed Windows processor and
-processor count but remain unconsumed on the final checked head. Representative
+processor count and passed together at that exact head. Representative
 longer physical-device, low-end battery, and thermal certification is deferred
 to default-on or Phase 10 release qualification and cannot be inferred from
 this Preview gate. A
