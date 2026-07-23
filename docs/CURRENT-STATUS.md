@@ -62,6 +62,13 @@ can include the four-hour boundary only for batch. Its evidence explicitly says
 `duration-transport-and-lifecycle` and `representativeAccuracyClaim: false`;
 quality, sentinel integrity, concurrency, and promotion remain separate.
 
+Executable candidate `aa3268d73ae9a811e84534387c8399ced2cc07e1` built and
+independently reloaded one private 18-track provider-duration suite from the two
+license-vetted AMI prepared views. The checked locks also reverified both
+already-present model directories without starting a service. This closes input
+preparation only: no provider runtime cell, lifecycle wrapper, frozen gate, or
+promotion claim was consumed.
+
 The sequential resident-provider lifecycle wrapper is also executable under
 focused tests but remains unconsumed. It verifies already-present models, builds
 both exact-head ARM64 images, launches each provider separately without a

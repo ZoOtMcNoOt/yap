@@ -953,8 +953,12 @@ and selected duration identities before the checked-candidate hash is computed.
 The admitted tracks are handed directly to the workload runner rather than
 hashed a second time at runner entry, and the suite plus selected audio are
 re-read before evidence publication. Focused tests cover full and cell-specific
-admission, pre-publication read-back, and wrong-digest failure; no private suite
-has been built or runtime cell consumed yet.
+admission, pre-publication read-back, and wrong-digest failure. Executable
+candidate `aa3268d73ae9a811e84534387c8399ced2cc07e1` built and independently
+reloaded one private 18-track suite from the two license-vetted AMI prepared
+views, then reverified both checked model directories without launching either
+service. That is input preparation only; no runtime cell or frozen provider gate
+was consumed.
 
 The standard runner can now select one or more existing plan concurrencies and,
 only when exactly one is explicit, repeat that cell up to a fixed bound. This
