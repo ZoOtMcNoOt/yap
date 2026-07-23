@@ -117,6 +117,9 @@ pub(in crate::live::recordings) fn build_recoverable_deletion_intent(
             names.insert(name);
         }
     }
+    if recording::recoverable_complete_sidecar_is_owned(dir, session_id)? {
+        names.insert(format!("live-{session_id}.capture.json"));
+    }
     names.extend(transcript_artifact_names(dir, session_id)?);
 
     let sidecar_name = format!("live-{session_id}.capture.partial.json");

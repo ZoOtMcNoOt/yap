@@ -68,7 +68,7 @@ function assertCanonicalFile(candidate, expectedName, label, root, canonicalRoot
   }
 }
 
-export function assertOwnedSavedSession(saved, recordingRoot, options = {}) {
+function assertOwnedSessionIdentity(saved, recordingRoot, options) {
   const canonicalize = options.canonicalize ?? realpathSync.native;
   const nowMs = options.nowMs ?? Date.now();
   const runStartedAtMs = options.runStartedAtMs;
@@ -96,7 +96,18 @@ export function assertOwnedSavedSession(saved, recordingRoot, options = {}) {
     || saved.createdAtMs > nowMs + 5_000) {
     throw new Error("Saved event does not belong to the current test run.");
   }
+  return { canonicalize, canonicalRoot, normalizedRoot };
+}
 
+export function assertOwnedSavedSession(saved, recordingRoot, options = {}) {
+  const {
+    canonicalize,
+    canonicalRoot,
+    normalizedRoot,
+  } = assertOwnedSessionIdentity(saved, recordingRoot, options);
+  if (saved.recoveryState !== undefined && saved.recoveryState !== null) {
+    throw new Error("Completed saved-session evidence must not claim a recovery state.");
+  }
   const artifactNames = expectedBundleSuffixes.map((suffix) => `${saved.name}${suffix}`);
   const eventPaths = new Map([
     [`${saved.name}.commit.json`, [saved.captureCommitPath, "capture commit path"]],
@@ -142,5 +153,82 @@ export function assertOwnedSavedSession(saved, recordingRoot, options = {}) {
   return {
     artifactNames,
     sessionId: saved.sessionId,
+  };
+}
+
+export function assertOwnedRecoverableSession(saved, recordingRoot, options = {}) {
+  const {
+    canonicalize,
+    canonicalRoot,
+    normalizedRoot,
+  } = assertOwnedSessionIdentity(saved, recordingRoot, options);
+  if (!["recoverable", "recovered"].includes(saved.recoveryState)) {
+    throw new Error("Saved recovery event has no supported recovery state.");
+  }
+
+  const sourceNames = [
+    `${saved.name}.wav.part`,
+    `${saved.name}.capture.journal.part`,
+    `${saved.name}.wav`,
+  ];
+  const normalizedSource = requireAbsoluteWindowsPath(
+    saved.sourcePath,
+    "recovery source path",
+  );
+  const sourceName = path.win32.basename(normalizedSource);
+  if (!sourceNames.includes(sourceName)) {
+    throw new Error("Recovery source path has no canonical session artifact name.");
+  }
+  assertCanonicalFile(
+    saved.sourcePath,
+    sourceName,
+    "recovery source path",
+    normalizedRoot,
+    canonicalRoot,
+    canonicalize,
+  );
+
+  const normalizedOutput = requireAbsoluteWindowsPath(
+    saved.outputPath,
+    "recovery output path",
+  );
+  const outputName = path.win32.basename(normalizedOutput);
+  if (![sourceName, `${saved.name}.txt`].includes(outputName)) {
+    throw new Error("Recovery output path has no canonical session artifact name.");
+  }
+  assertCanonicalFile(
+    saved.outputPath,
+    outputName,
+    "recovery output path",
+    normalizedRoot,
+    canonicalRoot,
+    canonicalize,
+  );
+
+  return {
+    artifactPath: saved.sourcePath,
+    sessionId: saved.sessionId,
+  };
+}
+
+export function ownedLiveSessionDeletion(saved, recordingRoot, options = {}) {
+  if (saved?.recoveryState === "recoverable" || saved?.recoveryState === "recovered") {
+    const owned = assertOwnedRecoverableSession(saved, recordingRoot, options);
+    return {
+      command: "delete_recoverable_live_session",
+      identity: {
+        expectedArtifactPath: owned.artifactPath,
+        sessionId: owned.sessionId,
+      },
+    };
+  }
+  const owned = assertOwnedSavedSession(saved, recordingRoot, options);
+  return {
+    command: "delete_saved_live_session",
+    identity: {
+      expectedCaptureCommitPath: saved.captureCommitPath,
+      expectedOutputPath: saved.outputPath,
+      sessionId: owned.sessionId,
+    },
   };
 }

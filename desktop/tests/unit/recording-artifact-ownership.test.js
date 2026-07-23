@@ -2,7 +2,11 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { assertOwnedSavedSession } from "../wdio/recording-artifact-ownership.js";
+import {
+  assertOwnedRecoverableSession,
+  assertOwnedSavedSession,
+  ownedLiveSessionDeletion,
+} from "../wdio/recording-artifact-ownership.js";
 import { installWdioRunIsolationFixture } from "./wdio-run-isolation-fixture.js";
 
 const {
@@ -36,6 +40,44 @@ describe("canonical saved-session artifact ownership", () => {
       "live-s-18c13f2a28c8be80-d018-2.txt",
       "live-s-18c13f2a28c8be80-d018-2.wav",
     ]);
+  });
+
+  it("binds an unfinished transcript to its authoritative recovery artifact", () => {
+    const isolation = privateIsolation("recoverable-recording");
+    const name = "live-s-a-b-c";
+    const sourcePath = path.join(isolation.recordingRoot, `${name}.wav.part`);
+    const outputPath = path.join(isolation.recordingRoot, `${name}.txt`);
+    writeFileSync(sourcePath, Buffer.alloc(48));
+    writeFileSync(outputPath, "partial transcript\n");
+    const saved = {
+      createdAtMs: 2_000,
+      name,
+      outputPath,
+      recoveryState: "recoverable",
+      sessionId: "s-a-b-c",
+      sourcePath,
+    };
+    const options = { nowMs: 2_500, runStartedAtMs: 1_500 };
+
+    expect(assertOwnedRecoverableSession(
+      saved,
+      isolation.recordingRoot,
+      options,
+    )).toEqual({
+      artifactPath: sourcePath,
+      sessionId: "s-a-b-c",
+    });
+    expect(ownedLiveSessionDeletion(
+      saved,
+      isolation.recordingRoot,
+      options,
+    )).toEqual({
+      command: "delete_recoverable_live_session",
+      identity: {
+        expectedArtifactPath: sourcePath,
+        sessionId: "s-a-b-c",
+      },
+    });
   });
 
   it("rejects relative paths and a different parent", () => {

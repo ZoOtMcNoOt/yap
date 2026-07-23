@@ -179,10 +179,18 @@ where
         })
         .err();
     let Some(committed) = capture.committed else {
+        let recoverable = recovery::recoverable_session_from_dir(dir, &capture.session_id).ok();
+        let recovery_artifact = recoverable
+            .as_ref()
+            .and_then(recovery::recoverable_session_artifact_path)
+            .map(str::to_string);
+        let recovery_state = recovery_artifact
+            .as_ref()
+            .map(|_| "recoverable".to_string());
         return Ok(Some(SavedLiveSession {
             session_id: capture.session_id.to_string(),
             name,
-            source_path: output_path.clone(),
+            source_path: recovery_artifact.unwrap_or_else(|| output_path.clone()),
             output_path,
             created_at_ms,
             warning: revision_warning.map_or_else(
@@ -195,7 +203,7 @@ where
                 },
             ),
             capture_commit_path: None,
-            recovery_state: None,
+            recovery_state,
         }));
     };
     let audio_path = dir.join(&committed.manifest.audio_file);

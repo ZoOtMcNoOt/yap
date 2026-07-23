@@ -163,11 +163,20 @@ fn assert_partial_capture_transcript(fault: CommitFaultPoint) {
         recording::sha256_file(&dir.join(lineage_file)).unwrap(),
         lineage_hash
     );
+    assert_eq!(saved.recovery_state.as_deref(), Some("recoverable"));
+    assert_ne!(saved.source_path, saved.output_path);
+    assert!(
+        saved.source_path.ends_with(".wav.part") || saved.source_path.ends_with(".wav"),
+        "partial capture must expose its authoritative recovery artifact"
+    );
     assert!(saved.warning.unwrap().contains(AUDIO_SAVE_FAILED_WARNING));
     let scanned = recording::scan_recordings(&dir).unwrap();
     assert!(scanned.complete.is_empty());
     assert_eq!(scanned.partial.len(), 1);
     assert!(list_session_files_from_dir(&dir).unwrap().is_empty());
+    delete_recoverable_live_session_in_dir(&dir, session.to_string(), saved.source_path).unwrap();
+    assert!(recording::scan_recordings(&dir).unwrap().is_empty());
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0);
     std::fs::remove_dir_all(dir).ok();
 }
 

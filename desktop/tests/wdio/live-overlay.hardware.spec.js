@@ -1,6 +1,7 @@
 import {
   assertOwnedSavedSession,
   assertRecordingRootEmpty,
+  ownedLiveSessionDeletion,
 } from "./recording-artifact-ownership.js";
 import {
   registerLiveSessionEventListeners,
@@ -13,7 +14,7 @@ import { createTargetClientLanguageRoutingHardwareGate } from "./target-client-l
 // transaction together. Target-client policy lives in its own gate module.
 const lifecycleAssertions = [
   "overlay-context start and stop without main-window UI interaction",
-  "armed/listening/speaking -> saving -> idle lifecycle ordering",
+  "active capture -> saving -> idle lifecycle ordering",
   "live-level delivery",
   "exactly one canonical main-window live-session-saved event",
   "no saved-path or transcript payload delivery to the overlay",
@@ -165,15 +166,11 @@ async function cleanupLifecycle(runStartedAtMs) {
       errors.push(new Error(`Expected one saved event during cleanup, received ${saved.length}.`));
     }
     const candidate = saved[0];
-    const owned = assertOwnedSavedSession(candidate, recordingRoot, { runStartedAtMs });
+    const deletion = ownedLiveSessionDeletion(candidate, recordingRoot, { runStartedAtMs });
     await browser.tauri.switchWindow("main");
     await browser.tauri.execute(
-      ({ core }, identity) => core.invoke("delete_saved_live_session", identity),
-      {
-        expectedCaptureCommitPath: candidate.captureCommitPath,
-        expectedOutputPath: candidate.outputPath,
-        sessionId: owned.sessionId,
-      },
+      ({ core }, request) => core.invoke(request.command, request.identity),
+      deletion,
     );
   });
 
@@ -328,7 +325,7 @@ describe("Yap live overlay hardware capture", () => {
       expect(evidence.sessions[idleIndex].error).toBeNull();
       expect(evidence.levels.length).toBeGreaterThan(0);
       expect(evidence.levels.some(({ level }) => Number.isFinite(level))).toBe(true);
-      targetClient.assertSustainedEvidence({ evidence, statuses, uiResponsiveness });
+      targetClient.assertRenderedCaptureEvidence({ evidence, statuses, uiResponsiveness });
       expect(evidence.saved).toHaveLength(1);
       expect(evidence.sessions.every((session) =>
         !("partialText" in session)

@@ -171,4 +171,22 @@ describe("native transcript history actions", () => {
     });
     expect(savedLiveSessionActionIdentity(entry)).toBeUndefined();
   });
+
+  it("uses an unfinished capture artifact when its transcript was already saved", () => {
+    const sourcePath = "C:\\Users\\me\\AppData\\Local\\Yap\\live-recordings\\live-partial.wav.part";
+    const entry = savedSessionToTranscriptHistoryEntry({
+      createdAtMs: Date.UTC(2026, 0, 1),
+      name: "live-partial",
+      outputPath: "C:\\Users\\me\\AppData\\Local\\Yap\\live-recordings\\live-partial.txt",
+      recoveryState: "recoverable",
+      sessionId: "partial",
+      sourcePath,
+    });
+
+    expect(recoverableLiveSessionActionIdentity(entry)).toEqual({
+      expectedArtifactPath: sourcePath,
+      sessionId: "partial",
+    });
+    expect(savedLiveSessionActionIdentity(entry)).toBeUndefined();
+  });
 });

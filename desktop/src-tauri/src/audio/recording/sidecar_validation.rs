@@ -45,6 +45,20 @@ impl CaptureSidecar {
         if self.session_metadata != manifest.session_metadata {
             return Err("capture session metadata does not match the commit manifest".into());
         }
+        self.validate_contents()
+    }
+
+    pub(super) fn validate_recoverable(&self, session_id: &SessionId) -> Result<(), String> {
+        if self.schema_version != CAPTURE_SCHEMA_VERSION
+            || self.session_id != *session_id
+            || self.audio_file != format!("live-{session_id}.wav")
+        {
+            return Err("recoverable capture sidecar does not match the session".into());
+        }
+        self.validate_contents()
+    }
+
+    fn validate_contents(&self) -> Result<(), String> {
         if let Some(metadata) = &self.session_metadata {
             validate_capture_metadata(metadata, &self.session_id)?;
         }

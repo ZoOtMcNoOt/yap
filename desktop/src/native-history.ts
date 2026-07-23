@@ -210,7 +210,6 @@ export function recoverableLiveSessionActionIdentity(
   }
   if (
     artifact.directory !== output.directory
-    || (entry.recoveryState === "recoverable" && entry.sourcePath !== entry.outputPath)
     || ![artifact.name, `${stem}.txt`].includes(output.name)
   ) return undefined;
   return { expectedArtifactPath: entry.sourcePath, sessionId };

@@ -196,6 +196,23 @@ fn recovery_delete_rejects_unknown_sessions_and_preserves_unrelated_files() {
 }
 
 #[test]
+fn recoverable_delete_preserves_an_unverified_complete_sidecar() {
+    let dir = test_dir("recover-delete-unverified-complete-sidecar");
+    let session = SessionId::new("s-recover-delete-unverified-sidecar").unwrap();
+    {
+        let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+        recording.append_pcm16(&[1, 0]).unwrap();
+    }
+    let sidecar = dir.join(format!("live-{session}.capture.json"));
+    std::fs::write(&sidecar, b"unverified sidecar").unwrap();
+
+    delete_recoverable_session_for_test(&dir, &session).unwrap();
+
+    assert_eq!(std::fs::read(&sidecar).unwrap(), b"unverified sidecar");
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
 fn recovery_actions_reject_a_mismatched_expected_artifact_without_mutation() {
     let dir = test_dir("recover-expected-identity");
     let session = SessionId::new("s-recover-expected-identity").unwrap();

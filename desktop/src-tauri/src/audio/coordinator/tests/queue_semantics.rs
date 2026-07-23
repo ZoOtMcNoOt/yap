@@ -191,7 +191,7 @@ fn composed_result_marks_only_the_failed_or_degraded_sinks() {
 
 #[test]
 fn queue_capacities_and_high_water_marks_are_visible() {
-    assert_eq!(RECORDING_QUEUE_CAPACITY, 128);
+    assert_eq!(RECORDING_QUEUE_CAPACITY, 1_024);
     assert_eq!(LOCAL_ASR_QUEUE_CAPACITY, 1_024);
     assert_eq!(EVIDENCE_QUEUE_CAPACITY, 32);
     assert_eq!(SERVER_TRANSPORT_QUEUE_CAPACITY, 64);

@@ -13,7 +13,10 @@ use crate::audio::frame::PreparedFrame;
 use super::super::stream::StreamMessage;
 use super::worker::join_worker;
 
-pub(super) const ASR_ADAPTER_DRAIN_TIMEOUT: Duration = Duration::from_millis(6000);
+// The local queue can retain ten seconds of source audio during startup.
+// Allow that bounded pre-roll plus scheduler variance to reach the stream
+// worker before treating shutdown as wedged.
+pub(super) const ASR_ADAPTER_DRAIN_TIMEOUT: Duration = Duration::from_secs(12);
 const ASR_ADAPTER_CANCEL_GRACE: Duration = Duration::from_millis(100);
 
 pub(super) struct SessionAsrAdapter {
