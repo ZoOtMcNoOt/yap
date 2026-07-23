@@ -48,6 +48,22 @@ async function invoke(command, args = {}) {
   return result.value;
 }
 
+async function waitForConnectionState(expectedState, label) {
+  let connection;
+  await browser.waitUntil(
+    async () => {
+      connection = await invoke("server_connection_status");
+      return connection.state === expectedState;
+    },
+    {
+      interval: 100,
+      timeout: 15_000,
+      timeoutMsg: `The private-server connection did not ${label} within 15 seconds.`,
+    },
+  );
+  return connection;
+}
+
 function canonicalPath(value) {
   return path.resolve(realpathSync.native(value));
 }
@@ -170,8 +186,8 @@ describe("checked-head private-server ASR gate", () => {
 
     const settings = await invoke("server_settings");
     expect(settings).toEqual({ schemaVersion: 1, enabled: true, baseUrl: expectedOrigin });
-    const connection = await invoke("refresh_server_connection");
-    expect(connection.state).toBe("ready");
+    await invoke("refresh_server_connection");
+    const connection = await waitForConnectionState("ready", "become ready");
     expect(connection.capabilities).toEqual({
       batchJobs: true,
       jobStatus: true,
@@ -215,8 +231,8 @@ describe("checked-head private-server ASR gate", () => {
     observedPreprocessingStates.add(interruptedJob.pipeline.preprocessing);
 
     tunnelProcess = await startTunnel(requireSshAlias());
-    const restoredConnection = await invoke("refresh_server_connection");
-    expect(restoredConnection.state).toBe("ready");
+    await invoke("refresh_server_connection");
+    const restoredConnection = await waitForConnectionState("ready", "recover after tunnel restart");
     expect((await invoke("server_settings")).baseUrl).toBe(expectedOrigin);
 
     await browser.waitUntil(
