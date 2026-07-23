@@ -357,9 +357,10 @@ and the complete resource gate remain open.
   without inheriting Cohere or retired Triton evidence.
 - [ ] Prove frozen Nemotron NeMo correctness, cache/finalization semantics,
   cancellation, concurrency, memory, lifecycle, and teardown on GB10.
-- [ ] Promote each runtime only on its own frozen checked-head evidence with
-  rollback proof; keep Yap/Rust authoritative for jobs, sessions, routes,
-  retry, admission, and validation.
+- [x] Keep both resident runtimes unpromoted in Phase 6. Any later promotion
+  requires its own frozen checked-head evidence and rollback proof; Yap/Rust
+  remains authoritative for jobs, sessions, routes, retry, admission, and
+  validation.
 
 Focused source-exact GB10 integration at executable commit
 `fcccf21e785b116b92cd8e46150a36b9b5ee91db` ran the full locked Cohere model
@@ -418,6 +419,15 @@ tests; and 10 primary-language/transcript-summary projection tests. These prove
 the implemented contract slices, not the unchecked frozen-head resource gate.
 
 ### P6-07 — Quality, duration, and concurrency evidence
+
+The Phase 6 merge gate keeps the current advertised `en-US` regression and the
+deterministic duration, concurrency, cancellation, resource, and teardown
+boundaries. It does not promote the resident Cohere or Nemotron services and
+therefore does not consume an exhaustive Cohere natural-quality campaign.
+Rights-adjudicated broad natural coverage below remains reusable promotion work
+for whichever provider survives the Phase 8 Tiron comparison; unchecked
+promotion-only items do not block retaining the current candidates behind the
+provider-neutral contract.
 
 - [x] Freeze and inspect the first exact public comparator source: FLEURS
   `es_419` test at immutable revision

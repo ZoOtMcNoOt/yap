@@ -228,8 +228,11 @@ The [ASR evaluation corpus and runtime qualification](../../research/2026-07-17-
 separates natural transcript-quality evidence from deterministic duration and
 load evidence. The repository's one short English fixture and repeated long
 WAV are smoke/runtime inputs, not comprehensive quality certification. Phase 6
-must add a provenance-locked, transcript-private, per-slice promotion subset;
-future approved private-domain evidence remains an explicit handoff.
+keeps a bounded current-route `en-US` regression and does not promote either
+resident provider candidate. The provenance-locked, transcript-private,
+per-slice subset remains reusable work for whichever server route is later
+selected for promotion; future approved private-domain evidence remains an
+explicit handoff.
 The machine-validated `server/asr-evaluation-plan.json` is the runtime matrix
 authority. Public corpora are model-specific comparators unless their manifest
 proves contractual exclusion or creation after the exact model freeze; an
@@ -286,8 +289,9 @@ by a base-language marker fail closed. Opened-handle containment and a portable
 artifact-path grammar reject raced junction escapes and Windows alternate data
 streams. Source URI/retrieval time, suite/condition labels, speaker/timing
 metadata, and audio shape must also match the reviewed case. The real
-second-locale selection, human work, selection freshness/consumption record, and
-out-of-band registry trust anchor remain open.
+production-case selection, human work, selection freshness/consumption record,
+and out-of-band registry trust anchor remain open for a later provider
+promotion.
 
 The private GB10 comparator then ran the exact locked Cohere revision through a
 20-case screen and all 908 cases under the Python 3.12.3/NVIDIA PyTorch 26.06,
@@ -853,6 +857,14 @@ switch promotion and the frozen runtime parity rerun remain open.
 
 ### 7. Prove the provider-specific ASR runtimes
 
+Phase 6 qualifies these replaceable candidates only far enough to prove the
+bounded server contract, current advertised `en-US` regression, deterministic
+duration/concurrency safety, cancellation/recovery, resources, and teardown.
+It does not promote either resident service or run a broad Cohere natural-
+quality campaign. Phase 8 reuses bounded single-speaker/long-batch controls when
+deciding whether Tiron is meeting-only, replaces Cohere batch work more broadly,
+or is rejected.
+
 - [x] Pin `nvcr.io/nvidia/vllm:26.06-py3` by immutable ARM64 digest and assert
       Python 3.12, Torch/CUDA, vLLM, Transformers, audio dependencies, exact
       Cohere model artifacts, and license/provenance identity.
@@ -889,9 +901,9 @@ switch promotion and the frozen runtime parity rerun remain open.
       capacity and duration edges; and the exact supported maximum. Either
       qualify the current four-hour transport ceiling or lower the product
       claim to the longest duration that passes end to end.
-- [ ] Promote each provider runtime only on its own frozen checked-head evidence
-      with rollback proof and review. Persistent supervised multi-owner capacity
-      remains Phase 10.
+- [x] Keep both resident provider runtimes unpromoted in Phase 6. Any later
+      promotion requires route-specific frozen evidence, rollback proof, and
+      review; persistent supervised multi-owner capacity remains Phase 10.
 
 At exact executable source SHA
 `fcccf21e785b116b92cd8e46150a36b9b5ee91db`, focused GB10 smokes exercised both
@@ -1466,8 +1478,9 @@ matrix.
 - [x] Publish `alignedWords: []` plus a typed unavailable reason when the
       provider/language or evidence fails its gate. Never invent even spacing,
       confidence, or speaker attribution.
-- [ ] Prove the frozen-head alignment latency and memory budgets on the accepted
-      workload before changing the catalog from `wordAlignment: false`.
+- [x] Keep the catalog at `wordAlignment: false` for Phase 6. Defer the
+      accuracy/latency/memory promotion workload until a later selected route
+      proposes to advertise alignment.
 - [x] Retain Qwen3 ForcedAligner only as a later, separately licensed/measured
       challenger for supported languages. No Qwen artifact, runtime, or code is
       part of the Phase 6 product or evidence path.
@@ -1625,19 +1638,17 @@ It must prove at least:
    duplicate/dropped transcript text, and no path manufactures confidence;
 7. VAD failure preserves source audio and bounded transport; alignment failure
    publishes an explicit unavailable result rather than fabricated timing;
-8. the provenance-locked Phase 6 promotion subset exercises every advertised
-   locale/tier plus clean/noisy single-speaker, spontaneous/reduced,
-   same-utterance switch-point, medical-mock, silence, critical-token, and long-
-   form slices without publishing audio/transcripts or promoting an unmeasured
-   broad-coverage or language-boundary quality claim. The completed AMI close/
-   far run remains diagnostic only; independent multi-speaker, overlap,
-   speaker-attributed, and virtual-meeting promotion belongs to Phase 8 under
-   ADR 0027;
-9. GB10 uses the exact locked Python 3.12/NVIDIA runtime, records WER/CER/LID/
-   alignment, streaming stability, exact-duration integrity, concurrency, and
-   single-reference-worker resource ceilings appropriate to the promoted
-   capabilities, and leaves no owned container, process, model port, or
-   listener; and
+8. the bounded current advertised `en-US` regression passes without publishing
+   audio or transcripts, while completed local switching evidence remains
+   honestly classified as Preview. No broad Cohere natural-quality campaign or
+   unmeasured locale/tier claim enters the gate. The completed AMI close/far run
+   remains diagnostic only; provider-promotion subsets and independent multi-
+   speaker, overlap, speaker-attributed, and virtual-meeting promotion belong to
+   the later selected route and Phase 8 under ADR 0027;
+9. GB10 uses the exact locked Python 3.12/NVIDIA runtime, records the bounded
+   regression, streaming stability, exact-duration integrity, concurrency, and
+   candidate resource ceilings, and leaves no owned container, process, model
+   port, or listener. Neither resident service is promoted by this result; and
 10. the LAN/SSH-forward development path still reconnects without claiming
     production authentication, persistent service, external networking, or an
     IT-owned enterprise deployment.

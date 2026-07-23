@@ -67,12 +67,14 @@ catalog, primary/per-job language flow, advisory VAD, durable stages, isolated
 LID, fixed/dynamic routing, timing evidence, migrations, docs, and focused
 reviews are ready on one frozen candidate.
 
-The gate must use license-clear public fixtures to prove contract shape,
-language decisions, representative advertised tiers, source preservation,
-restart/cancel/retry behavior, alignment failure semantics, resource ceilings,
-and clean teardown. Aggregate candidate research cannot promote a locale or
-alignment capability by itself. Private recordings, raw benchmark output, host
-paths, and scan evidence remain outside Git and hosted artifacts.
+The gate must use license-clear public fixtures to prove contract shape, the
+currently advertised `en-US` regression, language decisions, source
+preservation, restart/cancel/retry behavior, alignment failure semantics,
+resource ceilings, and clean teardown. It does not run an exhaustive Cohere
+quality campaign or promote either resident provider candidate. Aggregate
+candidate research cannot promote a locale, provider, or alignment capability
+by itself. Private recordings, raw benchmark output, host paths, and scan
+evidence remain outside Git and hosted artifacts.
 
 The local-language resource harness has two distinct development-host modes.
 Its accelerated mode measures throughput, model load, incremental memory, and
@@ -125,9 +127,12 @@ controls into accuracy evidence. Source license/provenance records and natural
 references remain separately vetted private-corpus inputs.
 
 The [ASR evaluation corpus and runtime qualification](../research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md)
-owns the Phase 6 corpus tiers, provenance manifest, per-slice metrics, live and
-batch duration ladder, and risk-weighted concurrency matrix. Natural quality
-evidence and deterministic duration/load evidence are separate requirements.
+owns the reusable corpus tiers, provenance manifest, per-slice metrics, live
+and batch duration ladder, and risk-weighted concurrency matrix. Natural
+quality evidence and deterministic duration/load evidence are separate. Phase
+6 consumes the bounded current-route regression and runtime-safety slices; the
+broad natural-quality subset activates when a resident provider or the Phase 8
+Tiron challenger is actually considered for promotion.
 `server/asr-evaluation-plan.json` is the machine-validated runtime matrix. Every
 quality case also carries a model-revision exposure decision; public benchmark
 membership does not prove the model did not train on it. Only contractually
@@ -199,9 +204,11 @@ and runtime identity. The adapter streams the verified PCM WAV and derives its
 duration; a self-attested manifest duration cannot dilute silence metrics.
 Private case evidence remains under `YAP_EVAL_CACHE`; public evidence is
 aggregate and omits transcript and critical-policy hashes.
-No production review registry, trust anchor, or human-reviewed second-locale
-case is tracked in Git; implementing the fail-closed loader does not satisfy
-that Phase 6 evidence requirement.
+No production review registry or trust anchor is tracked in Git. Implementing
+the fail-closed loader does not create a production-quality claim, and the
+resident Phase 6 provider services remain unpromoted. A completed production
+registry is required when a route is selected for promotion, not merely to
+retain a replaceable candidate behind Yap's bounded contract.
 The locked public ASR fixture is therefore an exposure-unknown regression
 comparator, not a promotion holdout. Exact-duration controls are generated and
 validated outside Git under `YAP_EVAL_CACHE`; their benchmark evidence must
@@ -318,7 +325,7 @@ timestamp-shape coverage without shipping private or unclear audio.
 - The GB10 gate's `yap_server.evaluation.word_error_rate.word_error_rate` and desktop Rust
   parity helper remain dependency-free, single-fixture smoke diagnostics. They
   cannot produce multilingual promotion claims.
-- Phase 6 promotion uses the separately pinned `evaluation` extra and
+- Route promotion uses the separately pinned `evaluation` extra and
   `yap_server.evaluation.transcript_scoring`. It reports raw and normalized word
   plus extended-grapheme edit counts, boundary-position punctuation metrics,
   and optional hash-pinned critical-token retention, order, and exact-surface
@@ -344,10 +351,12 @@ timestamp-shape coverage without shipping private or unclear audio.
 
 - A regression beyond the threshold fails that backend's applicable gate. The
   private GB10 check is a phase gate, not a portable hosted-CI inference job.
-  Phase 6 promotion additionally requires frozen per-locale, per-domain,
-  meeting, acoustic, duration, and critical-token thresholds. A better macro
-  WER cannot offset a failed required slice, hallucination-on-silence,
-  cross-request leak, or long-form integrity failure.
+  Any production promotion additionally requires the frozen per-locale,
+  per-domain, acoustic, duration, and critical-token slices activated by that
+  capability. Phase 8 owns meeting and overlap promotion. The Phase 6 resident
+  candidates do not gain production status from their bounded regression and
+  lifecycle gate. A better macro WER cannot offset a failed required slice,
+  hallucination-on-silence, cross-request leak, or long-form integrity failure.
 
 ### Diarization and identity gates
 

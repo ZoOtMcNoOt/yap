@@ -501,10 +501,13 @@ exposure; those are separate manifest decisions.
 This is the roadmap-wide coverage matrix, not a requirement that every row
 activate in Phase 6. A promotion subset must cover every row owned by the
 capability being promoted; one recording may satisfy several active rows, but an
-aggregate score cannot conceal a failing row. Phase 6 owns single-speaker
-dictation/batch, locale, language-routing, duration, and provider-runtime rows.
-Phase 8 activates the multi-speaker meeting, overlap, speaking-roster, speaker-
-attributed, and virtual-meeting rows under ADR 0027.
+aggregate score cannot conceal a failing row. Phase 6 closes the current
+advertised-route regression, local Preview safety, language-routing, duration,
+and provider-runtime boundaries without promoting either resident server
+candidate. Broader single-speaker/provider quality activates when a route is
+selected for promotion. Phase 8 activates the Tiron challenger plus the multi-
+speaker meeting, overlap, speaking-roster, speaker-attributed, and virtual-
+meeting rows under ADR 0027.
 
 | Use condition | Primary evidence | Required assertions |
 | --- | --- | --- |
@@ -739,7 +742,7 @@ profile.
   window-capacity error, speaker merge/split/fragmentation, and per-speaker
   macro reporting. Forced-aligned source timings are derived, not timestamp
   gold.
-- The canonical Phase 6 promotion scorer is
+- The canonical route-promotion scorer is
   `yap_server.evaluation.transcript_scoring`, installed through the pinned
   `evaluation` extra. It reports raw NFC and normalized
   NFKC/casefold/NFKC word and extended-grapheme edit counts, dependency/Unicode
@@ -845,21 +848,27 @@ not called a live-object leak.
    SHA verification, and a transcript-free evidence schema.
 2. Pin scorer/normalizer revisions and test them on hand-checked substitutions,
    Unicode, punctuation, numbers, speaker permutations, silence, and overlap.
-3. Build a tiny hosted smoke suite and a stratified Phase 6 promotion subset;
-   keep the extended and approved-private suites separately selectable.
+3. Build a tiny hosted smoke suite and separately selectable stratified
+   promotion subsets; Phase 6 consumes only the bounded current-route
+   regression unless it actually promotes a provider.
 4. Generate exact-duration sentinel tracks and fixed acoustic/transport
    transformations with reproducible manifests, never by mutating source truth.
 5. Run each candidate through one harness that records model/runtime/artifact
    identity, per-slice quality, lifecycle, and resource evidence.
-6. Conduct independent reference and result review, resolve findings, freeze the
-   candidate and thresholds, then run the one-time complete Phase 6 matrix.
+6. Before promoting any route, conduct independent reference and result review,
+   resolve findings, and freeze the candidate and thresholds. The Phase 6
+   matrix may retain unpromoted candidates after their bounded regression and
+   runtime-safety gates pass.
 
-The initial Phase 6 promotion subset should be hours, not hundreds of hours, but
-must contain every Phase 6-active coverage row and advertised locale. Phase 8
-adds the independently adjudicated meeting, overlap, speaking-roster, speaker-
-attributed, and virtual-transport rows. The extended suite runs before a model/
-runtime promotion or major decoder change. Phase 10 adds the approved-private,
-authenticated mixed-owner and enterprise deployment profile.
+An initial provider-promotion subset should be hours, not hundreds of hours,
+and must contain every active coverage row and advertised locale. Phase 6 does
+not consume that broad subset for replaceable, unpromoted resident candidates.
+Phase 8 adds the independently adjudicated meeting, overlap, speaking-roster,
+speaker-attributed, and virtual-transport rows and reuses bounded single-speaker
+controls when deciding whether Tiron replaces any Cohere batch work. The
+extended suite runs before a model/runtime promotion or major decoder change.
+Phase 10 adds the approved-private, authenticated mixed-owner and enterprise
+deployment profile.
 
 ## Primary references
 

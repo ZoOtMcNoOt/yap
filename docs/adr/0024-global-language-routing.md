@@ -454,9 +454,10 @@ cross-attention without adding another alignment model:
 
 The worker/result contracts and durable alignment stage now execute this path
 and fail closed. The public capability catalog intentionally remains
-`wordAlignment: false` until the frozen Phase 6 head meets boundary error,
-monotonicity, coverage, transcript-reconciliation, latency, and memory promotion
-gates. English is the first focused candidate. Unsupported or failed provider/
+`wordAlignment: false`. A later route-specific promotion may enable it only
+after boundary error, monotonicity, coverage, transcript-reconciliation,
+latency, and memory gates pass for the selected provider. English is the first
+focused candidate. Unsupported or failed provider/
 language pairs publish `alignedWords: []` plus an explicit unavailable reason;
 they never fabricate even spacing, confidence, or speaker attribution.
 
@@ -730,8 +731,9 @@ evidence before default-on or production promotion.
         The server envelope is utterance-bound and model/plan-bound; it does not
         claim client acoustic switch boundaries.
 11. [x] Implement fail-closed Cohere attention alignment and typed unavailable
-        results behind per-language gates. Keep catalog `wordAlignment: false`
-        until the frozen-head accuracy/latency/memory promotion gate passes.
+        results behind per-language gates. Keep catalog `wordAlignment: false`;
+        any later selected route must pass its own accuracy/latency/memory
+        promotion gate before advertising alignment.
 12. [ ] Validate every advertised locale/tier on representative public and
        approved private-domain fixtures before changing a quality claim. The
        fail-closed case-level human-reference registry contract now executes,
@@ -739,8 +741,8 @@ evidence before default-on or production promotion.
        human exact-locale basis, reviewed rights/defects, and separate artifact
        hashes. Phase 6 advertises only the existing gated `en-US` route and does
        not require a ceremonial second-locale promotion. Its final checked-head
-       parity and representative single-speaker evidence still keep this item
-       and the ADR score open.
+       parity and the bounded advertised `en-US` regression still keep this
+       item and the ADR score open.
 13. [ ] Run the complete Phase 6 local/native/server/GB10 matrix exactly once on
        the ready head, then require hosted exact-head review before merge.
 

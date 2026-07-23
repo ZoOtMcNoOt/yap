@@ -160,10 +160,11 @@ speaker/timing metadata, and canonical audio shape. Bounded same-open reads
 verify the opened handle remains inside the private cache; portable paths reject
 Windows alternate streams, while duplicate JSON keys, replacement, excessive
 aggregate I/O, and oversize fail closed. The receipt must match exact rights,
-defects, locale, and timestamp. No real
-reviewed registry or second-locale gold case exists yet, so this executing trust
-boundary is not promotion evidence and leaves the representative Phase 6 gate
-open.
+defects, locale, and timestamp. No real reviewed production registry exists
+yet, so this executing trust boundary is not provider-promotion evidence. Phase
+6 retains the resident services as replaceable candidates and runs only the
+bounded advertised-route regression plus runtime-safety gate; any later route
+promotion must supply the complete reviewed registry.
 
 ADR 0025 replaces the attempted universal ASR plane with provider-specific
 runtimes behind Yap's existing worker-neutral contracts. Cohere batch now has a
