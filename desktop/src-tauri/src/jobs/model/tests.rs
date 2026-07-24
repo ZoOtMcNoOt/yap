@@ -168,7 +168,7 @@ fn every_durable_status_projects_only_proven_pipeline_progress() {
     };
     let cases = [
         (J::Accepted, None, pipeline(N, N, N, N, N)),
-        (J::Preflighting, None, pipeline(N, N, N, N, N)),
+        (J::Preflighting, None, pipeline(R, N, N, N, N)),
         (J::BlockedSetupRequired, None, pipeline(N, N, N, N, N)),
         (
             J::BlockedServerUnavailable,

@@ -121,6 +121,7 @@ fn restart_database_has_exact_metadata_surface_and_no_payload_content() {
     assert_eq!(
         table_names,
         [
+            "client_preflight_artifacts",
             "detached_remote_cancellations",
             "job_chunks",
             "job_ledger_write_probe",
@@ -131,6 +132,21 @@ fn restart_database_has_exact_metadata_surface_and_no_payload_content() {
         ]
     );
     let expected_columns = [
+        (
+            "client_preflight_artifacts",
+            &[
+                ("job_id", "TEXT"),
+                ("manifest_path", "TEXT"),
+                ("manifest_sha256", "TEXT"),
+                ("source_pcm_sha256", "TEXT"),
+                ("source_sample_count", "INTEGER"),
+                ("lid_request_id", "TEXT"),
+                ("lid_server_base_url", "TEXT"),
+                ("lid_catalog_revision", "TEXT"),
+                ("lid_policy_revision", "TEXT"),
+                ("lid_started_at_ms", "INTEGER"),
+            ][..],
+        ),
         (
             "detached_remote_cancellations",
             &[
