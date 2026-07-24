@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import Future
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import hashlib
 from ipaddress import ip_address
@@ -146,6 +146,7 @@ class BatchRuntime:
     storage_lease: StorageRuntimeLease
     asr_capabilities: dict[str, object]
     language_detection_runtime: LanguageDetectionRuntime | None
+    _cleanup_failed: bool = field(default=False, init=False, repr=False)
 
     @property
     def lid_preflight_service(self) -> LidPreflightService | None:
@@ -153,15 +154,36 @@ class BatchRuntime:
         return runtime.service if runtime is not None else None
 
     def close(self) -> None:
-        try:
-            self.service.begin_runtime_shutdown()
+        if self._cleanup_failed:
+            raise WorkerContainmentError(
+                "batch runtime cleanup previously failed; process restart is required"
+            )
+        self.service.begin_runtime_shutdown()
+        cleanup_error: BaseException | None = None
+        for cleanup in (
+            self.language_detection_runtime.close
+            if self.language_detection_runtime is not None
+            else None,
+            self.pool.shutdown,
+        ):
+            if cleanup is None:
+                continue
             try:
-                if self.language_detection_runtime is not None:
-                    self.language_detection_runtime.close()
-            finally:
-                self.pool.shutdown()
-        finally:
+                cleanup()
+            except BaseException as error:
+                if cleanup_error is None:
+                    cleanup_error = error
+        if cleanup_error is not None:
+            # A worker or callback can still be live. This process must retain
+            # the exclusive namespace until fail-stop exit.
+            self.storage_lease.retain_until_process_exit()
+            self._cleanup_failed = True
+            raise cleanup_error
+        try:
             self.storage_lease.close()
+        except BaseException:
+            self._cleanup_failed = True
+            raise
 
 
 class StorageRuntimeLease:
@@ -193,8 +215,17 @@ class StorageRuntimeLease:
             os.close(descriptor)
             raise
         self._descriptor: int | None = descriptor
+        self._retained_for_fail_stop = False
+
+    def retain_until_process_exit(self) -> None:
+        if self._retained_for_fail_stop:
+            return
+        self._retained_for_fail_stop = True
+        _FAIL_STOP_STORAGE_LEASES.append(self)
 
     def close(self) -> None:
+        if self._retained_for_fail_stop:
+            return
         descriptor = self._descriptor
         if descriptor is None:
             return
@@ -205,6 +236,10 @@ class StorageRuntimeLease:
             fcntl.flock(descriptor, fcntl.LOCK_UN)
         finally:
             os.close(descriptor)
+
+
+# Fatal cleanup keeps the raw lock descriptor reachable until the process exits.
+_FAIL_STOP_STORAGE_LEASES: list[StorageRuntimeLease] = []
 
 
 def build_batch_runtime(
@@ -261,6 +296,7 @@ def build_batch_runtime(
     validate_asr_catalog_revision(catalog_revision)
     storage_lease = StorageRuntimeLease(storage_dir)
     pool: BatchAsrPool | None = None
+    service: RecordingJobService | None = None
     language_detection_runtime: LanguageDetectionRuntime | None = None
     unowned_workers: list[BatchWorker] = []
     try:
@@ -274,6 +310,13 @@ def build_batch_runtime(
             timeout_seconds=timeout_seconds,
         )
         unowned_workers.extend(plan.worker for plan in worker_plans.values())
+        startup_cleanup_verified = bool(worker_plans) and all(
+            plan.startup_cleanup_verified for plan in worker_plans.values()
+        )
+        if not startup_cleanup_verified:
+            raise WorkerContainmentError(
+                "provider startup reconciliation could not verify cleanup"
+            )
         worker_registry = ProviderBatchWorkerRegistry(
             {
                 provider_id: plan.worker
@@ -312,7 +355,7 @@ def build_batch_runtime(
             processor=processor,
             supported_languages=route_resolver.supported_languages,
             now=_utc_now,
-            startup_worker_cleanup_verified=True,
+            startup_worker_cleanup_verified=startup_cleanup_verified,
         )
         language_detection_runtime = build_language_detection_runtime(
             source,
@@ -335,9 +378,10 @@ def build_batch_runtime(
             asr_capabilities=asr_capabilities,
             language_detection_runtime=language_detection_runtime,
         )
-    except BaseException:
+    except BaseException as startup_error:
         cleanup_error: BaseException | None = None
         for cleanup in (
+            service.begin_runtime_shutdown if service is not None else None,
             language_detection_runtime.close
             if language_detection_runtime is not None
             else None,
@@ -345,7 +389,6 @@ def build_batch_runtime(
             (lambda: _close_unowned_workers(unowned_workers))
             if pool is None and unowned_workers
             else None,
-            storage_lease.close,
         ):
             if cleanup is None:
                 continue
@@ -355,8 +398,18 @@ def build_batch_runtime(
                 if cleanup_error is None:
                     cleanup_error = error
         if cleanup_error is not None:
+            storage_lease.retain_until_process_exit()
             raise WorkerContainmentError(
                 "batch runtime startup cleanup could not be verified"
+            ) from cleanup_error
+        if isinstance(startup_error, WorkerContainmentError):
+            storage_lease.retain_until_process_exit()
+            raise
+        try:
+            storage_lease.close()
+        except BaseException as cleanup_error:
+            raise WorkerContainmentError(
+                "batch runtime startup cleanup could not release storage ownership"
             ) from cleanup_error
         raise
 

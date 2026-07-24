@@ -14,7 +14,6 @@ from yap_server.pools.batch_contract import (
     BatchReservation,
     DurableAsrRouting,
     PoolBackpressure,
-    WorkerContainmentError,
     validate_asr_catalog_revision,
 )
 from yap_server.pools.utterance_plan import (
@@ -178,6 +177,7 @@ class RecordingJobService:
         if request.get("route") != "server_batch":
             raise ValueError("route must be server_batch")
         with self._lock:
+            self._require_runtime_admission_open_locked()
             created_at = self._now()
             server_now = _utc_timestamp(created_at, "server clock")
             if (
@@ -321,6 +321,7 @@ class RecordingJobService:
             threading.Event,
         ] | None = None
         with self._lock:
+            self._require_runtime_admission_open_locked()
             if job_id not in self._state.jobs:
                 raise JobServiceError(
                     404,
@@ -464,18 +465,20 @@ class RecordingJobService:
         channels: int,
         content_length: int,
     ) -> ChunkUploadPlan:
-        return self._uploads.prepare(
-            job_id,
-            track_id=track_id,
-            sequence_start=sequence_start,
-            sequence_end=sequence_end,
-            idempotency_key=idempotency_key,
-            content_sha256=content_sha256,
-            audio_codec=audio_codec,
-            sample_rate_hz=sample_rate_hz,
-            channels=channels,
-            content_length=content_length,
-        )
+        with self._lock:
+            self._require_runtime_admission_open_locked()
+            return self._uploads.prepare(
+                job_id,
+                track_id=track_id,
+                sequence_start=sequence_start,
+                sequence_end=sequence_end,
+                idempotency_key=idempotency_key,
+                content_sha256=content_sha256,
+                audio_codec=audio_codec,
+                sample_rate_hz=sample_rate_hz,
+                channels=channels,
+                content_length=content_length,
+            )
 
 
     def accept_chunk(
@@ -483,7 +486,9 @@ class RecordingJobService:
         plan: ChunkUploadPlan,
         body: bytes,
     ) -> dict[str, object]:
-        return self._uploads.accept(plan, body)
+        with self._lock:
+            self._require_runtime_admission_open_locked()
+            return self._uploads.accept(plan, body)
 
 
     def commit(
@@ -498,6 +503,7 @@ class RecordingJobService:
             threading.Event,
         ] | None = None
         with self._lock:
+            self._require_runtime_admission_open_locked()
             creation = self._state.requests[job_id]
             job = self._state.jobs[job_id]
             self._validate_commit_request(creation, request)
@@ -596,6 +602,15 @@ class RecordingJobService:
 
         with self._lock:
             self._stopping = True
+
+    def _require_runtime_admission_open_locked(self) -> None:
+        if self._stopping:
+            raise JobServiceError(
+                503,
+                "SERVER_SHUTTING_DOWN",
+                "The server runtime is shutting down.",
+                retryable=True,
+            )
 
     def _validate_commit_request(
         self,
@@ -810,39 +825,22 @@ class RecordingJobService:
         completion_event: threading.Event,
     ) -> None:
         with self._lock:
-            stopping = self._stopping
-        if stopping:
-            try:
-                future.result()
-            except WorkerContainmentError:
-                self._completion.finish_safely(
-                    job_id,
-                    language_bcp47,
-                    future,
-                    completion_event,
-                )
-            except BaseException:
-                with self._lock:
-                    if self._futures.get(job_id) is future:
-                        self._futures.pop(job_id, None)
-                    if self._completion_events.get(job_id) is completion_event:
-                        self._completion_events.pop(job_id, None)
-                    completion_event.set()
-                return
+            if self._stopping:
+                if self._futures.get(job_id) is future:
+                    self._futures.pop(job_id, None)
+                if self._completion_events.get(job_id) is completion_event:
+                    self._completion_events.pop(job_id, None)
+                completion_event.set()
             else:
+                # Linearize completion against begin_runtime_shutdown. Either
+                # publication finishes while this runtime still owns storage,
+                # or shutdown retires the callback before it mutates anything.
                 self._completion.finish_safely(
                     job_id,
                     language_bcp47,
                     future,
                     completion_event,
                 )
-        else:
-            self._completion.finish_safely(
-                job_id,
-                language_bcp47,
-                future,
-                completion_event,
-            )
         self._pump_pending_processing()
 
     def _pump_pending_processing(self) -> None:
@@ -978,6 +976,7 @@ class RecordingJobService:
         future: object | None = None
         completion_event: threading.Event | None = None
         with self._lock:
+            self._require_runtime_admission_open_locked()
             job = self._state.jobs[job_id]
             error = job.get("error")
             if (
@@ -1026,6 +1025,7 @@ class RecordingJobService:
                 retryable=True,
             )
         with self._lock:
+            self._require_runtime_admission_open_locked()
             job = self._state.jobs[job_id]
             error = job.get("error")
             if (
@@ -1074,6 +1074,7 @@ class RecordingJobService:
 
     def prune_expired(self) -> int:
         with self._lock:
+            self._require_runtime_admission_open_locked()
             return self._prune_expired_jobs_locked(
                 _utc_timestamp(self._now(), "server clock")
             )

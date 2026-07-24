@@ -223,6 +223,27 @@ class BatchAsrPoolTests(unittest.TestCase):
         finally:
             pool.shutdown()
 
+    def test_shutdown_rejects_new_and_previously_reserved_work(self) -> None:
+        pool = _test_pool(BlockingWorker(), max_workers=1, max_queued=0)
+        reservation = pool.reserve("job-1")
+
+        pool.shutdown()
+
+        self.assertEqual(pool.outstanding_count, 0)
+        with self.assertRaisesRegex(PoolFenced, "shut down"):
+            reservation.start(
+                lambda _cancellation: BatchAsrJob(
+                    "job-1",
+                    Path("one.wav"),
+                    Path("one.json"),
+                    language="en",
+                    input_sha256=AUDIO_SHA256,
+                    route=test_asr_route(),
+                )
+            )
+        with self.assertRaisesRegex(PoolFenced, "shut down"):
+            pool.reserve("job-2")
+
     def test_pool_rejects_duplicate_outstanding_job(self) -> None:
         worker = BlockingWorker()
         pool = _test_pool(worker, max_workers=1, max_queued=1)

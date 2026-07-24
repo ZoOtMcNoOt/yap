@@ -107,6 +107,7 @@ class LidPreflightService:
                 except Exception as error:
                     cleanup_error = error
             with self._lock_guard:
+                cancelled = cancellation.is_set()
                 self._active.pop(request.request_id, None)
                 self._idle.notify_all()
                 if cleanup_error is not None:
@@ -118,6 +119,8 @@ class LidPreflightService:
                 raise LidPreflightUnavailable(
                     self._fenced_reason or "LID preflight cleanup failed"
                 ) from cleanup_error
+            if cancelled:
+                raise LidPreflightCancelled("LID preflight was cancelled")
 
     def cancel(self, request_id: str) -> bool:
         with self._lock_guard:

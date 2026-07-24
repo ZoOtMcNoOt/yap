@@ -4,6 +4,7 @@
 **Status:** Accepted architectural principles; phase numbering is superseded by the canonical Voice OS roadmap
 **Builds on:** [ADR 0001](0001-dual-stt-backends.md) (dual-model split), [ADR 0002](0002-crispasr-unified-stt-runtime.md) (CrispASR sidecar, English-only live v1)
 **Amended by:** [ADR 0013](0013-global-hotkey-injection.md) resolves the hotkey process and safe-delivery boundary; [ADR 0014](0014-server-tier-compute-topology.md) reframes the "local-first" layer architecture (L1–L7) described here as the **solo/local-first deployment profile**. In the **team profile**, the STT inference (streaming + batch), LLM pool, and L3 background worker all relocate to the `yap-server` tier on a GB-class server node. The node is on-prem org-owned hardware and is **not** a cloud service; this is consistent with the "no cloud STT" principle. Client layers (L1 hotkey, L2 mic/VAD/UI, ghost preview) remain client-side in both profiles.
+**Amended by:** [ADR 0024](0024-global-language-routing.md) owns the current primary-language, local Preview language-span, provider-catalog, server-auto, and timing decisions; [ADR 0025](0025-provider-specific-asr-serving.md) owns provider-specific vLLM/NeMo serving; [ADR 0026](0026-ambernet-batch-language-preflight.md) replaces the historical SpeechBrain batch-preflight implementation.
 
 ## Context
 

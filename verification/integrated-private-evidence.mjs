@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import {
   existsSync,
   lstatSync,
-  readFileSync,
   realpathSync,
   statSync,
 } from "node:fs";
@@ -11,6 +10,11 @@ import path from "node:path";
 
 import { validateTargetClientNativeResourceEvidence } from "../desktop/tests/wdio/target-client-native-resource-evidence.js";
 import { validateTargetClientPreparedAudioEvidence } from "../desktop/tests/wdio/target-client-prepared-audio-evidence.js";
+import {
+  INTEGRATED_GATE_BYTE_LIMITS,
+  readBoundedJsonArtifact,
+  readBoundedRegularFile,
+} from "./integrated-gate-artifact-bounds.mjs";
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
@@ -119,20 +123,19 @@ function requireRealParent(candidate, label) {
 }
 
 function readRealBytesFile(candidate, label) {
-  requireCondition(
-    existsSync(candidate)
-      && statSync(candidate).isFile()
-      && !lstatSync(candidate).isSymbolicLink()
-      && path.normalize(realpathSync.native(candidate)).toLowerCase()
-        === path.normalize(candidate).toLowerCase(),
-    `${label} must be an existing real file.`,
-  );
-  return readFileSync(candidate);
+  return readBoundedRegularFile(
+    candidate,
+    label,
+    INTEGRATED_GATE_BYTE_LIMITS.privateLogEvidenceBytes,
+  ).bytes;
 }
 
 function readRealFile(candidate, label) {
-  const bytes = readRealBytesFile(candidate, label);
-  return { bytes, value: JSON.parse(bytes.toString("utf8")) };
+  return readBoundedJsonArtifact(
+    candidate,
+    label,
+    INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
+  );
 }
 
 function requireRealDirectory(candidate, label) {
@@ -351,8 +354,8 @@ function validateIntegratedEvidence(plan, expectedHead) {
     plan.integrated.remoteCleanupLogFile,
     "Integrated remote cleanup log",
   );
-  const cleanupLines = cleanupLogBytes
-    .toString("utf8")
+  const cleanupLogText = cleanupLogBytes.toString("utf8");
+  const cleanupLines = cleanupLogText
     .split(/\r?\n/)
     .filter((line) => line.startsWith("REMOTE_GATE_CLEANUP="));
   requireCondition(
@@ -417,8 +420,8 @@ function validateIntegratedEvidence(plan, expectedHead) {
   requireCondition(
     cleanupLines.length === 1
       && cleanupLines[0] === "REMOTE_GATE_CLEANUP=PASS"
-      && cleanupLogBytes.toString("utf8").includes(`REMOTE_PRIVATE_SERVER_READY=${expectedHead}`)
-      && !cleanupLogBytes.toString("utf8").includes("REMOTE_GATE_CLEANUP=FAIL"),
+      && cleanupLogText.includes(`REMOTE_PRIVATE_SERVER_READY=${expectedHead}`)
+      && !cleanupLogText.includes("REMOTE_GATE_CLEANUP=FAIL"),
     "Integrated remote cleanup log did not prove exact checked-head teardown.",
   );
   const verticalSha256 = combinedEvidenceSha256(context.bytes, vertical.bytes);

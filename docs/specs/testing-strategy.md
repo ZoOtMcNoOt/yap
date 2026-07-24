@@ -1,6 +1,6 @@
 # Spec: Testing strategy
 
-**Status:** Living verification contract (updated 2026-07-23); future phase gates activate only when their fixtures exist
+**Status:** Living verification contract (updated 2026-07-24); future phase gates activate only when their fixtures exist
 **Scope:** Cross-cutting tests for the desktop runtime, track-aware audio contracts, local fallback, source-aware diarization, server contracts, and native UI.
 
 This is the shared reference the phase specs point to for their acceptance tests.
@@ -16,15 +16,24 @@ desktop speech suite, meeting RTTM manifest, diarization benchmark harness,
 bundled llama-server, and per-OS real-model matrix described below do not exist
 yet. Phase 6 catalog, deterministic preprocessing/VAD, guarded server LID,
 Preview local LID/span routing, provider-specific server candidates, alignment,
-private-corpus trust, scoring, and runtime-qualification components now execute
-under focused tests. Exact head
-`74322bf42c22058ffa88620f28cd4bf118ad8c01` passed the focused current-host
-release/resource qualification. The representative provider-promotion corpus,
-frozen Phase 8 comparisons, and complete Phase 6 gate remain open. ADR 0027
-selects Tiron as the future Phase 8 server meeting
+private-corpus trust, scoring, and runtime-qualification components execute
+under focused tests. Historical executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` passed the frozen one-attempt
+30-child local/native/server/private-runtime matrix. Its independently validated
+candidate receipt has SHA-256
+`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`;
+the 18-child GB10 public-safe aggregate has SHA-256
+`6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
+Later adversarial review found executable blockers, and their repair invalidated
+that SHA as merge authority. The receipt remains historical evidence only. The
+repaired implementation passed the focused three-agent remediation re-review.
+One fresh complete matrix on its frozen exact head and separate hosted closure
+remain; no replacement gate result is claimed yet.
+The representative provider-promotion corpus and frozen Phase 8 comparisons
+remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
 baseline, but no Tiron worker or meeting scorer executes yet. The tables below
-distinguish executable focused coverage from future phase-gate requirements;
-neither is a claim about ordinary hosted CI.
+distinguish executable checked coverage from future phase-gate requirements and
+from the separate hosted PR closure.
 
 ---
 
@@ -63,18 +72,22 @@ host-boundary evidence.
 
 ### Phase 6 target boundary
 
-Focused suites cover each Phase 6 slice while the branch changes. The complete
-local/native/server/GB10 matrix runs exactly once only after the provider
-catalog, primary/per-job language flow, advisory VAD, durable stages, isolated
-LID, fixed/dynamic routing, timing evidence, migrations, docs, and focused
-reviews are ready on one frozen candidate.
+Focused suites covered each Phase 6 slice while the branch changed. The complete
+local/native/server/private-runtime matrix ran exactly once on historical
+candidate `97b63be46b05dffa21595f2fd081b8467bb95798`. Subsequent executable repair
+means that run cannot authorize merge. The current boundary is to finish
+focused remediation and three-reviewer read-back, freeze one clean replacement,
+and run the complete matrix exactly once on that replacement head.
 
 The exact executable inventory and private receipt contract are frozen in the
 [integrated preprocessing and language-routing gate](../runbooks/integrated-preprocessing-language-routing-gate.md).
-Its validator rejects omissions, additions, duplicate or reordered children,
+Its validator rejected omissions, additions, duplicate or reordered children,
 more than one admitted attempt, definition drift, failure, and checked-head
-drift. Hosted CI, the complete current CodeQL language matrix, and disposable
-Windows NSIS closure form a separate same-head receipt after the PR opens.
+drift. Documentation reconciliation after the replacement gate must identify
+the unchanged executable candidate explicitly. Only then do hosted CI, the
+complete current CodeQL language matrix, and disposable-Windows NSIS closure
+form the separate PR receipt that revalidates source-to-docs lineage before
+merge.
 
 The gate must use license-clear public fixtures to prove contract shape, the
 currently advertised `en-US` regression, language decisions, source

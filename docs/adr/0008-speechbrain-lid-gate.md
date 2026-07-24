@@ -9,7 +9,10 @@ probe-selection, and score details superseded by
 
 > **Current applicability:** Suggest and confirm language; never silently
 > switch. The SpeechBrain implementation and two-window policy below are
-> historical. ADR 0026 owns the executing AmberNet batch preflight.
+> historical. ADR 0026 owns the executing AmberNet batch preflight. ADR 0024
+> separately owns the current primary-language and optional default-off live
+> language-switching Preview; the English-only live statements below are
+> historical.
 
 ## Context
 

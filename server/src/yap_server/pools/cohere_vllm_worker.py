@@ -21,6 +21,8 @@ from yap_server.transcript_text import canonical_transcript
 class VllmTranscriber(Protocol):
     def verify_ready(self, lock: ModelPoolLock) -> None: ...
 
+    def verify_startup_idle(self) -> None: ...
+
     def transcribe(
         self,
         *,
@@ -50,6 +52,9 @@ class CohereVllmBatchWorker:
 
     def verify_ready(self) -> None:
         self._client.verify_ready(self._lock)
+
+    def verify_startup_idle(self) -> None:
+        self._client.verify_startup_idle()
 
     def close(self) -> None:
         self._shutdown.set()

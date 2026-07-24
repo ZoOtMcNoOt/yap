@@ -1,6 +1,8 @@
 import json
 import unittest
 
+from yap_server.api.routes import allowed_methods
+
 from . import contract_http_values as http_contract
 from . import contract_identity_values as identity_contract
 from . import contract_schema_support as contract_schema
@@ -50,6 +52,19 @@ class ContractTests(unittest.TestCase):
             "AsrCapability",
             "AsrProviderCapabilities",
             "AsrCapabilityCatalog",
+            "LanguagePreflightCapabilities",
+            "LidPreflightRequestManifest",
+            "LidPreflightResult",
+            "LidPreflightCancellation",
+            "LidPreflightRequestError",
+            "LidPreflightConflictError",
+            "LidPreflightRequestTooLargeError",
+            "LidPreflightUnsupportedMediaTypeError",
+            "LidPreflightBusyError",
+            "LidPreflightStorageError",
+            "LidPreflightNotImplementedError",
+            "LidPreflightUnavailableError",
+            "LidPreflightNotFoundError",
             "RecordingJob",
             "ApiError",
         }
@@ -67,6 +82,10 @@ class ContractTests(unittest.TestCase):
         self.assertNotIn("server_processing_cohere", json.dumps(document))
         self.assertEqual(
             [name for name in contract_schema.schema_property_names(document) if "_" in name], []
+        )
+        self.assertEqual(
+            schemas["AsrCapabilityCatalog"]["properties"]["languagePreflight"],
+            {"$ref": "#/components/schemas/LanguagePreflightCapabilities"},
         )
 
         origin_projection = {
@@ -292,3 +311,89 @@ class ContractTests(unittest.TestCase):
                 "requestId": "req-01J...",
             },
         )
+
+    def test_openapi_methods_and_paths_match_the_executing_router(self) -> None:
+        document = contract_schema.load_json(http_contract.OPENAPI_PATH)
+
+        self.assertEqual(
+            set(http_contract.RUNTIME_PATH_EXAMPLES),
+            set(document["paths"]),
+        )
+        for template, concrete_path in http_contract.RUNTIME_PATH_EXAMPLES.items():
+            expected_methods = frozenset(
+                method.upper()
+                for path, method in http_contract.HTTP_OPERATIONS
+                if path == template
+            )
+            with self.subTest(template=template, concrete_path=concrete_path):
+                self.assertEqual(allowed_methods(concrete_path), expected_methods)
+
+    def test_lid_openapi_freezes_executing_bounds_and_typed_errors(self) -> None:
+        document = contract_schema.load_json(http_contract.OPENAPI_PATH)
+        schemas = document["components"]["schemas"]
+        operation = document["paths"]["/v1/lid/preflight"]["post"]
+        envelope = operation["x-yap-envelope-contract"]
+        request_schema = operation["requestBody"]["content"][
+            "application/vnd.yap.lid-preflight.v1+octet-stream"
+        ]["schema"]
+        capabilities = schemas["LanguagePreflightCapabilities"]["properties"]
+        transport = capabilities["transport"]["properties"]
+        policy = capabilities["policy"]["properties"]
+        manifest = schemas["LidPreflightRequestManifest"]["properties"]
+
+        self.assertEqual(request_schema["minLength"], 960_005)
+        self.assertEqual(
+            request_schema["maxLength"],
+            transport["maximumBodyBytes"]["const"],
+        )
+        self.assertEqual(
+            envelope["maximumManifestBytes"],
+            transport["maximumManifestBytes"]["const"],
+        )
+        self.assertEqual(envelope["manifestLengthPrefixBytes"], 4)
+        self.assertEqual(
+            manifest["sourceSamples"]["minimum"],
+            policy["minimumSourceSamples"]["const"],
+        )
+        self.assertEqual(manifest["sourceSamples"]["maximum"], 230_400_000)
+        self.assertEqual(
+            manifest["probes"]["minItems"],
+            policy["maximumWindows"]["const"],
+        )
+        self.assertEqual(
+            manifest["probes"]["maxItems"],
+            policy["maximumWindows"]["const"],
+        )
+        self.assertEqual(
+            schemas["LidPreflightResult"]["properties"]["observations"][
+                "maxItems"
+            ],
+            policy["maximumWindows"]["const"],
+        )
+
+        for (
+            path,
+            method,
+            status,
+        ), (
+            schema_name,
+            expected_codes,
+            retryable,
+        ) in http_contract.LID_ERROR_CONTRACTS.items():
+            with self.subTest(path=path, method=method, status=status):
+                actual_reference = document["paths"][path][method]["responses"][
+                    status
+                ]["content"]["application/json"]["schema"]
+                self.assertEqual(
+                    actual_reference,
+                    {"$ref": f"#/components/schemas/{schema_name}"},
+                )
+                narrowing = schemas[schema_name]["allOf"][1]["properties"]
+                code_schema = narrowing["code"]
+                actual_codes = (
+                    set(code_schema["enum"])
+                    if "enum" in code_schema
+                    else {code_schema["const"]}
+                )
+                self.assertEqual(actual_codes, expected_codes)
+                self.assertIs(narrowing["retryable"]["const"], retryable)

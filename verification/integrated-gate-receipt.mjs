@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  INTEGRATED_GATE_BYTE_LIMITS,
+  readBoundedJsonArtifact,
+} from "./integrated-gate-artifact-bounds.mjs";
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
@@ -251,9 +255,13 @@ function runCli() {
   const { operation, values } = parseArguments(process.argv.slice(2));
   const manifestPath = values.get("manifest");
   requireCondition(manifestPath, "--manifest is required.");
-  const manifestBytes = readFileSync(manifestPath);
-  const manifest = validateIntegratedGateManifest(JSON.parse(manifestBytes.toString("utf8")));
-  const manifestSha256 = integratedGateManifestSha256(manifestBytes);
+  const manifestArtifact = readBoundedJsonArtifact(
+    manifestPath,
+    "Integrated gate manifest",
+    INTEGRATED_GATE_BYTE_LIMITS.gateManifestBytes,
+  );
+  const manifest = validateIntegratedGateManifest(manifestArtifact.value);
+  const manifestSha256 = integratedGateManifestSha256(manifestArtifact.bytes);
   if (operation === "manifest") {
     process.stdout.write(`${JSON.stringify({
       candidateCells: manifest.candidateCells.map(({ id }) => id),
@@ -272,8 +280,13 @@ function runCli() {
     values.get("candidate-receipt-sha256") ?? null;
   const expectedScope = values.get("scope");
   requireCondition(receiptPath, "--receipt is required.");
+  const receipt = readBoundedJsonArtifact(
+    receiptPath,
+    "Integrated gate receipt",
+    INTEGRATED_GATE_BYTE_LIMITS.candidateReceiptBytes,
+  );
   const result = validateIntegratedGateReceipt({
-    receipt: JSON.parse(readFileSync(receiptPath, "utf8")),
+    receipt: receipt.value,
     manifest,
     manifestSha256,
     expectedHead,

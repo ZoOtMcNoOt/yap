@@ -49,6 +49,11 @@ class AsrWorkerPlan:
     max_workers: int
     max_queued: int
     max_inflight_pcm_bytes: int
+    startup_cleanup_verified: bool
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.startup_cleanup_verified, bool):
+            raise ValueError("provider startup cleanup proof must be boolean")
 
 
 def build_asr_worker_plan(
@@ -151,6 +156,7 @@ def _build_cohere_vllm_plan(
     worker = CohereVllmBatchWorker(lock=lock, client=client)
     try:
         worker.verify_ready()
+        worker.verify_startup_idle()
     except BaseException:
         worker.close()
         raise
@@ -162,6 +168,7 @@ def _build_cohere_vllm_plan(
         max_workers=8,
         max_queued=8,
         max_inflight_pcm_bytes=max_inflight_pcm_bytes,
+        startup_cleanup_verified=True,
     )
 
 
@@ -192,6 +199,7 @@ def _build_nemotron_nemo_plan(
     worker = NemotronNemoBatchWorker(lock=lock, client=client)
     try:
         worker.verify_ready()
+        worker.verify_startup_idle()
     except BaseException:
         worker.close()
         raise
@@ -200,6 +208,7 @@ def _build_nemotron_nemo_plan(
         max_workers=8,
         max_queued=8,
         max_inflight_pcm_bytes=max_inflight_pcm_bytes,
+        startup_cleanup_verified=True,
     )
 
 
@@ -243,6 +252,7 @@ def _build_isolated_reference_plan(
         max_workers=1,
         max_queued=2,
         max_inflight_pcm_bytes=max_inflight_pcm_bytes,
+        startup_cleanup_verified=True,
     )
 
 

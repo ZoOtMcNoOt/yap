@@ -1,7 +1,7 @@
 # Executable Ownership and Trust Boundaries
 
 This map records the executable ownership baseline established by architecture
-checkpoint A after the first five roadmap phases. Paths are relative to the
+checkpoint A and the executing Phase 6 branch. Paths are relative to the
 repository root; later implementation must update this map only after its
 behavior is executable and verified.
 
@@ -187,7 +187,12 @@ owner's state but may not recreate its transition logic.
 - **Entry point:** `jobs/commands/*` and `jobs/drain/*`.
 - **Authoritative owner:** `jobs/ledger.rs` plus `jobs/ledger/*` submodules.
 - **Persisted state:** SQLite schema/migrations, job status, retry/cancellation,
-  remote origin/identity/progress, retention, and artifact references.
+  remote origin/identity/progress, retention, immutable per-job language
+  decision and catalog binding, stage-attempt history,
+  `client_preflight_artifacts`, and owned artifact references. Schema 11 rewrites
+  the former phase-derived implicit-English disposition to the functional
+  `legacy_implicit_english_default` token while preserving child rows and
+  foreign-key integrity.
 - **Transient state:** transaction-local rows and snapshots.
 - **Trust boundary:** database migrations, row decoding, monotonic status
   transitions, origin generation, and bounded retention.
@@ -203,9 +208,13 @@ owner's state but may not recreate its transition logic.
 - **Entry point:** settings commands and background polling in
   `server_connector/desktop.rs`.
 - **Authoritative owner:** `server_connector/state.rs` for connection state and
-  generations; `config/*` for validated persisted configuration.
-- **Persisted state:** server configuration and approved origin, each admitted
-  through bounded no-follow regular-file I/O before schema validation.
+  generations; `config/*` for validated persisted configuration; and
+  `server_connector/capability_snapshot.rs` for the bounded last-known catalog
+  projection.
+- **Persisted state:** server configuration and approved origin, plus
+  `asr-capabilities-snapshot.json`. Each is admitted through bounded no-follow
+  regular-file I/O before schema validation. The capability file is an offline
+  last-known projection, never current readiness or live server authority.
 - **Transient state:** in-flight health request, retry schedule, generation, and
   latest capability snapshot.
 - **Trust boundary:** untrusted origin/configuration and bounded HTTP response.
@@ -239,13 +248,50 @@ owner's state but may not recreate its transition logic.
   retryable terminal state, reconciles atomic results, and never invents
   success; create/upload/commit are idempotent. Chunk assembly reopens each
   regular file through a bounded descriptor and verifies its declared exact
-  length and SHA before exclusive atomic WAV publication.
+  length and SHA before exclusive atomic WAV publication. Every mutating
+  service entry point linearizes against runtime shutdown, the pool rejects and
+  releases unstarted reservations after shutdown, and an unverified worker
+  cleanup retains the exclusive storage lease until fail-stop process exit.
 - **Cancellation:** idempotent cancellation wins tested commit/result races and
   purges private audio at the safe boundary.
 - **Duplicate owner:** none. HTTP handlers and workers do not write job state
   independently of the service/store contract.
 
-### 11. Model and runtime selection
+### 11. Server language-preflight lifecycle
+
+- **Entry point:** `server/api/lid_requests.py` for
+  `POST /v1/lid/preflight` and
+  `DELETE /v1/lid/preflights/{requestId}`; `jobs/runtime.py` composes the
+  optional runtime.
+- **Authoritative owner:** `lid/service.py` owns active-request identity,
+  cancellation, transient probe lifetime, cleanup, and shutdown;
+  `lid/preflight.py` owns evaluation policy; `lid/runtime.py` owns component
+  construction and startup reconciliation.
+- **Persisted state:** no preflight result or probe audio is durable. The
+  repository-pinned component/model/policy locks and the verified ASR
+  capability catalog define the executable contract.
+- **Transient state:** one bounded active-request map, cancellation events,
+  materialized PCM probe files under the private server storage namespace, and
+  the isolated AmberNet worker/container.
+- **Trust boundary:** versioned binary envelope, exact manifest/body lengths and
+  hashes, source-sample intervals, catalog/policy/model identity, private path
+  identity, worker output bounds, and cleanup proof.
+- **Dependencies/events:** HTTP adapter -> transport parser -> service ->
+  materialization -> preflight engine -> isolated worker. The response is an
+  assistive suggestion only; the client language-decision owner remains
+  authoritative.
+- **Failure/recovery:** stale owned probe directories are reconciled at startup;
+  a cleanup failure fences the LID service. Runtime startup failure retires an
+  already-created job service before worker cleanup and retains the storage
+  lease whenever containment cannot be proved.
+- **Cancellation:** an accepted DELETE sets the request cancellation while the
+  request is active. Finalization checks that signal under the same lock that
+  removes active identity, so an accepted cancellation cannot race into a
+  successful POST response.
+- **Duplicate owner:** none. The HTTP adapter does not own request lifetime, and
+  the server suggestion does not replace the desktop decision owner.
+
+### 12. Model and runtime selection
 
 - **Entry point:** local setup/settings commands and server runtime creation.
 - **Authoritative owner:** desktop `stt/fallback_model/*`, `stt/nemotron/*`,
@@ -270,7 +316,7 @@ owner's state but may not recreate its transition logic.
 - **Duplicate owner:** none. The NGC image is a build base, not a second runtime
   owner.
 
-### 12. Process supervision and containment
+### 13. Process supervision and containment
 
 - **Entry point:** app background startup and server pool/runtime invocation.
 - **Authoritative owner:** desktop lifecycle resources for native tasks;
@@ -297,7 +343,7 @@ owner's state but may not recreate its transition logic.
 - **Duplicate owner:** installer-only containment was retired; real runtime
   process safety remains.
 
-### 13. Filesystem admission and path authorization
+### 14. Filesystem admission and path authorization
 
 - **Entry point:** `media_protocol/*`, `recording_access/*`, `file_actions/*`,
   `audio/recording/*`, `jobs/remote/*`, shared native `bounded_file.rs`, shared
@@ -320,13 +366,14 @@ owner's state but may not recreate its transition logic.
 - **Cancellation:** removes only verified owned artifacts.
 - **Duplicate owner:** none; generic string paths are not authority.
 
-### 14. Transcript publication and history
+### 15. Transcript publication and history
 
 - **Entry point:** live finalization or verified remote result publication.
 - **Authoritative owner:** native transcript revision/catalog modules and
   `commands/history/*`; remote result verification lives in `jobs/remote/result.rs`.
 - **Persisted state:** immutable transcript/revision files, commit/result
-  metadata, and native hidden/deletion state where applicable.
+  metadata, hash-chained language-label correction revisions, and native
+  hidden/deletion state where applicable.
 - **Transient state:** frontend preview, selection, search, and polish draft.
 - **Trust boundary:** text/result size, revision identity/hash, catalog path,
   source replacement, and renderer file actions.
@@ -338,14 +385,17 @@ owner's state but may not recreate its transition logic.
   uses explicit action owners.
 - **Duplicate owner:** `localStorage` is compatibility/presentation only.
 
-### 15. Configuration and environment variables
+### 16. Configuration and environment variables
 
 - **Entry point:** native settings commands and server `config/settings.py`.
-- **Authoritative owner:** desktop `server_connector/config/*`, live settings,
-  and STT settings for their domains; server `ServerSettings` for process config.
+- **Authoritative owner:** desktop `server_connector/config/*`,
+  `language_preferences/*`, live settings, and STT settings for their domains;
+  server `ServerSettings` for process config.
 - **Persisted state:** atomic app-data configuration with a generation/origin;
-  persisted JSON is limited to 64 KiB and server URL input to 2,048 bytes;
-  server environment is process input.
+  `primary-language.json` for the confirmed primary locale;
+  `live-language-routing.json` for the explicit default-off Preview policy and
+  its catalog revision; persisted JSON is limited to 64 KiB and server URL input
+  to 2,048 bytes; server environment is process input.
 - **Transient state:** renderer draft and validation errors.
 - **Trust boundary:** malformed persisted data, confirmation of new origins,
   allowed loopback bind, and secret/private-value logging.
@@ -358,13 +408,15 @@ owner's state but may not recreate its transition logic.
 - **Duplicate owner:** renderer draft is not applied state. One native save lease
   serializes the complete confirmation/publication/application sequence.
 
-### 16. Health, capability, and readiness projection
+### 17. Health, capability, and readiness projection
 
 - **Entry point:** server `/v1/health`; desktop health client/poller.
 - **Authoritative owner:** server capability calculation and desktop connector
   state machine for the local projection.
-- **Persisted state:** none; capability is observed runtime truth.
-- **Transient state:** bounded health response and retry/readiness snapshot.
+- **Persisted state:** `asr-capabilities-snapshot.json` is a bounded last-known
+  offline display projection only; current capability/readiness remains observed
+  runtime truth.
+- **Transient state:** bounded live health response and retry/readiness snapshot.
 - **Trust boundary:** untrusted response schema/version/size and stale origin.
 - **Dependencies/events:** server router/pool readiness -> health -> bounded
   client validation -> frontend server hook.
@@ -373,7 +425,7 @@ owner's state but may not recreate its transition logic.
 - **Cancellation:** reconfiguration/shutdown cancels polling.
 - **Duplicate owner:** none; UI labels do not infer readiness.
 
-### 17. Security, authentication, and enterprise networking handoffs
+### 18. Security, authentication, and enterprise networking handoffs
 
 - **Entry point:** current development profile uses explicit loopback and a
   user-managed SSH forward.
@@ -393,7 +445,7 @@ owner's state but may not recreate its transition logic.
 - **Duplicate owner:** none; developer infrastructure is not a substitute for
   enterprise ownership.
 
-### 18. Test harnesses and release gates
+### 19. Test harnesses and release gates
 
 - **Entry point:** `desktop/package.json`, `server` test commands,
   `.github/workflows/*`, and `desktop/tests/scripts/*`.

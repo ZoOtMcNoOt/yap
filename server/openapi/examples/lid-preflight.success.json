@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "requestId": "lid-request-01",
+  "status": "suggestion",
+  "reason": "mapped_language_agreement",
+  "suggestedLocale": "en-US",
+  "userConfirmationRequired": true,
+  "sourceSamples": 480000,
+  "component": {
+    "id": "ambernet-batch-language-preflight",
+    "runtime": {
+      "pythonVersion": "3.12.13",
+      "cpuOnly": true
+    },
+    "model": {
+      "id": "nvidia/nemo/langid_ambernet",
+      "revision": "1.12.0"
+    },
+    "policyRevision": "ambernet-stratified-five-region-v1",
+    "scoreSemantics": "mean-logit-log-softmax"
+  },
+  "observations": [
+    {
+      "index": 0,
+      "probeSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "sourceStartSample": 0,
+      "sourceEndSample": 96000,
+      "voicedSamples": 96000,
+      "rawLabel": "en",
+      "topScore": -0.08,
+      "scoreMargin": 1.12,
+      "mappedLocale": "en-US"
+    },
+    {
+      "index": 1,
+      "probeSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "sourceStartSample": 96000,
+      "sourceEndSample": 192000,
+      "voicedSamples": 96000,
+      "rawLabel": "en",
+      "topScore": -0.09,
+      "scoreMargin": 1.1,
+      "mappedLocale": "en-US"
+    },
+    {
+      "index": 2,
+      "probeSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "sourceStartSample": 192000,
+      "sourceEndSample": 288000,
+      "voicedSamples": 96000,
+      "rawLabel": "en",
+      "topScore": -0.07,
+      "scoreMargin": 1.15,
+      "mappedLocale": "en-US"
+    },
+    {
+      "index": 3,
+      "probeSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "sourceStartSample": 288000,
+      "sourceEndSample": 384000,
+      "voicedSamples": 96000,
+      "rawLabel": "en",
+      "topScore": -0.1,
+      "scoreMargin": 1.08,
+      "mappedLocale": "en-US"
+    },
+    {
+      "index": 4,
+      "probeSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "sourceStartSample": 384000,
+      "sourceEndSample": 480000,
+      "voicedSamples": 96000,
+      "rawLabel": "en",
+      "topScore": -0.06,
+      "scoreMargin": 1.2,
+      "mappedLocale": "en-US"
+    }
+  ],
+  "sourcePcmSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "catalogRevision": "16a89b24cf036dda7b1272b88c066baafea2262743dcaaebc8a66b7b76c3d09f"
+}

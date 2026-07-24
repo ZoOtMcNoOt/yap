@@ -46,6 +46,18 @@ class ContractTests(unittest.TestCase):
         asr_capabilities_example = contract_schema.load_json(
             http_contract.EXAMPLES_ROOT / "asr-capabilities.ok.json"
         )
+        lid_enabled_capabilities_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "asr-capabilities.lid-enabled.ok.json"
+        )
+        lid_request_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "lid-preflight.request-manifest.json"
+        )
+        lid_success_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "lid-preflight.success.json"
+        )
+        lid_cancellation_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "lid-preflight.cancellation.json"
+        )
         job_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "job.accepted.json")
         partial_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "live.partial.json")
 
@@ -59,6 +71,33 @@ class ContractTests(unittest.TestCase):
         contract_schema.assert_schema_subset(
             asr_capabilities_example,
             schemas["AsrCapabilityCatalog"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        contract_schema.assert_schema_subset(
+            lid_enabled_capabilities_example,
+            schemas["AsrCapabilityCatalog"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        catalog_without_lid = deepcopy(lid_enabled_capabilities_example)
+        del catalog_without_lid["languagePreflight"]
+        self.assertEqual(catalog_without_lid, asr_capabilities_example)
+        contract_schema.assert_schema_subset(
+            lid_request_example,
+            schemas["LidPreflightRequestManifest"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        contract_schema.assert_schema_subset(
+            lid_success_example,
+            schemas["LidPreflightResult"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        contract_schema.assert_schema_subset(
+            lid_cancellation_example,
+            schemas["LidPreflightCancellation"],
             document_name="openapi.json",
             documents=documents,
         )
@@ -129,6 +168,112 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(partial_example["eventType"], "transcript.partial")
         self.assertEqual(partial_example["schemaVersion"], 1)
         self.assertGreaterEqual(partial_example["eventSequence"], 0)
+
+        invalid_lid_request = deepcopy(lid_request_example)
+        invalid_lid_request["sourceSamples"] = 479_999
+        with self.assertRaisesRegex(AssertionError, "below"):
+            contract_schema.assert_schema_subset(
+                invalid_lid_request,
+                schemas["LidPreflightRequestManifest"],
+                document_name="openapi.json",
+                documents=documents,
+            )
+
+        invalid_lid_success = deepcopy(lid_success_example)
+        invalid_lid_success["observations"].append(
+            deepcopy(invalid_lid_success["observations"][0])
+        )
+        with self.assertRaisesRegex(AssertionError, "exceeds"):
+            contract_schema.assert_schema_subset(
+                invalid_lid_success,
+                schemas["LidPreflightResult"],
+                document_name="openapi.json",
+                documents=documents,
+            )
+
+    def test_lid_error_examples_match_each_typed_operation_response(self) -> None:
+        document = contract_schema.load_json(http_contract.OPENAPI_PATH)
+        documents = {"openapi.json": document}
+        fixture = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "lid-preflight.errors.json"
+        )
+        self.assertEqual(fixture["schemaVersion"], 1)
+        case_ids: set[str] = set()
+
+        for case in fixture["cases"]:
+            with self.subTest(case=case["id"]):
+                self.assertNotIn(case["id"], case_ids)
+                case_ids.add(case["id"])
+                response = document["paths"][case["path"]][case["method"]][
+                    "responses"
+                ][str(case["status"])]
+                schema = response["content"]["application/json"]["schema"]
+                target, target_name = contract_schema.resolve_reference(
+                    schema["$ref"],
+                    "openapi.json",
+                    documents,
+                )
+                contract_schema.assert_schema_subset(
+                    case["value"],
+                    target,
+                    document_name=target_name,
+                    documents=documents,
+                )
+
+        self.assertEqual(
+            case_ids,
+            {
+                "invalid-envelope",
+                "stale-contract",
+                "request-too-large",
+                "unsupported-media-type",
+                "capacity-busy",
+                "storage-error",
+                "not-configured",
+                "temporarily-unavailable",
+                "preflight-not-found",
+            },
+        )
+
+        for contract in http_contract.HTTP_SCHEMA_CONTRACTS:
+            if not contract["path"].startswith("/v1/lid/"):
+                continue
+            operation = document["paths"][contract["path"]][contract["method"]]
+            for status in contract["errors"]:
+                response_content = operation["responses"][status]["content"][
+                    "application/json"
+                ]
+                schema = response_content["schema"]
+                target, target_name = contract_schema.resolve_reference(
+                    schema["$ref"],
+                    "openapi.json",
+                    documents,
+                )
+                examples = []
+                if "example" in response_content:
+                    examples.append(response_content["example"])
+                examples.extend(
+                    example["value"]
+                    for example in response_content.get("examples", {}).values()
+                    if "value" in example
+                )
+                self.assertTrue(
+                    examples,
+                    f"{contract['method']} {contract['path']} {status} has no example",
+                )
+                for index, value in enumerate(examples):
+                    with self.subTest(
+                        path=contract["path"],
+                        method=contract["method"],
+                        status=status,
+                        example=index,
+                    ):
+                        contract_schema.assert_schema_subset(
+                            value,
+                            target,
+                            document_name=target_name,
+                            documents=documents,
+                        )
 
     def test_shared_invalid_asr_catalog_cases_match_the_openapi_boundary(self) -> None:
         document = contract_schema.load_json(http_contract.OPENAPI_PATH)

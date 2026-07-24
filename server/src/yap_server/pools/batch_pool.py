@@ -86,6 +86,7 @@ class BatchAsrPool:
         self._cancellations: dict[str, threading.Event] = {}
         self._futures: dict[str, Future[dict[str, object]]] = {}
         self._fenced_reason: str | None = None
+        self._shutdown = False
         self._executor = ThreadPoolExecutor(
             max_workers=max_workers,
             thread_name_prefix="yap-batch-asr",
@@ -129,6 +130,8 @@ class BatchAsrPool:
         ):
             raise ValueError("batch ASR PCM reservation size is invalid")
         with self._lock:
+            if self._shutdown:
+                raise PoolFenced("batch ASR pool is shut down")
             if self._fenced_reason is not None:
                 raise PoolFenced(self._fenced_reason)
             if job_id in self._outstanding:
@@ -154,6 +157,9 @@ class BatchAsrPool:
         factory: BatchJobFactory,
     ) -> Future[dict[str, object]]:
         with self._lock:
+            if self._shutdown:
+                self._release_unstarted_locked(job_id, cancellation)
+                raise PoolFenced("batch ASR pool is shut down")
             if (
                 job_id not in self._outstanding
                 or self._cancellations.get(job_id) is not cancellation
@@ -177,6 +183,22 @@ class BatchAsrPool:
             self._futures[job_id] = future
         future.add_done_callback(lambda _future: self._release(job_id))
         return future
+
+    def _release_unstarted_locked(
+        self,
+        job_id: str,
+        cancellation: threading.Event,
+    ) -> None:
+        if (
+            self._cancellations.get(job_id) is not cancellation
+            or job_id in self._futures
+        ):
+            return
+        self._outstanding.discard(job_id)
+        self._cancellations.pop(job_id, None)
+        pcm_byte_length = self._pcm_byte_lengths.pop(job_id)
+        self._available_pcm_bytes += pcm_byte_length
+        self._slots.release()
 
     def _abort_reserved(
         self,
@@ -244,8 +266,13 @@ class BatchAsrPool:
         containment_error: WorkerContainmentError | None = None
         try:
             with self._lock:
+                self._shutdown = True
                 for cancellation in self._cancellations.values():
                     cancellation.set()
+                for job_id in tuple(self._outstanding):
+                    if job_id not in self._futures:
+                        cancellation = self._cancellations[job_id]
+                        self._release_unstarted_locked(job_id, cancellation)
             if callable(close_worker):
                 close_worker()
         except WorkerContainmentError as error:

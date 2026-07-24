@@ -32,31 +32,24 @@ complexity.
 - Phases 1–5 and Architecture Checkpoint A are merged at baseline
   `a80934d844a068110e7f86b30b6e29d35146db57`.
 - Phase 6 remains on `feat/phase6-preprocessing-pipeline`.
-- Exact executable head `05d1b82017447df04d46ccc8fa729c5a6a0d0b13`
-  passed the focused connected desktop/private-server vertical slice. The real
-  Windows desktop preserved its immutable job across a tunnel interruption,
-  verified its durable preprocessing manifest, completed the advertised
-  Cohere `en-US` server route, retired the completed job from the recoverable
-  queue, opened the verified result through History, and left no owned remote
-  container, network, process, or listener. The private schema-2 receipt remains
-  outside Git; its public-safe SHA-256 is
-  `8fe9236459a160fe2a66b6f905fa4ec86d721e0b9d7147783503152fdcbde466`.
-  This is focused development evidence, not the frozen complete Phase 6 gate.
-- Exact executable head `74322bf42c22058ffa88620f28cd4bf118ad8c01`
-  passed the focused target-client qualification. Twelve paced native cycles
-  and all nine 250-ms-through-30-second prepared-audio cases completed with zero
-  dropped frames. The unattended 30-second release-mode UI run remained on
-  `localFallback`, recovered from four early cancellations, saved and deleted
-  the captured session, exited through the production tray path, and retained
-  no recording, model snapshot, Yap/driver process, or port-18765 listener. The
-  private native-profile, duration, and UI-evidence SHA-256 receipts are
-  `17e5a92766ecd317506eefb0d3bc60c5541f87919e00332eca0b777afbc60dd0`,
-  `71a2457ec98af40f176a45d7cb41e861c094cfaed011fb3780af997727018c4d`,
-  and `22612670fa7ab2f6eb9ace7f731ad2a0fb554314faade948005136483e4b41c3`.
-  This remains focused pre-gate evidence, not the complete Phase 6 matrix.
-- The model-neutral Cohere vLLM and Nemotron NeMo candidate-safety lifecycle
-  already passed on GB10 at `a21964c19e56648e9fddcb5200de419e59a7687c`.
+- Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
+  passed the frozen one-attempt 30-child Phase 6 matrix. Manifest SHA-256
+  `8c59a08174a2c1a7e72bef59fefc6a8160ca65982736e0ba7b18f853d893affd`
+  and independently validated candidate-receipt SHA-256
+  `798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`
+  bind the exact evidence.
+- Its target-client channel passed twelve paced native cycles, all nine
+  250-ms-through-30-second prepared-audio cases, and the unattended 30-second
+  release-mode microphone/UI lifecycle with no retained recording, model
+  snapshot, Yap/driver process, or port-18765 listener.
+- Its GB10 channel passed all 18 Cohere vLLM/Nemotron NeMo candidate-safety
+  children with public-safe aggregate SHA-256
+  `6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
   Neither provider is promoted.
+- Its connected channel preserved one immutable Windows desktop job across a
+  tunnel interruption, verified durable preprocessing, completed the advertised
+  Cohere `en-US` route, retired the job into History, opened the verified
+  server-authoritative result, and left no owned local or remote runtime.
 - Tiron is a Phase 8 replacement candidate. Phase 6 will not run a broad Cohere
   quality, locale, long-duration, percentile, or rollback campaign.
 - The full Codex Security scan remains deferred to the private Phase 10 gate.
@@ -86,7 +79,7 @@ Phase 6 is ready to merge when one clean exact head proves all of the following:
 
 ## Ordered Phase 6 closeout checklist
 
-Only these six actions remain on the Phase 6 critical path.
+These six actions define the Phase 6 critical path. Only unchecked items remain.
 
 ### 1. Finish connected pre-gate preparation
 
@@ -146,20 +139,38 @@ the immutable result artifact are terminal truth.
 
 ### 4. Freeze the Phase 6 candidate
 
-- [ ] Review the complete Phase 6 diff and all remaining unchecked plan items.
-- [ ] Classify each item as already evidenced, required for the candidate,
+- [x] Review the complete Phase 6 diff and all remaining unchecked plan items
+      with three independent read-only adversarial reviewers.
+- [x] Classify each item as already evidenced, required for the candidate,
       deferred to its named later phase, or an explicit external handoff.
-- [ ] Reconcile ADR implementation scores, current architecture, Voice OS,
+- [x] Reconcile ADR implementation scores, current architecture, Voice OS,
       roadmap, status, plans, OpenAPI, and runbooks with executable truth.
-- [ ] Commit the clean candidate and record its exact SHA. No executable change
-      may occur after this point without an explicit gate-invalidating decision.
+- [ ] Commit the repaired clean replacement and record its exact SHA. No
+      executable change may occur after this point without an explicit
+      gate-invalidating decision.
+- [ ] Complete a focused three-reviewer read-back of the repairs before freezing
+      that replacement.
+
+Candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed its admitted
+matrix, but final review found concrete restart/cleanup, normative OpenAPI,
+hosted-closure, evidence-bound, and phase-derived persisted-vocabulary defects.
+Executable repair explicitly invalidated that SHA as merge authority. Its
+receipt remains historical evidence and is not reused for the replacement.
+
+The same review also recorded non-blocking Checkpoint B inputs without pulling
+them into this phase: remove the server worker-to-engine dependency cycle,
+restore the desktop language-to-STT dependency direction under one composite
+routing-revision owner, and consolidate duplicate server request fixtures. The
+Phase 6 ownership-map omission was documentation truth and is corrected here,
+not deferred.
 
 ### 5. Run the complete Phase 6 matrix exactly once
 
-- [ ] Run every candidate child frozen by the machine-validated
+- [ ] Run every replacement-candidate child frozen by the machine-validated
       [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
-      on the same frozen head, then validate its separate exact-head hosted
-      CI/CodeQL/disposable-Windows closure after the PR opens.
+      on the same frozen head.
+- [ ] Validate the separate exact-head hosted CI/CodeQL/disposable-Windows
+      closure after the PR opens.
 - [ ] Verify cancellation, retry, restart, recovery, immutable identity,
       resource bounds, model/process/listener teardown, and private-evidence
       handling.

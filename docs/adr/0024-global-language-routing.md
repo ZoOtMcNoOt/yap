@@ -1,22 +1,23 @@
 # ADR 0024: Global language routing and timing evidence
 
-**Date:** 2026-07-16; amended 2026-07-23
+**Date:** 2026-07-16; amended 2026-07-24
 **Status:** Accepted decision; the local detector lifecycle, bounded dynamic
 routing, source-time switch evidence, visible primary fallback, pinned server
 Nemotron reference routes, provider-specific Cohere vLLM and resident NeMo
-adapters, and fail-
-closed English Cohere timing implementation now execute under focused tests. A
-contained GB10 lifecycle proof exercised the current timing source without
-promoting it. The accepted local route is exposed on the active branch only as
-an explicit, default-off **Preview**: its consumed representative natural-switch
-quality target failed and remains a visible limitation rather than a
-qualification claim. Exact executable head
-`74322bf42c22058ffa88620f28cd4bf118ad8c01` passed the focused current-host
-release/resource/lifecycle gate. Per-locale quality evidence and the complete
-Phase 6 gate remain incomplete.
-The separate Cohere vLLM/Nemotron NeMo candidate-safety lifecycle passed at
-exact GB10 head `a21964c19e56648e9fddcb5200de419e59a7687c`; neither service was
-promoted, and broad model-quality/replacement evidence remains Phase 8 work.
+adapters, and fail-closed English Cohere timing implementation execute. The
+accepted local route is exposed on the active branch only as an explicit,
+default-off **Preview**: its consumed representative natural-switch quality
+target failed and remains a visible limitation rather than a qualification
+claim. Exact executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` passed the frozen one-attempt
+30-child Phase 6 matrix, including the current-host release/resource/lifecycle
+channels and the 18-child Cohere vLLM/Nemotron NeMo candidate-safety lifecycle.
+Final adversarial review then found concrete merge blockers and invalidated that
+SHA as merge authority; its receipt remains historical evidence. Neither service
+was promoted; per-locale and broad model-quality/replacement evidence remains
+Phase 8 work. The repaired implementation passed the focused three-agent
+remediation re-review; one new complete gate remains before hosted PR checks,
+review, and merge.
 SpeechFlow LID13 and FireRedLID have now failed behavior and payload preflight;
 Whisper base also failed broad global-top behavior, and both official base and
 tiny Q5_1 routes failed client throughput preflight. The frozen narrow
@@ -46,9 +47,9 @@ frames, drained in 911 ms, averaged 1.773 cores during source-paced input, and
 measured 8.023 ms p95/45.864 ms maximum scheduler wake delay. Its accelerated
 combined pass used 3.71 of four cores and is not an interactive-use claim. This
 is development-host prepared-audio evidence, not rendered-UI or sustained
-release-lifecycle evidence. The later current-host gate passed at
-`74322bf42c22058ffa88620f28cd4bf118ad8c01`; the complete Phase 6 gate remains
-open. It is also not minimum-device, battery, or thermal
+release-lifecycle evidence. The later current-host gate and complete Phase 6
+matrix passed at `97b63be46b05dffa21595f2fd081b8467bb95798`. This is not
+minimum-device, battery, or thermal
 certification, which is required before default-on or enterprise release rather
 than for this explicit Preview. The
 natural/noisy transition result is a completed failure accepted only under the
@@ -676,8 +677,9 @@ evidence before default-on or production promotion.
        image/resource/teardown smoke. Exact executable head
        `a21964c19e56648e9fddcb5200de419e59a7687c` then passed the final
        source-exact ARM64 repetition under the production worker limits; retain
-       its accepted abstaining behavior and complete phase evidence in the final
-       Phase 6 gate; do not start another open-ended accuracy campaign.
+       its accepted abstaining behavior. Exact candidate
+       `97b63be46b05dffa21595f2fd081b8467bb95798` consumed that component inside
+       the final Phase 6 gate; do not start another open-ended accuracy campaign.
 6. [x] Preserve Whisper-tiny and the other released candidates as measured
        comparators; implement the accepted AmberNet 1.12.0 QDQ INT8 component
        with exact frontend/label/runtime identity and a verified local-import
@@ -709,13 +711,13 @@ evidence before default-on or production promotion.
        launcher supplies a 30-second unattended default-microphone/UI lifecycle
        smoke; the checked-head prepared-audio profile owns speech, routing, and
        transcription evidence.
-       Exact executable head
-       `74322bf42c22058ffa88620f28cd4bf118ad8c01` passed both current-host
+       Exact executable candidate
+       `97b63be46b05dffa21595f2fd081b8467bb95798` passed both current-host
        channels: 12/12 paced cycles and all nine prepared-audio cases completed
        with zero drops, and the 30-second UI run proved local fallback, four
        cancellation recoveries, save/delete, production quit, and complete
-       recording/model/process/listener teardown. The complete checked-head
-       Phase 6 matrix remains required for the accepted AmberNet Preview.
+       recording/model/process/listener teardown inside the complete checked-head
+       Phase 6 matrix.
        A longer manual physical-device soak and representative low-end
        battery/thermal certification are deferred to the default-on and Phase
        10 release boundary; they are not Phase 6 Preview blockers. Removing
@@ -737,7 +739,8 @@ evidence before default-on or production promotion.
 8. [x] Add reference fixed-language Cohere/Nemotron routes and explicit Nemotron
        auto mode without claiming a persistent production pool.
 9. [x] Finish the bounded provider-specific candidate-safety gate from ADR 0025.
-       Exact GB10 head `a21964c19e56648e9fddcb5200de419e59a7687c`
+       Exact executable candidate
+       `97b63be46b05dffa21595f2fd081b8467bb95798`
        passed Cohere vLLM and resident NeMo request/result identity, duration,
        concurrency, cancellation/recovery, bounded admission, resource, language-
        contract, and exact-teardown cells. This does not promote either route:
@@ -763,8 +766,11 @@ evidence before default-on or production promotion.
        campaign, and does not require a ceremonial second-locale promotion.
        If Cohere remains a Phase 8 contender, validate its representative
        quality and long-duration behavior against Tiron before changing claims.
-13. [ ] Run the complete Phase 6 local/native/server/GB10 matrix exactly once on
-       the ready head, then require hosted exact-head review before merge.
+13. [x] Run the complete Phase 6 local/native/server/private-runtime matrix
+       exactly once on the ready executable candidate. Exact candidate
+       `97b63be46b05dffa21595f2fd081b8467bb95798` passed all 30 children; retain
+       the docs-only source lineage and require hosted exact-head review before
+       merge.
 
 ## References
 

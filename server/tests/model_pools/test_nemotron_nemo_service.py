@@ -186,6 +186,49 @@ class NemotronNemoServiceTests(unittest.TestCase):
                 client.close()
                 _stop(server, server_thread, application)
 
+    def test_startup_reconciliation_waits_for_the_prior_request_to_finish(self) -> None:
+        lock = _native_lock()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            request = _request(root)
+            engine = _FakeEngine(lock, block_until_released=True)
+            application = NemotronNemoApplication(
+                engine=engine,  # type: ignore[arg-type]
+                lock=lock,
+                storage_root=root,
+            )
+            server, server_thread = _serve(application, api_key="private-test-key")
+            client = NemotronNemoClient(
+                endpoint=f"http://127.0.0.1:{server.server_port}",
+                api_key="private-test-key",
+                timeout_seconds=2,
+            )
+            prior_request = threading.Thread(
+                target=application.transcribe,
+                args=(request,),
+                daemon=True,
+            )
+            try:
+                prior_request.start()
+                self.assertTrue(engine.started.wait(timeout=1))
+
+                with self.assertRaisesRegex(
+                    WorkerContainmentError,
+                    "still owns active requests",
+                ):
+                    client.verify_startup_idle(lock)
+                self.assertTrue(prior_request.is_alive())
+
+                engine.release.set()
+                prior_request.join(timeout=2)
+                self.assertFalse(prior_request.is_alive())
+                client.verify_startup_idle(lock)
+            finally:
+                engine.release.set()
+                prior_request.join(timeout=2)
+                client.close()
+                _stop(server, server_thread, application)
+
     def test_readiness_retries_transport_failure_but_not_client_defects(self) -> None:
         lock = _native_lock()
 

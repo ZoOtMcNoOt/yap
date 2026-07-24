@@ -22,7 +22,7 @@ frame contains alternate or historical sequencing.
 
 Evidence and limits are summarized in [current status](../CURRENT-STATUS.md).
 
-## Current gate: Phase 6 preprocessing
+## Current gate: Phase 6 repaired replacement
 
 Phase 6 turns the merged fixed-language canonical-WAV vertical slice into a
 durable preprocessing and language-aware pipeline without pulling later
@@ -43,9 +43,10 @@ identity, diarization, knowledge, or enterprise boundaries forward:
   mode at finalized utterance boundaries, with correctness and bounded-resource
   evidence rather than a production pool claim;
 - a digest-pinned Cohere vLLM 26.06 serving candidate behind the same worker
-  contract, promoted only by exact-output plus measured GB10 lifecycle,
-  cold/warm latency, throughput, p95/p99, memory, cancellation, teardown, and
-  concurrent-load evidence against the Transformers reference;
+  contract, with measured GB10 lifecycle, latency, throughput, memory,
+  cancellation, teardown, and concurrent-load safety evidence; representative
+  output quality, rollback, and provider promotion remain separate Phase 8
+  decisions rather than exact-output assumptions;
 - a separate Nemotron NeMo server-streaming candidate with its own correctness,
   streaming, lifecycle, concurrency, and resource gate; and
 - fail-closed word timing, initially behind an English Cohere evidence gate.
@@ -63,10 +64,14 @@ later-phase owners without authorizing phase mixing.
 Automatic cross-provider switching, named speaker identity, and enterprise
 infrastructure are not Phase 6 claims. Within-utterance language spans are a
 Phase 6 target and remain an explicit default-off Preview because the frozen
-natural-switch quality target failed. Exact head
-`74322bf42c22058ffa88620f28cd4bf118ad8c01` passed the focused no-server local
-resource/lifecycle gate; candidate review, the complete Phase 6 matrix, hosted
-checks, and merge remain open.
+natural-switch quality target failed. Exact executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` passed the frozen 30-child
+local/native/server/private-runtime matrix, including the target-client,
+18-child resident-provider, and connected interruption/recovery channels. Final
+adversarial review then found concrete blockers and invalidated that SHA as
+merge authority. The historical receipt remains recorded. The repaired
+implementation passed the focused three-agent remediation re-review; one new
+complete gate, hosted checks, and review remain before merge.
 Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
 SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
 and SGLang services, production multi-worker/mixed-load capacity promotion, production

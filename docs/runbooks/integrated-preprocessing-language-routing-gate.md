@@ -7,6 +7,22 @@ The authoritative child inventory is
 Its functional names describe the behavior under test rather than a roadmap
 phase number.
 
+## Last admitted result
+
+Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
+passed its sole admitted 30-child attempt on 2026-07-24. The manifest SHA-256 is
+`8c59a08174a2c1a7e72bef59fefc6a8160ca65982736e0ba7b18f853d893affd`;
+the independently validated candidate receipt SHA-256 is
+`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`.
+Final adversarial review then found executable restart/cleanup, normative
+OpenAPI, hosted-closure, evidence-bound, and persisted-vocabulary defects. That
+review explicitly invalidated `97b63be...` as merge authority; its receipt
+remains historical evidence and must not be relabeled. A repaired replacement
+implementation passed focused verification and the three-agent remediation
+re-review; one new admitted complete gate remains.
+The private plan, command logs, audio, runtime evidence, and receipts remain
+outside Git.
+
 ## Candidate boundary
 
 Freeze one clean lowercase Git SHA before admitting a run. Every child records

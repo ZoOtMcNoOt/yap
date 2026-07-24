@@ -1,44 +1,34 @@
 # Audio Preprocessing and Language Routing Implementation Plan
 
-**Status:** Active on `feat/phase6-preprocessing-pipeline`. Decision research
-and public aggregate benchmark evidence are complete. The bounded verified ASR
-catalog, frozen language decision, local primary-language conditioning, durable-
-stage, normalization, imported-file advisory VAD, local language spans, and
-isolated verify-only AmberNet batch-preflight slices now execute alongside pinned server
-Nemotron fixed/automatic Transformers reference routes and a Cohere vLLM
-adapter/image/launcher contract with focused Python 3.12, OpenAPI, Rust, and
-TypeScript coverage. The pinned resident Nemotron NeMo adapter, cache-aware
-scheduler, authenticated loopback service, checked image, and launcher also now
-execute under focused tests. Their model-neutral candidate-safety lifecycle
-passed at exact GB10 head `a21964c19e56648e9fddcb5200de419e59a7687c`;
-provider promotion remains Phase 8 work. The resource harness now distinguishes cgroup residency, entrypoint RSS/
-allocation extent, CUDA allocation/reservation, task/thread counts, and memory
-events; version 5 of the runtime plan freezes separate GB10 ceilings for the
-vLLM and NeMo candidates before the checked-head run. The retired Triton
+**Status:** Historical executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` passed the one-attempt frozen
+30-child local/native/server/private-runtime matrix on 2026-07-24. The admitted
+target-client channel passed 12/12 paced native cycles, all nine short-boundary
+cases, and the unattended release-mode microphone/UI lifecycle with complete
+recording/model/process/listener teardown. The GB10 channel passed all 18 Cohere
+vLLM/Nemotron NeMo duration, request, language, admission, cancellation,
+resource, and lifecycle children; its public-safe aggregate SHA-256 is
+`6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
+The connected channel carried one immutable desktop job through durable
+preprocessing, an SSH-forward interruption and recovery, server-authoritative
+result publication, verified History review, and exact local/remote teardown.
+The complete frontend/accessibility, Rust/native, required WDIO, connector,
+dependency/provenance, and portable Python 3.12 inventory passed. The validated
+candidate receipt SHA-256 is
+`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`.
+Neither provider is promoted; the local automatic route remains default-off
+Preview behavior because its frozen natural-switch quality target failed. Final
+adversarial read-back subsequently found concrete merge blockers and invalidated
+`97b63be...` as merge authority. Its receipt remains historical evidence. The
+repaired implementation passed the focused three-agent remediation re-review;
+one complete gate, hosted checks, review, and merge remain. The retired Triton
 experiment remains negative evidence.
-Source-exact focused GB10 image smokes exist for Cohere vLLM and Nemotron NeMo
-at executable commit `fcccf21e785b116b92cd8e46150a36b9b5ee91db`.
-The isolated SpeechBrain component also has a historical source-exact receipt at
+
+The isolated SpeechBrain component has a historical source-exact receipt at
 `04266c4bbffd0fd31eaf2afd0bcce42e0248344f`, but ADR 0026 supersedes that
-runtime. The replacement AmberNet path has focused Windows real-model and
-cross-architecture frontend/logit parity evidence. Exact executable commit
-`c6862262fa36a83bcd40a7bffa65ec6429ec097e` also passed a focused ARM64 build,
-real-artifact `ContainerLidWorker` execution, locked-resource measurement, and
-teardown smoke. Exact executable head
-`a21964c19e56648e9fddcb5200de419e59a7687c` then passed the final source-exact
-ARM64 production-worker repetition. Exact executable head
-`05d1b82017447df04d46ccc8fa729c5a6a0d0b13` subsequently passed the focused
-assembled Windows-desktop/private-server route through durable preprocessing,
-one tunnel interruption and recovery, server-authoritative result publication,
-verified History review, and complete remote teardown. That closes the focused
-advertised-route integration smoke without promoting a provider or completing
-the Phase 6 gate. Exact executable head
-`74322bf42c22058ffa88620f28cd4bf118ad8c01` subsequently passed the focused
-current-host automated no-server Preview lifecycle: 12/12 paced native cycles
-and all nine short-boundary cases completed without drops, and the unattended
-release-mode UI run proved cancellation recovery, local fallback, save/delete,
-production quit, and complete recording/model/process/listener teardown. The
-accessibility rerun and complete frozen Phase 6 matrix remain open.
+runtime. The replacement AmberNet path retains focused Windows real-model,
+cross-architecture frontend/logit parity, and source-exact ARM64
+resource/teardown evidence.
 Fail-closed English
 Cohere attention alignment also executes and has current-source contained GB10
 lifecycle evidence without being advertised. The tiny SpeechFlow LID13 challenger
@@ -75,10 +65,9 @@ interactive-use claim. These proxies are not rendered-UI, sustained release-
 lifecycle, minimum-device, battery, or thermal qualification. The separately frozen representative natural-switch
 quality target completed and failed; that accepted limitation fixes the route
 as an explicit, default-off Preview rather than remaining an unfinished pass
-claim. Current-host resource/interference and sustained lifecycle passed the
-focused target-client gate at
-`74322bf42c22058ffa88620f28cd4bf118ad8c01`; the complete Phase 6 gate is not
-complete. Representative
+claim. Current-host resource/interference and sustained lifecycle passed again
+inside exact candidate `97b63be46b05dffa21595f2fd081b8467bb95798`; the complete
+Phase 6 matrix also passed. Representative
 low-end physical battery/thermal certification is deferred until default-on or
 Phase 10 release qualification.
 
@@ -637,8 +626,10 @@ legacy rows remain readable without claiming history they never recorded.
 - [x] Classify representative fixed-language/long-tail suggestion quality as
       unpromoted rather than starting another Phase 6 evaluation campaign. The
       executing path remains assistive, user-confirmed, and manual on ambiguity
-      or failure. Keep the complete one-time Phase 6 resource/matrix gate open
-      until the branch is frozen.
+      or failure. Candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
+      consumed the first complete matrix, but final adversarial review invalidated
+      it as merge authority. Keep one replacement resource/matrix gate open until
+      the repaired branch is frozen.
 
 The desktop and server independently compute the same five source regions and
 decision. Focused Python and Rust tests cover the four-hour selector bound
@@ -1453,9 +1444,10 @@ semaphore warning, exited zero after observed engine/API shutdown, and removed
 its container/listener. The real run verified all model artifact hashes,
 returned zero normalized public-fixture word errors, and observed 2.968 GiB
 container usage. Private log/summary hashes are recorded in ADR 0025. This
-focused correction does not close the provider, meeting, locale, duration, or
-complete Phase 6 gates; the frozen exact candidate must repeat log-clean
-lifecycle assertions.
+This focused correction does not close the provider, meeting, locale, duration, or
+  complete phase gates. Its log-clean lifecycle assertions were subsequently
+  consumed by the historical `97b63be...` candidate and remain required by the
+  repaired replacement gate.
 
 #### Retired Triton experiment — historical negative evidence
 
@@ -1735,7 +1727,8 @@ keyboard selection and focus return, and a 390-by-760 narrow-window layout. The
 narrow proof exposed and closed the fixed navigation/picker clipping defect.
 The muted explanatory-text token now measures 4.69:1 against the base
 background, above the WCAG AA 4.5:1 normal-text threshold. The complete
-full-matrix accessibility rerun remains part of the one-time Phase 6 gate.
+full-matrix accessibility cell passed inside exact candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798`.
 
 ### 10. Reconcile evidence and close the exact head
 
@@ -1755,40 +1748,53 @@ VAD evidence could incorrectly hold a job in preflight, and the gate expected a
 completed job to remain in the recoverable queue instead of following it into
 History. Focused follow-up verification passed five desktop gate files with 30
 tests, seven Rust client-stage ledger tests, JavaScript syntax checking,
-TypeScript checking, and whitespace validation. The later focused target-client
-qualification passed at exact head
-`74322bf42c22058ffa88620f28cd4bf118ad8c01`; the checklist remains open until
-the frozen complete gate determines the final claims and the exact candidate
-receives one last read-back.
+TypeScript checking, and whitespace validation. Exact executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` then passed the frozen one-attempt
+30-child matrix on 2026-07-24. Manifest SHA-256
+`8c59a08174a2c1a7e72bef59fefc6a8160ca65982736e0ba7b18f853d893affd`
+and candidate-receipt SHA-256
+`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`
+bind the complete target-client, GB10, connected, accessibility, frontend,
+native, and portable Python 3.12 inventory. That post-gate documentation
+reconciliation identified the unchanged executable SHA. The later final
+adversarial read-back found concrete blockers, and subsequent executable repair
+invalidated `97b63be...` as merge authority. Focused three-agent remediation
+re-review passed; one replacement complete gate, hosted closure, review, and
+merge remain.
 
 - [x] Resolve focused correctness, security, privacy, license/provenance,
       maintainability, accessibility, and resource-bound findings.
 - [x] Update ADR implementation scores only for behavior proved by executable
       tests and observed runtime evidence.
 - [x] Reconcile current architecture, Voice OS synthesis, roadmap, status,
-      OpenAPI, runbooks, and this plan with what actually executes. The OpenAPI
-      contract remains unchanged because this closure changes only local runtime
-      lifecycle and qualification behavior.
-- [ ] Freeze one Phase 6 candidate and run the complete local/native/server/
-      GB10 inventory in the machine-validated
+      OpenAPI, runbooks, and this plan with what actually executes. The
+      normative OpenAPI now includes the bounded LID preflight/cancellation
+      surface and retryable shutdown responses for mutating job operations.
+- [ ] Freeze one repaired Phase 6 replacement and run the complete
+      local/native/server/GB10 inventory in the machine-validated
       [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
-      exactly once.
+      exactly once. Historical candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
+      passed all 30 frozen children, but later executable repair invalidated it
+      as merge authority and its receipt cannot be reused.
 - [ ] Open a focused PR, require hosted exact-head CI/CodeQL and any applicable
       disposable-Windows lifecycle evidence, review the checked SHA, and merge
       only that green reviewed head.
 
 Exactly three read-only adversarial reviews covered runtime/concurrency,
-architecture/maintainability, and contracts/evidence. Their Phase 6 blockers are
-closed: recording language evidence is bound to committed PCM and persistence
-loss degrades durably; partial provider startup closes acquired workers; NeMo
-shutdown handles a connection factory that never returns; production images
-exclude the evaluation package; the model bundle uses a strict resource
-allowlist; and runtime/provenance documents match the executable owners. The
-focused regression rerun passed 23 Rust tests, 42 server lifecycle/containment
-tests with one expected skip, 19 production-image contract tests, and three
-model-provenance tests. Large cohesive-module decomposition remains correctly
-queued for the separate post-Phase-6 checkpoint and is not a release-correctness
-finding.
+architecture/maintainability, and contracts/evidence. The latest read-back
+found late HTTP mutation admission during shutdown, unsafe startup lease
+release after unverified containment, an accepted LID-cancellation completion
+race, and pre-validation trust in command-log destinations. The repairs fence
+every mutating service and pool entry point, retire an already-created service
+before startup cleanup, retain storage ownership on unverified containment,
+linearize LID completion with cancellation, and verify private log path and
+opened-file identity before command execution. Final focused regression
+verification ran 176 server tests: 174 passed and two POSIX-only lease checks
+were expectedly skipped on Windows. All 14 release-contract checks passed,
+including bounded-log overflow, tampered-destination, and junction-destination
+cases. All three focused reviewers returned `READY`. Large cohesive-module
+decomposition remains queued for the separate post-Phase-6 checkpoint and is
+not silently folded into this phase.
 
 The Phase 6 merge activates the separately queued
 [Codebase ownership and maintainability review](../queued/2026-07-18-codebase-ownership-and-maintainability-review.md).

@@ -4,7 +4,7 @@
 one-time exact-head gate, hosted review, and merge. This plan does not authorize
 Checkpoint B work in the Phase 6 worktree.
 
-**Planned branch:** `refactor/codebase-ownership-and-maintainability`
+**Planned branch:** `refactor/post-phase6-architecture-checkpoint`
 
 **Base:** The reviewed Phase 6 merge commit, recorded when Phase 6 closes.
 
@@ -89,6 +89,18 @@ GPU pressure, model teardown, private evaluation evidence, and unavailable timin
 - [ ] Remove duplicate/dead/speculative machinery and decompose mixed owners,
       oversized modules, and catch-all test harnesses without adding Phase 7
       behavior.
+- [ ] Break the server worker-to-engine dependency cycle. Accept only a
+      one-way provider protocol/adapter dependency, retain the same runtime
+      contract and lifecycle behavior, and add an import/dependency check that
+      fails if the cycle returns.
+- [ ] Restore desktop language-routing-to-STT dependency direction under one
+      composite routing-revision owner. Remove reverse/cross-owner state access
+      while preserving the accepted local decision, span, fallback, and model
+      replacement behavior in focused tests.
+- [ ] Consolidate duplicate server request fixtures behind behavior-named
+      builders without weakening endpoint-specific assertions. The resulting
+      fixtures must keep immutable request identities explicit and must not
+      become one catch-all mutable test object.
 - [ ] Reconcile architecture, ADR implementation status, current status,
       roadmap, runbooks, active/completed plans, and evidence classifications
       with the refactored executable system.

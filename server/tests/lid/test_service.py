@@ -7,7 +7,9 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
+from yap_server.lid import service as lid_service_module
 from yap_server.lid.component_lock import load_lid_component_lock
 from yap_server.lid.preflight import LidPreflightEngine
 from yap_server.lid.service import LidPreflightService
@@ -100,6 +102,51 @@ class LidPreflightServiceTests(unittest.TestCase):
             thread.join(timeout=2)
 
             self.assertFalse(thread.is_alive())
+            self.assertEqual(len(failures), 1)
+            self.assertIn("cancel", str(failures[0]))
+            self.assertEqual(list(root.iterdir()), [])
+
+    def test_accepted_cancellation_cannot_race_with_a_successful_result(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            worker = _Worker()
+            service = self._service(root, worker)
+            failures: list[BaseException] = []
+            results: list[dict[str, object]] = []
+            cleanup_started = threading.Event()
+            release_cleanup = threading.Event()
+            remove_request = lid_service_module.remove_materialized_lid_request
+
+            def blocked_cleanup(materialized: object) -> None:
+                cleanup_started.set()
+                if not release_cleanup.wait(timeout=2):
+                    raise TimeoutError("test cleanup release timed out")
+                remove_request(materialized)
+
+            def invoke() -> None:
+                try:
+                    results.append(
+                        service.run_envelope(
+                            _envelope(self.lock, "job-completion-race")
+                        )
+                    )
+                except BaseException as error:
+                    failures.append(error)
+
+            with patch.object(
+                lid_service_module,
+                "remove_materialized_lid_request",
+                side_effect=blocked_cleanup,
+            ):
+                thread = threading.Thread(target=invoke)
+                thread.start()
+                self.assertTrue(cleanup_started.wait(timeout=2))
+                self.assertTrue(service.cancel("job-completion-race"))
+                release_cleanup.set()
+                thread.join(timeout=2)
+
+            self.assertFalse(thread.is_alive())
+            self.assertEqual(results, [])
             self.assertEqual(len(failures), 1)
             self.assertIn("cancel", str(failures[0]))
             self.assertEqual(list(root.iterdir()), [])

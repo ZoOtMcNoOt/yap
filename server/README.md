@@ -262,13 +262,14 @@ peak ceilings, a sufficiently long sampled tail, zero memory-event increments,
 bounded tasks/threads, and no more than 64 MiB absolute tail-window growth in
 entrypoint virtual allocation extent. Cgroup RSS regression/range stays visible
 because unified-memory residency may oscillate, but it is not mislabeled as
-growing live state. Both current-source profiles pass the executable eleven-
-check contract and clean teardown; the Phase 6 requirement remains unfulfilled
-until the frozen-head run passes it. The command requires the checked head,
-repository root, and provider-serving lock and performs the same pre/post
-candidate read-back before publishing its aggregate. Raw JSONL and sampler
-control files must remain beneath the private `YAP_EVAL_CACHE`; they are never a
-repository artifact.
+  growing live state. Both current-source profiles pass the executable eleven-
+  check contract and clean teardown. Exact-head lifecycle results and their
+  current disposition are recorded in `docs/CURRENT-STATUS.md`; profile evidence
+  alone is not provider-promotion evidence. The command requires the checked
+  head, repository root, and provider-serving lock and performs the same pre/post
+  candidate read-back before publishing its aggregate. Raw JSONL and sampler
+  control files must remain beneath the private `YAP_EVAL_CACHE`; they are never
+  a repository artifact.
 
 `resident-provider-lifecycle-gate.sh` is the checked GB10 composition for these
 provider-owned cells. It requires one clean full SHA, a dedicated private cache,
@@ -281,10 +282,11 @@ retries only typed transient startup unavailability, and fails immediately on
 wrong auth, runtime, or model identity. The wrapper runs the exact duration, standard,
 specialized, and c8/1,600 resource cells, then publishes an aggregate only when
 every child is complete and no provider container, launcher, listener, or
-network remains. Focused tests establish the composition contract; the frozen
-GB10 wrapper has not yet been consumed and does not by itself satisfy
-representative quality or the complete Phase 6 matrix. See the server-node
-runbook for the exact private invocation and evidence boundary.
+  network remains. Focused tests establish the composition contract; exact-head
+  admitted results are recorded in `docs/CURRENT-STATUS.md`. The wrapper does
+  not by itself satisfy representative quality, provider promotion, or the
+  complete phase matrix. See the server-node runbook for the exact private
+  invocation and evidence boundary.
 
 Container cgroup samples deliberately measure the provider container, not the
 small host proxy process group. API wall latency includes the loopback proxy;
@@ -327,9 +329,10 @@ reference hash through independent c2/c4/c8 requests and observed vLLM engine
 abort after explicit client socket shutdown; NeMo separately formed one batch of
 eight fixed/automatic requests. Both recovered and tore down, but neither result
 consumes its frozen promotion gate or establishes production capacity.
-Additional locales, automatic local routing, timing, and serving candidates
-remain unavailable until their exact runtime artifacts and promotion evidence
-pass.
+The desktop automatic local route exists only as explicit default-off Preview
+behavior and does not expand this server catalog. Additional server locales,
+timing guarantees, and serving candidates remain unavailable until their exact
+runtime artifacts and promotion evidence pass.
 
 ## Local checks
 

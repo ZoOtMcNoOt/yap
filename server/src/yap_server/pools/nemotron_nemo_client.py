@@ -85,6 +85,16 @@ class NemotronNemoClient:
     def verify_ready(self, lock: ModelPoolLock) -> None:
         self.readiness_capacity(lock)
 
+    def verify_startup_idle(self, lock: ModelPoolLock) -> None:
+        """Prove no request from a previous Yap owner remains in resident NeMo."""
+
+        capacity = self.readiness_capacity(lock)
+        if capacity["activeRequests"] != 0:
+            raise WorkerContainmentError(
+                "resident Nemotron NeMo still owns active requests "
+                "from a previous runtime"
+            )
+
     def readiness_capacity(self, lock: ModelPoolLock) -> dict[str, int]:
         """Return the authenticated bounded admission snapshot."""
 

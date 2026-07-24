@@ -1,10 +1,16 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–5 system plus the focused
-Phase 6 catalog, fixed-language decision, local primary-language conditioning,
-durable-stage, normalization, imported-file advisory VAD, local language-span,
-and verify-only AmberNet batch-preflight slices that execute on the active
-branch. The
+This document describes the merged executable Phase 1–5 system plus the repaired
+Phase 6 implementation on the active branch: provider catalog, fixed-language
+decision, local primary-language conditioning, durable preprocessing, advisory
+VAD, local language spans, verify-only AmberNet batch preflight, and
+provider-specific serving candidates. Exact executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` passed its frozen one-attempt
+30-child local/native/server/private-runtime matrix, but final adversarial
+review found executable and assurance blockers and invalidated that SHA as merge
+authority. Its receipt remains historical. The repaired implementation passed
+the focused three-agent remediation re-review; one new complete gate remains.
+Hosted PR checks, review, and merge remain open. The
 [Voice OS architecture](../VOICE-OS-ARCHITECTURE.md) remains the first-class
 long-term frame; accepted future work is sequenced by the
 [roadmap](../roadmap/ROADMAP.md) and ADRs, not promoted into current-state
@@ -186,10 +192,13 @@ probes preserved Cohere's Transformers reference hash across c2/c4/c8 and
 exercised vLLM's disconnect-to-engine-abort boundary, while NeMo formed one
 batch of eight isolated fixed/auto requests; both recovered and tore down. A
 later source-backed metrics control confirmed that the pinned external abort is
-not added to vLLM's finished-request histogram. Exact GB10 head
-`a21964c19e56648e9fddcb5200de419e59a7687c` subsequently passed the composed
+not added to vLLM's finished-request histogram. Exact executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` subsequently passed the composed
 18-child duration, identity, language-contract, cancellation, admission,
-resource, and teardown candidate-safety lifecycle. Representative parity/
+resource, and teardown candidate-safety lifecycle as part of the complete Phase
+6 matrix. Its public-safe aggregate has SHA-256
+`6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
+Representative parity/
 locale/quality, frozen percentiles, and rollback remain open for any later
 provider-selection comparison. Neither candidate has been promoted. The earlier
 Triton Python-backend experiment remains historical negative evidence because parity-
@@ -262,15 +271,15 @@ and range remain visible because unified-memory residency can oscillate, but
 they are not substituted for allocation growth. Focused results selected these
 thresholds, and both current-source profiles pass their eleven focused checks
 plus clean teardown. The frozen checked-head candidate-safety run passed all
-18 children at `a21964c19e56648e9fddcb5200de419e59a7687c`; the complete Phase 6
-gate still includes separate client, AmberNet, advertised-route, accessibility,
-and full-matrix evidence.
+18 children at `97b63be46b05dffa21595f2fd081b8467bb95798`; the same exact candidate
+also passed the separate client, AmberNet, advertised-route, accessibility, and
+full-matrix children.
 
 The server's dynamic health response advertises batch/status only when the
 Phase 5 runtime actually initializes. Live streaming remains false and
 `/v1/live` remains unimplemented.
 
-## Active Phase 6 slices
+## Phase 6 implementation on the active branch
 
 The current branch adds a separately bounded ASR capability-catalog endpoint,
 native fingerprint/bounds validation, and an origin-bound last-known snapshot
@@ -335,8 +344,8 @@ oversubscribed: two threads improved the combined path to `0.431` RTF while
 using 61.844 CPU-seconds, or about 1.61 logical-core equivalents when spread
 over continuous real-time source arrival. A one-thread diagnostic remained
 below real time at `0.484` RTF with lower CPU use but materially slower model
-load. The executable default is therefore two threads pending the final checked-head
-gate. A follow-on source-paced proxy delivered all 3,840 ten-millisecond frames
+load. The executable default is therefore two threads. A follow-on source-paced
+proxy delivered all 3,840 ten-millisecond frames
 without loss through the production-sized 64-frame local-ASR queue, reached a
 42-frame high-water mark, completed 864 ms after the 38.4-second source ended,
 and averaged 1.765 logical cores (22.066% of the eight-CPU affinity budget).
@@ -350,10 +359,10 @@ is saturation evidence rather than an interactive workload claim. These are
 accelerated and paced prepared-audio runtime proxies, not rendered-UI or
 sustained release-lifecycle evidence. The route is available only as an
 explicit, default-off Preview because its frozen natural-switch target failed;
-exact head `74322bf42c22058ffa88620f28cd4bf118ad8c01` later passed the
-focused current-host resource, restart/cancellation, no-server, and unattended
-30-second microphone/UI lifecycle gate. The complete checked-head Phase 6 matrix
-still gates release.
+exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
+later passed the focused current-host resource, restart/cancellation, no-server,
+and unattended 30-second microphone/UI lifecycle work inside the complete
+checked-head Phase 6 matrix.
 Fail-closed checked-head native repeated-session and release-mode default-
 microphone/rendered-UI collectors bind the observed Windows processor and
 processor count and passed together at that exact head. Representative
@@ -457,8 +466,10 @@ long-meeting and overlap evidence.
 
 These paths remain unadvertised/unselected:
 the catalog still exposes only Cohere `en-US` with `wordAlignment: false`. The
-model-neutral provider candidate-safety lifecycle passed, but representative
-provider-promotion comparisons and the complete Phase 6 gate have not run. Both
+model-neutral provider candidate-safety lifecycle and complete Phase 6 matrix
+passed on exact executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798`, but representative
+provider-promotion comparisons have not run. Both
 candidate containers stay on an
 egress-blocked internal bridge with no Docker-published port; their launchers
 own bounded numeric-loopback proxy process groups and require separate private

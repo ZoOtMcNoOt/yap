@@ -143,11 +143,23 @@ export function selectHostedClosureEvidence({
       run.workflowName === cell.workflow
       && run.headSha === checkedHead
     )).sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
+    const independentById = new Map();
+    for (const run of exactRuns) {
+      if (!independentById.has(run.databaseId)) {
+        independentById.set(run.databaseId, run);
+      }
+    }
+    const independentRuns = [...independentById.values()];
     requireCondition(
-      exactRuns.length >= 1,
+      independentRuns.length >= 1,
       `Hosted workflow ${cell.workflow} has no run for ${checkedHead}.`,
     );
-    const run = exactRuns[0];
+    requireCondition(
+      independentRuns.length === 1,
+      `Hosted workflow ${cell.workflow} exact-head run is ambiguous: `
+        + `found ${independentRuns.length} independent runs for ${checkedHead}.`,
+    );
+    const run = independentRuns[0];
     requireCondition(
       run.status === "completed" && run.conclusion === "success" && run.attempt === 1,
       `The newest ${cell.workflow} run for ${checkedHead} is not first-attempt green.`,

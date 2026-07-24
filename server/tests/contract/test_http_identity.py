@@ -231,8 +231,16 @@ class ContractTests(unittest.TestCase):
                         )
                     self.assertEqual(set(response["content"]), {"application/json"})
                     error_schema = response["content"]["application/json"]["schema"]
+                    expected_error_schema = contract.get(
+                        "errorSchemas", {}
+                    ).get(status, "#/components/schemas/ApiError")
                     self.assertEqual(
-                        error_schema, {"$ref": "#/components/schemas/ApiError"}
+                        error_schema, {"$ref": expected_error_schema}
+                    )
+                    contract_schema.resolve_reference(
+                        expected_error_schema,
+                        "openapi.json",
+                        documents,
                     )
 
         for reference in contract_schema.iter_references(document):

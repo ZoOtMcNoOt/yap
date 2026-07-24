@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import CancelledError
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import threading
@@ -12,15 +13,18 @@ from unittest.mock import patch
 
 from yap_server.jobs import JobServiceError, RecordingJobService
 from yap_server.jobs import processing_input as processing_input_module
+from yap_server.jobs.runtime import BatchRuntime, StorageRuntimeLease
 from yap_server.pools.batch_asr import (
     BatchAsrJob,
     BatchAsrPool,
+    WorkerContainmentError,
     WorkerExecutionError,
 )
 
 from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
 
 from .service_fixtures import (
+    _ControlledProcessor,
     _Processor,
     _create_request,
     _request_with_preprocessing_evidence,
@@ -49,6 +53,47 @@ class _ControlledWorker:
             "model": {"id": "private-asr", "revision": "revision-1"},
             "transcript": {"text": "Durably admitted transcript."},
         }
+
+
+class _LateResultAfterContainmentFailureWorker:
+    def __init__(self) -> None:
+        self.started = threading.Event()
+        self.release = threading.Event()
+
+    def run(
+        self,
+        _job: BatchAsrJob,
+        _cancellation: threading.Event,
+    ) -> dict[str, object]:
+        self.started.set()
+        if not self.release.wait(timeout=2):
+            raise AssertionError("late-result worker was not released")
+        return {
+            "model": {"id": "private-asr", "revision": "revision-1"},
+            "transcript": {"text": "Must not be published after shutdown."},
+        }
+
+    def close(self) -> None:
+        raise WorkerContainmentError("synthetic containment failure")
+
+
+class _InProcessStorageLease:
+    _owned: set[Path] = set()
+
+    def __init__(self, root: Path) -> None:
+        self._root = root
+        self._retained_for_fail_stop = False
+        if root in self._owned:
+            raise ValueError("private server storage is already owned by another runtime")
+        self._owned.add(root)
+
+    def retain_until_process_exit(self) -> None:
+        self._retained_for_fail_stop = True
+
+    def close(self) -> None:
+        if self._retained_for_fail_stop:
+            return
+        self._owned.discard(self._root)
 
 
 def _create_and_upload(
@@ -98,6 +143,155 @@ def _wait_for_status(
 
 
 class RecordingJobCommitAdmissionTests(unittest.TestCase):
+    def test_runtime_shutdown_fences_every_mutating_service_entry_point(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            processor = _ControlledProcessor()
+            service = RecordingJobService(
+                root,
+                processor=processor,
+                supported_languages=("en",),
+                now=lambda: "2026-07-14T21:29:00Z",
+            )
+            request, created = _create_and_upload(service)
+            body = bytes(320)
+            replay_plan = service.prepare_chunk_upload(
+                created["jobId"],
+                track_id="track-1",
+                sequence_start=0,
+                sequence_end=159,
+                idempotency_key="1/s-batch-create/track-1/0/159",
+                content_sha256=hashlib.sha256(body).hexdigest(),
+                audio_codec="pcm_s16le",
+                sample_rate_hz=16000,
+                channels=1,
+                content_length=len(body),
+            )
+            state_before_shutdown = (
+                root / "jobs" / created["jobId"] / "state.json"
+            ).read_bytes()
+
+            service.begin_runtime_shutdown()
+
+            operations = (
+                lambda: service.create(
+                    _create_request(session_id="s-after-shutdown")
+                ),
+                lambda: service.prepare_chunk_upload(
+                    created["jobId"],
+                    track_id="track-1",
+                    sequence_start=0,
+                    sequence_end=159,
+                    idempotency_key="1/s-batch-create/track-1/0/159",
+                    content_sha256=hashlib.sha256(body).hexdigest(),
+                    audio_codec="pcm_s16le",
+                    sample_rate_hz=16000,
+                    channels=1,
+                    content_length=len(body),
+                ),
+                lambda: service.accept_chunk(replay_plan, body),
+                lambda: service.commit(
+                    created["jobId"],
+                    _commit_request(request),
+                ),
+                lambda: service.retry_stage(
+                    created["jobId"],
+                    "asr",
+                    {
+                        "stage": "asr",
+                        "attempt": 1,
+                        "projectionRevision": 1,
+                        "captureManifestSha256": "a" * 64,
+                    },
+                ),
+                lambda: service.cancel(created["jobId"]),
+                service.prune_expired,
+            )
+            for operation in operations:
+                with self.subTest(operation=operation):
+                    with self.assertRaises(JobServiceError) as stopped:
+                        operation()
+                    self.assertEqual(stopped.exception.status, 503)
+                    self.assertEqual(
+                        stopped.exception.code,
+                        "SERVER_SHUTTING_DOWN",
+                    )
+                    self.assertTrue(stopped.exception.retryable)
+
+            self.assertEqual(processor.jobs, [])
+            self.assertNotIn(created["jobId"], service._state.cancelled)
+            self.assertEqual(
+                (root / "jobs" / created["jobId"] / "state.json").read_bytes(),
+                state_before_shutdown,
+            )
+
+    def test_containment_failure_blocks_reownership_and_late_callback_mutation(
+        self,
+    ) -> None:
+        self._assert_containment_failure_retains_lease(_InProcessStorageLease)
+
+    @unittest.skipUnless(os.name == "posix", "POSIX storage lease")
+    def test_containment_failure_retains_lease_and_blocks_late_publication(self) -> None:
+        self._assert_containment_failure_retains_lease(StorageRuntimeLease)
+
+    def _assert_containment_failure_retains_lease(self, lease_type: type) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            worker = _LateResultAfterContainmentFailureWorker()
+            pool = BatchAsrPool(
+                worker,
+                max_workers=1,
+                max_queued=0,
+                route_resolver=test_asr_route,
+                asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
+            )
+            service = RecordingJobService(
+                root,
+                processor=pool,
+                supported_languages=("en",),
+                now=lambda: "2026-07-14T21:29:00Z",
+            )
+            runtime = BatchRuntime(
+                service=service,
+                pool=pool,
+                storage_lease=lease_type(root),
+                asr_capabilities={},
+                language_detection_runtime=None,
+            )
+            request, created = _create_and_upload(service)
+            service.commit(created["jobId"], _commit_request(request))
+            self.assertTrue(worker.started.wait(timeout=1))
+            completion_event = service._completion_events[created["jobId"]]
+            state_path = root / "jobs" / created["jobId"] / "state.json"
+            state_before_close = state_path.read_bytes()
+
+            with self.assertRaisesRegex(
+                WorkerContainmentError,
+                "synthetic containment failure",
+            ):
+                runtime.close()
+            with self.assertRaisesRegex(
+                WorkerContainmentError,
+                "process restart is required",
+            ):
+                runtime.close()
+            runtime.storage_lease.close()
+            with self.assertRaisesRegex(ValueError, "already owned"):
+                lease_type(root)
+
+            worker.release.set()
+            self.assertTrue(completion_event.wait(timeout=2))
+            deadline = time.monotonic() + 2
+            while pool.outstanding_count and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertEqual(pool.outstanding_count, 0)
+            self.assertEqual(state_path.read_bytes(), state_before_close)
+            self.assertFalse(
+                (root / "jobs" / created["jobId"] / "result-revision.json").exists()
+            )
+
     def test_slow_preparation_does_not_block_exact_commit_replay(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             worker = _ControlledWorker()

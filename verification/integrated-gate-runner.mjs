@@ -1,11 +1,9 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import {
-  createWriteStream,
   existsSync,
   lstatSync,
   mkdirSync,
-  readFileSync,
   realpathSync,
   statSync,
   writeFileSync,
@@ -24,6 +22,13 @@ import {
   validateIntegratedPrivateEvidence,
   validateIntegratedPrivateEvidencePlan,
 } from "./integrated-private-evidence.mjs";
+import {
+  INTEGRATED_GATE_BYTE_LIMITS,
+  readBoundedJsonArtifact,
+  serializeBoundedJson,
+  sha256BoundedRegularFile,
+} from "./integrated-gate-artifact-bounds.mjs";
+import { executeBoundedCommand } from "./bounded-command-execution.mjs";
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
@@ -52,6 +57,14 @@ const ADMISSION_KEYS = new Set([
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+function samePath(left, right) {
+  const normalizedLeft = path.normalize(left);
+  const normalizedRight = path.normalize(right);
+  return process.platform === "win32"
+    ? normalizedLeft.toLowerCase() === normalizedRight.toLowerCase()
+    : normalizedLeft === normalizedRight;
 }
 
 function sha256(value) {
@@ -87,14 +100,9 @@ function requireOutsideRepository(candidate, label) {
   );
 }
 
-function readExactJson(candidate, label) {
+function readExactJson(candidate, label, maximumBytes) {
   const real = normalizedRealPath(path.resolve(candidate), label, "file");
-  const bytes = readFileSync(real);
-  return {
-    bytes,
-    path: real,
-    value: JSON.parse(bytes.toString("utf8")),
-  };
+  return readBoundedJsonArtifact(real, label, maximumBytes);
 }
 
 function git(args) {
@@ -119,9 +127,9 @@ export function assertExactCleanGitHead(expectedHead) {
   );
 }
 
-function writeExclusiveJson(candidate, value) {
-  writeFileSync(candidate, `${JSON.stringify(value, null, 2)}\n`, {
-    encoding: "utf8",
+function writeExclusiveJson(candidate, value, label, maximumBytes) {
+  const bytes = serializeBoundedJson(value, label, maximumBytes);
+  writeFileSync(candidate, bytes, {
     flag: "wx",
     mode: 0o600,
   });
@@ -170,15 +178,73 @@ function validateAdmission(value) {
   return value;
 }
 
+function verifiedCommandLogDirectory(admission) {
+  const runDirectory = normalizedRealPath(
+    path.resolve(admission.runDirectory),
+    "Gate run directory",
+    "directory",
+  );
+  requireOutsideRepository(runDirectory, "Gate run directory");
+  const commandLogDirectory = normalizedRealPath(
+    path.join(runDirectory, "command-logs"),
+    "Command log directory",
+    "directory",
+  );
+  requireCondition(
+    samePath(admission.commandLogDirectory, commandLogDirectory),
+    "Command logs do not belong to the admitted run directory.",
+  );
+  return commandLogDirectory;
+}
+
+function verifiedAdmissionPaths(admissionFile, admission) {
+  const runDirectory = normalizedRealPath(
+    path.dirname(admissionFile.path),
+    "Gate run directory",
+    "directory",
+  );
+  requireOutsideRepository(runDirectory, "Gate run directory");
+  requireCondition(
+    samePath(admissionFile.path, path.join(runDirectory, "admission.json"))
+      && samePath(admission.runDirectory, runDirectory),
+    "Gate admission moved away from its run directory.",
+  );
+  const commandLogDirectory = verifiedCommandLogDirectory({
+    ...admission,
+    runDirectory,
+  });
+  const candidateReceiptPath = path.join(
+    runDirectory,
+    "candidate-receipt.json",
+  );
+  requireCondition(
+    samePath(admission.candidateReceiptPath, candidateReceiptPath),
+    "Candidate receipt does not belong to the admitted run directory.",
+  );
+  return Object.freeze({
+    runDirectory,
+    commandLogDirectory,
+    candidateReceiptPath,
+  });
+}
+
 function loadFrozenInputs({ manifestPath, privatePlanPath, expectedHead }) {
-  const manifestFile = readExactJson(manifestPath, "Integrated gate manifest");
+  const manifestFile = readExactJson(
+    manifestPath,
+    "Integrated gate manifest",
+    INTEGRATED_GATE_BYTE_LIMITS.gateManifestBytes,
+  );
   requireCondition(
     manifestFile.path.toLowerCase()
       === normalizedRealPath(MANIFEST_PATH, "Canonical integrated gate manifest", "file").toLowerCase(),
     "The runner accepts only the repository's canonical gate manifest.",
   );
   const manifest = validateIntegratedGateManifest(manifestFile.value);
-  const privatePlanFile = readExactJson(privatePlanPath, "Private evidence plan");
+  const privatePlanFile = readExactJson(
+    privatePlanPath,
+    "Private evidence plan",
+    INTEGRATED_GATE_BYTE_LIMITS.privatePlanBytes,
+  );
   requireOutsideRepository(privatePlanFile.path, "Private evidence plan");
   const privatePlan = validateIntegratedPrivateEvidencePlan(privatePlanFile.value, {
     expectedHead,
@@ -237,68 +303,44 @@ export function admitIntegratedGateAttempt({
     candidateReceiptPath: path.join(runDirectory, "candidate-receipt.json"),
   };
   const admissionPath = path.join(runDirectory, "admission.json");
-  writeExclusiveJson(admissionPath, admission);
+  writeExclusiveJson(
+    admissionPath,
+    admission,
+    "Gate admission",
+    INTEGRATED_GATE_BYTE_LIMITS.admissionBytes,
+  );
   return Object.freeze({ admissionPath, ...admission });
 }
 
-function windowsCommandLine(command) {
-  return command.map((token) => {
-    requireCondition(
-      !/[\r\n"&|<>^%]/.test(token),
-      `Command token contains an unsupported Windows shell character: ${token}`,
-    );
-    return /\s/.test(token) ? `"${token}"` : token;
-  }).join(" ");
-}
-
-function commandProcess(cell, cwd) {
-  const [executable, ...args] = cell.command;
-  if (process.platform === "win32") {
-    return {
-      executable: process.env.ComSpec || "cmd.exe",
-      args: ["/d", "/s", "/c", windowsCommandLine([executable, ...args])],
-      cwd,
-    };
-  }
-  return { executable, args, cwd };
-}
-
-async function runCommandCell(cell, admission) {
+export async function runCommandCell(
+  cell,
+  admission,
+  { maximumLogBytes = INTEGRATED_GATE_BYTE_LIMITS.commandLogBytes } = {},
+) {
   const cwd = path.resolve(REPOSITORY_ROOT, cell.cwd);
   const relative = path.relative(REPOSITORY_ROOT, cwd);
   requireCondition(
     relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative)),
     `Cell ${cell.id} escaped the repository.`,
   );
-  const logPath = path.join(admission.commandLogDirectory, `${cell.id}.log`);
-  const output = createWriteStream(logPath, { flags: "wx", mode: 0o600 });
+  const commandLogDirectory = verifiedCommandLogDirectory(admission);
+  const logPath = path.join(commandLogDirectory, `${cell.id}.log`);
   const startedAt = new Date().toISOString();
   process.stdout.write(`[gate] ${cell.id}: running\n`);
-  const invocation = commandProcess(cell, cwd);
-  const exitCode = await new Promise((resolve, reject) => {
-    const child = spawn(invocation.executable, invocation.args, {
-      cwd: invocation.cwd,
-      env: { ...process.env, YAP_CHECKED_HEAD: admission.checkedHead },
-      stdio: ["ignore", "pipe", "pipe"],
-      windowsHide: true,
-    });
-    let settled = false;
-    child.stdout.pipe(output, { end: false });
-    child.stderr.pipe(output, { end: false });
-    child.once("error", (error) => {
-      if (settled) return;
-      settled = true;
-      output.write(`\nRunner spawn error: ${error.message}\n`);
-      output.end(() => reject(error));
-    });
-    child.once("close", (code, signal) => {
-      if (settled) return;
-      settled = true;
-      output.write(`\nRunner exit: code=${String(code)} signal=${String(signal)}\n`);
-      output.end(() => resolve(code));
-    });
+  const commandResult = await executeBoundedCommand({
+    command: cell.command,
+    cwd,
+    environment: { ...process.env, YAP_CHECKED_HEAD: admission.checkedHead },
+    label: `Cell ${cell.id}`,
+    logPath,
+    expectedLogDirectory: commandLogDirectory,
+    maximumLogBytes,
   });
-  requireCondition(exitCode === 0, `Cell ${cell.id} failed; inspect its private log.`);
+  requireCondition(
+    commandResult.exitCode === 0,
+    `Cell ${cell.id} failed with code ${String(commandResult.exitCode)} `
+      + `and signal ${String(commandResult.signal)}; inspect its bounded private log.`,
+  );
   assertExactCleanGitHead(admission.checkedHead);
   const finishedAt = new Date().toISOString();
   process.stdout.write(`[gate] ${cell.id}: passed\n`);
@@ -307,7 +349,7 @@ async function runCommandCell(cell, admission) {
     executor: cell.executor,
     checkedHead: admission.checkedHead,
     definitionSha256: integratedGateCellDefinitionSha256(cell),
-    evidenceSha256: sha256(readFileSync(logPath)),
+    evidenceSha256: commandResult.evidenceSha256,
     attempt: 1,
     status: "passed",
     startedAt,
@@ -359,26 +401,60 @@ function privateCellReceipt(cell, evidenceSha256, admission, validatedAt) {
   };
 }
 
+function nestedFailures(error) {
+  return error instanceof AggregateError
+    ? error.errors.flatMap((nested) => nestedFailures(nested))
+    : [error];
+}
+
+export function integratedGateFailureRecord(admission, failure) {
+  const causes = nestedFailures(failure);
+  const typedCause = causes.find(
+    (cause) => cause && typeof cause.code === "string",
+  );
+  const messages = causes.map(
+    (cause) => cause instanceof Error ? cause.message : String(cause),
+  );
+  const message = [
+    failure instanceof Error ? failure.message : String(failure),
+    ...messages,
+  ].filter((value, index, values) => value && values.indexOf(value) === index)
+    .join(" Causes: ")
+    .slice(0, 16_384);
+  return {
+    schemaVersion: 2,
+    checkedHead: admission.checkedHead,
+    failedAt: new Date().toISOString(),
+    code: typedCause?.code ?? "INTEGRATED_GATE_FAILED",
+    message,
+  };
+}
+
 export async function completeIntegratedGateAttempt({
   admissionPath,
   attemptToken,
 }) {
-  const admissionFile = readExactJson(admissionPath, "Gate admission");
+  const admissionFile = readExactJson(
+    admissionPath,
+    "Gate admission",
+    INTEGRATED_GATE_BYTE_LIMITS.admissionBytes,
+  );
   requireOutsideRepository(admissionFile.path, "Gate admission");
   const admission = validateAdmission(admissionFile.value);
   requireCondition(admission.attemptToken === attemptToken, "Attempt token does not match.");
-  requireCondition(
-    path.dirname(admissionFile.path).toLowerCase() === admission.runDirectory.toLowerCase(),
-    "Gate admission moved away from its run directory.",
-  );
+  const admittedPaths = verifiedAdmissionPaths(admissionFile, admission);
+  const executionAdmission = Object.freeze({
+    ...admission,
+    ...admittedPaths,
+  });
   for (const marker of ["running.json", "failed.json"]) {
     requireCondition(
-      !existsSync(path.join(admission.runDirectory, marker)),
+      !existsSync(path.join(admittedPaths.runDirectory, marker)),
       "This checked-head attempt has already started or finished.",
     );
   }
   requireCondition(
-    !existsSync(admission.candidateReceiptPath),
+    !existsSync(admittedPaths.candidateReceiptPath),
     "A candidate receipt already exists for this attempt.",
   );
 
@@ -396,17 +472,25 @@ export async function completeIntegratedGateAttempt({
     "Private evidence plan changed after admission.",
   );
   assertExactCleanGitHead(admission.checkedHead);
-  writeExclusiveJson(path.join(admission.runDirectory, "running.json"), {
-    schemaVersion: 1,
-    checkedHead: admission.checkedHead,
-    startedAt: new Date().toISOString(),
-  });
+  writeExclusiveJson(
+    path.join(admittedPaths.runDirectory, "running.json"),
+    {
+      schemaVersion: 1,
+      checkedHead: admission.checkedHead,
+      startedAt: new Date().toISOString(),
+    },
+    "Gate running marker",
+    INTEGRATED_GATE_BYTE_LIMITS.runMarkerBytes,
+  );
 
   const commandReceipts = new Map();
   try {
     for (const cell of frozen.manifest.candidateCells) {
       if (cell.executor === "command") {
-        commandReceipts.set(cell.id, await runCommandCell(cell, admission));
+        commandReceipts.set(
+          cell.id,
+          await runCommandCell(cell, executionAdmission),
+        );
       }
     }
     assertExactCleanGitHead(admission.checkedHead);
@@ -447,9 +531,14 @@ export async function completeIntegratedGateAttempt({
       expectedHead: admission.checkedHead,
       expectedScope: "candidate",
     });
-    writeExclusiveJson(admission.candidateReceiptPath, receipt);
+    writeExclusiveJson(
+      admittedPaths.candidateReceiptPath,
+      receipt,
+      "Candidate receipt",
+      INTEGRATED_GATE_BYTE_LIMITS.candidateReceiptBytes,
+    );
     return Object.freeze({
-      candidateReceiptPath: admission.candidateReceiptPath,
+      candidateReceiptPath: admittedPaths.candidateReceiptPath,
       checkedHead: admission.checkedHead,
       childCount: receipt.children.length,
       manifestSha256: admission.manifestSha256,
@@ -464,35 +553,32 @@ export async function completeIntegratedGateAttempt({
         "The candidate gate failed and local ownership was not fully released.",
       );
     }
-    const failedPath = path.join(admission.runDirectory, "failed.json");
+    const failedPath = path.join(admittedPaths.runDirectory, "failed.json");
     if (!existsSync(failedPath)) {
-      writeExclusiveJson(failedPath, {
-        schemaVersion: 1,
-        checkedHead: admission.checkedHead,
-        failedAt: new Date().toISOString(),
-        message: failure instanceof Error ? failure.message : String(failure),
-      });
+      writeExclusiveJson(
+        failedPath,
+        integratedGateFailureRecord(admission, failure),
+        "Gate failure marker",
+        INTEGRATED_GATE_BYTE_LIMITS.runMarkerBytes,
+      );
     }
     throw failure;
   }
 }
 
 export function validateCompletedIntegratedGateAttempt(admissionPath) {
-  const admissionFile = readExactJson(admissionPath, "Gate admission");
+  const admissionFile = readExactJson(
+    admissionPath,
+    "Gate admission",
+    INTEGRATED_GATE_BYTE_LIMITS.admissionBytes,
+  );
   requireOutsideRepository(admissionFile.path, "Gate admission");
   const admission = validateAdmission(admissionFile.value);
-  requireCondition(
-    admissionFile.path.toLowerCase()
-      === path.join(admission.runDirectory, "admission.json").toLowerCase()
-      && admission.commandLogDirectory.toLowerCase()
-        === path.join(admission.runDirectory, "command-logs").toLowerCase()
-      && admission.candidateReceiptPath.toLowerCase()
-        === path.join(admission.runDirectory, "candidate-receipt.json").toLowerCase(),
-    "Completed gate paths do not belong to the admitted run directory.",
-  );
+  const admittedPaths = verifiedAdmissionPaths(admissionFile, admission);
   const running = readExactJson(
-    path.join(admission.runDirectory, "running.json"),
+    path.join(admittedPaths.runDirectory, "running.json"),
     "Gate running marker",
+    INTEGRATED_GATE_BYTE_LIMITS.runMarkerBytes,
   );
   requireCondition(
     running.value.schemaVersion === 1
@@ -500,7 +586,7 @@ export function validateCompletedIntegratedGateAttempt(admissionPath) {
     "Gate running marker does not match its admission.",
   );
   requireCondition(
-    !existsSync(path.join(admission.runDirectory, "failed.json")),
+    !existsSync(path.join(admittedPaths.runDirectory, "failed.json")),
     "The admitted candidate attempt is failed.",
   );
   const frozen = loadFrozenInputs({
@@ -514,8 +600,9 @@ export function validateCompletedIntegratedGateAttempt(admissionPath) {
     "Completed gate inputs changed after admission.",
   );
   const receiptFile = readExactJson(
-    admission.candidateReceiptPath,
+    admittedPaths.candidateReceiptPath,
     "Candidate receipt",
+    INTEGRATED_GATE_BYTE_LIMITS.candidateReceiptBytes,
   );
   validateIntegratedGateReceipt({
     receipt: receiptFile.value,
@@ -532,11 +619,15 @@ export function validateCompletedIntegratedGateAttempt(admissionPath) {
   for (const [index, cell] of frozen.manifest.candidateCells.entries()) {
     const child = receiptFile.value.children[index];
     const expectedEvidenceSha256 = cell.executor === "command"
-      ? sha256(readFileSync(normalizedRealPath(
-        path.join(admission.commandLogDirectory, `${cell.id}.log`),
+      ? sha256BoundedRegularFile(
+        normalizedRealPath(
+          path.join(admittedPaths.commandLogDirectory, `${cell.id}.log`),
+          `Command log ${cell.id}`,
+          "file",
+        ),
         `Command log ${cell.id}`,
-        "file",
-      )))
+        INTEGRATED_GATE_BYTE_LIMITS.commandLogBytes,
+      ).sha256
       : privateEvidence.get(cell.id);
     requireCondition(
       child.evidenceSha256 === expectedEvidenceSha256,

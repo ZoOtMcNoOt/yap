@@ -1,7 +1,7 @@
 # Yap & Voice OS — System Architecture
 
 **Status:** Living long-term Voice OS frame of reference; implementation-status
-snapshot last reconciled 2026-07-16
+snapshot last reconciled 2026-07-24
 
 > **Scope notice (2026-07-15):** This document remains the first-class readable
 > frame for the eventual Voice OS architecture. It intentionally combines the
@@ -63,7 +63,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | | **Current + next Yap boundary** | **Voice OS (long-term)** |
 |--|---------------------|---------------------------|
 | Primary input | File imports + explicit live mic + global dictation hotkey; paste-last is optional and imports remain a queue shell | Same client inputs plus future connected server routes |
-| Live language | Executing fallback applies the confirmed primary locale across Nemotron's exact 32 out-of-box locales. The Phase 6 branch implements one optional bounded resident acoustic-LID component, offline switching, and within-utterance source-time language spans under the same Rust live-runtime owner. Exact head `74322bf42c22058ffa88620f28cd4bf118ad8c01` passed the focused no-server target-client gate: 12/12 paced native cycles and all nine short-boundary cases completed without drops; the unattended release-mode UI run proved local fallback, cancellation recovery, save/delete, production quit, and complete teardown. The consumed representative natural-switch target failed, so the feature remains explicit, default-off Preview behavior. Longer physical-device and low-end battery/thermal certification remains default-on or Phase 10 work. | Multilingual server live follows the authenticated live-transport gate. Local switching remains a best-effort Preview unless new independently frozen evidence justifies a stronger quality tier. |
+| Live language | Executing fallback applies the confirmed primary locale across Nemotron's exact 32 out-of-box locales. The Phase 6 branch implements one optional bounded resident acoustic-LID component, offline switching, and within-utterance source-time language spans under the same Rust live-runtime owner. Exact candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed the no-server target-client channel and the complete Phase 6 matrix: 12/12 paced native cycles and all nine short-boundary cases completed without drops; the unattended release-mode UI run proved local fallback, cancellation recovery, save/delete, production quit, and complete teardown. The consumed representative natural-switch target failed, so the feature remains explicit, default-off Preview behavior. Longer physical-device and low-end battery/thermal certification remains default-on or Phase 10 work. | Multilingual server live follows the authenticated live-transport gate. Local switching remains a best-effort Preview unless new independently frozen evidence justifies a stronger quality tier. |
 | Batch language | Executing Phase 5: Cohere **14 languages**, explicit choice. The unpromoted Phase 6 branch adds the tiered catalog, guarded suggestions, explicit server Nemotron auto mode, and immutable per-segment label corrections under focused tests | Versioned model-agnostic catalog with per-segment provenance and append-only review revisions |
 | STT runtime | **Nemotron INT8 sherpa fallback** + gated Phase 5 loopback batch path; WSS/authenticated production transport deferred | Same client shell; heavier pools move server-side |
 | Polish | Development-only Ollama call today; bundled `llama-server` is deferred | Scribe + agents through a governed client/server LLM boundary |
@@ -198,10 +198,11 @@ launcher execute under focused tests but remain unselected until their separate
 frozen GB10 lifecycle and workload gates. Both foreground launchers require an
 exact-head internal Docker bridge and separate API keys, publish no Docker
 port, and own a bounded process group that exposes only numeric host loopback.
-A checked wrapper now composes their plan-owned lifecycle
-cells sequentially and removes its temporary bridge before final evidence; that
-wrapper is executable under focused tests but has not run on the frozen GB10
-head. The NeMo implementation currently
+  A checked wrapper composes their plan-owned lifecycle cells sequentially and
+  removes its temporary bridge before final evidence. Exact-head lifecycle
+  results and their current disposition are recorded in
+  [current status](CURRENT-STATUS.md); candidate-safety evidence does not itself
+  promote a provider. The NeMo implementation currently
 serves bounded finalized jobs; it is not the deferred client-facing live
 transport. Focused repeated-fixture controls reached the exact four-hour
 boundary through both provider adapters with bounded result publication and
@@ -224,8 +225,8 @@ while reporting lexical and rendered-text parity separately; vLLM
 cancellation distinguishes its pinned externally freed request accounting from
 provider completion. Provider-behavior promotion cells retain lexical stability
 and independent punctuation-quality scoring. These mechanics are implemented;
-the model-neutral candidate-safety GB10 lifecycle passed at exact head
-`a21964c19e56648e9fddcb5200de419e59a7687c`, while comparative behavior and
+the model-neutral candidate-safety GB10 lifecycle passed again at exact candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798`, while comparative behavior and
 candidate promotion remain Phase 8 work. The
 retired Triton experiment
 remains historical negative evidence rather than an accepted topology. See
@@ -238,8 +239,8 @@ prepared frame. The runner streams rather than retaining multi-hour WAVs and
 binds the exact head, machine plan, external private suite, manifests, raw WAV,
 and decoded PCM while emitting no transcript or path. Its declared boundary is
 therefore `desktop-prepared-audio-frame-to-final`. The separate current-host
-default-microphone/rendered-UI/resource gate passed at
-`74322bf42c22058ffa88620f28cd4bf118ad8c01`; natural short-correction quality
+default-microphone/rendered-UI/resource gate passed at exact candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798`; natural short-correction quality
 remains later selected-model evidence and is not inferred from the runner.
 
 The resource boundary follows the same provider-specific rule. Runtime-plan
@@ -461,7 +462,7 @@ Everything from the original 7-layer flowchart and master spec is represented be
 | **L1** Pre-warm (llama.cpp KV, mic, Silero) | ✅ | ADR 0002, 0005, 0019 | Warm **Nemotron recognizer** is implemented; llama-server and live-microphone Silero are deferred |
 | **L2** Mic, WebRTC/AGC clean | ✅ | § L2 | Capture foundation is implemented; AGC and live-microphone Silero are deferred |
 | **L2** VAD | ✅ Reconciled | Local audio spec, ADR 0006/0020/0024 | Imported canonical WAV advisory Silero VAD executes with complete source retention; live endpointing remains deferred |
-| **L2** Batch LangID | ✅ Reconciled | ADR 0003/0008/0024/0026 | **Off the live hot path**; the Phase 6 branch verifies one imported AmberNet 1.12.0 INT8 QDQ artifact and samples five strict six-second regions from start through exact tail before explicit user confirmation. Focused real-model/parity/contract tests exist, and exact head `a21964c19e56648e9fddcb5200de419e59a7687c` passed the final source-exact ARM64 production-worker resource/lifecycle repetition. Representative suggestion quality and complete phase evidence remain open. The prior SpeechBrain receipt is historical. |
+| **L2** Batch LangID | ✅ Reconciled | ADR 0003/0008/0024/0026 | **Off the live hot path**; the Phase 6 branch verifies one imported AmberNet 1.12.0 INT8 QDQ artifact and samples five strict six-second regions from start through exact tail before explicit user confirmation. Focused real-model/parity/contract tests and source-exact ARM64 resource/lifecycle evidence exist; exact candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed the portable Python, Rust, connected-route, and complete Phase 6 matrix. Representative suggestion quality remains unpromoted. The prior SpeechBrain receipt is historical. |
 | **L2** ASR | ✅ Reconciled | ADR 0001–0002/0014/0019/0024/0025 | **Nemotron local fallback**; **server router** for official recordings/live; explicit server Nemotron auto mode and provider-specific vLLM/NeMo candidate-safety gates execute, while broad provider promotion and Cohere-versus-Tiron selection belong to Phase 8 |
 | **L2** Post-LLM (Llama 3 8B) | ✅ Reconciled | ADR 0005 | Deferred **llama-server** target; current development Polish uses Ollama |
 | **L2** Ghost preview | ✅ | § L2 | In-app panel v1 |
@@ -725,19 +726,22 @@ These rules prevent the repeated UI and runtime churn we have been seeing. They 
 | Mode | Current or accepted language boundary | Detection/decision |
 |------|---------------------------------------|--------------------|
 | **Local live fallback (executes)** | Pinned `sherpa-onnx` export over the exact 32-locale out-of-box Nemotron allowlist | Warmup requires the confirmed primary locale and applies it to creation/reset; unsupported locales fail visibly. Nemotron's public result exposes no automatic tag, so the optional Phase 6 branch path uses a separately pinned acoustic detector rather than hidden model output |
-| **Local live dynamic (executes on the unpromoted Phase 6 branch)** | The same single Nemotron ASR plus one bounded resident native acoustic-LID component | `LiveRuntime` owns both lifecycles; LID emits revisioned source-time spans with bounded decision evidence, and confirmed switches partition held source audio exactly once before finalize/reset. Independent detector-history and ASR-commit cursors share source frames without replay. Ambiguity or failure holds/returns visibly to the confirmed primary locale |
+| **Local live dynamic (executes as a default-off Preview)** | The same single Nemotron ASR plus one bounded resident native acoustic-LID component | `LiveRuntime` owns both lifecycles; LID emits revisioned source-time spans with bounded decision evidence, and confirmed switches partition held source audio exactly once before finalize/reset. Independent detector-history and ASR-commit cursors share source frames without replay. Ambiguity or failure holds/returns visibly to the confirmed primary locale |
 | **Fixed batch (executes)** | Cohere 14-language Phase 5 worker plus the unpromoted Phase 6 preflight boundary | One explicit preferred language; recordings meeting the 30-second/speech bounds may run five start-to-tail AmberNet regions, but any disagreement/ambiguity remains manual and the job stays blocked until the user confirms a supported locale |
-| **Fixed batch (remaining Phase 6 target)** | Tiered provider catalog: overlapping Cohere/Nemotron routes plus Nemotron out-of-box locales | Promote only independently gated locale/workload routes and make their catalog-derived choices selectable without changing the executing confirmation boundary |
+| **Fixed batch (later promotion target)** | Tiered provider catalog: overlapping Cohere/Nemotron routes plus Nemotron out-of-box locales | Phase 8 or a later explicit provider gate may promote only independently qualified locale/workload routes and make their catalog-derived choices selectable without changing the executing confirmation boundary |
 | **Dynamic batch/utterances (executes on the unpromoted Phase 6 branch)** | One server Nemotron job over its enabled 32 out-of-box locales | Explicit `target_lang=auto`; retain one tag per finalized utterance, mark missing/invalid/disabled tags `Unknown`, and do not switch ASR providers inside the job. History corrections are separate strict-schema, hash-chained revisions; they never rewrite source audio or the server result |
 
 The Phase 6 union catalog can represent 33 locale entries across 29 language
 families: 32 Nemotron transcription-ready/broad-coverage locales plus Cohere-only
 Greek. Quality tier remains visible and is not an enterprise certification.
 Nemotron's eight adaptation-ready locales are excluded from its supported path;
-Yap has no language fine-tuning plan. Within-utterance language spans execute on
-the unpromoted Phase 6 branch under focused tests and one constructed pinned-
-model diagnostic; they become a product claim only after the frozen natural and
-constructed switch-point, continuity, latency, memory, and energy gate.
+Yap has no language fine-tuning plan. Within-utterance language spans execute as
+an explicit default-off Preview. Exact candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` passed the Phase 6 lifecycle,
+continuity, latency, memory, UI, and teardown matrix, while its consumed natural-
+switch target failed. Promotion beyond Preview requires new independently frozen
+natural/noisy quality and release evidence rather than reinterpretation of that
+failure.
 
 A focused exact-source AMI `ES2004a` comparison reinforces the provider-neutral
 boundary without promoting a route. On the same 17.49-minute close-headset mix and
@@ -801,8 +805,8 @@ and extracts immutable PCM from already-canonical WAV input, drains resumable
 jobs through the bounded router and isolated Cohere worker, and publishes
 verified server results. Phase 6 adds durable preprocessing stages, a measured
 Cohere vLLM candidate, and an implemented resident Nemotron NeMo candidate. Their
-model-neutral candidate-safety lifecycle passed at exact head
-`a21964c19e56648e9fddcb5200de419e59a7687c`; neither has been promoted as a
+model-neutral candidate-safety lifecycle passed at exact candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798`; neither has been promoted as a
 persistent production service. General media conversion,
 WSS/live, authentication, persistent supervision, production mixed-
 load capacity, databases, secure transport edge, and the `yap-knowledge`
@@ -887,7 +891,7 @@ timeline
 | **4** | Merged and verified | Executable candidate `309a2d427707e3483b2649f13940bd48dfaee836` passed the one-time local/native/server/GB10 matrix. Its transient isolated ARM64 raw Transformers worker ran the locked Cohere revision on NVIDIA GB10 in CUDA/BF16 at WER `0.0`; immutable evidence confirmed matching before/after listener, firewall-policy, and service-unit observations plus complete container/worker teardown. Hosted closure passed before final PR head `43f9c43f37e1893dbfe1565d3636fca1e4e3fedf` became reachable from merged main `7d967a5b9f1021fd995af77a421ebaa13d8f9925`. This proves the one-job reference slice, not authenticated/persistent production service or capacity. |
 | **5** | Merged and verified | Already-canonical mono PCM16/16 kHz WAV files are strictly validated and extracted into an immutable Yap-owned spool, durably created/uploaded/committed/resumed/cancelled through the approved loopback origin, processed through the bounded router and isolated Cohere worker, and published to History only after native result verification. Exact PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the one-time local/native/server/GB10 gate and hosted checks, then merged as `b6677631b2cc8283f0f6466622f2dfa7cfdb38f6`. Private review evidence remains outside the repository. General media conversion, WSS/live, authentication, persistent service, external networking, and measured multi-worker capacity remain later gates. |
 | **Checkpoint A** | Merged and verified | Exact implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time complete local/native/server/GB10 gate. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS, then merged as `a80934d844a068110e7f86b30b6e29d35146db57` through PR #59. Private security evidence remains outside Git. |
-| **6** | Active; focused local/server slices pass, phase not gated | ADRs 0024–0026 and the active plan define the provider catalog, primary language, bounded resident AmberNet/Nemotron Preview, verify-only five-region AmberNet batch preflight, explicit server Nemotron auto mode, fail-closed alignment, and provider-specific serving gates. Exact head `74322bf42c22058ffa88620f28cd4bf118ad8c01` passed the focused no-server target-client qualification through paced native cycles, short boundaries, release-mode UI, production quit, and teardown. Exact head `a21964c19e56648e9fddcb5200de419e59a7687c` passed the ARM64 AmberNet repetition and 18-child Cohere vLLM/Nemotron NeMo candidate-safety lifecycle; exact head `05d1b82017447df04d46ccc8fa729c5a6a0d0b13` passed the connected desktop/private-server route through interruption/recovery, verified History publication, and teardown. The local route remains default-off Preview because its natural-switch target failed; the catalog still advertises only gated Cohere `en-US` with `wordAlignment: false`; neither resident server provider is promoted. Candidate review, the accessibility-inclusive complete Phase 6 matrix, hosted checks, and merge remain open. Tiron/provider quality selection stays in Phase 8; authentication and persistent supervised mixed-load production remain Phases 7 and 10. |
+| **6** | Focused repair review passed; replacement gate pending | ADRs 0024–0026 and the active plan define the provider catalog, primary language, bounded resident AmberNet/Nemotron Preview, verify-only five-region AmberNet batch preflight, explicit server Nemotron auto mode, fail-closed alignment, and provider-specific serving gates. Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed its frozen 30-child local/native/server/private-runtime matrix, but the required final adversarial review found concrete restart/cleanup, normative OpenAPI, hosted-closure, evidence-bound, and persisted-vocabulary defects and invalidated that SHA as merge authority. Its receipt remains historical evidence. The repaired implementation passed the focused three-agent remediation re-review; one new complete gate remains. The local route remains default-off Preview because its natural-switch target failed; the catalog still advertises only gated Cohere `en-US` with `wordAlignment: false`; neither resident server provider is promoted. Hosted checks, PR review, and merge remain open. Tiron/provider quality selection stays in Phase 8; authentication and persistent supervised mixed-load production remain Phases 7 and 10. |
 | **7** | Planned | Auth/identity design exists but requires the corrected Yap API token audience, `(tid, oid)` key, purpose-grant records, and a server entrypoint. |
 | **8** | Capture prerequisites implemented; meeting inference deferred | ADR 0020, ADR 0027, and the source-aware design are canonical. Track/timeline/recording prerequisites are implemented and pinned Tiron's eight-window/eight-global route is selected as the server development baseline; the local anonymous model, Tiron worker, larger-roster speaker-epoch reconciler, frozen messy-meeting benchmark, result production, and server reconciliation do not exist. |
 | **9** | Planned | Google OKF conformance, KB compiler, Postgres permission/relationship ledger, pgvector baseline, optional Neo4j challenger, agents, RAG, and MCP wait on preprocessing, identity, and diarization outputs. |
@@ -927,10 +931,11 @@ privacy review and ADR.
 
 **Build specs:** [Client state machine](specs/client-state-machine.md) · [Model download UX](specs/model-download-ux.md) · [Local audio preprocessing](specs/local-audio-preprocessing-stack.md) · [Local live fallback](specs/local-live-fallback-sidecar.md) · [Local LLM sidecar](specs/local-llm-sidecar.md) · [Live dictation client](specs/live-dictation-client-ux.md) · [Server tier MVP](specs/server-tier-mvp.md) · [Source-aware diarization](specs/source-aware-diarization.md) · [Testing](specs/testing-strategy.md).
 
-**Next execution order:** complete Phase 6 on
-`feat/phase6-preprocessing-pipeline` through its focused implementation slices,
-one exact-head local/native/server/GB10 gate, hosted checks, review, and merge.
-Then continue Phases 7–10 on separate branches in documented order. WSS/live
+**Next execution order:** finish the Phase 6 executable repairs and adversarial
+read-back, freeze one replacement candidate, and run its complete
+local/native/server/GB10 gate exactly once. Then run hosted checks on the
+focused PR head, review, and merge. Run the separately queued Checkpoint B
+before continuing Phases 7–10 on separate branches in documented order. WSS/live
 ASR, authentication, diarization, and the HTTP/3 edge remain gated by their
 canonical phases. ADR 0021 does not authorize UDP exposure from the loopback
 application boundary.
@@ -1013,8 +1018,8 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 - [x] Isolated verify-only CPU AmberNet long-recording suggestion with five
   bounded start-to-tail regions, strict all-five agreement, explicit user
   confirmation, and a passing final source-exact ARM64 production-worker
-  resource/lifecycle repetition at
-  `a21964c19e56648e9fddcb5200de419e59a7687c`
+  resource/lifecycle repetition and complete Phase 6 matrix at exact candidate
+  `97b63be46b05dffa21595f2fd081b8467bb95798`
 - [x] Pinned reference Cohere/Nemotron routes plus explicit server Nemotron auto
   mode at finalized utterance boundaries; no persistent production-pool claim
 - [x] Fail-closed provider/language-gated alignment implementation that publishes
@@ -1024,8 +1029,8 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
   admission on the existing job authorities
 - [x] Complete the digest-pinned Cohere vLLM candidate-safety gate with frozen
   request/result identity and GB10 duration/concurrency, resource, cancellation,
-  admission, and teardown evidence at
-  `a21964c19e56648e9fddcb5200de419e59a7687c`; retain output determinism,
+  admission, and teardown evidence at exact candidate
+  `97b63be46b05dffa21595f2fd081b8467bb95798`; retain output determinism,
   representative quality, percentiles, and rollback for the Phase 8 Tiron
   comparison and keep the route unpromoted
 - [x] Implement the pinned resident Nemotron NeMo worker/service/image/launcher
@@ -1033,8 +1038,8 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
   requests, prompt/catalog validation, and job-specific cancellation
 - [x] Complete Nemotron NeMo's independent request-lifecycle, fixed/auto language-
   contract, duration, cancellation, memory, c1/c2/c4/c8 identity/isolation,
-  admission, recovery, and lifecycle gate at
-  `a21964c19e56648e9fddcb5200de419e59a7687c`; retain provider-behavior quality,
+  admission, recovery, and lifecycle gate at exact candidate
+  `97b63be46b05dffa21595f2fd081b8467bb95798`; retain provider-behavior quality,
   output determinism, representative locales, percentiles, and rollback for later
   promotion evidence and keep the route unpromoted
 

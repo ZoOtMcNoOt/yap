@@ -11,6 +11,7 @@ from yap_server.pools.batch_contract import (
     ProviderCapacityUnavailable,
     ProviderServiceUnavailable,
     WorkerCancellationAcknowledged,
+    WorkerContainmentError,
     WorkerExecutionError,
 )
 from yap_server.pools.vllm_transcription_client import (
@@ -32,6 +33,25 @@ class _Response:
             return str(len(self._encoded))
         if name.lower() == "content-type":
             return "application/json"
+        return None
+
+    def read(self, amount: int = -1) -> bytes:
+        if amount < 0:
+            amount = len(self._encoded)
+        returned, self._encoded = self._encoded[:amount], self._encoded[amount:]
+        return returned
+
+
+class _TextResponse:
+    def __init__(self, status: int, body: str) -> None:
+        self.status = status
+        self._encoded = body.encode("utf-8")
+
+    def getheader(self, name: str) -> str | None:
+        if name.lower() == "content-length":
+            return str(len(self._encoded))
+        if name.lower() == "content-type":
+            return "text/plain; version=0.0.4; charset=utf-8"
         return None
 
     def read(self, amount: int = -1) -> bytes:
@@ -157,6 +177,55 @@ class VllmTranscriptionClientTests(unittest.TestCase):
             models.headers["Authorization"],
             "Bearer private-test-key",
         )
+
+    def test_startup_reconciliation_requires_zero_provider_requests(self) -> None:
+        for running, waiting in ((1, 0), (0, 1)):
+            with self.subTest(running=running, waiting=waiting):
+                metrics = _Connection(
+                    _TextResponse(
+                        200,
+                        "\n".join(
+                            (
+                                f'vllm:num_requests_running{{model_name="locked"}} {running}',
+                                f'vllm:num_requests_waiting{{model_name="locked"}} {waiting}',
+                            )
+                        ),
+                    )
+                )
+                client = VllmTranscriptionClient(
+                    endpoint="http://127.0.0.1:8000",
+                    api_key="private-test-key",
+                    timeout_seconds=2,
+                    connection_factory=_ConnectionFactory(metrics),
+                )
+
+                with self.assertRaisesRegex(
+                    WorkerContainmentError,
+                    "still owns active requests",
+                ):
+                    client.verify_startup_idle()
+
+                self.assertEqual(metrics.request_line, ("GET", "/metrics"))
+
+        idle_metrics = _Connection(
+            _TextResponse(
+                200,
+                "\n".join(
+                    (
+                        'vllm:num_requests_running{model_name="locked"} 0',
+                        'vllm:num_requests_waiting{model_name="locked"} 0',
+                    )
+                ),
+            )
+        )
+        idle_client = VllmTranscriptionClient(
+            endpoint="http://127.0.0.1:8000",
+            api_key="private-test-key",
+            timeout_seconds=2,
+            connection_factory=_ConnectionFactory(idle_metrics),
+        )
+
+        idle_client.verify_startup_idle()
 
     def test_readiness_rejects_a_reported_version_that_differs_from_the_lock(
         self,

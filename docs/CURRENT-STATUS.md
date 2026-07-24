@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-07-23
+**As of:** 2026-07-24
 
 **Current work:** Phase 6 preprocessing on
 `feat/phase6-preprocessing-pipeline`.
@@ -29,7 +29,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 4: private ASR node | Merged and gated | A bounded router/pool and transient isolated Cohere worker ran on GB10 using the pinned Python 3.12 / NVIDIA PyTorch 26.06 stack. This is reference-worker proof, not a production service. |
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
-| Phase 6: preprocessing | Active; focused slices pass, phase not gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. The catalog-derived recording-language selector, primary/fixed decisions, durable preprocessing, advisory Silero VAD, default-off local AmberNet/Nemotron switching Preview, source-time spans, verify-only server AmberNet five-region confirmation, pinned server Nemotron references, fail-closed Cohere timing, Cohere vLLM candidate, and resident Nemotron NeMo candidate execute under focused tests. The selector exposes only the gated Cohere `en-US` route; Phase 6 does not invent a second locale. The Preview's frozen natural-switch target failed and remains a visible limitation. Exact head `74322bf42c22058ffa88620f28cd4bf118ad8c01` passed the focused current-host no-server target-client qualification: 12/12 paced cycles and all nine 250-ms-through-30-second cases completed without drops; the unattended release-mode UI run stayed on `localFallback`, recovered from four early cancellations, saved/deleted its capture, exited through the production tray path, and retained no recording, model snapshot, Yap/driver process, or port-18765 listener. Longer physical-device and low-end battery/thermal certification remain default-on or Phase 10 work. Exact head `a21964c19e56648e9fddcb5200de419e59a7687c` passed the source-exact ARM64 AmberNet repetition and the composed 18-child Cohere vLLM/Nemotron NeMo candidate-safety lifecycle with teardown; neither provider is promoted. Exact head `05d1b82017447df04d46ccc8fa729c5a6a0d0b13` passed the connected Windows-desktop/SSH-forwarded-GB10 slice through durable preprocessing, one tunnel interruption, server-authoritative result publication, History review, and remote teardown. Candidate freeze/review, the accessibility-inclusive complete Phase 6 matrix, hosted checks, and merge remain open. `wordAlignment` remains false; Phase 8 owns Tiron selection and broad provider quality/long-duration/percentile/rollback work. |
+| Phase 6: preprocessing | Focused repair review passed; replacement gate pending | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed its frozen 30-child local/native/server/private-runtime attempt, but the required final adversarial review found restart/cleanup, OpenAPI, hosted-closure, evidence-bound, and persisted-vocabulary defects and explicitly invalidated that SHA as merge authority. The receipt remains historical evidence. The repaired implementation passed focused verification and three-agent remediation re-review; one new complete gate remains before PR closure. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Phase 7: identity/access | Planned | Entra/MSAL, token-derived ownership, purpose grants, and authorization remain unimplemented. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
@@ -62,10 +62,10 @@ licensed fixture, so this is duration/lifecycle evidence only; sentinel-rich
 long-form correctness, representative quality, frozen p50/p95/p99 capacity, and
 provider promotion remain open.
 
-The checked-head resident exact-duration runner is now executable under focused
-tests but has not consumed the frozen gate. It selects only the plan-owned Cohere
-vLLM or Nemotron NeMo unpaced ladders, runs each exact duration once at c1, and
-can include the four-hour boundary only for batch. Its evidence explicitly says
+The checked-head resident exact-duration runner has now passed the frozen
+candidate gate. It selects only the plan-owned Cohere vLLM or Nemotron NeMo
+unpaced ladders, runs each exact duration once at c1, and can include the
+four-hour boundary only for batch. Its evidence explicitly says
 `duration-transport-and-lifecycle` and `representativeAccuracyClaim: false`;
 quality, sentinel integrity, concurrency, and promotion remain separate.
 
@@ -87,10 +87,10 @@ identity/auth failures, runs the plan-owned duration/load/cancellation/capacity/
 resource cells, and publishes only after complete child evidence, clean
 launcher/proxy exit, and clean host teardown. Its private cache retains raw
 logs, samples, and snapshots outside
-Git. Exact head `a21964c19e56648e9fddcb5200de419e59a7687c` passed all 18
+Git. Exact candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed all 18
 candidate-safety children and exact host teardown. This closes the frozen
 resident-provider lifecycle component, not representative quality, provider
-promotion, or the complete Phase 6 gate.
+promotion, or later production capacity.
 
 The provider-qualification code now separates ordinary load, cancellation,
 capacity, and fixed/automatic-language semantics. vLLM cancellation evidence
@@ -173,7 +173,7 @@ time from about 24 ms to 3-5 ms. Runtime-plan schema 5 freezes separate
 c8/1,600 current/peak/allocation-extent/task/thread/memory-event ceilings for the
 one-time checked-head gate. Both current-source profiles passed all eleven
 focused checks and clean teardown; that does not promote either candidate or
-consume the still-open frozen qualification.
+replace the later provider-promotion evidence.
 
 The sustained Cohere exact-track control also resolved its two reported
 transcript identities: all 200 requests retained the same 92 lexical tokens,
@@ -228,8 +228,8 @@ candidate is promoted by this dirty-head result.
   remains the bounded raw PyTorch/Transformers Cohere reference worker. On the
   active branch, Cohere defaults to a digest-pinned vLLM candidate behind the
   same worker contract and a required loopback/API-key boundary; its composed
-  candidate-safety lifecycle with resident NeMo passed at exact GB10 head
-  `a21964c19e56648e9fddcb5200de419e59a7687c`. Locked Nemotron Transformers routes
+  candidate-safety lifecycle with resident NeMo passed at exact GB10 candidate
+  `97b63be46b05dffa21595f2fd081b8467bb95798`. Locked Nemotron Transformers routes
   remain correctness references. A pinned resident NeMo candidate now executes
   behind its own authenticated numeric-loopback adapter and checked launcher,
   but is not selected and does not implement client-facing live transport. None
@@ -288,10 +288,10 @@ ownership.
   development-host profiles prove exact-source routing, paced zero-loss queueing,
   bounded drain, under-real-time combined execution, and teardown. The consumed
   natural-switch quality target failed and fixes the Preview boundary rather
-  than remaining an unfinished pass. Exact head
-  `74322bf42c22058ffa88620f28cd4bf118ad8c01` passed current-host
-  resource/interference and sustained lifecycle; the complete checked-head
-  Phase 6 gate remains unfinished. The
+  than remaining an unfinished pass. Exact candidate
+  `97b63be46b05dffa21595f2fd081b8467bb95798` passed current-host
+  resource/interference, sustained lifecycle, accessibility, and the complete
+  checked-head Phase 6 matrix. The
   isolated AmberNet CPU batch preflight, durable desktop request/retry/
   cancellation path, strict five-region agreement, and explicit user
   confirmation execute under focused Python 3.12/Rust/React tests. Windows
@@ -306,7 +306,8 @@ ownership.
   dynamic server tags, fail-closed Cohere word alignment, and the Cohere vLLM
   adapter/image/launcher contract and the resident Nemotron NeMo worker/service/
   image/launcher now execute, and their composed candidate-safety lifecycle
-  passed at exact head `a21964c19e56648e9fddcb5200de419e59a7687c`. They remain
+  passed again inside exact candidate
+  `97b63be46b05dffa21595f2fd081b8467bb95798`. They remain
   unadvertised or unselected: `wordAlignment` is still false, and broad Cohere
   output-stability/quality plus representative Nemotron locale/quality evidence
   remain later provider-promotion work. The
@@ -347,6 +348,36 @@ all passed on that exact head. It merged through PR #59 as
 `a80934d844a068110e7f86b30b6e29d35146db57`. The complete public-safe record is
 [executable ownership review verification](evidence/executable-ownership-review/VERIFICATION.md).
 
+## Phase 6 historical checked-head evidence and invalidation
+
+Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
+passed the one-attempt integrated Phase 6 gate on 2026-07-24. The frozen
+manifest SHA-256 is
+`8c59a08174a2c1a7e72bef59fefc6a8160ca65982736e0ba7b18f853d893affd`;
+the independently validated 30-child candidate receipt SHA-256 is
+`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`.
+
+The admitted target-client channel passed 12/12 repeated native cycles, all
+nine 250-ms-through-30-second prepared-audio cases, and the release-mode
+microphone/UI lifecycle. The GB10 channel passed the composed 18-child Cohere
+vLLM/Nemotron NeMo suite; its public-safe aggregate SHA-256 is
+`6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
+The connected channel proved one immutable job across a stopped and restored
+SSH forward, durable preprocessing, server-authoritative result publication,
+verified History review, and exact teardown. The complete command matrix passed
+frontend accessibility/workflows, production build, release/provenance and
+dependency contracts, Rust format/Clippy/tests/audit/Windows boundary,
+server-connector integration, required native WDIO, and the portable Python
+3.12 server suite.
+
+Private audio, transcripts, raw metrics, process ledgers, host paths, and logs
+remain outside Git and hosted artifacts. This candidate gate did not promote a
+provider or supply hosted PR closure. Final adversarial review subsequently
+identified concrete restart/cleanup, normative OpenAPI, hosted-closure,
+evidence-bound, and persisted-vocabulary defects. Executable repairs therefore
+invalidated `97b63be...` as the merge candidate. Its hashes above remain a
+truthful historical receipt, not authority for the repaired head.
+
 ## Active next steps
 
 The living [decision and evidence queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
@@ -357,15 +388,14 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Complete exact-candidate diff/read-back and adversarial review.
-2. Freeze one exact Phase 6 candidate and run the complete
-   applicable matrix exactly once.
-3. Merge only the reviewed exact PR head after hosted checks are green.
-
-Connected preparation and the focused integrated vertical slice are complete at
-exact executable head `05d1b82017447df04d46ccc8fa729c5a6a0d0b13`;
-the focused no-server target-client qualification is complete at
-`74322bf42c22058ffa88620f28cd4bf118ad8c01`.
+1. Finish focused verification and the three-agent remediation re-review of the
+   repaired diff, then freeze one clean replacement SHA.
+2. Run the complete replacement matrix once, keeping all private evidence
+   outside Git and recording only bounded public-safe aggregates.
+3. Open the focused Phase 6 PR and require hosted CI/CodeQL and applicable
+   Windows checks on the reviewed PR head.
+4. Merge only that reviewed green head, then start the separately queued
+   Checkpoint B before Phase 7.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
 point. Checkpoint B reviews broadly but changes narrowly before that integrated

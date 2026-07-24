@@ -2,14 +2,19 @@ import { createHash } from "node:crypto";
 import {
   existsSync,
   lstatSync,
-  readFileSync,
   realpathSync,
-  statSync,
   writeFileSync,
 } from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  INTEGRATED_GATE_BYTE_LIMITS,
+  readBoundedJsonArtifact,
+  readBoundedRegularFile,
+  serializeBoundedJson,
+} from "./integrated-gate-artifact-bounds.mjs";
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const REPOSITORY_ROOT = path.resolve(
@@ -23,15 +28,6 @@ function requireCondition(condition, message) {
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
-}
-
-function realFile(candidate, label) {
-  requireCondition(path.isAbsolute(candidate), `${label} must be absolute.`);
-  requireCondition(existsSync(candidate), `${label} does not exist.`);
-  const item = lstatSync(candidate);
-  requireCondition(item.isFile() && !item.isSymbolicLink(),
-    `${label} must be a real regular file.`);
-  return path.normalize(realpathSync.native(candidate));
 }
 
 function realDirectory(candidate, label) {
@@ -89,12 +85,23 @@ export async function createConnectedServerTeardownReceipt({
     Number.isSafeInteger(remoteServerProcessId) && remoteServerProcessId > 0,
     "The directly launched remote-server SSH process id is required.",
   );
-  const logPath = realFile(path.resolve(remoteCleanupLog), "Remote cleanup log");
-  requireOutsideRepository(logPath, "Remote cleanup log");
-  const tunnelLedgerPath = realFile(
-    path.resolve(tunnelProcessLedger),
-    "Tunnel process ledger",
+  const logCandidate = path.resolve(remoteCleanupLog);
+  requireOutsideRepository(logCandidate, "Remote cleanup log");
+  const logArtifact = readBoundedRegularFile(
+    logCandidate,
+    "Remote cleanup log",
+    INTEGRATED_GATE_BYTE_LIMITS.privateLogEvidenceBytes,
   );
+  const logPath = logArtifact.path;
+  requireOutsideRepository(logPath, "Remote cleanup log");
+  const tunnelLedgerCandidate = path.resolve(tunnelProcessLedger);
+  requireOutsideRepository(tunnelLedgerCandidate, "Tunnel process ledger");
+  const tunnelLedgerArtifact = readBoundedJsonArtifact(
+    tunnelLedgerCandidate,
+    "Tunnel process ledger",
+    INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
+  );
+  const tunnelLedgerPath = tunnelLedgerArtifact.path;
   requireOutsideRepository(tunnelLedgerPath, "Tunnel process ledger");
   requireCondition(path.isAbsolute(output), "Teardown receipt path must be absolute.");
   requireOutsideRepository(path.resolve(output), "Teardown receipt");
@@ -105,10 +112,10 @@ export async function createConnectedServerTeardownReceipt({
     "Teardown receipt parent must not redirect elsewhere.",
   );
 
-  const logBytes = readFileSync(logPath);
+  const logBytes = logArtifact.bytes;
   const logText = logBytes.toString("utf8");
-  const tunnelLedgerBytes = readFileSync(tunnelLedgerPath);
-  const tunnelLedger = JSON.parse(tunnelLedgerBytes.toString("utf8"));
+  const tunnelLedgerBytes = tunnelLedgerArtifact.bytes;
+  const tunnelLedger = tunnelLedgerArtifact.value;
   requireCondition(
     tunnelLedger?.schemaVersion === 1
       && tunnelLedger.checkedHead === checkedHead
@@ -167,8 +174,12 @@ export async function createConnectedServerTeardownReceipt({
     tunnelProcessLedgerSha256: sha256(tunnelLedgerBytes),
     status: "passed",
   };
-  writeFileSync(output, `${JSON.stringify(receipt, null, 2)}\n`, {
-    encoding: "utf8",
+  const receiptBytes = serializeBoundedJson(
+    receipt,
+    "Connected-server teardown receipt",
+    INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
+  );
+  writeFileSync(output, receiptBytes, {
     flag: "wx",
     mode: 0o600,
   });

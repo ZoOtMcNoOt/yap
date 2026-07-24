@@ -3,9 +3,11 @@
 **Date:** 2026-07-21
 **Status:** Accepted; Cohere vLLM and Nemotron NeMo adapters, checked
 container/launcher contracts, and the sequential candidate-safety lifecycle are
-implemented and passed at exact GB10 head
-`a21964c19e56648e9fddcb5200de419e59a7687c`; neither replaceable provider is
-promoted, and broad model-quality/replacement decisions remain Phase 8 work
+implemented. Historical executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` passed all 18 provider children
+inside the frozen 30-child Phase 6 matrix before final review invalidated it as
+merge authority; neither replaceable provider is promoted, and broad
+model-quality/replacement decisions remain Phase 8 work
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md) and
 [ADR 0024](0024-global-language-routing.md)
 **Meeting serving amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 selects a separate Tiron joint speaker-attributed worker without changing the Phase 6 Cohere/Nemotron gates)
@@ -573,6 +575,12 @@ Finalization and an independent read-back found no owned provider container,
 network, runtime process, or listener. This closes only Phase 6's bounded
 resident-provider candidate-safety component; it does not select either service
 or pull Cohere-versus-Tiron quality work forward from Phase 8.
+
+Exact executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` later consumed the unchanged
+provider-serving contract in the complete Phase 6 matrix. All 18 children passed;
+the public-safe aggregate has SHA-256
+`6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
 
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall

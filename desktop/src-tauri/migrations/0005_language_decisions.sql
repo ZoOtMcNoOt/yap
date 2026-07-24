@@ -7,17 +7,17 @@ ALTER TABLE recording_jobs
   CHECK (language_bcp47 IS NULL OR (length(language_bcp47) BETWEEN 2 AND 35));
 
 ALTER TABLE recording_jobs
-  ADD COLUMN language_disposition TEXT NOT NULL DEFAULT 'legacy_phase5_default'
+  ADD COLUMN language_disposition TEXT NOT NULL DEFAULT 'legacy_implicit_english_default'
   CHECK (language_disposition IN (
     'primary', 'manual_override', 'detected_suggestion_confirmed',
-    'explicit_dynamic', 'legacy_phase5_default'
+    'explicit_dynamic', 'legacy_implicit_english_default'
   ) AND (
     (
       language_mode = 'fixed'
       AND language_bcp47 IS NOT NULL
       AND language_disposition IN (
         'primary', 'manual_override', 'detected_suggestion_confirmed',
-        'legacy_phase5_default'
+        'legacy_implicit_english_default'
       )
     )
     OR (

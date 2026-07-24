@@ -43,7 +43,7 @@ impl RecordingLanguageDisposition {
             Self::ManualOverride => "manual_override",
             Self::DetectedSuggestionConfirmed => "detected_suggestion_confirmed",
             Self::ExplicitDynamic => "explicit_dynamic",
-            Self::LegacyImplicitEnglishDefault => "legacy_phase5_default",
+            Self::LegacyImplicitEnglishDefault => "legacy_implicit_english_default",
         }
     }
 
@@ -53,7 +53,7 @@ impl RecordingLanguageDisposition {
             "manual_override" => Ok(Self::ManualOverride),
             "detected_suggestion_confirmed" => Ok(Self::DetectedSuggestionConfirmed),
             "explicit_dynamic" => Ok(Self::ExplicitDynamic),
-            "legacy_phase5_default" => Ok(Self::LegacyImplicitEnglishDefault),
+            "legacy_implicit_english_default" => Ok(Self::LegacyImplicitEnglishDefault),
             _ => Err(corrupt("language_disposition", value)),
         }
     }

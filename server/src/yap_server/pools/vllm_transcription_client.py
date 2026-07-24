@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import http.client
+import math
+import re
 import secrets
 import socket
 import threading
@@ -36,7 +38,14 @@ _READINESS_TIMEOUT_SECONDS = 5.0
 _CANCELLATION_ACK_SECONDS = 5.0
 _POLL_SECONDS = 0.02
 _MAX_JSON_RESPONSE_BYTES = MAX_WORKER_RESULT_BYTES
+_MAX_METRICS_RESPONSE_BYTES = 2 * 1024 * 1024
 _SEND_CHUNK_BYTES = 1024 * 1024
+_REQUEST_ACTIVITY_LINE = re.compile(
+    r"^(?P<name>vllm:num_requests_(?:running|waiting))"
+    r"(?:\{[^{}]*\})?\s+"
+    r"(?P<value>[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)"
+    r"(?:\s+\d+)?$"
+)
 
 
 class _CancellableHttpConnection(_HttpConnection, Protocol):
@@ -105,6 +114,20 @@ class VllmTranscriptionClient:
             or data[0].get("object") != "model"
         ):
             raise WorkerExecutionError("vLLM served model differs from the lock")
+
+    def verify_startup_idle(self) -> None:
+        """Prove no request from a previous Yap owner remains in vLLM."""
+
+        with self._active_lock:
+            if self._active:
+                raise WorkerContainmentError(
+                    "vLLM startup reconciliation found local active requests"
+                )
+        running, waiting = self._request_activity()
+        if running != 0 or waiting != 0:
+            raise WorkerContainmentError(
+                "vLLM still owns active requests from a previous runtime"
+            )
 
     def transcribe(
         self,
@@ -314,6 +337,53 @@ class VllmTranscriptionClient:
             if connection is not None:
                 connection.close()
 
+    def _request_activity(self) -> tuple[int, int]:
+        if self._shutdown.is_set():
+            raise WorkerExecutionError("vLLM client is closed")
+        connection: _CancellableHttpConnection | None = None
+        try:
+            connection = self._connection_factory(
+                self._host,
+                self._port,
+                _READINESS_TIMEOUT_SECONDS,
+            )
+            connection.putrequest("GET", "/metrics")
+            connection.putheader("Accept", "text/plain")
+            connection.endheaders()
+            response = connection.getresponse()
+            content_type = response.getheader("Content-Type")
+            if (
+                response.status != 200
+                or not isinstance(content_type, str)
+                or not content_type.lower().startswith("text/plain")
+            ):
+                raise WorkerExecutionError("vLLM request-activity probe is invalid")
+            body = response.read(_MAX_METRICS_RESPONSE_BYTES + 1)
+            if len(body) > _MAX_METRICS_RESPONSE_BYTES:
+                raise WorkerExecutionError(
+                    "vLLM request-activity response exceeds its bound"
+                )
+            try:
+                text = body.decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise WorkerExecutionError(
+                    "vLLM request-activity response is not UTF-8"
+                ) from error
+            return _parse_request_activity(text)
+        except WorkerExecutionError:
+            raise
+        except (OSError, http.client.HTTPException) as error:
+            raise ProviderServiceUnavailable(
+                "vLLM request-activity endpoint is unavailable"
+            ) from error
+        except Exception as error:
+            raise WorkerExecutionError(
+                "vLLM request-activity probe failed"
+            ) from error
+        finally:
+            if connection is not None:
+                connection.close()
+
     def _post_transcription(
         self,
         connection: _CancellableHttpConnection,
@@ -422,6 +492,37 @@ def _open_http_connection(
 
 def _parse_loopback_http_endpoint(endpoint: str) -> tuple[str, int]:
     return parse_numeric_loopback_http_endpoint(endpoint, component="vLLM")
+
+
+def _parse_request_activity(text: str) -> tuple[int, int]:
+    values = {
+        "vllm:num_requests_running": 0,
+        "vllm:num_requests_waiting": 0,
+    }
+    observed: set[str] = set()
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        match = _REQUEST_ACTIVITY_LINE.fullmatch(stripped)
+        if match is None:
+            if stripped.startswith(
+                ("vllm:num_requests_running", "vllm:num_requests_waiting")
+            ):
+                raise ValueError("vLLM request-activity metric is malformed")
+            continue
+        name = match.group("name")
+        value = float(match.group("value"))
+        if not math.isfinite(value) or value < 0 or not value.is_integer():
+            raise ValueError("vLLM request-activity metric is invalid")
+        observed.add(name)
+        values[name] += int(value)
+    if observed != set(values):
+        raise ValueError("vLLM request-activity metrics are incomplete")
+    return (
+        values["vllm:num_requests_running"],
+        values["vllm:num_requests_waiting"],
+    )
 
 
 def _validate_api_key(api_key: str) -> None:

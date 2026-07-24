@@ -1,8 +1,8 @@
 use crate::jobs::model::{JobLedgerError, RecordingLanguageDecision};
-use rusqlite::{Connection, OpenFlags, Transaction, TransactionBehavior};
+use rusqlite::{Connection, OpenFlags, OptionalExtension, Transaction, TransactionBehavior};
 use std::{path::Path, time::Duration};
 
-const CURRENT_SCHEMA_VERSION: i64 = 10;
+const CURRENT_SCHEMA_VERSION: i64 = 11;
 const MIGRATION_1_SQL: &str = include_str!("../../migrations/0001_job_ledger.sql");
 const MIGRATION_2_SQL: &str = include_str!("../../migrations/0002_prepared_remote_jobs.sql");
 const MIGRATION_3_SQL: &str = include_str!("../../migrations/0003_remote_spool_cleanup.sql");
@@ -14,6 +14,10 @@ const MIGRATION_7_SQL: &str = include_str!("../../migrations/0007_asr_catalog_bi
 const MIGRATION_8_SQL: &str = include_str!("../../migrations/0008_job_ledger_write_probe.sql");
 const MIGRATION_9_SQL: &str = include_str!("../../migrations/0009_client_stage_authority.sql");
 const MIGRATION_10_SQL: &str = include_str!("../../migrations/0010_client_preflight_artifacts.sql");
+const MIGRATION_11_SQL: &str =
+    include_str!("../../migrations/0011_functional_language_disposition.sql");
+const PRE_FUNCTIONAL_LANGUAGE_DISPOSITION: &str = "legacy_phase5_default";
+const FUNCTIONAL_LANGUAGE_DISPOSITION: &str = "legacy_implicit_english_default";
 
 pub(super) fn open_file(path: &Path) -> Result<Connection, JobLedgerError> {
     open_file_with_migration_hook(path, || {})
@@ -55,59 +59,82 @@ fn migrate_with_hook(
     before_migration_transaction: impl FnOnce(),
 ) -> Result<(), JobLedgerError> {
     before_migration_transaction();
-    let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-    let version: i64 = transaction.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-    match version {
-        CURRENT_SCHEMA_VERSION => {}
-        9 => {}
-        8 => {}
-        7 => {}
-        6 => {}
-        5 => {}
-        4 => {
-            transaction.execute_batch(MIGRATION_5_SQL)?;
+    connection.pragma_update(None, "foreign_keys", false)?;
+    let migration_result = (|| {
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let version: i64 = transaction.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+        match version {
+            CURRENT_SCHEMA_VERSION => {}
+            10 => {}
+            9 => {}
+            8 => {}
+            7 => {}
+            6 => {}
+            5 => {}
+            4 => {
+                transaction.execute_batch(MIGRATION_5_SQL)?;
+            }
+            3 => {
+                transaction.execute_batch(MIGRATION_4_SQL)?;
+                transaction.execute_batch(MIGRATION_5_SQL)?;
+            }
+            2 => {
+                transaction.execute_batch(MIGRATION_3_SQL)?;
+                transaction.execute_batch(MIGRATION_4_SQL)?;
+                transaction.execute_batch(MIGRATION_5_SQL)?;
+            }
+            1 => {
+                transaction.execute_batch(MIGRATION_2_SQL)?;
+                transaction.execute_batch(MIGRATION_3_SQL)?;
+                transaction.execute_batch(MIGRATION_4_SQL)?;
+                transaction.execute_batch(MIGRATION_5_SQL)?;
+            }
+            0 => {
+                transaction.execute_batch(MIGRATION_1_SQL)?;
+                transaction.execute_batch(MIGRATION_2_SQL)?;
+                transaction.execute_batch(MIGRATION_3_SQL)?;
+                transaction.execute_batch(MIGRATION_4_SQL)?;
+                transaction.execute_batch(MIGRATION_5_SQL)?;
+            }
+            unsupported => return Err(JobLedgerError::UnsupportedSchema(unsupported)),
         }
-        3 => {
-            transaction.execute_batch(MIGRATION_4_SQL)?;
-            transaction.execute_batch(MIGRATION_5_SQL)?;
+        if version < 6 {
+            validate_existing_language_decisions(&transaction)?;
+            transaction.execute_batch(MIGRATION_6_SQL)?;
         }
-        2 => {
-            transaction.execute_batch(MIGRATION_3_SQL)?;
-            transaction.execute_batch(MIGRATION_4_SQL)?;
-            transaction.execute_batch(MIGRATION_5_SQL)?;
+        if version < 7 {
+            transaction.execute_batch(MIGRATION_7_SQL)?;
         }
-        1 => {
-            transaction.execute_batch(MIGRATION_2_SQL)?;
-            transaction.execute_batch(MIGRATION_3_SQL)?;
-            transaction.execute_batch(MIGRATION_4_SQL)?;
-            transaction.execute_batch(MIGRATION_5_SQL)?;
+        if version < 8 {
+            transaction.execute_batch(MIGRATION_8_SQL)?;
         }
-        0 => {
-            transaction.execute_batch(MIGRATION_1_SQL)?;
-            transaction.execute_batch(MIGRATION_2_SQL)?;
-            transaction.execute_batch(MIGRATION_3_SQL)?;
-            transaction.execute_batch(MIGRATION_4_SQL)?;
-            transaction.execute_batch(MIGRATION_5_SQL)?;
+        if version < 9 {
+            transaction.execute_batch(MIGRATION_9_SQL)?;
         }
-        unsupported => return Err(JobLedgerError::UnsupportedSchema(unsupported)),
-    }
-    if version < 6 {
-        validate_existing_language_decisions(&transaction)?;
-        transaction.execute_batch(MIGRATION_6_SQL)?;
-    }
-    if version < 7 {
-        transaction.execute_batch(MIGRATION_7_SQL)?;
-    }
-    if version < 8 {
-        transaction.execute_batch(MIGRATION_8_SQL)?;
-    }
-    if version < 9 {
-        transaction.execute_batch(MIGRATION_9_SQL)?;
-    }
-    if version < 10 {
-        transaction.execute_batch(MIGRATION_10_SQL)?;
-    }
-    transaction.commit()?;
+        if version < 10 {
+            transaction.execute_batch(MIGRATION_10_SQL)?;
+        }
+        if version < 11 {
+            transaction.execute_batch(MIGRATION_11_SQL)?;
+        }
+        let foreign_key_violation: Option<i64> = transaction
+            .query_row(
+                "SELECT 1 FROM pragma_foreign_key_check LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if foreign_key_violation.is_some() {
+            return Err(JobLedgerError::InvalidRecord(
+                "job ledger migration left invalid foreign-key references",
+            ));
+        }
+        transaction.commit()?;
+        Ok(())
+    })();
+    let foreign_keys_result = connection.pragma_update(None, "foreign_keys", true);
+    migration_result?;
+    foreign_keys_result?;
     Ok(())
 }
 
@@ -126,7 +153,12 @@ fn validate_existing_language_decisions(
     })?;
     for decision in decisions {
         let (mode, language_bcp47, disposition) = decision?;
-        RecordingLanguageDecision::from_db(&mode, language_bcp47, &disposition)?;
+        let disposition = if disposition == PRE_FUNCTIONAL_LANGUAGE_DISPOSITION {
+            FUNCTIONAL_LANGUAGE_DISPOSITION
+        } else {
+            &disposition
+        };
+        RecordingLanguageDecision::from_db(&mode, language_bcp47, disposition)?;
     }
     Ok(())
 }
@@ -189,7 +221,7 @@ mod tests {
                 .unwrap()
         };
 
-        assert_eq!(version, 10);
+        assert_eq!(version, 11);
         assert_eq!(foreign_keys, 1);
         assert_eq!(
             tables,
@@ -231,7 +263,7 @@ mod tests {
             (
                 "fixed".into(),
                 Some("en-US".into()),
-                "legacy_phase5_default".into()
+                "legacy_implicit_english_default".into()
             )
         );
     }
@@ -307,7 +339,7 @@ mod tests {
             [],
             |row| row.get(0),
         ).unwrap();
-        assert_eq!((version, table_count), (10, 8));
+        assert_eq!((version, table_count), (11, 8));
         drop(connection);
         fs::remove_dir_all(dir).unwrap();
     }
@@ -320,13 +352,13 @@ mod tests {
             .execute_batch(
                 "CREATE TABLE future_owned_data (value TEXT NOT NULL); \
                  INSERT INTO future_owned_data VALUES ('preserve'); \
-                 PRAGMA user_version = 11;",
+                 PRAGMA user_version = 12;",
             )
             .unwrap();
 
         let error = migrate(&mut connection).unwrap_err();
 
-        assert!(matches!(error, JobLedgerError::UnsupportedSchema(11)));
+        assert!(matches!(error, JobLedgerError::UnsupportedSchema(12)));
         let state: (i64, String) = connection
             .query_row(
                 "SELECT (SELECT user_version FROM pragma_user_version), value FROM future_owned_data",
@@ -334,7 +366,7 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .unwrap();
-        assert_eq!(state, (11, "preserve".into()));
+        assert_eq!(state, (12, "preserve".into()));
     }
 
     #[test]
@@ -375,14 +407,14 @@ mod tests {
             .unwrap();
         assert_eq!(
             (version, existing.as_str(), remote_table),
-            (10, "existing.wav", 1)
+            (11, "existing.wav", 1)
         );
         assert_eq!(
             language,
             (
                 "fixed".into(),
                 Some("en-US".into()),
-                "legacy_phase5_default".into()
+                "legacy_implicit_english_default".into()
             )
         );
     }
@@ -415,7 +447,7 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .unwrap();
-        assert_eq!(version, 10);
+        assert_eq!(version, 11);
         assert_eq!(prepared, ("{}".into(), None));
     }
 
@@ -438,7 +470,7 @@ mod tests {
         let version: i64 = connection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap();
-        assert_eq!(version, 10);
+        assert_eq!(version, 11);
         let error = connection
             .execute(
                 "UPDATE recording_jobs SET language_mode = 'fixed', language_bcp47 = 'de-DE', language_disposition = 'primary' WHERE job_id = 'existing-language'",
@@ -512,7 +544,7 @@ mod tests {
         connection.execute_batch(MIGRATION_5_SQL).unwrap();
         connection.execute_batch(MIGRATION_6_SQL).unwrap();
         connection.execute(
-            "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, display_name, status, route, created_at_ms, updated_at_ms, language_mode, language_bcp47, language_disposition) VALUES ('legacy-six', 'meeting', 'imported_file', 'C:/legacy.wav', 'legacy.wav', 'uploading', 'server_batch', 1, 1, 'fixed', 'en-US', 'legacy_phase5_default')",
+            "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, display_name, status, route, created_at_ms, updated_at_ms, language_mode, language_bcp47, language_disposition) VALUES ('legacy-six', 'meeting', 'imported_file', 'C:/legacy.wav', 'legacy.wav', 'uploading', 'server_batch', 1, 1, 'fixed', 'en-US', 'legacy_implicit_english_default')",
             [],
         ).unwrap();
 
@@ -525,7 +557,7 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
             )
             .unwrap();
-        assert_eq!(migrated, (10, None, None));
+        assert_eq!(migrated, (11, None, None));
         assert!(connection
             .execute(
                 "UPDATE recording_jobs SET asr_catalog_origin = 'http://127.0.0.1:18765' WHERE job_id = 'legacy-six'",
@@ -577,13 +609,115 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
             )
             .unwrap();
-        assert_eq!(migrated, (10, 1, 0));
+        assert_eq!(migrated, (11, 1, 0));
         assert!(connection
             .execute(
                 "UPDATE recording_jobs SET language_decision_locked = 0 WHERE job_id = 'legacy-eight'",
                 [],
             )
             .is_err());
+    }
+
+    #[test]
+    fn intermediate_language_default_is_rewritten_to_functional_vocabulary() {
+        let mut connection = Connection::open_in_memory().unwrap();
+        configure_connection(&connection, false).unwrap();
+        for migration in [
+            MIGRATION_1_SQL,
+            MIGRATION_2_SQL,
+            MIGRATION_3_SQL,
+            MIGRATION_4_SQL,
+        ] {
+            connection.execute_batch(migration).unwrap();
+        }
+        let intermediate_language_migration = MIGRATION_5_SQL.replace(
+            FUNCTIONAL_LANGUAGE_DISPOSITION,
+            PRE_FUNCTIONAL_LANGUAGE_DISPOSITION,
+        );
+        connection
+            .execute_batch(&intermediate_language_migration)
+            .unwrap();
+        for migration in [
+            MIGRATION_6_SQL,
+            MIGRATION_7_SQL,
+            MIGRATION_8_SQL,
+            MIGRATION_9_SQL,
+            MIGRATION_10_SQL,
+        ] {
+            connection.execute_batch(migration).unwrap();
+        }
+        connection
+            .execute(
+                "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, display_name, status, created_at_ms, updated_at_ms) VALUES ('intermediate-default', 'meeting', 'imported_file', 'C:/legacy.wav', 'legacy.wav', 'queued_server', 1, 1)",
+                [],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO job_chunks (job_id, owner_namespace, session_id, track_id, sequence_start, sequence_end, content_sha256, artifact_path) VALUES ('intermediate-default', 'local:test', 'session', 'mic', 0, 1, 'hash', 'artifact')",
+                [],
+            )
+            .unwrap();
+
+        migrate(&mut connection).unwrap();
+
+        let migrated: (i64, String, i64) = connection
+            .query_row(
+                "SELECT (SELECT user_version FROM pragma_user_version), language_disposition, (SELECT COUNT(*) FROM job_chunks WHERE job_id = 'intermediate-default') FROM recording_jobs WHERE job_id = 'intermediate-default'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(migrated, (11, "legacy_implicit_english_default".into(), 1));
+        let foreign_key_errors: i64 = connection
+            .query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(foreign_key_errors, 0);
+    }
+
+    #[test]
+    fn version_five_phase_derived_default_reaches_the_functional_migration() {
+        let mut connection = Connection::open_in_memory().unwrap();
+        configure_connection(&connection, false).unwrap();
+        for migration in [
+            MIGRATION_1_SQL,
+            MIGRATION_2_SQL,
+            MIGRATION_3_SQL,
+            MIGRATION_4_SQL,
+        ] {
+            connection.execute_batch(migration).unwrap();
+        }
+        connection
+            .execute_batch(&MIGRATION_5_SQL.replace(
+                FUNCTIONAL_LANGUAGE_DISPOSITION,
+                PRE_FUNCTIONAL_LANGUAGE_DISPOSITION,
+            ))
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, display_name, status, created_at_ms, updated_at_ms) VALUES ('version-five-default', 'meeting', 'imported_file', 'C:/legacy.wav', 'legacy.wav', 'accepted', 1, 1)",
+                [],
+            )
+            .unwrap();
+
+        migrate(&mut connection).unwrap();
+
+        let migrated: (i64, String) = connection
+            .query_row(
+                "SELECT (SELECT user_version FROM pragma_user_version), language_disposition FROM recording_jobs WHERE job_id = 'version-five-default'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(
+            migrated,
+            (
+                CURRENT_SCHEMA_VERSION,
+                FUNCTIONAL_LANGUAGE_DISPOSITION.into()
+            )
+        );
     }
 
     #[test]

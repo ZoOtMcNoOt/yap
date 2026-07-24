@@ -1,20 +1,30 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
+  statSync,
+  symlinkSync,
+  truncateSync,
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 import {
+  integratedGateFailureRecord,
+  runCommandCell,
   reserveIntegratedGateAttemptDirectory,
 } from "../../../../verification/integrated-gate-runner.mjs";
+import {
+  INTEGRATED_GATE_BYTE_LIMITS,
+} from "../../../../verification/integrated-gate-artifact-bounds.mjs";
 import {
   integratedGateCellDefinitionSha256,
   integratedGateManifestSha256,
@@ -287,6 +297,162 @@ test("integrated gate reserves one deterministic attempt and refuses a retry", (
   }
 });
 
+test("integrated gate terminates a command whose output exceeds its bounded log", async () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "yap-gate-command-output-"));
+  const commandLogDirectory = path.join(root, "command-logs");
+  mkdirSync(commandLogDirectory);
+  const maximumLogBytes = 1_024;
+  const escapedMarkerPath = JSON.stringify(path.join(root, "grandchild-survived"));
+  const grandchildSource = Buffer.from(
+    `setTimeout(()=>require("node:fs").writeFileSync(${escapedMarkerPath},"survived"),1500);`
+      + "setTimeout(process.exit,5000,0);",
+  ).toString("base64");
+  const commandSource = [
+    'const{spawn}=require("node:child_process");',
+    `const source=Buffer.from("${grandchildSource}","base64").toString("utf8");`,
+    'spawn(process.execPath,["-e",source],{stdio:"ignore"});',
+    `process.stdout.write(Buffer.alloc(${maximumLogBytes + 1},120));`,
+    "setTimeout(process.exit,2500,0);",
+  ].join("");
+  const cell = {
+    id: "bounded.command-output",
+    executor: "command",
+    cwd: ".",
+    command: [
+      process.execPath,
+      "-e",
+      commandSource,
+    ],
+  };
+  const admission = {
+    checkedHead,
+    runDirectory: root,
+    commandLogDirectory,
+  };
+  const started = Date.now();
+  let boundedFailure;
+  try {
+    await assert.rejects(
+      runCommandCell(cell, admission, { maximumLogBytes }),
+      (error) => {
+        boundedFailure = error;
+        assert.equal(error.code, "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED");
+        assert.equal(error.maximumBytes, maximumLogBytes);
+        assert.ok(error.observedBytes > maximumLogBytes);
+        return true;
+      },
+    );
+    assert.ok(
+      Date.now() - started < 2_000,
+      "the command process tree must be terminated instead of waiting for its natural exit; "
+        + `termination targets: ${JSON.stringify(boundedFailure?.terminatedProcessIds)}`,
+    );
+    assert.equal(
+      statSync(path.join(commandLogDirectory, `${cell.id}.log`)).size,
+      maximumLogBytes,
+    );
+    const failureRecord = integratedGateFailureRecord(admission, boundedFailure);
+    assert.equal(failureRecord.schemaVersion, 2);
+    assert.equal(
+      failureRecord.code,
+      "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED",
+    );
+    assert.match(failureRecord.message, /1024-byte command-log limit/);
+    await delay(1_750);
+    assert.equal(
+      existsSync(path.join(root, "grandchild-survived")),
+      false,
+      "the command grandchild must not survive bounded-log overflow",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("command cells reject a redirected log destination before execution", async () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "yap-gate-log-path-"));
+  const runDirectory = path.join(root, "admitted");
+  const commandLogDirectory = path.join(runDirectory, "command-logs");
+  const redirectedDirectory = path.join(root, "redirected");
+  const markerPath = path.join(root, "command-ran");
+  mkdirSync(runDirectory);
+  mkdirSync(commandLogDirectory);
+  mkdirSync(redirectedDirectory);
+  try {
+    await assert.rejects(
+      runCommandCell(
+        {
+          id: "redirected.command-log",
+          executor: "command",
+          cwd: ".",
+          command: [
+            process.execPath,
+            "-e",
+            `require("node:fs").writeFileSync(${JSON.stringify(markerPath)},"ran")`,
+          ],
+        },
+        {
+          checkedHead,
+          runDirectory,
+          commandLogDirectory: redirectedDirectory,
+        },
+      ),
+      /do not belong to the admitted run directory/,
+    );
+    assert.equal(existsSync(markerPath), false);
+    assert.equal(
+      existsSync(path.join(redirectedDirectory, "redirected.command-log.log")),
+      false,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("command cells reject a junction-swapped log directory before execution", async () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "yap-gate-log-junction-"));
+  const runDirectory = path.join(root, "admitted");
+  const commandLogDirectory = path.join(runDirectory, "command-logs");
+  const redirectedDirectory = path.join(root, "redirected");
+  const markerPath = path.join(root, "command-ran");
+  mkdirSync(runDirectory);
+  mkdirSync(redirectedDirectory);
+  symlinkSync(
+    redirectedDirectory,
+    commandLogDirectory,
+    process.platform === "win32" ? "junction" : "dir",
+  );
+  try {
+    await assert.rejects(
+      runCommandCell(
+        {
+          id: "junction.command-log",
+          executor: "command",
+          cwd: ".",
+          command: [
+            process.execPath,
+            "-e",
+            `require("node:fs").writeFileSync(${JSON.stringify(markerPath)},"ran")`,
+          ],
+        },
+        {
+          checkedHead,
+          runDirectory,
+          commandLogDirectory,
+        },
+      ),
+      /symbolic link|redirected parent/,
+    );
+    assert.equal(existsSync(markerPath), false);
+    assert.equal(
+      existsSync(path.join(redirectedDirectory, "junction.command-log.log")),
+      false,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("integrated private evidence is derived from concrete checked-head artifacts", () => {
   const root = mkdtempSync(path.join(os.tmpdir(), "yap-private-evidence-"));
   const targetRoot = path.join(root, `${checkedHead}-target`);
@@ -538,6 +704,26 @@ test("integrated private evidence is derived from concrete checked-head artifact
 
     const evidence = validateIntegratedPrivateEvidence(plan, checkedHead);
     assert.equal(evidence.size, 12);
+    truncateSync(
+      preparedPath,
+      INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes + 1,
+    );
+    assert.equal(
+      statSync(preparedPath).size,
+      INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes + 1,
+    );
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      (error) => {
+        assert.equal(error.code, "INTEGRATED_GATE_ARTIFACT_LIMIT_EXCEEDED");
+        assert.equal(
+          error.maximumBytes,
+          INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
+        );
+        return true;
+      },
+    );
+    writeFileSync(preparedPath, preparedBytes);
     prepared.cases[0].droppedFrames = 1;
     writeFileSync(preparedPath, `${JSON.stringify(prepared, null, 2)}\n`);
     assert.throws(() => validateIntegratedPrivateEvidence(plan, checkedHead));
@@ -672,6 +858,28 @@ test("hosted closure derives exact checked-head jobs and rejects rerun-only evid
     runsByWorkflow: mutatedRuns,
     jobsByRun,
   }));
+  const olderFailure = {
+    ...runsByWorkflow.get("CI")[0],
+    databaseId: 9_999,
+    conclusion: "failure",
+    createdAt: "2026-07-23T11:00:00.000Z",
+    updatedAt: "2026-07-23T11:30:00.000Z",
+    url: "https://example.invalid/run/9999",
+  };
+  const independentlyRetriedRuns = new Map(runsByWorkflow);
+  independentlyRetriedRuns.set("CI", [
+    runsByWorkflow.get("CI")[0],
+    olderFailure,
+  ]);
+  assert.throws(
+    () => selectHostedClosureEvidence({
+      cells: manifest.hostedClosureCells,
+      checkedHead,
+      runsByWorkflow: independentlyRetriedRuns,
+      jobsByRun,
+    }),
+    /exact-head run is ambiguous/i,
+  );
 });
 
 test("documentation-only hosted lineage exposes both sides of a source-to-docs move", () => {

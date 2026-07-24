@@ -3,7 +3,13 @@
 **Date:** 2026-07-08
 **Status:** Accepted (canonical Phase 2 local fallback; narrowly amended by
 [ADR 0024](0024-global-language-routing.md) for Phase 6 acoustic language
-evidence)
+evidence). Exact executable candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798` passed the complete Phase 6
+target-client and integrated safety matrix; automatic switching remains an
+explicit default-off Preview because its consumed natural-switch target failed.
+Final review invalidated that SHA as merge authority, so its receipt is
+historical. The repaired implementation passed the focused three-agent
+remediation re-review; one new complete gate remains.
 **Amends:** [ADR 0001](0001-dual-stt-backends.md), [ADR 0002](0002-crispasr-unified-stt-runtime.md), [ADR 0003](0003-long-term-voice-architecture.md), [ADR 0006](0006-silero-agents-state-machine.md), [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0018](0018-three-repo-topology.md)
 
 ## Context
@@ -38,20 +44,21 @@ Use **Nemotron 3.5 ASR Streaming 0.6B INT8** as the single pinned local streamin
 
 ### Phase 6 language-evidence amendment
 
-The single-local-ASR and no-ASR-router decisions remain in force. Phase 6 may
-add one separately pinned, bounded acoustic language-identification component
+The single-local-ASR and no-ASR-router decisions remain in force. Phase 6 adds
+one separately pinned, bounded acoustic language-identification component
 beside Nemotron so offline live dictation can detect language changes and emit
 source-time language spans. That auxiliary component does not transcribe audio,
 select among local ASR models, own capture/session lifecycle, or become a second
 durable state authority. `LiveRuntime` owns its load/unload, resource budget,
 failure fallback, and every Nemotron stream transition.
 
-The amendment is promoted only with an immutable artifact/license lock,
-representative code-switch and non-speech evidence, measured incremental
-memory/CPU/energy beside the resident Nemotron model, deterministic temporal
-smoothing, and bounded stream handoff/replay behavior. Failure or ambiguity
+The exact artifact/runtime lock, measured client resource behavior,
+deterministic smoothing, and bounded handoff/replay behavior passed the Phase 6
+safety gate. The consumed representative natural-switch target did not pass, so
+the amendment is exposed only as a default-off Preview. Failure or ambiguity
 falls back visibly to the confirmed primary locale; it never invents a language
-decision.
+decision. Default-on or broader promotion still requires new independent
+natural/noisy quality plus low-end physical energy/thermal evidence.
 
 The local pin remains fail-closed with SHA-256 verification. Runtime startup should verify cached artifacts once, write marker files, then avoid rehashing large model files on every launch.
 

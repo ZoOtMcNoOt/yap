@@ -18,6 +18,8 @@ from yap_server.pools.nemotron_nemo_protocol import NemotronNemoServiceRequest
 class ResidentNemotronTranscriber(Protocol):
     def verify_ready(self, lock: ModelPoolLock) -> None: ...
 
+    def verify_startup_idle(self, lock: ModelPoolLock) -> None: ...
+
     def transcribe(
         self,
         request: NemotronNemoServiceRequest,
@@ -48,6 +50,9 @@ class NemotronNemoBatchWorker:
 
     def verify_ready(self) -> None:
         self._client.verify_ready(self._lock)
+
+    def verify_startup_idle(self) -> None:
+        self._client.verify_startup_idle(self._lock)
 
     def close(self) -> None:
         self._shutdown.set()

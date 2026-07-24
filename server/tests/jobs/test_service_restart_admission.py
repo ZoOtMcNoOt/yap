@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import Future
 import hashlib
+import json
 from pathlib import Path
 import tempfile
 import threading
@@ -72,6 +73,28 @@ class _PendingProcessor:
 
     def cancel(self, _job_id: str) -> bool:
         return False
+
+
+class _TrackedPendingProcessor(_PendingProcessor):
+    def __init__(self) -> None:
+        self.future: Future[dict[str, object]] = Future()
+        self.started: list[str] = []
+
+    def reserve(
+        self,
+        job_id: str,
+        *,
+        pcm_byte_length: int,
+    ) -> _Reservation:
+        if pcm_byte_length < 1:
+            raise ValueError("test PCM reservation must be positive")
+
+        def start(factory: BatchJobFactory) -> Future[dict[str, object]]:
+            factory(threading.Event())
+            self.started.append(job_id)
+            return self.future
+
+        return _Reservation(start)
 
 
 class _ImmediateProcessor(_PendingProcessor):
@@ -227,6 +250,55 @@ def _wait_for_status(
 
 
 class RestartAdmissionTests(unittest.TestCase):
+    def test_restart_does_not_readmit_or_purge_before_provider_idle_proof(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            prior_processor = _TrackedPendingProcessor()
+            prior = RecordingJobService(
+                root,
+                processor=prior_processor,
+                supported_languages=("en",),
+                now=lambda: "2026-07-14T21:39:00Z",
+            )
+            request, created = _create_and_upload(prior)
+            job_id = str(created["jobId"])
+            prior.commit(job_id, _commit_request(request))
+            state_path = root / "jobs" / job_id / "state.json"
+            before = state_path.read_bytes()
+            persisted = json.loads(before)
+            self.assertEqual(prior_processor.started, [job_id])
+            self.assertEqual(
+                [
+                    attempt["state"]
+                    for attempt in persisted["stageAttempts"]
+                    if attempt["stage"] == "asr"
+                ],
+                ["running"],
+            )
+
+            replacement_processor = _ImmediateProcessor()
+            with self.assertRaisesRegex(ValueError, "startup cleanup"):
+                RecordingJobService(
+                    root,
+                    processor=replacement_processor,
+                    supported_languages=("en",),
+                    now=lambda: "2026-07-14T21:39:30Z",
+                )
+
+            self.assertEqual(replacement_processor.started, [])
+            self.assertEqual(prior_processor.started, [job_id])
+            self.assertEqual(state_path.read_bytes(), before)
+            self.assertTrue((root / "jobs" / job_id / "input.wav").is_file())
+            self.assertTrue(any((root / "jobs" / job_id / "chunks").iterdir()))
+            self.assertFalse(
+                (root / "jobs" / job_id / "result-revision.json").exists()
+            )
+
+            prior.begin_runtime_shutdown()
+            prior_processor.future.set_exception(RuntimeError("prior owner stopped"))
+
     def test_immediate_restart_futures_are_drained_without_recursive_pump_failure(
         self,
     ) -> None:

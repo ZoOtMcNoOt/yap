@@ -7,7 +7,8 @@ import os
 from pathlib import Path
 import tempfile
 import threading
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 import yap_server.__main__ as server_main
 from yap_server.config import ServerSettings
@@ -92,6 +93,29 @@ class _ClosableWorker:
 
     def close(self) -> None:
         self.close_calls += 1
+
+
+class _RetainingTestStorageLease:
+    _owned: set[Path] = set()
+
+    def __init__(self, storage_root: Path) -> None:
+        self.storage_root = storage_root
+        self.retained = False
+        self.close_calls = 0
+        if storage_root in self._owned:
+            raise ValueError("private server storage is already owned")
+        self._owned.add(storage_root)
+
+    def retain_until_process_exit(self) -> None:
+        self.retained = True
+
+    def close(self) -> None:
+        self.close_calls += 1
+        if not self.retained:
+            self._owned.discard(self.storage_root)
+
+    def release_for_test(self) -> None:
+        self._owned.discard(self.storage_root)
 
 
 class RoutedBatchProcessorTests(unittest.TestCase):
@@ -211,6 +235,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
             max_workers=1,
             max_queued=2,
             max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
+            startup_cleanup_verified=True,
         )
         cohere_lock = _test_lock()
         nemotron_lock = replace(_test_lock(), pool_id="nemotron-batch")
@@ -240,6 +265,231 @@ class RoutedBatchProcessorTests(unittest.TestCase):
                 )
 
         self.assertEqual(first_worker.close_calls, 1)
+
+    def test_runtime_does_not_claim_cleanup_without_every_provider_proof(
+        self,
+    ) -> None:
+        unverified_worker = _ClosableWorker()
+        unverified_plan = AsrWorkerPlan(
+            worker=unverified_worker,
+            max_workers=1,
+            max_queued=0,
+            max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
+            startup_cleanup_verified=False,
+        )
+        storage_lease = MagicMock()
+        route_resolver = MagicMock()
+        route_resolver.supported_languages = ("en",)
+        posix_runtime_os = SimpleNamespace(
+            name="posix",
+            environ=os.environ,
+            fsencode=os.fsencode,
+            getuid=lambda: 1000,
+            getgid=lambda: 1000,
+        )
+        with (
+            patch("yap_server.jobs.runtime.os", posix_runtime_os),
+            patch(
+                "yap_server.jobs.runtime.load_verified_asr_capability_catalog",
+                return_value={"catalogRevision": TEST_ASR_CATALOG_REVISION},
+            ),
+            patch(
+                "yap_server.jobs.runtime._configured_model_pools",
+                return_value=((_test_lock(), Path("model")),),
+            ),
+            patch(
+                "yap_server.jobs.runtime._private_storage_directory",
+                return_value=Path("private-storage"),
+            ),
+            patch(
+                "yap_server.jobs.runtime.StorageRuntimeLease",
+                return_value=storage_lease,
+            ),
+            patch(
+                "yap_server.jobs.runtime.BatchCatalogRouter",
+                return_value=route_resolver,
+            ),
+            patch(
+                "yap_server.jobs.runtime._build_provider_worker_plans",
+                return_value={"cohere": unverified_plan},
+            ),
+            patch("yap_server.jobs.runtime.RecordingJobService") as service_type,
+        ):
+            with self.assertRaisesRegex(
+                WorkerContainmentError,
+                "startup reconciliation",
+            ):
+                build_batch_runtime(
+                    {"YAP_BATCH_ASR_ENABLED": "1"},
+                    server_root=Path.cwd(),
+                )
+
+        service_type.assert_not_called()
+        self.assertEqual(unverified_worker.close_calls, 1)
+        storage_lease.retain_until_process_exit.assert_called_once_with()
+        storage_lease.close.assert_not_called()
+
+    def test_provider_cleanup_failure_retains_storage_ownership(self) -> None:
+        first_worker = MagicMock()
+        first_worker.close.side_effect = RuntimeError("worker remained uncontained")
+        first_plan = AsrWorkerPlan(
+            worker=first_worker,
+            max_workers=1,
+            max_queued=0,
+            max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
+            startup_cleanup_verified=True,
+        )
+        cohere_lock = _test_lock()
+        nemotron_lock = replace(_test_lock(), pool_id="nemotron-batch")
+        capabilities = {
+            "catalogRevision": TEST_ASR_CATALOG_REVISION,
+            "providers": [
+                {"providerId": "cohere", "poolId": "cohere-batch"},
+                {"providerId": "nemotron", "poolId": "nemotron-batch"},
+            ],
+        }
+        storage_root = Path("private-storage-provider-cleanup")
+        storage_lease = _RetainingTestStorageLease(storage_root)
+        route_resolver = MagicMock()
+        posix_runtime_os = SimpleNamespace(
+            name="posix",
+            environ=os.environ,
+            fsencode=os.fsencode,
+            getuid=lambda: 1000,
+            getgid=lambda: 1000,
+        )
+        with (
+            patch("yap_server.jobs.runtime.os", posix_runtime_os),
+            patch(
+                "yap_server.jobs.runtime.load_verified_asr_capability_catalog",
+                return_value=capabilities,
+            ),
+            patch(
+                "yap_server.jobs.runtime._configured_model_pools",
+                return_value=(
+                    (cohere_lock, Path("cohere-model")),
+                    (nemotron_lock, Path("nemotron-model")),
+                ),
+            ),
+            patch(
+                "yap_server.jobs.runtime._private_storage_directory",
+                return_value=storage_root,
+            ),
+            patch(
+                "yap_server.jobs.runtime.StorageRuntimeLease",
+                return_value=storage_lease,
+            ),
+            patch(
+                "yap_server.jobs.runtime.BatchCatalogRouter",
+                return_value=route_resolver,
+            ),
+            patch(
+                "yap_server.jobs.runtime.build_asr_worker_plan",
+                side_effect=(first_plan, RuntimeError("second provider failed")),
+            ),
+        ):
+            try:
+                with self.assertRaisesRegex(
+                    WorkerContainmentError,
+                    "provider worker startup cleanup could not be verified",
+                ):
+                    build_batch_runtime(
+                        {"YAP_BATCH_ASR_ENABLED": "1"},
+                        server_root=Path.cwd(),
+                    )
+
+                first_worker.close.assert_called_once_with()
+                self.assertTrue(storage_lease.retained)
+                self.assertEqual(storage_lease.close_calls, 0)
+                with self.assertRaisesRegex(ValueError, "already owned"):
+                    _RetainingTestStorageLease(storage_root)
+            finally:
+                storage_lease.release_for_test()
+
+    def test_startup_containment_failure_retires_service_and_retains_storage(
+        self,
+    ) -> None:
+        worker = _ClosableWorker()
+        worker_plan = AsrWorkerPlan(
+            worker=worker,
+            max_workers=1,
+            max_queued=0,
+            max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
+            startup_cleanup_verified=True,
+        )
+        storage_root = Path("private-storage")
+        storage_lease = _RetainingTestStorageLease(storage_root)
+        pool = MagicMock()
+        pool.shutdown.side_effect = WorkerContainmentError(
+            "synthetic startup cleanup failure"
+        )
+        service = MagicMock()
+        route_resolver = MagicMock()
+        route_resolver.supported_languages = ("en",)
+        posix_runtime_os = SimpleNamespace(
+            name="posix",
+            environ=os.environ,
+            fsencode=os.fsencode,
+            getuid=lambda: 1000,
+            getgid=lambda: 1000,
+        )
+        with (
+            patch("yap_server.jobs.runtime.os", posix_runtime_os),
+            patch(
+                "yap_server.jobs.runtime.load_verified_asr_capability_catalog",
+                return_value={"catalogRevision": TEST_ASR_CATALOG_REVISION},
+            ),
+            patch(
+                "yap_server.jobs.runtime._configured_model_pools",
+                return_value=((_test_lock(), Path("model")),),
+            ),
+            patch(
+                "yap_server.jobs.runtime._private_storage_directory",
+                return_value=storage_root,
+            ),
+            patch(
+                "yap_server.jobs.runtime.StorageRuntimeLease",
+                return_value=storage_lease,
+            ),
+            patch(
+                "yap_server.jobs.runtime.BatchCatalogRouter",
+                return_value=route_resolver,
+            ),
+            patch(
+                "yap_server.jobs.runtime._build_provider_worker_plans",
+                return_value={"cohere": worker_plan},
+            ),
+            patch(
+                "yap_server.jobs.runtime.BatchAsrPool",
+                return_value=pool,
+            ),
+            patch(
+                "yap_server.jobs.runtime.RecordingJobService",
+                return_value=service,
+            ),
+            patch(
+                "yap_server.jobs.runtime.build_language_detection_runtime",
+                side_effect=RuntimeError("later startup step failed"),
+            ),
+        ):
+            try:
+                with self.assertRaisesRegex(
+                    WorkerContainmentError,
+                    "startup cleanup could not be verified",
+                ):
+                    build_batch_runtime(
+                        {"YAP_BATCH_ASR_ENABLED": "1"},
+                        server_root=Path.cwd(),
+                    )
+
+                service.begin_runtime_shutdown.assert_called_once_with()
+                pool.shutdown.assert_called_once_with()
+                self.assertTrue(storage_lease.retained)
+                self.assertEqual(storage_lease.close_calls, 0)
+                with self.assertRaisesRegex(ValueError, "already owned"):
+                    _RetainingTestStorageLease(storage_root)
+            finally:
+                storage_lease.release_for_test()
 
     def test_runtime_rejects_orphaned_nemotron_lock(self) -> None:
         with self.assertRaisesRegex(ValueError, "NEMOTRON_MODEL_DIR"):
@@ -337,6 +587,8 @@ class RoutedBatchProcessorTests(unittest.TestCase):
             client=client_type.return_value,
         )
         worker_type.return_value.verify_ready.assert_called_once_with()
+        worker_type.return_value.verify_startup_idle.assert_called_once_with()
+        self.assertTrue(plan.startup_cleanup_verified)
         self.assertIs(plan.worker, worker_type.return_value)
         self.assertEqual(plan.max_workers, 8)
         self.assertEqual(plan.max_queued, 8)
@@ -490,6 +742,8 @@ class RoutedBatchProcessorTests(unittest.TestCase):
             client=client_type.return_value,
         )
         worker_type.return_value.verify_ready.assert_called_once_with()
+        worker_type.return_value.verify_startup_idle.assert_called_once_with()
+        self.assertTrue(plan.startup_cleanup_verified)
         self.assertIs(plan.worker, worker_type.return_value)
         self.assertEqual(plan.max_workers, 8)
         self.assertEqual(plan.max_queued, 8)

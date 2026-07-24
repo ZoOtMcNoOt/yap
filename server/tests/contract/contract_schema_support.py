@@ -284,6 +284,14 @@ def assert_schema_subset(
         if isinstance(pattern, str) and re.search(pattern, value) is None:
             raise AssertionError(f"{path}: value does not match {pattern!r}")
 
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        minimum = schema.get("minimum")
+        maximum = schema.get("maximum")
+        if isinstance(minimum, (int, float)) and value < minimum:
+            raise AssertionError(f"{path}: value {value} is below {minimum}")
+        if isinstance(maximum, (int, float)) and value > maximum:
+            raise AssertionError(f"{path}: value {value} exceeds {maximum}")
+
     if isinstance(value, dict):
         required = schema.get("required", [])
         missing = [name for name in required if name not in value]
@@ -322,15 +330,26 @@ def assert_schema_subset(
             if extras:
                 raise AssertionError(f"{path}: unexpected fields {extras!r}")
 
-    if isinstance(value, list) and "items" in schema:
-        for index, child in enumerate(value):
-            assert_schema_subset(
-                child,
-                schema["items"],
-                document_name=document_name,
-                documents=documents,
-                path=f"{path}[{index}]",
+    if isinstance(value, list):
+        minimum_items = schema.get("minItems")
+        maximum_items = schema.get("maxItems")
+        if isinstance(minimum_items, int) and len(value) < minimum_items:
+            raise AssertionError(
+                f"{path}: item count {len(value)} is below {minimum_items}"
             )
+        if isinstance(maximum_items, int) and len(value) > maximum_items:
+            raise AssertionError(
+                f"{path}: item count {len(value)} exceeds {maximum_items}"
+            )
+        if "items" in schema:
+            for index, child in enumerate(value):
+                assert_schema_subset(
+                    child,
+                    schema["items"],
+                    document_name=document_name,
+                    documents=documents,
+                    path=f"{path}[{index}]",
+                )
 
 
 def schema_property_names(value: Any) -> list[str]:

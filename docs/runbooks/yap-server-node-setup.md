@@ -1,6 +1,6 @@
 # Yap Server Node Setup Runbook
 
-Yap's team profile treats an NVIDIA GB-class server node as a private server tier, not a public service. The desktop stays thin: local Nemotron INT8 is the live/offline fallback. Phase 3 provides health reachability and durable queued-job ownership. Phase 4 adds one transient, server-internal Cohere batch reference worker. The gated Phase 5 path sends imported recordings through the durable loopback batch contract. It remains a development profile, not a public or persistent production service.
+Yap's team profile treats an NVIDIA GB-class server node as a private server tier, not a public service. The desktop stays thin: local Nemotron INT8 is the live/offline fallback. Phase 3 provides health reachability and durable queued-job ownership. Phase 4 adds one transient, server-internal Cohere batch reference worker. The gated Phase 5 path sends imported recordings through the durable loopback batch contract. Phase 6 adds bounded Cohere vLLM and Nemotron NeMo resident candidates behind the same job/result authority; exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed their lifecycle boundary inside the complete Phase 6 matrix. Neither candidate is promoted. This remains a development profile, not a public or persistent production service.
 
 The first supported node profile is DGX Spark GB10. A later GB300-class node should keep the same server contract and change only host-specific config: NIC names, CIDRs, GPU/runtime sizing, and deployment capacity.
 
@@ -473,13 +473,16 @@ and stayed within its frozen memory and allocation limits. The mixed long-window
 cell selected both 30 seconds and 15 minutes. Finalization and a separate read-
 back found no provider container, temporary network, runtime process, or listener
 on 18000/18001. Keep the raw suite, child evidence, logs, and samples private;
-only these bounded facts belong in repository status. This result closes the
-Phase 6 resident-provider candidate-safety component but does not install either
+only these bounded facts belong in repository status. This result closed the
+Phase 6 resident-provider candidate-safety component but did not install either
 service persistently or promote Cohere/NeMo over a later Tiron comparison.
+Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
+later repeated all 18 provider children inside the complete 30-child Phase 6
+matrix; its public-safe provider aggregate has SHA-256
+`6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
 
-Representative quality, current-host client Preview resource/lifecycle behavior,
-accessibility, and the other Phase 6 gates remain separate. Low-end physical
-client hardware certification remains a later release boundary. Provider cgroup evidence excludes the small host
+Representative provider quality and low-end physical client hardware
+certification remain later gates. Provider cgroup evidence excludes the small host
 proxy process group, while API wall latency includes it; whole-host CPU/RAM and
 persistent supervision remain Phase 10 evidence.
 
