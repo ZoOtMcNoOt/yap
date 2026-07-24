@@ -58,6 +58,8 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
             'YAP_LANGUAGE_DETECTION_TIMEOUT_SECONDS="$YAP_LANGUAGE_DETECTION_TIMEOUT_SECONDS"',
             'YAP_LANGUAGE_DETECTION_DOCKER_BINARY="$YAP_LANGUAGE_DETECTION_DOCKER_BINARY"',
             'YAP_LANGUAGE_DETECTION_WORKER_IMAGE="$YAP_LANGUAGE_DETECTION_WORKER_IMAGE"',
+            'YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT="$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT"',
+            'YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256="$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256"',
         ):
             self.assertIn(language_detection_setting, script)
         self.assertIn('storage_mode="$(stat -Lc \'%a\'', script)
@@ -100,6 +102,11 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
         self.assertIn('YAP_LANGUAGE_DETECTION_ENABLED:=0', script)
         self.assertIn('YAP_LANGUAGE_DETECTION_MODEL_DIR:?', script)
         self.assertIn('YAP_LANGUAGE_DETECTION_WORKER_IMAGE:?', script)
+        self.assertIn('YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT:?', script)
+        self.assertIn(
+            'YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256:?',
+            script,
+        )
         self.assertIn(
             "YAP_LANGUAGE_DETECTION_ENABLED must be 0 or 1",
             script,

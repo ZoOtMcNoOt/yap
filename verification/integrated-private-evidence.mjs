@@ -25,6 +25,11 @@ const PRIVATE_PLAN_KEYS = new Set([
   "gb10",
   "integrated",
 ]);
+const RUNTIME_PREPARATION_IDS = new Set([
+  "cohere-vllm",
+  "nemotron-nemo",
+  "language-detection",
+]);
 const GB10_CHILDREN = new Set([
   "nemo/active-capacity",
   "nemo/cancellation",
@@ -149,6 +154,44 @@ function requireRealDirectory(candidate, label) {
   );
 }
 
+function readRuntimePreparation(plan, runtime, expectedHead) {
+  const preparation = plan.gb10.runtimePreparation[runtime];
+  const receipt = readBoundedJsonArtifact(
+    preparation.receiptFile,
+    `${runtime} preparation receipt`,
+    INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
+  );
+  const value = receipt.value;
+  requireExactKeys(
+    value,
+    new Set([
+      "schemaVersion",
+      "checkedHead",
+      "runtime",
+      "dockerfileSha256",
+      "image",
+      "imageId",
+      "architecture",
+      "baseDigest",
+    ]),
+    `${runtime} preparation receipt`,
+  );
+  requireCondition(
+    value.schemaVersion === 1
+      && value.checkedHead === expectedHead
+      && value.runtime === runtime
+      && SHA256.test(value.dockerfileSha256 ?? "")
+      && typeof value.image === "string"
+      && value.image.endsWith(`:checked-head-${expectedHead}`)
+      && /^sha256:[0-9a-f]{64}$/.test(value.imageId ?? "")
+      && value.architecture === "arm64"
+      && /^sha256:[0-9a-f]{64}$/.test(value.baseDigest ?? "")
+      && sha256(receipt.bytes) === preparation.receiptSha256,
+    `${runtime} preparation receipt does not match the frozen plan.`,
+  );
+  return receipt;
+}
+
 export function validateIntegratedPrivateEvidencePlan(
   plan,
   { expectedHead, repositoryRoot, requireDestinationsAbsent = false },
@@ -166,9 +209,46 @@ export function validateIntegratedPrivateEvidencePlan(
   );
   requireExactKeys(
     plan.gb10,
-    new Set(["lifecycleEvidenceFile"]),
+    new Set(["lifecycleEvidenceFile", "runtimePreparation"]),
     "GB10 private plan",
   );
+  requireCondition(
+    plan.gb10.runtimePreparation
+      && typeof plan.gb10.runtimePreparation === "object"
+      && !Array.isArray(plan.gb10.runtimePreparation),
+    "Runtime preparation plan must be an object.",
+  );
+  requireExactKeys(
+    plan.gb10.runtimePreparation,
+    RUNTIME_PREPARATION_IDS,
+    "Runtime preparation plan",
+  );
+  for (const runtime of RUNTIME_PREPARATION_IDS) {
+    const preparation = plan.gb10.runtimePreparation[runtime];
+    requireCondition(
+      preparation && typeof preparation === "object" && !Array.isArray(preparation),
+      `${runtime} preparation plan must be an object.`,
+    );
+    requireExactKeys(
+      preparation,
+      new Set(["receiptFile", "receiptSha256"]),
+      `${runtime} preparation plan`,
+    );
+    requireCondition(
+      typeof preparation.receiptFile === "string",
+      `${runtime} preparation receipt must be a path.`,
+    );
+    requireOutsideRepository(
+      preparation.receiptFile,
+      repositoryRoot,
+      `${runtime} preparation receipt`,
+    );
+    requireCondition(
+      SHA256.test(preparation.receiptSha256 ?? ""),
+      `${runtime} preparation receipt identity is invalid.`,
+    );
+    readRuntimePreparation(plan, runtime, expectedHead);
+  }
   requireExactKeys(
     plan.integrated,
     new Set(["evidenceDirectory", "remoteCleanupLogFile", "teardownEvidenceFile"]),
@@ -324,6 +404,17 @@ function validateGb10Evidence(plan, expectedHead) {
     "GB10 lifecycle aggregate has an invalid duration-suite identity.",
   );
   requireCondition(
+    value.runtimeImages
+      && Object.keys(value.runtimeImages).length === 2
+      && ["cohere-vllm", "nemotron-nemo"].every((runtime) => {
+        const receipt = readRuntimePreparation(plan, runtime, expectedHead);
+        return value.runtimeImages[runtime]?.imageId === receipt.value.imageId
+          && value.runtimeImages[runtime]?.preparationReceiptSha256
+            === plan.gb10.runtimePreparation[runtime].receiptSha256;
+      }),
+    "GB10 lifecycle aggregate is not bound to the frozen runtime preparation.",
+  );
+  requireCondition(
     value.childEvidence
       && Object.keys(value.childEvidence).length === GB10_CHILDREN.size
       && Object.entries(value.childEvidence).every(
@@ -358,6 +449,25 @@ function validateIntegratedEvidence(plan, expectedHead) {
   const cleanupLines = cleanupLogText
     .split(/\r?\n/)
     .filter((line) => line.startsWith("REMOTE_GATE_CLEANUP="));
+  const runtimeMarkerLines = cleanupLogText
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith("REMOTE_RUNTIME_"));
+  const runtimeLines = Object.fromEntries(
+    runtimeMarkerLines.map((line) => {
+      const separator = line.indexOf("=");
+      return [line.slice(0, separator), line.slice(separator + 1)];
+    }),
+  );
+  const coherePreparation = readRuntimePreparation(
+    plan,
+    "cohere-vllm",
+    expectedHead,
+  );
+  const lidPreparation = readRuntimePreparation(
+    plan,
+    "language-detection",
+    expectedHead,
+  );
   requireCondition(
     context.value.schemaVersion === 1
       && context.value.checkedHead === expectedHead
@@ -368,7 +478,7 @@ function validateIntegratedEvidence(plan, expectedHead) {
     "Integrated gate context is invalid.",
   );
   requireCondition(
-    vertical.value.schemaVersion === 2
+    vertical.value.schemaVersion === 3
       && vertical.value.checkedHead === expectedHead
       && vertical.value.fixtureSha256 === context.value.fixtureSha256
       && vertical.value.clientRoute === "serverBatch"
@@ -380,8 +490,27 @@ function validateIntegratedEvidence(plan, expectedHead) {
       && vertical.value.tunnelRestoredState === "ready"
       && vertical.value.immutableJobSurvivedTunnelInterruption === true
       && vertical.value.historyOpenedVerifiedResult === true
+      && vertical.value.languagePreflightExecution?.componentId
+        === "ambernet-batch-language-preflight"
+      && vertical.value.languagePreflightExecution?.modelId
+        === "nvidia/nemo/langid_ambernet"
+      && vertical.value.languagePreflightExecution?.modelRevision === "1.12.0"
+      && vertical.value.languagePreflightExecution?.runtimePythonVersion === "3.12.13"
+      && vertical.value.languagePreflightExecution?.runtimeCpuOnly === true
+      && vertical.value.languagePreflightExecution?.policyRevision
+        === "ambernet-stratified-five-region-v1"
+      && vertical.value.languagePreflightExecution?.observationCount === 5
+      && ["manual", "suggestion"].includes(
+        vertical.value.languagePreflightExecution?.resultStatus,
+      )
+      && SHA256.test(
+        vertical.value.languagePreflightExecution?.requestIdSha256 ?? "",
+      )
+      && SHA256.test(
+        vertical.value.languagePreflightExecution?.sourcePcmSha256 ?? "",
+      )
       && vertical.value.status === "passed",
-    "Integrated desktop/private-server evidence did not pass.",
+    "Integrated desktop/private-server evidence did not prove ASR and LID execution.",
   );
   requireCondition(
     tunnelLedger.value.schemaVersion === 1
@@ -400,6 +529,19 @@ function validateIntegratedEvidence(plan, expectedHead) {
         && Date.parse(exitedAt) >= Date.parse(startedAt)
       )),
     "Integrated tunnel process ledger did not prove two retired owned forwards.",
+  );
+  requireCondition(
+    runtimeLines.REMOTE_RUNTIME_COHERE_VLLM_IMAGE_ID
+      === coherePreparation.value.imageId
+      && runtimeLines.REMOTE_RUNTIME_COHERE_VLLM_PREPARATION_RECEIPT_SHA256
+        === plan.gb10.runtimePreparation["cohere-vllm"].receiptSha256
+      && runtimeLines.REMOTE_RUNTIME_LANGUAGE_DETECTION_IMAGE_ID
+        === lidPreparation.value.imageId
+      && runtimeLines.REMOTE_RUNTIME_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256
+        === plan.gb10.runtimePreparation["language-detection"].receiptSha256
+      && runtimeMarkerLines.length === 4
+      && Object.keys(runtimeLines).length === 4,
+    "Integrated server runtime did not use the frozen prepared images.",
   );
   requireCondition(
     teardown.value.schemaVersion === 1

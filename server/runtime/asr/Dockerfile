@@ -39,6 +39,11 @@ RUN set -eu; \
     test "$check_output" = "triton-kernels 1.0.0+gitb7fa781f.nv26.6 requires pytest, which is not installed."; \
     rm -f /tmp/yap-asr-requirements.lock
 
+ARG YAP_CHECKED_HEAD
+LABEL org.opencontainers.image.revision="${YAP_CHECKED_HEAD}" \
+      com.mcnatg1.yap.base-platform-digest="sha256:dcae8df08ef61b019b8eb109113428cba4ef0e37484c6e722406150dd5ada759" \
+      com.mcnatg1.yap.runtime="reference-batch-asr"
+
 COPY model-pools.lock.json /opt/yap-server/model-pools.lock.json
 COPY model-pools.lock.json /opt/yap-server/model-locks/cohere-batch.json
 COPY nemotron-model-pool.lock.json /opt/yap-server/nemotron-model-pool.lock.json

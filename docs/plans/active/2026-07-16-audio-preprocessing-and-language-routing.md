@@ -20,16 +20,21 @@ Neither provider is promoted; the local automatic route remains default-off
 Preview behavior because its frozen natural-switch quality target failed. Final
 adversarial read-back subsequently found concrete merge blockers and invalidated
 `97b63be...` as merge authority. Its receipt remains historical evidence. The
-repaired implementation passed the focused three-agent remediation re-review;
-the first admitted replacement candidate
+current checked-runtime and containment repair passed one bounded final
+three-agent re-review; the first admitted replacement candidate
 `4b87e222c8ad7325a12a88709a52b5e9c1baf22e` then failed before provider
 startup because its checked builder forced an NGC registry lookup while the
 qualified GB10 was deliberately offline. The stopped target-client channel and
 both hosts cleaned up exactly; that SHA remains failed evidence and will not be
-retried or relabeled. The shared runtime-image builder now requires locally
-cached digest-pinned bases and disables pulls. One new candidate
-complete gate, hosted checks, review, and merge remain. The retired Triton
-experiment remains negative evidence.
+retried or relabeled. Runtime images are now prepared before admission from
+locally present digest-pinned bases and pinned dependencies and emit private
+receipts after a second clean-head check. The admitted gates verify each frozen
+receipt hash and perform inspection-only verification of the exact prepared
+ARM64 image ID, checked-head revision, base digest, and runtime identity. They
+launch and record that receipt-bound ID and cannot build, pull, reconnect, or
+substitute an image.
+One new candidate complete gate, hosted checks, review,
+and merge remain. The retired Triton experiment remains negative evidence.
 
 The isolated SpeechBrain component has a historical source-exact receipt at
 `04266c4bbffd0fd31eaf2afd0bcce42e0248344f`, but ADR 0026 supersedes that
@@ -1206,9 +1211,11 @@ tests pass; no resident model or frozen resource profile was run by this change.
 
 The resident-service lifecycle composition is executable and has now passed at
 one exact clean GB10 head. The wrapper verifies the two already-present model
-directories, builds exact-head ARM64 images, creates a temporary checked
-internal Docker bridge, runs each container without a Docker-published port or
-external egress, owns a bounded numeric-loopback proxy, and runs vLLM then NeMo sequentially. Typed startup
+directories, verifies already-prepared exact-head ARM64 images against frozen
+private preparation-receipt hashes,
+creates a temporary checked internal Docker bridge, runs each container without
+a Docker-published port or external egress, owns a bounded numeric-loopback
+proxy, and runs vLLM then NeMo sequentially. Typed startup
 unavailability may retry; wrong authentication, runtime version, model identity,
 or malformed readiness fails immediately. The wrapper consumes the plan-owned
 duration, candidate-safety load, cancellation, capacity, language-contract, and
@@ -1765,9 +1772,9 @@ bind the complete target-client, GB10, connected, accessibility, frontend,
 native, and portable Python 3.12 inventory. That post-gate documentation
 reconciliation identified the unchanged executable SHA. The later final
 adversarial read-back found concrete blockers, and subsequent executable repair
-invalidated `97b63be...` as merge authority. Focused three-agent remediation
-re-review passed; one replacement complete gate, hosted closure, review, and
-merge remain.
+invalidated `97b63be...` as merge authority. The current checked-runtime and
+containment repair passed one bounded final three-agent re-review; one
+replacement complete gate, hosted closure, review, and merge remain.
 
 The first admitted repaired candidate,
 `4b87e222c8ad7325a12a88709a52b5e9c1baf22e`, failed before any provider
@@ -1776,9 +1783,11 @@ lookup while the GB10 had no default route. The concurrent Windows channel was
 stopped, its partial recording evidence was removed under the private failed-run
 cleanup contract, and read-back found no retained listener, process, container,
 network, or model-load snapshot on either machine. The failed admission remains
-private negative evidence and cannot be retried. Checked runtime builds now
-resolve every external Dockerfile base, require an exact cached digest, and
-disable registry pulls; the same functional builder covers Cohere, Nemotron,
+private negative evidence and cannot be retried. Checked runtime-image
+preparation now resolves every external Dockerfile base, requires its exact
+local digest, and disables base-image pulls. Preparation may use the network for
+hash- or revision-pinned Dockerfile dependency steps and therefore occurs before
+admission. The same functional preparation owner covers Cohere, Nemotron,
 AmberNet LID, and the older reference batch worker.
 Focused offline preflight at
 `278aec7889277732a603e130426f916c529b3c8b` confirmed that Cohere no longer
@@ -1786,7 +1795,13 @@ contacted NGC, then showed Nemotron's checked-head label still invalidated its
 hash-locked dependency-install layer and caused a PyPI lookup. No complete gate
 was admitted. The runtime Dockerfiles now materialize network-dependent
 dependencies before applying candidate-only revision metadata so subsequent
-clean heads can reuse the frozen dependency layer offline.
+clean heads can reuse the pinned dependency layer. Preparation emits a private
+receipt only after a second clean-head check. The admitted gate has no build
+path: it verifies the frozen receipt hash, inspects the already-prepared
+exact-head image, and fails closed unless its immutable ID, architecture,
+revision label, Dockerfile-derived base digest, and runtime identity match the
+receipt. That receipt-bound ID is the only image passed to the launcher and is
+recorded in lifecycle evidence.
 
 - [x] Resolve focused correctness, security, privacy, license/provenance,
       maintainability, accessibility, and resource-bound findings.

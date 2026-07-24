@@ -18,9 +18,9 @@ exposes only gated Cohere `en-US` with `wordAlignment: false`; neither resident
 provider is promoted. The required final adversarial review then found concrete
 restart/cleanup, normative OpenAPI, hosted-closure, evidence-bound, and
 persisted-vocabulary defects. That SHA remains historical evidence but is no
-longer merge authority. The repaired implementation passed the focused
-three-agent remediation re-review; one new complete gate remains before hosted
-closure and merge.
+longer merge authority. The current checked-runtime and containment repair
+passed one bounded final three-agent re-review; one new complete gate remains
+before hosted closure and merge.
 **Authority:** ADRs define decisions; current code and executable tests define implementation truth.
 
 An ADR can be accepted while its implementation score is zero. Superseded ADRs remain in the table for historical completeness, but a low score on a superseded decision is not backlog authorization.

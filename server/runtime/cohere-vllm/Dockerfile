@@ -4,6 +4,8 @@ ARG YAP_CHECKED_HEAD
 LABEL org.opencontainers.image.title="Yap Cohere vLLM serving runtime" \
       org.opencontainers.image.source="https://github.com/mcnatg1/yap" \
       org.opencontainers.image.revision="${YAP_CHECKED_HEAD}" \
+      com.mcnatg1.yap.base-platform-digest="sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e" \
+      com.mcnatg1.yap.runtime="cohere-vllm" \
       org.opencontainers.image.licenses="LicenseRef-NVIDIA-AI AND Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause"
 
 ENV HF_HUB_OFFLINE=1 \

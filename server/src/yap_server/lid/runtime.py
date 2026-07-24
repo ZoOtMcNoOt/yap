@@ -6,11 +6,17 @@ import os
 from pathlib import Path
 import re
 import stat
+import subprocess
 from typing import Mapping
 
 from yap_server.config.runtime_environment import CHECKED_HEAD_ENV, DOCKER_BINARY_ENV
 from yap_server.language_tags import canonical_bcp47
-from yap_server.pools.batch_asr import inspect_worker_image
+from yap_server.pools.checked_runtime_image import (
+    CheckedRuntimeImageError,
+    assert_clean_checked_head,
+    runtime_image_contract,
+    verify_prepared_checked_image,
+)
 
 from .component_lock import (
     LidComponentLock,
@@ -18,7 +24,11 @@ from .component_lock import (
     verify_lid_model_artifacts,
     verify_lid_requirements,
 )
-from .container_runtime import ContainerLidWorker, reconcile_lid_containers
+from .container_runtime import (
+    ContainerLidWorker,
+    reconcile_lid_containers,
+    verify_lid_container_absent,
+)
 from .materialization import reconcile_stale_lid_requests
 from .preflight import LidPreflightEngine
 from .service import LidPreflightService
@@ -35,9 +45,14 @@ LANGUAGE_DETECTION_MODEL_DIR_ENV = "YAP_LANGUAGE_DETECTION_MODEL_DIR"
 LANGUAGE_DETECTION_TIMEOUT_SECONDS_ENV = "YAP_LANGUAGE_DETECTION_TIMEOUT_SECONDS"
 LANGUAGE_DETECTION_DOCKER_BINARY_ENV = "YAP_LANGUAGE_DETECTION_DOCKER_BINARY"
 LANGUAGE_DETECTION_WORKER_IMAGE_ENV = "YAP_LANGUAGE_DETECTION_WORKER_IMAGE"
+LANGUAGE_DETECTION_PREPARATION_RECEIPT_ENV = (
+    "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT"
+)
+LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256_ENV = (
+    "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256"
+)
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_BASE_PLATFORM_LABEL = "com.mcnatg1.yap.base-platform-digest"
 
 
 @dataclass(slots=True)
@@ -101,6 +116,7 @@ def build_language_detection_runtime(
         environ,
         lock=lock,
         docker_binary=docker_binary,
+        repository_root=repo,
     )
     checked_head = environ[CHECKED_HEAD_ENV].strip()
     reconcile_lid_containers(
@@ -108,7 +124,14 @@ def build_language_detection_runtime(
         storage_namespace=storage_namespace,
     )
     work_root = _private_work_root(storage_dir)
-    reconcile_stale_lid_requests(work_root)
+    reconcile_stale_lid_requests(
+        work_root,
+        retire_container_identities=True,
+        verify_container_absent=lambda container_id: verify_lid_container_absent(
+            docker_binary,
+            container_id,
+        ),
+    )
 
     worker = ContainerLidWorker(
         image=image,
@@ -150,6 +173,7 @@ def resolve_language_detection_worker_image(
     *,
     lock: LidComponentLock,
     docker_binary: str,
+    repository_root: Path,
 ) -> str:
     image = environ.get(LANGUAGE_DETECTION_WORKER_IMAGE_ENV, "").strip()
     checked_head = environ.get(CHECKED_HEAD_ENV, "").strip()
@@ -158,23 +182,56 @@ def resolve_language_detection_worker_image(
             f"{LANGUAGE_DETECTION_WORKER_IMAGE_ENV} and a full "
             f"{CHECKED_HEAD_ENV} are required"
         )
-    try:
-        inspected = inspect_worker_image(
-            image,
-            checked_head,
-            docker_binary=docker_binary,
+    receipt = environ.get(
+        LANGUAGE_DETECTION_PREPARATION_RECEIPT_ENV,
+        "",
+    ).strip()
+    receipt_sha256 = environ.get(
+        LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256_ENV,
+        "",
+    ).strip()
+    if not receipt or _SHA256.fullmatch(receipt_sha256) is None:
+        raise ValueError(
+            "language-detection preparation receipt and SHA-256 are required"
         )
-    except RuntimeError as error:
+
+    def run_command(
+        command: list[str],
+        **kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        actual = list(command)
+        if actual and actual[0] == "docker":
+            actual[0] = docker_binary
+        return subprocess.run(actual, **kwargs)  # type: ignore[arg-type]
+
+    try:
+        contract = runtime_image_contract(
+            repository_root,
+            "language-detection",
+            checked_head,
+        )
+        if contract.base_digest != lock.runtime.platform_digest:
+            raise CheckedRuntimeImageError(
+                "LID image base platform digest differs from its lock"
+            )
+        assert_clean_checked_head(
+            repository_root,
+            checked_head,
+            runner=run_command,
+        )
+        inspected = verify_prepared_checked_image(
+            contract,
+            receipt_path=Path(receipt),
+            receipt_sha256=receipt_sha256,
+            runner=run_command,
+        )
+    except (CheckedRuntimeImageError, OSError) as error:
         raise ValueError(str(error)) from None
-    image_id = inspected.get("id")
-    labels = inspected.get("labels")
-    if not isinstance(image_id, str):
-        raise ValueError("checked-head LID image inspection omitted its immutable ID")
-    if (
-        not isinstance(labels, dict)
-        or labels.get(_BASE_PLATFORM_LABEL) != lock.runtime.platform_digest
-    ):
-        raise ValueError("LID image base platform digest differs from its lock")
+    image_id = inspected["imageId"]
+    if image != image_id:
+        raise ValueError(
+            "LID worker image must be the receipt-bound immutable image ID"
+        )
     return image_id
 
 

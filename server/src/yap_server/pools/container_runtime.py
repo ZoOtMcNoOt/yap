@@ -16,7 +16,7 @@ from yap_server.pools.batch_contract import (
 MAX_WORKER_OUTPUT_BYTES = MAX_WORKER_RESULT_BYTES
 _PROCESS_READ_BYTES = 64 * 1024
 _CONTAINER_CLEANUP_TIMEOUT_SECONDS = 30
-_CONTAINER_ID = re.compile(r"^[0-9a-f]{12,64}$")
+_CONTAINER_ID = re.compile(r"^[0-9a-f]{64}$")
 CONTAINER_LABEL_VALUE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 OWNER_LABEL = "com.mcnatg1.yap.owner"
 OWNER_VALUE = "batch-asr"
@@ -76,6 +76,7 @@ def reconcile_owned_containers(
                 "ls",
                 "--all",
                 "--quiet",
+                "--no-trunc",
                 "--filter",
                 f"label={OWNER_LABEL}={owner_value}",
                 "--filter",

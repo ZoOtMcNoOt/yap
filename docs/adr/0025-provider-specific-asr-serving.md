@@ -72,13 +72,21 @@ specific behind that seam.
   environment, never committed or written to evidence.
 - Startup verifies the exact vLLM version, single served model identity, and all
   immutable model artifacts before admitting work.
-- Checked image builds resolve every external Dockerfile base, reject
-  non-digest references, require each exact digest in the local image store, and
-  disable registry pulls. Network-dependent build layers are provisioned before
-  the candidate is frozen; an offline gate never substitutes a tag or reconnects
-  to repair a missing cache. Candidate-only revision metadata is applied after
-  dependency materialization so a new checked head does not invalidate the
-  frozen runtime environment.
+- Checked image preparation happens before gate admission. It resolves every
+  external Dockerfile base, rejects non-digest references, requires each exact
+  digest in the local image store, and disables base-image pulls. Dockerfile
+  steps may use the network only during this pre-admission preparation to
+  materialize hash- or revision-pinned dependencies. Candidate-only revision
+  metadata is applied after dependency materialization so a new checked head
+  does not invalidate that layer.
+- The admitted gate never builds an image. It only inspects the already-prepared
+  exact-head tag against a private preparation receipt whose frozen SHA-256 is
+  an admission input. It requires ARM64 architecture, the exact checked-head
+  revision label, the Dockerfile-derived base digest label, the runtime-specific
+  identity label, and the receipt's immutable image ID. It passes that exact ID
+  through to the launcher and binds the ID and receipt hash into lifecycle
+  evidence. A missing or mismatched receipt or image fails closed; the gate
+  never substitutes a tag, pulls, reconnects, or invokes a Dockerfile step.
 - The launcher rejects root and runs the container as the invoking model-owner
   UID/GID so private host model directories do not need broader permissions.
 - Docker publishes no provider-container port. Each foreground launcher owns a
@@ -95,7 +103,11 @@ specific behind that seam.
   publication; the provider containers have no external egress through it. The
   launcher requires `socat`, `setsid`, `ss`, and `ps`, validates the exact
   loopback listener, and terminates the complete proxy process group before
-  returning.
+  returning. The proxy publishes its process-group identity in a private
+  per-run file before `exec`-ing `socat`. The lifecycle owner validates the
+  run-token environment on every surviving member and applies bounded
+  TERM/KILL cleanup, so an abnormal launcher exit cannot orphan the nested
+  proxy group or transfer cleanup to an unrelated PID.
 - The vLLM worker rejects punctuation-off requests because the pinned Cohere
   decoder currently fixes the `<|pnc|>` control token.
 - HTTP request bodies and responses are bounded. Cancellation explicitly shuts
@@ -427,8 +439,9 @@ cancellation, recovery, rollback, or promotion requirements below.
 
 The checked `resident-provider-lifecycle-gate.sh` now composes the frozen
 resident-service mechanics without merging the provider runtimes. It verifies
-already-present Cohere and Nemotron artifacts, builds exact-head ARM64 images,
-creates one temporary internal bridge, and runs vLLM and NeMo sequentially. For
+already-present Cohere and Nemotron artifacts, verifies already-prepared
+exact-head ARM64 images by inspection, creates one temporary internal bridge,
+and runs vLLM and NeMo sequentially. For
 each service it verifies absent Docker port publication, blocked external
 container reachability, the launcher-owned loopback proxy, exact-model
 readiness; the plan-owned duration,

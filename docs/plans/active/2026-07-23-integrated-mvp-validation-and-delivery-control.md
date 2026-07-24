@@ -50,6 +50,17 @@ complexity.
   tunnel interruption, verified durable preprocessing, completed the advertised
   Cohere `en-US` route, retired the job into History, opened the verified
   server-authoritative result, and left no owned local or remote runtime.
+- Final review invalidated `97b63be...` as merge authority. Admitted replacement
+  `4b87e222c8ad7325a12a88709a52b5e9c1baf22e` then failed before provider
+  startup because image construction forced a registry lookup across the
+  deliberately offline GB10 boundary. Exact cleanup passed; that SHA remains
+  failed private evidence and cannot be retried.
+- Runtime images are now prepared before admission from digest-pinned bases and
+  pinned dependencies and emit private receipts after a second clean-head
+  check. The admitted gates verify each frozen receipt hash, exact prepared
+  ARM64 image ID, checked-head revision, base digest, and runtime identity by
+  inspection, then launch and record that receipt-bound ID. They cannot build,
+  pull, reconnect, or substitute an image.
 - Tiron is a Phase 8 replacement candidate. Phase 6 will not run a broad Cohere
   quality, locale, long-duration, percentile, or rollback campaign.
 - The full Codex Security scan remains deferred to the private Phase 10 gate.

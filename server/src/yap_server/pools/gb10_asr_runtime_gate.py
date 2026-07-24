@@ -26,6 +26,7 @@ from yap_server.workload_router import WorkloadRequest, WorkloadRouter
 
 
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _GB10_DEVICE_NAME = "NVIDIA GB10"
 _GB10_COMPUTE_CAPABILITY = [12, 1]
 _GB10_DTYPE = "bfloat16"
@@ -48,6 +49,7 @@ def run_gb10_asr_runtime_gate(
     *,
     checked_head: str,
     image: str,
+    preparation_receipt_sha256: str,
     lock_path: Path,
     model_dir: Path,
     repo_root: Path,
@@ -57,6 +59,8 @@ def run_gb10_asr_runtime_gate(
 ) -> dict[str, object]:
     if not _GIT_SHA.fullmatch(checked_head):
         raise ValueError("checked head must be a full lowercase Git SHA")
+    if not _SHA256.fullmatch(preparation_receipt_sha256):
+        raise ValueError("preparation receipt SHA-256 is invalid")
     if not 0 <= max_wer <= 1:
         raise ValueError("max WER must be between zero and one")
 
@@ -163,6 +167,7 @@ def run_gb10_asr_runtime_gate(
         "phase": 4,
         "checkedHead": checked_head,
         "container": container,
+        "containerPreparationReceiptSha256": preparation_receipt_sha256,
         "model": model,
         "fixture": {
             "sha256": lock.fixture.sha256,
@@ -214,6 +219,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--checked-head", required=True)
     parser.add_argument("--image", required=True)
+    parser.add_argument("--preparation-receipt-sha256", required=True)
     parser.add_argument("--lock", required=True)
     parser.add_argument("--model-dir", required=True)
     parser.add_argument("--repo-root", required=True)
@@ -228,6 +234,7 @@ def main(argv: list[str] | None = None) -> int:
     evidence = run_gb10_asr_runtime_gate(
         checked_head=arguments.checked_head,
         image=arguments.image,
+        preparation_receipt_sha256=arguments.preparation_receipt_sha256,
         lock_path=Path(arguments.lock),
         model_dir=Path(arguments.model_dir),
         repo_root=Path(arguments.repo_root),

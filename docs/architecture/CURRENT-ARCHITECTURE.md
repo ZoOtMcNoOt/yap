@@ -8,13 +8,20 @@ provider-specific serving candidates. Exact executable candidate
 `97b63be46b05dffa21595f2fd081b8467bb95798` passed its frozen one-attempt
 30-child local/native/server/private-runtime matrix, but final adversarial
 review found executable and assurance blockers and invalidated that SHA as merge
-authority. Its receipt remains historical. The repaired implementation passed
-the focused three-agent remediation re-review. Its first admitted replacement,
+authority. Its receipt remains historical. The current checked-runtime and
+containment repair passed one bounded final three-agent re-review. Its first
+admitted replacement,
 `4b87e222c8ad7325a12a88709a52b5e9c1baf22e`, failed before provider startup
 when a forced registry pull met the intentionally offline GB10 boundary; exact
-cleanup passed and that SHA remains failed evidence. Checked runtime builds now
-require locally cached digest-pinned bases and disable pulls. One new complete
-gate remains. Hosted PR checks, review, and merge remain open. The
+cleanup passed and that SHA remains failed evidence. Runtime images are now
+prepared before admission from locally present digest-pinned bases and pinned
+dependencies. The admitted gates validate a frozen private preparation-receipt
+hash, inspect the exact prepared ARM64 image, and require its checked-head
+revision, base digest, runtime identity, and immutable image ID to match that
+receipt. They launch and record that exact ID; they cannot build, pull,
+reconnect, or substitute an image.
+One new complete gate remains. Hosted PR checks, review,
+and merge remain open. The
 [Voice OS architecture](../VOICE-OS-ARCHITECTURE.md) remains the first-class
 long-term frame; accepted future work is sequenced by the
 [roadmap](../roadmap/ROADMAP.md) and ADRs, not promoted into current-state

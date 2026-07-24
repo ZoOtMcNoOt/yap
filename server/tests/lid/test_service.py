@@ -11,8 +11,13 @@ from unittest.mock import patch
 
 from yap_server.lid import service as lid_service_module
 from yap_server.lid.component_lock import load_lid_component_lock
+from yap_server.lid.errors import (
+    LidPreflightContainmentError,
+    LidPreflightUnavailable,
+)
 from yap_server.lid.preflight import LidPreflightEngine
 from yap_server.lid.service import LidPreflightService
+from yap_server.pools.batch_contract import WorkerContainmentError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -61,6 +66,34 @@ class _Worker:
                 for probe in request.probes
             ],
         }
+
+
+class _ContainmentWorker(_Worker):
+    def run(
+        self,
+        request: object,
+        _request_root: Path,
+        cancellation: threading.Event | None = None,
+    ) -> dict[str, object]:
+        del request, cancellation
+        self.started.set()
+        raise WorkerContainmentError("container identity could not be verified")
+
+
+class _CancelledContainmentWorker(_Worker):
+    def run(
+        self,
+        request: object,
+        _request_root: Path,
+        cancellation: threading.Event | None = None,
+    ) -> dict[str, object]:
+        del request
+        self.started.set()
+        assert cancellation is not None
+        cancellation.set()
+        raise WorkerContainmentError(
+            "container cleanup failed after cancellation"
+        )
 
 
 class LidPreflightServiceTests(unittest.TestCase):
@@ -175,6 +208,90 @@ class LidPreflightServiceTests(unittest.TestCase):
             self.assertIn("cancel", str(failures[0]))
             self.assertEqual(list(root.iterdir()), [])
             service.close()
+
+    def test_container_containment_failure_fences_and_retains_recovery_state(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            service = self._service(root, _ContainmentWorker())
+
+            with self.assertRaisesRegex(
+                WorkerContainmentError,
+                "identity could not be verified",
+            ):
+                service.run_envelope(_envelope(self.lock, "job-containment"))
+
+            self.assertTrue(service.fenced)
+            retained = list(root.iterdir())
+            self.assertEqual(len(retained), 1)
+            self.assertEqual(retained[0].name, "lid-job-containment")
+            with self.assertRaisesRegex(
+                LidPreflightUnavailable,
+                "transient containment could not be verified",
+            ):
+                service.run_envelope(_envelope(self.lock, "job-after-fence"))
+            with self.assertRaisesRegex(
+                LidPreflightUnavailable,
+                "transient containment could not be verified",
+            ):
+                service.close()
+
+    def test_containment_failure_remains_observable_after_cancellation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            service = self._service(root, _CancelledContainmentWorker())
+
+            with self.assertRaisesRegex(
+                WorkerContainmentError,
+                "cleanup failed after cancellation",
+            ):
+                service.run_envelope(
+                    _envelope(self.lock, "job-cancel-containment")
+                )
+
+            self.assertTrue(service.fenced)
+            self.assertTrue(
+                (root / "lid-job-cancel-containment").is_dir()
+            )
+
+    def test_staging_cleanup_failure_fences_before_materialization_returns(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            service = self._service(root, _Worker())
+
+            def fail_staging(*_args: object, **kwargs: object) -> object:
+                destination = Path(kwargs["destination"])
+                destination.mkdir()
+                (destination / "retained.part").write_bytes(b"retained")
+                raise LidPreflightContainmentError(
+                    "private staging could not be removed"
+                )
+
+            with (
+                patch.object(
+                    lid_service_module,
+                    "materialize_lid_transport_request",
+                    side_effect=fail_staging,
+                ),
+                self.assertRaisesRegex(
+                    LidPreflightContainmentError,
+                    "staging could not be removed",
+                ),
+            ):
+                service.run_envelope(_envelope(self.lock, "job-staging-fence"))
+
+            self.assertTrue(service.fenced)
+            self.assertTrue((root / "lid-job-staging-fence").is_dir())
+            with self.assertRaisesRegex(
+                LidPreflightUnavailable,
+                "transient containment could not be verified",
+            ):
+                service.run_envelope(_envelope(self.lock, "job-after-staging"))
 
     def _service(self, root: Path, worker: _Worker) -> LidPreflightService:
         engine = LidPreflightEngine(

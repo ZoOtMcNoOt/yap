@@ -69,13 +69,18 @@ natural-switch quality target failed. Exact executable candidate
 local/native/server/private-runtime matrix, including the target-client,
 18-child resident-provider, and connected interruption/recovery channels. Final
 adversarial review then found concrete blockers and invalidated that SHA as
-merge authority. The historical receipt remains recorded. The repaired
-implementation passed the focused three-agent remediation re-review; one new
+merge authority. The historical receipt remains recorded. The current
+checked-runtime and containment repair passed one bounded final three-agent
+re-review; one new
 admitted candidate then failed before provider startup because its forced base
 pull crossed the deliberately offline GB10 boundary. Cleanup passed and that SHA
-will not be retried. The shared checked-image builder now requires cached
-digest-pinned bases and disables pulls. One new candidate complete gate, hosted
-checks, and review remain before merge.
+will not be retried. Exact runtime images are now prepared before admission from
+digest-pinned bases and pinned dependencies and emit private receipts after a
+second clean-head check. The admitted gate verifies each frozen receipt hash,
+then requires the already-prepared ARM64 image ID, checked-head revision, base
+digest, and runtime identity to match it. The receipt-bound ID is launched and
+recorded; the gate cannot build, pull, reconnect, or substitute an image. One new candidate
+complete gate, hosted checks, and review remain before merge.
 Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
 SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
 and SGLang services, production multi-worker/mixed-load capacity promotion, production

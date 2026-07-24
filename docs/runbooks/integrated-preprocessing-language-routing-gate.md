@@ -7,7 +7,7 @@ The authoritative child inventory is
 Its functional names describe the behavior under test rather than a roadmap
 phase number.
 
-## Last admitted result
+## Admitted history
 
 Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
 passed its sole admitted 30-child attempt on 2026-07-24. The manifest SHA-256 is
@@ -17,9 +17,26 @@ the independently validated candidate receipt SHA-256 is
 Final adversarial review then found executable restart/cleanup, normative
 OpenAPI, hosted-closure, evidence-bound, and persisted-vocabulary defects. That
 review explicitly invalidated `97b63be...` as merge authority; its receipt
-remains historical evidence and must not be relabeled. A repaired replacement
-implementation passed focused verification and the three-agent remediation
-re-review; one new admitted complete gate remains.
+remains historical evidence and must not be relabeled.
+
+The next admitted candidate,
+`4b87e222c8ad7325a12a88709a52b5e9c1baf22e`, failed before provider startup
+when its checked builder forced an NGC registry lookup across the deliberately
+offline GB10 boundary. The concurrent Windows channel was stopped and exact
+local/remote cleanup passed. That admission remains failed private evidence and
+must never be retried, resumed, or represented by the historical passing
+receipt. Runtime-image preparation now happens before gate admission. It
+requires every external base to be digest-pinned and locally present, disables
+base-image pulls, and preserves network-dependent dependency layers across
+candidate-only revision changes. Preparation may still use the network for
+hash- or revision-pinned Dockerfile steps. After preparation, the admitted
+gates verify each frozen private preparation-receipt hash, then perform
+inspection-only verification of the exact ARM64 image, checked-head revision,
+base digest, runtime identity, and receipt-bound immutable image ID. They launch
+and record that exact ID; they never build, pull, reconnect, or substitute an
+image.
+Focused route-less verification passed on the GB10; one
+new admitted complete gate remains.
 The private plan, command logs, audio, runtime evidence, and receipts remain
 outside Git.
 
@@ -75,7 +92,21 @@ exact shape:
     "preparedAudioSuiteSha256": "<frozen-suite-sha256>"
   },
   "gb10": {
-    "lifecycleEvidenceFile": "<new-absolute-private-json-file>"
+    "lifecycleEvidenceFile": "<new-absolute-private-json-file>",
+    "runtimePreparation": {
+      "cohere-vllm": {
+        "receiptFile": "<absolute-private-cohere-preparation-receipt>",
+        "receiptSha256": "<frozen-receipt-sha256>"
+      },
+      "nemotron-nemo": {
+        "receiptFile": "<absolute-private-nemotron-preparation-receipt>",
+        "receiptSha256": "<frozen-receipt-sha256>"
+      },
+      "language-detection": {
+        "receiptFile": "<absolute-private-lid-preparation-receipt>",
+        "receiptSha256": "<frozen-receipt-sha256>"
+      }
+    }
   },
   "integrated": {
     "evidenceDirectory": "<new-absolute-private-directory>",
@@ -84,6 +115,19 @@ exact shape:
   }
 }
 ```
+
+Create all three runtime-preparation receipts from the clean checked head before
+admission. Each receipt must be an existing bounded regular file outside the
+repository and must bind the exact runtime, Dockerfile hash, ARM64 image ID,
+base digest, and checked head. `begin` validates the receipt bytes against the
+listed SHA-256 values and freezes the complete private-plan hash.
+
+The plan validator runs on the Windows gate controller, so copy the exact
+receipt JSON bytes from the GB10 into the private Windows gate root and verify
+that each copied file has the same SHA-256 as its mode-0600 GB10 original. The
+plan points to those local byte-identical copies. The remote wrappers use the
+GB10 copies and the same frozen hashes; changing either copy invalidates the
+attempt.
 
 Admit the sole attempt from the clean frozen checkout:
 
@@ -96,8 +140,26 @@ node .\verification\integrated-gate-runner.mjs begin `
 
 Use the returned exact destinations for the unattended target-client channel,
 GB10 lifecycle aggregate, and connected desktop/private-server slice. Capture
-the remote server launch and cleanup in one private log. After the owned SSH
-and forwarding processes have exited, derive the connected teardown receipt:
+the remote server launch and cleanup in one private log. After
+`verify-prepared` returns the Cohere and language-detection immutable IDs and
+those exact IDs have been handed to the launchers, the remote wrapper must emit
+exactly one copy of each public-safe binding:
+
+```bash
+printf '%s\n' \
+  "REMOTE_RUNTIME_COHERE_VLLM_IMAGE_ID=$vllm_image" \
+  "REMOTE_RUNTIME_COHERE_VLLM_PREPARATION_RECEIPT_SHA256=$YAP_COHERE_VLLM_PREPARATION_RECEIPT_SHA256" \
+  "REMOTE_RUNTIME_LANGUAGE_DETECTION_IMAGE_ID=$lid_image" \
+  "REMOTE_RUNTIME_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256=$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256"
+```
+
+The final validator rejects missing, duplicate, stale, or mismatched marker
+lines and compares both IDs to the parsed frozen receipts. The connected cell
+also sends one bounded five-window request through `/v1/lid/preflight` and
+records the returned AmberNet component, policy, runtime, model, and five
+observations in `native-vertical-slice.json`. Configuration markers alone do
+not count as language-detection execution. After the owned SSH and forwarding
+processes have exited, derive the connected teardown receipt:
 
 ```powershell
 node .\verification\write-connected-server-teardown-receipt.mjs `

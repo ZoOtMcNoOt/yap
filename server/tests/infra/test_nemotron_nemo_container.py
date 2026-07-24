@@ -27,6 +27,7 @@ class NemotronNemoContainerContractTests(unittest.TestCase):
         lock = load_model_pool_lock(SERVING_LOCK)
 
         self.assertIn(f"{lock.runtime_image}@{lock.runtime_digest}", dockerfile)
+        self.assertIn('com.mcnatg1.yap.runtime="nemotron-nemo"', dockerfile)
         self.assertIn(f"ARG NEMO_REVISION={NEMO_REVISION}", dockerfile)
         self.assertIn('git -C /tmp/nemo-source rev-parse HEAD', dockerfile)
         self.assertIn('git -C /tmp/nemo-source config core.abbrev 9', dockerfile)

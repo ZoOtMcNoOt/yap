@@ -2,6 +2,8 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+# shellcheck source=owned-process-group.sh
+source "$script_dir/owned-process-group.sh"
 # shellcheck source=private-container-loopback-proxy.sh
 source "$script_dir/private-container-loopback-proxy.sh"
 
@@ -11,6 +13,8 @@ source "$script_dir/private-container-loopback-proxy.sh"
 : "${YAP_BATCH_JOB_STORAGE_DIR:?Set YAP_BATCH_JOB_STORAGE_DIR to the private job directory}"
 : "${YAP_NEMOTRON_NEMO_API_KEY:?Set the private resident NeMo API key}"
 : "${YAP_PRIVATE_INFERENCE_NETWORK:?Set the checked internal inference network}"
+: "${YAP_RUNTIME_OWNER_TOKEN:?Set the per-run container ownership token}"
+: "${YAP_PROXY_PROCESS_GROUP_FILE:?Set the private proxy process-group identity path}"
 : "${YAP_NEMOTRON_NEMO_PORT:=18001}"
 
 if [[ ! "$YAP_CHECKED_HEAD" =~ ^[0-9a-f]{40}$ ]]; then
@@ -58,28 +62,33 @@ if [[ ! "$YAP_PRIVATE_INFERENCE_NETWORK" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$ ]
   echo "YAP_PRIVATE_INFERENCE_NETWORK is invalid" >&2
   exit 2
 fi
+if [[ ! "$YAP_RUNTIME_OWNER_TOKEN" =~ ^[0-9a-f]{64}$ ]]; then
+  echo "YAP_RUNTIME_OWNER_TOKEN must be 32 random bytes in lowercase hex" >&2
+  exit 2
+fi
 network_identity="$(
   docker network inspect \
-    --format '{{.Internal}}|{{.Driver}}|{{index .Labels "io.yap.owner"}}|{{index .Labels "io.yap.revision"}}' \
+    --format '{{.Internal}}|{{.Driver}}|{{index .Labels "io.yap.owner"}}|{{index .Labels "io.yap.revision"}}|{{index .Labels "io.yap.run-token"}}' \
     "$YAP_PRIVATE_INFERENCE_NETWORK"
 )"
-IFS='|' read -r network_internal network_driver network_owner network_revision \
+IFS='|' read -r network_internal network_driver network_owner network_revision network_run_token \
   <<<"$network_identity"
 if [ "$network_internal" != "true" ] \
   || [ "$network_driver" != "bridge" ] \
   || [ "$network_owner" != "private-inference" ] \
-  || [ "$network_revision" != "$YAP_CHECKED_HEAD" ]; then
+  || [ "$network_revision" != "$YAP_CHECKED_HEAD" ] \
+  || [ "$network_run_token" != "$YAP_RUNTIME_OWNER_TOKEN" ]; then
   echo "YAP_PRIVATE_INFERENCE_NETWORK is not the checked internal network" >&2
   exit 2
 fi
 
-image_id="$(docker image inspect --format '{{.Id}}' "$YAP_NEMOTRON_NEMO_IMAGE")"
-architecture="$(docker image inspect --format '{{.Architecture}}' "$YAP_NEMOTRON_NEMO_IMAGE")"
-revision="$(
+image_identity="$(
   docker image inspect \
-    --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' \
+    --format '{{.Id}}|{{.Architecture}}|{{index .Config.Labels "org.opencontainers.image.revision"}}|{{index .Config.Labels "com.mcnatg1.yap.runtime"}}' \
     "$YAP_NEMOTRON_NEMO_IMAGE"
 )"
+IFS='|' read -r image_id architecture revision runtime_identity \
+  <<<"$image_identity"
 if [[ ! "$image_id" =~ ^sha256:[0-9a-f]{64}$ ]]; then
   echo "YAP_NEMOTRON_NEMO_IMAGE did not resolve to an immutable image ID" >&2
   exit 2
@@ -90,6 +99,10 @@ if [ "$architecture" != "arm64" ]; then
 fi
 if [ "$revision" != "$YAP_CHECKED_HEAD" ]; then
   echo "YAP_NEMOTRON_NEMO_IMAGE revision differs from YAP_CHECKED_HEAD" >&2
+  exit 2
+fi
+if [ "$runtime_identity" != "nemotron-nemo" ]; then
+  echo "YAP_NEMOTRON_NEMO_IMAGE runtime identity differs" >&2
   exit 2
 fi
 if docker container inspect yap-nemotron-nemo >/dev/null 2>&1; then
@@ -103,6 +116,8 @@ run_private_container_with_loopback_proxy \
   "$YAP_PRIVATE_INFERENCE_NETWORK" \
   "$YAP_NEMOTRON_NEMO_PORT" \
   8000 \
+  "$YAP_RUNTIME_OWNER_TOKEN" \
+  "$YAP_PROXY_PROCESS_GROUP_FILE" \
   -- \
   docker run \
   --detach \
@@ -110,6 +125,7 @@ run_private_container_with_loopback_proxy \
   --name yap-nemotron-nemo \
   --label io.yap.owner=private-inference \
   --label "io.yap.revision=$YAP_CHECKED_HEAD" \
+  --label "io.yap.run-token=$YAP_RUNTIME_OWNER_TOKEN" \
   --pull never \
   --network "$YAP_PRIVATE_INFERENCE_NETWORK" \
   --user "$run_as_uid:$run_as_gid" \

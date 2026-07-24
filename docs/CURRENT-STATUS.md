@@ -29,7 +29,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 4: private ASR node | Merged and gated | A bounded router/pool and transient isolated Cohere worker ran on GB10 using the pinned Python 3.12 / NVIDIA PyTorch 26.06 stack. This is reference-worker proof, not a production service. |
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
-| Phase 6: preprocessing | Focused repair review passed; replacement gate pending | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed its frozen 30-child local/native/server/private-runtime attempt, but the required final adversarial review found restart/cleanup, OpenAPI, hosted-closure, evidence-bound, and persisted-vocabulary defects and explicitly invalidated that SHA as merge authority. The receipt remains historical evidence. The repaired implementation passed focused verification and three-agent remediation re-review; one new complete gate remains before PR closure. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
+| Phase 6: preprocessing | Bounded final repair review passed; replacement gate pending | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed its frozen 30-child local/native/server/private-runtime attempt, but the required final adversarial review found restart/cleanup, OpenAPI, hosted-closure, evidence-bound, and persisted-vocabulary defects and explicitly invalidated that SHA as merge authority. Its receipt remains historical evidence. Admitted replacement `4b87e222c8ad7325a12a88709a52b5e9c1baf22e` failed before provider startup because its image build forced a registry lookup across the offline GB10 boundary; exact cleanup passed and that SHA cannot be retried. The current checked-runtime and containment repair passed one bounded final three-agent re-review. Runtime images are now prepared before admission and emit private receipts after a second clean-head check. Admitted gates verify the frozen receipt hashes, exact prepared ARM64 IDs, revisions, base digests, and runtime identities by inspection, launch those IDs, and bind them into evidence. One new complete gate remains before PR closure. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Phase 7: identity/access | Planned | Entra/MSAL, token-derived ownership, purpose grants, and authorization remain unimplemented. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
@@ -76,21 +76,24 @@ already-present model directories without starting a service. This closes input
 preparation only: no provider runtime cell, lifecycle wrapper, frozen gate, or
 promotion claim was consumed.
 
-The sequential resident-provider lifecycle wrapper has now published one complete
-exact-head GB10 aggregate after its earlier failed-closed runs. It verifies
-already-present models, builds
-both exact-head ARM64 images, launches each provider separately without a
-Docker-published port on a temporary internal bridge, owns a bounded host
-loopback proxy, verifies blocked container egress, and distinguishes transient
-startup from permanent
-identity/auth failures, runs the plan-owned duration/load/cancellation/capacity/
-resource cells, and publishes only after complete child evidence, clean
-launcher/proxy exit, and clean host teardown. Its private cache retains raw
-logs, samples, and snapshots outside
-Git. Exact candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed all 18
-candidate-safety children and exact host teardown. This closes the frozen
-resident-provider lifecycle component, not representative quality, provider
-promotion, or later production capacity.
+The historical sequential resident-provider lifecycle wrapper published one
+complete exact-head GB10 aggregate for candidate
+`97b63be46b05dffa21595f2fd081b8467bb95798`: all 18 then-current
+candidate-safety children and exact host teardown passed. Final review later
+invalidated that SHA as merge authority, so this receipt proves only the
+historical wrapper and remains outside Git with its raw logs, samples, and
+snapshots.
+
+The repaired wrapper has not yet published a replacement aggregate. It verifies
+already-present models and receipt-bound, already-prepared exact-head ARM64
+images; launches each provider by immutable image ID without a Docker-published
+port on a temporary internal bridge; durably owns the bounded loopback-proxy
+process-group identity; verifies blocked container egress; runs the plan-owned
+duration/load/cancellation/capacity/resource cells; and publishes only after
+complete child evidence plus clean launcher, proxy, container, network, and host
+teardown. Those behaviors remain implementation awaiting the one replacement
+gate, not evidence already earned by `97b63be...`. Representative quality,
+provider promotion, and later production capacity also remain open.
 
 The provider-qualification code now separates ordinary load, cancellation,
 capacity, and fixed/automatic-language semantics. vLLM cancellation evidence
@@ -378,6 +381,18 @@ evidence-bound, and persisted-vocabulary defects. Executable repairs therefore
 invalidated `97b63be...` as the merge candidate. Its hashes above remain a
 truthful historical receipt, not authority for the repaired head.
 
+Admitted replacement
+`4b87e222c8ad7325a12a88709a52b5e9c1baf22e` failed before provider startup
+when its checked image build forced a registry lookup across the deliberately
+offline GB10 boundary. The concurrent Windows channel was stopped and exact
+cleanup passed on both hosts. That attempt remains failed private evidence and
+cannot be retried, resumed, or represented by the historical passing receipt.
+Runtime-image preparation now occurs before admission and emits a private
+receipt only after a second clean-head check. The admitted gate verifies the
+frozen receipt hashes, inspects the already-prepared exact-head images, and
+fails closed on a missing or mismatched image ID, architecture, revision,
+base-digest identity, or runtime identity.
+
 ## Active next steps
 
 The living [decision and evidence queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
@@ -388,8 +403,8 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Finish focused verification and the three-agent remediation re-review of the
-   repaired diff, then freeze one clean replacement SHA.
+1. Freeze one clean replacement SHA from the focused-verified,
+   three-agent-reviewed checked-runtime repair.
 2. Run the complete replacement matrix once, keeping all private evidence
    outside Git and recording only bounded public-safe aggregates.
 3. Open the focused Phase 6 PR and require hosted CI/CodeQL and applicable

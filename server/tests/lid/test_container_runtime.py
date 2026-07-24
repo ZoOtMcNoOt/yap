@@ -14,13 +14,24 @@ from yap_server.lid.component_lock import load_lid_component_lock
 from yap_server.lid.container_runtime import (
     ContainerLidWorker,
     reconcile_lid_containers,
+    verify_lid_container_absent,
 )
 from yap_server.lid.worker_contract import load_lid_worker_request
+from yap_server.pools.batch_contract import WorkerContainmentError
+from yap_server.pools.container_runtime import (
+    JOB_LABEL,
+    OWNER_LABEL,
+    REVISION_LABEL,
+    RUNTIME_LABEL,
+    STORAGE_LABEL,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 LOCK_PATH = REPO_ROOT / "server" / "lid-component.lock.json"
 IMAGE = "yap-lid@sha256:" + "a" * 64
 HEAD = "b" * 40
+CONTAINER_ID = "c" * 64
+RUNTIME_ID = "lid-runtime-test-instance"
 
 
 class LidContainerRuntimeTests(unittest.TestCase):
@@ -42,6 +53,12 @@ class LidContainerRuntimeTests(unittest.TestCase):
             rendered = " ".join(command)
 
             self.assertIn("--pull never", rendered)
+            self.assertIn("--cidfile", command)
+            self.assertTrue(
+                command[command.index("--cidfile") + 1].endswith(
+                    ".yap-container-id"
+                )
+            )
             self.assertIn("--network none", rendered)
             self.assertIn("--read-only", command)
             self.assertIn("--cap-drop ALL", rendered)
@@ -99,20 +116,142 @@ class LidContainerRuntimeTests(unittest.TestCase):
             removals: list[tuple[str, str]] = []
 
             def execute(
-                *_args: object,
+                command: list[str],
                 **_kwargs: object,
             ) -> subprocess.CompletedProcess[str]:
+                Path(command[command.index("--cidfile") + 1]).write_text(
+                    CONTAINER_ID,
+                    encoding="utf-8",
+                )
                 raise RuntimeError("worker failed")
 
-            def remove(binary: str, name: str) -> None:
-                removals.append((binary, name))
+            def inspect(
+                command: list[str],
+                **_kwargs: object,
+            ) -> subprocess.CompletedProcess[str]:
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    json.dumps(_expected_labels(request.request_id)),
+                    "",
+                )
 
-            worker = _worker(model, process_runner=execute, container_remover=remove)
+            def remove(binary: str, container_id: str) -> None:
+                removals.append((binary, container_id))
+
+            worker = _worker(
+                model,
+                process_runner=execute,
+                cleanup_runner=inspect,
+                container_remover=remove,
+            )
             with self.assertRaisesRegex(RuntimeError, "worker failed"):
                 worker.run(request, request_root, cancellation=threading.Event())
-            self.assertEqual(len(removals), 1)
-            self.assertEqual(removals[0][0], "docker")
-            self.assertTrue(removals[0][1].startswith("yap-language-detection-"))
+            self.assertEqual(removals, [("docker", CONTAINER_ID)])
+            self.assertFalse((request_root / ".yap-container-id").exists())
+
+    def test_refuses_to_remove_a_container_when_immutable_labels_do_not_match(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            model = root / "model"
+            request_root = root / "request"
+            model.mkdir()
+            request_root.mkdir()
+            request = load_lid_worker_request(
+                _write_request(request_root, self.lock),
+                self.lock,
+            )
+            removals: list[tuple[str, str]] = []
+
+            def execute(
+                command: list[str],
+                **_kwargs: object,
+            ) -> subprocess.CompletedProcess[str]:
+                Path(command[command.index("--cidfile") + 1]).write_text(
+                    CONTAINER_ID,
+                    encoding="utf-8",
+                )
+                raise RuntimeError("worker failed")
+
+            def inspect(
+                command: list[str],
+                **_kwargs: object,
+            ) -> subprocess.CompletedProcess[str]:
+                labels = _expected_labels(request.request_id)
+                labels[RUNTIME_LABEL] = "foreign-runtime"
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    json.dumps(labels),
+                    "",
+                )
+
+            worker = _worker(
+                model,
+                process_runner=execute,
+                cleanup_runner=inspect,
+                container_remover=lambda binary, identity: removals.append(
+                    (binary, identity)
+                ),
+            )
+            with self.assertRaisesRegex(
+                WorkerContainmentError,
+                "ownership was invalid",
+            ):
+                worker.run(request, request_root)
+            self.assertEqual(removals, [])
+            self.assertEqual(
+                (request_root / ".yap-container-id").read_text(encoding="utf-8"),
+                CONTAINER_ID,
+            )
+
+    def test_runner_failure_without_a_container_identity_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            model = root / "model"
+            request_root = root / "request"
+            model.mkdir()
+            request_root.mkdir()
+            request = load_lid_worker_request(
+                _write_request(request_root, self.lock),
+                self.lock,
+            )
+
+            def execute(
+                _command: list[str],
+                **_kwargs: object,
+            ) -> subprocess.CompletedProcess[str]:
+                raise TimeoutError("docker client timed out")
+
+            with self.assertRaisesRegex(
+                WorkerContainmentError,
+                "identity was unavailable",
+            ):
+                _worker(model, process_runner=execute).run(request, request_root)
+
+    def test_rejects_a_preexisting_container_identity_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            model = root / "model"
+            request_root = root / "request"
+            model.mkdir()
+            request_root.mkdir()
+            request = load_lid_worker_request(
+                _write_request(request_root, self.lock),
+                self.lock,
+            )
+            (request_root / ".yap-container-id").write_text(
+                CONTAINER_ID,
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                WorkerContainmentError,
+                "identity file already exists",
+            ):
+                _worker(model).run(request, request_root)
 
     def test_requires_immutable_image_checked_head_and_nonroot_identity(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -163,6 +302,49 @@ class LidContainerRuntimeTests(unittest.TestCase):
             ["docker-test", "container", "rm", "--force", "c" * 64],
         )
 
+    def test_restart_requires_the_retained_exact_container_id_to_be_absent(
+        self,
+    ) -> None:
+        calls: list[list[str]] = []
+
+        def missing(
+            command: list[str],
+            **_kwargs: object,
+        ) -> subprocess.CompletedProcess[str]:
+            calls.append(command)
+            return subprocess.CompletedProcess(
+                command,
+                1,
+                "",
+                "Error: No such container",
+            )
+
+        verify_lid_container_absent(
+            "docker-test",
+            CONTAINER_ID,
+            runner=missing,
+        )
+        self.assertEqual(
+            calls,
+            [["docker-test", "container", "inspect", CONTAINER_ID]],
+        )
+
+        def present(
+            command: list[str],
+            **_kwargs: object,
+        ) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(command, 0, "{}", "")
+
+        with self.assertRaisesRegex(
+            WorkerContainmentError,
+            "still exists",
+        ):
+            verify_lid_container_absent(
+                "docker-test",
+                CONTAINER_ID,
+                runner=present,
+            )
+
 
 def _worker(model: Path, **overrides: object) -> ContainerLidWorker:
     values: dict[str, object] = {
@@ -173,9 +355,20 @@ def _worker(model: Path, **overrides: object) -> ContainerLidWorker:
         "run_as_gid": 10001,
         "checked_head": HEAD,
         "storage_namespace": "lid-test",
+        "runtime_instance_id": RUNTIME_ID,
     }
     values.update(overrides)
     return ContainerLidWorker(**values)
+
+
+def _expected_labels(request_id: str) -> dict[str, str]:
+    return {
+        OWNER_LABEL: "lid-preflight",
+        STORAGE_LABEL: "lid-test",
+        RUNTIME_LABEL: RUNTIME_ID,
+        JOB_LABEL: request_id,
+        REVISION_LABEL: HEAD,
+    }
 
 
 def _write_request(root: Path, _lock: object) -> Path:

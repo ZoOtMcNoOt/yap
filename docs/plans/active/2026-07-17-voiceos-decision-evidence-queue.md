@@ -756,8 +756,9 @@ The required final three-agent adversarial review then found concrete
 restart/cleanup, normative OpenAPI, hosted-closure, evidence-bound, and
 phase-derived persisted-vocabulary defects. Executable repair invalidated
 `97b63be...` as merge authority while preserving its receipt as historical
-evidence. Focused three-agent remediation re-review passed after the runtime,
-assurance, and architecture blockers were repaired. Final focused verification
+evidence. The current checked-runtime and containment repair passed one bounded
+final three-agent re-review after the runtime, assurance, and architecture
+blockers were repaired. Final focused verification
 ran 176 server tests with 174 passes and two expected Windows platform skips;
 all 14 release-contract checks passed. The replacement complete gate, hosted
 closure, PR review, and merge remain open.

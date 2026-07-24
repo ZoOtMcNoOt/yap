@@ -8,8 +8,8 @@ evidence). Exact executable candidate
 target-client and integrated safety matrix; automatic switching remains an
 explicit default-off Preview because its consumed natural-switch target failed.
 Final review invalidated that SHA as merge authority, so its receipt is
-historical. The repaired implementation passed the focused three-agent
-remediation re-review; one new complete gate remains.
+historical. The current checked-runtime and containment repair passed one
+bounded final three-agent re-review; one new complete gate remains.
 **Amends:** [ADR 0001](0001-dual-stt-backends.md), [ADR 0002](0002-crispasr-unified-stt-runtime.md), [ADR 0003](0003-long-term-voice-architecture.md), [ADR 0006](0006-silero-agents-state-machine.md), [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0018](0018-three-repo-topology.md)
 
 ## Context

@@ -84,6 +84,7 @@ class LanguageDetectionContainerContractTests(unittest.TestCase):
             'org.opencontainers.image.revision="${YAP_CHECKED_HEAD}"',
             dockerfile,
         )
+        self.assertIn('com.mcnatg1.yap.runtime="language-detection"', dockerfile)
         self.assertIn(
             'ENTRYPOINT ["python3", "-m", "yap_server.lid.worker"]',
             dockerfile,

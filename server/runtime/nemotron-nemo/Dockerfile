@@ -81,7 +81,9 @@ RUN set -eu; \
       /tmp/nemo_toolkit-3.1.0+ba2cd63ef-py3-none-any.whl
 
 ARG YAP_CHECKED_HEAD
-LABEL org.opencontainers.image.revision="${YAP_CHECKED_HEAD}"
+LABEL org.opencontainers.image.revision="${YAP_CHECKED_HEAD}" \
+      com.mcnatg1.yap.base-platform-digest="sha256:dcae8df08ef61b019b8eb109113428cba4ef0e37484c6e722406150dd5ada759" \
+      com.mcnatg1.yap.runtime="nemotron-nemo"
 
 COPY nemotron-nemo-serving.lock.json /opt/yap-server/model-locks/nemotron-batch.json
 COPY runtime/nemotron-nemo/cache-aware-streaming.yaml \

@@ -199,12 +199,26 @@ def finalize_resident_provider_lifecycle_evidence(
     after_dir: Path,
     provider_evidence_root: Path,
     checked_head: str,
+    vllm_image_id: str,
+    nemo_image_id: str,
+    vllm_preparation_receipt_sha256: str,
+    nemo_preparation_receipt_sha256: str,
     output_path: Path,
 ) -> dict[str, object]:
     """Validate every required child and publish only after clean teardown."""
 
     if _GIT_SHA.fullmatch(checked_head) is None:
         raise ValueError("checked head must be a full lowercase Git SHA")
+    runtime_images = {
+        "cohere-vllm": _runtime_image_evidence(
+            vllm_image_id,
+            vllm_preparation_receipt_sha256,
+        ),
+        "nemotron-nemo": _runtime_image_evidence(
+            nemo_image_id,
+            nemo_preparation_receipt_sha256,
+        ),
+    }
     host_boundary = _validate_host_boundary(before_dir, after_dir)
     children, duration_suite = _validate_child_evidence(
         provider_evidence_root,
@@ -215,6 +229,7 @@ def finalize_resident_provider_lifecycle_evidence(
         "checkedHead": checked_head,
         "hardwareProfile": "dgx-spark-gb10",
         "executionShape": "sequential-resident-providers",
+        "runtimeImages": runtime_images,
         "durationSuite": duration_suite,
         "hostBoundary": host_boundary,
         "childEvidence": children,
@@ -224,6 +239,20 @@ def finalize_resident_provider_lifecycle_evidence(
     _validate_new_output(output_path)
     write_private_evidence(output_path, evidence)
     return evidence
+
+
+def _runtime_image_evidence(
+    image_id: str,
+    preparation_receipt_sha256: str,
+) -> dict[str, str]:
+    if re.fullmatch(r"sha256:[0-9a-f]{64}", image_id) is None:
+        raise ValueError("resident provider runtime image ID is invalid")
+    if _SHA256.fullmatch(preparation_receipt_sha256) is None:
+        raise ValueError("resident provider preparation receipt SHA-256 is invalid")
+    return {
+        "imageId": image_id,
+        "preparationReceiptSha256": preparation_receipt_sha256,
+    }
 
 
 def _validate_host_boundary(before_dir: Path, after_dir: Path) -> dict[str, object]:
@@ -471,6 +500,10 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--after", type=Path, required=True)
     parser.add_argument("--provider-evidence-root", type=Path, required=True)
     parser.add_argument("--checked-head", required=True)
+    parser.add_argument("--vllm-image-id", required=True)
+    parser.add_argument("--nemo-image-id", required=True)
+    parser.add_argument("--vllm-preparation-receipt-sha256", required=True)
+    parser.add_argument("--nemo-preparation-receipt-sha256", required=True)
     parser.add_argument("--output", type=Path, required=True)
     return parser
 
@@ -482,6 +515,14 @@ def main(argv: list[str] | None = None) -> int:
         after_dir=arguments.after,
         provider_evidence_root=arguments.provider_evidence_root,
         checked_head=arguments.checked_head,
+        vllm_image_id=arguments.vllm_image_id,
+        nemo_image_id=arguments.nemo_image_id,
+        vllm_preparation_receipt_sha256=(
+            arguments.vllm_preparation_receipt_sha256
+        ),
+        nemo_preparation_receipt_sha256=(
+            arguments.nemo_preparation_receipt_sha256
+        ),
         output_path=arguments.output,
     )
     print(json.dumps(evidence, ensure_ascii=True, separators=(",", ":"), sort_keys=True))

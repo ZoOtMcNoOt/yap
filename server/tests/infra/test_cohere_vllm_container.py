@@ -51,6 +51,7 @@ class CohereVllmContainerContractTests(unittest.TestCase):
         self.assertIn(
             'm.version("vllm") == "0.22.1+7b9cb5b7.nv26.6.55915567"', dockerfile
         )
+        self.assertIn('com.mcnatg1.yap.runtime="cohere-vllm"', dockerfile)
         self.assertNotIn("pip install", dockerfile)
         self.assertNotIn("tritonserver", dockerfile)
         self.assertNotIn("sglang", dockerfile.lower())

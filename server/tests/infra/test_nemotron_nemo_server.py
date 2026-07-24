@@ -21,7 +21,11 @@ class NemotronNemoServerContractTests(unittest.TestCase):
             "YAP_BATCH_JOB_STORAGE_DIR:?",
             "YAP_NEMOTRON_NEMO_API_KEY:?",
             "YAP_PRIVATE_INFERENCE_NETWORK:?",
+            "YAP_RUNTIME_OWNER_TOKEN:?",
+            "YAP_PROXY_PROCESS_GROUP_FILE:?",
             "org.opencontainers.image.revision",
+            "com.mcnatg1.yap.runtime",
+            'runtime_identity" != "nemotron-nemo"',
             'architecture" != "arm64"',
             'run_as_uid="$(id -u)"',
             'run_as_gid="$(id -g)"',
@@ -30,6 +34,7 @@ class NemotronNemoServerContractTests(unittest.TestCase):
             "private-container-loopback-proxy.sh",
             "run_private_container_with_loopback_proxy",
             '"$YAP_NEMOTRON_NEMO_PORT"',
+            '"$YAP_PROXY_PROCESS_GROUP_FILE"',
             "--env YAP_NEMOTRON_NEMO_API_KEY",
             "export YAP_NEMOTRON_NEMO_API_KEY",
             "--pull never",
@@ -62,6 +67,9 @@ class NemotronNemoServerContractTests(unittest.TestCase):
         self.assertIn('network_internal" != "true"', script)
         self.assertIn("io.yap.owner", script)
         self.assertIn("io.yap.revision", script)
+        self.assertIn("io.yap.run-token", script)
+        self.assertIn('network_run_token" != "$YAP_RUNTIME_OWNER_TOKEN"', script)
+        self.assertIn("YAP_RUNTIME_OWNER_TOKEN must be", script)
 
     def test_api_key_is_only_inherited_through_process_environment(self) -> None:
         script = SERVER_LAUNCH.read_text(encoding="utf-8")

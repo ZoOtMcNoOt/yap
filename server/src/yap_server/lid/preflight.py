@@ -5,6 +5,8 @@ from pathlib import Path
 import threading
 from typing import Any, Protocol
 
+from yap_server.pools.batch_contract import WorkerContainmentError
+
 from .component_lock import LidComponentLock
 from .errors import LidPreflightCancelled, LidPreflightConflict
 from .materialization import (
@@ -102,6 +104,8 @@ class LidPreflightEngine:
                         materialized.root,
                         cancellation=cancelled,
                     )
+                except WorkerContainmentError:
+                    raise
                 except Exception as error:
                     if self._shutdown.is_set() or cancelled.is_set():
                         raise LidPreflightCancelled(

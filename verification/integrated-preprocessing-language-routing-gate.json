@@ -245,7 +245,7 @@
     {
       "id": "integrated.desktop-private-server",
       "executor": "private-receipt",
-      "receiptContract": "desktop-private-server-asr-v2"
+      "receiptContract": "desktop-private-server-asr-v3"
     },
     {
       "id": "integrated.tunnel-interruption-recovery",

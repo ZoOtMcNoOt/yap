@@ -11,7 +11,10 @@ import re
 import stat
 import wave
 
+from yap_server.bounded_file import read_regular_text
+
 from .component_lock import LidComponentLock
+from .errors import LidPreflightContainmentError
 from .policy import LidProbeSelection, LidProbeWindow
 from .worker_contract import LidWorkerRequest, load_lid_worker_request
 
@@ -22,6 +25,9 @@ _MAX_SOURCE_SAMPLES = 16_000 * 4 * 60 * 60
 _MAX_WAV_OVERHEAD_BYTES = 64 * 1024
 _REQUEST_FILE_NAME = "request.json"
 _REQUEST_STAGING_FILE_NAME = ".request.json.part"
+_CONTAINER_ID_FILE_NAME = ".yap-container-id"
+_CONTAINER_ID = re.compile(r"^[0-9a-f]{64}$")
+_MAX_CONTAINER_ID_BYTES = 128
 _ALLOWED_ARTIFACTS = frozenset(
     {
         _REQUEST_FILE_NAME,
@@ -209,7 +215,7 @@ def materialize_lid_pcm_request(
                 expected_inode=owned.st_ino,
             )
         except Exception as cleanup_error:
-            raise RuntimeError(
+            raise LidPreflightContainmentError(
                 "LID request failed and its private staging could not be removed"
             ) from cleanup_error
         raise
@@ -227,7 +233,12 @@ def remove_materialized_lid_request(request: LidMaterializedRequest) -> None:
     )
 
 
-def reconcile_stale_lid_requests(work_root: Path) -> int:
+def reconcile_stale_lid_requests(
+    work_root: Path,
+    *,
+    retire_container_identities: bool = False,
+    verify_container_absent: Callable[[str], None] | None = None,
+) -> int:
     """Remove only exact transient directories left by an interrupted runtime."""
 
     root = Path(work_root)
@@ -252,6 +263,8 @@ def reconcile_stale_lid_requests(work_root: Path) -> int:
             child,
             expected_device=child_metadata.st_dev,
             expected_inode=child_metadata.st_ino,
+            retire_container_identity=retire_container_identities,
+            verify_container_absent=verify_container_absent,
         )
         removed += 1
 
@@ -407,6 +420,8 @@ def _remove_owned_directory(
     *,
     expected_device: int,
     expected_inode: int,
+    retire_container_identity: bool = False,
+    verify_container_absent: Callable[[str], None] | None = None,
 ) -> None:
     metadata = path.lstat()
     if (
@@ -416,13 +431,42 @@ def _remove_owned_directory(
     ):
         raise RuntimeError("private LID request directory changed before cleanup")
     for child in path.iterdir():
-        if child.name not in _ALLOWED_ARTIFACTS:
+        is_recovery_identity = (
+            retire_container_identity
+            and child.name == _CONTAINER_ID_FILE_NAME
+        )
+        if child.name not in _ALLOWED_ARTIFACTS and not is_recovery_identity:
             raise RuntimeError("private LID request contains an unexpected artifact")
         child_metadata = child.lstat()
         if _is_link_or_reparse(child_metadata) or not stat.S_ISREG(
             child_metadata.st_mode
         ):
             raise RuntimeError("private LID request artifact changed before cleanup")
+        if is_recovery_identity:
+            if child_metadata.st_size > _MAX_CONTAINER_ID_BYTES:
+                raise RuntimeError("private LID container identity is invalid")
+            try:
+                identity = read_regular_text(child, _MAX_CONTAINER_ID_BYTES)
+            except ValueError as error:
+                raise RuntimeError(
+                    "private LID container identity is invalid"
+                ) from error
+            after = child.lstat()
+            if (
+                _is_link_or_reparse(after)
+                or not stat.S_ISREG(after.st_mode)
+                or (after.st_dev, after.st_ino)
+                != (child_metadata.st_dev, child_metadata.st_ino)
+            ):
+                raise RuntimeError("private LID container identity is invalid")
+            if child_metadata.st_size != 0:
+                if _CONTAINER_ID.fullmatch(identity) is None:
+                    raise RuntimeError("private LID container identity is invalid")
+                if verify_container_absent is None:
+                    raise RuntimeError(
+                        "private LID container absence was not verified"
+                    )
+                verify_container_absent(identity)
         child.unlink()
     path.rmdir()
 

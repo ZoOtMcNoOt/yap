@@ -47,6 +47,7 @@ class Gb10AsrRuntimeContractTests(unittest.TestCase):
         expected = lock["runtime"]["image"] + "@" + lock["runtime"]["digest"]
 
         self.assertIn(f"FROM {expected}", dockerfile)
+        self.assertIn('com.mcnatg1.yap.runtime="reference-batch-asr"', dockerfile)
         self.assertNotIn(":latest", dockerfile)
         self.assertEqual(lock["runtime"]["sourceTag"], "26.06-py3")
         self.assertEqual(lock["runtime"]["pythonVersion"], "3.12")
@@ -130,7 +131,21 @@ class Gb10AsrRuntimeContractTests(unittest.TestCase):
 
     def test_gate_observes_host_boundary_and_publishes_only_after_teardown(self) -> None:
         script = GATE.read_text(encoding="utf-8")
-        self.assertIn("build-checked-runtime-image.sh", script)
+        self.assertIn("yap_server.pools.checked_runtime_image", script)
+        self.assertIn(
+            'verify-prepared reference-batch-asr "$YAP_CHECKED_HEAD"',
+            script,
+        )
+        self.assertIn("YAP_GB10_ASR_PREPARATION_RECEIPT:?", script)
+        self.assertIn("YAP_GB10_ASR_PREPARATION_RECEIPT_SHA256:?", script)
+        self.assertIn("--preparation-receipt-sha256", script)
+        self.assertIn("--verify-only", script)
+        self.assertIn('image="$(', script)
+        self.assertIn('>"$gate_tmp/checked-runtime-image-id.txt"', script)
+        self.assertNotIn(
+            'image="yap-gb10-asr:checked-head-$YAP_CHECKED_HEAD"',
+            script,
+        )
         self.assertIn("reference-batch-asr", script)
         self.assertNotIn("\n  --pull \\", script)
         self.assertIn("gb10_asr_runtime_gate", script)
@@ -157,7 +172,7 @@ class Gb10AsrRuntimeContractTests(unittest.TestCase):
         self.assertIn('if [ -e "$YAP_GB10_ASR_EVIDENCE_DIR" ]', script)
         self.assertLess(
             script.index('capture_host_boundary "$gate_tmp/before"'),
-            script.index("build-checked-runtime-image.sh"),
+            script.index("yap_server.pools.checked_runtime_image"),
         )
         self.assertLess(
             script.index("gb10_asr_runtime_gate"),

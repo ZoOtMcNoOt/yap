@@ -16,6 +16,10 @@ from yap_server.evaluation.resident_provider_lifecycle_evidence import (
 CHECKED_HEAD = "a" * 40
 SUITE_SHA256 = "b" * 64
 PLAN_SHA256 = "c" * 64
+VLLM_IMAGE_ID = "sha256:" + "d" * 64
+NEMO_IMAGE_ID = "sha256:" + "e" * 64
+VLLM_PREPARATION_RECEIPT_SHA256 = "f" * 64
+NEMO_PREPARATION_RECEIPT_SHA256 = "9" * 64
 FINALIZED_DURATION_SAMPLES = [
     4_000,
     8_000,
@@ -186,6 +190,14 @@ class ResidentProviderLifecycleEvidenceTests(unittest.TestCase):
                 after_dir=after,
                 provider_evidence_root=evidence_root,
                 checked_head=CHECKED_HEAD,
+                vllm_image_id=VLLM_IMAGE_ID,
+                nemo_image_id=NEMO_IMAGE_ID,
+                vllm_preparation_receipt_sha256=(
+                    VLLM_PREPARATION_RECEIPT_SHA256
+                ),
+                nemo_preparation_receipt_sha256=(
+                    NEMO_PREPARATION_RECEIPT_SHA256
+                ),
                 output_path=output,
             )
 
@@ -200,6 +212,23 @@ class ResidentProviderLifecycleEvidenceTests(unittest.TestCase):
             self.assertEqual(
                 evidence["durationSuite"],
                 {"sha256": SUITE_SHA256, "planSha256": PLAN_SHA256},
+            )
+            self.assertEqual(
+                evidence["runtimeImages"],
+                {
+                    "cohere-vllm": {
+                        "imageId": VLLM_IMAGE_ID,
+                        "preparationReceiptSha256": (
+                            VLLM_PREPARATION_RECEIPT_SHA256
+                        ),
+                    },
+                    "nemotron-nemo": {
+                        "imageId": NEMO_IMAGE_ID,
+                        "preparationReceiptSha256": (
+                            NEMO_PREPARATION_RECEIPT_SHA256
+                        ),
+                    },
+                },
             )
             self.assertEqual(
                 json.loads(output.read_text(encoding="utf-8")),
@@ -268,6 +297,14 @@ class ResidentProviderLifecycleEvidenceTests(unittest.TestCase):
                         after_dir=after,
                         provider_evidence_root=evidence_root,
                         checked_head=CHECKED_HEAD,
+                        vllm_image_id=VLLM_IMAGE_ID,
+                        nemo_image_id=NEMO_IMAGE_ID,
+                        vllm_preparation_receipt_sha256=(
+                            VLLM_PREPARATION_RECEIPT_SHA256
+                        ),
+                        nemo_preparation_receipt_sha256=(
+                            NEMO_PREPARATION_RECEIPT_SHA256
+                        ),
                         output_path=root / "lifecycle-evidence.json",
                     )
 
@@ -305,6 +342,14 @@ class ResidentProviderLifecycleEvidenceTests(unittest.TestCase):
                         after_dir=after,
                         provider_evidence_root=evidence_root,
                         checked_head=CHECKED_HEAD,
+                        vllm_image_id=VLLM_IMAGE_ID,
+                        nemo_image_id=NEMO_IMAGE_ID,
+                        vllm_preparation_receipt_sha256=(
+                            VLLM_PREPARATION_RECEIPT_SHA256
+                        ),
+                        nemo_preparation_receipt_sha256=(
+                            NEMO_PREPARATION_RECEIPT_SHA256
+                        ),
                         output_path=root / "lifecycle-evidence.json",
                     )
 

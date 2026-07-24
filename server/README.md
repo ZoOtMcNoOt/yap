@@ -125,9 +125,13 @@ endpoint, and private API key. The vLLM launcher inspects the exact ARM64 image
 ID and revision label, requires a checked internal Docker bridge, runs the
 container without a Docker-published port, and owns a bounded `socat` process
 group that forwards only `127.0.0.1:18000` to the container-private address.
+Each launcher requires a private `YAP_PROXY_PROCESS_GROUP_FILE`; the proxy
+publishes its group identity there until verified teardown so the lifecycle
+owner can recover it after an abnormal launcher exit.
 The same foreground launcher can enable the verified AmberNet language
-preflight by passing `YAP_LANGUAGE_DETECTION_ENABLED=1`, the private
-verify-only model directory, and an exact-head `server/runtime/lid` image.
+preflight by passing `YAP_LANGUAGE_DETECTION_ENABLED=1`, the private verify-only
+model directory, the receipt-bound raw `server/runtime/lid` image ID, and the
+private preparation-receipt path plus its frozen SHA-256.
 When those inputs are absent, the server does not advertise
 `languagePreflight`; clients then retain the recording for explicit language
 review instead of silently bypassing the unavailable check.
@@ -274,9 +278,11 @@ because unified-memory residency may oscillate, but it is not mislabeled as
 `resident-provider-lifecycle-gate.sh` is the checked GB10 composition for these
 provider-owned cells. It requires one clean full SHA, a dedicated private cache,
 the provider duration suite plus its separately supplied digest, two already
-verified model directories, and separate in-memory API keys. It builds and
-launches the two
-checked images sequentially on a temporary internal Docker bridge, verifies no
+verified model directories, two already-prepared exact-head ARM64 images with
+frozen private preparation-receipt hashes, and separate in-memory API keys. It
+verifies those receipts and exact image IDs by inspection, binds them into
+lifecycle evidence, and launches them sequentially on a temporary internal
+Docker bridge, verifies no
 Docker-published port and blocked container egress, owns each loopback proxy,
 retries only typed transient startup unavailability, and fails immediately on
 wrong auth, runtime, or model identity. The wrapper runs the exact duration, standard,
@@ -352,17 +358,30 @@ The clean-head GB10 gate is run from the private node, not from normal local or
 hosted CI:
 
 ```bash
+umask 077
+export YAP_GB10_ASR_PREPARATION_RECEIPT=/path/to/private/runtime-preparation/reference-<full-git-sha>.json
+PYTHONPATH="$PWD/server/src" \
+  python3.12 -m yap_server.pools.checked_runtime_image \
+    prepare reference-batch-asr <full-git-sha> \
+    >"$YAP_GB10_ASR_PREPARATION_RECEIPT"
+export YAP_GB10_ASR_PREPARATION_RECEIPT_SHA256="$(
+  sha256sum "$YAP_GB10_ASR_PREPARATION_RECEIPT" | awk '{print $1}'
+)"
+# Remove any temporary build proxy and restore the qualified network boundary.
 YAP_CHECKED_HEAD=<full-git-sha> \
 YAP_GB10_ASR_MODEL_DIR=<private-model-directory> \
 YAP_GB10_ASR_EVIDENCE_DIR=<private-evidence-directory> \
 bash infra/yap-server-node/gb10-asr-runtime-gate.sh
 ```
 
-The gate builds and runs a transient container only. It does not install a
-service, publish a port, or change the host firewall. Raw host snapshots exist
-only in its temporary directory; final evidence stores hashes and observed
-facts, not listener or firewall details. Its checked-head evidence directory
-must be new and is never overwritten or silently reused.
+Preparation happens before gate admission and emits a private receipt only
+after a second clean-head check. The gate verifies that receipt's frozen hash,
+rejects any different image ID, and runs the receipt-bound immutable image as a
+transient container only; it cannot build or pull.
+It does not install a service, publish a port, or change the host firewall. Raw
+host snapshots exist only in its temporary directory; final evidence stores
+hashes and observed facts, not listener or firewall details. Its checked-head
+evidence directory must be new and is never overwritten or silently reused.
 
 ## Run the Phase 3 health service
 

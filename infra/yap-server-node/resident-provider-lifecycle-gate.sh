@@ -3,6 +3,8 @@ set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "$script_dir/../.." && pwd)"
+# shellcheck source=owned-process-group.sh
+source "$script_dir/owned-process-group.sh"
 
 : "${YAP_CHECKED_HEAD:?Set YAP_CHECKED_HEAD to the exact 40-character candidate SHA}"
 : "${YAP_EVAL_CACHE:?Set YAP_EVAL_CACHE to the private mode-0700 evaluation cache}"
@@ -12,6 +14,10 @@ repo_root="$(cd -- "$script_dir/../.." && pwd)"
 : "${YAP_NEMOTRON_MODEL_DIR:?Set the verified Nemotron model directory}"
 : "${YAP_COHERE_VLLM_API_KEY:?Set the private Cohere vLLM API key}"
 : "${YAP_NEMOTRON_NEMO_API_KEY:?Set the private Nemotron NeMo API key}"
+: "${YAP_COHERE_VLLM_PREPARATION_RECEIPT:?Set the private Cohere image preparation receipt}"
+: "${YAP_COHERE_VLLM_PREPARATION_RECEIPT_SHA256:?Set its frozen SHA-256}"
+: "${YAP_NEMOTRON_NEMO_PREPARATION_RECEIPT:?Set the private Nemotron image preparation receipt}"
+: "${YAP_NEMOTRON_NEMO_PREPARATION_RECEIPT_SHA256:?Set its frozen SHA-256}"
 : "${YAP_RESIDENT_PROVIDER_EVIDENCE_DIR:=$YAP_EVAL_CACHE/resident-provider-lifecycle/$YAP_CHECKED_HEAD}"
 : "${YAP_PROVIDER_READY_TIMEOUT_SECONDS:=1800}"
 : "${YAP_PROVIDER_TIMEOUT_SECONDS:=1800}"
@@ -34,16 +40,20 @@ fi
 plan_path="$repo_root/server/asr-evaluation-plan.json"
 vllm_lock="$repo_root/server/cohere-vllm-serving.lock.json"
 nemo_lock="$repo_root/server/nemotron-nemo-serving.lock.json"
-vllm_image="yap-cohere-vllm:checked-head-$YAP_CHECKED_HEAD"
-nemo_image="yap-nemotron-nemo:checked-head-$YAP_CHECKED_HEAD"
 network_name="yap-private-inference-${YAP_CHECKED_HEAD:0:12}"
 vllm_endpoint="http://127.0.0.1:$YAP_COHERE_VLLM_PORT"
 nemo_endpoint="http://127.0.0.1:$YAP_NEMOTRON_NEMO_PORT"
+runtime_owner_token="$(
+  python3.12 -c 'import secrets; print(secrets.token_hex(32))'
+)"
 
-active_container=""
+active_container_id=""
+active_container_name=""
+observed_container_running=""
 launcher_pid=""
 sampler_pid=""
-network_owned=false
+network_id=""
+proxy_group_file=""
 
 verify_clean_head() {
   local actual_head worktree_status inside_worktree
@@ -67,36 +77,90 @@ verify_clean_head() {
   fi
 }
 
+stop_recorded_proxy_group() {
+  stop_recorded_token_owned_process_group \
+    "$proxy_group_file" \
+    "$runtime_owner_token" \
+    "Resident provider proxy" \
+    || return 1
+  proxy_group_file=""
+}
+
 stop_owned_runtime() {
+  local cleanup_status=0
+  local launcher_group_stopped=true
   set +e
-  if [ -n "$sampler_pid" ] && kill -0 "$sampler_pid" 2>/dev/null; then
-    kill -TERM "$sampler_pid" 2>/dev/null
-    wait "$sampler_pid" 2>/dev/null
-  fi
-  sampler_pid=""
-  if [ -n "$active_container" ] \
-    && docker container inspect "$active_container" >/dev/null 2>&1; then
-    docker stop --time 10 "$active_container" >/dev/null 2>&1
-  fi
-  if [ -n "$launcher_pid" ] && kill -0 "$launcher_pid" 2>/dev/null; then
-    kill -TERM "$launcher_pid" 2>/dev/null
+  if [ -n "$sampler_pid" ]; then
+    if stop_owned_child_process_group \
+      "$sampler_pid" \
+      "$runtime_owner_token" \
+      "Resident provider sampler" \
+      "$$"; then
+      wait "$sampler_pid" 2>/dev/null || true
+      sampler_pid=""
+    else
+      cleanup_status=1
+    fi
   fi
   if [ -n "$launcher_pid" ]; then
-    wait "$launcher_pid" 2>/dev/null
+    if ! stop_owned_child_process_group \
+      "$launcher_pid" \
+      "$runtime_owner_token" \
+      "Resident provider launcher" \
+      "$$"; then
+      cleanup_status=1
+      launcher_group_stopped=false
+    fi
   fi
-  active_container=""
+  if [ -n "$launcher_pid" ] && [ "$launcher_group_stopped" = true ]; then
+    wait "$launcher_pid" 2>/dev/null || true
+  fi
+  stop_recorded_proxy_group || cleanup_status=1
+  local recovery_status=0
+  capture_owned_provider_container
+  recovery_status="$?"
+  if [ "$recovery_status" -eq 0 ]; then
+    if ! docker stop --time 10 "$active_container_id" >/dev/null 2>&1 \
+      && ! verify_owned_container_absent "$active_container_id"; then
+      cleanup_status=1
+    elif ! wait_for_owned_container_absence "$active_container_id"; then
+      cleanup_status=1
+    fi
+  elif [ "$recovery_status" -ne 1 ]; then
+    cleanup_status=1
+  fi
+  active_container_id=""
+  active_container_name=""
+  observed_container_running=""
   launcher_pid=""
-  if [ "$network_owned" = true ]; then
-    docker network rm "$network_name" >/dev/null 2>&1
-    network_owned=false
+  local network_recovery_status=0
+  capture_owned_network
+  network_recovery_status="$?"
+  if [ "$network_recovery_status" -eq 0 ]; then
+    if docker network rm "$network_id" >/dev/null 2>&1; then
+      if verify_network_absent "$network_id"; then
+        network_id=""
+      else
+        echo "Resident provider owned network absence could not be verified" >&2
+        cleanup_status=1
+      fi
+    else
+      echo "Resident provider owned network cleanup failed" >&2
+      cleanup_status=1
+    fi
+  elif [ "$network_recovery_status" -ne 1 ]; then
+    cleanup_status=1
   fi
   set -e
+  return "$cleanup_status"
 }
 
 cleanup() {
   local status="$?"
   trap - EXIT
-  stop_owned_runtime
+  if ! stop_owned_runtime && [ "$status" -eq 0 ]; then
+    status=1
+  fi
   exit "$status"
 }
 trap cleanup EXIT
@@ -175,24 +239,163 @@ capture_host_boundary() {
   fi
 }
 
-wait_for_container() {
-  local container="$1"
-  local deadline=$((SECONDS + 60))
-  while [ "$SECONDS" -lt "$deadline" ]; do
-    if [ -n "$launcher_pid" ] && ! kill -0 "$launcher_pid" 2>/dev/null; then
-      wait "$launcher_pid" || true
-      echo "Resident provider launcher exited before creating its container" >&2
+capture_owned_provider_container() {
+  local identity container_id observed_owner observed_name running
+  if [ -z "$active_container_name" ]; then
+    return 1
+  fi
+  if ! identity="$(
+    docker container inspect \
+      --format '{{.Id}}|{{index .Config.Labels "io.yap.run-token"}}|{{.Name}}|{{.State.Running}}' \
+      "$active_container_name" 2>&1
+  )"; then
+    if grep -Eqi 'no such (container|object)' <<<"$identity"; then
       return 1
     fi
-    if [ "$(
-      docker container inspect --format '{{.State.Running}}' "$container" 2>/dev/null || true
-    )" = "true" ]; then
+    echo "Resident provider container inventory failed" >&2
+    return 2
+  fi
+  IFS='|' read -r container_id observed_owner observed_name running <<<"$identity"
+  if [[ ! "$container_id" =~ ^[0-9a-f]{64}$ ]] \
+    || [ "$observed_owner" != "$runtime_owner_token" ] \
+    || [ "$observed_name" != "/$active_container_name" ] \
+    || { [ "$running" != "true" ] && [ "$running" != "false" ]; } \
+    || { [ -n "$active_container_id" ] \
+      && [ "$active_container_id" != "$container_id" ]; }; then
+    echo "Resident provider container ownership is invalid" >&2
+    return 2
+  fi
+  active_container_id="$container_id"
+  observed_container_running="$running"
+}
+
+verify_owned_container_absent() {
+  local container_id="$1"
+  local output
+  if output="$(docker container inspect "$container_id" 2>&1)"; then
+    return 1
+  fi
+  if grep -Eqi 'no such (container|object)' <<<"$output"; then
+    return 0
+  fi
+  echo "Resident provider container absence check failed" >&2
+  return 2
+}
+
+wait_for_owned_container_absence() {
+  local container_id="$1"
+  local absence_status
+  local deadline=$((SECONDS + 60))
+  while true; do
+    absence_status=0
+    verify_owned_container_absent "$container_id" || absence_status="$?"
+    if [ "$absence_status" -eq 0 ]; then
       return 0
+    fi
+    if [ "$absence_status" -ne 1 ]; then
+      return 1
+    fi
+    if [ "$SECONDS" -ge "$deadline" ]; then
+      echo "Resident provider container remained after teardown" >&2
+      return 1
+    fi
+    sleep 0.1
+  done
+}
+
+capture_owned_network() {
+  local identity observed_id observed_owner observed_revision observed_name
+  if ! identity="$(
+    docker network inspect \
+      --format '{{.Id}}|{{index .Labels "io.yap.run-token"}}|{{index .Labels "io.yap.revision"}}|{{.Name}}' \
+      "$network_name" 2>&1
+  )"; then
+    if grep -Eqi 'no such (network|object)' <<<"$identity"; then
+      return 1
+    fi
+    echo "Resident provider network inventory failed" >&2
+    return 2
+  fi
+  IFS='|' read -r \
+    observed_id observed_owner observed_revision observed_name \
+    <<<"$identity"
+  if [[ ! "$observed_id" =~ ^[0-9a-f]{64}$ ]] \
+    || [ "$observed_owner" != "$runtime_owner_token" ] \
+    || [ "$observed_revision" != "$YAP_CHECKED_HEAD" ] \
+    || [ "$observed_name" != "$network_name" ] \
+    || { [ -n "$network_id" ] && [ "$network_id" != "$observed_id" ]; }; then
+    echo "Resident provider network ownership is invalid" >&2
+    return 2
+  fi
+  network_id="$observed_id"
+}
+
+verify_network_absent() {
+  local owned_network_id="$1"
+  local output
+  if output="$(docker network inspect "$owned_network_id" 2>&1)"; then
+    return 1
+  fi
+  if grep -Eqi 'no such (network|object)' <<<"$output"; then
+    return 0
+  fi
+  echo "Resident provider network absence check failed" >&2
+  return 2
+}
+
+wait_for_owned_container() {
+  local container="$1"
+  local capture_status
+  local deadline=$((SECONDS + 60))
+  if [ "$container" != "$active_container_name" ]; then
+    echo "Resident provider expected container identity changed" >&2
+    return 1
+  fi
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    capture_status=0
+    capture_owned_provider_container || capture_status="$?"
+    if [ "$capture_status" -eq 0 ]; then
+      if [ "$observed_container_running" = "true" ]; then
+        return 0
+      fi
+    elif [ "$capture_status" -ne 1 ]; then
+      return 1
+    fi
+    if [ -n "$launcher_pid" ] && ! kill -0 "$launcher_pid" 2>/dev/null; then
+      wait "$launcher_pid" || true
+      echo "Resident provider launcher exited before its container became ready" >&2
+      return 1
     fi
     sleep 0.1
   done
   echo "Resident provider container did not start" >&2
   return 1
+}
+
+verify_owned_process_group() {
+  local process_id="$1"
+  local description="$2"
+  local observed_group
+  local deadline=$((SECONDS + 10))
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    observed_group="$(
+      ps -o pgid= -p "$process_id" 2>/dev/null | tr -d '[:space:]'
+    )"
+    if [ "$observed_group" = "$process_id" ]; then
+      return 0
+    fi
+    if ! kill -0 "$process_id" 2>/dev/null; then
+      echo "$description exited before process-group ownership" >&2
+      return 1
+    fi
+    sleep 0.05
+  done
+  echo "$description did not enter its own process group" >&2
+  return 1
+}
+
+verify_launcher_process_group() {
+  verify_owned_process_group "$launcher_pid" "Resident provider launcher"
 }
 
 verify_private_container_network() {
@@ -248,30 +451,56 @@ wait_for_file() {
 }
 
 stop_provider() {
-  local container="$1"
-  local port="$2"
-  local deadline launcher_status=0
-  if ! docker container inspect "$container" >/dev/null 2>&1; then
+  local port="$1"
+  local container="$active_container_id"
+  local deadline launcher_status=0 observed_launcher_status=0 launcher_members
+  local capture_status=0
+  capture_owned_provider_container || capture_status="$?"
+  if [ "$capture_status" -ne 0 ] \
+    || [ -z "$container" ] \
+    || [ "$active_container_id" != "$container" ]; then
     echo "Resident provider container disappeared before explicit teardown" >&2
     return 1
   fi
   docker stop --time 10 "$container" >/dev/null
   if [ -n "$launcher_pid" ]; then
+    deadline=$((SECONDS + 60))
+    while true; do
+      if ! launcher_members="$(yap_process_group_members "$launcher_pid")"; then
+        echo "Resident provider launcher inventory failed during teardown" >&2
+        return 1
+      fi
+      if [ -z "$launcher_members" ]; then
+        break
+      fi
+      if [ "$SECONDS" -ge "$deadline" ]; then
+        stop_token_owned_process_group \
+          "$launcher_pid" \
+          "$runtime_owner_token" \
+          "Resident provider launcher" \
+          || return 1
+        launcher_status=1
+        break
+      fi
+      sleep 0.1
+    done
     set +e
     wait "$launcher_pid"
-    launcher_status="$?"
+    observed_launcher_status="$?"
+    if [ "$launcher_status" -eq 0 ]; then
+      launcher_status="$observed_launcher_status"
+    fi
     set -e
   fi
+  if ! stop_recorded_proxy_group; then
+    echo "Resident provider proxy remained after teardown" >&2
+    return 1
+  fi
   launcher_pid=""
-  deadline=$((SECONDS + 60))
-  while docker container inspect "$container" >/dev/null 2>&1; do
-    if [ "$SECONDS" -ge "$deadline" ]; then
-      echo "Resident provider container remained after teardown" >&2
-      return 1
-    fi
-    sleep 0.1
-  done
-  active_container=""
+  wait_for_owned_container_absence "$container"
+  active_container_id=""
+  active_container_name=""
+  observed_container_running=""
   if ss -H -ltn | awk -v port=":$port" '$4 ~ port "$" { found=1 } END { exit !found }'; then
     echo "Resident provider listener remained after teardown" >&2
     return 1
@@ -421,7 +650,9 @@ run_resource_profile() {
   local control_root="$raw_root/control"
   local sample_path="$raw_root/samples.jsonl"
   install -d -m 0700 "$raw_root" "$control_root"
+  YAP_RUNTIME_OWNER_TOKEN="$runtime_owner_token" \
   PYTHONPATH="$repo_root/server/src" \
+    setsid \
     python3.12 -m yap_server.evaluation.resident_provider_resource_sampler \
       --container "$container" \
       --checked-head "$YAP_CHECKED_HEAD" \
@@ -455,12 +686,42 @@ run_resource_profile() {
   fi
   install -m 0600 /dev/null "$control_root/workload-end"
   install -m 0600 /dev/null "$control_root/stop"
-  local sampler_status=0
-  set +e
-  wait "$sampler_pid"
-  sampler_status="$?"
-  set -e
-  sampler_pid=""
+  local sampler_status=0 observed_sampler_status=0 sampler_members
+  local sampler_stopped=false
+  local sampler_deadline=$((SECONDS + 30))
+  while true; do
+    if ! sampler_members="$(yap_process_group_members "$sampler_pid")"; then
+      echo "Resident provider sampler inventory failed" >&2
+      sampler_status=1
+      break
+    fi
+    if [ -z "$sampler_members" ]; then
+      sampler_stopped=true
+      break
+    fi
+    if [ "$SECONDS" -ge "$sampler_deadline" ]; then
+      sampler_status=1
+      if stop_owned_child_process_group \
+        "$sampler_pid" \
+        "$runtime_owner_token" \
+        "Resident provider sampler" \
+        "$$"; then
+        sampler_stopped=true
+      fi
+      break
+    fi
+    sleep 0.1
+  done
+  if [ "$sampler_stopped" = true ]; then
+    set +e
+    wait "$sampler_pid" 2>/dev/null
+    observed_sampler_status="$?"
+    if [ "$sampler_status" -eq 0 ]; then
+      sampler_status="$observed_sampler_status"
+    fi
+    sampler_pid=""
+    set -e
+  fi
   if [ "$workload_status" -ne 0 ] || [ "$sampler_status" -ne 0 ]; then
     echo "Resident provider resource workload or sampler failed" >&2
     return 1
@@ -576,6 +837,12 @@ if ! command -v python3.12 >/dev/null 2>&1 \
   echo "Resident provider lifecycle gate requires Python 3.12" >&2
   exit 2
 fi
+for program in setsid ps; do
+  if ! command -v "$program" >/dev/null 2>&1; then
+    echo "Resident provider lifecycle gate requires $program" >&2
+    exit 2
+  fi
+done
 verify_clean_head
 
 eval_cache="$(readlink -f -- "$YAP_EVAL_CACHE")"
@@ -622,6 +889,7 @@ install -d -m 0700 \
   "$gate_root" \
   "$gate_root/logs" \
   "$gate_root/raw" \
+  "$gate_root/runtime" \
   "$gate_root/workloads" \
   "$gate_root/provider-evidence" \
   "$gate_root/provider-evidence/vllm" \
@@ -635,46 +903,84 @@ PYTHONPATH="$repo_root/server/src" python3.12 -m yap_server.pools.model_assets \
 PYTHONPATH="$repo_root/server/src" python3.12 -m yap_server.pools.model_assets \
   --lock "$nemo_lock" --model-dir "$YAP_NEMOTRON_MODEL_DIR" --verify-only
 
-bash "$script_dir/build-checked-runtime-image.sh" cohere-vllm "$YAP_CHECKED_HEAD"
-bash "$script_dir/build-checked-runtime-image.sh" nemotron-nemo "$YAP_CHECKED_HEAD"
+vllm_image="$(
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.pools.checked_runtime_image \
+      verify-prepared cohere-vllm "$YAP_CHECKED_HEAD" \
+      "$YAP_COHERE_VLLM_PREPARATION_RECEIPT" \
+      "$YAP_COHERE_VLLM_PREPARATION_RECEIPT_SHA256"
+)"
+nemo_image="$(
+  PYTHONPATH="$repo_root/server/src" \
+    python3.12 -m yap_server.pools.checked_runtime_image \
+      verify-prepared nemotron-nemo "$YAP_CHECKED_HEAD" \
+      "$YAP_NEMOTRON_NEMO_PREPARATION_RECEIPT" \
+      "$YAP_NEMOTRON_NEMO_PREPARATION_RECEIPT_SHA256"
+)"
+printf '%s\n' "$vllm_image" >"$gate_root/logs/vllm-image-id.txt"
+printf '%s\n' "$nemo_image" >"$gate_root/logs/nemo-image-id.txt"
 
-docker network create \
+network_id="$(
+  docker network create \
   --driver bridge \
   --internal \
   --label io.yap.owner=private-inference \
   --label "io.yap.revision=$YAP_CHECKED_HEAD" \
+  --label "io.yap.run-token=$runtime_owner_token" \
   "$network_name" \
-  >"$gate_root/logs/network-create.txt"
-network_owned=true
+)"
+if [[ ! "$network_id" =~ ^[0-9a-f]{64}$ ]] || ! capture_owned_network; then
+  echo "Resident provider network identity is invalid" >&2
+  exit 1
+fi
+printf '%s\n' "$network_id" >"$gate_root/logs/network-create.txt"
 export YAP_PRIVATE_INFERENCE_NETWORK="$network_name"
 
+proxy_group_file="$gate_root/runtime/cohere-vllm-proxy.pgid"
+active_container_name="yap-cohere-vllm"
 YAP_COHERE_VLLM_IMAGE="$vllm_image" \
-YAP_COHERE_VLLM_PORT="$YAP_COHERE_VLLM_PORT" \
-bash "$script_dir/cohere-vllm-server.sh" \
+  YAP_COHERE_VLLM_PORT="$YAP_COHERE_VLLM_PORT" \
+  YAP_RUNTIME_OWNER_TOKEN="$runtime_owner_token" \
+  YAP_PROXY_PROCESS_GROUP_FILE="$proxy_group_file" \
+  setsid \
+  bash "$script_dir/cohere-vllm-server.sh" \
   >"$gate_root/logs/vllm-service.log" 2>&1 &
 launcher_pid="$!"
-active_container="yap-cohere-vllm"
-wait_for_container "$active_container"
-verify_private_container_network "$active_container"
+verify_launcher_process_group
+wait_for_owned_container "yap-cohere-vllm"
+verify_private_container_network "$active_container_id"
 run_readiness vllm vllm-cohere-batch "$vllm_lock" "$vllm_endpoint"
 run_vllm_qualification
-stop_provider "yap-cohere-vllm" "$YAP_COHERE_VLLM_PORT"
+stop_provider "$YAP_COHERE_VLLM_PORT"
 
+proxy_group_file="$gate_root/runtime/nemotron-nemo-proxy.pgid"
+active_container_name="yap-nemotron-nemo"
 YAP_NEMOTRON_NEMO_IMAGE="$nemo_image" \
-YAP_BATCH_JOB_STORAGE_DIR="$eval_cache" \
-YAP_NEMOTRON_NEMO_PORT="$YAP_NEMOTRON_NEMO_PORT" \
-bash "$script_dir/nemotron-nemo-server.sh" \
+  YAP_BATCH_JOB_STORAGE_DIR="$eval_cache" \
+  YAP_NEMOTRON_NEMO_PORT="$YAP_NEMOTRON_NEMO_PORT" \
+  YAP_RUNTIME_OWNER_TOKEN="$runtime_owner_token" \
+  YAP_PROXY_PROCESS_GROUP_FILE="$proxy_group_file" \
+  setsid \
+  bash "$script_dir/nemotron-nemo-server.sh" \
   >"$gate_root/logs/nemo-service.log" 2>&1 &
 launcher_pid="$!"
-active_container="yap-nemotron-nemo"
-wait_for_container "$active_container"
-verify_private_container_network "$active_container"
+verify_launcher_process_group
+wait_for_owned_container "yap-nemotron-nemo"
+verify_private_container_network "$active_container_id"
 run_readiness nemo nemo-nemotron-finalized "$nemo_lock" "$nemo_endpoint"
 run_nemo_qualification
-stop_provider "yap-nemotron-nemo" "$YAP_NEMOTRON_NEMO_PORT"
+stop_provider "$YAP_NEMOTRON_NEMO_PORT"
 
-docker network rm "$network_name" >"$gate_root/logs/network-remove.txt"
-network_owned=false
+if ! capture_owned_network; then
+  echo "Resident provider network ownership changed before teardown" >&2
+  exit 1
+fi
+docker network rm "$network_id" >"$gate_root/logs/network-remove.txt"
+if ! verify_network_absent "$network_id"; then
+  echo "Resident provider network remained after teardown" >&2
+  exit 1
+fi
+network_id=""
 capture_host_boundary "$gate_root/after"
 verify_clean_head
 
@@ -684,6 +990,12 @@ PYTHONPATH="$repo_root/server/src" \
     --after "$gate_root/after" \
     --provider-evidence-root "$provider_evidence_root" \
     --checked-head "$YAP_CHECKED_HEAD" \
+    --vllm-image-id "$vllm_image" \
+    --nemo-image-id "$nemo_image" \
+    --vllm-preparation-receipt-sha256 \
+      "$YAP_COHERE_VLLM_PREPARATION_RECEIPT_SHA256" \
+    --nemo-preparation-receipt-sha256 \
+      "$YAP_NEMOTRON_NEMO_PREPARATION_RECEIPT_SHA256" \
     --output "$gate_root/evidence.json" \
     >"$gate_root/logs/lifecycle-evidence.json"
 

@@ -15,9 +15,9 @@ channels and the 18-child Cohere vLLM/Nemotron NeMo candidate-safety lifecycle.
 Final adversarial review then found concrete merge blockers and invalidated that
 SHA as merge authority; its receipt remains historical evidence. Neither service
 was promoted; per-locale and broad model-quality/replacement evidence remains
-Phase 8 work. The repaired implementation passed the focused three-agent
-remediation re-review; one new complete gate remains before hosted PR checks,
-review, and merge.
+Phase 8 work. The current checked-runtime and containment repair passed one
+bounded final three-agent re-review; one new complete gate remains before
+hosted PR checks, review, and merge.
 SpeechFlow LID13 and FireRedLID have now failed behavior and payload preflight;
 Whisper base also failed broad global-top behavior, and both official base and
 tiny Q5_1 routes failed client throughput preflight. The frozen narrow

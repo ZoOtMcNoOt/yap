@@ -6,10 +6,13 @@ import threading
 import time
 from typing import Any
 
+from yap_server.pools.batch_contract import WorkerContainmentError
+
 from .component_lock import LidComponentLock
 from .errors import (
     LidPreflightCancelled,
     LidPreflightConflict,
+    LidPreflightContainmentError,
     LidPreflightUnavailable,
 )
 from .materialization import (
@@ -79,6 +82,9 @@ class LidPreflightService:
                 )
             self._active[request.request_id] = cancellation
         materialized: LidMaterializedRequest | None = None
+        containment_error: (
+            WorkerContainmentError | LidPreflightContainmentError | None
+        ) = None
         try:
             def ensure_active() -> None:
                 if cancellation.is_set():
@@ -99,9 +105,12 @@ class LidPreflightService:
                 "sourcePcmSha256": request.source_pcm_sha256,
                 "catalogRevision": request.catalog_revision,
             }
+        except (WorkerContainmentError, LidPreflightContainmentError) as error:
+            containment_error = error
+            raise
         finally:
             cleanup_error: Exception | None = None
-            if materialized is not None:
+            if materialized is not None and containment_error is None:
                 try:
                     remove_materialized_lid_request(materialized)
                 except Exception as error:
@@ -110,7 +119,12 @@ class LidPreflightService:
                 cancelled = cancellation.is_set()
                 self._active.pop(request.request_id, None)
                 self._idle.notify_all()
-                if cleanup_error is not None:
+                if containment_error is not None:
+                    self._fenced_reason = (
+                        "LID preflight is fenced because transient containment "
+                        "could not be verified"
+                    )
+                elif cleanup_error is not None:
                     self._fenced_reason = (
                         "LID preflight is fenced because transient probe cleanup "
                         "could not be verified"
@@ -119,7 +133,7 @@ class LidPreflightService:
                 raise LidPreflightUnavailable(
                     self._fenced_reason or "LID preflight cleanup failed"
                 ) from cleanup_error
-            if cancelled:
+            if cancelled and containment_error is None:
                 raise LidPreflightCancelled("LID preflight was cancelled")
 
     def cancel(self, request_id: str) -> bool:

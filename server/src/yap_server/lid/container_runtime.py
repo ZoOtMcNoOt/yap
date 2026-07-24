@@ -11,7 +11,11 @@ import threading
 from typing import Any
 from uuid import uuid4
 
-from yap_server.pools.batch_contract import WorkerExecutionError
+from yap_server.bounded_file import read_regular_text
+from yap_server.pools.batch_contract import (
+    WorkerContainmentError,
+    WorkerExecutionError,
+)
 from yap_server.pools.container_runtime import (
     JOB_LABEL,
     OWNER_LABEL,
@@ -35,8 +39,11 @@ from .worker_contract import (
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _IMMUTABLE_IMAGE = re.compile(r"^(?:sha256:[0-9a-f]{64}|.+@sha256:[0-9a-f]{64})$")
 _LABEL_VALUE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+_CONTAINER_ID = re.compile(r"^[0-9a-f]{64}$")
 _OWNER_VALUE = "lid-preflight"
 _MAX_OUTPUT_BYTES = 64 * 1024
+_MAX_CONTAINER_ID_BYTES = 128
+_CONTAINER_CLEANUP_TIMEOUT_SECONDS = 30
 
 
 def reconcile_lid_containers(
@@ -51,6 +58,43 @@ def reconcile_lid_containers(
         owner_value=_OWNER_VALUE,
         runner=runner,
     )
+
+
+def verify_lid_container_absent(
+    docker_binary: str,
+    container_id: str,
+    *,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> None:
+    if _CONTAINER_ID.fullmatch(container_id) is None:
+        raise ValueError("retained LID container identity is invalid")
+    try:
+        completed = runner(
+            [docker_binary, "container", "inspect", container_id],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=_CONTAINER_CLEANUP_TIMEOUT_SECONDS,
+            stdin=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise WorkerContainmentError(
+            "could not verify retained LID container absence"
+        ) from error
+    stderr = completed.stderr if isinstance(completed.stderr, str) else ""
+    if completed.returncode == 0:
+        raise WorkerContainmentError(
+            "retained LID container still exists after startup reconciliation"
+        )
+    if not any(
+        marker in stderr.casefold()
+        for marker in ("no such container", "no such object")
+    ):
+        raise WorkerContainmentError(
+            "could not verify retained LID container absence"
+        )
 
 
 class ContainerLidWorker:
@@ -73,6 +117,9 @@ class ContainerLidWorker:
         process_runner: Callable[
             ..., subprocess.CompletedProcess[str]
         ] = run_bounded_process,
+        cleanup_runner: Callable[
+            ..., subprocess.CompletedProcess[str]
+        ] = subprocess.run,
         container_remover: Callable[[str, str], None] = force_remove_container,
     ) -> None:
         if _IMMUTABLE_IMAGE.fullmatch(image) is None:
@@ -114,6 +161,7 @@ class ContainerLidWorker:
         self._timeout_seconds = timeout_seconds
         self._runner = runner
         self._process_runner = process_runner
+        self._cleanup_runner = cleanup_runner
         self._container_remover = container_remover
         self._shutdown = threading.Event()
 
@@ -125,6 +173,7 @@ class ContainerLidWorker:
             request,
             request_root,
             container_name=f"yap-language-detection-{uuid4().hex}",
+            container_id_file=Path(request_root) / ".yap-container-id",
         )
 
     def _build_command(
@@ -133,6 +182,7 @@ class ContainerLidWorker:
         request_root: Path,
         *,
         container_name: str,
+        container_id_file: Path,
     ) -> list[str]:
         root = _safe_mount_path(
             _resolve_real_directory(Path(request_root), "LID request root")
@@ -146,6 +196,8 @@ class ContainerLidWorker:
             "--rm",
             "--name",
             container_name,
+            "--cidfile",
+            str(_safe_mount_path(container_id_file)),
             "--label",
             f"{OWNER_LABEL}={_OWNER_VALUE}",
             "--label",
@@ -215,10 +267,20 @@ class ContainerLidWorker:
         if self._shutdown.is_set() or cancelled.is_set():
             raise WorkerExecutionError("isolated LID worker was cancelled")
         container_name = f"yap-language-detection-{uuid4().hex}"
+        container_id_file = Path(request_root) / ".yap-container-id"
+        try:
+            container_id_file.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            raise WorkerContainmentError(
+                "isolated LID container identity file already exists"
+            )
         command = self._build_command(
             request,
             request_root,
             container_name=container_name,
+            container_id_file=container_id_file,
         )
         if self._runner is None:
             try:
@@ -229,7 +291,10 @@ class ContainerLidWorker:
                     cancellation=(self._shutdown, cancelled),
                 )
             finally:
-                self._container_remover(self._docker_binary, container_name)
+                self._cleanup_container_identity(
+                    container_id_file,
+                    request=request,
+                )
         else:
             completed = self._runner(
                 command,
@@ -258,6 +323,90 @@ class ContainerLidWorker:
         if not isinstance(payload, dict):
             raise WorkerExecutionError("isolated LID worker returned an invalid result")
         return payload
+
+    def _cleanup_container_identity(
+        self,
+        container_id_file: Path,
+        *,
+        request: LidWorkerRequest,
+    ) -> None:
+        try:
+            container_id = read_regular_text(
+                container_id_file,
+                _MAX_CONTAINER_ID_BYTES,
+            ).strip()
+        except ValueError as error:
+            raise WorkerContainmentError(
+                "isolated LID container identity was unavailable"
+            ) from error
+        if _CONTAINER_ID.fullmatch(container_id) is None:
+            raise WorkerContainmentError(
+                "isolated LID container identity was invalid"
+            )
+
+        try:
+            inspected = self._cleanup_runner(
+                [
+                    self._docker_binary,
+                    "container",
+                    "inspect",
+                    "--format",
+                    "{{json .Config.Labels}}",
+                    container_id,
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=_CONTAINER_CLEANUP_TIMEOUT_SECONDS,
+                stdin=subprocess.DEVNULL,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise WorkerContainmentError(
+                "could not verify isolated LID container ownership"
+            ) from error
+        stderr = inspected.stderr if isinstance(inspected.stderr, str) else ""
+        if inspected.returncode != 0:
+            if any(
+                marker in stderr.casefold()
+                for marker in ("no such container", "no such object")
+            ):
+                _retire_container_identity_file(container_id_file)
+                return
+            raise WorkerContainmentError(
+                "could not verify isolated LID container ownership"
+            )
+        try:
+            labels = json.loads(inspected.stdout)
+        except (json.JSONDecodeError, TypeError) as error:
+            raise WorkerContainmentError(
+                "isolated LID container ownership was invalid"
+            ) from error
+        expected_labels = {
+            OWNER_LABEL: _OWNER_VALUE,
+            STORAGE_LABEL: self._storage_namespace,
+            RUNTIME_LABEL: self._runtime_instance_id,
+            JOB_LABEL: request.request_id,
+            REVISION_LABEL: self._checked_head,
+        }
+        if not isinstance(labels, dict) or any(
+            labels.get(key) != value for key, value in expected_labels.items()
+        ):
+            raise WorkerContainmentError(
+                "isolated LID container ownership was invalid"
+            )
+        self._container_remover(self._docker_binary, container_id)
+        _retire_container_identity_file(container_id_file)
+
+
+def _retire_container_identity_file(path: Path) -> None:
+    try:
+        path.unlink()
+    except OSError as error:
+        raise WorkerContainmentError(
+            "isolated LID container identity could not be retired"
+        ) from error
 
 
 def _safe_mount_path(path: Path) -> Path:

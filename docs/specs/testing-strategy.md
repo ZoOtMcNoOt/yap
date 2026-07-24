@@ -26,9 +26,14 @@ the 18-child GB10 public-safe aggregate has SHA-256
 `6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
 Later adversarial review found executable blockers, and their repair invalidated
 that SHA as merge authority. The receipt remains historical evidence only. The
-repaired implementation passed the focused three-agent remediation re-review.
-One fresh complete matrix on its frozen exact head and separate hosted closure
-remain; no replacement gate result is claimed yet.
+current checked-runtime and containment repair passed one bounded final
+three-agent re-review.
+The first replacement admission,
+`4b87e222c8ad7325a12a88709a52b5e9c1baf22e`, failed before provider startup
+when image construction attempted a registry lookup across the deliberately
+offline GB10 boundary. It cannot be retried or relabeled. One fresh complete
+matrix on a new frozen exact head and separate hosted closure remain; no passing
+replacement gate result is claimed yet.
 The representative provider-promotion corpus and frozen Phase 8 comparisons
 remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
 baseline, but no Tiron worker or meeting scorer executes yet. The tables below
@@ -217,9 +222,11 @@ Phase 8 Tiron gate.
 
 The resident-provider lifecycle wrapper is the checked-head owner for the
 launched-image and teardown boundary. It verifies already-present model assets,
-builds exact-head ARM64 images, creates a labeled internal Docker bridge, runs
-the containers with no Docker-published port or external egress, owns bounded
-numeric-loopback proxy process groups, and runs vLLM and NeMo sequentially. It
+verifies already-prepared exact-head ARM64 images against frozen private
+preparation-receipt hashes, creates a labeled internal Docker bridge, launches
+and records the receipt-bound immutable image IDs with
+no Docker-published port or external egress, owns bounded numeric-loopback proxy
+process groups, and runs vLLM and NeMo sequentially. It
 requires typed exact-model readiness, the bounded candidate-safety duration/
 load/specialized cells, and each c8/1,600 resource profile. The resource
 observation window is at least 125 seconds, so its last-half tail exceeds the

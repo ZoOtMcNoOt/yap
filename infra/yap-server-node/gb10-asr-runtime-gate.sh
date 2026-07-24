@@ -5,6 +5,8 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "$script_dir/../.." && pwd)"
 
 : "${YAP_CHECKED_HEAD:?Set YAP_CHECKED_HEAD to the exact 40-character candidate SHA}"
+: "${YAP_GB10_ASR_PREPARATION_RECEIPT:?Set the private reference image preparation receipt}"
+: "${YAP_GB10_ASR_PREPARATION_RECEIPT_SHA256:?Set its frozen SHA-256}"
 : "${YAP_GB10_ASR_MODEL_DIR:=/srv/yap-server/models/cohere-transcribe-03-2026/b1eacc2686a3d08ceaae5f24a88b1d519620bc09}"
 : "${YAP_GB10_ASR_EVIDENCE_DIR:=/srv/yap-server/shared/gb10-asr-runtime-evidence/$YAP_CHECKED_HEAD}"
 
@@ -94,7 +96,6 @@ capture_host_boundary() {
 }
 
 lock_path="$repo_root/server/model-pools.lock.json"
-image="yap-gb10-asr:checked-head-$YAP_CHECKED_HEAD"
 mkdir -p "$YAP_GB10_ASR_MODEL_DIR" "$(dirname -- "$YAP_GB10_ASR_EVIDENCE_DIR")"
 if [ -e "$YAP_GB10_ASR_EVIDENCE_DIR" ]; then
   echo "GB10 ASR checked-head evidence directory already exists" >&2
@@ -108,16 +109,23 @@ capture_host_boundary "$gate_tmp/before"
 PYTHONPATH="$repo_root/server/src" \
   python3 -m yap_server.pools.model_assets \
     --lock "$lock_path" \
-    --model-dir "$YAP_GB10_ASR_MODEL_DIR"
+    --model-dir "$YAP_GB10_ASR_MODEL_DIR" \
+    --verify-only
 
-bash "$script_dir/build-checked-runtime-image.sh" \
-  reference-batch-asr \
-  "$YAP_CHECKED_HEAD"
+image="$(
+  PYTHONPATH="$repo_root/server/src" \
+    python3 -m yap_server.pools.checked_runtime_image \
+      verify-prepared reference-batch-asr "$YAP_CHECKED_HEAD" \
+      "$YAP_GB10_ASR_PREPARATION_RECEIPT" \
+      "$YAP_GB10_ASR_PREPARATION_RECEIPT_SHA256"
+)"
+printf '%s\n' "$image" >"$gate_tmp/checked-runtime-image-id.txt"
 
 PYTHONPATH="$repo_root/server/src" \
   python3 -m yap_server.pools.gb10_asr_runtime_gate \
     --checked-head "$YAP_CHECKED_HEAD" \
     --image "$image" \
+    --preparation-receipt-sha256 "$YAP_GB10_ASR_PREPARATION_RECEIPT_SHA256" \
     --lock "$lock_path" \
     --model-dir "$YAP_GB10_ASR_MODEL_DIR" \
     --repo-root "$repo_root" \

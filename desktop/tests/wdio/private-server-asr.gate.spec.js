@@ -97,6 +97,195 @@ async function healthIsReachable() {
   }
 }
 
+function readCanonicalPcm16Mono16KhzWav(filePath) {
+  const bytes = readFileSync(filePath);
+  if (
+    bytes.length < 44
+    || bytes.toString("ascii", 0, 4) !== "RIFF"
+    || bytes.toString("ascii", 8, 12) !== "WAVE"
+  ) {
+    throw new Error("The language-preflight fixture is not a RIFF/WAVE file.");
+  }
+  let format;
+  let pcm;
+  for (let offset = 12; offset + 8 <= bytes.length;) {
+    const id = bytes.toString("ascii", offset, offset + 4);
+    const length = bytes.readUInt32LE(offset + 4);
+    const start = offset + 8;
+    const end = start + length;
+    if (end > bytes.length) {
+      throw new Error("The language-preflight fixture has a truncated WAV chunk.");
+    }
+    if (id === "fmt ") format = bytes.subarray(start, end);
+    if (id === "data") pcm = bytes.subarray(start, end);
+    offset = end + (length % 2);
+  }
+  if (
+    !format
+    || format.length < 16
+    || format.readUInt16LE(0) !== 1
+    || format.readUInt16LE(2) !== 1
+    || format.readUInt32LE(4) !== 16_000
+    || format.readUInt16LE(12) !== 2
+    || format.readUInt16LE(14) !== 16
+    || !pcm
+    || pcm.length < 2
+    || pcm.length % 2 !== 0
+  ) {
+    throw new Error(
+      "The language-preflight fixture must be mono signed-PCM16 at 16 kHz.",
+    );
+  }
+  return pcm;
+}
+
+function repeatedPcm(source, byteLength) {
+  const output = Buffer.alloc(byteLength);
+  for (let offset = 0; offset < output.length;) {
+    const copied = Math.min(source.length, output.length - offset);
+    source.copy(output, offset, 0, copied);
+    offset += copied;
+  }
+  return output;
+}
+
+function canonicalWavSha256(pcm) {
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0, "ascii");
+  header.writeUInt32LE(pcm.length + 36, 4);
+  header.write("WAVEfmt ", 8, "ascii");
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(16_000, 24);
+  header.writeUInt32LE(32_000, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write("data", 36, "ascii");
+  header.writeUInt32LE(pcm.length, 40);
+  return createHash("sha256").update(header).update(pcm).digest("hex");
+}
+
+async function runLanguagePreflightExecution(catalog, fixturePath, checkedHead) {
+  const capability = catalog?.languagePreflight;
+  expect(capability?.componentId).toBe("ambernet-batch-language-preflight");
+  expect(capability?.policy).toMatchObject({
+    sampleRateHz: 16_000,
+    channelCount: 1,
+    sampleWidthBytes: 2,
+    minimumSourceSamples: 480_000,
+    maximumWindows: 5,
+    maximumWindowSamples: 96_000,
+    minimumVoicedSamplesPerWindow: 51_200,
+    userConfirmationRequired: true,
+  });
+  expect(capability?.transport?.mediaType)
+    .toBe("application/vnd.yap.lid-preflight.v1+octet-stream");
+
+  const sourceSamples = capability.policy.minimumSourceSamples;
+  const windowSamples = capability.policy.maximumWindowSamples;
+  expect(sourceSamples).toBe(windowSamples * capability.policy.maximumWindows);
+  const sourcePcm = repeatedPcm(
+    readCanonicalPcm16Mono16KhzWav(fixturePath),
+    sourceSamples * capability.policy.sampleWidthBytes,
+  );
+  const sourcePcmSha256 = createHash("sha256").update(sourcePcm).digest("hex");
+  const probes = [];
+  const probePcm = [];
+  const expectedWavSha256 = [];
+  for (let index = 0; index < capability.policy.maximumWindows; index += 1) {
+    const sourceStartSample = index * windowSamples;
+    const sourceEndSample = sourceStartSample + windowSamples;
+    const pcm = sourcePcm.subarray(
+      sourceStartSample * capability.policy.sampleWidthBytes,
+      sourceEndSample * capability.policy.sampleWidthBytes,
+    );
+    probePcm.push(pcm);
+    expectedWavSha256.push(canonicalWavSha256(pcm));
+    probes.push({
+      index,
+      sourceStartSample,
+      sourceEndSample,
+      voicedSamples: windowSamples,
+      pcmByteLength: pcm.length,
+      pcmSha256: createHash("sha256").update(pcm).digest("hex"),
+      vadIntervals: [{ startSample: sourceStartSample, endSampleExclusive: sourceEndSample }],
+    });
+  }
+  const requestId = `lid-gate-${checkedHead.slice(0, 24)}`;
+  const manifest = Buffer.from(JSON.stringify({
+    schemaVersion: 1,
+    requestId,
+    sourceSamples,
+    sourcePcmSha256,
+    catalogRevision: catalog.catalogRevision,
+    policyRevision: capability.policy.revision,
+    probes,
+  }));
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(manifest.length);
+  const body = Buffer.concat([length, manifest, ...probePcm]);
+  expect(body.length).toBeLessThanOrEqual(capability.transport.maximumBodyBytes);
+
+  const response = await fetch(`http://${tunnelHost}:${tunnelPort}/v1/lid/preflight`, {
+    body,
+    headers: { "content-type": capability.transport.mediaType },
+    method: "POST",
+    redirect: "error",
+    signal: AbortSignal.timeout(
+      (capability.transport.maximumResponseSeconds + 5) * 1_000,
+    ),
+  });
+  const responseBytes = Buffer.from(await response.arrayBuffer());
+  expect(responseBytes.length).toBeLessThanOrEqual(64 * 1024);
+  const result = JSON.parse(responseBytes.toString("utf8"));
+  expect(response.ok).toBe(true);
+  expect(result).toMatchObject({
+    schemaVersion: 1,
+    requestId,
+    sourceSamples,
+    sourcePcmSha256,
+    catalogRevision: catalog.catalogRevision,
+    userConfirmationRequired: true,
+    component: {
+      id: capability.componentId,
+      runtime: capability.runtime,
+      model: capability.model,
+      policyRevision: capability.policy.revision,
+      scoreSemantics: capability.policy.scoreSemantics,
+    },
+  });
+  expect(["manual", "suggestion"]).toContain(result.status);
+  expect(typeof result.reason).toBe("string");
+  expect(result.reason.length).toBeGreaterThan(0);
+  expect(result.observations).toHaveLength(capability.policy.maximumWindows);
+  for (const [index, observation] of result.observations.entries()) {
+    expect(observation).toMatchObject({
+      index,
+      probeSha256: expectedWavSha256[index],
+      sourceStartSample: probes[index].sourceStartSample,
+      sourceEndSample: probes[index].sourceEndSample,
+      voicedSamples: windowSamples,
+    });
+    expect(typeof observation.rawLabel).toBe("string");
+    expect(observation.rawLabel.length).toBeGreaterThan(0);
+    expect(Number.isFinite(observation.topScore)).toBe(true);
+    expect(Number.isFinite(observation.scoreMargin)).toBe(true);
+  }
+  return {
+    componentId: result.component.id,
+    modelId: result.component.model.id,
+    modelRevision: result.component.model.revision,
+    observationCount: result.observations.length,
+    policyRevision: result.component.policyRevision,
+    requestIdSha256: createHash("sha256").update(requestId).digest("hex"),
+    resultStatus: result.status,
+    runtimeCpuOnly: result.component.runtime.cpuOnly,
+    runtimePythonVersion: result.component.runtime.pythonVersion,
+    sourcePcmSha256,
+  };
+}
+
 async function waitForHealth(expected, child, label) {
   const deadline = Date.now() + 15_000;
   while (Date.now() < deadline) {
@@ -244,6 +433,11 @@ describe("checked-head private-server ASR gate", () => {
 
     const catalog = await invoke("server_asr_capabilities");
     expect(catalog?.catalogRevision).toMatch(/^[0-9a-f]{64}$/);
+    const languagePreflightExecution = await runLanguagePreflightExecution(
+      catalog,
+      fixturePath,
+      checkedHead,
+    );
     const created = await invoke("recording_jobs_pick_imports", {
       languageBcp47: "en-US",
       catalogRevision: catalog.catalogRevision,
@@ -394,7 +588,7 @@ describe("checked-head private-server ASR gate", () => {
     writeFileSync(
       path.join(evidenceDirectory, "native-vertical-slice.json"),
       `${JSON.stringify({
-        schemaVersion: 2,
+        schemaVersion: 3,
         checkedHead,
         fixtureSha256,
         clientJobId,
@@ -415,6 +609,7 @@ describe("checked-head private-server ASR gate", () => {
         tunnelRestoredState: restoredConnection.state,
         immutableJobSurvivedTunnelInterruption: true,
         historyOpenedVerifiedResult: true,
+        languagePreflightExecution,
         status: "passed",
       }, null, 2)}\n`,
       { encoding: "utf8", flag: "wx" },

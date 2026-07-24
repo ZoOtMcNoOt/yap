@@ -7,8 +7,7 @@ FROM python:3.12.13-slim-bookworm@sha256:c18c7a910432dde3311fc54d02e5d5220f3ebe2
 
 LABEL org.opencontainers.image.title="Yap isolated AmberNet LID preflight" \
       org.opencontainers.image.source="https://github.com/mcnatg1/yap" \
-      org.opencontainers.image.licenses="Apache-2.0 AND BSD-3-Clause AND MIT" \
-      com.mcnatg1.yap.base-platform-digest="sha256:c18c7a910432dde3311fc54d02e5d5220f3ebe26fec43ff15745982863dd7b3b"
+      org.opencontainers.image.licenses="Apache-2.0 AND BSD-3-Clause AND MIT"
 
 ENV PYTHONPATH=/opt/yap-repo/server/src \
     YAP_LID_COMPONENT_LOCK=/opt/yap-repo/server/lid-component.lock.json \
@@ -34,7 +33,9 @@ RUN python3 -m pip install \
     && python3 -m pip check
 
 ARG YAP_CHECKED_HEAD
-LABEL org.opencontainers.image.revision="${YAP_CHECKED_HEAD}"
+LABEL org.opencontainers.image.revision="${YAP_CHECKED_HEAD}" \
+      com.mcnatg1.yap.base-platform-digest="sha256:c18c7a910432dde3311fc54d02e5d5220f3ebe26fec43ff15745982863dd7b3b" \
+      com.mcnatg1.yap.runtime="language-detection"
 
 COPY lid-component.lock.json /opt/yap-repo/server/lid-component.lock.json
 COPY runtime/lid/THIRD_PARTY_NOTICES.md /opt/yap-repo/server/THIRD_PARTY_NOTICES.md

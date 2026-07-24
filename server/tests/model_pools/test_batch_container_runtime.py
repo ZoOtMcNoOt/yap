@@ -172,6 +172,7 @@ class ContainerBatchAsrRuntimeTests(unittest.TestCase):
                 "ls",
                 "--all",
                 "--quiet",
+                "--no-trunc",
                 "--filter",
                 "label=com.mcnatg1.yap.owner=batch-asr",
                 "--filter",

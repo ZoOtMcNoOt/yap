@@ -20,6 +20,8 @@ LOCK_PATH = REPO_ROOT / "server" / "lid-component.lock.json"
 CHECKED_HEAD = "a" * 40
 IMAGE_ID = "sha256:" + "b" * 64
 CATALOG_REVISION = "c" * 64
+PREPARATION_RECEIPT = str(REPO_ROOT / "private-lid-preparation.json")
+PREPARATION_RECEIPT_SHA256 = "d" * 64
 
 
 def _catalog() -> dict[str, object]:
@@ -50,33 +52,59 @@ class LidRuntimeTests(unittest.TestCase):
             model = root / "model"
             storage.mkdir()
             model.mkdir()
+            work_root = storage / "lid-preflight"
+            recovery = work_root / "lid-recovery-request"
+            recovery.mkdir(parents=True)
+            (recovery / ".yap-container-id").write_text(
+                "e" * 64,
+                encoding="utf-8",
+            )
+            startup_order: list[str] = []
+
+            def reconcile_containers(*_args: object, **_kwargs: object) -> int:
+                startup_order.append("containers")
+                return 1
+
+            def reconcile_requests(path: Path, **kwargs: object) -> int:
+                self.assertEqual(startup_order, ["containers"])
+                startup_order.append("requests")
+                return reconcile_stale_lid_requests(path, **kwargs)
+
             environ = {
                 "YAP_LANGUAGE_DETECTION_ENABLED": "1",
                 "YAP_LANGUAGE_DETECTION_MODEL_DIR": str(model),
-                "YAP_LANGUAGE_DETECTION_WORKER_IMAGE": "yap-lid:test",
+                "YAP_LANGUAGE_DETECTION_WORKER_IMAGE": IMAGE_ID,
+                "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT": (
+                    PREPARATION_RECEIPT
+                ),
+                "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256": (
+                    PREPARATION_RECEIPT_SHA256
+                ),
                 "YAP_CHECKED_HEAD": CHECKED_HEAD,
                 "YAP_LANGUAGE_DETECTION_DOCKER_BINARY": "docker-test",
-            }
-            inspection = {
-                "id": IMAGE_ID,
-                "labels": {
-                    "com.mcnatg1.yap.base-platform-digest": (
-                        self.lock.runtime.platform_digest
-                    )
-                },
             }
             with (
                 patch(
                     "yap_server.lid.runtime.verify_lid_model_artifacts"
                 ) as verify_model,
                 patch(
-                    "yap_server.lid.runtime.inspect_worker_image",
-                    return_value=inspection,
-                ) as inspect,
+                    "yap_server.lid.runtime.assert_clean_checked_head",
+                ) as assert_clean,
+                patch(
+                    "yap_server.lid.runtime.verify_prepared_checked_image",
+                    return_value={"imageId": IMAGE_ID},
+                ) as verify_prepared,
                 patch(
                     "yap_server.lid.runtime.reconcile_lid_containers",
-                    return_value=0,
+                    side_effect=reconcile_containers,
                 ) as reconcile_containers,
+                patch(
+                    "yap_server.lid.runtime.reconcile_stale_lid_requests",
+                    side_effect=reconcile_requests,
+                ) as reconcile_requests,
+                patch(
+                    "yap_server.lid.runtime.verify_lid_container_absent",
+                ) as verify_recovery_container,
             ):
                 runtime = build_language_detection_runtime(
                     environ,
@@ -131,15 +159,39 @@ class LidRuntimeTests(unittest.TestCase):
             )
             self.assertNotIn("languagePreflight", _catalog())
             verify_model.assert_called_once_with(self.lock, model.resolve())
-            inspect.assert_called_once_with(
-                environ["YAP_LANGUAGE_DETECTION_WORKER_IMAGE"],
-                CHECKED_HEAD,
-                docker_binary="docker-test",
+            assert_clean.assert_called_once()
+            verify_prepared.assert_called_once()
+            self.assertEqual(
+                verify_prepared.call_args.kwargs["receipt_path"],
+                Path(PREPARATION_RECEIPT),
+            )
+            self.assertEqual(
+                verify_prepared.call_args.kwargs["receipt_sha256"],
+                PREPARATION_RECEIPT_SHA256,
             )
             reconcile_containers.assert_called_once_with(
                 "docker-test",
                 storage_namespace="storage-test",
             )
+            reconcile_requests.assert_called_once()
+            self.assertEqual(reconcile_requests.call_args.args, (work_root,))
+            self.assertTrue(
+                reconcile_requests.call_args.kwargs[
+                    "retire_container_identities"
+                ]
+            )
+            self.assertTrue(
+                callable(
+                    reconcile_requests.call_args.kwargs[
+                        "verify_container_absent"
+                    ]
+                )
+            )
+            verify_recovery_container.assert_called_once_with(
+                "docker-test",
+                "e" * 64,
+            )
+            self.assertEqual(startup_order, ["containers", "requests"])
             runtime.close()
 
     def test_runtime_is_explicit_and_rejects_invalid_enable_values(self) -> None:
@@ -158,49 +210,47 @@ class LidRuntimeTests(unittest.TestCase):
                 **arguments,
             )
 
-    def test_resolves_only_an_arm64_checked_head_image_with_locked_base(self) -> None:
+    def test_resolves_only_the_receipt_bound_immutable_image_id(self) -> None:
         environ = {
-            "YAP_LANGUAGE_DETECTION_WORKER_IMAGE": "yap-lid:test",
+            "YAP_LANGUAGE_DETECTION_WORKER_IMAGE": IMAGE_ID,
             "YAP_CHECKED_HEAD": CHECKED_HEAD,
+            "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT": PREPARATION_RECEIPT,
+            "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256": (
+                PREPARATION_RECEIPT_SHA256
+            ),
         }
-        valid = {
-            "id": IMAGE_ID,
-            "labels": {
-                "com.mcnatg1.yap.base-platform-digest": (
-                    self.lock.runtime.platform_digest
-                )
-            },
-        }
-        with patch(
-            "yap_server.lid.runtime.inspect_worker_image",
-            return_value=valid,
+        with (
+            patch("yap_server.lid.runtime.assert_clean_checked_head"),
+            patch(
+                "yap_server.lid.runtime.verify_prepared_checked_image",
+                return_value={"imageId": IMAGE_ID},
+            ),
         ):
             self.assertEqual(
                 resolve_language_detection_worker_image(
                     environ,
                     lock=self.lock,
                     docker_binary="docker-test",
+                    repository_root=REPO_ROOT,
                 ),
                 IMAGE_ID,
             )
 
-        invalid = {
-            "id": IMAGE_ID,
-            "labels": {
-                "com.mcnatg1.yap.base-platform-digest": "sha256:" + "d" * 64
-            },
-        }
+        substituted = dict(environ)
+        substituted["YAP_LANGUAGE_DETECTION_WORKER_IMAGE"] = "yap-lid:test"
         with (
+            patch("yap_server.lid.runtime.assert_clean_checked_head"),
             patch(
-                "yap_server.lid.runtime.inspect_worker_image",
-                return_value=invalid,
+                "yap_server.lid.runtime.verify_prepared_checked_image",
+                return_value={"imageId": IMAGE_ID},
             ),
-            self.assertRaisesRegex(ValueError, "base platform digest"),
+            self.assertRaisesRegex(ValueError, "receipt-bound immutable image ID"),
         ):
             resolve_language_detection_worker_image(
-                environ,
+                substituted,
                 lock=self.lock,
                 docker_binary="docker-test",
+                repository_root=REPO_ROOT,
             )
 
     def test_catalog_contributes_only_unique_fixed_locale_destinations(self) -> None:
@@ -235,6 +285,66 @@ class LidRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "unexpected entry"):
                 reconcile_stale_lid_requests(root)
             self.assertEqual(marker.read_text(encoding="utf-8"), "preserve")
+
+            marker.unlink()
+            unrelated.rmdir()
+            fenced = root / "lid-fenced-request"
+            fenced.mkdir()
+            identity = fenced / ".yap-container-id"
+            identity.write_text("e" * 64, encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "unexpected artifact"):
+                reconcile_stale_lid_requests(root)
+            self.assertEqual(
+                reconcile_stale_lid_requests(
+                    root,
+                    retire_container_identities=True,
+                    verify_container_absent=lambda _identity: None,
+                ),
+                1,
+            )
+
+            whitespace = root / "lid-whitespace-recovery"
+            whitespace.mkdir()
+            (whitespace / ".yap-container-id").write_bytes(b" \n")
+            with self.assertRaisesRegex(RuntimeError, "identity is invalid"):
+                reconcile_stale_lid_requests(
+                    root,
+                    retire_container_identities=True,
+                    verify_container_absent=lambda _identity: None,
+                )
+            self.assertTrue(whitespace.exists())
+            (whitespace / ".yap-container-id").unlink()
+            whitespace.rmdir()
+            self.assertEqual(list(root.iterdir()), [])
+
+            invalid = root / "lid-invalid-recovery"
+            invalid.mkdir()
+            (invalid / ".yap-container-id").write_text(
+                "not-an-id",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RuntimeError, "identity is invalid"):
+                reconcile_stale_lid_requests(
+                    root,
+                    retire_container_identities=True,
+                    verify_container_absent=lambda _identity: None,
+                )
+
+            (invalid / ".yap-container-id").unlink()
+            invalid.rmdir()
+            empty = root / "lid-empty-recovery"
+            empty.mkdir()
+            (empty / ".yap-container-id").write_bytes(b"")
+            self.assertEqual(
+                reconcile_stale_lid_requests(
+                    root,
+                    retire_container_identities=True,
+                    verify_container_absent=lambda _identity: self.fail(
+                        "empty pre-create identity must not be inspected"
+                    ),
+                ),
+                1,
+            )
 
 
 if __name__ == "__main__":

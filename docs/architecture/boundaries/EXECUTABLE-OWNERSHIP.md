@@ -275,15 +275,20 @@ owner's state but may not recreate its transition logic.
   the isolated AmberNet worker/container.
 - **Trust boundary:** versioned binary envelope, exact manifest/body lengths and
   hashes, source-sample intervals, catalog/policy/model identity, private path
-  identity, worker output bounds, and cleanup proof.
+  identity, worker output bounds, and cleanup proof. Each real container launch
+  writes Docker's immutable 64-character ID to a private per-request
+  `--cidfile`; cleanup verifies that ID's owner, storage, runtime-instance, job,
+  and checked-revision labels before removing only that ID.
 - **Dependencies/events:** HTTP adapter -> transport parser -> service ->
   materialization -> preflight engine -> isolated worker. The response is an
   assistive suggestion only; the client language-decision owner remains
   authoritative.
-- **Failure/recovery:** stale owned probe directories are reconciled at startup;
-  a cleanup failure fences the LID service. Runtime startup failure retires an
-  already-created job service before worker cleanup and retains the storage
-  lease whenever containment cannot be proved.
+- **Failure/recovery:** a cleanup failure fences the LID service and retains the
+  request root plus immutable container identity. On restart, owned containers
+  are reconciled first; only then may startup validate and retire that bounded
+  identity file with the stale owned probe directory. Runtime startup failure
+  retires an already-created job service before worker cleanup and retains the
+  storage lease whenever containment cannot be proved.
 - **Cancellation:** an accepted DELETE sets the request cancellation while the
   request is active. Finalization checks that signal under the same lock that
   removes active identity, so an accepted cancellation cannot race into a
@@ -323,11 +328,13 @@ owner's state but may not recreate its transition logic.
   fixed shortcut/native-import dispatchers for process-lifetime event work; and
   `server/pools/container_runtime.py` plus `batch_asr_worker.py` for the
   transient reference worker. The two provider-specific foreground launchers
-  own their resident containers and bounded loopback-proxy process groups; the
-  lifecycle gate owns only their sequential qualification run and temporary
-  internal bridge.
-- **Persisted state:** no process handle is durable; durable job/cancellation
-  state drives restart behavior.
+  own normal resident-container and bounded loopback-proxy teardown; the
+  lifecycle gate owns their sequential qualification run, temporary internal
+  bridge, and abnormal-exit recovery.
+- **Persisted state:** each active proxy publishes its immutable process-group
+  identity into the gate's private runtime directory until verified teardown.
+  No handle survives successful cleanup; durable job/cancellation state drives
+  application restart behavior.
 - **Transient state:** task handles, child/container identity, proxy process
   group and fixed child ceiling, timeouts, and cleanup guards. Shortcut/import
   worker counts and queue capacities are fixed; they end with the desktop
@@ -336,9 +343,11 @@ owner's state but may not recreate its transition logic.
   ceilings, filesystem mounts, and termination.
 - **Dependencies/events:** job pool invokes runtime; lifecycle errors become
   safe status/failure projections.
-- **Failure/recovery:** handles and complete proxy process groups are
-  reaped/force-cleaned; restart relies on durable state rather than pretending a
-  child survived.
+- **Failure/recovery:** the recovery owner validates the per-run token on every
+  live process-group member before bounded TERM/KILL cleanup. The private
+  process-group identity lets it retire a proxy even after the launcher leader
+  dies; restart relies on durable job state rather than pretending a child
+  survived.
 - **Cancellation:** explicit terminate/kill fallback with bounded wait.
 - **Duplicate owner:** installer-only containment was retired; real runtime
   process safety remains.
@@ -466,6 +475,14 @@ owner's state but may not recreate its transition logic.
   validate the exact PR head. Production ASR, NeMo, and LID images exclude the
   `yap_server.evaluation` package; private qualification adds evaluation code or
   source material only through the explicit evaluation image/mount boundary.
+- **Checked-runtime boundary:** pre-admission preparation owns digest-pinned
+  Dockerfile execution and emits a private receipt only after a second
+  clean-head check. The frozen private plan owns each receipt hash. Admitted
+  gates are inspection-only: they require the receipt-bound ARM64 image ID,
+  pass that ID to the launcher, and bind the ID plus receipt hash into final
+  evidence. Provider launchers and the shared loopback helper use a per-run
+  token and immutable container/network IDs so cleanup cannot claim a later
+  fixed-name replacement.
 - **Failure/recovery:** runners fail closed on stale/partial evidence, avoid
   inherited fixed-port assumptions, and clean up only their owned
   processes/listeners/networks. Resident-provider final evidence additionally

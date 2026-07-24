@@ -262,6 +262,18 @@ test("checked-head WDIO builds require a clean tree before and after compilation
   );
 });
 
+test("connected gate records a real five-window AmberNet preflight", () => {
+  const source = readFileSync(
+    path.join(repoRoot, "desktop", "tests", "wdio", "private-server-asr.gate.spec.js"),
+    "utf8",
+  );
+  assert.match(source, /runLanguagePreflightExecution\(/);
+  assert.match(source, /fetch\(`http:\/\/\$\{tunnelHost\}:\$\{tunnelPort\}\/v1\/lid\/preflight`/);
+  assert.match(source, /expect\(result\.observations\)\.toHaveLength/);
+  assert.match(source, /languagePreflightExecution,/);
+  assert.match(source, /schemaVersion: 3,/);
+});
+
 test("target-client runbook carries prepared-audio identity into the UI gate", () => {
   const runbook = readFileSync(
     path.join(repoRoot, "docs", "runbooks", "target-client-language-routing-qualification.md"),
@@ -462,6 +474,31 @@ test("integrated private evidence is derived from concrete checked-head artifact
   const remoteCleanupLogPath = path.join(root, `${checkedHead}-remote-cleanup.log`);
   const teardownPath = path.join(integratedRoot, "teardown.json");
   const suiteSha256 = "1".repeat(64);
+  const runtimeImageIds = {
+    "cohere-vllm": `sha256:${"a".repeat(64)}`,
+    "nemotron-nemo": `sha256:${"b".repeat(64)}`,
+    "language-detection": `sha256:${"c".repeat(64)}`,
+  };
+  const runtimePreparation = Object.fromEntries(
+    ["cohere-vllm", "nemotron-nemo", "language-detection"].map((runtime) => {
+      const receiptFile = path.join(root, `${runtime}-preparation.json`);
+      const receiptBytes = Buffer.from(`${JSON.stringify({
+        schemaVersion: 1,
+        checkedHead,
+        runtime,
+        dockerfileSha256: "d".repeat(64),
+        image: `yap-${runtime}:checked-head-${checkedHead}`,
+        imageId: runtimeImageIds[runtime],
+        architecture: "arm64",
+        baseDigest: `sha256:${"e".repeat(64)}`,
+      })}\n`);
+      writeFileSync(receiptFile, receiptBytes);
+      return [runtime, {
+        receiptFile,
+        receiptSha256: sha256(receiptBytes),
+      }];
+    }),
+  );
   const plan = {
     schemaVersion: 1,
     checkedHead,
@@ -470,7 +507,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
       preparedAudioEvidenceFile: preparedPath,
       preparedAudioSuiteSha256: suiteSha256,
     },
-    gb10: { lifecycleEvidenceFile: gb10Path },
+    gb10: { lifecycleEvidenceFile: gb10Path, runtimePreparation },
     integrated: {
       evidenceDirectory: integratedRoot,
       remoteCleanupLogFile: remoteCleanupLogPath,
@@ -612,6 +649,16 @@ test("integrated private evidence is derived from concrete checked-head artifact
       checkedHead,
       hardwareProfile: "dgx-spark-gb10",
       executionShape: "sequential-resident-providers",
+      runtimeImages: {
+        "cohere-vllm": {
+          imageId: runtimeImageIds["cohere-vllm"],
+          preparationReceiptSha256: runtimePreparation["cohere-vllm"].receiptSha256,
+        },
+        "nemotron-nemo": {
+          imageId: runtimeImageIds["nemotron-nemo"],
+          preparationReceiptSha256: runtimePreparation["nemotron-nemo"].receiptSha256,
+        },
+      },
       durationSuite: { sha256: "5".repeat(64), planSha256: "6".repeat(64) },
       hostBoundary: {
         listenerStateUnchanged: true,
@@ -642,7 +689,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
     writeFileSync(
       path.join(integratedRoot, "native-vertical-slice.json"),
       `${JSON.stringify({
-        schemaVersion: 2,
+        schemaVersion: 3,
         checkedHead,
         fixtureSha256: "8".repeat(64),
         clientRoute: "serverBatch",
@@ -654,11 +701,31 @@ test("integrated private evidence is derived from concrete checked-head artifact
         tunnelRestoredState: "ready",
         immutableJobSurvivedTunnelInterruption: true,
         historyOpenedVerifiedResult: true,
+        languagePreflightExecution: {
+          componentId: "ambernet-batch-language-preflight",
+          modelId: "nvidia/nemo/langid_ambernet",
+          modelRevision: "1.12.0",
+          observationCount: 5,
+          policyRevision: "ambernet-stratified-five-region-v1",
+          requestIdSha256: "9".repeat(64),
+          resultStatus: "suggestion",
+          runtimeCpuOnly: true,
+          runtimePythonVersion: "3.12.13",
+          sourcePcmSha256: "a".repeat(64),
+        },
         status: "passed",
       }, null, 2)}\n`,
     );
     const remoteCleanupLog = Buffer.from(
-      `REMOTE_PRIVATE_SERVER_READY=${checkedHead}\nREMOTE_GATE_CLEANUP=PASS\n`,
+      [
+        `REMOTE_RUNTIME_COHERE_VLLM_IMAGE_ID=${runtimeImageIds["cohere-vllm"]}`,
+        `REMOTE_RUNTIME_COHERE_VLLM_PREPARATION_RECEIPT_SHA256=${runtimePreparation["cohere-vllm"].receiptSha256}`,
+        `REMOTE_RUNTIME_LANGUAGE_DETECTION_IMAGE_ID=${runtimeImageIds["language-detection"]}`,
+        `REMOTE_RUNTIME_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256=${runtimePreparation["language-detection"].receiptSha256}`,
+        `REMOTE_PRIVATE_SERVER_READY=${checkedHead}`,
+        "REMOTE_GATE_CLEANUP=PASS",
+        "",
+      ].join("\n"),
     );
     writeFileSync(remoteCleanupLogPath, remoteCleanupLog);
     const tunnelProcessLedger = Buffer.from(`${JSON.stringify({
@@ -704,6 +771,54 @@ test("integrated private evidence is derived from concrete checked-head artifact
 
     const evidence = validateIntegratedPrivateEvidence(plan, checkedHead);
     assert.equal(evidence.size, 12);
+    const verticalPath = path.join(integratedRoot, "native-vertical-slice.json");
+    const vertical = JSON.parse(readFileSync(verticalPath, "utf8"));
+    const lidExecution = vertical.languagePreflightExecution;
+    delete vertical.languagePreflightExecution;
+    writeFileSync(verticalPath, `${JSON.stringify(vertical, null, 2)}\n`);
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      /did not prove ASR and LID execution/,
+    );
+    vertical.languagePreflightExecution = lidExecution;
+    writeFileSync(verticalPath, `${JSON.stringify(vertical, null, 2)}\n`);
+    writeFileSync(
+      remoteCleanupLogPath,
+      Buffer.concat([
+        remoteCleanupLog,
+        Buffer.from(
+          `REMOTE_RUNTIME_COHERE_VLLM_IMAGE_ID=${runtimeImageIds["cohere-vllm"]}\n`,
+        ),
+      ]),
+    );
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      /did not use the frozen prepared images/,
+    );
+    writeFileSync(remoteCleanupLogPath, remoteCleanupLog);
+    gb10.runtimeImages["cohere-vllm"].imageId = `sha256:${"f".repeat(64)}`;
+    delete gb10.evidenceSha256;
+    gb10.evidenceSha256 = sha256(JSON.stringify(stableValue(gb10)));
+    writeFileSync(gb10Path, `${JSON.stringify(gb10, null, 2)}\n`);
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      /not bound to the frozen runtime preparation/,
+    );
+    gb10.runtimeImages["cohere-vllm"].imageId = runtimeImageIds["cohere-vllm"];
+    delete gb10.evidenceSha256;
+    gb10.evidenceSha256 = sha256(JSON.stringify(stableValue(gb10)));
+    writeFileSync(gb10Path, `${JSON.stringify(gb10, null, 2)}\n`);
+    const cohereReceipt = runtimePreparation["cohere-vllm"].receiptFile;
+    const cohereReceiptBytes = readFileSync(cohereReceipt);
+    writeFileSync(cohereReceipt, Buffer.concat([cohereReceiptBytes, Buffer.from(" ")]));
+    assert.throws(
+      () => validateIntegratedPrivateEvidencePlan(plan, {
+        expectedHead: checkedHead,
+        repositoryRoot: repoRoot,
+      }),
+      /does not match the frozen plan/,
+    );
+    writeFileSync(cohereReceipt, cohereReceiptBytes);
     truncateSync(
       preparedPath,
       INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes + 1,
