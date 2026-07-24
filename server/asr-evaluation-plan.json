@@ -294,7 +294,7 @@
       "completedRequestCount": 1600,
       "minimumTailDurationMs": 60000,
       "minimumTailSampleCount": 200,
-      "maximumMemoryCurrentBytes": 4294967296,
+      "maximumMemoryCurrentBytes": 6442450944,
       "maximumMemoryPeakBytes": 8589934592,
       "maximumContainerEntrypointVirtualDataBytes": 5368709120,
       "maximumAbsoluteTailVirtualDataWindowMedianGrowthBytes": 67108864,

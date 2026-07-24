@@ -1167,13 +1167,24 @@ These focused results selected, but did not consume, the frozen resource
 contracts in runtime-plan schema 5. Both profiles require c8/1,600 completions,
 at least 60 seconds and 200 samples in the tail, no memory-event increments,
 at most 256 cgroup tasks, and no more than 64 MiB absolute tail growth in the
-entrypoint allocation extent. vLLM is capped at 4 GiB current, 8 GiB peak,
+entrypoint allocation extent. vLLM is capped at 6 GiB current, 8 GiB peak,
 5 GiB entrypoint virtual data, and 128 entrypoint threads. NeMo is capped at
 5 GiB current, 8 GiB peak, 14 GiB entrypoint virtual data, and 256 entrypoint
 threads. Physical RSS slope remains reported rather than hidden, but GB10
 residency oscillation cannot substitute for growing allocation extent. The
 one-time checked-head resource qualification and representative-quality gates
 remain open, and all raw samples stayed in the private external cache.
+
+The first frozen-candidate lifecycle attempt exposed a cold-cache dependency in
+the original 4 GiB vLLM current-memory ceiling. All 1,600 requests completed,
+memory-event deltas stayed zero, peak memory remained below 8 GiB, and
+entrypoint allocation extent plateaued, but the cgroup reached 5.42 GiB current
+while charging about 2.06 GiB of reclaimable file cache to the new container.
+The earlier warm-host control stayed below 3.12 GiB because those pages were
+already charged outside the container. The 6 GiB ceiling therefore covers the
+cold model/image cache while the independent peak, entrypoint-allocation,
+allocation-growth, task/thread, and zero-memory-event
+checks remain unchanged.
 
 The current-source enforcement rerun then passed all eleven checks in both
 profiles. vLLM completed 1,600/1,600 with a 75.2-second/286-sample tail,

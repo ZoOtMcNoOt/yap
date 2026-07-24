@@ -114,7 +114,7 @@ class RuntimeEvaluationPlanTests(unittest.TestCase):
 
         self.assertEqual(vllm.load_case_id, "vllm-short-tail")
         self.assertEqual(vllm.completed_request_count, 1_600)
-        self.assertEqual(vllm.maximum_memory_current_bytes, 4 * 1024**3)
+        self.assertEqual(vllm.maximum_memory_current_bytes, 6 * 1024**3)
         self.assertEqual(vllm.maximum_container_entrypoint_thread_count, 128)
         self.assertEqual(nemo.load_case_id, "nemo-finalized-short-tail")
         self.assertEqual(
