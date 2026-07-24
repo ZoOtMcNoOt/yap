@@ -46,7 +46,11 @@ export function createTargetClientLanguageRoutingHardwareGate({
     enabled,
   );
   const stimulusDelivery = environment.YAP_TARGET_CLIENT_STIMULUS_DELIVERY;
+  const checkedHead = environment.YAP_CHECKED_HEAD;
+  const preparedAudioEvidenceSha256 =
+    environment.YAP_TARGET_CLIENT_PREPARED_AUDIO_EVIDENCE_SHA256;
   let restartCancellationEvidence = null;
+  let verifiedBuildGitSha = null;
 
   if (enabled && !evidenceFile) {
     throw new Error("YAP_TARGET_CLIENT_UI_EVIDENCE_FILE is required for the target-client gate.");
@@ -54,6 +58,14 @@ export function createTargetClientLanguageRoutingHardwareGate({
   if (enabled && stimulusDelivery !== AUTOMATED_STIMULUS_DELIVERY) {
     throw new Error(
       `YAP_TARGET_CLIENT_STIMULUS_DELIVERY must be ${AUTOMATED_STIMULUS_DELIVERY}.`,
+    );
+  }
+  if (enabled && !/^[0-9a-f]{40}$/.test(checkedHead ?? "")) {
+    throw new Error("YAP_CHECKED_HEAD must identify the exact target-client build.");
+  }
+  if (enabled && !/^[0-9a-f]{64}$/.test(preparedAudioEvidenceSha256 ?? "")) {
+    throw new Error(
+      "YAP_TARGET_CLIENT_PREPARED_AUDIO_EVIDENCE_SHA256 must identify passed prepared-audio evidence.",
     );
   }
 
@@ -80,6 +92,20 @@ export function createTargetClientLanguageRoutingHardwareGate({
         enabledAlternateLocales: [selected],
       });
     });
+  }
+
+  async function assertCheckedBuildIdentity() {
+    if (!enabled) return null;
+    const browser = requireActiveBrowser();
+    await browser.tauri.switchWindow("main");
+    const buildGitSha = await browser.tauri.execute(({ core }) =>
+      core.invoke("wdio_build_git_sha"));
+    requireCondition(
+      buildGitSha === checkedHead,
+      "The running target-client binary was not built from YAP_CHECKED_HEAD.",
+    );
+    verifiedBuildGitSha = buildGitSha;
+    return buildGitSha;
   }
 
   async function assertResidentRuntimeReady(configuredRouting) {
@@ -314,12 +340,18 @@ export function createTargetClientLanguageRoutingHardwareGate({
       restartCancellationEvidence?.cycleCount === RESTART_STOP_DELAYS_MS.length,
       "Restart/cancellation evidence was incomplete.",
     );
+    requireCondition(
+      verifiedBuildGitSha === checkedHead,
+      "The target-client build identity was not verified.",
+    );
     const aggregate = {
-      schemaVersion: 3,
+      schemaVersion: 4,
       activeCaptureMs,
+      buildGitSha: verifiedBuildGitSha,
       languageRoutingEnabledLocales: configuredRouting?.enabledLocales ?? [],
       levelEventCount: evidence.levels.length,
       lifecycleStatuses: statuses,
+      preparedAudioEvidenceSha256,
       renderedUiResponsiveness: uiResponsiveness,
       restartCancellation: restartCancellationEvidence,
       route: evidence.mainSessions.find(({ route }) => route === "localFallback")?.route ?? null,
@@ -338,6 +370,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
 
   return Object.freeze({
     activeCaptureMs,
+    assertCheckedBuildIdentity,
     assertResidentRuntimeReady,
     assertRenderedCaptureEvidence,
     configureLanguageRouting,

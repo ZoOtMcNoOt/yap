@@ -25,6 +25,7 @@ import {
 } from "./wdio/windows-path-safety.js";
 import { validateTargetClientNativeResourceEvidence } from "./wdio/target-client-native-resource-evidence.js";
 import { validateTargetClientPowerThermalEvidence } from "./wdio/target-client-power-thermal-evidence.js";
+import { validateTargetClientPreparedAudioEvidence } from "./wdio/target-client-prepared-audio-evidence.js";
 
 // Cohesion note: preflight and finalization intentionally share one captured
 // path/hash identity so the private evidence transaction cannot change owners.
@@ -51,6 +52,12 @@ const appBinaryPath = requireAbsoluteWindowsPath(
   process.env.APP_BINARY,
   "Target-client release binary",
 );
+const preparedAudioEvidencePath = requireAbsoluteWindowsPath(
+  process.env.YAP_TARGET_CLIENT_PREPARED_AUDIO_EVIDENCE_FILE,
+  "Target-client prepared-audio evidence file",
+);
+const preparedAudioSuiteSha256 =
+  process.env.YAP_TARGET_CLIENT_PREPARED_AUDIO_SUITE_SHA256 ?? "";
 const powerThermalEvidencePath = process.env.YAP_TARGET_CLIENT_POWER_THERMAL_EVIDENCE_FILE
   ? requireAbsoluteWindowsPath(
     process.env.YAP_TARGET_CLIENT_POWER_THERMAL_EVIDENCE_FILE,
@@ -67,6 +74,7 @@ const uiEvidenceFile = path.join(runRoot, "rendered-ui-evidence.json");
 const uiContextFile = path.join(runRoot, "rendered-ui-context.json");
 const powerThermalSummaryFile = path.join(runRoot, "power-thermal-evidence.json");
 let appBinarySha256 = "";
+let preparedAudioEvidenceSha256 = "";
 let validatedPowerThermalEvidence: unknown = null;
 
 function parseActiveCaptureDuration(raw: string | undefined): number {
@@ -235,6 +243,26 @@ function requireNativeResourceEvidence() {
   }
 }
 
+function requirePreparedAudioEvidence() {
+  if (!/^[0-9a-f]{64}$/.test(preparedAudioSuiteSha256)) {
+    throw new Error(
+      "YAP_TARGET_CLIENT_PREPARED_AUDIO_SUITE_SHA256 must identify the frozen suite.",
+    );
+  }
+  requireOutsideRepository(preparedAudioEvidencePath, "Prepared-audio evidence");
+  requireInsideEvidenceRoot(preparedAudioEvidencePath, "Prepared-audio evidence");
+  requireRealFile(preparedAudioEvidencePath, "Prepared-audio evidence");
+  validateTargetClientPreparedAudioEvidence(
+    JSON.parse(readFileSync(preparedAudioEvidencePath, "utf8")),
+    {
+      checkedHead,
+      logicalProcessors: os.cpus().length,
+      suiteSha256: preparedAudioSuiteSha256,
+    },
+  );
+  return createHash("sha256").update(readFileSync(preparedAudioEvidencePath)).digest("hex");
+}
+
 function createPrivateRunDirectories() {
   if (!worker) {
     if (existsSync(runRoot)) {
@@ -252,11 +280,13 @@ function createPrivateRunDirectories() {
     writeFileSync(
       uiContextFile,
       `${JSON.stringify({
-        schemaVersion: 3,
+        schemaVersion: 4,
         status: "started",
         activeCaptureMs,
         appBinarySha256,
         checkedHead,
+        preparedAudioEvidenceSha256,
+        preparedAudioSuiteSha256,
         physicalPowerThermalStatus: powerThermalEvidencePath
           ? "passed"
           : "deferred-to-default-on-hardware-certification",
@@ -308,6 +338,7 @@ requireRealDirectory(evidenceRoot, "Target-client evidence root");
 requireRealDirectory(modelsRoot, "Target-client models root");
 requireReleaseBinary();
 requireNativeResourceEvidence();
+preparedAudioEvidenceSha256 = requirePreparedAudioEvidence();
 appBinarySha256 = createHash("sha256").update(readFileSync(appBinaryPath)).digest("hex");
 if (powerThermalEvidencePath) {
   requireOutsideRepository(powerThermalEvidencePath, "Target-client power/thermal evidence");
@@ -330,6 +361,8 @@ process.env.YAP_LIVE_RECORDINGS_DIR = recordingRoot;
 process.env.WEBVIEW2_USER_DATA_FOLDER = webviewRoot;
 process.env.YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE = "1";
 process.env.YAP_TARGET_CLIENT_UI_EVIDENCE_FILE = uiEvidenceFile;
+process.env.YAP_TARGET_CLIENT_PREPARED_AUDIO_EVIDENCE_SHA256 =
+  preparedAudioEvidenceSha256;
 
 export const config = {
   bail: 1,
@@ -396,8 +429,9 @@ export const config = {
     const evidenceBytes = readFileSync(uiEvidenceFile);
     const evidence = JSON.parse(evidenceBytes.toString("utf8"));
     if (
-      evidence.schemaVersion !== 3
+      evidence.schemaVersion !== 4
       || evidence.activeCaptureMs !== activeCaptureMs
+      || evidence.buildGitSha !== checkedHead
       || evidence.route !== "localFallback"
       || evidence.stimulusLicense !== stimulusLicense
       || evidence.stimulusSha256 !== stimulusSha256
@@ -411,6 +445,7 @@ export const config = {
         (status: unknown) => status === "listening" || status === "speaking",
       )
       || evidence.speechEvidenceBoundary !== "checked-head-prepared-audio-short-boundaries"
+      || evidence.preparedAudioEvidenceSha256 !== preparedAudioEvidenceSha256
       || evidence.restartCancellation?.cycleCount !== 4
       || evidence.restartCancellation?.finalStatus !== "idle"
       || !Number.isFinite(evidence.renderedUiResponsiveness?.p95DelayMs)
@@ -422,15 +457,24 @@ export const config = {
     }
     const context = JSON.parse(readFileSync(uiContextFile, "utf8"));
     if (
-      context.schemaVersion !== 3
+      context.schemaVersion !== 4
+      || context.checkedHead !== checkedHead
       || context.serverBoundary !== targetServerBoundary
       || context.stimulusDelivery !== stimulusDelivery
+      || context.preparedAudioEvidenceSha256 !== preparedAudioEvidenceSha256
+      || context.preparedAudioSuiteSha256 !== preparedAudioSuiteSha256
     ) {
       throw new Error("The target-client UI context did not preserve its automated boundary.");
     }
     const finalBinarySha256 = createHash("sha256").update(readFileSync(appBinaryPath)).digest("hex");
     if (finalBinarySha256 !== context.appBinarySha256) {
       throw new Error("The target-client release binary changed during qualification.");
+    }
+    const finalPreparedAudioEvidenceSha256 = createHash("sha256")
+      .update(readFileSync(preparedAudioEvidencePath))
+      .digest("hex");
+    if (finalPreparedAudioEvidenceSha256 !== context.preparedAudioEvidenceSha256) {
+      throw new Error("The prepared-audio evidence changed during qualification.");
     }
     let powerThermalSummarySha256 = null;
     if (powerThermalEvidencePath) {

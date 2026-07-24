@@ -5,6 +5,8 @@ use super::{
     StartIntent,
 };
 
+const LIVE_MODEL_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
+
 impl LiveRuntime {
     pub fn is_active(&self) -> bool {
         self.inner
@@ -119,7 +121,14 @@ impl LiveRuntime {
             inner.retire_stream();
             self.active_session.store(0, Ordering::SeqCst);
             drop(inner);
-            let _ = self.model_warmup.clear_idle();
+            if let Err(error) = self
+                .model_warmup
+                .clear_idle_for_shutdown(LIVE_MODEL_SHUTDOWN_TIMEOUT)
+            {
+                crate::stt::log_yap(&format!(
+                    "live model shutdown continued after bounded warmup cancellation: {error}"
+                ));
+            }
             let _ = self.finalize_recording();
             log_worker_shutdown_errors(shutdown_errors);
         });

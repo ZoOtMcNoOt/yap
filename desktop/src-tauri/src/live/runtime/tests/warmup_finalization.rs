@@ -116,6 +116,39 @@ fn clearing_idle_warmup_cancels_and_waits_for_a_loading_model() {
 }
 
 #[test]
+fn shutdown_clear_returns_at_its_bound_when_model_loading_is_blocked() {
+    let warmup = Arc::new(SharedWarmup::<usize>::new());
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+    warmup
+        .request("blocked-shutdown-warmup", move || {
+            entered_tx.send(()).unwrap();
+            release_rx.recv().unwrap();
+            Ok(7)
+        })
+        .unwrap();
+    entered_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+
+    let started = Instant::now();
+    let error = warmup
+        .clear_idle_for_shutdown(Duration::from_millis(25))
+        .unwrap_err();
+
+    assert!(error.contains("shutdown deadline"));
+    assert!(started.elapsed() < Duration::from_secs(1));
+    assert!(warmup.is_loading_for_test());
+    release_tx.send(()).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while !warmup.is_empty_for_test() {
+        assert!(
+            Instant::now() < deadline,
+            "cancelled warmup did not retire after its loader returned"
+        );
+        std::thread::yield_now();
+    }
+}
+
+#[test]
 fn model_mutation_lease_invalidates_a_start_queued_behind_it() {
     let runtime = LiveRuntime::new();
     let mutation = runtime.begin_model_mutation().unwrap();

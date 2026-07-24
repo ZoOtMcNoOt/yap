@@ -1,3 +1,5 @@
+#[cfg(feature = "wdio")]
+mod build_identity;
 mod history;
 mod live;
 mod setup;
@@ -95,6 +97,8 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         crate::file_actions::open_app_path,
         crate::file_actions::reveal_app_path,
         #[cfg(feature = "wdio")]
-        crate::tray::wdio_dispatch_tray_action
+        crate::tray::wdio_dispatch_tray_action,
+        #[cfg(feature = "wdio")]
+        build_identity::wdio_build_git_sha
     ])
 }

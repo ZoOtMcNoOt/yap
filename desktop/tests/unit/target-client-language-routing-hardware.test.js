@@ -2,6 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import { createTargetClientLanguageRoutingHardwareGate } from "../wdio/target-client-language-routing-hardware.js";
 
+const checkedHead = "a".repeat(40);
+const preparedAudioEvidenceSha256 = "b".repeat(64);
+
+function enabledEnvironment(overrides = {}) {
+  return {
+    YAP_CHECKED_HEAD: checkedHead,
+    YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
+    YAP_TARGET_CLIENT_PREPARED_AUDIO_EVIDENCE_SHA256: preparedAudioEvidenceSha256,
+    YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
+    YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
+    ...overrides,
+  };
+}
+
 function createGate(environment) {
   return createTargetClientLanguageRoutingHardwareGate({
     browser: {},
@@ -32,11 +46,7 @@ describe("target-client language-routing hardware gate", () => {
   });
 
   it("defaults the unattended rendered-capture smoke to thirty seconds", () => {
-    const environment = {
-      YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
-      YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
-      YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
-    };
+    const environment = enabledEnvironment();
     expect(createGate(environment).activeCaptureMs).toBe(30_000);
     expect(() => createGate({
       ...environment,
@@ -45,11 +55,7 @@ describe("target-client language-routing hardware gate", () => {
   });
 
   it("requires active capture and finite levels without depending on acoustic loopback", () => {
-    const gate = createGate({
-      YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
-      YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
-      YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
-    });
+    const gate = createGate(enabledEnvironment());
     const evidence = {
       levels: [{ level: 0 }],
       mainSessions: [{
@@ -80,11 +86,7 @@ describe("target-client language-routing hardware gate", () => {
     let activeBrowser;
     const gate = createTargetClientLanguageRoutingHardwareGate({
       browserProvider: () => activeBrowser,
-      environment: {
-        YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
-        YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
-        YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
-      },
+      environment: enabledEnvironment(),
       recordingRoot: "C:\\private-yap-recordings",
     });
     activeBrowser = {
@@ -111,6 +113,26 @@ describe("target-client language-routing hardware gate", () => {
     });
   });
 
+  it("verifies the running binary against the exact checked head", async () => {
+    let buildGitSha = checkedHead;
+    const gate = createTargetClientLanguageRoutingHardwareGate({
+      browser: {
+        tauri: {
+          execute: async (operation) => operation({
+            core: { invoke: async () => buildGitSha },
+          }),
+          switchWindow: async () => {},
+        },
+      },
+      environment: enabledEnvironment(),
+      recordingRoot: "C:\\private-yap-recordings",
+    });
+
+    await expect(gate.assertCheckedBuildIdentity()).resolves.toBe(checkedHead);
+    buildGitSha = "c".repeat(40);
+    await expect(gate.assertCheckedBuildIdentity()).rejects.toThrow(/not built from/);
+  });
+
   it("requires the connector state that corresponds to disabled server settings", async () => {
     const status = {
       acousticLanguageDetector: { status: "ready" },
@@ -130,11 +152,7 @@ describe("target-client language-routing hardware gate", () => {
           switchWindow: async () => {},
         },
       },
-      environment: {
-        YAP_TARGET_CLIENT_LANGUAGE_ROUTING_GATE: "1",
-        YAP_TARGET_CLIENT_STIMULUS_DELIVERY: "same-host-acoustic-playback",
-        YAP_TARGET_CLIENT_UI_EVIDENCE_FILE: "C:\\private-yap-evidence\\ui.json",
-      },
+      environment: enabledEnvironment(),
       recordingRoot: "C:\\private-yap-recordings",
     });
 

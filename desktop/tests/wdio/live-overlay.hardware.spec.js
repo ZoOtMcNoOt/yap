@@ -184,6 +184,10 @@ async function cleanupLifecycle(runStartedAtMs) {
 describe("Yap live overlay hardware capture", () => {
   let overlayWasEnabled;
 
+  before(async () => {
+    await targetClient.assertCheckedBuildIdentity();
+  });
+
   after(async () => {
     if (targetClient.enabled) {
       await gracefullyExitWdioApp(browser);
