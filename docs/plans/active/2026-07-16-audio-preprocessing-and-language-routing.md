@@ -21,7 +21,14 @@ Preview behavior because its frozen natural-switch quality target failed. Final
 adversarial read-back subsequently found concrete merge blockers and invalidated
 `97b63be...` as merge authority. Its receipt remains historical evidence. The
 repaired implementation passed the focused three-agent remediation re-review;
-one complete gate, hosted checks, review, and merge remain. The retired Triton
+the first admitted replacement candidate
+`4b87e222c8ad7325a12a88709a52b5e9c1baf22e` then failed before provider
+startup because its checked builder forced an NGC registry lookup while the
+qualified GB10 was deliberately offline. The stopped target-client channel and
+both hosts cleaned up exactly; that SHA remains failed evidence and will not be
+retried or relabeled. The shared runtime-image builder now requires locally
+cached digest-pinned bases and disables pulls. One new candidate
+complete gate, hosted checks, review, and merge remain. The retired Triton
 experiment remains negative evidence.
 
 The isolated SpeechBrain component has a historical source-exact receipt at
@@ -1762,6 +1769,18 @@ invalidated `97b63be...` as merge authority. Focused three-agent remediation
 re-review passed; one replacement complete gate, hosted closure, review, and
 merge remain.
 
+The first admitted repaired candidate,
+`4b87e222c8ad7325a12a88709a52b5e9c1baf22e`, failed before any provider
+workload on 2026-07-24. Docker's forced base-image pull attempted an NGC DNS
+lookup while the GB10 had no default route. The concurrent Windows channel was
+stopped, its partial recording evidence was removed under the private failed-run
+cleanup contract, and read-back found no retained listener, process, container,
+network, or model-load snapshot on either machine. The failed admission remains
+private negative evidence and cannot be retried. Checked runtime builds now
+resolve every external Dockerfile base, require an exact cached digest, and
+disable registry pulls; the same functional builder covers Cohere, Nemotron,
+AmberNet LID, and the older reference batch worker.
+
 - [x] Resolve focused correctness, security, privacy, license/provenance,
       maintainability, accessibility, and resource-bound findings.
 - [x] Update ADR implementation scores only for behavior proved by executable
@@ -1775,7 +1794,9 @@ merge remain.
       [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
       exactly once. Historical candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
       passed all 30 frozen children, but later executable repair invalidated it
-      as merge authority and its receipt cannot be reused.
+      as merge authority and its receipt cannot be reused. Admitted replacement
+      `4b87e222c8ad7325a12a88709a52b5e9c1baf22e` failed at offline image-build
+      preflight and likewise cannot be retried or reused.
 - [ ] Open a focused PR, require hosted exact-head CI/CodeQL and any applicable
       disposable-Windows lifecycle evidence, review the checked SHA, and merge
       only that green reviewed head.

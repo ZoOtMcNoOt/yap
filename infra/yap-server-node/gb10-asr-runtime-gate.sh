@@ -110,12 +110,9 @@ PYTHONPATH="$repo_root/server/src" \
     --lock "$lock_path" \
     --model-dir "$YAP_GB10_ASR_MODEL_DIR"
 
-docker build \
-  --pull \
-  --file "$repo_root/server/runtime/asr/Dockerfile" \
-  --label "org.opencontainers.image.revision=$YAP_CHECKED_HEAD" \
-  --tag "$image" \
-  "$repo_root/server"
+bash "$script_dir/build-checked-runtime-image.sh" \
+  reference-batch-asr \
+  "$YAP_CHECKED_HEAD"
 
 PYTHONPATH="$repo_root/server/src" \
   python3 -m yap_server.pools.gb10_asr_runtime_gate \

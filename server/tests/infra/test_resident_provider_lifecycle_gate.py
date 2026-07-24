@@ -5,6 +5,12 @@ import unittest
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+IMAGE_BUILDER = (
+    REPOSITORY_ROOT
+    / "infra"
+    / "yap-server-node"
+    / "build-checked-runtime-image.sh"
+)
 GATE = (
     REPOSITORY_ROOT
     / "infra"
@@ -15,6 +21,37 @@ PLAN = REPOSITORY_ROOT / "server" / "asr-evaluation-plan.json"
 
 
 class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
+    def test_builds_from_digest_pinned_cached_bases_without_registry_pull(self) -> None:
+        builder = IMAGE_BUILDER.read_text(encoding="utf-8")
+        script = GATE.read_text(encoding="utf-8")
+
+        for required in (
+            "cohere-vllm",
+            "nemotron-nemo",
+            "language-detection",
+            "reference-batch-asr",
+            "runtime/cohere-vllm/Dockerfile",
+            "runtime/nemotron-nemo/Dockerfile",
+            "docker image inspect",
+            "@sha256:",
+            "--pull=false",
+            "status --porcelain=v1 --untracked-files=normal",
+            "Cached digest-pinned base image is required",
+        ):
+            self.assertIn(required, builder)
+
+        self.assertNotIn("\n  --pull \\", builder)
+        self.assertNotIn("\n  --pull \\", script)
+        self.assertNotIn("docker build", script)
+        self.assertIn(
+            'build-checked-runtime-image.sh" cohere-vllm "$YAP_CHECKED_HEAD"',
+            script,
+        )
+        self.assertIn(
+            'build-checked-runtime-image.sh" nemotron-nemo "$YAP_CHECKED_HEAD"',
+            script,
+        )
+
     def test_runs_both_checked_providers_sequentially_and_finalizes_after_teardown(
         self,
     ) -> None:
@@ -31,8 +68,6 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
             "YAP_COHERE_VLLM_API_KEY:?",
             "YAP_NEMOTRON_NEMO_API_KEY:?",
             "status --porcelain=v1 --untracked-files=normal",
-            "runtime/cohere-vllm/Dockerfile",
-            "runtime/nemotron-nemo/Dockerfile",
             "cohere-vllm-server.sh",
             "nemotron-nemo-server.sh",
             "resident_provider_readiness",

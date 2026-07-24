@@ -72,6 +72,11 @@ specific behind that seam.
   environment, never committed or written to evidence.
 - Startup verifies the exact vLLM version, single served model identity, and all
   immutable model artifacts before admitting work.
+- Checked image builds resolve every external Dockerfile base, reject
+  non-digest references, require each exact digest in the local image store, and
+  disable registry pulls. Network-dependent build layers are provisioned before
+  the candidate is frozen; an offline gate never substitutes a tag or reconnects
+  to repair a missing cache.
 - The launcher rejects root and runs the container as the invoking model-owner
   UID/GID so private host model directories do not need broader permissions.
 - Docker publishes no provider-container port. Each foreground launcher owns a

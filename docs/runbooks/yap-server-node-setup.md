@@ -174,6 +174,14 @@ verified private model directory; do not place model files, API keys, or job
 storage in Git. Build the repository's thin Cohere image from the immutable
 NVIDIA vLLM 26.06 base and bind its revision label to the exact candidate:
 
+The checked builder resolves every external `FROM`, rejects any base that is
+not digest-pinned, and requires that exact digest in the local Docker image
+store. It uses `--pull=false`; a disconnected qualification therefore does not
+contact a registry merely to rebuild a checked-head wrapper. Provision base
+images and network-dependent build layers before freezing an offline gate. A
+missing cached input is a preflight failure, never permission to substitute a
+tag or silently reconnect.
+
 ```bash
 release_root='/srv/yap-server/releases/<checked-head>'
 model_dir='/path/to/private/cohere-transcribe-03-2026'
@@ -182,12 +190,9 @@ checked_head="$(git -C "$release_root" rev-parse HEAD)"
 vllm_image="yap-cohere-vllm:checked-head-$checked_head"
 
 install -d -m 0700 "$storage_dir"
-docker build \
-  --pull \
-  --build-arg "YAP_CHECKED_HEAD=$checked_head" \
-  --file "$release_root/server/runtime/cohere-vllm/Dockerfile" \
-  --tag "$vllm_image" \
-  "$release_root/server"
+bash "$release_root/infra/yap-server-node/build-checked-runtime-image.sh" \
+  cohere-vllm \
+  "$checked_head"
 ```
 
 To exercise the optional resident Nemotron candidate, point a second model
@@ -198,12 +203,9 @@ build the thin checked image. Do not copy the checkpoint into the build context:
 nemotron_model_dir='/path/to/private/nemotron-3.5-asr-streaming-0.6b'
 nemo_image="yap-nemotron-nemo:checked-head-$checked_head"
 
-docker build \
-  --pull \
-  --build-arg "YAP_CHECKED_HEAD=$checked_head" \
-  --file "$release_root/server/runtime/nemotron-nemo/Dockerfile" \
-  --tag "$nemo_image" \
-  "$release_root/server"
+bash "$release_root/infra/yap-server-node/build-checked-runtime-image.sh" \
+  nemotron-nemo \
+  "$checked_head"
 ```
 
 To exercise the accepted Phase 6 server language-preflight path, build the
@@ -215,12 +217,9 @@ copied into the image or repository:
 lid_model_dir='/path/to/private/ambernet-1.12.0-int8-qdq'
 lid_image="yap-lid:checked-head-$checked_head"
 
-docker build \
-  --pull \
-  --build-arg "YAP_CHECKED_HEAD=$checked_head" \
-  --file "$release_root/server/runtime/lid/Dockerfile" \
-  --tag "$lid_image" \
-  "$release_root/server"
+bash "$release_root/infra/yap-server-node/build-checked-runtime-image.sh" \
+  language-detection \
+  "$checked_head"
 ```
 
 Create one checked, temporary internal bridge for the foreground model

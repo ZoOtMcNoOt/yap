@@ -635,18 +635,8 @@ PYTHONPATH="$repo_root/server/src" python3.12 -m yap_server.pools.model_assets \
 PYTHONPATH="$repo_root/server/src" python3.12 -m yap_server.pools.model_assets \
   --lock "$nemo_lock" --model-dir "$YAP_NEMOTRON_MODEL_DIR" --verify-only
 
-docker build \
-  --pull \
-  --build-arg "YAP_CHECKED_HEAD=$YAP_CHECKED_HEAD" \
-  --file "$repo_root/server/runtime/cohere-vllm/Dockerfile" \
-  --tag "$vllm_image" \
-  "$repo_root/server"
-docker build \
-  --pull \
-  --build-arg "YAP_CHECKED_HEAD=$YAP_CHECKED_HEAD" \
-  --file "$repo_root/server/runtime/nemotron-nemo/Dockerfile" \
-  --tag "$nemo_image" \
-  "$repo_root/server"
+bash "$script_dir/build-checked-runtime-image.sh" cohere-vllm "$YAP_CHECKED_HEAD"
+bash "$script_dir/build-checked-runtime-image.sh" nemotron-nemo "$YAP_CHECKED_HEAD"
 
 docker network create \
   --driver bridge \

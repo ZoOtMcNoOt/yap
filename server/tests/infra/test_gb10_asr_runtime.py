@@ -130,7 +130,9 @@ class Gb10AsrRuntimeContractTests(unittest.TestCase):
 
     def test_gate_observes_host_boundary_and_publishes_only_after_teardown(self) -> None:
         script = GATE.read_text(encoding="utf-8")
-        self.assertIn("docker build", script)
+        self.assertIn("build-checked-runtime-image.sh", script)
+        self.assertIn("reference-batch-asr", script)
+        self.assertNotIn("\n  --pull \\", script)
         self.assertIn("gb10_asr_runtime_gate", script)
         self.assertIn("isolated_runtime_evidence", script)
         self.assertIn(
@@ -153,7 +155,10 @@ class Gb10AsrRuntimeContractTests(unittest.TestCase):
         self.assertIn("systemctl list-unit-files", script)
         self.assertNotIn('"tool=none"', script)
         self.assertIn('if [ -e "$YAP_GB10_ASR_EVIDENCE_DIR" ]', script)
-        self.assertLess(script.index('capture_host_boundary "$gate_tmp/before"'), script.index("docker build"))
+        self.assertLess(
+            script.index('capture_host_boundary "$gate_tmp/before"'),
+            script.index("build-checked-runtime-image.sh"),
+        )
         self.assertLess(
             script.index("gb10_asr_runtime_gate"),
             script.index('capture_host_boundary "$gate_tmp/after"'),

@@ -71,7 +71,11 @@ local/native/server/private-runtime matrix, including the target-client,
 adversarial review then found concrete blockers and invalidated that SHA as
 merge authority. The historical receipt remains recorded. The repaired
 implementation passed the focused three-agent remediation re-review; one new
-complete gate, hosted checks, and review remain before merge.
+admitted candidate then failed before provider startup because its forced base
+pull crossed the deliberately offline GB10 boundary. Cleanup passed and that SHA
+will not be retried. The shared checked-image builder now requires cached
+digest-pinned bases and disables pulls. One new candidate complete gate, hosted
+checks, and review remain before merge.
 Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
 SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
 and SGLang services, production multi-worker/mixed-load capacity promotion, production
