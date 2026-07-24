@@ -156,9 +156,10 @@ the immutable result artifact are terminal truth.
 
 ### 5. Run the complete Phase 6 matrix exactly once
 
-- [ ] Run the applicable frontend, native Rust, server, release, disposable
-      Windows, integrated desktop/private-server, and GB10 checks on the same
-      frozen head.
+- [ ] Run every candidate child frozen by the machine-validated
+      [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
+      on the same frozen head, then validate its separate exact-head hosted
+      CI/CodeQL/disposable-Windows closure after the PR opens.
 - [ ] Verify cancellation, retry, restart, recovery, immutable identity,
       resource bounds, model/process/listener teardown, and private-evidence
       handling.

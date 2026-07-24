@@ -94,6 +94,7 @@ instructions. Detailed historical task reports live under
 - [Dependency audit policy](runbooks/dependency-audit-policy.md)
 - [Repository housekeeping](runbooks/repo-housekeeping.md)
 - [Target-client language-routing qualification](runbooks/target-client-language-routing-qualification.md)
+- [Integrated preprocessing and language-routing gate](runbooks/integrated-preprocessing-language-routing-gate.md)
 - [Independent transcript-reference review](runbooks/independent-transcript-reference-review.md)
 - [Research index](research/README.md)
 - [Public security posture](security/SECURITY-POSTURE.md)

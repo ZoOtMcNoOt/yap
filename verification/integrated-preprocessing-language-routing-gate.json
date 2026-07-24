@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "gateId": "integrated-preprocessing-language-routing",
+  "candidateCells": [
+    {
+      "id": "frontend.node-runtime",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "node",
+        "./tests/scripts/assert-node24.mjs"
+      ]
+    },
+    {
+      "id": "frontend.dependencies",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "corepack",
+        "pnpm@11.7.0",
+        "install",
+        "--frozen-lockfile"
+      ]
+    },
+    {
+      "id": "frontend.dependency-audit",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "audit",
+        "--audit-level",
+        "high"
+      ]
+    },
+    {
+      "id": "frontend.release-contracts",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "test:release-contract"
+      ]
+    },
+    {
+      "id": "frontend.provenance",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "node",
+        "./tests/scripts/assert-third-party-provenance.mjs",
+        "--require-reviewed",
+        "--verify-upstream"
+      ]
+    },
+    {
+      "id": "frontend.unit",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "test"
+      ]
+    },
+    {
+      "id": "frontend.production-build",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "build"
+      ]
+    },
+    {
+      "id": "frontend.chromium-runtime",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "install",
+        "chromium"
+      ]
+    },
+    {
+      "id": "frontend.accessibility-and-workflows",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "test:e2e"
+      ]
+    },
+    {
+      "id": "native.format",
+      "executor": "command",
+      "cwd": "desktop/src-tauri",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ]
+    },
+    {
+      "id": "native.clippy",
+      "executor": "command",
+      "cwd": "desktop/src-tauri",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ]
+    },
+    {
+      "id": "native.tests",
+      "executor": "command",
+      "cwd": "desktop/src-tauri",
+      "command": [
+        "cargo",
+        "test",
+        "--locked"
+      ]
+    },
+    {
+      "id": "native.server-connector",
+      "executor": "command",
+      "cwd": ".",
+      "command": [
+        "pwsh.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./verification/test-server-connector.ps1"
+      ]
+    },
+    {
+      "id": "native.windows-dependency-boundary",
+      "executor": "command",
+      "cwd": ".",
+      "command": [
+        "pwsh.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./verification/test-windows-rust-dependency-boundary.ps1"
+      ]
+    },
+    {
+      "id": "native.dependency-audit",
+      "executor": "command",
+      "cwd": ".",
+      "command": [
+        "pwsh.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./verification/audit-windows-rust-dependencies.ps1"
+      ]
+    },
+    {
+      "id": "desktop.wdio-build",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "test:desktop:build"
+      ]
+    },
+    {
+      "id": "desktop.required-wdio",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "exec",
+        "wdio",
+        "run",
+        "./tests/wdio.required.conf.ts"
+      ]
+    },
+    {
+      "id": "server.python-3.12",
+      "executor": "command",
+      "cwd": ".",
+      "command": [
+        "pwsh.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./verification/test-portable-python-server.ps1"
+      ]
+    },
+    {
+      "id": "target-client.native-resource-and-restart",
+      "executor": "private-receipt",
+      "receiptContract": "target-client-native-resource-v4"
+    },
+    {
+      "id": "target-client.prepared-audio-boundaries",
+      "executor": "private-receipt",
+      "receiptContract": "target-client-prepared-audio-v2"
+    },
+    {
+      "id": "target-client.rendered-ui-and-microphone",
+      "executor": "private-receipt",
+      "receiptContract": "target-client-rendered-ui-v4"
+    },
+    {
+      "id": "target-client.teardown",
+      "executor": "private-receipt",
+      "receiptContract": "target-client-zero-retained-owners-v1"
+    },
+    {
+      "id": "gb10.provider-duration-and-concurrency",
+      "executor": "private-receipt",
+      "receiptContract": "resident-provider-duration-and-concurrency-v1"
+    },
+    {
+      "id": "gb10.provider-cancellation-and-recovery",
+      "executor": "private-receipt",
+      "receiptContract": "resident-provider-cancellation-and-recovery-v1"
+    },
+    {
+      "id": "gb10.provider-resource-bounds",
+      "executor": "private-receipt",
+      "receiptContract": "resident-provider-resource-bounds-v1"
+    },
+    {
+      "id": "gb10.provider-teardown",
+      "executor": "private-receipt",
+      "receiptContract": "resident-provider-zero-retained-owners-v1"
+    },
+    {
+      "id": "integrated.desktop-private-server",
+      "executor": "private-receipt",
+      "receiptContract": "desktop-private-server-asr-v2"
+    },
+    {
+      "id": "integrated.tunnel-interruption-recovery",
+      "executor": "private-receipt",
+      "receiptContract": "desktop-private-server-interruption-v2"
+    },
+    {
+      "id": "integrated.authoritative-history-result",
+      "executor": "private-receipt",
+      "receiptContract": "desktop-private-server-history-result-v2"
+    },
+    {
+      "id": "integrated.teardown",
+      "executor": "private-receipt",
+      "receiptContract": "desktop-private-server-zero-retained-owners-v2"
+    }
+  ],
+  "hostedClosureCells": [
+    {
+      "id": "hosted.ci.frontend",
+      "executor": "github-check",
+      "workflow": "CI",
+      "job": "frontend"
+    },
+    {
+      "id": "hosted.ci.rust",
+      "executor": "github-check",
+      "workflow": "CI",
+      "job": "rust"
+    },
+    {
+      "id": "hosted.ci.native-wdio",
+      "executor": "github-check",
+      "workflow": "CI",
+      "job": "Native WDIO smoke (required, no hardware)"
+    },
+    {
+      "id": "hosted.ci.server",
+      "executor": "github-check",
+      "workflow": "CI",
+      "job": "server"
+    },
+    {
+      "id": "hosted.codeql.rust",
+      "executor": "github-check",
+      "workflow": "CodeQL",
+      "job": "Analyze (rust)"
+    },
+    {
+      "id": "hosted.codeql.actions",
+      "executor": "github-check",
+      "workflow": "CodeQL",
+      "job": "Analyze (actions)"
+    },
+    {
+      "id": "hosted.codeql.javascript-typescript",
+      "executor": "github-check",
+      "workflow": "CodeQL",
+      "job": "Analyze (javascript-typescript)"
+    },
+    {
+      "id": "hosted.codeql.python",
+      "executor": "github-check",
+      "workflow": "CodeQL",
+      "job": "Analyze (python)"
+    },
+    {
+      "id": "hosted.nsis.disposable-windows",
+      "executor": "github-check",
+      "workflow": "NSIS Bundle Smoke",
+      "job": "nsis-bundle-smoke"
+    }
+  ]
+}

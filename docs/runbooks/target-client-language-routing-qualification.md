@@ -191,6 +191,7 @@ reference.
 Build the test-instrumented release binary from the same clean head:
 
 ```powershell
+$env:YAP_CHECKED_HEAD = $Head
 Push-Location .\desktop
 pnpm test:desktop:build:release
 ```
@@ -207,6 +208,10 @@ $env:YAP_TARGET_CLIENT_SERVER_ORIGIN = 'http://127.0.0.1:18765'
 $env:YAP_TARGET_CLIENT_STIMULUS_SHA256 = '<lowercase-sha256>'
 $env:YAP_TARGET_CLIENT_STIMULUS_LICENSE = 'CC-BY-4.0'
 $env:YAP_TARGET_CLIENT_STIMULUS_DELIVERY = 'same-host-acoustic-playback'
+$env:YAP_TARGET_CLIENT_PREPARED_AUDIO_EVIDENCE_FILE = `
+  $env:YAP_TEST_LOCAL_DURATION_EVIDENCE
+$env:YAP_TARGET_CLIENT_PREPARED_AUDIO_SUITE_SHA256 = `
+  $DurationBuild.suiteSha256
 
 pnpm test:target-client-language-routing-ui
 Pop-Location
@@ -215,7 +220,9 @@ Pop-Location
 The private launcher starts and stops a bounded `SoundPlayer` job for the
 licensed WAV around the WDIO command. The specialized WDIO configuration
 refuses a dirty or different head. It
-independently revalidates the native context, profile, and log hashes; the
+also verifies that the running executable embeds that exact clean build head
+and hash-binds the passed nine-case prepared-audio aggregate. It independently
+revalidates the native context, profile, and log hashes; the
 observed processor identity and processor count; two ASR threads; and all 12
 sustained cycles. It verifies that no model-load snapshots remain and never
 copies private model or recording bytes into the checkout.

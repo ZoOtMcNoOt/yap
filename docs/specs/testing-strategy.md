@@ -69,6 +69,13 @@ catalog, primary/per-job language flow, advisory VAD, durable stages, isolated
 LID, fixed/dynamic routing, timing evidence, migrations, docs, and focused
 reviews are ready on one frozen candidate.
 
+The exact executable inventory and private receipt contract are frozen in the
+[integrated preprocessing and language-routing gate](../runbooks/integrated-preprocessing-language-routing-gate.md).
+Its validator rejects omissions, additions, duplicate or reordered children,
+more than one admitted attempt, definition drift, failure, and checked-head
+drift. Hosted CI, the complete current CodeQL language matrix, and disposable
+Windows NSIS closure form a separate same-head receipt after the PR opens.
+
 The gate must use license-clear public fixtures to prove contract shape, the
 currently advertised `en-US` regression, language decisions, source
 preservation, restart/cancel/retry behavior, alignment failure semantics,

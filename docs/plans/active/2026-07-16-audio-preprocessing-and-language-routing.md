@@ -1758,8 +1758,10 @@ receives one last read-back.
       OpenAPI, runbooks, and this plan with what actually executes. The OpenAPI
       contract remains unchanged because this closure changes only local runtime
       lifecycle and qualification behavior.
-- [ ] Freeze one Phase 6 candidate and run the complete applicable local/native/
-      server/GB10 matrix exactly once.
+- [ ] Freeze one Phase 6 candidate and run the complete local/native/server/
+      GB10 inventory in the machine-validated
+      [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
+      exactly once.
 - [ ] Open a focused PR, require hosted exact-head CI/CodeQL and any applicable
       disposable-Windows lifecycle evidence, review the checked SHA, and merge
       only that green reviewed head.
@@ -1812,6 +1814,9 @@ and private scan material never enters this repository.
 
 The complete gate runs once only after code, contracts, docs, provenance,
 focused reviews, and public-safe evidence are ready on one immutable candidate.
+Its checked-in functional manifest and validator are authoritative for the
+exact child inventory and reject missing, extra, duplicate, reordered, retried,
+failed, definition-drifted, or checked-head-drifted receipt entries.
 It must prove at least:
 
 1. frontend install/build/unit/Playwright and required native WDIO pass;

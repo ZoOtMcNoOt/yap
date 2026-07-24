@@ -17,6 +17,8 @@ import {
 
 const tunnelHost = "127.0.0.1";
 const tunnelPort = 18765;
+const tunnelProcesses = [];
+const tunnelProcessEntries = new WeakMap();
 let tunnelProcess;
 
 function requireEnvironment(name) {
@@ -124,11 +126,22 @@ async function startTunnel(alias) {
     ],
     { stdio: "ignore", windowsHide: true },
   );
+  if (!Number.isSafeInteger(child.pid) || child.pid <= 0) {
+    if (child.exitCode === null) child.kill();
+    throw new Error("The gate-owned SSH forward did not expose its process identity.");
+  }
+  const processEntry = {
+    pid: child.pid,
+    startedAt: new Date().toISOString(),
+    exitedAt: null,
+  };
+  tunnelProcesses.push(processEntry);
+  tunnelProcessEntries.set(child, processEntry);
   child.once("error", () => {});
   try {
     await waitForHealth(true, child, "become reachable");
   } catch (error) {
-    if (child.exitCode === null) child.kill();
+    await stopTunnel(child);
     throw error;
   }
   return child;
@@ -152,6 +165,40 @@ async function stopTunnel(child) {
     });
   }
   await waitForHealth(false, undefined, "become unreachable");
+  const processEntry = tunnelProcessEntries.get(child);
+  if (!processEntry) {
+    throw new Error("The stopped SSH forward was absent from the owned-process ledger.");
+  }
+  processEntry.exitedAt = new Date().toISOString();
+}
+
+function publishTunnelProcessLedger() {
+  if (
+    tunnelProcesses.length !== 2
+    || tunnelProcesses.some(({ pid, startedAt, exitedAt }) => (
+      !Number.isSafeInteger(pid)
+      || pid <= 0
+      || !Number.isFinite(Date.parse(startedAt))
+      || !Number.isFinite(Date.parse(exitedAt))
+      || Date.parse(exitedAt) < Date.parse(startedAt)
+    ))
+    || new Set(tunnelProcesses.map(({ pid }) => pid)).size !== tunnelProcesses.length
+  ) {
+    throw new Error("The private-server gate did not retire exactly two owned SSH forwards.");
+  }
+  const evidenceDirectory = requireEnvironment("YAP_PRIVATE_SERVER_ASR_GATE_EVIDENCE_DIR");
+  writeFileSync(
+    path.join(evidenceDirectory, "tunnel-process-ledger.json"),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      checkedHead: requireEnvironment("YAP_CHECKED_HEAD"),
+      startedProcessCount: tunnelProcesses.length,
+      exitedProcessCount: tunnelProcesses.length,
+      processes: tunnelProcesses,
+      status: "passed",
+    }, null, 2)}\n`,
+    { encoding: "utf8", flag: "wx" },
+  );
 }
 
 describe("checked-head private-server ASR gate", () => {
@@ -165,6 +212,7 @@ describe("checked-head private-server ASR gate", () => {
       tunnelProcess = undefined;
       await stopTunnel(owned);
     }
+    publishTunnelProcessLedger();
   });
 
   it("imports through the real tunneled GB10 worker and opens the verified History result", async () => {
