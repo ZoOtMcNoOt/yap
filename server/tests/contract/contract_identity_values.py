@@ -32,6 +32,16 @@ CREATE_JOB_LANGUAGE_INVARIANTS = {
             "metadata.preferredLanguagesBcp47[0]",
         ],
     },
+    "dynamicLanguageContinuity": {
+        "rule": "schema_2_dynamic_requires_null_fixed_locale_and_und_catalog_metadata",
+        "paths": [
+            "languageDecision.mode",
+            "languageDecision.languageBcp47",
+            "languageDecision.disposition",
+            "metadata.localeHintBcp47",
+            "metadata.preferredLanguagesBcp47[0]",
+        ],
+    },
     "immutability": {
         "rule": "immutable_after_accept",
         "path": "languageDecision",

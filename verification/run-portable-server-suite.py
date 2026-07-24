@@ -20,10 +20,10 @@ def validate_runtime_identity() -> dict[str, object]:
     locked_versions = {
         package["name"]: package["version"]
         for package in lock["package"]
-        if package["name"] in {"rapidfuzz", "regex"}
+        if package["name"] in {"numpy", "rapidfuzz", "regex"}
     }
-    if set(locked_versions) != {"rapidfuzz", "regex"}:
-        raise RuntimeError("uv.lock does not contain the required evaluation dependencies.")
+    if set(locked_versions) != {"numpy", "rapidfuzz", "regex"}:
+        raise RuntimeError("uv.lock does not contain the portable suite dependencies.")
     installed_versions = {
         name: importlib.metadata.version(name)
         for name in sorted(locked_versions)
@@ -47,7 +47,11 @@ def main() -> int:
     if arguments == ["--identity-only"]:
         return 0
 
-    suite = unittest.defaultTestLoader.discover("tests", pattern="test_*.py")
+    suite = unittest.defaultTestLoader.discover(
+        "tests",
+        pattern="test_*.py",
+        top_level_dir=".",
+    )
     result = unittest.TextTestRunner(verbosity=1).run(suite)
     return 0 if result.wasSuccessful() else 1
 

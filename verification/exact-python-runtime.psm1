@@ -63,7 +63,8 @@ function Resolve-UvExecutable {
 function Sync-LockedServerEnvironment {
     param(
         [Parameter(Mandatory)][string]$ServerRoot,
-        [switch]$WithEvaluation
+        [switch]$WithEvaluation,
+        [switch]$WithTests
     )
 
     $ServerDirectory = Get-Item -LiteralPath $ServerRoot -Force
@@ -92,6 +93,9 @@ function Sync-LockedServerEnvironment {
     )
     if ($WithEvaluation) {
         $Arguments += @('--extra', 'evaluation')
+    }
+    if ($WithTests) {
+        $Arguments += @('--extra', 'test')
     }
     Push-Location -LiteralPath $ServerDirectory.FullName
     try {

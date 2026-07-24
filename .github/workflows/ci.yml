@@ -339,4 +339,13 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
-      - run: python -m unittest discover -s server/tests -p "test_*.py"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.21"
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - name: Populate the exact server dependency cache
+        working-directory: server
+        run: uv sync --locked --exact --extra evaluation --extra test --python (Get-Command python.exe).Source --no-python-downloads
+      - name: Run the portable Python 3.12 server suite
+        run: ./verification/test-portable-python-server.ps1

@@ -9,7 +9,8 @@ Import-Module (Join-Path $PSScriptRoot 'exact-python-runtime.psm1') -Force
 $ServerRoot = Join-Path $Repository 'server'
 $Runtime = Sync-LockedServerEnvironment `
     -ServerRoot $ServerRoot `
-    -WithEvaluation
+    -WithEvaluation `
+    -WithTests
 
 $env:PYTHONPATH = Join-Path $Repository 'server\src'
 Push-Location -LiteralPath $ServerRoot
