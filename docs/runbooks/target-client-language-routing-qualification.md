@@ -41,8 +41,9 @@ current microphone.
 The isolated rendered-UI profile has no safely revalidatable external text
 field. Its successful terminal state must therefore report the exact
 clipboard-only insertion fallback after saving. The gate accepts that known
-feedback only on an idle event; a capture, transcription, save, clipboard, or
-other lifecycle error remains fatal.
+feedback only on an idle event and requires the matching compact feedback
+surface; a capture, transcription, save, clipboard, or other lifecycle error
+remains fatal.
 
 A paired energy/thermal measurement on a representative low-end physical
 device is a separate default-on and Phase 10 hardware-certification boundary.

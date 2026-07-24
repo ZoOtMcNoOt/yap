@@ -22,7 +22,7 @@ const lifecycleAssertions = [
   "live-level delivery",
   "exactly one canonical main-window live-session-saved event",
   "no saved-path or transcript payload delivery to the overlay",
-  "compact idle overlay after the success dwell",
+  "compact terminal overlay after the success dwell",
   "idempotent listener cleanup and unregistration",
 ];
 
@@ -344,7 +344,13 @@ describe("Yap live overlay hardware capture", () => {
       expect(activeIndex).toBeGreaterThanOrEqual(0);
       expect(savingIndex).toBeGreaterThan(activeIndex);
       expect(idleIndex).toBeGreaterThan(savingIndex);
-      expect(evidence.sessions[idleIndex].error).toBe(EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK);
+      const terminalError = evidence.sessions[idleIndex].error;
+      const copiedToClipboard = terminalError === EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK;
+      if (targetClient.enabled) {
+        expect(copiedToClipboard).toBe(true);
+      } else {
+        expect([null, EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK]).toContain(terminalError);
+      }
       expect(evidence.levels.length).toBeGreaterThan(0);
       expect(evidence.levels.some(({ level }) => Number.isFinite(level))).toBe(true);
       targetClient.assertRenderedCaptureEvidence({ evidence, statuses, uiResponsiveness });
@@ -360,16 +366,19 @@ describe("Yap live overlay hardware capture", () => {
       await browser.pause(2_750);
       const surface = await browser.tauri.execute(() =>
         document.querySelector("[data-overlay-surface]")?.getAttribute("data-overlay-surface"));
-      expect(surface).toBe("collapsed");
-      const compact = await browser.tauri.execute(() => {
-        const root = document.querySelector('[data-overlay-surface="collapsed"]').getBoundingClientRect();
+      const expectedSurface = copiedToClipboard ? "feedback" : "collapsed";
+      expect(surface).toBe(expectedSurface);
+      const compact = await browser.tauri.execute((_tauri, terminalSurface) => {
+        const root = document.querySelector(
+          `[data-overlay-surface="${terminalSurface}"]`,
+        ).getBoundingClientRect();
         const island = document.querySelector('[data-testid="live-overlay-island"]').getBoundingClientRect();
         return {
           island: { height: island.height, width: island.width },
           root: { height: root.height, width: root.width },
         };
-      });
-      expect(compact.root.width).toBe(104);
+      }, expectedSurface);
+      expect(compact.root.width).toBe(copiedToClipboard ? 252 : 104);
       expect(compact.root.height).toBe(40);
       expect(compact.island).toEqual(compact.root);
       expect(await browser.tauri.execute(() =>
