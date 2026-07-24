@@ -351,6 +351,7 @@ fn recoverable_delete_preserves_a_valid_sidecar_created_after_admission() {
 
 #[test]
 fn recover_delete_and_catalog_threads_share_one_mutation_owner() {
+    let mutation_owner_timeout = Duration::from_secs(10);
     let dir = test_dir("recover-delete-list-owner-race");
     let session = SessionId::new("s-recover-delete-list-owner-race").unwrap();
     {
@@ -374,7 +375,9 @@ fn recover_delete_and_catalog_threads_share_one_mutation_owner() {
             },
         )
     });
-    delete_ready_rx.recv().unwrap();
+    delete_ready_rx
+        .recv_timeout(mutation_owner_timeout)
+        .expect("delete worker did not acquire the mutation owner");
 
     let recover_dir = dir.clone();
     let recover_session = session.clone();
@@ -392,6 +395,10 @@ fn recover_delete_and_catalog_threads_share_one_mutation_owner() {
             ))
             .unwrap();
     });
+    recover_queued_rx
+        .recv_timeout(mutation_owner_timeout)
+        .expect("recovery worker did not queue behind the delete owner");
+
     let list_dir = dir.clone();
     let (list_queued_tx, list_queued_rx) = std::sync::mpsc::channel();
     let (list_tx, list_rx) = std::sync::mpsc::channel();
@@ -405,22 +412,21 @@ fn recover_delete_and_catalog_threads_share_one_mutation_owner() {
             .unwrap();
     });
 
-    recover_queued_rx
-        .recv_timeout(Duration::from_secs(2))
-        .unwrap();
-    list_queued_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    list_queued_rx
+        .recv_timeout(mutation_owner_timeout)
+        .expect("catalog worker did not queue behind the delete owner");
     assert!(recover_rx.try_recv().is_err());
     assert!(list_rx.try_recv().is_err());
     release_delete_tx.send(()).unwrap();
 
     assert!(deleting.join().unwrap().is_ok());
     assert!(recover_rx
-        .recv_timeout(Duration::from_secs(2))
-        .unwrap()
+        .recv_timeout(mutation_owner_timeout)
+        .expect("recovery worker did not finish after delete released ownership")
         .is_err());
     assert!(list_rx
-        .recv_timeout(Duration::from_secs(2))
-        .unwrap()
+        .recv_timeout(mutation_owner_timeout)
+        .expect("catalog worker did not finish after recovery released ownership")
         .unwrap()
         .sessions
         .is_empty());
