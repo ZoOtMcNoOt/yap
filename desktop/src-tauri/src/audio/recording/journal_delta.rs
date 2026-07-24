@@ -13,7 +13,7 @@ pub(super) struct JournalDelta {
     pub(super) gap_start_index: usize,
     pub(super) sequence_gaps: Vec<SequenceGap>,
     pub(super) sequence_gap_overflow: Option<SequenceGapOverflow>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) language_evidence: Option<crate::language::live_evidence::LiveLanguageEvidence>,
     pub(super) sink_degraded: bool,
 }
