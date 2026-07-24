@@ -18,12 +18,15 @@ from yap_server.jobs.runtime import (
     _configured_model_pools,
     build_batch_runtime,
     ensure_development_batch_bind,
-    resolve_checked_worker_image,
 )
-from yap_server.jobs.asr_worker_runtime import AsrWorkerPlan, build_asr_worker_plan
 from yap_server.jobs.contract_values import MAX_JOB_PCM_BYTES
 from yap_server.pools.batch_asr import BatchAsrJob, WorkerContainmentError
 from yap_server.pools.batch_contract import BatchJobFactory
+from yap_server.pools.provider_worker_factory import (
+    AsrWorkerPlan,
+    build_asr_worker_plan,
+    resolve_checked_worker_image,
+)
 from yap_server.workload_router import WorkloadRouter
 
 from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
@@ -260,7 +263,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
         }
 
         with patch(
-            "yap_server.jobs.asr_worker_runtime.inspect_worker_image",
+            "yap_server.pools.provider_worker_factory.inspect_worker_image",
             return_value={"id": image_id},
         ) as inspect:
             resolved = resolve_checked_worker_image(
@@ -299,13 +302,13 @@ class RoutedBatchProcessorTests(unittest.TestCase):
         endpoint = "http://127.0.0.1:8000"
         with (
             patch(
-                "yap_server.jobs.asr_worker_runtime.verify_model_artifacts"
+                "yap_server.pools.provider_worker_factory.verify_model_artifacts"
             ) as verify_artifacts,
             patch(
-                "yap_server.jobs.asr_worker_runtime.VllmTranscriptionClient"
+                "yap_server.pools.provider_worker_factory.VllmTranscriptionClient"
             ) as client_type,
             patch(
-                "yap_server.jobs.asr_worker_runtime.CohereVllmBatchWorker"
+                "yap_server.pools.provider_worker_factory.CohereVllmBatchWorker"
             ) as worker_type,
         ):
             plan = build_asr_worker_plan(
@@ -316,6 +319,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
                 },
                 model_dir=Path("model"),
                 lock=lock,
+                max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
                 run_as_uid=1000,
                 run_as_gid=1000,
                 storage_namespace="storage-test",
@@ -343,14 +347,14 @@ class RoutedBatchProcessorTests(unittest.TestCase):
         image_id = "sha256:" + "e" * 64
         with (
             patch(
-                "yap_server.jobs.asr_worker_runtime.resolve_checked_worker_image",
+                "yap_server.pools.provider_worker_factory.resolve_checked_worker_image",
                 return_value=image_id,
             ),
             patch(
-                "yap_server.jobs.asr_worker_runtime.reconcile_owned_containers"
+                "yap_server.pools.provider_worker_factory.reconcile_owned_containers"
             ) as reconcile,
             patch(
-                "yap_server.jobs.asr_worker_runtime.ContainerBatchAsrWorker"
+                "yap_server.pools.provider_worker_factory.ContainerBatchAsrWorker"
             ) as worker_type,
         ):
             plan = build_asr_worker_plan(
@@ -360,6 +364,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
                 },
                 model_dir=Path("model"),
                 lock=lock,
+                max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
                 run_as_uid=1000,
                 run_as_gid=1000,
                 storage_namespace="storage-test",
@@ -399,20 +404,21 @@ class RoutedBatchProcessorTests(unittest.TestCase):
         }
         with (
             patch(
-                "yap_server.jobs.asr_worker_runtime.resolve_checked_worker_image",
+                "yap_server.pools.provider_worker_factory.resolve_checked_worker_image",
                 return_value=image_id,
             ) as resolve_image,
             patch(
-                "yap_server.jobs.asr_worker_runtime.reconcile_owned_containers"
+                "yap_server.pools.provider_worker_factory.reconcile_owned_containers"
             ),
             patch(
-                "yap_server.jobs.asr_worker_runtime.ContainerBatchAsrWorker"
+                "yap_server.pools.provider_worker_factory.ContainerBatchAsrWorker"
             ) as worker_type,
         ):
             plan = build_asr_worker_plan(
                 source,
                 model_dir=Path("native-model"),
                 lock=lock,
+                max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
                 run_as_uid=1000,
                 run_as_gid=1000,
                 storage_namespace="storage-test",
@@ -449,13 +455,13 @@ class RoutedBatchProcessorTests(unittest.TestCase):
         endpoint = "http://127.0.0.1:18001"
         with (
             patch(
-                "yap_server.jobs.asr_worker_runtime.verify_model_artifacts"
+                "yap_server.pools.provider_worker_factory.verify_model_artifacts"
             ) as verify_artifacts,
             patch(
-                "yap_server.jobs.asr_worker_runtime.NemotronNemoClient"
+                "yap_server.pools.provider_worker_factory.NemotronNemoClient"
             ) as client_type,
             patch(
-                "yap_server.jobs.asr_worker_runtime.NemotronNemoBatchWorker"
+                "yap_server.pools.provider_worker_factory.NemotronNemoBatchWorker"
             ) as worker_type,
         ):
             plan = build_asr_worker_plan(
@@ -466,6 +472,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
                 },
                 model_dir=Path("native-model"),
                 lock=lock,
+                max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
                 run_as_uid=1000,
                 run_as_gid=1000,
                 storage_namespace="storage-test",
@@ -522,6 +529,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
                         source,
                         model_dir=Path("model"),
                         lock=lock,
+                        max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
                         run_as_uid=1000,
                         run_as_gid=1000,
                         storage_namespace="storage-test",
@@ -535,6 +543,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
                 {"YAP_NEMOTRON_ASR_RUNTIME": "vllm"},
                 model_dir=Path("model"),
                 lock=lock,
+                max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
                 run_as_uid=1000,
                 run_as_gid=1000,
                 storage_namespace="storage-test",

@@ -32,8 +32,6 @@ from yap_server.pools.nemotron_nemo_client import NemotronNemoClient
 from yap_server.pools.nemotron_nemo_worker import NemotronNemoBatchWorker
 from yap_server.pools.vllm_transcription_client import VllmTranscriptionClient
 
-from .contract_values import MAX_JOB_PCM_BYTES
-
 
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _COHERE_POOL = "cohere-batch"
@@ -58,6 +56,7 @@ def build_asr_worker_plan(
     *,
     model_dir: Path,
     lock: ModelPoolLock,
+    max_inflight_pcm_bytes: int,
     run_as_uid: int,
     run_as_gid: int,
     storage_namespace: str,
@@ -75,6 +74,7 @@ def build_asr_worker_plan(
                 source,
                 model_dir=model_dir,
                 lock=lock,
+                max_inflight_pcm_bytes=max_inflight_pcm_bytes,
                 timeout_seconds=timeout_seconds,
             )
         if runtime != _TRANSFORMERS_REFERENCE_RUNTIME:
@@ -94,6 +94,7 @@ def build_asr_worker_plan(
                 source,
                 model_dir=model_dir,
                 lock=lock,
+                max_inflight_pcm_bytes=max_inflight_pcm_bytes,
                 timeout_seconds=timeout_seconds,
             )
         if runtime == _TRANSFORMERS_REFERENCE_RUNTIME:
@@ -114,6 +115,7 @@ def build_asr_worker_plan(
         source,
         model_dir=model_dir,
         lock=lock,
+        max_inflight_pcm_bytes=max_inflight_pcm_bytes,
         run_as_uid=run_as_uid,
         run_as_gid=run_as_gid,
         storage_namespace=storage_namespace,
@@ -127,6 +129,7 @@ def _build_cohere_vllm_plan(
     *,
     model_dir: Path,
     lock: ModelPoolLock,
+    max_inflight_pcm_bytes: int,
     timeout_seconds: float,
 ) -> AsrWorkerPlan:
     endpoint = source.get(COHERE_VLLM_ENDPOINT_ENV, "").strip()
@@ -158,7 +161,7 @@ def _build_cohere_vllm_plan(
         # across users.
         max_workers=8,
         max_queued=8,
-        max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
+        max_inflight_pcm_bytes=max_inflight_pcm_bytes,
     )
 
 
@@ -167,6 +170,7 @@ def _build_nemotron_nemo_plan(
     *,
     model_dir: Path,
     lock: ModelPoolLock,
+    max_inflight_pcm_bytes: int,
     timeout_seconds: float,
 ) -> AsrWorkerPlan:
     endpoint = source.get(NEMOTRON_NEMO_ENDPOINT_ENV, "").strip()
@@ -195,7 +199,7 @@ def _build_nemotron_nemo_plan(
         worker=worker,
         max_workers=8,
         max_queued=8,
-        max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
+        max_inflight_pcm_bytes=max_inflight_pcm_bytes,
     )
 
 
@@ -204,6 +208,7 @@ def _build_isolated_reference_plan(
     *,
     model_dir: Path,
     lock: ModelPoolLock,
+    max_inflight_pcm_bytes: int,
     run_as_uid: int,
     run_as_gid: int,
     storage_namespace: str,
@@ -237,7 +242,7 @@ def _build_isolated_reference_plan(
         worker=worker,
         max_workers=1,
         max_queued=2,
-        max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
+        max_inflight_pcm_bytes=max_inflight_pcm_bytes,
     )
 
 

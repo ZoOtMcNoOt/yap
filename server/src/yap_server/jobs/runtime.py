@@ -45,17 +45,17 @@ from yap_server.pools.batch_contract import (
 )
 from yap_server.pools.catalog_routing import BatchCatalogRouter
 from yap_server.pools.model_lock import ModelPoolLock, load_model_pool_lock
+from yap_server.pools.provider_worker_factory import (
+    AsrWorkerPlan,
+    build_asr_worker_plan,
+)
 from yap_server.workload_router import (
     RouterBackpressure,
     WorkloadRequest,
     WorkloadRouter,
 )
 
-from .asr_worker_runtime import (
-    AsrWorkerPlan,
-    build_asr_worker_plan,
-    resolve_checked_worker_image,
-)
+from .contract_values import MAX_JOB_PCM_BYTES
 
 
 class BatchPool(Protocol):
@@ -381,6 +381,7 @@ def _build_provider_worker_plans(
                 source,
                 model_dir=model_dir,
                 lock=lock,
+                max_inflight_pcm_bytes=MAX_JOB_PCM_BYTES,
                 run_as_uid=run_as_uid,
                 run_as_gid=run_as_gid,
                 storage_namespace=storage_namespace,
