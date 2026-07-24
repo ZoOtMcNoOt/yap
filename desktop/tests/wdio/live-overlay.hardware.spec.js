@@ -346,10 +346,8 @@ describe("Yap live overlay hardware capture", () => {
       expect(idleIndex).toBeGreaterThan(savingIndex);
       const terminalError = evidence.sessions[idleIndex].error;
       const copiedToClipboard = terminalError === EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK;
-      if (targetClient.enabled) {
-        expect(copiedToClipboard).toBe(true);
-      } else {
-        expect([null, EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK]).toContain(terminalError);
+      if (terminalError !== null && !copiedToClipboard) {
+        throw new Error("The terminal idle event reported an unexpected lifecycle error.");
       }
       expect(evidence.levels.length).toBeGreaterThan(0);
       expect(evidence.levels.some(({ level }) => Number.isFinite(level))).toBe(true);

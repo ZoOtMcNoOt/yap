@@ -39,11 +39,12 @@ does not depend on the current Windows output device acoustically reaching the
 current microphone.
 
 The isolated rendered-UI profile has no safely revalidatable external text
-field. Its successful terminal state must therefore report the exact
-clipboard-only insertion fallback after saving. The gate accepts that known
-feedback only on an idle event and requires the matching compact feedback
-surface; a capture, transcription, save, clipboard, or other lifecycle error
-remains fatal.
+field. When its acoustic smoke produces a completed transcript, the terminal
+state must report the exact clipboard-only insertion fallback on an idle event
+and show the matching compact feedback surface. When it produces no completed
+transcript, `idle` with no error and the collapsed surface is correct because
+the prepared-audio channel owns speech and transcription proof. A capture,
+transcription, save, clipboard, or other lifecycle error remains fatal.
 
 A paired energy/thermal measurement on a representative low-end physical
 device is a separate default-on and Phase 10 hardware-certification boundary.

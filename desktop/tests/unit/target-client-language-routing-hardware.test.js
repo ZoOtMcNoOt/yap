@@ -57,7 +57,7 @@ describe("target-client language-routing hardware gate", () => {
     })).toThrow(/between 30000 and 1800000/);
   });
 
-  it("requires active capture, finite levels, and only the expected clipboard fallback", () => {
+  it("requires active capture and allows only the expected terminal clipboard feedback", () => {
     const gate = createGate(enabledEnvironment());
     const evidence = {
       levels: [{ level: 0 }],
@@ -84,6 +84,14 @@ describe("target-client language-routing hardware gate", () => {
 
     expect(() => gate.assertRenderedCaptureEvidence({
       evidence,
+      statuses: ["armed", "listening", "saving", "idle"],
+      uiResponsiveness,
+    })).not.toThrow();
+    expect(() => gate.assertRenderedCaptureEvidence({
+      evidence: {
+        ...evidence,
+        mainSessions: evidence.mainSessions.map((session) => ({ ...session, error: null })),
+      },
       statuses: ["armed", "listening", "saving", "idle"],
       uiResponsiveness,
     })).not.toThrow();

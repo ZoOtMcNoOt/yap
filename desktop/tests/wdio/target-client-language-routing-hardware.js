@@ -325,9 +325,8 @@ export function createTargetClientLanguageRoutingHardwareGate({
     );
     const feedbackSessions = evidence.mainSessions.filter(({ error }) => error !== null);
     requireCondition(
-      feedbackSessions.length > 0
-        && feedbackSessions.every(({ error, status }) =>
-          status === "idle" && error === EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK),
+      feedbackSessions.every(({ error, status }) =>
+        status === "idle" && error === EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK),
       "The target-client run did not report only the expected idle clipboard fallback.",
     );
     requireCondition(
