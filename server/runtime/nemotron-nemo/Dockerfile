@@ -25,12 +25,10 @@ RUN python3 -m pip wheel \
       /tmp/nemo-wheel/nemo_toolkit-3.1.0+ba2cd63ef-py3-none-any.whl
 
 FROM ${BASE_IMAGE}
-ARG YAP_CHECKED_HEAD
 ARG NEMO_REVISION
 
 LABEL org.opencontainers.image.title="Yap native NeMo Nemotron runtime" \
       org.opencontainers.image.source="https://github.com/mcnatg1/yap" \
-      org.opencontainers.image.revision="${YAP_CHECKED_HEAD}" \
       org.opencontainers.image.licenses="LicenseRef-NVIDIA-AI AND OpenMDW-1.1 AND Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND ISC AND LGPL-2.1-or-later AND MIT AND Artistic-1.0" \
       io.yap.nemo.revision="${NEMO_REVISION}"
 
@@ -81,6 +79,9 @@ RUN set -eu; \
     rm -f \
       /tmp/yap-nemo-requirements.lock \
       /tmp/nemo_toolkit-3.1.0+ba2cd63ef-py3-none-any.whl
+
+ARG YAP_CHECKED_HEAD
+LABEL org.opencontainers.image.revision="${YAP_CHECKED_HEAD}"
 
 COPY nemotron-nemo-serving.lock.json /opt/yap-server/model-locks/nemotron-batch.json
 COPY runtime/nemotron-nemo/cache-aware-streaming.yaml \

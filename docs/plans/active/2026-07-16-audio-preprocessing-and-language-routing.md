@@ -1780,6 +1780,13 @@ private negative evidence and cannot be retried. Checked runtime builds now
 resolve every external Dockerfile base, require an exact cached digest, and
 disable registry pulls; the same functional builder covers Cohere, Nemotron,
 AmberNet LID, and the older reference batch worker.
+Focused offline preflight at
+`278aec7889277732a603e130426f916c529b3c8b` confirmed that Cohere no longer
+contacted NGC, then showed Nemotron's checked-head label still invalidated its
+hash-locked dependency-install layer and caused a PyPI lookup. No complete gate
+was admitted. The runtime Dockerfiles now materialize network-dependent
+dependencies before applying candidate-only revision metadata so subsequent
+clean heads can reuse the frozen dependency layer offline.
 
 - [x] Resolve focused correctness, security, privacy, license/provenance,
       maintainability, accessibility, and resource-bound findings.

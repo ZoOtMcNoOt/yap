@@ -54,6 +54,16 @@ class LanguageDetectionContainerContractTests(unittest.TestCase):
             len(re.findall(r"--hash=sha256:[0-9a-f]{64}", requirements)),
             30,
         )
+        self.assertLess(
+            dockerfile.index("python3 -m pip install"),
+            dockerfile.index("ARG YAP_CHECKED_HEAD"),
+        )
+        self.assertLess(
+            dockerfile.index("python3 -m pip install"),
+            dockerfile.index(
+                'org.opencontainers.image.revision="${YAP_CHECKED_HEAD}"'
+            ),
+        )
 
     def test_container_carries_and_verifies_the_component_contract(self) -> None:
         payload = json.loads(LOCK_PATH.read_text(encoding="utf-8"))["component"]

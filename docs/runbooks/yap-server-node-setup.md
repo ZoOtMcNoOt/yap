@@ -180,7 +180,9 @@ store. It uses `--pull=false`; a disconnected qualification therefore does not
 contact a registry merely to rebuild a checked-head wrapper. Provision base
 images and network-dependent build layers before freezing an offline gate. A
 missing cached input is a preflight failure, never permission to substitute a
-tag or silently reconnect.
+tag or silently reconnect. Checked-head revision metadata is applied after
+network-dependent dependency materialization so changing only the candidate SHA
+does not invalidate the frozen runtime environment.
 
 ```bash
 release_root='/srv/yap-server/releases/<checked-head>'

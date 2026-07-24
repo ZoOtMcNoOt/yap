@@ -53,6 +53,16 @@ class NemotronNemoContainerContractTests(unittest.TestCase):
             dockerfile,
         )
         self.assertNotIn("pip check || true", dockerfile)
+        self.assertLess(
+            dockerfile.index("python3 -m pip install"),
+            dockerfile.index("ARG YAP_CHECKED_HEAD"),
+        )
+        self.assertLess(
+            dockerfile.index("python3 -m pip install"),
+            dockerfile.index(
+                'org.opencontainers.image.revision="${YAP_CHECKED_HEAD}"'
+            ),
+        )
 
     def test_bakes_only_the_native_nemotron_lock_and_runs_offline_nonroot(self) -> None:
         dockerfile = DOCKERFILE.read_text(encoding="utf-8")
