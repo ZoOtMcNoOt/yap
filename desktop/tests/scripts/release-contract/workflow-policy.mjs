@@ -7,6 +7,7 @@ export const reviewedActions = Object.freeze({
   setupPnpm: "pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271",
   setupPython: "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
   setupRust: "dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30",
+  setupUv: "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9",
   uploadArtifact: "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
 });
 

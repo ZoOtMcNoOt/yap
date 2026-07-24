@@ -104,6 +104,28 @@ test("all CI, smoke, and release actions use exact reviewed commit pins", async 
   }
 });
 
+test("server CI uses the reviewed exact uv environment and lock-bound cache", async () => {
+  const ci = await readWorkflow(".github/workflows/ci.yml");
+  const { steps } = workflowSteps(ci, "server");
+  const setupUv = steps.find((step) => step.uses === reviewedActions.setupUv);
+  const populateCache = steps.find(
+    (step) => step.name === "Populate the exact server dependency cache",
+  );
+
+  assert.ok(setupUv, "server CI must use the reviewed setup-uv action revision");
+  assert.deepEqual(setupUv.with, {
+    version: "0.11.21",
+    "enable-cache": true,
+    "cache-dependency-glob": "server/uv.lock",
+  });
+  assert.ok(populateCache, "server CI must populate the exact dependency cache");
+  assert.equal(populateCache["working-directory"], "server");
+  assert.equal(
+    normalizedRunBody(populateCache.run),
+    "uv sync --locked --exact --extra evaluation --extra test --python (Get-Command python.exe).Source --no-python-downloads",
+  );
+});
+
 test("CI fails closed if any glib version becomes Windows-reachable", async () => {
   const ci = await readWorkflow(".github/workflows/ci.yml");
   const { steps: rustSteps } = workflowSteps(ci, "rust");
