@@ -104,7 +104,7 @@ const hostedClosureIds = [
 const exactCommands = {
   "frontend.node-runtime": ["node", "./tests/scripts/assert-node24.mjs"],
   "frontend.dependencies": ["corepack", "pnpm@11.7.0", "install", "--frozen-lockfile"],
-  "frontend.dependency-audit": ["pnpm", "audit", "--audit-level", "high"],
+  "frontend.dependency-audit": ["pnpm", "audit:dependencies"],
   "frontend.release-contracts": ["pnpm", "test:release-contract"],
   "frontend.provenance": [
     "node",

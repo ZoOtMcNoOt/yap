@@ -28,9 +28,7 @@
       "cwd": "desktop",
       "command": [
         "pnpm",
-        "audit",
-        "--audit-level",
-        "high"
+        "audit:dependencies"
       ]
     },
     {

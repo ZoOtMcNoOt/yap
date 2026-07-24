@@ -9,6 +9,7 @@
   },
   "scripts": {
     "check:node": "node ./tests/scripts/assert-node24.mjs",
+    "audit:dependencies": "pnpm check:node && node ./tests/scripts/audit-dependencies.mjs",
     "dev": "pnpm check:node && vite",
     "build": "pnpm check:node && tsc && vite build",
     "preview": "pnpm check:node && vite preview",

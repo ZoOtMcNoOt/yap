@@ -4,6 +4,22 @@ Yap treats `cargo audit` vulnerabilities as release blockers unless the risk is
 explicitly accepted in CI with a removal condition. Warnings are reviewed, but
 they do not fail CI by themselves.
 
+## Frontend Registry Audit
+
+The desktop release gate and hosted CI run:
+
+```powershell
+pnpm audit:dependencies
+```
+
+That command executes the real `pnpm audit --audit-level high` check. It retries
+only explicit transient registry or network failures on a bounded
+10-second, 30-second, 60-second, and 120-second schedule. It disables pnpm's
+internal fetch retries so the enclosing schedule remains bounded. A reported
+vulnerability, certificate or configuration error, unrecognized failure, or
+exhausted registry retry still fails the audit. Do not use
+`--ignore-registry-errors` in a release gate.
+
 ## Current Rust Policy
 
 CI runs `cargo audit` for the Windows desktop target:
