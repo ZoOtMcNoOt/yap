@@ -9,7 +9,10 @@ import {
 } from "./live-session-event-listeners.js";
 import { gracefullyExitWdioApp } from "./graceful-wdio-app-exit.js";
 import { classifyNativeReadiness } from "./native-microphone-readiness.js";
-import { createTargetClientLanguageRoutingHardwareGate } from "./target-client-language-routing-hardware.js";
+import {
+  createTargetClientLanguageRoutingHardwareGate,
+  EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK,
+} from "./target-client-language-routing-hardware.js";
 
 // Cohesion note: this spec keeps one ordered cross-window capture/save/delete
 // transaction together. Target-client policy lives in its own gate module.
@@ -22,6 +25,14 @@ const lifecycleAssertions = [
   "compact idle overlay after the success dwell",
   "idempotent listener cleanup and unregistration",
 ];
+
+function describeFailure(error) {
+  if (error instanceof AggregateError) {
+    return `${error.message}: ${error.errors.map(describeFailure).join("; ")}`;
+  }
+  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  return String(error);
+}
 
 const recordingRoot = process.env.YAP_LIVE_RECORDINGS_DIR;
 if (!recordingRoot) throw new Error("WDIO requires an isolated YAP_LIVE_RECORDINGS_DIR.");
@@ -333,7 +344,7 @@ describe("Yap live overlay hardware capture", () => {
       expect(activeIndex).toBeGreaterThanOrEqual(0);
       expect(savingIndex).toBeGreaterThan(activeIndex);
       expect(idleIndex).toBeGreaterThan(savingIndex);
-      expect(evidence.sessions[idleIndex].error).toBeNull();
+      expect(evidence.sessions[idleIndex].error).toBe(EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK);
       expect(evidence.levels.length).toBeGreaterThan(0);
       expect(evidence.levels.some(({ level }) => Number.isFinite(level))).toBe(true);
       targetClient.assertRenderedCaptureEvidence({ evidence, statuses, uiResponsiveness });
@@ -379,7 +390,10 @@ describe("Yap live overlay hardware capture", () => {
     }
 
     const errors = [primaryError, ...teardown.errors].filter(Boolean);
-    if (errors.length > 0) throw new AggregateError(errors, "Hardware lifecycle evidence failed");
+    if (errors.length > 0) {
+      const detail = errors.map(describeFailure).join(" | ");
+      throw new AggregateError(errors, `Hardware lifecycle evidence failed: ${detail}`);
+    }
     expect(teardown.saved).toHaveLength(1);
     expect(teardown.listenerCleanupCounts).toEqual({
       main: [targetClient.enabled ? 2 : 1, 0],

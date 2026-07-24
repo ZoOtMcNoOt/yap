@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { createTargetClientLanguageRoutingHardwareGate } from "../wdio/target-client-language-routing-hardware.js";
+import {
+  createTargetClientLanguageRoutingHardwareGate,
+  EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK,
+} from "../wdio/target-client-language-routing-hardware.js";
 
 const checkedHead = "a".repeat(40);
 const preparedAudioEvidenceSha256 = "b".repeat(64);
@@ -54,15 +57,24 @@ describe("target-client language-routing hardware gate", () => {
     })).toThrow(/between 30000 and 1800000/);
   });
 
-  it("requires active capture and finite levels without depending on acoustic loopback", () => {
+  it("requires active capture, finite levels, and only the expected clipboard fallback", () => {
     const gate = createGate(enabledEnvironment());
     const evidence = {
       levels: [{ level: 0 }],
-      mainSessions: [{
-        error: null,
-        route: "localFallback",
-        transcriptionDegraded: false,
-      }],
+      mainSessions: [
+        {
+          error: null,
+          route: "localFallback",
+          status: "listening",
+          transcriptionDegraded: false,
+        },
+        {
+          error: EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK,
+          route: "localFallback",
+          status: "idle",
+          transcriptionDegraded: false,
+        },
+      ],
     };
     const uiResponsiveness = {
       maximumDelayMs: 25,
@@ -80,6 +92,19 @@ describe("target-client language-routing hardware gate", () => {
       statuses: ["armed", "saving", "idle"],
       uiResponsiveness,
     })).toThrow(/active microphone capture/);
+    expect(() => gate.assertRenderedCaptureEvidence({
+      evidence: {
+        ...evidence,
+        mainSessions: [{
+          error: "Microphone stream failed.",
+          route: "localFallback",
+          status: "idle",
+          transcriptionDegraded: false,
+        }],
+      },
+      statuses: ["armed", "listening", "saving", "idle"],
+      uiResponsiveness,
+    })).toThrow(/expected idle clipboard fallback/);
   });
 
   it("resolves the WebdriverIO browser when an operation starts", async () => {

@@ -38,6 +38,12 @@ capture device, window lifecycle, responsiveness, save/delete, and teardown; it
 does not depend on the current Windows output device acoustically reaching the
 current microphone.
 
+The isolated rendered-UI profile has no safely revalidatable external text
+field. Its successful terminal state must therefore report the exact
+clipboard-only insertion fallback after saving. The gate accepts that known
+feedback only on an idle event; a capture, transcription, save, clipboard, or
+other lifecycle error remains fatal.
+
 A paired energy/thermal measurement on a representative low-end physical
 device is a separate default-on and Phase 10 hardware-certification boundary.
 It may accompany a Phase 6 run, but its absence does not block merging an

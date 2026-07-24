@@ -12,6 +12,8 @@ const MINIMUM_TARGET_CAPTURE_MS = 30_000;
 const MAXIMUM_TARGET_CAPTURE_MS = 30 * 60_000;
 const AUTOMATED_STIMULUS_DELIVERY = "same-host-acoustic-playback";
 const SPEECH_EVIDENCE_BOUNDARY = "checked-head-prepared-audio-short-boundaries";
+export const EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK =
+  "Couldn't insert text here. Transcript copied; press Ctrl+V.";
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message);
@@ -321,9 +323,12 @@ export function createTargetClientLanguageRoutingHardwareGate({
       evidence.mainSessions.every(({ transcriptionDegraded }) => !transcriptionDegraded),
       "The target-client run reported degraded transcription.",
     );
+    const feedbackSessions = evidence.mainSessions.filter(({ error }) => error !== null);
     requireCondition(
-      evidence.mainSessions.every(({ error }) => error === null),
-      "The target-client run reported a lifecycle error.",
+      feedbackSessions.length > 0
+        && feedbackSessions.every(({ error, status }) =>
+          status === "idle" && error === EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK),
+      "The target-client run did not report only the expected idle clipboard fallback.",
     );
     requireCondition(
       uiResponsiveness.sampleCount > activeCaptureMs / 20,
