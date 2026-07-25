@@ -168,6 +168,19 @@ completed normally. No connected container, listener, network, remote wrapper,
 cleanup marker, or candidate receipt remained. The admission is failed private
 evidence and must not be retried, resumed, or relabeled.
 
+Documentation-only successor
+`1c61f7f6d71b0b1bf030612aa277bc598030c597` passed the Windows target-client
+channel and all 18 sequential GB10 provider children with exact teardown. The
+corrected Windows OpenSSH controller then launched the connected wrapper, but
+the controller had exported the provider-lifecycle environment wholesale.
+That unintentionally enabled resident Nemotron in the connected Cohere-only
+server without its separately required candidate capability lock, so the
+server failed closed before readiness or connected workload execution. The
+wrapper emitted its passing cleanup marker, and independent cleanup confirmed
+zero containers, networks, listeners, and candidate processes. No candidate
+receipt remained. The admission is failed private evidence and must not be
+retried, resumed, or relabeled.
+
 ## Candidate boundary
 
 Freeze one clean lowercase Git SHA before admitting a run. Every child records
@@ -329,6 +342,13 @@ error to separate private files. Do not combine redirected Windows OpenSSH with
 before sending the remote command. `-NoNewWindow` keeps the controller
 non-interactive without creating a new visible window and preserves the direct
 SSH process ID required by the teardown receipt.
+
+Construct the connected wrapper environment from an explicit allowlist. Export
+only the Cohere and language-detection preparation receipt paths and hashes
+required by that wrapper. Do not source or forward the provider-lifecycle
+environment: its Nemotron model directory and API key would opt the
+Cohere-only connected server into resident Nemotron and correctly trigger the
+separate candidate-capability-lock requirement.
 
 Shut down the connected server without breaking its evidence channel: while
 the directly launched SSH process is still alive, use a separate bounded SSH
