@@ -138,6 +138,14 @@ condition in
 dependency audit remains clean. This admission is also failed historical
 evidence and may not be resumed or relabeled.
 
+Exact executable candidate
+`20e4a18f380915f69e699f84c25bc2fdb178bf36` was admitted once, then the
+GB10 controller failed closed before provider startup. The controller had
+copied only the frozen `suite.json`; the checked loader requires the complete
+18-track collection and a mode-0700 `runtime-tracks` parent. No candidate
+provider container, listener, network, or receipt remained. The admission is
+failed historical evidence and must not be retried, resumed, or relabeled.
+
 ## Candidate boundary
 
 Freeze one clean lowercase Git SHA before admitting a run. Every child records
@@ -235,6 +243,16 @@ that each copied file has the same SHA-256 as its mode-0600 GB10 original. The
 plan points to those local byte-identical copies. The remote wrappers use the
 GB10 copies and the same frozen hashes; changing either copy invalidates the
 attempt.
+
+Before admission, stage the complete frozen provider duration-track collection
+on the GB10, not only its `suite.json`. The evaluation cache,
+`runtime-tracks` parent, collection directory, and every case directory must be
+real mode-0700 directories; every audio and manifest file must be a real
+mode-0600 file. Verify the copied `suite.json` SHA-256 and every case manifest
+and audio identity by loading the suite through the checked candidate before
+creating the candidate evidence destination. The admitted lifecycle wrapper
+loads the same bytes again and fails closed if an entry is missing, extra,
+linked, permissioned less strictly, or changed.
 
 Admit the sole attempt from the clean frozen checkout:
 
