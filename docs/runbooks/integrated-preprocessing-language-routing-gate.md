@@ -40,7 +40,7 @@ new admitted complete gate remains.
 The private plan, command logs, audio, runtime evidence, and receipts remain
 outside Git.
 
-Four later admissions remain failed private evidence. Candidate
+Five later admissions remain failed private evidence. Candidate
 `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3` completed the target-client and
 provider workloads, but Docker 29's exact post-removal `network <id> not found`
 response was initially treated as an inventory failure; candidate
@@ -57,7 +57,16 @@ instead merges one stdout newline with the same stderr message. Both later
 candidates left zero provider containers, listeners, networks, and processes.
 The parser now recognizes only the observed exact one-line, leading-newline,
 and `[]`-plus-newline absence responses, while unrelated daemon errors remain
-fail-closed. None of these admissions may be resumed, retried, or relabeled.
+fail-closed. Candidate `7db6947c6f85c9a10d434911246cb50fb4164380`
+then passed its target-client and resident-provider channels, including exact
+network teardown, but failed before the connected vertical slice because
+pinned vLLM added distinct `num_requests_waiting_by_reason` metrics and Yap's
+startup-idle parser incorrectly classified those sibling names as malformed
+aggregate metrics. Its connected cleanup left zero provider containers,
+listeners, networks, and processes. The parser now validates only the exact
+running and waiting aggregate names while ignoring other complete metric
+families; malformed or missing aggregate metrics still fail closed. None of
+these admissions may be resumed, retried, or relabeled.
 
 ## Candidate boundary
 

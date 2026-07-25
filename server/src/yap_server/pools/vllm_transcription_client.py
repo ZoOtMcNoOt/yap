@@ -506,9 +506,8 @@ def _parse_request_activity(text: str) -> tuple[int, int]:
             continue
         match = _REQUEST_ACTIVITY_LINE.fullmatch(stripped)
         if match is None:
-            if stripped.startswith(
-                ("vllm:num_requests_running", "vllm:num_requests_waiting")
-            ):
+            metric_name = stripped.split("{", 1)[0].split(None, 1)[0]
+            if metric_name in values:
                 raise ValueError("vLLM request-activity metric is malformed")
             continue
         name = match.group("name")

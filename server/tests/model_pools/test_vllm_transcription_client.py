@@ -212,8 +212,22 @@ class VllmTranscriptionClientTests(unittest.TestCase):
                 200,
                 "\n".join(
                     (
-                        'vllm:num_requests_running{model_name="locked"} 0',
-                        'vllm:num_requests_waiting{model_name="locked"} 0',
+                        (
+                            'vllm:num_requests_running'
+                            '{engine="0",model_name="locked"} 0.0'
+                        ),
+                        (
+                            'vllm:num_requests_waiting'
+                            '{engine="0",model_name="locked"} 0.0'
+                        ),
+                        (
+                            'vllm:num_requests_waiting_by_reason'
+                            '{engine="0",model_name="locked",reason="capacity"} 0.0'
+                        ),
+                        (
+                            'vllm:num_requests_waiting_by_reason'
+                            '{engine="0",model_name="locked",reason="deferred"} 0.0'
+                        ),
                     )
                 ),
             )
@@ -226,6 +240,37 @@ class VllmTranscriptionClientTests(unittest.TestCase):
         )
 
         idle_client.verify_startup_idle()
+
+    def test_startup_reconciliation_rejects_a_malformed_aggregate_metric(
+        self,
+    ) -> None:
+        metrics = _Connection(
+            _TextResponse(
+                200,
+                "\n".join(
+                    (
+                        'vllm:num_requests_running{model_name="locked"} invalid',
+                        'vllm:num_requests_waiting{model_name="locked"} 0',
+                        (
+                            'vllm:num_requests_waiting_by_reason'
+                            '{model_name="locked",reason="capacity"} 0'
+                        ),
+                    )
+                ),
+            )
+        )
+        client = VllmTranscriptionClient(
+            endpoint="http://127.0.0.1:8000",
+            api_key="private-test-key",
+            timeout_seconds=2,
+            connection_factory=_ConnectionFactory(metrics),
+        )
+
+        with self.assertRaisesRegex(
+            WorkerExecutionError,
+            "request-activity probe failed",
+        ):
+            client.verify_startup_idle()
 
     def test_readiness_rejects_a_reported_version_that_differs_from_the_lock(
         self,

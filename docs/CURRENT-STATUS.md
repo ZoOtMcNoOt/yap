@@ -37,17 +37,22 @@ rewrite that target; this status document distinguishes what currently executes.
 Replacement admissions `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3`,
 `6b4eda32ca3853c90b40db607248fab5af23048e`,
 `550d9152771a8220dece90ecdb001217f2f36f4e`, and
-`c4670bef1a549e4db13089bebdf066b09131a681` are failed historical evidence,
-not merge authority. The first exposed Docker 29's changed post-removal
-network wording; the second was invalidated when lid-triggered Windows Modern
-Standby suspended its local responsiveness clock and reset SSH. Independent
-supervision stabilized both later runs and proved the two exact Docker 29
-missing-network byte shapes: `[]` plus the daemon message for an unformatted
-inspection, and one leading newline plus the same message for a formatted
-inspection. Both completed workload channels and left zero provider
-containers, listeners, networks, and processes, but their parser false
-negatives invalidate them. The checked parser accepts only those exact absence
-shapes and remains fail-closed for unrelated daemon errors. The next admission
+`c4670bef1a549e4db13089bebdf066b09131a681`, and
+`7db6947c6f85c9a10d434911246cb50fb4164380` are failed historical evidence,
+not merge authority. The first exposed Docker 29's changed post-removal network
+wording; the second was invalidated when lid-triggered Windows Modern Standby
+suspended its local responsiveness clock and reset SSH. Independent
+supervision stabilized the next two runs and proved the two exact Docker 29
+missing-network byte shapes. Both completed workload channels and left zero
+provider containers, listeners, networks, and processes, but their parser
+false negatives invalidate them. `7db6947c...` passed target-client and
+resident-provider evidence, including exact teardown, then failed connected
+server startup because pinned vLLM exposed additional
+`num_requests_waiting_by_reason` metrics that Yap incorrectly classified as
+malformed aggregates. Its cleanup also passed. The checked parsers now accept
+only exact known absence shapes, validate only exact request-activity aggregate
+names, ignore distinct complete metric families, and remain fail-closed for
+unrelated daemon errors or malformed/missing aggregates. The next admission
 must keep the controller lid open and supervise the long GB10 lifecycle
 independently of SSH.
 
