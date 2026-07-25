@@ -5,7 +5,7 @@ Phase 6 implementation on the active branch: provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
 VAD, local language spans, verify-only AmberNet batch preflight, and
 provider-specific serving candidates. Exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed its frozen one-attempt
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed its frozen one-attempt
 30-child local/native/server/private-runtime matrix after bounded three-agent
 remediation re-review. Runtime images were prepared before admission from
 locally present digest-pinned bases and pinned dependencies. The admitted gates
@@ -197,11 +197,11 @@ exercised vLLM's disconnect-to-engine-abort boundary, while NeMo formed one
 batch of eight isolated fixed/auto requests; both recovered and tore down. A
 later source-backed metrics control confirmed that the pinned external abort is
 not added to vLLM's finished-request histogram. Exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` subsequently passed the composed
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` subsequently passed the composed
 18-child duration, identity, language-contract, cancellation, admission,
 resource, and teardown candidate-safety lifecycle as part of the complete Phase
 6 matrix. Its public-safe aggregate has SHA-256
-`88674596088bc5d1f6a396716f01ee83899fb114a784470c1e131db5972ae019`.
+`506341b3c173de12e29b397beb944eaa20f4a0d5ed50c1028f3f7b9b1c6c9edc`.
 Representative parity/
 locale/quality, frozen percentiles, and rollback remain open for any later
 provider-selection comparison. Neither candidate has been promoted. The earlier
@@ -275,7 +275,7 @@ and range remain visible because unified-memory residency can oscillate, but
 they are not substituted for allocation growth. Focused results selected these
 thresholds, and both current-source profiles pass their eleven focused checks
 plus clean teardown. The frozen checked-head candidate-safety run passed all
-18 children at `cf9b5453270a8afa87cfca42206767a1bf7d82ee`; the same exact candidate
+18 children at `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`; the same exact candidate
 also passed the separate client, AmberNet, advertised-route, accessibility, and
 full-matrix children.
 
@@ -363,7 +363,7 @@ is saturation evidence rather than an interactive workload claim. These are
 accelerated and paced prepared-audio runtime proxies, not rendered-UI or
 sustained release-lifecycle evidence. The route is available only as an
 explicit, default-off Preview because its frozen natural-switch target failed;
-exact executable candidate `cf9b5453270a8afa87cfca42206767a1bf7d82ee`
+exact executable candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`
 later passed the focused current-host resource, restart/cancellation, no-server,
 and unattended 30-second microphone/UI lifecycle work inside the complete
 checked-head Phase 6 matrix.
@@ -472,7 +472,7 @@ These paths remain unadvertised/unselected:
 the catalog still exposes only Cohere `en-US` with `wordAlignment: false`. The
 model-neutral provider candidate-safety lifecycle and complete Phase 6 matrix
 passed on exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee`, but representative
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`, but representative
 provider-promotion comparisons have not run. Both
 candidate containers stay on an
 egress-blocked internal bridge with no Docker-published port; their launchers

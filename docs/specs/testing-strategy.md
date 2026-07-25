@@ -18,11 +18,11 @@ yet. Phase 6 catalog, deterministic preprocessing/VAD, guarded server LID,
 Preview local LID/span routing, provider-specific server candidates, alignment,
 private-corpus trust, scoring, and runtime-qualification components execute
 under focused tests. Exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed the frozen one-attempt
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed the frozen one-attempt
 30-child local/native/server/private-runtime matrix. Its candidate receipt was
 independently validated for the exact head and all 30 children;
 the 18-child GB10 public-safe aggregate has SHA-256
-`88674596088bc5d1f6a396716f01ee83899fb114a784470c1e131db5972ae019`.
+`506341b3c173de12e29b397beb944eaa20f4a0d5ed50c1028f3f7b9b1c6c9edc`.
 The repaired implementation passed one bounded final three-agent re-review.
 Hosted closure, final adversarial review, PR review, and merge remain.
 The representative provider-promotion corpus and frozen Phase 8 comparisons
@@ -70,7 +70,7 @@ host-boundary evidence.
 
 Focused suites covered each Phase 6 slice while the branch changed. The complete
 local/native/server/private-runtime matrix ran exactly once on exact candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` after focused remediation and
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` after focused remediation and
 three-reviewer read-back.
 
 The exact executable inventory and private receipt contract are frozen in the

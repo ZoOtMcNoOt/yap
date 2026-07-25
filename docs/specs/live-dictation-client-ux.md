@@ -24,7 +24,7 @@
 > default-off Preview emits source-time language evidence, partitions held audio
 > exactly once at accepted switches, and returns visibly to the primary locale
 > on ambiguity or failure. Exact executable candidate
-> `cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed the complete Phase 6 safety
+> `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed the complete Phase 6 safety
 > matrix, but the consumed natural-switch target failed; this is not default-on
 > multilingual certification.
 

@@ -9,7 +9,7 @@ accepted local route is exposed on the active branch only as an explicit,
 default-off **Preview**: its consumed representative natural-switch quality
 target failed and remains a visible limitation rather than a qualification
 claim. Exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed the frozen one-attempt
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed the frozen one-attempt
 30-child Phase 6 matrix after bounded three-agent remediation re-review,
 including the current-host release/resource/lifecycle channels, the 18-child
 Cohere vLLM/Nemotron NeMo candidate-safety lifecycle, and the connected
@@ -46,7 +46,7 @@ measured 8.023 ms p95/45.864 ms maximum scheduler wake delay. Its accelerated
 combined pass used 3.71 of four cores and is not an interactive-use claim. This
 is development-host prepared-audio evidence, not rendered-UI or sustained
 release-lifecycle evidence. The later current-host gate and complete Phase 6
-matrix passed at `cf9b5453270a8afa87cfca42206767a1bf7d82ee`. This is not
+matrix passed at `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`. This is not
 minimum-device, battery, or thermal
 certification, which is required before default-on or enterprise release rather
 than for this explicit Preview. The
@@ -676,7 +676,7 @@ evidence before default-on or production promotion.
        `a21964c19e56648e9fddcb5200de419e59a7687c` then passed the final
        source-exact ARM64 repetition under the production worker limits; retain
        its accepted abstaining behavior. Exact candidate
-       `cf9b5453270a8afa87cfca42206767a1bf7d82ee` consumed that component inside
+       `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` consumed that component inside
        the final Phase 6 gate; do not start another open-ended accuracy campaign.
 6. [x] Preserve Whisper-tiny and the other released candidates as measured
        comparators; implement the accepted AmberNet 1.12.0 QDQ INT8 component
@@ -710,7 +710,7 @@ evidence before default-on or production promotion.
        smoke; the checked-head prepared-audio profile owns speech, routing, and
        transcription evidence.
        Exact executable candidate
-       `cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed both current-host
+       `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed both current-host
        channels: 12/12 paced cycles and all nine prepared-audio cases completed
        with zero drops, and the 30-second UI run proved local fallback, four
        cancellation recoveries, save/delete, production quit, and complete
@@ -738,7 +738,7 @@ evidence before default-on or production promotion.
        auto mode without claiming a persistent production pool.
 9. [x] Finish the bounded provider-specific candidate-safety gate from ADR 0025.
        Exact executable candidate
-       `cf9b5453270a8afa87cfca42206767a1bf7d82ee`
+       `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`
        passed Cohere vLLM and resident NeMo request/result identity, duration,
        concurrency, cancellation/recovery, bounded admission, resource, language-
        contract, and exact-teardown cells. This does not promote either route:
@@ -766,7 +766,7 @@ evidence before default-on or production promotion.
        quality and long-duration behavior against Tiron before changing claims.
 13. [x] Run the complete Phase 6 local/native/server/private-runtime matrix
        exactly once on the ready executable candidate. Exact candidate
-       `cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed all 30 children; retain
+       `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed all 30 children; retain
        the docs-only source lineage and require hosted exact-head review before
        merge.
 

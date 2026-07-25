@@ -9,17 +9,27 @@ phase number.
 
 ## Current admitted result and history
 
-Exact executable candidate `cf9b5453270a8afa87cfca42206767a1bf7d82ee`
+Exact executable candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`
 passed its sole admitted 30-child attempt on 2026-07-25. The manifest SHA-256 is
 `46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52`;
 the candidate receipt was independently validated for the exact head and all 30
 children. The target-client, 18-child sequential provider, connected
 interruption/recovery/History, complete local/native/server inventory, and
 exact teardown all passed. The public-safe GB10 aggregate file SHA-256 is
-`88674596088bc5d1f6a396716f01ee83899fb114a784470c1e131db5972ae019`.
+`506341b3c173de12e29b397beb944eaa20f4a0d5ed50c1028f3f7b9b1c6c9edc`.
 Private audio, transcripts, raw metrics, host paths, logs, and process ledgers
 remain outside Git. Hosted exact-head closure, final review, and merge remain
 separate.
+
+Historical exact executable candidate
+`cf9b5453270a8afa87cfca42206767a1bf7d82ee` also passed its sole admitted
+30-child attempt. Later executable hosted-process cleanup and portable-server
+fixture corrections, followed by connected-controller contract corrections,
+invalidated that receipt as merge authority. Exact candidate
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` rebuilt the checked runtime
+preparations and reran every admitted channel and all 30 children after those
+corrections. The `cf9b5453...` receipt remains historical evidence and must not
+be reused or relabeled.
 
 Historical exact executable candidate
 `c82fe47a683dabd72231ffca377095ff16f2d4f5`
@@ -90,7 +100,7 @@ base digest, runtime identity, and receipt-bound immutable image ID. They launch
 and record that exact ID; they never build, pull, reconnect, or substitute an
 image.
 Focused route-less verification passed on the GB10 before admission. Exact
-candidate `cf9b5453270a8afa87cfca42206767a1bf7d82ee` then consumed the frozen,
+candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` then consumed the frozen,
 receipt-bound images in its passing admitted complete gate. Historical
 candidate `c82fe47a683dabd72231ffca377095ff16f2d4f5` had consumed the prior
 receipt-bound images before a hosted-only timing correction invalidated it as

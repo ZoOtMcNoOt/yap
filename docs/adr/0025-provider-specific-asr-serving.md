@@ -4,7 +4,7 @@
 **Status:** Accepted; Cohere vLLM and Nemotron NeMo adapters, checked
 container/launcher contracts, and the sequential candidate-safety lifecycle are
 implemented. Exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed all 18 provider children
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed all 18 provider children
 and exact teardown inside the frozen 30-child Phase 6 matrix; neither
 replaceable provider is promoted, and broad model-quality/replacement decisions
 remain Phase 8 work. Hosted exact-head closure, final review, and merge remain.
@@ -597,10 +597,10 @@ resident-provider candidate-safety component; it does not select either service
 or pull Cohere-versus-Tiron quality work forward from Phase 8.
 
 Exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` later consumed the unchanged
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` later consumed the unchanged
 provider-serving contract in the complete Phase 6 matrix. All 18 children passed;
 the public-safe aggregate has SHA-256
-`88674596088bc5d1f6a396716f01ee83899fb114a784470c1e131db5972ae019`.
+`506341b3c173de12e29b397beb944eaa20f4a0d5ed50c1028f3f7b9b1c6c9edc`.
 
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall

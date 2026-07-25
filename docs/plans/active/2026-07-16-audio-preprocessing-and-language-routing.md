@@ -1,14 +1,14 @@
 # Audio Preprocessing and Language Routing Implementation Plan
 
 **Status:** Exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed the one-attempt frozen
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed the one-attempt frozen
 30-child local/native/server/private-runtime matrix on 2026-07-25. The admitted
 target-client channel passed 12/12 paced native cycles, all nine short-boundary
 cases, and the unattended release-mode microphone/UI lifecycle with complete
 recording/model/process/listener teardown. The GB10 channel passed all 18 Cohere
 vLLM/Nemotron NeMo duration, request, language, admission, cancellation,
 resource, and lifecycle children; its public-safe aggregate SHA-256 is
-`88674596088bc5d1f6a396716f01ee83899fb114a784470c1e131db5972ae019`.
+`506341b3c173de12e29b397beb944eaa20f4a0d5ed50c1028f3f7b9b1c6c9edc`.
 The connected channel carried one immutable desktop job through durable
 preprocessing, an SSH-forward interruption and recovery, server-authoritative
 result publication, verified History review, and exact local/remote teardown.
@@ -28,7 +28,7 @@ reconnect, or substitute an image. A later hosted-only teardown-timing contract
 correction invalidated historical candidate
 `c82fe47a683dabd72231ffca377095ff16f2d4f5`; no receipt or child evidence was
 reused or relabeled. Hosted checks, final adversarial review, PR review, and
-merge remain for `cf9b5453...`. Earlier replacement candidate
+merge remain for `e4a62f4b...`. Earlier replacement candidate
 `72c089f42c1358f4f0b86c793af39a8e762d6137` passed the complete
 Windows target-client channel and all 18 sequential GB10 provider children,
 then failed connected-server readiness because its private controller selected
@@ -81,7 +81,7 @@ lifecycle, minimum-device, battery, or thermal qualification. The separately fro
 quality target completed and failed; that accepted limitation fixes the route
 as an explicit, default-off Preview rather than remaining an unfinished pass
 claim. Current-host resource/interference and sustained lifecycle passed again
-inside exact candidate `cf9b5453270a8afa87cfca42206767a1bf7d82ee`; the complete
+inside exact candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`; the complete
 Phase 6 matrix also passed. Representative
 low-end physical battery/thermal certification is deferred until default-on or
 Phase 10 release qualification.
@@ -641,7 +641,7 @@ legacy rows remain readable without claiming history they never recorded.
 - [x] Classify representative fixed-language/long-tail suggestion quality as
       unpromoted rather than starting another Phase 6 evaluation campaign. The
       executing path remains assistive, user-confirmed, and manual on ambiguity
-      or failure. Candidate `cf9b5453270a8afa87cfca42206767a1bf7d82ee`
+      or failure. Candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`
       consumed the repaired complete matrix after final adversarial re-review.
 
 The desktop and server independently compute the same five source regions and
@@ -1462,7 +1462,7 @@ container usage. Private log/summary hashes are recorded in ADR 0025.
 This focused correction does not close the provider, meeting, locale, duration, or
   complete phase gates. Its log-clean lifecycle assertions were subsequently
   consumed again by exact candidate
-  `cf9b5453270a8afa87cfca42206767a1bf7d82ee`.
+  `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`.
 
 #### Retired Triton experiment — historical negative evidence
 
@@ -1743,7 +1743,7 @@ narrow proof exposed and closed the fixed navigation/picker clipping defect.
 The muted explanatory-text token now measures 4.69:1 against the base
 background, above the WCAG AA 4.5:1 normal-text threshold. The complete
 full-matrix accessibility cell passed inside exact candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee`.
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`.
 
 ### 10. Reconcile evidence and close the exact head
 
@@ -1826,7 +1826,7 @@ retried, or relabeled.
       local/native/server/GB10 inventory in the machine-validated
       [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
       exactly once. Exact candidate
-      `cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed all 30 frozen children,
+      `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed all 30 frozen children,
       all three private hardware/integration channels, and exact teardown.
 - [ ] Open a focused PR, require hosted exact-head CI/CodeQL and any applicable
       disposable-Windows lifecycle evidence, review the checked SHA, and merge

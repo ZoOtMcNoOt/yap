@@ -3,7 +3,7 @@
 **Date:** 2026-07-22
 **Status:** Accepted; client/server contract and isolated CPU implementation
 execute. Exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed the source-exact ARM64
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed the source-exact ARM64
 resource/lifecycle boundary, five-window connected route, and complete 30-child
 Phase 6 matrix. Hosted exact-head closure, final review, and merge remain.
 Representative suggestion quality remains unpromoted and is not a Phase 6
@@ -232,7 +232,7 @@ language-suggestion quality. Because the suggestion is assistive, requires
 explicit user confirmation, and falls back visibly to the manual picker on
 every ambiguous or failed outcome, Phase 6 does not make or require a broad
 accuracy-promotion claim for it. Exact executable candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` subsequently passed the frozen
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` subsequently passed the frozen
 local/native/server/private-runtime matrix, including the connected advertised
 route and duration/lifecycle channels. Documentation lineage, hosted review, and
 merge remain separate; no component or phase gate is relabeled as production

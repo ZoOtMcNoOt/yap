@@ -33,7 +33,7 @@ complexity.
   `a80934d844a068110e7f86b30b6e29d35146db57`.
 - Phase 6 remains on `feat/phase6-preprocessing-pipeline`.
 - Exact executable candidate
-  `cf9b5453270a8afa87cfca42206767a1bf7d82ee`
+  `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`
   passed the frozen one-attempt 30-child Phase 6 matrix. Manifest SHA-256
   `46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52`
   plus its independently validated exact-head 30-child candidate receipt bind
@@ -45,7 +45,7 @@ complexity.
   snapshot, Yap/driver process, or port-18765 listener.
 - Its GB10 channel passed all 18 Cohere vLLM/Nemotron NeMo candidate-safety
   children with public-safe aggregate SHA-256
-  `88674596088bc5d1f6a396716f01ee83899fb114a784470c1e131db5972ae019`.
+  `506341b3c173de12e29b397beb944eaa20f4a0d5ed50c1028f3f7b9b1c6c9edc`.
   Neither provider is promoted.
 - Its connected channel preserved one immutable Windows desktop job across a
   tunnel interruption, verified durable preprocessing, completed the advertised
@@ -153,7 +153,7 @@ the immutable result artifact are terminal truth.
 - [x] Reconcile ADR implementation scores, current architecture, Voice OS,
       roadmap, status, plans, OpenAPI, and runbooks with executable truth.
 - [x] Commit the repaired clean replacement and record its exact SHA. Executable
-      candidate `cf9b5453270a8afa87cfca42206767a1bf7d82ee` is frozen. No
+      candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` is frozen. No
       executable change may occur after this point without an explicit
       gate-invalidating decision.
 - [x] Complete a focused three-reviewer read-back of the repairs before freezing
@@ -183,7 +183,7 @@ executable correction invalidated `c82fe47...`. Candidate
 18-child GB10 channels but failed connected readiness because its controller
 selected an AmberNet directory with unexpected artifacts; cleanup passed and
 the admission remains failed. Exact candidate
-`cf9b5453270a8afa87cfca42206767a1bf7d82ee` verified the precise AmberNet model
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` verified the precise AmberNet model
 root, rebuilt all three checked runtime receipts, and reran every admitted
 channel and all 30 children without reusing or relabeling prior evidence,
 including the corrected termination and grandchild-absence contract.
