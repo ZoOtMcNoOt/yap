@@ -601,6 +601,8 @@ test("integrated private evidence is derived from concrete checked-head artifact
       modelArtifactLockSha256: "4".repeat(64),
       qualificationProfile: "short-boundaries",
       measurementBoundary: "desktop-prepared-audio-frame-to-final",
+      adapterDrainTargetMs: 6_000,
+      adapterDrainTimeoutMs: 12_000,
       logicalProcessorBudget: os.cpus().length,
       allCasesPassed: true,
       cases: durations.map((durationMs) => ({
@@ -608,6 +610,9 @@ test("integrated private evidence is derived from concrete checked-head artifact
         durationSamples: durationMs * 16,
         expectedFrames: durationMs / 10,
         acceptedFrames: durationMs / 10,
+        adapterDrainMs: 1_000,
+        adapterDrainTargetMet: true,
+        adapterStatus: "drained",
         droppedFrames: 0,
         processedAudioSamples: durationMs * 16,
         streamStatus: "completed",
@@ -794,6 +799,13 @@ test("integrated private evidence is derived from concrete checked-head artifact
 
     const evidence = validateIntegratedPrivateEvidence(plan, checkedHead);
     assert.equal(evidence.size, 12);
+    const preparedFailurePath = `${preparedPath}.failure.json`;
+    writeFileSync(preparedFailurePath, '{"status":"failed"}\n');
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      /cannot retain prepared-audio failure evidence/,
+    );
+    rmSync(preparedFailurePath);
     const verticalPath = path.join(integratedRoot, "native-vertical-slice.json");
     const vertical = JSON.parse(readFileSync(verticalPath, "utf8"));
     const lidExecution = vertical.languagePreflightExecution;

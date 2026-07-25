@@ -36,7 +36,9 @@ mod worker;
 #[cfg(test)]
 use asr_adapter::set_reaper_spawn_failure_for_test;
 #[cfg(test)]
-use asr_adapter::{AdapterDrainStatus, PendingAsrAdapter, SessionAsrAdapter};
+use asr_adapter::{
+    AdapterDrainStatus, PendingAsrAdapter, SessionAsrAdapter, ASR_ADAPTER_DRAIN_TIMEOUT,
+};
 #[cfg(test)]
 use capture_worker::*;
 use finalization::{RecordingFinalization, StopCompletion};

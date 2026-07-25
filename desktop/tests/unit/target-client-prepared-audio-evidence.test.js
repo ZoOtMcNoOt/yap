@@ -11,9 +11,14 @@ const expected = {
 
 function validEvidence() {
   return {
+    adapterDrainTargetMs: 6_000,
+    adapterDrainTimeoutMs: 12_000,
     allCasesPassed: true,
     cases: durations.map((durationMs) => ({
       acceptedFrames: durationMs / 10,
+      adapterDrainMs: 1_000,
+      adapterDrainTargetMet: true,
+      adapterStatus: "drained",
       droppedFrames: 0,
       durationMs,
       durationSamples: durationMs * 16,
@@ -63,9 +68,33 @@ describe("target-client prepared-audio evidence", () => {
           index === 3 ? { ...candidate, textSeen: false } : candidate
         )),
       },
+      { ...validEvidence(), adapterDrainTimeoutMs: 6_000 },
+      {
+        ...validEvidence(),
+        cases: validEvidence().cases.map((candidate, index) => (
+          index === 8 ? { ...candidate, adapterStatus: "timedOut" } : candidate
+        )),
+      },
+      {
+        ...validEvidence(),
+        cases: validEvidence().cases.map((candidate, index) => (
+          index === 8 ? { ...candidate, adapterDrainMs: 6_001 } : candidate
+        )),
+      },
     ];
     for (const candidate of cases) {
       expect(() => validateTargetClientPreparedAudioEvidence(candidate, expected)).toThrow();
     }
+  });
+
+  it("keeps a completed post-target drain visible without calling it a product timeout", () => {
+    const evidence = validEvidence();
+    evidence.cases[8] = {
+      ...evidence.cases[8],
+      adapterDrainMs: 6_001,
+      adapterDrainTargetMet: false,
+    };
+
+    expect(validateTargetClientPreparedAudioEvidence(evidence, expected).caseCount).toBe(9);
   });
 });

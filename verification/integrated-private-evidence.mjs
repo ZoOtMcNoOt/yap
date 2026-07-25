@@ -257,6 +257,10 @@ export function validateIntegratedPrivateEvidencePlan(
   const paths = [
     ["Target-client evidence directory", plan.targetClient.evidenceDirectory],
     ["Prepared-audio evidence file", plan.targetClient.preparedAudioEvidenceFile],
+    [
+      "Prepared-audio failure evidence file",
+      `${plan.targetClient.preparedAudioEvidenceFile}.failure.json`,
+    ],
     ["GB10 lifecycle evidence file", plan.gb10.lifecycleEvidenceFile],
     ["Integrated evidence directory", plan.integrated.evidenceDirectory],
     ["Integrated remote cleanup log", plan.integrated.remoteCleanupLogFile],
@@ -278,6 +282,11 @@ export function validateIntegratedPrivateEvidencePlan(
     plan.targetClient.preparedAudioEvidenceFile,
     plan.targetClient.evidenceDirectory,
     "Prepared-audio evidence file",
+  );
+  requireContained(
+    `${plan.targetClient.preparedAudioEvidenceFile}.failure.json`,
+    plan.targetClient.evidenceDirectory,
+    "Prepared-audio failure evidence file",
   );
   requireContained(
     plan.integrated.teardownEvidenceFile,
@@ -321,6 +330,10 @@ function validateTargetClientEvidence(plan, expectedHead) {
 
   const preparedPath = plan.targetClient.preparedAudioEvidenceFile;
   requireContained(preparedPath, root, "Prepared-audio evidence file");
+  requireCondition(
+    !existsSync(`${preparedPath}.failure.json`),
+    "A successful target-client run cannot retain prepared-audio failure evidence.",
+  );
   const prepared = readRealFile(preparedPath, "Prepared-audio evidence");
   validateTargetClientPreparedAudioEvidence(prepared.value, {
     checkedHead: expectedHead,

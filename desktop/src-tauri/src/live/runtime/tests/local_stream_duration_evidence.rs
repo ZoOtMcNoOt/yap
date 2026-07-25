@@ -21,8 +21,9 @@ mod manifest;
 mod pcm_wave;
 
 use evidence::{
-    persist_private_evidence, required_checked_head, LocalStreamDurationCaseEvidence,
-    LocalStreamDurationEvidence,
+    persist_private_evidence, persist_private_failure, required_checked_head,
+    LocalStreamDurationCaseEvidence, LocalStreamDurationEvidence,
+    LocalStreamDurationFailureEvidence,
 };
 use manifest::{
     direct_case_file, load_local_duration_suite, load_track_manifest, repository_root,
@@ -32,7 +33,7 @@ use pcm_wave::Pcm16WaveReader;
 
 const SAMPLE_RATE_HZ: u32 = 16_000;
 const PACED_FRAME_SAMPLES: usize = 160;
-const MAXIMUM_ADAPTER_DRAIN: Duration = Duration::from_millis(6_000);
+const ADAPTER_DRAIN_TARGET: Duration = Duration::from_millis(6_000);
 
 #[derive(Default)]
 struct DurationEventCollector {
@@ -89,32 +90,45 @@ fn local_stream_duration_ladders_preserve_audio_and_finalize() {
     };
     let active_session = Arc::new(AtomicU64::new(1));
     let events = Arc::new(DurationEventCollector::default());
-    let mut stream = SessionStream::start_with_event_sink_for_test(
+    let mut stream = Some(SessionStream::start_with_event_sink_for_test(
         inference,
         1,
         Arc::clone(&active_session),
         Box::new(Arc::clone(&events)),
-    );
+    ));
 
     let mut cases = Vec::with_capacity(suite.definition.cases.len());
     for (index, definition) in suite.definition.cases.iter().enumerate() {
         let session = u64::try_from(index + 1).expect("duration case count must fit in u64");
         active_session.store(session, Ordering::SeqCst);
-        stream.retarget(session);
+        stream
+            .as_ref()
+            .expect("duration stream remains owned")
+            .retarget(session);
         let manifest = load_track_manifest(&suite.root, definition);
         let audio_path = direct_case_file(&suite.root, &definition.case_id, "audio.wav");
         let wave = Pcm16WaveReader::open(&audio_path, &manifest.audio);
-        cases.push(run_duration_case(
-            &mut stream,
+        let result = run_duration_case(
+            stream.as_mut().expect("duration stream remains owned"),
             &events,
             session,
             definition,
             wave,
-        ));
+            &checked_head,
+            &suite.suite_sha256,
+        );
+        match result {
+            Ok(case) => cases.push(case),
+            Err(failure) => {
+                let case_id = failure.case_id.clone();
+                persist_private_failure(&failure);
+                shutdown_duration_stream(&mut stream, false)
+                    .expect("failed duration stream must release its owner");
+                panic!("local duration case {case_id} did not complete safely");
+            }
+        }
     }
-    stream
-        .shutdown(true)
-        .expect("local duration worker must stop cleanly");
+    shutdown_duration_stream(&mut stream, true).expect("local duration worker must stop cleanly");
 
     let all_cases_passed = cases.iter().all(|case| case.passed);
     let qualification_profile = suite.definition.qualification_profile.clone();
@@ -132,6 +146,8 @@ fn local_stream_duration_ladders_preserve_audio_and_finalize() {
         sample_rate_hz: SAMPLE_RATE_HZ,
         paced_frame_samples: PACED_FRAME_SAMPLES,
         measurement_boundary: "desktop-prepared-audio-frame-to-final",
+        adapter_drain_target_ms: ADAPTER_DRAIN_TARGET.as_millis(),
+        adapter_drain_timeout_ms: ASR_ADAPTER_DRAIN_TIMEOUT.as_millis(),
         cases,
         all_cases_passed,
     };
@@ -151,7 +167,9 @@ fn run_duration_case(
     session: u64,
     definition: &LocalDurationSuiteCase,
     mut wave: Pcm16WaveReader,
-) -> LocalStreamDurationCaseEvidence {
+    checked_head: &str,
+    suite_sha256: &str,
+) -> Result<LocalStreamDurationCaseEvidence, Box<LocalStreamDurationFailureEvidence>> {
     let mut adapter = PendingAsrAdapter::new().start(stream.sender(), session);
     let frames = adapter.sink();
     let source_started = Instant::now();
@@ -174,19 +192,45 @@ fn run_duration_case(
 
     let drain_started = Instant::now();
     let drain = adapter
-        .drain_after_capture(MAXIMUM_ADAPTER_DRAIN)
+        .drain_after_capture(ASR_ADAPTER_DRAIN_TIMEOUT)
         .expect("local duration adapter must report its drain outcome");
     let adapter_drain_ms = drain_started.elapsed().as_millis();
-    assert_eq!(drain, AdapterDrainStatus::Drained);
+    let outcome = frames.outcome();
+    if drain != AdapterDrainStatus::Drained {
+        return Err(Box::new(LocalStreamDurationFailureEvidence {
+            schema_version: 1,
+            checked_head: checked_head.to_owned(),
+            suite_sha256: suite_sha256.to_owned(),
+            case_id: definition.case_id.clone(),
+            duration_ms: audio_ms,
+            adapter_status: adapter_drain_status_name(drain),
+            stream_status: None,
+            adapter_drain_ms,
+            accepted_frames: outcome.accepted_frames,
+            dropped_frames: outcome.dropped_frames,
+            queue_high_water_mark: frames.high_water_mark(),
+        }));
+    }
 
     let finalization_started = Instant::now();
     let report = stream.finisher().finish_session_report();
     let finalization_ms = finalization_started.elapsed().as_millis();
-    let processing = report
-        .processing
-        .expect("completed local duration stream must report processing totals");
+    let Some(processing) = report.processing else {
+        return Err(Box::new(LocalStreamDurationFailureEvidence {
+            schema_version: 1,
+            checked_head: checked_head.to_owned(),
+            suite_sha256: suite_sha256.to_owned(),
+            case_id: definition.case_id.clone(),
+            duration_ms: audio_ms,
+            adapter_status: adapter_drain_status_name(drain),
+            stream_status: Some(stream_status_name(report.status)),
+            adapter_drain_ms,
+            accepted_frames: outcome.accepted_frames,
+            dropped_frames: outcome.dropped_frames,
+            queue_high_water_mark: frames.high_water_mark(),
+        }));
+    };
     let observed = events.snapshot(session);
-    let outcome = frames.outcome();
     let expected_frames = definition
         .duration_samples
         .div_ceil(PACED_FRAME_SAMPLES as u64);
@@ -200,7 +244,7 @@ fn run_duration_case(
         && !observed.transcription_unavailable
         && (!definition.expect_text || text_seen);
 
-    LocalStreamDurationCaseEvidence {
+    Ok(LocalStreamDurationCaseEvidence {
         ladder_id: definition.ladder_id.clone(),
         case_id: definition.case_id.clone(),
         duration_samples: definition.duration_samples,
@@ -211,7 +255,9 @@ fn run_duration_case(
         queue_high_water_mark: frames.high_water_mark(),
         source_wall_ms,
         source_overrun_ms: source_wall_ms.saturating_sub(u128::from(audio_ms)),
+        adapter_status: adapter_drain_status_name(drain),
         adapter_drain_ms,
+        adapter_drain_target_met: adapter_drain_target_met(drain, adapter_drain_ms),
         finalization_ms,
         processed_audio_samples: processing.audio_samples,
         decode_chunks: processing.chunks,
@@ -226,7 +272,7 @@ fn run_duration_case(
         transcription_unavailable: observed.transcription_unavailable,
         stream_status: stream_status_name(report.status),
         passed,
-    }
+    })
 }
 
 impl DurationEventCollector {
@@ -331,5 +377,72 @@ fn stream_status_name(status: StreamFinishStatus) -> &'static str {
         StreamFinishStatus::Disconnected => "disconnected",
         StreamFinishStatus::NoStream => "noStream",
         StreamFinishStatus::TimedOut => "timedOut",
+    }
+}
+
+fn adapter_drain_status_name(status: AdapterDrainStatus) -> &'static str {
+    match status {
+        AdapterDrainStatus::Drained => "drained",
+        AdapterDrainStatus::TimedOut => "timedOut",
+        AdapterDrainStatus::TimedOutRetained => "timedOutRetained",
+    }
+}
+
+fn adapter_drain_target_met(status: AdapterDrainStatus, elapsed_ms: u128) -> bool {
+    status == AdapterDrainStatus::Drained && elapsed_ms <= ADAPTER_DRAIN_TARGET.as_millis()
+}
+
+fn shutdown_duration_stream(
+    stream: &mut Option<SessionStream>,
+    join_reader: bool,
+) -> Result<(), String> {
+    stream
+        .take()
+        .ok_or_else(|| "duration stream ownership was already consumed".to_string())?
+        .shutdown(join_reader)
+}
+
+#[test]
+fn adapter_drain_target_distinguishes_latency_from_product_timeout() {
+    assert!(adapter_drain_target_met(AdapterDrainStatus::Drained, 6_000));
+    assert!(!adapter_drain_target_met(
+        AdapterDrainStatus::Drained,
+        6_001,
+    ));
+    assert!(!adapter_drain_target_met(
+        AdapterDrainStatus::TimedOut,
+        12_000,
+    ));
+}
+
+#[test]
+fn failed_duration_case_does_not_join_a_wedged_stream_worker() {
+    let release_worker = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let worker_exited = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let worker_release = Arc::clone(&release_worker);
+    let worker_state = Arc::clone(&worker_exited);
+    let worker = thread::spawn(move || {
+        while !worker_release.load(Ordering::SeqCst) {
+            thread::sleep(Duration::from_millis(1));
+        }
+        worker_state.store(true, Ordering::SeqCst);
+    });
+    let mut stream = Some(SessionStream::from_worker_for_test(1, worker, false));
+
+    let started = Instant::now();
+    shutdown_duration_stream(&mut stream, false).unwrap();
+
+    assert!(started.elapsed() < Duration::from_millis(250));
+    assert!(stream.is_none());
+    assert!(!worker_exited.load(Ordering::SeqCst));
+
+    release_worker.store(true, Ordering::SeqCst);
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while !worker_exited.load(Ordering::SeqCst) {
+        assert!(
+            Instant::now() < deadline,
+            "detached test worker did not exit"
+        );
+        thread::yield_now();
     }
 }

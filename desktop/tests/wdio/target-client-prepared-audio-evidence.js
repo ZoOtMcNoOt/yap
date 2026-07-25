@@ -43,6 +43,11 @@ export function validateTargetClientPreparedAudioEvidence(value, expected) {
     "Prepared-audio measurement boundary does not match.",
   );
   requireCondition(
+    value.adapterDrainTargetMs === 6_000
+      && value.adapterDrainTimeoutMs === 12_000,
+    "Prepared-audio drain timing contract does not match.",
+  );
+  requireCondition(
     Number.isSafeInteger(value.logicalProcessorBudget)
       && value.logicalProcessorBudget === expected.logicalProcessors,
     "Prepared-audio processor budget does not match the current target host.",
@@ -75,6 +80,15 @@ export function validateTargetClientPreparedAudioEvidence(value, expected) {
         && candidate.languageDegraded === false
         && candidate.transcriptionUnavailable === false,
       `Prepared-audio case ${durationMs} ms did not complete cleanly.`,
+    );
+    requireCondition(
+      Number.isSafeInteger(candidate.adapterDrainMs)
+        && candidate.adapterDrainMs >= 0
+        && candidate.adapterStatus === "drained"
+        && candidate.adapterDrainTargetMet === (
+          candidate.adapterDrainMs <= value.adapterDrainTargetMs
+        ),
+      `Prepared-audio case ${durationMs} ms has inconsistent drain timing.`,
     );
     requireCondition(
       candidate.expectedText === (durationMs >= 1_000)
