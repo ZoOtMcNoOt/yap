@@ -64,6 +64,16 @@ function createCanonicalTemporaryDirectory(prefix) {
   return mkdtempSync(path.join(realpathSync.native(os.tmpdir()), prefix));
 }
 
+function processIsAlive(processId) {
+  try {
+    process.kill(processId, 0);
+    return true;
+  } catch (error) {
+    if (error?.code === "ESRCH") return false;
+    throw error;
+  }
+}
+
 function stableValue(value) {
   if (Array.isArray(value)) return value.map(stableValue);
   if (value && typeof value === "object") {
@@ -342,16 +352,20 @@ test("integrated gate terminates a command whose output exceeds its bounded log"
   const commandLogDirectory = path.join(root, "command-logs");
   mkdirSync(commandLogDirectory);
   const maximumLogBytes = 1_024;
-  const escapedMarkerPath = JSON.stringify(path.join(root, "grandchild-survived"));
+  const readyPath = path.join(root, "grandchild-ready");
+  const escapedReadyPath = JSON.stringify(readyPath);
   const grandchildSource = Buffer.from(
-    `setTimeout(()=>require("node:fs").writeFileSync(${escapedMarkerPath},"survived"),1500);`
-      + "setTimeout(process.exit,5000,0);",
+    `require("node:fs").writeFileSync(${escapedReadyPath},String(process.pid));`
+      + "setTimeout(process.exit,10000,0);",
   ).toString("base64");
   const commandSource = [
     'const{spawn}=require("node:child_process");',
+    'const{existsSync}=require("node:fs");',
     `const source=Buffer.from("${grandchildSource}","base64").toString("utf8");`,
     'spawn(process.execPath,["-e",source],{stdio:"ignore"});',
-    `process.stdout.write(Buffer.alloc(${maximumLogBytes + 1},120));`,
+    `const ready=${escapedReadyPath};`,
+    `const overflow=()=>process.stdout.write(Buffer.alloc(${maximumLogBytes + 1},120));`,
+    "const wait=()=>existsSync(ready)?overflow():setTimeout(wait,10);wait();",
     "setTimeout(process.exit,15000,0);",
   ].join("");
   const cell = {
@@ -398,11 +412,12 @@ test("integrated gate terminates a command whose output exceeds its bounded log"
       "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED",
     );
     assert.match(failureRecord.message, /1024-byte command-log limit/);
-    await delay(1_750);
+    const grandchildProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
+    assert.ok(Number.isSafeInteger(grandchildProcessId) && grandchildProcessId > 0);
     assert.equal(
-      existsSync(path.join(root, "grandchild-survived")),
+      processIsAlive(grandchildProcessId),
       false,
-      "the command grandchild must not survive bounded-log overflow",
+      "the ready command grandchild must be gone when bounded cleanup settles",
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

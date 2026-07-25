@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 import shlex
-import shutil
 import subprocess
 import tempfile
 import unittest
+
+from tests.infra.linux_bash import find_linux_bash
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -20,9 +21,9 @@ OWNER_TOKEN = "d" * 64
 
 class OwnedProcessGroupBehaviorTests(unittest.TestCase):
     def test_recorded_group_is_retired_after_its_launcher_leader_exits(self) -> None:
-        bash = shutil.which("bash")
+        bash = find_linux_bash()
         if bash is None:
-            self.skipTest("bash is unavailable for the process-group replay")
+            self.skipTest("Linux-compatible bash is unavailable for the process-group replay")
 
         with tempfile.TemporaryDirectory() as temporary:
             identity_file = _bash_path(Path(temporary) / "proxy.pgid")
@@ -71,9 +72,9 @@ test -z "$(yap_process_group_members "$recorded_group")"
             )
 
     def test_recorded_group_with_another_owner_is_not_signalled(self) -> None:
-        bash = shutil.which("bash")
+        bash = find_linux_bash()
         if bash is None:
-            self.skipTest("bash is unavailable for the process-group replay")
+            self.skipTest("Linux-compatible bash is unavailable for the process-group replay")
 
         with tempfile.TemporaryDirectory() as temporary:
             identity_file = _bash_path(Path(temporary) / "foreign.pgid")
@@ -124,9 +125,9 @@ wait "$group" 2>/dev/null || true
             )
 
     def test_inventory_failure_retains_the_recorded_identity(self) -> None:
-        bash = shutil.which("bash")
+        bash = find_linux_bash()
         if bash is None:
-            self.skipTest("bash is unavailable for the process-group replay")
+            self.skipTest("Linux-compatible bash is unavailable for the process-group replay")
 
         with tempfile.TemporaryDirectory() as temporary:
             identity_file = _bash_path(Path(temporary) / "inventory-failed.pgid")
@@ -166,9 +167,9 @@ test -e "$identity_file"
             )
 
     def test_targeted_recheck_failure_never_signals_a_live_member(self) -> None:
-        bash = shutil.which("bash")
+        bash = find_linux_bash()
         if bash is None:
-            self.skipTest("bash is unavailable for the process-group replay")
+            self.skipTest("Linux-compatible bash is unavailable for the process-group replay")
 
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -225,9 +226,9 @@ test ! -e "$signal_marker"
             )
 
     def test_pre_session_direct_child_is_stopped_before_it_can_detach(self) -> None:
-        bash = shutil.which("bash")
+        bash = find_linux_bash()
         if bash is None:
-            self.skipTest("bash is unavailable for the pre-session replay")
+            self.skipTest("Linux-compatible bash is unavailable for the pre-session replay")
 
         with tempfile.TemporaryDirectory() as temporary:
             release_file = _bash_path(Path(temporary) / "release")
@@ -269,9 +270,9 @@ test -z "$(yap_process_group_members "$child_pid")"
             )
 
     def test_pre_session_child_with_another_token_is_not_signalled(self) -> None:
-        bash = shutil.which("bash")
+        bash = find_linux_bash()
         if bash is None:
-            self.skipTest("bash is unavailable for the pre-session replay")
+            self.skipTest("Linux-compatible bash is unavailable for the pre-session replay")
 
         harness = f"""
 set -euo pipefail

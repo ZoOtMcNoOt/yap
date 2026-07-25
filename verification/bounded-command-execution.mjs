@@ -125,97 +125,37 @@ export class BoundedCommandOutputLimitError extends Error {
   }
 }
 
-const WINDOWS_PROCESS_SNAPSHOT_COMMAND = [
-  "$ErrorActionPreference='Stop'",
-  "$rows=Get-Process | ForEach-Object {",
-  "  [pscustomobject]@{ProcessId=$_.Id;ParentProcessId=$_.Parent.Id}",
-  "}",
-  "$rows | ConvertTo-Json -Compress",
-].join("; ");
-
-function windowsProcessSnapshot() {
+function terminateWindowsProcessTree(rootProcessId) {
   return new Promise((resolve, reject) => {
     execFile(
-      "powershell.exe",
-      [
-        "-NoLogo",
-        "-NoProfile",
-        "-NonInteractive",
-        "-Command",
-        WINDOWS_PROCESS_SNAPSHOT_COMMAND,
-      ],
+      "taskkill.exe",
+      ["/PID", String(rootProcessId), "/T", "/F"],
       {
         encoding: "utf8",
-        maxBuffer: 4 * 1024 * 1024,
-        timeout: 5_000,
+        maxBuffer: 64 * 1024,
+        timeout: 10_000,
         windowsHide: true,
       },
-      (error, stdout, stderr) => {
+      (error, _stdout, stderr) => {
         if (error) {
           reject(new Error(
-            `Windows process-tree snapshot failed: ${
+            `Windows could not terminate process tree ${rootProcessId}: ${
               (stderr || error.message || "unknown error").trim()
             }`,
             { cause: error },
           ));
           return;
         }
-        try {
-          resolve(JSON.parse(stdout));
-        } catch (parseError) {
-          reject(new Error(
-            "Windows process-tree snapshot returned invalid JSON.",
-            { cause: parseError },
-          ));
-        }
+        resolve([rootProcessId]);
       },
     );
   });
 }
 
-async function windowsDescendantProcessIds(rootProcessId) {
-  const parsed = await windowsProcessSnapshot();
-  const rows = (Array.isArray(parsed) ? parsed : [parsed]).filter((row) => (
-    Number.isSafeInteger(row?.ProcessId)
-      && row.ProcessId > 0
-      && Number.isSafeInteger(row?.ParentProcessId)
-      && row.ParentProcessId >= 0
-  ));
-  const children = new Map();
-  for (const row of rows) {
-    const existing = children.get(row.ParentProcessId) ?? [];
-    existing.push(row.ProcessId);
-    children.set(row.ParentProcessId, existing);
-  }
-  const descendants = [];
-  const seen = new Set([rootProcessId]);
-  const visit = (processId) => {
-    for (const childProcessId of children.get(processId) ?? []) {
-      if (seen.has(childProcessId)) continue;
-      seen.add(childProcessId);
-      visit(childProcessId);
-      descendants.push(childProcessId);
-    }
-  };
-  visit(rootProcessId);
-  return descendants;
-}
-
-function forceKill(processId) {
-  try {
-    process.kill(processId, "SIGKILL");
-  } catch (error) {
-    if (error?.code !== "ESRCH") throw error;
-  }
-}
-
 async function terminateProcessTree(child) {
   if (!Number.isSafeInteger(child.pid) || child.pid <= 0) return [];
   if (process.platform === "win32") {
-    const descendants = await windowsDescendantProcessIds(child.pid);
-    forceKill(child.pid);
-    for (const processId of descendants) forceKill(processId);
-    return [child.pid, ...descendants];
+    return terminateWindowsProcessTree(child.pid);
   }
   try {
     process.kill(-child.pid, "SIGKILL");

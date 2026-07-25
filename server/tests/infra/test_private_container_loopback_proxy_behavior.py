@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 import shlex
-import shutil
 import subprocess
 import tempfile
 import unittest
+
+from tests.infra.linux_bash import find_linux_bash
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -27,9 +28,9 @@ OWNER_TOKEN = "b" * 64
 
 class PrivateContainerLoopbackProxyBehaviorTests(unittest.TestCase):
     def test_failure_cleanup_stops_only_the_created_owned_container_id(self) -> None:
-        bash = shutil.which("bash")
+        bash = find_linux_bash()
         if bash is None:
-            self.skipTest("bash is unavailable for the shell ownership replay")
+            self.skipTest("Linux-compatible bash is unavailable for the shell ownership replay")
 
         with tempfile.TemporaryDirectory() as temporary:
             marker_path = Path(temporary) / "owned-stop"
@@ -115,9 +116,9 @@ exit 99
             self.assertFalse(foreign_marker_path.exists())
 
     def test_term_to_outer_launcher_retires_owned_runtime(self) -> None:
-        bash = shutil.which("bash")
+        bash = find_linux_bash()
         if bash is None:
-            self.skipTest("bash is unavailable for the shell TERM replay")
+            self.skipTest("Linux-compatible bash is unavailable for the shell TERM replay")
 
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -52,7 +52,10 @@ def main() -> int:
         pattern="test_*.py",
         top_level_dir=".",
     )
-    result = unittest.TextTestRunner(verbosity=1).run(suite)
+    result = unittest.TextTestRunner(
+        verbosity=2,
+        failfast=True,
+    ).run(suite)
     return 0 if result.wasSuccessful() else 1
 
 
