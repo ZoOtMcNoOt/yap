@@ -14,6 +14,7 @@ export default defineConfig({
   expect: {
     timeout: 5_000,
   },
+  globalSetup: "./scripts/warm-playwright-application.mjs",
   projects: [
     {
       name: "chromium",
@@ -23,6 +24,7 @@ export default defineConfig({
   outputDir: "./results/playwright",
   testDir: "./e2e",
   timeout: 20_000,
+  workers: 1,
   use: {
     baseURL: testUrl,
     screenshot: "only-on-failure",
