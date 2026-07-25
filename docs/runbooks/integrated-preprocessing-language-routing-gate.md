@@ -40,6 +40,16 @@ new admitted complete gate remains.
 The private plan, command logs, audio, runtime evidence, and receipts remain
 outside Git.
 
+Two later admissions remain failed private evidence. Candidate
+`7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3` completed the target-client and
+provider workloads, but Docker 29's exact post-removal `network <id> not found`
+response was initially treated as an inventory failure; candidate
+`6b4eda32ca3853c90b40db607248fab5af23048e` contains the exact-match,
+fail-closed compatibility fix, but its Windows controller entered lid-triggered
+Modern Standby during evidence collection. That standby interval suspended the
+local responsiveness clock and reset the live SSH process. Neither admission
+may be resumed, retried, or relabeled.
+
 ## Candidate boundary
 
 Freeze one clean lowercase Git SHA before admitting a run. Every child records
@@ -47,6 +57,15 @@ that same SHA, the SHA-256 of its exact manifest definition, one private
 evidence SHA-256, and `attempt: 1`. The receipt validator rejects a missing,
 extra, duplicate, reordered, retried, failed, stale-definition, or mismatched-
 head child.
+
+Keep the Windows gate controller awake with its lid open for the entire
+admitted attempt. A per-process execution request cannot safely override the
+host's physical lid-close action. Run the long GB10 provider lifecycle through
+a candidate-scoped transient user service so a transport interruption cannot
+terminate healthy on-node work. Before accepting its evidence, require the
+transient unit to finish successfully and disappear, then independently verify
+the usual zero-container, zero-listener, zero-network, and zero-process
+teardown boundary.
 
 The candidate scope contains the exact local frontend, dependency/provenance,
 unit/build/accessibility, Rust format/lint/test/connector/dependency, required

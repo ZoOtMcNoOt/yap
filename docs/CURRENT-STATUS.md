@@ -34,6 +34,17 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
+Replacement admissions `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3`
+and `6b4eda32ca3853c90b40db607248fab5af23048e` are failed historical
+evidence, not merge authority. The first exposed Docker 29's exact
+post-removal network-absence wording after its target-client and provider
+workloads; the checked fix requires an exact message match and preserves
+fail-closed handling for all other daemon errors. The second was invalidated
+when lid-triggered Windows Modern Standby suspended its local responsiveness
+clock and reset the live SSH process. Exact remote cleanup passed after the
+transport failure. The next admission must keep the controller lid open and
+supervise the long GB10 lifecycle independently of the SSH transport.
+
 The local exact-duration runner starts at the truthful prepared-audio-frame
 boundary, streams ten-millisecond frames through Yap's production bounded
 adapter and single live worker, and cycles finalization across one explicitly
