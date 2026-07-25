@@ -32,29 +32,23 @@ complexity.
 - Phases 1–5 and Architecture Checkpoint A are merged at baseline
   `a80934d844a068110e7f86b30b6e29d35146db57`.
 - Phase 6 remains on `feat/phase6-preprocessing-pipeline`.
-- Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
+- Exact executable candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
   passed the frozen one-attempt 30-child Phase 6 matrix. Manifest SHA-256
-  `8c59a08174a2c1a7e72bef59fefc6a8160ca65982736e0ba7b18f853d893affd`
-  and independently validated candidate-receipt SHA-256
-  `798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`
-  bind the exact evidence.
+  `46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52`
+  plus the independently validated exact-head 30-child candidate receipt bind
+  the exact evidence.
 - Its target-client channel passed twelve paced native cycles, all nine
   250-ms-through-30-second prepared-audio cases, and the unattended 30-second
   release-mode microphone/UI lifecycle with no retained recording, model
   snapshot, Yap/driver process, or port-18765 listener.
 - Its GB10 channel passed all 18 Cohere vLLM/Nemotron NeMo candidate-safety
   children with public-safe aggregate SHA-256
-  `6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
+  `b8daa673febc3fb7777ea099c84878bb929ea2ce49d2f3a70c17b0baf594bc78`.
   Neither provider is promoted.
 - Its connected channel preserved one immutable Windows desktop job across a
   tunnel interruption, verified durable preprocessing, completed the advertised
   Cohere `en-US` route, retired the job into History, opened the verified
   server-authoritative result, and left no owned local or remote runtime.
-- Final review invalidated `97b63be...` as merge authority. Admitted replacement
-  `4b87e222c8ad7325a12a88709a52b5e9c1baf22e` then failed before provider
-  startup because image construction forced a registry lookup across the
-  deliberately offline GB10 boundary. Exact cleanup passed; that SHA remains
-  failed private evidence and cannot be retried.
 - Runtime images are now prepared before admission from digest-pinned bases and
   pinned dependencies and emit private receipts after a second clean-head
   check. The admitted gates verify each frozen receipt hash, exact prepared
@@ -92,7 +86,7 @@ Phase 6 is ready to merge when one clean exact head proves all of the following:
 
 These six actions define the Phase 6 critical path. Only unchecked items remain.
 
-### 1. Finish connected pre-gate preparation
+### 1. Finish connected gate preparation
 
 - [x] Reuse the existing desktop/private-server ASR vertical-slice gate. Add
       only missing assertions needed to prove the executing Phase 6
@@ -156,10 +150,11 @@ the immutable result artifact are terminal truth.
       deferred to its named later phase, or an explicit external handoff.
 - [x] Reconcile ADR implementation scores, current architecture, Voice OS,
       roadmap, status, plans, OpenAPI, and runbooks with executable truth.
-- [ ] Commit the repaired clean replacement and record its exact SHA. No
+- [x] Commit the repaired clean replacement and record its exact SHA
+      `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`. No
       executable change may occur after this point without an explicit
       gate-invalidating decision.
-- [ ] Complete a focused three-reviewer read-back of the repairs before freezing
+- [x] Complete a focused three-reviewer read-back of the repairs before freezing
       that replacement.
 
 Candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed its admitted
@@ -177,15 +172,15 @@ not deferred.
 
 ### 5. Run the complete Phase 6 matrix exactly once
 
-- [ ] Run every replacement-candidate child frozen by the machine-validated
+- [x] Run every replacement-candidate child frozen by the machine-validated
       [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
       on the same frozen head.
 - [ ] Validate the separate exact-head hosted CI/CodeQL/disposable-Windows
       closure after the PR opens.
-- [ ] Verify cancellation, retry, restart, recovery, immutable identity,
+- [x] Verify cancellation, retry, restart, recovery, immutable identity,
       resource bounds, model/process/listener teardown, and private-evidence
       handling.
-- [ ] Record only public-safe aggregate evidence in repository documentation.
+- [x] Record only public-safe aggregate evidence in repository documentation.
 
 ### 6. Review, PR, and merge
 

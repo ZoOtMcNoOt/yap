@@ -8,17 +8,15 @@ complete Phase 6 gate.
 
 ## Last consumed result
 
-Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
-passed both channels inside the complete Phase 6 matrix on 2026-07-24. Twelve
+Exact executable candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
+passed both channels inside the complete Phase 6 matrix on 2026-07-25. Twelve
 paced native cycles and all nine
 250-ms-through-30-second cases completed with zero dropped frames. The
 unattended release-mode UI run remained on `localFallback`, recovered from four
 early cancellations, saved and deleted the captured session, exited through the
 production tray action, and retained no recording, model snapshot, Yap/driver
 process, or port-18765 listener. The private artifacts remain outside Git and
-are bound by the independently validated 30-child candidate receipt with
-SHA-256
-`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`.
+are bound by the independently validated exact-head 30-child candidate receipt.
 This closes the Phase 6 target-client channel, not physical power/thermal
 certification.
 

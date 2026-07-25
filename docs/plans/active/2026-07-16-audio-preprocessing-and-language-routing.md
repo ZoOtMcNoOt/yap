@@ -1,40 +1,32 @@
 # Audio Preprocessing and Language Routing Implementation Plan
 
-**Status:** Historical executable candidate
-`97b63be46b05dffa21595f2fd081b8467bb95798` passed the one-attempt frozen
-30-child local/native/server/private-runtime matrix on 2026-07-24. The admitted
+**Status:** Exact executable candidate
+`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed the one-attempt frozen
+30-child local/native/server/private-runtime matrix on 2026-07-25. The admitted
 target-client channel passed 12/12 paced native cycles, all nine short-boundary
 cases, and the unattended release-mode microphone/UI lifecycle with complete
 recording/model/process/listener teardown. The GB10 channel passed all 18 Cohere
 vLLM/Nemotron NeMo duration, request, language, admission, cancellation,
 resource, and lifecycle children; its public-safe aggregate SHA-256 is
-`6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
+`b8daa673febc3fb7777ea099c84878bb929ea2ce49d2f3a70c17b0baf594bc78`.
 The connected channel carried one immutable desktop job through durable
 preprocessing, an SSH-forward interruption and recovery, server-authoritative
 result publication, verified History review, and exact local/remote teardown.
 The complete frontend/accessibility, Rust/native, required WDIO, connector,
-dependency/provenance, and portable Python 3.12 inventory passed. The validated
-candidate receipt SHA-256 is
-`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`.
+dependency/provenance, and portable Python 3.12 inventory passed. The candidate
+receipt independently validated for the exact head and all 30 children.
 Neither provider is promoted; the local automatic route remains default-off
-Preview behavior because its frozen natural-switch quality target failed. Final
-adversarial read-back subsequently found concrete merge blockers and invalidated
-`97b63be...` as merge authority. Its receipt remains historical evidence. The
-current checked-runtime and containment repair passed one bounded final
-three-agent re-review; the first admitted replacement candidate
-`4b87e222c8ad7325a12a88709a52b5e9c1baf22e` then failed before provider
-startup because its checked builder forced an NGC registry lookup while the
-qualified GB10 was deliberately offline. The stopped target-client channel and
-both hosts cleaned up exactly; that SHA remains failed evidence and will not be
-retried or relabeled. Runtime images are now prepared before admission from
+Preview behavior because its frozen natural-switch quality target failed. The
+repaired implementation passed one bounded final three-agent re-review. Runtime
+images were prepared before admission from
 locally present digest-pinned bases and pinned dependencies and emit private
 receipts after a second clean-head check. The admitted gates verify each frozen
 receipt hash and perform inspection-only verification of the exact prepared
 ARM64 image ID, checked-head revision, base digest, and runtime identity. They
-launch and record that receipt-bound ID and cannot build, pull, reconnect, or
-substitute an image.
-One new candidate complete gate, hosted checks, review,
-and merge remain. The retired Triton experiment remains negative evidence.
+launched and recorded that receipt-bound ID and could not build, pull,
+reconnect, or substitute an image. Hosted checks, review, and merge remain. The
+retired Triton experiment remains
+negative evidence.
 
 The isolated SpeechBrain component has a historical source-exact receipt at
 `04266c4bbffd0fd31eaf2afd0bcce42e0248344f`, but ADR 0026 supersedes that
@@ -78,7 +70,7 @@ lifecycle, minimum-device, battery, or thermal qualification. The separately fro
 quality target completed and failed; that accepted limitation fixes the route
 as an explicit, default-off Preview rather than remaining an unfinished pass
 claim. Current-host resource/interference and sustained lifecycle passed again
-inside exact candidate `97b63be46b05dffa21595f2fd081b8467bb95798`; the complete
+inside exact candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`; the complete
 Phase 6 matrix also passed. Representative
 low-end physical battery/thermal certification is deferred until default-on or
 Phase 10 release qualification.
@@ -638,10 +630,8 @@ legacy rows remain readable without claiming history they never recorded.
 - [x] Classify representative fixed-language/long-tail suggestion quality as
       unpromoted rather than starting another Phase 6 evaluation campaign. The
       executing path remains assistive, user-confirmed, and manual on ambiguity
-      or failure. Candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
-      consumed the first complete matrix, but final adversarial review invalidated
-      it as merge authority. Keep one replacement resource/matrix gate open until
-      the repaired branch is frozen.
+      or failure. Candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
+      consumed the repaired complete matrix after final adversarial re-review.
 
 The desktop and server independently compute the same five source regions and
 decision. Focused Python and Rust tests cover the four-hour selector bound
@@ -1457,11 +1447,11 @@ lifecycle both omitted the finalizer trace; the real lifecycle also omitted the
 semaphore warning, exited zero after observed engine/API shutdown, and removed
 its container/listener. The real run verified all model artifact hashes,
 returned zero normalized public-fixture word errors, and observed 2.968 GiB
-container usage. Private log/summary hashes are recorded in ADR 0025. This
+container usage. Private log/summary hashes are recorded in ADR 0025.
 This focused correction does not close the provider, meeting, locale, duration, or
   complete phase gates. Its log-clean lifecycle assertions were subsequently
-  consumed by the historical `97b63be...` candidate and remain required by the
-  repaired replacement gate.
+  consumed again by exact candidate
+  `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`.
 
 #### Retired Triton experiment — historical negative evidence
 
@@ -1742,7 +1732,7 @@ narrow proof exposed and closed the fixed navigation/picker clipping defect.
 The muted explanatory-text token now measures 4.69:1 against the base
 background, above the WCAG AA 4.5:1 normal-text threshold. The complete
 full-matrix accessibility cell passed inside exact candidate
-`97b63be46b05dffa21595f2fd081b8467bb95798`.
+`0ed2037dbbb8c3df9350dbc37aeddc633f567a40`.
 
 ### 10. Reconcile evidence and close the exact head
 
@@ -1766,15 +1756,13 @@ TypeScript checking, and whitespace validation. Exact executable candidate
 `97b63be46b05dffa21595f2fd081b8467bb95798` then passed the frozen one-attempt
 30-child matrix on 2026-07-24. Manifest SHA-256
 `8c59a08174a2c1a7e72bef59fefc6a8160ca65982736e0ba7b18f853d893affd`
-and candidate-receipt SHA-256
-`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`
-bind the complete target-client, GB10, connected, accessibility, frontend,
-native, and portable Python 3.12 inventory. That post-gate documentation
+and the independently validated exact-head 30-child candidate receipt bind the
+complete target-client, GB10, connected, accessibility, frontend, native, and
+portable Python 3.12 inventory. That post-gate documentation
 reconciliation identified the unchanged executable SHA. The later final
 adversarial read-back found concrete blockers, and subsequent executable repair
 invalidated `97b63be...` as merge authority. The current checked-runtime and
-containment repair passed one bounded final three-agent re-review; one
-replacement complete gate, hosted closure, review, and merge remain.
+containment repair passed one bounded final three-agent re-review.
 
 The first admitted repaired candidate,
 `4b87e222c8ad7325a12a88709a52b5e9c1baf22e`, failed before any provider
@@ -1823,17 +1811,12 @@ retried, or relabeled.
       OpenAPI, runbooks, and this plan with what actually executes. The
       normative OpenAPI now includes the bounded LID preflight/cancellation
       surface and retryable shutdown responses for mutating job operations.
-- [ ] Freeze one repaired Phase 6 replacement and run the complete
+- [x] Freeze one repaired Phase 6 replacement and run the complete
       local/native/server/GB10 inventory in the machine-validated
       [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
-      exactly once. Historical candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
-      passed all 30 frozen children, but later executable repair invalidated it
-      as merge authority and its receipt cannot be reused. Admitted replacement
-      `4b87e222c8ad7325a12a88709a52b5e9c1baf22e` failed at offline image-build
-      preflight and likewise cannot be retried or reused. Candidate
-      `09b8b71746c8eb1f504cf34d1af0639bba625859` passed all three private
-      hardware/integration channels but failed its one complete-matrix attempt
-      at the live dependency audit; its evidence is also historical only.
+      exactly once. Exact candidate
+      `0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed all 30 frozen children,
+      all three private hardware/integration channels, and exact teardown.
 - [ ] Open a focused PR, require hosted exact-head CI/CodeQL and any applicable
       disposable-Windows lifecycle evidence, review the checked SHA, and merge
       only that green reviewed head.

@@ -1,6 +1,6 @@
 # Spec: Testing strategy
 
-**Status:** Living verification contract (updated 2026-07-24); future phase gates activate only when their fixtures exist
+**Status:** Living verification contract (updated 2026-07-25); future phase gates activate only when their fixtures exist
 **Scope:** Cross-cutting tests for the desktop runtime, track-aware audio contracts, local fallback, source-aware diarization, server contracts, and native UI.
 
 This is the shared reference the phase specs point to for their acceptance tests.
@@ -17,23 +17,14 @@ bundled llama-server, and per-OS real-model matrix described below do not exist
 yet. Phase 6 catalog, deterministic preprocessing/VAD, guarded server LID,
 Preview local LID/span routing, provider-specific server candidates, alignment,
 private-corpus trust, scoring, and runtime-qualification components execute
-under focused tests. Historical executable candidate
-`97b63be46b05dffa21595f2fd081b8467bb95798` passed the frozen one-attempt
-30-child local/native/server/private-runtime matrix. Its independently validated
-candidate receipt has SHA-256
-`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`;
+under focused tests. Exact executable candidate
+`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed the frozen one-attempt
+30-child local/native/server/private-runtime matrix. Its candidate receipt
+independently validated for the exact head and all 30 children;
 the 18-child GB10 public-safe aggregate has SHA-256
-`6a126aacd6fdcc1904ce2633dcebdb0b68d70a50a84cedc20301e97457fc4272`.
-Later adversarial review found executable blockers, and their repair invalidated
-that SHA as merge authority. The receipt remains historical evidence only. The
-current checked-runtime and containment repair passed one bounded final
-three-agent re-review.
-The first replacement admission,
-`4b87e222c8ad7325a12a88709a52b5e9c1baf22e`, failed before provider startup
-when image construction attempted a registry lookup across the deliberately
-offline GB10 boundary. It cannot be retried or relabeled. One fresh complete
-matrix on a new frozen exact head and separate hosted closure remain; no passing
-replacement gate result is claimed yet.
+`b8daa673febc3fb7777ea099c84878bb929ea2ce49d2f3a70c17b0baf594bc78`.
+The repaired implementation passed one bounded final three-agent re-review.
+Separate hosted closure remains.
 The representative provider-promotion corpus and frozen Phase 8 comparisons
 remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
 baseline, but no Tiron worker or meeting scorer executes yet. The tables below
@@ -78,18 +69,16 @@ host-boundary evidence.
 ### Phase 6 target boundary
 
 Focused suites covered each Phase 6 slice while the branch changed. The complete
-local/native/server/private-runtime matrix ran exactly once on historical
-candidate `97b63be46b05dffa21595f2fd081b8467bb95798`. Subsequent executable repair
-means that run cannot authorize merge. The current boundary is to finish
-focused remediation and three-reviewer read-back, freeze one clean replacement,
-and run the complete matrix exactly once on that replacement head.
+local/native/server/private-runtime matrix ran exactly once on exact candidate
+`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` after focused remediation and
+three-reviewer read-back.
 
 The exact executable inventory and private receipt contract are frozen in the
 [integrated preprocessing and language-routing gate](../runbooks/integrated-preprocessing-language-routing-gate.md).
 Its validator rejected omissions, additions, duplicate or reordered children,
 more than one admitted attempt, definition drift, failure, and checked-head
-drift. Documentation reconciliation after the replacement gate must identify
-the unchanged executable candidate explicitly. Only then do hosted CI, the
+drift. This documentation reconciliation identifies the unchanged executable
+candidate explicitly. Hosted CI, the
 complete current CodeQL language matrix, and disposable-Windows NSIS closure
 form the separate PR receipt that revalidates source-to-docs lineage before
 merge.

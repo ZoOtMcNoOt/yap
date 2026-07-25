@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-07-24
+**As of:** 2026-07-25
 
 **Current work:** Phase 6 preprocessing on
 `feat/phase6-preprocessing-pipeline`.
@@ -29,7 +29,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 4: private ASR node | Merged and gated | A bounded router/pool and transient isolated Cohere worker ran on GB10 using the pinned Python 3.12 / NVIDIA PyTorch 26.06 stack. This is reference-worker proof, not a production service. |
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
-| Phase 6: preprocessing | Bounded final repair review passed; replacement gate pending | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798` passed its frozen 30-child local/native/server/private-runtime attempt, but the required final adversarial review found restart/cleanup, OpenAPI, hosted-closure, evidence-bound, and persisted-vocabulary defects and explicitly invalidated that SHA as merge authority. Its receipt remains historical evidence. Admitted replacement `4b87e222c8ad7325a12a88709a52b5e9c1baf22e` failed before provider startup because its image build forced a registry lookup across the offline GB10 boundary; exact cleanup passed and that SHA cannot be retried. The current checked-runtime and containment repair passed one bounded final three-agent re-review. Runtime images are now prepared before admission and emit private receipts after a second clean-head check. Admitted gates verify the frozen receipt hashes, exact prepared ARM64 IDs, revisions, base digests, and runtime identities by inspection, launch those IDs, and bind them into evidence. One new complete gate remains before PR closure. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
+| Phase 6: preprocessing | Evidence reconciled; PR and hosted closure pending | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed the admitted target-client channel, all 18 sequential GB10 provider children, the connected interruption/recovery/History channel, exact teardown, and the complete 30-child local/native/server/private-runtime matrix. Its candidate receipt independently validated for the exact head and all 30 children; private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Exact-head hosted CI/CodeQL/stock-NSIS closure, PR review, and merge remain. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Phase 7: identity/access | Planned | Entra/MSAL, token-derived ownership, purpose grants, and authorization remain unimplemented. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
@@ -107,24 +107,19 @@ already-present model directories without starting a service. This closes input
 preparation only: no provider runtime cell, lifecycle wrapper, frozen gate, or
 promotion claim was consumed.
 
-The historical sequential resident-provider lifecycle wrapper published one
+The repaired sequential resident-provider lifecycle wrapper published one
 complete exact-head GB10 aggregate for candidate
-`97b63be46b05dffa21595f2fd081b8467bb95798`: all 18 then-current
-candidate-safety children and exact host teardown passed. Final review later
-invalidated that SHA as merge authority, so this receipt proves only the
-historical wrapper and remains outside Git with its raw logs, samples, and
-snapshots.
-
-The repaired wrapper has not yet published a replacement aggregate. It verifies
-already-present models and receipt-bound, already-prepared exact-head ARM64
-images; launches each provider by immutable image ID without a Docker-published
-port on a temporary internal bridge; durably owns the bounded loopback-proxy
-process-group identity; verifies blocked container egress; runs the plan-owned
-duration/load/cancellation/capacity/resource cells; and publishes only after
-complete child evidence plus clean launcher, proxy, container, network, and host
-teardown. Those behaviors remain implementation awaiting the one replacement
-gate, not evidence already earned by `97b63be...`. Representative quality,
-provider promotion, and later production capacity also remain open.
+`0ed2037dbbb8c3df9350dbc37aeddc633f567a40`: all 18 candidate-safety children
+and exact host teardown passed. The public-safe aggregate file SHA-256 is
+`b8daa673febc3fb7777ea099c84878bb929ea2ce49d2f3a70c17b0baf594bc78`.
+It verified already-present models and receipt-bound, already-prepared
+exact-head ARM64 images; launched each provider by immutable image ID without a
+Docker-published port on a temporary internal bridge; durably owned the bounded
+loopback-proxy process-group identity; verified blocked container egress; ran
+the plan-owned duration/load/cancellation/capacity/resource cells; and
+published only after complete child evidence plus clean launcher, proxy,
+container, network, and host teardown. Representative quality, provider
+promotion, and later production capacity remain open.
 
 The provider-qualification code now separates ordinary load, cancellation,
 capacity, and fixed/automatic-language semantics. vLLM cancellation evidence
@@ -263,7 +258,7 @@ candidate is promoted by this dirty-head result.
   active branch, Cohere defaults to a digest-pinned vLLM candidate behind the
   same worker contract and a required loopback/API-key boundary; its composed
   candidate-safety lifecycle with resident NeMo passed at exact GB10 candidate
-  `97b63be46b05dffa21595f2fd081b8467bb95798`. Locked Nemotron Transformers routes
+  `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`. Locked Nemotron Transformers routes
   remain correctness references. A pinned resident NeMo candidate now executes
   behind its own authenticated numeric-loopback adapter and checked launcher,
   but is not selected and does not implement client-facing live transport. None
@@ -323,7 +318,7 @@ ownership.
   bounded drain, under-real-time combined execution, and teardown. The consumed
   natural-switch quality target failed and fixes the Preview boundary rather
   than remaining an unfinished pass. Exact candidate
-  `97b63be46b05dffa21595f2fd081b8467bb95798` passed current-host
+  `0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed current-host
   resource/interference, sustained lifecycle, accessibility, and the complete
   checked-head Phase 6 matrix. The
   isolated AmberNet CPU batch preflight, durable desktop request/retry/
@@ -341,7 +336,7 @@ ownership.
   adapter/image/launcher contract and the resident Nemotron NeMo worker/service/
   image/launcher now execute, and their composed candidate-safety lifecycle
   passed again inside exact candidate
-  `97b63be46b05dffa21595f2fd081b8467bb95798`. They remain
+  `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`. They remain
   unadvertised or unselected: `wordAlignment` is still false, and broad Cohere
   output-stability/quality plus representative Nemotron locale/quality evidence
   remain later provider-promotion work. The
@@ -382,14 +377,41 @@ all passed on that exact head. It merged through PR #59 as
 `a80934d844a068110e7f86b30b6e29d35146db57`. The complete public-safe record is
 [executable ownership review verification](evidence/executable-ownership-review/VERIFICATION.md).
 
+## Phase 6 current checked-head evidence
+
+Exact executable candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
+passed the one-attempt integrated Phase 6 gate on 2026-07-25. The frozen
+manifest SHA-256 is
+`46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52`;
+the candidate receipt independently validated for the exact head and all 30
+children.
+
+The admitted target-client channel passed 12/12 repeated native cycles, all
+nine 250-ms-through-30-second prepared-audio cases, and the release-mode
+microphone/UI lifecycle. The GB10 channel passed the composed 18-child Cohere
+vLLM/Nemotron NeMo suite and exact teardown. The connected channel proved one
+immutable job across a stopped and restored SSH forward, durable
+preprocessing, the five-window AmberNet preflight, server-authoritative result
+publication, verified History review, and exact teardown. The complete command
+matrix passed frontend accessibility/workflows, production build,
+release/provenance and dependency contracts, Rust format/Clippy/tests/audit/
+Windows boundary, server-connector integration, required native WDIO, and the
+portable Python 3.12 server suite.
+
+Private audio, transcripts, raw metrics, process ledgers, host paths, and logs
+remain outside Git and hosted artifacts. This candidate does not promote a
+provider or claim representative physical-device power/thermal, broad
+language-quality, persistent production capacity, authentication, or
+enterprise deployment. Hosted PR closure and merge remain open.
+
 ## Phase 6 historical checked-head evidence and invalidation
 
 Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
 passed the one-attempt integrated Phase 6 gate on 2026-07-24. The frozen
 manifest SHA-256 is
 `8c59a08174a2c1a7e72bef59fefc6a8160ca65982736e0ba7b18f853d893affd`;
-the independently validated 30-child candidate receipt SHA-256 is
-`798f3fcef3709f9751d1e7fc1a8c31b5bf2e429c2cf08efedad4a03b77d87f8d`.
+the candidate receipt independently validated for the exact head and all 30
+children.
 
 The admitted target-client channel passed 12/12 repeated native cycles, all
 nine 250-ms-through-30-second prepared-audio cases, and the release-mode
@@ -434,13 +456,9 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Freeze one clean replacement SHA from the focused-verified,
-   three-agent-reviewed checked-runtime repair.
-2. Run the complete replacement matrix once, keeping all private evidence
-   outside Git and recording only bounded public-safe aggregates.
-3. Open the focused Phase 6 PR and require hosted CI/CodeQL and applicable
+1. Open the focused Phase 6 PR and require hosted CI/CodeQL and applicable
    Windows checks on the reviewed PR head.
-4. Merge only that reviewed green head, then start the separately queued
+2. Merge only that reviewed green head, then start the separately queued
    Checkpoint B before Phase 7.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision

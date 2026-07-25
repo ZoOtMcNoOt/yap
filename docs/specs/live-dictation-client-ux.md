@@ -18,13 +18,13 @@
 
 > **2026-07-14 security amendment:** Shortcut changes require native confirmation and a bounded 15-second Rust/Windows physical-chord epoch that waits for neutral/chord/release, ignores ordinary typing without the required modifiers, and persists only the validated normalized chord. Completed transcripts use clipboard-only delivery with visible manual-paste guidance. Synthesized focused-field input is retired until an adapter can prove and revalidate authority over the exact destination field. ADR 0013 owns this behavior.
 
-> **2026-07-24 Phase 6 amendment:** `LiveRuntime` remains the sole local
+> **2026-07-25 Phase 6 amendment:** `LiveRuntime` remains the sole local
 > lifecycle owner. It applies the confirmed primary locale to Nemotron and may
 > load one explicitly imported AmberNet/Silero component beside it. That
 > default-off Preview emits source-time language evidence, partitions held audio
 > exactly once at accepted switches, and returns visibly to the primary locale
 > on ambiguity or failure. Exact executable candidate
-> `97b63be46b05dffa21595f2fd081b8467bb95798` passed the complete Phase 6 safety
+> `0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed the complete Phase 6 safety
 > matrix, but the consumed natural-switch target failed; this is not default-on
 > multilingual certification.
 
