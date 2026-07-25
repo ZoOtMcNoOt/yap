@@ -156,6 +156,18 @@ server, provider container, listeners, and network, but the missing
 wrapper-authored marker invalidates the admission. It must not be retried,
 resumed, or relabeled.
 
+Documentation-only successor
+`0069d9631447867df5360f5c49c8290bb2bca08b` passed the Windows target-client
+channel and all 18 sequential GB10 provider children with exact teardown. Its
+connected setup then exposed a Windows OpenSSH controller defect before the
+remote wrapper or connected workload started: `Start-Process -WindowStyle
+Hidden` left the authenticated SSH process in `CloseWait` when standard output
+and standard error were redirected. A harmless one-line SSH probe reproduced
+the same deadlock, while `Start-Process -NoNewWindow` with the same redirection
+completed normally. No connected container, listener, network, remote wrapper,
+cleanup marker, or candidate receipt remained. The admission is failed private
+evidence and must not be retried, resumed, or relabeled.
+
 ## Candidate boundary
 
 Freeze one clean lowercase Git SHA before admitting a run. Every child records
@@ -309,6 +321,14 @@ The rendered integration gate publishes the exact two sequential SSH-forward
 PIDs only after both have exited. The teardown writer combines that immutable
 ledger with the directly launched remote-server SSH PID; arbitrary or partial
 caller-supplied PID lists are not accepted.
+
+On Windows, launch the directly owned background `ssh.exe` with
+`Start-Process -NoNewWindow -PassThru` and redirect standard output and standard
+error to separate private files. Do not combine redirected Windows OpenSSH with
+`-WindowStyle Hidden`: that combination can authenticate and then deadlock
+before sending the remote command. `-NoNewWindow` keeps the controller
+non-interactive without creating a new visible window and preserves the direct
+SSH process ID required by the teardown receipt.
 
 Shut down the connected server without breaking its evidence channel: while
 the directly launched SSH process is still alive, use a separate bounded SSH
