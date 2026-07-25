@@ -303,6 +303,22 @@ wait_for_owned_container_absence() {
   done
 }
 
+docker_network_absence_response() {
+  local requested_network="$1"
+  local output="$2"
+  local current_message="Error response from daemon: network $requested_network not found"
+  local legacy_message="Error: No such network: $requested_network"
+  local legacy_daemon_message=\
+"Error response from daemon: No such network: $requested_network"
+
+  [ "$output" = "$current_message" ] \
+    || [ "$output" = "[]"$'\n'"$current_message" ] \
+    || [ "$output" = "$legacy_message" ] \
+    || [ "$output" = "[]"$'\n'"$legacy_message" ] \
+    || [ "$output" = "$legacy_daemon_message" ] \
+    || [ "$output" = "[]"$'\n'"$legacy_daemon_message" ]
+}
+
 capture_owned_network() {
   local identity observed_id observed_owner observed_revision observed_name
   if ! identity="$(
@@ -310,9 +326,7 @@ capture_owned_network() {
       --format '{{.Id}}|{{index .Labels "io.yap.run-token"}}|{{index .Labels "io.yap.revision"}}|{{.Name}}' \
       "$network_name" 2>&1
   )"; then
-    if grep -Eqi 'no such (network|object)' <<<"$identity" \
-      || [ "$identity" = \
-        "Error response from daemon: network $network_name not found" ]; then
+    if docker_network_absence_response "$network_name" "$identity"; then
       return 1
     fi
     echo "Resident provider network inventory failed" >&2
@@ -338,9 +352,7 @@ verify_network_absent() {
   if output="$(docker network inspect "$owned_network_id" 2>&1)"; then
     return 1
   fi
-  if grep -Eqi 'no such (network|object)' <<<"$output" \
-    || [ "$output" = \
-      "Error response from daemon: network $owned_network_id not found" ]; then
+  if docker_network_absence_response "$owned_network_id" "$output"; then
     return 0
   fi
   echo "Resident provider network absence check failed" >&2

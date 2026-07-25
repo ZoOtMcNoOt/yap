@@ -300,7 +300,7 @@ test "$network_id" = "{network_id}"
         if bash is None:
             self.skipTest("bash is unavailable for the network absence replay")
         script = GATE.read_text(encoding="utf-8")
-        function_start = script.index("capture_owned_network() {")
+        function_start = script.index("docker_network_absence_response() {")
         function_end = script.index("\nwait_for_owned_container() {")
         functions = script[function_start:function_end]
         network_id = "c" * 64
@@ -310,7 +310,8 @@ set -euo pipefail
 network_name={network_name}
 docker() {{
   local requested="${{@: -1}}"
-  printf '%s\\n' "Error response from daemon: network $requested not found" >&2
+  printf '[]\\n%s\\n' \
+    "Error response from daemon: network $requested not found" >&2
   return 1
 }}
 set +e
