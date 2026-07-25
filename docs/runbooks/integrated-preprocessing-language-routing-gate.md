@@ -146,6 +146,16 @@ copied only the frozen `suite.json`; the checked loader requires the complete
 provider container, listener, network, or receipt remained. The admission is
 failed historical evidence and must not be retried, resumed, or relabeled.
 
+Documentation-only successor
+`b0a86775e46834f570868d19a264d0a249a25ba8` passed the Windows target-client
+channel, all 18 sequential GB10 provider children, and the connected
+desktop/private-server behavior. Its controller then terminated the local SSH
+process before signaling the remote wrapper, severing the channel that owned
+the required cleanup marker. Independent cleanup removed the still-owned
+server, provider container, listeners, and network, but the missing
+wrapper-authored marker invalidates the admission. It must not be retried,
+resumed, or relabeled.
+
 ## Candidate boundary
 
 Freeze one clean lowercase Git SHA before admitting a run. Every child records
@@ -299,6 +309,16 @@ The rendered integration gate publishes the exact two sequential SSH-forward
 PIDs only after both have exited. The teardown writer combines that immutable
 ledger with the directly launched remote-server SSH PID; arbitrary or partial
 caller-supplied PID lists are not accepted.
+
+Shut down the connected server without breaking its evidence channel: while
+the directly launched SSH process is still alive, use a separate bounded SSH
+control call to verify and signal the exact checked-head remote wrapper. Wait
+for that wrapper to print its single `REMOTE_GATE_CLEANUP=PASS` marker and for
+the original SSH process to exit naturally. Only then run the independent
+zero-container, zero-listener, zero-network, and zero-process checks and create
+the teardown receipt. Terminating the local SSH process first is a failed
+admission even if a later out-of-band cleanup succeeds, because the wrapper's
+marker can no longer reach its frozen log.
 
 Then invoke `complete` once. It runs the complete local/native/server command
 matrix and publishes the private candidate receipt only if every prepared
