@@ -5,6 +5,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -58,6 +59,10 @@ const checkedHead = "a".repeat(40);
 const startedAt = "2026-07-23T12:00:00.000Z";
 const finishedAt = "2026-07-23T13:00:00.000Z";
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+
+function createCanonicalTemporaryDirectory(prefix) {
+  return mkdtempSync(path.join(realpathSync.native(os.tmpdir()), prefix));
+}
 
 function stableValue(value) {
   if (Array.isArray(value)) return value.map(stableValue);
@@ -294,7 +299,7 @@ test("portable Python gate rejects project and uv.lock drift", () => {
 });
 
 test("integrated gate reserves one deterministic attempt and refuses a retry", () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), "yap-gate-attempt-"));
+  const root = createCanonicalTemporaryDirectory("yap-gate-attempt-");
   try {
     const input = {
       evidenceRoot: root,
@@ -333,7 +338,7 @@ test("integrated gate rejects a wrong runner runtime before consuming the attemp
 });
 
 test("integrated gate terminates a command whose output exceeds its bounded log", async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), "yap-gate-command-output-"));
+  const root = createCanonicalTemporaryDirectory("yap-gate-command-output-");
   const commandLogDirectory = path.join(root, "command-logs");
   mkdirSync(commandLogDirectory);
   const maximumLogBytes = 1_024;
@@ -405,7 +410,7 @@ test("integrated gate terminates a command whose output exceeds its bounded log"
 });
 
 test("command cells reject a redirected log destination before execution", async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), "yap-gate-log-path-"));
+  const root = createCanonicalTemporaryDirectory("yap-gate-log-path-");
   const runDirectory = path.join(root, "admitted");
   const commandLogDirectory = path.join(runDirectory, "command-logs");
   const redirectedDirectory = path.join(root, "redirected");
@@ -445,7 +450,7 @@ test("command cells reject a redirected log destination before execution", async
 });
 
 test("command cells reject a junction-swapped log directory before execution", async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), "yap-gate-log-junction-"));
+  const root = createCanonicalTemporaryDirectory("yap-gate-log-junction-");
   const runDirectory = path.join(root, "admitted");
   const commandLogDirectory = path.join(runDirectory, "command-logs");
   const redirectedDirectory = path.join(root, "redirected");
@@ -489,7 +494,7 @@ test("command cells reject a junction-swapped log directory before execution", a
 });
 
 test("integrated private evidence is derived from concrete checked-head artifacts", () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), "yap-private-evidence-"));
+  const root = createCanonicalTemporaryDirectory("yap-private-evidence-");
   const targetRoot = path.join(root, `${checkedHead}-target`);
   const integratedRoot = path.join(root, `${checkedHead}-integrated`);
   const preparedPath = path.join(targetRoot, "local-stream-short-boundaries.json");
@@ -883,7 +888,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
 });
 
 test("connected teardown receipt derives cleanup state and refuses retained owners", async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), "yap-connected-teardown-"));
+  const root = createCanonicalTemporaryDirectory("yap-connected-teardown-");
   const logPath = path.join(root, "remote.log");
   const tunnelLedgerPath = path.join(root, "tunnel-process-ledger.json");
   const output = path.join(root, "teardown.json");
