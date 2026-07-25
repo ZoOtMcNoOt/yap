@@ -295,6 +295,61 @@ test "$network_id" = "{network_id}"
             ),
         )
 
+    def test_docker_29_network_not_found_is_treated_as_absent(self) -> None:
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash is unavailable for the network absence replay")
+        script = GATE.read_text(encoding="utf-8")
+        function_start = script.index("capture_owned_network() {")
+        function_end = script.index("\nwait_for_owned_container() {")
+        functions = script[function_start:function_end]
+        network_id = "c" * 64
+        network_name = "yap-private-inference-absence"
+        harness = f"""
+set -euo pipefail
+network_name={network_name}
+docker() {{
+  local requested="${{@: -1}}"
+  printf '%s\\n' "Error response from daemon: network $requested not found" >&2
+  return 1
+}}
+set +e
+capture_owned_network
+capture_status="$?"
+set -e
+test "$capture_status" -eq 1
+verify_network_absent {network_id}
+docker() {{
+  local requested="${{@: -1}}"
+  printf '%s\\n' \
+    "permission denied while plugin reported network $requested not found" >&2
+  return 1
+}}
+set +e
+capture_owned_network
+capture_status="$?"
+verify_network_absent {network_id}
+verify_status="$?"
+set -e
+test "$capture_status" -eq 2
+test "$verify_status" -eq 2
+"""
+        completed = subprocess.run(
+            [bash],
+            input=(functions + harness).encode("utf-8"),
+            check=False,
+            capture_output=True,
+            timeout=30,
+        )
+        self.assertEqual(
+            completed.returncode,
+            0,
+            (completed.stdout + completed.stderr).decode(
+                "utf-8",
+                errors="replace",
+            ),
+        )
+
     def test_captured_container_identity_cannot_be_replaced(self) -> None:
         bash = shutil.which("bash")
         if bash is None:

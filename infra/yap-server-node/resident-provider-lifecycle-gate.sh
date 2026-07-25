@@ -310,7 +310,9 @@ capture_owned_network() {
       --format '{{.Id}}|{{index .Labels "io.yap.run-token"}}|{{index .Labels "io.yap.revision"}}|{{.Name}}' \
       "$network_name" 2>&1
   )"; then
-    if grep -Eqi 'no such (network|object)' <<<"$identity"; then
+    if grep -Eqi 'no such (network|object)' <<<"$identity" \
+      || [ "$identity" = \
+        "Error response from daemon: network $network_name not found" ]; then
       return 1
     fi
     echo "Resident provider network inventory failed" >&2
@@ -336,7 +338,9 @@ verify_network_absent() {
   if output="$(docker network inspect "$owned_network_id" 2>&1)"; then
     return 1
   fi
-  if grep -Eqi 'no such (network|object)' <<<"$output"; then
+  if grep -Eqi 'no such (network|object)' <<<"$output" \
+    || [ "$output" = \
+      "Error response from daemon: network $owned_network_id not found" ]; then
     return 0
   fi
   echo "Resident provider network absence check failed" >&2
