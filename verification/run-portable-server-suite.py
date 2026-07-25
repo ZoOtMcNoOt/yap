@@ -3,10 +3,30 @@ from __future__ import annotations
 import hashlib
 import importlib.metadata
 import json
+import os
 from pathlib import Path
 import sys
+import tempfile
 import tomllib
 import unittest
+
+
+def configure_canonical_test_temp_root() -> None:
+    """Keep test fixtures off hosted-runner junction aliases."""
+
+    try:
+        canonical_root = Path(tempfile.gettempdir()).resolve(strict=True)
+    except OSError as error:
+        raise RuntimeError(
+            "The portable server suite temp root is unavailable."
+        ) from error
+    if not canonical_root.is_dir():
+        raise RuntimeError("The portable server suite temp root is not a directory.")
+
+    canonical = str(canonical_root)
+    tempfile.tempdir = canonical
+    for variable in ("TMPDIR", "TEMP", "TMP"):
+        os.environ[variable] = canonical
 
 
 def validate_runtime_identity() -> dict[str, object]:
@@ -47,6 +67,7 @@ def main() -> int:
     if arguments == ["--identity-only"]:
         return 0
 
+    configure_canonical_test_temp_root()
     suite = unittest.defaultTestLoader.discover(
         "tests",
         pattern="test_*.py",
