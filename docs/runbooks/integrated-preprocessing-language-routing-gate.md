@@ -68,6 +68,18 @@ running and waiting aggregate names while ignoring other complete metric
 families; malformed or missing aggregate metrics still fail closed. None of
 these admissions may be resumed, retried, or relabeled.
 
+Candidate `09b8b71746c8eb1f504cf34d1af0639bba625859` passed its Windows
+target-client, GB10 resident-provider, and connected desktop/private-server
+channels with exact teardown. Its sole complete-matrix attempt then failed at
+`frontend.dependency-audit` after the registry began reporting
+`GHSA-r28c-9q8g-f849` and `GHSA-mh99-v99m-4gvg`. PostCSS is now pinned to the
+compatible patched 8.5.18 release. The brace-expansion advisory remains
+development-tool-only and is governed by the exact exception and removal
+condition in
+[`dependency-audit-policy.md`](dependency-audit-policy.md); the product
+dependency audit remains clean. This admission is also failed historical
+evidence and may not be resumed or relabeled.
+
 ## Candidate boundary
 
 Freeze one clean lowercase Git SHA before admitting a run. Every child records

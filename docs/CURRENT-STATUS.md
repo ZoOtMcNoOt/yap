@@ -38,7 +38,8 @@ Replacement admissions `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3`,
 `6b4eda32ca3853c90b40db607248fab5af23048e`,
 `550d9152771a8220dece90ecdb001217f2f36f4e`, and
 `c4670bef1a549e4db13089bebdf066b09131a681`, and
-`7db6947c6f85c9a10d434911246cb50fb4164380` are failed historical evidence,
+`7db6947c6f85c9a10d434911246cb50fb4164380`, and
+`09b8b71746c8eb1f504cf34d1af0639bba625859` are failed historical evidence,
 not merge authority. The first exposed Docker 29's changed post-removal network
 wording; the second was invalidated when lid-triggered Windows Modern Standby
 suspended its local responsiveness clock and reset SSH. Independent
@@ -52,8 +53,16 @@ server startup because pinned vLLM exposed additional
 malformed aggregates. Its cleanup also passed. The checked parsers now accept
 only exact known absence shapes, validate only exact request-activity aggregate
 names, ignore distinct complete metric families, and remain fail-closed for
-unrelated daemon errors or malformed/missing aggregates. The next admission
-must keep the controller lid open and supervise the long GB10 lifecycle
+unrelated daemon errors or malformed/missing aggregates. `09b8b717...` then
+passed its Windows target-client, GB10 resident-provider, and connected
+desktop/private-server channels with exact teardown, but its complete matrix
+failed immediately when the live registry audit reported two newly published
+high-severity frontend transitive advisories. The compatible PostCSS finding
+is pinned to its patched 8.5.18 release. The `brace-expansion` finding remains
+confined to development-only WDIO/glob paths whose older `minimatch` consumers
+cannot accept the breaking 5.0.8 fix; one exact documented exception and
+removal condition now replace any broad suppression. The next admission must
+keep the controller lid open and supervise the long GB10 lifecycle
 independently of SSH.
 
 The local exact-duration runner starts at the truthful prepared-audio-frame

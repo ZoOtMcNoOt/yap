@@ -20,6 +20,44 @@ vulnerability, certificate or configuration error, unrecognized failure, or
 exhausted registry retry still fails the audit. Do not use
 `--ignore-registry-errors` in a release gate.
 
+The workspace policy contains exactly one accepted frontend advisory exception:
+`GHSA-mh99-v99m-4gvg`. A unit test fails if that list expands or changes
+silently, and the hosted workflow names the documented policy boundary. Before
+the registry audit runs, the same command queries the installed production
+dependency graph with `pnpm why --prod` and fails closed if `brace-expansion`
+is reachable there. This guard is independent of pnpm's advisory ignore and
+prevents the exception from silently masking a future production path.
+
+### Frontend development-tool exception
+
+On July 24, 2026, the registry began reporting
+`GHSA-mh99-v99m-4gvg` for every `brace-expansion` release through 5.0.7.
+The fix is available in 5.0.8, whose API and packaging are a breaking change
+for the older `minimatch` consumers in WebdriverIO's development-only CLI,
+glob, archive, and scaffolding graph. The locked product dependency graph
+reports no known vulnerability under `pnpm audit --prod`.
+
+Yap temporarily accepts this one development-tool advisory because:
+
+- every reachable path is under the desktop test/build toolchain;
+- no shipped application code imports `brace-expansion`;
+- the checked commands use repository-owned glob patterns rather than
+  attacker-controlled patterns; and
+- forcing 5.0.8 underneath older `minimatch` majors would replace a known
+  development-tool risk with an unreviewed compatibility break in the release
+  gate.
+
+The exception must be removed as soon as the WebdriverIO/glob/minimatch graph
+offers compatible patched releases, or when the old scaffolding dependency can
+be removed without weakening desktop verification. Any new use of
+attacker-controlled glob patterns, any production-reachable path, or any second
+ignored frontend advisory invalidates this acceptance immediately.
+
+The same July 24 audit also reported
+`GHSA-r28c-9q8g-f849` in PostCSS 8.5.16. That finding has a compatible upstream
+fix and is resolved by the workspace's exact PostCSS 8.5.18 override; it is not
+ignored.
+
 ## Current Rust Policy
 
 CI runs `cargo audit` for the Windows desktop target:
@@ -92,7 +130,7 @@ The classification must be repeated if Tauri/Wry features change, Linux becomes
 a supported target, or the exact Windows graph guard reports a reachable
 `glib` package.
 
-## Ignored Advisories
+## Ignored Rust Advisories
 
 The CI ignore list is empty. `RUSTSEC-2026-0194` and `RUSTSEC-2026-0195` were
 removed after `plist` 1.10.0 moved the transitive parser to `quick-xml` 0.41.0.

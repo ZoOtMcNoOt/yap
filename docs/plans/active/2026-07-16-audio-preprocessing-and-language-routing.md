@@ -1803,6 +1803,18 @@ revision label, Dockerfile-derived base digest, and runtime identity match the
 receipt. That receipt-bound ID is the only image passed to the launcher and is
 recorded in lifecycle evidence.
 
+Admitted candidate `09b8b71746c8eb1f504cf34d1af0639bba625859` subsequently
+passed the complete Windows target-client, GB10 resident-provider, and connected
+desktop/private-server channels with exact teardown. Its sole complete-matrix
+attempt failed at the frontend dependency-audit cell after two new
+high-severity advisories entered the live registry. The compatible PostCSS
+finding is fixed by an exact 8.5.18 override. The brace-expansion finding is
+confined to development-only WDIO/glob paths and has one exact documented
+exception with a removal condition because the available 5.0.8 fix is breaking
+for the locked older `minimatch` consumers. The production dependency audit is
+clean. This SHA remains failed historical evidence and cannot be resumed,
+retried, or relabeled.
+
 - [x] Resolve focused correctness, security, privacy, license/provenance,
       maintainability, accessibility, and resource-bound findings.
 - [x] Update ADR implementation scores only for behavior proved by executable
@@ -1818,7 +1830,10 @@ recorded in lifecycle evidence.
       passed all 30 frozen children, but later executable repair invalidated it
       as merge authority and its receipt cannot be reused. Admitted replacement
       `4b87e222c8ad7325a12a88709a52b5e9c1baf22e` failed at offline image-build
-      preflight and likewise cannot be retried or reused.
+      preflight and likewise cannot be retried or reused. Candidate
+      `09b8b71746c8eb1f504cf34d1af0639bba625859` passed all three private
+      hardware/integration channels but failed its one complete-matrix attempt
+      at the live dependency audit; its evidence is also historical only.
 - [ ] Open a focused PR, require hosted exact-head CI/CodeQL and any applicable
       disposable-Windows lifecycle evidence, review the checked SHA, and merge
       only that green reviewed head.

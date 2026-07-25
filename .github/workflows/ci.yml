@@ -107,7 +107,8 @@ jobs:
           path: ~\AppData\Local\ms-playwright
           key: playwright-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('desktop/pnpm-lock.yaml') }}
       - run: pnpm install --frozen-lockfile
-      - run: pnpm audit:dependencies
+      - name: Audit frontend dependencies with documented workspace policy
+        run: pnpm audit:dependencies
       - run: pnpm test:release-contract
       - run: pnpm test
       - run: pnpm build
