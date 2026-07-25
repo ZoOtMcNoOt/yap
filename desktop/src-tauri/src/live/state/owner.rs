@@ -148,6 +148,20 @@ impl LiveSessionState {
         Some(view.clone())
     }
 
+    pub(crate) fn try_cancel_armed_local_start(&self) -> Option<LiveSessionView> {
+        let mut view = self.view.lock().expect("live state poisoned");
+        if view.status != LiveSessionStatus::Armed || view.route != LiveRoute::LocalFallback {
+            return None;
+        }
+        view.error = None;
+        view.level = Some(0.0);
+        view.partial_text = None;
+        view.route = LiveRoute::None;
+        view.status = LiveSessionStatus::Idle;
+        view.active_capture_mode = None;
+        Some(view.clone())
+    }
+
     pub fn route_loss(&self, fallback_ready: bool) -> LiveSessionView {
         self.clear_startup_shortcut_failure(false);
         self.update(|view| {

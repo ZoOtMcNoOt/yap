@@ -213,6 +213,7 @@ fn regional_language_mutation_invalidates_idle_warmup_state() {
 #[test]
 fn primary_language_mutation_has_an_actionable_live_busy_error() {
     let runtime = LiveRuntime::new();
+    let intent = runtime.capture_start_intent();
     runtime
         .inner
         .lock()
@@ -226,6 +227,7 @@ fn primary_language_mutation_has_an_actionable_live_busy_error() {
 
     assert_eq!(error, "Stop live before changing the primary language.");
     assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+    assert!(runtime.start_intent_is_current(intent));
 }
 
 #[test]

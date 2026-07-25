@@ -7,7 +7,7 @@ The authoritative child inventory is
 Its functional names describe the behavior under test rather than a roadmap
 phase number.
 
-## Current admitted result and history
+## Latest admitted result and history
 
 Exact executable candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`
 passed its sole admitted 30-child attempt on 2026-07-25. The manifest SHA-256 is
@@ -18,8 +18,12 @@ interruption/recovery/History, complete local/native/server inventory, and
 exact teardown all passed. The public-safe GB10 aggregate file SHA-256 is
 `506341b3c173de12e29b397beb944eaa20f4a0d5ed50c1028f3f7b9b1c6c9edc`.
 Private audio, transcripts, raw metrics, host paths, logs, and process ledgers
-remain outside Git. Hosted exact-head closure, final review, and merge remain
-separate.
+remain outside Git. Final adversarial review subsequently found local-start
+cancellation races across concurrent model/language mutation. The focused
+repair distinguishes uninstalled cancellation from installed-capture
+completion and preserves exact session ownership, but it invalidates
+`e4a62f4b...` as merge authority. A new complete candidate, hosted exact-head
+closure, final read-back, and merge remain separate.
 
 Historical exact executable candidate
 `cf9b5453270a8afa87cfca42206767a1bf7d82ee` also passed its sole admitted

@@ -89,6 +89,7 @@ pub struct LiveStopResult {
 pub(crate) struct ModelMutationLease {
     runtime: LiveRuntime,
     _operation: OwnedLifecycleOperation,
+    cancel_pending_start_on_drop: bool,
 }
 
 pub(crate) struct LiveStartFailure {
@@ -105,7 +106,9 @@ impl LiveStartFailure {
 impl Drop for ModelMutationLease {
     fn drop(&mut self) {
         // A start requested during a long install must not run unexpectedly afterward.
-        self.runtime.cancel_pending_start();
+        if self.cancel_pending_start_on_drop {
+            self.runtime.cancel_pending_start();
+        }
         self.runtime
             .model_mutation_active
             .store(false, Ordering::Release);

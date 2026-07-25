@@ -68,6 +68,28 @@ fn start_arms_without_claiming_mic_capture() {
 }
 
 #[test]
+fn only_an_armed_local_start_can_be_cancelled_back_to_idle() {
+    let state = LiveSessionState::new(LiveSettings::default());
+    state
+        .try_begin_local_start(LiveCaptureMode::Toggle, None, Some("Default".into()))
+        .unwrap();
+
+    let cancelled = state.try_cancel_armed_local_start().unwrap();
+
+    assert_eq!(cancelled.status, LiveSessionStatus::Idle);
+    assert_eq!(cancelled.route, LiveRoute::None);
+    assert_eq!(cancelled.active_capture_mode, None);
+    assert!(state.try_cancel_armed_local_start().is_none());
+
+    state
+        .try_begin_local_start(LiveCaptureMode::Toggle, None, Some("Default".into()))
+        .unwrap();
+    state.try_begin_listening_from_armed().unwrap();
+    assert!(state.try_cancel_armed_local_start().is_none());
+    assert_eq!(state.snapshot().status, LiveSessionStatus::Listening);
+}
+
+#[test]
 fn stop_preserves_final_text() {
     let state = LiveSessionState::new(LiveSettings {
         overlay_enabled: true,

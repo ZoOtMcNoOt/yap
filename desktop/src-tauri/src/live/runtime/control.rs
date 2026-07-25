@@ -40,6 +40,15 @@ impl LiveRuntime {
         self.start_intent_is_current(intent).then(run)
     }
 
+    pub(crate) fn run_installed_capture_lifecycle<T>(
+        &self,
+        intent: StartIntent,
+        run: impl FnOnce() -> T,
+    ) -> Option<T> {
+        let _operation = self.transition.begin_start();
+        self.start_intent_is_current(intent).then(run)
+    }
+
     pub(crate) fn run_stop_lifecycle<T>(&self, run: impl FnOnce() -> T) -> T {
         let _operation = self.transition.begin_stop();
         run()
@@ -61,20 +70,22 @@ impl LiveRuntime {
         &self,
         active_message: &'static str,
     ) -> Result<ModelMutationLease, String> {
-        self.cancel_pending_start();
         self.model_mutation_active
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .map_err(|_| "Another local model change is already in progress.".to_string())?;
         let operation = self.transition.begin_stop_owned();
-        let lease = ModelMutationLease {
+        let mut lease = ModelMutationLease {
             runtime: self.clone(),
             _operation: operation,
+            cancel_pending_start_on_drop: false,
         };
 
         let mut inner = self.inner.lock().expect("live runtime poisoned");
         if inner.is_capturing() {
             return Err(active_message.to_string());
         }
+        self.cancel_pending_start();
+        lease.cancel_pending_start_on_drop = true;
         inner.retire_stream();
         drop(inner);
         self.model_warmup.clear_idle()?;

@@ -10,8 +10,8 @@ use crate::audio::recording::RecordingSinkHandle;
 use crate::audio::session::{SessionMetadata, SessionMode, SessionOrigin, TriggerMode};
 
 use super::super::{
-    devices, events, recordings,
-    state::{LiveCaptureMode, LiveSessionState},
+    devices, events, overlay_window, recordings,
+    state::{LiveCaptureMode, LiveOverlayVisibility, LiveSessionState},
 };
 use super::asr_adapter::PendingAsrAdapter;
 use super::capture_installation::CaptureInstallation;
@@ -48,6 +48,7 @@ impl LiveRuntime {
         };
 
         if !self.start_intent_is_current(intent) {
+            self.unwind_cancelled_uninstalled_start(&app, session);
             return Ok(None);
         }
 
@@ -99,7 +100,9 @@ impl LiveRuntime {
         if !self.start_intent_is_current(intent)
             || self.active_session.load(Ordering::Acquire) != session
         {
-            return discard_cancelled_recording(&recording_directory, &recording_handle, session);
+            discard_cancelled_recording(&recording_directory, &recording_handle, session)?;
+            self.unwind_cancelled_uninstalled_start(&app, session);
+            return Ok(None);
         }
         let capture = match CaptureAdapter::open(
             resolved.device,
@@ -144,6 +147,7 @@ impl LiveRuntime {
                 crate::stt::log_yap(&format!("live capture shutdown failed: {error}"));
             }
             discard_cancelled_recording(&recording_directory, &recording_handle, session)?;
+            self.unwind_cancelled_uninstalled_start(&app, session);
             drop(level);
             return Ok(None);
         }
@@ -178,7 +182,7 @@ impl LiveRuntime {
         intent: StartIntent,
     ) -> Result<bool, LiveStartFailure> {
         let session = start.session;
-        let reused = self.run_start_lifecycle(intent, || {
+        let reused = self.run_installed_capture_lifecycle(intent, || {
             let mut inner = self.inner.lock().expect("live runtime poisoned");
             if !inner
                 .capture_session_is_current(session, self.active_session.load(Ordering::Acquire))
@@ -208,7 +212,7 @@ impl LiveRuntime {
             return Ok(false);
         };
         let model_warmup = Arc::clone(&self.model_warmup);
-        self.run_start_lifecycle(intent, move || {
+        self.run_installed_capture_lifecycle(intent, move || {
             let mut inner = self.inner.lock().expect("live runtime poisoned");
             if !inner
                 .capture_session_is_current(session, self.active_session.load(Ordering::Acquire))
@@ -230,17 +234,34 @@ impl LiveRuntime {
         .unwrap_or(Ok(false))
         .map_err(|message| LiveStartFailure::new(session, message))
     }
+
+    fn unwind_cancelled_uninstalled_start(&self, app: &tauri::AppHandle, session: u64) {
+        let state = app.state::<LiveSessionState>();
+        let Some(view) = self.cancel_uninstalled_capture_start(&state, session) else {
+            return;
+        };
+        if view.visibility == LiveOverlayVisibility::Enabled {
+            if let Err(error) = overlay_window::ensure_idle(app) {
+                crate::stt::log_yap(&format!(
+                    "live overlay cancelled-start reset failed: {error}"
+                ));
+            }
+        } else if let Some(window) = app.get_webview_window(overlay_window::WINDOW_LABEL) {
+            let _ = window.hide();
+        }
+        events::emit_session(app, &view);
+    }
 }
 
 fn discard_cancelled_recording(
     recording_directory: &std::path::Path,
     recording: &RecordingSinkHandle,
     session: u64,
-) -> Result<Option<LocalCaptureStart>, LiveStartFailure> {
+) -> Result<(), LiveStartFailure> {
     let capture = recording
         .finalize()
         .map_err(|message| LiveStartFailure::new(session, message))?;
     recordings::discard_cancelled_capture_in_dir(recording_directory, &capture)
         .map_err(|message| LiveStartFailure::new(session, message))?;
-    Ok(None)
+    Ok(())
 }
