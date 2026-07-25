@@ -1,20 +1,20 @@
 # Audio Preprocessing and Language Routing Implementation Plan
 
-**Status:** Exact executable candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed the one-attempt frozen
+**Status:** Historical exact executable candidate
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` passed the one-attempt frozen
 30-child local/native/server/private-runtime matrix on 2026-07-25. The admitted
 target-client channel passed 12/12 paced native cycles, all nine short-boundary
 cases, and the unattended release-mode microphone/UI lifecycle with complete
 recording/model/process/listener teardown. The GB10 channel passed all 18 Cohere
 vLLM/Nemotron NeMo duration, request, language, admission, cancellation,
 resource, and lifecycle children; its public-safe aggregate SHA-256 is
-`b8daa673febc3fb7777ea099c84878bb929ea2ce49d2f3a70c17b0baf594bc78`.
+`2e28a82f0479c4fb0dc03cbeb820a2532101975c8d292b409ef9ad4481d1a255`.
 The connected channel carried one immutable desktop job through durable
 preprocessing, an SSH-forward interruption and recovery, server-authoritative
 result publication, verified History review, and exact local/remote teardown.
 The complete frontend/accessibility, Rust/native, required WDIO, connector,
 dependency/provenance, and portable Python 3.12 inventory passed. The candidate
-receipt independently validated for the exact head and all 30 children.
+receipt was independently validated for the exact head and all 30 children.
 Neither provider is promoted; the local automatic route remains default-off
 Preview behavior because its frozen natural-switch quality target failed. The
 repaired implementation passed one bounded final three-agent re-review. Runtime
@@ -24,7 +24,9 @@ receipts after a second clean-head check. The admitted gates verify each frozen
 receipt hash and perform inspection-only verification of the exact prepared
 ARM64 image ID, checked-head revision, base digest, and runtime identity. They
 launched and recorded that receipt-bound ID and could not build, pull,
-reconnect, or substitute an image. Hosted checks, review, and merge remain. The
+reconnect, or substitute an image. A later hosted-only teardown-timing contract
+correction invalidated that candidate as merge authority; a fresh exact-head
+gate, hosted checks, review, and merge remain. The
 retired Triton experiment remains
 negative evidence.
 
@@ -70,7 +72,7 @@ lifecycle, minimum-device, battery, or thermal qualification. The separately fro
 quality target completed and failed; that accepted limitation fixes the route
 as an explicit, default-off Preview rather than remaining an unfinished pass
 claim. Current-host resource/interference and sustained lifecycle passed again
-inside exact candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`; the complete
+inside exact candidate `c82fe47a683dabd72231ffca377095ff16f2d4f5`; the complete
 Phase 6 matrix also passed. Representative
 low-end physical battery/thermal certification is deferred until default-on or
 Phase 10 release qualification.
@@ -630,7 +632,7 @@ legacy rows remain readable without claiming history they never recorded.
 - [x] Classify representative fixed-language/long-tail suggestion quality as
       unpromoted rather than starting another Phase 6 evaluation campaign. The
       executing path remains assistive, user-confirmed, and manual on ambiguity
-      or failure. Candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
+      or failure. Candidate `c82fe47a683dabd72231ffca377095ff16f2d4f5`
       consumed the repaired complete matrix after final adversarial re-review.
 
 The desktop and server independently compute the same five source regions and
@@ -1451,7 +1453,7 @@ container usage. Private log/summary hashes are recorded in ADR 0025.
 This focused correction does not close the provider, meeting, locale, duration, or
   complete phase gates. Its log-clean lifecycle assertions were subsequently
   consumed again by exact candidate
-  `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`.
+  `c82fe47a683dabd72231ffca377095ff16f2d4f5`.
 
 #### Retired Triton experiment — historical negative evidence
 
@@ -1732,7 +1734,7 @@ narrow proof exposed and closed the fixed navigation/picker clipping defect.
 The muted explanatory-text token now measures 4.69:1 against the base
 background, above the WCAG AA 4.5:1 normal-text threshold. The complete
 full-matrix accessibility cell passed inside exact candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40`.
+`c82fe47a683dabd72231ffca377095ff16f2d4f5`.
 
 ### 10. Reconcile evidence and close the exact head
 
@@ -1815,7 +1817,7 @@ retried, or relabeled.
       local/native/server/GB10 inventory in the machine-validated
       [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
       exactly once. Exact candidate
-      `0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed all 30 frozen children,
+      `c82fe47a683dabd72231ffca377095ff16f2d4f5` passed all 30 frozen children,
       all three private hardware/integration channels, and exact teardown.
 - [ ] Open a focused PR, require hosted exact-head CI/CodeQL and any applicable
       disposable-Windows lifecycle evidence, review the checked SHA, and merge

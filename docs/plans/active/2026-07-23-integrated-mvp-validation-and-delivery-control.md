@@ -32,18 +32,21 @@ complexity.
 - Phases 1–5 and Architecture Checkpoint A are merged at baseline
   `a80934d844a068110e7f86b30b6e29d35146db57`.
 - Phase 6 remains on `feat/phase6-preprocessing-pipeline`.
-- Exact executable candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
+- Historical exact executable candidate
+  `c82fe47a683dabd72231ffca377095ff16f2d4f5`
   passed the frozen one-attempt 30-child Phase 6 matrix. Manifest SHA-256
   `46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52`
-  plus the independently validated exact-head 30-child candidate receipt bind
-  the exact evidence.
+  plus its independently validated exact-head 30-child candidate receipt bind
+  the historical evidence. Hosted Windows then exposed a test-only teardown
+  timing portability defect; the executable correction invalidated that SHA as
+  merge authority, and a fresh exact-head gate is pending without receipt reuse.
 - Its target-client channel passed twelve paced native cycles, all nine
   250-ms-through-30-second prepared-audio cases, and the unattended 30-second
   release-mode microphone/UI lifecycle with no retained recording, model
   snapshot, Yap/driver process, or port-18765 listener.
 - Its GB10 channel passed all 18 Cohere vLLM/Nemotron NeMo candidate-safety
   children with public-safe aggregate SHA-256
-  `b8daa673febc3fb7777ea099c84878bb929ea2ce49d2f3a70c17b0baf594bc78`.
+  `2e28a82f0479c4fb0dc03cbeb820a2532101975c8d292b409ef9ad4481d1a255`.
   Neither provider is promoted.
 - Its connected channel preserved one immutable Windows desktop job across a
   tunnel interruption, verified durable preprocessing, completed the advertised
@@ -150,8 +153,7 @@ the immutable result artifact are terminal truth.
       deferred to its named later phase, or an explicit external handoff.
 - [x] Reconcile ADR implementation scores, current architecture, Voice OS,
       roadmap, status, plans, OpenAPI, and runbooks with executable truth.
-- [x] Commit the repaired clean replacement and record its exact SHA
-      `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`. No
+- [ ] Commit the repaired clean replacement and record its exact SHA. No
       executable change may occur after this point without an explicit
       gate-invalidating decision.
 - [x] Complete a focused three-reviewer read-back of the repairs before freezing
@@ -163,6 +165,21 @@ hosted-closure, evidence-bound, and phase-derived persisted-vocabulary defects.
 Executable repair explicitly invalidated that SHA as merge authority. Its
 receipt remains historical evidence and is not reused for the replacement.
 
+Replacement `0ed2037dbbb8c3df9350dbc37aeddc633f567a40` also passed its
+admitted matrix, but hosted Windows checks exposed that release-contract test
+fixtures inherited GitHub Runner's redirected temporary parent. The
+test-only canonical-temporary-root correction therefore invalidated that SHA
+as merge authority. Candidate
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` rebuilt the three checked runtime
+images and reran the target-client, GB10, connected, teardown, and complete
+30-child channels without reusing or relabeling the prior receipt. Hosted
+Windows then proved its process tree was contained but needed 3.015 seconds to
+finish cleanup, exceeding a test-only two-second ceiling. The replacement
+contract retains the independent grandchild-absence proof, delays natural exit
+to 15 seconds, and requires termination within ten seconds. That executable
+correction invalidates `c82fe47...`; the next clean commit becomes a new
+candidate and must rerun every admitted channel and all 30 children.
+
 The same review also recorded non-blocking Checkpoint B inputs without pulling
 them into this phase: remove the server worker-to-engine dependency cycle,
 restore the desktop language-to-STT dependency direction under one composite
@@ -170,17 +187,17 @@ routing-revision owner, and consolidate duplicate server request fixtures. The
 Phase 6 ownership-map omission was documentation truth and is corrected here,
 not deferred.
 
-### 5. Run the complete Phase 6 matrix exactly once
+### 5. Run the complete Phase 6 matrix exactly once per frozen replacement
 
-- [x] Run every replacement-candidate child frozen by the machine-validated
+- [ ] Run every replacement-candidate child frozen by the machine-validated
       [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
       on the same frozen head.
 - [ ] Validate the separate exact-head hosted CI/CodeQL/disposable-Windows
       closure after the PR opens.
-- [x] Verify cancellation, retry, restart, recovery, immutable identity,
+- [ ] Verify cancellation, retry, restart, recovery, immutable identity,
       resource bounds, model/process/listener teardown, and private-evidence
       handling.
-- [x] Record only public-safe aggregate evidence in repository documentation.
+- [ ] Record only public-safe aggregate evidence in repository documentation.
 
 ### 6. Review, PR, and merge
 

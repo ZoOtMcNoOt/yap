@@ -64,8 +64,8 @@ later-phase owners without authorizing phase mixing.
 Automatic cross-provider switching, named speaker identity, and enterprise
 infrastructure are not Phase 6 claims. Within-utterance language spans are a
 Phase 6 target and remain an explicit default-off Preview because the frozen
-natural-switch quality target failed. Exact executable candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed the frozen 30-child
+natural-switch quality target failed. Historical exact executable candidate
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` passed the frozen 30-child
 local/native/server/private-runtime matrix after bounded three-agent
 remediation re-review, including the target-client, 18-child resident-provider,
 and connected interruption/recovery/History channels with exact teardown.
@@ -74,8 +74,10 @@ and pinned dependencies and emitted private receipts after a second clean-head
 check. The admitted gate verified each frozen receipt hash, then required the
 already-prepared ARM64 image ID, checked-head revision, base digest, and runtime
 identity to match it. The receipt-bound ID was launched and recorded; the gate
-could not build, pull, reconnect, or substitute an image. Docs-only evidence
-reconciliation, hosted checks, PR review, and merge remain.
+could not build, pull, reconnect, or substitute an image. A later hosted-only
+teardown-timing contract correction invalidated that candidate as merge
+authority. A fresh exact-head gate, docs-only evidence reconciliation, hosted
+checks, PR review, and merge remain.
 Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
 SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
 and SGLang services, production multi-worker/mixed-load capacity promotion, production

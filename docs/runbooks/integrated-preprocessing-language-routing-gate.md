@@ -9,21 +9,32 @@ phase number.
 
 ## Current admitted result and history
 
-Exact executable candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
+Historical exact executable candidate
+`c82fe47a683dabd72231ffca377095ff16f2d4f5`
 passed its sole admitted 30-child attempt on 2026-07-25. The manifest SHA-256 is
 `46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52`;
-the candidate receipt independently validated for the exact head and all 30
+the candidate receipt was independently validated for the exact head and all 30
 children.
 The target-client, 18-child sequential provider, connected
 interruption/recovery/History, complete local/native/server inventory, and
 exact teardown all passed. Private audio, transcripts, raw metrics, host paths,
-logs, and process ledgers remain outside Git. Hosted PR closure and merge
-remain.
+logs, and process ledgers remain outside Git. Hosted Windows then exposed a
+test-only two-second process-tree timing assertion that was narrower than
+runner variability even though containment and the independent grandchild
+absence proof succeeded. The executable correction invalidated `c82fe47...`
+as merge authority. Its receipt remains historical evidence and must not be
+reused or relabeled; a fresh exact-head 30-child candidate is required.
+
+Exact executable candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
+passed its sole admitted 30-child attempt on 2026-07-25. Its hosted Windows
+release-contract fixtures inherited the runner's redirected temporary parent,
+so the canonical-temporary-root correction invalidated it as merge authority.
+Its receipt remains historical evidence and must not be reused or relabeled.
 
 Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
 passed its sole admitted 30-child attempt on 2026-07-24. The manifest SHA-256 is
 `8c59a08174a2c1a7e72bef59fefc6a8160ca65982736e0ba7b18f853d893affd`;
-the candidate receipt independently validated for the exact head and all 30
+the candidate receipt was independently validated for the exact head and all 30
 children.
 Final adversarial review then found executable restart/cleanup, normative
 OpenAPI, hosted-closure, evidence-bound, and persisted-vocabulary defects. That
@@ -46,9 +57,11 @@ inspection-only verification of the exact ARM64 image, checked-head revision,
 base digest, runtime identity, and receipt-bound immutable image ID. They launch
 and record that exact ID; they never build, pull, reconnect, or substitute an
 image.
-Focused route-less verification passed on the GB10 before admission; exact
-candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40` then consumed the sole
-passing admitted complete gate.
+Focused route-less verification passed on the GB10 before admission;
+historical exact candidate
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` then consumed a passing admitted
+complete gate before the later hosted-only timing correction invalidated it as
+merge authority.
 The private plan, command logs, audio, runtime evidence, and receipts remain
 outside Git.
 

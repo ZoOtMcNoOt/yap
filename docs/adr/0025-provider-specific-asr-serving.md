@@ -3,11 +3,12 @@
 **Date:** 2026-07-21
 **Status:** Accepted; Cohere vLLM and Nemotron NeMo adapters, checked
 container/launcher contracts, and the sequential candidate-safety lifecycle are
-implemented. Exact executable candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed all 18 provider children
+implemented. Historical exact executable candidate
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` passed all 18 provider children
 and exact teardown inside the frozen 30-child Phase 6 matrix; neither
 replaceable provider is promoted, and broad model-quality/replacement decisions
-remain Phase 8 work
+remain Phase 8 work. A later hosted-only teardown-timing contract correction
+invalidated that candidate as merge authority; a fresh exact-head gate remains.
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md) and
 [ADR 0024](0024-global-language-routing.md)
 **Meeting serving amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 selects a separate Tiron joint speaker-attributed worker without changing the Phase 6 Cohere/Nemotron gates)
@@ -597,10 +598,10 @@ resident-provider candidate-safety component; it does not select either service
 or pull Cohere-versus-Tiron quality work forward from Phase 8.
 
 Exact executable candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` later consumed the unchanged
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` later consumed the unchanged
 provider-serving contract in the complete Phase 6 matrix. All 18 children passed;
 the public-safe aggregate has SHA-256
-`b8daa673febc3fb7777ea099c84878bb929ea2ce49d2f3a70c17b0baf594bc78`.
+`2e28a82f0479c4fb0dc03cbeb820a2532101975c8d292b409ef9ad4481d1a255`.
 
 The cgroup profile measures the provider container; it does not attribute the
 launcher-owned host proxy's CPU or RSS to the model. End-to-end request wall

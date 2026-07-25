@@ -4,8 +4,8 @@ This document describes the merged executable Phase 1–5 system plus the repair
 Phase 6 implementation on the active branch: provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
 VAD, local language spans, verify-only AmberNet batch preflight, and
-provider-specific serving candidates. Exact executable candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed its frozen one-attempt
+provider-specific serving candidates. Historical exact executable candidate
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` passed its frozen one-attempt
 30-child local/native/server/private-runtime matrix after bounded three-agent
 remediation re-review. Runtime images were prepared before admission from
 locally present digest-pinned bases and pinned dependencies. The admitted gates
@@ -13,7 +13,9 @@ validated a frozen private preparation-receipt hash, inspected the exact
 prepared ARM64 image, and required its checked-head
 revision, base digest, runtime identity, and immutable image ID to match that
 receipt. They launch and record that exact ID; they cannot build, pull,
-reconnect, or substitute an image.
+reconnect, or substitute an image. A later hosted-only teardown-timing contract
+correction invalidated that candidate as merge authority without changing the
+executing architecture; a fresh exact-head gate is pending.
 Hosted PR checks, review, and merge remain open. The
 [Voice OS architecture](../VOICE-OS-ARCHITECTURE.md) remains the first-class
 long-term frame; accepted future work is sequenced by the
@@ -197,11 +199,11 @@ exercised vLLM's disconnect-to-engine-abort boundary, while NeMo formed one
 batch of eight isolated fixed/auto requests; both recovered and tore down. A
 later source-backed metrics control confirmed that the pinned external abort is
 not added to vLLM's finished-request histogram. Exact executable candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` subsequently passed the composed
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` subsequently passed the composed
 18-child duration, identity, language-contract, cancellation, admission,
 resource, and teardown candidate-safety lifecycle as part of the complete Phase
 6 matrix. Its public-safe aggregate has SHA-256
-`b8daa673febc3fb7777ea099c84878bb929ea2ce49d2f3a70c17b0baf594bc78`.
+`2e28a82f0479c4fb0dc03cbeb820a2532101975c8d292b409ef9ad4481d1a255`.
 Representative parity/
 locale/quality, frozen percentiles, and rollback remain open for any later
 provider-selection comparison. Neither candidate has been promoted. The earlier
@@ -275,7 +277,7 @@ and range remain visible because unified-memory residency can oscillate, but
 they are not substituted for allocation growth. Focused results selected these
 thresholds, and both current-source profiles pass their eleven focused checks
 plus clean teardown. The frozen checked-head candidate-safety run passed all
-18 children at `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`; the same exact candidate
+18 children at `c82fe47a683dabd72231ffca377095ff16f2d4f5`; the same exact candidate
 also passed the separate client, AmberNet, advertised-route, accessibility, and
 full-matrix children.
 
@@ -363,7 +365,7 @@ is saturation evidence rather than an interactive workload claim. These are
 accelerated and paced prepared-audio runtime proxies, not rendered-UI or
 sustained release-lifecycle evidence. The route is available only as an
 explicit, default-off Preview because its frozen natural-switch target failed;
-exact executable candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
+exact executable candidate `c82fe47a683dabd72231ffca377095ff16f2d4f5`
 later passed the focused current-host resource, restart/cancellation, no-server,
 and unattended 30-second microphone/UI lifecycle work inside the complete
 checked-head Phase 6 matrix.
@@ -472,7 +474,7 @@ These paths remain unadvertised/unselected:
 the catalog still exposes only Cohere `en-US` with `wordAlignment: false`. The
 model-neutral provider candidate-safety lifecycle and complete Phase 6 matrix
 passed on exact executable candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40`, but representative
+`c82fe47a683dabd72231ffca377095ff16f2d4f5`, but representative
 provider-promotion comparisons have not run. Both
 candidate containers stay on an
 egress-blocked internal bridge with no Docker-published port; their launchers

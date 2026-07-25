@@ -2,11 +2,13 @@
 
 **Date:** 2026-07-22
 **Status:** Accepted; client/server contract and isolated CPU implementation
-execute. Exact executable candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` passed the source-exact ARM64
+execute. Historical exact executable candidate
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` passed the source-exact ARM64
 resource/lifecycle boundary, five-window connected route, and complete 30-child
-Phase 6 matrix. Representative suggestion quality remains unpromoted and is
-not a Phase 6 product claim
+Phase 6 matrix. A later hosted-only teardown-timing contract correction
+invalidated that candidate as merge authority; a fresh exact-head gate remains.
+Representative suggestion quality remains unpromoted and is not a Phase 6
+product claim.
 **Builds on:** [ADR 0020](0020-meeting-capture-diarization-authority.md),
 [ADR 0024](0024-global-language-routing.md), and
 [ADR 0025](0025-provider-specific-asr-serving.md)
@@ -231,7 +233,7 @@ language-suggestion quality. Because the suggestion is assistive, requires
 explicit user confirmation, and falls back visibly to the manual picker on
 every ambiguous or failed outcome, Phase 6 does not make or require a broad
 accuracy-promotion claim for it. Exact executable candidate
-`0ed2037dbbb8c3df9350dbc37aeddc633f567a40` subsequently passed the frozen
+`c82fe47a683dabd72231ffca377095ff16f2d4f5` subsequently passed the frozen
 local/native/server/private-runtime matrix, including the connected advertised
 route and duration/lifecycle channels. Documentation lineage, hosted review, and
 merge remain separate; no component or phase gate is relabeled as production

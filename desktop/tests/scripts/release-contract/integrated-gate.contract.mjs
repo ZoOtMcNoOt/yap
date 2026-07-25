@@ -352,7 +352,7 @@ test("integrated gate terminates a command whose output exceeds its bounded log"
     `const source=Buffer.from("${grandchildSource}","base64").toString("utf8");`,
     'spawn(process.execPath,["-e",source],{stdio:"ignore"});',
     `process.stdout.write(Buffer.alloc(${maximumLogBytes + 1},120));`,
-    "setTimeout(process.exit,2500,0);",
+    "setTimeout(process.exit,15000,0);",
   ].join("");
   const cell = {
     id: "bounded.command-output",
@@ -383,8 +383,8 @@ test("integrated gate terminates a command whose output exceeds its bounded log"
       },
     );
     assert.ok(
-      Date.now() - started < 2_000,
-      "the command process tree must be terminated instead of waiting for its natural exit; "
+      Date.now() - started < 10_000,
+      "the command process tree must terminate well before its delayed natural exit; "
         + `termination targets: ${JSON.stringify(boundedFailure?.terminatedProcessIds)}`,
     );
     assert.equal(
