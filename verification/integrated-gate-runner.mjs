@@ -127,6 +127,15 @@ export function assertExactCleanGitHead(expectedHead) {
   );
 }
 
+export function assertGateRunnerNodeRuntime(nodeVersion = process.versions.node) {
+  const major = Number.parseInt(nodeVersion.split(".")[0] ?? "", 10);
+  requireCondition(
+    major === 24,
+    `The integrated gate runner requires Node 24.x LTS; current runtime is v${nodeVersion}. `
+      + "The admitted attempt has not started. Switch to the version in .node-version.",
+  );
+}
+
 function writeExclusiveJson(candidate, value, label, maximumBytes) {
   const bytes = serializeBoundedJson(value, label, maximumBytes);
   writeFileSync(candidate, bytes, {
@@ -472,6 +481,7 @@ export async function completeIntegratedGateAttempt({
     "Private evidence plan changed after admission.",
   );
   assertExactCleanGitHead(admission.checkedHead);
+  assertGateRunnerNodeRuntime();
   writeExclusiveJson(
     path.join(admittedPaths.runDirectory, "running.json"),
     {

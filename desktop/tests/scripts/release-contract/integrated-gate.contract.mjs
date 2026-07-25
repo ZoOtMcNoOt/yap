@@ -18,6 +18,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 import {
+  assertGateRunnerNodeRuntime,
   integratedGateFailureRecord,
   runCommandCell,
   reserveIntegratedGateAttemptDirectory,
@@ -307,6 +308,28 @@ test("integrated gate reserves one deterministic attempt and refuses a retry", (
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("integrated gate rejects a wrong runner runtime before consuming the attempt", () => {
+  assert.doesNotThrow(() => assertGateRunnerNodeRuntime("24.14.0"));
+  assert.throws(
+    () => assertGateRunnerNodeRuntime("26.3.1"),
+    /attempt has not started/,
+  );
+  const runnerSource = readFileSync(
+    path.join(repoRoot, "verification", "integrated-gate-runner.mjs"),
+    "utf8",
+  );
+  const runtimePreflightIndex = runnerSource.indexOf("assertGateRunnerNodeRuntime();");
+  const runningMarkerIndex = runnerSource.indexOf(
+    'path.join(admittedPaths.runDirectory, "running.json")',
+  );
+  assert.notEqual(runtimePreflightIndex, -1, "the runner runtime preflight must exist");
+  assert.notEqual(runningMarkerIndex, -1, "the attempt marker write must exist");
+  assert.ok(
+    runtimePreflightIndex < runningMarkerIndex,
+    "the runner runtime preflight must precede the attempt marker",
+  );
 });
 
 test("integrated gate terminates a command whose output exceeds its bounded log", async () => {
