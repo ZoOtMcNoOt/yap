@@ -40,15 +40,24 @@ new admitted complete gate remains.
 The private plan, command logs, audio, runtime evidence, and receipts remain
 outside Git.
 
-Two later admissions remain failed private evidence. Candidate
+Four later admissions remain failed private evidence. Candidate
 `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3` completed the target-client and
 provider workloads, but Docker 29's exact post-removal `network <id> not found`
 response was initially treated as an inventory failure; candidate
 `6b4eda32ca3853c90b40db607248fab5af23048e` contains the exact-match,
 fail-closed compatibility fix, but its Windows controller entered lid-triggered
 Modern Standby during evidence collection. That standby interval suspended the
-local responsiveness clock and reset the live SSH process. Neither admission
-may be resumed, retried, or relabeled.
+local responsiveness clock and reset the live SSH process. Candidate
+`550d9152771a8220dece90ecdb001217f2f36f4e` completed both workload channels
+under independent supervision, then exposed Docker 29's two-line
+`[]`-plus-error response for an unformatted missing-network inspection.
+Candidate `c4670bef1a549e4db13089bebdf066b09131a681` completed the target-client
+channel and both provider workloads, then proved that a formatted inspection
+instead merges one stdout newline with the same stderr message. Both later
+candidates left zero provider containers, listeners, networks, and processes.
+The parser now recognizes only the observed exact one-line, leading-newline,
+and `[]`-plus-newline absence responses, while unrelated daemon errors remain
+fail-closed. None of these admissions may be resumed, retried, or relabeled.
 
 ## Candidate boundary
 

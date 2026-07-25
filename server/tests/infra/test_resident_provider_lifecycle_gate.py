@@ -310,7 +310,12 @@ set -euo pipefail
 network_name={network_name}
 docker() {{
   local requested="${{@: -1}}"
-  printf '[]\\n%s\\n' \
+  if [[ " $* " == *" --format "* ]]; then
+    printf '\\n'
+  else
+    printf '[]\\n'
+  fi
+  printf '%s\\n' \
     "Error response from daemon: network $requested not found" >&2
   return 1
 }}

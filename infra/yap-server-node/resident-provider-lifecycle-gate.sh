@@ -312,10 +312,13 @@ docker_network_absence_response() {
 "Error response from daemon: No such network: $requested_network"
 
   [ "$output" = "$current_message" ] \
+    || [ "$output" = $'\n'"$current_message" ] \
     || [ "$output" = "[]"$'\n'"$current_message" ] \
     || [ "$output" = "$legacy_message" ] \
+    || [ "$output" = $'\n'"$legacy_message" ] \
     || [ "$output" = "[]"$'\n'"$legacy_message" ] \
     || [ "$output" = "$legacy_daemon_message" ] \
+    || [ "$output" = $'\n'"$legacy_daemon_message" ] \
     || [ "$output" = "[]"$'\n'"$legacy_daemon_message" ]
 }
 
