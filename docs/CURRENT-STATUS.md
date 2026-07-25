@@ -65,6 +65,18 @@ removal condition now replace any broad suppression. The next admission must
 keep the controller lid open and supervise the long GB10 lifecycle
 independently of SSH.
 
+Replacement candidate `72c089f42c1358f4f0b86c793af39a8e762d6137`
+passed its complete Windows target-client channel and all 18 sequential GB10
+resident-provider children with exact teardown. Its connected server then
+failed closed before readiness because the private controller selected an
+AmberNet directory that contained the locked ONNX file plus unexpected
+artifacts. Connected cleanup still removed every owned container, listener,
+process, and network. This was an input-selection defect rather than an
+application-runtime defect, but the admission remains failed and may not be
+retried or relabeled. Every replacement admission must run the checked
+`yap_server.lid.model_assets` verifier against the exact private AmberNet
+directory before freezing the controller input.
+
 The local exact-duration runner starts at the truthful prepared-audio-frame
 boundary, streams ten-millisecond frames through Yap's production bounded
 adapter and single live worker, and cycles finalization across one explicitly

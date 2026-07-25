@@ -31,6 +31,22 @@ release-contract fixtures inherited the runner's redirected temporary parent,
 so the canonical-temporary-root correction invalidated it as merge authority.
 Its receipt remains historical evidence and must not be reused or relabeled.
 
+Exact executable candidate `72c089f42c1358f4f0b86c793af39a8e762d6137`
+passed the complete Windows target-client channel and all 18 sequential GB10
+resident-provider children with exact teardown. Its connected server failed
+closed before readiness because the private controller selected an AmberNet
+directory containing the locked ONNX file plus unexpected artifacts.
+Connected cleanup passed. The admission remains failed private evidence and
+must not be retried or relabeled. Before a replacement admission, verify the
+exact selected private directory—not merely one matching file—with:
+
+```bash
+PYTHONPATH="$release_root/server/src" \
+  python3.12 -m yap_server.lid.model_assets \
+    --lock "$release_root/server/lid-component.lock.json" \
+    --model-dir "$lid_model_dir"
+```
+
 Exact executable candidate `97b63be46b05dffa21595f2fd081b8467bb95798`
 passed its sole admitted 30-child attempt on 2026-07-24. The manifest SHA-256 is
 `8c59a08174a2c1a7e72bef59fefc6a8160ca65982736e0ba7b18f853d893affd`;

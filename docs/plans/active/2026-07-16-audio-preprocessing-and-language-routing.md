@@ -26,7 +26,14 @@ ARM64 image ID, checked-head revision, base digest, and runtime identity. They
 launched and recorded that receipt-bound ID and could not build, pull,
 reconnect, or substitute an image. A later hosted-only teardown-timing contract
 correction invalidated that candidate as merge authority; a fresh exact-head
-gate, hosted checks, review, and merge remain. The
+gate, hosted checks, review, and merge remain. Replacement candidate
+`72c089f42c1358f4f0b86c793af39a8e762d6137` subsequently passed the complete
+Windows target-client channel and all 18 sequential GB10 provider children,
+then failed connected-server readiness because its private controller selected
+an AmberNet directory containing the correct ONNX file plus unexpected
+artifacts. Cleanup passed, but that admission is failed and cannot be retried
+or relabeled. Replacement preparation now verifies the exact selected
+directory through `yap_server.lid.model_assets` before admission. The
 retired Triton experiment remains
 negative evidence.
 
