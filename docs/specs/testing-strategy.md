@@ -17,16 +17,14 @@ bundled llama-server, and per-OS real-model matrix described below do not exist
 yet. Phase 6 catalog, deterministic preprocessing/VAD, guarded server LID,
 Preview local LID/span routing, provider-specific server candidates, alignment,
 private-corpus trust, scoring, and runtime-qualification components execute
-under focused tests. Historical exact executable candidate
-`c82fe47a683dabd72231ffca377095ff16f2d4f5` passed the frozen one-attempt
+under focused tests. Exact executable candidate
+`cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed the frozen one-attempt
 30-child local/native/server/private-runtime matrix. Its candidate receipt was
 independently validated for the exact head and all 30 children;
 the 18-child GB10 public-safe aggregate has SHA-256
-`2e28a82f0479c4fb0dc03cbeb820a2532101975c8d292b409ef9ad4481d1a255`.
+`88674596088bc5d1f6a396716f01ee83899fb114a784470c1e131db5972ae019`.
 The repaired implementation passed one bounded final three-agent re-review.
-A later hosted-only teardown-timing contract correction invalidated that
-candidate as merge authority. A fresh exact-head gate and separate hosted
-closure remain.
+Hosted closure, final adversarial review, PR review, and merge remain.
 The representative provider-promotion corpus and frozen Phase 8 comparisons
 remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
 baseline, but no Tiron worker or meeting scorer executes yet. The tables below
@@ -72,7 +70,7 @@ host-boundary evidence.
 
 Focused suites covered each Phase 6 slice while the branch changed. The complete
 local/native/server/private-runtime matrix ran exactly once on exact candidate
-`c82fe47a683dabd72231ffca377095ff16f2d4f5` after focused remediation and
+`cf9b5453270a8afa87cfca42206767a1bf7d82ee` after focused remediation and
 three-reviewer read-back.
 
 The exact executable inventory and private receipt contract are frozen in the

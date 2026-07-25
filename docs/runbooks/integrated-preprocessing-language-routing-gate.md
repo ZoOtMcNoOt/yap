@@ -9,21 +9,37 @@ phase number.
 
 ## Current admitted result and history
 
+Exact executable candidate `cf9b5453270a8afa87cfca42206767a1bf7d82ee`
+passed its sole admitted 30-child attempt on 2026-07-25. The manifest SHA-256 is
+`46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52`;
+the candidate receipt was independently validated for the exact head and all 30
+children. The target-client, 18-child sequential provider, connected
+interruption/recovery/History, complete local/native/server inventory, and
+exact teardown all passed. The public-safe GB10 aggregate file SHA-256 is
+`88674596088bc5d1f6a396716f01ee83899fb114a784470c1e131db5972ae019`.
+Private audio, transcripts, raw metrics, host paths, logs, and process ledgers
+remain outside Git. Hosted exact-head closure, final review, and merge remain
+separate.
+
 Historical exact executable candidate
 `c82fe47a683dabd72231ffca377095ff16f2d4f5`
 passed its sole admitted 30-child attempt on 2026-07-25. The manifest SHA-256 is
 `46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52`;
 the candidate receipt was independently validated for the exact head and all 30
-children.
+children. Its public-safe GB10 aggregate file SHA-256 was
+`2e28a82f0479c4fb0dc03cbeb820a2532101975c8d292b409ef9ad4481d1a255`.
 The target-client, 18-child sequential provider, connected
 interruption/recovery/History, complete local/native/server inventory, and
 exact teardown all passed. Private audio, transcripts, raw metrics, host paths,
-logs, and process ledgers remain outside Git. Hosted Windows then exposed a
-test-only two-second process-tree timing assertion that was narrower than
-runner variability even though containment and the independent grandchild
-absence proof succeeded. The executable correction invalidated `c82fe47...`
-as merge authority. Its receipt remains historical evidence and must not be
-reused or relabeled; a fresh exact-head 30-child candidate is required.
+logs, and process ledgers remain outside Git. Hosted Windows then reported
+3.015 seconds against the old two-second assertion. Because that fixture could
+exit naturally after 2.5 seconds and the marker assertion followed the failed
+timing assertion, the run did not prove forced termination or grandchild
+absence. The executable correction invalidated `c82fe47...` as merge authority.
+Exact candidate `cf9b5453...` passed the corrected contract's 15-second natural
+exit, bounded ten-second termination, and independent grandchild-absence check,
+then supplied the required fresh 30-child attempt. The c82 receipt remains
+historical evidence and must not be reused or relabeled.
 
 Exact executable candidate `0ed2037dbbb8c3df9350dbc37aeddc633f567a40`
 passed its sole admitted 30-child attempt on 2026-07-25. Its hosted Windows
@@ -73,15 +89,16 @@ inspection-only verification of the exact ARM64 image, checked-head revision,
 base digest, runtime identity, and receipt-bound immutable image ID. They launch
 and record that exact ID; they never build, pull, reconnect, or substitute an
 image.
-Focused route-less verification passed on the GB10 before admission;
-historical exact candidate
-`c82fe47a683dabd72231ffca377095ff16f2d4f5` then consumed a passing admitted
-complete gate before the later hosted-only timing correction invalidated it as
+Focused route-less verification passed on the GB10 before admission. Exact
+candidate `cf9b5453270a8afa87cfca42206767a1bf7d82ee` then consumed the frozen,
+receipt-bound images in its passing admitted complete gate. Historical
+candidate `c82fe47a683dabd72231ffca377095ff16f2d4f5` had consumed the prior
+receipt-bound images before a hosted-only timing correction invalidated it as
 merge authority.
 The private plan, command logs, audio, runtime evidence, and receipts remain
 outside Git.
 
-Five later admissions remain failed private evidence. Candidate
+Six later admissions remain failed private evidence. Candidate
 `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3` completed the target-client and
 provider workloads, but Docker 29's exact post-removal `network <id> not found`
 response was initially treated as an inventory failure; candidate

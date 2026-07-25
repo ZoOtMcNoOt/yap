@@ -3,13 +3,12 @@
 **Date:** 2026-07-08
 **Status:** Accepted (canonical Phase 2 local fallback; narrowly amended by
 [ADR 0024](0024-global-language-routing.md) for Phase 6 acoustic language
-evidence). Historical exact executable candidate
-`c82fe47a683dabd72231ffca377095ff16f2d4f5` passed the complete Phase 6
+evidence). Exact executable candidate
+`cf9b5453270a8afa87cfca42206767a1bf7d82ee` passed the complete Phase 6
 target-client and integrated safety matrix after bounded three-agent
 remediation re-review; automatic switching remains an explicit default-off
-Preview because its consumed natural-switch target failed. A later hosted-only
-teardown-timing contract correction invalidated that candidate as merge
-authority; a fresh exact-head gate, hosted PR closure, and merge remain.
+Preview because its consumed natural-switch target failed. Hosted PR closure,
+final review, and merge remain.
 **Amends:** [ADR 0001](0001-dual-stt-backends.md), [ADR 0002](0002-crispasr-unified-stt-runtime.md), [ADR 0003](0003-long-term-voice-architecture.md), [ADR 0006](0006-silero-agents-state-machine.md), [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0018](0018-three-repo-topology.md)
 
 ## Context
