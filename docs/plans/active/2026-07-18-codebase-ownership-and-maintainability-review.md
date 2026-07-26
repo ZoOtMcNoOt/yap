@@ -202,6 +202,21 @@ container, private network, or listener. This attempt remains failed private
 evidence and must not be resumed, retried, or relabeled. Replacement preflight
 must execute the actual controller through the same transient-service boundary.
 
+Exact candidate `bbd4f40d0460d7f706bdc455eec8c084cce3266c` was admitted once
+after the exact GB10 controller passed the transient-service executable
+boundary in preflight-only mode. Its complete Windows target-client lane
+passed, including the repaired real-session tray exit. Its sequential Cohere
+and Nemotron GB10 lifecycle also completed with status zero and the transient
+unit was collected. The subsequent independent process-absence verifier then
+failed because its `pgrep` expression matched the verifier's own command line,
+before the bounded GB10 aggregate was copied to the Windows plan destination.
+A separate audit-only read-back with explicit self and parent exclusion found
+no retained local or remote process, provider container, private network, or
+listener. This admission remains failed private evidence and must not be
+resumed, retried, or relabeled. Replacement absence checks must enumerate
+processes while excluding the verifier identities rather than searching their
+own command line.
+
 ## Phase 7 cadence
 
 Phase 7 begins only after Checkpoint B merges. Its implementation remains on a
