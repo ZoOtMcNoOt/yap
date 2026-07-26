@@ -179,6 +179,17 @@ was stopped, and independent read-back found no retained local or remote
 process, provider container, private network, or listener. This attempt remains
 failed private evidence and must not be resumed, retried, or relabeled.
 
+Exact candidate `a89c9c3610b8b0bdf9fb511471312668fa60fe8e` was admitted once
+after its local, remote, runtime-preparation, model, duration-suite, and
+controller preflights passed. Before either hardware lane started, the Windows
+controller-generation command failed on a PowerShell quoting error while
+replacing the target-client Cargo invocation. No target-client or GB10 evidence
+destination was written. Independent read-back found no retained local or
+remote process, provider container, private network, listener, or transient
+service. This attempt remains failed private evidence and must not be resumed,
+retried, or relabeled. Replacement candidates must fully materialize and parse
+both hardware controllers before admission.
+
 ## Phase 7 cadence
 
 Phase 7 begins only after Checkpoint B merges. Its implementation remains on a
