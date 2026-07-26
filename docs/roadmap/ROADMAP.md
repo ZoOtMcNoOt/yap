@@ -19,10 +19,11 @@ frame contains alternate or historical sequencing.
 | 4 | Bounded private router/pool and isolated Cohere GPU reference worker on the pinned Python 3.12/NVIDIA stack. |
 | 5 | Real durable imported-recording batch-ASR slice through the desktop/server contract with verified native result publication. |
 | Checkpoint A | Phase 1–5 correctness, ownership, decomposition, provenance, documentation, and resource-bound review; merged after the one-time local/native/server/GB10 matrix and exact-head hosted closure. |
+| 6 | Durable preprocessing, language-aware local routing evidence, guarded batch preflight, provider-specific ASR serving candidates, and bounded timing evidence; merged after the one-time 30-child matrix and exact-head hosted closure. |
 
 Evidence and limits are summarized in [current status](../CURRENT-STATUS.md).
 
-## Current gate: Phase 6 exact-head review and merge
+## Delivered Phase 6 boundary
 
 Phase 6 turns the merged fixed-language canonical-WAV vertical slice into a
 durable preprocessing and language-aware pipeline without pulling later
@@ -55,8 +56,8 @@ The canonical decisions are
 [ADR 0024](../adr/0024-global-language-routing.md),
 [ADR 0025](../adr/0025-provider-specific-asr-serving.md), and
 [ADR 0026](../adr/0026-ambernet-batch-language-preflight.md). The implementation
-and one-time gate contract are in the active
-[audio preprocessing and language routing plan](../plans/active/2026-07-16-audio-preprocessing-and-language-routing.md).
+and one-time gate contract are in the completed
+[audio preprocessing and language routing plan](../plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md).
 The living
 [decision and evidence queue](../plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 preserves discussed decisions, open questions, detailed Phase 6 sub-tasks, and
@@ -77,20 +78,22 @@ identity to match it. The receipt-bound ID was launched and recorded; the gate
 could not build, pull, reconnect, or substitute an image. Hosted CI, CodeQL,
 and stock-NSIS passed at first attempt on docs-only review head
 `cee13f819a85417ea43a3c63e263be85f0570838`; a private closure receipt was
-independently validated outside Git. PR #67 may merge only after its final
-docs-only successor passes the same exact-head hosted policy and final
-adversarial read-back.
+independently validated outside Git. Final reviewed head
+`50f0f9e5e3cf288f41efa3745514dd08c9ee1929` passed the required exact-head
+hosted policy and final adversarial read-back, and
+[PR #67](https://github.com/mcnatg1/yap/pull/67) merged as
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
 SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
 and SGLang services, production multi-worker/mixed-load capacity promotion, production
 observability, and external deployment remain Phase 10.
 
-## Queued post-Phase-6 checkpoint
+## Current gate: post-Phase-6 checkpoint
 
-After Phase 6 merges, a separate
-[codebase ownership and maintainability review](../plans/queued/2026-07-18-codebase-ownership-and-maintainability-review.md)
+The separate
+[codebase ownership and maintainability review](../plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md)
 reviews the complete Phase 1–6 executable system before Phase 7 starts. It uses
-parallel antagonistic reviewers, then applies the same ownership,
+exactly three completed antagonistic reviews, then applies the same ownership,
 comprehensibility, decomposition, maintainability, resource, provenance, and
 documentation standard as post-Phase-5 Checkpoint A. It adds no Phase 7 product
 functionality and closes through its own exact-head gate and reviewed PR.

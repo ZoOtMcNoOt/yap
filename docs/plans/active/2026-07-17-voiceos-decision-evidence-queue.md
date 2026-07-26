@@ -14,7 +14,7 @@ observed runtime behavior.
 [ADR 0024](../../adr/0024-global-language-routing.md),
 [ADR 0026](../../adr/0026-ambernet-batch-language-preflight.md),
 [ADR 0027](../../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md), and the
-[audio preprocessing and language routing plan](2026-07-16-audio-preprocessing-and-language-routing.md).
+[completed audio preprocessing and language routing plan](../completed/2026-07-16-audio-preprocessing-and-language-routing.md).
 
 ## How to use this queue
 
@@ -721,8 +721,10 @@ unavailable.
 - [x] Open focused PR #67 and obtain first-attempt hosted CI, CodeQL, and
   stock-NSIS checks on docs-only review head
   `cee13f819a85417ea43a3c63e263be85f0570838`.
-- [ ] Require the final docs-only successor to pass exact-head hosted checks,
-  resolve the final review findings, and merge only that checked SHA.
+- [x] Require the final docs-only successor to pass exact-head hosted checks,
+  resolve the final review findings, and merge only that checked SHA. Final
+  reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929` merged in PR #67
+  as `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 
 Focused July 20 evidence classified the recurring native warning without
 speculative dependency churn. The exact locked Windows graph contained 994
@@ -768,14 +770,16 @@ all 14 release-contract checks passed. Exact replacement candidate
 channels, and exact teardown on 2026-07-25. Its candidate receipt was
 independently validated for the exact head and all 30 children. Hosted CI,
 CodeQL, and stock-NSIS passed at first attempt on docs-only review head
-`cee13f819a85417ea43a3c63e263be85f0570838`; PR #67 requires final exact-head
-hosted and adversarial read-back before merge.
+`cee13f819a85417ea43a3c63e263be85f0570838`; final reviewed head
+`50f0f9e5e3cf288f41efa3745514dd08c9ee1929` retained exact-head hosted
+closure and adversarial read-back before PR #67 merged as
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 
-## Queued post-Phase-6 checkpoint
+## Active post-Phase-6 checkpoint
 
 The reviewed Phase 6 merge activates
-[codebase ownership and maintainability review](../queued/2026-07-18-codebase-ownership-and-maintainability-review.md).
-It runs a parallel multi-subagent antagonistic review and the same
+[codebase ownership and maintainability review](2026-07-18-codebase-ownership-and-maintainability-review.md).
+It has completed exactly three parallel antagonistic reviews and applies the same
 ownership/decomposition/maintainability checkpoint used after Phase 5, on a
 separate refactor branch with no Phase 7 behavior. It must gate and merge before
 Phase 7 starts. Phase 7 then uses the same phase -> adversarial checkpoint ->

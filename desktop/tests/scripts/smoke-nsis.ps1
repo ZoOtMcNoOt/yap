@@ -148,7 +148,11 @@ foreach ($path in @($appExecutable, $uninstaller)) {
 }
 
 $resourceHashes = [ordered]@{}
-foreach ($resourceName in @("THIRD_PARTY_NOTICES.md", "THIRD_PARTY_PROVENANCE.json")) {
+foreach ($resourceName in @(
+    "SHIPPED_DEPENDENCY_INVENTORY.json",
+    "THIRD_PARTY_NOTICES.md",
+    "THIRD_PARTY_PROVENANCE.json"
+  )) {
   $expectedResource = Join-Path $repoRoot $resourceName
   $installedResource = Join-Path $installLocation $resourceName
   foreach ($path in @($expectedResource, $installedResource)) {

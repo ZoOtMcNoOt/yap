@@ -61,12 +61,11 @@ availability.
 
 ### Active
 
-- [Audio preprocessing and language routing](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md)
+- [Codebase ownership and maintainability review](plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md)
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
 
 ### Queued
 
-- [Codebase ownership and maintainability review](plans/queued/2026-07-18-codebase-ownership-and-maintainability-review.md)
 - [Joint speaker-attributed meeting transcription](plans/queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
 
 ### Completed implementation records
@@ -77,6 +76,7 @@ availability.
 - [Private ASR node](plans/completed/2026-07-13-private-asr-node.md)
 - [Remote recording transcription](plans/completed/2026-07-14-remote-recording-transcription.md)
 - [Executable ownership and maintainability review](plans/completed/2026-07-15-executable-ownership-and-maintainability-review.md)
+- [Audio preprocessing and language routing](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md)
 
 ### Archived plans and historical designs
 

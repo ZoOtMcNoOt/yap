@@ -21,12 +21,11 @@ exact teardown all passed. The public-safe GB10 aggregate file SHA-256 is
 `98cdc087b574f35a0e12b386a5d8c4c576a9ada548afe88101d1442868e96deb`.
 Private audio, transcripts, raw metrics, host paths, logs, and process ledgers
 remain outside Git. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on
-docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`; its
+final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; its
 private closure receipt was independently validated outside Git and has
 public-safe SHA-256
 `2ee79c2223b52c7fbb006291811e43226aecdc5fa6bccdcf51d8e675705d7bb0`.
-PR #67 requires any later docs-only successor to pass the same exact-head
-hosted and final-read-back policy before merge.
+PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 
 Historical exact executable candidate
 `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed its sole admitted 30-child

@@ -1,7 +1,7 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–5 system plus the repaired
-Phase 6 implementation on the active branch: provider catalog, fixed-language
+This document describes the merged executable Phase 1–6 system: provider
+catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
 VAD, local language spans, verify-only AmberNet batch preflight, and
 provider-specific serving candidates. Exact executable candidate
@@ -14,10 +14,10 @@ prepared ARM64 image, and required its checked-head
 revision, base digest, runtime identity, and immutable image ID to match that
 receipt. They launch and record that exact ID; they cannot build, pull,
 reconnect, or substitute an image. Hosted CI, CodeQL, and stock-NSIS passed at
-first attempt on docs-only review head
-`cee13f819a85417ea43a3c63e263be85f0570838`, and its private closure receipt
-was independently validated outside Git. PR #67 retains the rule that any
-later docs-only successor must pass exact-head hosted checks before merge. The
+first attempt on final reviewed head
+`50f0f9e5e3cf288f41efa3745514dd08c9ee1929`, and its private closure receipt
+was independently validated outside Git. PR #67 merged as
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`. The
 [Voice OS architecture](../VOICE-OS-ARCHITECTURE.md) remains the first-class
 long-term frame; accepted future work is sequenced by the
 [roadmap](../roadmap/ROADMAP.md) and ADRs, not promoted into current-state
@@ -286,9 +286,9 @@ The server's dynamic health response advertises batch/status only when the
 Phase 5 runtime actually initializes. Live streaming remains false and
 `/v1/live` remains unimplemented.
 
-## Phase 6 implementation on the active branch
+## Merged Phase 6 implementation
 
-The current branch adds a separately bounded ASR capability-catalog endpoint,
+Phase 6 added a separately bounded ASR capability-catalog endpoint,
 native fingerprint/bounds validation, and an origin-bound last-known snapshot
 that explains offline state without authorizing a route. Rust owns the
 versioned primary-language preference and freezes each imported job's

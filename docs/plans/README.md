@@ -12,17 +12,17 @@ their execution window closes.
 
 Current work:
 
-- [Audio preprocessing and language routing](active/2026-07-16-audio-preprocessing-and-language-routing.md)
+- [Codebase ownership and maintainability review](active/2026-07-18-codebase-ownership-and-maintainability-review.md)
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
 
 Queued work (activate only in roadmap order):
 
-- [Codebase ownership and maintainability review](queued/2026-07-18-codebase-ownership-and-maintainability-review.md)
 - [Joint speaker-attributed meeting transcription](queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
 
 Recently completed:
 
 - [Executable ownership and maintainability review](completed/2026-07-15-executable-ownership-and-maintainability-review.md)
+- [Audio preprocessing and language routing](completed/2026-07-16-audio-preprocessing-and-language-routing.md)
 
 When a plan closes, use `git mv` into `completed/` or `archived/`, repair all
 references, and update [current status](../CURRENT-STATUS.md) only when

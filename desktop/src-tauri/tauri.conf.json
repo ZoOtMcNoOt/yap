@@ -39,6 +39,7 @@
     ],
     "resources": {
       "../model-artifacts.lock.json": "model-artifacts.lock.json",
+      "../../SHIPPED_DEPENDENCY_INVENTORY.json": "SHIPPED_DEPENDENCY_INVENTORY.json",
       "../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
       "../../THIRD_PARTY_PROVENANCE.json": "THIRD_PARTY_PROVENANCE.json",
       "../../server/runtime/asr/licenses/APACHE-2.0.txt": "licenses/APACHE-2.0.txt"

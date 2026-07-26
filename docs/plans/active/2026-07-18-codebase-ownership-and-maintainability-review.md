@@ -1,12 +1,14 @@
 # Codebase Ownership and Maintainability Review Plan
 
-**Status:** Queued and not yet active. Activate only after the focused Phase 6 PR passes its
-one-time exact-head gate, hosted review, and merge. This plan does not authorize
-Checkpoint B work in the Phase 6 worktree.
+**Status:** Active on `chore/codebase-maintainability-review`. Phase 6 merged in
+[PR #67](https://github.com/mcnatg1/yap/pull/67) as
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`; this checkpoint remains a separate
+reviewable change and does not authorize Phase 7 product work.
 
-**Planned branch:** `refactor/post-phase6-architecture-checkpoint`
+**Branch:** `chore/codebase-maintainability-review`
 
-**Base:** The reviewed Phase 6 merge commit, recorded when Phase 6 closes.
+**Base:** Reviewed Phase 6 merge
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 
 **Scope:** Review and simplify the complete executable Phase 1–6 system without
 adding Phase 7 identity, authorization, or enterprise-network functionality.
@@ -46,10 +48,10 @@ preprocessing, evaluation, model-serving, timing, and GPU-resource surfaces.
 
 ## Multi-subagent antagonistic review
 
-After the Checkpoint B branch is created, the primary agent will launch exactly
-three independent read-only reviewers in parallel. Each reviewer must use repository
-state, executable contracts, and observed behavior rather than trusting status
-claims. At minimum, the review covers:
+After the Checkpoint B branch was created, the primary agent launched exactly
+three independent read-only reviewers in parallel. Their completed reviews use
+repository state, executable contracts, and observed behavior rather than
+trusting status claims. At minimum, the review covers:
 
 - state/persistence/retry/restart correctness and backward compatibility;
 - concurrency, race, cancellation, backpressure, retention, process/container,

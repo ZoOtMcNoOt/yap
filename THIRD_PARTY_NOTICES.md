@@ -1,5 +1,25 @@
 # Third-Party Notices
 
+## Shipped desktop dependency inventory
+
+`SHIPPED_DEPENDENCY_INVENTORY.json` is generated from the exact production
+pnpm graph and the normal-dependency Rust graph for
+`x86_64-pc-windows-msvc`. It is bundled beside this notice. The release
+contract rejects a stale inventory, a dependency without license metadata, or
+an unreviewed license term.
+
+The current graph maps to these license families and reviewed terms:
+`0BSD`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `CC0-1.0`,
+`CDLA-Permissive-2.0`, `ISC`, `LGPL-2.1-or-later`, `LLVM-exception`, `MIT`,
+`MIT-0`, `MPL-2.0`, `Unicode-3.0`, `Unlicense`, and `Zlib`.
+The `GSAP-Standard` disposition refers to the GSAP standard no-charge license
+published at https://gsap.com/standard-license/. The inventory preserves each
+package's exact declared license expression rather than collapsing alternatives.
+
+This dependency inventory is separate from direct source-adaptation provenance
+in `THIRD_PARTY_PROVENANCE.json`. Package-manager metadata does not authorize
+copying source into Yap, and a new license term fails closed pending review.
+
 ## Silero VAD v4 model
 
 Yap can explicitly download or import a hash-pinned k2-fsa ONNX export of

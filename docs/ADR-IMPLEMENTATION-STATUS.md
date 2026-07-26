@@ -1,7 +1,7 @@
 # ADR implementation status
 
 **Status:** Living, non-normative implementation audit
-**As of:** 2026-07-25; Phases 3–5 and Architecture Checkpoint A are merged and
+**As of:** 2026-07-25; Phases 3–6 and Architecture Checkpoint A are merged and
 their checked-head evidence remains recorded below. Exact Phase 6
 executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its frozen
 30-child local/native/server/private-runtime gate. Its target-client evidence
@@ -19,10 +19,9 @@ its frozen natural-switch quality target failed. The catalog intentionally
 exposes only gated Cohere `en-US` with `wordAlignment: false`; neither resident
 provider is promoted. The repaired implementation passed the required bounded
 three-agent adversarial re-review. Hosted CI, CodeQL, and stock-NSIS passed at
-first attempt on docs-only review head
-`cee13f819a85417ea43a3c63e263be85f0570838`; PR #67 requires any later
-docs-only successor to pass the same exact-head hosted and final-read-back
-policy before merge.
+first attempt on final reviewed head
+`50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 **Authority:** ADRs define decisions; current code and executable tests define implementation truth.
 
 An ADR can be accepted while its implementation score is zero. Superseded ADRs remain in the table for historical completeness, but a low score on a superseded decision is not backlog authorization.

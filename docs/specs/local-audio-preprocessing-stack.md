@@ -1,9 +1,9 @@
 # Spec: Local Audio Preprocessing Stack
 
-**Status:** Accepted design contract; desktop capture/timeline/recording foundation and the gated Phase 5 canonical-WAV path are merged. Exact Phase 6 candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its complete local/private matrix after bounded three-agent remediation re-review. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`; PR #67 requires any later docs-only successor to pass the same exact-head hosted and final-read-back policy before merge.
+**Status:** Accepted implemented design contract; exact Phase 6 candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its complete local/private matrix after bounded three-agent remediation re-review. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 **Scope:** Desktop-side capture and deterministic preprocessing before local fallback or server upload.
 **Amended by:** [ADR 0020](../adr/0020-meeting-capture-diarization-authority.md), [ADR 0024](../adr/0024-global-language-routing.md), and the [Source-Aware Diarization Design](source-aware-diarization.md).
-**Active implementation:** [audio preprocessing and language routing plan](../plans/active/2026-07-16-audio-preprocessing-and-language-routing.md).
+**Implemented by:** [completed audio preprocessing and language routing plan](../plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md).
 
 Yap should preprocess audio locally when the work is cheap, deterministic, and useful for both the local live fallback and the server path. The server owns heavy inference and enrichment. The desktop owns capture, preparation, chunk metadata, and retryable transport packaging.
 
