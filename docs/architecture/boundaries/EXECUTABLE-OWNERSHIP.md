@@ -1,7 +1,8 @@
 # Executable Ownership and Trust Boundaries
 
 This map records the executable ownership baseline established by architecture
-checkpoints A/B and the focused Phase 7 implementation under review. Paths are
+checkpoints A/B and the focused Phase 7 implementation with three-review
+closure complete and its one-time gate pending. Paths are
 relative to the repository root; later implementation must update this map only
 after its behavior is executable and verified.
 
