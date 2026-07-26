@@ -293,8 +293,8 @@ exact .NET runtime-pack and Windows SDK reference identities.
       quarantine of ambiguous pre-repair authenticated bindings
 
 These checks describe focused executable implementation on the active Phase 7
-branch. They do not claim that the frozen phase matrix, adversarial review,
-hosted exact-head closure, a real enterprise tenant login, Conditional Access,
+branch. They do not claim that the frozen phase matrix, hosted exact-head
+closure, a real enterprise tenant login, Conditional Access,
 MFA, WAM policy conformance, legal distribution review, or production storage
 and deployment approval has passed.
 

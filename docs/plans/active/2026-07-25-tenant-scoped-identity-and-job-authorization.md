@@ -153,7 +153,7 @@ scanning, capacity/SLO promotion, and deployment evidence.
 - [x] Run exactly three bounded antagonistic reviews of the ready executable
       branch, repair all P0-P2 correctness/security/privacy/maintainability
       findings, and run focused verification for those repairs.
-- [ ] Obtain bounded read-only closure from the same three reviewers on the
+- [x] Obtain bounded read-only closure from the same three reviewers on the
       exact repair head; do not add a fourth reviewer or consume the full gate.
 - [ ] Freeze one exact candidate and run the complete applicable
       local/native/server/target-client/private-server Phase 7 matrix once.
