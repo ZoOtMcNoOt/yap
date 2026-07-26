@@ -53,11 +53,13 @@ function requireOutsideRepository(candidate, label) {
   );
 }
 
-function gh(args) {
-  requireCondition(
-    typeof process.env.GH_TOKEN === "string" && process.env.GH_TOKEN.length > 0,
-    "Hosted closure requires a dedicated nonempty GH_TOKEN.",
-  );
+function gh(args, { requireExplicitToken = false } = {}) {
+  if (requireExplicitToken) {
+    requireCondition(
+      typeof process.env.GH_TOKEN === "string" && process.env.GH_TOKEN.length > 0,
+      "Identity hosted closure requires a dedicated nonempty GH_TOKEN.",
+    );
+  }
   const result = spawnSync("gh", args, {
     cwd: REPOSITORY_ROOT,
     encoding: "utf8",
@@ -123,7 +125,7 @@ export function assertCandidateToHostedLineage(candidateHead, hostedHead) {
   return Object.freeze({ documentationOnly: true, changed });
 }
 
-function listWorkflowRuns(workflow, checkedHead) {
+function listWorkflowRuns(workflow, checkedHead, requireExplicitToken) {
   return JSON.parse(gh([
     "run",
     "list",
@@ -137,10 +139,10 @@ function listWorkflowRuns(workflow, checkedHead) {
     `${GITHUB_ADMISSION_AUTHORITY_HOST}/${GITHUB_ADMISSION_REPOSITORY}`,
     "--json",
     "databaseId,headSha,workflowName,status,conclusion,attempt,createdAt,updatedAt,url",
-  ]));
+  ], { requireExplicitToken }));
 }
 
-function readRunJobs(databaseId) {
+function readRunJobs(databaseId, requireExplicitToken) {
   return JSON.parse(gh([
     "run",
     "view",
@@ -149,7 +151,7 @@ function readRunJobs(databaseId) {
     `${GITHUB_ADMISSION_AUTHORITY_HOST}/${GITHUB_ADMISSION_REPOSITORY}`,
     "--json",
     "jobs",
-  ])).jobs;
+  ], { requireExplicitToken })).jobs;
 }
 
 export function selectHostedClosureEvidence({
@@ -279,9 +281,13 @@ export function buildHostedClosureReceipt({
 }
 
 export function collectHostedClosureEvidence(manifest, checkedHead) {
+  const requireExplicitToken = manifest.gateId === "integrated-identity-access";
   const workflows = [...new Set(manifest.hostedClosureCells.map(({ workflow }) => workflow))];
   const runsByWorkflow = new Map(
-    workflows.map((workflow) => [workflow, listWorkflowRuns(workflow, checkedHead)]),
+    workflows.map((workflow) => [
+      workflow,
+      listWorkflowRuns(workflow, checkedHead, requireExplicitToken),
+    ]),
   );
   const runIds = new Set();
   for (const runs of runsByWorkflow.values()) {
@@ -296,7 +302,10 @@ export function collectHostedClosureEvidence(manifest, checkedHead) {
       }
     }
   }
-  const jobsByRun = new Map([...runIds].map((runId) => [runId, readRunJobs(runId)]));
+  const jobsByRun = new Map([...runIds].map((runId) => [
+    runId,
+    readRunJobs(runId, requireExplicitToken),
+  ]));
   return selectHostedClosureEvidence({
     cells: manifest.hostedClosureCells,
     checkedHead,
