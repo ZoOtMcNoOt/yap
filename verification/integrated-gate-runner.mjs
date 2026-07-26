@@ -9,6 +9,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import net from "node:net";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -70,7 +71,11 @@ const INTEGRATED_GATE_IDS = new Set([
   "integrated-product-checkpoint",
   "integrated-preprocessing-language-routing",
 ]);
-const ADMISSION_KEYS = new Set([
+const LEGACY_ADMISSION_AUTHORITY_ROOT = path.join(
+  os.homedir(),
+  ".yap-private-gate-admissions",
+);
+const LEGACY_ADMISSION_KEYS = new Set([
   "schemaVersion",
   "gateId",
   "checkedHead",
@@ -84,6 +89,9 @@ const ADMISSION_KEYS = new Set([
   "runDirectory",
   "commandLogDirectory",
   "candidateReceiptPath",
+]);
+const IDENTITY_ADMISSION_KEYS = new Set([
+  ...LEGACY_ADMISSION_KEYS,
   "reservationPath",
   "reservationSha256",
   "statusAuthority",
@@ -103,6 +111,17 @@ function samePath(left, right) {
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+export function integratedGateCommandEnvironment(checkedHead, source = process.env) {
+  const environment = {};
+  const credentialName =
+    /^(?:GH_TOKEN|GITHUB_TOKEN|GH_ENTERPRISE_TOKEN|GITHUB_ENTERPRISE_TOKEN)$/i;
+  for (const [name, value] of Object.entries(source)) {
+    if (!credentialName.test(name)) environment[name] = value;
+  }
+  environment.YAP_CHECKED_HEAD = checkedHead;
+  return environment;
 }
 
 function normalizedRealPath(candidate, label, expectedType) {
@@ -184,6 +203,7 @@ export function reserveIntegratedGateAttemptDirectory({
   checkedHead,
   manifestSha256,
   statusClient,
+  reservationAuthorityRoot,
 }) {
   requireCondition(SHA40.test(checkedHead ?? ""), "Checked head is invalid.");
   requireCondition(SHA256.test(manifestSha256 ?? ""), "Manifest identity is invalid.");
@@ -196,6 +216,43 @@ export function reserveIntegratedGateAttemptDirectory({
     "Private gate root",
     "directory",
   );
+  if (gateId !== "integrated-identity-access") {
+    const authorityRoot = reservationAuthorityRoot === undefined
+      ? canonicalLegacyAdmissionAuthorityRoot()
+      : normalizedRealPath(
+        path.resolve(reservationAuthorityRoot),
+        "Legacy admission reservation authority",
+        "directory",
+      );
+    requireOutsideRepository(authorityRoot, "Legacy admission reservation authority");
+    writeExclusiveJson(
+      legacyIntegratedGateReservationPath({
+        authorityRoot,
+        gateId,
+        checkedHead,
+        manifestSha256,
+      }),
+      {
+        schemaVersion: 1,
+        gateId,
+        checkedHead,
+        manifestSha256,
+        evidenceRoot: canonicalEvidenceRoot,
+        reservedAt: new Date().toISOString(),
+      },
+      "Legacy gate admission reservation",
+      INTEGRATED_GATE_BYTE_LIMITS.runMarkerBytes,
+    );
+    const runDirectory = path.join(
+      canonicalEvidenceRoot,
+      `${gateId}-${checkedHead}-${manifestSha256.slice(0, 12)}`,
+    );
+    mkdirSync(runDirectory, { recursive: false, mode: 0o700 });
+    return Object.freeze({
+      runDirectory,
+      reservedAt: new Date().toISOString(),
+    });
+  }
   const remoteReservation = reserveGitHubGateAdmission({
     gateId,
     checkedHead,
@@ -234,6 +291,57 @@ export function reserveIntegratedGateAttemptDirectory({
     reservedAt: remoteReservation.claim.reservedAt,
     statusAuthority: remoteReservation.statusAuthority,
   });
+}
+
+function canonicalLegacyAdmissionAuthorityRoot() {
+  const home = normalizedRealPath(os.homedir(), "User home", "directory");
+  const authorityRoot = path.join(
+    home,
+    path.basename(LEGACY_ADMISSION_AUTHORITY_ROOT),
+  );
+  if (!existsSync(authorityRoot)) {
+    mkdirSync(authorityRoot, { recursive: false, mode: 0o700 });
+  }
+  return normalizedRealPath(
+    authorityRoot,
+    "Legacy admission reservation authority",
+    "directory",
+  );
+}
+
+function legacyIntegratedGateReservationPath({
+  authorityRoot,
+  gateId,
+  checkedHead,
+  manifestSha256,
+}) {
+  return path.join(
+    authorityRoot,
+    `${gateId}-${checkedHead}-${manifestSha256}.json`,
+  );
+}
+
+function assertLegacyIntegratedGateReservation(admission, runDirectory) {
+  const reservationPath = legacyIntegratedGateReservationPath({
+    authorityRoot: canonicalLegacyAdmissionAuthorityRoot(),
+    gateId: admission.gateId,
+    checkedHead: admission.checkedHead,
+    manifestSha256: admission.manifestSha256,
+  });
+  const reservation = readExactJson(
+    reservationPath,
+    "Legacy gate admission reservation",
+    INTEGRATED_GATE_BYTE_LIMITS.runMarkerBytes,
+  ).value;
+  requireCondition(
+    reservation?.schemaVersion === 1
+      && reservation.gateId === admission.gateId
+      && reservation.checkedHead === admission.checkedHead
+      && reservation.manifestSha256 === admission.manifestSha256
+      && Number.isFinite(Date.parse(reservation.reservedAt))
+      && samePath(reservation.evidenceRoot, path.dirname(runDirectory)),
+    "Legacy gate admission reservation does not match the admitted attempt.",
+  );
 }
 
 function assertIntegratedGateReservation(admission, runDirectory) {
@@ -284,28 +392,34 @@ function assertIntegratedGateReservation(admission, runDirectory) {
 function validateAdmission(value) {
   requireCondition(value && typeof value === "object" && !Array.isArray(value),
     "Gate admission must be an object.");
-  const keys = Object.keys(value);
-  requireCondition(
-    keys.length === ADMISSION_KEYS.size
-      && keys.every((key) => ADMISSION_KEYS.has(key)),
-    "Gate admission fields differ from the frozen contract.",
-  );
-  requireCondition(value.schemaVersion === 1, "Gate admission schemaVersion must be 1.");
   requireCondition(
     INTEGRATED_GATE_IDS.has(value.gateId),
     "Gate admission has the wrong gate id.",
   );
+  const admissionKeys = value.gateId === "integrated-identity-access"
+    ? IDENTITY_ADMISSION_KEYS
+    : LEGACY_ADMISSION_KEYS;
+  const keys = Object.keys(value);
+  requireCondition(
+    keys.length === admissionKeys.size
+      && keys.every((key) => admissionKeys.has(key)),
+    "Gate admission fields differ from the frozen contract.",
+  );
+  requireCondition(value.schemaVersion === 1, "Gate admission schemaVersion must be 1.");
   requireCondition(SHA40.test(value.checkedHead ?? ""), "Gate admission head is invalid.");
   requireCondition(SHA256.test(value.manifestSha256 ?? ""), "Manifest identity is invalid.");
   requireCondition(SHA256.test(value.privatePlanSha256 ?? ""), "Private plan identity is invalid.");
-  requireCondition(SHA256.test(value.reservationSha256 ?? ""), "Reservation identity is invalid.");
-  requireCondition(
-    typeof value.reservationPath === "string"
-      && value.statusAuthority
-      && typeof value.statusAuthority === "object"
-      && !Array.isArray(value.statusAuthority),
-    "Remote reservation identity is invalid.",
-  );
+  if (value.gateId === "integrated-identity-access") {
+    requireCondition(SHA256.test(value.reservationSha256 ?? ""),
+      "Reservation identity is invalid.");
+    requireCondition(
+      typeof value.reservationPath === "string"
+        && value.statusAuthority
+        && typeof value.statusAuthority === "object"
+        && !Array.isArray(value.statusAuthority),
+      "Remote reservation identity is invalid.",
+    );
+  }
   requireCondition(value.attempt === 1, "Only one admitted attempt is allowed.");
   requireCondition(TOKEN.test(value.attemptToken ?? ""), "Attempt token is invalid.");
   requireCondition(Number.isFinite(Date.parse(value.admittedAt)), "Admission timestamp is invalid.");
@@ -496,9 +610,13 @@ export function admitIntegratedGateAttempt({
     runDirectory,
     commandLogDirectory,
     candidateReceiptPath: path.join(runDirectory, "candidate-receipt.json"),
-    reservationPath: reservation.reservationPath,
-    reservationSha256: reservation.reservationSha256,
-    statusAuthority: reservation.statusAuthority,
+    ...(frozen.manifest.gateId === "integrated-identity-access"
+      ? {
+        reservationPath: reservation.reservationPath,
+        reservationSha256: reservation.reservationSha256,
+        statusAuthority: reservation.statusAuthority,
+      }
+      : {}),
   };
   const admissionPath = path.join(runDirectory, "admission.json");
   writeExclusiveJson(
@@ -528,7 +646,7 @@ export async function runCommandCell(
   const commandResult = await executeBoundedCommand({
     command: cell.command,
     cwd,
-    environment: { ...process.env, YAP_CHECKED_HEAD: admission.checkedHead },
+    environment: integratedGateCommandEnvironment(admission.checkedHead),
     label: `Cell ${cell.id}`,
     logPath,
     expectedLogDirectory: commandLogDirectory,
@@ -644,7 +762,11 @@ export async function completeIntegratedGateAttempt({
   const manifestSelection = loadIntegratedGateManifestSelection(manifestPath);
   assertIntegratedGateManifestMatchesAdmission(admission, manifestSelection);
   const admittedPaths = verifiedAdmissionPaths(admissionFile, admission);
-  assertIntegratedGateReservation(admission, admittedPaths.runDirectory);
+  if (admission.gateId === "integrated-identity-access") {
+    assertIntegratedGateReservation(admission, admittedPaths.runDirectory);
+  } else {
+    assertLegacyIntegratedGateReservation(admission, admittedPaths.runDirectory);
+  }
   const executionAdmission = Object.freeze({
     ...admission,
     ...admittedPaths,
@@ -782,7 +904,11 @@ export function validateCompletedIntegratedGateAttempt(admissionPath) {
   requireOutsideRepository(admissionFile.path, "Gate admission");
   const admission = validateAdmission(admissionFile.value);
   const admittedPaths = verifiedAdmissionPaths(admissionFile, admission);
-  assertIntegratedGateReservation(admission, admittedPaths.runDirectory);
+  if (admission.gateId === "integrated-identity-access") {
+    assertIntegratedGateReservation(admission, admittedPaths.runDirectory);
+  } else {
+    assertLegacyIntegratedGateReservation(admission, admittedPaths.runDirectory);
+  }
   const running = readExactJson(
     path.join(admittedPaths.runDirectory, "running.json"),
     "Gate running marker",

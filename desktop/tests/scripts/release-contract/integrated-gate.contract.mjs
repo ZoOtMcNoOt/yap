@@ -23,6 +23,7 @@ import {
   assertIntegratedGateManifestMatchesAdmission,
   completeIntegratedGateAttempt,
   integratedGateFailureRecord,
+  integratedGateCommandEnvironment,
   loadIntegratedGateManifestSelection,
   parseIntegratedGateRunnerInvocation,
   runCommandCell,
@@ -48,6 +49,12 @@ import {
 import {
   createConnectedServerTeardownReceipt,
 } from "../../../../verification/write-connected-server-teardown-receipt.mjs";
+import {
+  GITHUB_ADMISSION_AUTHORITY_HOST,
+  GITHUB_ADMISSION_REPOSITORY,
+  GITHUB_ADMISSION_REPOSITORY_ID,
+  githubApiArguments,
+} from "../../../../verification/github-gate-admission.mjs";
 
 const contractRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(contractRoot, "..", "..", "..", "..");
@@ -102,6 +109,7 @@ function createGateStatusClient({ competingStatusWins = false } = {}) {
     };
   }
   return {
+    authorityHost: GITHUB_ADMISSION_AUTHORITY_HOST,
     repositoryId,
     repositoryFullName,
     statuses,
@@ -635,9 +643,6 @@ test("runner requires an explicit canonical manifest and rejects cross-gate comp
         runDirectory: root,
         commandLogDirectory: path.join(root, "command-logs"),
         candidateReceiptPath: path.join(root, "candidate-receipt.json"),
-        reservationPath: path.join(root, "remote-admission.json"),
-        reservationSha256: "2".repeat(64),
-        statusAuthority: {},
       }, null, 2)}\n`,
     );
     await assert.rejects(
@@ -781,6 +786,91 @@ test("portable Python gate rejects project and uv.lock drift", () => {
   assert.doesNotMatch(source, /'--frozen'/);
 });
 
+test("gate admission pins GitHub.com and the canonical repository", () => {
+  const previousHost = process.env.GH_HOST;
+  try {
+    process.env.GH_HOST = "example.invalid";
+    assert.deepEqual(
+      githubApiArguments(["repos/mcnatg1/yap"]),
+      [
+        "api",
+        "--hostname",
+        "github.com",
+        "-H",
+        "Accept: application/vnd.github+json",
+        "repos/mcnatg1/yap",
+      ],
+    );
+    assert.equal(GITHUB_ADMISSION_AUTHORITY_HOST, "github.com");
+    assert.equal(GITHUB_ADMISSION_REPOSITORY, "mcnatg1/yap");
+    assert.equal(GITHUB_ADMISSION_REPOSITORY_ID, 1278708785);
+    const source = readFileSync(
+      path.join(repoRoot, "verification", "github-gate-admission.mjs"),
+      "utf8",
+    );
+    assert.match(source, /GH_PROMPT_DISABLED:\s*"1"/);
+    assert.match(source, /dedicated nonempty GH_TOKEN/);
+    assert.doesNotMatch(source, /remote", "get-url"/);
+    const hostedSource = readFileSync(
+      path.join(repoRoot, "verification", "integrated-hosted-closure.mjs"),
+      "utf8",
+    );
+    assert.match(hostedSource, /GITHUB_ADMISSION_AUTHORITY_HOST/);
+    assert.match(hostedSource, /GITHUB_ADMISSION_REPOSITORY/);
+    assert.match(hostedSource, /"--repo"/);
+    assert.match(hostedSource, /GH_PROMPT_DISABLED:\s*"1"/);
+  } finally {
+    if (previousHost === undefined) delete process.env.GH_HOST;
+    else process.env.GH_HOST = previousHost;
+  }
+});
+
+test("integrated gate command cells never inherit GitHub credentials", () => {
+  assert.deepEqual(
+    integratedGateCommandEnvironment(checkedHead, {
+      PATH: "safe-path",
+      GH_TOKEN: "secret",
+      github_token: "secret",
+      GH_ENTERPRISE_TOKEN: "secret",
+      GITHUB_ENTERPRISE_TOKEN: "secret",
+    }),
+    {
+      PATH: "safe-path",
+      YAP_CHECKED_HEAD: checkedHead,
+    },
+  );
+});
+
+test("historical gates retain their local deterministic reservation boundary", () => {
+  const root = createCanonicalTemporaryDirectory("yap-legacy-gate-attempt-");
+  const authority =
+    createCanonicalTemporaryDirectory("yap-legacy-gate-authority-");
+  try {
+    for (const [gateId, gateManifestSha256] of [
+      [manifest.gateId, manifestSha256],
+      [
+        phase6Manifest.gateId,
+        integratedGateManifestSha256(phase6ManifestBytes),
+      ],
+    ]) {
+      const input = {
+        evidenceRoot: root,
+        gateId,
+        checkedHead,
+        manifestSha256: gateManifestSha256,
+        reservationAuthorityRoot: authority,
+      };
+      const first = reserveIntegratedGateAttemptDirectory(input);
+      assert.ok(first.runDirectory.startsWith(root));
+      assert.equal(first.statusAuthority, undefined);
+      assert.throws(() => reserveIntegratedGateAttemptDirectory(input));
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(authority, { recursive: true, force: true });
+  }
+});
+
 test("integrated gate reservation authority rejects same-root and cross-root retries", () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-attempt-");
   const otherRoot = createCanonicalTemporaryDirectory("yap-gate-attempt-other-");
@@ -789,9 +879,9 @@ test("integrated gate reservation authority rejects same-root and cross-root ret
   try {
     const input = {
       evidenceRoot: root,
-      gateId: manifest.gateId,
+      gateId: identityManifest.gateId,
       checkedHead,
-      manifestSha256,
+      manifestSha256: integratedGateManifestSha256(identityManifestBytes),
       statusClient,
     };
     const first = reserveIntegratedGateAttemptDirectory(input);
@@ -817,9 +907,9 @@ test("integrated gate admits only the oldest remote status in a reservation race
     assert.throws(
       () => reserveIntegratedGateAttemptDirectory({
         evidenceRoot: root,
-        gateId: manifest.gateId,
+        gateId: identityManifest.gateId,
         checkedHead,
-        manifestSha256,
+        manifestSha256: integratedGateManifestSha256(identityManifestBytes),
         statusClient: createGateStatusClient({ competingStatusWins: true }),
       }),
       /different GitHub gate admission won/,

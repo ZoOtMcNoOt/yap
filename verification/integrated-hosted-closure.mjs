@@ -18,6 +18,10 @@ import {
   integratedGateCellDefinitionSha256,
   validateIntegratedGateReceipt,
 } from "./integrated-gate-receipt.mjs";
+import {
+  GITHUB_ADMISSION_AUTHORITY_HOST,
+  GITHUB_ADMISSION_REPOSITORY,
+} from "./github-gate-admission.mjs";
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const RUNNER_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
@@ -50,15 +54,30 @@ function requireOutsideRepository(candidate, label) {
 }
 
 function gh(args) {
+  requireCondition(
+    typeof process.env.GH_TOKEN === "string" && process.env.GH_TOKEN.length > 0,
+    "Hosted closure requires a dedicated nonempty GH_TOKEN.",
+  );
   const result = spawnSync("gh", args, {
     cwd: REPOSITORY_ROOT,
     encoding: "utf8",
+    env: {
+      ...process.env,
+      GH_HOST: GITHUB_ADMISSION_AUTHORITY_HOST,
+      GH_PROMPT_DISABLED: "1",
+    },
     maxBuffer: 50 * 1024 * 1024,
+    timeout: 30_000,
+    killSignal: "SIGKILL",
     windowsHide: true,
   });
+  if (result.error) {
+    throw new Error(`GitHub CLI failed: ${result.error.message}`);
+  }
+  const detail = String(result.stderr ?? result.stdout ?? "").trim();
   requireCondition(
     result.status === 0,
-    `GitHub CLI ${args.join(" ")} failed: ${(result.stderr || result.stdout).trim()}`,
+    `GitHub CLI ${args.join(" ")} failed${detail ? `: ${detail}` : "."}`,
   );
   return result.stdout;
 }
@@ -114,6 +133,8 @@ function listWorkflowRuns(workflow, checkedHead) {
     checkedHead,
     "--limit",
     "100",
+    "--repo",
+    `${GITHUB_ADMISSION_AUTHORITY_HOST}/${GITHUB_ADMISSION_REPOSITORY}`,
     "--json",
     "databaseId,headSha,workflowName,status,conclusion,attempt,createdAt,updatedAt,url",
   ]));
@@ -124,6 +145,8 @@ function readRunJobs(databaseId) {
     "run",
     "view",
     String(databaseId),
+    "--repo",
+    `${GITHUB_ADMISSION_AUTHORITY_HOST}/${GITHUB_ADMISSION_REPOSITORY}`,
     "--json",
     "jobs",
   ])).jobs;

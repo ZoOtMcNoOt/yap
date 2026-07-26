@@ -5,6 +5,9 @@ const SHA40 = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
 const REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const MAXIMUM_STATUS_PAGES = 11;
+export const GITHUB_ADMISSION_AUTHORITY_HOST = "github.com";
+export const GITHUB_ADMISSION_REPOSITORY_ID = 1278708785;
+export const GITHUB_ADMISSION_REPOSITORY = "mcnatg1/yap";
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message);
@@ -19,32 +22,37 @@ function canonicalJson(value) {
 }
 
 function command(executable, args, label, input = undefined) {
+  requireCondition(
+    typeof process.env.GH_TOKEN === "string" && process.env.GH_TOKEN.length > 0,
+    "Gate admission requires a dedicated nonempty GH_TOKEN.",
+  );
   const result = spawnSync(executable, args, {
     encoding: "utf8",
+    env: {
+      ...process.env,
+      GH_PROMPT_DISABLED: "1",
+    },
     input,
     maxBuffer: 1024 * 1024,
+    timeout: 30_000,
+    killSignal: "SIGKILL",
     windowsHide: true,
   });
+  if (result.error) {
+    throw new Error(`${label} failed: ${result.error.message}`);
+  }
+  const detail = String(result.stderr ?? result.stdout ?? "").trim();
   requireCondition(
     result.status === 0,
-    `${label} failed: ${(result.stderr || result.stdout).trim()}`,
+    `${label} failed${detail ? `: ${detail}` : "."}`,
   );
   return result.stdout.trim();
-}
-
-function repositoryFromOrigin() {
-  const origin = command("git", ["remote", "get-url", "origin"], "Git origin lookup");
-  const match = origin.match(
-    /^(?:git@github\.com:|https:\/\/github\.com\/)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+?)(?:\.git)?$/,
-  );
-  requireCondition(match, "Gate admission requires a github.com origin.");
-  return match[1];
 }
 
 function ghJson(args, label, input = undefined) {
   const output = command(
     "gh",
-    ["api", "-H", "Accept: application/vnd.github+json", ...args],
+    githubApiArguments(args),
     label,
     input,
   );
@@ -55,18 +63,30 @@ function ghJson(args, label, input = undefined) {
   }
 }
 
+export function githubApiArguments(args) {
+  return [
+    "api",
+    "--hostname",
+    GITHUB_ADMISSION_AUTHORITY_HOST,
+    "-H",
+    "Accept: application/vnd.github+json",
+    ...args,
+  ];
+}
+
 function defaultClient() {
-  const repositoryFullName = repositoryFromOrigin();
+  const repositoryFullName = GITHUB_ADMISSION_REPOSITORY;
   const repository = ghJson(
     [`repos/${repositoryFullName}`],
     "GitHub repository identity lookup",
   );
   requireCondition(
-    Number.isSafeInteger(repository.id)
+    repository.id === GITHUB_ADMISSION_REPOSITORY_ID
       && repository.full_name?.toLowerCase() === repositoryFullName.toLowerCase(),
     "GitHub repository identity is invalid.",
   );
   return {
+    authorityHost: GITHUB_ADMISSION_AUTHORITY_HOST,
     repositoryId: repository.id,
     repositoryFullName: repository.full_name,
     listStatuses(checkedHead) {
@@ -128,6 +148,7 @@ function statusAuthority(status, client, context, claimSha256) {
     "GitHub gate-status identity is invalid.",
   );
   return Object.freeze({
+    authorityHost: client.authorityHost,
     repositoryId: client.repositoryId,
     repositoryFullName: client.repositoryFullName,
     context: status.context.toLowerCase(),
@@ -144,6 +165,7 @@ function statusAuthority(status, client, context, claimSha256) {
 export function buildGateAdmissionClaim({
   repositoryId,
   repositoryFullName,
+  authorityHost,
   gateId,
   checkedHead,
   manifestSha256,
@@ -153,6 +175,10 @@ export function buildGateAdmissionClaim({
 }) {
   requireCondition(Number.isSafeInteger(repositoryId), "Repository id is invalid.");
   requireCondition(REPOSITORY.test(repositoryFullName ?? ""), "Repository name is invalid.");
+  requireCondition(
+    authorityHost === GITHUB_ADMISSION_AUTHORITY_HOST,
+    "GitHub admission authority is invalid.",
+  );
   requireCondition(typeof gateId === "string" && gateId.length > 0, "Gate id is invalid.");
   requireCondition(SHA40.test(checkedHead ?? ""), "Checked head is invalid.");
   requireCondition(SHA256.test(manifestSha256 ?? ""), "Manifest identity is invalid.");
@@ -162,6 +188,7 @@ export function buildGateAdmissionClaim({
   requireCondition(SHA256.test(nonce ?? ""), "Reservation nonce is invalid.");
   return Object.freeze({
     schemaVersion: 1,
+    authorityHost,
     repositoryId,
     repositoryFullName,
     gateId,
@@ -194,6 +221,7 @@ export function reserveGitHubGateAdmission({
   const claim = buildGateAdmissionClaim({
     repositoryId: client.repositoryId,
     repositoryFullName: client.repositoryFullName,
+    authorityHost: client.authorityHost,
     gateId,
     checkedHead,
     manifestSha256,

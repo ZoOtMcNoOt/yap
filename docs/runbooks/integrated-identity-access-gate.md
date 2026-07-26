@@ -42,11 +42,15 @@ bind to that head.
 Admission creates one GitHub commit status whose normalized context binds the
 gate ID and manifest hash and whose description contains only the SHA-256 of
 the private reservation claim. GitHub commit-status history is the authority;
-the private path never leaves the machine. The runner lists every status page,
+the private path never leaves the machine. The runner pins `github.com`,
+repository `mcnatg1/yap`, and immutable repository ID `1278708785`; neither
+`GH_HOST` nor mutable Git remote configuration selects the authority. It lists
+every status page,
 refuses an existing context, and records the oldest status ID. Completion
 re-lists and re-elects that oldest ID before running any command cell, so
 changing the local profile, evidence root, or cached reservation cannot create
-another executable attempt. GitHub documents commit statuses as create/list
+another executable attempt. GitHub credential variables are removed from every
+command-cell environment after that validation. GitHub documents commit statuses as create/list
 history with case-insensitive contexts; see the
 [commit-status API](https://docs.github.com/en/rest/commits/statuses).
 
@@ -97,6 +101,11 @@ candidate receipt validates. Hosted CI, the identity-broker job, CodeQL, and the
 disposable-Windows NSIS job must all pass on the exact final reviewed head on
 their first attempt. A documentation-only descendant may reconcile public-safe
 evidence; any other change requires a new candidate gate.
+
+Remove the admission token after candidate completion. For hosted closure, set
+`GH_TOKEN` to a separate read-only credential limited to commit-status read and
+Actions read. Hosted collection pins `github.com/mcnatg1/yap`; it does not use
+the mutable Git remote or `GH_HOST`.
 
 Derive the hosted receipt from the original candidate admission:
 
