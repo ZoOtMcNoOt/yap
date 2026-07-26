@@ -274,6 +274,20 @@ container, private network, listener, or transient service. The admission must
 not be resumed, retried, or relabeled; a docs-only successor requires fresh
 runtime receipts, private destinations, controller preflights, and admission.
 
+Docs-only successor
+`76b43784cc4ae19dc121503b4555efb84e27fc6c` then passed its complete
+target-client, sequential GB10, connected desktop/private-server, and exact
+teardown lanes. The integrated command matrix passed its Node runtime,
+dependency installation, and dependency-audit children, then failed its
+release-contract child because the keyboard-accessibility repair had changed
+`live-overlay.tsx` without refreshing that reviewed local file's exact hash in
+`THIRD_PARTY_PROVENANCE.json`. The runner marked the attempt failed before later
+command children ran. Independent read-back found no retained local or remote
+process, provider container, private network, listener, or transient service.
+This admission must not be resumed, retried, or relabeled. A successor must
+bind the corrected exact local provenance hash and repeat every private lane
+and command child from fresh evidence.
+
 ## Phase 7 cadence
 
 Phase 7 begins only after Checkpoint B merges. Its implementation remains on a
