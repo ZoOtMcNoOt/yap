@@ -606,7 +606,7 @@ jobs, admission, cancellation, immutable revisions, and publication.
 | Prepared spool/chunks | Only verified Yap-owned paths are cleaned; external sources are preserved. |
 | Install identity | Bounded no-follow regular-file admission rejects linked, oversized, or invalid namespace state. |
 | Connector configuration | Bounded no-follow regular-file admission precedes schema validation; one save lease spans confirmation, publication, approval, generation change, and applied-state projection. |
-| Server job/chunk/result state | Schema 5 retains bounded ASR/alignment/result-publication attempts. Idempotency survives restart; interrupted processing and retry admission remain explicit without rewriting completed result authority. |
+| Server job/chunk/result state | Schema 6 retains bounded ASR/alignment/result-publication attempts. Idempotency survives restart; interrupted processing and retry admission remain explicit without rewriting completed result authority. |
 | Server identity repository | The provider-neutral repository owns principal, access-revocation, purpose-control, and redacted audit records. The SQLite adapter persists focused development/restart evidence; production topology, encryption, backup/deletion, retention/export, and administrative access remain external approvals. |
 | Deletion intent/quarantine | Destructive work revalidates identity and resumes without following replacement paths. |
 
