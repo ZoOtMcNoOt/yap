@@ -26,7 +26,12 @@ Post-Phase-6 Checkpoint B changes no ADR score. Its exact executable candidate
 `66267af0abf38af0a6b8d3d2fac76543673c0331` passed the single admitted
 31-child checkpoint matrix and independent receipt validation with exact
 teardown after the narrow repairs and three-agent antagonistic read-back.
-Hosted exact-head closure, review, and merge remain.
+First-attempt hosted CI on later reviewed head
+`08ab49ba8d727cb8331a40f28c7c4c70d75d4035` exposed Cargo color
+contamination in dependency inventory and a same-process Windows atomic
+replacement race. Both are repaired with no ADR score change, but the
+executable/test-definition changes require a fresh exact-head checkpoint
+candidate before hosted closure, review, and merge.
 **Authority:** ADRs define decisions; current code and executable tests define implementation truth.
 
 An ADR can be accepted while its implementation score is zero. Superseded ADRs remain in the table for historical completeness, but a low score on a superseded decision is not backlog authorization.

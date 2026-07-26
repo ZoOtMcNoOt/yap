@@ -100,7 +100,12 @@ functionality. Exact executable candidate
 `66267af0abf38af0a6b8d3d2fac76543673c0331` passed its single admitted
 31-child checkpoint matrix and independent receipt validation with exact
 teardown after the narrow repairs and three final antagonistic read-backs.
-Hosted exact-head closure, review, and merge remain.
+The first hosted attempt on later reviewed head
+`08ab49ba8d727cb8331a40f28c7c4c70d75d4035` then exposed deterministic
+Cargo-output contamination in dependency inventory and a same-process Windows
+atomic replacement race. The workflow was not rerun. Both defects are repaired
+and focused three-agent review is clean; those executable/test changes require
+a fresh exact-head 31-child candidate before hosted closure, review, and merge.
 
 Phase 7 follows the same cadence: independently merge the phase, run a separate
 post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that

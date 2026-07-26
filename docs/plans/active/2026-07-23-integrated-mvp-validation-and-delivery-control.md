@@ -40,8 +40,14 @@ complexity.
   `2641f613a2a8dfbf0d2e1c7989b37c3af7e85aab732c3ae20381b52c1d144ac2`;
   the private receipt SHA-256 is
   `21977f50ccf18ff9a342575f2f8f1ab8162951da3ebad5bf86c1d7f7eb2254b7`.
-  Three final antagonistic read-backs found no P0-P2 issue. Hosted exact-head
-  closure, review, and merge remain.
+  Three final antagonistic read-backs found no P0-P2 issue. A first-attempt
+  hosted run on later reviewed head
+  `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` exposed Cargo color
+  contamination in dependency inventory and a same-process Windows atomic
+  replacement race. Both are repaired and focused review is clean, but those
+  executable/test-definition changes invalidate the historical candidate as
+  merge authority. A fresh 31-child exact-head candidate, hosted closure,
+  review, and merge remain.
 - Exact executable candidate
   `a92f338546a2f8bbaded96b04f8987f0ac475c88`
   passed the frozen one-attempt 30-child Phase 6 matrix. Manifest SHA-256

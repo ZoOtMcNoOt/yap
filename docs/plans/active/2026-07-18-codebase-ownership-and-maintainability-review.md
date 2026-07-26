@@ -107,10 +107,14 @@ GPU pressure, model teardown, private evaluation evidence, and unavailable timin
       roadmap, runbooks, active/completed plans, and evidence classifications
       with the refactored executable system.
 - [x] Run focused verification throughout each affected slice.
-- [x] Freeze one merge-authority checkpoint candidate and run the complete applicable local,
-      native, server, release, disposable-Windows, and GB10 matrix exactly once.
-- [ ] Open a focused PR, require green exact-head hosted checks and review, and
-      merge only the checked SHA.
+- [x] Preserve the historical passed 31-child candidate and its independently
+      validated receipt without relabeling it after later executable changes.
+- [ ] Freeze the replacement merge-authority checkpoint candidate and run the
+      complete applicable local, native, server, release,
+      disposable-Windows, and GB10 matrix exactly once.
+- [x] Open a focused PR.
+- [ ] Require green exact-head hosted checks and review, and merge only the
+      checked SHA.
 
 ## Implemented checkpoint repairs
 
@@ -322,6 +326,24 @@ retained local or remote process, provider container, private network,
 listener, or transient service. Private audio, transcripts, raw metrics,
 process ledgers, host paths, logs, and receipts remain outside Git and hosted
 artifacts. Hosted exact-head closure, PR review, and merge remain pending.
+
+The first hosted attempt on reviewed head
+`08ab49ba8d727cb8331a40f28c7c4c70d75d4035` is consumed and must not
+be rerun or relabeled. CI run `30203395426` passed frontend and server, but the
+required native job failed before WDIO because Cargo terminal-color bytes
+escaped into machine-readable dependency-license output and were parsed as an
+unreviewed `22m` term. The Rust job independently passed 1,064 tests before a
+same-process Windows atomic-text replacement race returned access denied in
+the concurrent-writer test. All four CodeQL analyses passed. Commit
+`bdbcc9cf` now makes the Cargo inventory explicitly color-free without
+weakening license review, and commit `740d510d` serializes the Windows
+probe/publication critical section while retaining destination metadata and
+the existing replacement APIs. The focused hostile-environment dependency
+contract and 100-by-four existing-output replacement stress passed, and three
+antagonistic read-backs found no P0-P2 issue in either repair. Because these are
+executable and test-definition changes, candidate `66267af0...` remains valid
+historical evidence but is no longer merge authority. A fresh clean exact-head
+31-child admission and first-attempt hosted closure are required.
 
 ## Phase 7 cadence
 
