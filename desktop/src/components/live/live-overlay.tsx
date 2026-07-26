@@ -55,7 +55,11 @@ export function LiveOverlay({
         if (model.phase === "idle") openIdleIsland();
       }}
       onKeyDown={(event) => {
-        if (model.phase !== "idle" || !["Enter", " "].includes(event.key)) return;
+        if (
+          event.target !== event.currentTarget
+          || model.phase !== "idle"
+          || !["Enter", " "].includes(event.key)
+        ) return;
         event.preventDefault();
         openIdleIsland();
       }}

@@ -91,6 +91,43 @@ test("keyboard focus expands the island and exposes 40-pixel primary actions", a
   }
 });
 
+test("focused Start dictating preserves native Enter activation", async ({ page }) => {
+  await openOverlayPreview(page);
+
+  const root = page.getByTestId("live-overlay-root");
+  const start = page.getByRole("button", { name: "Start dictating" });
+  await root.focus();
+  await page.keyboard.press("Tab");
+  await expect(start).toBeFocused();
+
+  await page.keyboard.press("Enter");
+
+  await expect(root).toHaveAttribute("data-overlay-phase", "recording");
+  await expect(start).toHaveCount(0);
+});
+
+test("focused workspace controls preserve native Enter and Space activation", async ({ page }) => {
+  for (const action of [
+    { key: "Enter", label: "Open scratch", tabs: 2, workspace: "home" },
+    { key: "Space", label: "Open transform", tabs: 3, workspace: "polish" },
+  ]) {
+    await openOverlayPreview(page);
+    await installInvokeCapture(page);
+
+    const root = page.getByTestId("live-overlay-root");
+    const control = page.getByRole("button", { name: action.label });
+    await root.focus();
+    for (let tab = 0; tab < action.tabs; tab += 1) {
+      await page.keyboard.press("Tab");
+    }
+    await expect(control).toBeFocused();
+
+    await page.keyboard.press(action.key);
+
+    await expect.poll(() => capturedWorkspace(page)).toBe(action.workspace);
+  }
+});
+
 test("collapse grace keeps the visible pointer target before shrinking", async ({ page }) => {
   await openOverlayPreview(page);
 
@@ -287,6 +324,29 @@ async function focusedElement(page: Page) {
     ariaLabel: document.activeElement?.getAttribute("aria-label") ?? null,
     tagName: document.activeElement?.tagName ?? null,
   }));
+}
+
+async function installInvokeCapture(page: Page) {
+  await page.evaluate(() => {
+    const testWindow = window as typeof window & {
+      __TAURI_INTERNALS__?: {
+        invoke?: (command: string, args?: Record<string, unknown>) => Promise<unknown>;
+      };
+      __yapCapturedWorkspace?: string;
+    };
+    testWindow.__TAURI_INTERNALS__ ??= {};
+    testWindow.__TAURI_INTERNALS__.invoke = async (command, args) => {
+      if (command === "show_main_workspace") {
+        testWindow.__yapCapturedWorkspace = String(args?.workspace ?? "");
+      }
+      return null;
+    };
+  });
+}
+
+async function capturedWorkspace(page: Page) {
+  return page.evaluate(() =>
+    (window as typeof window & { __yapCapturedWorkspace?: string }).__yapCapturedWorkspace);
 }
 
 async function expectExactFrame(locator: Locator, frame: Frame) {
