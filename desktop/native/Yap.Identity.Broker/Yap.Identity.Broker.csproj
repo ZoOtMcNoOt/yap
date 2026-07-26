@@ -8,6 +8,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisMode>All</AnalysisMode>
+    <!--
+      CA1031: the process boundary intentionally converts every failure to a
+      non-sensitive unavailable response.
+      CA1308: lowercase hex is the existing cache-file identity contract.
+      CA1812: the JSON request record is instantiated through reflection.
+    -->
+    <NoWarn>$(NoWarn);CA1031;CA1308;CA1812</NoWarn>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>

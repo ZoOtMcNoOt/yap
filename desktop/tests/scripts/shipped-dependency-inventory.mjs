@@ -496,7 +496,9 @@ function pinnedDotnetExecutable(nativeRoot) {
   for (const candidate of candidates) {
     if (path.isAbsolute(candidate) && !existsSync(candidate)) continue;
     try {
-      if (run(candidate, ["--version"]).trim() === expectedVersion) return candidate;
+      if (run(candidate, ["--version"], { cwd: nativeRoot }).trim() === expectedVersion) {
+        return candidate;
+      }
     } catch {
       // Continue to the next bounded candidate.
     }

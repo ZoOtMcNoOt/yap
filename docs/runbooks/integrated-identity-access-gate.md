@@ -35,6 +35,11 @@ independent receipt validation.
 Start from the exact clean reviewed candidate. Prepare a new private plan for
 that head with new absent evidence destinations outside the repository. Runtime
 preparation receipts and every private result must also bind to that head.
+Admission first reserves the full gate ID, head, and manifest hash in the
+runner-owned per-user authority at `~/.yap-private-gate-admissions`; changing
+the evidence root cannot create another attempt. Treat that authority as an
+append-only audit record. Removing or rewriting it invalidates the delivery
+evidence rather than permitting another attempt.
 
 ```powershell
 $candidateHead = (git rev-parse HEAD).Trim()
@@ -60,11 +65,15 @@ node .\verification\integrated-gate-runner.mjs complete `
 Validate the candidate receipt independently:
 
 ```powershell
+$admissionSha256 = (
+  Get-FileHash -Algorithm SHA256 -LiteralPath <private-admission.json>
+).Hash.ToLowerInvariant()
 node .\verification\integrated-gate-receipt.mjs validate `
   --manifest .\verification\integrated-identity-access-gate.json `
   --receipt <private-candidate-receipt.json> `
   --scope candidate `
-  --checked-head $candidateHead
+  --checked-head $candidateHead `
+  --admission-sha256 $admissionSha256
 ```
 
 Any command or private-child failure consumes this candidate attempt. Any
@@ -95,4 +104,27 @@ node .\verification\integrated-hosted-closure.mjs `
 ```
 
 Validate the hosted receipt against the same behavior identity and original
-candidate lineage before recording closure or merging.
+candidate lineage before recording closure or merging:
+
+```powershell
+$candidateReceiptSha256 = (
+  Get-FileHash -Algorithm SHA256 -LiteralPath <private-candidate-receipt.json>
+).Hash.ToLowerInvariant()
+node .\verification\integrated-gate-receipt.mjs validate `
+  --manifest .\verification\integrated-identity-access-gate.json `
+  --receipt <new-private-hosted-closure-receipt.json> `
+  --scope hosted-closure `
+  --checked-head $hostedHead `
+  --candidate-head $candidateHead `
+  --candidate-receipt-sha256 $candidateReceiptSha256 `
+  --admission-sha256 $admissionSha256
+```
+
+The pre-merge C# boundary is enforced by the pinned .NET SDK's full analyzer
+set, warnings-as-errors, locked restore, the NuGet advisory audit, and the
+identity-broker CI job. The repository's GitHub CodeQL configuration uses
+default setup; GitHub enrolls a newly detected supported language after that
+language reaches the default branch. Therefore C# CodeQL is a post-merge
+default-branch confirmation, not evidence claimed by this pre-merge receipt.
+See GitHub's
+[default setup documentation](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configure-code-scanning).

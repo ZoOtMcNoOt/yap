@@ -276,6 +276,9 @@ jobs:
           }
       - name: Publish and smoke the MSAL/WAM identity broker
         run: ./tests/scripts/build-identity-broker.ps1
+      - name: Audit locked NuGet dependencies
+        working-directory: ${{ github.workspace }}
+        run: ./verification/audit-dotnet-dependencies.ps1
 
   native-wdio:
     name: Native WDIO smoke (required, no hardware)

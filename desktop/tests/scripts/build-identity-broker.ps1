@@ -37,7 +37,13 @@ if ($pathDotnet) {
 $dotnet = $dotnetCandidates |
     Select-Object -Unique |
     Where-Object {
-        $candidateVersion = (& $_ --version 2>$null | Out-String).Trim()
+        Push-Location -LiteralPath (Join-Path $repositoryRoot 'desktop\native')
+        try {
+            $candidateVersion = (& $_ --version 2>$null | Out-String).Trim()
+        }
+        finally {
+            Pop-Location
+        }
         $LASTEXITCODE -eq 0 -and $candidateVersion -ceq "8.0.423"
     } |
     Select-Object -First 1

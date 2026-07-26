@@ -214,6 +214,7 @@ export function buildHostedClosureReceipt({
   checkedHead,
   candidateHead,
   candidateReceiptSha256,
+  admissionSha256,
   selected,
 }) {
   requireCondition(
@@ -227,13 +228,16 @@ export function buildHostedClosureReceipt({
     .map(({ job }) => job.completedAt)
     .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
   return {
-    schemaVersion: 2,
+    schemaVersion: manifest.gateId === "integrated-identity-access" ? 3 : 2,
     gateId: manifest.gateId,
     scope: "hosted-closure",
     checkedHead,
     candidateHead,
     candidateReceiptSha256,
     manifestSha256,
+    ...(manifest.gateId === "integrated-identity-access"
+      ? { admissionSha256 }
+      : {}),
     status: "passed",
     startedAt,
     finishedAt,
@@ -290,6 +294,7 @@ export function writeHostedClosureReceipt({
   const { manifest, manifestSha256 } = completedCandidate;
   const candidateHead = completedCandidate.admission.checkedHead;
   const candidateReceiptSha256 = sha256(completedCandidate.candidateReceiptBytes);
+  const admissionSha256 = completedCandidate.candidateReceipt.admissionSha256 ?? null;
   const lineage = assertCandidateToHostedLineage(candidateHead, checkedHead);
 
   requireCondition(path.isAbsolute(output), "Hosted receipt path must be absolute.");
@@ -313,6 +318,7 @@ export function writeHostedClosureReceipt({
     checkedHead,
     candidateHead,
     candidateReceiptSha256,
+    admissionSha256,
     selected,
   });
   validateIntegratedGateReceipt({
@@ -322,6 +328,7 @@ export function writeHostedClosureReceipt({
     expectedHead: checkedHead,
     expectedCandidateHead: candidateHead,
     expectedCandidateReceiptSha256: candidateReceiptSha256,
+    expectedAdmissionSha256: admissionSha256,
     expectedScope: "hosted-closure",
   });
   writeFileSync(output, `${JSON.stringify(receipt, null, 2)}\n`, {

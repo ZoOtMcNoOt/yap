@@ -543,6 +543,25 @@ mod tests {
     }
 
     #[test]
+    fn python_authenticated_server_accepts_signed_bearer_when_provided() {
+        let (Ok(base_url), Ok(token)) = (
+            std::env::var("YAP_TEST_AUTH_SERVER_URL"),
+            std::env::var("YAP_TEST_AUTH_SERVER_TOKEN"),
+        ) else {
+            return;
+        };
+        let client = bounded_client().unwrap();
+        let result = tauri::async_runtime::block_on(verify_protected_access(
+            &client,
+            &RequestAuthorization::fixed(&token),
+            &base_url,
+            false,
+        ));
+
+        assert_eq!(result, ProtectedAccessResult::Accepted);
+    }
+
+    #[test]
     fn server_errors_and_connection_refusal_are_retryable() {
         let fixture = Fixture::response("500 Internal Server Error", Vec::new(), Duration::ZERO);
         assert_eq!(

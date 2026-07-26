@@ -26,18 +26,19 @@ internal static class Program
         BrokerResponse response;
         try
         {
-            var requestText = await ReadBoundedRequestAsync();
+            var requestText = await ReadBoundedRequestAsync().ConfigureAwait(false);
             var request = JsonSerializer.Deserialize<BrokerRequest>(requestText, JsonOptions);
             response = request is null || !request.IsValid()
                 ? BrokerResponse.Invalid(request?.RequestId)
-                : await ExecuteAsync(request);
+                : await ExecuteAsync(request).ConfigureAwait(false);
         }
         catch
         {
             response = BrokerResponse.Unavailable();
         }
 
-        await Console.Out.WriteAsync(JsonSerializer.Serialize(response, JsonOptions));
+        await Console.Out.WriteAsync(JsonSerializer.Serialize(response, JsonOptions))
+            .ConfigureAwait(false);
         return 0;
     }
 
@@ -47,7 +48,7 @@ internal static class Program
         var buffer = new char[1024];
         while (true)
         {
-            var count = await Console.In.ReadAsync(buffer);
+            var count = await Console.In.ReadAsync(buffer).ConfigureAwait(false);
             if (count == 0)
             {
                 return result.ToString();
@@ -70,17 +71,19 @@ internal static class Program
                 .WithDefaultRedirectUri()
                 .WithBroker(new BrokerOptions(BrokerOptions.OperatingSystems.Windows))
                 .Build();
-            var cache = await CreateProtectedCacheAsync(request);
+            var cache = await CreateProtectedCacheAsync(request).ConfigureAwait(false);
             cache.RegisterCache(application.UserTokenCache);
 
             return request.Operation switch
             {
                 BrokerOperation.AcquireTokenSilent =>
-                    await AcquireTokenSilentAsync(application, request),
+                    await AcquireTokenSilentAsync(application, request).ConfigureAwait(false),
                 BrokerOperation.SignInInteractively =>
-                    await SignInInteractivelyAsync(application, request),
-                BrokerOperation.SignOut => await SignOutAsync(application, request),
-                BrokerOperation.GetStatus => await GetStatusAsync(application, request),
+                    await SignInInteractivelyAsync(application, request).ConfigureAwait(false),
+                BrokerOperation.SignOut =>
+                    await SignOutAsync(application, request).ConfigureAwait(false),
+                BrokerOperation.GetStatus =>
+                    await GetStatusAsync(application, request).ConfigureAwait(false),
                 _ => BrokerResponse.Invalid(request.RequestId),
             };
         }
@@ -112,14 +115,14 @@ internal static class Program
                 $"msal-{cacheKey[..24]}.bin",
                 root)
             .Build();
-        return await MsalCacheHelper.CreateAsync(storage);
+        return await MsalCacheHelper.CreateAsync(storage).ConfigureAwait(false);
     }
 
     private static async Task<BrokerResponse> AcquireTokenSilentAsync(
         IPublicClientApplication application,
         BrokerRequest request)
     {
-        var accounts = (await application.GetAccountsAsync()).ToArray();
+        var accounts = (await application.GetAccountsAsync().ConfigureAwait(false)).ToArray();
         if (accounts.Length > 1)
         {
             return BrokerResponse.InteractionRequired(request.RequestId);
@@ -131,7 +134,8 @@ internal static class Program
         }
         var result = await application
             .AcquireTokenSilent([request.ApiScope], account)
-            .ExecuteAsync();
+            .ExecuteAsync()
+            .ConfigureAwait(false);
         return BrokerResponse.Token(request, result);
     }
 
@@ -139,9 +143,9 @@ internal static class Program
         IPublicClientApplication application,
         BrokerRequest request)
     {
-        foreach (var account in await application.GetAccountsAsync())
+        foreach (var account in await application.GetAccountsAsync().ConfigureAwait(false))
         {
-            await application.RemoveAsync(account);
+            await application.RemoveAsync(account).ConfigureAwait(false);
         }
 
         var acquisition = application
@@ -152,7 +156,7 @@ internal static class Program
             acquisition = acquisition.WithParentActivityOrWindow(
                 new IntPtr(checked((long)request.ParentWindowHandle.Value)));
         }
-        var result = await acquisition.ExecuteAsync();
+        var result = await acquisition.ExecuteAsync().ConfigureAwait(false);
         return BrokerResponse.SignedIn(request, result);
     }
 
@@ -160,9 +164,9 @@ internal static class Program
         IPublicClientApplication application,
         BrokerRequest request)
     {
-        foreach (var account in await application.GetAccountsAsync())
+        foreach (var account in await application.GetAccountsAsync().ConfigureAwait(false))
         {
-            await application.RemoveAsync(account);
+            await application.RemoveAsync(account).ConfigureAwait(false);
         }
         return BrokerResponse.SignedOut(request.RequestId);
     }
@@ -171,7 +175,7 @@ internal static class Program
         IPublicClientApplication application,
         BrokerRequest request)
     {
-        var accounts = await application.GetAccountsAsync();
+        var accounts = await application.GetAccountsAsync().ConfigureAwait(false);
         var accountList = accounts.ToArray();
         if (accountList.Length > 1)
         {

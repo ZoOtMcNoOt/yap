@@ -148,13 +148,15 @@ const identityCandidateIds = [
   "frontend.unit",
   "frontend.production-build",
   "frontend.chromium-runtime",
-  "frontend.identity-access-workflows",
+  "frontend.browser-workflows",
   "native.format",
   "native.clippy",
   "native.tests",
   "native.server-connector",
+  "native.authenticated-server-connector",
   "native.windows-dependency-boundary",
   "native.dependency-audit",
+  "desktop.dotnet-dependency-audit",
   "desktop.identity-broker",
   "desktop.wdio-build",
   "desktop.required-wdio",
@@ -288,21 +290,48 @@ const exactCommands = {
 };
 const identityExactCommands = {
   ...exactCommands,
-  "frontend.identity-access-workflows": ["pnpm", "test:e2e"],
+  "native.authenticated-server-connector": [
+    "pwsh.exe",
+    "-NoProfile",
+    "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "./verification/test-authenticated-server-connector.ps1",
+  ],
+  "desktop.dotnet-dependency-audit": [
+    "pwsh.exe",
+    "-NoProfile",
+    "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "./verification/audit-dotnet-dependencies.ps1",
+  ],
   "desktop.identity-broker": ["pnpm", "build:identity"],
 };
-delete identityExactCommands["frontend.browser-workflows"];
 
-function createReceipt(scope) {
-  const cells = scope === "candidate" ? manifest.candidateCells : manifest.hostedClosureCells;
+function createReceipt(
+  scope,
+  {
+    gateManifest = manifest,
+    gateManifestSha256 = manifestSha256,
+    admissionSha256 = null,
+  } = {},
+) {
+  const cells = scope === "candidate"
+    ? gateManifest.candidateCells
+    : gateManifest.hostedClosureCells;
+  const bindsAdmission = gateManifest.gateId === "integrated-identity-access";
   return {
-    schemaVersion: 2,
-    gateId: manifest.gateId,
+    schemaVersion: bindsAdmission ? 3 : 2,
+    gateId: gateManifest.gateId,
     scope,
     checkedHead,
     candidateHead: checkedHead,
     candidateReceiptSha256: scope === "candidate" ? null : "e".repeat(64),
-    manifestSha256,
+    manifestSha256: gateManifestSha256,
+    ...(bindsAdmission ? { admissionSha256 } : {}),
     status: "passed",
     startedAt,
     finishedAt,
@@ -348,6 +377,75 @@ test("identity and access gate freezes its complete behavior inventory", () => {
       .map(({ id, command }) => [id, command]),
   );
   assert.deepEqual(commandCells, identityExactCommands);
+});
+
+test("identity and access receipts bind the canonical admission", () => {
+  const admissionSha256 = "9".repeat(64);
+  const identityManifestSha256 =
+    integratedGateManifestSha256(identityManifestBytes);
+  const receipt = createReceipt("candidate", {
+    gateManifest: identityManifest,
+    gateManifestSha256: identityManifestSha256,
+    admissionSha256,
+  });
+  assert.doesNotThrow(() => validateIntegratedGateReceipt({
+    receipt,
+    manifest: identityManifest,
+    manifestSha256: identityManifestSha256,
+    expectedHead: checkedHead,
+    expectedAdmissionSha256: admissionSha256,
+    expectedScope: "candidate",
+  }));
+  assert.throws(() => validateIntegratedGateReceipt({
+    receipt,
+    manifest: identityManifest,
+    manifestSha256: identityManifestSha256,
+    expectedHead: checkedHead,
+    expectedAdmissionSha256: "8".repeat(64),
+    expectedScope: "candidate",
+  }), /admission identity does not match/);
+
+  const hosted = buildHostedClosureReceipt({
+    manifest: identityManifest,
+    manifestSha256: identityManifestSha256,
+    checkedHead,
+    candidateHead: checkedHead,
+    candidateReceiptSha256: "e".repeat(64),
+    admissionSha256,
+    selected: identityManifest.hostedClosureCells.map((cell, index) => ({
+      cell,
+      run: {
+        databaseId: 20_000 + index,
+        headSha: checkedHead,
+        workflowName: cell.workflow,
+        attempt: 1,
+        status: "completed",
+        conclusion: "success",
+        createdAt: startedAt,
+        updatedAt: finishedAt,
+        url: `https://example.invalid/run/${index}`,
+      },
+      job: {
+        databaseId: 30_000 + index,
+        name: cell.job,
+        status: "completed",
+        conclusion: "success",
+        startedAt,
+        completedAt: finishedAt,
+        url: `https://example.invalid/job/${index}`,
+      },
+    })),
+  });
+  assert.doesNotThrow(() => validateIntegratedGateReceipt({
+    receipt: hosted,
+    manifest: identityManifest,
+    manifestSha256: identityManifestSha256,
+    expectedHead: checkedHead,
+    expectedCandidateHead: checkedHead,
+    expectedCandidateReceiptSha256: "e".repeat(64),
+    expectedAdmissionSha256: admissionSha256,
+    expectedScope: "hosted-closure",
+  }));
 });
 
 test("historical Phase 6 gate identity and bytes remain frozen", () => {
@@ -647,20 +745,30 @@ test("portable Python gate rejects project and uv.lock drift", () => {
   assert.doesNotMatch(source, /'--frozen'/);
 });
 
-test("integrated gate reserves one deterministic attempt and refuses a retry", () => {
+test("integrated gate reservation authority rejects same-root and cross-root retries", () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-attempt-");
+  const otherRoot = createCanonicalTemporaryDirectory("yap-gate-attempt-other-");
+  const reservationAuthorityRoot =
+    createCanonicalTemporaryDirectory("yap-gate-attempt-authority-");
   try {
     const input = {
       evidenceRoot: root,
       gateId: manifest.gateId,
       checkedHead,
       manifestSha256,
+      reservationAuthorityRoot,
     };
     const first = reserveIntegratedGateAttemptDirectory(input);
     assert.ok(first.startsWith(root));
     assert.throws(() => reserveIntegratedGateAttemptDirectory(input));
+    assert.throws(() => reserveIntegratedGateAttemptDirectory({
+      ...input,
+      evidenceRoot: otherRoot,
+    }));
   } finally {
     rmSync(root, { recursive: true, force: true });
+    rmSync(otherRoot, { recursive: true, force: true });
+    rmSync(reservationAuthorityRoot, { recursive: true, force: true });
   }
 });
 

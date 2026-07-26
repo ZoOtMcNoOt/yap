@@ -25,7 +25,7 @@ const MANIFEST_KEYS = new Set([
   "candidateCells",
   "hostedClosureCells",
 ]);
-const RECEIPT_KEYS = new Set([
+const RECEIPT_KEYS_V2 = new Set([
   "schemaVersion",
   "gateId",
   "scope",
@@ -37,6 +37,10 @@ const RECEIPT_KEYS = new Set([
   "startedAt",
   "finishedAt",
   "children",
+]);
+const RECEIPT_KEYS_V3 = new Set([
+  ...RECEIPT_KEYS_V2,
+  "admissionSha256",
 ]);
 const CHILD_KEYS = new Set([
   "id",
@@ -163,13 +167,32 @@ export function validateIntegratedGateReceipt({
   expectedHead,
   expectedCandidateHead = expectedHead,
   expectedCandidateReceiptSha256 = null,
+  expectedAdmissionSha256 = null,
   expectedScope,
 }) {
   validateIntegratedGateManifest(manifest);
   requireCondition(receipt && typeof receipt === "object" && !Array.isArray(receipt),
     "Integrated gate receipt must be an object.");
-  requireExactKeys(receipt, RECEIPT_KEYS, "Integrated gate receipt");
-  requireCondition(receipt.schemaVersion === 2, "Integrated gate receipt schemaVersion must be 2.");
+  requireCondition(
+    receipt.schemaVersion === 2 || receipt.schemaVersion === 3,
+    "Integrated gate receipt schemaVersion must be 2 or 3.",
+  );
+  requireExactKeys(
+    receipt,
+    receipt.schemaVersion === 3 ? RECEIPT_KEYS_V3 : RECEIPT_KEYS_V2,
+    "Integrated gate receipt",
+  );
+  requireCondition(
+    manifest.gateId !== "integrated-identity-access" || receipt.schemaVersion === 3,
+    "Identity and access receipts must bind their admission.",
+  );
+  if (receipt.schemaVersion === 3) {
+    requireCondition(
+      SHA256.test(expectedAdmissionSha256 ?? "")
+        && receipt.admissionSha256 === expectedAdmissionSha256,
+      "Integrated gate receipt admission identity does not match.",
+    );
+  }
   requireCondition(receipt.gateId === manifest.gateId, "Integrated gate receipt has the wrong gate id.");
   requireCondition(RECEIPT_SCOPES[expectedScope], "Integrated gate receipt scope is unsupported.");
   requireCondition(receipt.scope === expectedScope, "Integrated gate receipt has the wrong scope.");
@@ -237,6 +260,7 @@ export function validateIntegratedGateReceipt({
     candidateHead: receipt.candidateHead,
     checkedHead: receipt.checkedHead,
     childCount: receipt.children.length,
+    admissionSha256: receipt.admissionSha256 ?? null,
     manifestSha256: receipt.manifestSha256,
     scope: receipt.scope,
   });
@@ -283,6 +307,7 @@ function runCli() {
   const expectedCandidateHead = values.get("candidate-head") ?? expectedHead;
   const expectedCandidateReceiptSha256 =
     values.get("candidate-receipt-sha256") ?? null;
+  const expectedAdmissionSha256 = values.get("admission-sha256") ?? null;
   const expectedScope = values.get("scope");
   requireCondition(receiptPath, "--receipt is required.");
   const receipt = readBoundedJsonArtifact(
@@ -297,6 +322,7 @@ function runCli() {
     expectedHead,
     expectedCandidateHead,
     expectedCandidateReceiptSha256,
+    expectedAdmissionSha256,
     expectedScope,
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

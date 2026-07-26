@@ -82,7 +82,7 @@
       ]
     },
     {
-      "id": "frontend.identity-access-workflows",
+      "id": "frontend.browser-workflows",
       "executor": "command",
       "cwd": "desktop",
       "command": [
@@ -140,6 +140,20 @@
       ]
     },
     {
+      "id": "native.authenticated-server-connector",
+      "executor": "command",
+      "cwd": ".",
+      "command": [
+        "pwsh.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./verification/test-authenticated-server-connector.ps1"
+      ]
+    },
+    {
       "id": "native.windows-dependency-boundary",
       "executor": "command",
       "cwd": ".",
@@ -165,6 +179,20 @@
         "Bypass",
         "-File",
         "./verification/audit-windows-rust-dependencies.ps1"
+      ]
+    },
+    {
+      "id": "desktop.dotnet-dependency-audit",
+      "executor": "command",
+      "cwd": ".",
+      "command": [
+        "pwsh.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./verification/audit-dotnet-dependencies.ps1"
       ]
     },
     {

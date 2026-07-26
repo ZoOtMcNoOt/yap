@@ -7,7 +7,7 @@
     "cargoTomlSha256": "d9e66f9c548c05ffbbea4c1846874210deab670b21a3d10d709ad56eedad8a39",
     "cargoLockSha256": "7f8594bc98695989265612f0ea2103bac0dfc3902d9fc0b74471a2afbea192b6",
     "dotnetGlobalJsonSha256": "248c17bb46fd7ff31402c62dc1870e90005fc1d9bcbc9a31cefcc78691149d76",
-    "dotnetProjectSha256": "e8284f68a62cfb15a739a565c1db0b5c3e62be2eee686cd858de34825fb4a885",
+    "dotnetProjectSha256": "6252bd6a5112b273bffadabe8c2a1ca48dfabcceb690206ed64c4a47215fd35c",
     "dotnetPackagesLockSha256": "22731e848000fddbecb50a0bec9b92eaefa8218e4df830c2774c28f211cc67f6",
     "noticeExemptionsSha256": "02214522c9906f4cb767b6c49681b855fb5012f8f7a7b04dfe4e41a27866f4a0"
   },

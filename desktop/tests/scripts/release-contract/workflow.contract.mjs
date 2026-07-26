@@ -81,6 +81,24 @@ test("CI and smoke workflows run the explicit release contract on supported trig
   assert.equal(smoke.on.release, undefined);
 });
 
+test("native identity CI publishes and audits the locked NuGet graph", async () => {
+  const ci = await readWorkflow(".github/workflows/ci.yml");
+  const { steps } = workflowSteps(ci, "identity-broker");
+
+  assert.ok(
+    steps.some((step) => step.run === "./tests/scripts/build-identity-broker.ps1"),
+    "identity CI must publish and smoke the pinned broker",
+  );
+  assert.ok(
+    steps.some(
+      (step) =>
+        step.run === "./verification/audit-dotnet-dependencies.ps1"
+        && step["working-directory"] === "${{ github.workspace }}",
+    ),
+    "identity CI must audit the locked transitive NuGet graph",
+  );
+});
+
 test("CI workflow token defaults to read-only repository contents", async () => {
   const ci = await readWorkflow(".github/workflows/ci.yml");
   assert.deepEqual(
