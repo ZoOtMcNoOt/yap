@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-07-25
+**As of:** 2026-07-26
 
 **Current work:** Post-Phase-6 codebase ownership and maintainability review on
 `chore/codebase-maintainability-review`.
@@ -29,7 +29,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
-| Checkpoint B | Active; repaired candidate pending | The [codebase ownership and maintainability review](plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md) adds no Phase 7 functionality. Exact executable candidate `f3f2f910c2340bbab016f98c51438414415b7206` passed its one-time 31-child checkpoint matrix, but final antagonistic read-back invalidated it as merge authority. The lifecycle, ownership, accessibility, notice, activation, and evidence-identity blockers are repaired under focused verification; final repaired-head read-back and one new exact-candidate gate remain. |
+| Checkpoint B | Candidate gated; PR closure pending | The [codebase ownership and maintainability review](plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md) adds no Phase 7 functionality. Exact repaired candidate `66267af0abf38af0a6b8d3d2fac76543673c0331` passed its single admitted 31-child local/native/server/release/private-runtime matrix and independent receipt validation with exact teardown. Three final antagonistic read-backs found no P0-P2 issue. Hosted exact-head closure, PR review, and merge remain. |
 | Phase 7: identity/access | Planned | Entra/MSAL, token-derived ownership, purpose grants, and authorization remain unimplemented. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
@@ -515,10 +515,8 @@ is the Checkpoint B delivery authority. The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Complete the three-agent read-back of the focused Checkpoint B repairs.
-2. Freeze the repaired exact candidate and consume its complete applicable
-   matrix once, then open the focused PR and require first-attempt hosted closure.
-3. Merge only the green checked head, then begin Phase 7 on a separate branch.
+1. Open the focused Checkpoint B PR and require first-attempt hosted closure.
+2. Merge only the green checked head, then begin Phase 7 on a separate branch.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
 point. Checkpoint B reviews broadly but changes narrowly before that integrated

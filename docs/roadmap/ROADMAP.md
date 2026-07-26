@@ -97,11 +97,10 @@ exactly three completed antagonistic reviews, then applies the same ownership,
 comprehensibility, decomposition, maintainability, resource, provenance, and
 documentation standard as post-Phase-5 Checkpoint A. It adds no Phase 7 product
 functionality. Exact executable candidate
-`f3f2f910c2340bbab016f98c51438414415b7206` passed its one-time 31-child
-checkpoint matrix, but final antagonistic read-back found concrete blockers and
-invalidated it as merge authority. The narrow repairs now pass focused
-verification; final repaired-head read-back, one exact-candidate gate, hosted
-exact-head closure, review, and merge remain.
+`66267af0abf38af0a6b8d3d2fac76543673c0331` passed its single admitted
+31-child checkpoint matrix and independent receipt validation with exact
+teardown after the narrow repairs and three final antagonistic read-backs.
+Hosted exact-head closure, review, and merge remain.
 
 Phase 7 follows the same cadence: independently merge the phase, run a separate
 post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that

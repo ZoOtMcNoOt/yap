@@ -1,7 +1,7 @@
 # ADR implementation status
 
 **Status:** Living, non-normative implementation audit
-**As of:** 2026-07-25; Phases 3–6 and Architecture Checkpoint A are merged and
+**As of:** 2026-07-26; Phases 3–6 and Architecture Checkpoint A are merged and
 their checked-head evidence remains recorded below. Exact Phase 6
 executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its frozen
 30-child local/native/server/private-runtime gate. Its target-client evidence
@@ -23,11 +23,10 @@ first attempt on final reviewed head
 `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as
 `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 Post-Phase-6 Checkpoint B changes no ADR score. Its exact executable candidate
-`f3f2f910c2340bbab016f98c51438414415b7206` passed the one-time
-31-child checkpoint matrix, but final antagonistic read-back found concrete
-blockers and invalidated it as merge authority. The narrow repairs pass focused
-verification; final repaired-head read-back, one exact candidate gate, hosted
-exact-head closure, review, and merge remain.
+`66267af0abf38af0a6b8d3d2fac76543673c0331` passed the single admitted
+31-child checkpoint matrix and independent receipt validation with exact
+teardown after the narrow repairs and three-agent antagonistic read-back.
+Hosted exact-head closure, review, and merge remain.
 **Authority:** ADRs define decisions; current code and executable tests define implementation truth.
 
 An ADR can be accepted while its implementation score is zero. Superseded ADRs remain in the table for historical completeness, but a low score on a superseded decision is not backlog authorization.

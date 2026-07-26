@@ -107,7 +107,7 @@ GPU pressure, model teardown, private evaluation evidence, and unavailable timin
       roadmap, runbooks, active/completed plans, and evidence classifications
       with the refactored executable system.
 - [x] Run focused verification throughout each affected slice.
-- [ ] Freeze one merge-authority checkpoint candidate and run the complete applicable local,
+- [x] Freeze one merge-authority checkpoint candidate and run the complete applicable local,
       native, server, release, disposable-Windows, and GB10 matrix exactly once.
 - [ ] Open a focused PR, require green exact-head hosted checks and review, and
       merge only the checked SHA.
@@ -305,6 +305,23 @@ admission must not be resumed, retried, or relabeled. A successor must make
 focus-loss collapse explicit, prove that transition directly, refresh the
 reviewed local provenance hash, and repeat every private lane and command child
 from fresh evidence.
+
+Exact repaired candidate
+`66267af0abf38af0a6b8d3d2fac76543673c0331` passed its single admitted
+checkpoint gate. Independent validation bound that exact head, all 31 children,
+and frozen manifest SHA-256
+`2641f613a2a8dfbf0d2e1c7989b37c3af7e85aab732c3ae20381b52c1d144ac2`;
+the private candidate receipt has SHA-256
+`21977f50ccf18ff9a342575f2f8f1ab8162951da3ebad5bf86c1d7f7eb2254b7`.
+The target-client, sequential GB10, connected desktop/private-server, exact
+teardown, frontend, native, required desktop WDIO, Python 3.12, and Ruff cells
+all passed. The required desktop suite directly proved that keyboard focus
+retains the expanded overlay through pointer exit and that focus transfer back
+to the main window then collapses it. Independent final read-back found no
+retained local or remote process, provider container, private network,
+listener, or transient service. Private audio, transcripts, raw metrics,
+process ledgers, host paths, logs, and receipts remain outside Git and hosted
+artifacts. Hosted exact-head closure, PR review, and merge remain pending.
 
 ## Phase 7 cadence
 

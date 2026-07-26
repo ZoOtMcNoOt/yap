@@ -58,6 +58,10 @@ View variants, waveform, reduced-motion behavior, and presentation timing live
 under `components/live/`; native code owns window identity, bounds, placement,
 visible region, and lifecycle. The renderer reads the OS reduced-motion
 preference synchronously for its initial state before subscribing to changes.
+Pointer hover may expand the idle island, while keyboard focus inside the
+toolbar suppresses pointer-exit collapse. Focus loss schedules the bounded idle
+collapse; pointer exit does the same only when focus is already outside the
+toolbar. Native bounds stay synchronized to the resulting surface.
 
 ### Tauri/native boundary
 
