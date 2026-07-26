@@ -6,9 +6,10 @@ of the completed Phase 6 preprocessing and language-routing gate.
 
 The authoritative manifest is
 [`verification/integrated-product-checkpoint-gate.json`](../../verification/integrated-product-checkpoint-gate.json).
-The runner uses that manifest by default and freezes its exact bytes, checked
-Git head, private-plan bytes, one-attempt token, command logs, private evidence,
-and child definitions into the admission and receipt.
+The runner requires that manifest to be selected explicitly for both admission
+and completion, and freezes its exact bytes, checked Git head, private-plan
+bytes, one-attempt token, command logs, private evidence, and child definitions
+into the admission and receipt.
 
 ## Identity boundary
 
@@ -35,6 +36,7 @@ $checkedHead = (git rev-parse HEAD).Trim()
 node .\verification\integrated-gate-runner.mjs begin `
   --checked-head $checkedHead `
   --evidence-root <existing-private-gate-root> `
+  --manifest .\verification\integrated-product-checkpoint-gate.json `
   --private-plan <new-private-plan.json>
 ```
 
@@ -51,7 +53,8 @@ receipt only when every exact child passes:
 ```powershell
 node .\verification\integrated-gate-runner.mjs complete `
   --admission <private-admission.json> `
-  --attempt-token <admitted-token>
+  --attempt-token <admitted-token> `
+  --manifest .\verification\integrated-product-checkpoint-gate.json
 ```
 
 Validate the result independently against the behavior-named manifest:

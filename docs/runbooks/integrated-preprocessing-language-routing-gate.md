@@ -322,6 +322,7 @@ Admit the sole attempt from the clean frozen checkout:
 node .\verification\integrated-gate-runner.mjs begin `
   --checked-head <full-lowercase-git-sha> `
   --evidence-root <existing-private-gate-root> `
+  --manifest .\verification\integrated-preprocessing-language-routing-gate.json `
   --private-plan <private-plan.json>
 ```
 
@@ -394,7 +395,8 @@ private artifact and final local teardown check also passes:
 ```powershell
 node .\verification\integrated-gate-runner.mjs complete `
   --admission <private-admission.json> `
-  --attempt-token <admitted-token>
+  --attempt-token <admitted-token> `
+  --manifest .\verification\integrated-preprocessing-language-routing-gate.json
 ```
 
 The resulting receipt can be independently checked without exposing its

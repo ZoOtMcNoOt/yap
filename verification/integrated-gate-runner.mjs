@@ -43,6 +43,16 @@ const LEGACY_MANIFEST_PATH = path.join(
   RUNNER_DIRECTORY,
   "integrated-preprocessing-language-routing-gate.json",
 );
+const CANONICAL_MANIFEST_CONTRACTS = Object.freeze([
+  Object.freeze({
+    path: MANIFEST_PATH,
+    gateId: "integrated-product-checkpoint",
+  }),
+  Object.freeze({
+    path: LEGACY_MANIFEST_PATH,
+    gateId: "integrated-preprocessing-language-routing",
+  }),
+]);
 const INTEGRATED_GATE_IDS = new Set([
   "integrated-product-checkpoint",
   "integrated-preprocessing-language-routing",
@@ -245,35 +255,76 @@ function verifiedAdmissionPaths(admissionFile, admission) {
   });
 }
 
-function loadFrozenInputs({ manifestPath, privatePlanPath, expectedHead }) {
-  const manifestFile = readExactJson(
-    manifestPath,
-    "Integrated gate manifest",
-    INTEGRATED_GATE_BYTE_LIMITS.gateManifestBytes,
+export function loadIntegratedGateManifestSelection(manifestPath) {
+  requireCondition(
+    typeof manifestPath === "string" && manifestPath.length > 0,
+    "An explicit integrated gate manifest is required.",
   );
-  const canonicalManifestContracts = [
-    [MANIFEST_PATH, "integrated-product-checkpoint"],
-    [LEGACY_MANIFEST_PATH, "integrated-preprocessing-language-routing"],
-  ].map(([candidate, gateId]) => ({
-    gateId,
+  const selectedPath = normalizedRealPath(
+    path.resolve(manifestPath),
+    "Integrated gate manifest",
+    "file",
+  );
+  const canonicalManifestContracts = CANONICAL_MANIFEST_CONTRACTS.map((contract) => ({
+    gateId: contract.gateId,
     path: normalizedRealPath(
-      candidate,
+      contract.path,
       "Canonical integrated gate manifest",
       "file",
-    ).toLowerCase(),
+    ),
   }));
   const manifestContract = canonicalManifestContracts.find(
-    ({ path: candidate }) => candidate === manifestFile.path.toLowerCase(),
+    ({ path: candidate }) => samePath(candidate, selectedPath),
   );
   requireCondition(
     manifestContract,
     "The runner accepts only a repository-owned integrated gate manifest.",
+  );
+  const manifestFile = readBoundedJsonArtifact(
+    selectedPath,
+    "Integrated gate manifest",
+    INTEGRATED_GATE_BYTE_LIMITS.gateManifestBytes,
   );
   const manifest = validateIntegratedGateManifest(manifestFile.value);
   requireCondition(
     manifest.gateId === manifestContract.gateId,
     "The gate manifest path and behavior identity do not match.",
   );
+  return Object.freeze({
+    manifest,
+    manifestFile,
+    manifestSha256: integratedGateManifestSha256(manifestFile.bytes),
+  });
+}
+
+export function assertIntegratedGateManifestMatchesAdmission(
+  admission,
+  manifestSelection,
+) {
+  requireCondition(
+    typeof admission?.manifestPath === "string"
+      && typeof manifestSelection?.manifestFile?.path === "string"
+      && samePath(admission.manifestPath, manifestSelection.manifestFile.path),
+    "Selected gate manifest does not match the admitted manifest.",
+  );
+  requireCondition(
+    admission.gateId === manifestSelection.manifest.gateId,
+    "Selected gate identity does not match the admitted gate.",
+  );
+  requireCondition(
+    admission.manifestSha256 === manifestSelection.manifestSha256,
+    "Selected gate manifest bytes do not match the admitted manifest.",
+  );
+}
+
+function loadFrozenInputs({
+  manifestPath,
+  manifestSelection,
+  privatePlanPath,
+  expectedHead,
+}) {
+  const selectedManifest = manifestSelection
+    ?? loadIntegratedGateManifestSelection(manifestPath);
   const privatePlanFile = readExactJson(
     privatePlanPath,
     "Private evidence plan",
@@ -285,8 +336,9 @@ function loadFrozenInputs({ manifestPath, privatePlanPath, expectedHead }) {
     repositoryRoot: REPOSITORY_ROOT,
   });
   return {
-    manifest,
-    manifestFile,
+    manifest: selectedManifest.manifest,
+    manifestFile: selectedManifest.manifestFile,
+    manifestSha256: selectedManifest.manifestSha256,
     privatePlan,
     privatePlanFile,
   };
@@ -295,14 +347,15 @@ function loadFrozenInputs({ manifestPath, privatePlanPath, expectedHead }) {
 export function admitIntegratedGateAttempt({
   checkedHead,
   evidenceRoot,
-  manifestPath = MANIFEST_PATH,
+  manifestPath,
   privatePlanPath,
 }) {
+  const manifestSelection = loadIntegratedGateManifestSelection(manifestPath);
   assertExactCleanGitHead(checkedHead);
   const root = normalizedRealPath(path.resolve(evidenceRoot), "Private gate root", "directory");
   requireOutsideRepository(root, "Private gate root");
   const frozen = loadFrozenInputs({
-    manifestPath,
+    manifestSelection,
     privatePlanPath,
     expectedHead: checkedHead,
   });
@@ -312,7 +365,7 @@ export function admitIntegratedGateAttempt({
     requireDestinationsAbsent: true,
   });
 
-  const manifestSha256 = integratedGateManifestSha256(frozen.manifestFile.bytes);
+  const manifestSha256 = frozen.manifestSha256;
   const runDirectory = reserveIntegratedGateAttemptDirectory({
     evidenceRoot: root,
     gateId: frozen.manifest.gateId,
@@ -467,6 +520,7 @@ export function integratedGateFailureRecord(admission, failure) {
 export async function completeIntegratedGateAttempt({
   admissionPath,
   attemptToken,
+  manifestPath,
 }) {
   const admissionFile = readExactJson(
     admissionPath,
@@ -476,6 +530,8 @@ export async function completeIntegratedGateAttempt({
   requireOutsideRepository(admissionFile.path, "Gate admission");
   const admission = validateAdmission(admissionFile.value);
   requireCondition(admission.attemptToken === attemptToken, "Attempt token does not match.");
+  const manifestSelection = loadIntegratedGateManifestSelection(manifestPath);
+  assertIntegratedGateManifestMatchesAdmission(admission, manifestSelection);
   const admittedPaths = verifiedAdmissionPaths(admissionFile, admission);
   const executionAdmission = Object.freeze({
     ...admission,
@@ -493,7 +549,7 @@ export async function completeIntegratedGateAttempt({
   );
 
   const frozen = loadFrozenInputs({
-    manifestPath: admission.manifestPath,
+    manifestSelection,
     privatePlanPath: admission.privatePlanPath,
     expectedHead: admission.checkedHead,
   });
@@ -694,28 +750,54 @@ function parseArguments(argv) {
   return { operation, values };
 }
 
-async function runCli() {
-  const { operation, values } = parseArguments(process.argv.slice(2));
+export function parseIntegratedGateRunnerInvocation(argv) {
+  const { operation, values } = parseArguments(argv);
+  const requiredArguments = operation === "begin"
+    ? ["checked-head", "evidence-root", "manifest", "private-plan"]
+    : operation === "complete"
+      ? ["admission", "attempt-token", "manifest"]
+      : null;
+  requireCondition(requiredArguments, "Operation must be begin or complete.");
+  const hasExactArguments = values.size === requiredArguments.length
+    && requiredArguments.every((name) => values.get(name));
+  requireCondition(
+    hasExactArguments,
+    `${operation} requires exactly ${requiredArguments.map((name) => `--${name}`).join(", ")}.`,
+  );
   if (operation === "begin") {
-    const checkedHead = values.get("checked-head");
-    const evidenceRoot = values.get("evidence-root");
-    const privatePlanPath = values.get("private-plan");
-    requireCondition(checkedHead && evidenceRoot && privatePlanPath,
-      "begin requires --checked-head, --evidence-root, and --private-plan.");
+    return Object.freeze({
+      operation,
+      checkedHead: values.get("checked-head"),
+      evidenceRoot: values.get("evidence-root"),
+      manifestPath: values.get("manifest"),
+      privatePlanPath: values.get("private-plan"),
+    });
+  }
+  return Object.freeze({
+    operation,
+    admissionPath: values.get("admission"),
+    attemptToken: values.get("attempt-token"),
+    manifestPath: values.get("manifest"),
+  });
+}
+
+async function runCli() {
+  const invocation = parseIntegratedGateRunnerInvocation(process.argv.slice(2));
+  if (invocation.operation === "begin") {
     const admission = admitIntegratedGateAttempt({
-      checkedHead,
-      evidenceRoot,
-      privatePlanPath,
+      checkedHead: invocation.checkedHead,
+      evidenceRoot: invocation.evidenceRoot,
+      manifestPath: invocation.manifestPath,
+      privatePlanPath: invocation.privatePlanPath,
     });
     process.stdout.write(`${JSON.stringify(admission, null, 2)}\n`);
     return;
   }
-  requireCondition(operation === "complete", "Operation must be begin or complete.");
-  const admissionPath = values.get("admission");
-  const attemptToken = values.get("attempt-token");
-  requireCondition(admissionPath && attemptToken,
-    "complete requires --admission and --attempt-token.");
-  const result = await completeIntegratedGateAttempt({ admissionPath, attemptToken });
+  const result = await completeIntegratedGateAttempt({
+    admissionPath: invocation.admissionPath,
+    attemptToken: invocation.attemptToken,
+    manifestPath: invocation.manifestPath,
+  });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
