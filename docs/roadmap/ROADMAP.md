@@ -128,8 +128,10 @@ knowledge permission compilation remains Phase 9.
 
 The active branch now has focused executable evidence for the server
 resource/ownership boundary and the bounded native MSAL.NET/WAM bridge. That is
-implementation progress, not phase completion: documentation reconciliation,
-exactly three adversarial reviews, the one admitted complete matrix,
+implementation progress, not phase completion: documentation reconciliation
+and exactly three adversarial reviews are complete, with all accepted P0-P2
+findings closed on executable repair head
+`88de4aa66a5e16ff2b0c5e7eb4b21d7333b61d7f`. The one admitted complete matrix,
 first-attempt hosted closure, and merge remain required. Real enterprise Entra
 and WAM policy conformance remains an IT-authorized follow-up.
 

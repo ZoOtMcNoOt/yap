@@ -1,7 +1,8 @@
 # Current Architecture
 
 This document describes the merged executable Phase 1–6 system plus the focused
-Phase 7 implementation currently under review: provider
+Phase 7 implementation with three-review closure complete and its one-time gate
+pending: provider
 catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
 VAD, local language spans, verify-only AmberNet batch preflight, and
