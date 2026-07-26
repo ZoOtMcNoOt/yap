@@ -1,4 +1,5 @@
 mod app;
+mod atomic_file;
 mod atomic_text;
 pub mod audio;
 mod authorization;

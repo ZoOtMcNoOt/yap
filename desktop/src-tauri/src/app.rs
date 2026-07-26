@@ -10,6 +10,7 @@ use crate::{authorization, commands, exclusive_file_lease, jobs, live, paths, ru
 const INSTANCE_LEASE_FILE: &str = ".yap-instance.lock";
 const INSTANCE_ACTIVATION_REQUEST_FILE: &str = ".yap-instance-activation.request";
 const INSTANCE_ACTIVATION_REQUEST: &[u8] = b"yap-instance-activation-v1\n";
+const INSTANCE_ACTIVATION_TEMP_ATTEMPTS: u8 = 32;
 const INSTANCE_ACTIVATION_QUARANTINE_ATTEMPTS: u8 = 32;
 static ACTIVATION_REQUEST_ERROR_LOGGED: AtomicBool = AtomicBool::new(false);
 
@@ -174,14 +175,35 @@ fn instance_activation_request_path() -> std::path::PathBuf {
     paths::app_data_dir().join(INSTANCE_ACTIVATION_REQUEST_FILE)
 }
 
+enum ActivationRequestPublicationError {
+    NotPublished(std::io::Error),
+    Durability(std::io::Error),
+}
+
+impl ActivationRequestPublicationError {
+    fn into_io_error(self) -> std::io::Error {
+        match self {
+            Self::NotPublished(error) | Self::Durability(error) => error,
+        }
+    }
+}
+
 fn request_existing_instance_activation_at(path: &std::path::Path) -> std::io::Result<()> {
+    request_existing_instance_activation_at_with_before_publish(path, |_| {})
+}
+
+fn request_existing_instance_activation_at_with_before_publish(
+    path: &std::path::Path,
+    mut before_publish: impl FnMut(&std::path::Path),
+) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
     for _ in 0..=1 {
-        match create_activation_request_file(path) {
+        match create_activation_request_file(path, &mut before_publish) {
             Ok(()) => return Ok(()),
-            Err(create_error) => {
+            Err(ActivationRequestPublicationError::Durability(error)) => return Err(error),
+            Err(ActivationRequestPublicationError::NotPublished(create_error)) => {
                 match std::fs::symlink_metadata(path) {
                     Ok(_) => {}
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
@@ -199,29 +221,88 @@ fn request_existing_instance_activation_at(path: &std::path::Path) -> std::io::R
             }
         }
     }
-    create_activation_request_file(path)
+    create_activation_request_file(path, &mut before_publish)
+        .map_err(ActivationRequestPublicationError::into_io_error)
 }
 
-fn create_activation_request_file(path: &std::path::Path) -> std::io::Result<()> {
-    let mut options = std::fs::OpenOptions::new();
-    options.create_new(true).write(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.mode(0o600);
-    }
-    let mut file = options.open(path)?;
-    let result = (|| {
+// Publish only after the complete marker is durable so readers cannot observe
+// or quarantine an in-progress writer handle at the request path.
+fn create_activation_request_file(
+    path: &std::path::Path,
+    before_publish: &mut impl FnMut(&std::path::Path),
+) -> Result<(), ActivationRequestPublicationError> {
+    let (temporary, mut file) = reserve_activation_request_temp_file(path)
+        .map_err(ActivationRequestPublicationError::NotPublished)?;
+    let prepared = (|| {
         file.write_all(INSTANCE_ACTIVATION_REQUEST)?;
         file.flush()?;
         file.sync_all()
     })();
-    if let Err(error) = result {
-        drop(file);
-        let _ = std::fs::remove_file(path);
-        return Err(error);
+    drop(file);
+    if let Err(error) = prepared {
+        return Err(ActivationRequestPublicationError::NotPublished(
+            activation_request_temp_cleanup_error(&temporary, error),
+        ));
     }
-    Ok(())
+    before_publish(&temporary);
+    if let Err(error) = crate::atomic_file::rename_same_directory_no_replace(&temporary, path) {
+        return Err(ActivationRequestPublicationError::NotPublished(
+            activation_request_temp_cleanup_error(&temporary, error),
+        ));
+    }
+    crate::atomic_file::sync_parent_directory(path)
+        .map_err(ActivationRequestPublicationError::Durability)
+}
+
+fn activation_request_temp_cleanup_error(
+    temporary: &std::path::Path,
+    original: std::io::Error,
+) -> std::io::Error {
+    match std::fs::remove_file(temporary) {
+        Ok(()) => original,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => original,
+        Err(error) => error,
+    }
+}
+
+fn reserve_activation_request_temp_file(
+    path: &std::path::Path,
+) -> std::io::Result<(std::path::PathBuf, std::fs::File)> {
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "activation request path has no file name",
+            )
+        })?;
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    for attempt in 0..INSTANCE_ACTIVATION_TEMP_ATTEMPTS {
+        let temporary = path.with_file_name(format!(
+            "{file_name}.pending-{}-{nonce}-{attempt}",
+            std::process::id()
+        ));
+        let mut options = std::fs::OpenOptions::new();
+        options.create_new(true).write(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        match options.open(&temporary) {
+            Ok(file) => return Ok((temporary, file)),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(error) => return Err(error),
+        }
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::AlreadyExists,
+        "could not reserve an activation-request temporary path",
+    ))
 }
 
 fn read_activation_request(path: &std::path::Path) -> std::io::Result<Option<bool>> {
@@ -534,10 +615,15 @@ mod tests {
     use super::{
         acquire_instance_lease_at, exit_request_disposition, instance_lease_startup_message,
         is_allowed_app_navigation, report_activation_request_result,
-        request_existing_instance_activation_at, take_existing_instance_activation_request_at,
-        write_startup_migration_diagnostic, ExitRequestDisposition, INSTANCE_ACTIVATION_REQUEST,
+        request_existing_instance_activation_at,
+        request_existing_instance_activation_at_with_before_publish,
+        take_existing_instance_activation_request_at, write_startup_migration_diagnostic,
+        ExitRequestDisposition, INSTANCE_ACTIVATION_REQUEST,
     };
-    use std::sync::atomic::AtomicBool;
+    use std::{
+        sync::{atomic::AtomicBool, mpsc, Arc, Barrier},
+        time::Duration,
+    };
 
     #[test]
     fn exit_request_requires_semantic_quit_authorization() {
@@ -657,6 +743,108 @@ mod tests {
         );
         assert!(take_existing_instance_activation_request_at(&request).unwrap());
         assert!(!take_existing_instance_activation_request_at(&request).unwrap());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn in_progress_activation_publication_is_invisible_to_the_reader() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-publication-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join("instance-activation.request");
+        let producer_request = request.clone();
+        let (ready_sender, ready_receiver) = mpsc::channel();
+        let (resume_sender, resume_receiver) = mpsc::channel();
+
+        let producer = std::thread::spawn(move || {
+            request_existing_instance_activation_at_with_before_publish(
+                &producer_request,
+                |temporary| {
+                    ready_sender.send(temporary.to_path_buf()).unwrap();
+                    resume_receiver
+                        .recv_timeout(Duration::from_secs(5))
+                        .unwrap();
+                },
+            )
+        });
+
+        let temporary = ready_receiver.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(temporary.is_file());
+        assert_eq!(
+            std::fs::read(&temporary).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(!request.exists());
+        assert!(!take_existing_instance_activation_request_at(&request).unwrap());
+        assert!(temporary.exists());
+        assert!(!std::fs::read_dir(&root).unwrap().any(|entry| {
+            entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .contains(".invalid-")
+        }));
+
+        resume_sender.send(()).unwrap();
+        producer.join().unwrap().unwrap();
+        assert!(!temporary.exists());
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(take_existing_instance_activation_request_at(&request).unwrap());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn concurrent_complete_activation_publications_coalesce_without_sidecars() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-concurrency-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join("instance-activation.request");
+        let publication_barrier = Arc::new(Barrier::new(3));
+        let producers = (0..2)
+            .map(|_| {
+                let producer_request = request.clone();
+                let producer_barrier = Arc::clone(&publication_barrier);
+                std::thread::spawn(move || {
+                    request_existing_instance_activation_at_with_before_publish(
+                        &producer_request,
+                        |_| {
+                            producer_barrier.wait();
+                        },
+                    )
+                })
+            })
+            .collect::<Vec<_>>();
+
+        publication_barrier.wait();
+        for producer in producers {
+            producer.join().unwrap().unwrap();
+        }
+
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        let entries = std::fs::read_dir(&root)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect::<Vec<_>>();
+        assert_eq!(entries, [request.file_name().unwrap()]);
+        assert!(take_existing_instance_activation_request_at(&request).unwrap());
         std::fs::remove_dir_all(root).unwrap();
     }
 

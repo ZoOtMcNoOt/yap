@@ -43,10 +43,10 @@ impl OperationTemp {
 
     pub(super) fn publish_to(&mut self, destination: &Path) -> Result<(), SttError> {
         self.file.take();
-        crate::atomic_text::replace_same_directory(&self.path, destination)
+        crate::atomic_file::replace_same_directory(&self.path, destination)
             .map_err(io_error_to_stt)?;
         self.published = true;
-        crate::atomic_text::sync_parent_directory(destination).map_err(io_error_to_stt)
+        crate::atomic_file::sync_parent_directory(destination).map_err(io_error_to_stt)
     }
 
     fn cleanup(&mut self) -> Result<(), String> {
