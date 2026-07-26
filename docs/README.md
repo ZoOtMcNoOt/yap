@@ -61,7 +61,7 @@ availability.
 
 ### Active
 
-- [Codebase ownership and maintainability review](plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md)
+- [Tenant-scoped identity and job authorization](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
 
 ### Queued
@@ -70,6 +70,7 @@ availability.
 
 ### Completed implementation records
 
+- [Codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md)
 - [Local Nemotron live transcription](plans/completed/2026-07-05-local-nemotron-live-transcription.md)
 - [Model download UX](plans/completed/2026-07-08-model-download-ux.md)
 - [Phase 3 server contract and durable connector](plans/completed/2026-07-10-server-contract-durable-connector.md)

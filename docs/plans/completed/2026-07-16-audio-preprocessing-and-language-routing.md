@@ -1861,7 +1861,7 @@ decomposition remains queued for the separate post-Phase-6 checkpoint and is
 not silently folded into this phase.
 
 The Phase 6 merge activates the separately queued
-[Codebase ownership and maintainability review](../active/2026-07-18-codebase-ownership-and-maintainability-review.md).
+[Codebase ownership and maintainability review](2026-07-18-codebase-ownership-and-maintainability-review.md).
 That checkpoint starts from the reviewed merge on its own branch, runs the
 requested multi-subagent antagonistic review, applies Checkpoint A-style
 ownership/decomposition/maintainability refactors, and closes through its own

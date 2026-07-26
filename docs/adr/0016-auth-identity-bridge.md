@@ -1,11 +1,22 @@
 # ADR 0016: Authentication and voice identity bridge (Entra ID + MSAL)
 
 **Date:** 2026-07-01
-**Status:** Accepted (roadmap - Phase 7); voice-profile behavior amended by [ADR 0020](0020-meeting-capture-diarization-authority.md)
+**Status:** Accepted (Phase 7 implementation active); voice-profile behavior amended by [ADR 0020](0020-meeting-capture-diarization-authority.md)
 **Builds on:** [ADR 0014](0014-server-tier-compute-topology.md) (server tier; auth gates the server connector)
 **Related to:** [ADR 0020](0020-meeting-capture-diarization-authority.md) (diarization authority, contact boundary, and profile-update rules), [ADR 0017](0017-knowledge-base-compiler.md) (authenticated identity drives KB permission compilation)
 
 > **2026-07-10 correction:** Yap API tokens and Microsoft Graph tokens are resource-specific and must not be interchanged. Yap identities are tenant-scoped `(tid, oid)` pairs, display names are presentation snapshots, and no model prediction may authorize its own biometric-profile update.
+
+> **2026-07-25 implementation-boundary amendment:** Phase 7 implements the
+> authenticated principal, Yap API validation, owner-enforced job/LID
+> operations, access revocation, purpose-control records, and redacted audit
+> contracts. Phase 8 implements voice enrollment, biometric profile storage,
+> matching, reconciliation, and named-speaker publication. Phase 9 implements
+> Postgres/pgvector knowledge persistence and compiled KB permissions. The
+> conceptual profile tables below remain requirements for those later owners;
+> they are not Phase 7 completion claims. Phase 7 uses a provider-neutral
+> identity-repository contract with a SQLite executable development adapter.
+> Production database topology and approval remain an explicit handoff.
 
 ## Context
 
@@ -28,7 +39,7 @@ flowchart LR
     MSAL["MSAL OAuth2\n(Entra ID)"]
     Token["Yap API access token\n(JWT, Entra-signed)"]
     Server["yap-server\ntoken validation"]
-    DB["Identity DB\n(tid, oid) → authorized profile"]
+    DB["Identity repository\n(tid, oid) → policy"]
 
     User -->|"sign in"| MSAL
     MSAL --> Token --> User
@@ -40,7 +51,9 @@ flowchart LR
 2. MSAL performs the OAuth2 Authorization Code + PKCE flow against the org's Entra ID tenant.
 3. The native client requests a Yap API scope, such as `api://<yap-server-app-id>/access_as_user`.
 4. `yap-desktop` presents that Yap API access token as a `Bearer` header on requests to `yap-server`.
-5. `yap-server` validates signature, issuer, tenant, audience, expiry, and the `tid` and `oid` claims against the configured Entra tenant policy.
+5. `yap-server` validates the fixed signing algorithm and key, issuer, tenant,
+   audience, expiry/not-before, delegated Yap scope, allowed client actor, and
+   the `tid` and `oid` claims against the configured Entra tenant policy.
 6. On first sign-in, `yap-server` upserts a principal keyed by `(tid, oid)`.
 7. Microsoft Graph data, when required, is fetched with a separate Graph-scoped token or by an authorized server integration. A Graph `User.Read` token is never accepted as a Yap API token.
 
@@ -56,7 +69,11 @@ flowchart LR
 
 ### Identity DB — the bridge
 
-The identity DB is the **only store that links text identity to voice biometric**. It lives inside `yap-server` and is never exported to Entra or any third party.
+The identity repository is the **only application authority that may link text
+identity to voice biometric**. Phase 7 stores principals, access revocation,
+purpose-control records, and audit events. Phase 8 adds the separately
+authorized biometric-profile implementation. Neither is exported to Entra or
+any third party.
 
 **Conceptual schema:**
 
@@ -178,7 +195,7 @@ This system is designed for **on-prem organization-controlled deployments only**
 |----------|-----------|
 | **No third-party biometric processing** | Audio and voice vectors remain inside the authorized organization-controlled deployment boundary. |
 | **Org controls the data** | Entra ID stores only text metadata; voice vectors are in the org's own database on the org's own hardware. |
-| **Auditability** | Postgres audit log (ADR 0017) records all identity and permission changes. |
+| **Auditability** | The identity repository records redacted identity and authorization changes; production audit export and retention require a separately approved sink. |
 | **Data residency** | All processing happens on the GB-class server node inside the org's physical perimeter. |
 
 **For HIPAA-covered orgs:** voice biometrics of patients or patient-adjacent staff may be PHI or de-identified PHI depending on context. A covered entity must conduct a HIPAA Privacy/Security risk assessment before deploying the voice enrollment feature for roles where conversations include patient information. Yap provides the technical controls (isolation, deletion, audit); the org provides the administrative safeguards and BAA if applicable.
@@ -209,28 +226,37 @@ This system is designed for **on-prem organization-controlled deployments only**
 
 ### MSAL integration (`yap-desktop`)
 
-Use an MSAL native/public-client Authorization Code + PKCE flow through the system browser. The exact Rust or native-client library is selected in the implementation spec; `msal-browser` popup code is not the architecture contract for a Tauri desktop app.
+Use an MSAL native/public-client Authorization Code + PKCE flow. Microsoft does
+not publish a supported Rust MSAL library, so the Windows implementation uses a
+bounded MSAL.NET/WAM native adapter with a system-browser fallback. Rust owns
+adapter lifecycle and connector integration; MSAL owns token acquisition,
+broker/cache behavior, and refresh. `msal-browser` popup code is not the
+architecture contract for the Tauri desktop app.
 
 Request the Yap API scope for Yap calls. Request Microsoft Graph scopes only for separate Graph operations. Tokens and refresh material are stored through OS credential storage and are never exposed to ordinary frontend persistence.
 
 ### Token validation (`yap-server`)
 
-- Validate JWT signature against Entra JWKS (`https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys`).
-- Check `iss`, allowed `tid`, `aud` (the Yap server API application ID), `exp`, and other deployment-required claims.
+- Validate JWT signature against Entra JWKS (`https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys`) with a fixed `RS256` allow-list and bounded key caching/refresh.
+- Check `iss`, allowed `tid`, `aud` (the Yap server API application ID), `exp`, `nbf`, delegated `scp`, allowed `azp`, and other deployment-required claims.
 - Extract `(tid, oid)` as the tenant-scoped principal key.
-- Middleware rejects unauthenticated requests to all server endpoints except `/health`.
+- Reject app-only, wrong-resource, Graph, ID, and unapproved-client tokens.
+- Middleware rejects unauthenticated requests to all server endpoints except the exact executable health route `/v1/health`.
 
 ### Phase 7 deliverables
 
-- [ ] Native/public-client MSAL sign-in flow in `yap-desktop` through the system browser
-- [ ] Token storage in OS keychain via Tauri
+- [ ] Native/public-client MSAL.NET/WAM sign-in adapter in `yap-desktop`, with a system-browser fallback
+- [ ] MSAL/WAM protected token cache; no token or refresh material in renderer or ordinary app-data persistence
 - [ ] Token validation middleware in `yap-server`
-- [ ] Identity DB schema + migration (Postgres, ADR 0017)
+- [ ] Provider-neutral identity repository + SQLite development migration
 - [ ] Upsert-on-first-sign-in logic
-- [ ] Enrollment UI: "Enroll my voice" Settings panel with explicit opt-in and the approved notice
-- [ ] Versioned purpose-grant and profile records; absence of a profile row means not enrolled
-- [ ] "Delete my voice profile" action + audit log
-- [ ] KB permission gating wired to `(tid, oid)` (ADR 0017)
+- [ ] Tenant-scoped job/LID/idempotency/artifact ownership with legacy-unowned quarantine
+- [ ] Versioned purpose-control, access-revocation, and redacted audit records
+- [ ] Synthetic two-principal signed-token/restart/account-switch gate
+
+Phase 8 owns the enrollment UI, profile records, matching, and voice-profile
+deletion. Phase 9 owns KB permission compilation and its Postgres/pgvector
+persistence. Their absence is not relabeled as Phase 7 completion.
 
 ## Open questions
 

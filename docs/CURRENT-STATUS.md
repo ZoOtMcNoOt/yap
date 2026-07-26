@@ -29,8 +29,8 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
-| Checkpoint B | PR open; hosted closure pending | The [codebase ownership and maintainability review](plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md) adds no Phase 7 functionality. Historical candidate `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence but are not merge authority. After repairing Cargo color contamination and the same-process Windows atomic replacement race, fresh exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. Its private receipt SHA-256 is `6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`. First-attempt hosted CI, CodeQL, stock-NSIS closure on the documentation-only descendant, final review, and merge remain required. |
-| Phase 7: identity/access | Planned | Entra/MSAL, token-derived ownership, purpose grants, and authorization remain unimplemented. |
+| Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
+| Phase 7: identity/access | Active | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs Entra/MSAL token acquisition, Yap API validation, token-derived ownership, purpose-control primitives, authorization/revocation/audit behavior, and synthetic multi-owner evidence. No executable Phase 7 identity behavior has landed yet. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -508,19 +508,20 @@ base-digest identity, or runtime identity.
 
 The living [decision and evidence queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 preserves the detailed discussion register, open questions, later-phase owners,
-and reviewable sub-tasks. Phase 6 is merged. The active
-[codebase ownership and maintainability review](plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md)
-is the Checkpoint B delivery authority. The concise
+and reviewable sub-tasks. Phase 6 and Checkpoint B are merged. The active
+[tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
+is the Phase 7 delivery authority. The concise
 [integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Require first-attempt hosted closure on the documentation-only descendant of
-   validated executable candidate
-   `9dfa8a68b02cdf854d14fb046e51a166cd3da353`.
-2. Merge only the green checked head, then begin Phase 7 on a separate branch.
+1. Implement the Phase 7 authenticated principal, token validation, durable
+   owner isolation, purpose-control, revocation/audit, and native token-provider
+   seams with focused verification.
+2. Run the one-time exact-candidate Phase 7 gate and merge only the green,
+   reviewed checked head.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
-point. Checkpoint B reviews broadly but changes narrowly before that integrated
-decision: concrete blockers are fixed, while non-blocking optimization is
-recorded rather than allowed to delay the MVP.
+point. Phase 7 remains bounded to identity and access before that integrated
+decision; non-blocking optimization is recorded rather than allowed to delay
+the MVP.

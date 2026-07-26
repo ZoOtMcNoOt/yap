@@ -88,14 +88,14 @@ SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
 and SGLang services, production multi-worker/mixed-load capacity promotion, production
 observability, and external deployment remain Phase 10.
 
-## Current gate: post-Phase-6 checkpoint
+## Delivered post-Phase-6 checkpoint
 
 The separate
-[codebase ownership and maintainability review](../plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md)
-reviews the complete Phase 1–6 executable system before Phase 7 starts. It uses
-exactly three completed antagonistic reviews, then applies the same ownership,
+[codebase ownership and maintainability review](../plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md)
+reviewed the complete Phase 1–6 executable system before Phase 7 started. It used
+exactly three completed antagonistic reviews, then applied the same ownership,
 comprehensibility, decomposition, maintainability, resource, provenance, and
-documentation standard as post-Phase-5 Checkpoint A. It adds no Phase 7 product
+documentation standard as post-Phase-5 Checkpoint A. It added no Phase 7 product
 functionality. Historical candidate
 `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
 `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence
@@ -105,12 +105,26 @@ atomic replacement repairs, fresh exact executable candidate
 31-child checkpoint matrix and independent receipt validation with exact
 teardown. Its private receipt SHA-256 is
 `6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`.
-First-attempt hosted CI, CodeQL, and stock-NSIS closure on the
-documentation-only descendant, final review, and merge remain pending.
+First-attempt hosted CI run `30206923702`, CodeQL run `30206922629`, and
+stock-NSIS run `30206941391` passed on documentation-only reviewed head
+`0bd11ae8dea34cd22029c6c09a9fd62a5951a363`. [PR
+#68](https://github.com/mcnatg1/yap/pull/68) merged as
+`15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
 Phase 7 follows the same cadence: independently merge the phase, run a separate
 post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that
 checkpoint merges.
+
+## Current phase: tenant-scoped identity and access
+
+The
+[tenant-scoped identity and job authorization plan](../plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
+implements the Phase 7 boundary. It keeps local/offline dictation independent,
+derives server principals from validated Yap API tokens, enforces owner-scoped
+job and LID operations, adds revocation/purpose-control/audit primitives, and
+uses a synthetic signed two-principal gate where IT-owned Entra registration is
+not yet available. Biometric profiles remain Phase 8; Postgres/pgvector
+knowledge permission compilation remains Phase 9.
 
 ## Accepted later phases
 
