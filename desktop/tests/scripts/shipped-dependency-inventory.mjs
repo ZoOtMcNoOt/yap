@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -13,7 +13,7 @@ const noticeExemptionsPath = path.join(
   "SHIPPED_DEPENDENCY_NOTICE_EXEMPTIONS.json",
 );
 const windowsTarget = "x86_64-pc-windows-msvc";
-const shippedEcosystems = Object.freeze(["javascript", "rust", "dotnet"]);
+const shippedEcosystems = Object.freeze(["javascript", "rust"]);
 const exactNoticeName =
   /^(?:licen[cs]e|copying|notices?|copyright|authors?)(?:[._-].*)?$/i;
 const knownLicenseTerms = new Set([
@@ -39,7 +39,6 @@ export async function buildShippedDependencyArtifacts() {
   const packageSources = {
     javascript: javascriptRuntimePackageSources(),
     rust: rustRuntimePackageSources(),
-    dotnet: dotnetRuntimePackageSources(),
   };
   const documents = new Map();
   const usedExemptions = new Set();
@@ -86,27 +85,6 @@ export async function buildShippedDependencyArtifacts() {
     ),
     cargoLockSha256: await sha256File(
       path.join(repoRoot, "desktop", "src-tauri", "Cargo.lock"),
-    ),
-    dotnetGlobalJsonSha256: await sha256File(
-      path.join(repoRoot, "desktop", "native", "global.json"),
-    ),
-    dotnetProjectSha256: await sha256File(
-      path.join(
-        repoRoot,
-        "desktop",
-        "native",
-        "Yap.Identity.Broker",
-        "Yap.Identity.Broker.csproj",
-      ),
-    ),
-    dotnetPackagesLockSha256: await sha256File(
-      path.join(
-        repoRoot,
-        "desktop",
-        "native",
-        "Yap.Identity.Broker",
-        "packages.lock.json",
-      ),
     ),
     noticeExemptionsSha256: await sha256File(noticeExemptionsPath),
   };
@@ -157,7 +135,6 @@ export async function verifyShippedDependencyInventory() {
   for (const packageRecord of [
     ...inventory.packages.javascript,
     ...inventory.packages.rust,
-    ...inventory.packages.dotnet,
   ]) {
     for (const term of packageRecord.licenseTerms) {
       assert(
@@ -377,161 +354,6 @@ function rustRuntimePackageSources() {
   return uniqueSortedSources(packages);
 }
 
-function dotnetRuntimePackageSources() {
-  const nativeRoot = path.join(repoRoot, "desktop", "native");
-  const projectDirectory = path.join(nativeRoot, "Yap.Identity.Broker");
-  const projectPath = path.join(projectDirectory, "Yap.Identity.Broker.csproj");
-  const dotnet = pinnedDotnetExecutable(nativeRoot);
-  run(dotnet, [
-    "restore",
-    projectPath,
-    "-p:RestoreLockedMode=true",
-    "--nologo",
-  ], { cwd: nativeRoot });
-  run(dotnet, [
-    "publish",
-    projectPath,
-    "--configuration",
-    "Release",
-    "--runtime",
-    "win-x64",
-    "--self-contained",
-    "true",
-    "-p:RestoreLockedMode=true",
-    "--no-restore",
-    "--nologo",
-  ], { cwd: nativeRoot });
-  const assetsPath = path.join(
-    projectDirectory,
-    "obj",
-    "project.assets.json",
-  );
-  const assets = JSON.parse(readFileSync(assetsPath, "utf8"));
-  const targetName = Object.keys(assets.targets).find((candidate) =>
-    candidate.endsWith("/win-x64"));
-  assert(targetName, "The identity broker assets omit the win-x64 runtime target.");
-  const packageRoots = Object.keys(assets.packageFolders ?? {});
-  assert(
-    packageRoots.length === 1,
-    "The identity broker must resolve one exact NuGet global package directory.",
-  );
-  const packageRoot = packageRoots[0];
-  const packages = [];
-  const appendPackage = (name, version) => {
-    const sourceDirectory = path.join(
-      packageRoot,
-      name.toLowerCase(),
-      version.toLowerCase(),
-    );
-    const nuspecPath = path.join(sourceDirectory, `${name.toLowerCase()}.nuspec`);
-    const nuspec = readFileSync(nuspecPath, "utf8");
-    const declaredId = xmlElement(nuspec, "id");
-    const declaredVersion = xmlElement(nuspec, "version");
-    assert(
-      declaredId === name && declaredVersion === version,
-      `NuGet dependency source identity differs from assets at ${sourceDirectory}.`,
-    );
-    packages.push({
-      ...packageRecord(
-        "dotnet",
-        name,
-        version,
-        nugetLicenseExpression(nuspec, sourceDirectory),
-      ),
-      sourceDirectories: [sourceDirectory],
-    });
-  };
-  for (const [identity, packageAssets] of Object.entries(assets.targets[targetName])) {
-    if (
-      packageAssets.type !== "package"
-      || (!packageAssets.runtime && !packageAssets.runtimeTargets)
-    ) {
-      continue;
-    }
-    const separator = identity.lastIndexOf("/");
-    assert(separator > 0, `NuGet dependency identity is invalid: ${identity}.`);
-    const name = identity.slice(0, separator);
-    const version = identity.slice(separator + 1);
-    appendPackage(name, version);
-  }
-  const project = readFileSync(projectPath, "utf8");
-  const targetFramework = xmlElement(project, "TargetFramework");
-  const dependencyManifestPath = path.join(
-    projectDirectory,
-    "bin",
-    "Release",
-    targetFramework,
-    "win-x64",
-    "yap-identity-broker.deps.json",
-  );
-  const dependencyManifest = JSON.parse(readFileSync(dependencyManifestPath, "utf8"));
-  const runtimePacks = Object.entries(dependencyManifest.libraries)
-    .filter(([, metadata]) => metadata.type === "runtimepack")
-    .map(([identity]) => identity.replace(/^runtimepack\./, ""));
-  assert(
-    runtimePacks.length > 0,
-    "The self-contained identity broker dependency manifest omits its runtime packs.",
-  );
-  for (const identity of runtimePacks) {
-    const separator = identity.lastIndexOf("/");
-    assert(separator > 0, `Runtime-pack identity is invalid: ${identity}.`);
-    appendPackage(identity.slice(0, separator), identity.slice(separator + 1));
-  }
-  return uniqueSortedSources(packages);
-}
-
-function pinnedDotnetExecutable(nativeRoot) {
-  const expectedVersion = JSON.parse(
-    readFileSync(path.join(nativeRoot, "global.json"), "utf8"),
-  ).sdk?.version;
-  assert(
-    typeof expectedVersion === "string" && /^\d+\.\d+\.\d+$/.test(expectedVersion),
-    "The pinned .NET SDK version is invalid.",
-  );
-  const executableName = process.platform === "win32" ? "dotnet.exe" : "dotnet";
-  const candidates = [
-    path.join(repoRoot, ".tools", "dotnet", executableName),
-    executableName,
-  ];
-  for (const candidate of candidates) {
-    if (path.isAbsolute(candidate) && !existsSync(candidate)) continue;
-    try {
-      if (run(candidate, ["--version"], { cwd: nativeRoot }).trim() === expectedVersion) {
-        return candidate;
-      }
-    } catch {
-      // Continue to the next bounded candidate.
-    }
-  }
-  throw new Error(`The shipped dependency inventory requires .NET SDK ${expectedVersion}.`);
-}
-
-function nugetLicenseExpression(nuspec, sourceDirectory) {
-  const expression = /<license\s+type=["']expression["']>([^<]+)<\/license>/i.exec(nuspec)?.[1]
-    ?.trim();
-  if (expression) return expression;
-  const licenseUrl = xmlElement(nuspec, "licenseUrl");
-  if (licenseUrl === "https://aka.ms/WinSDKLicenseURL") {
-    return "MS-Windows-SDK";
-  }
-  const licenseName = readdirSync(sourceDirectory).find((name) =>
-    /^(?:licen[cs]e)(?:[._-].*)?$/i.test(name));
-  assert(licenseName, `NuGet dependency at ${sourceDirectory} has no license declaration.`);
-  const licenseText = readFileSync(path.join(sourceDirectory, licenseName), "utf8");
-  if (/^MICROSOFT SOFTWARE LICENSE TERMS\b/.test(licenseText)) {
-    return "MS-MSAL-NativeInterop";
-  }
-  assert(
-    /\bMIT License\b/i.test(licenseText),
-    `NuGet dependency at ${sourceDirectory} has an unreviewed file license.`,
-  );
-  return "MIT";
-}
-
-function xmlElement(document, name) {
-  return new RegExp(`<${name}>([^<]+)</${name}>`, "i").exec(document)?.[1]?.trim();
-}
-
 export function cargoCommandEnvironment(environment = process.env) {
   return {
     ...environment,
@@ -562,32 +384,6 @@ function packageRecord(ecosystem, name, version, licenseExpression) {
       version,
       licenseExpression,
       licenseTerms: ["GSAP-Standard"],
-      reviewDisposition: "reviewed-custom-runtime-license",
-    };
-  }
-  if (
-    ecosystem === "dotnet"
-    && name === "Microsoft.Identity.Client.NativeInterop"
-    && licenseExpression === "MS-MSAL-NativeInterop"
-  ) {
-    return {
-      name,
-      version,
-      licenseExpression,
-      licenseTerms: ["MS-MSAL-NativeInterop"],
-      reviewDisposition: "reviewed-custom-runtime-license",
-    };
-  }
-  if (
-    ecosystem === "dotnet"
-    && name === "Microsoft.Windows.SDK.NET.Ref"
-    && licenseExpression === "MS-Windows-SDK"
-  ) {
-    return {
-      name,
-      version,
-      licenseExpression,
-      licenseTerms: ["MS-Windows-SDK"],
       reviewDisposition: "reviewed-custom-runtime-license",
     };
   }
@@ -734,7 +530,7 @@ async function main(args) {
   const notices = await verifyShippedDependencyNotices(inventory);
   console.log(
     `Shipped dependency inventory passed (${inventory.packages.javascript.length} JavaScript, `
-      + `${inventory.packages.rust.length} Rust, ${inventory.packages.dotnet.length} .NET packages, `
+      + `${inventory.packages.rust.length} Rust packages, `
       + `${notices.documents.length} exact notice documents).`,
   );
 }

@@ -14,7 +14,7 @@ use super::{
     BatchClientError, CaptureChunkReference, CaptureManifestReference, ContentIdentity,
     CreateRecordingJobRequest, ServerReplayKey, ServerStageProjectionEnvelope, UploadTrack,
 };
-use crate::server_connector::{client::bounded_client, RequestAuthorization};
+use crate::server_connector::{client::bounded_client, AuthenticatedRequestDispatcher};
 
 #[test]
 fn alignment_unavailable_reason_preserves_provider_and_language_limits() {
@@ -73,9 +73,8 @@ fn shared_batch_dispatch_attaches_the_native_bearer_token() {
         stream.write_all(body).unwrap();
     });
     let client = BatchApiClient::new_authorized(
-        bounded_client().unwrap(),
+        AuthenticatedRequestDispatcher::fixed(bounded_client().unwrap(), "batch-token"),
         &format!("http://{address}"),
-        RequestAuthorization::fixed("batch-token"),
     )
     .unwrap();
 

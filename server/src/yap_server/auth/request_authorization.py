@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import sqlite3
 import stat
 
 from yap_server.auth.identity_repository import SqliteIdentityRepository
@@ -11,6 +12,7 @@ from yap_server.auth.principal_admission import (
     PrincipalAdmissionUnavailable,
 )
 from yap_server.auth.principal import AuthenticatedPrincipal
+from yap_server.auth.purpose_authorization import IdentityAuthorizationService
 from yap_server.auth.request_authentication import (
     AuthenticationFailure,
     RequestAuthenticator,
@@ -47,11 +49,21 @@ class RepositoryBackedRequestAuthenticator:
             )
         return principal
 
+    def principal_is_admitted(self, principal: AuthenticatedPrincipal) -> bool:
+        """Re-check long-lived transport admission without retaining a token."""
+        try:
+            return self._identity_repository.access_is_allowed(principal)
+        except (sqlite3.Error, RuntimeError) as error:
+            raise PrincipalAdmissionUnavailable(
+                "principal admission repository is unavailable"
+            ) from error
+
 
 @dataclass(slots=True)
 class RequestAuthorizationRuntime:
     authenticator: RequestAuthenticator
     identity_repository: SqliteIdentityRepository | None = None
+    purpose_authorization: IdentityAuthorizationService | None = None
 
     def close(self) -> None:
         if self.identity_repository is not None:
@@ -75,7 +87,11 @@ def build_request_authorization_runtime(
     except BaseException:
         repository.close()
         raise
-    return RequestAuthorizationRuntime(authenticator, repository)
+    return RequestAuthorizationRuntime(
+        authenticator,
+        repository,
+        IdentityAuthorizationService(repository),
+    )
 
 
 def _private_identity_database_path(storage_dir: Path) -> Path:

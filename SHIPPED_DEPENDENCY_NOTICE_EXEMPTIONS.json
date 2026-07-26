@@ -2,41 +2,6 @@
   "schemaVersion": 1,
   "exemptions": [
     {
-      "ecosystem": "dotnet",
-      "name": "Microsoft.Identity.Client",
-      "version": "4.86.1",
-      "sourceFile": "microsoft.identity.client.nuspec",
-      "reason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression."
-    },
-    {
-      "ecosystem": "dotnet",
-      "name": "Microsoft.Identity.Client.Broker",
-      "version": "4.86.1",
-      "sourceFile": "microsoft.identity.client.broker.nuspec",
-      "reason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression."
-    },
-    {
-      "ecosystem": "dotnet",
-      "name": "Microsoft.Identity.Client.Extensions.Msal",
-      "version": "4.86.1",
-      "sourceFile": "microsoft.identity.client.extensions.msal.nuspec",
-      "reason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression."
-    },
-    {
-      "ecosystem": "dotnet",
-      "name": "Microsoft.IdentityModel.Abstractions",
-      "version": "8.14.0",
-      "sourceFile": "microsoft.identitymodel.abstractions.nuspec",
-      "reason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression."
-    },
-    {
-      "ecosystem": "dotnet",
-      "name": "Microsoft.Windows.SDK.NET.Ref",
-      "version": "10.0.17763.56",
-      "sourceFile": "microsoft.windows.sdk.net.ref.nuspec",
-      "reason": "The exact self-contained broker runtime-pack manifest includes this Microsoft Windows SDK reference package; its signed package metadata points to the applicable Windows SDK license terms and the installed package has no standalone notice file."
-    },
-    {
       "ecosystem": "javascript",
       "name": "gsap",
       "version": "3.15.0",

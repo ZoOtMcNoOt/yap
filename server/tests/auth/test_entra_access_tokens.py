@@ -9,7 +9,10 @@ import jwt
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from yap_server.auth import AuthenticationFailure
-from yap_server.auth.entra_access_tokens import EntraAccessTokenAuthenticator
+from yap_server.auth.entra_access_tokens import (
+    EntraAccessTokenAuthenticator,
+    entra_access_token_policy,
+)
 from yap_server.auth.signing_keys import SigningKeyUnavailable
 from yap_server.config import ServerAuthenticationSettings
 
@@ -48,23 +51,22 @@ class EntraAccessTokenTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.keys = _SigningKeys(self.public_key)
-        self.authenticator = EntraAccessTokenAuthenticator(
-            ServerAuthenticationSettings(
-                mode="entra",
-                tenant_id=TENANT_ID,
-                audience=AUDIENCE,
-                required_scope="access_as_user",
-                allowed_client_ids=(CLIENT_ID,),
-                identity_storage_dir=Path("test-private-identity"),
-            ),
-            self.keys,
+        self.settings = ServerAuthenticationSettings(
+            mode="entra",
+            tenant_id=TENANT_ID,
+            audience=AUDIENCE,
+            required_scope="access_as_user",
+            allowed_client_ids=(CLIENT_ID,),
+            identity_storage_dir=Path("test-private-identity"),
         )
+        self.authenticator = EntraAccessTokenAuthenticator(self.settings, self.keys)
 
     def _claims(self) -> dict[str, object]:
         now = datetime.now(UTC)
         return {
             "iss": ISSUER,
             "aud": AUDIENCE,
+            "ver": "2.0",
             "exp": now + timedelta(minutes=5),
             "nbf": now - timedelta(minutes=1),
             "iat": now - timedelta(minutes=1),
@@ -102,7 +104,24 @@ class EntraAccessTokenTests(unittest.TestCase):
         self.assertEqual(principal.client_id, CLIENT_ID)
         self.assertEqual(principal.scopes, frozenset({"access_as_user"}))
         self.assertIsInstance(principal.issued_at_unix, int)
+        self.assertIsInstance(principal.expires_at_unix, int)
+        self.assertEqual(principal.roles, frozenset())
         self.assertEqual(self.keys.requested, [KID])
+
+    def test_entra_claim_semantics_are_owned_by_the_entra_policy(self) -> None:
+        policy = entra_access_token_policy(self.settings)
+
+        self.assertEqual(policy.tenant_id_claim, "tid")
+        self.assertEqual(policy.subject_id_claim, "oid")
+        self.assertEqual(policy.client_id_claim, "azp")
+        self.assertEqual(policy.scope_claim, "scp")
+        self.assertEqual(policy.roles_claim, "roles")
+        self.assertEqual(policy.identity_format, "uuid")
+        self.assertEqual(policy.required_claim_values, (("ver", "2.0"),))
+        self.assertEqual(
+            policy.rejected_claim_values,
+            (("idtyp", frozenset({"app"})),),
+        )
 
     def test_header_and_token_shape_fail_uniformly(self) -> None:
         for authorization in (
@@ -129,10 +148,10 @@ class EntraAccessTokenTests(unittest.TestCase):
         mutations = {
             "iss": "https://login.microsoftonline.com/common/v2.0",
             "aud": "00000003-0000-0000-c000-000000000000",
+            "ver": "1.0",
             "tid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
             "oid": "not-a-guid",
             "azp": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-            "scp": "User.Read",
         }
         for field, value in mutations.items():
             with self.subTest(field=field):
@@ -143,6 +162,13 @@ class EntraAccessTokenTests(unittest.TestCase):
                     "INVALID_ACCESS_TOKEN",
                 )
 
+        claims = self._claims()
+        claims["scp"] = "User.Read"
+        self.assertEqual(
+            self._failure(self._token(claims)).code,
+            "INSUFFICIENT_SCOPE",
+        )
+
     def test_missing_required_claims_and_app_only_tokens_are_rejected(self) -> None:
         for field in (
             "iss",
@@ -150,6 +176,7 @@ class EntraAccessTokenTests(unittest.TestCase):
             "exp",
             "nbf",
             "iat",
+            "ver",
             "tid",
             "oid",
             "azp",

@@ -2,10 +2,10 @@ use std::time::Duration;
 
 use reqwest::{Client, StatusCode};
 
-use super::authorization::RequestAuthorizationError;
+use super::authorization::{AuthenticatedDispatchError, RequestAuthorizationError};
 use super::config;
 use super::state::ServerCapabilities;
-use super::RequestAuthorization;
+use super::AuthenticatedRequestDispatcher;
 
 const MAX_HEALTH_BYTES: usize = 64 * 1024;
 const SUPPORTED_API_VERSION: &str = "1";
@@ -108,8 +108,7 @@ pub(crate) async fn check_health(
 }
 
 pub(super) async fn verify_protected_access(
-    client: &Client,
-    authorization: &RequestAuthorization,
+    authenticated: &AuthenticatedRequestDispatcher,
     base_url: &str,
     allow_insecure_private: bool,
 ) -> ProtectedAccessResult {
@@ -132,38 +131,46 @@ pub(super) async fn verify_protected_access(
         }
     };
     url.set_path("/v1/asr/capabilities");
-    let request = match authorization
-        .authorize(
-            client
+    let response = match authenticated
+        .send(
+            authenticated
                 .get(url)
                 .header(reqwest::header::ACCEPT, "application/json"),
         )
         .await
     {
-        Ok(request) => request,
-        Err(RequestAuthorizationError::AccountChanged) => {
+        Ok(response) => response,
+        Err(AuthenticatedDispatchError::Authorization(
+            RequestAuthorizationError::AccountChanged,
+        )) => {
             return ProtectedAccessResult::AccessDenied;
         }
-        Err(RequestAuthorizationError::Unavailable | RequestAuthorizationError::InvalidToken) => {
-            return ProtectedAccessResult::SignInRequired
-        }
-    };
-    let response = match request.send().await {
-        Ok(response) => response,
-        Err(error) if error.is_timeout() => {
+        Err(AuthenticatedDispatchError::Authorization(
+            RequestAuthorizationError::Unavailable | RequestAuthorizationError::InvalidToken,
+        )) => return ProtectedAccessResult::SignInRequired,
+        Err(AuthenticatedDispatchError::Transport(error)) if error.is_timeout() => {
             return ProtectedAccessResult::Unavailable {
                 error_code: "REQUEST_TIMEOUT",
                 retryable: true,
             };
         }
-        Err(_) => {
+        Err(AuthenticatedDispatchError::Transport(_)) => {
             return ProtectedAccessResult::Unavailable {
                 error_code: "CONNECTION_FAILED",
                 retryable: true,
             };
         }
     };
-    match response.status() {
+    let status = match response.status() {
+        Ok(status) => status,
+        Err(RequestAuthorizationError::AccountChanged) => {
+            return ProtectedAccessResult::AccessDenied
+        }
+        Err(RequestAuthorizationError::Unavailable | RequestAuthorizationError::InvalidToken) => {
+            return ProtectedAccessResult::SignInRequired
+        }
+    };
+    match status {
         StatusCode::OK | StatusCode::NOT_IMPLEMENTED => ProtectedAccessResult::Accepted,
         StatusCode::UNAUTHORIZED => ProtectedAccessResult::SignInRequired,
         StatusCode::FORBIDDEN => ProtectedAccessResult::AccessDenied,
@@ -281,7 +288,7 @@ mod tests {
         ProtectedAccessResult,
     };
     use crate::server_connector::state::ServerCapabilities;
-    use crate::server_connector::RequestAuthorization;
+    use crate::server_connector::AuthenticatedRequestDispatcher;
 
     struct Fixture {
         address: SocketAddr,
@@ -345,13 +352,11 @@ mod tests {
     }
 
     fn check_protected(base_url: &str) -> ProtectedAccessResult {
-        let client = bounded_client().unwrap();
-        tauri::async_runtime::block_on(verify_protected_access(
-            &client,
-            &RequestAuthorization::fixed("protected-probe-token"),
-            base_url,
-            false,
-        ))
+        let authenticated = AuthenticatedRequestDispatcher::fixed(
+            bounded_client().unwrap(),
+            "protected-probe-token",
+        );
+        tauri::async_runtime::block_on(verify_protected_access(&authenticated, base_url, false))
     }
 
     fn healthy_body(api_version: &str, auth: &str, capabilities: &str) -> String {
@@ -550,10 +555,10 @@ mod tests {
         ) else {
             return;
         };
-        let client = bounded_client().unwrap();
+        let authenticated =
+            AuthenticatedRequestDispatcher::fixed(bounded_client().unwrap(), &token);
         let result = tauri::async_runtime::block_on(verify_protected_access(
-            &client,
-            &RequestAuthorization::fixed(&token),
+            &authenticated,
             &base_url,
             false,
         ));

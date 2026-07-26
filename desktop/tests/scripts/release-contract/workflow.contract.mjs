@@ -81,24 +81,6 @@ test("CI and smoke workflows run the explicit release contract on supported trig
   assert.equal(smoke.on.release, undefined);
 });
 
-test("native identity CI publishes and audits the locked NuGet graph", async () => {
-  const ci = await readWorkflow(".github/workflows/ci.yml");
-  const { steps } = workflowSteps(ci, "identity-broker");
-
-  assert.ok(
-    steps.some((step) => step.run === "./tests/scripts/build-identity-broker.ps1"),
-    "identity CI must publish and smoke the pinned broker",
-  );
-  assert.ok(
-    steps.some(
-      (step) =>
-        step.run === "./verification/audit-dotnet-dependencies.ps1"
-        && step["working-directory"] === "${{ github.workspace }}",
-    ),
-    "identity CI must audit the locked transitive NuGet graph",
-  );
-});
-
 test("CI workflow token defaults to read-only repository contents", async () => {
   const ci = await readWorkflow(".github/workflows/ci.yml");
   assert.deepEqual(
@@ -141,6 +123,52 @@ test("server CI uses the reviewed exact uv environment and lock-bound cache", as
   assert.equal(
     normalizedRunBody(populateCache.run),
     "uv sync --locked --exact --extra evaluation --extra test --python (Get-Command python.exe).Source --no-python-downloads",
+  );
+});
+
+test("mock OIDC CI is the reviewed pinned Linux Docker closure", async () => {
+  const ci = await readWorkflow(".github/workflows/ci.yml");
+  const { job, steps } = workflowSteps(ci, "mock-oidc");
+  const actionSteps = steps.filter((step) => step.uses);
+  const setupPython = actionSteps.find(
+    (step) => step.uses === reviewedActions.setupPython,
+  );
+  const setupUv = actionSteps.find((step) => step.uses === reviewedActions.setupUv);
+  const populateEnvironment = steps.find(
+    (step) => step.name === "Populate the exact mock OIDC dependency environment",
+  );
+  const runHarness = steps.find(
+    (step) => step.name === "Run the pinned mock OIDC owner flow",
+  );
+
+  assert.equal(job.name, "mock-oidc");
+  assert.equal(job["runs-on"], "ubuntu-latest");
+  assert.equal(job["timeout-minutes"], 10);
+  assert.equal(job.defaults?.run?.shell, "pwsh");
+  assert.deepEqual(
+    actionSteps.map((step) => step.uses),
+    [
+      reviewedActions.checkout,
+      reviewedActions.setupPython,
+      reviewedActions.setupUv,
+    ],
+    "mock OIDC CI may use only the existing reviewed setup actions",
+  );
+  assert.deepEqual(setupPython?.with, { "python-version": "3.12" });
+  assert.deepEqual(setupUv?.with, {
+    version: "0.11.21",
+    "enable-cache": true,
+    "cache-dependency-glob": "server/uv.lock",
+  });
+  assert.ok(populateEnvironment);
+  assert.equal(populateEnvironment["working-directory"], "server");
+  assert.match(populateEnvironment.run, /uv --version/);
+  assert.match(populateEnvironment.run, /3\.12/);
+  assert.match(populateEnvironment.run, /uv sync --locked --exact/);
+  assert.ok(runHarness);
+  assert.equal(
+    normalizedRunBody(runHarness.run),
+    "./verification/test-mock-oidc-owner-flow.ps1",
   );
 });
 

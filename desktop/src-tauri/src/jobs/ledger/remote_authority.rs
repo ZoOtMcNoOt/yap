@@ -13,15 +13,16 @@ impl JobLedger {
         &self,
         job_id: &str,
         authority: &str,
+        authentication: &str,
     ) -> Result<(), JobLedgerError> {
-        validate_remote_authority(authority)?;
+        validate_remote_authority(authority, authentication)?;
         let mut connection = self.lock()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let current: (String, Option<String>, i64) = transaction
+        let current: (String, Option<String>, Option<String>, i64) = transaction
             .query_row(
-                "SELECT route, remote_authority_binding, remote_authority_version FROM recording_jobs WHERE job_id = ?1",
+                "SELECT route, remote_authority_binding, remote_authentication_binding, remote_authority_version FROM recording_jobs WHERE job_id = ?1",
                 [job_id],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
             )
             .optional()?
             .ok_or_else(|| JobLedgerError::NotFound(job_id.into()))?;
@@ -30,19 +31,27 @@ impl JobLedger {
                 "remote authority belongs only to server-batch work",
             ));
         }
-        if current.2 != 2 {
+        if current.3 != 2 {
             return Err(JobLedgerError::InvalidRecord(
-                "legacy account-only remote authority is quarantined",
+                "legacy remote authority without authentication binding is quarantined",
             ));
         }
-        match current.1.as_deref() {
-            Some(existing) if existing == authority => return Ok(()),
-            Some(_) => {
+        match (current.1.as_deref(), current.2.as_deref()) {
+            (Some(existing_authority), Some(existing_authentication)) => {
+                validate_remote_authority(existing_authority, existing_authentication)?;
+                if existing_authority == authority && existing_authentication == authentication {
+                    return Ok(());
+                }
                 return Err(JobLedgerError::InvalidRecord(
-                    "remote work is bound to a different server account",
+                    "remote work is bound to a different server account or authentication configuration",
                 ));
             }
-            None => {}
+            (None, None) => {}
+            _ => {
+                return Err(JobLedgerError::InvalidRecord(
+                    "remote authority binding is incomplete",
+                ));
+            }
         }
 
         let legacy_remote_activity: bool = transaction.query_row(
@@ -59,8 +68,8 @@ impl JobLedger {
             ));
         }
         let changed = transaction.execute(
-            "UPDATE recording_jobs SET remote_authority_binding = ?1, remote_authority_version = 2 WHERE job_id = ?2 AND remote_authority_binding IS NULL AND remote_authority_version = 2",
-            params![authority, job_id],
+            "UPDATE recording_jobs SET remote_authority_binding = ?1, remote_authentication_binding = ?2, remote_authority_version = 2 WHERE job_id = ?3 AND remote_authority_binding IS NULL AND remote_authentication_binding IS NULL AND remote_authority_version = 2",
+            params![authority, authentication, job_id],
         )?;
         if changed != 1 {
             return Err(JobLedgerError::InvalidRecord(
@@ -71,37 +80,59 @@ impl JobLedger {
         Ok(())
     }
 
-    pub(crate) fn remote_authority(&self, job_id: &str) -> Result<String, JobLedgerError> {
+    pub(crate) fn remote_authority(
+        &self,
+        job_id: &str,
+    ) -> Result<(String, String), JobLedgerError> {
         let connection = self.lock()?;
-        let (authority, version): (Option<String>, i64) = connection
+        let (authority, authentication, version): (Option<String>, Option<String>, i64) = connection
             .query_row(
-                "SELECT remote_authority_binding, remote_authority_version FROM recording_jobs WHERE job_id = ?1",
+                "SELECT remote_authority_binding, remote_authentication_binding, remote_authority_version FROM recording_jobs WHERE job_id = ?1",
                 [job_id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
             )
             .optional()?
             .ok_or_else(|| JobLedgerError::NotFound(job_id.into()))?;
         if version != 2 {
             return Err(JobLedgerError::InvalidRecord(
-                "legacy account-only remote authority is quarantined",
+                "legacy remote authority without authentication binding is quarantined",
             ));
         }
-        authority.ok_or(JobLedgerError::InvalidRecord(
-            "remote work has no server-account binding",
-        ))
+        let (authority, authentication) = match (authority, authentication) {
+            (Some(authority), Some(authentication)) => (authority, authentication),
+            (None, None) => {
+                return Err(JobLedgerError::InvalidRecord(
+                    "remote work has no server authority binding",
+                ));
+            }
+            _ => {
+                return Err(JobLedgerError::InvalidRecord(
+                    "remote authority binding is incomplete",
+                ));
+            }
+        };
+        validate_remote_authority(&authority, &authentication)?;
+        Ok((authority, authentication))
     }
 }
 
-pub(super) fn validate_remote_authority(value: &str) -> Result<(), JobLedgerError> {
-    if value == DEVELOPMENT_AUTHORITY
-        || (value.len() == 64
-            && value
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f')))
+pub(super) fn validate_remote_authority(
+    authority: &str,
+    authentication: &str,
+) -> Result<(), JobLedgerError> {
+    if (authority == DEVELOPMENT_AUTHORITY && authentication == DEVELOPMENT_AUTHORITY)
+        || (valid_digest(authority) && valid_digest(authentication))
     {
         return Ok(());
     }
     Err(JobLedgerError::InvalidRecord(
-        "remote server-account binding is invalid",
+        "remote server authority binding is invalid",
     ))
+}
+
+fn valid_digest(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
 }

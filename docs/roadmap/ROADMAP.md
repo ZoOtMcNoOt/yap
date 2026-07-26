@@ -126,20 +126,26 @@ uses a synthetic signed two-principal gate where IT-owned Entra registration is
 not yet available. Biometric profiles remain Phase 8; Postgres/pgvector
 knowledge permission compilation remains Phase 9.
 
-The active branch now has focused executable evidence for the server
-resource/ownership boundary and the bounded native MSAL.NET/WAM bridge. That is
-implementation progress, not phase completion: documentation reconciliation
-and exactly three adversarial reviews are complete, with all accepted P0-P2
-findings closed on executable repair head
-`88de4aa66a5e16ff2b0c5e7eb4b21d7333b61d7f`. The one admitted complete matrix,
-first-attempt hosted closure, and merge remain required. Real enterprise Entra
-and WAM policy conformance remains an IT-authorized follow-up.
+The active branch now has focused executable evidence for a provider-neutral
+OIDC verifier with Entra policy, fail-closed authentication, tenant-scoped
+resource ownership, role-gated and audited purpose grants, enforced purpose
+checks, and authenticated bounded private WebSocket admission. The native lower
+WebSocket handshake is qualified against the separate internal live port. The
+desktop exposes only a narrow in-process token-provider seam; no production
+adapter is selected or approved. There is no live ASR, product endpoint
+discovery, external same-origin WSS/TLS, or HTTP/3 edge.
+
+This is implementation progress, not phase completion. The pinned mock OIDC
+flow is focused-green, while hosted Docker execution, final review, the one
+admitted complete matrix, hosted PR closure, and merge remain required. Real
+enterprise Entra policy conformance and an approved native adapter remain
+IT-authorized follow-ups.
 
 ## Accepted later phases
 
 | Phase | Boundary | Exit direction |
 | --- | --- | --- |
-| 7 | Identity and access | Entra/MSAL client bridge, Yap API audience/token validation, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants, authorization/revocation/audit behavior, and the authenticated owner seam consumed by later batch/live admission. |
+| 7 | Identity and access | Provider-neutral OIDC validation with Entra policy, a native token-provider seam whose production adapter requires separate approval, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, enforced purpose grants, authorization/revocation/audit behavior, and authenticated bounded private live admission without a live ASR or external edge claim. |
 | 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron eight-window/eight-global server baseline, a separately gated speaker-epoch extension for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/global/window pressure, ASR-plus-diarization fallback, and purpose-authorized server reconciliation/naming. |
 | 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and SGLang-backed compatible reasoning/tool-output models. |
 | 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus SGLang agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |

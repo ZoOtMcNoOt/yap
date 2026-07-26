@@ -7,6 +7,10 @@
 **Base:** Reviewed post-Phase-6 checkpoint merge
 `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
+**Current closure state:** Focused implementation evidence exists, but no
+Phase 7 exact head is frozen. Final three-agent review, the one-time complete
+matrix, first-attempt hosted closure, the focused PR, and merge remain open.
+
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
 implementing Phase 8 speaker inference, pulling Phase 9 knowledge/agent work
@@ -28,51 +32,62 @@ forward, or claiming IT-controlled enterprise deployment.
 4. Durable jobs, idempotency keys, artifact paths, audit events, and
    authorization records are tenant-and-subject scoped. Cross-principal lookup
    returns the same not-found projection as an absent resource.
-5. The desktop obtains Yap API tokens through an official MSAL native-client
-   adapter, keeps access tokens out of renderer and ordinary app-data
-   persistence, attaches bearer authorization at the connector boundary, and
-   handles silent refresh, interactive sign-in, sign-out, expiry, and
-   reconfiguration without duplicating connector ownership.
+5. The desktop has one narrow Rust-owned native access-token-provider
+   interface, keeps tokens out of renderer and ordinary app-data persistence,
+   and owns bearer injection, expiry, account-plus-authentication binding,
+   sign-out fencing, and connector generations. Production currently has no
+   installed provider and fails closed; an enterprise-approved adapter remains
+   an explicit handoff.
 6. Purpose grants and principal access revocation have one durable,
    append-only audit owner. Sign-in does not create a voice profile or imply
    enrollment, matching, adaptation, knowledge access, or speaker naming.
-7. The existing loopback development profile remains explicit and usable
-   without enterprise credentials. It uses a fixed development principal only
-   inside the disabled-auth loopback profile; that principal can never be
-   selected by a client or accepted on an externally bound server.
+7. The loopback development profile remains explicit and usable without
+   enterprise credentials. It uses a fixed development principal only when
+   `YAP_SERVER_CONFIGURATION=development` and
+   `YAP_AUTH_MODE=development_loopback`; that principal can never be selected
+   by a client or accepted on an externally bound server. The default
+   disabled-auth configuration fails closed for protected work.
 
 ## Architecture decisions
 
 ### Native client
 
-Microsoft does not publish a supported Rust MSAL implementation. The Windows
-desktop therefore uses a small official MSAL.NET public-client adapter rather
-than implementing OAuth/OIDC token acquisition in Rust or using renderer
-`localStorage`. Rust owns adapter lifecycle, request correlation, connector
-generation, and bearer injection. MSAL owns interactive Authorization Code +
-PKCE, its encrypted token cache, silent acquisition, refresh, and broker/system
-browser behavior.
+`NativeAccessTokenProvider` is the only desktop authentication seam. It models
+silent acquisition, interactive sign-in, session status, and sign-out while
+Rust owns request correlation, connector generations, account-and-authentication
+configuration-bound durable work, expiry fences, and bearer injection.
+Fake-provider tests exercise that contract without storing tokens in renderer
+or ordinary app-data state.
 
-The adapter has a versioned bounded stdin/stdout protocol, no arbitrary command
-surface, no token logging, no client secret, and no ability to choose a server
-origin. Packaging and teardown use the ordinary Tauri runtime-sidecar boundary;
-they do not restore retired installer-only containment.
+The production manager intentionally has `provider: None` and reports
+authentication unavailable. No MSAL.NET/WAM helper, system-browser adapter,
+protected broker cache, or other production provider is shipped or approved.
+Selection and conformance belong to the
+[Entra identity conformance handoff](../../runbooks/entra-identity-conformance-handoff.md).
 
 ### Server authentication
 
-Authentication is dependency-injected ahead of route dispatch. Production
-configuration is single-tenant and derives the metadata/JWKS authority from the
-configured tenant identifier rather than accepting an arbitrary discovery URL.
-Pinned `PyJWT[crypto]` performs JOSE validation behind a Yap-owned verifier. The
-verifier fixes `RS256`, enforces the tenant-specific issuer, Yap API audience,
+Authentication is dependency-injected ahead of route dispatch. The
+provider-neutral OIDC owner performs bounded discovery and same-origin JWKS
+retrieval, caching, rotation retention, and unknown-`kid` refresh. The Entra
+profile derives its issuer from the configured tenant rather than accepting a
+production override. Pinned `PyJWT[crypto]` performs JOSE validation behind a
+Yap-owned verifier. The Entra policy fixes `RS256`, issuer, Yap API audience,
 `access_as_user` delegated scope, allowed `azp` client, time claims, `tid`, and
-`oid`, and rejects app-only or wrong-resource tokens. Key documents are fetched
-with bounded size/time, cached for a bounded lifetime, and refreshed once
-through a single-flight path for an unknown `kid`. Tests use process-generated
-asymmetric keys and never require an Entra tenant or checked-in credential.
+`oid`, and rejects app-only or wrong-resource tokens. Focused tests use
+process-generated keys; the pinned mock provider exercises standards-based
+discovery/JWKS without an Entra tenant or checked-in credential.
 
 The native client does not validate access tokens. The Yap API is the resource
 server and owns token validation.
+
+Authenticated private live admission shares the REST principal policy and
+rechecks access revocation. The current runtime still has two loopback
+listeners: REST on `127.0.0.1:18765` and live WebSocket admission on
+`127.0.0.1:18766`. The desktop does not infer or discover the live origin from
+the REST origin. No production same-origin HTTPS/WSS edge or discovery contract
+exists, and this admission boundary does not promote a server live-ASR
+provider.
 
 ### Identity and authorization persistence
 
@@ -130,10 +145,11 @@ scanning, capacity/SLO promotion, and deployment evidence.
 - [x] Carry the authenticated principal through LID and server job-service
       admission, with non-disclosing cross-owner tests and no Phase 8 speaker
       behavior. Owner-fair provider-pool/router admission remains Phase 10.
-- [x] Add the official MSAL native adapter, encrypted cache integration,
-      bounded Rust protocol owner, connector-generation token acquisition, and
-      bearer injection for capabilities, LID, and batch calls. Preserve local
-      dictation and offline history when sign-in or the server is unavailable.
+- [x] Add the narrow native token-provider interface, fake-provider lifecycle
+      tests, connector-generation/account fencing, zeroizing token ownership,
+      and bearer injection for capabilities, LID, batch, and live admission.
+      Preserve local dictation and offline history when authentication is
+      unavailable.
 - [x] Add focused end-to-end fixtures for two tenants, two users in one tenant,
       token expiry/not-before, wrong resource/scope/issuer/tenant/algorithm,
       wrong/app-only client actor, unknown-key single-flight refresh, access
@@ -143,13 +159,20 @@ scanning, capacity/SLO promotion, and deployment evidence.
       roadmap, executable ownership, current status, provenance, runbooks, and
       IT handoffs with observed behavior. Do not mark biometric, knowledge, or
       enterprise work complete.
-- [x] Repair the initial adversarial findings: tenant-specific MSAL authority,
+- [x] Repair focused implementation findings: tenant-specific account
+      authority,
       schema-13 quarantine for ambiguous older authenticated bindings,
+      schema-14 durable account/configuration binding for remote cleanup,
       protected readiness, durable access disable/restore, read-only steady
       principal admission, rollback on failed first-principal commit,
       revoked-principal migration backfill, truthful OpenAPI/health,
       post-publication settings cleanup, live settings status, accessible async
-      status, and complete self-contained .NET runtime-pack inventory.
+      status, provider-neutral OIDC discovery/JWKS ownership, and
+      revocation-aware private live admission.
+- [x] Add the digest-pinned mock-OIDC owner-flow harness, bounded public-safe
+      receipt contract, and reviewed `ubuntu-latest` `mock-oidc` job. Focused
+      static and workflow/gate contracts are green; the Docker-backed flow
+      still awaits hosted execution on the final reviewed head.
 - [x] Run exactly three bounded antagonistic reviews of the ready executable
       branch, repair all P0-P2 correctness/security/privacy/maintainability
       findings, and run focused verification for those repairs.
@@ -164,6 +187,13 @@ scanning, capacity/SLO promotion, and deployment evidence.
 - [ ] Merge only the reviewed green SHA, then create the separate post-Phase-7
       ownership/maintainability checkpoint before Phase 8.
 
+The production native provider/protected cache is an IT-backed conformance
+handoff, not a developer-owned Phase 7 completion criterion. The production
+same-origin HTTPS/WSS edge or live-endpoint discovery contract remains a later
+transport/deployment decision, principally Phase 10. Phase 7 closes only the
+fail-closed interfaces and authenticated admission baseline that those owners
+will consume.
+
 ## Focused verification during development
 
 - Python auth/config/repository/request/job tests through the locked Python 3.12
@@ -173,28 +203,28 @@ scanning, capacity/SLO promotion, and deployment evidence.
 - Migration/restart tests using disposable private directories and databases.
 - Negative authorization tests that assert identical absent/cross-owner
   projections and redacted logs.
-- Native adapter protocol and lifecycle tests with a fake adapter, followed by a
-  disposable-Windows MSAL packaging smoke that does not require an enterprise
-  login.
+- Native token-provider and connector lifecycle tests with a fake provider.
+  Production adapter packaging and enterprise sign-in remain open.
 - A registration-independent synthetic issuer/JWKS integration gate with two
   principals and real asymmetric signatures. It proves the resource-server and
   ownership boundary, not Entra consent, Conditional Access, WAM, or a final
-  production audience.
+  production audience. The digest-pinned Docker provider is exercised by the
+  hosted `mock-oidc` job, not by this Docker-less local host.
 
 The complete matrix is reserved for the frozen candidate. Focused tests may run
 repeatedly while implementation is changing.
 
-The accepted-review repair head passed the narrow Ruff baseline, 25 focused
-server authorization/health/OpenAPI/owner-flow tests, 129 connector tests plus
-the final access-denied state check, 17 desktop migration tests, 31 ledger
-tests, 35 drain tests, the self-contained broker publish/protocol smoke,
-TypeScript compilation, 16 focused settings/accessibility tests, exact
-dependency inventory (88 JavaScript, 296 Rust, 10 .NET packages, 224 notice
-documents), and all 59 release-contract tests. This is development evidence,
-not the reserved complete Phase 7 matrix.
+The current working tree is not an accepted-review or frozen candidate head.
+The mock-OIDC static harness suite is 5/5 green, and the focused workflow plus
+integrated-gate contract set is 38/38 green. The actual Docker-backed
+mock-provider flow has not run locally; the hosted `mock-oidc` job is its
+executable closure. These are focused development results, not the reserved
+complete Phase 7 matrix or hosted first-attempt evidence.
 
 ## IT, security, privacy, and deployment handoffs
 
+The authoritative decision and evidence checklist is the
+[Entra identity conformance handoff](../../runbooks/entra-identity-conformance-handoff.md).
 Yap can implement and test the application boundary, but the following remain
 external approvals or inputs:
 

@@ -7,7 +7,7 @@ use std::{
 use crate::server_connector::{
     batch::{BatchApiClient, SourceVadInterval},
     client::bounded_client,
-    AsrCapabilityCatalog, RequestAuthorization,
+    AsrCapabilityCatalog, AuthenticatedRequestDispatcher,
 };
 
 use super::{
@@ -165,9 +165,8 @@ fn native_client_uses_versioned_media_type_and_validates_success() {
         write_json_response(&mut stream, 200, "OK", &response_body);
     });
     let client = BatchApiClient::new_authorized(
-        bounded_client().unwrap(),
+        AuthenticatedRequestDispatcher::fixed(bounded_client().unwrap(), "lid-token"),
         &format!("http://{address}"),
-        RequestAuthorization::fixed("lid-token"),
     )
     .unwrap();
 

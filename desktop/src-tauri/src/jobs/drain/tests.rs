@@ -13,9 +13,8 @@ use std::{
 use crate::{
     audio::session::OwnerNamespace,
     jobs::{
-        ClientStageName, ClientStageState, JobLedger, NewClientPreflightArtifact, NewRecordingJob,
-        RecordingJobResources, RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin,
-        SourceOwnership,
+        JobLedger, NewClientPreflightArtifact, NewRecordingJob, RecordingJobResources,
+        RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
     },
     server_connector::{
         batch::{
@@ -23,17 +22,17 @@ use crate::{
             PreprocessingEvidence, SourceVadInterval, VadComponentEvidence, VadEvidence,
         },
         config::ServerSettings,
-        ServerConnector, ServerConnectorBoundary,
+        AuthenticatedRequestDispatcher, ServerConnector, ServerConnectorBoundary,
     },
 };
 
 use super::{
-    advance_persisted_cancellation_once, advance_processing_job_once_guarded_for_test,
-    advance_processing_once, advance_processing_once_guarded,
-    advance_upload_job_once_guarded_for_test, advance_upload_once, advance_upload_once_guarded,
-    attach_prepared_remote_job_or_cleanup, claim_preprocessing_for_catalog,
-    prepare_next_queued_job, remote_retry_plan, validate_result_revision, BatchCommitGuard,
-    DrainStepError, RemoteJobDrain,
+    advance_cancellation_once_guarded_for_test, advance_persisted_cancellation_once,
+    advance_processing_job_once_guarded_for_test, advance_processing_once,
+    advance_processing_once_guarded, advance_upload_job_once_guarded_for_test, advance_upload_once,
+    advance_upload_once_guarded, attach_prepared_remote_job_or_cleanup,
+    claim_preprocessing_for_catalog, prepare_next_queued_job, remote_retry_plan,
+    validate_result_revision, BatchCommitGuard, DrainStepError, RemoteJobDrain,
 };
 
 #[path = "tests/support.rs"]

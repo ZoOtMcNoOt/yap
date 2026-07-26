@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "provider": "navikt/mock-oauth2-server",
+  "version": "5.0.2",
+  "image": "ghcr.io/navikt/mock-oauth2-server",
+  "manifestDigest": "sha256:f625692f5bf84939f3d0af4931f2c0f038dca84c4f1bac1171710d544181f97f",
+  "reference": "ghcr.io/navikt/mock-oauth2-server:5.0.2@sha256:f625692f5bf84939f3d0af4931f2c0f038dca84c4f1bac1171710d544181f97f",
+  "platformManifests": {
+    "linux/amd64": "sha256:26c173827c93382eab6543dfc66d5707e39024868618d3c3fd8e6f694717333c",
+    "linux/arm64": "sha256:9687bd8fdd9d9ddbbe10de97aac103f7aa6e1b9f9f1426e0cf476945ecdde5b9"
+  },
+  "license": "MIT",
+  "releaseSource": "https://github.com/navikt/mock-oauth2-server/releases/tag/5.0.2",
+  "sourceRevision": "b33a0c8",
+  "licenseSource": "https://github.com/navikt/mock-oauth2-server/blob/5.0.2/LICENSE.md",
+  "registryManifest": "https://ghcr.io/v2/navikt/mock-oauth2-server/manifests/5.0.2",
+  "verifiedAtUtc": "2026-07-26"
+}

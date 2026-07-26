@@ -4,15 +4,17 @@ use std::{
 };
 
 use super::{
-    allow_insecure_private_server, client, config, ServerConnectionSnapshot, ServerConnector,
+    allow_insecure_private_server, client, config, AuthenticatedLiveConnection,
+    AuthenticatedLiveError, ServerConnectionSnapshot, ServerConnector,
 };
 
 /// App-independent adapter over the production connector boundary.
 ///
 /// This is intentionally narrow: integration tests and non-Tauri hosts can
 /// drive the same bounded HTTP client, state machine, generation checks, and
-/// retry cancellation used by the desktop command adapter without exposing
-/// those implementation modules.
+/// retry cancellation used by the desktop command adapter. The explicit live
+/// seam additionally requires the caller's origin to be the current approved
+/// native server origin and never exposes credentials or a raw socket.
 #[doc(hidden)]
 #[derive(Clone)]
 pub struct ServerConnectorBoundary {
@@ -65,6 +67,21 @@ impl ServerConnectorBoundary {
                 spawn_boundary_retry(retry_connector, generation, retry_token, delay)
             },
         )
+    }
+
+    /// Connects a same-origin approved live edge supplied by native code.
+    ///
+    /// This does not discover or infer the private server's separate REST and
+    /// live-listener ports. That lower transport pairing is qualified by the
+    /// native-to-Python parity harness until a later topology owner publishes
+    /// one approved client-facing origin.
+    pub async fn connect_live_at_approved_origin(
+        &self,
+        approved_live_origin: &str,
+    ) -> Result<AuthenticatedLiveConnection, AuthenticatedLiveError> {
+        self.connector
+            .connect_authenticated_live_at_approved_origin(approved_live_origin)
+            .await
     }
 }
 

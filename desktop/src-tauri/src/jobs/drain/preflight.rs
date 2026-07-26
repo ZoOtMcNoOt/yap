@@ -408,10 +408,11 @@ async fn dispatch(
             .map_err(|error| ClientPreflightAdvanceError {
                 detail: error.to_string(),
             })?;
-    drain
-        .resources
-        .ledger()
-        .bind_remote_authority(&job.job_id, &remote_authority)?;
+    drain.resources.ledger().bind_remote_authority(
+        &job.job_id,
+        remote_authority.account(),
+        remote_authority.authentication(),
+    )?;
     let base_url = client.base_url_identity();
     let active_dispatch = artifact.lid_request_id.is_some();
     if active_dispatch
@@ -606,7 +607,7 @@ async fn cancel_persisted_dispatch(
             detail: "persisted LID dispatch has incomplete cancellation identity".into(),
         });
     };
-    let authority = ledger
+    let (authority, authentication) = ledger
         .remote_authority(&artifact.job_id)
         .map_err(ClientPreflightAdvanceError::from)?;
     let client = connector
@@ -614,7 +615,7 @@ async fn cancel_persisted_dispatch(
         .map_err(|error| ClientPreflightAdvanceError {
             detail: error.to_string(),
         })?
-        .expect_persisted_authority(&authority)
+        .expect_persisted_authority(&authority, &authentication)
         .map_err(|error| ClientPreflightAdvanceError {
             detail: error.to_string(),
         })?;

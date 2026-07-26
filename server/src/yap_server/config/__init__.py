@@ -3,11 +3,11 @@
 from yap_server.config.settings import (
     ServerAuthenticationSettings,
     ServerSettings,
-    ensure_authentication_bind_is_allowed,
+    ensure_private_application_bind,
 )
 
 __all__ = [
     "ServerAuthenticationSettings",
     "ServerSettings",
-    "ensure_authentication_bind_is_allowed",
+    "ensure_private_application_bind",
 ]

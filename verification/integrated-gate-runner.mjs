@@ -582,9 +582,13 @@ function loadFrozenInputs({
     INTEGRATED_GATE_BYTE_LIMITS.privatePlanBytes,
   );
   requireOutsideRepository(privatePlanFile.path, "Private evidence plan");
+  const requireMockOidc = selectedManifest.manifest.candidateCells.some(
+    ({ id }) => id === "server.mock-oidc-owner-flow",
+  );
   const privatePlan = validateIntegratedPrivateEvidencePlan(privatePlanFile.value, {
     expectedHead,
     repositoryRoot: REPOSITORY_ROOT,
+    requireMockOidc,
   });
   return {
     manifest: selectedManifest.manifest,
@@ -614,6 +618,9 @@ export function admitIntegratedGateAttempt({
     expectedHead: checkedHead,
     repositoryRoot: REPOSITORY_ROOT,
     requireDestinationsAbsent: true,
+    requireMockOidc: frozen.manifest.candidateCells.some(
+      ({ id }) => id === "server.mock-oidc-owner-flow",
+    ),
   });
 
   const manifestSha256 = frozen.manifestSha256;
@@ -852,6 +859,7 @@ export async function completeIntegratedGateAttempt({
     const privateEvidence = validateIntegratedPrivateEvidence(
       frozen.privatePlan,
       admission.checkedHead,
+      REPOSITORY_ROOT,
     );
     await assertNoRetainedLocalOwners();
     assertExactCleanGitHead(admission.checkedHead);
@@ -982,6 +990,7 @@ export function validateCompletedIntegratedGateAttempt(admissionPath) {
   const privateEvidence = validateIntegratedPrivateEvidence(
     frozen.privatePlan,
     admission.checkedHead,
+    REPOSITORY_ROOT,
   );
   for (const [index, cell] of frozen.manifest.candidateCells.entries()) {
     const child = receiptFile.value.children[index];

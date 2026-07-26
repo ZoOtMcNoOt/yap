@@ -11,7 +11,7 @@ Keep three planes separate:
 | Plane | Purpose | Exposure |
 | --- | --- | --- |
 | Management | SSH, recovery, tunnels | Private Ethernet for demos; corporate LAN/VPN later |
-| App entrypoint | Current loopback HTTP batch; future `yap-server` WSS + HTTPS | SSH-forwarded loopback during Phase 5 development; one managed TLS endpoint later |
+| App entrypoint | Current loopback REST on `18765` plus auth-only private live WebSocket admission on `18766` | Separate loopback listeners today; one approved same-origin HTTPS/WSS edge with discovery later |
 | Model/runtime internals | Ollama, VNC, dashboard, model pools, databases | Loopback, container network, or SSH tunnel only |
 
 Default rule: a Yap application service is never exposed to the public internet.
@@ -187,16 +187,29 @@ The executable Entra mode is an application boundary, not permission to invent
 or deploy enterprise identity configuration. IT must supply the approved
 single-tenant native-client and Yap API registrations, exposed delegated scope,
 assignment/consent policy, and test principals. Use only canonical identifiers
-from that handoff:
+from the
+[Entra identity conformance handoff](entra-identity-conformance-handoff.md):
 
 ```powershell
 $env:YAP_AUTH_MODE = 'entra'
+$env:YAP_SERVER_HOST = '127.0.0.1'
+$env:YAP_SERVER_PORT = '18765'
+$env:YAP_SERVER_LIVE_PORT = '18766'
 $env:YAP_ENTRA_TENANT_ID = '<approved-tenant-uuid>'
 $env:YAP_ENTRA_AUDIENCE = '<approved-yap-api-app-uuid>'
 $env:YAP_ENTRA_ALLOWED_CLIENT_IDS = '<approved-desktop-client-uuid>'
 $env:YAP_ENTRA_REQUIRED_SCOPE = 'access_as_user'
 $env:YAP_IDENTITY_STORAGE_DIR = '<private-owner-restricted-identity-directory>'
 ```
+
+The server owns provider-neutral OIDC discovery and JWKS retrieval, signature
+verification, bounded key refresh, and Entra-specific issuer, tenant, audience,
+client, scope, and role policy. Its identity repository enforces access state,
+purpose grants and revocation, and a redacted hash-chain audit. The desktop owns
+a narrow native access-token-provider interface, but the production build
+installs no provider and fails closed. No MSAL.NET/WAM helper, browser adapter,
+or production token cache is shipped; the handoff must select and qualify an
+approved adapter before real sign-in can be claimed.
 
 The desktop Settings entry uses the same approved tenant and desktop client IDs
 plus the full delegated scope, for example
@@ -205,17 +218,34 @@ scope as the Yap API scope. Remote HTTPS requires this public identity
 configuration; bearer tokens are never sent over private plaintext HTTP.
 Loopback HTTP remains available for the isolated development profile.
 
+In `entra` mode, protected REST routes and the private live listener admit the
+same authenticated principal and recheck revocation. The executable topology is
+still two loopback origins: REST on `18765` and live WebSocket admission on
+`18766`. The desktop boundary deliberately does not infer the live origin from
+the REST origin. No production same-origin HTTPS/WSS edge or discovery
+mechanism exists, so do not publish `18766` directly or treat this admission
+boundary as a promoted live-ASR service.
+
 Before any real-provider test, verify the identity directory is private,
 untracked, outside hosted artifacts, and covered by the approved encryption,
 backup, deletion, audit-retention, and administrator-access policy. The current
 SQLite adapter is for executable development/restart evidence; it is not the
 approved production database or audit sink.
 
-The checked branch proves signed-token validation and multi-owner isolation
-with a local synthetic issuer. That evidence does not prove real login, WAM,
-Conditional Access, MFA, consent, revocation propagation, guest behavior,
-packaged enterprise policy, or production approval. Run those only in a
-separately authorized IT-provided environment.
+The mock-OIDC dependency is digest-pinned in
+[`verification/mock-oidc-provider.lock.json`](../../verification/mock-oidc-provider.lock.json),
+and its bounded owner-flow harness is
+[`verification/test-mock-oidc-owner-flow.ps1`](../../verification/test-mock-oidc-owner-flow.ps1).
+Current focused evidence is 7/7 focused harness tests, including two executable
+fake-Docker lifecycle regressions, and 38/38 workflow/integrated-gate contracts.
+Docker was unavailable for the actual flow locally, so the dedicated hosted
+`mock-oidc` job remains the executable Docker
+closure. No exact Phase 7 head is frozen; final three-agent review, the complete
+gate, first-attempt hosted closure, the focused PR, and merge remain open.
+This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
+revocation propagation, guest behavior, packaged enterprise policy, or
+production approval. Run those only in a separately authorized IT-provided
+environment.
 
 On the Linux node, use Python 3.12 and private mode-0700 job storage. Replace
 the angle-bracket paths only with a clean staged candidate and the already
@@ -815,8 +845,8 @@ step fails. Treat any reported recovery failure as a console repair condition.
 
 | Owner | Responsibilities |
 | --- | --- |
-| Product | Configurable HTTPS origin (with loopback HTTP limited to the development tunnel), capability and auth-required state gating, strict Yap API token validation and owner authorization, no embedded node IP, and fail-closed retry without automatic network failover |
-| IT | Entra tenant/native/API registrations and policy, internal DNS, ZPA app segment and policy, App Connector placement and redundancy, connector-to-server routing, TLS termination and certificates, firewall source ranges, production identity storage/audit, and deployment approval |
+| Product | Current provider-neutral OIDC validation with Entra policy, purpose and owner authorization, authenticated private live admission, a narrow native token-provider boundary, no embedded node IP, and fail-closed retry without automatic network failover; later consume one approved same-origin HTTPS/WSS edge and discovery contract |
+| IT | Entra tenant/native/API registrations and policy, approved native token-provider adapter and conformance environment, internal DNS, the same-origin HTTPS/WSS edge and discovery design, ZPA app segment and policy, App Connector placement and redundancy, connector-to-server routing, TLS termination and certificates, firewall source ranges, production identity storage/audit, and deployment approval |
 
 Product configuration cannot substitute for approved network topology, and IT
 network reachability does not imply that upload, authentication, or inference
@@ -830,8 +860,10 @@ For corporate use, get these from IT before opening the app endpoint:
 - DHCP reservation or static IP for the server node, including wireless if the node is intended to live on Wi-Fi
 - Client CIDR or VPN CIDR allowed to reach the service
 - TLS certificate source, preferably corporate CA or approved internal ACME
-- Approved ADR 0016 Entra/MSAL registration and policy values for the executable
-  Yap API bearer-token boundary
+- Approved ADR 0016 Entra/OIDC registration and policy values, the native
+  token-provider adapter/conformance decision, and the same-origin HTTPS/WSS
+  edge/discovery design from the
+  [Entra identity conformance handoff](entra-identity-conformance-handoff.md)
 
 Then run with corporate CIDRs:
 
@@ -934,6 +966,9 @@ the directory and allow-rule operations are repeatable.
 - Do not open `11000`, `11434`, `5909`, database ports, or model worker ports directly.
 - Do not bind the Phase 3 health service to `0.0.0.0`, `[::]`, the Wi-Fi address, or an
   overlay address.
+- Do not publish the current private live port `18766`, infer it from REST
+  `18765`, or represent the two loopback listeners as the missing production
+  same-origin HTTPS/WSS edge.
 - Do not expose the Phase 4 container worker or model directory as a network
   service.
 - Do not make the server node public-internet reachable.

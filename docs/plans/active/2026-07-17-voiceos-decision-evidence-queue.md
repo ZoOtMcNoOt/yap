@@ -798,11 +798,20 @@ next-phase cadence.
 
 ### Phase 7 — Identity and ownership
 
-- Replace the fixed development owner with token-derived `(tid, oid)` identity.
-- Implement Entra/MSAL client flow, Yap API audience validation, secure token
-  storage, revocation, authorization, purpose grants, and audit events.
-- Prove identity reaches batch/live admission without making UI state or a model
-  the authorization authority.
+- The active branch replaces fixed ownership in the authenticated profile with
+  validated `(tid, oid)` principals, owner-scopes batch/LID access, and enforces
+  access revocation and purpose grants through one redacted audit owner.
+- Provider-neutral OIDC discovery/JWKS validation executes behind an Entra
+  policy adapter. A narrow native token-acquisition interface and bearer
+  injection boundary execute, but no enterprise-approved production
+  MSAL/WAM adapter or token cache is selected.
+- Authenticated REST and bounded private WebSocket admission are focused-tested.
+  The WebSocket listener has no live ASR, and the desktop does not infer the
+  private server's separate REST/live ports or claim a production same-origin
+  WSS edge.
+- The pinned mock-OIDC flow, final three-agent adversarial closure, exact
+  one-time Phase 7 gate, hosted checks, PR, and merge remain the current
+  delivery boundary.
 
 ### Phase 8 — Meeting evidence
 

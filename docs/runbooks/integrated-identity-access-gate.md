@@ -5,25 +5,43 @@ behavior identity is `integrated-identity-access`. It is separate from the
 historical Phase 6 gate and the earlier whole-product checkpoint, so neither
 their admissions nor their pass receipts can be relabeled or reused.
 
+**Current status:** no Phase 7 exact head is frozen or admitted. Focused
+development checks are green, but final three-agent review, the complete
+candidate matrix, first-attempt hosted closure, the focused PR, and merge
+remain open.
+
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
 It retains the complete frontend, native, server, target-client, GB10, and
-desktop-to-private-server matrix. The local and hosted inventories additionally
-name the self-contained native identity broker explicitly.
+desktop-to-private-server matrix. The local inventory includes the
+receipt-backed mock-OIDC owner flow, and hosted closure includes the dedicated
+`mock-oidc` job. No production desktop-provider job is listed because no
+production provider is selected or shipped.
 
 ## Evidence boundary
 
-Repository tests prove the single-tenant token contract with locally signed
-tokens, tenant-specific principal IDs, durable access disable/restore,
+Repository tests prove the provider-neutral OIDC discovery/JWKS boundary, Entra
+tenant/audience/client/scope/role policy, tenant-specific principal IDs,
+durable access disable/restore, purpose enforcement, redacted audit behavior,
 cross-owner isolation, restart behavior, protected readiness, and desktop
-binding. The private GB10 and connected-server receipts continue to qualify the
-physical ASR lifecycle through the development access mode.
+connector fencing. Authenticated private WebSocket admission shares the REST
+principal policy and rechecks revocation. The executable private topology still
+uses separate loopback listeners—REST `18765` and live `18766`; no production
+same-origin HTTPS/WSS edge or discovery mechanism exists. The private GB10 and
+connected-server receipts continue to qualify the physical ASR lifecycle
+through the development access mode.
 
 That is not evidence of real enterprise enrollment. Entra application
 registrations, tenant policy, assignment/consent, test principals, certificates,
 DNS, ZPA policy, and production identity-store operations remain explicit IT
 inputs. Do not substitute developer-created infrastructure or claim that this
 gate proves those controls.
+
+The desktop currently has a narrow native access-token-provider interface but
+production installs no provider and fails closed. No MSAL.NET/WAM helper or
+protected production cache is shipped. Adapter selection, tenant enrollment,
+and real-provider evidence are governed by the
+[Entra identity conformance handoff](entra-identity-conformance-handoff.md).
 
 Private audio, transcript text, host paths, raw metrics, process ledgers,
 tokens, command output, and receipts must remain outside Git. Only public-safe
@@ -38,6 +56,10 @@ dedicated `GH_TOKEN` limited to commit-status read/write for admission. Prepare
 a new private plan for that head with new absent evidence destinations outside
 the repository. Runtime preparation receipts and every private result must also
 bind to that head.
+
+The identity gate requires private-plan schema version 2 and a new absolute
+`mockOidc.receiptFile` outside the repository. Like every other admitted
+destination, that file must not exist at admission.
 
 Admission creates one GitHub commit status whose normalized context binds the
 gate ID and manifest hash and whose description contains only the SHA-256 of
@@ -63,10 +85,30 @@ node .\verification\integrated-gate-runner.mjs begin `
   --private-plan <new-private-plan.json>
 ```
 
+After admission, populate the admitted `mockOidc.receiptFile` on a
+Docker-capable exact-clean candidate executor only through the bounded harness:
+
+```powershell
+.\verification\test-mock-oidc-owner-flow.ps1 `
+  -CheckedHead $candidateHead `
+  -ReceiptOutput <absolute-new-mock-oidc-receipt.json>
+```
+
+The harness writes at most 4 KiB only after the owner flow passes and container,
+network, child-process, loopback-port, cancellation-handler, and state-directory
+teardown is verified. The receipt contains only the checked head, locked image
+digest, validator/owner-flow source hashes, and public-safe teardown facts; it
+contains no token, log, container ID, or private path. The current working tree
+has 7/7 focused harness tests, including two executable fake-Docker lifecycle
+regressions, and 38/38 focused workflow/integrated-gate contracts. Its actual
+Docker-backed flow was not run locally; the hosted
+`mock-oidc` job is the current executable Docker closure, and its first-attempt
+result must be collected on the final reviewed head.
+
 Populate the admitted destinations through the approved target-client, GB10,
-connected-server, and teardown controllers. Then invoke completion exactly
-once. Completion runs every command cell and accepts every private child only
-when its receipt matches the frozen plan:
+connected-server, mock-OIDC, and teardown controllers. Then invoke completion
+exactly once. Completion runs every command cell and accepts every private child
+only when its receipt matches the frozen plan:
 
 ```powershell
 node .\verification\integrated-gate-runner.mjs complete `
@@ -97,10 +139,10 @@ same candidate.
 ## Hosted closure
 
 Push the checked candidate and open its focused pull request only after the
-candidate receipt validates. Hosted CI, the identity-broker job, CodeQL, and the
-disposable-Windows NSIS job must all pass on the exact final reviewed head on
-their first attempt. A documentation-only descendant may reconcile public-safe
-evidence; any other change requires a new candidate gate.
+candidate receipt validates. Hosted CI—including the `mock-oidc` job—CodeQL,
+and the disposable-Windows NSIS job must all pass on the exact final reviewed
+head on their first attempt. A documentation-only descendant may reconcile
+public-safe evidence; any other change requires a new candidate gate.
 
 Remove the admission token after candidate completion. For hosted closure, set
 `GH_TOKEN` to a separate read-only credential limited to commit-status read and
@@ -141,11 +183,6 @@ node .\verification\integrated-gate-receipt.mjs validate `
   --admission-sha256 $admissionSha256
 ```
 
-The pre-merge C# boundary is enforced by the pinned .NET SDK's full analyzer
-set, warnings-as-errors, locked restore, the NuGet advisory audit, and the
-identity-broker CI job. The repository's GitHub CodeQL configuration uses
-default setup; GitHub enrolls a newly detected supported language after that
-language reaches the default branch. Therefore C# CodeQL is a post-merge
-default-branch confirmation, not evidence claimed by this pre-merge receipt.
-See GitHub's
-[default setup documentation](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configure-code-scanning).
+Do not add a broker, C# inventory, or post-merge language claim to this gate
+until an approved production native provider exists and its separately
+reviewed adapter contract requires them.

@@ -3,8 +3,7 @@
 ## Shipped desktop dependency inventory
 
 `SHIPPED_DEPENDENCY_INVENTORY.json` is generated from the exact production
-pnpm graph, the normal-dependency Rust graph, and the native identity broker's
-runtime-bearing NuGet graph for
+pnpm graph and the normal-dependency Rust graph for
 `x86_64-pc-windows-msvc`. It is bundled beside this notice.
 `SHIPPED_DEPENDENCY_NOTICES.json` binds every exact package/crate identity to
 deduplicated installed-source LICENSE, COPYING, NOTICE, COPYRIGHT, or AUTHORS
@@ -20,14 +19,6 @@ The current graph maps to these license families and reviewed terms:
 The `GSAP-Standard` disposition refers to the GSAP standard no-charge license
 published at https://gsap.com/standard-license/. The inventory preserves each
 package's exact declared license expression rather than collapsing alternatives.
-`MS-MSAL-NativeInterop` identifies the Microsoft Software License Terms shipped
-inside the official WAM broker dependency. Its exact installed terms are bound
-in `SHIPPED_DEPENDENCY_NOTICES.json`; redistribution outside an approved
-organizational deployment remains subject to legal review of those terms.
-`MS-Windows-SDK` identifies the Microsoft Windows SDK terms referenced by the
-exact SDK reference runtime-pack entry in the self-contained broker manifest.
-Its signed installed package metadata is bound in the notice bundle, and
-redistribution remains subject to organizational legal review.
 
 This dependency inventory is separate from direct source-adaptation provenance
 in `THIRD_PARTY_PROVENANCE.json`. Package-manager metadata does not authorize

@@ -15,6 +15,7 @@ from yap_server.auth import (
 )
 from yap_server.auth.identity_repository import SqliteIdentityRepository
 from yap_server.config import ServerAuthenticationSettings, ServerSettings
+from yap_server.live import PrivateLiveWebSocketServer
 
 
 TENANT_ID = "11111111-1111-4111-8111-111111111111"
@@ -37,6 +38,7 @@ class _FixedSigningKeys:
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", required=True, type=int)
+    parser.add_argument("--live-port", required=True, type=int)
     parser.add_argument("--state-root", required=True, type=Path)
     parser.add_argument("--token-file", required=True, type=Path)
     return parser.parse_args()
@@ -48,6 +50,7 @@ def _signed_token(private_key: object) -> str:
         {
             "iss": f"https://login.microsoftonline.com/{TENANT_ID}/v2.0",
             "aud": AUDIENCE,
+            "ver": "2.0",
             "exp": now + timedelta(minutes=5),
             "nbf": now - timedelta(minutes=1),
             "iat": now - timedelta(seconds=1),
@@ -96,7 +99,14 @@ def main() -> None:
         settings,
         request_authenticator=authenticator,
     )
+    live_server = PrivateLiveWebSocketServer(
+        authenticator,
+        port=arguments.live_port,
+    )
+    live_started = False
     try:
+        live_server.start()
+        live_started = True
         descriptor = os.open(
             token_file,
             os.O_WRONLY | os.O_CREAT | os.O_EXCL,
@@ -107,6 +117,8 @@ def main() -> None:
             stream.write("\n")
         server.serve_forever(poll_interval=0.01)
     finally:
+        if live_started:
+            live_server.close()
         server.server_close()
         repository.close()
 

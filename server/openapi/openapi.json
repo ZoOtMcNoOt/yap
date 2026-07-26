@@ -25,7 +25,7 @@
     },
     {
       "name": "live",
-      "description": "Contract-only WebSocket upgrade interface."
+      "description": "Authenticated private WebSocket transport interface; live ASR inference remains unavailable."
     }
   ],
   "security": [
@@ -1017,14 +1017,26 @@
           "live"
         ],
         "summary": "Upgrade to the Yap live event protocol",
-        "description": "The live event schema remains contract-only. The loopback batch runtime does not advertise a WebSocket runtime, streaming inference, or authentication.",
+        "description": "An authenticated loopback WebSocket application transport admits and validates live sessions on the private live listener. Clients must offer exactly Sec-WebSocket-Protocol: yap.live.v1 and the successful upgrade negotiates that protocol. Token authentication, principal admission, session ownership, replay safety, cancellation, bounded buffering, and reconnect semantics are enforced. TLS terminates at an external secure edge. Live ASR inference remains unavailable and liveStreaming remains false.",
         "operationId": "connectLive",
-        "x-yap-runtime-status": "Contract only; capability remains false",
+        "x-yap-runtime-status": "Authenticated private transport implemented; live ASR inference remains false",
         "x-yap-runtime-owner": "Live WebSocket transport",
         "x-yap-live-events-schema": "./live-events.schema.json",
+        "parameters": [
+          {
+            "name": "Sec-WebSocket-Protocol",
+            "in": "header",
+            "required": true,
+            "description": "The client must offer exactly the Yap live protocol token; missing, mismatched, or additional protocol offers are rejected.",
+            "schema": {
+              "type": "string",
+              "const": "yap.live.v1"
+            }
+          }
+        ],
         "responses": {
           "101": {
-            "description": "Future WebSocket protocol upgrade.",
+            "description": "Authenticated WebSocket upgrade with yap.live.v1 negotiated.",
             "headers": {
               "Upgrade": {
                 "schema": {
@@ -3516,7 +3528,7 @@
           },
           "liveStreaming": {
             "type": "boolean",
-            "description": "True only when the live WebSocket runtime is implemented."
+            "description": "True only when live ASR inference is implemented; authenticated transport admission alone remains false."
           },
           "jobStatus": {
             "type": "boolean",

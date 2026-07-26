@@ -19,6 +19,8 @@ TENANT_ID = "11111111-1111-4111-8111-111111111111"
 SUBJECT_ID = "22222222-2222-4222-8222-222222222222"
 ADMIN_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 CLIENT_ID = "33333333-3333-4333-8333-333333333333"
+ADMIN_ROLE = "Yap.IdentityAdministrator"
+ADMINISTRATOR_ROLES = frozenset({ADMIN_ROLE})
 
 
 class _Clock:
@@ -36,6 +38,7 @@ def _principal(
     subject_id: str = SUBJECT_ID,
     *,
     issued_at_unix: int = 1_774_699_199,
+    roles: frozenset[str] = frozenset(),
 ) -> AuthenticatedPrincipal:
     return AuthenticatedPrincipal(
         tenant_id=TENANT_ID,
@@ -43,6 +46,7 @@ def _principal(
         client_id=CLIENT_ID,
         scopes=frozenset({"access_as_user"}),
         issued_at_unix=issued_at_unix,
+        roles=roles,
     )
 
 
@@ -56,7 +60,7 @@ class IdentityRepositoryTests(unittest.TestCase):
             clock=self.clock,
         )
         self.user = _principal()
-        self.admin = _principal(ADMIN_ID)
+        self.admin = _principal(ADMIN_ID, roles=ADMINISTRATOR_ROLES)
 
     def tearDown(self) -> None:
         self.repository.close()
@@ -107,7 +111,11 @@ class IdentityRepositoryTests(unittest.TestCase):
         self.repository.upsert_principal(user)
         self.repository.upsert_principal(self.admin)
 
-        epoch = self.repository.revoke_access(self.admin.key, user.key)
+        epoch = self.repository.revoke_access(
+            self.admin,
+            user.key,
+            administrator_roles=ADMINISTRATOR_ROLES,
+        )
 
         self.assertEqual(epoch, int(self.clock().timestamp()))
         self.assertFalse(self.repository.access_is_allowed(user))
@@ -115,7 +123,11 @@ class IdentityRepositoryTests(unittest.TestCase):
         newer = _principal(issued_at_unix=int(self.clock().timestamp()))
         self.assertFalse(self.repository.access_is_allowed(newer))
 
-        restored_epoch = self.repository.restore_access(self.admin.key, user.key)
+        restored_epoch = self.repository.restore_access(
+            self.admin,
+            user.key,
+            administrator_roles=ADMINISTRATOR_ROLES,
+        )
         self.assertEqual(restored_epoch, int(self.clock().timestamp()))
         self.assertFalse(self.repository.access_is_allowed(newer))
         self.clock.advance()
@@ -140,7 +152,11 @@ class IdentityRepositoryTests(unittest.TestCase):
         self.assertEqual(self.repository.audit_events(), original_events)
 
         self.repository.upsert_principal(self.admin)
-        self.repository.revoke_access(self.admin.key, self.user.key)
+        self.repository.revoke_access(
+            self.admin,
+            self.user.key,
+            administrator_roles=ADMINISTRATOR_ROLES,
+        )
         denied_before = self.repository.principal(self.user.key)
         denied_events = self.repository.audit_events()
         self.clock.advance(30)
@@ -214,7 +230,11 @@ class IdentityRepositoryTests(unittest.TestCase):
         self.assertEqual(disabled, {SUBJECT_ID: 1, ADMIN_ID: 0})
         newer = _principal(issued_at_unix=int(self.clock().timestamp()) + 100)
         self.assertFalse(self.repository.access_is_allowed(newer))
-        self.repository.restore_access(self.admin.key, newer.key)
+        self.repository.restore_access(
+            self.admin,
+            newer.key,
+            administrator_roles=ADMINISTRATOR_ROLES,
+        )
         self.clock.advance()
         self.assertTrue(
             self.repository.access_is_allowed(
@@ -235,19 +255,21 @@ class IdentityRepositoryTests(unittest.TestCase):
         )
 
         granted_epoch = self.repository.grant_purpose(
-            self.admin.key,
+            self.admin,
             self.user.key,
             purpose="matching",
             metadata=metadata,
+            administrator_roles=ADMINISTRATOR_ROLES,
         )
         self.assertEqual(granted_epoch, 1)
         self.assertTrue(self.repository.purpose_is_active(self.user.key, "matching"))
         self.assertFalse(self.repository.purpose_is_active(self.user.key, "adaptation"))
 
         revoked_epoch = self.repository.revoke_purpose(
-            self.admin.key,
+            self.admin,
             self.user.key,
             purpose="matching",
+            administrator_roles=ADMINISTRATOR_ROLES,
         )
         self.assertEqual(revoked_epoch, 2)
         self.assertFalse(self.repository.purpose_is_active(self.user.key, "matching"))
@@ -297,6 +319,10 @@ class IdentityRepositoryTests(unittest.TestCase):
             subject_id=SUBJECT_ID,
         )
 
-        with self.assertRaises(KeyError):
-            self.repository.revoke_access(self.admin.key, unknown)
+        with self.assertRaises(PermissionError):
+            self.repository.revoke_access(
+                self.admin,
+                unknown,
+                administrator_roles=ADMINISTRATOR_ROLES,
+            )
         self.assertIsNone(self.repository.principal(unknown))

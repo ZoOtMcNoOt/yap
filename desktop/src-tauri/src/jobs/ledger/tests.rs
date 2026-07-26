@@ -26,21 +26,24 @@ fn remote_authority_is_immutable_across_account_switch_and_restart() {
         let ledger = JobLedger::open(&path).unwrap();
         ledger.insert_job(&job).unwrap();
         ledger
-            .bind_remote_authority(&job.job_id, &"a".repeat(64))
+            .bind_remote_authority(&job.job_id, &"a".repeat(64), &"1".repeat(64))
             .unwrap();
         ledger
-            .bind_remote_authority(&job.job_id, &"a".repeat(64))
+            .bind_remote_authority(&job.job_id, &"a".repeat(64), &"1".repeat(64))
             .unwrap();
         assert!(ledger
-            .bind_remote_authority(&job.job_id, &"b".repeat(64))
+            .bind_remote_authority(&job.job_id, &"b".repeat(64), &"1".repeat(64))
             .is_err());
         assert!(ledger
-            .bind_remote_authority(&job.job_id, "development-loopback")
+            .bind_remote_authority(&job.job_id, "development-loopback", "development-loopback")
+            .is_err());
+        assert!(ledger
+            .bind_remote_authority(&job.job_id, &"a".repeat(64), &"2".repeat(64))
             .is_err());
     }
     let reopened = JobLedger::open(&path).unwrap();
     assert!(reopened
-        .bind_remote_authority(&job.job_id, &"b".repeat(64))
+        .bind_remote_authority(&job.job_id, &"b".repeat(64), &"1".repeat(64))
         .is_err());
     drop(reopened);
     fs::remove_dir_all(dir).unwrap();
@@ -52,11 +55,11 @@ fn unauthenticated_remote_authority_cannot_be_claimed_afterward() {
     let job = server_batch_job("development-bound");
     ledger.insert_job(&job).unwrap();
     ledger
-        .bind_remote_authority(&job.job_id, "development-loopback")
+        .bind_remote_authority(&job.job_id, "development-loopback", "development-loopback")
         .unwrap();
 
     assert!(ledger
-        .bind_remote_authority(&job.job_id, &"c".repeat(64))
+        .bind_remote_authority(&job.job_id, &"c".repeat(64), &"1".repeat(64))
         .is_err());
 }
 
@@ -199,6 +202,7 @@ fn restart_database_has_exact_metadata_surface_and_no_payload_content() {
                 ("queued_at_ms", "INTEGER"),
                 ("remote_authority_binding", "TEXT"),
                 ("remote_authority_version", "INTEGER"),
+                ("remote_authentication_binding", "TEXT"),
             ][..],
         ),
         (
@@ -285,6 +289,7 @@ fn restart_database_has_exact_metadata_surface_and_no_payload_content() {
                 ("client_stage_history_complete", "INTEGER"),
                 ("remote_authority_binding", "TEXT"),
                 ("remote_authority_version", "INTEGER"),
+                ("remote_authentication_binding", "TEXT"),
             ][..],
         ),
         (

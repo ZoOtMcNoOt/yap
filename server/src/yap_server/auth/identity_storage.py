@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from typing import Literal
+from typing import Literal, Sequence
 from uuid import uuid4
 
 from yap_server.auth.authorization_audit import (
@@ -226,26 +226,36 @@ def append_identity_audit(
     occurred_at_utc: str,
     epoch: int,
     purpose: Purpose | None = None,
+    required_purposes: Sequence[Purpose] = (),
+    reason: str | None = None,
+    operation_id: str | None = None,
 ) -> None:
+    event: dict[str, object] = {
+        "schemaVersion": 1,
+        "eventId": str(uuid4()),
+        "occurredAtUtc": occurred_at_utc,
+        "actor": {
+            "tenantId": actor.tenant_id,
+            "subjectId": actor.subject_id,
+        },
+        "target": {
+            "tenantId": target.tenant_id,
+            "subjectId": target.subject_id,
+        },
+        "action": action,
+        "outcome": outcome,
+        "purpose": purpose,
+        "epoch": epoch,
+    }
+    if required_purposes:
+        event["requiredPurposes"] = list(required_purposes)
+    if reason is not None:
+        event["reason"] = reason
+    if operation_id is not None:
+        event["operationId"] = operation_id
     append_audit_event(
         connection,
-        {
-            "schemaVersion": 1,
-            "eventId": str(uuid4()),
-            "occurredAtUtc": occurred_at_utc,
-            "actor": {
-                "tenantId": actor.tenant_id,
-                "subjectId": actor.subject_id,
-            },
-            "target": {
-                "tenantId": target.tenant_id,
-                "subjectId": target.subject_id,
-            },
-            "action": action,
-            "outcome": outcome,
-            "purpose": purpose,
-            "epoch": epoch,
-        },
+        event,
     )
 
 

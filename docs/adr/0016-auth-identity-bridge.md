@@ -1,9 +1,10 @@
-# ADR 0016: Authentication and voice identity bridge (Entra ID + MSAL)
+# ADR 0016: Authentication and voice identity bridge (Entra policy over OIDC)
 
 **Date:** 2026-07-01
 **Status:** Accepted (Phase 7 implementation active); voice-profile behavior amended by [ADR 0020](0020-meeting-capture-diarization-authority.md)
 **Builds on:** [ADR 0014](0014-server-tier-compute-topology.md) (server tier; auth gates the server connector)
 **Related to:** [ADR 0020](0020-meeting-capture-diarization-authority.md) (diarization authority, contact boundary, and profile-update rules), [ADR 0017](0017-knowledge-base-compiler.md) (authenticated identity drives KB permission compilation)
+**Enterprise handoff:** [Entra identity conformance handoff](../runbooks/entra-identity-conformance-handoff.md)
 
 > **2026-07-10 correction:** Yap API tokens and Microsoft Graph tokens are resource-specific and must not be interchanged. Yap identities are tenant-scoped `(tid, oid)` pairs, display names are presentation snapshots, and no model prediction may authorize its own biometric-profile update.
 
@@ -17,15 +18,14 @@
 > they are not Phase 7 completion claims. Phase 7 uses a provider-neutral
 > identity-repository contract with a SQLite executable development adapter.
 > Production database topology and approval remain an explicit handoff.
-> The Windows client now uses an official MSAL.NET public-client sidecar with
-> WAM and system-browser fallback, an OS-protected per-tenant/client cache, and
-> a bounded single-request JSON protocol owned by Rust. The raw MSAL home
-> account ID is immediately reduced to a one-way local account binding; it is
-> never renderer, ledger, or log material. Every durable remote desktop job is
-> immutably bound to that account before network dispatch, so sign-out or
-> account switching fails closed instead of sending another user's bearer
-> token. Pre-Phase-7 remote work remains bound only to the development-loopback
-> authority and is never claimed by the first signer.
+> The Windows client currently exposes one narrow Rust-owned native
+> access-token-provider interface and fails closed because no production
+> provider is installed. Fake-provider tests exercise acquisition, account
+> binding, expiry, sign-out, and connector fencing, but no MSAL.NET, WAM,
+> system-browser, or protected-cache adapter is shipped or approved.
+> Production adapter selection and real-provider conformance remain the
+> enterprise handoff. Pre-Phase-7 remote work remains bound only to the
+> development-loopback authority and is never claimed by the first signer.
 
 ## Context
 
@@ -34,7 +34,11 @@ The team profile (ADR 0014) introduces a server tier that processes audio and st
 1. **Who is the user?** — the server needs a verified identity to enforce per-user queuing, fairness, and permission gating.
 2. **Whose voice is this?** - the authoritative diarization service may match meeting evidence against explicitly enrolled employee profiles; those profiles must be linked to a stable tenant-scoped identity.
 
-**Microsoft Entra ID** (formerly Azure AD) is the assumed corporate identity provider for org deployments of Yap. Sign-in uses the **MSAL** (Microsoft Authentication Library) OAuth2 / OIDC flow, which is standard for corporate apps.
+**Microsoft Entra ID** (formerly Azure AD) is the assumed corporate identity
+provider for org deployments of Yap. The resource server implements
+provider-neutral OAuth2/OIDC discovery, JWKS ownership, and access-token
+validation with an Entra-specific tenant/audience/client/scope/role policy.
+The production native token-acquisition adapter has not been selected.
 
 **Critical distinction:** Entra ID stores identity metadata. It does **not** store Yap voice vectors. The app database is the bridge between the tenant-scoped Entra identity `(tid, oid)` and a separately enrolled, purpose-authorized, model-versioned voice profile. This separation keeps biometric data under the organization's direct control.
 
@@ -45,19 +49,22 @@ The team profile (ADR 0014) introduces a server tier that processes audio and st
 ```mermaid
 flowchart LR
     User["User\n(yap-desktop)"]
-    MSAL["MSAL OAuth2\n(Entra ID)"]
+    Provider["Approved native token provider\n(not yet selected)"]
     Token["Yap API access token\n(JWT, Entra-signed)"]
     Server["yap-server\ntoken validation"]
     DB["Identity repository\n(tid, oid) → policy"]
 
-    User -->|"sign in"| MSAL
-    MSAL --> Token --> User
+    User -->|"sign in"| Provider
+    Provider --> Token --> User
     User -->|"Bearer token"| Server
     Server -->|"validate + lookup"| DB
 ```
 
-1. User clicks **Sign in** in `yap-desktop`.
-2. MSAL performs the OAuth2 Authorization Code + PKCE flow against the org's Entra ID tenant.
+This is the required production flow, not a claim that a production desktop
+adapter exists today:
+
+1. User clicks **Sign in** in `yap-desktop` after an approved native provider is installed.
+2. The approved provider performs OAuth2 Authorization Code + PKCE against the org's Entra ID tenant.
 3. The native client requests a Yap API scope, such as `api://<yap-server-app-id>/access_as_user`.
 4. `yap-desktop` presents that Yap API access token as a `Bearer` header on requests to `yap-server`.
 5. `yap-server` validates the fixed signing algorithm and key, issuer, tenant,
@@ -223,7 +230,8 @@ This system is designed for **on-prem organization-controlled deployments only**
 
 ### Positive
 
-- **Single sign-on** — users sign in once with their corporate Entra credentials; no separate Yap account.
+- **Single sign-on target** — after an adapter is approved, users sign in with
+  corporate Entra credentials rather than a separate Yap account.
 - **Accurate speaker attribution** — identity DB links voice centroids to real names without sending biometrics to Entra or any cloud provider.
 - **Clean permission model** - `(tid, oid)` as the stable tenant-scoped key survives email changes and renames.
 - **Biometric isolation** — voice vectors are strictly org-local and never embedded in transcript content.
@@ -237,43 +245,41 @@ This system is designed for **on-prem organization-controlled deployments only**
 ### Neutral
 
 - Solo/local-first profile is unaffected; no auth required, no voice enrollment.
-- The Entra access token is scoped per session; token refresh is MSAL's responsibility.
+- The Entra access token is scoped per session; acquisition and refresh belong
+  to the future approved native provider, while Yap owns connector fencing and
+  resource-server validation.
 
 ## Implementation notes
 
-### MSAL integration (`yap-desktop`)
+### Native token-provider boundary (`yap-desktop`)
 
-Use an MSAL native/public-client Authorization Code + PKCE flow. Microsoft does
-not publish a supported Rust MSAL library, so the Windows implementation uses a
-bounded MSAL.NET/WAM native adapter with a system-browser fallback. Rust owns
-adapter lifecycle and connector integration; MSAL owns token acquisition,
-broker/cache behavior, and refresh. `msal-browser` popup code is not the
-architecture contract for the Tauri desktop app.
+`NativeAccessTokenProvider` is the only desktop authentication seam. It models
+silent acquisition, interactive sign-in, session status, and sign-out while
+the Rust connector owns request correlation, an active account/configuration
+binding independent of token-cache expiry, connector/session generations,
+current approved-origin fencing, and bearer injection. Settings publication
+first cancels and drains the previous authenticated session; persisted cleanup
+does not contact a retired or unapproved origin and requires the durable account
+hash plus a normalized tenant/client/API-scope configuration hash to match.
+Access tokens remain in zeroizing Rust-owned memory and are not renderer or
+ordinary app-data state.
 
-Request the Yap API scope for Yap calls. Request Microsoft Graph scopes only for separate Graph operations. Tokens and refresh material are stored through OS credential storage and are never exposed to ordinary frontend persistence.
-
-The packaged adapter is a self-contained Windows executable built from the
-pinned .NET 8 SDK and locked MSAL packages. Its silent path uses only the one
-account already selected through Yap's interactive flow; it does not silently
-adopt the ambient Windows account. Rust bounds request/response bytes, suppresses
-sidecar stderr, owns timeouts and child teardown, keeps access tokens in
-zeroizing memory, and marks the outbound authorization header sensitive.
-The adapter resolves the configured tenant's `TenantProfile.Oid` and returns
-only the canonical tenant-specific `tenant:oid` account identity; it does not
-use the cross-tenant MSAL home-account identifier as resource ownership.
-Desktop ledger schema 13 therefore writes version-2 tenant-principal authority
-bindings and quarantines pre-repair authenticated schema-12 bindings instead
-of guessing their tenant subject.
-`Microsoft.Identity.Client.NativeInterop` is transitively required by the WAM
-broker and uses Microsoft-specific license terms. The repository records those
-exact terms; distribution still requires the named legal/provenance review and
-is not inferred from a successful local build. Release inventory is generated
-from the produced self-contained broker dependency manifest, including its
-exact .NET runtime-pack and Windows SDK reference identities.
+The production manager deliberately discovers no provider and returns an
+unavailable/fail-closed state. Only fake providers exist for focused tests.
+There is no shipped MSAL.NET/WAM helper, broker cache, system-browser adapter,
+or production credential-store integration. The
+[Entra identity conformance handoff](../runbooks/entra-identity-conformance-handoff.md)
+owns adapter selection, enterprise policy, packaging, legal/provenance review,
+and real-provider evidence.
 
 ### Token validation (`yap-server`)
 
-- Validate JWT signature against Entra JWKS (`https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys`) with a fixed `RS256` allow-list and bounded key caching/refresh.
+- Resolve bounded OIDC discovery and same-origin JWKS metadata through the
+  provider-neutral `OidcDiscoveryJwksProvider`; the Entra profile derives its
+  issuer from the approved tenant and does not accept a production issuer
+  override.
+- Validate JWT signatures with a fixed `RS256` allow-list and bounded key
+  caching, rotation retention, and unknown-`kid` refresh.
 - Check `iss`, allowed `tid`, `aud` (the Yap server API application ID), `exp`, `nbf`, delegated `scp`, allowed `azp`, and other deployment-required claims.
 - Extract `(tid, oid)` as the tenant-scoped principal key.
 - Reject app-only, wrong-resource, Graph, ID, and unapproved-client tokens.
@@ -281,22 +287,38 @@ exact .NET runtime-pack and Windows SDK reference identities.
 
 ### Phase 7 deliverables
 
-- [x] Native/public-client MSAL.NET/WAM sign-in adapter in `yap-desktop`, with a system-browser fallback
-- [x] MSAL/WAM protected token cache; no token or refresh material in renderer or ordinary app-data persistence
-- [x] Token validation middleware in `yap-server`
+- [x] Narrow native access-token-provider interface, fake-provider lifecycle
+      tests, Rust-owned bearer injection, and fail-closed no-provider behavior
+- [x] Provider-neutral OIDC discovery/JWKS owner plus Entra policy and token
+      validation middleware in `yap-server`
 - [x] Provider-neutral identity repository + SQLite development migration
 - [x] Upsert-on-first-sign-in logic
 - [x] Tenant-scoped job/LID/idempotency/artifact ownership with legacy-unowned quarantine
 - [x] Versioned purpose-control, access-revocation, and redacted audit records
-- [x] Synthetic two-principal signed-token/restart/account-switch gate
+- [x] Authenticated private REST and live-WebSocket admission with revocation
+      rechecks; current development listeners remain separate on loopback REST
+      `18765` and live `18766`
+- [x] Pinned mock-OIDC harness and focused static/contract coverage
 - [x] Protected readiness probe, tenant-specific desktop authority, and
       quarantine of ambiguous pre-repair authenticated bindings
+- [ ] Final three-agent review, exact-head full matrix, first-attempt hosted
+      closure, focused PR, and reviewed-green merge
 
-These checks describe focused executable implementation on the active Phase 7
-branch. They do not claim that the frozen phase matrix, hosted exact-head
-closure, a real enterprise tenant login, Conditional Access,
-MFA, WAM policy conformance, legal distribution review, or production storage
-and deployment approval has passed.
+The IT-approved production native provider, protected cache, packaging, and
+real-provider conformance are enterprise handoffs rather than
+developer-controlled Phase 7 completion criteria. A production same-origin
+HTTPS/WSS edge or approved live-endpoint discovery contract remains a later
+transport/deployment decision, principally Phase 10.
+
+The current working tree has focused-green mock evidence: 7/7 focused harness
+tests, including two executable fake-Docker lifecycle regressions, and 38/38
+focused workflow/integrated-gate contract tests. The actual
+Docker-backed mock-provider flow is wired as the hosted `mock-oidc` job and was
+not run on this local host. No Phase 7 exact head is frozen, and the final
+three-agent review, complete matrix, hosted first-attempt evidence, PR, and
+merge remain open. These checks do not prove a real enterprise tenant login,
+Conditional Access, MFA, WAM policy conformance, legal distribution review, or
+production storage and deployment approval.
 
 Phase 8 owns the enrollment UI, profile records, matching, and voice-profile
 deletion. Phase 9 owns KB permission compilation and its Postgres/pgvector

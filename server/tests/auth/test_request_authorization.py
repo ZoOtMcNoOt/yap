@@ -10,10 +10,13 @@ from unittest.mock import patch
 from yap_server.auth import (
     AuthenticatedPrincipal,
     AuthenticationFailure,
+    IdentityAuthorizationService,
     RepositoryBackedRequestAuthenticator,
+    build_request_authorization_runtime,
 )
 from yap_server.auth.identity_repository import SqliteIdentityRepository
 from yap_server.auth.principal_admission import PrincipalAdmissionUnavailable
+from yap_server.config import ServerAuthenticationSettings
 
 
 TENANT_ID = "11111111-1111-4111-8111-111111111111"
@@ -35,17 +38,51 @@ class _TokenAuthenticator:
         return self.principal
 
 
-def _principal(subject_id: str, issued_at_unix: int) -> AuthenticatedPrincipal:
+def _principal(
+    subject_id: str,
+    issued_at_unix: int,
+    *,
+    roles: frozenset[str] = frozenset(),
+) -> AuthenticatedPrincipal:
     return AuthenticatedPrincipal(
         tenant_id=TENANT_ID,
         subject_id=subject_id,
         client_id=CLIENT_ID,
         scopes=frozenset({"access_as_user"}),
         issued_at_unix=issued_at_unix,
+        roles=roles,
     )
 
 
 class RepositoryBackedRequestAuthenticatorTests(unittest.TestCase):
+    def test_entra_runtime_exposes_the_purpose_authorization_seam(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            settings = ServerAuthenticationSettings(
+                mode="entra",
+                tenant_id=TENANT_ID,
+                audience="44444444-4444-4444-8444-444444444444",
+                required_scope="access_as_user",
+                allowed_client_ids=(CLIENT_ID,),
+                allowed_roles=("Yap.IdentityAdministrator",),
+                identity_storage_dir=Path(temporary),
+            )
+            principal = _principal(SUBJECT_ID, 1)
+            runtime = build_request_authorization_runtime(
+                settings,
+                _TokenAuthenticator(principal),
+            )
+            try:
+                self.assertIsInstance(
+                    runtime.purpose_authorization,
+                    IdentityAuthorizationService,
+                )
+                self.assertIs(
+                    runtime.authenticator._identity_repository,
+                    runtime.identity_repository,
+                )
+            finally:
+                runtime.close()
+
     def test_failed_first_principal_commits_never_admit_visible_uncommitted_state(
         self,
     ) -> None:
@@ -128,10 +165,20 @@ class RepositoryBackedRequestAuthenticatorTests(unittest.TestCase):
                 admitted = authenticator.authenticate("Bearer synthetic")
                 self.assertEqual(admitted, old_token_principal)
                 self.assertIsNotNone(repository.principal(admitted.key))
+                self.assertTrue(authenticator.principal_is_admitted(admitted))
 
-                admin = _principal(ADMIN_ID, int(now.timestamp()))
+                administrator_roles = frozenset({"Yap.IdentityAdministrator"})
+                admin = _principal(
+                    ADMIN_ID,
+                    int(now.timestamp()),
+                    roles=administrator_roles,
+                )
                 repository.upsert_principal(admin)
-                repository.revoke_access(admin.key, admitted.key)
+                repository.revoke_access(
+                    admin,
+                    admitted.key,
+                    administrator_roles=administrator_roles,
+                )
 
                 with self.assertRaises(AuthenticationFailure) as denied:
                     authenticator.authenticate("Bearer synthetic")
@@ -140,6 +187,7 @@ class RepositoryBackedRequestAuthenticatorTests(unittest.TestCase):
                     denied.exception.code,
                     "PRINCIPAL_ACCESS_REVOKED",
                 )
+                self.assertFalse(authenticator.principal_is_admitted(admitted))
 
                 newer = _principal(
                     SUBJECT_ID,

@@ -38,36 +38,33 @@ pub(in crate::server_connector) async fn save(
         None
     };
 
-    let (result, effective_authentication) = {
-        let mut inner = connector.inner.lock().expect("server connector poisoned");
-        let generation = connector.invalidate_locked(&mut inner);
+    let previous_authentication = current.authentication.clone();
+    let access_tokens = connector.access_tokens.clone();
+    access_tokens
+        .transition_configuration(previous_authentication.as_ref(), || {
+            let mut inner = connector.inner.lock().expect("server connector poisoned");
+            let generation = connector.invalidate_locked(&mut inner);
 
-        // Revoke the old lease before either durable setting changes or approval
-        // publication. If approval publication fails, the origin stays unauthorized.
-        let save_result = config::save(&normalized).and_then(|saved| {
-            if let Some(origin) = approval_origin.as_deref() {
-                config::approve_origin(origin)?;
-            }
-            Ok(saved)
-        });
-        let result = finish_after_revocation(save_result);
-        let effective = result
-            .as_ref()
-            .ok()
-            .cloned()
-            .or_else(|| config::load().ok())
-            .unwrap_or_else(|| current.clone());
-        inner.apply_server_settings(generation, effective.enabled, effective.base_url.clone());
-        emit_transition(&app, &inner.snapshot());
-        (result, effective.authentication)
-    };
-    if current.authentication != effective_authentication {
-        connector
-            .identity
-            .configuration_changed(current.authentication.as_ref())
-            .await;
-    }
-    result
+            // The authenticated session has already been cancelled and drained
+            // before either durable settings or origin approval are published.
+            let save_result = config::save(&normalized).and_then(|saved| {
+                if let Some(origin) = approval_origin.as_deref() {
+                    config::approve_origin(origin)?;
+                }
+                Ok(saved)
+            });
+            let result = finish_after_revocation(save_result);
+            let effective = result
+                .as_ref()
+                .ok()
+                .cloned()
+                .or_else(|| config::load().ok())
+                .unwrap_or_else(|| current.clone());
+            inner.apply_server_settings(generation, effective.enabled, effective.base_url.clone());
+            emit_transition(&app, &inner.snapshot());
+            (result, effective.authentication)
+        })
+        .await
 }
 
 pub(in crate::server_connector) fn requires_origin_confirmation(

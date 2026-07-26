@@ -12,13 +12,12 @@ import unittest
 from unittest.mock import ANY, MagicMock, patch
 
 import yap_server.__main__ as server_main
-from yap_server.config import ServerSettings
+from yap_server.config import ServerSettings, ensure_private_application_bind
 from yap_server.jobs.runtime import (
     StorageRuntimeLease,
     _build_provider_worker_plans,
     _configured_model_pools,
     build_batch_runtime,
-    ensure_development_batch_bind,
 )
 from yap_server.jobs.contract_values import MAX_JOB_PCM_BYTES
 from yap_server.pools.batch_asr import WorkerContainmentError
@@ -92,13 +91,13 @@ class BatchRuntimeTests(unittest.TestCase):
             replacement = StorageRuntimeLease(storage)
             replacement.close()
 
-    def test_unauthenticated_batch_runtime_is_loopback_only(self) -> None:
-        ensure_development_batch_bind("127.0.0.1")
-        ensure_development_batch_bind("::1")
+    def test_private_application_runtime_is_loopback_only(self) -> None:
+        ensure_private_application_bind("127.0.0.1")
+        ensure_private_application_bind("::1")
         for host in ("localhost", "0.0.0.0", "192.168.50.1", "yap.internal"):
             with self.subTest(host=host):
-                with self.assertRaisesRegex(ValueError, "SSH tunnel"):
-                    ensure_development_batch_bind(host)
+                with self.assertRaisesRegex(ValueError, "secure edge"):
+                    ensure_private_application_bind(host)
 
     def test_language_detection_cannot_start_without_the_verified_batch_runtime(
         self,

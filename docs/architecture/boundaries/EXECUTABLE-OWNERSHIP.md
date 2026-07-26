@@ -1,8 +1,9 @@
 # Executable Ownership and Trust Boundaries
 
 This map records the executable ownership baseline established by architecture
-checkpoints A/B and the focused Phase 7 implementation with three-review
-closure complete and its one-time gate pending. Paths are
+checkpoints A/B and the active Phase 7 implementation. Focused identity,
+purpose-authorization, private-WebSocket, and native lower-handshake evidence is
+green; final review, the full phase gate, PR closure, and merge remain open. Paths are
 relative to the repository root; later implementation must update this map only
 after its behavior is executable and verified.
 
@@ -25,9 +26,14 @@ desktop jobs/drain
   -> job store/artifacts + bounded router/pool
 
 desktop settings/identity commands
-  -> desktop native identity manager
-  -> bounded MSAL.NET/WAM sidecar
-  -> OS-protected MSAL cache
+  -> desktop native token manager/provider interface
+  -> [no approved production provider adapter]
+
+desktop live authorization
+  -> bounded native WebSocket actor + session lease
+  -> separate private loopback WebSocket endpoint
+  -> server token/principal admission
+  -> bounded live protocol registry [no ASR consumer]
 ```
 
 Imports may point down this diagram. Durable owners must not import React,
@@ -200,8 +206,9 @@ owner's state but may not recreate its transition logic.
   `client_preflight_artifacts`, and owned artifact references. Schema 11 rewrites
   the former phase-derived implicit-English disposition to the functional
   `legacy_implicit_english_default` token while preserving child rows and
-  foreign-key integrity. Schema 12 binds each remote job and detached
-  cancellation to one development or hashed MSAL-account authority.
+  foreign-key integrity. Schemas 12–13 bind each remote job and detached
+  cancellation to versioned development or hashed native-provider account
+  authority and quarantine ambiguous older authenticated bindings.
 - **Transient state:** transaction-local rows and snapshots.
 - **Trust boundary:** database migrations, row decoding, monotonic status
   transitions, origin generation, and bounded retention.
@@ -219,8 +226,9 @@ owner's state but may not recreate its transition logic.
 - **Authoritative owner:** `server_connector/state.rs` for connection state and
   generations; `config/*` for validated persisted configuration; and
   `server_connector/capability_snapshot.rs` for the bounded last-known catalog
-  projection. `identity_adapter.rs` owns native sign-in state and the in-memory
-  access-token projection; `authorization.rs` owns bearer injection and durable
+  projection. `native_access_token_provider.rs` owns the in-process provider
+  interface, native sign-in state, and zeroizing token projection;
+  `authorization.rs` owns bearer injection, session invalidation, and durable
   account pinning.
 - **Persisted state:** server configuration and approved origin, plus
   `asr-capabilities-snapshot.json`. Each is admitted through bounded no-follow
@@ -230,8 +238,9 @@ owner's state but may not recreate its transition logic.
   latest capability snapshot, zeroizing access token, and hashed selected-account
   binding.
 - **Trust boundary:** untrusted origin/configuration, bounded HTTP response, and
-  the bounded single-request MSAL sidecar protocol. Raw tokens and raw MSAL
-  account IDs never enter React or ordinary app-data persistence.
+  the narrow native provider return contract. No production provider
+  implementation is selected. Raw tokens and raw provider account IDs never
+  enter React or ordinary app-data persistence.
 - **Dependencies/events:** core policy -> health/batch clients -> connector
   state -> typed frontend events.
 - **Failure/recovery:** stale generation responses are discarded; typed offline
@@ -245,6 +254,38 @@ owner's state but may not recreate its transition logic.
 - **Cancellation:** reconfiguration cancels the old in-flight generation;
   shutdown joins polling.
 - **Duplicate owner:** none; frontend hook projects snapshots.
+
+### 9a. Private authenticated live admission
+
+- **Entry point:** desktop
+  `server_connector/authorization/live_websocket.rs`; server
+  `server/live/websocket_server.py` and `server/live/protocol.py`.
+- **Authoritative owner:** the Rust WebSocket actor owns one authorized client
+  connection and its bounded command/event queues; the Python live server owns
+  loopback listener lifecycle, authenticated admission, connection limits,
+  replay state, and protocol sequencing.
+- **Persisted state:** none. The service uses the existing durable identity
+  repository for principal-access and revocation decisions.
+- **Transient state:** zeroizing bearer access, one `SessionLease`, bounded
+  message/queue state, up to eight admitted server connections, and the live
+  protocol registry.
+- **Trust boundary:** explicit approved origin, exact `yap.live.v1`
+  subprotocol, sensitive bearer injection, handshake status, message/frame
+  sizes, sequence/replay windows, token expiry, and access revocation.
+- **Dependencies/events:** the current server starts the authenticated live
+  listener at `127.0.0.1:18766` by default, separate from HTTP port `18765`.
+  Focused parity evidence qualifies the native lower handshake against the
+  two-port topology. Product endpoint discovery and wiring to that separate port
+  do not exist.
+- **Failure/recovery:** bad origin, missing/invalid authorization, wrong
+  subprotocol, overflow, replay, expiry, revocation, or account-generation
+  change fails closed and closes or rejects the connection without leaking
+  bearer/header content.
+- **Cancellation:** sign-out or configuration/account change invalidates the
+  shared session lease and cancels handshake plus actor I/O.
+- **Duplicate owner:** none. This is admission/transport only; no live ASR,
+  transcript publication, external same-origin WSS/TLS edge, or HTTP/3 carrier
+  exists.
 
 ### 10. Server create/upload/commit/status/result lifecycle
 
@@ -460,28 +501,37 @@ owner's state but may not recreate its transition logic.
 ### 18. Authentication, authorization, and enterprise networking handoffs
 
 - **Entry point:** desktop identity commands and request authorization;
-  `server/auth/*` middleware and repository authorization; the current
+  `server/auth/*` token, repository, and purpose authorization; the current
   development profile still uses explicit loopback and a user-managed SSH
   forward.
-- **Authoritative owner:** the MSAL.NET adapter owns provider token
-  acquisition/cache behavior; Rust owns adapter lifecycle, token projection,
-  account binding, and request injection; the server authenticator owns Entra
-  claim validation; the identity repository owns principal, access-revocation,
-  purpose-control, and redacted audit records. IT/security owns tenant policy
-  and enterprise infrastructure.
-- **Persisted state:** approved origin, schema-12 remote account binding,
-  OS-protected MSAL cache, and the SQLite development identity repository. No
-  token or raw MSAL account ID is stored in the renderer or job ledger.
+- **Authoritative owner:** the Rust native provider interface owns the token
+  acquisition contract but has no production implementation; Rust owns token
+  projection, account binding, session invalidation, and request injection. The
+  common server OIDC layer owns JWT/discovery verification, the Entra policy
+  owns tenant/audience/scope/client/role requirements, and the identity and
+  purpose-authorization services own principal access, grant enforcement, and
+  redacted audit records. IT/security owns provider approval, tenant policy, and
+  enterprise infrastructure.
+- **Persisted state:** approved origin, versioned hashed remote account plus
+  normalized tenant/client/API-scope configuration binding, and the SQLite
+  development identity repository. No token, raw provider account ID, tenant
+  ID, client ID, or API scope is stored in the renderer or job ledger.
 - **Transient state:** zeroizing access tokens and SSH tunnel state; the tunnel
   remains outside Yap process ownership.
-- **Trust boundary:** fixed-tenant/audience/scope/client RS256 validation,
-  bounded JWKS retrieval/cache, owner-scoped authorization, numeric loopback,
-  and the native sidecar protocol. Real tenant registration, Conditional
-  Access, MFA, consent, TLS, DNS, certificates, ZPA, firewall, production
-  database/audit, and deployment policy remain external.
+- **Trust boundary:** provider-neutral fixed-algorithm OIDC validation, bounded
+  discovery/JWKS retrieval/cache, Entra tenant/audience/scope/client/role policy,
+  owner- and purpose-scoped authorization, numeric loopback, and the narrow
+  native provider contract. Default authentication fails closed; the fixed
+  development principal requires explicit development-only configuration. Real
+  provider registration/adapter approval, Conditional Access, MFA, consent,
+  external WSS/TLS, DNS, certificates, ZPA, firewall, production database/audit,
+  and deployment policy remain external.
 - **Dependencies/events:** validated identity -> immutable request principal ->
-  repository authorization -> owner-scoped job/LID service. The connector
-  observes availability; it does not create or silently fail over tunnels.
+  repository authorization -> owner-scoped job/LID/live admission. The
+  `Yap.IdentityAdministrator` role gates same-tenant grant/revoke and access
+  mutations; active grant combinations gate and audit enrollment, matching, and
+  adaptation seams. The connector observes availability; it does not create or
+  silently fail over tunnels.
 - **Failure/recovery:** invalid/expired/revoked access fails closed; account
   switching cannot reuse another account's durable work; absent and cross-owner
   lookup are non-disclosing. Tunnel loss projects retrying and resumes against
@@ -512,6 +562,10 @@ owner's state but may not recreate its transition logic.
   validate the exact PR head. Production ASR, NeMo, and LID images exclude the
   `yap_server.evaluation` package; private qualification adds evaluation code or
   source material only through the explicit evaluation image/mount boundary.
+- **Identity-provider evidence:** a version-and-digest-pinned mock OIDC provider
+  and owner-flow harness exercise real discovery, JWKS, signed-token, ownership,
+  and revocation behavior. Focused local checks are green; hosted Docker
+  execution remains part of the open full phase gate.
 - **Checked-runtime boundary:** pre-admission preparation owns digest-pinned
   Dockerfile execution and emits a private receipt only after a second
   clean-head check. The frozen private plan owns each receipt hash. Admitted
@@ -541,6 +595,7 @@ owner's state but may not recreate its transition logic.
 | Server connector configuration | native connector config owner | connector state and settings UI |
 | Local model artifacts/settings | native STT model/settings owners | live runtime and setup UI |
 | Server job/chunk/result lifecycle | server store/service/artifact owners | HTTP status/result projections |
+| Server principal/access/purpose revisions | server identity repository | HTTP and private-live admission; purpose authorization |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

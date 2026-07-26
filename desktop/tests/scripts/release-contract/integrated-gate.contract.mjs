@@ -198,12 +198,11 @@ const identityCandidateIds = [
   "native.authenticated-server-connector",
   "native.windows-dependency-boundary",
   "native.dependency-audit",
-  "desktop.dotnet-dependency-audit",
-  "desktop.identity-broker",
   "desktop.wdio-build",
   "desktop.required-wdio",
   "server.python-3.12",
   "server.lint",
+  "server.mock-oidc-owner-flow",
   "target-client.native-resource-and-restart",
   "target-client.prepared-audio-boundaries",
   "target-client.rendered-ui-and-microphone",
@@ -263,9 +262,9 @@ const hostedClosureIds = [
 const identityHostedClosureIds = [
   "hosted.ci.frontend",
   "hosted.ci.rust",
-  "hosted.ci.identity-broker",
   "hosted.ci.native-wdio",
   "hosted.ci.server",
+  "hosted.ci.mock-oidc",
   "hosted.codeql.rust",
   "hosted.codeql.actions",
   "hosted.codeql.javascript-typescript",
@@ -341,16 +340,6 @@ const identityExactCommands = {
     "-File",
     "./verification/test-authenticated-server-connector.ps1",
   ],
-  "desktop.dotnet-dependency-audit": [
-    "pwsh.exe",
-    "-NoProfile",
-    "-NonInteractive",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-    "./verification/audit-dotnet-dependencies.ps1",
-  ],
-  "desktop.identity-broker": ["pnpm", "build:identity"],
 };
 
 function createReceipt(
@@ -419,6 +408,30 @@ test("identity and access gate freezes its complete behavior inventory", () => {
       .map(({ id, command }) => [id, command]),
   );
   assert.deepEqual(commandCells, identityExactCommands);
+});
+
+test("identity and access gate binds mock OIDC candidate and hosted closure", () => {
+  assert.deepEqual(
+    identityManifest.candidateCells.find(
+      ({ id }) => id === "server.mock-oidc-owner-flow",
+    ),
+    {
+      id: "server.mock-oidc-owner-flow",
+      executor: "private-receipt",
+      receiptContract: "mock-oidc-owner-flow-v1",
+    },
+  );
+  assert.deepEqual(
+    identityManifest.hostedClosureCells.find(
+      ({ id }) => id === "hosted.ci.mock-oidc",
+    ),
+    {
+      id: "hosted.ci.mock-oidc",
+      executor: "github-check",
+      workflow: "CI",
+      job: "mock-oidc",
+    },
+  );
 });
 
 test("identity and access receipts bind the canonical admission", () => {
@@ -1130,6 +1143,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
   const integratedRoot = path.join(root, `${checkedHead}-integrated`);
   const preparedPath = path.join(targetRoot, "local-stream-short-boundaries.json");
   const gb10Path = path.join(root, `${checkedHead}-resident-provider-lifecycle.json`);
+  const mockOidcReceiptPath = path.join(root, `${checkedHead}-mock-oidc-owner-flow.json`);
   const remoteCleanupLogPath = path.join(root, `${checkedHead}-remote-cleanup.log`);
   const teardownPath = path.join(integratedRoot, "teardown.json");
   const suiteSha256 = "1".repeat(64);
@@ -1159,8 +1173,9 @@ test("integrated private evidence is derived from concrete checked-head artifact
     }),
   );
   const plan = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     checkedHead,
+    mockOidc: { receiptFile: mockOidcReceiptPath },
     targetClient: {
       evidenceDirectory: targetRoot,
       preparedAudioEvidenceFile: preparedPath,
@@ -1174,10 +1189,27 @@ test("integrated private evidence is derived from concrete checked-head artifact
     },
   };
   try {
+    const legacyPlan = { ...plan, schemaVersion: 1 };
+    delete legacyPlan.mockOidc;
+    validateIntegratedPrivateEvidencePlan(legacyPlan, {
+      expectedHead: checkedHead,
+      repositoryRoot: repoRoot,
+      requireDestinationsAbsent: true,
+    });
+    assert.throws(
+      () => validateIntegratedPrivateEvidencePlan(legacyPlan, {
+        expectedHead: checkedHead,
+        repositoryRoot: repoRoot,
+        requireDestinationsAbsent: true,
+        requireMockOidc: true,
+      }),
+      /requires a schemaVersion 2 mock OIDC receipt/,
+    );
     validateIntegratedPrivateEvidencePlan(plan, {
       expectedHead: checkedHead,
       repositoryRoot: repoRoot,
       requireDestinationsAbsent: true,
+      requireMockOidc: true,
     });
     mkdirSync(targetRoot);
     const logBytes = Buffer.from("bounded native profile passed\n");
@@ -1433,12 +1465,107 @@ test("integrated private evidence is derived from concrete checked-head artifact
       }, null, 2)}\n`,
     );
 
-    const evidence = validateIntegratedPrivateEvidence(plan, checkedHead);
-    assert.equal(evidence.size, 12);
+    const mockOidcReceipt = {
+      schemaVersion: 1,
+      receiptContract: "mock-oidc-owner-flow-v1",
+      checkedHead,
+      lockedImageDigest:
+        "sha256:f625692f5bf84939f3d0af4931f2c0f038dca84c4f1bac1171710d544181f97f",
+      validatorSources: {
+        oidcAccessTokensSha256: sha256(readFileSync(path.join(
+          repoRoot,
+          "server",
+          "src",
+          "yap_server",
+          "auth",
+          "oidc_access_tokens.py",
+        ))),
+        oidcMetadataSha256: sha256(readFileSync(path.join(
+          repoRoot,
+          "server",
+          "src",
+          "yap_server",
+          "auth",
+          "oidc_metadata.py",
+        ))),
+      },
+      ownerFlowSha256: sha256(readFileSync(path.join(
+        repoRoot,
+        "verification",
+        "mock-oidc-owner-flow.py",
+      ))),
+      teardown: {
+        childProcessesStopped: true,
+        containerAbsent: true,
+        networkAbsent: true,
+        loopbackPortReleased: true,
+        stateDirectoryRemoved: true,
+        cancellationHandlerRemoved: true,
+        remainingContainers: 0,
+        remainingNetworks: 0,
+        status: "passed",
+      },
+      status: "passed",
+    };
+    const mockOidcReceiptBytes = Buffer.from(
+      `${JSON.stringify(mockOidcReceipt, null, 2)}\n`,
+    );
+    writeFileSync(mockOidcReceiptPath, mockOidcReceiptBytes);
+
+    const evidence = validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot);
+    assert.equal(evidence.size, 13);
+    assert.equal(
+      evidence.get("server.mock-oidc-owner-flow"),
+      sha256(mockOidcReceiptBytes),
+    );
+    mockOidcReceipt.ownerFlowSha256 = "f".repeat(64);
+    writeFileSync(
+      mockOidcReceiptPath,
+      `${JSON.stringify(mockOidcReceipt, null, 2)}\n`,
+    );
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+      /source identities do not match/,
+    );
+    mockOidcReceipt.ownerFlowSha256 = sha256(readFileSync(path.join(
+      repoRoot,
+      "verification",
+      "mock-oidc-owner-flow.py",
+    )));
+    mockOidcReceipt.teardown.containerAbsent = false;
+    writeFileSync(
+      mockOidcReceiptPath,
+      `${JSON.stringify(mockOidcReceipt, null, 2)}\n`,
+    );
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+      /did not prove verified teardown/,
+    );
+    mockOidcReceipt.teardown.containerAbsent = true;
+    mockOidcReceipt.privatePath = "must-not-be-admitted";
+    writeFileSync(
+      mockOidcReceiptPath,
+      `${JSON.stringify(mockOidcReceipt, null, 2)}\n`,
+    );
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+      /fields differ from the frozen contract/,
+    );
+    delete mockOidcReceipt.privatePath;
+    truncateSync(mockOidcReceiptPath, 4_097);
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+      (error) => {
+        assert.equal(error.code, "INTEGRATED_GATE_ARTIFACT_LIMIT_EXCEEDED");
+        assert.equal(error.maximumBytes, 4_096);
+        return true;
+      },
+    );
+    writeFileSync(mockOidcReceiptPath, mockOidcReceiptBytes);
     const preparedFailurePath = `${preparedPath}.failure.json`;
     writeFileSync(preparedFailurePath, '{"status":"failed"}\n');
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       /cannot retain prepared-audio failure evidence/,
     );
     rmSync(preparedFailurePath);
@@ -1448,7 +1575,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
     delete vertical.languagePreflightExecution;
     writeFileSync(verticalPath, `${JSON.stringify(vertical, null, 2)}\n`);
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       /did not prove ASR and LID execution/,
     );
     vertical.languagePreflightExecution = lidExecution;
@@ -1463,7 +1590,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
       ]),
     );
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       /did not use the frozen prepared images/,
     );
     writeFileSync(remoteCleanupLogPath, remoteCleanupLog);
@@ -1472,7 +1599,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
     gb10.evidenceSha256 = sha256(JSON.stringify(stableValue(gb10)));
     writeFileSync(gb10Path, `${JSON.stringify(gb10, null, 2)}\n`);
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       /not bound to the frozen runtime preparation/,
     );
     gb10.runtimeImages["cohere-vllm"].imageId = runtimeImageIds["cohere-vllm"];
@@ -1499,7 +1626,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
       INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes + 1,
     );
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       (error) => {
         assert.equal(error.code, "INTEGRATED_GATE_ARTIFACT_LIMIT_EXCEEDED");
         assert.equal(
@@ -1512,7 +1639,9 @@ test("integrated private evidence is derived from concrete checked-head artifact
     writeFileSync(preparedPath, preparedBytes);
     prepared.cases[0].droppedFrames = 1;
     writeFileSync(preparedPath, `${JSON.stringify(prepared, null, 2)}\n`);
-    assert.throws(() => validateIntegratedPrivateEvidence(plan, checkedHead));
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

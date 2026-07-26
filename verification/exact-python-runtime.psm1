@@ -16,7 +16,8 @@ function Test-ExactPython312 {
 
 function Resolve-ExactPython312 {
     $Candidates = [Collections.Generic.List[string]]::new()
-    $Uv = Get-Command uv.exe -CommandType Application -ErrorAction SilentlyContinue
+    $Uv = Get-Command uv -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
     if ($Uv) {
         $PreviousDownloads = $env:UV_PYTHON_DOWNLOADS
         try {
@@ -31,7 +32,8 @@ function Resolve-ExactPython312 {
         }
     }
 
-    $Launcher = Get-Command py.exe -CommandType Application -ErrorAction SilentlyContinue
+    $Launcher = Get-Command py -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
     if ($Launcher) {
         $Candidate = (& $Launcher.Source -3.12 -c 'import sys; print(sys.executable)' 2>$null)
         if ($LASTEXITCODE -eq 0 -and $Candidate) {
@@ -39,7 +41,8 @@ function Resolve-ExactPython312 {
         }
     }
 
-    $Ambient = Get-Command python.exe -CommandType Application -ErrorAction SilentlyContinue
+    $Ambient = Get-Command python -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
     if ($Ambient) {
         $Candidates.Add($Ambient.Source)
     }
@@ -53,7 +56,8 @@ function Resolve-ExactPython312 {
 }
 
 function Resolve-UvExecutable {
-    $Uv = Get-Command uv.exe -CommandType Application -ErrorAction SilentlyContinue
+    $Uv = Get-Command uv -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
     if (-not $Uv) {
         throw 'The locked server gate requires the uv executable.'
     }
@@ -108,7 +112,13 @@ function Sync-LockedServerEnvironment {
         Pop-Location
     }
 
-    $Python = Join-Path $ServerDirectory.FullName '.venv\Scripts\python.exe'
+    $VirtualEnvironmentRoot = Join-Path $ServerDirectory.FullName '.venv'
+    $Python = if ([OperatingSystem]::IsWindows()) {
+        Join-Path (Join-Path $VirtualEnvironmentRoot 'Scripts') 'python.exe'
+    }
+    else {
+        Join-Path (Join-Path $VirtualEnvironmentRoot 'bin') 'python'
+    }
     if (-not (Test-ExactPython312 -Path $Python)) {
         throw 'The locked uv environment did not produce an exact Python 3.12 interpreter.'
     }

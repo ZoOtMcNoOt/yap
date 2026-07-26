@@ -31,7 +31,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
-| Phase 7: identity/access | Active; three-review closure clean, one-time phase gate pending | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Strict Entra Yap-API token validation, token-derived `(tid, oid)` principals, durable access disable/restore, owner-scoped job/LID/idempotency/artifact behavior, protected readiness, the bounded official MSAL.NET/WAM desktop adapter, tenant-specific account authority, schema-13 quarantine of ambiguous older authenticated bindings, OS-protected cache, and sensitive bearer injection execute under focused tests. Exactly three adversarial reviewers closed every accepted P0-P2 finding on executable repair head `88de4aa66a5e16ff2b0c5e7eb4b21d7333b61d7f`; focused server, native, frontend, dependency, and release-contract verification is green. Real enterprise Entra/WAM policy conformance, the complete matrix, hosted closure, and merge remain open. |
+| Phase 7: identity/access | Active; focused identity/private-live evidence green, final review and full gate pending | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. A provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` principals, durable access disable/restore, owner-scoped job/LID/idempotency/artifact behavior, role-gated and audited purpose grants, enforced enrollment/matching/adaptation purpose checks, protected readiness, authenticated bounded private WebSocket admission, and the native lower WebSocket handshake execute under focused tests. The desktop now has only a narrow in-process native token-provider seam; no production adapter is selected or approved. The pinned mock OIDC flow is focused-green, while hosted Docker execution, final review, the complete phase matrix, hosted PR closure, and merge remain open. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -287,6 +287,25 @@ candidate is promoted by this dirty-head result.
 - Native shortcut and OS-drop work use fixed workers with bounded queues;
   interactive file selection and server-settings publication each admit one
   end-to-end owner rather than accumulating blocking work.
+- Server authentication is fail-closed by default. The generic OIDC verifier and
+  discovery/JWKS seam apply an Entra-specific tenant, audience, scope, client,
+  role, and claim policy in Entra mode; the fixed development principal requires
+  an explicit development-only loopback configuration.
+- Purpose-control is executable authorization, not just storage: the
+  `Yap.IdentityAdministrator` role gates grant/revoke and access-control changes,
+  and enrollment, matching, and adaptation require their configured active
+  grants. Allowed and denied decisions are redacted and audited. No voice profile
+  or embedding implementation is implied.
+- Entra mode starts a bounded, authenticated private WebSocket admission service
+  at `ws://127.0.0.1:18766/v1/live` by default, separate from the HTTP
+  application port, with exact `yap.live.v1` negotiation and token
+  expiry/revocation enforcement.
+  The native lower handshake is qualified against this boundary. The product
+  does not discover that separate endpoint or route audio/transcripts through it.
+- The desktop token path is a Rust-owned in-process provider interface with
+  zeroizing token handling, durable account pinning, and session invalidation.
+  It intentionally fails closed because no production native provider adapter
+  has been approved or installed.
 
 The complete owner and trust-boundary map is
 [executable ownership map](architecture/boundaries/EXECUTABLE-OWNERSHIP.md). The
@@ -296,17 +315,17 @@ ownership.
 
 ## What is not claimed
 
-- No WSS/live server transcription, general media conversion, production-
-  approved authentication, external application endpoint, persistent supervised
-  multi-user service, or measured multi-worker capacity is shipped.
-- The active Phase 7 branch implements Yap API token validation,
-  tenant-derived ownership, purpose-control and revocation primitives, and a
-  packaged MSAL.NET/WAM adapter under synthetic/focused evidence. It does not
-  prove real tenant registration, Conditional Access, MFA, consent, enterprise
-  WAM policy, production storage/audit, or distribution approval. No internal
-  DNS, enterprise certificate, ZPA policy, or production firewall rule exists.
-- Phase 7 still owns checked-head closure of authenticated tenant/user
-  derivation. Persistent warm model
+- No live server ASR, product endpoint discovery, external same-origin WSS/TLS
+  application endpoint, HTTP/3 edge, general media conversion, persistent
+  supervised multi-user service, or measured multi-worker capacity is shipped.
+  Private WebSocket admission and a native lower handshake are not a live
+  transcription path or production edge.
+- The active Phase 7 branch does not prove a production native token adapter,
+  real tenant registration, Conditional Access, MFA, consent, enterprise sign-in
+  policy, production storage/audit, or distribution approval. No internal DNS,
+  enterprise certificate, ZPA policy, or production firewall rule exists.
+- Phase 7 final review, the full phase gate, hosted PR closure, and merge remain
+  open. Persistent warm model
   services, multi-worker and mixed live/batch capacity promotion, production
   supervision/observability, and external deployment remain Phase 10 gates;
   they are not Phase 6 completion criteria.
@@ -521,10 +540,11 @@ is the Phase 7 delivery authority. The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Freeze the reviewed Phase 7 candidate and run the one-time applicable
-   local/native/server/target-client/private-server matrix.
-2. Open the focused PR and merge only the green checked head after hosted CI,
-   CodeQL, and disposable-Windows stock-NSIS closure.
+1. Complete final bounded review of the settled Phase 7 executable boundary.
+2. Run the one-time applicable local/native/server/target-client/private-server
+   matrix, including the hosted Docker execution of the pinned mock OIDC flow.
+3. Open the focused PR only after the full gate is green, then merge only after
+   hosted CI, CodeQL, and disposable-Windows stock-NSIS closure.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
 point. Phase 7 remains bounded to identity and access before that integrated

@@ -66,7 +66,27 @@ class ContractTests(unittest.TestCase):
         )
         self.assertEqual(
             live_operation["x-yap-runtime-status"],
-            "Contract only; capability remains false",
+            (
+                "Authenticated private transport implemented; "
+                "live ASR inference remains false"
+            ),
+        )
+        subprotocol_parameter = next(
+            parameter
+            for parameter in live_operation["parameters"]
+            if parameter["name"] == "Sec-WebSocket-Protocol"
+        )
+        self.assertEqual(subprotocol_parameter["in"], "header")
+        self.assertTrue(subprotocol_parameter["required"])
+        self.assertEqual(
+            subprotocol_parameter["schema"]["const"],
+            "yap.live.v1",
+        )
+        self.assertEqual(
+            live_operation["responses"]["101"]["headers"][
+                "Sec-WebSocket-Protocol"
+            ]["schema"]["const"],
+            "yap.live.v1",
         )
 
     def test_live_source_identity_invariants_are_normative(self) -> None:

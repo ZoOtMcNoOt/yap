@@ -58,7 +58,9 @@ impl std::fmt::Display for LidPreflightError {
             }
             Self::Transport(_) => formatter.write_str("Language preflight request failed."),
             Self::Authorization(RequestAuthorizationError::AccountChanged) => {
-                formatter.write_str("The server account changed during language preflight.")
+                formatter.write_str(
+                    "The server account or authentication configuration changed during language preflight.",
+                )
             }
             Self::Authorization(_) => formatter.write_str("Server sign-in is unavailable."),
             Self::ResponseTooLarge => {

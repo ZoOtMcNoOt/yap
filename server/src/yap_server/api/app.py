@@ -11,15 +11,12 @@ from uuid import uuid4
 from yap_server.api.health import health
 from yap_server.auth import (
     AuthenticatedPrincipal,
+    AuthenticationDisabledAuthenticator,
     AuthenticationFailure,
     DevelopmentLoopbackAuthenticator,
     RequestAuthenticator,
 )
-from yap_server.config import ServerSettings
-from yap_server.config.settings import (
-    ensure_authentication_bind_is_allowed,
-    ensure_bind_is_allowed,
-)
+from yap_server.config import ServerSettings, ensure_private_application_bind
 from yap_server.jobs import RecordingJobService
 
 from .http_server import (
@@ -237,21 +234,21 @@ def create_server(
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
-    ensure_bind_is_allowed(settings.host)
-    ensure_authentication_bind_is_allowed(
-        settings.host,
-        settings.authentication,
-    )
+    ensure_private_application_bind(settings.host)
     request_logger = logger or _REQUEST_LOGGER
     if request_authenticator is None:
         if settings.authentication.required:
             raise ValueError("authenticated team mode requires a request authenticator")
-        active_authenticator: RequestAuthenticator = DevelopmentLoopbackAuthenticator()
+        active_authenticator: RequestAuthenticator
+        if settings.authentication.development_enabled:
+            active_authenticator = DevelopmentLoopbackAuthenticator()
+        else:
+            active_authenticator = AuthenticationDisabledAuthenticator()
     else:
         active_authenticator = request_authenticator
         if (
             active_authenticator.authentication_required
-            != settings.authentication.required
+            != settings.authentication.authentication_required
         ):
             raise ValueError(
                 "request authenticator does not match the server authentication mode"

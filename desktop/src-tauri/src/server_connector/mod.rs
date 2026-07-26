@@ -7,11 +7,14 @@ mod client;
 pub mod config;
 mod core;
 mod desktop;
-mod identity_adapter;
 pub(crate) mod lid;
+mod native_access_token_provider;
 mod state;
 
-pub(crate) use authorization::RequestAuthorization;
+pub(crate) use authorization::AuthenticatedRequestDispatcher;
+pub use authorization::{
+    AuthenticatedLiveConnection, AuthenticatedLiveError, AuthenticatedLiveMessage,
+};
 pub use boundary::ServerConnectorBoundary;
 pub use capabilities::AsrCapabilityCatalog;
 pub(crate) use capabilities::LidPreflightCapability;
@@ -76,9 +79,10 @@ pub(crate) async fn set_server_settings(
 #[tauri::command]
 pub(crate) async fn server_identity_status(
     window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
     connector: tauri::State<'_, ServerConnector>,
-) -> Result<identity_adapter::IdentitySessionStatus, String> {
-    desktop::identity_session_status(window, connector).await
+) -> Result<native_access_token_provider::AccessTokenSessionStatus, String> {
+    desktop::identity_session_status(window, app, connector).await
 }
 
 #[tauri::command]
@@ -86,7 +90,7 @@ pub(crate) async fn sign_in_to_server(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
     connector: tauri::State<'_, ServerConnector>,
-) -> Result<identity_adapter::IdentitySessionStatus, String> {
+) -> Result<native_access_token_provider::AccessTokenSessionStatus, String> {
     desktop::sign_in_to_server(window, app, connector).await
 }
 
@@ -95,7 +99,7 @@ pub(crate) async fn sign_out_of_server(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
     connector: tauri::State<'_, ServerConnector>,
-) -> Result<identity_adapter::IdentitySessionStatus, String> {
+) -> Result<native_access_token_provider::AccessTokenSessionStatus, String> {
     desktop::sign_out_of_server(window, app, connector).await
 }
 

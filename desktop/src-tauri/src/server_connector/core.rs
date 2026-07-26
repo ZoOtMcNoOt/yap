@@ -16,10 +16,10 @@ use super::{
 
 pub struct ServerConnector {
     pub(super) client: reqwest::Client,
-    pub(super) authorization: super::RequestAuthorization,
-    pub(super) identity: Arc<super::identity_adapter::NativeIdentityManager>,
+    pub(super) authenticated: super::AuthenticatedRequestDispatcher,
+    pub(super) access_tokens: Arc<super::native_access_token_provider::NativeAccessTokenManager>,
     pub(super) inner: Mutex<ConnectorInner>,
-    pub(super) generation: AtomicU64,
+    pub(super) generation: Arc<AtomicU64>,
     asr_request_sequence: AtomicU64,
     latest_asr_commit: AtomicU64,
     latest_asr_catalog: Mutex<Option<CommittedAsrCatalog>>,
@@ -50,6 +50,7 @@ pub(crate) struct AsrCapabilityLease {
     generation: u64,
     base_url: String,
     request_sequence: u64,
+    authenticated: super::AuthenticatedRequestDispatcher,
 }
 
 pub(crate) struct CurrentAsrCatalog<'a> {
@@ -116,6 +117,10 @@ impl AsrCapabilityLease {
     pub(crate) fn base_url(&self) -> &str {
         &self.base_url
     }
+
+    pub(crate) fn authenticated(&self) -> &super::AuthenticatedRequestDispatcher {
+        &self.authenticated
+    }
 }
 
 impl BatchConnectionLease {
@@ -126,13 +131,22 @@ impl BatchConnectionLease {
 
 impl Default for ServerConnector {
     fn default() -> Self {
-        let identity = super::identity_adapter::NativeIdentityManager::discover();
+        let access_tokens =
+            super::native_access_token_provider::NativeAccessTokenManager::discover();
+        let client = client::bounded_client().expect("bounded server connector client must build");
+        let generation = Arc::new(AtomicU64::new(0));
+        let authenticated = super::AuthenticatedRequestDispatcher::from_source(
+            client.clone(),
+            access_tokens.clone(),
+            access_tokens.session(),
+        )
+        .with_connector_generation(Arc::clone(&generation));
         Self {
-            client: client::bounded_client().expect("bounded server connector client must build"),
-            authorization: super::RequestAuthorization::from_source(identity.clone()),
-            identity,
+            client,
+            authenticated,
+            access_tokens,
             inner: Mutex::new(ConnectorInner::default()),
-            generation: AtomicU64::new(0),
+            generation,
             asr_request_sequence: AtomicU64::new(0),
             latest_asr_commit: AtomicU64::new(0),
             latest_asr_catalog: Mutex::new(None),
@@ -150,11 +164,45 @@ impl ServerConnector {
         &self,
         base_url: &str,
     ) -> Result<batch::BatchApiClient, batch::BatchClientError> {
-        batch::BatchApiClient::new_authorized(
-            self.client.clone(),
-            base_url,
-            self.authorization.clone(),
-        )
+        self.current_approved_batch_client(base_url).map_err(|_| {
+            batch::BatchClientError::Authorization(
+                super::authorization::RequestAuthorizationError::Unavailable,
+            )
+        })
+    }
+
+    pub(crate) async fn connect_authenticated_live_at_approved_origin(
+        &self,
+        approved_live_origin: &str,
+    ) -> Result<super::AuthenticatedLiveConnection, super::AuthenticatedLiveError> {
+        let origin = config::validate_base_url(approved_live_origin, false)
+            .map_err(|_| super::AuthenticatedLiveError::InvalidOrigin)?;
+        let generation = self.generation.load(Ordering::Acquire);
+        let origin_is_current = {
+            let inner = self.inner.lock().expect("server connector poisoned");
+            inner.generation() == generation
+                && inner.configured_base_url(generation).as_deref() == Some(origin.as_str())
+        };
+        if !origin_is_current
+            || !config::origin_is_approved(&origin)
+                .map_err(|_| super::AuthenticatedLiveError::ConfigurationUnavailable)?
+        {
+            return Err(super::AuthenticatedLiveError::OriginNotApproved);
+        }
+        let authenticated = self
+            .authenticated
+            .bind_current_transport(generation, &origin)
+            .map_err(|_| super::AuthenticatedLiveError::ConfigurationUnavailable)?;
+        let connection = authenticated.connect_approved_live(&origin).await?;
+        let still_current = self
+            .configured_batch_origin()
+            .is_ok_and(|current| current.as_deref() == Some(origin.as_str()))
+            && config::origin_is_approved(&origin).unwrap_or(false);
+        if !still_current {
+            drop(connection);
+            return Err(super::AuthenticatedLiveError::ConfigurationUnavailable);
+        }
+        Ok(connection)
     }
 
     pub(super) fn begin_settings_save(&self) -> Result<SettingsSaveLease, String> {
@@ -251,12 +299,12 @@ impl ServerConnector {
         let Some(base_url) = inner.configured_base_url(generation) else {
             return Ok(None);
         };
-        let client = batch::BatchApiClient::new_authorized(
-            self.client.clone(),
-            &base_url,
-            self.authorization.clone(),
-        )
-        .map_err(|error| error.to_string())?;
+        let authenticated = self
+            .authenticated
+            .bind_current_transport(generation, &base_url)
+            .map_err(|_| "The server connection changed before batch dispatch.".to_string())?;
+        let client = batch::BatchApiClient::new_authorized(authenticated, &base_url)
+            .map_err(|error| error.to_string())?;
         let base_url = client.base_url_identity().to_owned();
         Ok(Some(BatchConnectionLease {
             generation,
@@ -282,10 +330,15 @@ impl ServerConnector {
             })
             .ok()?
             .checked_add(1)?;
+        let authenticated = self
+            .authenticated
+            .bind_current_transport(generation, &base_url)
+            .ok()?;
         Some(AsrCapabilityLease {
             generation,
             base_url,
             request_sequence,
+            authenticated,
         })
     }
 
@@ -293,14 +346,42 @@ impl ServerConnector {
         &self,
         base_url: &str,
     ) -> Result<batch::BatchApiClient, String> {
-        // A durable cancellation record is a cleanup-only authority for its
-        // exact previously validated origin. It does not authorize new work.
-        batch::BatchApiClient::new_authorized(
-            self.client.clone(),
-            base_url,
-            self.authorization.clone(),
-        )
-        .map_err(|error| error.to_string())
+        self.current_approved_batch_client(base_url)
+    }
+
+    fn current_approved_batch_client(
+        &self,
+        base_url: &str,
+    ) -> Result<batch::BatchApiClient, String> {
+        let origin = config::validate_base_url(base_url, super::allow_insecure_private_server())
+            .map_err(|error| error.to_string())?;
+        let generation = self.generation.load(Ordering::Acquire);
+        let origin_is_current = {
+            let inner = self.inner.lock().expect("server connector poisoned");
+            inner.generation() == generation
+                && inner.configured_base_url(generation).as_deref() == Some(origin.as_str())
+        };
+        if !origin_is_current {
+            return Err(
+                "Persisted remote cleanup is blocked because its origin is not the current configured server."
+                    .into(),
+            );
+        }
+        if !config::origin_is_approved(&origin).map_err(|error| error.to_string())? {
+            return Err(
+                "Persisted remote cleanup is blocked because its origin is not currently approved."
+                    .into(),
+            );
+        }
+        let authenticated = self
+            .authenticated
+            .bind_current_transport(generation, &origin)
+            .map_err(|_| {
+                "Persisted remote cleanup is blocked because the authenticated session changed."
+                    .to_string()
+            })?;
+        batch::BatchApiClient::new_authorized(authenticated, &origin)
+            .map_err(|error| error.to_string())
     }
 
     pub(crate) fn configured_batch_origin(&self) -> Result<Option<String>, String> {

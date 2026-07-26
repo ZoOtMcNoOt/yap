@@ -28,6 +28,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-dialog = "2"
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "system-proxy"] }
+reqwest-websocket = { version = "=0.6.0", default-features = false }
+futures-util = { version = "0.3.32", default-features = false, features = ["sink"] }
+tungstenite = { version = "=0.28.0", default-features = false, features = ["handshake"] }
 sha2 = "0.11"
 tokio = { version = "1", features = ["io-util", "macros", "process", "sync", "time"] }
 tauri-plugin-global-shortcut = "2"

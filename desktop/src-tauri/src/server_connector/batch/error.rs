@@ -31,7 +31,9 @@ impl std::fmt::Display for BatchClientError {
             }
             Self::Transport(_) => formatter.write_str("Batch server request failed."),
             Self::Authorization(RequestAuthorizationError::AccountChanged) => {
-                formatter.write_str("The server account changed while remote work was active.")
+                formatter.write_str(
+                    "The server account or authentication configuration changed while remote work was active.",
+                )
             }
             Self::Authorization(_) => formatter.write_str("Server sign-in is unavailable."),
             Self::ResponseTooLarge => formatter.write_str("Batch server response is too large."),

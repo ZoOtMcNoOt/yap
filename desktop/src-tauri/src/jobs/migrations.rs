@@ -2,7 +2,7 @@ use crate::jobs::model::{JobLedgerError, RecordingLanguageDecision};
 use rusqlite::{Connection, OpenFlags, OptionalExtension, Transaction, TransactionBehavior};
 use std::{path::Path, time::Duration};
 
-const CURRENT_SCHEMA_VERSION: i64 = 13;
+const CURRENT_SCHEMA_VERSION: i64 = 14;
 const MIGRATION_1_SQL: &str = include_str!("../../migrations/0001_job_ledger.sql");
 const MIGRATION_2_SQL: &str = include_str!("../../migrations/0002_prepared_remote_jobs.sql");
 const MIGRATION_3_SQL: &str = include_str!("../../migrations/0003_remote_spool_cleanup.sql");
@@ -18,6 +18,8 @@ const MIGRATION_11_SQL: &str =
     include_str!("../../migrations/0011_functional_language_disposition.sql");
 const MIGRATION_12_SQL: &str = include_str!("../../migrations/0012_remote_authority_binding.sql");
 const MIGRATION_13_SQL: &str = include_str!("../../migrations/0013_tenant_principal_authority.sql");
+const MIGRATION_14_SQL: &str =
+    include_str!("../../migrations/0014_remote_authentication_binding.sql");
 const PRE_FUNCTIONAL_LANGUAGE_DISPOSITION: &str = "legacy_phase5_default";
 const FUNCTIONAL_LANGUAGE_DISPOSITION: &str = "legacy_implicit_english_default";
 
@@ -67,6 +69,7 @@ fn migrate_with_hook(
         let version: i64 = transaction.query_row("PRAGMA user_version", [], |row| row.get(0))?;
         match version {
             CURRENT_SCHEMA_VERSION => {}
+            13 => {}
             12 => {}
             11 => {}
             10 => {}
@@ -126,6 +129,9 @@ fn migrate_with_hook(
         }
         if version < 13 {
             transaction.execute_batch(MIGRATION_13_SQL)?;
+        }
+        if version < 14 {
+            transaction.execute_batch(MIGRATION_14_SQL)?;
         }
         let foreign_key_violation: Option<i64> = transaction
             .query_row(
@@ -279,7 +285,7 @@ mod tests {
     }
 
     #[test]
-    fn account_only_schema_twelve_bindings_are_quarantined() {
+    fn account_only_schema_thirteen_bindings_are_quarantined_without_losing_development_work() {
         let mut connection = Connection::open_in_memory().unwrap();
         configure_connection(&connection, false).unwrap();
         for migration in [
@@ -295,6 +301,7 @@ mod tests {
             MIGRATION_10_SQL,
             MIGRATION_11_SQL,
             MIGRATION_12_SQL,
+            MIGRATION_13_SQL,
         ] {
             connection.execute_batch(migration).unwrap();
         }
@@ -310,24 +317,56 @@ mod tests {
                 ["b".repeat(64)],
             )
             .unwrap();
+        connection
+            .execute(
+                "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, display_name, status, route, created_at_ms, updated_at_ms, language_mode, language_bcp47, language_disposition, remote_authority_binding) VALUES ('development-job', 'meeting', 'imported_file', 'development.wav', 'development.wav', 'queued_server', 'server_batch', 1, 1, 'fixed', 'en-US', 'manual_override', 'development-loopback')",
+                [],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO detached_remote_cancellations (server_base_url, server_job_id, create_request_json, queued_at_ms, remote_authority_binding) VALUES ('http://127.0.0.1:18765', 'development-server-job', '{}', 2, 'development-loopback')",
+                [],
+            )
+            .unwrap();
 
         migrate(&mut connection).unwrap();
 
-        let job_version: i64 = connection
+        let account_only: (i64, Option<String>) = connection
             .query_row(
-                "SELECT remote_authority_version FROM recording_jobs WHERE job_id = 'legacy-account'",
+                "SELECT remote_authority_version, remote_authentication_binding FROM recording_jobs WHERE job_id = 'legacy-account'",
                 [],
-                |row| row.get(0),
+                |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .unwrap();
-        let cancellation_version: i64 = connection
+        let account_only_cancellation: (i64, Option<String>) = connection
             .query_row(
-                "SELECT remote_authority_version FROM detached_remote_cancellations WHERE server_job_id = 'server-job'",
+                "SELECT remote_authority_version, remote_authentication_binding FROM detached_remote_cancellations WHERE server_job_id = 'server-job'",
                 [],
-                |row| row.get(0),
+                |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .unwrap();
-        assert_eq!((job_version, cancellation_version), (1, 1));
+        let development: (i64, Option<String>) = connection
+            .query_row(
+                "SELECT remote_authority_version, remote_authentication_binding FROM recording_jobs WHERE job_id = 'development-job'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        let development_cancellation: (i64, Option<String>) = connection
+            .query_row(
+                "SELECT remote_authority_version, remote_authentication_binding FROM detached_remote_cancellations WHERE server_job_id = 'development-server-job'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(account_only, (1, None));
+        assert_eq!(account_only_cancellation, (1, None));
+        assert_eq!(development, (2, Some("development-loopback".to_owned())));
+        assert_eq!(
+            development_cancellation,
+            (2, Some("development-loopback".to_owned()))
+        );
     }
 
     #[test]
@@ -414,13 +453,13 @@ mod tests {
             .execute_batch(
                 "CREATE TABLE future_owned_data (value TEXT NOT NULL); \
                  INSERT INTO future_owned_data VALUES ('preserve'); \
-                 PRAGMA user_version = 14;",
+                 PRAGMA user_version = 15;",
             )
             .unwrap();
 
         let error = migrate(&mut connection).unwrap_err();
 
-        assert!(matches!(error, JobLedgerError::UnsupportedSchema(14)));
+        assert!(matches!(error, JobLedgerError::UnsupportedSchema(15)));
         let state: (i64, String) = connection
             .query_row(
                 "SELECT (SELECT user_version FROM pragma_user_version), value FROM future_owned_data",
@@ -428,7 +467,7 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .unwrap();
-        assert_eq!(state, (14, "preserve".into()));
+        assert_eq!(state, (15, "preserve".into()));
     }
 
     #[test]

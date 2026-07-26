@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 from yap_server.api.app import create_server
 from yap_server.api.request_io import MAX_REQUEST_BODY_BYTES
-from yap_server.config import ServerSettings
+from yap_server.config import ServerAuthenticationSettings, ServerSettings
 from yap_server.jobs import RecordingJobService
 
 from tests.recording_job_fixtures import (
@@ -73,7 +73,11 @@ class HealthServerTestCase(unittest.TestCase):
     asr_capabilities: dict[str, object] | None = None
     lid_preflight_service: object | None = None
     request_authenticator: object | None = None
-    server_settings = ServerSettings(host="127.0.0.1", port=0)
+    server_settings = ServerSettings(
+        host="127.0.0.1",
+        port=0,
+        authentication=ServerAuthenticationSettings(mode="development_loopback"),
+    )
 
     def setUp(self) -> None:
         self.logger = _CapturingLogger()
@@ -191,7 +195,13 @@ class BatchJobApiTestCase(unittest.TestCase):
             now=lambda: "2026-07-14T21:10:00Z",
         )
         self.server = create_server(
-            ServerSettings(host="127.0.0.1", port=0),
+            ServerSettings(
+                host="127.0.0.1",
+                port=0,
+                authentication=ServerAuthenticationSettings(
+                    mode="development_loopback"
+                ),
+            ),
             logger=self.logger,
             job_service=self.jobs,
         )

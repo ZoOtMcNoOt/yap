@@ -67,8 +67,8 @@ impl ServerConnector {
         .await;
         let result = resolve_health_authentication(
             result,
-            &self.client,
-            &self.authorization,
+            &self.authenticated,
+            generation,
             &base_url,
             allow_insecure_private_server(),
         )
@@ -119,8 +119,8 @@ where
 
 async fn resolve_health_authentication(
     result: client::HealthCheckResult,
-    http_client: &reqwest::Client,
-    authorization: &super::authorization::RequestAuthorization,
+    authenticated: &super::AuthenticatedRequestDispatcher,
+    generation: u64,
     base_url: &str,
     allow_insecure_private: bool,
 ) -> client::HealthCheckResult {
@@ -133,13 +133,18 @@ async fn resolve_health_authentication(
     ) {
         return result;
     }
-    let access = client::verify_protected_access(
-        http_client,
-        authorization,
-        base_url,
-        allow_insecure_private,
-    )
-    .await;
+    let authenticated = match authenticated.bind_current_transport(generation, base_url) {
+        Ok(authenticated) => authenticated,
+        Err(_) => {
+            return client::HealthCheckResult::Offline {
+                api_version: None,
+                error_code: "SERVER_CONFIGURATION_CHANGED",
+                retryable: false,
+            };
+        }
+    };
+    let access =
+        client::verify_protected_access(&authenticated, base_url, allow_insecure_private).await;
     project_authenticated_health(result, access)
 }
 
@@ -216,8 +221,8 @@ async fn run_scheduled_retry<R: tauri::Runtime>(
     .await;
     let result = resolve_health_authentication(
         result,
-        &connector.client,
-        &connector.authorization,
+        &connector.authenticated,
+        generation,
         &base_url,
         allow_insecure_private_server(),
     )
@@ -302,8 +307,7 @@ async fn fetch_current_asr_capabilities(
         return Err("ASR capability origin is not approved.".into());
     }
     let catalog = match capabilities::fetch_asr_capabilities(
-        &connector.client,
-        &connector.authorization,
+        lease.authenticated(),
         lease.base_url(),
         allow_insecure_private_server(),
     )

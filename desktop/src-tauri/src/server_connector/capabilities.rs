@@ -133,8 +133,7 @@ pub(crate) enum AsrCatalogError {
 }
 
 pub(crate) async fn fetch_asr_capabilities(
-    client: &reqwest::Client,
-    authorization: &super::RequestAuthorization,
+    authenticated: &super::AuthenticatedRequestDispatcher,
     base_url: &str,
     allow_insecure_private: bool,
 ) -> Result<AsrCapabilityCatalog, AsrCatalogError> {
@@ -144,22 +143,31 @@ pub(crate) async fn fetch_asr_capabilities(
     url.set_path("/v1/asr/capabilities");
     url.set_query(None);
     url.set_fragment(None);
-    let mut response = authorization
-        .authorize(
-            client
+    let mut response = authenticated
+        .send(
+            authenticated
                 .get(url)
                 .header(reqwest::header::ACCEPT, "application/json"),
         )
         .await
+        .map_err(|error| match error {
+            super::authorization::AuthenticatedDispatchError::Authorization(_) => {
+                AsrCatalogError::Unavailable
+            }
+            super::authorization::AuthenticatedDispatchError::Transport(_) => {
+                AsrCatalogError::Transport
+            }
+        })?;
+    if response
+        .status()
         .map_err(|_| AsrCatalogError::Unavailable)?
-        .send()
-        .await
-        .map_err(|_| AsrCatalogError::Transport)?;
-    if response.status() != reqwest::StatusCode::OK {
+        != reqwest::StatusCode::OK
+    {
         return Err(AsrCatalogError::Unavailable);
     }
     if response
         .content_length()
+        .map_err(|_| AsrCatalogError::Unavailable)?
         .is_some_and(|length| length > MAX_CATALOG_BYTES as u64)
     {
         return Err(AsrCatalogError::ResponseTooLarge);
@@ -167,20 +175,28 @@ pub(crate) async fn fetch_asr_capabilities(
     let mut body = Vec::with_capacity(
         response
             .content_length()
+            .map_err(|_| AsrCatalogError::Unavailable)?
             .unwrap_or_default()
             .min(MAX_CATALOG_BYTES as u64) as usize,
     );
-    while let Some(chunk) = response
-        .chunk()
-        .await
-        .map_err(|_| AsrCatalogError::Transport)?
-    {
+    while let Some(chunk) = response.chunk().await.map_err(|error| match error {
+        super::authorization::AuthenticatedDispatchError::Authorization(_) => {
+            AsrCatalogError::Unavailable
+        }
+        super::authorization::AuthenticatedDispatchError::Transport(_) => {
+            AsrCatalogError::Transport
+        }
+    })? {
         if body.len().saturating_add(chunk.len()) > MAX_CATALOG_BYTES {
             return Err(AsrCatalogError::ResponseTooLarge);
         }
         body.extend_from_slice(&chunk);
     }
-    AsrCapabilityCatalog::parse_bounded(&body)
+    let catalog = AsrCapabilityCatalog::parse_bounded(&body)?;
+    response
+        .ensure_current()
+        .map_err(|_| AsrCatalogError::Unavailable)?;
+    Ok(catalog)
 }
 
 impl AsrCapabilityCatalog {
@@ -564,8 +580,10 @@ mod tests {
         });
 
         let catalog = tauri::async_runtime::block_on(fetch_asr_capabilities(
-            &bounded_client().unwrap(),
-            &crate::server_connector::RequestAuthorization::fixed("capability-token"),
+            &crate::server_connector::AuthenticatedRequestDispatcher::fixed(
+                bounded_client().unwrap(),
+                "capability-token",
+            ),
             &format!("http://{address}"),
             false,
         ))

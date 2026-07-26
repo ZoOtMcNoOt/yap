@@ -1,9 +1,15 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–6 system plus the focused
-Phase 7 implementation with three-review closure complete and its one-time gate
-pending: provider
-catalog, fixed-language
+This document describes the merged executable Phase 1–6 system plus the active
+Phase 7 executable boundary. Phase 7 focused evidence now covers provider-neutral
+OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
+ownership, enforced purpose authorization, authenticated bounded private
+WebSocket admission, and the native lower handshake. The desktop exposes a
+narrow native token-provider seam but has no approved production adapter; the
+live boundary has no ASR route, endpoint discovery, or external secure edge.
+Final review, the full phase gate, PR closure, and merge remain open.
+
+The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
 VAD, local language spans, verify-only AmberNet batch preflight, and
 provider-specific serving candidates. Exact executable candidate
@@ -33,11 +39,14 @@ flowchart LR
   UI --> Native["Tauri Rust owners"]
   Native --> Local["Local Nemotron fallback"]
   Native --> DB["SQLite and app-data artifacts"]
-  Native --> Identity["Rust identity owner\nMSAL.NET/WAM sidecar"]
-  Identity -. "Yap API token" .-> Entra["Microsoft Entra ID\nIT-provided environment"]
+  Native --> Identity["Rust native token-provider seam\nno production adapter"]
+  Identity -. "future approved adapter" .-> Entra["Microsoft Entra ID\nIT-provided environment"]
   Native --> Loopback["HTTP + optional sensitive bearer"]
   Loopback -. "explicit SSH forward" .-> Server["Private Yap server"]
-  Server --> Auth["Token validation +\nidentity repository"]
+  Native --> LiveClient["Bounded native WebSocket client\nlower handshake qualified"]
+  LiveClient -. "separate private endpoint\nnot product-discovered" .-> Live["Authenticated private WS admission\n127.0.0.1:18766 · no ASR"]
+  Server --> Auth["Provider-neutral OIDC verifier + Entra policy\nidentity and purpose authorization"]
+  Live --> Auth
   Server --> Store["Private job store and artifacts"]
   Server --> Pool["Bounded provider admission pools"]
   Pool --> Reference["Transformers reference workers"]
@@ -142,6 +151,14 @@ result, cancellation, restart recovery, bounded retention, and safe private
 artifact cleanup. Uploaded chunks are reopened as bounded regular files and
 must still match their declared exact extent and SHA before exclusive atomic
 WAV publication.
+
+`server/src/yap_server/live/*` separately owns authenticated WebSocket admission
+at numeric loopback port `18766` by default. It requires exact `yap.live.v1`
+negotiation, reuses the HTTP token/principal-access boundary, limits connections,
+messages, queues, and replay, and rechecks expiry and revocation. It is a
+transport and admission primitive only: no live ASR or transcript publication
+route consumes it, and the desktop product does not discover this separate
+internal endpoint.
 
 `pools/*` owns bounded admission and isolated GPU workers. The reference
 `BatchAsrPool` admits one running job plus two queued jobs. The current loopback
@@ -502,11 +519,12 @@ provider-promotion comparisons have not run. Both
 candidate containers stay on an
 egress-blocked internal bridge with no Docker-published port; their launchers
 own bounded numeric-loopback proxy process groups and require separate private
-API keys. This does not implement the still-false live capability. The active
-Phase 7 branch adds authenticated tenant/user identity to the existing REST/LID
-boundary, but it does not create a live transport or persistent supervised
-mixed-load production service. Phase 10 owns production supervision, capacity
-promotion, observability, and enterprise deployment.
+API keys. The active Phase 7 branch adds authenticated tenant/user identity to
+the existing REST/LID boundary and bounded private WebSocket admission on a
+separate internal port. The native lower handshake is qualified, but no live ASR
+route, endpoint discovery, external same-origin WSS/TLS edge, or persistent
+supervised mixed-load production service exists. Phase 10 owns production
+supervision, capacity promotion, observability, and enterprise deployment.
 
 Local and server language evidence now share the narrow version-1 16 kHz
 `LanguageSpan` wire contract without sharing a state owner. Local acoustic
@@ -532,44 +550,57 @@ one DOM row per possible segment.
 
 ## Authenticated identity and durable remote-account ownership
 
-In Entra mode, the server accepts only fixed-algorithm RS256 Yap API access
-tokens from the configured tenant, audience, delegated scope, and allowed
-native-client actor. Bounded signing-key retrieval/cache logic validates issuer,
-tenant, audience, time, and key identity before the request adapter creates an
-immutable `(tenant_id, subject_id)` principal. The exact health route remains
-public; every other current API route requires authentication. The identity
-repository owns principal upsert, a durable access-disabled latch with explicit
-administrative restore, purpose-control records, and redacted append-only audit
-events. Existing-principal admission is read-only; only the first observed
-principal creates a row, and repository failure returns a stable retryable
-authentication-unavailable response. The executable SQLite adapter is
-development evidence, not the selected production database or audit sink.
+The server's common OIDC layer owns strict fixed-algorithm JWT validation and
+bounded discovery/JWKS retrieval. Entra mode supplies the provider policy:
+tenant issuer, audience, delegated scope, allowed native-client actor, required
+claims, accepted roles, and canonical `(tid, oid)` identity. The default
+`disabled` authentication mode fails closed for every non-health operation;
+the fixed development principal is available only through an explicit
+development-only loopback configuration. The exact health route remains public.
+
+The identity repository owns principal upsert, a durable access-disabled latch
+with explicit administrative restore, revisioned purpose grants, and redacted
+append-only audit events. The `Yap.IdentityAdministrator` role gates purpose and
+access mutations within one tenant. Enrollment requires `enrollment`; matching
+requires `enrollment` plus `matching`; adaptation requires all three active
+grants. Allowed and denied decisions are audited. This is an executable
+authorization seam, not a voice-profile, embedding, or matching implementation.
+The SQLite adapter is development evidence, not the selected production
+database or audit sink.
 
 The Windows client keeps local/offline dictation independent of authentication.
-For server work, Rust owns one bounded sidecar protocol and token-cache
-projection; the official MSAL.NET public-client adapter owns Authorization
-Code + PKCE, WAM/system-browser interaction, silent refresh, and its OS-protected
-cache. No token or raw MSAL account ID crosses into React or ordinary Yap
-persistence. The adapter selects the configured tenant profile and Rust hashes
-its canonical tenant-specific `tenant:oid` identity. Desktop schema 13 writes
-version-2 authority bindings; authenticated schema-12 bindings created from a
-cross-tenant home-account identifier are quarantined and never reinterpreted.
-An account switch, sign-out, or attempt to attach pre-Phase-7 development work
-fails before a different bearer can be sent. Public health describes server
-configuration, while `Ready` additionally requires a bearer-authenticated
-protected-capability probe; 401, 403, and retryable admission failure remain
-distinct states.
+For server work, Rust owns a narrow in-process `NativeAccessTokenProvider`
+interface, zeroizing token cache, account-plus-authentication binding, bearer
+injection, and session invalidation. No production implementation is selected,
+so interactive sign-in and silent acquisition fail closed as unavailable. No
+token or raw provider account ID crosses into React or ordinary Yap persistence.
+Account/configuration switching, sign-out, or attempts to attach ambiguous
+earlier authenticated work fail before a different bearer can be sent. The
+active account/configuration binding survives token-cache expiry, while each
+protected dispatcher is fixed to one connector generation, approved origin,
+and authenticated-session generation. Settings transitions
+cancel and drain that session before settings or approval publication. Durable
+cleanup remains queued without opening a socket when its persisted origin is no
+longer the exact current approved origin or when its hashed account and
+normalized tenant/client/API-scope configuration do not both match. Identity
+lifecycle/status failure projects a fresh non-`Ready` connector snapshot after
+invalidation. Public health describes server configuration, while `Ready`
+additionally requires a bearer-authenticated protected-capability probe; 401,
+403, and retryable admission failure remain distinct states.
 
-Phase 7 carries the authenticated principal through HTTP middleware and the
-job/LID service admission boundary. The current batch adapter still dispatches
-directly to its bounded provider pool. Owner-fair pool/router scheduling,
-durable multi-tenant queuing, and sustained mixed-user capacity remain the
-Phase 10 work defined by ADR 0023 rather than a Phase 7 completion claim.
+Phase 7 carries the authenticated principal through HTTP middleware, job/LID
+service admission, and the separate private WebSocket admission service. The
+native WebSocket actor uses the same authorization source and session lease,
+requires exact `yap.live.v1`, bounds messages and queues, and terminates on
+session invalidation. Focused parity evidence qualifies the lower handshake
+against separate HTTP and private-live ports. Product endpoint discovery,
+external same-origin WSS/TLS, live ASR, owner-fair pool/router scheduling,
+durable multi-tenant queuing, and sustained mixed-user capacity remain absent.
 
-The branch has focused synthetic signed-token, restart, cross-owner
-non-disclosure, account-switch, package, and protocol evidence. It has not yet
-passed the complete Phase 7 gate or a real IT-provided Entra/WAM/Conditional
-Access environment.
+The pinned mock OIDC provider and owner-flow harness are focused-green. Hosted
+Docker execution of that pinned provider, final review, the full Phase 7 gate,
+hosted PR closure, and merge remain open. Real IT-provided Entra/Conditional
+Access policy and an approved native adapter remain external conformance work.
 
 ## Accepted meeting direction, not current execution
 
@@ -601,7 +632,7 @@ jobs, admission, cancellation, immutable revisions, and publication.
 
 | Durable boundary | Recovery invariant |
 | --- | --- |
-| Desktop SQLite job ledger | Transactional migration and replay preserve one job identity and accepted remote progress. Schema 8 adds a singleton metadata write probe; schema 9 adds bounded client-stage attempts without fabricating history for legacy rows; schema 10 binds the immutable preflight artifact and persisted LID dispatch identity; schema 11 renames the legacy language disposition; schema 12 introduces development or hashed account authority; schema 13 writes tenant-principal authority version 2 and quarantines ambiguous older authenticated bindings as version 1. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
+| Desktop SQLite job ledger | Transactional migration and replay preserve one job identity and accepted remote progress. Schema 8 adds a singleton metadata write probe; schema 9 adds bounded client-stage attempts without fabricating history for legacy rows; schema 10 binds the immutable preflight artifact and persisted LID dispatch identity; schema 11 renames the legacy language disposition; schemas 12–13 introduce versioned development or hashed native-provider account authority and quarantine ambiguous older authenticated bindings. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
 | Recording commit/sidecar/transcript | Only hash-valid, atomically published lineage becomes complete History truth. |
 | Remote result review | Native History derives fixed/dynamic/unknown-language and available/unavailable/legacy-timing summaries only from a verified immutable result, then projects them into the one existing transcript review surface. |
 | Prepared spool/chunks | Only verified Yap-owned paths are cleaned; external sources are preserved. |
@@ -624,11 +655,12 @@ jobs, admission, cancellation, immutable revisions, and publication.
   revalidation/leases where mutation requires it.
 - Logs and public errors describe stable codes/state without private audio or
   transcript content.
-- The application boundary remains numeric loopback during development. Entra
-  mode implements application authentication and owner authorization, but
-  synthetic tokens and a packaged MSAL adapter do not imply real tenant policy,
-  Conditional Access, MFA, certificates, DNS, firewall policy, ZPA, or
-  enterprise deployment.
+- The HTTP application and private live-admission boundaries remain numeric
+  loopback during development. Entra mode implements application authentication
+  and owner authorization, but synthetic/mock tokens and a native provider
+  interface without a production adapter do not imply real tenant policy,
+  Conditional Access, MFA, certificates, DNS, firewall policy, ZPA, an external
+  WSS/TLS edge, or enterprise deployment.
 
 See the complete [ownership map](boundaries/EXECUTABLE-OWNERSHIP.md) and public
 [security posture](../security/SECURITY-POSTURE.md).
@@ -637,8 +669,8 @@ See the complete [ownership map](boundaries/EXECUTABLE-OWNERSHIP.md) and public
 
 The frontend uses Node 24 and pnpm 11.7.0. Native code uses Rust 1.96. The
 portable server supports Python 3.12 only. Windows automation requires
-PowerShell Core 7.4 or newer. The Windows identity sidecar uses pinned .NET SDK
-8.0.423 and locked MSAL dependencies. Installer lifecycle tests run only in a
+PowerShell Core 7.4 or newer. No desktop identity-provider SDK or sidecar is a
+shipped runtime or build dependency. Installer lifecycle tests run only in a
 disposable Windows environment.
 
 Focused suites protect each extraction. Browser automation allocates an

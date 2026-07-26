@@ -182,29 +182,6 @@
       ]
     },
     {
-      "id": "desktop.dotnet-dependency-audit",
-      "executor": "command",
-      "cwd": ".",
-      "command": [
-        "pwsh.exe",
-        "-NoProfile",
-        "-NonInteractive",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "./verification/audit-dotnet-dependencies.ps1"
-      ]
-    },
-    {
-      "id": "desktop.identity-broker",
-      "executor": "command",
-      "cwd": "desktop",
-      "command": [
-        "pnpm",
-        "build:identity"
-      ]
-    },
-    {
       "id": "desktop.wdio-build",
       "executor": "command",
       "cwd": "desktop",
@@ -251,6 +228,11 @@
         "check",
         "."
       ]
+    },
+    {
+      "id": "server.mock-oidc-owner-flow",
+      "executor": "private-receipt",
+      "receiptContract": "mock-oidc-owner-flow-v1"
     },
     {
       "id": "target-client.native-resource-and-restart",
@@ -327,12 +309,6 @@
       "job": "rust"
     },
     {
-      "id": "hosted.ci.identity-broker",
-      "executor": "github-check",
-      "workflow": "CI",
-      "job": "Native identity broker"
-    },
-    {
       "id": "hosted.ci.native-wdio",
       "executor": "github-check",
       "workflow": "CI",
@@ -343,6 +319,12 @@
       "executor": "github-check",
       "workflow": "CI",
       "job": "server"
+    },
+    {
+      "id": "hosted.ci.mock-oidc",
+      "executor": "github-check",
+      "workflow": "CI",
+      "job": "mock-oidc"
     },
     {
       "id": "hosted.codeql.rust",

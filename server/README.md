@@ -22,7 +22,7 @@ server/
   openapi/
     README.md
     openapi.json            # Phase 3 health + later HTTP contracts
-    live-events.schema.json # contract only until live transport ships
+    live-events.schema.json # authenticated private live contract
   src/
     yap_server/
       api/
@@ -65,9 +65,12 @@ The default Phase 3 profile advertises `batchJobs`, `liveStreaming`, and
 `jobStatus` as `false` and keeps every job route unavailable. The Phase 5
 profile is an explicit Linux/loopback development runtime: only after its
 private storage, immutable model lock, verified model directory, and pool
-initialize successfully do batch/status become true. A WebSocket runtime,
-authentication, token validation, diarization, persistent supervision, and an
-external application listener are not present.
+initialize successfully do batch/status become true. In those historical
+profiles, a WebSocket runtime, authentication, token validation, diarization,
+persistent supervision, and an external application listener are not present.
+The current Phase 7 branch adds authenticated private live admission on a
+separate loopback listener; it does not alter the Phase 3/5 table above or
+create a production application edge.
 
 Contract JSON fields use camelCase. Immutable manifest and server enum values
 use snake_case. The React `RecordingJobView` values are an explicit projection,
@@ -77,8 +80,9 @@ Chunk uploads use `application/octet-stream` raw `pcm_s16le` bytes. The logical
 idempotency key and the SHA-256 byte identity are separate: the same key and
 hash is replay success, while the same key with a different hash is a 409
 `CONTENT_IDENTITY_CONFLICT`. Job and chunk requests do not accept tenant or
-owner-subject fields; those values become server-derived only after token
-validation exists.
+owner-subject fields. In `entra` mode those values are server-derived from the
+validated token and identity repository; the historical development profile
+uses only its isolated development principal.
 
 ## Phase 4 private batch-ASR reference slice
 
@@ -301,13 +305,14 @@ Container cgroup samples deliberately measure the provider container, not the
 small host proxy process group. API wall latency includes the loopback proxy;
 whole-host CPU/RAM capacity and persistent supervision remain Phase 10 evidence.
 
-The Windows desktop reaches this profile only through an explicitly started
-SSH local forward to `127.0.0.1:18765`. No TLS endpoint, firewall opening, DNS,
-ZPA publication, service unit, automatic alias failover, authenticated owner,
-or WSS/live transport is created. See the
+The Windows desktop reaches this historical Phase 5 profile only through an
+explicitly started SSH local forward to `127.0.0.1:18765`. Its gate created no
+TLS endpoint, firewall opening, DNS, ZPA publication, service unit, automatic
+alias failover, authenticated owner, or WSS/live transport. See the
 [server-node runbook](../docs/runbooks/yap-server-node-setup.md#loopback-batch-development-profile).
 Use its two foreground launchers rather than reconstructing either environment
-ad hoc.
+ad hoc. The current Phase 7 identity and live-admission boundary is described
+separately below.
 
 This path passed the one-time Phase 5 local/native/server/GB10 gate on exact PR
 head `4771d9be60562fa009ccecbcd3c7111b699883a5` and merged as
@@ -342,6 +347,46 @@ The desktop automatic local route exists only as explicit default-off Preview
 behavior and does not expand this server catalog. Additional server locales,
 timing guarantees, and serving candidates remain unavailable until their exact
 runtime artifacts and promotion evidence pass.
+
+## Phase 7 identity and private live admission
+
+The current server implements provider-neutral OIDC discovery and JWKS
+retrieval, fixed signing-policy validation, bounded key refresh, and
+Entra-specific issuer, tenant, audience, client, scope, and role policy. The
+identity repository owns durable access state, purpose grant/revoke/enforcement,
+tenant-specific principals, and a redacted hash-chain audit. Protected REST
+routes and private live WebSocket admission use the same authenticated
+principal, and the live boundary rechecks revocation.
+
+The desktop has a narrow native access-token-provider interface with fake
+providers for focused tests. Production installs no provider and fails closed;
+no MSAL.NET/WAM helper, browser adapter, or protected production token cache is
+shipped. The approved adapter, tenant enrollment, and real-provider conformance
+remain IT handoff inputs.
+
+The executable private topology still uses separate loopback listeners: REST on
+`127.0.0.1:18765` and the auth-only live listener on `127.0.0.1:18766`. The
+desktop does not infer or discover the live origin from the REST origin. No
+production same-origin HTTPS/WSS edge or discovery mechanism exists, and this
+admission boundary does not promote a server live-ASR provider.
+
+The mock issuer image is digest-pinned in
+[`verification/mock-oidc-provider.lock.json`](../verification/mock-oidc-provider.lock.json),
+and
+[`verification/test-mock-oidc-owner-flow.ps1`](../verification/test-mock-oidc-owner-flow.ps1)
+owns the bounded Docker owner flow and public-safe receipt. Current focused
+evidence is 7/7 focused harness tests, including two executable fake-Docker
+lifecycle regressions, and 38/38 workflow/integrated-gate contracts. Docker was
+unavailable for the actual flow locally; the dedicated
+hosted `mock-oidc` job is the executable Docker closure. No exact Phase 7 head
+is frozen, and final three-agent review, the complete gate, first-attempt hosted
+closure, the focused PR, and merge remain open.
+
+See the
+[Entra identity conformance handoff](../docs/runbooks/entra-identity-conformance-handoff.md)
+for enterprise inputs and the
+[integrated identity and access gate](../docs/runbooks/integrated-identity-access-gate.md)
+for candidate and hosted closure.
 
 ## Local checks
 
@@ -397,15 +442,19 @@ python -m yap_server
 Invoke-RestMethod http://127.0.0.1:18765/v1/health
 ```
 
-`YAP_SERVER_HOST` and `YAP_SERVER_PORT` override the address. A wildcard or
-non-loopback host is rejected unless the process explicitly sets
-`YAP_SERVER_ALLOW_PRIVATE_BIND=1`. Binding does not change firewall rules; the
-server-node runbook keeps port 18765 tunnel-only by default.
+`YAP_SERVER_HOST` and `YAP_SERVER_PORT` override the address, but the
+application service accepts only a numeric loopback host. The retired
+`YAP_SERVER_ALLOW_PRIVATE_BIND` variable does not relax that rule. Use SSH
+local forwarding for development or place an approved secure edge in front of
+the loopback application service; the process does not change firewall rules.
 
 In the default Phase 3 profile, only `GET /v1/health` is implemented. Job,
-chunk, commit, and live routes return a stable `501 NOT_IMPLEMENTED` JSON
-error; enabling the Linux-only Phase 5 profile activates the documented batch
-routes but not live transport. Request bodies are
+chunk, commit, and the REST `/v1/live` route return a stable
+`501 NOT_IMPLEMENTED` JSON error; enabling the Linux-only Phase 5 profile
+activates the documented batch routes but not live transport. The Phase 7
+authenticated profile starts its private live WebSocket listener separately on
+`YAP_SERVER_LIVE_PORT` (default `18766`); it does not make the REST route a live
+upgrade endpoint. Request bodies are
 capped at 1 MiB before any body read. Each accepted request has a two-second
 wall-clock deadline, so slow-drip input cannot extend the single-request server
 indefinitely. The service accepts HTTP/1.0 and HTTP/1.1 only.

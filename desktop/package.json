@@ -11,7 +11,6 @@
     "check:node": "node ./tests/scripts/assert-node24.mjs",
     "check:dependency-licenses": "pnpm check:node && node ./tests/scripts/shipped-dependency-inventory.mjs",
     "audit:dependencies": "pnpm check:node && node ./tests/scripts/audit-dependencies.mjs",
-    "build:identity": "pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./tests/scripts/build-identity-broker.ps1",
     "dev": "pnpm check:node && vite",
     "build": "pnpm check:node && tsc && vite build",
     "preview": "pnpm check:node && vite preview",

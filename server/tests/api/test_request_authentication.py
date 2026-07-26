@@ -149,3 +149,23 @@ class RequestAuthenticationTests(HealthServerTestCase):
                 self.server_settings,
                 request_authenticator=_TokenOnlyFixture(),
             )
+
+
+class DefaultFailClosedAuthenticationTests(HealthServerTestCase):
+    server_settings = ServerSettings(host="127.0.0.1", port=0)
+
+    def test_default_server_exposes_health_but_rejects_protected_routes(self) -> None:
+        health_status, _, health_body = self._request("/v1/health")
+        self.assertEqual(health_status, HTTPStatus.OK)
+        self.assertEqual(json.loads(health_body)["auth"], "required")
+
+        status, headers, body = self._request("/v1/asr/capabilities")
+        self.assert_error(
+            status,
+            headers,
+            body,
+            expected_status=HTTPStatus.SERVICE_UNAVAILABLE,
+            code="AUTHENTICATION_UNAVAILABLE",
+            message="Yap could not validate the access token.",
+            retryable=True,
+        )

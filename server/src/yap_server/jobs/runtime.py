@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import hashlib
-from ipaddress import ip_address
 import os
 from pathlib import Path
 import stat
@@ -362,18 +361,6 @@ def _close_unowned_workers(workers: Sequence[BatchWorker]) -> None:
                 first_error = error
     if first_error is not None:
         raise first_error
-
-
-def ensure_development_batch_bind(host: str) -> None:
-    try:
-        if ip_address(host).is_loopback:
-            return
-    except ValueError:
-        pass
-    raise ValueError(
-        "unauthenticated batch audio is development-only and must bind to loopback; "
-        "use an SSH tunnel until authentication and certificate policy ship"
-    )
 
 
 def _provider_id_for_pool(catalog: Mapping[str, object], pool_id: str) -> str:

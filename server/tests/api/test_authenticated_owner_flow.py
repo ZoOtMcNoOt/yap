@@ -122,6 +122,7 @@ class AuthenticatedOwnerFlowTests(unittest.TestCase):
         claims = {
             "iss": f"https://login.microsoftonline.com/{tenant_id}/v2.0",
             "aud": AUDIENCE,
+            "ver": "2.0",
             "exp": now + timedelta(minutes=5),
             "nbf": now - timedelta(minutes=1),
             "iat": now - timedelta(seconds=1),
@@ -224,16 +225,19 @@ class AuthenticatedOwnerFlowTests(unittest.TestCase):
             subject_id=ADMIN_ID,
             client_id=CLIENT_ID,
             scopes=frozenset({"access_as_user"}),
+            issued_at_unix=int(datetime.now(UTC).timestamp()),
+            roles=frozenset({"Yap.IdentityAdministrator"}),
         )
         self.repository.upsert_principal(admin)
         self.repository.revoke_access(
-            admin.key,
+            admin,
             AuthenticatedPrincipal(
                 tenant_id=TENANT_ID,
                 subject_id=ALICE_ID,
                 client_id=CLIENT_ID,
                 scopes=frozenset({"access_as_user"}),
             ).key,
+            administrator_roles=frozenset({"Yap.IdentityAdministrator"}),
         )
         revoked_status, revoked = self._request(
             f"/v1/jobs/{alice_job['jobId']}",

@@ -4,7 +4,7 @@
 **Status:** Accepted (roadmap - gated after the Phase 5 remote transport and Phase 7 authentication baselines)
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md)
 **Relates to:** [ADR 0001](0001-dual-stt-backends.md), [ADR 0016](0016-auth-identity-bridge.md), and [ADR 0020](0020-meeting-capture-diarization-authority.md)
-**Implementation status:** The gated Phase 5 path implements the transport-neutral durable batch contract over a manually SSH-forwarded loopback HTTP/1.1 development boundary. It does not implement authenticated WSS, TLS/QUIC, HTTP/3, UDP exposure, or an enterprise edge.
+**Implementation status:** The gated Phase 5 path implements the transport-neutral durable batch contract over a manually SSH-forwarded loopback HTTP/1.1 development boundary. Phase 7 now adds authenticated, revocation-aware, bounded private WebSocket admission on a separate loopback port and a qualified native lower handshake. It does not implement live ASR, product endpoint discovery, external same-origin WSS/TLS, QUIC/HTTP/3, UDP exposure, or an enterprise edge.
 
 ## Context
 

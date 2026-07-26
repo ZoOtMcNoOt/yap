@@ -75,3 +75,14 @@ class DevelopmentLoopbackAuthenticator:
     def authenticate(self, authorization: str | None) -> AuthenticatedPrincipal:
         del authorization
         return _DEVELOPMENT_PRINCIPAL
+
+
+class AuthenticationDisabledAuthenticator:
+    """Fail-closed default without approved identity configuration."""
+
+    authentication_required = True
+    principal_access_enforced = True
+
+    def authenticate(self, authorization: str | None) -> AuthenticatedPrincipal:
+        del authorization
+        raise AuthenticationFailure.unavailable()

@@ -18,12 +18,18 @@ import {
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
-const PRIVATE_PLAN_KEYS = new Set([
+const IMAGE_DIGEST = /^sha256:[0-9a-f]{64}$/;
+const MOCK_OIDC_RECEIPT_MAX_BYTES = 4 * 1024;
+const PRIVATE_PLAN_V1_KEYS = new Set([
   "schemaVersion",
   "checkedHead",
   "targetClient",
   "gb10",
   "integrated",
+]);
+const PRIVATE_PLAN_V2_KEYS = new Set([
+  ...PRIVATE_PLAN_V1_KEYS,
+  "mockOidc",
 ]);
 const RUNTIME_PREPARATION_IDS = new Set([
   "cohere-vllm",
@@ -194,14 +200,43 @@ function readRuntimePreparation(plan, runtime, expectedHead) {
 
 export function validateIntegratedPrivateEvidencePlan(
   plan,
-  { expectedHead, repositoryRoot, requireDestinationsAbsent = false },
+  {
+    expectedHead,
+    repositoryRoot,
+    requireDestinationsAbsent = false,
+    requireMockOidc = false,
+  },
 ) {
   requireCondition(plan && typeof plan === "object" && !Array.isArray(plan),
     "Private evidence plan must be an object.");
-  requireExactKeys(plan, PRIVATE_PLAN_KEYS, "Private evidence plan");
-  requireCondition(plan.schemaVersion === 1, "Private evidence plan schemaVersion must be 1.");
+  requireCondition(
+    plan.schemaVersion === 1 || plan.schemaVersion === 2,
+    "Private evidence plan schemaVersion must be 1 or 2.",
+  );
+  requireExactKeys(
+    plan,
+    plan.schemaVersion === 2 ? PRIVATE_PLAN_V2_KEYS : PRIVATE_PLAN_V1_KEYS,
+    "Private evidence plan",
+  );
+  requireCondition(
+    !requireMockOidc || plan.schemaVersion === 2,
+    "This gate requires a schemaVersion 2 mock OIDC receipt.",
+  );
   requireCondition(SHA40.test(expectedHead ?? "") && plan.checkedHead === expectedHead,
     "Private evidence plan head does not match.");
+  if (plan.schemaVersion === 2) {
+    requireCondition(
+      plan.mockOidc
+        && typeof plan.mockOidc === "object"
+        && !Array.isArray(plan.mockOidc),
+      "Mock OIDC private plan must be an object.",
+    );
+    requireExactKeys(
+      plan.mockOidc,
+      new Set(["receiptFile"]),
+      "Mock OIDC private plan",
+    );
+  }
   requireExactKeys(
     plan.targetClient,
     new Set(["evidenceDirectory", "preparedAudioEvidenceFile", "preparedAudioSuiteSha256"]),
@@ -255,6 +290,9 @@ export function validateIntegratedPrivateEvidencePlan(
     "Integrated private plan",
   );
   const paths = [
+    ...(plan.schemaVersion === 2
+      ? [["Mock OIDC receipt file", plan.mockOidc.receiptFile]]
+      : []),
     ["Target-client evidence directory", plan.targetClient.evidenceDirectory],
     ["Prepared-audio evidence file", plan.targetClient.preparedAudioEvidenceFile],
     [
@@ -271,6 +309,9 @@ export function validateIntegratedPrivateEvidencePlan(
     requireOutsideRepository(candidate, repositoryRoot, label);
   }
   for (const [label, candidate] of [
+    ...(plan.schemaVersion === 2
+      ? [["Mock OIDC receipt file", plan.mockOidc.receiptFile]]
+      : []),
     ["Target-client evidence directory", plan.targetClient.evidenceDirectory],
     ["GB10 lifecycle evidence file", plan.gb10.lifecycleEvidenceFile],
     ["Integrated evidence directory", plan.integrated.evidenceDirectory],
@@ -308,6 +349,144 @@ export function validateIntegratedPrivateEvidencePlan(
     }
   }
   return plan;
+}
+
+function validateMockOidcEvidence(plan, expectedHead, repositoryRoot) {
+  requireCondition(
+    plan.schemaVersion === 2,
+    "Mock OIDC evidence requires a schemaVersion 2 private plan.",
+  );
+  requireCondition(
+    typeof repositoryRoot === "string" && path.isAbsolute(repositoryRoot),
+    "Mock OIDC evidence requires an absolute repository root.",
+  );
+  const receipt = readBoundedJsonArtifact(
+    plan.mockOidc.receiptFile,
+    "Mock OIDC owner-flow receipt",
+    MOCK_OIDC_RECEIPT_MAX_BYTES,
+  );
+  const value = receipt.value;
+  requireExactKeys(
+    value,
+    new Set([
+      "schemaVersion",
+      "receiptContract",
+      "checkedHead",
+      "lockedImageDigest",
+      "validatorSources",
+      "ownerFlowSha256",
+      "teardown",
+      "status",
+    ]),
+    "Mock OIDC owner-flow receipt",
+  );
+  requireCondition(
+    value.validatorSources
+      && typeof value.validatorSources === "object"
+      && !Array.isArray(value.validatorSources),
+    "Mock OIDC validator sources must be an object.",
+  );
+  requireExactKeys(
+    value.validatorSources,
+    new Set(["oidcAccessTokensSha256", "oidcMetadataSha256"]),
+    "Mock OIDC validator sources",
+  );
+  requireCondition(
+    value.teardown
+      && typeof value.teardown === "object"
+      && !Array.isArray(value.teardown),
+    "Mock OIDC teardown receipt must be an object.",
+  );
+  requireExactKeys(
+    value.teardown,
+    new Set([
+      "childProcessesStopped",
+      "containerAbsent",
+      "networkAbsent",
+      "loopbackPortReleased",
+      "stateDirectoryRemoved",
+      "cancellationHandlerRemoved",
+      "remainingContainers",
+      "remainingNetworks",
+      "status",
+    ]),
+    "Mock OIDC teardown receipt",
+  );
+  requireCondition(
+    value.schemaVersion === 1
+      && value.receiptContract === "mock-oidc-owner-flow-v1"
+      && value.checkedHead === expectedHead
+      && IMAGE_DIGEST.test(value.lockedImageDigest ?? "")
+      && SHA256.test(value.validatorSources.oidcAccessTokensSha256 ?? "")
+      && SHA256.test(value.validatorSources.oidcMetadataSha256 ?? "")
+      && SHA256.test(value.ownerFlowSha256 ?? "")
+      && value.status === "passed",
+    "Mock OIDC owner-flow receipt did not pass its checked-head contract.",
+  );
+  requireCondition(
+    value.teardown.childProcessesStopped === true
+      && value.teardown.containerAbsent === true
+      && value.teardown.networkAbsent === true
+      && value.teardown.loopbackPortReleased === true
+      && value.teardown.stateDirectoryRemoved === true
+      && value.teardown.cancellationHandlerRemoved === true
+      && value.teardown.remainingContainers === 0
+      && value.teardown.remainingNetworks === 0
+      && value.teardown.status === "passed",
+    "Mock OIDC owner-flow receipt did not prove verified teardown.",
+  );
+
+  const repository = path.resolve(repositoryRoot);
+  const lock = readBoundedJsonArtifact(
+    path.join(repository, "verification", "mock-oidc-provider.lock.json"),
+    "Mock OIDC provider lock",
+    INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
+  );
+  requireCondition(
+    lock.value.schemaVersion === 1
+      && lock.value.manifestDigest === value.lockedImageDigest
+      && lock.value.reference
+        === `ghcr.io/navikt/mock-oauth2-server:5.0.2@${value.lockedImageDigest}`,
+    "Mock OIDC receipt does not match the locked provider image.",
+  );
+  const accessTokens = readBoundedRegularFile(
+    path.join(
+      repository,
+      "server",
+      "src",
+      "yap_server",
+      "auth",
+      "oidc_access_tokens.py",
+    ),
+    "OIDC access-token validator source",
+    INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
+  );
+  const metadata = readBoundedRegularFile(
+    path.join(
+      repository,
+      "server",
+      "src",
+      "yap_server",
+      "auth",
+      "oidc_metadata.py",
+    ),
+    "OIDC metadata owner source",
+    INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
+  );
+  const ownerFlow = readBoundedRegularFile(
+    path.join(repository, "verification", "mock-oidc-owner-flow.py"),
+    "Mock OIDC owner-flow source",
+    INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
+  );
+  requireCondition(
+    value.validatorSources.oidcAccessTokensSha256 === sha256(accessTokens.bytes)
+      && value.validatorSources.oidcMetadataSha256 === sha256(metadata.bytes)
+      && value.ownerFlowSha256 === sha256(ownerFlow.bytes),
+    "Mock OIDC receipt source identities do not match the exact checkout.",
+  );
+  return new Map([
+    ["server.mock-oidc-owner-flow", sha256(receipt.bytes)],
+  ]);
 }
 
 function validateTargetClientEvidence(plan, expectedHead) {
@@ -593,8 +772,15 @@ function validateIntegratedEvidence(plan, expectedHead) {
   ]);
 }
 
-export function validateIntegratedPrivateEvidence(plan, expectedHead) {
+export function validateIntegratedPrivateEvidence(
+  plan,
+  expectedHead,
+  repositoryRoot,
+) {
   const maps = [
+    ...(plan.schemaVersion === 2
+      ? [validateMockOidcEvidence(plan, expectedHead, repositoryRoot)]
+      : []),
     validateTargetClientEvidence(plan, expectedHead),
     validateGb10Evidence(plan, expectedHead),
     validateIntegratedEvidence(plan, expectedHead),

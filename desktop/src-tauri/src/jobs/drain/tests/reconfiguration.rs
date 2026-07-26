@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn abandoned_create_attempt_is_recovered_and_cancelled_at_its_persisted_origin() {
+fn abandoned_create_attempt_at_a_retired_origin_is_blocked_without_network_dispatch() {
     let root = temp_dir("abandoned-create-attempt");
     let database = root.join("jobs.sqlite3");
     let source = root.join("source.wav");
@@ -28,27 +28,8 @@ fn abandoned_create_attempt_is_recovered_and_cancelled_at_its_persisted_origin()
         .unwrap()
         .unwrap();
     let capture_manifest_sha256 = prepared.capture_manifest_sha256.clone();
-    let request =
-        CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json).unwrap();
-    let server_job_id = "job-0123456789abcdef0123456789abcdef";
-    let projection = |status: &str| {
-        serde_json::json!({
-            "jobId": server_job_id,
-            "sessionId": request.metadata.session_id.as_str(),
-            "displayName": request.display_name,
-            "sessionMode": "meeting",
-            "sessionOrigin": "imported_file",
-            "status": status,
-            "route": "server_batch",
-            "captureManifest": request.capture_manifest,
-            "createdAtUtc": "2026-07-14T21:00:00Z",
-            "updatedAtUtc": "2026-07-14T21:00:01Z"
-        })
-    };
-    let (base_url, observed, server) = start_json_server(vec![
-        (202, projection("accepted")),
-        (202, projection("cancelled")),
-    ]);
+    let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+    let base_url = format!("http://{}", listener.local_addr().unwrap());
     ledger
         .begin_remote_create_attempt("job-abandoned-create", &base_url, 1_720_000_000_200)
         .unwrap();
@@ -56,27 +37,27 @@ fn abandoned_create_attempt_is_recovered_and_cancelled_at_its_persisted_origin()
     boundary.configure(&ServerSettings::default());
     let connector = boundary.downgrade().upgrade().unwrap();
 
-    tauri::async_runtime::block_on(async {
-        assert!(advance_persisted_cancellation_once(
-            &ledger,
-            &remote_jobs,
-            &connector,
-            1_720_000_000_300,
-        )
-        .await
-        .unwrap());
+    let error = tauri::async_runtime::block_on(async {
+        advance_persisted_cancellation_once(&ledger, &remote_jobs, &connector, 1_720_000_000_300)
+            .await
+            .unwrap_err()
     });
-    server.join().unwrap();
+    assert!(error
+        .to_string()
+        .contains("origin is not the current configured server"));
 
-    let failed = ledger.get_job("job-abandoned-create").unwrap().unwrap();
-    assert_eq!(failed.status, RecordingJobStatus::Failed);
-    assert_eq!(failed.error_code.as_deref(), Some("REMOTE_ORIGIN_CHANGED"));
+    let retained = ledger.get_job("job-abandoned-create").unwrap().unwrap();
+    assert_ne!(retained.status, RecordingJobStatus::Failed);
+    assert_eq!(retained.error_code, None);
     let preserved = ledger
         .get_prepared_remote_job("job-abandoned-create")
         .unwrap()
         .expect("abandoned-origin cleanup preserves the admitted capture");
     assert_eq!(preserved.capture_manifest_sha256, capture_manifest_sha256);
-    assert_eq!(preserved.create_attempt_base_url, None);
+    assert_eq!(
+        preserved.create_attempt_base_url.as_deref(),
+        Some(base_url.as_str())
+    );
     assert_eq!(preserved.server_job_id, None);
     assert_eq!(preserved.server_base_url, None);
     assert!(remote_jobs.join("job-abandoned-create").is_dir());
@@ -85,17 +66,18 @@ fn abandoned_create_attempt_is_recovered_and_cancelled_at_its_persisted_origin()
         .unwrap()
         .is_empty());
     assert!(source.is_file(), "external source must never be deleted");
-    let requests = observed.lock().unwrap();
-    assert!(requests[0].starts_with("POST /v1/jobs HTTP/1.1"));
-    assert!(requests[1].starts_with(&format!("DELETE /v1/jobs/{server_job_id} HTTP/1.1")));
+    listener.set_nonblocking(true).unwrap();
+    assert_eq!(
+        listener.accept().unwrap_err().kind(),
+        std::io::ErrorKind::WouldBlock
+    );
 
-    drop(requests);
     drop(ledger);
     fs::remove_dir_all(root).unwrap();
 }
 
 #[test]
-fn changed_origin_detaches_and_cancels_an_existing_server_binding() {
+fn changed_origin_detaches_but_does_not_send_bearer_to_the_retired_origin() {
     let root = temp_dir("changed-origin-binding");
     let database = root.join("jobs.sqlite3");
     let source = root.join("source.wav");
@@ -122,22 +104,9 @@ fn changed_origin_detaches_and_cancels_an_existing_server_binding() {
         .unwrap()
         .unwrap();
     let capture_manifest_sha256 = prepared.capture_manifest_sha256.clone();
-    let request =
-        CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json).unwrap();
     let server_job_id = "job-0123456789abcdef0123456789abcdef";
-    let cancelled = serde_json::json!({
-        "jobId": server_job_id,
-        "sessionId": request.metadata.session_id.as_str(),
-        "displayName": request.display_name,
-        "sessionMode": "meeting",
-        "sessionOrigin": "imported_file",
-        "status": "cancelled",
-        "route": "server_batch",
-        "captureManifest": request.capture_manifest,
-        "createdAtUtc": "2026-07-14T21:00:00Z",
-        "updatedAtUtc": "2026-07-14T21:00:01Z"
-    });
-    let (old_origin, observed, server) = start_json_server(vec![(202, cancelled)]);
+    let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+    let old_origin = format!("http://{}", listener.local_addr().unwrap());
     ledger
         .begin_remote_create_attempt("job-changed-origin", &old_origin, 1_720_000_000_200)
         .unwrap();
@@ -157,7 +126,7 @@ fn changed_origin_detaches_and_cancels_an_existing_server_binding() {
     });
     let connector = boundary.downgrade().upgrade().unwrap();
 
-    tauri::async_runtime::block_on(async {
+    let error = tauri::async_runtime::block_on(async {
         assert!(advance_persisted_cancellation_once(
             &ledger,
             &remote_jobs,
@@ -166,16 +135,13 @@ fn changed_origin_detaches_and_cancels_an_existing_server_binding() {
         )
         .await
         .unwrap());
-        assert!(advance_persisted_cancellation_once(
-            &ledger,
-            &remote_jobs,
-            &connector,
-            1_720_000_000_400,
-        )
-        .await
-        .unwrap());
+        advance_persisted_cancellation_once(&ledger, &remote_jobs, &connector, 1_720_000_000_400)
+            .await
+            .unwrap_err()
     });
-    server.join().unwrap();
+    assert!(error
+        .to_string()
+        .contains("origin is not the current configured server"));
 
     let failed = ledger.get_job("job-changed-origin").unwrap().unwrap();
     assert_eq!(failed.status, RecordingJobStatus::Failed);
@@ -188,15 +154,17 @@ fn changed_origin_detaches_and_cancels_an_existing_server_binding() {
     assert_eq!(preserved.create_attempt_base_url, None);
     assert_eq!(preserved.server_job_id, None);
     assert_eq!(preserved.server_base_url, None);
-    assert!(ledger
-        .list_detached_remote_cancellations()
-        .unwrap()
-        .is_empty());
+    let detached = ledger.list_detached_remote_cancellations().unwrap();
+    assert_eq!(detached.len(), 1);
+    assert_eq!(detached[0].server_base_url, old_origin);
     assert!(remote_jobs.join("job-changed-origin").is_dir());
     assert!(!ledger.list_chunks("job-changed-origin").unwrap().is_empty());
     assert!(source.is_file(), "external source must never be deleted");
-    assert!(observed.lock().unwrap()[0]
-        .starts_with(&format!("DELETE /v1/jobs/{server_job_id} HTTP/1.1")));
+    listener.set_nonblocking(true).unwrap();
+    assert_eq!(
+        listener.accept().unwrap_err().kind(),
+        std::io::ErrorKind::WouldBlock
+    );
 
     drop(ledger);
     fs::remove_dir_all(root).unwrap();

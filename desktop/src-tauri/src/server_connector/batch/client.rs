@@ -1,4 +1,6 @@
-use reqwest::{Client, RequestBuilder, Response, StatusCode, Url};
+#[cfg(test)]
+use reqwest::Client;
+use reqwest::{RequestBuilder, StatusCode, Url};
 use serde::de::DeserializeOwned;
 
 use super::{
@@ -9,41 +11,44 @@ use super::{
     ServerStageName, ServerStageProjectionEnvelope, TranscriptResultRevision,
     MAX_TRANSCRIPT_RESULT_BYTES,
 };
+use crate::server_connector::authorization::{
+    AuthenticatedDispatchError, AuthenticatedRequestDispatcher, AuthenticatedResponse,
+    PinnedRemoteAuthority,
+};
 use crate::server_connector::lid::{
     cancel_preflight, submit_preflight, LidPreflightError, LidPreflightRequest, LidPreflightResult,
 };
-use crate::server_connector::RequestAuthorization;
 
 const MAX_JOB_RESPONSE_BYTES: usize = 256 * 1024;
 const MAX_STAGE_RESPONSE_BYTES: usize = 32 * 1024;
 
 #[derive(Clone)]
 pub(crate) struct BatchApiClient {
-    client: Client,
+    authenticated: AuthenticatedRequestDispatcher,
     base_url: Url,
     base_url_identity: String,
-    authorization: RequestAuthorization,
 }
 
 impl BatchApiClient {
     #[cfg(test)]
     pub(crate) fn new(client: Client, base_url: &str) -> Result<Self, BatchClientError> {
-        Self::new_authorized(client, base_url, RequestAuthorization::none())
+        Self::new_authorized(
+            AuthenticatedRequestDispatcher::unauthenticated(client),
+            base_url,
+        )
     }
 
     pub(crate) fn new_authorized(
-        client: Client,
+        authenticated: AuthenticatedRequestDispatcher,
         base_url: &str,
-        authorization: RequestAuthorization,
     ) -> Result<Self, BatchClientError> {
         let normalized =
             validate_batch_base_url(base_url).map_err(BatchClientError::InvalidOrigin)?;
         let base_url = Url::parse(&normalized).map_err(|_| BatchClientError::MalformedResponse)?;
         Ok(Self {
-            client,
+            authenticated,
             base_url,
             base_url_identity: normalized,
-            authorization,
         })
     }
 
@@ -51,25 +56,28 @@ impl BatchApiClient {
         &self.base_url_identity
     }
 
-    pub(crate) async fn pin_current_authority(&self) -> Result<(Self, String), BatchClientError> {
-        let (authorization, authority) = self
-            .authorization
+    pub(crate) async fn pin_current_authority(
+        &self,
+    ) -> Result<(Self, PinnedRemoteAuthority), BatchClientError> {
+        let (authenticated, authority) = self
+            .authenticated
             .pin_current_authority()
             .await
             .map_err(BatchClientError::Authorization)?;
         let mut pinned = self.clone();
-        pinned.authorization = authorization;
+        pinned.authenticated = authenticated;
         Ok((pinned, authority))
     }
 
     pub(crate) fn expect_persisted_authority(
         &self,
-        authority: &str,
+        account: &str,
+        authentication: &str,
     ) -> Result<Self, BatchClientError> {
         let mut pinned = self.clone();
-        pinned.authorization = self
-            .authorization
-            .expect_persisted_authority(authority)
+        pinned.authenticated = self
+            .authenticated
+            .expect_persisted_authority(account, authentication)
             .map_err(BatchClientError::Authorization)?;
         Ok(pinned)
     }
@@ -78,20 +86,14 @@ impl BatchApiClient {
         &self,
         request: &LidPreflightRequest,
     ) -> Result<LidPreflightResult, LidPreflightError> {
-        submit_preflight(&self.client, &self.base_url, &self.authorization, request).await
+        submit_preflight(&self.authenticated, &self.base_url, request).await
     }
 
     pub(crate) async fn cancel_lid_preflight(
         &self,
         request_id: &str,
     ) -> Result<(), LidPreflightError> {
-        cancel_preflight(
-            &self.client,
-            &self.base_url,
-            &self.authorization,
-            request_id,
-        )
-        .await
+        cancel_preflight(&self.authenticated, &self.base_url, request_id).await
     }
 
     pub(crate) async fn create(
@@ -104,7 +106,7 @@ impl BatchApiClient {
         }
         let response = self
             .send(
-                self.client
+                self.authenticated
                     .post(self.endpoint(&["jobs"])?)
                     .header(reqwest::header::ACCEPT, "application/json")
                     .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -130,7 +132,7 @@ impl BatchApiClient {
         );
         let response = self
             .send(
-                self.client
+                self.authenticated
                     .put(self.endpoint(&[
                         "jobs",
                         job_id,
@@ -163,7 +165,7 @@ impl BatchApiClient {
     ) -> Result<RecordingJob, BatchClientError> {
         let response = self
             .send(
-                self.client
+                self.authenticated
                     .post(self.endpoint(&["jobs", job_id, "commit"])?)
                     .header(reqwest::header::ACCEPT, "application/json")
                     .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -176,7 +178,7 @@ impl BatchApiClient {
     pub(crate) async fn status(&self, job_id: &str) -> Result<RecordingJob, BatchClientError> {
         let response = self
             .send(
-                self.client
+                self.authenticated
                     .get(self.endpoint(&["jobs", job_id])?)
                     .header(reqwest::header::ACCEPT, "application/json"),
             )
@@ -190,7 +192,7 @@ impl BatchApiClient {
     ) -> Result<TranscriptResultRevision, BatchClientError> {
         let response = self
             .send(
-                self.client
+                self.authenticated
                     .get(self.endpoint(&["jobs", job_id, "result"])?)
                     .header(reqwest::header::ACCEPT, "application/json"),
             )
@@ -204,7 +206,7 @@ impl BatchApiClient {
     ) -> Result<ServerStageProjectionEnvelope, BatchClientError> {
         let response = self
             .send(
-                self.client
+                self.authenticated
                     .get(self.endpoint(&["jobs", job_id, "stages"])?)
                     .header(reqwest::header::ACCEPT, "application/json"),
             )
@@ -232,7 +234,7 @@ impl BatchApiClient {
         }
         let response = self
             .send(
-                self.client
+                self.authenticated
                     .post(self.endpoint(&["jobs", job_id, "stages", stage.as_path(), "retry"])?)
                     .header(reqwest::header::ACCEPT, "application/json")
                     .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -250,7 +252,7 @@ impl BatchApiClient {
     pub(crate) async fn cancel(&self, job_id: &str) -> Result<RecordingJob, BatchClientError> {
         let response = self
             .send(
-                self.client
+                self.authenticated
                     .delete(self.endpoint(&["jobs", job_id])?)
                     .header(reqwest::header::ACCEPT, "application/json"),
             )
@@ -275,45 +277,51 @@ impl BatchApiClient {
         Ok(url)
     }
 
-    async fn send(&self, request: RequestBuilder) -> Result<Response, BatchClientError> {
-        self.authorization
-            .authorize(request)
-            .await
-            .map_err(BatchClientError::Authorization)?
-            .send()
-            .await
-            .map_err(BatchClientError::Transport)
+    async fn send(
+        &self,
+        request: RequestBuilder,
+    ) -> Result<AuthenticatedResponse, BatchClientError> {
+        self.authenticated.send(request).await.map_err(map_dispatch)
     }
 }
 
 async fn decode_response<T: DeserializeOwned>(
-    response: Response,
+    mut response: AuthenticatedResponse,
     successes: &[StatusCode],
     maximum_bytes: usize,
 ) -> Result<T, BatchClientError> {
-    let status = response.status();
-    let body = read_bounded(response, maximum_bytes).await?;
+    let status = response.status().map_err(BatchClientError::Authorization)?;
+    let body = read_bounded(&mut response, maximum_bytes).await?;
     if !successes.contains(&status) {
         let error: ApiError =
             serde_json::from_slice(&body).map_err(|_| BatchClientError::MalformedResponse)?;
         if !error.is_valid() {
             return Err(BatchClientError::MalformedResponse);
         }
-        return Err(BatchClientError::Api {
+        let error = BatchClientError::Api {
             status,
             code: error.code,
             retryable: error.retryable,
-        });
+        };
+        response
+            .ensure_current()
+            .map_err(BatchClientError::Authorization)?;
+        return Err(error);
     }
-    serde_json::from_slice(&body).map_err(|_| BatchClientError::MalformedResponse)
+    let decoded = serde_json::from_slice(&body).map_err(|_| BatchClientError::MalformedResponse)?;
+    response
+        .ensure_current()
+        .map_err(BatchClientError::Authorization)?;
+    Ok(decoded)
 }
 
 async fn read_bounded(
-    mut response: Response,
+    response: &mut AuthenticatedResponse,
     maximum_bytes: usize,
 ) -> Result<Vec<u8>, BatchClientError> {
     if response
         .content_length()
+        .map_err(BatchClientError::Authorization)?
         .is_some_and(|length| length > maximum_bytes as u64)
     {
         return Err(BatchClientError::ResponseTooLarge);
@@ -321,20 +329,24 @@ async fn read_bounded(
     let mut body = Vec::with_capacity(
         response
             .content_length()
+            .map_err(BatchClientError::Authorization)?
             .unwrap_or_default()
             .min(maximum_bytes as u64) as usize,
     );
-    while let Some(chunk) = response
-        .chunk()
-        .await
-        .map_err(BatchClientError::Transport)?
-    {
+    while let Some(chunk) = response.chunk().await.map_err(map_dispatch)? {
         if body.len().saturating_add(chunk.len()) > maximum_bytes {
             return Err(BatchClientError::ResponseTooLarge);
         }
         body.extend_from_slice(&chunk);
     }
     Ok(body)
+}
+
+fn map_dispatch(error: AuthenticatedDispatchError) -> BatchClientError {
+    match error {
+        AuthenticatedDispatchError::Authorization(error) => BatchClientError::Authorization(error),
+        AuthenticatedDispatchError::Transport(error) => BatchClientError::Transport(error),
+    }
 }
 
 pub(crate) fn validate_batch_base_url(raw: &str) -> Result<String, ConfigError> {
