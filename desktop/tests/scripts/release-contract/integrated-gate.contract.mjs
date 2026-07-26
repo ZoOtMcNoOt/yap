@@ -86,6 +86,39 @@ function createCanonicalTemporaryDirectory(prefix) {
   return mkdtempSync(path.join(realpathSync.native(os.tmpdir()), prefix));
 }
 
+function createGateStatusClient({ competingStatusWins = false } = {}) {
+  const statuses = [];
+  const repositoryId = 42;
+  const repositoryFullName = "example/yap";
+  function value(id, body) {
+    return {
+      id,
+      state: body.state,
+      context: body.context,
+      description: body.description,
+      created_at: `2026-07-23T12:00:0${id}.000Z`,
+      url: `https://api.github.invalid/statuses/${id}`,
+      creator: { id: 7, login: "gate-publisher" },
+    };
+  }
+  return {
+    repositoryId,
+    repositoryFullName,
+    statuses,
+    listStatuses() {
+      return [...statuses].sort((left, right) => right.id - left.id);
+    },
+    createStatus(_head, body) {
+      if (competingStatusWins && statuses.length === 0) {
+        statuses.push(value(1, body));
+      }
+      const created = value(statuses.length + 1, body);
+      statuses.push(created);
+      return created;
+    },
+  };
+}
+
 function processIsAlive(processId) {
   try {
     process.kill(processId, 0);
@@ -602,6 +635,9 @@ test("runner requires an explicit canonical manifest and rejects cross-gate comp
         runDirectory: root,
         commandLogDirectory: path.join(root, "command-logs"),
         candidateReceiptPath: path.join(root, "candidate-receipt.json"),
+        reservationPath: path.join(root, "remote-admission.json"),
+        reservationSha256: "2".repeat(64),
+        statusAuthority: {},
       }, null, 2)}\n`,
     );
     await assert.rejects(
@@ -748,27 +784,48 @@ test("portable Python gate rejects project and uv.lock drift", () => {
 test("integrated gate reservation authority rejects same-root and cross-root retries", () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-attempt-");
   const otherRoot = createCanonicalTemporaryDirectory("yap-gate-attempt-other-");
-  const reservationAuthorityRoot =
-    createCanonicalTemporaryDirectory("yap-gate-attempt-authority-");
+  const statusClient = createGateStatusClient();
+  const previousUserProfile = process.env.USERPROFILE;
   try {
     const input = {
       evidenceRoot: root,
       gateId: manifest.gateId,
       checkedHead,
       manifestSha256,
-      reservationAuthorityRoot,
+      statusClient,
     };
     const first = reserveIntegratedGateAttemptDirectory(input);
-    assert.ok(first.startsWith(root));
+    assert.ok(first.runDirectory.startsWith(root));
     assert.throws(() => reserveIntegratedGateAttemptDirectory(input));
+    rmSync(first.runDirectory, { recursive: true, force: true });
+    process.env.USERPROFILE = otherRoot;
     assert.throws(() => reserveIntegratedGateAttemptDirectory({
       ...input,
       evidenceRoot: otherRoot,
     }));
   } finally {
+    if (previousUserProfile === undefined) delete process.env.USERPROFILE;
+    else process.env.USERPROFILE = previousUserProfile;
     rmSync(root, { recursive: true, force: true });
     rmSync(otherRoot, { recursive: true, force: true });
-    rmSync(reservationAuthorityRoot, { recursive: true, force: true });
+  }
+});
+
+test("integrated gate admits only the oldest remote status in a reservation race", () => {
+  const root = createCanonicalTemporaryDirectory("yap-gate-attempt-race-");
+  try {
+    assert.throws(
+      () => reserveIntegratedGateAttemptDirectory({
+        evidenceRoot: root,
+        gateId: manifest.gateId,
+        checkedHead,
+        manifestSha256,
+        statusClient: createGateStatusClient({ competingStatusWins: true }),
+      }),
+      /different GitHub gate admission won/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });
 

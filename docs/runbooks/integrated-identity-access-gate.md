@@ -32,14 +32,23 @@ independent receipt validation.
 
 ## Sole candidate attempt
 
-Start from the exact clean reviewed candidate. Prepare a new private plan for
-that head with new absent evidence destinations outside the repository. Runtime
-preparation receipts and every private result must also bind to that head.
-Admission first reserves the full gate ID, head, and manifest hash in the
-runner-owned per-user authority at `~/.yap-private-gate-admissions`; changing
-the evidence root cannot create another attempt. Treat that authority as an
-append-only audit record. Removing or rewriting it invalidates the delivery
-evidence rather than permitting another attempt.
+Start from the exact clean reviewed candidate. Push that exact candidate branch
+without opening the pull request so GitHub can address the commit. Use a
+dedicated `GH_TOKEN` limited to commit-status read/write for admission. Prepare
+a new private plan for that head with new absent evidence destinations outside
+the repository. Runtime preparation receipts and every private result must also
+bind to that head.
+
+Admission creates one GitHub commit status whose normalized context binds the
+gate ID and manifest hash and whose description contains only the SHA-256 of
+the private reservation claim. GitHub commit-status history is the authority;
+the private path never leaves the machine. The runner lists every status page,
+refuses an existing context, and records the oldest status ID. Completion
+re-lists and re-elects that oldest ID before running any command cell, so
+changing the local profile, evidence root, or cached reservation cannot create
+another executable attempt. GitHub documents commit statuses as create/list
+history with case-insensitive contexts; see the
+[commit-status API](https://docs.github.com/en/rest/commits/statuses).
 
 ```powershell
 $candidateHead = (git rev-parse HEAD).Trim()
@@ -107,6 +116,9 @@ Validate the hosted receipt against the same behavior identity and original
 candidate lineage before recording closure or merging:
 
 ```powershell
+$admissionSha256 = (
+  Get-FileHash -Algorithm SHA256 -LiteralPath $candidateAdmissionPath
+).Hash.ToLowerInvariant()
 $candidateReceiptSha256 = (
   Get-FileHash -Algorithm SHA256 -LiteralPath <private-candidate-receipt.json>
 ).Hash.ToLowerInvariant()
