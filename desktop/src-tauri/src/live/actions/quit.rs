@@ -115,6 +115,12 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
             let result = run_quit_with(
                 || finalize_live_before_quit(&worker_app),
                 || {
+                    let lifecycle = worker_app.state::<crate::runtime::DesktopLifecycle>();
+                    for error in lifecycle.shutdown() {
+                        crate::diagnostics::log(&format!(
+                            "desktop background shutdown failed: {error}"
+                        ));
+                    }
                     worker_app.state::<QuitCoordinator>().finish(Ok(()));
                     worker_app.exit(0);
                 },

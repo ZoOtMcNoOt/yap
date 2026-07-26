@@ -169,6 +169,16 @@ failed private evidence and must not be resumed, retried, or relabeled. A new
 candidate requires a fresh model staging without retained load snapshots and
 an LF-only SSH input file that is validated before admission.
 
+Exact candidate `b697055c0243799f2a9041e5025a0c436c17822a` was admitted once
+after both hardware preflights passed. Its Windows native resource lane passed
+all 12 cycles, its prepared short-boundary duration evidence passed all 9
+cases, its release build passed, and both rendered UI scenarios passed. The
+final production tray action then left the desktop process alive beyond its
+10-second exit contract after a real local session. The concurrent GB10 lane
+was stopped, and independent read-back found no retained local or remote
+process, provider container, private network, or listener. This attempt remains
+failed private evidence and must not be resumed, retried, or relabeled.
+
 ## Phase 7 cadence
 
 Phase 7 begins only after Checkpoint B merges. Its implementation remains on a

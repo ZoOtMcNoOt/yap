@@ -383,7 +383,10 @@ pub(crate) fn run() {
                 // process exit so model-load snapshots release deterministically.
                 live_runtime_for_exit.shutdown();
                 let lifecycle = app_handle.state::<runtime::DesktopLifecycle>();
-                log_lifecycle_shutdown_errors(lifecycle.shutdown());
+                // Exit callbacks run on Tauri's event loop. Some owned workers
+                // can be waiting for that loop while reading or moving a
+                // window, so this last-resort path must signal without joining.
+                lifecycle.request_shutdown();
             }
             _ => {}
         });
