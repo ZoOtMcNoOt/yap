@@ -18,6 +18,10 @@ from yap_server.pools.nemotron_engine import (
     NemotronUtteranceTranscript,
 )
 from yap_server.pools.nemo_stream_scheduler import NemoStreamCancelled
+from yap_server.pools.nemotron_nemo_cleanup import (
+    NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+    close_native_runtime_or_fail_stop,
+)
 from yap_server.pools.nemotron_nemo_pipeline import (
     NEMOTRON_STREAMING_ATTENTION_CONTEXT,
     NEMOTRON_STREAMING_CHUNK_SECONDS,
@@ -32,6 +36,7 @@ _MISSING_TAG = "MISSING_LANGUAGE_TAG"
 _DISABLED_TAG = "DISABLED_LANGUAGE_TAG"
 _EMPTY_TAGGED_TEXT = "EMPTY_TAGGED_TRANSCRIPT"
 NEMOTRON_STREAMING_CONFIG_ENV = "YAP_NEMOTRON_STREAMING_CONFIG"
+_NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS = NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS
 
 
 def parse_nemo_transcript(
@@ -184,7 +189,10 @@ class NemotronNemoStreamingEngine(NemotronAsrEngine):
             if any(locale not in prompts for locale in fixed_locales):
                 raise RuntimeError("NeMo prompt catalog differs from the model lock")
         except BaseException:
-            runtime.close()
+            close_native_runtime_or_fail_stop(
+                runtime.close,
+                timeout_seconds=_NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+            )
             raise
         self._runtime = runtime
         self._lock = lock

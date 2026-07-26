@@ -12,7 +12,7 @@ import signal
 import stat
 import sys
 import threading
-from typing import Callable, Mapping
+from typing import Mapping
 
 from yap_server.bounded_file import read_regular_file
 from yap_server.limits import MAX_WORKER_RESULT_BYTES
@@ -42,6 +42,11 @@ from yap_server.pools.nemotron_nemo_protocol import (
     NemotronNemoServiceRequest,
     cancellation_path,
 )
+from yap_server.pools.nemotron_nemo_cleanup import (
+    NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+    close_native_runtime_or_fail_stop as _close_native_runtime_or_fail_stop,
+    fail_stop_native_runtime as _fail_stop_shutdown,
+)
 from yap_server.pools.nemotron_nemo_streaming import NemotronNemoStreamingEngine
 from yap_server.pools.utterance_plan import read_utterance_plan
 
@@ -49,8 +54,7 @@ from yap_server.pools.utterance_plan import read_utterance_plan
 _API_KEY_ENV = "YAP_NEMOTRON_NEMO_API_KEY"
 _REQUEST_TIMEOUT_SECONDS = 10.0
 _MAX_HTTP_REQUEST_WORKERS = NEMOTRON_NEMO_MAX_ACTIVE_REQUESTS * 2 + 2
-_SHUTDOWN_CLEANUP_TIMEOUT_SECONDS = 15.0
-_SHUTDOWN_FAILURE_EXIT_CODE = 70
+_SHUTDOWN_CLEANUP_TIMEOUT_SECONDS = NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS
 
 
 class NemotronNemoRequestCancelled(RuntimeError):
@@ -63,48 +67,6 @@ class NemotronNemoServiceBusy(RuntimeError):
 
 class NemotronNemoServiceFenced(RuntimeError):
     pass
-
-
-def _fail_stop_shutdown() -> None:
-    print(
-        "resident Nemotron NeMo shutdown exceeded its safe cleanup boundary; "
-        "fail-stopping the service process",
-        file=sys.stderr,
-    )
-    os._exit(_SHUTDOWN_FAILURE_EXIT_CODE)
-
-
-def _close_native_runtime_or_fail_stop(
-    close_runtime: Callable[[], None],
-    *,
-    timeout_seconds: float,
-) -> None:
-    if timeout_seconds <= 0:
-        raise ValueError("shutdown cleanup timeout must be positive")
-    completed = threading.Event()
-    errors: list[BaseException] = []
-
-    def close_in_background() -> None:
-        try:
-            close_runtime()
-        except BaseException as error:
-            errors.append(error)
-        finally:
-            completed.set()
-
-    try:
-        cleanup_thread = threading.Thread(
-            target=close_in_background,
-            name="yap-nemotron-nemo-cleanup",
-            daemon=True,
-        )
-        cleanup_thread.start()
-        cleanup_completed = completed.wait(timeout_seconds)
-    except BaseException:
-        _fail_stop_shutdown()
-        return
-    if not cleanup_completed or errors:
-        _fail_stop_shutdown()
 
 
 class NemotronNemoApplication:

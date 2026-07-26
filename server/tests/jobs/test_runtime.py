@@ -851,27 +851,64 @@ class ServerMainTests(unittest.TestCase):
         self.assertIsNone(stopped.exception.__cause__)
         self.assertTrue(stopped.exception.__suppress_context__)
 
-    def test_startup_containment_failure_uses_the_generic_boundary(self) -> None:
-        with (
-            patch.object(server_main.signal, "signal"),
-            patch.object(
-                server_main.ServerSettings,
-                "from_env",
-                return_value=ServerSettings(),
-            ),
-            patch.object(
-                server_main,
-                "build_batch_runtime",
-                side_effect=WorkerContainmentError("private container detail"),
-            ),
-        ):
-            with self.assertRaises(SystemExit) as stopped:
-                server_main.main()
+    def test_build_time_containment_failure_hard_exits_before_executor_atexit_join(
+        self,
+    ) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(server_root / "src")
+        script = textwrap.dedent(
+            """
+            import threading
+            from concurrent.futures import ThreadPoolExecutor
+            from unittest.mock import patch
 
-        self.assertEqual(str(stopped.exception), "Yap private server startup failed.")
-        self.assertNotIn("private container detail", str(stopped.exception))
-        self.assertIsNone(stopped.exception.__cause__)
-        self.assertTrue(stopped.exception.__suppress_context__)
+            import yap_server.__main__ as server_main
+            from yap_server.config import ServerSettings
+            from yap_server.pools.batch_contract import WorkerContainmentError
+
+
+            def fail_during_build():
+                started = threading.Event()
+                release = threading.Event()
+                executor = ThreadPoolExecutor(max_workers=1)
+                executor.submit(lambda: (started.set(), release.wait()))
+                if not started.wait(timeout=1):
+                    raise RuntimeError("synthetic worker did not start")
+                executor.shutdown(wait=False, cancel_futures=True)
+                raise WorkerContainmentError("private container detail")
+
+
+            with (
+                patch.object(server_main.signal, "signal"),
+                patch.object(
+                    server_main.ServerSettings,
+                    "from_env",
+                    return_value=ServerSettings(),
+                ),
+                patch.object(
+                    server_main,
+                    "build_batch_runtime",
+                    side_effect=fail_during_build,
+                ),
+            ):
+                server_main.main()
+            """
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=server_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 70)
+        self.assertIn("fail-stopping the service process", completed.stderr)
+        self.assertNotIn("private container detail", completed.stderr)
 
     def test_serving_storage_failure_does_not_expose_private_paths(self) -> None:
         private_path = "/srv/yap/private/patient-audio.wav"

@@ -9,9 +9,18 @@ from yap_server.jobs.runtime import (
     build_batch_runtime,
     ensure_development_batch_bind,
 )
+from yap_server.pools.batch_contract import WorkerContainmentError
 
 
 _SHUTDOWN_FAILURE_EXIT_CODE = 70
+
+
+def _fail_stop_worker_containment() -> None:
+    logging.critical(
+        "Yap private server shutdown could not verify worker containment; "
+        "fail-stopping the service process"
+    )
+    os._exit(_SHUTDOWN_FAILURE_EXIT_CODE)
 
 
 def _raise_keyboard_interrupt(signum: int, frame: object) -> None:
@@ -23,11 +32,7 @@ def _close_runtime_or_fail_stop(runtime: BatchRuntime) -> None:
     try:
         runtime.close()
     except BaseException:
-        logging.critical(
-            "Yap private server shutdown could not verify worker containment; "
-            "fail-stopping the service process"
-        )
-        os._exit(_SHUTDOWN_FAILURE_EXIT_CODE)
+        _fail_stop_worker_containment()
 
 
 def main() -> None:
@@ -45,6 +50,8 @@ def main() -> None:
         if runtime is not None:
             _close_runtime_or_fail_stop(runtime)
         raise SystemExit(str(error)) from None
+    except WorkerContainmentError:
+        _fail_stop_worker_containment()
     except (OSError, RuntimeError):
         if runtime is not None:
             _close_runtime_or_fail_stop(runtime)
