@@ -150,6 +150,7 @@ foreach ($path in @($appExecutable, $uninstaller)) {
 $resourceHashes = [ordered]@{}
 foreach ($resourceName in @(
     "SHIPPED_DEPENDENCY_INVENTORY.json",
+    "SHIPPED_DEPENDENCY_NOTICES.json",
     "THIRD_PARTY_NOTICES.md",
     "THIRD_PARTY_PROVENANCE.json"
   )) {

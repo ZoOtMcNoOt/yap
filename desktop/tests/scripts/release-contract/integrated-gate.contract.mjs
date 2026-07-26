@@ -50,11 +50,20 @@ const repoRoot = path.resolve(contractRoot, "..", "..", "..", "..");
 const manifestPath = path.join(
   repoRoot,
   "verification",
-  "integrated-preprocessing-language-routing-gate.json",
+  "integrated-product-checkpoint-gate.json",
 );
 const manifestBytes = readFileSync(manifestPath);
 const manifest = validateIntegratedGateManifest(JSON.parse(manifestBytes.toString("utf8")));
 const manifestSha256 = integratedGateManifestSha256(manifestBytes);
+const phase6ManifestPath = path.join(
+  repoRoot,
+  "verification",
+  "integrated-preprocessing-language-routing-gate.json",
+);
+const phase6ManifestBytes = readFileSync(phase6ManifestPath);
+const phase6Manifest = validateIntegratedGateManifest(
+  JSON.parse(phase6ManifestBytes.toString("utf8")),
+);
 const checkedHead = "a".repeat(40);
 const startedAt = "2026-07-23T12:00:00.000Z";
 const finishedAt = "2026-07-23T13:00:00.000Z";
@@ -215,6 +224,7 @@ function createReceipt(scope) {
 }
 
 test("integrated gate freezes the complete candidate and hosted child inventories", () => {
+  assert.equal(manifest.gateId, "integrated-product-checkpoint");
   assert.deepEqual(manifest.candidateCells.map(({ id }) => id), candidateIds);
   assert.deepEqual(manifest.hostedClosureCells.map(({ id }) => id), hostedClosureIds);
   const commandCells = Object.fromEntries(
@@ -223,6 +233,15 @@ test("integrated gate freezes the complete candidate and hosted child inventorie
       .map(({ id, command }) => [id, command]),
   );
   assert.deepEqual(commandCells, exactCommands);
+});
+
+test("historical Phase 6 gate identity and bytes remain frozen", () => {
+  assert.equal(phase6Manifest.gateId, "integrated-preprocessing-language-routing");
+  assert.equal(phase6Manifest.candidateCells.length, 30);
+  assert.equal(
+    integratedGateManifestSha256(phase6ManifestBytes),
+    "46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52",
+  );
 });
 
 test("integrated gate accepts exact one-attempt receipts for both scopes", () => {

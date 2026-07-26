@@ -34,6 +34,24 @@ pub(crate) fn ensure_idle(app: &tauri::AppHandle) -> Result<(), String> {
     ensure_surface(app, "collapsed")
 }
 
+pub(crate) fn focus_controls(app: &tauri::AppHandle) -> Result<(), String> {
+    let view = app.state::<crate::live::LiveSessionState>().snapshot();
+    if view.visibility != crate::live::state::LiveOverlayVisibility::Enabled {
+        return Err("Live overlay controls are hidden.".into());
+    }
+    if crate::live::state::is_live_session_started(view.status)
+        || view.status == crate::live::state::LiveSessionStatus::Blocked
+    {
+        ensure_active(app)?;
+    } else {
+        ensure_idle(app)?;
+    }
+    app.get_webview_window(WINDOW_LABEL)
+        .ok_or_else(|| "Live overlay window is unavailable.".to_string())?
+        .set_focus()
+        .map_err(|error| format!("Failed to focus live overlay controls: {error}"))
+}
+
 pub(crate) fn recover(app: &tauri::AppHandle) {
     let view = app.state::<crate::live::LiveSessionState>().snapshot();
     if view.visibility != crate::live::state::LiveOverlayVisibility::Enabled {

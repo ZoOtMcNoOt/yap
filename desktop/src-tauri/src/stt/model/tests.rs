@@ -9,7 +9,7 @@ use super::{
     cleanup_stale_download_temps, hf_resolve_url, models_dir_from,
     operation::DownloadOperation,
     progress::{progress_metrics, BodyProgress},
-    sha256_file, verify_sha256, write_text_atomically, DownloadProgress,
+    sha256_file, verify_sha256, DownloadProgress,
 };
 use crate::stt::error::SttError;
 
@@ -105,17 +105,6 @@ fn empty_body_chunks_do_not_extend_the_no_progress_deadline() {
         progress.deadline(),
         base + Duration::from_secs(11) + timeout
     );
-}
-
-#[test]
-fn atomic_text_write_replaces_existing_marker_without_delete_window() {
-    let dir = TestDir::new("yap-marker");
-    let marker = dir.0.join("model.verified");
-    std::fs::write(&marker, "old").unwrap();
-
-    write_text_atomically(&marker, "new").unwrap();
-
-    assert_eq!(std::fs::read_to_string(marker).unwrap(), "new");
 }
 
 #[test]

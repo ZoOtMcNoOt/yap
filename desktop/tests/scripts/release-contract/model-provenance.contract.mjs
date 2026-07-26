@@ -71,6 +71,7 @@ test("desktop model provenance pins the Silero bytes, lineage, runtime, and nati
   );
   assert.deepEqual(Object.keys(tauri.bundle.resources ?? {}).sort(), [
     "../../SHIPPED_DEPENDENCY_INVENTORY.json",
+    "../../SHIPPED_DEPENDENCY_NOTICES.json",
     "../../THIRD_PARTY_NOTICES.md",
     "../../THIRD_PARTY_PROVENANCE.json",
     "../../server/runtime/asr/licenses/APACHE-2.0.txt",
@@ -154,6 +155,7 @@ test("desktop model provenance pins the import-only AmberNet language detector a
   assert.match(notice, /No AmberNet\s+model bytes are bundled or hosted by Yap/);
   assert.deepEqual(Object.keys(tauri.bundle.resources ?? {}).sort(), [
     "../../SHIPPED_DEPENDENCY_INVENTORY.json",
+    "../../SHIPPED_DEPENDENCY_NOTICES.json",
     "../../THIRD_PARTY_NOTICES.md",
     "../../THIRD_PARTY_PROVENANCE.json",
     "../../server/runtime/asr/licenses/APACHE-2.0.txt",

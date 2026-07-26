@@ -9,7 +9,6 @@ from yap_server.alignment_contract import (
     AlignmentUnavailable,
     AlignmentUnavailableReason,
 )
-from yap_server.pools.batch_asr_worker import PcmAudio
 from yap_server.pools.cohere_engine import (
     CohereAsrInput,
     _ChunkAlignment,
@@ -20,6 +19,7 @@ from yap_server.pools.cohere_engine import (
     _result_payload,
     _selected_teacher_inputs,
 )
+from yap_server.pools.pcm_audio import PcmAudio
 
 from .batch_asr_fixtures import AUDIO_SHA256, test_lock as _test_lock
 

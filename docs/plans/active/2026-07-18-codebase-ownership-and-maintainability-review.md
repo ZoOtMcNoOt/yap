@@ -107,7 +107,7 @@ GPU pressure, model teardown, private evaluation evidence, and unavailable timin
       roadmap, runbooks, active/completed plans, and evidence classifications
       with the refactored executable system.
 - [x] Run focused verification throughout each affected slice.
-- [ ] Freeze one checkpoint candidate and run the complete applicable local,
+- [ ] Freeze one merge-authority checkpoint candidate and run the complete applicable local,
       native, server, release, disposable-Windows, and GB10 matrix exactly once.
 - [ ] Open a focused PR, require green exact-head hosted checks and review, and
       merge only the checked SHA.
@@ -216,6 +216,47 @@ listener. This admission remains failed private evidence and must not be
 resumed, retried, or relabeled. Replacement absence checks must enumerate
 processes while excluding the verifier identities rather than searching their
 own command line.
+
+Exact executable candidate
+`f3f2f910c2340bbab016f98c51438414415b7206` passed its single admitted
+checkpoint gate. The independently validated candidate receipt binds that
+exact head, 31 children, and frozen manifest SHA-256
+`1cb5a7e165f50e6a2c6746c00169e1c68c9d154fe8fdab0ab3a0bf78042696e5`.
+The target-client channel passed all 12 native cycles, nine prepared-audio
+boundaries, release build, both rendered UI scenarios, and production
+real-session tray exit. The sequential GB10 channel passed the complete Cohere
+and Nemotron lifecycle and the corrected independent absence verifier. The
+connected channel passed the real tunneled import, verified History result,
+interruption-safe ownership, and exact local/remote teardown. The integrated
+matrix passed the frozen frontend, native, server, release, provenance,
+dependency, WDIO, Python 3.12, Ruff, and private external cells. Private audio,
+transcripts, raw metrics, process ledgers, host paths, logs, and receipts remain
+outside Git and hosted artifacts. Final read-back, hosted exact-head closure,
+review, and merge were not claimed by this receipt.
+
+Final read-back found concrete blockers after that execution: native cleanup and
+batch-worker containment could still retain a server process; generic atomic
+publication and provider/test seams retained duplicate or backward ownership;
+the unused router and stale current-state claims remained; dependency notices
+were not bound per shipped package; the unfocused tool-window overlay lacked a
+native keyboard acquisition route; second-launch activation trusted an untyped
+marker; and the checkpoint evidence still carried the Phase 6 gate identity.
+These findings invalidate `f3f2f910...` as merge authority without changing
+what its passing receipt proves. A repaired exact candidate requires its own
+single complete admission after focused verification.
+
+The repaired tree now fail-stops both native NeMo cleanup and Python executor
+containment at bounded process boundaries; removes the unused router and
+duplicate request/PCM/job-ID owners; consolidates durable text publication at
+the crate root; binds every shipped dependency to exact notice documents or a
+reviewed own-source exemption; adds a reserved, settings-visible native shortcut
+that acquires the overlay from another foreground process; hardens the
+versioned app-data activation signal against stale, wrong-type, and redirected
+entries; and gives maintainability checkpoints their own manifest/runbook
+identity while preserving the Phase 6 manifest bytes. Focused server, Rust,
+frontend, release-contract, installer-contract, and external-foreground WDIO
+verification pass. Final repaired-head read-back and the new exact-candidate
+gate remain.
 
 ## Phase 7 cadence
 

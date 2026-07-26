@@ -5,6 +5,7 @@ import {
 import {
   closeMainToTray,
   cycleIdleOverlay,
+  pressOverlayFocusShortcutFromExternalWindow,
   recordingRoot,
   sampleWdioProcessTree,
   showIdleOverlay,
@@ -95,6 +96,35 @@ describe("Yap live overlay window", () => {
     expect(logicalOuter.width).toBeCloseTo(104, 1);
     expect(logicalOuter.height).toBeCloseTo(40, 1);
     expect(listRecordingArtifacts(recordingRoot)).toEqual([]);
+  });
+
+  it("acquires overlay keyboard focus through the native global shortcut", async () => {
+    await showIdleOverlay();
+    const view = await browser.tauri.execute(({ core }) => core.invoke("live_status"));
+    expect(view.overlayFocusHotkey).toBe("Ctrl+Shift+Alt+O");
+    expect(await browser.tauri.execute(({ core }) =>
+      core.invoke("plugin:window|is_focused", { label: "live-overlay" }))).toBe(false);
+
+    const nativeInput = await pressOverlayFocusShortcutFromExternalWindow();
+    expect(nativeInput.foregroundProcessId).not.toBe(nativeInput.appProcessId);
+    await browser.waitUntil(async () => browser.tauri.execute(({ core }) =>
+      core.invoke("plugin:window|is_focused", { label: "live-overlay" })), {
+      interval: 25,
+      timeout: 5_000,
+      timeoutMsg: "native overlay focus shortcut did not focus the overlay window",
+    });
+
+    await browser.tauri.switchWindow("live-overlay");
+    const focusedControl = await browser.tauri.execute(() => ({
+      ariaLabel: document.activeElement?.getAttribute("aria-label"),
+      role: document.activeElement?.getAttribute("role"),
+      tagName: document.activeElement?.tagName,
+    }));
+    expect(
+      focusedControl.role === "toolbar"
+        || focusedControl.tagName === "BUTTON"
+        || Boolean(focusedControl.ariaLabel),
+    ).toBe(true);
   });
 
   it("reuses one native window whose bounds equal each visible island surface", async () => {

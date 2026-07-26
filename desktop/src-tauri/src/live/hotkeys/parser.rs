@@ -1,6 +1,6 @@
 use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut};
 
-use crate::live::settings::DEFAULT_HOTKEY;
+use crate::live::settings::{DEFAULT_HOTKEY, OVERLAY_CONTROLS_HOTKEY};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HotkeyPurpose {
@@ -66,6 +66,9 @@ fn parse_hotkey_parts(input: &str, purpose: HotkeyPurpose) -> Result<(Modifiers,
     }
 
     let key = key.ok_or_else(|| "Shortcut must contain a key.".to_string())?;
+    if Shortcut::new(Some(modifiers), key) == overlay_controls_shortcut() {
+        return Err("Shortcut is reserved by Yap for overlay controls.".into());
+    }
     if is_windows_reserved(modifiers, key) {
         return Err("Shortcut is reserved by Windows.".into());
     }
@@ -249,4 +252,12 @@ fn function_key_code(value: &str) -> Result<Code, String> {
 
 pub fn default_shortcut() -> Shortcut {
     parse_hotkey(DEFAULT_HOTKEY).expect("default live hotkey must be valid")
+}
+
+pub(crate) fn overlay_controls_shortcut() -> Shortcut {
+    debug_assert_eq!(OVERLAY_CONTROLS_HOTKEY, "Ctrl+Shift+Alt+O");
+    Shortcut::new(
+        Some(Modifiers::CONTROL | Modifiers::SHIFT | Modifiers::ALT),
+        Code::KeyO,
+    )
 }

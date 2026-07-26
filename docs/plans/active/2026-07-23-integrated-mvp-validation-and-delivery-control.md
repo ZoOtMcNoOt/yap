@@ -32,6 +32,15 @@ complexity.
 - Phases 1–6 and Architecture Checkpoint A are merged at baseline
   `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 - Checkpoint B is active on `chore/codebase-maintainability-review`.
+- Checkpoint B exact executable candidate
+  `f3f2f910c2340bbab016f98c51438414415b7206` passed its one-time
+  31-child local/native/server/release/private-runtime matrix. Its independently
+  validated receipt binds the exact head and manifest SHA-256
+  `1cb5a7e165f50e6a2c6746c00169e1c68c9d154fe8fdab0ab3a0bf78042696e5`.
+  Final antagonistic read-back found concrete blockers and invalidated that
+  exact head as merge authority. The narrow repairs pass focused verification;
+  final repaired-head read-back, one exact candidate gate, hosted exact-head
+  closure, review, and merge remain.
 - Exact executable candidate
   `a92f338546a2f8bbaded96b04f8987f0ac475c88`
   passed the frozen one-attempt 30-child Phase 6 matrix. Manifest SHA-256

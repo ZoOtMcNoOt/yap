@@ -90,10 +90,11 @@ pub(super) fn verify_sha_and_mark(path: &Path, artifact: &Artifact) -> Result<()
 }
 
 pub(super) fn write_verified_marker(path: &Path, artifact: &Artifact) -> Result<(), SttError> {
-    crate::stt::model::write_text_atomically(
+    crate::atomic_text::write(
         &path.with_extension("verified"),
         &format!("{}\n{}\n", artifact.sha256, artifact.bytes),
     )
+    .map_err(crate::stt::model::io_error_to_stt)
 }
 
 pub(super) fn verify_model_at_with_progress<P, C>(

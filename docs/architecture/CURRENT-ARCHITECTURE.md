@@ -34,10 +34,10 @@ flowchart LR
   Native --> Loopback["Numeric loopback HTTP"]
   Loopback -. "explicit SSH forward" .-> Server["Private Yap server"]
   Server --> Store["Private job store and artifacts"]
-  Server --> Router["Bounded workload router and pool"]
-  Router --> Reference["Transformers reference workers"]
-  Router --> Cohere["Cohere vLLM candidate"]
-  Router --> NeMo["Nemotron NeMo candidate"]
+  Server --> Pool["Bounded provider admission pools"]
+  Pool --> Reference["Transformers reference workers"]
+  Pool --> Cohere["Cohere vLLM candidate"]
+  Pool --> NeMo["Nemotron NeMo candidate"]
 ```
 
 The SSH forward is a development access boundary managed outside Yap. It is
@@ -134,11 +134,10 @@ artifact cleanup. Uploaded chunks are reopened as bounded regular files and
 must still match their declared exact extent and SHA before exclusive atomic
 WAV publication.
 
-`workload_router/*` and `pools/*` own bounded admission and one isolated GPU
-worker. The executable pool admits one running job plus two queued jobs. The
-current adapter uses one fixed `development-loopback` owner and dispatches each
-batch request immediately to that pool; the actual waiting bound is the pool,
-not a durable authenticated multi-tenant router queue.
+`pools/*` owns bounded admission and isolated GPU workers. The reference
+`BatchAsrPool` admits one running job plus two queued jobs. The current loopback
+adapter dispatches each batch request directly to that pool; no durable
+authenticated multi-tenant router queue executes yet.
 
 The checked reference worker image uses the digest-pinned NVIDIA PyTorch 26.06
 base, Python 3.12, the locked NVIDIA Torch/CUDA runtime, Transformers 5.13.1,
@@ -244,11 +243,13 @@ those owners. Provider engines consume the neutral
 `batch_asr_worker.py` adapter, with an AST dependency test guarding the seam.
 The loopback server passes `BatchAsrPool` directly to `RecordingJobService`;
 the removed wrapper only enqueued and immediately dispatched the same batch
-request, so it never provided independent scheduling or fairness. The retained
-`WorkloadRouter` remains a policy/reference surface for future mixed live and
-batch admission, not a claimed second owner in the current batch runtime.
-Desktop-wide bounded logging now belongs to crate-root `diagnostics.rs`; the
-STT module owns only its ASR-specific log path and timing helpers.
+request, so it never provided independent scheduling or fairness. The
+non-executable reference router was also removed; ADR 0023 retains the accepted
+future mixed-live/batch fairness rule, but Phase 10 must implement it against
+real durable/authenticated owners. Neutral test support now owns shared
+recording-job request builders. Desktop-wide bounded logging belongs to
+crate-root `diagnostics.rs`, and crate-root `atomic_text.rs` owns durable text
+publication; STT retains only ASR-specific adaptation and timing.
 
 The production result contract permits canonical empty ASR text. Duration-
 transport evidence therefore counts a published empty result as completed for

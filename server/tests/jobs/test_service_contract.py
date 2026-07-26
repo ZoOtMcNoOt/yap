@@ -13,8 +13,8 @@ from yap_server.language_span_contract import (
     ServerUtteranceLanguageObservation,
     build_server_language_span_evidence,
 )
-from yap_server.pools.batch_asr_worker import MAX_AUDIO_SECONDS, SAMPLE_RATE_HZ
 from yap_server.pools.batch_contract import AsrRouteDecision
+from yap_server.pools.pcm_audio import MAX_AUDIO_SECONDS, SAMPLE_RATE_HZ
 
 from .service_fixtures import (
     _Processor,

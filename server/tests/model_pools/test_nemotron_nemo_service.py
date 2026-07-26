@@ -3,9 +3,13 @@ from __future__ import annotations
 from dataclasses import replace
 import hashlib
 import http.client
+import os
 from pathlib import Path
 import socket
+import subprocess
+import sys
 import tempfile
+import textwrap
 import threading
 import time
 import unittest
@@ -118,6 +122,96 @@ class _FakeEngine:
 
 
 class NemotronNemoServiceTests(unittest.TestCase):
+    def test_main_fail_stops_when_native_cleanup_exceeds_its_deadline(self) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(server_root / "src")
+        script = textwrap.dedent(
+            """
+            import os
+            from pathlib import Path
+            import tempfile
+            import threading
+            from types import SimpleNamespace
+            from unittest.mock import patch
+
+            import yap_server.pools.nemotron_nemo_service as service
+
+
+            class Engine:
+                def close(self):
+                    raise AssertionError("application owns engine cleanup")
+
+
+            class Application:
+                def __init__(self, **_kwargs):
+                    self._release = threading.Event()
+
+                def request_shutdown(self):
+                    pass
+
+                def close(self):
+                    self._release.wait()
+
+
+            class Server:
+                def __init__(self, *_args, **_kwargs):
+                    pass
+
+                def serve_forever(self):
+                    pass
+
+                def shutdown(self):
+                    pass
+
+                def server_close(self):
+                    pass
+
+
+            service._SHUTDOWN_CLEANUP_TIMEOUT_SECONDS = 0.05
+            os.environ["YAP_NEMOTRON_NEMO_API_KEY"] = "synthetic-test-key"
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                arguments = SimpleNamespace(
+                    lock=str(root / "model-pool.lock.json"),
+                    model_dir=str(root),
+                    storage_dir=str(root),
+                    host="0.0.0.0",
+                    port=8000,
+                )
+                parser = SimpleNamespace(parse_args=lambda _argv: arguments)
+                with (
+                    patch.object(service, "_parser", return_value=parser),
+                    patch.object(service, "validate_private_api_key"),
+                    patch.object(service, "load_model_pool_lock", return_value=object()),
+                    patch.object(service, "verify_model_artifacts"),
+                    patch.object(
+                        service,
+                        "NemotronNemoStreamingEngine",
+                        return_value=Engine(),
+                    ),
+                    patch.object(service, "NemotronNemoApplication", Application),
+                    patch.object(service, "_NemotronNemoHttpServer", Server),
+                    patch.object(service.signal, "signal"),
+                ):
+                    service.main([])
+            """
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=server_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 70)
+        self.assertIn("fail-stopping the service process", completed.stderr)
+        self.assertNotIn("Traceback", completed.stderr)
+
     def test_server_close_releases_listener_without_waiting_for_wedged_request(
         self,
     ) -> None:

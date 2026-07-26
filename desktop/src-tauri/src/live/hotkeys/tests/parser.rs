@@ -1,5 +1,6 @@
 use super::super::*;
-use crate::live::settings::{DEFAULT_HOTKEY, DEFAULT_PASTE_HOTKEY};
+use crate::live::settings::{DEFAULT_HOTKEY, DEFAULT_PASTE_HOTKEY, OVERLAY_CONTROLS_HOTKEY};
+use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut};
 
 #[test]
 fn parses_default_hotkey() {
@@ -56,6 +57,23 @@ fn rejects_windows_reserved_hotkeys_before_registration() {
             "{hotkey}"
         );
     }
+}
+
+#[test]
+fn reserves_the_overlay_controls_shortcut_from_user_configuration() {
+    for purpose in [HotkeyPurpose::Dictation, HotkeyPurpose::PasteLast] {
+        assert_eq!(
+            parse_hotkey_for(OVERLAY_CONTROLS_HOTKEY, purpose),
+            Err("Shortcut is reserved by Yap for overlay controls.".into())
+        );
+    }
+    assert_eq!(
+        overlay_controls_shortcut(),
+        Shortcut::new(
+            Some(Modifiers::CONTROL | Modifiers::SHIFT | Modifiers::ALT),
+            Code::KeyO
+        )
+    );
 }
 
 #[test]

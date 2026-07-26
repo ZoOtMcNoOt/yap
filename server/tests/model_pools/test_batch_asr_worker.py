@@ -7,11 +7,11 @@ import wave
 from pathlib import Path
 from unittest.mock import patch
 
-from yap_server.pools.batch_asr_worker import (
+from yap_server.pools.batch_contract import validate_batch_job_id
+from yap_server.pools.pcm_audio import (
     MAX_ENCODED_AUDIO_BYTES,
     WorkerInputError,
     read_pcm16_wav,
-    validate_job_id,
 )
 
 
@@ -38,7 +38,10 @@ def _write_wav(
 class BatchAsrWorkerTests(unittest.TestCase):
     def test_worker_module_does_not_import_gpu_stack_on_health_process_import(self) -> None:
         script = (
-            "import sys; import yap_server.pools.batch_asr_worker; "
+            "import sys; import yap_server.pools.batch_asr_worker as worker; "
+            "assert worker.__all__ == ['transcribe']; "
+            "assert not hasattr(worker, 'PcmAudio'); "
+            "assert not hasattr(worker, 'read_pcm16_wav'); "
             "assert 'torch' not in sys.modules; "
             "assert 'transformers' not in sys.modules; "
             "assert 'numpy' not in sys.modules"
@@ -120,11 +123,11 @@ class BatchAsrWorkerTests(unittest.TestCase):
             self.assertEqual(audio.pcm_bytes, b"\x00\x00" * 1600)
 
     def test_job_ids_are_opaque_and_path_safe(self) -> None:
-        self.assertEqual(validate_job_id("job-01_a.b"), "job-01_a.b")
+        self.assertIsNone(validate_batch_job_id("job-01_a.b"))
         for invalid in ("", "../job", "job/id", " job", "x" * 129):
             with self.subTest(invalid=invalid):
-                with self.assertRaises(WorkerInputError):
-                    validate_job_id(invalid)
+                with self.assertRaises(ValueError):
+                    validate_batch_job_id(invalid)
 
 
 if __name__ == "__main__":

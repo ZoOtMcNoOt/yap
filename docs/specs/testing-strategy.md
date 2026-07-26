@@ -87,6 +87,15 @@ complete current CodeQL language matrix, and disposable-Windows NSIS closure
 form the separate PR receipt that revalidates source-to-docs lineage before
 merge.
 
+### Product checkpoint boundary
+
+Post-phase maintainability checkpoints use the behavior-named
+[integrated product checkpoint gate](../runbooks/integrated-product-checkpoint-gate.md).
+Its manifest is distinct from the frozen Phase 6 gate, so a checkpoint receipt
+cannot be presented as a continuation or rerun of the phase-specific admission.
+Both retain exact head, manifest, child-definition, single-attempt, and private
+evidence bounds.
+
 The gate must use license-clear public fixtures to prove contract shape, the
 currently advertised `en-US` regression, language decisions, source
 preservation, restart/cancel/retry behavior, alignment failure semantics,

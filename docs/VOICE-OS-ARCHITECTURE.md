@@ -692,7 +692,7 @@ Idle ↔ ServerQueued ↔ ServerUploading   (verified GB-class ASR route)
 
 These rules prevent the repeated UI and runtime churn we have been seeing. They are part of the architecture contract, not polish notes.
 
-**Current implementation:** the convergence client now keeps one continuously reused `live-overlay`. React projects semantic surfaces and never receives native resize/position permissions; Rust is the sole production bounds owner, top-centers `104×40` collapsed and `180×96` expanded frames, sizes compact status surfaces exactly, and applies a rounded Windows hit region. Show and hover remain non-activating, while explicit focus exposes keyboard-accessible 40 px primary actions. The 200 ms collapse grace keeps the visible target present. Shortcut changes require native confirmation and one bounded 15-second Rust/Windows physical-chord epoch; the recorder waits for neutral/chord/release, ignores ordinary typing without the required modifiers, persists only a normalized chord, and retains reserved/conflict validation, Cancel, per-action Reset, and transactional rollback. Dictation defaults to `Ctrl+Shift+Space`; paste-last defaults to the deliberately less collision-prone `Ctrl+Shift+Alt+V`. Completed transcripts use clipboard-only delivery with visible paste guidance; Yap does not synthesize focused-field input. Remaining client gaps are macOS/Linux hotkey/clipboard adapters, broader real-application clipboard evidence, and optional real-model/hardware lifecycle proof.
+**Current implementation:** the convergence client now keeps one continuously reused `live-overlay`. React projects semantic surfaces and never receives native resize/position permissions; Rust is the sole production bounds owner, top-centers `104×40` collapsed and `180×96` expanded frames, sizes compact status surfaces exactly, and applies a rounded Windows hit region. Show and hover remain non-activating. The reserved, settings-visible `Ctrl+Shift+Alt+O` system shortcut explicitly focuses the overlay from another application so keyboard users can enter its 40 px primary controls; failure to register is projected as unavailable. The 200 ms collapse grace keeps the visible target present. Shortcut changes require native confirmation and one bounded 15-second Rust/Windows physical-chord epoch; the recorder waits for neutral/chord/release, ignores ordinary typing without the required modifiers, persists only a normalized chord, and retains reserved/conflict validation, Cancel, per-action Reset, and transactional rollback. Dictation defaults to `Ctrl+Shift+Space`; paste-last defaults to the deliberately less collision-prone `Ctrl+Shift+Alt+V`. Completed transcripts use clipboard-only delivery with visible paste guidance; Yap does not synthesize focused-field input. Remaining client gaps are macOS/Linux hotkey/clipboard adapters, broader real-application clipboard evidence, and optional real-model/hardware lifecycle proof.
 
 | Surface | Do | Do not |
 |---------|----|--------|
@@ -704,7 +704,7 @@ These rules prevent the repeated UI and runtime churn we have been seeing. They 
 | Settings and controls | Ship usable dictation and paste-last defaults. Enter an explicit "Change shortcut" mode that records one physical primary-key chord, normalizes only that final chord, supports Cancel and Reset, and preserves the previous registration on failure. | Do not require users to type chord strings, accept bare printable/OS-reserved chords, capture outside deliberate recording mode, or log/store raw key events. |
 | Docs and code | Update the ADR/spec/product surface in the same phase as the code. | Do not ship behavior that contradicts the client/server split: live local fallback is allowed; official long recordings queue for server. |
 | Speaker privacy | Persist anonymous timelines and user labels; keep local embeddings transient. | Do not turn contact import, transcript renaming, or meeting attendance into passive voice enrollment. |
-| Server staging | Keep the default Phase 3 health-only profile separate from the Phase 5 loopback batch profile. Advertise batch/status only after private storage, immutable locks, verified models, router, and pool initialize. Keep reference workers transient/networkless; keep Phase 6 resident containers on a temporary exact-head internal bridge with no Docker-published port or egress, and use checked non-root launchers to own bounded numeric-loopback proxy process groups with separate API keys. | Do not advertise live capability, expose a model service beyond host loopback, give the provider containers external egress, or mistake focused resident/concurrency evidence for an authenticated persistent multi-user service or production capacity benchmark. |
+| Server staging | Keep the default Phase 3 health-only profile separate from the Phase 5 loopback batch profile. Advertise batch/status only after private storage, immutable locks, verified models, and the bounded pool initialize. Keep reference workers transient/networkless; keep Phase 6 resident containers on a temporary exact-head internal bridge with no Docker-published port or egress, and use checked non-root launchers to own bounded numeric-loopback proxy process groups with separate API keys. | Do not advertise live capability, expose a model service beyond host loopback, give the provider containers external egress, or mistake focused resident/concurrency evidence for an authenticated persistent multi-user service or production capacity benchmark. |
 
 ---
 
@@ -810,7 +810,7 @@ The hardened host bootstrap, machine-readable HTTP/live contracts, bounded
 loopback service, desktop connector/state machine, durable SQLite imported-job
 ledger, and Phase 5 development batch path exist. The gated baseline validates
 and extracts immutable PCM from already-canonical WAV input, drains resumable
-jobs through the bounded router and isolated Cohere worker, and publishes
+jobs through the bounded pool and isolated Cohere worker, and publishes
 verified server results. Phase 6 adds durable preprocessing stages, a measured
 Cohere vLLM candidate, and an implemented resident Nemotron NeMo candidate. Their
 model-neutral candidate-safety lifecycle passed at exact candidate
@@ -939,10 +939,13 @@ privacy review and ADR.
 
 **Build specs:** [Client state machine](specs/client-state-machine.md) · [Model download UX](specs/model-download-ux.md) · [Local audio preprocessing](specs/local-audio-preprocessing-stack.md) · [Local live fallback](specs/local-live-fallback-sidecar.md) · [Local LLM sidecar](specs/local-llm-sidecar.md) · [Live dictation client](specs/live-dictation-client-ux.md) · [Server tier MVP](specs/server-tier-mvp.md) · [Source-aware diarization](specs/source-aware-diarization.md) · [Testing](specs/testing-strategy.md).
 
-**Next execution order:** Phase 6 PR #67 is merged. Finish Checkpoint B's narrow
-ownership and maintainability repairs, run its complete applicable matrix once
-on the frozen candidate, and merge only the green reviewed head. Then continue
-Phases 7–10 on separate branches in documented order. WSS/live ASR,
+**Next execution order:** Phase 6 PR #67 is merged. Checkpoint B exact executable
+candidate `f3f2f910c2340bbab016f98c51438414415b7206` passed its one-time
+31-child matrix, but final antagonistic read-back found concrete blockers and
+invalidated it as merge authority. Those narrow repairs pass focused
+verification. Finish the repaired-head read-back, gate one exact candidate,
+require hosted exact-head closure, and merge only the green reviewed head. Then
+continue Phases 7–10 on separate branches in documented order. WSS/live ASR,
 authentication, diarization, and the HTTP/3 edge remain gated by their canonical
 phases. ADR 0021 does not authorize UDP exposure from the loopback application
 boundary.

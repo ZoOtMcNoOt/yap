@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-import unittest
 from dataclasses import replace
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
+import textwrap
 from types import SimpleNamespace
+import unittest
 from unittest.mock import MagicMock, patch
 
 import yap_server.__main__ as server_main
@@ -709,6 +712,77 @@ class BatchRuntimeTests(unittest.TestCase):
 
 
 class ServerMainTests(unittest.TestCase):
+    def test_cleanup_containment_failure_hard_exits_before_executor_atexit_join(
+        self,
+    ) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(server_root / "src")
+        script = textwrap.dedent(
+            """
+            import threading
+            from concurrent.futures import ThreadPoolExecutor
+            from unittest.mock import patch
+
+            import yap_server.__main__ as server_main
+            from yap_server.config import ServerSettings
+            from yap_server.pools.batch_contract import WorkerContainmentError
+
+
+            class Runtime:
+                def __init__(self):
+                    self.service = object()
+                    self.lid_preflight_service = object()
+                    self.asr_capabilities = {"schemaVersion": 1, "providers": []}
+                    self._started = threading.Event()
+                    self._release = threading.Event()
+                    self._executor = ThreadPoolExecutor(max_workers=1)
+                    self._executor.submit(self._block)
+                    if not self._started.wait(timeout=1):
+                        raise RuntimeError("synthetic worker did not start")
+
+                def _block(self):
+                    self._started.set()
+                    self._release.wait()
+
+                def close(self):
+                    self._executor.shutdown(wait=False, cancel_futures=True)
+                    raise WorkerContainmentError("sensitive worker detail")
+
+
+            runtime = Runtime()
+            with (
+                patch.object(server_main.signal, "signal"),
+                patch.object(
+                    server_main.ServerSettings,
+                    "from_env",
+                    return_value=ServerSettings(),
+                ),
+                patch.object(
+                    server_main,
+                    "build_batch_runtime",
+                    return_value=runtime,
+                ),
+                patch.object(server_main, "serve", side_effect=KeyboardInterrupt),
+            ):
+                server_main.main()
+            """
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=server_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 70)
+        self.assertIn("fail-stopping the service process", completed.stderr)
+        self.assertNotIn("sensitive worker detail", completed.stderr)
+
     def test_verified_runtime_capabilities_are_served_with_the_job_service(self) -> None:
         runtime = _Runtime()
         settings = ServerSettings()

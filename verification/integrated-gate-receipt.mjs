@@ -14,6 +14,10 @@ const RECEIPT_SCOPES = Object.freeze({
   candidate: "candidateCells",
   "hosted-closure": "hostedClosureCells",
 });
+const INTEGRATED_GATE_IDS = new Set([
+  "integrated-product-checkpoint",
+  "integrated-preprocessing-language-routing",
+]);
 const MANIFEST_KEYS = new Set([
   "schemaVersion",
   "gateId",
@@ -125,7 +129,7 @@ export function validateIntegratedGateManifest(manifest) {
   requireExactKeys(manifest, MANIFEST_KEYS, "Integrated gate manifest");
   requireCondition(manifest.schemaVersion === 1, "Integrated gate manifest schemaVersion must be 1.");
   requireCondition(
-    manifest.gateId === "integrated-preprocessing-language-routing",
+    INTEGRATED_GATE_IDS.has(manifest.gateId),
     "Integrated gate manifest has the wrong gate id.",
   );
   requireCondition(

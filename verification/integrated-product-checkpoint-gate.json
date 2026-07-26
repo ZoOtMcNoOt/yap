@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "gateId": "integrated-preprocessing-language-routing",
+  "gateId": "integrated-product-checkpoint",
   "candidateCells": [
     {
       "id": "frontend.node-runtime",
@@ -82,7 +82,7 @@
       ]
     },
     {
-      "id": "frontend.accessibility-and-workflows",
+      "id": "frontend.browser-workflows",
       "executor": "command",
       "cwd": "desktop",
       "command": [
@@ -200,6 +200,19 @@
         "Bypass",
         "-File",
         "./verification/test-portable-python-server.ps1"
+      ]
+    },
+    {
+      "id": "server.lint",
+      "executor": "command",
+      "cwd": "server",
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "ruff",
+        "check",
+        "."
       ]
     },
     {

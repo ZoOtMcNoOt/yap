@@ -37,8 +37,16 @@ const RUNNER_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = path.resolve(RUNNER_DIRECTORY, "..");
 const MANIFEST_PATH = path.join(
   RUNNER_DIRECTORY,
+  "integrated-product-checkpoint-gate.json",
+);
+const LEGACY_MANIFEST_PATH = path.join(
+  RUNNER_DIRECTORY,
   "integrated-preprocessing-language-routing-gate.json",
 );
+const INTEGRATED_GATE_IDS = new Set([
+  "integrated-product-checkpoint",
+  "integrated-preprocessing-language-routing",
+]);
 const ADMISSION_KEYS = new Set([
   "schemaVersion",
   "gateId",
@@ -153,7 +161,7 @@ export function reserveIntegratedGateAttemptDirectory({
   requireCondition(SHA40.test(checkedHead ?? ""), "Checked head is invalid.");
   requireCondition(SHA256.test(manifestSha256 ?? ""), "Manifest identity is invalid.");
   requireCondition(
-    gateId === "integrated-preprocessing-language-routing",
+    INTEGRATED_GATE_IDS.has(gateId),
     "Gate id is invalid.",
   );
   const runDirectory = path.join(
@@ -175,7 +183,7 @@ function validateAdmission(value) {
   );
   requireCondition(value.schemaVersion === 1, "Gate admission schemaVersion must be 1.");
   requireCondition(
-    value.gateId === "integrated-preprocessing-language-routing",
+    INTEGRATED_GATE_IDS.has(value.gateId),
     "Gate admission has the wrong gate id.",
   );
   requireCondition(SHA40.test(value.checkedHead ?? ""), "Gate admission head is invalid.");
@@ -243,12 +251,29 @@ function loadFrozenInputs({ manifestPath, privatePlanPath, expectedHead }) {
     "Integrated gate manifest",
     INTEGRATED_GATE_BYTE_LIMITS.gateManifestBytes,
   );
+  const canonicalManifestContracts = [
+    [MANIFEST_PATH, "integrated-product-checkpoint"],
+    [LEGACY_MANIFEST_PATH, "integrated-preprocessing-language-routing"],
+  ].map(([candidate, gateId]) => ({
+    gateId,
+    path: normalizedRealPath(
+      candidate,
+      "Canonical integrated gate manifest",
+      "file",
+    ).toLowerCase(),
+  }));
+  const manifestContract = canonicalManifestContracts.find(
+    ({ path: candidate }) => candidate === manifestFile.path.toLowerCase(),
+  );
   requireCondition(
-    manifestFile.path.toLowerCase()
-      === normalizedRealPath(MANIFEST_PATH, "Canonical integrated gate manifest", "file").toLowerCase(),
-    "The runner accepts only the repository's canonical gate manifest.",
+    manifestContract,
+    "The runner accepts only a repository-owned integrated gate manifest.",
   );
   const manifest = validateIntegratedGateManifest(manifestFile.value);
+  requireCondition(
+    manifest.gateId === manifestContract.gateId,
+    "The gate manifest path and behavior identity do not match.",
+  );
   const privatePlanFile = readExactJson(
     privatePlanPath,
     "Private evidence plan",

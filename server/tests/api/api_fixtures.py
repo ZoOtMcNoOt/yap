@@ -16,9 +16,9 @@ from yap_server.api.request_io import MAX_REQUEST_BODY_BYTES
 from yap_server.config import ServerSettings
 from yap_server.jobs import RecordingJobService
 
-from tests.jobs.service_fixtures import (
+from tests.recording_job_fixtures import (
     ControlledJobProcessor,
-    create_recording_job_request,
+    batch_api_recording_job_request,
 )
 
 __all__ = [
@@ -63,9 +63,7 @@ class _BlockingStatusService:
 
 
 def meeting_import_job_request() -> dict[str, object]:
-    request = create_recording_job_request(session_id="s-batch-api")
-    request["displayName"] = "Batch API fixture"
-    return request
+    return batch_api_recording_job_request()
 
 
 class HealthServerTestCase(unittest.TestCase):

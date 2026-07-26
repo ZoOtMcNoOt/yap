@@ -3,7 +3,6 @@ from __future__ import annotations
 from types import MethodType, SimpleNamespace
 import unittest
 
-from yap_server.pools.batch_asr_worker import PcmAudio
 from yap_server.pools.nemotron_engine import (
     MAX_NEMOTRON_LANGUAGE_SEGMENTS,
     NemotronAsrEngine,
@@ -13,6 +12,7 @@ from yap_server.pools.nemotron_engine import (
     language_tag_token_map,
     tagged_language_segments,
 )
+from yap_server.pools.pcm_audio import PcmAudio
 from yap_server.pools.utterance_plan import (
     SAMPLE_RATE_HZ,
     build_utterance_plan,

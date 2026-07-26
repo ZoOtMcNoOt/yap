@@ -1,8 +1,9 @@
 import json
 import re
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
+
+from tests.recording_job_fixtures import provenance_contract_job_request
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -14,67 +15,7 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def make_job_request(origin: str, track_source: dict[str, Any]) -> dict[str, Any]:
-    session_id = "s-provenance-test"
-    track_id = "track-1"
-    return {
-        "displayName": "Provenance contract test",
-        "metadata": {
-            "sessionId": session_id,
-            "mode": "meeting",
-            "origin": origin,
-            "triggerMode": "toggle",
-            "startedAtUtc": "2026-07-12T16:00:00Z",
-            "utcOffsetMinutesAtStart": None,
-            "localeHintBcp47": "en-US",
-            "countryCodeHint": None,
-            "preferredLanguagesBcp47": ["en-US"],
-            "appVersion": "0.1.0",
-            "platform": "windows",
-            "privacyPolicyVersion": "unconfigured",
-            "retentionExpiresAtUtc": "2026-08-11T16:00:00Z",
-        },
-        "languageDecision": {
-            "mode": "fixed",
-            "languageBcp47": "en-US",
-            "disposition": "primary",
-        },
-        "tracks": [
-            {
-                "trackId": track_id,
-                "source": deepcopy(track_source),
-                "deviceId": None,
-                "originalSampleRateHz": 16000,
-                "originalChannels": 1,
-            }
-        ],
-        "route": "server_batch",
-        "captureManifest": {
-            "schemaVersion": 1,
-            "sessionId": session_id,
-            "sha256": "a" * 64,
-            "byteLength": 4096,
-        },
-        "chunks": [
-            {
-                "replayKey": {
-                    "schemaVersion": 1,
-                    "sessionId": session_id,
-                    "trackId": track_id,
-                    "sequenceStart": 0,
-                    "sequenceEnd": 159,
-                },
-                "contentIdentity": {
-                    "sha256": "b" * 64,
-                    "byteLength": 320,
-                },
-                "audioCodec": "pcm_s16le",
-                "sampleRateHz": 16000,
-                "channels": 1,
-                "startMs": 0,
-                "durationMs": 10,
-            }
-        ],
-    }
+    return provenance_contract_job_request(origin, track_source)
 
 
 def make_live_start(origin: str, track_source: dict[str, Any]) -> dict[str, Any]:

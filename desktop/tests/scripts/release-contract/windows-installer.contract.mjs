@@ -59,6 +59,7 @@ test("NSIS uses stock Tauri behavior inside a disposable Windows boundary", asyn
   assert.match(smoke, /THIRD_PARTY_NOTICES\.md/);
   assert.match(smoke, /THIRD_PARTY_PROVENANCE\.json/);
   assert.match(smoke, /SHIPPED_DEPENDENCY_INVENTORY\.json/);
+  assert.match(smoke, /SHIPPED_DEPENDENCY_NOTICES\.json/);
   assert.match(smoke, /stockSilentUninstallPreservedProductRegistry/);
   assert.match(smoke, /@\("\/S"\)/);
   assert.match(smoke, /preserved/i);

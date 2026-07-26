@@ -1,9 +1,17 @@
+use std::{
+    io::Write,
+    sync::atomic::{AtomicBool, Ordering},
+};
+
 use tauri::Manager;
 
 use crate::{authorization, commands, exclusive_file_lease, jobs, live, paths, runtime, stt, tray};
 
 const INSTANCE_LEASE_FILE: &str = ".yap-instance.lock";
-const INSTANCE_ACTIVATION_REQUEST_PREFIX: &str = "Yap-existing-instance-activation";
+const INSTANCE_ACTIVATION_REQUEST_FILE: &str = ".yap-instance-activation.request";
+const INSTANCE_ACTIVATION_REQUEST: &[u8] = b"yap-instance-activation-v1\n";
+const INSTANCE_ACTIVATION_QUARANTINE_ATTEMPTS: u8 = 32;
+static ACTIVATION_REQUEST_ERROR_LOGGED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ExitRequestDisposition {
@@ -84,8 +92,6 @@ fn write_startup_migration_diagnostic(
     directory: &std::path::Path,
     detail: &str,
 ) -> std::io::Result<std::path::PathBuf> {
-    use std::io::Write;
-
     let nonce = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -165,36 +171,163 @@ fn acquire_instance_lease_at(
 }
 
 fn instance_activation_request_path() -> std::path::PathBuf {
-    let app_data_directory = paths::app_data_dir();
-    let identity = app_data_directory
-        .as_os_str()
-        .as_encoded_bytes()
-        .iter()
-        .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| {
-            (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
-        });
-    std::env::temp_dir().join(format!(
-        "{INSTANCE_ACTIVATION_REQUEST_PREFIX}-{:016x}.request",
-        identity
-    ))
+    paths::app_data_dir().join(INSTANCE_ACTIVATION_REQUEST_FILE)
 }
 
 fn request_existing_instance_activation_at(path: &std::path::Path) -> std::io::Result<()> {
-    match std::fs::create_dir(path) {
-        Ok(()) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    for _ in 0..=1 {
+        match create_activation_request_file(path) {
+            Ok(()) => return Ok(()),
+            Err(create_error) => {
+                match std::fs::symlink_metadata(path) {
+                    Ok(_) => {}
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                        return Err(create_error);
+                    }
+                    Err(error) => return Err(error),
+                }
+                match read_activation_request(path) {
+                    Ok(Some(true)) => return Ok(()),
+                    Ok(None) => continue,
+                    Ok(Some(false)) | Err(_) => {
+                        quarantine_invalid_activation_request(path)?;
+                    }
+                }
+            }
+        }
+    }
+    create_activation_request_file(path)
+}
+
+fn create_activation_request_file(path: &std::path::Path) -> std::io::Result<()> {
+    let mut options = std::fs::OpenOptions::new();
+    options.create_new(true).write(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = options.open(path)?;
+    let result = (|| {
+        file.write_all(INSTANCE_ACTIVATION_REQUEST)?;
+        file.flush()?;
+        file.sync_all()
+    })();
+    if let Err(error) = result {
+        drop(file);
+        let _ = std::fs::remove_file(path);
+        return Err(error);
+    }
+    Ok(())
+}
+
+fn read_activation_request(path: &std::path::Path) -> std::io::Result<Option<bool>> {
+    match crate::bounded_file::read_bytes(path, INSTANCE_ACTIVATION_REQUEST.len()) {
+        Ok(bytes) => Ok(Some(bytes == INSTANCE_ACTIVATION_REQUEST)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(error) => Err(error),
     }
 }
 
-fn take_existing_instance_activation_request_at(path: &std::path::Path) -> bool {
-    match std::fs::remove_dir(path) {
-        Ok(()) => true,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+fn take_existing_instance_activation_request_at(path: &std::path::Path) -> std::io::Result<bool> {
+    match read_activation_request(path) {
+        Ok(None) => Ok(false),
+        Ok(Some(true)) => match std::fs::remove_file(path) {
+            Ok(()) => Ok(true),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(error) => Err(error),
+        },
+        Ok(Some(false)) => {
+            quarantine_invalid_activation_request(path)?;
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "stale activation request was quarantined",
+            ))
+        }
         Err(error) => {
-            crate::diagnostics::log(&format!(
-                "existing instance activation request could not be consumed: {error}"
-            ));
+            quarantine_invalid_activation_request(path)?;
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("invalid activation request was quarantined: {error}"),
+            ))
+        }
+    }
+}
+
+fn quarantine_invalid_activation_request(path: &std::path::Path) -> std::io::Result<()> {
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "activation request path has no file name",
+            )
+        })?;
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    for attempt in 0..INSTANCE_ACTIVATION_QUARANTINE_ATTEMPTS {
+        let quarantine = path.with_file_name(format!(
+            "{file_name}.invalid-{}-{nonce}-{attempt}",
+            std::process::id()
+        ));
+        match std::fs::rename(path, &quarantine) {
+            Ok(()) => {
+                remove_quarantined_activation_entry(&quarantine);
+                return Ok(());
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(error),
+        }
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::AlreadyExists,
+        "could not reserve an activation-request quarantine path",
+    ))
+}
+
+fn remove_quarantined_activation_entry(path: &std::path::Path) {
+    let Ok(metadata) = std::fs::symlink_metadata(path) else {
+        return;
+    };
+    if metadata.file_type().is_file() {
+        let _ = std::fs::remove_file(path);
+        return;
+    }
+    if metadata.file_type().is_dir() {
+        let _ = std::fs::remove_dir(path);
+        return;
+    }
+    if std::fs::remove_file(path).is_err() {
+        let _ = std::fs::remove_dir(path);
+    }
+}
+
+fn report_activation_request_result(
+    result: std::io::Result<bool>,
+    error_logged: &AtomicBool,
+    mut log: impl FnMut(&str),
+) -> bool {
+    match result {
+        Ok(activated) => {
+            error_logged.store(false, Ordering::Release);
+            activated
+        }
+        Err(error) => {
+            if error_logged
+                .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                .is_ok()
+            {
+                log(&format!(
+                    "existing instance activation request could not be consumed: {error}"
+                ));
+            }
             false
         }
     }
@@ -205,7 +338,11 @@ fn request_existing_instance_activation() -> std::io::Result<()> {
 }
 
 fn take_existing_instance_activation_request() -> bool {
-    take_existing_instance_activation_request_at(&instance_activation_request_path())
+    report_activation_request_result(
+        take_existing_instance_activation_request_at(&instance_activation_request_path()),
+        &ACTIVATION_REQUEST_ERROR_LOGGED,
+        crate::diagnostics::log,
+    )
 }
 
 fn instance_lease_startup_message(error: &std::io::Error) -> String {
@@ -396,10 +533,11 @@ pub(crate) fn run() {
 mod tests {
     use super::{
         acquire_instance_lease_at, exit_request_disposition, instance_lease_startup_message,
-        is_allowed_app_navigation, request_existing_instance_activation_at,
-        take_existing_instance_activation_request_at, write_startup_migration_diagnostic,
-        ExitRequestDisposition,
+        is_allowed_app_navigation, report_activation_request_result,
+        request_existing_instance_activation_at, take_existing_instance_activation_request_at,
+        write_startup_migration_diagnostic, ExitRequestDisposition, INSTANCE_ACTIVATION_REQUEST,
     };
+    use std::sync::atomic::AtomicBool;
 
     #[test]
     fn exit_request_requires_semantic_quit_authorization() {
@@ -498,7 +636,7 @@ mod tests {
 
     #[test]
     fn second_instance_activation_request_is_coalesced_and_consumed_once() {
-        let request = std::env::temp_dir().join(format!(
+        let root = std::env::temp_dir().join(format!(
             "yap-instance-activation-test-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
@@ -506,11 +644,140 @@ mod tests {
                 .unwrap()
                 .as_nanos()
         ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join("instance-activation.request");
 
-        assert!(!take_existing_instance_activation_request_at(&request));
+        assert!(!take_existing_instance_activation_request_at(&request).unwrap());
         request_existing_instance_activation_at(&request).unwrap();
         request_existing_instance_activation_at(&request).unwrap();
-        assert!(take_existing_instance_activation_request_at(&request));
-        assert!(!take_existing_instance_activation_request_at(&request));
+        assert!(std::fs::metadata(&request).unwrap().is_file());
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(take_existing_instance_activation_request_at(&request).unwrap());
+        assert!(!take_existing_instance_activation_request_at(&request).unwrap());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn second_instance_activation_request_recovers_wrong_file_and_directory_types() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-recovery-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join("instance-activation.request");
+
+        std::fs::write(&request, b"stale-or-untyped").unwrap();
+        request_existing_instance_activation_at(&request).unwrap();
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(take_existing_instance_activation_request_at(&request).unwrap());
+
+        std::fs::create_dir(&request).unwrap();
+        std::fs::write(request.join("must-not-be-recursively-deleted"), b"sentinel").unwrap();
+        request_existing_instance_activation_at(&request).unwrap();
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(std::fs::read_dir(&root).unwrap().any(|entry| {
+            let entry = entry.unwrap();
+            entry.file_type().unwrap().is_dir()
+                && entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("instance-activation.request.invalid-")
+        }));
+
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn second_instance_activation_request_does_not_follow_redirected_files() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-link-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join("instance-activation.request");
+        let target = root.join("redirect-target");
+        std::fs::create_dir(&target).unwrap();
+        std::fs::write(target.join("target-must-remain"), b"sentinel").unwrap();
+        create_test_directory_link(&target, &request);
+
+        request_existing_instance_activation_at(&request).unwrap();
+
+        assert_eq!(
+            std::fs::read(target.join("target-must-remain")).unwrap(),
+            b"sentinel"
+        );
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn repeated_activation_poll_errors_are_logged_once_until_recovery() {
+        let logged = AtomicBool::new(false);
+        let mut messages = Vec::new();
+        for _ in 0..4 {
+            assert!(!report_activation_request_result(
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "blocked"
+                )),
+                &logged,
+                |message| messages.push(message.to_string()),
+            ));
+        }
+        assert_eq!(messages.len(), 1);
+        assert!(!report_activation_request_result(
+            Ok(false),
+            &logged,
+            |message| messages.push(message.to_string()),
+        ));
+        assert!(!report_activation_request_result(
+            Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "blocked again"
+            )),
+            &logged,
+            |message| messages.push(message.to_string()),
+        ));
+        assert_eq!(messages.len(), 2);
+    }
+
+    #[cfg(windows)]
+    fn create_test_directory_link(target: &std::path::Path, link: &std::path::Path) {
+        let output = std::process::Command::new("cmd")
+            .args(["/d", "/c", "mklink", "/J"])
+            .arg(link)
+            .arg(target)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "could not create activation-request junction: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    #[cfg(unix)]
+    fn create_test_directory_link(target: &std::path::Path, link: &std::path::Path) {
+        std::os::unix::fs::symlink(target, link).unwrap();
     }
 }

@@ -12,7 +12,7 @@ import signal
 import stat
 import sys
 import threading
-from typing import Mapping
+from typing import Callable, Mapping
 
 from yap_server.bounded_file import read_regular_file
 from yap_server.limits import MAX_WORKER_RESULT_BYTES
@@ -49,6 +49,7 @@ from yap_server.pools.utterance_plan import read_utterance_plan
 _API_KEY_ENV = "YAP_NEMOTRON_NEMO_API_KEY"
 _REQUEST_TIMEOUT_SECONDS = 10.0
 _MAX_HTTP_REQUEST_WORKERS = NEMOTRON_NEMO_MAX_ACTIVE_REQUESTS * 2 + 2
+_SHUTDOWN_CLEANUP_TIMEOUT_SECONDS = 15.0
 _SHUTDOWN_FAILURE_EXIT_CODE = 70
 
 
@@ -62,6 +63,48 @@ class NemotronNemoServiceBusy(RuntimeError):
 
 class NemotronNemoServiceFenced(RuntimeError):
     pass
+
+
+def _fail_stop_shutdown() -> None:
+    print(
+        "resident Nemotron NeMo shutdown exceeded its safe cleanup boundary; "
+        "fail-stopping the service process",
+        file=sys.stderr,
+    )
+    os._exit(_SHUTDOWN_FAILURE_EXIT_CODE)
+
+
+def _close_native_runtime_or_fail_stop(
+    close_runtime: Callable[[], None],
+    *,
+    timeout_seconds: float,
+) -> None:
+    if timeout_seconds <= 0:
+        raise ValueError("shutdown cleanup timeout must be positive")
+    completed = threading.Event()
+    errors: list[BaseException] = []
+
+    def close_in_background() -> None:
+        try:
+            close_runtime()
+        except BaseException as error:
+            errors.append(error)
+        finally:
+            completed.set()
+
+    try:
+        cleanup_thread = threading.Thread(
+            target=close_in_background,
+            name="yap-nemotron-nemo-cleanup",
+            daemon=True,
+        )
+        cleanup_thread.start()
+        cleanup_completed = completed.wait(timeout_seconds)
+    except BaseException:
+        _fail_stop_shutdown()
+        return
+    if not cleanup_completed or errors:
+        _fail_stop_shutdown()
 
 
 class NemotronNemoApplication:
@@ -423,7 +466,6 @@ def main(argv: list[str] | None = None) -> int:
     application: NemotronNemoApplication | None = None
     server: _NemotronNemoHttpServer | None = None
     server_thread: threading.Thread | None = None
-    shutdown_error: BaseException | None = None
     try:
         application = NemotronNemoApplication(
             engine=engine,
@@ -462,19 +504,13 @@ def main(argv: list[str] | None = None) -> int:
                     server.shutdown()
                     server_thread.join()
                 server.server_close()
-            if application is not None:
-                application.close()
-            else:
-                engine.close()
-        except BaseException as error:
-            shutdown_error = error
-    if shutdown_error is not None:
-        print(
-            "resident Nemotron NeMo shutdown exceeded its safe cleanup boundary; "
-            "fail-stopping the service process",
-            file=sys.stderr,
+        except BaseException:
+            _fail_stop_shutdown()
+        close_runtime = application.close if application is not None else engine.close
+        _close_native_runtime_or_fail_stop(
+            close_runtime,
+            timeout_seconds=_SHUTDOWN_CLEANUP_TIMEOUT_SECONDS,
         )
-        os._exit(_SHUTDOWN_FAILURE_EXIT_CODE)
     return 0
 
 

@@ -4,9 +4,13 @@
 
 `SHIPPED_DEPENDENCY_INVENTORY.json` is generated from the exact production
 pnpm graph and the normal-dependency Rust graph for
-`x86_64-pc-windows-msvc`. It is bundled beside this notice. The release
-contract rejects a stale inventory, a dependency without license metadata, or
-an unreviewed license term.
+`x86_64-pc-windows-msvc`. It is bundled beside this notice.
+`SHIPPED_DEPENDENCY_NOTICES.json` binds every exact package/crate identity to
+deduplicated installed-source LICENSE, COPYING, NOTICE, COPYRIGHT, or AUTHORS
+bytes, or to a reviewed own-source metadata exemption when the installed
+archive supplies no standalone notice. The release contract rejects a stale
+inventory or notice bundle, a dependency without license metadata, an
+unreviewed license term, a missing notice binding, or an unnecessary exemption.
 
 The current graph maps to these license families and reviewed terms:
 `0BSD`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `CC0-1.0`,

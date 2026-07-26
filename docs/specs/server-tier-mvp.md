@@ -30,16 +30,17 @@ server/
   src/yap_server/
     api/                health and current batch HTTP; future WSS entrypoint
     jobs/               durable Phase 5 loopback job service/runtime
-    workload_router/    bounded live/batch queues, fairness, and pool dispatch
-    pools/              isolated Cohere batch reference pool; streaming later
+    pools/              bounded provider admission and isolated workers
     schemas/            request/event/job shapes, no model weights
     config/             environment/config parsing
-  tests/                contract, API, workload-router tests
+  tests/                contract, API, jobs, and model-pool tests
 ```
 
 Avoid top-level `models/` and `workers/` during MVP. Model files live on the
 node, outside Git. The Phase 4 worker process is container-isolated behind the
-pool interface; persistent deployment topology remains deferred.
+pool interface; persistent deployment topology remains deferred. ADR 0023's
+mixed-live/batch fairness rule remains accepted future policy, not a reason to
+retain a non-executable router before durable authenticated owners exist.
 
 ## First Build Slice
 
@@ -104,8 +105,8 @@ remain later gates.
   typed retry, and verified immutable result publication make reconnect and
   restart behavior explicit.
 - The Python service durably implements create/upload/commit/status/result and
-  cancellation, dispatches one job through the bounded router and isolated
-  Cohere pool, recovers atomic result publication after restart, and converts
+  cancellation, dispatches one job through the bounded provider pool and
+  isolated Cohere worker, recovers atomic result publication after restart, and converts
   interrupted processing to an explicit retryable terminal state.
 - The profile refuses a non-loopback bind. Windows reaches it only through one
   manually selected SSH local forward; capabilities remain false unless the
