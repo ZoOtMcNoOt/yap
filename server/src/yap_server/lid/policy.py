@@ -364,7 +364,6 @@ def resolve_lid_suggestion(
         return _manual("invalid_model_label", validated)
     if any(code != codes[0] for code in codes[1:]):
         return _manual("language_disagreement", validated)
-    code = codes[0]
     candidates = map_lid_label_to_enabled_locales(
         validated[0].raw_label,
         enabled_fixed_locales=locales,

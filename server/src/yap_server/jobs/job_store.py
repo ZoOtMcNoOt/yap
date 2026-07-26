@@ -3,9 +3,9 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, field
 import hashlib
+import os
 from pathlib import Path
 import re
-import shutil
 import stat
 from typing import Callable, Mapping, Sequence
 
@@ -27,6 +27,7 @@ from .chunk_contract import chunk_path, find_chunk, receipt_key
 from .contract_values import (
     JOB_STATUSES,
     MAX_CHUNK_BYTES,
+    MAX_STORED_JOBS,
     exact_keys,
     mapping,
     utc_timestamp,
@@ -46,6 +47,12 @@ from .stage_attempts import canonical_json_sha256, finish_stage, validate_stage_
 
 
 _JOB_DIRECTORY = re.compile(r"^job-[0-9a-f]{32}$")
+_DELETION_TOMBSTONE = re.compile(r"^\.deleting-(job-[0-9a-f]{32})$")
+_MAX_PENDING_DELETION_TOMBSTONES_PER_PASS = 8
+_MAX_PENDING_DELETION_ENTRIES_PER_PASS = 256
+_MAX_PENDING_DELETION_DEPTH = 64
+_MAX_UNPERSISTED_CREATE_DELETION_ENTRIES = 8
+_MAX_JOB_STORAGE_ENTRIES = MAX_STORED_JOBS * 2
 
 
 @dataclass(slots=True)
@@ -62,6 +69,26 @@ class DurableJobState:
     stage_attempts: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     projection_revisions: dict[str, int] = field(default_factory=dict)
     cleanup_unverified: set[str] = field(default_factory=set)
+    pending_deletions: dict[str, None] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class _DeletionWorkBudget:
+    remaining_entries: int
+
+    def consume_entry(self) -> bool:
+        if self.remaining_entries == 0:
+            return False
+        self.remaining_entries -= 1
+        return True
+
+
+def _metadata_is_link_or_reparse(metadata: os.stat_result) -> bool:
+    reparse_attribute = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+    file_attributes = getattr(metadata, "st_file_attributes", 0)
+    return stat.S_ISLNK(metadata.st_mode) or bool(
+        reparse_attribute and file_attributes & reparse_attribute
+    )
 
 
 class RecordingJobStore:
@@ -97,9 +124,182 @@ class RecordingJobStore:
             return state
         if jobs_root.is_symlink() or not jobs_root.is_dir():
             raise ValueError("job storage root must be a real directory")
-        for job_root in sorted(jobs_root.iterdir(), key=lambda path: path.name):
+        entries: list[Path] = []
+        for job_root in jobs_root.iterdir():
+            entries.append(job_root)
+            if len(entries) > _MAX_JOB_STORAGE_ENTRIES:
+                raise ValueError("job storage entry capacity is exceeded")
+        entries.sort(key=lambda path: path.name)
+        for job_root in entries:
+            if _DELETION_TOMBSTONE.fullmatch(job_root.name) is not None:
+                self._validate_pending_deletion(job_root)
+                state.pending_deletions[job_root.name] = None
+                continue
+        self.reconcile_pending_deletions(state)
+        for job_root in entries:
+            if _DELETION_TOMBSTONE.fullmatch(job_root.name) is not None:
+                continue
             self._load_job(state, job_root)
+        if len(state.jobs) + len(state.pending_deletions) > MAX_STORED_JOBS:
+            raise ValueError("job storage capacity is exceeded")
         return state
+
+    def reconcile_pending_deletions(
+        self,
+        state: DurableJobState,
+        *,
+        max_tombstones: int | None = None,
+        max_entries: int | None = None,
+    ) -> int:
+        if max_tombstones is None:
+            max_tombstones = _MAX_PENDING_DELETION_TOMBSTONES_PER_PASS
+        if max_entries is None:
+            max_entries = _MAX_PENDING_DELETION_ENTRIES_PER_PASS
+        if (
+            not isinstance(max_tombstones, int)
+            or isinstance(max_tombstones, bool)
+            or max_tombstones < 0
+            or not isinstance(max_entries, int)
+            or isinstance(max_entries, bool)
+            or max_entries < 0
+        ):
+            raise ValueError("pending deletion reconciliation limits are invalid")
+        jobs_root = self.root / "jobs"
+        if not jobs_root.exists():
+            state.pending_deletions.clear()
+            return 0
+        if jobs_root.is_symlink() or not jobs_root.is_dir():
+            raise ValueError("job storage root must be a real directory")
+        removed = 0
+        budget = _DeletionWorkBudget(max_entries)
+        candidates = tuple(state.pending_deletions)[:max_tombstones]
+        for tombstone_name in candidates:
+            if budget.remaining_entries == 0:
+                break
+            tombstone_root = jobs_root / tombstone_name
+            try:
+                self._validate_pending_deletion(tombstone_root)
+                complete = self._delete_directory_incrementally(
+                    tombstone_root,
+                    tombstone_root=tombstone_root,
+                    budget=budget,
+                    depth=0,
+                )
+            except FileNotFoundError:
+                state.pending_deletions.pop(tombstone_name, None)
+            except OSError:
+                self._rotate_pending_deletion(state, tombstone_name)
+                continue
+            else:
+                if not complete:
+                    self._rotate_pending_deletion(state, tombstone_name)
+                    continue
+                state.pending_deletions.pop(tombstone_name, None)
+            removed += 1
+        return removed
+
+    def _delete_directory_incrementally(
+        self,
+        directory: Path,
+        *,
+        tombstone_root: Path,
+        budget: _DeletionWorkBudget,
+        depth: int,
+    ) -> bool:
+        if depth > _MAX_PENDING_DELETION_DEPTH:
+            raise ValueError("pending job deletion nesting is unsafe")
+        self._validate_deletion_descendant(directory, tombstone_root)
+        try:
+            iterator = os.scandir(directory)
+        except FileNotFoundError:
+            return True
+        with iterator:
+            for entry in iterator:
+                child = self._deletion_child_path(
+                    directory,
+                    entry.name,
+                    tombstone_root=tombstone_root,
+                )
+                try:
+                    metadata = entry.stat(follow_symlinks=False)
+                except FileNotFoundError:
+                    continue
+                if stat.S_ISDIR(metadata.st_mode) and not _metadata_is_link_or_reparse(
+                    metadata
+                ):
+                    if not self._delete_directory_incrementally(
+                        child,
+                        tombstone_root=tombstone_root,
+                        budget=budget,
+                        depth=depth + 1,
+                    ):
+                        return False
+                    continue
+                if not budget.consume_entry():
+                    return False
+                try:
+                    if stat.S_ISDIR(metadata.st_mode):
+                        os.rmdir(child)
+                    else:
+                        os.unlink(child)
+                except FileNotFoundError:
+                    continue
+        if not budget.consume_entry():
+            return False
+        try:
+            os.rmdir(directory)
+        except FileNotFoundError:
+            return True
+        return True
+
+    @staticmethod
+    def _validate_deletion_descendant(path: Path, tombstone_root: Path) -> None:
+        try:
+            path.relative_to(tombstone_root)
+            metadata = path.lstat()
+        except FileNotFoundError:
+            return
+        except ValueError as error:
+            raise ValueError("pending job deletion escaped its tombstone") from error
+        if _metadata_is_link_or_reparse(metadata) or not stat.S_ISDIR(
+            metadata.st_mode
+        ):
+            raise ValueError("pending job deletion contains an unsafe directory")
+
+    @staticmethod
+    def _deletion_child_path(
+        directory: Path,
+        name: str,
+        *,
+        tombstone_root: Path,
+    ) -> Path:
+        if not name or Path(name).name != name or name in {".", ".."}:
+            raise ValueError("pending job deletion entry identity is unsafe")
+        child = directory / name
+        try:
+            child.relative_to(tombstone_root)
+        except ValueError as error:
+            raise ValueError("pending job deletion escaped its tombstone") from error
+        return child
+
+    @staticmethod
+    def _rotate_pending_deletion(
+        state: DurableJobState,
+        tombstone_name: str,
+    ) -> None:
+        if tombstone_name in state.pending_deletions:
+            state.pending_deletions.pop(tombstone_name)
+            state.pending_deletions[tombstone_name] = None
+
+    @staticmethod
+    def _validate_pending_deletion(tombstone_root: Path) -> None:
+        if _DELETION_TOMBSTONE.fullmatch(tombstone_root.name) is None:
+            raise ValueError("pending job deletion identity is invalid")
+        metadata = tombstone_root.lstat()
+        if _metadata_is_link_or_reparse(metadata) or not stat.S_ISDIR(
+            metadata.st_mode
+        ):
+            raise ValueError("pending job deletion is unsafe")
 
     def persist(self, state: DurableJobState, job_id: str) -> None:
         receipts = [
@@ -171,7 +371,11 @@ class RecordingJobStore:
         metadata = job_root.lstat()
         if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
             raise ValueError("expired job storage is unsafe")
-        shutil.rmtree(job_root)
+        tombstone_root = job_root.with_name(f".deleting-{job_id}")
+        if tombstone_root.exists() or tombstone_root.is_symlink():
+            raise ValueError("pending deletion already exists for expired job")
+        job_root.rename(tombstone_root)
+        state.pending_deletions[tombstone_root.name] = None
         state.jobs.pop(job_id, None)
         state.requests.pop(job_id, None)
         state.results.pop(job_id, None)
@@ -187,6 +391,30 @@ class RecordingJobStore:
         for stored_receipt_key in tuple(state.receipts):
             if stored_receipt_key[0] == job_id:
                 state.receipts.pop(stored_receipt_key, None)
+
+    def rollback_unpersisted_create(
+        self,
+        state: DurableJobState,
+        job_id: str,
+    ) -> None:
+        self.delete(state, job_id)
+        tombstone_name = f".deleting-{job_id}"
+        tombstone_root = self.root / "jobs" / tombstone_name
+        budget = _DeletionWorkBudget(_MAX_UNPERSISTED_CREATE_DELETION_ENTRIES)
+        try:
+            self._validate_pending_deletion(tombstone_root)
+            complete = self._delete_directory_incrementally(
+                tombstone_root,
+                tombstone_root=tombstone_root,
+                budget=budget,
+                depth=0,
+            )
+        except FileNotFoundError:
+            complete = True
+        except OSError:
+            return
+        if complete:
+            state.pending_deletions.pop(tombstone_name, None)
 
     def _load_job(self, state: DurableJobState, job_root: Path) -> None:
         if job_root.is_symlink() or not job_root.is_dir():
@@ -385,6 +613,7 @@ class RecordingJobStore:
         status = projection.get("status")
         if status not in JOB_STATUSES:
             raise ValueError("persisted job status is invalid")
+        retention_expired = self._retention_expired(state, job_id)
         error = projection.get("error")
         cleanup_was_unverified = (
             status == "failed"
@@ -403,7 +632,10 @@ class RecordingJobStore:
             projection["status"] = "cancelled"
             projection["updatedAtUtc"] = self._now()
             projection.pop("error", None)
-            self.purge_private_audio(state, job_id)
+            if retention_expired:
+                self.persist(state, job_id)
+            else:
+                self.purge_private_audio(state, job_id)
             return
         result_path = job_root / "result-revision.json"
         if legacy_processing_without_route and result_path.exists():
@@ -424,7 +656,8 @@ class RecordingJobStore:
             status = "failed"
         if status == "cancelled":
             state.cancelled.add(job_id)
-            self.purge_private_audio(state, job_id)
+            if not retention_expired:
+                self.purge_private_audio(state, job_id)
         elif status == "failed":
             error = projection.get("error")
             retryable = isinstance(error, Mapping) and error.get("retryable") is True
@@ -442,13 +675,28 @@ class RecordingJobStore:
                 and latest_failed_stage.get("retryable") is True
                 and latest_failed_stage.get("reason") == error.get("code")
             )
-            if not retains_retry_input:
+            if not retains_retry_input and not retention_expired:
                 self.purge_private_audio(state, job_id)
         if status in {"complete", "partial"} and job_id not in state.results:
             raise ValueError("completed persisted job has no result")
         # A verified startup cleanup proves that no worker from the previous
         # process is still live. Keep durable processing intent so the service
         # can safely re-admit it with at-least-once inference semantics.
+
+    def _retention_expired(
+        self,
+        state: DurableJobState,
+        job_id: str,
+    ) -> bool:
+        metadata = mapping(
+            state.requests[job_id].get("metadata"),
+            "persisted metadata",
+        )
+        retention = metadata.get("retentionExpiresAtUtc")
+        return retention is not None and utc_timestamp(
+            retention,
+            "persisted retentionExpiresAtUtc",
+        ) <= utc_timestamp(self._now(), "server clock")
 
     def _load_result(
         self,

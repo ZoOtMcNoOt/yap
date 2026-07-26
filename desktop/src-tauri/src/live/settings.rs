@@ -4,6 +4,7 @@ use super::state::{LiveCaptureMode, LiveOverlayVisibility, LiveSessionView};
 
 pub const DEFAULT_HOTKEY: &str = "Ctrl+Shift+Space";
 pub const DEFAULT_PASTE_HOTKEY: &str = "Ctrl+Shift+Alt+V";
+pub const OVERLAY_CONTROLS_HOTKEY: &str = "Ctrl+Shift+Alt+O";
 const MAX_LIVE_SETTINGS_BYTES: usize = 64 * 1024;
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -59,7 +60,7 @@ fn save_to_path(settings: &LiveSettings, path: &std::path::Path) -> Result<(), S
     let text = serde_json::to_string_pretty(settings)
         .map_err(|err| format!("Failed to serialize live settings: {err}"))?;
     std::fs::remove_file(path.with_extension("json.part")).ok();
-    crate::stt::model::write_text_atomically(path, &text)
+    crate::atomic_text::write(path, &text)
         .map_err(|err| format!("Failed to save live settings: {err}"))
 }
 

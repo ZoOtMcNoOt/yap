@@ -19,8 +19,8 @@ from yap_server.language_span_contract import (
     ServerUtteranceLanguageObservation,
     build_server_language_span_evidence,
 )
-from yap_server.pools.batch_asr_worker import PcmAudio
 from yap_server.pools.model_lock import ModelPoolLock
+from yap_server.pools.pcm_audio import PcmAudio
 from yap_server.pools.utterance_plan import UtterancePlan, snapshot_utterance_plan
 from yap_server.transcript_text import canonical_transcript
 

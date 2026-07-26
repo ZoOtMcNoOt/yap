@@ -155,7 +155,7 @@ where
                         LanguageRoutingError::SessionHasNoAudio,
                     )) if !failure.frame_admitted => {}
                     Err(error) => {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "live language fallback drain failed code={}",
                             pipeline_error_code(&error)
                         ));
@@ -205,7 +205,7 @@ where
                             }
                             actions.extend(routing.actions);
                         }
-                        Err(error) => crate::stt::log_yap(&format!(
+                        Err(error) => crate::diagnostics::log(&format!(
                             "live language finish fallback failed code={}",
                             pipeline_error_code(&error)
                         )),

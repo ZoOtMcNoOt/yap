@@ -4,6 +4,12 @@
 **Status:** Accepted
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md) priority rule only
 
+**Implementation update (2026-07-26):** The Phase 4 reference router and its
+isolated tests were removed during Checkpoint B because no executing runtime
+consumed them. The fairness decision below remains accepted for the future
+durable authenticated mixed-live/batch scheduler; it is not current runtime
+functionality.
+
 ## Context
 
 ADR 0014 gave interactive live ASR absolute priority over background batch
@@ -54,23 +60,21 @@ decisions remain unchanged.
 
 - Admission bounds, per-owner round robin, pool capacity, and backpressure stay
   independent of this priority rule.
-- The gated Phase 5 path connects durable batch upload/drain to the router for
-  one development owner. Live transport remains a later authenticated baseline,
-  and Phase 7 still owns authenticated owner identity.
+- The current gated batch path dispatches directly to the bounded batch pool.
+  Live transport remains a later authenticated baseline, and Phase 7 still owns
+  authenticated owner identity.
 
 ## Implementation notes
 
-- `server/src/yap_server/workload_router/router.py` tracks the consecutive live
-  dispatch streak and forces one ready batch dispatch at the configured bound.
-- Focused router tests cover live preference, the bounded batch dispatch, owner
-  round robin, target availability, duplicate rejection, and backpressure.
-- The reference rule was included in the complete one-time Phase 4 matrix that
+- The removed Phase 4 reference implementation tracked the consecutive live
+  dispatch streak and had isolated tests for preference, bounded batch
+  dispatch, owner round robin, target availability, duplicate rejection, and
+  backpressure.
+- That historical reference rule was included in the complete one-time Phase 4 matrix that
   passed on exact executable candidate
   `309a2d427707e3483b2649f13940bd48dfaee836`.
-- The gated Phase 5 path routes loopback batch commits through this scheduler
-  with one fixed development owner. It does not add a live target, authenticated
-  ownership, measured mixed-load capacity, or persistent production service
-  integration.
+- The current loopback path does not execute that scheduler and therefore makes
+  no live-priority or owner-fairness claim.
 - Production promotion requires durable-queue, cancellation, recovery,
   authenticated-owner, and mixed-load latency/capacity evidence.
 - Phase 7 owns authenticated owner derivation. Phase 10 owns the persistent

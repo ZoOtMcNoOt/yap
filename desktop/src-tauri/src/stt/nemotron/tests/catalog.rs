@@ -69,6 +69,25 @@ fn verification_rejects_length_before_accepting_a_matching_hash() {
 }
 
 #[test]
+fn verification_publishes_the_verified_marker() {
+    let dir = TestDir::new();
+    let artifact = Artifact {
+        file: "model.bin",
+        sha256: TEST_ARTIFACT_SHA256,
+        bytes: TEST_ARTIFACT_CONTENTS.len() as u64,
+    };
+    let path = dir.path().join(artifact.file);
+    std::fs::write(&path, TEST_ARTIFACT_CONTENTS).unwrap();
+
+    verify_sha_and_mark(&path, &artifact).unwrap();
+
+    assert_eq!(
+        std::fs::read_to_string(path.with_extension("verified")).unwrap(),
+        format!("{}\n{}\n", artifact.sha256, artifact.bytes)
+    );
+}
+
+#[test]
 fn model_verification_preflights_all_lengths_before_hashing() {
     let dir = TestDir::new();
     let artifacts = [

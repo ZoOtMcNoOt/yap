@@ -82,7 +82,7 @@ pub(super) fn save_to_path(
     let enabled_alternate_locales = validate_and_sort(enabled_alternate_locales, false)?;
     let preference = PersistedLiveLanguageRouting {
         schema_version: CURRENT_SCHEMA_VERSION,
-        catalog_revision: crate::stt::nemotron::LIVE_LANGUAGE_CATALOG_REVISION.to_owned(),
+        catalog_revision: crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION.to_owned(),
         enabled_alternate_locales: enabled_alternate_locales.clone(),
     };
     let encoded =
@@ -140,7 +140,7 @@ fn load_from_path_under_lock(
             )))
         }
     };
-    if catalog_revision != crate::stt::nemotron::LIVE_LANGUAGE_CATALOG_REVISION {
+    if catalog_revision != crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION {
         return Err(LiveLanguageRoutingError::StaleCatalog);
     }
     Ok(EnabledAlternateLocales {
@@ -165,7 +165,7 @@ fn validate_and_sort(
     let mut language_codes = BTreeSet::new();
     for locale in &enabled_alternate_locales {
         if !crate::language::valid_bcp47(locale)
-            || !crate::stt::nemotron::supports_live_language(locale)
+            || !crate::language::live_catalog::supports_local_asr_language(locale)
             || !language_codes.insert(base_language(locale).to_owned())
         {
             return Err(invalid());

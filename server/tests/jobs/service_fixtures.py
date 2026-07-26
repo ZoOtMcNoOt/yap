@@ -11,71 +11,24 @@ from yap_server.pools.batch_asr import (
     WorkerContainmentError,
     WorkerExecutionError,
 )
-from yap_server.pools.batch_contract import BatchJobFactory
 
-from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
-
-
-class _ImmediateReservation:
-    def __init__(self, processor: object, job_id: str) -> None:
-        self._processor = processor
-        self._job_id = job_id
-        self._aborted = False
-
-    def start(self, factory: BatchJobFactory) -> Future[dict[str, object]]:
-        if self._aborted:
-            raise RuntimeError("test reservation was aborted")
-        job = factory(threading.Event())
-        if job.job_id != self._job_id:
-            raise AssertionError("test reservation identity changed")
-        return self._processor.submit(job)
-
-    def abort(self) -> None:
-        self._aborted = True
+from tests.recording_job_fixtures import (
+    ControlledJobProcessor,
+    ImmediateReservation,
+    ReservableProcessor,
+    service_recording_job_request as create_recording_job_request,
+)
 
 
-class _ReservableProcessor:
-    @property
-    def asr_catalog_revision(self) -> str:
-        return TEST_ASR_CATALOG_REVISION
-
-    def resolve_route(self, catalog_language_bcp47: str):
-        return test_asr_route(catalog_language_bcp47)
-
-    def reserve(
-        self,
-        job_id: str,
-        *,
-        pcm_byte_length: int,
-    ) -> _ImmediateReservation:
-        if pcm_byte_length < 1:
-            raise ValueError("test PCM reservation must be positive")
-        return _ImmediateReservation(self, job_id)
+_ImmediateReservation = ImmediateReservation
+_ReservableProcessor = ReservableProcessor
+_ControlledProcessor = ControlledJobProcessor
+_create_request = create_recording_job_request
 
 
 class _Processor(_ReservableProcessor):
     def submit(self, job: BatchAsrJob) -> Future[dict[str, object]]:
         raise AssertionError(f"job {job.job_id} must not dispatch before commit")
-
-
-class _ControlledProcessor(_ReservableProcessor):
-    def __init__(self) -> None:
-        self.jobs: list[BatchAsrJob] = []
-        self.reserved_pcm_bytes: list[int] = []
-        self.future: Future[dict[str, object]] = Future()
-
-    def reserve(
-        self,
-        job_id: str,
-        *,
-        pcm_byte_length: int,
-    ) -> _ImmediateReservation:
-        self.reserved_pcm_bytes.append(pcm_byte_length)
-        return super().reserve(job_id, pcm_byte_length=pcm_byte_length)
-
-    def submit(self, job: BatchAsrJob) -> Future[dict[str, object]]:
-        self.jobs.append(job)
-        return self.future
 
 
 class _BusyProcessor(_ReservableProcessor):
@@ -153,74 +106,6 @@ class _DelayedCancellationWorker:
         if not self.release_cleanup.wait(timeout=5):
             raise AssertionError(f"active job {job.job_id} cleanup was not released")
         raise WorkerExecutionError("isolated ASR worker was cancelled")
-
-
-def _create_request(
-    *,
-    session_id: str = "s-batch-create",
-    retention_expires_at_utc: str | None = "2026-08-13T21:00:00Z",
-) -> dict[str, object]:
-    track_id = "track-1"
-    chunk = bytes(320)
-    return {
-        "displayName": "Batch transcription vertical slice",
-        "metadata": {
-            "sessionId": session_id,
-            "mode": "meeting",
-            "origin": "imported_file",
-            "triggerMode": "toggle",
-            "startedAtUtc": "2026-07-14T21:00:00Z",
-            "utcOffsetMinutesAtStart": -300,
-            "localeHintBcp47": "en-US",
-            "countryCodeHint": "US",
-            "preferredLanguagesBcp47": ["en-US"],
-            "appVersion": "0.1.0",
-            "platform": "windows",
-            "privacyPolicyVersion": "development-only",
-            "retentionExpiresAtUtc": retention_expires_at_utc,
-        },
-        "languageDecision": {
-            "mode": "fixed",
-            "languageBcp47": "en-US",
-            "disposition": "primary",
-        },
-        "tracks": [
-            {
-                "trackId": track_id,
-                "source": {"kind": "imported", "provenance": "unknown"},
-                "deviceId": None,
-                "originalSampleRateHz": 16000,
-                "originalChannels": 1,
-            }
-        ],
-        "route": "server_batch",
-        "captureManifest": {
-            "schemaVersion": 1,
-            "sessionId": session_id,
-            "sha256": "a" * 64,
-            "byteLength": 4096,
-        },
-        "chunks": [
-            {
-                "replayKey": {
-                    "schemaVersion": 1,
-                    "sessionId": session_id,
-                    "trackId": track_id,
-                    "sequenceStart": 0,
-                    "sequenceEnd": 159,
-                },
-                "contentIdentity": {
-                    "sha256": hashlib.sha256(chunk).hexdigest(),
-                    "byteLength": len(chunk),
-                },
-                "audioCodec": "pcm_s16le",
-                "sampleRateHz": 16000,
-                "channels": 1,
-                "startMs": 0,
-                "durationMs": 10,
-            }
-        ],
-    }
 
 
 def _request_with_preprocessing_evidence() -> dict[str, object]:

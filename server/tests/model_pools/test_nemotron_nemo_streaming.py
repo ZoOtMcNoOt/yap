@@ -6,8 +6,9 @@ from io import StringIO
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from yap_server.pools.batch_asr_worker import PcmAudio, WorkerInputError, transcribe
+from yap_server.pools.batch_asr_worker import transcribe
 from yap_server.pools.nemotron_nemo_streaming import parse_nemo_transcript
+from yap_server.pools.pcm_audio import PcmAudio, WorkerInputError
 from yap_server.pools.utterance_plan import UtterancePlan, build_utterance_plan
 
 

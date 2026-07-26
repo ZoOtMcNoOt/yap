@@ -196,6 +196,29 @@ where
         self.clear_idle_until(None)
     }
 
+    pub(super) fn request_idle_clear(&self) -> Result<(), String> {
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        match &*state {
+            SharedWarmupState::Empty => Ok(()),
+            SharedWarmupState::InUse => Err("Live model is still owned by a stream.".to_string()),
+            SharedWarmupState::Loading { cancelled } => {
+                cancelled.store(true, Ordering::Release);
+                self.changed.notify_all();
+                Ok(())
+            }
+            SharedWarmupState::Ready(_) | SharedWarmupState::Failed(_) => {
+                let retired = std::mem::replace(&mut *state, SharedWarmupState::Empty);
+                self.changed.notify_all();
+                drop(state);
+                drop(retired);
+                Ok(())
+            }
+        }
+    }
+
     pub(super) fn clear_idle_for_shutdown(&self, timeout: Duration) -> Result<(), String> {
         let deadline = Instant::now()
             .checked_add(timeout)

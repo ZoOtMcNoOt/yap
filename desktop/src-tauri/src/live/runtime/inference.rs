@@ -36,7 +36,7 @@ impl LiveInferenceBundle {
                 Some(catalog) => match load_resident_language_pipeline(catalog) {
                     Ok(pipeline) => (Some(pipeline), None, LiveLanguageMode::Automatic),
                     Err(error) => {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "live language routing unavailable code={}",
                             error.code()
                         ));
@@ -54,7 +54,7 @@ impl LiveInferenceBundle {
                     }
                 },
                 None if configuration.routing_issue_code.is_some() => {
-                    crate::stt::log_yap(&format!(
+                    crate::diagnostics::log(&format!(
                         "live language routing unavailable code={}",
                         configuration
                             .routing_issue_code

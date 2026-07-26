@@ -7,7 +7,7 @@ from yap_server.alignment_contract import (
     AlignmentUnavailableReason,
     unavailable_alignment,
 )
-from yap_server.pools.batch_asr_worker import read_pcm16_wav_snapshot
+from yap_server.pools.pcm_audio import read_pcm16_wav_snapshot
 from yap_server.pools.batch_contract import (
     BatchAsrJob,
     WorkerCancellationAcknowledged,

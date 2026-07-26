@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from concurrent.futures import Future
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import hashlib
@@ -8,8 +7,7 @@ from ipaddress import ip_address
 import os
 from pathlib import Path
 import stat
-import threading
-from typing import Mapping, Protocol, Sequence
+from typing import Mapping, Sequence
 
 from yap_server.capabilities import load_verified_asr_capability_catalog
 from yap_server.config.runtime_environment import (
@@ -29,17 +27,9 @@ from yap_server.lid.runtime import (
     publish_language_detection_capabilities,
 )
 from yap_server.lid.service import LidPreflightService
-from yap_server.pools.batch_asr import (
-    AsrRouteDecision,
-    BatchAsrPool,
-    ProviderBatchWorkerRegistry,
-)
+from yap_server.pools.batch_asr import BatchAsrPool, ProviderBatchWorkerRegistry
 from yap_server.pools.batch_contract import (
-    AsrRouteResolver,
-    BatchAsrJob,
-    BatchReservation,
     BatchWorker,
-    PoolBackpressure,
     WorkerContainmentError,
     validate_asr_catalog_revision,
 )
@@ -49,94 +39,7 @@ from yap_server.pools.provider_worker_factory import (
     AsrWorkerPlan,
     build_asr_worker_plan,
 )
-from yap_server.workload_router import (
-    RouterBackpressure,
-    WorkloadRequest,
-    WorkloadRouter,
-)
-
 from .contract_values import MAX_JOB_PCM_BYTES
-
-
-class BatchPool(Protocol):
-    def reserve(
-        self,
-        job_id: str,
-        *,
-        pcm_byte_length: int = 1,
-    ) -> BatchReservation: ...
-
-    def submit(self, job: BatchAsrJob) -> Future[dict[str, object]]: ...
-
-    def cancel(self, job_id: str) -> bool: ...
-
-
-class RoutedBatchProcessor:
-    """Adapts the shared workload router to the isolated batch-ASR pool."""
-
-    def __init__(
-        self,
-        *,
-        router: WorkloadRouter,
-        pool: BatchPool,
-        owner_key: str,
-        route_resolver: AsrRouteResolver,
-        asr_catalog_revision: str,
-    ) -> None:
-        self._router = router
-        self._pool = pool
-        self._owner_key = owner_key
-        self._route_resolver = route_resolver
-        validate_asr_catalog_revision(asr_catalog_revision)
-        self._asr_catalog_revision = asr_catalog_revision
-        self._lock = threading.Lock()
-
-    @property
-    def asr_catalog_revision(self) -> str:
-        return self._asr_catalog_revision
-
-    def resolve_route(self, catalog_language_bcp47: str) -> AsrRouteDecision:
-        route = self._route_resolver(catalog_language_bcp47)
-        if not isinstance(route, AsrRouteDecision):
-            raise RuntimeError("batch route resolver returned an invalid route")
-        return route
-
-    def submit(self, job: BatchAsrJob) -> Future[dict[str, object]]:
-        reservation = self.reserve(job.job_id)
-        return reservation.start(lambda _cancellation: job)
-
-    def reserve(
-        self,
-        job_id: str,
-        *,
-        pcm_byte_length: int = 1,
-    ) -> BatchReservation:
-        with self._lock:
-            try:
-                route = self._router.enqueue(
-                    WorkloadRequest(
-                        job_id=job_id,
-                        owner_key=self._owner_key,
-                        kind="batch",
-                    )
-                )
-            except RouterBackpressure as error:
-                raise PoolBackpressure("router capacity is unavailable") from error
-            routed = self._router.dispatch(available_targets={"batch-asr"})
-            if (
-                route.target != "batch-asr"
-                or routed is None
-                or routed.request.job_id != job_id
-                or routed.route.target != "batch-asr"
-            ):
-                raise RuntimeError("batch router dispatch identity is inconsistent")
-            return self._pool.reserve(
-                job_id,
-                pcm_byte_length=pcm_byte_length,
-            )
-
-    def cancel(self, job_id: str) -> bool:
-        return self._pool.cancel(job_id)
 
 
 @dataclass(slots=True)
@@ -337,22 +240,9 @@ def build_batch_runtime(
             max_inflight_pcm_bytes=max_inflight_pcm_bytes,
         )
         unowned_workers.clear()
-        total_capacity = max_workers + max_queued
-        router = WorkloadRouter(
-            max_pending=total_capacity,
-            max_pending_per_owner=total_capacity,
-            max_consecutive_live=8,
-        )
-        processor = RoutedBatchProcessor(
-            router=router,
-            pool=pool,
-            owner_key="development-loopback",
-            route_resolver=route_resolver,
-            asr_catalog_revision=catalog_revision,
-        )
         service = RecordingJobService(
             storage_dir,
-            processor=processor,
+            processor=pool,
             supported_languages=route_resolver.supported_languages,
             now=_utc_now,
             startup_worker_cleanup_verified=startup_cleanup_verified,

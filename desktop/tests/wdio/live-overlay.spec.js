@@ -1,3 +1,6 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
 import {
   assertRecordingRootEmpty,
   listRecordingArtifacts,
@@ -5,12 +8,19 @@ import {
 import {
   closeMainToTray,
   cycleIdleOverlay,
+  pressOverlayFocusShortcutFromExternalWindow,
   recordingRoot,
   sampleWdioProcessTree,
   showIdleOverlay,
   withMainWindowRestored,
 } from "./live-overlay-window-fixture.js";
 
+const execFileAsync = promisify(execFile);
+const nativeVirtualKey = {
+  enter: 0x0D,
+  space: 0x20,
+  tab: 0x09,
+};
 
 describe("Yap live overlay window", () => {
   let overlayWasEnabled;
@@ -97,6 +107,91 @@ describe("Yap live overlay window", () => {
     expect(listRecordingArtifacts(recordingRoot)).toEqual([]);
   });
 
+  it("acquires overlay keyboard focus through the native global shortcut and activates child controls", async () => {
+    await showIdleOverlay();
+    const view = await browser.tauri.execute(({ core }) => core.invoke("live_status"));
+    expect(view.overlayFocusHotkey).toBe("Ctrl+Shift+Alt+O");
+    expect(await browser.tauri.execute(({ core }) =>
+      core.invoke("plugin:window|is_focused", { label: "live-overlay" }))).toBe(false);
+
+    const nativeInput = await pressOverlayFocusShortcutFromExternalWindow();
+    expect(nativeInput.foregroundProcessId).not.toBe(nativeInput.appProcessId);
+    await browser.waitUntil(async () => browser.tauri.execute(({ core }) =>
+      core.invoke("plugin:window|is_focused", { label: "live-overlay" })), {
+      interval: 25,
+      timeout: 5_000,
+      timeoutMsg: "native overlay focus shortcut did not focus the overlay window",
+    });
+
+    await browser.tauri.switchWindow("live-overlay");
+    const focusedControl = await browser.tauri.execute(() => ({
+      ariaLabel: document.activeElement?.getAttribute("aria-label"),
+      role: document.activeElement?.getAttribute("role"),
+      tagName: document.activeElement?.tagName,
+    }));
+    expect(
+      focusedControl.role === "toolbar"
+        || focusedControl.tagName === "BUTTON"
+        || Boolean(focusedControl.ariaLabel),
+    ).toBe(true);
+
+    await browser.tauri.execute(() => {
+      document.addEventListener("click", (event) => {
+        const target = event.target instanceof Element
+          ? event.target.closest('button[aria-label="Start dictating"]')
+          : null;
+        if (!target) return;
+        document.documentElement.dataset.startKeyboardActivated = "true";
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, { capture: true });
+    });
+    await focusOverlayAction("Start dictating", nativeInput.appProcessId);
+    await pressNativeOverlayKey(nativeVirtualKey.enter, nativeInput.appProcessId);
+    await browser.waitUntil(async () => browser.tauri.execute(() =>
+      document.documentElement.dataset.startKeyboardActivated === "true"), {
+      interval: 25,
+      timeout: 2_000,
+      timeoutMsg: "Enter did not preserve native Start dictating activation",
+    });
+
+    await focusOverlayAction("Open scratch", nativeInput.appProcessId);
+    await browser.tauri.switchWindow("live-overlay");
+    await browser.tauri.execute(() => {
+      const root = document.querySelector('[data-overlay-surface="expanded"]');
+      if (!root) throw new Error("expanded overlay surface disappeared before pointer exit");
+      root.dispatchEvent(new PointerEvent("pointerout", {
+        bubbles: true,
+        relatedTarget: document.body,
+      }));
+    });
+    await browser.pause(300);
+    const focusedAfterPointerExit = await browser.tauri.execute(() => ({
+      ariaLabel: document.activeElement?.getAttribute("aria-label"),
+      surface: document.querySelector("[data-overlay-surface]")
+        ?.getAttribute("data-overlay-surface"),
+    }));
+    expect(focusedAfterPointerExit).toEqual({
+      ariaLabel: "Open scratch",
+      surface: "expanded",
+    });
+    await pressNativeOverlayKey(nativeVirtualKey.space, nativeInput.appProcessId);
+    await browser.waitUntil(async () => browser.tauri.execute(({ core }) =>
+      core.invoke("plugin:window|is_focused", { label: "main" })), {
+      interval: 25,
+      timeout: 5_000,
+      timeoutMsg: "Space did not activate Open scratch from the externally focused overlay",
+    });
+    await browser.tauri.switchWindow("live-overlay");
+    await browser.waitUntil(async () => browser.tauri.execute(() =>
+      document.querySelector('[data-overlay-surface="collapsed"]') !== null), {
+      interval: 25,
+      timeout: 5_000,
+      timeoutMsg: "overlay did not collapse after keyboard focus returned to the main window",
+    });
+    await browser.tauri.switchWindow("main");
+  });
+
   it("reuses one native window whose bounds equal each visible island surface", async () => {
     await showIdleOverlay();
     await browser.tauri.switchWindow("live-overlay");
@@ -133,11 +228,11 @@ describe("Yap live overlay window", () => {
     await browser.waitUntil(async () => browser.tauri.execute(async ({ core }, scale) => {
       const inner = await core.invoke("plugin:window|inner_size", { label: "live-overlay" });
       return Math.abs(inner.width / scale - 180) <= 0.5
-        && Math.abs(inner.height / scale - 88) <= 0.5;
+        && Math.abs(inner.height / scale - 96) <= 0.5;
     }, scaleFactor), {
       interval: 25,
       timeout: 5_000,
-      timeoutMsg: "expanded native bounds did not converge to 180 by 88",
+      timeoutMsg: "expanded native bounds did not converge to 180 by 96",
     });
     expect(await browser.tauri.execute(({ core }) =>
       core.invoke("plugin:window|is_focused", { label: "live-overlay" }))).toBe(false);
@@ -322,3 +417,61 @@ describe("Yap live overlay window", () => {
       core.invoke("plugin:window|is_visible", { label: "main" }))).toBe(true);
   });
 });
+
+async function focusOverlayAction(label, appProcessId) {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const activeLabel = await browser.tauri.execute(() =>
+      document.activeElement?.getAttribute("aria-label") ?? "");
+    if (activeLabel === label) return;
+    await pressNativeOverlayKey(nativeVirtualKey.tab, appProcessId);
+  }
+  const activeLabel = await browser.tauri.execute(() =>
+    document.activeElement?.getAttribute("aria-label") ?? "");
+  throw new Error(`Could not focus ${label}; active control was ${activeLabel || "unlabeled"}.`);
+}
+
+async function pressNativeOverlayKey(virtualKey, expectedProcessId) {
+  if (!Number.isInteger(virtualKey) || virtualKey < 0 || virtualKey > 0xFF) {
+    throw new Error(`Invalid native virtual key ${virtualKey}.`);
+  }
+  if (!Number.isInteger(expectedProcessId) || expectedProcessId <= 0) {
+    throw new Error(`Invalid Yap process ID ${expectedProcessId}.`);
+  }
+  const script = `
+$ErrorActionPreference = "Stop"
+Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+
+public static class WdioNativeOverlayKey {
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte virtualKey, byte scanCode, uint flags, UIntPtr extra);
+
+    private const uint KeyUp = 0x0002;
+
+    public static void Press(byte virtualKey, uint expectedProcessId) {
+        uint foregroundProcessId;
+        GetWindowThreadProcessId(GetForegroundWindow(), out foregroundProcessId);
+        if (foregroundProcessId != expectedProcessId) {
+            throw new InvalidOperationException("Yap did not own foreground focus before native key input.");
+        }
+        keybd_event(virtualKey, 0, 0, UIntPtr.Zero);
+        keybd_event(virtualKey, 0, KeyUp, UIntPtr.Zero);
+    }
+}
+'@
+
+[WdioNativeOverlayKey]::Press([byte]${virtualKey}, [uint32]${expectedProcessId})
+`;
+  await execFileAsync(
+    "pwsh.exe",
+    ["-NoProfile", "-NonInteractive", "-Command", script],
+    { maxBuffer: 1024 * 1024, windowsHide: true },
+  );
+}

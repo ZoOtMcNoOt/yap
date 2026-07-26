@@ -113,6 +113,11 @@ export function GeneralSettingsSection({
         />
       </SettingsRow>
       <SettingsRow
+        detail="Moves keyboard focus into the always-on-top overlay without starting or stopping dictation."
+        label="Overlay controls shortcut"
+        value={liveView.overlayFocusHotkey || "Unavailable"}
+      />
+      <SettingsRow
         action={(
           <Button
             disabled={liveBusy || liveActive}

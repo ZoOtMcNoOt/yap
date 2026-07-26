@@ -19,7 +19,7 @@ from yap_server.evaluation.transcript_scoring import (
     score_transcript,
 )
 from yap_server.limits import MAX_TRANSCRIPT_BYTES
-from yap_server.pools.batch_asr_worker import (
+from yap_server.pools.pcm_audio import (
     MAX_AUDIO_SECONDS,
     MAX_ENCODED_AUDIO_BYTES,
     SAMPLE_RATE_HZ,

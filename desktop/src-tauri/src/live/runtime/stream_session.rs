@@ -343,7 +343,7 @@ impl StreamWorker {
                 }
                 if self.active_stream_session != session {
                     if let Err(error) = self.begin_session(session) {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "live language session initialization failed code={}",
                             error.code()
                         ));
@@ -355,7 +355,7 @@ impl StreamWorker {
                     return;
                 }
                 if let Err(error) = self.process_frame(session, frame) {
-                    crate::stt::log_yap(&format!(
+                    crate::diagnostics::log(&format!(
                         "live language routing failed code=runtime_contract message={error}"
                     ));
                     self.fail_active_session();
@@ -427,7 +427,7 @@ impl StreamWorker {
         let language = match self.language.finish() {
             Ok(language) => language,
             Err(error) => {
-                crate::stt::log_yap(&format!(
+                crate::diagnostics::log(&format!(
                     "live language evidence finalization failed code=invalid_evidence message={error}"
                 ));
                 self.mark_language_degraded();
@@ -437,7 +437,7 @@ impl StreamWorker {
             }
         };
         if let Err(error) = self.apply_language_actions(session, language.actions) {
-            crate::stt::log_yap(&format!(
+            crate::diagnostics::log(&format!(
                 "live language tail routing failed code=runtime_contract message={error}"
             ));
             self.mark_language_degraded();
@@ -471,7 +471,7 @@ impl StreamWorker {
             .engine
             .reset_for_language(self.language.primary_language_bcp47())
         {
-            crate::stt::log_yap(&format!(
+            crate::diagnostics::log(&format!(
                 "live stream primary-language reset failed code={}",
                 error.code()
             ));

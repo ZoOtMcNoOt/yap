@@ -5,7 +5,7 @@ document does not replace the
 [roadmap](../../roadmap/ROADMAP.md),
 [Voice OS architecture](../../VOICE-OS-ARCHITECTURE.md), accepted ADRs, or the
 detailed
-[audio preprocessing and language routing plan](2026-07-16-audio-preprocessing-and-language-routing.md).
+[completed audio preprocessing and language routing plan](../completed/2026-07-16-audio-preprocessing-and-language-routing.md).
 It provides one short answer to: _what must happen next, what proves the system
 works together, and what is deliberately deferred?_
 
@@ -29,9 +29,23 @@ complexity.
 
 ## Current position
 
-- Phases 1–5 and Architecture Checkpoint A are merged at baseline
-  `a80934d844a068110e7f86b30b6e29d35146db57`.
-- Phase 6 remains on `feat/phase6-preprocessing-pipeline`.
+- Phases 1–6 and Architecture Checkpoint A are merged at baseline
+  `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
+- Checkpoint B is active on `chore/codebase-maintainability-review`.
+- Historical Checkpoint B candidate
+  `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
+  `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence
+  but are not merge authority. After the Cargo color and same-process Windows
+  atomic replacement repairs, fresh exact executable candidate
+  `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted
+  31-child local/native/server/release/private-runtime matrix with exact
+  teardown. Its independently validated receipt binds that exact head and
+  manifest SHA-256
+  `2641f613a2a8dfbf0d2e1c7989b37c3af7e85aab732c3ae20381b52c1d144ac2`;
+  the private receipt SHA-256 is
+  `6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`.
+  First-attempt hosted CI, CodeQL, and stock-NSIS closure on the
+  documentation-only descendant, final review, and merge remain.
 - Exact executable candidate
   `a92f338546a2f8bbaded96b04f8987f0ac475c88`
   passed the frozen one-attempt 30-child Phase 6 matrix. Manifest SHA-256
@@ -39,9 +53,9 @@ complexity.
   plus its independently validated exact-head 30-child candidate receipt bind
   the current local/private evidence. The receipt SHA-256 is
   `74f183041082c77d05a0633202fa1052222d6a77bd9bef5ce2706546bf3e9647`.
-  Hosted CI, CodeQL, and stock-NSIS passed at first attempt on docs-only review
-  head `cee13f819a85417ea43a3c63e263be85f0570838`. PR #67 requires final
-  exact-head hosted and adversarial read-back before merge.
+  Hosted CI, CodeQL, and stock-NSIS passed at first attempt on final reviewed
+  head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`. PR #67 merged as
+  `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 - Its target-client channel passed twelve paced native cycles, all nine
   250-ms-through-30-second prepared-audio cases, and the unattended 30-second
   release-mode microphone/UI lifecycle with no retained recording, model
@@ -206,7 +220,8 @@ not deferred.
 - [x] Validate first-attempt hosted CI/CodeQL/disposable-Windows closure on
       docs-only review head
       `cee13f819a85417ea43a3c63e263be85f0570838`.
-- [ ] Validate the same hosted closure on the final docs-only successor.
+- [x] Validate the same hosted closure on final reviewed head
+      `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`.
 - [x] Verify cancellation, retry, restart, recovery, immutable identity,
       resource bounds, model/process/listener teardown, and private-evidence
       handling.
@@ -214,13 +229,15 @@ not deferred.
 
 ### 6. Review, PR, and merge
 
-- [ ] Review the exact checked SHA and resulting Phase 6 diff.
+- [x] Review the exact checked SHA and resulting Phase 6 diff.
 - [x] Open one focused Phase 6 PR: [PR #67](https://github.com/mcnatg1/yap/pull/67).
 - [x] Require hosted CI, CodeQL, and applicable Windows checks to be green on
       review head `cee13f819a85417ea43a3c63e263be85f0570838`.
-- [ ] Require those checks to be green again on the final docs-only successor.
-- [ ] Resolve blocking review findings, repeat only invalidated gates when
-      necessary, and merge only the reviewed green SHA.
+- [x] Require those checks to be green again on final reviewed head
+      `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`.
+- [x] Resolve blocking review findings, repeat only invalidated gates when
+      necessary, and merge only the reviewed green SHA. PR #67 merged as
+      `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 
 ## What is deliberately deferred
 

@@ -1,7 +1,7 @@
 use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
-use crate::{live, stt};
+use crate::live;
 
 mod dispatcher;
 
@@ -70,6 +70,17 @@ pub(crate) fn install(app: &mut tauri::App, plan: StartupShortcutPlan) -> tauri:
                     let live = app.state::<live::LiveSessionState>();
                     live.snapshot()
                 };
+                if *shortcut == live::hotkeys::overlay_controls_shortcut() {
+                    handler_dispatcher.reset();
+                    if event.state() == ShortcutState::Pressed {
+                        if let Err(error) = live::overlay_window::focus_controls(app) {
+                            crate::diagnostics::log(&format!(
+                                "live overlay controls could not be focused: {error}"
+                            ));
+                        }
+                    }
+                    return;
+                }
                 if live::actions::configured_hotkey_matches_shortcut(
                     &snapshot.paste_hotkey,
                     shortcut,
@@ -99,6 +110,14 @@ pub(crate) fn install(app: &mut tauri::App, plan: StartupShortcutPlan) -> tauri:
             .build(),
     )?;
 
+    let overlay_controls_shortcut = live::hotkeys::overlay_controls_shortcut();
+    if let Err(error) = app
+        .handle()
+        .global_shortcut()
+        .register(overlay_controls_shortcut)
+    {
+        record_overlay_focus_shortcut_failure(app.handle(), &error.to_string());
+    }
     for registration in &plan.registrations {
         match registration.shortcut.as_ref() {
             Ok(shortcut) => {
@@ -112,6 +131,19 @@ pub(crate) fn install(app: &mut tauri::App, plan: StartupShortcutPlan) -> tauri:
         }
     }
     Ok(())
+}
+
+fn record_overlay_focus_shortcut_failure(app: &tauri::AppHandle, reason: &str) {
+    crate::diagnostics::log(&format!(
+        "live overlay controls hotkey unavailable: {reason}"
+    ));
+    let live = app.state::<live::LiveSessionState>();
+    let view = live.update(apply_overlay_focus_shortcut_failure);
+    live::events::emit_session(app, &view);
+}
+
+fn apply_overlay_focus_shortcut_failure(view: &mut live::state::LiveSessionView) {
+    view.overlay_focus_hotkey.clear();
 }
 
 pub(crate) fn reset(app: &tauri::AppHandle) {
@@ -141,7 +173,7 @@ fn record_startup_shortcut_failure(
     registration: &LiveShortcutRegistration,
     reason: &str,
 ) {
-    stt::log_yap(&format!(
+    crate::diagnostics::log(&format!(
         "live {} hotkey unavailable: {reason}",
         if registration.is_paste {
             "paste"
@@ -155,7 +187,7 @@ fn record_startup_shortcut_failure(
         apply_startup_shortcut_failure(view, registration.is_paste);
     });
     if let Err(persist_error) = live::settings::save_view(&view) {
-        stt::log_yap(&format!(
+        crate::diagnostics::log(&format!(
             "failed to persist unavailable live shortcut cleanup: {persist_error}"
         ));
     }
@@ -242,6 +274,18 @@ mod tests {
         apply_startup_shortcut_failure(&mut paste, true);
         assert_eq!(paste.paste_hotkey, "");
         assert_eq!(paste.status, live::state::LiveSessionStatus::Idle);
+    }
+
+    #[test]
+    fn overlay_controls_registration_failure_only_clears_its_availability() {
+        let mut view =
+            live::state::LiveSessionView::from_settings(&live::settings::LiveSettings::default());
+
+        apply_overlay_focus_shortcut_failure(&mut view);
+
+        assert_eq!(view.overlay_focus_hotkey, "");
+        assert_eq!(view.hotkey, live::settings::DEFAULT_HOTKEY);
+        assert_eq!(view.status, live::state::LiveSessionStatus::Idle);
     }
 
     #[test]

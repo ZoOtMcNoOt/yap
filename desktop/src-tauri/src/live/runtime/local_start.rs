@@ -130,7 +130,7 @@ impl LiveRuntime {
                 if let Err(finalize_error) =
                     recording_handle.abort(format!("capture adapter failed to open: {error}"))
                 {
-                    crate::stt::log_yap(&format!(
+                    crate::diagnostics::log(&format!(
                         "live recording abort after capture-open failure failed: {finalize_error}"
                     ));
                 }
@@ -144,7 +144,7 @@ impl LiveRuntime {
             inner.mark_used();
             drop(inner);
             if let Err(error) = capture.shutdown() {
-                crate::stt::log_yap(&format!("live capture shutdown failed: {error}"));
+                crate::diagnostics::log(&format!("live capture shutdown failed: {error}"));
             }
             discard_cancelled_recording(&recording_directory, &recording_handle, session)?;
             self.unwind_cancelled_uninstalled_start(&app, session);
@@ -242,7 +242,7 @@ impl LiveRuntime {
         };
         if view.visibility == LiveOverlayVisibility::Enabled {
             if let Err(error) = overlay_window::ensure_idle(app) {
-                crate::stt::log_yap(&format!(
+                crate::diagnostics::log(&format!(
                     "live overlay cancelled-start reset failed: {error}"
                 ));
             }

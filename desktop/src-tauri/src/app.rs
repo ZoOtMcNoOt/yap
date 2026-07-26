@@ -1,13 +1,38 @@
+use std::{
+    io::Write,
+    sync::atomic::{AtomicBool, Ordering},
+};
+
 use tauri::Manager;
 
 use crate::{authorization, commands, exclusive_file_lease, jobs, live, paths, runtime, stt, tray};
 
 const INSTANCE_LEASE_FILE: &str = ".yap-instance.lock";
+// Every request mutation, shutdown transition, and secondary ack/promotion
+// decision is ordered by this lease. The shutdown marker remains until a new
+// process owns INSTANCE_LEASE_FILE and clears both protocol markers.
+const INSTANCE_ACTIVATION_HANDOFF_LEASE_FILE: &str = ".yap-instance-activation-handoff.lock";
+const INSTANCE_ACTIVATION_REQUEST_FILE: &str = ".yap-instance-activation.request";
+const INSTANCE_ACTIVATION_REQUEST: &[u8] = b"yap-instance-activation-v1\n";
+const INSTANCE_SHUTDOWN_FILE: &str = ".yap-instance-shutdown";
+const INSTANCE_SHUTDOWN: &[u8] = b"yap-instance-shutdown-v1\n";
+const INSTANCE_ACTIVATION_TEMP_ATTEMPTS: u8 = 32;
+const INSTANCE_ACTIVATION_QUARANTINE_ATTEMPTS: u8 = 32;
+const INSTANCE_ACTIVATION_HANDOFF_POLLS: usize = 200;
+const INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL: std::time::Duration =
+    std::time::Duration::from_millis(25);
+static ACTIVATION_REQUEST_ERROR_LOGGED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ExitRequestDisposition {
     PreventAndFinalize,
     Allow,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum InstanceActivationHandoff<T> {
+    Acknowledged,
+    Acquired(T),
 }
 
 fn exit_request_disposition(exit_authorized: bool) -> ExitRequestDisposition {
@@ -39,7 +64,7 @@ fn navigation_guard<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
 
 fn log_lifecycle_shutdown_errors(errors: Vec<String>) {
     for error in errors {
-        stt::log_yap(&format!("desktop background shutdown failed: {error}"));
+        crate::diagnostics::log(&format!("desktop background shutdown failed: {error}"));
     }
 }
 
@@ -61,6 +86,7 @@ fn start_owned_background_work(
             "live-overlay-monitor",
             std::time::Duration::from_millis(125),
             move || {
+                consume_existing_instance_activation_request(&overlay_app);
                 live::overlay_window::follow_cursor_if_idle(&overlay_app);
                 recovery_ticks = recovery_ticks.saturating_add(1);
                 if recovery_ticks >= 16 {
@@ -80,8 +106,6 @@ fn write_startup_migration_diagnostic(
     directory: &std::path::Path,
     detail: &str,
 ) -> std::io::Result<std::path::PathBuf> {
-    use std::io::Write;
-
     let nonce = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -160,6 +184,570 @@ fn acquire_instance_lease_at(
     }
 }
 
+fn try_acquire_instance_activation_handoff_lease_at(
+    app_data_directory: &std::path::Path,
+) -> std::io::Result<Option<exclusive_file_lease::ExclusiveFileLease>> {
+    std::fs::create_dir_all(app_data_directory)?;
+    let lease_path = app_data_directory.join(INSTANCE_ACTIVATION_HANDOFF_LEASE_FILE);
+    match exclusive_file_lease::try_acquire(&lease_path) {
+        Ok(lease) => Ok(Some(lease)),
+        Err(exclusive_file_lease::TryAcquireExclusiveFileLeaseError::Contended) => Ok(None),
+        Err(exclusive_file_lease::TryAcquireExclusiveFileLeaseError::Io(error)) => {
+            Err(std::io::Error::new(
+                error.kind(),
+                format!(
+                    "could not acquire the Yap activation handoff lease at {}: {error}",
+                    lease_path.display()
+                ),
+            ))
+        }
+    }
+}
+
+fn acquire_instance_activation_handoff_lease_at(
+    app_data_directory: &std::path::Path,
+    max_polls: usize,
+    poll_interval: std::time::Duration,
+    mut pause: impl FnMut(std::time::Duration),
+) -> std::io::Result<exclusive_file_lease::ExclusiveFileLease> {
+    if max_polls == 0 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "activation handoff lease acquisition requires at least one poll",
+        ));
+    }
+    for poll in 0..max_polls {
+        if let Some(lease) = try_acquire_instance_activation_handoff_lease_at(app_data_directory)? {
+            return Ok(lease);
+        }
+        if poll + 1 < max_polls {
+            pause(poll_interval);
+        }
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::TimedOut,
+        "the activation handoff lease remained contended past its deadline",
+    ))
+}
+
+enum InstanceMarkerPublicationError {
+    NotPublished(std::io::Error),
+    Durability(std::io::Error),
+}
+
+impl InstanceMarkerPublicationError {
+    fn into_io_error(self) -> std::io::Error {
+        match self {
+            Self::NotPublished(error) | Self::Durability(error) => error,
+        }
+    }
+}
+
+fn request_existing_instance_activation_at(path: &std::path::Path) -> std::io::Result<()> {
+    request_existing_instance_activation_at_with_before_publish(path, |_| {})
+}
+
+// This is the atomic marker primitive. Runtime callers serialize it with the
+// activation handoff lease; direct callers below are publication unit tests.
+fn request_existing_instance_activation_at_with_before_publish(
+    path: &std::path::Path,
+    before_publish: impl FnMut(&std::path::Path),
+) -> std::io::Result<()> {
+    publish_instance_marker_at_with_before_publish(
+        path,
+        INSTANCE_ACTIVATION_REQUEST,
+        before_publish,
+    )
+}
+
+fn publish_instance_shutdown_at(path: &std::path::Path) -> std::io::Result<()> {
+    match publish_instance_marker_at_with_before_publish(path, INSTANCE_SHUTDOWN, |_| {}) {
+        Ok(()) => Ok(()),
+        Err(original) => match discard_instance_shutdown_at(path) {
+            Ok(()) => Err(original),
+            Err(cleanup_error) => Err(std::io::Error::new(
+                cleanup_error.kind(),
+                format!("{original}; shutdown marker rollback also failed: {cleanup_error}"),
+            )),
+        },
+    }
+}
+
+fn publish_instance_marker_at_with_before_publish(
+    path: &std::path::Path,
+    contents: &[u8],
+    mut before_publish: impl FnMut(&std::path::Path),
+) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    for _ in 0..=1 {
+        match create_instance_marker_file(path, contents, &mut before_publish) {
+            Ok(()) => return Ok(()),
+            Err(InstanceMarkerPublicationError::Durability(error)) => return Err(error),
+            Err(InstanceMarkerPublicationError::NotPublished(create_error)) => {
+                match std::fs::symlink_metadata(path) {
+                    Ok(_) => {}
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                        return Err(create_error);
+                    }
+                    Err(error) => return Err(error),
+                }
+                match read_instance_marker(path, contents) {
+                    Ok(Some(true)) => return Ok(()),
+                    Ok(None) => continue,
+                    Ok(Some(false)) | Err(_) => {
+                        quarantine_invalid_instance_marker(path)?;
+                    }
+                }
+            }
+        }
+    }
+    create_instance_marker_file(path, contents, &mut before_publish)
+        .map_err(InstanceMarkerPublicationError::into_io_error)
+}
+
+// Publish only after the complete marker is durable so readers cannot observe
+// or quarantine an in-progress writer handle at the marker path.
+fn create_instance_marker_file(
+    path: &std::path::Path,
+    contents: &[u8],
+    before_publish: &mut impl FnMut(&std::path::Path),
+) -> Result<(), InstanceMarkerPublicationError> {
+    let (temporary, mut file) = reserve_instance_marker_temp_file(path)
+        .map_err(InstanceMarkerPublicationError::NotPublished)?;
+    let prepared = (|| {
+        file.write_all(contents)?;
+        file.flush()?;
+        file.sync_all()
+    })();
+    drop(file);
+    if let Err(error) = prepared {
+        return Err(InstanceMarkerPublicationError::NotPublished(
+            instance_marker_temp_cleanup_error(&temporary, error),
+        ));
+    }
+    before_publish(&temporary);
+    if let Err(error) = crate::atomic_file::rename_same_directory_no_replace(&temporary, path) {
+        return Err(InstanceMarkerPublicationError::NotPublished(
+            instance_marker_temp_cleanup_error(&temporary, error),
+        ));
+    }
+    crate::atomic_file::sync_parent_directory(path)
+        .map_err(InstanceMarkerPublicationError::Durability)
+}
+
+fn instance_marker_temp_cleanup_error(
+    temporary: &std::path::Path,
+    original: std::io::Error,
+) -> std::io::Error {
+    match std::fs::remove_file(temporary) {
+        Ok(()) => original,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => original,
+        Err(error) => error,
+    }
+}
+
+fn reserve_instance_marker_temp_file(
+    path: &std::path::Path,
+) -> std::io::Result<(std::path::PathBuf, std::fs::File)> {
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "instance marker path has no file name",
+            )
+        })?;
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    for attempt in 0..INSTANCE_ACTIVATION_TEMP_ATTEMPTS {
+        let temporary = path.with_file_name(format!(
+            "{file_name}.pending-{}-{nonce}-{attempt}",
+            std::process::id()
+        ));
+        let mut options = std::fs::OpenOptions::new();
+        options.create_new(true).write(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        match options.open(&temporary) {
+            Ok(file) => return Ok((temporary, file)),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(error) => return Err(error),
+        }
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::AlreadyExists,
+        "could not reserve an instance-marker temporary path",
+    ))
+}
+
+fn read_instance_marker(path: &std::path::Path, expected: &[u8]) -> std::io::Result<Option<bool>> {
+    match crate::bounded_file::read_bytes(path, expected.len()) {
+        Ok(bytes) => Ok(Some(bytes == expected)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(error),
+    }
+}
+
+fn read_activation_request(path: &std::path::Path) -> std::io::Result<Option<bool>> {
+    read_instance_marker(path, INSTANCE_ACTIVATION_REQUEST)
+}
+
+// Production consumption occurs only while holding the activation handoff
+// lease, so marker removal and secondary decisions have one linearization order.
+fn take_existing_instance_activation_request_at(path: &std::path::Path) -> std::io::Result<bool> {
+    match read_activation_request(path) {
+        Ok(None) => Ok(false),
+        Ok(Some(true)) => match std::fs::remove_file(path) {
+            Ok(()) => Ok(true),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(error) => Err(error),
+        },
+        Ok(Some(false)) => {
+            quarantine_invalid_instance_marker(path)?;
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "stale activation request was quarantined",
+            ))
+        }
+        Err(error) => {
+            quarantine_invalid_instance_marker(path)?;
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("invalid activation request was quarantined: {error}"),
+            ))
+        }
+    }
+}
+
+fn discard_instance_marker_at(path: &std::path::Path, expected: &[u8]) -> std::io::Result<()> {
+    match read_instance_marker(path, expected) {
+        Ok(None) => Ok(()),
+        Ok(Some(true)) => match std::fs::remove_file(path) {
+            Ok(()) => crate::atomic_file::sync_parent_directory(path),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error),
+        },
+        Ok(Some(false)) | Err(_) => quarantine_invalid_instance_marker(path),
+    }
+}
+
+fn discard_existing_instance_activation_request_at(path: &std::path::Path) -> std::io::Result<()> {
+    discard_instance_marker_at(path, INSTANCE_ACTIVATION_REQUEST)
+}
+
+fn discard_instance_shutdown_at(path: &std::path::Path) -> std::io::Result<()> {
+    discard_instance_marker_at(path, INSTANCE_SHUTDOWN)
+}
+
+fn instance_shutdown_pending_at(path: &std::path::Path) -> std::io::Result<bool> {
+    match read_instance_marker(path, INSTANCE_SHUTDOWN) {
+        Ok(None) => Ok(false),
+        Ok(Some(true)) => Ok(true),
+        Ok(Some(false)) => {
+            quarantine_invalid_instance_marker(path)?;
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "stale instance shutdown marker was quarantined",
+            ))
+        }
+        Err(error) => {
+            quarantine_invalid_instance_marker(path)?;
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("invalid instance shutdown marker was quarantined: {error}"),
+            ))
+        }
+    }
+}
+
+fn clear_owned_instance_activation_state_at(
+    app_data_directory: &std::path::Path,
+) -> std::io::Result<()> {
+    discard_instance_shutdown_at(&app_data_directory.join(INSTANCE_SHUTDOWN_FILE))?;
+    discard_existing_instance_activation_request_at(
+        &app_data_directory.join(INSTANCE_ACTIVATION_REQUEST_FILE),
+    )
+}
+
+fn prepare_primary_instance_activation_state_at(
+    app_data_directory: &std::path::Path,
+    max_polls: usize,
+    poll_interval: std::time::Duration,
+    pause: impl FnMut(std::time::Duration),
+) -> std::io::Result<()> {
+    let _handoff_lease = acquire_instance_activation_handoff_lease_at(
+        app_data_directory,
+        max_polls,
+        poll_interval,
+        pause,
+    )?;
+    clear_owned_instance_activation_state_at(app_data_directory)
+}
+
+fn publish_existing_instance_activation_request_at(
+    app_data_directory: &std::path::Path,
+    max_polls: usize,
+    poll_interval: std::time::Duration,
+    pause: impl FnMut(std::time::Duration),
+) -> std::io::Result<()> {
+    let _handoff_lease = acquire_instance_activation_handoff_lease_at(
+        app_data_directory,
+        max_polls,
+        poll_interval,
+        pause,
+    )?;
+    if !instance_shutdown_pending_at(&app_data_directory.join(INSTANCE_SHUTDOWN_FILE))? {
+        request_existing_instance_activation_at(
+            &app_data_directory.join(INSTANCE_ACTIVATION_REQUEST_FILE),
+        )?;
+    }
+    Ok(())
+}
+
+fn complete_existing_instance_activation_handoff_at<T>(
+    app_data_directory: &std::path::Path,
+    max_polls: usize,
+    poll_interval: std::time::Duration,
+    mut try_acquire_lease: impl FnMut() -> std::io::Result<Option<T>>,
+    mut pause: impl FnMut(std::time::Duration),
+) -> std::io::Result<InstanceActivationHandoff<T>> {
+    if max_polls == 0 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "activation handoff requires at least one lease poll",
+        ));
+    }
+    let request_path = app_data_directory.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+    let shutdown_path = app_data_directory.join(INSTANCE_SHUTDOWN_FILE);
+
+    for poll in 0..max_polls {
+        if let Some(_handoff_lease) =
+            try_acquire_instance_activation_handoff_lease_at(app_data_directory)?
+        {
+            let shutdown_pending = instance_shutdown_pending_at(&shutdown_path)?;
+            match try_acquire_lease()? {
+                Some(lease) => {
+                    clear_owned_instance_activation_state_at(app_data_directory)?;
+                    return Ok(InstanceActivationHandoff::Acquired(lease));
+                }
+                None if shutdown_pending => {}
+                None => match read_activation_request(&request_path)? {
+                    None => return Ok(InstanceActivationHandoff::Acknowledged),
+                    Some(true) => {}
+                    Some(false) => {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "activation request marker became invalid during handoff",
+                        ));
+                    }
+                },
+            }
+        }
+        if poll + 1 < max_polls {
+            pause(poll_interval);
+        }
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::TimedOut,
+        "the existing Yap process did not acknowledge the activation request or release its lease before the handoff deadline",
+    ))
+}
+
+fn begin_instance_activation_shutdown_at(
+    app_data_directory: &std::path::Path,
+    max_polls: usize,
+    poll_interval: std::time::Duration,
+    pause: impl FnMut(std::time::Duration),
+) -> std::io::Result<()> {
+    let _handoff_lease = acquire_instance_activation_handoff_lease_at(
+        app_data_directory,
+        max_polls,
+        poll_interval,
+        pause,
+    )?;
+    publish_instance_shutdown_at(&app_data_directory.join(INSTANCE_SHUTDOWN_FILE))
+}
+
+fn reopen_instance_activation_after_abandoned_shutdown_at(
+    app_data_directory: &std::path::Path,
+    max_polls: usize,
+    poll_interval: std::time::Duration,
+    pause: impl FnMut(std::time::Duration),
+) -> std::io::Result<()> {
+    let _handoff_lease = acquire_instance_activation_handoff_lease_at(
+        app_data_directory,
+        max_polls,
+        poll_interval,
+        pause,
+    )?;
+    let shutdown_path = app_data_directory.join(INSTANCE_SHUTDOWN_FILE);
+
+    // A secondary that arrived during the abandoned shutdown may be waiting
+    // without its own request marker. Publish one before reopening consumption
+    // so marker absence cannot be mistaken for an acknowledgment.
+    request_existing_instance_activation_at(
+        &app_data_directory.join(INSTANCE_ACTIVATION_REQUEST_FILE),
+    )?;
+    discard_instance_shutdown_at(&shutdown_path)
+}
+
+pub(crate) fn begin_instance_activation_shutdown() -> std::io::Result<()> {
+    begin_instance_activation_shutdown_at(
+        &paths::app_data_dir(),
+        INSTANCE_ACTIVATION_HANDOFF_POLLS,
+        INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL,
+        std::thread::sleep,
+    )
+}
+
+pub(crate) fn reopen_instance_activation_after_abandoned_shutdown() -> std::io::Result<()> {
+    reopen_instance_activation_after_abandoned_shutdown_at(
+        &paths::app_data_dir(),
+        INSTANCE_ACTIVATION_HANDOFF_POLLS,
+        INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL,
+        std::thread::sleep,
+    )
+}
+
+fn quarantine_invalid_instance_marker(path: &std::path::Path) -> std::io::Result<()> {
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "instance marker path has no file name",
+            )
+        })?;
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    for attempt in 0..INSTANCE_ACTIVATION_QUARANTINE_ATTEMPTS {
+        let quarantine = path.with_file_name(format!(
+            "{file_name}.invalid-{}-{nonce}-{attempt}",
+            std::process::id()
+        ));
+        match std::fs::rename(path, &quarantine) {
+            Ok(()) => {
+                remove_quarantined_activation_entry(&quarantine);
+                return Ok(());
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(error),
+        }
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::AlreadyExists,
+        "could not reserve an instance-marker quarantine path",
+    ))
+}
+
+fn remove_quarantined_activation_entry(path: &std::path::Path) {
+    let Ok(metadata) = std::fs::symlink_metadata(path) else {
+        return;
+    };
+    if metadata.file_type().is_file() {
+        let _ = std::fs::remove_file(path);
+        return;
+    }
+    if metadata.file_type().is_dir() {
+        let _ = std::fs::remove_dir(path);
+        return;
+    }
+    if std::fs::remove_file(path).is_err() {
+        let _ = std::fs::remove_dir(path);
+    }
+}
+
+fn report_activation_request_result(
+    result: std::io::Result<bool>,
+    error_logged: &AtomicBool,
+    mut log: impl FnMut(&str),
+) -> bool {
+    match result {
+        Ok(activated) => {
+            error_logged.store(false, Ordering::Release);
+            activated
+        }
+        Err(error) => {
+            if error_logged
+                .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                .is_ok()
+            {
+                log(&format!(
+                    "existing instance activation request could not be consumed: {error}"
+                ));
+            }
+            false
+        }
+    }
+}
+
+fn request_existing_instance_activation_or_acquire_lease(
+) -> std::io::Result<InstanceActivationHandoff<exclusive_file_lease::ExclusiveFileLease>> {
+    let app_data_directory = paths::app_data_dir();
+    publish_existing_instance_activation_request_at(
+        &app_data_directory,
+        INSTANCE_ACTIVATION_HANDOFF_POLLS,
+        INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL,
+        std::thread::sleep,
+    )?;
+    complete_existing_instance_activation_handoff_at(
+        &app_data_directory,
+        INSTANCE_ACTIVATION_HANDOFF_POLLS,
+        INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL,
+        || match acquire_instance_lease_at(&app_data_directory) {
+            Ok(lease) => Ok(Some(lease)),
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
+            Err(error) => Err(error),
+        },
+        std::thread::sleep,
+    )
+}
+
+fn consume_existing_instance_activation_request_at(
+    app_data_directory: &std::path::Path,
+    mut activate: impl FnMut(),
+) -> std::io::Result<bool> {
+    match try_acquire_instance_activation_handoff_lease_at(app_data_directory)? {
+        None => Ok(false),
+        Some(_handoff_lease) => {
+            if instance_shutdown_pending_at(&app_data_directory.join(INSTANCE_SHUTDOWN_FILE))? {
+                Ok(false)
+            } else {
+                let activated = take_existing_instance_activation_request_at(
+                    &app_data_directory.join(INSTANCE_ACTIVATION_REQUEST_FILE),
+                )?;
+                if activated {
+                    activate();
+                }
+                Ok(activated)
+            }
+        }
+    }
+}
+
+fn consume_existing_instance_activation_request(app: &tauri::AppHandle) {
+    let result = consume_existing_instance_activation_request_at(&paths::app_data_dir(), || {
+        live::actions::show_main_window(app);
+    });
+    report_activation_request_result(
+        result,
+        &ACTIVATION_REQUEST_ERROR_LOGGED,
+        crate::diagnostics::log,
+    );
+}
+
 fn instance_lease_startup_message(error: &std::io::Error) -> String {
     if error.kind() == std::io::ErrorKind::WouldBlock {
         return format!(
@@ -212,15 +800,40 @@ pub(crate) fn run() {
     // This guard remains in this stack frame until Tauri's blocking event loop returns.
     let _instance_lease = match acquire_instance_lease_at(&paths::app_data_dir()) {
         Ok(lease) => lease,
+        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+            match request_existing_instance_activation_or_acquire_lease() {
+                Ok(InstanceActivationHandoff::Acknowledged) => std::process::exit(0),
+                Ok(InstanceActivationHandoff::Acquired(lease)) => lease,
+                Err(handoff_error) => {
+                    stop_for_instance_lease_error(&std::io::Error::new(
+                        handoff_error.kind(),
+                        format!(
+                            "{error}; could not complete the existing-instance activation handoff: {handoff_error}"
+                        ),
+                    ));
+                }
+            }
+        }
         Err(error) => stop_for_instance_lease_error(&error),
     };
+    if let Err(error) = prepare_primary_instance_activation_state_at(
+        &paths::app_data_dir(),
+        INSTANCE_ACTIVATION_HANDOFF_POLLS,
+        INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL,
+        std::thread::sleep,
+    ) {
+        stop_for_instance_lease_error(&std::io::Error::new(
+            error.kind(),
+            format!("could not prepare the primary activation state: {error}"),
+        ));
+    }
     if let Err(error) = paths::migrate_legacy_app_data() {
         stop_for_migration_error(&error);
     }
     std::panic::set_hook(Box::new(|panic| {
-        stt::log_yap(&format!("panic: {panic}"));
+        crate::diagnostics::log(&format!("panic: {panic}"));
     }));
-    stt::log_yap("app start");
+    crate::diagnostics::log("app start");
 
     let stt_state = stt::dispatch::SttState::new();
     let live_settings = live::settings::load();
@@ -267,7 +880,7 @@ pub(crate) fn run() {
                     live::overlay_window::ensure_active(app.handle())
                 };
                 if let Err(error) = result {
-                    stt::log_yap(&format!("live overlay startup failed: {error}"));
+                    crate::diagnostics::log(&format!("live overlay startup failed: {error}"));
                 }
             }
             let live_runtime = app.state::<live::runtime::LiveRuntime>();
@@ -315,16 +928,24 @@ pub(crate) fn run() {
                 }
             }
             tauri::RunEvent::Exit => {
-                let lifecycle = app_handle.state::<runtime::DesktopLifecycle>();
-                log_lifecycle_shutdown_errors(lifecycle.shutdown());
                 let quit = app_handle.state::<live::actions::QuitCoordinator>();
                 if !quit.exit_authorized() {
-                    stt::log_yap("process exit reached degraded live shutdown fallback");
+                    crate::diagnostics::log("process exit reached degraded live shutdown fallback");
+                    if let Err(error) = begin_instance_activation_shutdown() {
+                        crate::diagnostics::log(&format!(
+                            "degraded exit could not publish the instance shutdown handoff: {error}"
+                        ));
+                    }
                 }
                 // Authorized quit finalizes the active capture, but the runtime
                 // can still own resident warmup models. Always retire it before
                 // process exit so model-load snapshots release deterministically.
                 live_runtime_for_exit.shutdown();
+                let lifecycle = app_handle.state::<runtime::DesktopLifecycle>();
+                // Exit callbacks run on Tauri's event loop. Some owned workers
+                // can be waiting for that loop while reading or moving a
+                // window, so this last-resort path must signal without joining.
+                lifecycle.request_shutdown();
             }
             _ => {}
         });
@@ -333,8 +954,26 @@ pub(crate) fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        acquire_instance_lease_at, exit_request_disposition, instance_lease_startup_message,
-        is_allowed_app_navigation, write_startup_migration_diagnostic, ExitRequestDisposition,
+        acquire_instance_lease_at, begin_instance_activation_shutdown_at,
+        complete_existing_instance_activation_handoff_at,
+        consume_existing_instance_activation_request_at, exit_request_disposition,
+        instance_lease_startup_message, is_allowed_app_navigation,
+        prepare_primary_instance_activation_state_at,
+        publish_existing_instance_activation_request_at,
+        reopen_instance_activation_after_abandoned_shutdown_at, report_activation_request_result,
+        request_existing_instance_activation_at,
+        request_existing_instance_activation_at_with_before_publish,
+        take_existing_instance_activation_request_at,
+        try_acquire_instance_activation_handoff_lease_at, write_startup_migration_diagnostic,
+        ExitRequestDisposition, InstanceActivationHandoff, INSTANCE_ACTIVATION_REQUEST,
+        INSTANCE_ACTIVATION_REQUEST_FILE, INSTANCE_SHUTDOWN, INSTANCE_SHUTDOWN_FILE,
+    };
+    use std::{
+        sync::{
+            atomic::{AtomicBool, AtomicUsize, Ordering},
+            mpsc, Arc, Barrier,
+        },
+        time::Duration,
     };
 
     #[test]
@@ -430,5 +1069,730 @@ mod tests {
         assert!(message.contains("could not establish exclusive access"));
         assert!(message.contains("stopped before migration and runtime startup"));
         assert!(!message.contains("already running"));
+    }
+
+    #[test]
+    fn second_instance_activation_request_is_coalesced_and_consumed_once() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+
+        assert!(!take_existing_instance_activation_request_at(&request).unwrap());
+        request_existing_instance_activation_at(&request).unwrap();
+        request_existing_instance_activation_at(&request).unwrap();
+        assert!(std::fs::metadata(&request).unwrap().is_file());
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(take_existing_instance_activation_request_at(&request).unwrap());
+        assert!(!take_existing_instance_activation_request_at(&request).unwrap());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn second_instance_waits_for_acknowledgment_while_primary_lease_is_stable() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-ack-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+        request_existing_instance_activation_at(&request).unwrap();
+        let request_to_acknowledge = request.clone();
+        let root_to_acknowledge = root.clone();
+        let mut lease_checks = 0;
+        let handoff = complete_existing_instance_activation_handoff_at(
+            &root,
+            2,
+            Duration::ZERO,
+            || {
+                lease_checks += 1;
+                Ok::<Option<u8>, std::io::Error>(None)
+            },
+            |_| {
+                assert!(consume_existing_instance_activation_request_at(
+                    &root_to_acknowledge,
+                    || {}
+                )
+                .unwrap());
+                assert!(!request_to_acknowledge.exists());
+            },
+        )
+        .unwrap();
+
+        assert!(matches!(handoff, InstanceActivationHandoff::Acknowledged));
+        assert_eq!(lease_checks, 2);
+        assert!(!request.exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn shutdown_publication_waits_for_an_inflight_handoff_decision() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-shutdown-serialization-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let decision_lease = try_acquire_instance_activation_handoff_lease_at(&root)
+            .unwrap()
+            .unwrap();
+        let shutdown = root.join(INSTANCE_SHUTDOWN_FILE);
+        let shutdown_root = root.clone();
+        let (waiting_sender, waiting_receiver) = mpsc::channel();
+        let (release_sender, release_receiver) = mpsc::channel();
+        let shutdown_worker = std::thread::spawn(move || {
+            begin_instance_activation_shutdown_at(&shutdown_root, 2, Duration::ZERO, |_| {
+                waiting_sender.send(()).unwrap();
+                release_receiver
+                    .recv_timeout(Duration::from_secs(5))
+                    .unwrap();
+            })
+        });
+
+        waiting_receiver
+            .recv_timeout(Duration::from_secs(5))
+            .unwrap();
+        assert!(
+            !shutdown.exists(),
+            "quit cannot publish across an active handoff decision"
+        );
+        drop(decision_lease);
+        release_sender.send(()).unwrap();
+        shutdown_worker.join().unwrap().unwrap();
+        assert_eq!(std::fs::read(&shutdown).unwrap(), INSTANCE_SHUTDOWN);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn shutdown_marker_stops_primary_activation_consumption() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-shutdown-consumer-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+        request_existing_instance_activation_at(&request).unwrap();
+        begin_instance_activation_shutdown_at(&root, 1, Duration::ZERO, |_| {}).unwrap();
+        let activated = AtomicBool::new(false);
+
+        assert!(!consume_existing_instance_activation_request_at(&root, || {
+            activated.store(true, Ordering::SeqCst);
+        })
+        .unwrap());
+        assert!(!activated.load(Ordering::SeqCst));
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn abandoned_shutdown_reopens_activation_without_false_acknowledgment() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-shutdown-reopen-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        begin_instance_activation_shutdown_at(&root, 1, Duration::ZERO, |_| {}).unwrap();
+
+        reopen_instance_activation_after_abandoned_shutdown_at(&root, 1, Duration::ZERO, |_| {})
+            .unwrap();
+
+        assert!(!root.join(INSTANCE_SHUTDOWN_FILE).exists());
+        assert_eq!(
+            std::fs::read(root.join(INSTANCE_ACTIVATION_REQUEST_FILE)).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        let activated = AtomicBool::new(false);
+        assert!(consume_existing_instance_activation_request_at(&root, || {
+            activated.store(true, Ordering::SeqCst);
+        })
+        .unwrap());
+        assert!(activated.load(Ordering::SeqCst));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn failed_shutdown_publication_reopen_still_requires_activation() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-shutdown-publication-reopen-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+
+        reopen_instance_activation_after_abandoned_shutdown_at(&root, 1, Duration::ZERO, |_| {})
+            .unwrap();
+
+        assert_eq!(
+            std::fs::read(root.join(INSTANCE_ACTIVATION_REQUEST_FILE)).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(consume_existing_instance_activation_request_at(&root, || {}).unwrap());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn shutdown_started_before_secondary_decision_forces_promotion() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-quit-handoff-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+        request_existing_instance_activation_at(&request).unwrap();
+        assert!(
+            consume_existing_instance_activation_request_at(&root, || {}).unwrap(),
+            "the primary first consumes the request"
+        );
+        begin_instance_activation_shutdown_at(&root, 1, Duration::ZERO, |_| {}).unwrap();
+
+        let mut lease_checks = 0;
+        let handoff = complete_existing_instance_activation_handoff_at(
+            &root,
+            2,
+            Duration::ZERO,
+            || {
+                lease_checks += 1;
+                Ok::<Option<u8>, std::io::Error>((lease_checks == 2).then_some(73))
+            },
+            |_| {},
+        )
+        .unwrap();
+
+        assert_eq!(handoff, InstanceActivationHandoff::Acquired(73));
+        assert_eq!(lease_checks, 2);
+        assert!(!root.join(INSTANCE_SHUTDOWN_FILE).exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn released_primary_lease_promotes_secondary_and_clears_activation_marker() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-promotion-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+        request_existing_instance_activation_at(&request).unwrap();
+        let mut lease_checks = 0;
+        let handoff = complete_existing_instance_activation_handoff_at(
+            &root,
+            2,
+            Duration::ZERO,
+            || {
+                lease_checks += 1;
+                Ok::<Option<u8>, std::io::Error>((lease_checks == 2).then_some(41))
+            },
+            |_| {},
+        )
+        .unwrap();
+
+        assert!(matches!(handoff, InstanceActivationHandoff::Acquired(41)));
+        assert!(!request.exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn two_concurrent_secondaries_share_one_primary_acknowledgment() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-two-secondaries-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+        let (published_sender, published_receiver) = mpsc::channel();
+        let (ready_sender, ready_receiver) = mpsc::channel();
+        let mut starts = Vec::new();
+        let mut releases = Vec::new();
+        let mut secondaries = Vec::new();
+
+        for secondary_id in 0..2 {
+            let secondary_root = root.clone();
+            let secondary_published = published_sender.clone();
+            let secondary_ready = ready_sender.clone();
+            let (start_sender, start_receiver) = mpsc::channel();
+            let (release_sender, release_receiver) = mpsc::channel();
+            starts.push(start_sender);
+            releases.push(release_sender);
+            secondaries.push(std::thread::spawn(move || {
+                publish_existing_instance_activation_request_at(
+                    &secondary_root,
+                    500,
+                    Duration::from_millis(1),
+                    std::thread::sleep,
+                )
+                .unwrap();
+                secondary_published.send(secondary_id).unwrap();
+                start_receiver.recv_timeout(Duration::from_secs(5)).unwrap();
+                let mut primary_release_observed = false;
+                complete_existing_instance_activation_handoff_at(
+                    &secondary_root,
+                    500,
+                    Duration::from_millis(1),
+                    || Ok::<Option<u8>, std::io::Error>(None),
+                    |interval| {
+                        if primary_release_observed {
+                            std::thread::sleep(interval);
+                        } else {
+                            secondary_ready.send(secondary_id).unwrap();
+                            release_receiver
+                                .recv_timeout(Duration::from_secs(5))
+                                .unwrap();
+                            primary_release_observed = true;
+                        }
+                    },
+                )
+            }));
+        }
+
+        let mut published = [
+            published_receiver
+                .recv_timeout(Duration::from_secs(5))
+                .unwrap(),
+            published_receiver
+                .recv_timeout(Duration::from_secs(5))
+                .unwrap(),
+        ];
+        published.sort_unstable();
+        assert_eq!(published, [0, 1]);
+        for start in starts {
+            start.send(()).unwrap();
+        }
+        let mut waiting = [
+            ready_receiver.recv_timeout(Duration::from_secs(5)).unwrap(),
+            ready_receiver.recv_timeout(Duration::from_secs(5)).unwrap(),
+        ];
+        waiting.sort_unstable();
+        assert_eq!(waiting, [0, 1]);
+        let activations = Arc::new(AtomicUsize::new(0));
+        let primary_activations = Arc::clone(&activations);
+        assert!(
+            consume_existing_instance_activation_request_at(&root, move || {
+                primary_activations.fetch_add(1, Ordering::SeqCst);
+            })
+            .unwrap()
+        );
+        for release in releases {
+            release.send(()).unwrap();
+        }
+        for secondary in secondaries {
+            assert_eq!(
+                secondary.join().unwrap().unwrap(),
+                InstanceActivationHandoff::Acknowledged
+            );
+        }
+        assert_eq!(activations.load(Ordering::SeqCst), 1);
+        assert!(!request.exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn new_primary_clears_stale_shutdown_and_request_markers() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-stale-shutdown-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+        let shutdown = root.join(INSTANCE_SHUTDOWN_FILE);
+        request_existing_instance_activation_at(&request).unwrap();
+        begin_instance_activation_shutdown_at(&root, 1, Duration::ZERO, |_| {}).unwrap();
+        assert_eq!(std::fs::read(&shutdown).unwrap(), INSTANCE_SHUTDOWN);
+
+        let instance_lease = acquire_instance_lease_at(&root).unwrap();
+        prepare_primary_instance_activation_state_at(&root, 1, Duration::ZERO, |_| {}).unwrap();
+
+        assert!(!shutdown.exists());
+        assert!(!request.exists());
+        drop(instance_lease);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn activation_handoff_timeout_fails_visibly_and_preserves_shared_request() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-timeout-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+        request_existing_instance_activation_at(&request).unwrap();
+        let error = complete_existing_instance_activation_handoff_at(
+            &root,
+            2,
+            Duration::ZERO,
+            || Ok::<Option<u8>, std::io::Error>(None),
+            |_| {},
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind(), std::io::ErrorKind::TimedOut);
+        assert!(error.to_string().contains("acknowledge"));
+        assert!(instance_lease_startup_message(&error).contains("Reason:"));
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn timed_out_secondary_does_not_delete_a_coalesced_activation_request() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-timeout-isolation-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+        request_existing_instance_activation_at(&request).unwrap();
+        request_existing_instance_activation_at(&request).unwrap();
+
+        complete_existing_instance_activation_handoff_at(
+            &root,
+            1,
+            Duration::ZERO,
+            || Ok::<Option<u8>, std::io::Error>(None),
+            |_| {},
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST,
+            "one timed-out secondary must not delete the shared request owned by another"
+        );
+        assert!(consume_existing_instance_activation_request_at(&root, || {}).unwrap());
+        let other = complete_existing_instance_activation_handoff_at(
+            &root,
+            1,
+            Duration::ZERO,
+            || Ok::<Option<u8>, std::io::Error>(None),
+            |_| {},
+        )
+        .unwrap();
+        assert_eq!(other, InstanceActivationHandoff::Acknowledged);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn activation_handoff_lease_error_is_isolated_from_other_secondaries() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-error-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+        request_existing_instance_activation_at(&request).unwrap();
+        let error = complete_existing_instance_activation_handoff_at(
+            &root,
+            2,
+            Duration::ZERO,
+            || {
+                Err::<Option<u8>, std::io::Error>(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "synthetic lease access failure",
+                ))
+            },
+            |_| {},
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
+        assert!(instance_lease_startup_message(&error).contains("synthetic lease access failure"));
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(consume_existing_instance_activation_request_at(&root, || {}).unwrap());
+        let other = complete_existing_instance_activation_handoff_at(
+            &root,
+            1,
+            Duration::ZERO,
+            || Ok::<Option<u8>, std::io::Error>(None),
+            |_| {},
+        )
+        .unwrap();
+        assert_eq!(other, InstanceActivationHandoff::Acknowledged);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn in_progress_activation_publication_is_invisible_to_the_reader() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-publication-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join("instance-activation.request");
+        let producer_request = request.clone();
+        let (ready_sender, ready_receiver) = mpsc::channel();
+        let (resume_sender, resume_receiver) = mpsc::channel();
+
+        let producer = std::thread::spawn(move || {
+            request_existing_instance_activation_at_with_before_publish(
+                &producer_request,
+                |temporary| {
+                    ready_sender.send(temporary.to_path_buf()).unwrap();
+                    resume_receiver
+                        .recv_timeout(Duration::from_secs(5))
+                        .unwrap();
+                },
+            )
+        });
+
+        let temporary = ready_receiver.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(temporary.is_file());
+        assert_eq!(
+            std::fs::read(&temporary).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(!request.exists());
+        assert!(!take_existing_instance_activation_request_at(&request).unwrap());
+        assert!(temporary.exists());
+        assert!(!std::fs::read_dir(&root).unwrap().any(|entry| {
+            entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .contains(".invalid-")
+        }));
+
+        resume_sender.send(()).unwrap();
+        producer.join().unwrap().unwrap();
+        assert!(!temporary.exists());
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(take_existing_instance_activation_request_at(&request).unwrap());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn concurrent_complete_activation_publications_coalesce_without_sidecars() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-concurrency-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join("instance-activation.request");
+        let publication_barrier = Arc::new(Barrier::new(3));
+        let producers = (0..2)
+            .map(|_| {
+                let producer_request = request.clone();
+                let producer_barrier = Arc::clone(&publication_barrier);
+                std::thread::spawn(move || {
+                    request_existing_instance_activation_at_with_before_publish(
+                        &producer_request,
+                        |_| {
+                            producer_barrier.wait();
+                        },
+                    )
+                })
+            })
+            .collect::<Vec<_>>();
+
+        publication_barrier.wait();
+        for producer in producers {
+            producer.join().unwrap().unwrap();
+        }
+
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        let entries = std::fs::read_dir(&root)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect::<Vec<_>>();
+        assert_eq!(entries, [request.file_name().unwrap()]);
+        assert!(take_existing_instance_activation_request_at(&request).unwrap());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn second_instance_activation_request_recovers_wrong_file_and_directory_types() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-recovery-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join("instance-activation.request");
+
+        std::fs::write(&request, b"stale-or-untyped").unwrap();
+        request_existing_instance_activation_at(&request).unwrap();
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(take_existing_instance_activation_request_at(&request).unwrap());
+
+        std::fs::create_dir(&request).unwrap();
+        std::fs::write(request.join("must-not-be-recursively-deleted"), b"sentinel").unwrap();
+        request_existing_instance_activation_at(&request).unwrap();
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(std::fs::read_dir(&root).unwrap().any(|entry| {
+            let entry = entry.unwrap();
+            entry.file_type().unwrap().is_dir()
+                && entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("instance-activation.request.invalid-")
+        }));
+
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn second_instance_activation_request_does_not_follow_redirected_files() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-link-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let request = root.join("instance-activation.request");
+        let target = root.join("redirect-target");
+        std::fs::create_dir(&target).unwrap();
+        std::fs::write(target.join("target-must-remain"), b"sentinel").unwrap();
+        create_test_directory_link(&target, &request);
+
+        request_existing_instance_activation_at(&request).unwrap();
+
+        assert_eq!(
+            std::fs::read(target.join("target-must-remain")).unwrap(),
+            b"sentinel"
+        );
+        assert_eq!(
+            std::fs::read(&request).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn repeated_activation_poll_errors_are_logged_once_until_recovery() {
+        let logged = AtomicBool::new(false);
+        let mut messages = Vec::new();
+        for _ in 0..4 {
+            assert!(!report_activation_request_result(
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "blocked"
+                )),
+                &logged,
+                |message| messages.push(message.to_string()),
+            ));
+        }
+        assert_eq!(messages.len(), 1);
+        assert!(!report_activation_request_result(
+            Ok(false),
+            &logged,
+            |message| messages.push(message.to_string()),
+        ));
+        assert!(!report_activation_request_result(
+            Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "blocked again"
+            )),
+            &logged,
+            |message| messages.push(message.to_string()),
+        ));
+        assert_eq!(messages.len(), 2);
+    }
+
+    #[cfg(windows)]
+    fn create_test_directory_link(target: &std::path::Path, link: &std::path::Path) {
+        let output = std::process::Command::new("cmd")
+            .args(["/d", "/c", "mklink", "/J"])
+            .arg(link)
+            .arg(target)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "could not create activation-request junction: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    #[cfg(unix)]
+    fn create_test_directory_link(target: &std::path::Path, link: &std::path::Path) {
+        std::os::unix::fs::symlink(target, link).unwrap();
     }
 }

@@ -38,6 +38,11 @@ export function LiveOverlay({
 
   useOverlayTransition(contentRef, surface, prefersReducedMotion);
 
+  const scheduleIdleCollapseWithoutFocus = (root: HTMLDivElement) => {
+    if (root.contains(document.activeElement)) return;
+    if (surface === "expanded") scheduleIdleCollapse();
+  };
+
   if (hiddenIdle) return null;
 
   return (
@@ -49,17 +54,39 @@ export function LiveOverlay({
       data-overlay-phase={model.phase}
       data-overlay-surface={surface}
       data-testid="live-overlay-root"
+      aria-label="Yap dictation controls"
+      role="toolbar"
+      onBlur={(event) => {
+        if (
+          event.relatedTarget instanceof Node
+          && event.currentTarget.contains(event.relatedTarget)
+        ) return;
+        if (surface === "expanded") scheduleIdleCollapse();
+      }}
+      onFocus={() => {
+        if (model.phase === "idle") openIdleIsland();
+      }}
+      onKeyDown={(event) => {
+        if (
+          event.target !== event.currentTarget
+          || model.phase !== "idle"
+          || !["Enter", " "].includes(event.key)
+        ) return;
+        event.preventDefault();
+        openIdleIsland();
+      }}
       onPointerEnter={() => {
         if (model.phase === "idle") openIdleIsland();
       }}
-      onMouseLeave={() => {
-        if (surface === "expanded") scheduleIdleCollapse();
+      onMouseLeave={(event) => {
+        scheduleIdleCollapseWithoutFocus(event.currentTarget);
       }}
       onPointerOut={(event) => {
         if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
-        if (surface === "expanded") scheduleIdleCollapse();
+        scheduleIdleCollapseWithoutFocus(event.currentTarget);
       }}
       style={rootFrameStyle}
+      tabIndex={model.phase === "idle" ? 0 : -1}
     >
       <div
         className="pointer-events-auto h-full w-full text-white"

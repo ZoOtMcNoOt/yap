@@ -20,7 +20,11 @@ import { fileURLToPath } from "node:url";
 
 import {
   assertGateRunnerNodeRuntime,
+  assertIntegratedGateManifestMatchesAdmission,
+  completeIntegratedGateAttempt,
   integratedGateFailureRecord,
+  loadIntegratedGateManifestSelection,
+  parseIntegratedGateRunnerInvocation,
   runCommandCell,
   reserveIntegratedGateAttemptDirectory,
 } from "../../../../verification/integrated-gate-runner.mjs";
@@ -50,11 +54,20 @@ const repoRoot = path.resolve(contractRoot, "..", "..", "..", "..");
 const manifestPath = path.join(
   repoRoot,
   "verification",
-  "integrated-preprocessing-language-routing-gate.json",
+  "integrated-product-checkpoint-gate.json",
 );
 const manifestBytes = readFileSync(manifestPath);
 const manifest = validateIntegratedGateManifest(JSON.parse(manifestBytes.toString("utf8")));
 const manifestSha256 = integratedGateManifestSha256(manifestBytes);
+const phase6ManifestPath = path.join(
+  repoRoot,
+  "verification",
+  "integrated-preprocessing-language-routing-gate.json",
+);
+const phase6ManifestBytes = readFileSync(phase6ManifestPath);
+const phase6Manifest = validateIntegratedGateManifest(
+  JSON.parse(phase6ManifestBytes.toString("utf8")),
+);
 const checkedHead = "a".repeat(40);
 const startedAt = "2026-07-23T12:00:00.000Z";
 const finishedAt = "2026-07-23T13:00:00.000Z";
@@ -85,6 +98,39 @@ function stableValue(value) {
 }
 
 const candidateIds = [
+  "frontend.node-runtime",
+  "frontend.dependencies",
+  "frontend.dependency-audit",
+  "frontend.release-contracts",
+  "frontend.provenance",
+  "frontend.unit",
+  "frontend.production-build",
+  "frontend.chromium-runtime",
+  "frontend.browser-workflows",
+  "native.format",
+  "native.clippy",
+  "native.tests",
+  "native.server-connector",
+  "native.windows-dependency-boundary",
+  "native.dependency-audit",
+  "desktop.wdio-build",
+  "desktop.required-wdio",
+  "server.python-3.12",
+  "server.lint",
+  "target-client.native-resource-and-restart",
+  "target-client.prepared-audio-boundaries",
+  "target-client.rendered-ui-and-microphone",
+  "target-client.teardown",
+  "gb10.provider-duration-and-concurrency",
+  "gb10.provider-cancellation-and-recovery",
+  "gb10.provider-resource-bounds",
+  "gb10.provider-teardown",
+  "integrated.desktop-private-server",
+  "integrated.tunnel-interruption-recovery",
+  "integrated.authoritative-history-result",
+  "integrated.teardown",
+];
+const phase6CandidateIds = [
   "frontend.node-runtime",
   "frontend.dependencies",
   "frontend.dependency-audit",
@@ -141,7 +187,7 @@ const exactCommands = {
   "frontend.unit": ["pnpm", "test"],
   "frontend.production-build": ["pnpm", "build"],
   "frontend.chromium-runtime": ["pnpm", "exec", "playwright", "install", "chromium"],
-  "frontend.accessibility-and-workflows": ["pnpm", "test:e2e"],
+  "frontend.browser-workflows": ["pnpm", "test:e2e"],
   "native.format": ["cargo", "fmt", "--all", "--check"],
   "native.clippy": ["cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings"],
   "native.tests": ["cargo", "test", "--locked"],
@@ -183,6 +229,7 @@ const exactCommands = {
     "-File",
     "./verification/test-portable-python-server.ps1",
   ],
+  "server.lint": ["uv", "run", "--locked", "ruff", "check", "."],
 };
 
 function createReceipt(scope) {
@@ -213,6 +260,7 @@ function createReceipt(scope) {
 }
 
 test("integrated gate freezes the complete candidate and hosted child inventories", () => {
+  assert.equal(manifest.gateId, "integrated-product-checkpoint");
   assert.deepEqual(manifest.candidateCells.map(({ id }) => id), candidateIds);
   assert.deepEqual(manifest.hostedClosureCells.map(({ id }) => id), hostedClosureIds);
   const commandCells = Object.fromEntries(
@@ -221,6 +269,203 @@ test("integrated gate freezes the complete candidate and hosted child inventorie
       .map(({ id, command }) => [id, command]),
   );
   assert.deepEqual(commandCells, exactCommands);
+});
+
+test("historical Phase 6 gate identity and bytes remain frozen", () => {
+  assert.equal(phase6Manifest.gateId, "integrated-preprocessing-language-routing");
+  assert.deepEqual(
+    phase6Manifest.candidateCells.map(({ id }) => id),
+    phase6CandidateIds,
+  );
+  assert.equal(
+    integratedGateManifestSha256(phase6ManifestBytes),
+    "46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52",
+  );
+});
+
+test("runner manifest selection preserves each canonical gate identity and child set", () => {
+  const productSelection = loadIntegratedGateManifestSelection(manifestPath);
+  const phase6Selection = loadIntegratedGateManifestSelection(phase6ManifestPath);
+
+  assert.equal(productSelection.manifest.gateId, "integrated-product-checkpoint");
+  assert.deepEqual(
+    productSelection.manifest.candidateCells.map(({ id }) => id),
+    candidateIds,
+  );
+  assert.equal(productSelection.manifestSha256, manifestSha256);
+  assert.equal(
+    phase6Selection.manifest.gateId,
+    "integrated-preprocessing-language-routing",
+  );
+  assert.deepEqual(
+    phase6Selection.manifest.candidateCells.map(({ id }) => id),
+    phase6CandidateIds,
+  );
+  assert.equal(
+    phase6Selection.manifestSha256,
+    "46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52",
+  );
+});
+
+test("runner requires an explicit canonical manifest and rejects cross-gate completion", async () => {
+  const beginArguments = [
+    "begin",
+    "--checked-head",
+    checkedHead,
+    "--evidence-root",
+    "private-root",
+    "--manifest",
+    manifestPath,
+    "--private-plan",
+    "private-plan.json",
+  ];
+  const completeArguments = [
+    "complete",
+    "--admission",
+    "admission.json",
+    "--attempt-token",
+    "f".repeat(64),
+    "--manifest",
+    manifestPath,
+  ];
+  assert.equal(
+    parseIntegratedGateRunnerInvocation(beginArguments).manifestPath,
+    manifestPath,
+  );
+  assert.equal(
+    parseIntegratedGateRunnerInvocation(completeArguments).manifestPath,
+    manifestPath,
+  );
+  assert.throws(
+    () => parseIntegratedGateRunnerInvocation(
+      beginArguments.filter((value, index) => ![5, 6].includes(index)),
+    ),
+    /begin requires exactly .*--manifest/,
+  );
+  assert.throws(
+    () => parseIntegratedGateRunnerInvocation(
+      completeArguments.filter((value, index) => ![5, 6].includes(index)),
+    ),
+    /complete requires exactly .*--manifest/,
+  );
+
+  const productSelection = loadIntegratedGateManifestSelection(manifestPath);
+  const phase6Selection = loadIntegratedGateManifestSelection(phase6ManifestPath);
+  const phase6Admission = {
+    gateId: phase6Selection.manifest.gateId,
+    manifestPath: phase6Selection.manifestFile.path,
+    manifestSha256: phase6Selection.manifestSha256,
+  };
+  assert.doesNotThrow(
+    () => assertIntegratedGateManifestMatchesAdmission(
+      phase6Admission,
+      phase6Selection,
+    ),
+  );
+  assert.throws(
+    () => assertIntegratedGateManifestMatchesAdmission(
+      phase6Admission,
+      productSelection,
+    ),
+    /does not match the admitted manifest/,
+  );
+  assert.throws(
+    () => assertIntegratedGateManifestMatchesAdmission(
+      {
+        ...phase6Admission,
+        gateId: productSelection.manifest.gateId,
+      },
+      phase6Selection,
+    ),
+    /identity does not match the admitted gate/,
+  );
+  assert.throws(
+    () => assertIntegratedGateManifestMatchesAdmission(
+      {
+        ...phase6Admission,
+        manifestSha256: "0".repeat(64),
+      },
+      phase6Selection,
+    ),
+    /bytes do not match the admitted manifest/,
+  );
+
+  const root = createCanonicalTemporaryDirectory("yap-invalid-gate-manifest-");
+  try {
+    const copiedManifest = path.join(root, "copied-gate.json");
+    writeFileSync(copiedManifest, manifestBytes);
+    assert.throws(
+      () => loadIntegratedGateManifestSelection(copiedManifest),
+      /accepts only a repository-owned integrated gate manifest/,
+    );
+    const admissionPath = path.join(root, "admission.json");
+    writeFileSync(
+      admissionPath,
+      `${JSON.stringify({
+        schemaVersion: 1,
+        gateId: phase6Admission.gateId,
+        checkedHead,
+        manifestPath: phase6Admission.manifestPath,
+        manifestSha256: phase6Admission.manifestSha256,
+        privatePlanPath: path.join(root, "private-plan.json"),
+        privatePlanSha256: "1".repeat(64),
+        attempt: 1,
+        attemptToken: "f".repeat(64),
+        admittedAt: startedAt,
+        runDirectory: root,
+        commandLogDirectory: path.join(root, "command-logs"),
+        candidateReceiptPath: path.join(root, "candidate-receipt.json"),
+      }, null, 2)}\n`,
+    );
+    await assert.rejects(
+      completeIntegratedGateAttempt({
+        admissionPath,
+        attemptToken: "f".repeat(64),
+        manifestPath,
+      }),
+      /does not match the admitted manifest/,
+    );
+    assert.equal(existsSync(path.join(root, "running.json")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("both integrated gate runbooks select their exact manifest for begin and complete", () => {
+  const contracts = [
+    {
+      runbook: "integrated-product-checkpoint-gate.md",
+      manifestArgument:
+        ".\\verification\\integrated-product-checkpoint-gate.json",
+    },
+    {
+      runbook: "integrated-preprocessing-language-routing-gate.md",
+      manifestArgument:
+        ".\\verification\\integrated-preprocessing-language-routing-gate.json",
+    },
+  ];
+  for (const contract of contracts) {
+    const runbook = readFileSync(
+      path.join(repoRoot, "docs", "runbooks", contract.runbook),
+      "utf8",
+    );
+    const runnerCommands = runbook
+      .split("```powershell")
+      .slice(1)
+      .map((block) => block.split("```")[0])
+      .filter((block) => block.includes("integrated-gate-runner.mjs"));
+    assert.equal(runnerCommands.length, 2);
+    for (const operation of ["begin", "complete"]) {
+      const command = runnerCommands.find(
+        (block) => block.includes(`integrated-gate-runner.mjs ${operation}`),
+      );
+      assert.ok(command, `${contract.runbook} must document ${operation}`);
+      assert.ok(
+        command.includes(`--manifest ${contract.manifestArgument}`),
+        `${contract.runbook} ${operation} must select ${contract.manifestArgument}`,
+      );
+    }
+  }
 });
 
 test("integrated gate accepts exact one-attempt receipts for both scopes", () => {

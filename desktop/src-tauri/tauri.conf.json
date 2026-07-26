@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "Yap",
-        "width": 1122,
-        "height": 760,
-        "minWidth": 1122,
-        "minHeight": 740,
+        "width": 960,
+        "height": 700,
+        "minWidth": 640,
+        "minHeight": 480,
         "backgroundColor": "#f3f0ea",
         "decorations": false,
         "dragDropEnabled": true
@@ -39,6 +39,8 @@
     ],
     "resources": {
       "../model-artifacts.lock.json": "model-artifacts.lock.json",
+      "../../SHIPPED_DEPENDENCY_INVENTORY.json": "SHIPPED_DEPENDENCY_INVENTORY.json",
+      "../../SHIPPED_DEPENDENCY_NOTICES.json": "SHIPPED_DEPENDENCY_NOTICES.json",
       "../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
       "../../THIRD_PARTY_PROVENANCE.json": "THIRD_PARTY_PROVENANCE.json",
       "../../server/runtime/asr/licenses/APACHE-2.0.txt": "licenses/APACHE-2.0.txt"

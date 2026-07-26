@@ -92,14 +92,14 @@ async fn run(app: tauri::AppHandle) {
             match durable_state_circuit
                 .try_close_with(|| drain.resources.ledger().commit_write_probe())
             {
-                Ok(true) => crate::stt::log_yap(
+                Ok(true) => crate::diagnostics::log(
                     "recording job durable-state circuit recovered after a committed write probe",
                 ),
                 Ok(false) => {}
                 Err(error) => {
                     if loop_now_ms >= next_circuit_error_log_ms {
                         next_circuit_error_log_ms = loop_now_ms.saturating_add(60_000);
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "recording job durable-state circuit remains open; no work will dispatch: {error}"
                         ));
                     }
@@ -115,7 +115,7 @@ async fn run(app: tauri::AppHandle) {
                 Ok(false) => {}
                 Err(error) => {
                     if error.durable_state_unavailable() {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "recording job retention could not commit; opening durable-state circuit: {error}"
                         ));
                         next_retention_check_ms = loop_now_ms;
@@ -123,7 +123,7 @@ async fn run(app: tauri::AppHandle) {
                         tokio::time::sleep(DURABLE_STATE_ERROR_BACKOFF).await;
                         continue;
                     }
-                    crate::stt::log_yap(&format!(
+                    crate::diagnostics::log(&format!(
                         "owned remote recording retention cleanup remains pending: {error}"
                     ));
                 }
@@ -134,7 +134,7 @@ async fn run(app: tauri::AppHandle) {
             Err(error) => {
                 if loop_now_ms >= next_pending_error_log_ms {
                     next_pending_error_log_ms = loop_now_ms.saturating_add(60_000);
-                    crate::stt::log_yap(&format!(
+                    crate::diagnostics::log(&format!(
                         "remote job drain state remains unavailable; retrying: {error}"
                     ));
                 }
@@ -164,7 +164,7 @@ async fn run(app: tauri::AppHandle) {
             }
             Ok(false) => {}
             Err(error) => {
-                crate::stt::log_yap(&format!(
+                crate::diagnostics::log(&format!(
                     "remote cancellation remains pending after a bounded request: {error}"
                 ));
                 durable_state_circuit.trip();
@@ -179,7 +179,7 @@ async fn run(app: tauri::AppHandle) {
             }
             Ok(ClientPreflightProgress::Idle | ClientPreflightProgress::ServerUnavailable) => {}
             Err(error) => {
-                crate::stt::log_yap(&format!(
+                crate::diagnostics::log(&format!(
                     "client recording preflight durable state is unavailable; backing off: {error}"
                 ));
                 durable_state_circuit.trip();
@@ -231,7 +231,7 @@ async fn run(app: tauri::AppHandle) {
             let claimed = match claim {
                 Ok(Some(Ok(claimed))) => claimed,
                 Ok(Some(Err(error))) => {
-                    crate::stt::log_yap(&format!(
+                    crate::diagnostics::log(&format!(
                         "remote preprocessing catalog claim could not commit; backing off: {error}"
                     ));
                     durable_state_circuit.trip();
@@ -246,7 +246,7 @@ async fn run(app: tauri::AppHandle) {
                         now,
                     );
                     if let Err(error) = deferred {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "remote preprocessing catalog deferral could not commit; backing off: {error}"
                         ));
                         durable_state_circuit.trip();
@@ -256,7 +256,7 @@ async fn run(app: tauri::AppHandle) {
                     continue;
                 }
                 Err(error) => {
-                    crate::stt::log_yap(&format!(
+                    crate::diagnostics::log(&format!(
                         "current ASR catalog remains unavailable before preprocessing: {error}"
                     ));
                     let deferred = drain.resources.ledger().defer_for_catalog_capability(
@@ -265,7 +265,7 @@ async fn run(app: tauri::AppHandle) {
                         now,
                     );
                     if let Err(persist_error) = deferred {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "remote preprocessing catalog outage could not be deferred; backing off: {persist_error}"
                         ));
                         durable_state_circuit.trip();
@@ -299,14 +299,16 @@ async fn run(app: tauri::AppHandle) {
                 }
                 Ok(Ok(None)) => {}
                 Ok(Err(error)) => {
-                    crate::stt::log_yap(&format!("remote preprocessing stopped safely: {error}"));
+                    crate::diagnostics::log(&format!(
+                        "remote preprocessing stopped safely: {error}"
+                    ));
                     if !error.is_cancelled() {
                         if let Some(job_id) = error.job_id() {
                             if let Err(persist_error) = app
                                 .state::<RemoteJobDrain>()
                                 .fail_preprocessing_job(job_id, now)
                             {
-                                crate::stt::log_yap(&format!(
+                                crate::diagnostics::log(&format!(
                                     "remote preprocessing failure could not be persisted; backing off: {persist_error}"
                                 ));
                                 durable_state_circuit.trip();
@@ -318,12 +320,14 @@ async fn run(app: tauri::AppHandle) {
                     continue;
                 }
                 Err(error) => {
-                    crate::stt::log_yap(&format!("remote preprocessing worker failed: {error}"));
+                    crate::diagnostics::log(&format!(
+                        "remote preprocessing worker failed: {error}"
+                    ));
                     if let Err(persist_error) = app
                         .state::<RemoteJobDrain>()
                         .fail_preprocessing_job(&job_id, now)
                     {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "remote preprocessing panic could not be persisted: {persist_error}"
                         ));
                         durable_state_circuit.trip();
@@ -365,7 +369,7 @@ async fn run(app: tauri::AppHandle) {
                 }
                 Ok(None) => false,
                 Err(error) => {
-                    crate::stt::log_yap(&format!(
+                    crate::diagnostics::log(&format!(
                         "remote upload catalog preflight could not read durable state; backing off: {error}"
                     ));
                     durable_state_circuit.trip();
@@ -413,7 +417,7 @@ async fn run(app: tauri::AppHandle) {
                             now,
                         );
                         if let Err(error) = deferred {
-                            crate::stt::log_yap(&format!(
+                            crate::diagnostics::log(&format!(
                                 "remote upload catalog deferral could not commit; backing off: {error}"
                             ));
                             durable_state_circuit.trip();
@@ -423,7 +427,7 @@ async fn run(app: tauri::AppHandle) {
                         continue;
                     }
                     Ok(Some(Err(error))) => {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "remote upload catalog validation could not commit; backing off: {error}"
                         ));
                         durable_state_circuit.trip();
@@ -432,7 +436,7 @@ async fn run(app: tauri::AppHandle) {
                         continue;
                     }
                     Err(error) => {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "current ASR catalog remains unavailable before upload: {error}"
                         ));
                         let deferred = drain.resources.ledger().defer_for_catalog_capability(
@@ -441,7 +445,7 @@ async fn run(app: tauri::AppHandle) {
                             now,
                         );
                         if let Err(persist_error) = deferred {
-                            crate::stt::log_yap(&format!(
+                            crate::diagnostics::log(&format!(
                                 "remote upload catalog outage could not be deferred; backing off: {persist_error}"
                             ));
                             durable_state_circuit.trip();
@@ -475,7 +479,9 @@ async fn run(app: tauri::AppHandle) {
                 }
                 Ok(false) => {}
                 Err(error) => {
-                    crate::stt::log_yap(&format!("remote upload step will not commit: {error}"));
+                    crate::diagnostics::log(&format!(
+                        "remote upload step will not commit: {error}"
+                    ));
                     let persisted = drain.handle_upload_error(
                         upload_job_id,
                         &error,
@@ -483,7 +489,7 @@ async fn run(app: tauri::AppHandle) {
                         now.saturating_add(CATALOG_RETRY_DELAY_MS),
                     );
                     if let Err(persist_error) = persisted {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "remote upload retry state could not be persisted; backing off: {persist_error}"
                         ));
                         durable_state_circuit.trip();
@@ -530,7 +536,9 @@ async fn run(app: tauri::AppHandle) {
                 Ok(true) => emit_jobs_changed(&app),
                 Ok(false) => {}
                 Err(error) => {
-                    crate::stt::log_yap(&format!("remote result step will not commit: {error}"));
+                    crate::diagnostics::log(&format!(
+                        "remote result step will not commit: {error}"
+                    ));
                     if let Err(persist_error) = drain.schedule_remote_retry_for_job(
                         processing_job_id,
                         &[
@@ -540,7 +548,7 @@ async fn run(app: tauri::AppHandle) {
                         &error,
                         now,
                     ) {
-                        crate::stt::log_yap(&format!(
+                        crate::diagnostics::log(&format!(
                             "remote result retry state could not be persisted; backing off: {persist_error}"
                         ));
                         durable_state_circuit.trip();
@@ -559,7 +567,7 @@ fn emit_jobs_changed(app: &tauri::AppHandle) {
         "recording-jobs-changed",
         (),
     ) {
-        crate::stt::log_yap(&format!(
+        crate::diagnostics::log(&format!(
             "recording jobs event failed after background commit: {error}"
         ));
     }

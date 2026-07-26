@@ -30,6 +30,7 @@ from .chunk_upload import ChunkUploadCoordinator, ChunkUploadPlan
 from .completion import JobCompletionCoordinator
 from .contract_values import (
     MAX_CLIENT_CLOCK_SKEW as _MAX_CLIENT_CLOCK_SKEW,
+    MAX_STORED_JOBS as _DEFAULT_MAX_STORED_JOBS,
     TERMINAL_STATUSES as _TERMINAL_STATUSES,
     identifier as _identifier,
     mapping as _mapping,
@@ -52,7 +53,8 @@ from .stage_attempts import (
 )
 
 
-_MAX_STORED_JOBS = 512
+_MAX_STORED_JOBS = _DEFAULT_MAX_STORED_JOBS
+_MAX_EXPIRED_JOB_TRANSITIONS_PER_PASS = 8
 _CANCELLATION_ACK_TIMEOUT_SECONDS = 2.0
 
 
@@ -129,14 +131,17 @@ class RecordingJobService:
             now=self._now,
         )
         with self._lock:
+            startup_now = _utc_timestamp(self._now(), "server clock")
             self._prune_expired_jobs_locked(
-                _utc_timestamp(self._now(), "server clock")
+                startup_now,
+                reconcile_deletion_debt=False,
             )
-            self._recover_interrupted_stages_locked()
+            self._recover_interrupted_stages_locked(startup_now)
             self._pending_processing.extend(
                 job_id
                 for job_id, projection in self._state.jobs.items()
                 if projection.get("status") == "server_processing"
+                and not self._job_retention_expired_locked(job_id, startup_now)
             )
         self._pump_pending_processing()
 
@@ -214,7 +219,10 @@ class RecordingJobService:
                     "INVALID_JOB",
                     "Recording job declaration is invalid.",
                 ) from error
-            if len(self._state.jobs) >= _MAX_STORED_JOBS:
+            if (
+                len(self._state.jobs) + len(self._state.pending_deletions)
+                >= _MAX_STORED_JOBS
+            ):
                 raise JobServiceError(
                     429,
                     "SERVER_STORAGE_LIMIT",
@@ -260,7 +268,7 @@ class RecordingJobService:
             try:
                 self._persist_job_locked(job_id)
             except Exception:
-                self._delete_job_locked(job_id)
+                self._store.rollback_unpersisted_create(self._state, job_id)
                 raise
         return deepcopy(projection)
 
@@ -775,9 +783,12 @@ class RecordingJobService:
             reason=reason,
         )
 
-    def _recover_interrupted_stages_locked(self) -> None:
+    def _recover_interrupted_stages_locked(self, now: datetime) -> None:
         for job_id, job in self._state.jobs.items():
-            if job.get("status") != "server_processing":
+            if (
+                job.get("status") != "server_processing"
+                or self._job_retention_expired_locked(job_id, now)
+            ):
                 continue
             interrupted_at = self._now()
             recovered_running_stage = False
@@ -887,6 +898,7 @@ class RecordingJobService:
             with self._lock:
                 if self._stopping:
                     return
+                server_now = _utc_timestamp(self._now(), "server clock")
                 while self._pending_processing:
                     job_id = self._pending_processing.popleft()
                     job = self._state.jobs.get(job_id)
@@ -894,6 +906,10 @@ class RecordingJobService:
                         job is not None
                         and job.get("status") == "server_processing"
                         and job_id not in self._futures
+                        and not self._job_retention_expired_locked(
+                            job_id,
+                            server_now,
+                        )
                     ):
                         break
                 else:
@@ -944,10 +960,15 @@ class RecordingJobService:
             self._attach_processing_callback(*callback)
 
     def _has_pending_restart_work_locked(self) -> bool:
+        server_now = _utc_timestamp(self._now(), "server clock")
         return any(
             (job := self._state.jobs.get(pending_job_id)) is not None
             and job.get("status") == "server_processing"
             and pending_job_id not in self._futures
+            and not self._job_retention_expired_locked(
+                pending_job_id,
+                server_now,
+            )
             for pending_job_id in self._pending_processing
         )
 
@@ -1042,12 +1063,20 @@ class RecordingJobService:
             self._finalize_cancellation_locked(job_id)
             return deepcopy(self._state.jobs[job_id])
 
-    def _finalize_cancellation_locked(self, job_id: str) -> None:
+    def _finalize_cancellation_locked(
+        self,
+        job_id: str,
+        *,
+        purge_private_audio: bool = True,
+    ) -> None:
         job = self._state.jobs[job_id]
         job["status"] = "cancelled"
         job["updatedAtUtc"] = self._now()
         job.pop("error", None)
-        self._purge_private_audio_locked(job_id)
+        if purge_private_audio:
+            self._purge_private_audio_locked(job_id)
+        else:
+            self._persist_job_locked(job_id)
         completion_event = self._completion_events.pop(job_id, None)
         if completion_event is not None:
             completion_event.set()
@@ -1079,18 +1108,21 @@ class RecordingJobService:
                 _utc_timestamp(self._now(), "server clock")
             )
 
-    def _prune_expired_jobs_locked(self, now: datetime) -> int:
-        expired: list[str] = []
-        for job_id, job in self._state.jobs.items():
-            metadata = _mapping(self._state.requests[job_id].get("metadata"), "metadata")
-            retention = metadata.get("retentionExpiresAtUtc")
-            if retention is not None and _utc_timestamp(
-                retention,
-                "retentionExpiresAtUtc",
-            ) <= now:
-                expired.append(job_id)
+    def _prune_expired_jobs_locked(
+        self,
+        now: datetime,
+        *,
+        reconcile_deletion_debt: bool = True,
+    ) -> int:
+        if reconcile_deletion_debt:
+            self._store.reconcile_pending_deletions(self._state)
+        expired = [
+            job_id
+            for job_id in self._state.jobs
+            if self._job_retention_expired_locked(job_id, now)
+        ]
         deleted = 0
-        for job_id in expired:
+        for job_id in expired[:_MAX_EXPIRED_JOB_TRANSITIONS_PER_PASS]:
             job = self._state.jobs[job_id]
             if job.get("status") not in _TERMINAL_STATUSES:
                 if job_id not in self._state.cancelled:
@@ -1104,13 +1136,27 @@ class RecordingJobService:
                     else:
                         future.cancel()
                 if job_id in self._futures:
+                    self._state.jobs[job_id] = self._state.jobs.pop(job_id)
                     continue
-                self._finalize_cancellation_locked(job_id)
-            if job.get("status") == "cancelled":
-                self._purge_private_audio_locked(job_id)
+                self._finalize_cancellation_locked(
+                    job_id,
+                    purge_private_audio=False,
+                )
             self._delete_job_locked(job_id)
             deleted += 1
         return deleted
+
+    def _job_retention_expired_locked(
+        self,
+        job_id: str,
+        now: datetime,
+    ) -> bool:
+        metadata = _mapping(self._state.requests[job_id].get("metadata"), "metadata")
+        retention = metadata.get("retentionExpiresAtUtc")
+        return retention is not None and _utc_timestamp(
+            retention,
+            "retentionExpiresAtUtc",
+        ) <= now
 
     def _delete_job_locked(self, job_id: str) -> None:
         self._store.delete(self._state, job_id)

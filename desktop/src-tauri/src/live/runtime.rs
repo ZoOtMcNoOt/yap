@@ -162,7 +162,7 @@ fn spawn_stream_crash_handler(
 
 fn log_worker_shutdown_errors(errors: Vec<String>) {
     for error in errors {
-        crate::stt::log_yap(&format!("live worker shutdown failed: {error}"));
+        crate::diagnostics::log(&format!("live worker shutdown failed: {error}"));
     }
 }
 

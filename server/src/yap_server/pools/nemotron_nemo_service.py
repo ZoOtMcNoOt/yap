@@ -17,7 +17,11 @@ from typing import Mapping
 from yap_server.bounded_file import read_regular_file
 from yap_server.limits import MAX_WORKER_RESULT_BYTES
 from yap_server.pools.authenticated_loopback_http import validate_private_api_key
-from yap_server.pools.batch_asr_worker import (
+from yap_server.pools.executor_cleanup import (
+    EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS,
+    shutdown_executor_or_raise,
+)
+from yap_server.pools.pcm_audio import (
     MAX_ENCODED_AUDIO_BYTES,
     decode_pcm16_wav,
 )
@@ -42,6 +46,11 @@ from yap_server.pools.nemotron_nemo_protocol import (
     NemotronNemoServiceRequest,
     cancellation_path,
 )
+from yap_server.pools.nemotron_nemo_cleanup import (
+    NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+    close_native_runtime_or_fail_stop as _close_native_runtime_or_fail_stop,
+    fail_stop_native_runtime as _fail_stop_shutdown,
+)
 from yap_server.pools.nemotron_nemo_streaming import NemotronNemoStreamingEngine
 from yap_server.pools.utterance_plan import read_utterance_plan
 
@@ -49,6 +58,8 @@ from yap_server.pools.utterance_plan import read_utterance_plan
 _API_KEY_ENV = "YAP_NEMOTRON_NEMO_API_KEY"
 _REQUEST_TIMEOUT_SECONDS = 10.0
 _MAX_HTTP_REQUEST_WORKERS = NEMOTRON_NEMO_MAX_ACTIVE_REQUESTS * 2 + 2
+_SHUTDOWN_CLEANUP_TIMEOUT_SECONDS = NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS
+_REQUEST_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS
 
 
 class NemotronNemoRequestCancelled(RuntimeError):
@@ -233,9 +244,16 @@ class _NemotronNemoHttpServer(HTTPServer):
 
     def server_close(self) -> None:
         try:
-            self._request_executor.shutdown(wait=True, cancel_futures=False)
+            self.application.request_shutdown()
         finally:
-            super().server_close()
+            try:
+                super().server_close()
+            finally:
+                shutdown_executor_or_raise(
+                    self._request_executor,
+                    timeout_seconds=_REQUEST_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS,
+                    component="Nemotron NeMo HTTP request",
+                )
 
     def handle_error(self, request, client_address) -> None:
         del request, client_address
@@ -448,17 +466,21 @@ def main(argv: list[str] | None = None) -> int:
         if not server_thread.is_alive() and not stopped.is_set():
             raise RuntimeError("resident Nemotron NeMo HTTP server stopped unexpectedly")
     finally:
-        if application is not None:
-            application.request_shutdown()
-        if server is not None and server_thread is not None:
-            if server_thread.ident is not None:
-                server.shutdown()
-                server_thread.join()
-            server.server_close()
-        if application is not None:
-            application.close()
-        else:
-            engine.close()
+        try:
+            if application is not None:
+                application.request_shutdown()
+            if server is not None and server_thread is not None:
+                if server_thread.ident is not None:
+                    server.shutdown()
+                    server_thread.join()
+                server.server_close()
+        except BaseException:
+            _fail_stop_shutdown()
+        close_runtime = application.close if application is not None else engine.close
+        _close_native_runtime_or_fail_stop(
+            close_runtime,
+            timeout_seconds=_SHUTDOWN_CLEANUP_TIMEOUT_SECONDS,
+        )
     return 0
 
 

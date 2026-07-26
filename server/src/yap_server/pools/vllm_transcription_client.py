@@ -19,7 +19,7 @@ from yap_server.pools.authenticated_loopback_http import (
     parse_numeric_loopback_http_endpoint,
     validate_private_api_key,
 )
-from yap_server.pools.batch_asr_worker import (
+from yap_server.pools.pcm_audio import (
     MAX_AUDIO_SECONDS,
     MAX_ENCODED_AUDIO_BYTES,
 )

@@ -1,6 +1,8 @@
 # Audio Preprocessing and Language Routing Implementation Plan
 
-**Status:** Exact executable candidate
+**Status:** Completed and merged in
+[PR #67](https://github.com/mcnatg1/yap/pull/67) as merge commit
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`. Exact executable candidate
 `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-attempt frozen
 30-child local/native/server/private-runtime matrix on 2026-07-25. The admitted
 target-client channel passed 12/12 paced native cycles, all nine short-boundary
@@ -32,8 +34,9 @@ on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`,
 whose direct executable parent is `a92f3385...`; the private hosted-closure
 receipt was independently validated outside Git. Final adversarial review found
 stale lineage, hosted-state, and process/data-layout documentation only. The
-resulting docs-only successor must pass exact-head hosted checks before PR #67
-is merged. Earlier replacement candidate
+final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`
+passed the required exact-head hosted checks and read-back before merge. Earlier
+replacement candidate
 `72c089f42c1358f4f0b86c793af39a8e762d6137` passed the complete
 Windows target-client channel and all 18 sequential GB10 provider children,
 then failed connected-server readiness because its private controller selected
@@ -1836,8 +1839,10 @@ retried, or relabeled.
 - [x] Open focused PR #67 and obtain first-attempt hosted CI, CodeQL, and
       disposable-Windows stock-NSIS evidence on docs-only review head
       `cee13f819a85417ea43a3c63e263be85f0570838`.
-- [ ] Require the final docs-only successor to pass exact-head hosted checks,
-      review that checked SHA, and merge only that green reviewed head.
+- [x] Require the final docs-only successor to pass exact-head hosted checks,
+      review that checked SHA, and merge only that green reviewed head. Final
+      reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929` merged in PR #67
+      as `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 
 Exactly three read-only adversarial reviews covered runtime/concurrency,
 architecture/maintainability, and contracts/evidence. The latest read-back
@@ -1856,7 +1861,7 @@ decomposition remains queued for the separate post-Phase-6 checkpoint and is
 not silently folded into this phase.
 
 The Phase 6 merge activates the separately queued
-[Codebase ownership and maintainability review](../queued/2026-07-18-codebase-ownership-and-maintainability-review.md).
+[Codebase ownership and maintainability review](../active/2026-07-18-codebase-ownership-and-maintainability-review.md).
 That checkpoint starts from the reviewed merge on its own branch, runs the
 requested multi-subagent antagonistic review, applies Checkpoint A-style
 ownership/decomposition/maintainability refactors, and closes through its own

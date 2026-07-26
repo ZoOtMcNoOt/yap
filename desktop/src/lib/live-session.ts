@@ -26,6 +26,7 @@ export type LiveSessionView = {
   activeCaptureMode?: LiveCaptureMode | null;
   hotkey: string;
   pasteHotkey: string;
+  overlayFocusHotkey: string;
   inputDeviceId?: string | null;
   inputDeviceLabel?: string | null;
   level?: number | null;

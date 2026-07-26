@@ -1,40 +1,65 @@
-use std::io::Write;
+use std::{
+    io::{ErrorKind, Write},
+    path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
-pub(crate) fn write(path: &std::path::Path, text: &str) -> std::io::Result<()> {
+use crate::atomic_file;
+
+pub(crate) fn write(path: &Path, text: &str) -> std::io::Result<()> {
     let file_name = path
         .file_name()
         .and_then(|name| name.to_str())
-        .ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::InvalidInput, "missing file name")
-        })?;
-    let nonce = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
+        .ok_or_else(|| std::io::Error::new(ErrorKind::InvalidInput, "missing file name"))?;
+    let legacy_temp = path.with_file_name(format!("{file_name}.part"));
+    match std::fs::remove_file(&legacy_temp) {
+        Ok(()) => {}
+        Err(error) if error.kind() == ErrorKind::NotFound => {}
+        Err(error) => return Err(error),
+    }
+
+    let (temp, mut file) = reserve_sibling_temp_file(path)?;
+    let result = (|| {
+        file.write_all(text.as_bytes())?;
+        file.sync_all()?;
+        drop(file);
+        atomic_file::replace_same_directory(&temp, path)?;
+        atomic_file::sync_parent_directory(path)
+    })();
+    if result.is_err() {
+        match std::fs::remove_file(&temp) {
+            Ok(()) => {}
+            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            Err(error) => return Err(error),
+        }
+    }
+    result
+}
+
+fn reserve_sibling_temp_file(path: &Path) -> std::io::Result<(PathBuf, std::fs::File)> {
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| std::io::Error::new(ErrorKind::InvalidInput, "missing file name"))?;
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
     let pid = std::process::id();
-    std::fs::remove_file(path.with_file_name(format!("{file_name}.part"))).ok();
     for attempt in 0..32 {
-        let tmp = path.with_file_name(format!("{file_name}.{pid}.{nonce}.{attempt}.part"));
+        let temp = path.with_file_name(format!("{file_name}.{pid}.{nonce}.{attempt}.part"));
         match std::fs::OpenOptions::new()
             .write(true)
             .create_new(true)
-            .open(&tmp)
+            .open(&temp)
         {
-            Ok(mut file) => {
-                let write_result = file.write_all(text.as_bytes());
-                drop(file);
-                let result = write_result.and_then(|_| std::fs::rename(&tmp, path));
-                if result.is_err() {
-                    std::fs::remove_file(&tmp).ok();
-                }
-                return result;
-            }
-            Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => continue,
-            Err(err) => return Err(err),
+            Ok(file) => return Ok((temp, file)),
+            Err(error) if error.kind() == ErrorKind::AlreadyExists => {}
+            Err(error) => return Err(error),
         }
     }
     Err(std::io::Error::new(
-        std::io::ErrorKind::AlreadyExists,
-        "could not reserve temporary transcript path",
+        ErrorKind::AlreadyExists,
+        "could not reserve temporary text path",
     ))
 }

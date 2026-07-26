@@ -1,7 +1,7 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–5 system plus the repaired
-Phase 6 implementation on the active branch: provider catalog, fixed-language
+This document describes the merged executable Phase 1–6 system: provider
+catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
 VAD, local language spans, verify-only AmberNet batch preflight, and
 provider-specific serving candidates. Exact executable candidate
@@ -14,10 +14,10 @@ prepared ARM64 image, and required its checked-head
 revision, base digest, runtime identity, and immutable image ID to match that
 receipt. They launch and record that exact ID; they cannot build, pull,
 reconnect, or substitute an image. Hosted CI, CodeQL, and stock-NSIS passed at
-first attempt on docs-only review head
-`cee13f819a85417ea43a3c63e263be85f0570838`, and its private closure receipt
-was independently validated outside Git. PR #67 retains the rule that any
-later docs-only successor must pass exact-head hosted checks before merge. The
+first attempt on final reviewed head
+`50f0f9e5e3cf288f41efa3745514dd08c9ee1929`, and its private closure receipt
+was independently validated outside Git. PR #67 merged as
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`. The
 [Voice OS architecture](../VOICE-OS-ARCHITECTURE.md) remains the first-class
 long-term frame; accepted future work is sequenced by the
 [roadmap](../roadmap/ROADMAP.md) and ADRs, not promoted into current-state
@@ -34,10 +34,10 @@ flowchart LR
   Native --> Loopback["Numeric loopback HTTP"]
   Loopback -. "explicit SSH forward" .-> Server["Private Yap server"]
   Server --> Store["Private job store and artifacts"]
-  Server --> Router["Bounded workload router and pool"]
-  Router --> Reference["Transformers reference workers"]
-  Router --> Cohere["Cohere vLLM candidate"]
-  Router --> NeMo["Nemotron NeMo candidate"]
+  Server --> Pool["Bounded provider admission pools"]
+  Pool --> Reference["Transformers reference workers"]
+  Pool --> Cohere["Cohere vLLM candidate"]
+  Pool --> NeMo["Nemotron NeMo candidate"]
 ```
 
 The SSH forward is a development access boundary managed outside Yap. It is
@@ -58,6 +58,10 @@ View variants, waveform, reduced-motion behavior, and presentation timing live
 under `components/live/`; native code owns window identity, bounds, placement,
 visible region, and lifecycle. The renderer reads the OS reduced-motion
 preference synchronously for its initial state before subscribing to changes.
+Pointer hover may expand the idle island, while keyboard focus inside the
+toolbar suppresses pointer-exit collapse. Focus loss schedules the bounded idle
+collapse; pointer exit does the same only when focus is already outside the
+toolbar. Native bounds stay synchronized to the resulting surface.
 
 ### Tauri/native boundary
 
@@ -134,11 +138,10 @@ artifact cleanup. Uploaded chunks are reopened as bounded regular files and
 must still match their declared exact extent and SHA before exclusive atomic
 WAV publication.
 
-`workload_router/*` and `pools/*` own bounded admission and one isolated GPU
-worker. The executable pool admits one running job plus two queued jobs. The
-current adapter uses one fixed `development-loopback` owner and dispatches each
-batch request immediately to that pool; the actual waiting bound is the pool,
-not a durable authenticated multi-tenant router queue.
+`pools/*` owns bounded admission and isolated GPU workers. The reference
+`BatchAsrPool` admits one running job plus two queued jobs. The current loopback
+adapter dispatches each batch request directly to that pool; no durable
+authenticated multi-tenant router queue executes yet.
 
 The checked reference worker image uses the digest-pinned NVIDIA PyTorch 26.06
 base, Python 3.12, the locked NVIDIA Torch/CUDA runtime, Transformers 5.13.1,
@@ -238,6 +241,20 @@ cancellation, capacity, and fixed/automatic-language runners so completion
 counts cannot stand in for the named semantics. Their composed frozen GB10
 candidate-safety evidence passed at `a21964c19e56648e9fddcb5200de419e59a7687c`.
 
+Checkpoint B removes two accidental dependency inversions without changing
+those owners. Provider engines consume the neutral
+`pools/pcm_audio.py` contract instead of importing the executable
+`batch_asr_worker.py` adapter, with an AST dependency test guarding the seam.
+The loopback server passes `BatchAsrPool` directly to `RecordingJobService`;
+the removed wrapper only enqueued and immediately dispatched the same batch
+request, so it never provided independent scheduling or fairness. The
+non-executable reference router was also removed; ADR 0023 retains the accepted
+future mixed-live/batch fairness rule, but Phase 10 must implement it against
+real durable/authenticated owners. Neutral test support now owns shared
+recording-job request builders. Desktop-wide bounded logging belongs to
+crate-root `diagnostics.rs`, and crate-root `atomic_text.rs` owns durable text
+publication; STT retains only ASR-specific adaptation and timing.
+
 The production result contract permits canonical empty ASR text. Duration-
 transport evidence therefore counts a published empty result as completed for
 silent or too-short audio, while provider-behavior, request-lifecycle, and
@@ -286,9 +303,9 @@ The server's dynamic health response advertises batch/status only when the
 Phase 5 runtime actually initializes. Live streaming remains false and
 `/v1/live` remains unimplemented.
 
-## Phase 6 implementation on the active branch
+## Merged Phase 6 implementation
 
-The current branch adds a separately bounded ASR capability-catalog endpoint,
+Phase 6 added a separately bounded ASR capability-catalog endpoint,
 native fingerprint/bounds validation, and an origin-bound last-known snapshot
 that explains offline state without authorizing a route. Rust owns the
 versioned primary-language preference and freezes each imported job's

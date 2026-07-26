@@ -1,6 +1,6 @@
 use tauri::Manager;
 
-use crate::{live, stt};
+use crate::live;
 
 pub(super) const INJECTION_COPIED_ERROR: &str =
     "Couldn't insert text here. Transcript copied; press Ctrl+V.";
@@ -82,11 +82,11 @@ pub(crate) fn inject_last_live_transcript(
     let view = apply_injection_result(&live, result);
     if view.error.is_some() {
         if let Err(error) = live::overlay_window::ensure_active(app) {
-            stt::log_yap(&format!("live paste feedback show failed: {error}"));
+            crate::diagnostics::log(&format!("live paste feedback show failed: {error}"));
         }
     } else if view.visibility == live::state::LiveOverlayVisibility::Enabled {
         if let Err(error) = live::overlay_window::ensure_idle(app) {
-            stt::log_yap(&format!("live paste idle show failed: {error}"));
+            crate::diagnostics::log(&format!("live paste idle show failed: {error}"));
         }
     } else if let Some(window) = app.get_webview_window(live::overlay_window::WINDOW_LABEL) {
         let _ = window.hide();
@@ -103,7 +103,7 @@ pub(super) fn apply_injection_result(
             view.error = without_injection_feedback(view.error.as_deref());
         }),
         Ok(Some(live::injection::InjectionOutcome::CopiedOnly(reason))) => {
-            stt::log_yap(&format!("live injection copied fallback: {reason}"));
+            crate::diagnostics::log(&format!("live injection copied fallback: {reason}"));
             live.update(|view| {
                 let existing = without_injection_feedback(view.error.as_deref());
                 view.error = Some(append_error(existing, INJECTION_COPIED_ERROR));
@@ -111,7 +111,7 @@ pub(super) fn apply_injection_result(
         }
         Ok(Some(live::injection::InjectionOutcome::Ignored)) | Ok(None) => live.snapshot(),
         Err(error) => {
-            stt::log_yap(&format!("live transcript injection failed: {error}"));
+            crate::diagnostics::log(&format!("live transcript injection failed: {error}"));
             live.update(|view| {
                 let existing = without_injection_feedback(view.error.as_deref());
                 view.error = Some(append_error(existing, INJECTION_FAILED_ERROR));

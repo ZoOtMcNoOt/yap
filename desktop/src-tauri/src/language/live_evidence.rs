@@ -104,7 +104,7 @@ impl LiveLanguageEvidence {
             || self.sample_rate_hz != LIVE_LANGUAGE_SAMPLE_RATE_HZ
             || self.source_end_sample == 0
             || self.boundary_authority != LanguageSpanBoundaryAuthority::ClientDecision
-            || !crate::stt::nemotron::supports_live_language(&self.primary_language_bcp47)
+            || !super::valid_bcp47(&self.primary_language_bcp47)
             || self.spans.is_empty()
             || self.spans.len() > MAX_LANGUAGE_SPANS
             || (self.status == LiveLanguageStatus::Complete) != self.degradation.is_none()
@@ -151,7 +151,7 @@ impl LiveLanguageEvidence {
         let mut expected_start = 0_u64;
         let mut previous_language = None;
         for (index, span) in self.spans.iter().enumerate() {
-            if !crate::stt::nemotron::supports_live_language(&span.language_bcp47)
+            if !super::valid_bcp47(&span.language_bcp47)
                 || previous_language == Some(span.language_bcp47.as_str())
             {
                 return Err(LiveLanguageEvidenceError::InvalidSpan);
@@ -382,5 +382,32 @@ mod tests {
             evidence.validate(),
             Err(LiveLanguageEvidenceError::InvalidSpan)
         );
+    }
+
+    #[test]
+    fn historical_evidence_does_not_depend_on_the_current_model_catalog() {
+        assert!(
+            !super::super::live_catalog::supports_local_asr_language("el-GR"),
+            "test locale must remain outside the current local ASR catalog"
+        );
+        let evidence = LiveLanguageEvidence::try_new(
+            16_000,
+            "el-GR".into(),
+            LiveLanguageMode::FixedPrimary,
+            LiveLanguageStatus::Complete,
+            None,
+            None,
+            vec![span(
+                0,
+                16_000,
+                "el-GR",
+                1,
+                LanguageSpanDisposition::ConfirmedPrimary,
+                None,
+            )],
+        )
+        .unwrap();
+
+        evidence.validate().unwrap();
     }
 }

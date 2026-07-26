@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use tauri::Manager;
 
-use crate::{authorization, live, stt};
+use crate::{authorization, live};
 
 use super::{
     completion::{append_error, CompletionMode},
@@ -15,6 +15,7 @@ pub(crate) struct QuitCoordinator {
 
 enum QuitState {
     Ready,
+    PublishingShutdown,
     Finalizing,
     Failed(String),
     ExitAuthorized,
@@ -22,10 +23,24 @@ enum QuitState {
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) enum QuitClaim {
-    Finalize,
+    BeginShutdown,
     Coalesced,
     Blocked(String),
     ExitAuthorized,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(super) enum QuitRunError {
+    Finalization(String),
+    Shutdown(String),
+}
+
+impl QuitRunError {
+    fn detail(&self) -> &str {
+        match self {
+            Self::Finalization(error) | Self::Shutdown(error) => error,
+        }
+    }
 }
 
 impl QuitCoordinator {
@@ -42,13 +57,53 @@ impl QuitCoordinator {
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         match &*state {
             QuitState::Ready => {
-                *state = QuitState::Finalizing;
-                QuitClaim::Finalize
+                *state = QuitState::PublishingShutdown;
+                QuitClaim::BeginShutdown
             }
-            QuitState::Finalizing => QuitClaim::Coalesced,
+            QuitState::PublishingShutdown | QuitState::Finalizing => QuitClaim::Coalesced,
             QuitState::Failed(error) => QuitClaim::Blocked(error.clone()),
             QuitState::ExitAuthorized => QuitClaim::ExitAuthorized,
         }
+    }
+
+    pub(super) fn begin_finalizing(
+        &self,
+        begin_shutdown: impl FnOnce() -> Result<(), String>,
+        reopen_activation: impl FnOnce() -> Result<(), String>,
+    ) -> Result<(), String> {
+        if !matches!(
+            *self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner()),
+            QuitState::PublishingShutdown
+        ) {
+            return Err("quit shutdown transition does not own the coordinator".into());
+        }
+
+        let transition = begin_shutdown();
+        let (result, next_state) = match transition {
+            Ok(()) => (Ok(()), QuitState::Finalizing),
+            Err(error) => match reopen_activation() {
+                Ok(()) => (Err(error), QuitState::Ready),
+                Err(reopen_error) => {
+                    let detail = format!(
+                        "{error}; could not reopen activation after the failed shutdown transition: {reopen_error}"
+                    );
+                    (Err(detail.clone()), QuitState::Failed(detail))
+                }
+            },
+        };
+
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if !matches!(*state, QuitState::PublishingShutdown) {
+            return Err("quit shutdown transition lost coordinator ownership".into());
+        }
+        *state = next_state;
+        result
     }
 
     pub(super) fn finish(&self, result: Result<(), String>) {
@@ -67,7 +122,7 @@ impl QuitCoordinator {
             .state
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if matches!(*state, QuitState::Finalizing) {
+        if matches!(*state, QuitState::PublishingShutdown) {
             *state = QuitState::Ready;
         }
     }
@@ -79,6 +134,17 @@ impl QuitCoordinator {
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner()),
             QuitState::ExitAuthorized
+        )
+    }
+
+    #[cfg(test)]
+    pub(super) fn finalization_started(&self) -> bool {
+        matches!(
+            *self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner()),
+            QuitState::Finalizing
         )
     }
 }
@@ -93,13 +159,13 @@ pub(crate) fn show_main_window(app: &tauri::AppHandle) {
 pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
     let quit = app.state::<QuitCoordinator>();
     match quit.claim() {
-        QuitClaim::Finalize => {}
+        QuitClaim::BeginShutdown => {}
         QuitClaim::Coalesced => return,
         QuitClaim::Blocked(error) => {
-            stt::log_yap(&format!(
-                "quit remains blocked by an unacknowledged save failure: {error}"
+            crate::diagnostics::log(&format!(
+                "quit remains blocked by an unacknowledged shutdown failure: {error}"
             ));
-            present_quit_failure(app);
+            present_quit_failure(app, None);
             return;
         }
         QuitClaim::ExitAuthorized => {
@@ -112,37 +178,78 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
     if let Err(error) = std::thread::Builder::new()
         .name("live-semantic-quit".into())
         .spawn(move || {
+            let quit = worker_app.state::<QuitCoordinator>();
+            if let Err(error) = quit.begin_finalizing(
+                || {
+                    crate::app::begin_instance_activation_shutdown().map_err(|error| {
+                        format!("could not publish the instance shutdown handoff: {error}")
+                    })
+                },
+                reopen_activation_after_abandoned_quit,
+            ) {
+                crate::diagnostics::log(&format!(
+                    "quit stayed open because the shutdown transition could not start: {error}"
+                ));
+                present_quit_failure(&worker_app, Some(&QuitRunError::Shutdown(error)));
+                return;
+            }
             let result = run_quit_with(
                 || finalize_live_before_quit(&worker_app),
                 || {
+                    let lifecycle = worker_app.state::<crate::runtime::DesktopLifecycle>();
+                    for error in lifecycle.shutdown() {
+                        crate::diagnostics::log(&format!(
+                            "desktop background shutdown failed: {error}"
+                        ));
+                    }
+                },
+                reopen_activation_after_abandoned_quit,
+            );
+            match result {
+                Ok(()) => {
                     worker_app.state::<QuitCoordinator>().finish(Ok(()));
                     worker_app.exit(0);
-                },
-            );
-            if let Err(error) = result {
-                worker_app
-                    .state::<QuitCoordinator>()
-                    .finish(Err(error.clone()));
-                stt::log_yap(&format!(
-                    "quit deferred after live finalization failed: {error}"
-                ));
-                present_quit_failure(&worker_app);
+                }
+                Err(error) => {
+                    let detail = error.detail().to_string();
+                    worker_app
+                        .state::<QuitCoordinator>()
+                        .finish(Err(detail.clone()));
+                    crate::diagnostics::log(&format!(
+                        "quit deferred because shutdown could not complete: {detail}"
+                    ));
+                    present_quit_failure(&worker_app, Some(&error));
+                }
             }
         })
     {
+        let detail = format!("quit worker failed to start: {error}");
         app.state::<QuitCoordinator>().worker_start_failed();
-        stt::log_yap(&format!("quit worker failed to start: {error}"));
-        present_quit_failure(app);
+        crate::diagnostics::log(&detail);
+        present_quit_failure(app, Some(&QuitRunError::Shutdown(detail)));
     }
 }
 
 pub(super) fn run_quit_with(
     finalize: impl FnOnce() -> Result<(), String>,
-    exit: impl FnOnce(),
-) -> Result<(), String> {
-    finalize()?;
-    exit();
+    prepare_exit: impl FnOnce(),
+    reopen_activation: impl FnOnce() -> Result<(), String>,
+) -> Result<(), QuitRunError> {
+    if let Err(error) = finalize() {
+        return match reopen_activation() {
+            Ok(()) => Err(QuitRunError::Finalization(error)),
+            Err(reopen_error) => Err(QuitRunError::Shutdown(format!(
+                "{error}; could not reopen activation after the abandoned quit: {reopen_error}"
+            ))),
+        };
+    }
+    prepare_exit();
     Ok(())
+}
+
+fn reopen_activation_after_abandoned_quit() -> Result<(), String> {
+    crate::app::reopen_instance_activation_after_abandoned_shutdown()
+        .map_err(|error| format!("could not reopen the instance activation handoff: {error}"))
 }
 
 fn finalize_live_before_quit(app: &tauri::AppHandle) -> Result<(), String> {
@@ -162,17 +269,22 @@ fn finalize_live_before_quit(app: &tauri::AppHandle) -> Result<(), String> {
     outcome.save_error.map_or(Ok(()), Err)
 }
 
-fn present_quit_failure(app: &tauri::AppHandle) {
+fn present_quit_failure(app: &tauri::AppHandle, failure: Option<&QuitRunError>) {
+    let message = match failure {
+        Some(QuitRunError::Finalization(_)) => {
+            "Yap stayed open because the current recording could not be saved."
+        }
+        Some(QuitRunError::Shutdown(_)) | None => {
+            "Yap stayed open because shutdown could not be completed safely."
+        }
+    };
     let live = app.state::<live::LiveSessionState>();
     let view = live.update(|view| {
-        view.error = Some(append_error(
-            view.error.take(),
-            "Yap stayed open because the current recording could not be saved.",
-        ));
+        view.error = Some(append_error(view.error.take(), message));
     });
     show_main_window(app);
     if let Err(error) = live::overlay_window::ensure_active(app) {
-        stt::log_yap(&format!("quit failure overlay show failed: {error}"));
+        crate::diagnostics::log(&format!("quit failure overlay show failed: {error}"));
     }
     live::events::emit_session(app, &view);
 }

@@ -22,7 +22,6 @@ from yap_server.pools.model_lock import (
     verify_fixture,
     verify_model_artifacts,
 )
-from yap_server.workload_router import WorkloadRequest, WorkloadRouter
 
 
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -111,17 +110,6 @@ def run_gb10_asr_runtime_gate(
         checked_head=checked_head,
         storage_namespace="gb10-asr-runtime-gate",
     )
-    router = WorkloadRouter(max_pending=4, max_pending_per_owner=2)
-    request = WorkloadRequest(
-        "gb10-asr-runtime-gate",
-        "checked-head-gate",
-        "batch",
-    )
-    router.enqueue(request)
-    dispatched = router.dispatch(available_targets={"batch-asr"})
-    if dispatched is None or dispatched.request != request:
-        raise RuntimeError("batch workload did not dispatch to the reference pool")
-
     pool = BatchAsrPool(
         worker,
         route_resolver=resolve_route,
@@ -132,7 +120,7 @@ def run_gb10_asr_runtime_gate(
     try:
         result = pool.submit(
             BatchAsrJob(
-                request.job_id,
+                "gb10-asr-runtime-gate",
                 fixture,
                 result_path,
                 language="en",

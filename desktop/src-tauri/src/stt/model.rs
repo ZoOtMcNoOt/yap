@@ -20,7 +20,7 @@ pub(crate) use path_safety::{
     metadata_is_link_or_reparse, model_directory_state, ModelDirectoryState,
 };
 pub use progress::DownloadProgress;
-pub(crate) use temp::{cleanup_stale_download_temps, write_text_atomically};
+pub(crate) use temp::cleanup_stale_download_temps;
 
 pub fn models_dir_from<F>(env: F) -> PathBuf
 where

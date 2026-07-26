@@ -348,5 +348,8 @@ jobs:
       - name: Populate the exact server dependency cache
         working-directory: server
         run: uv sync --locked --exact --extra evaluation --extra test --python (Get-Command python.exe).Source --no-python-downloads
+      - name: Lint the Python server
+        working-directory: server
+        run: uv run --locked ruff check .
       - name: Run the portable Python 3.12 server suite
         run: ./verification/test-portable-python-server.ps1

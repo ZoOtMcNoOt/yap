@@ -55,8 +55,11 @@ export async function gracefullyExitWdioApp(
   const processId = await findWdioAppProcessId(browserInstance);
   let bridgeClosedDuringQuit = false;
   try {
-    await browserInstance.tauri.execute(({ core }) =>
-      core.invoke("wdio_dispatch_tray_action", { action: "quit" }));
+    await browserInstance.tauri.execute(({ core }) => {
+      void core.invoke("wdio_dispatch_tray_action", { action: "quit" })
+        .catch(() => undefined);
+      return true;
+    });
   } catch (error) {
     bridgeClosedDuringQuit = true;
     console.info(`WDIO bridge closed during production tray quit: ${String(error)}`);

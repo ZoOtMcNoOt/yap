@@ -153,7 +153,7 @@ invalidates checkpoint closure until resolved.
 | Former coupling | Current owners | Result |
 | --- | --- | --- |
 | Remote command, preparation, upload, polling, cancellation, and retry logic | `jobs/commands`, `jobs/drain`, `jobs/ledger`, and `jobs/remote` | Durable ledger remains authoritative; scheduling, transport, storage, and command adaptation are one-way dependencies. |
-| Server route parsing, job validation, storage, lifecycle, completion, and worker execution | `api/*`, `jobs/*`, `workload_router/*`, and `pools/*` | HTTP parsing no longer owns business state; the service coordinates explicit sub-owners. |
+| Server route parsing, job validation, storage, lifecycle, completion, and worker execution | `api/*`, `jobs/*`, and `pools/*` | HTTP parsing no longer owns business state; the service coordinates explicit sub-owners and delegates admission directly to the executable pool. |
 | App-wide React state and feature behavior | feature hooks plus `components/app/*` and panel/view modules | `App.tsx` composes feature owners; native job/history truth is projected, not duplicated. |
 | Live island rendering, presentation timing, waveform, motion preference, and native-surface synchronization | `components/live/*` | Visual concerns are independently testable while the native window remains authoritative. |
 | Recording stream, durability, recovery, deletion, history, and transcript publication | `audio/recording/*`, `live/recordings/*`, `commands/history/*`, and `file_actions/*` | Mutation and catalog ownership are explicit; unrelated test harnesses are split. |

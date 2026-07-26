@@ -72,7 +72,7 @@ fn emit_transition<R: tauri::Runtime>(
         "server-connection",
         snapshot.clone(),
     ) {
-        crate::stt::log_yap(&format!("server connection event failed: {error}"));
+        crate::diagnostics::log(&format!("server connection event failed: {error}"));
     }
 }
 
@@ -242,7 +242,7 @@ pub(crate) fn last_known_asr_capabilities(
     match super::capability_snapshot::load(&origin) {
         Ok(snapshot) => Ok(snapshot),
         Err(_) => {
-            crate::stt::log_yap("last-known ASR capability snapshot is unavailable");
+            crate::diagnostics::log("last-known ASR capability snapshot is unavailable");
             Ok(None)
         }
     }

@@ -93,9 +93,29 @@ impl DesktopLifecycle {
     }
 
     pub(crate) fn shutdown(&self) -> Vec<String> {
-        if self.shutting_down.swap(true, Ordering::AcqRel) {
-            return Vec::new();
-        }
+        self.request_shutdown();
+        let threads = {
+            let mut threads = self
+                .threads
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            std::mem::take(&mut *threads)
+        };
+        threads
+            .into_iter()
+            .filter_map(|thread| {
+                let result = thread.worker.join();
+                result
+                    .err()
+                    .map(|_| format!("{} panicked during shutdown", thread.name))
+            })
+            .collect()
+    }
+
+    /// Signals owned work without joining threads that may currently be
+    /// waiting for the desktop event loop.
+    pub(crate) fn request_shutdown(&self) {
+        self.shutting_down.store(true, Ordering::Release);
 
         let async_tasks = {
             let mut tasks = self
@@ -108,26 +128,13 @@ impl DesktopLifecycle {
             task.worker.abort();
         }
 
-        let threads = {
-            let mut threads = self
-                .threads
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            std::mem::take(&mut *threads)
-        };
-        for thread in &threads {
+        let threads = self
+            .threads
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        for thread in threads.iter() {
             let _ = thread.stop.send(());
         }
-        threads
-            .into_iter()
-            .filter_map(|thread| {
-                thread
-                    .worker
-                    .join()
-                    .err()
-                    .map(|_| format!("{} panicked during shutdown", thread.name))
-            })
-            .collect()
     }
 }
 
@@ -185,6 +192,40 @@ mod tests {
         let stopped_at = ticks.load(Ordering::SeqCst);
         std::thread::sleep(Duration::from_millis(20));
         assert_eq!(ticks.load(Ordering::SeqCst), stopped_at);
+        assert!(lifecycle.shutdown().is_empty());
+    }
+
+    #[test]
+    fn shutdown_request_does_not_join_an_active_periodic_tick() {
+        let lifecycle = Arc::new(DesktopLifecycle::new());
+        let (tick_started, tick_started_receiver) = mpsc::channel();
+        let (release_tick, release_tick_receiver) = mpsc::channel();
+        lifecycle
+            .spawn_periodic(
+                "event-loop-dependent-work",
+                Duration::from_millis(1),
+                move || {
+                    let _ = tick_started.send(());
+                    let _ = release_tick_receiver.recv();
+                },
+            )
+            .unwrap();
+        tick_started_receiver
+            .recv_timeout(Duration::from_secs(1))
+            .unwrap();
+
+        let request_lifecycle = Arc::clone(&lifecycle);
+        let (request_returned, request_returned_receiver) = mpsc::channel();
+        let request_worker = std::thread::spawn(move || {
+            request_lifecycle.request_shutdown();
+            request_returned.send(()).unwrap();
+        });
+        request_returned_receiver
+            .recv_timeout(Duration::from_secs(1))
+            .unwrap();
+        request_worker.join().unwrap();
+
+        release_tick.send(()).unwrap();
         assert!(lifecycle.shutdown().is_empty());
     }
 

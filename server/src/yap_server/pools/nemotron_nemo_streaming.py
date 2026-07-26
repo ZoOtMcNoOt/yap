@@ -18,11 +18,17 @@ from yap_server.pools.nemotron_engine import (
     NemotronUtteranceTranscript,
 )
 from yap_server.pools.nemo_stream_scheduler import NemoStreamCancelled
+from yap_server.pools.nemotron_nemo_cleanup import (
+    NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+    close_native_runtime_or_fail_stop,
+    fail_stop_native_runtime,
+)
 from yap_server.pools.nemotron_nemo_pipeline import (
     NEMOTRON_STREAMING_ATTENTION_CONTEXT,
     NEMOTRON_STREAMING_CHUNK_SECONDS,
     NEMOTRON_STREAMING_MAX_STREAMS,
     NemotronNemoPipeline,
+    NemotronNemoPartialInitializationError,
 )
 from yap_server.transcript_text import canonical_transcript
 
@@ -32,6 +38,7 @@ _MISSING_TAG = "MISSING_LANGUAGE_TAG"
 _DISABLED_TAG = "DISABLED_LANGUAGE_TAG"
 _EMPTY_TAGGED_TEXT = "EMPTY_TAGGED_TRANSCRIPT"
 NEMOTRON_STREAMING_CONFIG_ENV = "YAP_NEMOTRON_STREAMING_CONFIG"
+_NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS = NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS
 
 
 def parse_nemo_transcript(
@@ -160,10 +167,16 @@ class NemotronNemoStreamingEngine(NemotronAsrEngine):
         config_path = Path(config_value)
         if not config_path.is_absolute():
             raise RuntimeError("NeMo streaming configuration path must be absolute")
-        runtime = NemotronNemoPipeline(
-            checkpoint=checkpoint,
-            config_path=config_path,
-        )
+        try:
+            runtime = NemotronNemoPipeline(
+                checkpoint=checkpoint,
+                config_path=config_path,
+            )
+        except NemotronNemoPartialInitializationError:
+            # No complete owner exists to close. Immediate process exit is the
+            # only bounded cleanup boundary that cannot be stranded by Python
+            # finalizers or partially initialized native worker threads.
+            fail_stop_native_runtime()
         try:
             versions = {
                 name: package_version(name)
@@ -184,7 +197,10 @@ class NemotronNemoStreamingEngine(NemotronAsrEngine):
             if any(locale not in prompts for locale in fixed_locales):
                 raise RuntimeError("NeMo prompt catalog differs from the model lock")
         except BaseException:
-            runtime.close()
+            close_native_runtime_or_fail_stop(
+                runtime.close,
+                timeout_seconds=_NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+            )
             raise
         self._runtime = runtime
         self._lock = lock

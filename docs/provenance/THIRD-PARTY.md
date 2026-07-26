@@ -1,8 +1,11 @@
 # Third-Party Provenance
 
 This page explains Yap's source-reuse and runtime provenance boundaries. The
-machine-readable authority is `THIRD_PARTY_PROVENANCE.json`; complete shipped
-license text is in `THIRD_PARTY_NOTICES.md` and the server runtime license tree.
+machine-readable source-adaptation authority is
+`THIRD_PARTY_PROVENANCE.json`. The separate lockfile-derived
+`SHIPPED_DEPENDENCY_INVENTORY.json` accounts for the packaged desktop
+JavaScript and Rust graphs. Shipped notices are in `THIRD_PARTY_NOTICES.md`
+and the server runtime license tree.
 
 ## Direct source adaptation
 
@@ -46,9 +49,11 @@ license text before merge.
 ## Dependency and runtime provenance
 
 - Frontend packages are declared in `desktop/package.json` and frozen by
-  `desktop/pnpm-lock.yaml`.
+  `desktop/pnpm-lock.yaml`. The production graph must exactly match the bundled
+  `SHIPPED_DEPENDENCY_INVENTORY.json`.
 - Rust crates are declared in `desktop/src-tauri/Cargo.toml` and frozen by
-  `desktop/src-tauri/Cargo.lock`; bundled SQLite notice text is shipped.
+  `desktop/src-tauri/Cargo.lock`; the normal Windows dependency graph must
+  exactly match the same inventory, and bundled SQLite notice text is shipped.
 - Desktop model/runtime artifacts are pinned separately in
   `desktop/model-artifacts.lock.json`. Silero remains an explicit non-bundled
   install. The selected AmberNet 1.12.0 acoustic-language detector is a

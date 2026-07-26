@@ -1,2 +1,0 @@
-"""Server workload-router tests."""
-

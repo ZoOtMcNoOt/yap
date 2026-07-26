@@ -34,6 +34,8 @@ from .routes import (
     allowed_methods as methods_for_path,
 )
 
+__all__ = ["MAX_CONCURRENT_REQUEST_THREADS", "create_server", "serve"]
+
 
 _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 

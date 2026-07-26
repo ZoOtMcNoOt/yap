@@ -230,7 +230,7 @@ impl RecordingJobs {
 
     pub(super) fn remove_remote_spool_best_effort(&self, job_id: &str, action: &str) {
         if let Err(error) = self.reset_remote_spool(job_id) {
-            crate::stt::log_yap(&format!(
+            crate::diagnostics::log(&format!(
                 "owned remote recording cleanup after {action} remains pending: {error}"
             ));
         }

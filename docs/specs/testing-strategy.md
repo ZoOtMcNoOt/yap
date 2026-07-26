@@ -25,11 +25,10 @@ independently validated for the exact head and all 30 children and has SHA-256
 the 18-child GB10 public-safe aggregate has SHA-256
 `98cdc087b574f35a0e12b386a5d8c4c576a9ada548afe88101d1442868e96deb`.
 The repaired implementation passed one bounded final three-agent re-review.
-Hosted CI, CodeQL, and stock-NSIS passed at first attempt on docs-only review
-head `cee13f819a85417ea43a3c63e263be85f0570838`; its private closure receipt
-was independently validated outside Git. Any later docs-only successor in PR
-#67 must pass the same exact-head hosted and final-read-back policy before
-merge.
+Hosted CI, CodeQL, and stock-NSIS passed at first attempt on final reviewed
+head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; its private closure receipt
+was independently validated outside Git. PR #67 merged as
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 The representative provider-promotion corpus and frozen Phase 8 comparisons
 remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
 baseline, but no Tiron worker or meeting scorer executes yet. The tables below
@@ -87,6 +86,15 @@ candidate explicitly. Hosted CI, the
 complete current CodeQL language matrix, and disposable-Windows NSIS closure
 form the separate PR receipt that revalidates source-to-docs lineage before
 merge.
+
+### Product checkpoint boundary
+
+Post-phase maintainability checkpoints use the behavior-named
+[integrated product checkpoint gate](../runbooks/integrated-product-checkpoint-gate.md).
+Its manifest is distinct from the frozen Phase 6 gate, so a checkpoint receipt
+cannot be presented as a continuation or rerun of the phase-specific admission.
+Both retain exact head, manifest, child-definition, single-attempt, and private
+evidence bounds.
 
 The gate must use license-clear public fixtures to prove contract shape, the
 currently advertised `en-US` regression, language decisions, source

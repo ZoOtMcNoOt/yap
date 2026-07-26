@@ -8,8 +8,8 @@ implemented. Exact executable candidate
 and exact teardown inside the frozen 30-child Phase 6 matrix; neither
 replaceable provider is promoted, and broad model-quality/replacement decisions
 remain Phase 8 work. Hosted CI, CodeQL, and stock-NSIS passed at first attempt
-on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`;
-PR #67 requires final exact-head hosted and adversarial read-back before merge.
+on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`;
+PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md) and
 [ADR 0024](0024-global-language-routing.md)
 **Meeting serving amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 selects a separate Tiron joint speaker-attributed worker without changing the Phase 6 Cohere/Nemotron gates)
@@ -165,6 +165,10 @@ specific behind that seam.
   budget, must fail before release with retryable pool backpressure and then
   succeed after the accepted work drains. NeMo separately owns an authenticated
   eight-active service limit and returns typed HTTP 429 for the ninth request.
+  Checkpoint B passes that pool directly to `RecordingJobService`; the removed
+  immediate enqueue/dequeue wrapper was not a second scheduler. Provider
+  engines now depend on neutral `pools/pcm_audio.py`, while
+  `batch_asr_worker.py` remains the executable process adapter.
 - Specialized private qualification runners distinguish typed cancellation
   from generic failure and prove immediate recovery. The pinned vLLM
   client-disconnect path calls the engine abort boundary, but externally freed

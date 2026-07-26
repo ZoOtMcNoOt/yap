@@ -157,9 +157,11 @@ fn collect_representative_natural_language_route_evidence_once() {
     let primary_locale = locale_for_family(&manifest.cases[0].primary_family);
     let alternate_locale = locale_for_family(&manifest.cases[0].alternate_family);
     assert_ne!(primary_locale, alternate_locale);
-    let catalog =
-        LocalLanguageCatalog::nemotron_with_explicit_alternates(primary_locale, [alternate_locale])
-            .unwrap();
+    let catalog = LocalLanguageCatalog::with_explicit_automatic_alternates(
+        primary_locale,
+        [alternate_locale],
+    )
+    .unwrap();
     let mut pipeline = load_resident_language_pipeline(catalog).unwrap();
     let component_revision = pipeline.component_revision().to_owned();
     let manifest_root = manifest_path.parent().unwrap().canonicalize().unwrap();
@@ -321,9 +323,11 @@ fn diagnose_consumed_representative_route_with_exact_detector() {
 
     let primary_locale = locale_for_family(&manifest.cases[0].primary_family);
     let alternate_locale = locale_for_family(&manifest.cases[0].alternate_family);
-    let catalog =
-        LocalLanguageCatalog::nemotron_with_explicit_alternates(primary_locale, [alternate_locale])
-            .unwrap();
+    let catalog = LocalLanguageCatalog::with_explicit_automatic_alternates(
+        primary_locale,
+        [alternate_locale],
+    )
+    .unwrap();
     let mut detector = AmberNetSileroLanguageDetector::load(catalog).unwrap();
     let component_revision = detector.component_revision().to_owned();
     let manifest_root = manifest_path.parent().unwrap().canonicalize().unwrap();

@@ -182,7 +182,7 @@ impl StreamingRecording {
             )),
         };
         if let Some(warning) = cleanup_warning {
-            crate::stt::log_yap(&warning);
+            crate::diagnostics::log(&warning);
         }
         Ok(destination_file)
     }

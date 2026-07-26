@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File, Metadata, OpenOptions},
+    fs::{File, Metadata, OpenOptions},
     io::{self, Read},
     path::Path,
 };
@@ -10,14 +10,22 @@ pub(crate) fn read_text(path: &Path, maximum_bytes: usize) -> io::Result<String>
 }
 
 pub(crate) fn read_bytes(path: &Path, maximum_bytes: usize) -> io::Result<Vec<u8>> {
-    let path_metadata = fs::symlink_metadata(path)?;
-    validate_metadata(&path_metadata, maximum_bytes)?;
+    read_bytes_after_admission(path, maximum_bytes, || {})
+}
+
+fn read_bytes_after_admission(
+    path: &Path,
+    maximum_bytes: usize,
+    after_admission: impl FnOnce(),
+) -> io::Result<Vec<u8>> {
     let mut file = open_no_follow(path)?;
     let opened_metadata = file.metadata()?;
     validate_metadata(&opened_metadata, maximum_bytes)?;
-    if opened_metadata.len() != path_metadata.len()
-        || !same_file_identity(&path_metadata, &opened_metadata)
-    {
+    after_admission();
+    let admitted_path = open_no_follow(path)?;
+    let path_metadata = admitted_path.metadata()?;
+    validate_metadata(&path_metadata, maximum_bytes)?;
+    if opened_metadata.len() != path_metadata.len() || !same_file_identity(&file, &admitted_path)? {
         return Err(invalid_data("opened file differs from its admitted path"));
     }
     let expected_bytes = usize::try_from(opened_metadata.len())
@@ -107,30 +115,46 @@ fn metadata_is_link_or_reparse(metadata: &Metadata) -> bool {
 }
 
 #[cfg(unix)]
-fn same_file_identity(left: &Metadata, right: &Metadata) -> bool {
+fn same_file_identity(left: &File, right: &File) -> io::Result<bool> {
     use std::os::unix::fs::MetadataExt;
 
-    (left.dev(), left.ino()) == (right.dev(), right.ino())
+    let left = left.metadata()?;
+    let right = right.metadata()?;
+    Ok((left.dev(), left.ino()) == (right.dev(), right.ino()))
 }
 
 #[cfg(windows)]
-fn same_file_identity(_left: &Metadata, _right: &Metadata) -> bool {
-    // The Windows opener grants only FILE_SHARE_READ, so the path cannot be
-    // replaced or mutated while the returned handle remains open. The opened
-    // handle is still revalidated for type, reparse status, length, and bytes.
-    true
+fn same_file_identity(left: &File, right: &File) -> io::Result<bool> {
+    Ok(windows_file_identity(left)? == windows_file_identity(right)?)
+}
+
+#[cfg(windows)]
+fn windows_file_identity(file: &File) -> io::Result<(u32, u64)> {
+    use std::os::windows::io::AsRawHandle;
+    use windows::Win32::Foundation::HANDLE;
+    use windows::Win32::Storage::FileSystem::{
+        GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
+    };
+
+    let mut information = BY_HANDLE_FILE_INFORMATION::default();
+    unsafe { GetFileInformationByHandle(HANDLE(file.as_raw_handle()), &mut information) }
+        .map_err(|_| io::Error::last_os_error())?;
+    Ok((
+        information.dwVolumeSerialNumber,
+        (u64::from(information.nFileIndexHigh) << 32) | u64::from(information.nFileIndexLow),
+    ))
 }
 
 #[cfg(not(any(unix, windows)))]
-fn same_file_identity(_left: &Metadata, _right: &Metadata) -> bool {
-    false
+fn same_file_identity(_left: &File, _right: &File) -> io::Result<bool> {
+    Ok(false)
 }
 
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
-    use super::{read_text, read_to_end};
+    use super::{read_bytes_after_admission, read_text, read_to_end};
 
     static NEXT_TEMP: AtomicU64 = AtomicU64::new(0);
 
@@ -157,6 +181,40 @@ mod tests {
         let error = read_text(&path, 8).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
 
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn path_reader_prevents_or_rejects_equal_length_replacement_after_admission() {
+        use std::cell::RefCell;
+
+        let id = NEXT_TEMP.fetch_add(1, Ordering::Relaxed);
+        let dir =
+            std::env::temp_dir().join(format!("yap-bounded-race-{}-{id}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.txt");
+        let replacement = dir.join("replacement.txt");
+        let admitted = dir.join("admitted.txt");
+        std::fs::write(&path, "admitted").unwrap();
+        std::fs::write(&replacement, "replaced").unwrap();
+        let swap = RefCell::new(None);
+
+        let result = read_bytes_after_admission(&path, 8, || {
+            let outcome = std::fs::rename(&path, &admitted)
+                .and_then(|_| std::fs::rename(&replacement, &path));
+            *swap.borrow_mut() = Some(outcome);
+        });
+
+        match swap.into_inner().unwrap() {
+            Ok(()) => {
+                let error = result.unwrap_err();
+                assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+                assert!(error
+                    .to_string()
+                    .contains("opened file differs from its admitted path"));
+            }
+            Err(_) => assert_eq!(result.unwrap(), b"admitted"),
+        }
         std::fs::remove_dir_all(dir).unwrap();
     }
 }

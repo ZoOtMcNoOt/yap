@@ -96,6 +96,7 @@ pub(crate) fn save_finalized_capture_to_dir_for_test(
         active_capture_mode: None,
         hotkey: String::new(),
         paste_hotkey: String::new(),
+        overlay_focus_hotkey: crate::live::settings::OVERLAY_CONTROLS_HOTKEY.into(),
         input_device_id: None,
         input_device_label: None,
         level: None,

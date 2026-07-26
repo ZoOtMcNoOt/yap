@@ -170,7 +170,7 @@ impl SessionAsrAdapter {
                 .expect("ASR adapter reaper owns one payload");
             let _ = payload.completed_rx.recv();
             if let Err(error) = join_worker(payload.worker) {
-                crate::stt::log_yap(&format!("live ASR adapter reaper failed: {error}"));
+                crate::diagnostics::log(&format!("live ASR adapter reaper failed: {error}"));
             }
         }) {
             Ok(_) => Ok(()),

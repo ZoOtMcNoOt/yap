@@ -11,6 +11,7 @@ fn live_view(final_text: Option<&str>, partial_text: Option<&str>) -> live::stat
         active_capture_mode: None,
         hotkey: String::new(),
         paste_hotkey: String::new(),
+        overlay_focus_hotkey: crate::live::settings::OVERLAY_CONTROLS_HOTKEY.into(),
         input_device_id: None,
         input_device_label: None,
         level: None,

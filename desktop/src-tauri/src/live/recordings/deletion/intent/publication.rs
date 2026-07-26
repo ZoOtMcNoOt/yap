@@ -110,13 +110,13 @@ where
             if let Err(restore_error) =
                 recording::restore_verified_quarantined_artifact(quarantined, path)
             {
-                crate::stt::log_yap(&format!(
+                crate::diagnostics::log(&format!(
                     "Retained quarantined recording deletion intent after publication failure: {restore_error}"
                 ));
             }
         }
         recording::remove_owned_staging(&staging, &file, "publish recording deletion intent");
-        crate::stt::log_yap(&format!(
+        crate::diagnostics::log(&format!(
             "Failed to publish recording deletion intent: {error}"
         ));
     }

@@ -191,11 +191,11 @@ impl LiveRuntimeResources {
 
     pub(super) fn retire_stream(&mut self) {
         if let Err(error) = self.cancel_asr_adapter() {
-            crate::stt::log_yap(&format!("live ASR adapter shutdown failed: {error}"));
+            crate::diagnostics::log(&format!("live ASR adapter shutdown failed: {error}"));
         }
         if let Some(stream) = self.stream.take() {
             if let Err(error) = stream.shutdown(true) {
-                crate::stt::log_yap(&format!("live stream worker shutdown failed: {error}"));
+                crate::diagnostics::log(&format!("live stream worker shutdown failed: {error}"));
             }
         }
         let retiring_finished = self
@@ -208,7 +208,7 @@ impl LiveRuntimeResources {
                 .take()
                 .expect("finished retiring stream was present");
             if let Err(error) = stream.shutdown(true) {
-                crate::stt::log_yap(&format!("retiring live stream shutdown failed: {error}"));
+                crate::diagnostics::log(&format!("retiring live stream shutdown failed: {error}"));
             }
         }
         #[cfg(test)]
@@ -219,14 +219,14 @@ impl LiveRuntimeResources {
 
     pub(super) fn retire_stream_detached_reader(&mut self) {
         if let Err(error) = self.cancel_asr_adapter() {
-            crate::stt::log_yap(&format!("live ASR adapter shutdown failed: {error}"));
+            crate::diagnostics::log(&format!("live ASR adapter shutdown failed: {error}"));
         }
         if let Some(stream) = self.stream.take() {
             stream.cancel_reader();
             if self.retiring_stream.is_none() {
                 self.retiring_stream = Some(stream);
             } else if let Err(error) = stream.shutdown(true) {
-                crate::stt::log_yap(&format!("extra retiring stream shutdown failed: {error}"));
+                crate::diagnostics::log(&format!("extra retiring stream shutdown failed: {error}"));
             }
         }
         #[cfg(test)]

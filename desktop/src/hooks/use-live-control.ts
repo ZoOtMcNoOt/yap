@@ -25,6 +25,7 @@ const initialLiveView: LiveSessionView = {
   captureMode: "pushToTalk",
   hotkey: "Ctrl+Shift+Space",
   pasteHotkey: "Ctrl+Shift+Alt+V",
+  overlayFocusHotkey: "Ctrl+Shift+Alt+O",
   route: "none",
   status: "idle",
   transcriptionDegraded: false,

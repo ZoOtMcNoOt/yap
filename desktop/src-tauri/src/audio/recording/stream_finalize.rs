@@ -192,7 +192,7 @@ impl StreamingRecording {
         };
         drop(journal);
         if let Err(error) = result {
-            crate::stt::log_yap(&format!(
+            crate::diagnostics::log(&format!(
                 "Published capture commit, but journal cleanup is pending: {error}"
             ));
         }

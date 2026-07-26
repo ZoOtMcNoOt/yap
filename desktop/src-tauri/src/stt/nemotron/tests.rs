@@ -100,6 +100,5 @@ fn tamper_artifact_same_size_after_marker(root: &Path, artifact: &Artifact) {
 }
 
 mod catalog;
-mod language;
 mod loading;
 mod removal;

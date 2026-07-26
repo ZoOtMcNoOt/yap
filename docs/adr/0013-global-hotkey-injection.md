@@ -1,8 +1,9 @@
 # ADR 0013: Global hotkey + safe cross-app delivery (L1)
 
 **Date:** 2026-06-30
-**Status:** Accepted as amended 2026-07-14 (single process, native hotkeys,
-tray-owned overlay, and clipboard delivery active on Windows; synthesized
+**Status:** Accepted as amended 2026-07-14 and 2026-07-25 (single process,
+native hotkeys, explicitly focusable tray-owned overlay, and clipboard delivery
+active on Windows; synthesized
 focused-field input is retired until exact field authority can be proven)
 **Builds on:** [ADR 0006](0006-silero-agents-state-machine.md)
 (orchestrator/pre-warm), [ADR 0019](0019-local-streaming-model-selection.md)
@@ -36,7 +37,7 @@ not synthesize keyboard input.
 | Host | Existing Yap Tauri process in tray/background mode; no second binary. |
 | Hotkeys | `tauri-plugin-global-shortcut` registers separate dictation (`Ctrl+Shift+Space`) and paste-last (`Ctrl+Shift+Alt+V`) defaults. Changing a shortcut requires a native confirmation dialog and one bounded 15-second Windows physical-chord epoch. Capture waits for a neutral keyboard, accepts one complete press-and-release chord, ignores ordinary typing that lacks the required modifiers, and persists only the normalized chord. Dictation requires at least two modifiers; paste-last requires three. Rust rejects unsupported, reserved, or conflicting chords and replaces registrations transactionally while idle. |
 | Mic/STT | Reuse the warm in-process Nemotron `LiveStreamEngine` selected by ADR 0019; there is one client-local recognizer runtime and no second ASR stack. |
-| Overlay | Reuse one always-on-top, non-focusable top-bezel WebView. React requests semantic collapsed/expanded/status surfaces; Rust alone owns exact native bounds, position, and the rounded Windows interaction region. |
+| Overlay | Reuse one always-on-top top-bezel WebView. Showing or hovering never activates it, while explicit focus remains available for keyboard and assistive-technology access. React requests semantic collapsed/expanded/status surfaces; Rust alone owns exact native bounds, position, and the rounded Windows interaction region. |
 | Delivery | Copy a cleaned completed transcript to the Windows clipboard using a valid Yap HWND owner, then show visible manual-paste status. Paste-last recopies only the dedicated last-completed transcript. Yap does not call `SendInput` or claim authority over an external focused field. |
 
 Reusing one process keeps one client-local recognizer, one orchestrator, and one

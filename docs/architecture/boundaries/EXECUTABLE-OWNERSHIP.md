@@ -301,8 +301,9 @@ owner's state but may not recreate its transition logic.
 - **Entry point:** local setup/settings commands and server runtime creation.
 - **Authoritative owner:** desktop `stt/fallback_model/*`, `stt/nemotron/*`,
   `stt/ambernet_language_detector*`, and `stt/silero_vad.rs`; server
-  `pools/model_lock.py`, `model_assets.py`, provider-specific worker adapters,
-  and `batch_asr*.py`.
+  `pools/model_lock.py`, `model_assets.py`, neutral `pools/pcm_audio.py`,
+  provider-specific engines/adapters, `batch_asr_worker.py` for the executable
+  worker protocol, and `batch_pool.py` for admission and lifecycle.
 - **Persisted state:** verified local model artifacts/settings and immutable
   server runtime/model lock.
 - **Transient state:** explicit import/download operation, load guard, warm
@@ -319,7 +320,9 @@ owner's state but may not recreate its transition logic.
 - **Cancellation:** operation generation cancels downloads/loads; server runtime
   force-cleans the isolated worker.
 - **Duplicate owner:** none. The NGC image is a build base, not a second runtime
-  owner.
+  owner. Provider engines do not import the executable worker entry point, and
+  the loopback runtime does not wrap `BatchAsrPool` in a second immediate
+  enqueue/dequeue scheduler.
 
 ### 13. Process supervision and containment
 

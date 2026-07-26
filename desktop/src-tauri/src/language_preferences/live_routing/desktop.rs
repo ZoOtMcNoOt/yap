@@ -27,7 +27,7 @@ pub(crate) fn set_live_language_routing(
     let _live_mutation = live_runtime.begin_language_support_mutation()?;
     let _preference_mutation = super::super::persistence::lock_mutation()
         .map_err(super::super::desktop::preference_error_message)?;
-    if catalog_revision != crate::stt::nemotron::LIVE_LANGUAGE_CATALOG_REVISION {
+    if catalog_revision != crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION {
         return Err(routing_error_message(
             LiveLanguageRoutingError::StaleCatalog,
         ));
@@ -37,7 +37,7 @@ pub(crate) fn set_live_language_routing(
         .ok_or_else(|| {
             "Confirm a primary language before configuring automatic switching.".to_string()
         })?;
-    LocalLanguageCatalog::nemotron_with_explicit_alternates(&primary, &enabled_alternate_locales)
+    LocalLanguageCatalog::with_explicit_automatic_alternates(&primary, &enabled_alternate_locales)
         .map_err(|_| routing_error_message(LiveLanguageRoutingError::InvalidSelection))?;
     let saved = persistence::save(enabled_alternate_locales).map_err(routing_error_message)?;
     project_status(Some(primary), &saved.locales, None)
@@ -54,7 +54,7 @@ pub(crate) fn live_language_configuration_for_warmup() -> Result<LiveLanguageCon
         })?;
     let (catalog, routing_issue_code) = match persistence::load() {
         Ok(selections) if selections.locales.is_empty() => (None, None),
-        Ok(selections) => match LocalLanguageCatalog::nemotron_with_explicit_alternates(
+        Ok(selections) => match LocalLanguageCatalog::with_explicit_automatic_alternates(
             &primary,
             &selections.locales,
         ) {

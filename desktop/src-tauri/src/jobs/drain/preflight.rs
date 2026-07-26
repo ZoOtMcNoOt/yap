@@ -165,7 +165,7 @@ fn persist_preparation_failure_message(
     detail: &str,
     now_ms: u64,
 ) -> Result<ClientPreflightProgress, ClientPreflightAdvanceError> {
-    crate::stt::log_yap(&format!(
+    crate::diagnostics::log(&format!(
         "client recording preflight stopped before language review: {detail}"
     ));
     match drain.resources.ledger().get_job(job_id)? {
@@ -529,7 +529,7 @@ async fn submit_with_cancellation(
                         Ok(()) => true,
                         Err(error) if error.is_not_found() => true,
                         Err(_) => {
-                            crate::stt::log_yap("language preflight cancellation acknowledgement was unavailable");
+                            crate::diagnostics::log("language preflight cancellation acknowledgement was unavailable");
                             false
                         }
                     };
@@ -602,7 +602,7 @@ async fn cancel_persisted_dispatch(
         Ok(()) => Ok(true),
         Err(error) if error.is_not_found() => Ok(true),
         Err(_) => {
-            crate::stt::log_yap(
+            crate::diagnostics::log(
                 "stale language preflight cancellation acknowledgement was unavailable",
             );
             Ok(false)

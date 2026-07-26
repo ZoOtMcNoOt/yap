@@ -302,7 +302,7 @@ impl<T> BoundedSink<T> {
             ) {
                 Ok(_) => {
                     #[cfg(debug_assertions)]
-                    crate::stt::log_yap(&format!(
+                    crate::diagnostics::log(&format!(
                         "audio sink {:?} queue high-water mark={queued}",
                         self.kind
                     ));

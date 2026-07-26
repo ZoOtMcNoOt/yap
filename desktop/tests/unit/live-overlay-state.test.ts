@@ -23,7 +23,7 @@ describe("live overlay state projection", () => {
     expect(overlaySurface(model, false, false)).toBe("collapsed");
     expect(previewOverlayFrame("collapsed")).toEqual({ height: 40, width: 104 });
     expect(overlaySurface(model, true, false)).toBe("expanded");
-    expect(previewOverlayFrame("expanded")).toEqual({ height: 88, width: 180 });
+    expect(previewOverlayFrame("expanded")).toEqual({ height: 96, width: 180 });
     expect(collapseGraceMs).toBe(200);
   });
 

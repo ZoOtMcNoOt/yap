@@ -16,6 +16,13 @@ from yap_server.pools.batch_contract import (
     validate_asr_catalog_revision,
     validate_batch_job_id,
 )
+from yap_server.pools.executor_cleanup import (
+    EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS,
+    shutdown_executor_or_raise,
+)
+
+
+_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS
 
 
 class BatchPoolReservation:
@@ -283,12 +290,24 @@ class BatchAsrPool:
                     "could not be verified"
                 )
         finally:
-            # A Python worker thread cannot be killed safely. Once its owning
-            # worker reports that containment is unverified, waiting here can
-            # block the server shutdown forever without improving containment.
-            self._executor.shutdown(
-                wait=containment_error is None,
-                cancel_futures=True,
-            )
+            if containment_error is None:
+                try:
+                    shutdown_executor_or_raise(
+                        self._executor,
+                        timeout_seconds=_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS,
+                        component="batch ASR",
+                    )
+                except WorkerContainmentError as error:
+                    containment_error = error
+                    with self._lock:
+                        self._fenced_reason = (
+                            "batch ASR pool is fenced because executor containment "
+                            "could not be verified"
+                        )
+            else:
+                # The process boundary must fail-stop immediately once an owned
+                # worker reports unverified containment. Waiting here cannot
+                # improve that result and can only strand the caller.
+                self._executor.shutdown(wait=False, cancel_futures=True)
         if containment_error is not None:
             raise containment_error

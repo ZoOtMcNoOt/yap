@@ -1,5 +1,5 @@
 use std::{
-    io::{ErrorKind, Write},
+    io::ErrorKind,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -43,9 +43,10 @@ impl OperationTemp {
 
     pub(super) fn publish_to(&mut self, destination: &Path) -> Result<(), SttError> {
         self.file.take();
-        atomic_replace_same_directory(&self.path, destination)?;
+        crate::atomic_file::replace_same_directory(&self.path, destination)
+            .map_err(io_error_to_stt)?;
         self.published = true;
-        sync_parent_directory(destination).map_err(io_error_to_stt)
+        crate::atomic_file::sync_parent_directory(destination).map_err(io_error_to_stt)
     }
 
     fn cleanup(&mut self) -> Result<(), String> {
@@ -171,116 +172,4 @@ fn reserve_operation_temp_file(
         }
     }
     Err(SttError::ModelMissing)
-}
-
-pub(crate) fn write_text_atomically(path: &Path, text: &str) -> Result<(), SttError> {
-    let (temp, mut file) = reserve_sibling_temp_file(path)?;
-    let result = (|| {
-        file.write_all(text.as_bytes()).map_err(io_error_to_stt)?;
-        file.sync_all().map_err(io_error_to_stt)?;
-        drop(file);
-        atomic_replace_same_directory(&temp, path)?;
-        sync_parent_directory(path).map_err(io_error_to_stt)
-    })();
-    if result.is_err() {
-        match std::fs::remove_file(&temp) {
-            Ok(()) => {}
-            Err(error) if error.kind() == ErrorKind::NotFound => {}
-            Err(error) => return Err(io_error_to_stt(error)),
-        }
-    }
-    result
-}
-
-fn reserve_sibling_temp_file(path: &Path) -> Result<(PathBuf, std::fs::File), SttError> {
-    let file_name = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .ok_or(SttError::ModelMissing)?;
-    let nonce = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|_| SttError::ModelMissing)?
-        .as_nanos();
-    let pid = std::process::id();
-    for attempt in 0..32 {
-        let temp = path.with_file_name(format!("{file_name}.{pid}.{nonce}.{attempt}.part"));
-        match std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&temp)
-        {
-            Ok(file) => return Ok((temp, file)),
-            Err(error) if error.kind() == ErrorKind::AlreadyExists => {}
-            Err(error) => return Err(io_error_to_stt(error)),
-        }
-    }
-    Err(SttError::ModelMissing)
-}
-
-#[cfg(windows)]
-fn atomic_replace_same_directory(source: &Path, destination: &Path) -> Result<(), SttError> {
-    use std::os::windows::ffi::OsStrExt;
-    use windows::core::PCWSTR;
-    use windows::Win32::Storage::FileSystem::{
-        MoveFileExW, ReplaceFileW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
-        REPLACEFILE_WRITE_THROUGH,
-    };
-
-    let source_wide = source
-        .as_os_str()
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect::<Vec<_>>();
-    let destination_wide = destination
-        .as_os_str()
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect::<Vec<_>>();
-    let source = PCWSTR(source_wide.as_ptr());
-    let destination = PCWSTR(destination_wide.as_ptr());
-
-    let result = unsafe {
-        if destination_path_exists(destination_wide.as_slice()) {
-            ReplaceFileW(
-                destination,
-                source,
-                PCWSTR::null(),
-                REPLACEFILE_WRITE_THROUGH,
-                None,
-                None,
-            )
-        } else {
-            MoveFileExW(
-                source,
-                destination,
-                MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH,
-            )
-        }
-    };
-    result.map_err(|_| SttError::ModelMissing)
-}
-
-#[cfg(windows)]
-fn destination_path_exists(wide_path: &[u16]) -> bool {
-    use windows::core::PCWSTR;
-    use windows::Win32::Storage::FileSystem::{GetFileAttributesW, INVALID_FILE_ATTRIBUTES};
-    unsafe { GetFileAttributesW(PCWSTR(wide_path.as_ptr())) != INVALID_FILE_ATTRIBUTES }
-}
-
-#[cfg(not(windows))]
-fn atomic_replace_same_directory(source: &Path, destination: &Path) -> Result<(), SttError> {
-    std::fs::rename(source, destination).map_err(io_error_to_stt)
-}
-
-#[cfg(unix)]
-fn sync_parent_directory(path: &Path) -> std::io::Result<()> {
-    std::fs::File::open(path.parent().ok_or_else(|| {
-        std::io::Error::new(ErrorKind::InvalidInput, "path has no parent directory")
-    })?)?
-    .sync_all()
-}
-
-#[cfg(not(unix))]
-fn sync_parent_directory(_path: &Path) -> std::io::Result<()> {
-    Ok(())
 }

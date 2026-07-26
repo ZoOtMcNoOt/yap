@@ -143,7 +143,7 @@ function IslandInlineButton({ children, label, onClick }: ActionButtonProps) {
   return (
     <Button
       aria-label={label}
-      className="size-8 rounded-full bg-white/10 p-0 text-white transition-colors hover:bg-white/20 hover:text-fuchsia-100 focus-visible:ring-white/60"
+      className="size-10 rounded-full bg-white/10 p-0 text-white transition-colors motion-reduce:transition-none hover:bg-white/20 hover:text-fuchsia-100 focus-visible:ring-white/60"
       onClick={onClick}
       size="icon-tight"
       title={label}
@@ -162,7 +162,7 @@ function FreeFlowIconButton({ children, label, onClick, tone = "cancel" }: Actio
     <Button
       aria-label={label}
       className={cn(
-        "size-5 rounded-full p-0 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)] focus-visible:ring-white/60",
+        "size-8 rounded-full p-0 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)] focus-visible:ring-white/60",
         tone === "confirm"
           ? "bg-white text-black hover:bg-emerald-100 hover:text-black"
           : "bg-white/18 hover:bg-red-500/85 hover:text-white",
@@ -266,7 +266,7 @@ function FreeFlowNeutralButton({ children, label, onClick }: ActionButtonProps) 
   return (
     <Button
       aria-label={label}
-      className="size-[22px] shrink-0 rounded-full bg-white/12 p-0 text-white hover:bg-white/20 hover:text-fuchsia-100 focus-visible:ring-white/60"
+      className="size-8 shrink-0 rounded-full bg-white/12 p-0 text-white hover:bg-white/20 hover:text-fuchsia-100 focus-visible:ring-white/60"
       onClick={onClick}
       size="icon-tight"
       title={label}

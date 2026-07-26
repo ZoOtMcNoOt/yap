@@ -68,7 +68,7 @@ pub(super) fn project_status(
         .collect();
 
     let enabled_locales = match (primary_language_bcp47.as_deref(), preference_issue) {
-        (Some(primary), None) => LocalLanguageCatalog::nemotron_with_explicit_alternates(
+        (Some(primary), None) => LocalLanguageCatalog::with_explicit_automatic_alternates(
             primary,
             enabled_alternate_locales,
         )
@@ -81,7 +81,7 @@ pub(super) fn project_status(
 
     Ok(LiveLanguageRoutingStatus {
         schema_version: CURRENT_SCHEMA_VERSION,
-        catalog_revision: crate::stt::nemotron::LIVE_LANGUAGE_CATALOG_REVISION.to_owned(),
+        catalog_revision: crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION.to_owned(),
         primary_language_bcp47,
         enabled_locales,
         automatic_languages,

@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import unittest
-from concurrent.futures import Future
 from dataclasses import replace
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
-import threading
+import textwrap
 from types import SimpleNamespace
+import unittest
 from unittest.mock import MagicMock, patch
 
 import yap_server.__main__ as server_main
 from yap_server.config import ServerSettings
 from yap_server.jobs.runtime import (
-    RoutedBatchProcessor,
     StorageRuntimeLease,
     _build_provider_worker_plans,
     _configured_model_pools,
@@ -21,56 +21,15 @@ from yap_server.jobs.runtime import (
     ensure_development_batch_bind,
 )
 from yap_server.jobs.contract_values import MAX_JOB_PCM_BYTES
-from yap_server.pools.batch_asr import BatchAsrJob, WorkerContainmentError
-from yap_server.pools.batch_contract import BatchJobFactory
+from yap_server.pools.batch_asr import WorkerContainmentError
 from yap_server.pools.provider_worker_factory import (
     AsrWorkerPlan,
     build_asr_worker_plan,
     resolve_checked_worker_image,
 )
-from yap_server.workload_router import WorkloadRouter
 
-from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
+from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION
 from tests.model_pools.batch_asr_fixtures import test_lock as _test_lock
-
-
-class _Pool:
-    def __init__(self) -> None:
-        self.jobs: list[BatchAsrJob] = []
-        self.future: Future[dict[str, object]] = Future()
-
-    def submit(self, job: BatchAsrJob) -> Future[dict[str, object]]:
-        self.jobs.append(job)
-        return self.future
-
-    def reserve(
-        self,
-        job_id: str,
-        *,
-        pcm_byte_length: int = 1,
-    ) -> _PoolReservation:
-        if pcm_byte_length < 1:
-            raise ValueError("test PCM reservation must be positive")
-        return _PoolReservation(self, job_id)
-
-    def cancel(self, job_id: str) -> bool:
-        return bool(self.jobs and self.jobs[-1].job_id == job_id)
-
-
-class _PoolReservation:
-    def __init__(self, pool: _Pool, job_id: str) -> None:
-        self._pool = pool
-        self._job_id = job_id
-        self._aborted = False
-
-    def start(self, factory: BatchJobFactory) -> Future[dict[str, object]]:
-        job = factory(threading.Event())
-        if job.job_id != self._job_id:
-            raise AssertionError("test reservation identity changed")
-        return self._pool.submit(job)
-
-    def abort(self) -> None:
-        self._aborted = True
 
 
 class _Runtime:
@@ -118,61 +77,7 @@ class _RetainingTestStorageLease:
         self._owned.discard(self.storage_root)
 
 
-class RoutedBatchProcessorTests(unittest.TestCase):
-    def test_submit_routes_batch_work_before_entering_the_isolated_pool(self) -> None:
-        pool = _Pool()
-        router = WorkloadRouter(
-            max_pending=3,
-            max_pending_per_owner=3,
-            max_consecutive_live=8,
-        )
-        processor = RoutedBatchProcessor(
-            router=router,
-            pool=pool,
-            owner_key="development-loopback",
-            route_resolver=test_asr_route,
-            asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
-        )
-        job = BatchAsrJob(
-            job_id="job-routed-batch-runtime",
-            input_path=Path("input.wav"),
-            result_path=Path("result.json"),
-            language="en",
-            input_sha256="a" * 64,
-            route=test_asr_route(),
-        )
-
-        returned = processor.submit(job)
-
-        self.assertIs(returned, pool.future)
-        self.assertEqual(pool.jobs, [job])
-        self.assertEqual(router.pending_count, 0)
-
-    def test_cancel_routes_to_the_same_isolated_pool_owner(self) -> None:
-        pool = _Pool()
-        processor = RoutedBatchProcessor(
-            router=WorkloadRouter(
-                max_pending=3,
-                max_pending_per_owner=3,
-                max_consecutive_live=8,
-            ),
-            pool=pool,
-            owner_key="development-loopback",
-            route_resolver=test_asr_route,
-            asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
-        )
-        job = BatchAsrJob(
-            job_id="job-routed-batch-cancel",
-            input_path=Path("input.wav"),
-            result_path=Path("result.json"),
-            language="en",
-            input_sha256="a" * 64,
-            route=test_asr_route(),
-        )
-        processor.submit(job)
-
-        self.assertTrue(processor.cancel(job.job_id))
-
+class BatchRuntimeTests(unittest.TestCase):
     @unittest.skipUnless(os.name == "posix", "POSIX storage lease")
     def test_storage_runtime_lease_excludes_a_second_server_process(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -466,7 +371,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
             patch(
                 "yap_server.jobs.runtime.RecordingJobService",
                 return_value=service,
-            ),
+            ) as service_type,
             patch(
                 "yap_server.jobs.runtime.build_language_detection_runtime",
                 side_effect=RuntimeError("later startup step failed"),
@@ -483,6 +388,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
                     )
 
                 service.begin_runtime_shutdown.assert_called_once_with()
+                self.assertIs(service_type.call_args.kwargs["processor"], pool)
                 pool.shutdown.assert_called_once_with()
                 self.assertTrue(storage_lease.retained)
                 self.assertEqual(storage_lease.close_calls, 0)
@@ -806,6 +712,167 @@ class RoutedBatchProcessorTests(unittest.TestCase):
 
 
 class ServerMainTests(unittest.TestCase):
+    def test_normal_pool_shutdown_fail_stops_before_executor_atexit_join(
+        self,
+    ) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(server_root / "src")
+        script = textwrap.dedent(
+            """
+            import threading
+            from unittest.mock import patch
+
+            import yap_server.__main__ as server_main
+            import yap_server.pools.batch_pool as batch_pool
+            from yap_server.config import ServerSettings
+            from yap_server.pools.batch_asr import BatchAsrPool
+            from tests.asr_route_fixtures import (
+                TEST_ASR_CATALOG_REVISION,
+                test_asr_route,
+            )
+
+
+            class Worker:
+                def run(self, _job, _cancellation):
+                    raise AssertionError("wedged preparation never reaches the worker")
+
+                def close(self):
+                    pass
+
+
+            pool = BatchAsrPool(
+                Worker(),
+                route_resolver=test_asr_route,
+                asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
+                max_workers=1,
+                max_queued=0,
+            )
+            started = threading.Event()
+            release = threading.Event()
+
+
+            def wedge_preparation(_cancellation):
+                started.set()
+                release.wait()
+                raise AssertionError("synthetic preparation unexpectedly resumed")
+
+
+            pool.reserve("job-wedged").start(wedge_preparation)
+            if not started.wait(timeout=1):
+                raise RuntimeError("synthetic preparation did not start")
+
+
+            class Runtime:
+                service = object()
+                lid_preflight_service = object()
+                asr_capabilities = {"schemaVersion": 1, "providers": []}
+
+                def close(self):
+                    pool.shutdown()
+
+
+            with (
+                patch.object(batch_pool, "_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS", 0.05, create=True),
+                patch.object(server_main, "_RUNTIME_CLEANUP_TIMEOUT_SECONDS", 0.5, create=True),
+                patch.object(server_main.signal, "signal"),
+                patch.object(
+                    server_main.ServerSettings,
+                    "from_env",
+                    return_value=ServerSettings(),
+                ),
+                patch.object(server_main, "build_batch_runtime", return_value=Runtime()),
+                patch.object(server_main, "serve", side_effect=KeyboardInterrupt),
+            ):
+                server_main.main()
+            """
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=server_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 70)
+        self.assertIn("fail-stopping the service process", completed.stderr)
+        self.assertNotIn("synthetic preparation", completed.stderr)
+
+    def test_cleanup_containment_failure_hard_exits_before_executor_atexit_join(
+        self,
+    ) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(server_root / "src")
+        script = textwrap.dedent(
+            """
+            import threading
+            from concurrent.futures import ThreadPoolExecutor
+            from unittest.mock import patch
+
+            import yap_server.__main__ as server_main
+            from yap_server.config import ServerSettings
+            from yap_server.pools.batch_contract import WorkerContainmentError
+
+
+            class Runtime:
+                def __init__(self):
+                    self.service = object()
+                    self.lid_preflight_service = object()
+                    self.asr_capabilities = {"schemaVersion": 1, "providers": []}
+                    self._started = threading.Event()
+                    self._release = threading.Event()
+                    self._executor = ThreadPoolExecutor(max_workers=1)
+                    self._executor.submit(self._block)
+                    if not self._started.wait(timeout=1):
+                        raise RuntimeError("synthetic worker did not start")
+
+                def _block(self):
+                    self._started.set()
+                    self._release.wait()
+
+                def close(self):
+                    self._executor.shutdown(wait=False, cancel_futures=True)
+                    raise WorkerContainmentError("sensitive worker detail")
+
+
+            runtime = Runtime()
+            with (
+                patch.object(server_main.signal, "signal"),
+                patch.object(
+                    server_main.ServerSettings,
+                    "from_env",
+                    return_value=ServerSettings(),
+                ),
+                patch.object(
+                    server_main,
+                    "build_batch_runtime",
+                    return_value=runtime,
+                ),
+                patch.object(server_main, "serve", side_effect=KeyboardInterrupt),
+            ):
+                server_main.main()
+            """
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=server_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 70)
+        self.assertIn("fail-stopping the service process", completed.stderr)
+        self.assertNotIn("sensitive worker detail", completed.stderr)
+
     def test_verified_runtime_capabilities_are_served_with_the_job_service(self) -> None:
         runtime = _Runtime()
         settings = ServerSettings()
@@ -874,27 +941,64 @@ class ServerMainTests(unittest.TestCase):
         self.assertIsNone(stopped.exception.__cause__)
         self.assertTrue(stopped.exception.__suppress_context__)
 
-    def test_startup_containment_failure_uses_the_generic_boundary(self) -> None:
-        with (
-            patch.object(server_main.signal, "signal"),
-            patch.object(
-                server_main.ServerSettings,
-                "from_env",
-                return_value=ServerSettings(),
-            ),
-            patch.object(
-                server_main,
-                "build_batch_runtime",
-                side_effect=WorkerContainmentError("private container detail"),
-            ),
-        ):
-            with self.assertRaises(SystemExit) as stopped:
-                server_main.main()
+    def test_build_time_containment_failure_hard_exits_before_executor_atexit_join(
+        self,
+    ) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(server_root / "src")
+        script = textwrap.dedent(
+            """
+            import threading
+            from concurrent.futures import ThreadPoolExecutor
+            from unittest.mock import patch
 
-        self.assertEqual(str(stopped.exception), "Yap private server startup failed.")
-        self.assertNotIn("private container detail", str(stopped.exception))
-        self.assertIsNone(stopped.exception.__cause__)
-        self.assertTrue(stopped.exception.__suppress_context__)
+            import yap_server.__main__ as server_main
+            from yap_server.config import ServerSettings
+            from yap_server.pools.batch_contract import WorkerContainmentError
+
+
+            def fail_during_build():
+                started = threading.Event()
+                release = threading.Event()
+                executor = ThreadPoolExecutor(max_workers=1)
+                executor.submit(lambda: (started.set(), release.wait()))
+                if not started.wait(timeout=1):
+                    raise RuntimeError("synthetic worker did not start")
+                executor.shutdown(wait=False, cancel_futures=True)
+                raise WorkerContainmentError("private container detail")
+
+
+            with (
+                patch.object(server_main.signal, "signal"),
+                patch.object(
+                    server_main.ServerSettings,
+                    "from_env",
+                    return_value=ServerSettings(),
+                ),
+                patch.object(
+                    server_main,
+                    "build_batch_runtime",
+                    side_effect=fail_during_build,
+                ),
+            ):
+                server_main.main()
+            """
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=server_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 70)
+        self.assertIn("fail-stopping the service process", completed.stderr)
+        self.assertNotIn("private container detail", completed.stderr)
 
     def test_serving_storage_failure_does_not_expose_private_paths(self) -> None:
         private_path = "/srv/yap/private/patient-audio.wav"

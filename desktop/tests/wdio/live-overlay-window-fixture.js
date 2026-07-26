@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const execFileAsync = promisify(execFile);
 const mainWindowTitle = "Yap";
-const minMainWindowWidth = Math.floor(1122 * 0.7);
-const minMainWindowHeight = Math.floor(740 * 0.7);
+const minMainWindowWidth = Math.floor(640 * 0.9);
+const minMainWindowHeight = Math.floor(480 * 0.9);
 const nativeWindowRecoveryModule = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "native-window-recovery.psm1",
@@ -18,6 +18,171 @@ if (!recordingRoot) throw new Error("WDIO requires an isolated YAP_LIVE_RECORDIN
 
 function powerShellLiteral(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
+}
+
+export async function pressOverlayFocusShortcutFromExternalWindow() {
+  const appPid = await resolveWdioAppPid();
+  const script = `
+$ErrorActionPreference = "Stop"
+Add-Type @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+public static class WdioExternalShortcutInput {
+    [DllImport("user32.dll")]
+    private static extern bool AttachThreadInput(uint source, uint target, bool attach);
+
+    [DllImport("user32.dll")]
+    private static extern bool BringWindowToTop(IntPtr window);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr CreateWindowExW(
+        uint extendedStyle,
+        string className,
+        string windowName,
+        uint style,
+        int x,
+        int y,
+        int width,
+        int height,
+        IntPtr parent,
+        IntPtr menu,
+        IntPtr instance,
+        IntPtr parameter
+    );
+
+    [DllImport("user32.dll")]
+    private static extern bool DestroyWindow(IntPtr window);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte virtualKey, byte scanCode, uint flags, UIntPtr extra);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SetFocus(IntPtr window);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr window);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr window, int command);
+
+    private const uint KeyUp = 0x0002;
+    private const uint OverlappedWindow = 0x00CF0000;
+    private const uint Visible = 0x10000000;
+
+    public static IntPtr CreateExternalWindow() {
+        IntPtr window = CreateWindowExW(
+            0,
+            "STATIC",
+            "Yap WDIO External Focus",
+            OverlappedWindow | Visible,
+            40,
+            40,
+            360,
+            120,
+            IntPtr.Zero,
+            IntPtr.Zero,
+            IntPtr.Zero,
+            IntPtr.Zero
+        );
+        if (window == IntPtr.Zero) {
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+        ShowWindow(window, 5);
+        return window;
+    }
+
+    public static void DestroyExternalWindow(IntPtr window) {
+        if (window != IntPtr.Zero) DestroyWindow(window);
+    }
+
+    public static uint FocusAndPress(IntPtr target, uint expectedYapProcessId) {
+        uint ignored;
+        uint currentThread = GetCurrentThreadId();
+        uint targetThread = GetWindowThreadProcessId(target, out ignored);
+        uint foregroundThread = GetWindowThreadProcessId(GetForegroundWindow(), out ignored);
+        bool attachedForeground = foregroundThread != 0
+            && foregroundThread != currentThread
+            && AttachThreadInput(currentThread, foregroundThread, true);
+        bool attachedTarget = targetThread != 0
+            && targetThread != currentThread
+            && AttachThreadInput(currentThread, targetThread, true);
+        try {
+            ShowWindow(target, 5);
+            BringWindowToTop(target);
+            SetForegroundWindow(target);
+            SetFocus(target);
+        } finally {
+            if (attachedTarget) AttachThreadInput(currentThread, targetThread, false);
+            if (attachedForeground) AttachThreadInput(currentThread, foregroundThread, false);
+        }
+        Thread.Sleep(150);
+        IntPtr foreground = GetForegroundWindow();
+        uint foregroundProcessId;
+        GetWindowThreadProcessId(foreground, out foregroundProcessId);
+        if (foreground != target) {
+            throw new InvalidOperationException("Disposable external window did not own foreground focus.");
+        }
+
+        keybd_event(0x11, 0, 0, UIntPtr.Zero);
+        keybd_event(0x10, 0, 0, UIntPtr.Zero);
+        keybd_event(0x12, 0, 0, UIntPtr.Zero);
+        keybd_event(0x4F, 0, 0, UIntPtr.Zero);
+        keybd_event(0x4F, 0, KeyUp, UIntPtr.Zero);
+        keybd_event(0x12, 0, KeyUp, UIntPtr.Zero);
+        keybd_event(0x10, 0, KeyUp, UIntPtr.Zero);
+        keybd_event(0x11, 0, KeyUp, UIntPtr.Zero);
+        for (int attempt = 0; attempt < 100; attempt++) {
+            Thread.Sleep(25);
+            uint activatedProcessId;
+            GetWindowThreadProcessId(GetForegroundWindow(), out activatedProcessId);
+            if (activatedProcessId == expectedYapProcessId) {
+                keybd_event(0x09, 0, 0, UIntPtr.Zero);
+                keybd_event(0x09, 0, KeyUp, UIntPtr.Zero);
+                return foregroundProcessId;
+            }
+        }
+        throw new InvalidOperationException("Native shortcut did not move foreground focus to Yap.");
+    }
+}
+'@
+
+$externalWindow = [WdioExternalShortcutInput]::CreateExternalWindow()
+try {
+  $foregroundProcessId = [WdioExternalShortcutInput]::FocusAndPress(
+    $externalWindow,
+    [uint32]${appPid}
+  )
+  if ($foregroundProcessId -eq ${appPid}) {
+    throw "Shortcut input began while a Yap window still owned foreground focus."
+  }
+  [pscustomobject]@{
+    appProcessId = ${appPid}
+    externalProcessId = $PID
+    foregroundProcessId = $foregroundProcessId
+  } | ConvertTo-Json -Compress
+  Start-Sleep -Milliseconds 150
+} finally {
+  [WdioExternalShortcutInput]::DestroyExternalWindow($externalWindow)
+}
+`;
+  const { stdout } = await execFileAsync(
+    "pwsh.exe",
+    ["-NoProfile", "-NonInteractive", "-Command", script],
+    { maxBuffer: 1024 * 1024, windowsHide: true },
+  );
+  return JSON.parse(stdout.trim());
 }
 
 async function showMainWindowNatively() {

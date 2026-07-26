@@ -45,7 +45,7 @@ impl LiveRuntime {
         let mut inner = self.inner.lock().expect("live runtime poisoned");
         if let Some(evidence) = finish_report.language_evidence {
             if let Err(error) = inner.append_language_evidence(evidence) {
-                crate::stt::log_yap(&format!(
+                crate::diagnostics::log(&format!(
                     "live language evidence persistence failed code=recording_sink message={error}"
                 ));
             }

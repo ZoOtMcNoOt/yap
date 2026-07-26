@@ -115,7 +115,7 @@
   body {
     background: var(--background);
     min-width: 0;
-    min-height: 620px;
+    min-height: 0;
     height: 100%;
     margin: 0;
     overflow: hidden;
@@ -234,6 +234,14 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation: none !important;
+      transition-property: none !important;
+    }
+
     .live-processing-waveform .live-processing-pill {
       animation: none;
     }

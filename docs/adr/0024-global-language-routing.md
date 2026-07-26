@@ -15,10 +15,10 @@ including the current-host release/resource/lifecycle channels, the 18-child
 Cohere vLLM/Nemotron NeMo candidate-safety lifecycle, and the connected
 interruption/recovery/History path. Neither service was promoted; per-locale
 and broad model-quality/replacement evidence remains Phase 8 work. Hosted CI,
-CodeQL, and stock-NSIS passed at first attempt on docs-only review head
-`cee13f819a85417ea43a3c63e263be85f0570838`; its private closure receipt was
-independently validated outside Git. PR #67 may merge only after its final
-docs-only successor passes the same exact-head policy and final read-back.
+CodeQL, and stock-NSIS passed at first attempt on final reviewed head
+`50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; its private closure receipt was
+independently validated outside Git. PR #67 merged as
+`87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 SpeechFlow LID13 and FireRedLID have now failed behavior and payload preflight;
 Whisper base also failed broad global-top behavior, and both official base and
 tiny Q5_1 routes failed client throughput preflight. The frozen narrow

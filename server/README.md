@@ -27,7 +27,6 @@ server/
     yap_server/
       api/
       jobs/                  # Durable loopback batch-ASR service/runtime
-      workload_router/
       pools/                 # bounded Phase 4 reference worker and pool
       schemas/
       config/
@@ -37,10 +36,13 @@ server/
     README.md
     contract/
     api/
-    workload_router/
+    jobs/
+    model_pools/
 ```
 
-Use `workload_router/` instead of vague `router/`. Use `schemas/` for API and message shapes. Do not add a repo `models/` directory; runtime model files belong on the server node, not in Git.
+Name runtime modules for their actual owner and behavior. Use `schemas/` for API
+and message shapes. Do not add a repo `models/` directory; runtime model files
+belong on the server node, not in Git.
 
 ## Phase 3 contract boundary
 
@@ -56,14 +58,14 @@ implemented:
 | `DELETE` | `/v1/jobs/{jobId}` | `501 NOT_IMPLEMENTED` | Idempotent cancellation with safe-boundary purge |
 | `GET` | `/v1/jobs/{jobId}/result` | `501 NOT_IMPLEMENTED` | Immutable completed result |
 | `PUT` | `/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}` | `501 NOT_IMPLEMENTED` | Identity-checked resumable PCM upload |
-| `POST` | `/v1/jobs/{jobId}/commit` | `501 NOT_IMPLEMENTED` | Manifest-bound dispatch through the bounded router/pool |
+| `POST` | `/v1/jobs/{jobId}/commit` | `501 NOT_IMPLEMENTED` | Manifest-bound dispatch through the bounded pool |
 | `GET` upgrade | `/v1/live` | Event schema only | Still unimplemented; live capability remains false |
 
 The default Phase 3 profile advertises `batchJobs`, `liveStreaming`, and
 `jobStatus` as `false` and keeps every job route unavailable. The Phase 5
 profile is an explicit Linux/loopback development runtime: only after its
-private storage, immutable model lock, verified model directory, router, and
-pool initialize successfully do batch/status become true. A WebSocket runtime,
+private storage, immutable model lock, verified model directory, and pool
+initialize successfully do batch/status become true. A WebSocket runtime,
 authentication, token validation, diarization, persistent supervision, and an
 external application listener are not present.
 
@@ -91,16 +93,17 @@ Phase 3 health process into a production service:
   `nvcr.io/nvidia/pytorch:26.06-py3` by immutable digest, Python 3.12, the
   NVIDIA Torch/CUDA build from that image, and a hash-locked resolver-minimal
   Python overlay.
-- `WorkloadRouter` provides bounded total/per-owner admission, bounded live
-  priority without batch starvation, round-robin owner fairness, and explicit
-  pool dispatch in memory.
+- The current loopback batch runtime delegates directly to `BatchAsrPool`, the
+  executable slot, queue, cancellation, and aggregate-PCM admission owner. The
+  accepted future mixed-live/batch fairness rule remains in ADR 0023 without a
+  speculative non-executable router module.
 - `BatchAsrPool` provides a bounded thread-backed queue. Its container adapter
   runs each job non-root with no network, a read-only root filesystem, dropped
   capabilities, `no-new-privileges`, memory/CPU/PID/output ceilings, read-only
   model/audio mounts, an explicitly non-executable `/tmp`, and only a private
   executable tmpfs for bounded PyTorch compiler output. Every run has a unique container name
   and an unconditional force-remove cleanup check.
-- `gb10_asr_runtime_gate.py` connects router -> pool -> isolated worker, verifies the
+- `gb10_asr_runtime_gate.py` connects pool -> isolated worker, verifies the
   immutable model and licensed fixture, executes the inspected raw image ID,
   requires input/result audio identity plus exact GB10/compute-capability/BF16
   runtime attestation, and enforces the fixture WER threshold. The wrapper
@@ -410,3 +413,9 @@ indefinitely. The service accepts HTTP/1.0 and HTTP/1.1 only.
 Skipped for now: Nx/Turborepo, package workspace wiring, framework/server
 dependencies, checked-in model weights, persistent worker deployment, and fake
 GB300 profiles.
+
+Python 3.12 server development uses the locked `uv` environment. Run
+`uv run --locked ruff check .` from `server/` before focused tests. Ruff's
+formatter is available for deliberate mechanical formatting work, but the
+checkpoint does not mass-format the established server tree inside a behavioral
+change.
