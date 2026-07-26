@@ -3,11 +3,13 @@ import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 from urllib.request import Request
 
 from yap_server.pools.model_assets import (
     _PinnedArtifactRedirectHandler,
     artifact_url,
+    main,
     sync_model_artifacts,
 )
 from yap_server.pools.model_lock import (
@@ -45,6 +47,7 @@ def _lock(content: bytes) -> ModelPoolLock:
         runtime_torch_cuda_version="13.3",
         runtime_overlay_packages=(("transformers", "5.13.1"),),
         pool_id="example-batch",
+        engine="transformers",
         model_id="example/model",
         model_revision="b" * 40,
         model_license="Apache-2.0",
@@ -171,6 +174,45 @@ class ModelAssetTests(unittest.TestCase):
                         {},
                         unsafe,
                     )
+
+    def test_verify_only_fails_cold_or_corrupt_without_entering_sync(self) -> None:
+        content = b"immutable model artifact"
+        lock = _lock(content)
+
+        with tempfile.TemporaryDirectory() as directory:
+            model_dir = Path(directory) / "model"
+            lock_path = Path(directory) / "model-lock.json"
+            for existing_content in (None, b"tampered"):
+                with self.subTest(existing_content=existing_content):
+                    if model_dir.exists():
+                        for artifact_path in model_dir.iterdir():
+                            artifact_path.unlink()
+                    else:
+                        model_dir.mkdir()
+                    if existing_content is not None:
+                        (model_dir / "weights.bin").write_bytes(existing_content)
+
+                    with (
+                        patch(
+                            "yap_server.pools.model_assets.load_model_pool_lock",
+                            return_value=lock,
+                        ),
+                        patch(
+                            "yap_server.pools.model_assets.sync_model_artifacts"
+                        ) as sync,
+                    ):
+                        with self.assertRaises(ModelArtifactError):
+                            main(
+                                [
+                                    "--lock",
+                                    str(lock_path),
+                                    "--model-dir",
+                                    str(model_dir),
+                                    "--verify-only",
+                                ]
+                            )
+
+                    sync.assert_not_called()
 
 
 if __name__ == "__main__":

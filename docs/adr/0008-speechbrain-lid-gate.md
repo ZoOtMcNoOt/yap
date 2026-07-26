@@ -1,10 +1,18 @@
 # ADR 0008: SpeechBrain LID language gate
 
 **Date:** 2026-06-30
-**Status:** Accepted language-gate behavior (canonical Phase 6); exact SpeechBrain model/runtime requires revalidation
+**Status:** Accepted user-confirmation principle; model, runtime, delivery,
+probe-selection, and score details superseded by
+[ADR 0026](0026-ambernet-batch-language-preflight.md)
 **Builds on:** [ADR 0003](0003-long-term-voice-architecture.md) (resolves its open questions), [ADR 0002](0002-crispasr-unified-stt-runtime.md) (Cohere needs explicit `-l`)
+**Superseded by:** [ADR 0026](0026-ambernet-batch-language-preflight.md)
 
-> **Applicability:** Suggest and confirm language; never silently switch. SpeechBrain remains a candidate implementation and must pass current licensing, footprint, latency, and language-coverage gates before it is added.
+> **Current applicability:** Suggest and confirm language; never silently
+> switch. The SpeechBrain implementation and two-window policy below are
+> historical. ADR 0026 owns the executing AmberNet batch preflight. ADR 0024
+> separately owns the current primary-language and optional default-off live
+> language-switching Preview; the English-only live statements below are
+> historical.
 
 ## Context
 

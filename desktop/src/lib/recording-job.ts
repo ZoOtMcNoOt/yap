@@ -1,3 +1,6 @@
+import type { RecordingLanguageDecision } from "@/lib/recording-language";
+import type { TranscriptResultSummary } from "@/lib/transcript-result-summary";
+
 export const queuedServerMessage =
   "Queued for your organization's transcription server. It will start when Yap connects.";
 
@@ -33,6 +36,13 @@ export type RecordingPipelineState = {
   postprocessing: PipelineStageStatus;
 };
 
+export type RecordingLanguageReview = {
+  kind: "suggestion" | "manual";
+  suggestedLanguageBcp47?: string;
+  reason: string;
+  catalogRevision: string;
+};
+
 export type PlaybackAdmission = {
   playbackPath: string;
   byteLength: number;
@@ -50,6 +60,9 @@ export type RecordingJobView = {
   status: RecordingJobStatus;
   route?: RecordingRoute;
   pipeline: RecordingPipelineState;
+  languageDecision?: RecordingLanguageDecision;
+  languageReview?: RecordingLanguageReview;
+  resultSummary?: TranscriptResultSummary;
 };
 
 const activeRecordingStatuses = new Set<RecordingJobStatus>([
@@ -85,6 +98,7 @@ export function isRecordingCancellable(status: RecordingJobStatus) {
     status === "blocked_server_unavailable" ||
     status === "blocked_sign_in_required" ||
     status === "queued_local_fallback" ||
+    status === "preflighting" ||
     status === "queued_server" ||
     status === "preprocessing" ||
     status === "uploading" ||

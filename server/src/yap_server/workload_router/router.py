@@ -49,7 +49,7 @@ class WorkloadRouter:
     """Bounded in-memory dispatch with bounded live priority and owner fairness.
 
     ``owner_key`` is an internal queue key. It is deliberately not part of the
-    Phase 3/5 wire request and must eventually be derived by the authenticated
+    The wire request must not supply this value; it will be derived by the authenticated
     server boundary rather than accepted from a client payload.
 
     Live work is preferred while both targets are ready, but one batch job is

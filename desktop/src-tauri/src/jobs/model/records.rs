@@ -1,6 +1,8 @@
 use super::status::{
     RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
 };
+use super::AsrCatalogBinding;
+use super::RecordingLanguageDecision;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -24,6 +26,10 @@ pub struct NewRecordingJob {
     pub created_at_ms: u64,
     pub updated_at_ms: u64,
     pub expires_at_ms: Option<u64>,
+    pub language_decision: RecordingLanguageDecision,
+    pub language_decision_locked: bool,
+    pub client_stage_history_complete: bool,
+    pub asr_catalog_binding: Option<AsrCatalogBinding>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,6 +53,32 @@ pub struct RecordingJobRecord {
     pub created_at_ms: u64,
     pub updated_at_ms: u64,
     pub expires_at_ms: Option<u64>,
+    pub language_decision: RecordingLanguageDecision,
+    pub language_decision_locked: bool,
+    pub client_stage_history_complete: bool,
+    pub asr_catalog_binding: Option<AsrCatalogBinding>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NewClientPreflightArtifact {
+    pub manifest_path: PathBuf,
+    pub manifest_sha256: String,
+    pub source_pcm_sha256: String,
+    pub source_sample_count: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClientPreflightArtifactRecord {
+    pub job_id: String,
+    pub manifest_path: PathBuf,
+    pub manifest_sha256: String,
+    pub source_pcm_sha256: String,
+    pub source_sample_count: u64,
+    pub lid_request_id: Option<String>,
+    pub lid_server_base_url: Option<String>,
+    pub lid_catalog_revision: Option<String>,
+    pub lid_policy_revision: Option<String>,
+    pub lid_started_at_ms: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

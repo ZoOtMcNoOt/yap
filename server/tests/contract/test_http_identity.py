@@ -49,6 +49,12 @@ class ContractTests(unittest.TestCase):
         self.assertIs(
             schemas["CaptureManifestReference"].get("x-yap-immutable"), True
         )
+        self.assertEqual(
+            schemas["CreateRecordingJobRequest"].get(
+                "x-yap-language-decision-invariants"
+            ),
+            identity_contract.CREATE_JOB_LANGUAGE_INVARIANTS,
+        )
 
     def test_session_origin_and_track_provenance_are_coherent(self) -> None:
         openapi = contract_schema.load_json(http_contract.OPENAPI_PATH)
@@ -135,7 +141,7 @@ class ContractTests(unittest.TestCase):
                 "openapi.json",
             ),
             (
-                "batch live origin remains outside the Phase 5 profile",
+                "batch live origin remains outside the loopback batch profile",
                 contract_schema.make_job_request("live_capture", captured),
                 create_schema,
                 "openapi.json",
@@ -225,8 +231,16 @@ class ContractTests(unittest.TestCase):
                         )
                     self.assertEqual(set(response["content"]), {"application/json"})
                     error_schema = response["content"]["application/json"]["schema"]
+                    expected_error_schema = contract.get(
+                        "errorSchemas", {}
+                    ).get(status, "#/components/schemas/ApiError")
                     self.assertEqual(
-                        error_schema, {"$ref": "#/components/schemas/ApiError"}
+                        error_schema, {"$ref": expected_error_schema}
+                    )
+                    contract_schema.resolve_reference(
+                        expected_error_schema,
+                        "openapi.json",
+                        documents,
                     )
 
         for reference in contract_schema.iter_references(document):

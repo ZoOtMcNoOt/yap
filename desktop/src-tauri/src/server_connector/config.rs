@@ -9,8 +9,9 @@ mod platform;
 
 pub use error::ConfigError;
 use persisted_file::{read_persisted_bytes, read_persisted_text};
-use persistence::{
+pub(crate) use persistence::{
     acquire_settings_access_lock, acquire_settings_lock, write_atomically_locked_with_hooks,
+    write_atomically_locked_with_limit_and_hooks,
 };
 
 pub const CURRENT_SCHEMA_VERSION: u16 = 1;

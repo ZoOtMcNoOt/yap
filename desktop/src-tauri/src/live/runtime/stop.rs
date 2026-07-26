@@ -8,7 +8,7 @@ use std::sync::atomic::Ordering;
 
 use super::{
     log_worker_shutdown_errors, stream_session::StreamFinisher, LiveRuntime, LiveStopResult,
-    StreamFinishStatus,
+    StreamFinishReport, StreamFinishStatus,
 };
 
 impl LiveRuntime {
@@ -34,19 +34,28 @@ impl LiveRuntime {
             )
         };
         log_worker_shutdown_errors(shutdown_errors);
-        let finish_status = adapter_status.unwrap_or_else(|| {
-            finisher
-                .as_ref()
-                .map(StreamFinisher::finish_session)
-                .unwrap_or(StreamFinishStatus::NoStream)
-        });
+        let finish_report = adapter_status
+            .map(StreamFinishReport::from)
+            .unwrap_or_else(|| {
+                finisher
+                    .as_ref()
+                    .map(StreamFinisher::finish_session_report)
+                    .unwrap_or_else(|| StreamFinishStatus::NoStream.into())
+            });
         let mut inner = self.inner.lock().expect("live runtime poisoned");
-        if finish_status.should_retire_stream() {
+        if let Some(evidence) = finish_report.language_evidence {
+            if let Err(error) = inner.append_language_evidence(evidence) {
+                crate::stt::log_yap(&format!(
+                    "live language evidence persistence failed code=recording_sink message={error}"
+                ));
+            }
+        }
+        if finish_report.status.should_retire_stream() {
             inner.retire_stream_detached_reader();
         }
         self.active_session.store(0, Ordering::SeqCst);
         inner.mark_used();
-        finish_status
+        finish_report.status
     }
 
     pub(crate) fn finish_stop(&self, stream: StreamFinishStatus) -> LiveStopResult {

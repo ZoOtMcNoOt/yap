@@ -10,6 +10,30 @@ from . import contract_identity_values as identity_contract
 from . import contract_schema_support as contract_schema
 
 
+def _replace_json_pointer(document: object, pointer: str, replacement: object) -> None:
+    if not pointer.startswith("/"):
+        raise AssertionError(f"invalid fixture pointer: {pointer}")
+    tokens = [
+        token.replace("~1", "/").replace("~0", "~")
+        for token in pointer[1:].split("/")
+    ]
+    target = document
+    for token in tokens[:-1]:
+        if isinstance(target, list):
+            target = target[int(token)]
+        elif isinstance(target, dict):
+            target = target[token]
+        else:
+            raise AssertionError(f"fixture pointer does not resolve: {pointer}")
+    final = tokens[-1]
+    if isinstance(target, list):
+        target[int(final)] = replacement
+    elif isinstance(target, dict) and final in target:
+        target[final] = replacement
+    else:
+        raise AssertionError(f"fixture pointer does not resolve: {pointer}")
+
+
 class ContractTests(unittest.TestCase):
     def test_examples_conform_to_required_contract_fields(self) -> None:
         document = contract_schema.load_json(http_contract.OPENAPI_PATH)
@@ -19,6 +43,21 @@ class ContractTests(unittest.TestCase):
             "live-events.schema.json": live_schema,
         }
         health_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "health.ok.json")
+        asr_capabilities_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "asr-capabilities.ok.json"
+        )
+        lid_enabled_capabilities_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "asr-capabilities.lid-enabled.ok.json"
+        )
+        lid_request_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "lid-preflight.request-manifest.json"
+        )
+        lid_success_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "lid-preflight.success.json"
+        )
+        lid_cancellation_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "lid-preflight.cancellation.json"
+        )
         job_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "job.accepted.json")
         partial_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "live.partial.json")
 
@@ -26,6 +65,39 @@ class ContractTests(unittest.TestCase):
         contract_schema.assert_schema_subset(
             health_example,
             schemas["HealthView"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        contract_schema.assert_schema_subset(
+            asr_capabilities_example,
+            schemas["AsrCapabilityCatalog"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        contract_schema.assert_schema_subset(
+            lid_enabled_capabilities_example,
+            schemas["AsrCapabilityCatalog"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        catalog_without_lid = deepcopy(lid_enabled_capabilities_example)
+        del catalog_without_lid["languagePreflight"]
+        self.assertEqual(catalog_without_lid, asr_capabilities_example)
+        contract_schema.assert_schema_subset(
+            lid_request_example,
+            schemas["LidPreflightRequestManifest"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        contract_schema.assert_schema_subset(
+            lid_success_example,
+            schemas["LidPreflightResult"],
+            document_name="openapi.json",
+            documents=documents,
+        )
+        contract_schema.assert_schema_subset(
+            lid_cancellation_example,
+            schemas["LidPreflightCancellation"],
             document_name="openapi.json",
             documents=documents,
         )
@@ -96,6 +168,164 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(partial_example["eventType"], "transcript.partial")
         self.assertEqual(partial_example["schemaVersion"], 1)
         self.assertGreaterEqual(partial_example["eventSequence"], 0)
+
+        invalid_lid_request = deepcopy(lid_request_example)
+        invalid_lid_request["sourceSamples"] = 479_999
+        with self.assertRaisesRegex(AssertionError, "below"):
+            contract_schema.assert_schema_subset(
+                invalid_lid_request,
+                schemas["LidPreflightRequestManifest"],
+                document_name="openapi.json",
+                documents=documents,
+            )
+
+        invalid_lid_success = deepcopy(lid_success_example)
+        invalid_lid_success["observations"].append(
+            deepcopy(invalid_lid_success["observations"][0])
+        )
+        with self.assertRaisesRegex(AssertionError, "exceeds"):
+            contract_schema.assert_schema_subset(
+                invalid_lid_success,
+                schemas["LidPreflightResult"],
+                document_name="openapi.json",
+                documents=documents,
+            )
+
+    def test_lid_error_examples_match_each_typed_operation_response(self) -> None:
+        document = contract_schema.load_json(http_contract.OPENAPI_PATH)
+        documents = {"openapi.json": document}
+        fixture = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "lid-preflight.errors.json"
+        )
+        self.assertEqual(fixture["schemaVersion"], 1)
+        case_ids: set[str] = set()
+
+        for case in fixture["cases"]:
+            with self.subTest(case=case["id"]):
+                self.assertNotIn(case["id"], case_ids)
+                case_ids.add(case["id"])
+                response = document["paths"][case["path"]][case["method"]][
+                    "responses"
+                ][str(case["status"])]
+                schema = response["content"]["application/json"]["schema"]
+                target, target_name = contract_schema.resolve_reference(
+                    schema["$ref"],
+                    "openapi.json",
+                    documents,
+                )
+                contract_schema.assert_schema_subset(
+                    case["value"],
+                    target,
+                    document_name=target_name,
+                    documents=documents,
+                )
+
+        self.assertEqual(
+            case_ids,
+            {
+                "invalid-envelope",
+                "stale-contract",
+                "request-too-large",
+                "unsupported-media-type",
+                "capacity-busy",
+                "storage-error",
+                "not-configured",
+                "temporarily-unavailable",
+                "preflight-not-found",
+            },
+        )
+
+        for contract in http_contract.HTTP_SCHEMA_CONTRACTS:
+            if not contract["path"].startswith("/v1/lid/"):
+                continue
+            operation = document["paths"][contract["path"]][contract["method"]]
+            for status in contract["errors"]:
+                response_content = operation["responses"][status]["content"][
+                    "application/json"
+                ]
+                schema = response_content["schema"]
+                target, target_name = contract_schema.resolve_reference(
+                    schema["$ref"],
+                    "openapi.json",
+                    documents,
+                )
+                examples = []
+                if "example" in response_content:
+                    examples.append(response_content["example"])
+                examples.extend(
+                    example["value"]
+                    for example in response_content.get("examples", {}).values()
+                    if "value" in example
+                )
+                self.assertTrue(
+                    examples,
+                    f"{contract['method']} {contract['path']} {status} has no example",
+                )
+                for index, value in enumerate(examples):
+                    with self.subTest(
+                        path=contract["path"],
+                        method=contract["method"],
+                        status=status,
+                        example=index,
+                    ):
+                        contract_schema.assert_schema_subset(
+                            value,
+                            target,
+                            document_name=target_name,
+                            documents=documents,
+                        )
+
+    def test_shared_invalid_asr_catalog_cases_match_the_openapi_boundary(self) -> None:
+        document = contract_schema.load_json(http_contract.OPENAPI_PATH)
+        examples_root = http_contract.EXAMPLES_ROOT
+        fixture = contract_schema.load_json(
+            examples_root / "asr-capability-catalog.invalid-cases.json"
+        )
+        self.assertEqual(fixture["schemaVersion"], 1)
+        self.assertEqual(fixture["baseExample"], "asr-capabilities.ok.json")
+        base = contract_schema.load_json(examples_root / fixture["baseExample"])
+        schema = document["components"]["schemas"]["AsrCapabilityCatalog"]
+        documents = {"openapi.json": document}
+        case_ids: set[str] = set()
+
+        for case in fixture["cases"]:
+            with self.subTest(case=case["id"]):
+                self.assertNotIn(case["id"], case_ids)
+                case_ids.add(case["id"])
+                candidate = deepcopy(base)
+                for mutation in case["mutations"]:
+                    _replace_json_pointer(
+                        candidate,
+                        mutation["pointer"],
+                        mutation["value"],
+                    )
+                if case["violatesOpenApiSchema"]:
+                    with self.assertRaises(AssertionError):
+                        contract_schema.assert_schema_subset(
+                            candidate,
+                            schema,
+                            document_name="openapi.json",
+                            documents=documents,
+                        )
+                else:
+                    contract_schema.assert_schema_subset(
+                        candidate,
+                        schema,
+                        document_name="openapi.json",
+                        documents=documents,
+                    )
+
+        self.assertEqual(
+            case_ids,
+            {
+                "dynamic-without-segment-language-tags",
+                "model-source-with-user-information",
+                "mutable-model-revision",
+                "noncanonical-language-tag",
+                "stale-catalog-revision",
+                "unknown-quality-tier",
+            },
+        )
 
     def test_python_health_shapes_use_explicit_wire_names(self) -> None:
         from yap_server.schemas import HealthView, ServerCapabilities

@@ -1,12 +1,29 @@
 use std::time::{Duration, UNIX_EPOCH};
 
+use sha2::Digest;
+
 use crate::audio::session::{SessionId, SessionMetadata, SessionMode, SessionOrigin, TriggerMode};
+use crate::language::RecordingLanguageDecision;
 
 use super::{
-    validate_development_batch_base_url, ApiError, BatchClientError, CaptureChunkReference,
-    CaptureManifestReference, ContentIdentity, CreateRecordingJobRequest, ServerReplayKey,
-    UploadTrack,
+    validate_development_batch_base_url, AlignmentUnavailableReason, ApiError, BatchClientError,
+    CaptureChunkReference, CaptureManifestReference, ContentIdentity, CreateRecordingJobRequest,
+    ServerReplayKey, ServerStageProjectionEnvelope, UploadTrack,
 };
+
+#[test]
+fn alignment_unavailable_reason_preserves_provider_and_language_limits() {
+    assert_eq!(
+        serde_json::from_str::<AlignmentUnavailableReason>(r#""ALIGNMENT_PROVIDER_UNSUPPORTED""#,)
+            .unwrap(),
+        AlignmentUnavailableReason::ProviderUnsupported,
+    );
+    assert_eq!(
+        serde_json::from_str::<AlignmentUnavailableReason>(r#""ALIGNMENT_LANGUAGE_UNSUPPORTED""#,)
+            .unwrap(),
+        AlignmentUnavailableReason::LanguageUnsupported,
+    );
+}
 
 #[test]
 fn unauthenticated_audio_transport_accepts_only_loopback_tunnel_origins() {
@@ -42,6 +59,8 @@ fn persisted_create_request_round_trips_strictly_before_resume() {
             Some(started + Duration::from_secs(3600)),
         )
         .unwrap(),
+        language_decision: RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+        asr_catalog_revision: None,
         tracks: vec![UploadTrack {
             track_id: "track-1".into(),
             source: serde_json::json!({"kind": "imported", "provenance": "unknown"}),
@@ -56,6 +75,7 @@ fn persisted_create_request_round_trips_strictly_before_resume() {
             sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".into(),
             byte_length: 200,
         },
+        preprocessing_evidence: None,
         chunks: vec![CaptureChunkReference {
             replay_key: ServerReplayKey {
                 schema_version: 1,
@@ -83,6 +103,26 @@ fn persisted_create_request_round_trips_strictly_before_resume() {
         request
     );
     assert_eq!(request.create_idempotency_key().unwrap(), original_key);
+    let encoded_language = serde_json::to_string(&request.language_decision).unwrap();
+    let legacy_encoded =
+        encoded.replacen(&format!(",\"languageDecision\":{encoded_language}"), "", 1);
+    assert_ne!(legacy_encoded, encoded);
+    let legacy_value: serde_json::Value = serde_json::from_str(&legacy_encoded).unwrap();
+    let legacy_request = CreateRecordingJobRequest::decode_persisted(&legacy_encoded).unwrap();
+    assert!(legacy_request
+        .language_decision
+        .is_legacy_implicit_english_default());
+    assert_eq!(serde_json::to_value(&legacy_request).unwrap(), legacy_value);
+    assert_eq!(
+        legacy_request.create_idempotency_key().unwrap(),
+        format!(
+            "create-{}",
+            sha2::Sha256::digest(legacy_encoded.as_bytes())
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        )
+    );
     let mut new_attempt = request.clone();
     new_attempt.display_name = "a distinct immutable request".into();
     assert_ne!(new_attempt.create_idempotency_key().unwrap(), original_key);
@@ -98,6 +138,19 @@ fn persisted_create_request_round_trips_strictly_before_resume() {
     unbounded_retention.metadata.retention_expires_at_utc = Some("2126-07-14T21:00:00Z".into());
     assert!(CreateRecordingJobRequest::decode_persisted(
         &serde_json::to_string(&unbounded_retention).unwrap()
+    )
+    .is_err());
+    let mut mismatched_language = request.clone();
+    mismatched_language.language_decision =
+        RecordingLanguageDecision::manual_override("fr-FR".into()).unwrap();
+    assert!(CreateRecordingJobRequest::decode_persisted(
+        &serde_json::to_string(&mismatched_language).unwrap()
+    )
+    .is_err());
+    let mut dynamic_language = request.clone();
+    dynamic_language.language_decision = RecordingLanguageDecision::explicit_dynamic();
+    assert!(CreateRecordingJobRequest::decode_persisted(
+        &serde_json::to_string(&dynamic_language).unwrap()
     )
     .is_err());
 
@@ -171,4 +224,57 @@ fn server_error_fields_are_bounded_before_logging_or_retry_decisions() {
     let mut invalid_request_id = valid;
     invalid_request_id.request_id = "../../outside".into();
     assert!(!invalid_request_id.is_valid());
+}
+
+#[test]
+fn server_stage_projection_is_strict_bounded_and_job_scoped() {
+    let job_id = "job-0123456789abcdef0123456789abcdef";
+    let valid = serde_json::json!({
+        "schemaVersion": 1,
+        "jobId": job_id,
+        "projectionRevision": 9,
+        "historyComplete": true,
+        "stages": [
+            {
+                "stage": "asr",
+                "attempt": 2,
+                "state": "succeeded",
+                "updatedAtUtc": "2026-07-14T21:00:02Z",
+                "retryable": false,
+                "reason": null
+            },
+            {
+                "stage": "alignment",
+                "attempt": 1,
+                "state": "unavailable",
+                "updatedAtUtc": "2026-07-14T21:00:03Z",
+                "retryable": false,
+                "reason": "ALIGNMENT_NOT_CONFIGURED"
+            }
+        ]
+    });
+    let projection: ServerStageProjectionEnvelope = serde_json::from_value(valid.clone()).unwrap();
+    assert!(projection.is_valid_for(job_id));
+    assert!(!projection.is_valid_for("job-different"));
+
+    let mut unknown = valid.clone();
+    unknown["unexpected"] = serde_json::json!(true);
+    assert!(serde_json::from_value::<ServerStageProjectionEnvelope>(unknown).is_err());
+
+    let mut bad_order = valid.clone();
+    bad_order["stages"].as_array_mut().unwrap().reverse();
+    let bad_order: ServerStageProjectionEnvelope = serde_json::from_value(bad_order).unwrap();
+    assert!(!bad_order.is_valid_for(job_id));
+
+    let mut excessive_attempt = valid.clone();
+    excessive_attempt["stages"][0]["attempt"] = serde_json::json!(65);
+    let excessive_attempt: ServerStageProjectionEnvelope =
+        serde_json::from_value(excessive_attempt).unwrap();
+    assert!(!excessive_attempt.is_valid_for(job_id));
+
+    let mut injected_reason = valid;
+    injected_reason["stages"][1]["reason"] = serde_json::json!("alignment\nforged");
+    let injected_reason: ServerStageProjectionEnvelope =
+        serde_json::from_value(injected_reason).unwrap();
+    assert!(!injected_reason.is_valid_for(job_id));
 }

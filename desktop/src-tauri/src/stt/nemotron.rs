@@ -3,15 +3,23 @@ use std::path::{Path, PathBuf};
 use crate::stt::error::SttError;
 
 mod catalog;
+mod language;
 mod lifecycle;
 mod load_guard;
 
-pub(crate) use load_guard::ModelLoadGuard;
+pub(crate) use language::{
+    supported_live_locales, supports_live_language, LIVE_LANGUAGE_CATALOG_REVISION,
+};
+pub(crate) use load_guard::{
+    cleanup_stale_snapshots as cleanup_stale_model_snapshots, ModelLoadGuard,
+};
 
 pub const MODEL_ID: &str = "nemotron-3.5-asr-streaming-0.6b-1120ms-int8";
 pub const MODEL_LABEL: &str = "Nemotron 3.5 ASR Streaming 0.6B INT8";
 pub const CHUNK_MS: u64 = 1120;
-pub const NUM_THREADS: i32 = 4;
+/// Two native inference threads preserve low-end real-time margin without the
+/// ONNX worker-pool oversubscription measured at four configured threads.
+pub const INFERENCE_THREADS: i32 = 2;
 
 const MODEL_DIR: &str = "nemotron-3.5-asr-streaming-0.6b-1120ms-int8";
 const REPO: &str = "csukuangfj2/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-1120ms-int8-2026-06-11";
@@ -87,10 +95,10 @@ pub struct FallbackModelView {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct Artifact {
-    file: &'static str,
-    sha256: &'static str,
-    bytes: u64,
+pub(crate) struct Artifact {
+    pub(crate) file: &'static str,
+    pub(crate) sha256: &'static str,
+    pub(crate) bytes: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

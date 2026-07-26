@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "corpus": {
+    "id": "ami-meeting-corpus",
+    "release": "1.6.2",
+    "meetingId": "ES2004a",
+    "languageBcp47": "en",
+    "scenarioSplit": "unseen-evaluation",
+    "asrSplit": "full-corpus-asr-eval",
+    "source": "https://groups.inf.ed.ac.uk/ami/corpus/datasets.shtml"
+  },
+  "purpose": {
+    "promotionEligible": false,
+    "exposureStatus": "unknown"
+  },
+  "license": {
+    "id": "CC-BY-4.0",
+    "declarationSource": "https://groups.inf.ed.ac.uk/ami/download/",
+    "legalCodeSource": "https://creativecommons.org/licenses/by/4.0/legalcode.txt",
+    "legalCodeSha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411"
+  },
+  "annotations": {
+    "artifact": {
+      "cachePath": "corpora/ami/1.6.2/ami_public_manual_1.6.2.zip",
+      "downloadSource": "https://groups.inf.ed.ac.uk/ami/AMICorpusAnnotations/ami_public_manual_1.6.2.zip",
+      "size": 22887865,
+      "sha256": "b56e5babb2496b8795deeeda7e71178d7fbc9963f94276cf2a3f4b56ebbc9f9d"
+    },
+    "memberCount": 5183,
+    "uncompressedBytes": 205293665
+  },
+  "transcript": {
+    "namespace": "http://nite.sourceforge.net/",
+    "timing": "manual-word-plus-forced-alignment",
+    "flatOrderingPolicy": "start-end-agent-source-ordinal-v1",
+    "members": [
+      {
+        "agentId": "A",
+        "archivePath": "words/ES2004a.A.words.xml",
+        "size": 32225,
+        "counts": {"w": 379, "vocalsound": 6, "disfmarker": 4, "gap": 2}
+      },
+      {
+        "agentId": "B",
+        "archivePath": "words/ES2004a.B.words.xml",
+        "size": 107451,
+        "counts": {"w": 1260, "vocalsound": 24, "disfmarker": 24, "gap": 1}
+      },
+      {
+        "agentId": "C",
+        "archivePath": "words/ES2004a.C.words.xml",
+        "size": 45192,
+        "counts": {"w": 517, "vocalsound": 13, "disfmarker": 19, "gap": 2}
+      },
+      {
+        "agentId": "D",
+        "archivePath": "words/ES2004a.D.words.xml",
+        "size": 82827,
+        "counts": {"w": 979, "vocalsound": 17, "disfmarker": 10, "gap": 1}
+      }
+    ]
+  },
+  "audio": {
+    "sampleRateHz": 16000,
+    "channelCount": 1,
+    "sampleWidthBytes": 2,
+    "frameCount": 16789675,
+    "conditions": [
+      {
+        "id": "close-mix",
+        "capture": "mixed-close-talking-headsets",
+        "artifact": {
+          "cachePath": "corpora/ami/1.6.2/ES2004a.Mix-Headset.wav",
+          "downloadSource": "https://groups.inf.ed.ac.uk/ami/AMICorpusMirror/amicorpus/HeadsetAudio/ES2004a.Mix-Headset.wav",
+          "size": 33579394,
+          "sha256": "3e2560b19bee6952c7c7ce041b0f1ea8a7ea9468044c4eea79d2a2c67e24ab0f"
+        }
+      },
+      {
+        "id": "far-field-array1-channel1",
+        "capture": "single-distant-array-channel",
+        "artifact": {
+          "cachePath": "corpora/ami/1.6.2/ES2004a.Array1-01.wav",
+          "downloadSource": "https://groups.inf.ed.ac.uk/ami/AMICorpusMirror/amicorpus/ES2004a/audio/ES2004a.Array1-01.wav",
+          "size": 33579394,
+          "sha256": "6936edac5d0904fc5c4ab175546c5cc5366601fdc1b1e5183a6ea2c10f05d150"
+        }
+      }
+    ]
+  },
+  "limitations": [
+    "pre-existing-public-comparator",
+    "upstream-transcript-known-defects-require-review",
+    "upstream-timings-include-forced-alignment",
+    "overlap-has-no-unique-flat-word-order",
+    "speaker-attribution-not-scored-in-phase-6"
+  ]
+}

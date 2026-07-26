@@ -3,8 +3,14 @@ use std::time::Duration;
 use tauri::{Emitter, Manager};
 
 use super::{
-    allow_insecure_private_server, client, config, ServerConnectionSnapshot, ServerConnector,
+    allow_insecure_private_server, capabilities, client, config, AsrCapabilityCatalog,
+    ServerConnectionSnapshot, ServerConnector,
 };
+
+struct FetchedAsrCapabilityCatalog {
+    lease: super::core::AsrCapabilityLease,
+    catalog: AsrCapabilityCatalog,
+}
 
 impl ServerConnector {
     fn synchronize_from_disk(
@@ -154,6 +160,92 @@ pub(super) async fn refresh_connection(
         .synchronize_from_disk(&app)
         .map_err(|error| error.to_string())?;
     Ok(connector.refresh(&app).await)
+}
+
+pub(super) async fn asr_capabilities(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    connector: tauri::State<'_, ServerConnector>,
+) -> Result<Option<AsrCapabilityCatalog>, String> {
+    crate::authorization::ensure_main(&window)?;
+    current_asr_capabilities(&app, connector.inner()).await
+}
+
+pub(crate) async fn current_asr_capabilities(
+    app: &tauri::AppHandle,
+    connector: &ServerConnector,
+) -> Result<Option<AsrCapabilityCatalog>, String> {
+    with_current_asr_capabilities(app, connector, |current| current.catalog().clone()).await
+}
+
+pub(crate) async fn with_current_asr_capabilities<T>(
+    app: &tauri::AppHandle,
+    connector: &ServerConnector,
+    commit: impl FnOnce(super::CurrentAsrCatalog<'_>) -> T,
+) -> Result<Option<T>, String> {
+    let Some(fetched) = fetch_current_asr_capabilities(app, connector).await? else {
+        return Ok(None);
+    };
+    // This synchronous closure runs while the connector generation is locked.
+    // Callers use it for bounded durable commits; it must never await or acquire
+    // the connector in the opposite order.
+    connector
+        .commit_current_asr_capability_catalog(&fetched.lease, fetched.catalog, commit)
+        .map(Some)
+}
+
+async fn fetch_current_asr_capabilities(
+    app: &tauri::AppHandle,
+    connector: &ServerConnector,
+) -> Result<Option<FetchedAsrCapabilityCatalog>, String> {
+    connector
+        .synchronize_from_disk(app)
+        .map_err(|error| error.to_string())?;
+    let Some(lease) = connector.asr_capability_lease() else {
+        return Ok(None);
+    };
+    if !config::origin_is_approved(lease.base_url()).unwrap_or(false) {
+        return Err("ASR capability origin is not approved.".into());
+    }
+    let catalog = match capabilities::fetch_asr_capabilities(
+        &connector.client,
+        lease.base_url(),
+        allow_insecure_private_server(),
+    )
+    .await
+    {
+        Ok(catalog) => catalog,
+        Err(
+            capabilities::AsrCatalogError::Transport | capabilities::AsrCatalogError::Unavailable,
+        ) => return Ok(None),
+        Err(capabilities::AsrCatalogError::InvalidOrigin) => {
+            return Err("ASR capability origin is invalid.".into());
+        }
+        Err(
+            capabilities::AsrCatalogError::ResponseTooLarge
+            | capabilities::AsrCatalogError::Malformed
+            | capabilities::AsrCatalogError::RevisionMismatch,
+        ) => return Err("Server returned an incompatible ASR capability catalog.".into()),
+    };
+    Ok(Some(FetchedAsrCapabilityCatalog { lease, catalog }))
+}
+
+pub(crate) fn last_known_asr_capabilities(
+) -> Result<Option<super::LastKnownAsrCapabilities>, String> {
+    let settings = config::load().map_err(|error| error.to_string())?;
+    if !settings.enabled {
+        return Ok(None);
+    }
+    let Some(origin) = settings.base_url else {
+        return Ok(None);
+    };
+    match super::capability_snapshot::load(&origin) {
+        Ok(snapshot) => Ok(snapshot),
+        Err(_) => {
+            crate::stt::log_yap("last-known ASR capability snapshot is unavailable");
+            Ok(None)
+        }
+    }
 }
 
 pub(super) fn load_settings(

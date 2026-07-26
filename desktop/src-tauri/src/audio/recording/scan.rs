@@ -189,6 +189,30 @@ pub(crate) fn open_regular_artifact(directory: &Path, name: &str) -> Result<File
     Ok(file)
 }
 
+pub(crate) fn recoverable_complete_sidecar_is_owned(
+    directory: &Path,
+    session_id: &SessionId,
+) -> Result<bool, String> {
+    let sidecar_name = format!("live-{session_id}.capture.json");
+    let Ok(text) = read_regular_artifact(directory, &sidecar_name) else {
+        return Ok(false);
+    };
+    let Ok(sidecar) = serde_json::from_str::<CaptureSidecar>(&text) else {
+        return Ok(false);
+    };
+    let audio_name = format!("live-{session_id}.wav");
+    if sidecar.validate_recoverable(session_id).is_err() {
+        return Ok(false);
+    }
+    let mut audio = open_regular_artifact(directory, &audio_name)?;
+    Ok(audio
+        .metadata()
+        .map_err(|error| format!("Failed to inspect recoverable audio: {error}"))?
+        .len()
+        == sidecar.audio_bytes
+        && sha256_open_file(&mut audio)? == sidecar.audio_sha256)
+}
+
 pub(crate) fn recover_partial_wav_with_identity(
     directory: &Path,
     session_id: &SessionId,

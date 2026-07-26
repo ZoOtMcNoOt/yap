@@ -1,12 +1,14 @@
 import type { ComponentProps } from "react";
 
 import { HelpSheet } from "@/components/panels/help-sheet";
+import { LanguageLabelCorrections } from "@/components/language-label-corrections";
 import { SettingsSheet } from "@/components/panels/settings-sheet";
 import { TranscriptPreviewDialog } from "@/components/transcript-preview-dialog";
 import { TranscriptReviewDialog } from "@/components/transcript-review-dialog";
 import type { useSettingsControl } from "@/hooks/use-settings-control";
 import type { TranscriptHistoryEntry } from "@/history-model";
 import type { RecordingJobView } from "@/lib/recording-job";
+import type { FixedBatchLanguageOption } from "@/language-preference";
 import type { RailAction } from "@/lib/workspace";
 
 const unavailableHistoryRetry = () => undefined;
@@ -20,6 +22,7 @@ type AppOverlaysProps = {
   helpOpen: boolean;
   historyJob: (entry: TranscriptHistoryEntry) => RecordingJobView;
   historyReviewOpen: boolean;
+  languageOptions: FixedBatchLanguageOption[];
   onDetailsOpenChange: (open: boolean) => void;
   onHelpOpenChange: (open: boolean) => void;
   openAppPath: (path: string) => unknown;
@@ -29,6 +32,7 @@ type AppOverlaysProps = {
   revealPath: (path: string) => unknown;
   reviewMorphOrigin?: ComponentProps<typeof TranscriptReviewDialog>["morphOrigin"];
   selectedHistoryItem?: RecordingJobView;
+  selectedHistoryEntry?: TranscriptHistoryEntry;
   settings: ReturnType<typeof useSettingsControl>;
   status: string;
   transcriptText: Record<string, string>;
@@ -43,6 +47,7 @@ export function AppOverlays({
   helpOpen,
   historyJob,
   historyReviewOpen,
+  languageOptions,
   onDetailsOpenChange,
   onHelpOpenChange,
   openAppPath,
@@ -52,6 +57,7 @@ export function AppOverlays({
   revealPath,
   reviewMorphOrigin,
   selectedHistoryItem,
+  selectedHistoryEntry,
   settings,
   status,
   transcriptText,
@@ -65,13 +71,19 @@ export function AppOverlays({
         fallbackModel={settings.fallback.model}
         liveBusy={settings.live.busy}
         liveInputDevices={settings.live.inputDevices}
+        liveLanguageRouting={settings.languageRouting}
         liveSettingsError={settings.live.settingsError}
         liveView={settings.live.view}
         localComputeTargets={settings.compute.targets}
+        primaryLanguageError={settings.language.error}
+        primaryLanguagePending={settings.language.pending}
+        primaryLanguageStatus={settings.language.status}
         onCancelFallbackInstall={() => void settings.fallback.cancelInstall()}
+        onConfirmPrimaryLanguage={(languageBcp47) => void settings.language.confirm(languageBcp47)}
         onInstallFallback={(options) => void settings.fallback.install(options)}
         onOpenChange={onDetailsOpenChange}
         onOpenFallbackFolder={() => void settings.fallback.openFolder()}
+        languageDetector={settings.languageDetector}
         onPreflightLiveInput={settings.live.preflightInput}
         onRemoveFallback={() => void settings.fallback.remove()}
         onResetLiveHotkey={settings.live.resetHotkey}
@@ -92,12 +104,21 @@ export function AppOverlays({
         onVerifyFallback={() => void settings.fallback.verify()}
         open={detailsOpen}
         serverLabel={settings.serverLabel}
+        sileroVad={settings.vad}
         status={status}
       />
       <HelpSheet onOpenChange={onHelpOpenChange} open={helpOpen} />
       <TranscriptReviewDialog
         elapsedSeconds={0}
         item={selectedHistoryItem}
+        languageLabelReview={selectedHistoryEntry?.origin === "remote" &&
+          (selectedHistoryEntry.resultSummary?.languageStatus === "dynamic" ||
+            selectedHistoryEntry.resultSummary?.languageStatus === "unknownSegments") ? (
+            <LanguageLabelCorrections
+              entry={selectedHistoryEntry}
+              languageOptions={languageOptions}
+            />
+          ) : undefined}
         morphOrigin={reviewMorphOrigin}
         onCopy={copyTranscript}
         onOpen={(path) => void openAppPath(path)}

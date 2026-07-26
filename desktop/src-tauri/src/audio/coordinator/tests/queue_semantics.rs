@@ -191,8 +191,8 @@ fn composed_result_marks_only_the_failed_or_degraded_sinks() {
 
 #[test]
 fn queue_capacities_and_high_water_marks_are_visible() {
-    assert_eq!(RECORDING_QUEUE_CAPACITY, 128);
-    assert_eq!(LOCAL_ASR_QUEUE_CAPACITY, 64);
+    assert_eq!(RECORDING_QUEUE_CAPACITY, 1_024);
+    assert_eq!(LOCAL_ASR_QUEUE_CAPACITY, 1_024);
     assert_eq!(EVIDENCE_QUEUE_CAPACITY, 32);
     assert_eq!(SERVER_TRANSPORT_QUEUE_CAPACITY, 64);
 
@@ -283,6 +283,40 @@ fn receive_claim_keeps_depth_and_high_water_at_capacity_during_a_send_interleavi
 
     assert_eq!(receiver_worker.join().unwrap().unwrap(), 1);
     assert_eq!(sink.high_water_mark(), 1);
+}
+
+#[test]
+fn terminal_control_send_waits_for_transient_pressure_without_recording_a_drop() {
+    let (sink, receiver) = bounded_sink(SinkKind::Recording, 1);
+    sink.try_send(1_u8).unwrap();
+    let drain = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(20));
+        [
+            receiver.recv_timeout(Duration::from_secs(1)).unwrap(),
+            receiver.recv_timeout(Duration::from_secs(1)).unwrap(),
+        ]
+    });
+
+    sink.send_control_with_timeout(2, Duration::from_secs(1))
+        .unwrap();
+
+    assert_eq!(drain.join().unwrap(), [1, 2]);
+    assert_eq!(sink.outcome().accepted_frames, 2);
+    assert_eq!(sink.outcome().dropped_frames, 0);
+}
+
+#[test]
+fn terminal_control_timeout_fails_closed_and_degrades_the_sink() {
+    let (sink, _receiver) = bounded_sink(SinkKind::Recording, 1);
+    sink.try_send(1_u8).unwrap();
+
+    assert!(matches!(
+        sink.send_control_with_timeout(2, Duration::ZERO),
+        Err(super::SinkSendError::Full)
+    ));
+    assert_eq!(sink.outcome().accepted_frames, 1);
+    assert_eq!(sink.outcome().dropped_frames, 1);
+    assert_eq!(sink.outcome().error.as_deref(), Some("sink queue is full"));
 }
 
 #[test]

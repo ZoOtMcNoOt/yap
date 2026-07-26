@@ -1,14 +1,25 @@
 pub(crate) mod batch;
 mod boundary;
+mod capabilities;
+mod capability_snapshot;
 mod client;
 pub mod config;
 mod core;
 mod desktop;
+pub(crate) mod lid;
 mod state;
 
 pub use boundary::ServerConnectorBoundary;
-pub(crate) use core::BatchConnectionLease;
+pub use capabilities::AsrCapabilityCatalog;
+pub(crate) use capabilities::LidPreflightCapability;
+pub(crate) use capability_snapshot::LastKnownAsrCapabilities;
 pub use core::ServerConnector;
+pub(crate) use core::{
+    AsrCatalogDispatchProof, BatchConnectionLease, CurrentAsrCatalog, LidPreflightDispatchProof,
+};
+pub(crate) use desktop::{
+    current_asr_capabilities, last_known_asr_capabilities, with_current_asr_capabilities,
+};
 pub use state::{ServerCapabilities, ServerConnectionSnapshot};
 
 fn allow_insecure_private_server() -> bool {
@@ -31,6 +42,15 @@ pub(crate) async fn refresh_server_connection(
     connector: tauri::State<'_, ServerConnector>,
 ) -> Result<ServerConnectionSnapshot, String> {
     desktop::refresh_connection(window, app, connector).await
+}
+
+#[tauri::command]
+pub(crate) async fn server_asr_capabilities(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    connector: tauri::State<'_, ServerConnector>,
+) -> Result<Option<AsrCapabilityCatalog>, String> {
+    desktop::asr_capabilities(window, app, connector).await
 }
 
 #[tauri::command]

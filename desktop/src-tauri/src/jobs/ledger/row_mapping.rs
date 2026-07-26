@@ -5,12 +5,16 @@ use std::path::PathBuf;
 use rusqlite::{Connection, OptionalExtension, Row};
 
 use crate::jobs::{
-    JobChunkRecord, JobLedgerError, PreparedRemoteJobRecord, RecordingJobRecord,
-    RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
+    AsrCatalogBinding, JobChunkRecord, JobLedgerError, PreparedRemoteJobRecord, RecordingJobRecord,
+    RecordingJobStatus, RecordingLanguageDecision, RecordingRoute, SessionMode, SessionOrigin,
+    SourceOwnership,
 };
 
 use super::{
-    records::{valid_sha256, validate_opaque_identifier, validate_server_base_url},
+    records::{
+        valid_sha256, validate_catalog_binding, validate_opaque_identifier,
+        validate_server_base_url,
+    },
     JOB_COLUMNS, MAX_PREPARED_REQUEST_BYTES,
 };
 
@@ -34,6 +38,13 @@ pub(super) struct RawJob {
     created_at_ms: i64,
     updated_at_ms: i64,
     expires_at_ms: Option<i64>,
+    language_mode: String,
+    language_bcp47: Option<String>,
+    language_disposition: String,
+    language_decision_locked: i64,
+    client_stage_history_complete: i64,
+    asr_catalog_origin: Option<String>,
+    asr_catalog_revision: Option<String>,
 }
 
 pub(super) fn raw_job_from_row(row: &Row<'_>) -> rusqlite::Result<RawJob> {
@@ -57,6 +68,13 @@ pub(super) fn raw_job_from_row(row: &Row<'_>) -> rusqlite::Result<RawJob> {
         created_at_ms: row.get(16)?,
         updated_at_ms: row.get(17)?,
         expires_at_ms: row.get(18)?,
+        language_mode: row.get(19)?,
+        language_bcp47: row.get(20)?,
+        language_disposition: row.get(21)?,
+        language_decision_locked: row.get(22)?,
+        client_stage_history_complete: row.get(23)?,
+        asr_catalog_origin: row.get(24)?,
+        asr_catalog_revision: row.get(25)?,
     })
 }
 
@@ -78,6 +96,28 @@ impl TryFrom<RawJob> for RecordingJobRecord {
     type Error = JobLedgerError;
 
     fn try_from(raw: RawJob) -> Result<Self, Self::Error> {
+        let asr_catalog_binding = match (raw.asr_catalog_origin, raw.asr_catalog_revision) {
+            (Some(origin), Some(revision)) => {
+                let binding = AsrCatalogBinding::try_new(origin, revision).map_err(|message| {
+                    JobLedgerError::CorruptValue {
+                        field: "asr_catalog_binding",
+                        value: message.into(),
+                    }
+                })?;
+                validate_catalog_binding(&binding).map_err(|_| JobLedgerError::CorruptValue {
+                    field: "asr_catalog_binding",
+                    value: "invalid origin or revision".into(),
+                })?;
+                Some(binding)
+            }
+            (None, None) => None,
+            _ => {
+                return Err(JobLedgerError::CorruptValue {
+                    field: "asr_catalog_binding",
+                    value: "incomplete origin/revision pair".into(),
+                })
+            }
+        };
         Ok(Self {
             job_id: raw.job_id,
             session_mode: SessionMode::from_db(&raw.session_mode)?,
@@ -108,6 +148,20 @@ impl TryFrom<RawJob> for RecordingJobRecord {
             created_at_ms: stored_unsigned(raw.created_at_ms, "created_at_ms")?,
             updated_at_ms: stored_unsigned(raw.updated_at_ms, "updated_at_ms")?,
             expires_at_ms: stored_optional_unsigned(raw.expires_at_ms, "expires_at_ms")?,
+            language_decision: RecordingLanguageDecision::from_db(
+                &raw.language_mode,
+                raw.language_bcp47,
+                &raw.language_disposition,
+            )?,
+            language_decision_locked: stored_bool(
+                raw.language_decision_locked,
+                "language_decision_locked",
+            )?,
+            client_stage_history_complete: stored_bool(
+                raw.client_stage_history_complete,
+                "client_stage_history_complete",
+            )?,
+            asr_catalog_binding,
         })
     }
 }

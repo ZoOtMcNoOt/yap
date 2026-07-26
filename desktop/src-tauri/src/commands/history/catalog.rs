@@ -81,6 +81,7 @@ pub(super) fn collect_history_catalog(
             origin: HistoryOrigin::Live,
             output_path: session.output_path,
             recovery_state: session.recovery_state,
+            result_summary: None,
             session_id: session.session_id,
             source_path: session.source_path,
             warning: session.warning,
@@ -97,6 +98,7 @@ pub(super) fn collect_history_catalog(
                 origin: HistoryOrigin::Live,
                 output_path: artifact_path.clone(),
                 recovery_state: Some("recoverable".into()),
+                result_summary: None,
                 session_id: session.session_id,
                 source_path: artifact_path,
                 warning: Some(session.reason),
@@ -113,6 +115,7 @@ pub(super) fn collect_history_catalog(
                     origin: HistoryOrigin::Remote,
                     output_path: session.output_path,
                     recovery_state: None,
+                    result_summary: Some(session.result_summary),
                     session_id: session.session_id,
                     source_path: session.source_path,
                     warning: session.warning,
@@ -195,11 +198,24 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::{
-        jobs::commands::{CompletedRemoteTranscript, CompletedRemoteTranscriptCatalog},
+        jobs::commands::{
+            CompletedRemoteTranscript, CompletedRemoteTranscriptCatalog, TranscriptLanguageStatus,
+            TranscriptResultSummary, TranscriptTimingStatus,
+        },
         live::recordings::{RecoverableLiveSession, SavedLiveSession, SavedLiveSessionCatalog},
     };
 
     use super::*;
+
+    fn fixed_result_summary() -> TranscriptResultSummary {
+        TranscriptResultSummary {
+            language_bcp47: "en-US".into(),
+            language_status: TranscriptLanguageStatus::Fixed,
+            timing_status: TranscriptTimingStatus::LegacyUnknown,
+            active_language_correction_count: None,
+            language_review_required_count: None,
+        }
+    }
 
     #[test]
     fn catalog_combines_native_sources_with_explicit_provenance() {
@@ -232,6 +248,7 @@ mod tests {
                     source_path: "source.wav".into(),
                     output_path: "remote.txt".into(),
                     created_at_ms: 10,
+                    result_summary: fixed_result_summary(),
                     warning: None,
                 }],
                 maintenance_warnings: vec!["shared warning".into(), "remote warning".into()],
@@ -261,6 +278,7 @@ mod tests {
                 source_path: format!("source-{index}.wav"),
                 output_path: format!("remote-{index}.txt"),
                 created_at_ms: index as u64,
+                result_summary: fixed_result_summary(),
                 warning: None,
             })
             .collect();
@@ -293,6 +311,7 @@ mod tests {
                 source_path: format!("source-{index}.wav"),
                 output_path: format!("remote-{index}.txt"),
                 created_at_ms: index as u64,
+                result_summary: fixed_result_summary(),
                 warning: None,
             })
             .collect();
@@ -338,6 +357,7 @@ mod tests {
                     source_path: "source.wav".into(),
                     output_path: "remote.txt".into(),
                     created_at_ms: 1,
+                    result_summary: fixed_result_summary(),
                     warning: None,
                 }],
                 maintenance_warnings: Vec::new(),
@@ -372,6 +392,7 @@ mod tests {
                     source_path: r"C:\Yap\source.wav".into(),
                     output_path: r"C:\Yap\remote.txt".into(),
                     created_at_ms: 1,
+                    result_summary: fixed_result_summary(),
                     warning: None,
                 }],
                 maintenance_warnings: Vec::new(),
@@ -407,6 +428,7 @@ mod tests {
                         source_path: "newest.wav".into(),
                         output_path: "newest.txt".into(),
                         created_at_ms: 2,
+                        result_summary: fixed_result_summary(),
                         warning: None,
                     },
                     CompletedRemoteTranscript {
@@ -415,6 +437,7 @@ mod tests {
                         source_path: "older.wav".into(),
                         output_path: "older.txt".into(),
                         created_at_ms: 1,
+                        result_summary: fixed_result_summary(),
                         warning: None,
                     },
                 ],

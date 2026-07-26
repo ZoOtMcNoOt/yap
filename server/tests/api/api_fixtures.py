@@ -18,6 +18,9 @@ from yap_server.api.request_io import MAX_REQUEST_BODY_BYTES
 from yap_server.config import ServerSettings
 from yap_server.jobs import RecordingJobService
 from yap_server.pools.batch_asr import BatchAsrJob
+from yap_server.pools.batch_contract import BatchJobFactory
+
+from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
 
 
 class _CapturingLogger:
@@ -36,6 +39,38 @@ class _ControlledProcessor:
     def submit(self, job: BatchAsrJob) -> Future[dict[str, object]]:
         self.jobs.append(job)
         return self.future
+
+    @property
+    def asr_catalog_revision(self) -> str:
+        return TEST_ASR_CATALOG_REVISION
+
+    def resolve_route(self, catalog_language_bcp47: str):
+        return test_asr_route(catalog_language_bcp47)
+
+    def reserve(
+        self,
+        job_id: str,
+        *,
+        pcm_byte_length: int,
+    ) -> _ImmediateReservation:
+        if pcm_byte_length < 1:
+            raise ValueError("test PCM reservation must be positive")
+        return _ImmediateReservation(self, job_id)
+
+
+class _ImmediateReservation:
+    def __init__(self, processor: _ControlledProcessor, job_id: str) -> None:
+        self._processor = processor
+        self._job_id = job_id
+
+    def start(self, factory: BatchJobFactory) -> Future[dict[str, object]]:
+        job = factory(threading.Event())
+        if job.job_id != self._job_id:
+            raise AssertionError("test reservation identity changed")
+        return self._processor.submit(job)
+
+    def abort(self) -> None:
+        return None
 
 
 class _BlockingStatusService:
@@ -62,12 +97,12 @@ class _BlockingStatusService:
                 self.active -= 1
 
 
-def _phase5_job_request() -> dict[str, object]:
+def _meeting_import_job_request() -> dict[str, object]:
     chunk = bytes(320)
     return {
-        "displayName": "Phase 5 API",
+        "displayName": "Batch API fixture",
         "metadata": {
-            "sessionId": "s-phase5-api",
+            "sessionId": "s-batch-api",
             "mode": "meeting",
             "origin": "imported_file",
             "triggerMode": "toggle",
@@ -81,6 +116,11 @@ def _phase5_job_request() -> dict[str, object]:
             "privacyPolicyVersion": "development-only",
             "retentionExpiresAtUtc": "2026-08-13T21:00:00Z",
         },
+        "languageDecision": {
+            "mode": "fixed",
+            "languageBcp47": "en-US",
+            "disposition": "primary",
+        },
         "tracks": [
             {
                 "trackId": "track-1",
@@ -93,7 +133,7 @@ def _phase5_job_request() -> dict[str, object]:
         "route": "server_batch",
         "captureManifest": {
             "schemaVersion": 1,
-            "sessionId": "s-phase5-api",
+            "sessionId": "s-batch-api",
             "sha256": "a" * 64,
             "byteLength": 4096,
         },
@@ -101,7 +141,7 @@ def _phase5_job_request() -> dict[str, object]:
             {
                 "replayKey": {
                     "schemaVersion": 1,
-                    "sessionId": "s-phase5-api",
+                    "sessionId": "s-batch-api",
                     "trackId": "track-1",
                     "sequenceStart": 0,
                     "sequenceEnd": 159,
@@ -121,14 +161,22 @@ def _phase5_job_request() -> dict[str, object]:
 
 
 class HealthServerTestCase(unittest.TestCase):
+    asr_capabilities: dict[str, object] | None = None
+    lid_preflight_service: object | None = None
+
     def setUp(self) -> None:
         self.logger = _CapturingLogger()
         self.server = create_server(
             ServerSettings(host="127.0.0.1", port=0),
             logger=self.logger,
+            asr_capabilities=self.asr_capabilities,
+            lid_preflight_service=self.lid_preflight_service,
         )
         self.assertIsInstance(self.server, HTTPServer)
-        self.assertNotIsInstance(self.server, ThreadingHTTPServer)
+        if self.lid_preflight_service is None:
+            self.assertNotIsInstance(self.server, ThreadingHTTPServer)
+        else:
+            self.assertIsInstance(self.server, ThreadingHTTPServer)
         host, port = self.server.server_address[:2]
         self.base_url = f"http://{host}:{port}"
         self.thread = threading.Thread(
@@ -199,6 +247,7 @@ class HealthServerTestCase(unittest.TestCase):
         expected_status: int,
         code: str,
         message: str,
+        retryable: bool = False,
     ) -> dict[str, object]:
         self.assertEqual(status, expected_status)
         self.assert_json_headers(headers, body)
@@ -211,7 +260,7 @@ class HealthServerTestCase(unittest.TestCase):
             {
                 "code": code,
                 "message": message,
-                "retryable": False,
+                "retryable": retryable,
                 "requestId": request_id,
             },
         )

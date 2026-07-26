@@ -21,6 +21,8 @@ use tauri_plugin_dialog::DialogExt;
 
 mod catalog;
 mod imports;
+pub(crate) mod language_confirmation;
+mod language_label_corrections;
 mod lifecycle;
 mod native_import_dispatcher;
 mod playback;
@@ -37,7 +39,7 @@ use native_import_dispatcher::{
 
 const PENDING_JOB_LIFETIME_MS: u64 = 7 * 24 * 60 * 60 * 1_000;
 const MAX_RECORDING_JOBS: usize = 200;
-const PHASE5_REMOTE_IMPORT_EXTENSIONS: &[&str] = &["wav"];
+const REMOTE_IMPORT_AUDIO_EXTENSIONS: &[&str] = &["wav"];
 static NEXT_JOB_NONCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, serde::Serialize)]
@@ -62,8 +64,37 @@ pub struct CompletedRemoteTranscript {
     pub source_path: String,
     pub output_path: String,
     pub created_at_ms: u64,
+    pub(crate) result_summary: TranscriptResultSummary,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub warning: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum TranscriptLanguageStatus {
+    Fixed,
+    Dynamic,
+    UnknownSegments,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum TranscriptTimingStatus {
+    Available,
+    Unavailable,
+    LegacyUnknown,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TranscriptResultSummary {
+    pub(crate) language_bcp47: String,
+    pub(crate) language_status: TranscriptLanguageStatus,
+    pub(crate) timing_status: TranscriptTimingStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) active_language_correction_count: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) language_review_required_count: Option<u64>,
 }
 
 impl From<JobLedgerError> for JobCommandError {
@@ -104,12 +135,24 @@ pub(crate) fn recording_jobs_snapshot(
 pub(crate) async fn recording_jobs_pick_imports(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
+    connector: tauri::State<'_, crate::server_connector::ServerConnector>,
+    language_mode: Option<crate::jobs::RecordingLanguageMode>,
+    language_bcp47: Option<String>,
+    catalog_revision: Option<String>,
 ) -> Result<Vec<RecordingJobView>, JobCommandError> {
     ensure_main(&window)?;
     let _selection = begin_native_import_selection(&app)?;
     #[cfg(feature = "wdio")]
     if let Some(paths) = wdio_picker_override()? {
-        return import_native_paths(&app, paths);
+        return import_picked_paths(
+            &app,
+            connector.inner(),
+            paths,
+            language_mode,
+            language_bcp47,
+            catalog_revision,
+        )
+        .await;
     }
     let picker_app = app.clone();
     let selected = tauri::async_runtime::spawn_blocking(move || {
@@ -117,7 +160,7 @@ pub(crate) async fn recording_jobs_pick_imports(
             .dialog()
             .file()
             .set_title("Choose recordings")
-            .add_filter("Canonical WAV audio", PHASE5_REMOTE_IMPORT_EXTENSIONS)
+            .add_filter("Canonical WAV audio", REMOTE_IMPORT_AUDIO_EXTENSIONS)
             .blocking_pick_files()
     })
     .await
@@ -136,7 +179,55 @@ pub(crate) async fn recording_jobs_pick_imports(
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
-    import_native_paths(&app, paths)
+    import_picked_paths(
+        &app,
+        connector.inner(),
+        paths,
+        language_mode,
+        language_bcp47,
+        catalog_revision,
+    )
+    .await
+}
+
+async fn import_picked_paths(
+    app: &tauri::AppHandle,
+    connector: &crate::server_connector::ServerConnector,
+    paths: Vec<PathBuf>,
+    language_mode: Option<crate::jobs::RecordingLanguageMode>,
+    language_bcp47: Option<String>,
+    catalog_revision: Option<String>,
+) -> Result<Vec<RecordingJobView>, JobCommandError> {
+    let jobs = app.state::<RecordingJobs>();
+    let media = app.state::<MediaOwner>();
+    let prepared = jobs.prepare_imports(paths)?;
+    let now_ms = now_ms()?;
+    let committed =
+        crate::server_connector::with_current_asr_capabilities(app, connector, |current| {
+            crate::language_preferences::with_recording_language_decision(
+                language_mode,
+                language_bcp47.as_deref(),
+                catalog_revision.as_deref(),
+                current.catalog(),
+                |decision| {
+                    jobs.commit_prepared_imports(prepared, now_ms, decision, current.binding())
+                },
+            )
+        })
+        .await
+        .map_err(|message| command_error("LANGUAGE_CAPABILITIES_UNAVAILABLE", message))?
+        .ok_or_else(|| {
+            command_error(
+                "LANGUAGE_CAPABILITIES_UNAVAILABLE",
+                "Current ASR language capabilities are unavailable.",
+            )
+        })?;
+    let committed = committed.map_err(|error| command_error(error.code(), error.to_string()))?;
+    notify_after_durable_import_commit(
+        committed,
+        |committed| jobs.project_committed_imports(&media, committed, now_ms),
+        || emit_jobs_changed(app),
+    )
 }
 
 #[cfg(feature = "wdio")]
@@ -220,7 +311,7 @@ fn now_ms() -> Result<u64, JobCommandError> {
         .map_err(|message| command_error("CLOCK_UNAVAILABLE", message))
 }
 
-fn emit_jobs_changed(app: &tauri::AppHandle) {
+pub(crate) fn emit_jobs_changed(app: &tauri::AppHandle) {
     if let Err(error) = app.emit_to(
         crate::authorization::MAIN_WINDOW_LABEL,
         "recording-jobs-changed",
@@ -232,16 +323,12 @@ fn emit_jobs_changed(app: &tauri::AppHandle) {
     }
 }
 
-pub(crate) fn import_native_paths(
+pub(crate) async fn import_native_paths(
     app: &tauri::AppHandle,
     paths: Vec<PathBuf>,
 ) -> Result<Vec<RecordingJobView>, JobCommandError> {
-    let jobs = app.state::<RecordingJobs>();
-    let media = app.state::<MediaOwner>();
-    mutate_then_notify(
-        || jobs.create_imports(&media, paths, now_ms()?),
-        || emit_jobs_changed(app),
-    )
+    let connector = app.state::<crate::server_connector::ServerConnector>();
+    import_picked_paths(app, connector.inner(), paths, None, None, None).await
 }
 
 pub(crate) fn emit_native_import_error(app: &tauri::AppHandle, error: &JobCommandError) {
@@ -322,6 +409,17 @@ fn mutate_then_notify<T, E>(
     notify: impl FnOnce(),
 ) -> Result<T, E> {
     let result = mutation();
+    notify();
+    result
+}
+
+fn notify_after_durable_import_commit<C, T, E>(
+    committed: Result<C, E>,
+    projection: impl FnOnce(C) -> Result<T, E>,
+    notify: impl FnOnce(),
+) -> Result<T, E> {
+    let committed = committed?;
+    let result = projection(committed);
     notify();
     result
 }

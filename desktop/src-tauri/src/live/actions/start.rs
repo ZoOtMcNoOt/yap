@@ -55,7 +55,7 @@ pub(crate) fn handle_live_shortcut_action(
     }
 }
 
-pub(crate) fn start_live_runtime(
+fn start_live_runtime(
     app: tauri::AppHandle,
     live: &live::LiveSessionState,
     live_runtime: &live::runtime::LiveRuntime,
@@ -63,6 +63,17 @@ pub(crate) fn start_live_runtime(
     active_capture_mode: live::state::LiveCaptureMode,
 ) -> live::state::LiveSessionView {
     let intent = live_runtime.capture_start_intent();
+    start_live_runtime_with_intent(app, live, live_runtime, stt, active_capture_mode, intent)
+}
+
+pub(crate) fn start_live_runtime_with_intent(
+    app: tauri::AppHandle,
+    live: &live::LiveSessionState,
+    live_runtime: &live::runtime::LiveRuntime,
+    stt: &stt::dispatch::SttState,
+    active_capture_mode: live::state::LiveCaptureMode,
+    intent: live::runtime::StartIntent,
+) -> live::state::LiveSessionView {
     let start_app = app.clone();
     let result = live_runtime.run_start_lifecycle(intent, || {
         start_live_runtime_serialized(

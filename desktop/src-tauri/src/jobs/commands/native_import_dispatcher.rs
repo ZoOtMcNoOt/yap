@@ -96,7 +96,7 @@ impl Drop for NativeImportSelectionLease {
 
 fn run_native_imports(app: tauri::AppHandle, receiver: NativeImportReceiver) {
     while let Ok(paths) = receiver.recv() {
-        if let Err(error) = import_native_paths(&app, paths) {
+        if let Err(error) = tauri::async_runtime::block_on(import_native_paths(&app, paths)) {
             emit_native_import_error(&app, &error);
         }
     }

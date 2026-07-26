@@ -12,6 +12,7 @@ use super::{
     integrity::verify_download,
     io_error_to_stt,
     operation::DownloadOperation,
+    path_safety::create_model_directory,
     progress::{BodyProgress, DownloadProgress},
     reqwest_error_to_stt,
     temp::{cleanup_stale_download_temps, OperationTemp},
@@ -57,7 +58,7 @@ where
 {
     request.validate()?;
     let parent = request.destination.parent().ok_or(SttError::ModelMissing)?;
-    std::fs::create_dir_all(parent).map_err(io_error_to_stt)?;
+    create_model_directory(parent)?;
     cleanup_stale_download_temps(&request.destination, operation)?;
 
     let mut temp = OperationTemp::create(&request.destination, operation.clone())?;

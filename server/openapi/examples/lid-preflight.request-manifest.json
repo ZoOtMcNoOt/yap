@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "requestId": "lid-request-01",
+  "sourceSamples": 480000,
+  "sourcePcmSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "catalogRevision": "16a89b24cf036dda7b1272b88c066baafea2262743dcaaebc8a66b7b76c3d09f",
+  "policyRevision": "ambernet-stratified-five-region-v1",
+  "probes": [
+    {
+      "index": 0,
+      "sourceStartSample": 0,
+      "sourceEndSample": 96000,
+      "voicedSamples": 96000,
+      "pcmByteLength": 192000,
+      "pcmSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "vadIntervals": [
+        {
+          "startSample": 0,
+          "endSampleExclusive": 96000
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "sourceStartSample": 96000,
+      "sourceEndSample": 192000,
+      "voicedSamples": 96000,
+      "pcmByteLength": 192000,
+      "pcmSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "vadIntervals": [
+        {
+          "startSample": 96000,
+          "endSampleExclusive": 192000
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "sourceStartSample": 192000,
+      "sourceEndSample": 288000,
+      "voicedSamples": 96000,
+      "pcmByteLength": 192000,
+      "pcmSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "vadIntervals": [
+        {
+          "startSample": 192000,
+          "endSampleExclusive": 288000
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "sourceStartSample": 288000,
+      "sourceEndSample": 384000,
+      "voicedSamples": 96000,
+      "pcmByteLength": 192000,
+      "pcmSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "vadIntervals": [
+        {
+          "startSample": 288000,
+          "endSampleExclusive": 384000
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "sourceStartSample": 384000,
+      "sourceEndSample": 480000,
+      "voicedSamples": 96000,
+      "pcmByteLength": 192000,
+      "pcmSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "vadIntervals": [
+        {
+          "startSample": 384000,
+          "endSampleExclusive": 480000
+        }
+      ]
+    }
+  ]
+}

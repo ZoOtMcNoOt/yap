@@ -216,63 +216,100 @@ pub(super) fn preflight_input_device(
 }
 
 #[tauri::command]
-pub(super) fn start_live_session(
+pub(super) async fn start_live_session(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
     state: tauri::State<'_, live::LiveSessionState>,
     live_runtime: tauri::State<'_, live::runtime::LiveRuntime>,
-    stt_state: tauri::State<'_, stt::dispatch::SttState>,
     active_capture_mode: Option<live::state::LiveCaptureMode>,
 ) -> Result<live::state::LiveSessionView, String> {
     authorization::ensure_main(&window)?;
-    live::actions::warm_on_intent(&app, &live_runtime);
+    let intent = live_runtime.capture_start_intent();
     let capture_mode = active_capture_mode.unwrap_or_else(|| state.snapshot().capture_mode);
-    Ok(live::actions::start_live_runtime(
-        app,
-        &state,
-        &live_runtime,
-        &stt_state,
-        capture_mode,
-    ))
+    live::actions::warm_on_intent(&app, &live_runtime);
+    let worker_app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = worker_app.state::<live::LiveSessionState>();
+        let live_runtime = worker_app.state::<live::runtime::LiveRuntime>();
+        let stt_state = worker_app.state::<stt::dispatch::SttState>();
+        live::actions::start_live_runtime_with_intent(
+            worker_app.clone(),
+            &state,
+            &live_runtime,
+            &stt_state,
+            capture_mode,
+            intent,
+        )
+    })
+    .await
+    .map_err(|error| format!("Live start worker failed: {error}"))
 }
 
 #[tauri::command]
-pub(super) fn start_live_overlay_session(
+pub(super) async fn start_live_overlay_session(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
     state: tauri::State<'_, live::LiveSessionState>,
     live_runtime: tauri::State<'_, live::runtime::LiveRuntime>,
-    stt_state: tauri::State<'_, stt::dispatch::SttState>,
     active_capture_mode: Option<live::state::LiveCaptureMode>,
 ) -> Result<live::state::LiveOverlayView, String> {
     authorization::ensure_live_overlay(&window)?;
-    live::actions::warm_on_intent(&app, &live_runtime);
+    let intent = live_runtime.capture_start_intent();
     let capture_mode = active_capture_mode.unwrap_or_else(|| state.snapshot().capture_mode);
-    let view =
-        live::actions::start_live_runtime(app, &state, &live_runtime, &stt_state, capture_mode);
+    live::actions::warm_on_intent(&app, &live_runtime);
+    let worker_app = app.clone();
+    let view = tauri::async_runtime::spawn_blocking(move || {
+        let state = worker_app.state::<live::LiveSessionState>();
+        let live_runtime = worker_app.state::<live::runtime::LiveRuntime>();
+        let stt_state = worker_app.state::<stt::dispatch::SttState>();
+        live::actions::start_live_runtime_with_intent(
+            worker_app.clone(),
+            &state,
+            &live_runtime,
+            &stt_state,
+            capture_mode,
+            intent,
+        )
+    })
+    .await
+    .map_err(|error| format!("Live overlay start worker failed: {error}"))?;
     Ok(live::state::LiveOverlayView::from(&view))
 }
 
 #[tauri::command]
-pub(super) fn stop_live_session(
+pub(super) async fn stop_live_session(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
-    state: tauri::State<'_, live::LiveSessionState>,
     live_runtime: tauri::State<'_, live::runtime::LiveRuntime>,
 ) -> Result<live::state::LiveSessionView, String> {
     authorization::ensure_main(&window)?;
-    Ok(live::actions::stop_live_runtime(app, &state, &live_runtime))
+    live_runtime.cancel_pending_start();
+    let worker_app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = worker_app.state::<live::LiveSessionState>();
+        let live_runtime = worker_app.state::<live::runtime::LiveRuntime>();
+        live::actions::stop_live_runtime(worker_app.clone(), &state, &live_runtime)
+    })
+    .await
+    .map_err(|error| format!("Live stop worker failed: {error}"))
 }
 
 #[tauri::command]
-pub(super) fn stop_live_overlay_session(
+pub(super) async fn stop_live_overlay_session(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
-    state: tauri::State<'_, live::LiveSessionState>,
     live_runtime: tauri::State<'_, live::runtime::LiveRuntime>,
 ) -> Result<live::state::LiveOverlayView, String> {
     authorization::ensure_live_overlay(&window)?;
-    let view = live::actions::stop_live_runtime(app, &state, &live_runtime);
+    live_runtime.cancel_pending_start();
+    let worker_app = app.clone();
+    let view = tauri::async_runtime::spawn_blocking(move || {
+        let state = worker_app.state::<live::LiveSessionState>();
+        let live_runtime = worker_app.state::<live::runtime::LiveRuntime>();
+        live::actions::stop_live_runtime(worker_app.clone(), &state, &live_runtime)
+    })
+    .await
+    .map_err(|error| format!("Live overlay stop worker failed: {error}"))?;
     Ok(live::state::LiveOverlayView::from(&view))
 }
 

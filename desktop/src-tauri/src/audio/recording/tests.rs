@@ -3,6 +3,10 @@ use crate::audio::coordinator::{bounded_sink, SinkKind};
 use crate::audio::frame::AudioFrame;
 use crate::audio::session::TrackId;
 use crate::audio::session::{SessionId, SessionMetadata, SessionMode, SessionOrigin, TriggerMode};
+use crate::language::{
+    live_diarization::{LanguageSpan, LanguageSpanDisposition},
+    live_evidence::{LiveLanguageEvidence, LiveLanguageMode, LiveLanguageStatus},
+};
 use std::sync::Arc;
 
 mod commit_partial;
@@ -162,6 +166,27 @@ fn prepared_frame_at(session_id: &SessionId, sequence: u64, start_ms: u64) -> Pr
         },
         samples: Arc::from([0.25]),
     }
+}
+
+fn fixed_language_evidence(source_end_sample: u64) -> LiveLanguageEvidence {
+    LiveLanguageEvidence::try_new(
+        source_end_sample,
+        "en-US".into(),
+        LiveLanguageMode::FixedPrimary,
+        LiveLanguageStatus::Complete,
+        None,
+        None,
+        vec![LanguageSpan {
+            start_sample: 0,
+            end_sample: source_end_sample,
+            language_bcp47: "en-US".into(),
+            decision_revision: 1,
+            disposition: LanguageSpanDisposition::ConfirmedPrimary,
+            component_revision: None,
+            decision_evidence: None,
+        }],
+    )
+    .unwrap()
 }
 
 fn rehash_capture_sidecar(dir: &Path, session: &SessionId, sidecar_path: &Path) {

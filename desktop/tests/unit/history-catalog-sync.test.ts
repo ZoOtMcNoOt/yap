@@ -92,6 +92,11 @@ describe("native history catalog synchronization", () => {
         name: "Remote",
         origin: "remote",
         outputPath: "C:/Yap/remote.txt",
+        resultSummary: {
+          languageBcp47: "en-US",
+          languageStatus: "fixed",
+          timingStatus: "legacyUnknown",
+        },
         sessionId: "remote",
         sourcePath: "C:/Yap/source.wav",
       },
@@ -99,6 +104,11 @@ describe("native history catalog synchronization", () => {
 
     expect(entries.map((entry) => entry.origin)).toEqual(["live", "remote"]);
     expect(entries[0].createdAt).toBe(new Date(Date.UTC(2026, 6, 15, 12)).toISOString());
+    expect(entries[1].resultSummary).toEqual({
+      languageBcp47: "en-US",
+      languageStatus: "fixed",
+      timingStatus: "legacyUnknown",
+    });
   });
 
   it("does not announce the initial catalog and selects only a later or preferred save", () => {

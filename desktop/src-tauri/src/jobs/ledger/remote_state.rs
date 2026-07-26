@@ -1,11 +1,14 @@
 //! Persists prepared remote work and binds it to its exact server origin and job identifier.
 
+mod prepared_contract;
+
 use rusqlite::{params, OptionalExtension, TransactionBehavior};
 
 use crate::jobs::{
     JobLedgerError, NewPreparedRemoteJob, PreparedRemoteJobRecord, RecordingJobRecord,
     RecordingJobStatus, RecordingRoute,
 };
+use crate::server_connector::batch::CreateRecordingJobRequest;
 
 use super::{
     records::{
@@ -15,6 +18,9 @@ use super::{
     row_mapping::{query_job, raw_prepared_remote_job_from_row},
     JobLedger,
 };
+use prepared_contract::{append_preprocessing_stages, validate_prepared_request};
+
+pub(in crate::jobs::ledger) use prepared_contract::append_preprocessing_stages as append_client_preprocessing_stages;
 
 impl JobLedger {
     pub fn attach_prepared_remote_job(
@@ -24,6 +30,21 @@ impl JobLedger {
         updated_at_ms: u64,
     ) -> Result<RecordingJobRecord, JobLedgerError> {
         let prepared = ValidatedPreparedRemoteJob::try_from(prepared)?;
+        let request = CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json)
+            .map_err(|_| {
+                JobLedgerError::InvalidRecord(
+                    "prepared create request is outside the current strict contract",
+                )
+            })?;
+        validate_prepared_request(&prepared, &request)?;
+        let preprocessing =
+            request
+                .preprocessing_evidence
+                .as_ref()
+                .ok_or(JobLedgerError::InvalidRecord(
+                    "prepared create request requires preprocessing stage evidence",
+                ))?;
+        let completed_at_ms = updated_at_ms;
         let updated_at_ms = sqlite_integer(updated_at_ms, "updated_at_ms")?;
         let mut connection = self.lock()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -37,6 +58,18 @@ impl JobLedger {
                 from: current.status,
                 to: RecordingJobStatus::Uploading,
             });
+        }
+        if !current.language_decision_locked
+            || request.language_decision != current.language_decision
+            || request.asr_catalog_revision.as_deref()
+                != current
+                    .asr_catalog_binding
+                    .as_ref()
+                    .map(|binding| binding.catalog_revision())
+        {
+            return Err(JobLedgerError::InvalidRecord(
+                "prepared request differs from the job's locked routing decision",
+            ));
         }
         if transaction.query_row(
             "SELECT EXISTS(SELECT 1 FROM prepared_remote_jobs WHERE job_id = ?1)",
@@ -57,6 +90,14 @@ impl JobLedger {
                 "recording job already has prepared chunks",
             ));
         }
+
+        append_preprocessing_stages(
+            &transaction,
+            job_id,
+            current.updated_at_ms,
+            completed_at_ms,
+            preprocessing,
+        )?;
 
         transaction.execute(
             "INSERT INTO prepared_remote_jobs (job_id, create_request_json, capture_manifest_path, capture_manifest_sha256) VALUES (?1, ?2, ?3, ?4)",
@@ -96,6 +137,111 @@ impl JobLedger {
             ));
         }
         let updated = query_job(&transaction, job_id)?.expect("prepared job exists");
+        transaction.commit()?;
+        updated.try_into()
+    }
+
+    pub(crate) fn promote_client_preflight_to_remote(
+        &self,
+        job_id: &str,
+        prepared: &NewPreparedRemoteJob,
+        updated_at_ms: u64,
+    ) -> Result<RecordingJobRecord, JobLedgerError> {
+        let prepared = ValidatedPreparedRemoteJob::try_from(prepared)?;
+        let request = CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json)
+            .map_err(|_| {
+                JobLedgerError::InvalidRecord(
+                    "prepared create request is outside the current strict contract",
+                )
+            })?;
+        validate_prepared_request(&prepared, &request)?;
+        let updated_at_ms = sqlite_integer(updated_at_ms, "updated_at_ms")?;
+        let mut connection = self.lock()?;
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let current: RecordingJobRecord = query_job(&transaction, job_id)?
+            .ok_or_else(|| JobLedgerError::NotFound(job_id.into()))?
+            .try_into()?;
+        if current.status != RecordingJobStatus::Preflighting
+            || current.route != Some(RecordingRoute::ServerBatch)
+            || !current.language_decision_locked
+            || !current.client_stage_history_complete
+            || current.cancellation_requested
+            || request.language_decision != current.language_decision
+            || request.asr_catalog_revision.as_deref()
+                != current
+                    .asr_catalog_binding
+                    .as_ref()
+                    .map(|binding| binding.catalog_revision())
+        {
+            return Err(JobLedgerError::InvalidRecord(
+                "remote promotion differs from the confirmed client preflight",
+            ));
+        }
+        let artifact_ready: bool = transaction.query_row(
+            "SELECT EXISTS(SELECT 1 FROM client_preflight_artifacts WHERE job_id = ?1 AND lid_request_id IS NULL)",
+            [job_id],
+            |row| row.get(0),
+        )?;
+        let conflicting_remote: bool = transaction.query_row(
+            "SELECT EXISTS(SELECT 1 FROM prepared_remote_jobs WHERE job_id = ?1) OR EXISTS(SELECT 1 FROM job_chunks WHERE job_id = ?1)",
+            [job_id],
+            |row| row.get(0),
+        )?;
+        if !artifact_ready
+            || !super::client_stages::has_completed_client_preflight_stages(
+                &transaction,
+                job_id,
+                true,
+            )?
+            || conflicting_remote
+        {
+            return Err(JobLedgerError::InvalidRecord(
+                "client preflight is not complete enough for remote promotion",
+            ));
+        }
+
+        transaction.execute(
+            "INSERT INTO prepared_remote_jobs (job_id, create_request_json, capture_manifest_path, capture_manifest_sha256) VALUES (?1, ?2, ?3, ?4)",
+            params![
+                job_id,
+                prepared.create_request_json,
+                prepared.capture_manifest_path,
+                prepared.capture_manifest_sha256,
+            ],
+        )?;
+        for chunk in &prepared.chunks {
+            transaction.execute(
+                "INSERT INTO job_chunks (job_id, owner_namespace, session_id, track_id, sequence_start, sequence_end, content_sha256, artifact_path, upload_offset, acknowledged_object_id, acknowledged_at_ms, content_byte_length) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                params![
+                    job_id,
+                    chunk.owner_namespace,
+                    chunk.session_id,
+                    chunk.track_id,
+                    chunk.sequence_start,
+                    chunk.sequence_end,
+                    chunk.content_sha256,
+                    chunk.artifact_path,
+                    chunk.upload_offset,
+                    chunk.acknowledged_object_id,
+                    chunk.acknowledged_at_ms,
+                    chunk.content_byte_length,
+                ],
+            )?;
+        }
+        let removed = transaction.execute(
+            "DELETE FROM client_preflight_artifacts WHERE job_id = ?1 AND lid_request_id IS NULL",
+            [job_id],
+        )?;
+        let changed = transaction.execute(
+            "UPDATE recording_jobs SET status = 'uploading', capture_manifest_sha256 = ?1, updated_at_ms = ?2 WHERE job_id = ?3 AND status = 'preflighting' AND language_decision_locked = 1 AND cancellation_requested = 0",
+            params![prepared.capture_manifest_sha256, updated_at_ms, job_id],
+        )?;
+        if removed != 1 || changed != 1 {
+            return Err(JobLedgerError::InvalidRecord(
+                "client preflight promotion lost its durable state race",
+            ));
+        }
+        let updated = query_job(&transaction, job_id)?.expect("promoted remote job exists");
         transaction.commit()?;
         updated.try_into()
     }

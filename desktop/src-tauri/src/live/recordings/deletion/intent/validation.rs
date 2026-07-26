@@ -6,7 +6,10 @@ use crate::audio::recording;
 
 use super::super::super::retention::committed_meeting_is_expired;
 use super::super::evidence::physical_entry_exists;
-use super::model::{DeletionIntent, DELETION_INTENT_SCHEMA_VERSION, MAX_DELETION_ARTIFACTS};
+use super::model::{
+    DeletionIntent, CANCELLED_START_DELETION_REASON, DELETION_INTENT_SCHEMA_VERSION,
+    MAX_DELETION_ARTIFACTS,
+};
 
 pub(in crate::live::recordings::deletion) fn revalidate_intent_artifact(
     dir: &Path,
@@ -107,7 +110,8 @@ pub(in crate::live::recordings) fn validate_deletion_intent(
     if intent.schema_version != DELETION_INTENT_SCHEMA_VERSION
         || (!recoverable
             && intent.reason != "manual"
-            && intent.reason != "expired-meeting-retention")
+            && intent.reason != "expired-meeting-retention"
+            && intent.reason != CANCELLED_START_DELETION_REASON)
         || (!recoverable && intent.commit_file != format!("live-{}.commit.json", intent.session_id))
         || (recoverable
             && !is_deletion_artifact_for_session(&intent.commit_file, &intent.session_id))

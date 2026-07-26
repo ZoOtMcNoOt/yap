@@ -39,6 +39,12 @@ def main() -> None:
         serve(
             settings,
             job_service=runtime.service if runtime is not None else None,
+            lid_preflight_service=(
+                runtime.lid_preflight_service if runtime is not None else None
+            ),
+            asr_capabilities=(
+                runtime.asr_capabilities if runtime is not None else None
+            ),
         )
     except KeyboardInterrupt:
         return

@@ -139,6 +139,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node ./tests/scripts/assert-third-party-provenance.mjs --require-reviewed --verify-upstream
+      - name: Stage hash-verified sherpa native archive
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $lockPath = Join-Path $env:GITHUB_WORKSPACE "desktop\model-artifacts.lock.json"
+          $lock = Get-Content -LiteralPath $lockPath -Raw | ConvertFrom-Json
+          $artifact = @($lock.artifacts | Where-Object { $_.id -ceq "silero-vad-v4-k2-export" })
+          if ($artifact.Count -ne 1) { throw "Model lock must contain exactly one Silero runtime entry." }
+          $archive = @($artifact[0].runtime.nativeArchives | Where-Object { $_.platform -ceq "windows-x86_64" })
+          if ($archive.Count -ne 1) { throw "Model lock must contain exactly one Windows sherpa archive." }
+          $archive = $archive[0]
+          if ($archive.fileName -cnotmatch '^sherpa-onnx-v1\.13\.4-win-x64-static-MT-Release-lib\.tar\.bz2$') {
+            throw "Model lock contains an unexpected sherpa archive name."
+          }
+          if ($archive.source -cnotmatch '^https://github\.com/k2-fsa/sherpa-onnx/releases/download/v1\.13\.4/') {
+            throw "Model lock contains an unexpected sherpa archive source."
+          }
+          if ($archive.sha256 -cnotmatch '^[0-9a-f]{64}$' -or [long]$archive.sizeBytes -le 0) {
+            throw "Model lock contains an invalid sherpa archive identity."
+          }
+          $archiveDir = Join-Path $env:RUNNER_TEMP "yap-sherpa-$([Guid]::NewGuid().ToString('N'))"
+          New-Item -ItemType Directory -Path $archiveDir | Out-Null
+          $destination = Join-Path $archiveDir $archive.fileName
+          $temporary = "$destination.part"
+          Invoke-WebRequest -Uri $archive.source -OutFile $temporary
+          if ((Get-Item -LiteralPath $temporary).Length -ne [long]$archive.sizeBytes) {
+            throw "Downloaded sherpa archive length does not match the model lock."
+          }
+          $actualHash = (Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualHash -cne $archive.sha256) {
+            throw "Downloaded sherpa archive hash does not match the model lock."
+          }
+          Move-Item -LiteralPath $temporary -Destination $destination
+          "SHERPA_ONNX_ARCHIVE_DIR=$archiveDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Build NSIS release artifact
         run: pnpm tauri build --bundles nsis
       - name: Seal exact NSIS release artifact
@@ -306,12 +340,14 @@ jobs:
           $requiredInputs = @(
             "THIRD_PARTY_NOTICES.md",
             "THIRD_PARTY_PROVENANCE.json",
+            "desktop/model-artifacts.lock.json",
             "desktop/package.json",
             "desktop/pnpm-lock.yaml",
             "desktop/src-tauri/Cargo.lock",
             "desktop/src-tauri/Cargo.toml",
             "desktop/src-tauri/rust-toolchain.toml",
-            "desktop/src-tauri/tauri.conf.json"
+            "desktop/src-tauri/tauri.conf.json",
+            "server/runtime/asr/licenses/APACHE-2.0.txt"
           )
           foreach ($inputPath in $requiredInputs) {
             $inputHash = $metadata.buildEnvironment.inputsSha256.$inputPath

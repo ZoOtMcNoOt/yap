@@ -2,9 +2,12 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type {
+  AcousticLanguageDetectorView,
   FallbackModelView,
   LocalComputeTargetView,
   ServerConnectionState,
+  SileroVadDownloadProgress,
+  SileroVadView,
 } from "@/lib/setup-model";
 
 export {
@@ -61,6 +64,55 @@ export function setFallbackModelEnabled(enabled: boolean): Promise<FallbackModel
 
 export function openFallbackModelFolder(): Promise<void> {
   return invoke<void>("fallback_model_open_folder");
+}
+
+export function sileroVadStatus(): Promise<SileroVadView> {
+  return invoke<SileroVadView>("silero_vad_status");
+}
+
+export function installSileroVad(): Promise<SileroVadView> {
+  return invoke<SileroVadView>("silero_vad_install");
+}
+
+export function cancelSileroVadInstall(): Promise<SileroVadView> {
+  return invoke<SileroVadView>("silero_vad_cancel_install");
+}
+
+export function verifySileroVad(): Promise<SileroVadView> {
+  return invoke<SileroVadView>("silero_vad_verify");
+}
+
+export function removeSileroVad(): Promise<SileroVadView> {
+  return invoke<SileroVadView>("silero_vad_remove");
+}
+
+export async function listenSileroVadProgress(
+  onProgress: (progress: SileroVadDownloadProgress) => void,
+): Promise<UnlistenFn> {
+  if (!isTauri()) return () => undefined;
+  return listen<SileroVadDownloadProgress>("silero-vad-progress", (event) => {
+    onProgress(event.payload);
+  });
+}
+
+export function acousticLanguageDetectorStatus(): Promise<AcousticLanguageDetectorView> {
+  return invoke<AcousticLanguageDetectorView>("acoustic_language_detector_status");
+}
+
+export function importAcousticLanguageDetector(): Promise<AcousticLanguageDetectorView> {
+  return invoke<AcousticLanguageDetectorView>("acoustic_language_detector_import");
+}
+
+export function cancelAcousticLanguageDetectorImport(): Promise<AcousticLanguageDetectorView> {
+  return invoke<AcousticLanguageDetectorView>("acoustic_language_detector_cancel_import");
+}
+
+export function verifyAcousticLanguageDetector(): Promise<AcousticLanguageDetectorView> {
+  return invoke<AcousticLanguageDetectorView>("acoustic_language_detector_verify");
+}
+
+export function removeAcousticLanguageDetector(): Promise<AcousticLanguageDetectorView> {
+  return invoke<AcousticLanguageDetectorView>("acoustic_language_detector_remove");
 }
 
 export async function polishNumGpuLayers(): Promise<number> {

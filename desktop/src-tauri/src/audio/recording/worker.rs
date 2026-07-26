@@ -157,6 +157,23 @@ impl RecordingSinkHandle {
         &self.session_id
     }
 
+    pub(crate) fn append_language_evidence(
+        &self,
+        evidence: crate::language::live_evidence::LiveLanguageEvidence,
+    ) -> Result<(), String> {
+        match self.sink.send_control_with_timeout(
+            RecordingInput::LanguageEvidence(evidence),
+            std::time::Duration::from_secs(1),
+        ) {
+            Ok(()) => Ok(()),
+            Err(error) => {
+                let message = format!("failed to persist live language evidence: {error:?}");
+                self.sink.degrade(&message);
+                Err(message)
+            }
+        }
+    }
+
     pub fn finalize(&self) -> Result<RecordingFinalizeResult, String> {
         self.sink.close();
         let worker = loop {

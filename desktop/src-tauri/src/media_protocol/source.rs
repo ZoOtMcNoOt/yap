@@ -7,6 +7,7 @@ use std::{
 const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
 const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
 const FILE_SHARE_READ: u32 = 0x0000_0001;
+const FILE_SHARE_DELETE: u32 = 0x0000_0004;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct MediaSourceFingerprint {
@@ -35,12 +36,26 @@ pub(super) fn authorize_playback_source(
     path: &Path,
     expected: Option<&MediaSourceFingerprint>,
 ) -> Result<AuthorizedMediaSource, String> {
+    authorize_playback_source_with_path_removal(path, expected, false)
+}
+
+pub(super) fn authorize_playback_source_allowing_path_removal(
+    path: &Path,
+) -> Result<AuthorizedMediaSource, String> {
+    authorize_playback_source_with_path_removal(path, None, true)
+}
+
+fn authorize_playback_source_with_path_removal(
+    path: &Path,
+    expected: Option<&MediaSourceFingerprint>,
+    allow_path_removal: bool,
+) -> Result<AuthorizedMediaSource, String> {
     if !path.is_absolute() {
         return Err("Recording playback requires an absolute path.".into());
     }
     let mime =
         media_mime(path).ok_or_else(|| "Choose a supported audio or video file.".to_string())?;
-    let file = open_no_follow(path)
+    let file = open_no_follow(path, allow_path_removal)
         .map_err(|error| format!("Failed to open recording for playback: {error}"))?;
     let fingerprint = file_snapshot(&file)?;
     if expected.is_some_and(|expected| expected != &fingerprint) {
@@ -58,7 +73,7 @@ pub(crate) fn inspect_media_source(path: &Path) -> Result<MediaSourceFingerprint
         return Err("Recording playback requires an absolute path.".into());
     }
     media_mime(path).ok_or_else(|| "Choose a supported audio or video file.".to_string())?;
-    let file = open_no_follow(path)
+    let file = open_no_follow(path, false)
         .map_err(|error| format!("Failed to open recording for playback: {error}"))?;
     file_snapshot(&file)
 }
@@ -71,7 +86,7 @@ pub(crate) fn open_unchanged_media_source(
         return Err("Recording preprocessing requires an absolute path.".into());
     }
     media_mime(path).ok_or_else(|| "Choose a supported audio or video file.".to_string())?;
-    let file = open_no_follow(path)
+    let file = open_no_follow(path, false)
         .map_err(|error| format!("Failed to open recording for preprocessing: {error}"))?;
     let snapshot = file_snapshot(&file)?;
     if &snapshot != expected {
@@ -251,18 +266,24 @@ fn file_identity(_file: &File) -> Result<FileIdentity, String> {
 }
 
 #[cfg(windows)]
-fn open_no_follow(path: &Path) -> io::Result<File> {
+fn open_no_follow(path: &Path, allow_path_removal: bool) -> io::Result<File> {
     use std::os::windows::fs::OpenOptionsExt;
 
+    let share_mode = FILE_SHARE_READ
+        | if allow_path_removal {
+            FILE_SHARE_DELETE
+        } else {
+            0
+        };
     OpenOptions::new()
         .read(true)
-        .share_mode(FILE_SHARE_READ)
+        .share_mode(share_mode)
         .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
         .open(path)
 }
 
 #[cfg(unix)]
-fn open_no_follow(path: &Path) -> io::Result<File> {
+fn open_no_follow(path: &Path, _allow_path_removal: bool) -> io::Result<File> {
     use std::os::unix::fs::OpenOptionsExt;
 
     OpenOptions::new()
@@ -272,7 +293,7 @@ fn open_no_follow(path: &Path) -> io::Result<File> {
 }
 
 #[cfg(not(any(windows, unix)))]
-fn open_no_follow(_path: &Path) -> io::Result<File> {
+fn open_no_follow(_path: &Path, _allow_path_removal: bool) -> io::Result<File> {
     Err(io::Error::new(
         io::ErrorKind::Unsupported,
         "secure no-follow media open is unsupported on this platform",

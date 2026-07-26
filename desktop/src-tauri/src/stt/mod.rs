@@ -148,6 +148,7 @@ pub(crate) fn log_yap(message: &str) {
     append_log(&yap_log_path(), message);
 }
 
+pub mod ambernet_language_detector;
 pub mod dispatch;
 pub mod error;
 pub mod fallback_model;
@@ -155,6 +156,7 @@ pub mod model;
 pub mod nemotron;
 pub mod parity;
 pub mod settings;
+pub mod silero_vad;
 
 #[cfg(test)]
 mod tests {

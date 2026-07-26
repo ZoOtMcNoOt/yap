@@ -28,6 +28,51 @@ fn database_enums_round_trip_and_reject_unknown_values() {
 }
 
 #[test]
+fn language_decision_rejects_mismatched_fixed_and_dynamic_state() {
+    assert!(RecordingLanguageDecision::try_new(
+        RecordingLanguageMode::Fixed,
+        None,
+        RecordingLanguageDisposition::Primary,
+    )
+    .is_err());
+    assert!(RecordingLanguageDecision::try_new(
+        RecordingLanguageMode::Dynamic,
+        Some("en-US".into()),
+        RecordingLanguageDisposition::ExplicitDynamic,
+    )
+    .is_err());
+    assert!(RecordingLanguageDecision::try_new(
+        RecordingLanguageMode::Fixed,
+        Some("en-US".into()),
+        RecordingLanguageDisposition::ExplicitDynamic,
+    )
+    .is_err());
+}
+
+#[test]
+fn language_decision_deserialization_rejects_inconsistent_state() {
+    for value in [
+        serde_json::json!({
+            "mode": "fixed",
+            "languageBcp47": "en-US",
+            "disposition": "explicitDynamic",
+        }),
+        serde_json::json!({
+            "mode": "dynamic",
+            "languageBcp47": "en-US",
+            "disposition": "explicitDynamic",
+        }),
+        serde_json::json!({
+            "mode": "fixed",
+            "languageBcp47": null,
+            "disposition": "primary",
+        }),
+    ] {
+        assert!(serde_json::from_value::<RecordingLanguageDecision>(value).is_err());
+    }
+}
+
+#[test]
 fn transition_policy_is_pure_and_cancellation_is_narrow() {
     assert_eq!(
         transition_policy(
@@ -51,6 +96,7 @@ fn transition_policy_is_pure_and_cancellation_is_narrow() {
 
     for status in [
         RecordingJobStatus::Accepted,
+        RecordingJobStatus::Preflighting,
         RecordingJobStatus::BlockedSetupRequired,
         RecordingJobStatus::BlockedServerUnavailable,
         RecordingJobStatus::BlockedSignInRequired,
@@ -68,7 +114,6 @@ fn transition_policy_is_pure_and_cancellation_is_narrow() {
         );
     }
     for status in [
-        RecordingJobStatus::Preflighting,
         RecordingJobStatus::LocalTranscribing,
         RecordingJobStatus::DiarizationQueued,
         RecordingJobStatus::DiarizationRunning,
@@ -123,7 +168,7 @@ fn every_durable_status_projects_only_proven_pipeline_progress() {
     };
     let cases = [
         (J::Accepted, None, pipeline(N, N, N, N, N)),
-        (J::Preflighting, None, pipeline(N, N, N, N, N)),
+        (J::Preflighting, None, pipeline(R, N, N, N, N)),
         (J::BlockedSetupRequired, None, pipeline(N, N, N, N, N)),
         (
             J::BlockedServerUnavailable,
@@ -186,5 +231,9 @@ fn fixture_record() -> RecordingJobRecord {
         created_at_ms: 100,
         updated_at_ms: 100,
         expires_at_ms: None,
+        language_decision: RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+        language_decision_locked: true,
+        client_stage_history_complete: true,
+        asr_catalog_binding: Some(AsrCatalogBinding::for_test()),
     }
 }

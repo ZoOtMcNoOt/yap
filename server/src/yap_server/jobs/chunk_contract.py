@@ -64,7 +64,7 @@ def validated_single_track_chunks(
         for chunk in chunks
     }
     if len(track_ids) != 1:
-        raise ValueError("the Phase 5 ASR slice accepts exactly one audio track")
+        raise ValueError("the current batch-ASR contract accepts exactly one audio track")
     expected_start_ms = 0
     expected_sequence_start = 0
     for chunk in chunks:
@@ -73,7 +73,7 @@ def validated_single_track_chunks(
         duration_ms = chunk.get("durationMs")
         content = mapping(chunk.get("contentIdentity"), "contentIdentity")
         if start_ms != expected_start_ms:
-            raise ValueError("the Phase 5 ASR slice requires contiguous chunk timing")
+            raise ValueError("the current batch-ASR contract requires contiguous chunk timing")
         if not isinstance(duration_ms, int) or isinstance(duration_ms, bool):
             raise ValueError("chunk duration must be an integer")
         byte_length = content.get("byteLength")

@@ -1,4 +1,8 @@
 use super::*;
+use crate::live::{
+    settings::LiveSettings,
+    state::{LiveCaptureMode, LiveSessionState, LiveSessionStatus},
+};
 
 #[test]
 fn stream_crash_retires_runtime_handles() {
@@ -57,6 +61,140 @@ fn cancelling_a_start_intent_preserves_the_active_session_for_final_drain() {
     runtime.cancel_pending_start();
 
     assert_eq!(runtime.active_session.load(Ordering::SeqCst), 7);
+}
+
+#[test]
+fn cancellation_before_a_deferred_start_worker_runs_prevents_the_start() {
+    let runtime = LiveRuntime::new();
+    let intent = runtime.capture_start_intent();
+
+    runtime.cancel_pending_start();
+
+    assert_eq!(
+        runtime.run_start_lifecycle(intent, || "unexpected start"),
+        None
+    );
+}
+
+#[test]
+fn stop_unwinds_an_uninstalled_capture_start() {
+    let runtime = Arc::new(LiveRuntime::new());
+    let state = LiveSessionState::new(LiveSettings::default());
+    state
+        .try_begin_local_start(LiveCaptureMode::Toggle, None, Some("Default".into()))
+        .unwrap();
+    let intent = runtime.capture_start_intent();
+    let start_operation = runtime.transition.begin_start();
+    let session = {
+        let mut inner = runtime.inner.lock().unwrap();
+        let session = inner.begin_capture_session().unwrap();
+        runtime.active_session.store(session, Ordering::SeqCst);
+        session
+    };
+    let (stop_done_tx, stop_done_rx) = mpsc::channel();
+    let stop_runtime = Arc::clone(&runtime);
+    let stopper = std::thread::spawn(move || {
+        stop_runtime.cancel_pending_start();
+        stop_runtime.run_stop_lifecycle(|| {});
+        stop_done_tx.send(()).unwrap();
+    });
+
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while runtime.start_intent_is_current(intent) {
+        assert!(
+            Instant::now() < deadline,
+            "stop did not cancel the pending start"
+        );
+        std::thread::yield_now();
+    }
+    assert!(matches!(
+        stop_done_rx.recv_timeout(Duration::from_millis(25)),
+        Err(mpsc::RecvTimeoutError::Timeout)
+    ));
+
+    let cancelled = runtime
+        .cancel_uninstalled_capture_start(&state, session)
+        .unwrap();
+    assert_eq!(cancelled.status, LiveSessionStatus::Idle);
+    assert_eq!(runtime.active_session.load(Ordering::SeqCst), 0);
+    drop(start_operation);
+
+    stop_done_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+    stopper.join().unwrap();
+    assert!(state
+        .try_begin_local_start(LiveCaptureMode::Toggle, None, Some("Default".into()))
+        .is_some());
+}
+
+#[test]
+fn rejected_language_mutation_does_not_cancel_installed_capture_completion() {
+    let runtime = Arc::new(LiveRuntime::new());
+    let intent = runtime.capture_start_intent();
+    let installation = runtime.transition.begin_start();
+    runtime
+        .inner
+        .lock()
+        .unwrap()
+        .mark_resources_present_for_test();
+    let (mutation_done_tx, mutation_done_rx) = mpsc::channel();
+    let mutation_runtime = Arc::clone(&runtime);
+    let mutation = std::thread::spawn(move || {
+        let error = match mutation_runtime.begin_primary_language_mutation() {
+            Ok(_) => panic!("installed capture unexpectedly allowed a language mutation"),
+            Err(error) => error,
+        };
+        mutation_done_tx.send(error).unwrap();
+    });
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while !runtime.model_mutation_active.load(Ordering::Acquire) {
+        assert!(
+            Instant::now() < deadline,
+            "language mutation did not queue behind capture installation"
+        );
+        std::thread::yield_now();
+    }
+    let (completion_done_tx, completion_done_rx) = mpsc::channel();
+    let completion_runtime = Arc::clone(&runtime);
+    let completion = std::thread::spawn(move || {
+        completion_done_tx
+            .send(completion_runtime.run_installed_capture_lifecycle(intent, || true))
+            .unwrap();
+    });
+
+    drop(installation);
+
+    assert_eq!(
+        mutation_done_rx
+            .recv_timeout(Duration::from_secs(1))
+            .unwrap(),
+        "Stop live before changing the primary language."
+    );
+    assert_eq!(
+        completion_done_rx
+            .recv_timeout(Duration::from_secs(1))
+            .unwrap(),
+        Some(true)
+    );
+    mutation.join().unwrap();
+    completion.join().unwrap();
+    assert!(runtime.start_intent_is_current(intent));
+}
+
+#[test]
+fn stale_uninstalled_start_cannot_clear_a_newer_armed_session() {
+    let runtime = LiveRuntime::new();
+    let state = LiveSessionState::new(LiveSettings::default());
+    state
+        .try_begin_local_start(LiveCaptureMode::Toggle, None, Some("Default".into()))
+        .unwrap();
+    runtime.inner.lock().unwrap().set_session_for_test(8);
+    runtime.active_session.store(8, Ordering::SeqCst);
+
+    assert!(runtime
+        .cancel_uninstalled_capture_start(&state, 7)
+        .is_none());
+    assert_eq!(runtime.active_session.load(Ordering::SeqCst), 8);
+    assert_eq!(state.snapshot().status, LiveSessionStatus::Armed);
 }
 
 #[test]
@@ -165,7 +303,7 @@ fn stop_finalizes_before_a_concurrent_start_activates_the_next_session() {
                 StreamMessage::Finish { session, done } => {
                     assert_eq!(session, expected_session);
                     finalized_for_worker.lock().unwrap().push(session);
-                    done.send(StreamFinishStatus::Completed).unwrap();
+                    done.send(StreamFinishStatus::Completed.into()).unwrap();
                     expected_session += 1;
                 }
             }

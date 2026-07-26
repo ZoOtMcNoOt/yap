@@ -1,7 +1,7 @@
 import {
   assertRecordingRootEmpty,
   listRecordingArtifacts,
-} from "./task-8b-artifacts.js";
+} from "./recording-artifact-ownership.js";
 import {
   closeMainToTray,
   cycleIdleOverlay,
@@ -51,7 +51,7 @@ describe("Yap live overlay window", () => {
     } catch (error) {
       errors.push(error);
     }
-    if (errors.length > 0) throw new AggregateError(errors, "Task 8b afterEach cleanup failed");
+    if (errors.length > 0) throw new AggregateError(errors, "Live-overlay afterEach cleanup failed");
   });
 
   // Tauri does not expose a cross-platform skip-taskbar/Alt-Tab readback command here.

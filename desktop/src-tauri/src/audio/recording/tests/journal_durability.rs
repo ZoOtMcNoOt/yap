@@ -35,6 +35,34 @@ fn journal_recovers_the_valid_append_prefix_after_a_torn_tail() {
 }
 
 #[test]
+fn absent_language_evidence_does_not_consume_every_journal_delta() {
+    let dir = tempfile_dir("journal-language-evidence-delta");
+    let session = SessionId::new("s-journal-language-evidence-delta").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session).unwrap();
+    let absent = serialize_journal_record(&JournalRecord::Delta {
+        delta: recording.journal_durable.delta(&recording.journal),
+    })
+    .unwrap();
+
+    assert!(!std::str::from_utf8(&absent)
+        .unwrap()
+        .contains("languageEvidence"));
+
+    recording
+        .journal
+        .observe_language_evidence(fixed_language_evidence(1))
+        .unwrap();
+    let present = serialize_journal_record(&JournalRecord::Delta {
+        delta: recording.journal_durable.delta(&recording.journal),
+    })
+    .unwrap();
+
+    assert!(std::str::from_utf8(&present)
+        .unwrap()
+        .contains("\"languageEvidence\":{"));
+}
+
+#[test]
 fn journal_never_replaces_an_adversarial_path_after_creation() {
     let dir = tempfile_dir("journal-path-replacement");
     let session = SessionId::new("s-journal-path-replacement").unwrap();

@@ -67,6 +67,21 @@ pub(in crate::live::recordings) fn delete_saved_live_session_in_dir(
     )
 }
 
+pub(in crate::live::recordings) fn delete_committed_session_in_dir(
+    dir: &Path,
+    capture: &recording::CommittedCapture,
+    reason: &str,
+) -> Result<(), String> {
+    let _ownership = session_mutation_ownership();
+    delete_committed_session_in_dir_with_publication_barrier_while_owned(
+        dir,
+        capture,
+        reason,
+        |_| {},
+        None,
+    )
+}
+
 #[cfg(test)]
 pub(in crate::live::recordings) fn delete_committed_session_in_dir_with_publication_barrier<F>(
     dir: &Path,

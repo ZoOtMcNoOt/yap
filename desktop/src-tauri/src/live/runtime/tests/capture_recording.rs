@@ -1,4 +1,8 @@
 use super::*;
+use crate::language::{
+    live_diarization::{LanguageSpan, LanguageSpanDisposition},
+    live_evidence::{LiveLanguageEvidence, LiveLanguageMode, LiveLanguageStatus},
+};
 
 #[test]
 fn reserved_recording_session_is_canonical_for_worker_frames_gaps_and_commit() {
@@ -62,7 +66,29 @@ fn reserved_recording_session_is_canonical_for_worker_frames_gaps_and_commit() {
             &LossAccumulator::new(),
         )
         .unwrap();
-    coordinator.lock().unwrap().close();
+    coordinator.lock().unwrap().handoff_recording_completion();
+    recording
+        .append_language_evidence(
+            LiveLanguageEvidence::try_new(
+                6_000,
+                "en-US".into(),
+                LiveLanguageMode::FixedPrimary,
+                LiveLanguageStatus::Complete,
+                None,
+                None,
+                vec![LanguageSpan {
+                    start_sample: 0,
+                    end_sample: 6_000,
+                    language_bcp47: "en-US".into(),
+                    decision_revision: 1,
+                    disposition: LanguageSpanDisposition::ConfirmedPrimary,
+                    component_revision: None,
+                    decision_evidence: None,
+                }],
+            )
+            .unwrap(),
+        )
+        .unwrap();
 
     let result = recording.finalize().unwrap();
     assert_eq!(result.status, CaptureStatus::Complete, "{:?}", result.error);
@@ -80,6 +106,8 @@ fn reserved_recording_session_is_canonical_for_worker_frames_gaps_and_commit() {
     assert_eq!(sidecar["sessionId"], recording_session_id.as_str());
     assert_eq!(sidecar["sequenceCoverage"][0]["firstSequence"], 0);
     assert_eq!(sidecar["sequenceCoverage"][0]["lastSequence"], 1);
+    assert_eq!(sidecar["languageEvidence"]["sourceEndSample"], 6_000);
+    assert_eq!(sidecar["languageEvidence"]["primaryLanguageBcp47"], "en-US");
     assert_eq!(sidecar["timelineGaps"].as_array().unwrap().len(), 1);
     let gap = &sidecar["timelineGaps"][0];
     assert_eq!(gap["sessionId"], recording_session_id.as_str());

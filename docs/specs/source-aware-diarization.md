@@ -2,7 +2,9 @@
 
 **Status:** Accepted design; client capture foundation implemented and verified 2026-07-11; model-specific diarization remains deferred
 **Date:** 2026-07-10
-**Scope:** Track-aware client audio contracts, local anonymous speaker evidence, and server-authoritative reconciliation for Yap meeting sessions.
+**Scope:** Track-aware client audio contracts, local anonymous speaker evidence,
+and Tiron-based server-authoritative speaker-attributed transcription and
+reconciliation for Yap meeting sessions.
 **Decision:** [ADR 0020](../adr/0020-meeting-capture-diarization-authority.md)
 
 ## Problem
@@ -29,6 +31,8 @@ The existing diarization ADRs also disagree about ownership and algorithms. This
 - Put diarization on the dictation critical path.
 - Persist local speaker embeddings across sessions.
 - Select EEND-VC or MS-SphereVBx before comparative benchmarks.
+- Treat the accepted Tiron development baseline as production-promoted before
+  its independent messy-meeting, runtime, and lifecycle gates pass.
 - Store audio or transcript bytes in SQLite.
 
 ## Current Anchors
@@ -207,6 +211,34 @@ SphereVBx-PF is the first clustering challenger. EEND-VC plus MS-SphereVBx is th
 | Final server diarization | RTF at or below 0.25 at target concurrency |
 
 The EEND challenger must also improve macro DER by at least 10% relative and overlap DER by at least 20% relative over the accepted baseline. Other challengers must not regress any absolute gate and must document the product-relevant improvement that justifies added complexity. Thresholds and targets may change only through recorded benchmark evidence and a reviewed spec amendment.
+
+[ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
+selects `Trelis/tiron` as the independent server development baseline. It
+jointly decodes transcript, timestamps, and up to eight window-local speaker
+slots. The pinned harness links those slots across 30-second windows but also
+caps its whole-meeting result at eight global identities. A separately gated
+Yap speaker-epoch reconciler is required before the route can claim more than
+eight distinct talkers; a larger attendee list alone is not such a claim. It
+does not replace the local baseline above. The server route remains
+unadvertised until a complete runtime lock and frozen messy-meeting gate prove
+the following additional properties:
+
+| Server joint-ASR gate | Required evidence |
+| --- | --- |
+| Speaker-attributed transcript quality | cpWER plus time-constrained or speaker-attributed WER on every required slice |
+| Overlap preservation | Explicit overlap-region word deletion/recall and no hidden flattening |
+| Released baseline | Reproduce the pinned eight-window/eight-global behavior before evaluating extensions |
+| Global roster stability | Return/late-arrival linking, merge/split/fragmentation error, >15-attendee/small-active-subset controls, and 9/16/32-talker cross-epoch sessions |
+| Window capacity | One through eight talkers plus typed degraded behavior above eight in a 30-second window |
+| Language | Separate result for every advertised locale; tokenizer support alone is insufficient |
+| Server resources | Cold/warm latency, RTF, VRAM/RAM, and c1/c2/c4/c8 admission/tail latency on GB10 |
+| Lifecycle/isolation | Cancellation, restart, clean teardown, and no cross-request audio/language/speaker state |
+
+AMI, ICSI, and NOTSOFAR-1 are public comparators because Tiron already reports
+results on them. Product promotion also requires a sealed, license-clear,
+independently adjudicated holdout kept in the private evaluation cache. The
+corpus manifest, scorer policy, thresholds, and configurations are frozen
+before hypotheses are revealed.
 
 ## Result Revisions
 
@@ -398,6 +430,11 @@ Client transient embedding and exemplar types must not implement ordinary persis
 ### Diarization tests
 
 - One speaker, two speakers, short interjections, overlapping speech, noise, echo leakage, late arrivals, and more than four global speakers.
+- Tiron-specific server cases cover one through eight distinct speakers in a
+  30-second window, explicit more-than-eight pressure, the released
+  eight-global harness cap, more-than-15-attendee sessions with a small active
+  subset, 9/16/32-talker cross-epoch sessions, long-gap returns,
+  staggered-window disagreement, and one-pass versus two-pass diagnostics.
 - Unknown remains unknown when evidence is insufficient.
 - Candidate evidence remains visually unknown; repeated qualified evidence may become a stable `Speaker N` but never a name.
 - Speaker labels remain stable within one result revision.
@@ -436,19 +473,24 @@ Client transient embedding and exemplar types must not implement ordinary persis
 - Remove the retained-PCM duration limitation for meeting sessions without allowing unbounded memory growth.
 - Persist an immutable single-track capture sidecar and separate result revisions while preserving current WAV/TXT playback.
 
-### Deferred Phase 8 slice: Local anonymous baseline
+### Deferred Phase 8 slice: Local anonymous and server joint baselines
 
 - Add optional speaker-model download state.
 - Benchmark a commercially usable `sherpa-onnx` embedding model.
 - Implement unknown/candidate/stable-anonymous clustering and result revisions.
 - Persist only the anonymous timeline and provenance; discard embeddings.
+- Add a pinned Tiron/ECAPA Python 3.12 worker on the private GPU tier behind the
+  Rust-owned meeting-result contract.
+- Compare it with the ASR-plus-diarization fallback on byte-identical source
+  audio and the frozen messy-meeting suite before promotion.
 
 ### Delivered transport prerequisite and subsequent plans
 
 - Delivered Phases 3–5: Rust-owned SQLite reconnect ledger and bounded
   loopback imported-file server transport/result publication. This does not
   activate live meeting-track transport.
-- Server authoritative diarization and purpose-authorized identity.
+- Tiron-based server authoritative speaker-attributed transcription,
+  reconciliation, and purpose-authorized identity.
 - OS contacts and roster suggestions without biometrics.
 - Windows system-loopback capture.
 - SphereVBx-PF and EEND/MS-SphereVBx benchmark challengers.
@@ -480,3 +522,11 @@ result path, licensed speech/WER fixture, and hosted Phase 5 gate now exist.
 - Candidate speaker state is hidden until stable, and the baseline passes the absolute release gates.
 - All per-speaker state is bounded by the configured product and safety ceilings.
 - The licensed fixture manifest, RTTM annotations, and reference-hardware benchmark report exist before a model is promoted.
+- The server Tiron baseline publishes no result until Rust validates its source
+  bounds, overlap, model/runtime provenance, capture lineage, and revision.
+- The eight-slot window cap and released eight-identity global cap are distinct
+  from the dynamic product session roster. Larger speaking rosters require the
+  separately qualified speaker-epoch reconciler or fallback; over-capacity
+  regions are typed partial/degraded results, never silent loss.
+- Public comparator results and independent messy-meeting promotion evidence are
+  reported separately.

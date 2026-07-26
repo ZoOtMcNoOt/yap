@@ -62,6 +62,67 @@ pub(crate) fn register_recording_job_playback_path_at_from_owned_dir(
     )
 }
 
+/// Persists one native-selection batch with a single bounded registry write.
+/// The returned paths were newly added by this call and can be removed if the
+/// following ledger transaction fails. A process crash can leave only paths
+/// that the user actually selected; startup reconciliation prunes any path
+/// that has no recoverable job.
+pub(crate) fn register_recording_job_playback_paths_at_from_owned_dir(
+    paths: &[std::path::PathBuf],
+    registry_path: &std::path::Path,
+    owned_dir: &std::path::Path,
+) -> Result<Vec<std::path::PathBuf>, String> {
+    let mut canonical_paths: Vec<std::path::PathBuf> = Vec::with_capacity(paths.len());
+    for path in paths {
+        let canonical = playable_recording_path(path.display().to_string())?;
+        if canonical != *path {
+            return Err(
+                "Recording source changed while native selection was being retained.".into(),
+            );
+        }
+        if canonical_path_is_inside_owned_live_directory(&canonical, owned_dir) {
+            crate::live::recordings::canonical_committed_live_path_from_dir(
+                &canonical, owned_dir, false,
+            )?;
+            continue;
+        }
+        if !canonical_paths
+            .iter()
+            .any(|existing| same_registry_path(existing, &canonical))
+        {
+            canonical_paths.push(canonical);
+        }
+    }
+
+    let _guard = playback_registry_lock()
+        .lock()
+        .map_err(|_| "Playback registry lock is unavailable.".to_string())?;
+    let mut registered =
+        read_registered_playback_paths_with_limit(registry_path, MAX_RECORDING_JOB_PLAYBACK_PATHS)?;
+    let newly_added = canonical_paths
+        .iter()
+        .filter(|path| {
+            !registered
+                .iter()
+                .any(|existing| same_registry_path(existing, path))
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    if registered
+        .len()
+        .checked_add(newly_added.len())
+        .is_none_or(|total| total > MAX_RECORDING_JOB_PLAYBACK_PATHS)
+    {
+        return Err("The recording job playback registry is full.".into());
+    }
+    for path in canonical_paths {
+        registered.retain(|existing| !same_registry_path(existing, &path));
+        registered.insert(0, path);
+    }
+    write_registered_playback_paths(registry_path, &registered)?;
+    Ok(newly_added)
+}
+
 fn register_playback_path_at_from_owned_dir_with_limit(
     path: String,
     registry_path: &std::path::Path,
@@ -146,15 +207,30 @@ pub(crate) fn remove_recording_job_playback_path_at(
     path: &std::path::Path,
     registry_path: &std::path::Path,
 ) -> Result<(), String> {
+    let paths = [path.to_path_buf()];
+    remove_recording_job_playback_paths_at(&paths, registry_path)
+}
+
+pub(crate) fn remove_recording_job_playback_paths_at(
+    paths: &[std::path::PathBuf],
+    registry_path: &std::path::Path,
+) -> Result<(), String> {
+    if paths.is_empty() {
+        return Ok(());
+    }
     let _guard = playback_registry_lock()
         .lock()
         .map_err(|_| "Playback registry lock is unavailable.".to_string())?;
-    let mut paths =
+    let mut registered =
         read_registered_playback_paths_with_limit(registry_path, MAX_RECORDING_JOB_PLAYBACK_PATHS)?;
-    let original_len = paths.len();
-    paths.retain(|registered| !same_registry_path(registered, path));
-    if paths.len() != original_len {
-        write_registered_playback_paths(registry_path, &paths)?;
+    let original_len = registered.len();
+    registered.retain(|registered| {
+        !paths
+            .iter()
+            .any(|path| same_registry_path(registered, path))
+    });
+    if registered.len() != original_len {
+        write_registered_playback_paths(registry_path, &registered)?;
     }
     Ok(())
 }

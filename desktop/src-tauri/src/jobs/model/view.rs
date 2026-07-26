@@ -1,6 +1,7 @@
 use super::{
     records::RecordingJobRecord,
     status::{RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin},
+    RecordingLanguageDecision,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
@@ -25,6 +26,23 @@ pub struct RecordingPipelineState {
     pub postprocessing: PipelineStageStatus,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RecordingLanguageReviewKind {
+    Suggestion,
+    Manual,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecordingLanguageReview {
+    pub kind: RecordingLanguageReviewKind,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub suggested_language_bcp47: Option<String>,
+    pub reason: String,
+    pub catalog_revision: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RecordingJobView {
@@ -44,6 +62,9 @@ pub struct RecordingJobView {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     pub pipeline: RecordingPipelineState,
+    pub language_decision: RecordingLanguageDecision,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language_review: Option<RecordingLanguageReview>,
 }
 
 impl RecordingJobView {
@@ -69,6 +90,8 @@ impl RecordingJobView {
                 .clone()
                 .or_else(|| record.error_code.clone()),
             pipeline: pipeline_for(record.status, record.route),
+            language_decision: record.language_decision.clone(),
+            language_review: None,
         }
     }
 }
@@ -89,7 +112,7 @@ fn pipeline_for(
     };
     match status {
         S::QueuedLocalFallback => pipeline.preprocessing = P::Skipped,
-        S::Preprocessing => pipeline.preprocessing = P::Running,
+        S::Preflighting | S::Preprocessing => pipeline.preprocessing = P::Running,
         S::Uploading => pipeline.preprocessing = P::Done,
         S::ServerProcessing => {
             pipeline.preprocessing = P::Done;
@@ -127,7 +150,6 @@ fn pipeline_for(
         }
         S::Failed => pipeline.preprocessing = completed_preprocessing(route),
         S::Accepted
-        | S::Preflighting
         | S::BlockedSetupRequired
         | S::BlockedServerUnavailable
         | S::BlockedSignInRequired

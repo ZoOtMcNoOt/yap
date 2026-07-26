@@ -1,25 +1,45 @@
 import {
   assertOwnedSavedSession,
   assertRecordingRootEmpty,
-} from "./task-8b-artifacts.js";
+  ownedLiveSessionDeletion,
+} from "./recording-artifact-ownership.js";
 import {
-  registerTask8bLifecycleListeners,
-  waitForTask8bSavedEvent,
-} from "./task-8b-lifecycle.js";
-import { classifyNativeReadiness } from "./task-8b-readiness.js";
+  registerLiveSessionEventListeners,
+  waitForLiveSessionSavedEvent,
+} from "./live-session-event-listeners.js";
+import { gracefullyExitWdioApp } from "./graceful-wdio-app-exit.js";
+import { classifyNativeReadiness } from "./native-microphone-readiness.js";
+import {
+  createTargetClientLanguageRoutingHardwareGate,
+  EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK,
+} from "./target-client-language-routing-hardware.js";
 
+// Cohesion note: this spec keeps one ordered cross-window capture/save/delete
+// transaction together. Target-client policy lives in its own gate module.
 const lifecycleAssertions = [
   "overlay-context start and stop without main-window UI interaction",
-  "armed/listening/speaking -> saving -> idle lifecycle ordering",
+  "active capture -> saving -> idle lifecycle ordering",
   "live-level delivery",
   "exactly one canonical main-window live-session-saved event",
   "no saved-path or transcript payload delivery to the overlay",
-  "compact idle overlay after the success dwell",
+  "compact terminal overlay after the success dwell",
   "idempotent listener cleanup and unregistration",
 ];
 
+function describeFailure(error) {
+  if (error instanceof AggregateError) {
+    return `${error.message}: ${error.errors.map(describeFailure).join("; ")}`;
+  }
+  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  return String(error);
+}
+
 const recordingRoot = process.env.YAP_LIVE_RECORDINGS_DIR;
 if (!recordingRoot) throw new Error("WDIO requires an isolated YAP_LIVE_RECORDINGS_DIR.");
+const targetClient = createTargetClientLanguageRoutingHardwareGate({
+  browserProvider: () => globalThis.browser,
+  recordingRoot,
+});
 
 async function switchToWindow(label) {
   const windows = await browser.tauri.listWindows();
@@ -65,20 +85,25 @@ async function nativeReadiness() {
 async function readLifecycleEvidence() {
   let overlay = { levels: [], sessions: [] };
   let saved = [];
+  let mainSessions = [];
   if (await switchToWindow("live-overlay")) {
     overlay = await browser.tauri.execute(() => {
-      const state = globalThis.__yapTask8bLifecycle;
+      const state = globalThis.__yapLiveSessionEventListeners;
       return state
         ? { levels: state.levels, sessions: state.sessions }
         : { levels: [], sessions: [] };
     });
   }
   if (await switchToWindow("main")) {
-    saved = await browser.tauri.execute(() =>
-      globalThis.__yapTask8bLifecycle?.saved ?? []);
+    const main = await browser.tauri.execute(() => ({
+      saved: globalThis.__yapLiveSessionEventListeners?.saved ?? [],
+      sessions: globalThis.__yapLiveSessionEventListeners?.sessions ?? [],
+    }));
+    saved = main.saved;
+    mainSessions = main.sessions;
   }
   await switchToWindow("live-overlay");
-  return { ...overlay, saved };
+  return { ...overlay, mainSessions, saved };
 }
 
 async function cleanupWindowListeners(label, counts) {
@@ -87,14 +112,14 @@ async function cleanupWindowListeners(label, counts) {
     return;
   }
   counts.push(await browser.tauri.execute(() =>
-    globalThis.__yapTask8bLifecycle?.cleanup?.() ?? 0));
+    globalThis.__yapLiveSessionEventListeners?.cleanup?.() ?? 0));
   counts.push(await browser.tauri.execute(() =>
-    globalThis.__yapTask8bLifecycle?.cleanup?.() ?? 0));
+    globalThis.__yapLiveSessionEventListeners?.cleanup?.() ?? 0));
 }
 
 async function readCurrentLifecycleState() {
   return browser.tauri.execute(() => {
-    const state = globalThis.__yapTask8bLifecycle;
+    const state = globalThis.__yapLiveSessionEventListeners;
     return state
       ? { levels: state.levels, saved: state.saved, sessions: state.sessions }
       : { levels: [], saved: [], sessions: [] };
@@ -129,7 +154,7 @@ async function cleanupLifecycle(runStartedAtMs) {
       if (!(await switchToWindow("main"))) {
         throw new Error("Main window closed before the saved event could be observed.");
       }
-      await browser.tauri.execute(waitForTask8bSavedEvent, {
+      await browser.tauri.execute(waitForLiveSessionSavedEvent, {
         expectedCount: 1,
         pollIntervalMs: 25,
         timeoutMs: 5_000,
@@ -153,15 +178,11 @@ async function cleanupLifecycle(runStartedAtMs) {
       errors.push(new Error(`Expected one saved event during cleanup, received ${saved.length}.`));
     }
     const candidate = saved[0];
-    const owned = assertOwnedSavedSession(candidate, recordingRoot, { runStartedAtMs });
+    const deletion = ownedLiveSessionDeletion(candidate, recordingRoot, { runStartedAtMs });
     await browser.tauri.switchWindow("main");
     await browser.tauri.execute(
-      ({ core }, identity) => core.invoke("delete_saved_live_session", identity),
-      {
-        expectedCaptureCommitPath: candidate.captureCommitPath,
-        expectedOutputPath: candidate.outputPath,
-        sessionId: owned.sessionId,
-      },
+      ({ core }, request) => core.invoke(request.command, request.identity),
+      deletion,
     );
   });
 
@@ -173,6 +194,16 @@ async function cleanupLifecycle(runStartedAtMs) {
 
 describe("Yap live overlay hardware capture", () => {
   let overlayWasEnabled;
+
+  before(async () => {
+    await targetClient.assertCheckedBuildIdentity();
+  });
+
+  after(async () => {
+    if (targetClient.enabled) {
+      await gracefullyExitWdioApp(browser);
+    }
+  });
 
   beforeEach(async () => {
     assertRecordingRootEmpty(recordingRoot);
@@ -213,9 +244,21 @@ describe("Yap live overlay hardware capture", () => {
     if (errors.length > 0) throw new AggregateError(errors, "Hardware capture cleanup failed");
   });
 
+  it("cancels early starts and recovers for later local sessions", async function () {
+    if (!targetClient.enabled) this.skip();
+    await targetClient.runRestartCancellation({
+      classifyReadiness: classifyNativeReadiness,
+      nativeReadiness,
+    });
+  });
+
   it("captures and saves one session entirely from the overlay context", async function () {
+    const configuredRouting = await targetClient.configureLanguageRouting();
     const readiness = classifyNativeReadiness(await nativeReadiness());
     if (readiness.action === "skip") {
+      if (targetClient.enabled) {
+        throw new Error(`Target-client native readiness failed: ${readiness.reason}.`);
+      }
       console.warn(
         `[Optional native hardware skip] ${readiness.reason}. Unproven assertions: ${lifecycleAssertions.join("; ")}`,
       );
@@ -225,20 +268,23 @@ describe("Yap live overlay hardware capture", () => {
     let primaryError;
     let runStartedAtMs;
     let teardown;
+    let targetEvidence;
+    let uiResponsiveness;
     try {
+      await targetClient.assertResidentRuntimeReady(configuredRouting);
       await showIdleOverlay();
       await browser.tauri.switchWindow("main");
       expect(await browser.tauri.execute(
-        registerTask8bLifecycleListeners,
-        { target: "main" },
-      )).toBe(1);
+        registerLiveSessionEventListeners,
+        { includeSessions: targetClient.enabled, target: "main" },
+      )).toBe(targetClient.enabled ? 2 : 1);
       await browser.tauri.switchWindow("live-overlay");
       expect(await browser.tauri.execute(
-        registerTask8bLifecycleListeners,
+        registerLiveSessionEventListeners,
         { target: "overlay" },
       )).toBe(2);
       expect(await browser.tauri.execute(() =>
-        globalThis.__yapTask8bLifecycle.saved.length)).toBe(0);
+        globalThis.__yapLiveSessionEventListeners.saved.length)).toBe(0);
       assertRecordingRootEmpty(recordingRoot);
 
       expect(await browser.getWindowHandle()).toBe("live-overlay");
@@ -254,11 +300,12 @@ describe("Yap live overlay hardware capture", () => {
         document.querySelector("[data-overlay-surface]")?.getAttribute("data-overlay-surface") === "expanded"));
       const startButton = await browser.$('[aria-label="Start dictating"]');
       await startButton.waitForDisplayed();
+      await targetClient.startResponsivenessSampler();
       runStartedAtMs = Date.now();
       await startButton.click();
 
       await browser.waitUntil(async () => browser.tauri.execute(() => {
-        const state = globalThis.__yapTask8bLifecycle;
+        const state = globalThis.__yapLiveSessionEventListeners;
         return state.sessions.some(({ status }) => ["armed", "listening", "speaking"].includes(status))
           && state.levels.length > 0;
       }), {
@@ -266,13 +313,13 @@ describe("Yap live overlay hardware capture", () => {
         timeout: 20_000,
         timeoutMsg: "live-session and live-level did not report active capture",
       });
-      await browser.pause(750);
+      await browser.pause(targetClient.activeCaptureMs);
 
       const finishButton = await browser.$('[aria-label="Finish recording"]');
       await finishButton.waitForDisplayed();
       await finishButton.click();
       await browser.waitUntil(async () => browser.tauri.execute(() => {
-        const state = globalThis.__yapTask8bLifecycle;
+        const state = globalThis.__yapLiveSessionEventListeners;
         return state.sessions.some(({ status }) => status === "saving")
           && state.sessions.some(({ status }) => status === "idle");
       }), {
@@ -282,13 +329,14 @@ describe("Yap live overlay hardware capture", () => {
       });
       expect((await readCurrentLifecycleState()).saved).toHaveLength(0);
       await browser.tauri.switchWindow("main");
-      await browser.tauri.execute(waitForTask8bSavedEvent, {
+      await browser.tauri.execute(waitForLiveSessionSavedEvent, {
         expectedCount: 1,
         pollIntervalMs: 25,
         timeoutMs: 5_000,
       });
 
       const evidence = await readLifecycleEvidence();
+      uiResponsiveness = await targetClient.stopResponsivenessSampler();
       const statuses = evidence.sessions.map(({ status }) => status);
       const activeIndex = statuses.findIndex((status) => ["armed", "listening", "speaking"].includes(status));
       const savingIndex = statuses.indexOf("saving", activeIndex + 1);
@@ -296,9 +344,14 @@ describe("Yap live overlay hardware capture", () => {
       expect(activeIndex).toBeGreaterThanOrEqual(0);
       expect(savingIndex).toBeGreaterThan(activeIndex);
       expect(idleIndex).toBeGreaterThan(savingIndex);
-      expect(evidence.sessions[idleIndex].error).toBeNull();
+      const terminalError = evidence.sessions[idleIndex].error;
+      const copiedToClipboard = terminalError === EXPECTED_CLIPBOARD_FALLBACK_FEEDBACK;
+      if (terminalError !== null && !copiedToClipboard) {
+        throw new Error("The terminal idle event reported an unexpected lifecycle error.");
+      }
       expect(evidence.levels.length).toBeGreaterThan(0);
       expect(evidence.levels.some(({ level }) => Number.isFinite(level))).toBe(true);
+      targetClient.assertRenderedCaptureEvidence({ evidence, statuses, uiResponsiveness });
       expect(evidence.saved).toHaveLength(1);
       expect(evidence.sessions.every((session) =>
         !("partialText" in session)
@@ -311,30 +364,49 @@ describe("Yap live overlay hardware capture", () => {
       await browser.pause(2_750);
       const surface = await browser.tauri.execute(() =>
         document.querySelector("[data-overlay-surface]")?.getAttribute("data-overlay-surface"));
-      expect(surface).toBe("collapsed");
-      const compact = await browser.tauri.execute(() => {
-        const root = document.querySelector('[data-overlay-surface="collapsed"]').getBoundingClientRect();
+      const expectedSurface = copiedToClipboard ? "feedback" : "collapsed";
+      expect(surface).toBe(expectedSurface);
+      const compact = await browser.tauri.execute((_tauri, terminalSurface) => {
+        const root = document.querySelector(
+          `[data-overlay-surface="${terminalSurface}"]`,
+        ).getBoundingClientRect();
         const island = document.querySelector('[data-testid="live-overlay-island"]').getBoundingClientRect();
         return {
           island: { height: island.height, width: island.width },
           root: { height: root.height, width: root.width },
         };
-      });
-      expect(compact.root.width).toBe(104);
+      }, expectedSurface);
+      expect(compact.root.width).toBe(copiedToClipboard ? 252 : 104);
       expect(compact.root.height).toBe(40);
       expect(compact.island).toEqual(compact.root);
       expect(await browser.tauri.execute(() =>
-        globalThis.__yapTask8bLifecycle.saved.length)).toBe(0);
+        globalThis.__yapLiveSessionEventListeners.saved.length)).toBe(0);
+      targetEvidence = { configuredRouting, evidence, statuses, uiResponsiveness };
     } catch (error) {
       primaryError = error;
     } finally {
+      if (!uiResponsiveness) {
+        try {
+          uiResponsiveness = await targetClient.stopResponsivenessSampler();
+        } catch {
+          // Preserve the primary lifecycle failure; missing sampler evidence is
+          // already fatal to the required target-client path.
+        }
+      }
       teardown = await cleanupLifecycle(runStartedAtMs);
     }
 
     const errors = [primaryError, ...teardown.errors].filter(Boolean);
-    if (errors.length > 0) throw new AggregateError(errors, "Hardware lifecycle evidence failed");
+    if (errors.length > 0) {
+      const detail = errors.map(describeFailure).join(" | ");
+      throw new AggregateError(errors, `Hardware lifecycle evidence failed: ${detail}`);
+    }
     expect(teardown.saved).toHaveLength(1);
-    expect(teardown.listenerCleanupCounts).toEqual({ main: [1, 0], overlay: [2, 0] });
+    expect(teardown.listenerCleanupCounts).toEqual({
+      main: [targetClient.enabled ? 2 : 1, 0],
+      overlay: [2, 0],
+    });
     assertRecordingRootEmpty(recordingRoot);
+    targetClient.publishEvidence(targetEvidence);
   });
 });

@@ -8,6 +8,12 @@ EXAMPLES_ROOT = SERVER_ROOT / "openapi" / "examples"
 
 HTTP_OPERATIONS = {
     ("/v1/health", "get"): "getHealth",
+    ("/v1/asr/capabilities", "get"): "getAsrCapabilities",
+    ("/v1/lid/preflight", "post"): "runLidPreflight",
+    (
+        "/v1/lid/preflights/{requestId}",
+        "delete",
+    ): "cancelLidPreflight",
     ("/v1/jobs", "post"): "createJob",
     ("/v1/jobs/{jobId}", "get"): "getJob",
     ("/v1/jobs/{jobId}/result", "get"): "getJobResult",
@@ -17,43 +23,81 @@ HTTP_OPERATIONS = {
         "put",
     ): "uploadJobChunk",
     ("/v1/jobs/{jobId}/commit", "post"): "commitJob",
+    ("/v1/jobs/{jobId}/stages", "get"): "getJobStages",
+    ("/v1/jobs/{jobId}/stages/{stage}/retry", "post"): "retryJobStage",
     ("/v1/live", "get"): "connectLive",
 }
 
-PHASE_BOUNDARY = {
-    ("/v1/health", "get"): ("Implemented", "Server process"),
-    ("/v1/jobs", "post"): ("Contract only", "Phase 5 upload intake"),
-    ("/v1/jobs/{jobId}", "get"): ("Contract only", "Phase 5 job status"),
-    ("/v1/jobs/{jobId}", "delete"): ("Contract only", "Phase 5 cancellation"),
+OPERATION_RUNTIME = {
+    ("/v1/health", "get"): ("Implemented", "Process health"),
+    ("/v1/asr/capabilities", "get"): (
+        "Implemented only when locked runtime artifacts verify",
+        "Verified ASR capability catalog",
+    ),
+    ("/v1/lid/preflight", "post"): (
+        "Implemented only when the locked LID runtime verifies",
+        "Bounded assistive language preflight",
+    ),
+    ("/v1/lid/preflights/{requestId}", "delete"): (
+        "Implemented only when the locked LID runtime verifies",
+        "Active language-preflight cancellation",
+    ),
+    ("/v1/jobs", "post"): (
+        "Implemented in the loopback batch runtime",
+        "Batch job intake",
+    ),
+    ("/v1/jobs/{jobId}", "get"): (
+        "Implemented in the loopback batch runtime",
+        "Batch job status",
+    ),
+    ("/v1/jobs/{jobId}", "delete"): (
+        "Implemented in the loopback batch runtime",
+        "Batch job cancellation",
+    ),
     ("/v1/jobs/{jobId}/result", "get"): (
-        "Contract only",
-        "Phase 5 result retrieval",
+        "Implemented in the loopback batch runtime",
+        "Transcript result retrieval",
     ),
     (
         "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}",
         "put",
-    ): ("Contract only", "Phase 5 resumable upload"),
+    ): ("Implemented in the loopback batch runtime", "Resumable chunk upload"),
     ("/v1/jobs/{jobId}/commit", "post"): (
-        "Contract only",
-        "Phase 5 upload commit",
+        "Implemented in the loopback batch runtime",
+        "Batch upload commit",
     ),
-    ("/v1/live", "get"): ("Event schema only", "Phase 5 WSS streaming"),
-}
-
-CURRENT_BEHAVIOR = {
-    ("/v1/jobs", "post"): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/jobs/{jobId}", "get"): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/jobs/{jobId}", "delete"): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/jobs/{jobId}/result", "get"): "Implemented in the Phase 5 loopback batch runtime",
-    (
-        "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}",
-        "put",
-    ): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/jobs/{jobId}/commit", "post"): "Implemented in the Phase 5 loopback batch runtime",
-    ("/v1/live", "get"): "Contract only; capability remains false",
+    ("/v1/jobs/{jobId}/stages", "get"): (
+        "Implemented in the loopback batch runtime",
+        "Durable server-stage projections",
+    ),
+    ("/v1/jobs/{jobId}/stages/{stage}/retry", "post"): (
+        "ASR retry implemented in the loopback batch runtime",
+        "Server-stage retry",
+    ),
+    ("/v1/live", "get"): (
+        "Contract only; capability remains false",
+        "Live WebSocket transport",
+    ),
 }
 
 CHUNK_PATH = "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}"
+
+RUNTIME_PATH_EXAMPLES = {
+    "/v1/health": "/v1/health",
+    "/v1/asr/capabilities": "/v1/asr/capabilities",
+    "/v1/lid/preflight": "/v1/lid/preflight",
+    "/v1/lid/preflights/{requestId}": "/v1/lid/preflights/lid-request-01",
+    "/v1/jobs": "/v1/jobs",
+    "/v1/jobs/{jobId}": "/v1/jobs/job-01",
+    "/v1/jobs/{jobId}/result": "/v1/jobs/job-01/result",
+    CHUNK_PATH: "/v1/jobs/job-01/chunks/mic/0-15",
+    "/v1/jobs/{jobId}/commit": "/v1/jobs/job-01/commit",
+    "/v1/jobs/{jobId}/stages": "/v1/jobs/job-01/stages",
+    "/v1/jobs/{jobId}/stages/{stage}/retry": (
+        "/v1/jobs/job-01/stages/asr/retry"
+    ),
+    "/v1/live": "/v1/live",
+}
 
 HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
     {
@@ -64,6 +108,49 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "errors": ["500"],
     },
     {
+        "path": "/v1/asr/capabilities",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/AsrCapabilityCatalog"},
+        "errors": ["501"],
+    },
+    {
+        "path": "/v1/lid/preflight",
+        "method": "post",
+        "request": (
+            "application/vnd.yap.lid-preflight.v1+octet-stream",
+            {
+                "type": "string",
+                "format": "binary",
+                "minLength": 960005,
+                "maxLength": 1024 * 1024,
+            },
+        ),
+        "success": {"200": "#/components/schemas/LidPreflightResult"},
+        "errors": ["400", "409", "413", "415", "429", "500", "501", "503"],
+        "errorSchemas": {
+            "400": "#/components/schemas/LidPreflightRequestError",
+            "409": "#/components/schemas/LidPreflightConflictError",
+            "413": "#/components/schemas/LidPreflightRequestTooLargeError",
+            "415": "#/components/schemas/LidPreflightUnsupportedMediaTypeError",
+            "429": "#/components/schemas/LidPreflightBusyError",
+            "500": "#/components/schemas/LidPreflightStorageError",
+            "501": "#/components/schemas/LidPreflightNotImplementedError",
+            "503": "#/components/schemas/LidPreflightUnavailableError",
+        },
+    },
+    {
+        "path": "/v1/lid/preflights/{requestId}",
+        "method": "delete",
+        "request": None,
+        "success": {"202": "#/components/schemas/LidPreflightCancellation"},
+        "errors": ["404", "501"],
+        "errorSchemas": {
+            "404": "#/components/schemas/LidPreflightNotFoundError",
+            "501": "#/components/schemas/LidPreflightNotImplementedError",
+        },
+    },
+    {
         "path": "/v1/jobs",
         "method": "post",
         "request": (
@@ -71,7 +158,7 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
             "#/components/schemas/CreateRecordingJobRequest",
         ),
         "success": {"202": "#/components/schemas/RecordingJob"},
-        "errors": ["400", "429", "501"],
+        "errors": ["400", "429", "501", "503"],
     },
     {
         "path": "/v1/jobs/{jobId}",
@@ -85,7 +172,7 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "method": "delete",
         "request": None,
         "success": {"202": "#/components/schemas/RecordingJob"},
-        "errors": ["404", "501"],
+        "errors": ["404", "501", "503"],
     },
     {
         "path": "/v1/jobs/{jobId}/result",
@@ -105,7 +192,7 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
             "200": "#/components/schemas/ChunkUploadReceipt",
             "201": "#/components/schemas/ChunkUploadReceipt",
         },
-        "errors": ["400", "404", "409", "415", "501"],
+        "errors": ["400", "404", "409", "415", "501", "503"],
     },
     {
         "path": "/v1/jobs/{jobId}/commit",
@@ -115,7 +202,24 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
             "#/components/schemas/CommitRecordingJobRequest",
         ),
         "success": {"202": "#/components/schemas/RecordingJob"},
-        "errors": ["400", "404", "409", "501"],
+        "errors": ["400", "404", "409", "501", "503"],
+    },
+    {
+        "path": "/v1/jobs/{jobId}/stages",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/ServerStageProjectionEnvelope"},
+        "errors": ["404"],
+    },
+    {
+        "path": "/v1/jobs/{jobId}/stages/{stage}/retry",
+        "method": "post",
+        "request": (
+            "application/json",
+            "#/components/schemas/RetryServerStageRequest",
+        ),
+        "success": {"202": "#/components/schemas/ServerStageProjectionEnvelope"},
+        "errors": ["400", "404", "409", "429", "503"],
     },
     {
         "path": "/v1/live",
@@ -125,3 +229,66 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "errors": ["400", "501"],
     },
 ]
+
+LID_ERROR_CONTRACTS = {
+    ("/v1/lid/preflight", "post", "400"): (
+        "LidPreflightRequestError",
+        {
+            "INVALID_LID_PREFLIGHT",
+            "INVALID_REQUEST_BODY",
+            "INVALID_CONTENT_LENGTH",
+            "CONTENT_LENGTH_REQUIRED",
+            "INCOMPLETE_REQUEST_BODY",
+        },
+        False,
+    ),
+    ("/v1/lid/preflight", "post", "409"): (
+        "LidPreflightConflictError",
+        {
+            "STALE_LID_PREFLIGHT_CONTRACT",
+            "LID_PREFLIGHT_CONFLICT",
+            "LID_PREFLIGHT_CANCELLED",
+        },
+        False,
+    ),
+    ("/v1/lid/preflight", "post", "413"): (
+        "LidPreflightRequestTooLargeError",
+        {"REQUEST_TOO_LARGE"},
+        False,
+    ),
+    ("/v1/lid/preflight", "post", "415"): (
+        "LidPreflightUnsupportedMediaTypeError",
+        {"UNSUPPORTED_MEDIA_TYPE"},
+        False,
+    ),
+    ("/v1/lid/preflight", "post", "429"): (
+        "LidPreflightBusyError",
+        {"LID_PREFLIGHT_BUSY"},
+        True,
+    ),
+    ("/v1/lid/preflight", "post", "500"): (
+        "LidPreflightStorageError",
+        {"LID_PREFLIGHT_STORAGE_ERROR"},
+        True,
+    ),
+    ("/v1/lid/preflight", "post", "501"): (
+        "LidPreflightNotImplementedError",
+        {"NOT_IMPLEMENTED"},
+        False,
+    ),
+    ("/v1/lid/preflight", "post", "503"): (
+        "LidPreflightUnavailableError",
+        {"LID_PREFLIGHT_UNAVAILABLE", "LID_PREFLIGHT_TIMEOUT"},
+        True,
+    ),
+    ("/v1/lid/preflights/{requestId}", "delete", "404"): (
+        "LidPreflightNotFoundError",
+        {"LID_PREFLIGHT_NOT_FOUND"},
+        False,
+    ),
+    ("/v1/lid/preflights/{requestId}", "delete", "501"): (
+        "LidPreflightNotImplementedError",
+        {"NOT_IMPLEMENTED"},
+        False,
+    ),
+}

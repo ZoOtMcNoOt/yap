@@ -18,40 +18,106 @@ frame contains alternate or historical sequencing.
 | 3 | Server contracts, capability health, connector state/retry, durable desktop job ledger, canonical app-data/stock NSIS closure. |
 | 4 | Bounded private router/pool and isolated Cohere GPU reference worker on the pinned Python 3.12/NVIDIA stack. |
 | 5 | Real durable imported-recording batch-ASR slice through the desktop/server contract with verified native result publication. |
+| Checkpoint A | Phase 1–5 correctness, ownership, decomposition, provenance, documentation, and resource-bound review; merged after the one-time local/native/server/GB10 matrix and exact-head hosted closure. |
 
 Evidence and limits are summarized in [current status](../CURRENT-STATUS.md).
 
-## Current gate: Architecture Checkpoint A
+## Current gate: Phase 6 exact-head review and merge
 
-Checkpoint A reviews the complete Phase 1–5 executable system before new
-product scope:
+Phase 6 turns the merged fixed-language canonical-WAV vertical slice into a
+durable preprocessing and language-aware pipeline without pulling later
+identity, diarization, knowledge, or enterprise boundaries forward:
 
-- resolve correctness/security findings;
-- establish one owner for lifecycle, persistence, window, result, retry, and
-  cancellation state;
-- remove dead/speculative machinery;
-- decompose mixed responsibilities and justify cohesive size exceptions;
-- make dependency direction explicit;
-- reconcile provenance/licenses;
-- measure before claiming efficiency gains; and
-- organize current, normative, active, completed, historical, operational, and
-  evidence documentation.
+- versioned provider/language/timing capabilities;
+- one Rust-owned primary language plus a visible catalog-derived per-job
+  recording-language selector that never invents an unpromoted alternate;
+- deterministic normalization and advisory VAD that never deletes source audio;
+- durable retryable preprocessing stages on the existing job authority;
+- one bounded resident local acoustic-LID component, automatic offline language
+  switching, and within-utterance source-time language spans under the existing
+  Rust live-runtime owner;
+- one verify-only AmberNet 1.12.0 INT8 QDQ artifact in an isolated CPU runtime,
+  with five strict start-to-tail regions and explicit user confirmation for long
+  fixed-language recordings;
+- pinned reference Cohere/Nemotron routes plus explicit server Nemotron auto
+  mode at finalized utterance boundaries, with correctness and bounded-resource
+  evidence rather than a production pool claim;
+- a digest-pinned Cohere vLLM 26.06 serving candidate behind the same worker
+  contract, with measured GB10 lifecycle, latency, throughput, memory,
+  cancellation, teardown, and concurrent-load safety evidence; representative
+  output quality, rollback, and provider promotion remain separate Phase 8
+  decisions rather than exact-output assumptions;
+- a separate Nemotron NeMo server-streaming candidate with its own correctness,
+  streaming, lifecycle, concurrency, and resource gate; and
+- fail-closed word timing, initially behind an English Cohere evidence gate.
 
-It adds no Phase 6 functionality. The active plan is
-[Architecture Checkpoint A](../plans/active/2026-07-15-architecture-checkpoint-a.md).
+The canonical decisions are
+[ADR 0024](../adr/0024-global-language-routing.md),
+[ADR 0025](../adr/0025-provider-specific-asr-serving.md), and
+[ADR 0026](../adr/0026-ambernet-batch-language-preflight.md). The implementation
+and one-time gate contract are in the active
+[audio preprocessing and language routing plan](../plans/active/2026-07-16-audio-preprocessing-and-language-routing.md).
+The living
+[decision and evidence queue](../plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
+preserves discussed decisions, open questions, detailed Phase 6 sub-tasks, and
+later-phase owners without authorizing phase mixing.
+Automatic cross-provider switching, named speaker identity, and enterprise
+infrastructure are not Phase 6 claims. Within-utterance language spans are a
+Phase 6 target and remain an explicit default-off Preview because the frozen
+natural-switch quality target failed. Exact executable candidate
+`a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the frozen 30-child
+local/native/server/private-runtime matrix after bounded three-agent
+remediation re-review, including the target-client, 18-child resident-provider,
+and connected interruption/recovery/History channels with exact teardown.
+Exact runtime images were prepared before admission from digest-pinned bases
+and pinned dependencies and emitted private receipts after a second clean-head
+check. The admitted gate verified each frozen receipt hash, then required the
+already-prepared ARM64 image ID, checked-head revision, base digest, and runtime
+identity to match it. The receipt-bound ID was launched and recorded; the gate
+could not build, pull, reconnect, or substitute an image. Hosted CI, CodeQL,
+and stock-NSIS passed at first attempt on docs-only review head
+`cee13f819a85417ea43a3c63e263be85f0570838`; a private closure receipt was
+independently validated outside Git. PR #67 may merge only after its final
+docs-only successor passes the same exact-head hosted policy and final
+adversarial read-back.
+Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
+SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
+and SGLang services, production multi-worker/mixed-load capacity promotion, production
+observability, and external deployment remain Phase 10.
+
+## Queued post-Phase-6 checkpoint
+
+After Phase 6 merges, a separate
+[codebase ownership and maintainability review](../plans/queued/2026-07-18-codebase-ownership-and-maintainability-review.md)
+reviews the complete Phase 1–6 executable system before Phase 7 starts. It uses
+parallel antagonistic reviewers, then applies the same ownership,
+comprehensibility, decomposition, maintainability, resource, provenance, and
+documentation standard as post-Phase-5 Checkpoint A. It adds no Phase 7 product
+functionality and closes through its own exact-head gate and reviewed PR.
+
+Phase 7 follows the same cadence: independently merge the phase, run a separate
+post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that
+checkpoint merges.
 
 ## Accepted later phases
 
 | Phase | Boundary | Exit direction |
 | --- | --- | --- |
-| 6 | Preprocessing | Audio normalization, VAD/chunk manifests, language identification, forced alignment, word timestamps, and durable retryable pipeline state. |
-| 7 | Identity and access | Entra/MSAL client bridge, Yap API audience/token validation, tenant-scoped `(tid, oid)` ownership, purpose grants, authorization/revocation/audit behavior. |
-| 8 | Meeting evidence | Anonymous speaker evidence, timestamped result revisions, benchmark gates, and purpose-authorized server reconciliation/naming. |
-| 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP. |
-| 10 | Enterprise and release | IT-managed access/network hardening, secure-edge evaluation, production publication governance, audit/deploy evidence, and eventual repo split. |
+| 7 | Identity and access | Entra/MSAL client bridge, Yap API audience/token validation, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants, authorization/revocation/audit behavior, and the authenticated owner seam consumed by later batch/live admission. |
+| 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron eight-window/eight-global server baseline, a separately gated speaker-epoch extension for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/global/window pressure, ASR-plus-diarization fallback, and purpose-authorized server reconciliation/naming. |
+| 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and SGLang-backed compatible reasoning/tool-output models. |
+| 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus SGLang agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
 
 Accepted ADRs remain requirements even when no premature implementation exists.
 Do not treat an unchecked historical plan box as current backlog.
+
+Phase 8 follows
+[ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
+and the queued
+[joint speaker-attributed meeting transcription plan](../plans/queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
+Selecting the development baseline does not advertise or production-promote
+the route before its independent accuracy, capacity, lifecycle, and privacy
+evidence exists.
 
 ## Enterprise handoffs
 
@@ -64,8 +130,10 @@ platform owners and cannot be invented by a developer branch:
 - ZPA application segment, policy, App Connector placement, and redundancy;
 - production identity registration, token audience, conditional-access and
   revocation behavior;
-- persistent service supervision, backup/deletion SLA, monitoring, and capacity
-  ownership; and
+- production hosting/service-manager approval, backup/deletion SLA, enterprise
+  monitoring integration, SLO approval, and capacity authorization (Yap still
+  owns the service implementation, bounded local capacity evidence, and
+  observability instrumentation); and
 - enterprise deployment, publication, and audit approval.
 
 Until those handoffs exist, the Phase 5 SSH-forward profile remains a narrow
@@ -82,3 +150,10 @@ development boundary, not production security.
 6. Update completion scores/status only after executable evidence exists.
 7. Keep private scan material and sensitive runtime evidence out of Git, PRs,
    hosted logs, and public docs.
+8. After Phase 6 and each later phase, run the accepted separate adversarial/
+   refactor checkpoint before beginning the next phase; never mix next-phase
+   behavior into a checkpoint branch.
+9. Name runtime modules, types, functions, tests, configuration, containers,
+   and versioned contracts for the behavior they own. A phase number belongs
+   only in an actual roadmap, phase gate, phase evidence artifact, or frozen
+   backward-compatibility token; it is not a substitute for a domain name.

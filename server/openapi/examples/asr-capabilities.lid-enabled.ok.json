@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "catalogRevision": "16a89b24cf036dda7b1272b88c066baafea2262743dcaaebc8a66b7b76c3d09f",
+  "providers": [
+    {
+      "providerId": "cohere",
+      "poolId": "cohere-batch",
+      "modelId": "CohereLabs/cohere-transcribe-03-2026",
+      "modelRevision": "b1eacc2686a3d08ceaae5f24a88b1d519620bc09",
+      "modelLicense": "Apache-2.0",
+      "modelSource": "https://huggingface.co/CohereLabs/cohere-transcribe-03-2026",
+      "capabilities": [
+        {
+          "languageBcp47": "en-US",
+          "providerLanguageCode": "en",
+          "mode": "fixedBatch",
+          "qualityTier": "transcriptionReady",
+          "languageSuggestion": false,
+          "segmentLanguageTags": false,
+          "wordAlignment": false,
+          "promotionEvidenceRevision": "4771d9be60562fa009ccecbcd3c7111b699883a5"
+        }
+      ]
+    }
+  ],
+  "languagePreflight": {
+    "schemaVersion": 1,
+    "componentId": "ambernet-batch-language-preflight",
+    "runtime": {
+      "pythonVersion": "3.12.13",
+      "cpuOnly": true
+    },
+    "model": {
+      "id": "nvidia/nemo/langid_ambernet",
+      "revision": "1.12.0"
+    },
+    "transport": {
+      "mediaType": "application/vnd.yap.lid-preflight.v1+octet-stream",
+      "maximumBodyBytes": 1048576,
+      "maximumManifestBytes": 32768,
+      "maximumResponseSeconds": 120
+    },
+    "policy": {
+      "revision": "ambernet-stratified-five-region-v1",
+      "sampleRateHz": 16000,
+      "channelCount": 1,
+      "sampleWidthBytes": 2,
+      "minimumSourceSamples": 480000,
+      "maximumWindows": 5,
+      "maximumWindowSamples": 96000,
+      "minimumVoicedSamplesPerWindow": 51200,
+      "scoreSemantics": "mean-logit-log-softmax",
+      "userConfirmationRequired": true
+    }
+  }
+}

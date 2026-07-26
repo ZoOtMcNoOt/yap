@@ -5,13 +5,13 @@ import { fileURLToPath } from "node:url";
 import {
   assertRecordingRootEmpty,
   listRecordingArtifacts,
-} from "./wdio/task-8b-artifacts.js";
+} from "./wdio/recording-artifact-ownership.js";
 import {
   attachWdioRunIsolation,
   createWdioRunIsolation,
   removePrivateRunRootWhenReleased,
   resetPrivateRecordingRoot,
-} from "./wdio/task-8b-isolation.js";
+} from "./wdio/wdio-run-isolation.js";
 
 const binaryName = process.platform === "win32" ? "yap-desktop.exe" : "yap-desktop";
 const testsRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -21,11 +21,11 @@ const appBinaryPath =
 const isolation = process.env.WDIO_WORKER_ID
   ? attachWdioRunIsolation()
   : createWdioRunIsolation();
-class Task8bIsolationCleanupService {
+class WdioRunIsolationCleanupService {
   async onComplete() {
     await new Promise((resolve) => setTimeout(resolve, 100));
     await removePrivateRunRootWhenReleased(isolation);
-    console.info(`[Task 8b isolation] removedRunRoot=${isolation.runRoot}`);
+    console.info(`[WDIO run isolation] removedRunRoot=${isolation.runRoot}`);
   }
 }
 
@@ -65,15 +65,15 @@ export const config = {
         frontendLogLevel: "warn",
       },
     ],
-    [Task8bIsolationCleanupService, {}],
+    [WdioRunIsolationCleanupService, {}],
   ],
   specs: [path.join(testsRoot, "wdio", "**", "*.spec.js")],
   waitforTimeout: 10_000,
   onPrepare() {
     assertRecordingRootEmpty(isolation.recordingRoot);
-    console.info(`[Task 8b isolation] runRoot=${isolation.runRoot}`);
-    console.info(`[Task 8b isolation] recordingRoot=${isolation.recordingRoot}`);
-    console.info(`[Task 8b isolation] webviewRoot=${isolation.webviewRoot}`);
+    console.info(`[WDIO run isolation] runRoot=${isolation.runRoot}`);
+    console.info(`[WDIO run isolation] recordingRoot=${isolation.recordingRoot}`);
+    console.info(`[WDIO run isolation] webviewRoot=${isolation.webviewRoot}`);
   },
   async afterTest(_test, _context, result) {
     if (result.error) {
@@ -95,7 +95,7 @@ export const config = {
       );
     }
     assertRecordingRootEmpty(isolation.recordingRoot);
-    console.info("[Task 8b isolation] afterTest recordingRoot=empty");
+    console.info("[WDIO run isolation] afterTest recordingRoot=empty");
   },
   async onComplete() {
     const artifacts = listRecordingArtifacts(isolation.recordingRoot);
@@ -107,7 +107,7 @@ export const config = {
       );
     }
     assertRecordingRootEmpty(isolation.recordingRoot);
-    console.info("[Task 8b isolation] pre-shutdown recordingRoot=empty");
+    console.info("[WDIO run isolation] pre-shutdown recordingRoot=empty");
     if (leakageError) throw leakageError;
   },
 };

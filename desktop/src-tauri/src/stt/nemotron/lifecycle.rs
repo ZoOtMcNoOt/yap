@@ -124,7 +124,13 @@ where
         ArtifactInstallState::Ready => {}
     }
     let guard = ModelLoadGuard::open(root, artifacts)?;
-    let value = loader(guard.paths())?;
+    let paths = NemotronPaths {
+        encoder: guard.path(0).to_path_buf(),
+        decoder: guard.path(1).to_path_buf(),
+        joiner: guard.path(2).to_path_buf(),
+        tokens: guard.path(3).to_path_buf(),
+    };
+    let value = loader(&paths)?;
     guard.revalidate_after_native_load()?;
     Ok(LoadedNemotronModel { value, guard })
 }

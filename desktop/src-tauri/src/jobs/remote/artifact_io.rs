@@ -114,13 +114,18 @@ pub(super) fn write_new_synced(path: &Path, bytes: &[u8]) -> Result<(), String> 
         .map_err(|error| format!("failed to sync prepared job artifact: {error}"))
 }
 
-pub(super) fn sha256_reader(file: &mut File, expected_bytes: u64) -> Result<String, String> {
+pub(super) fn sha256_reader(
+    file: &mut File,
+    expected_bytes: u64,
+    ensure_active: &mut impl FnMut() -> Result<(), String>,
+) -> Result<String, String> {
     file.seek(SeekFrom::Start(0))
         .map_err(|error| format!("failed to seek imported recording: {error}"))?;
     let mut digest = Sha256::new();
     let mut buffer = [0_u8; 64 * 1024];
     let mut remaining = expected_bytes;
     while remaining > 0 {
+        ensure_active()?;
         let requested = usize::try_from(remaining.min(buffer.len() as u64))
             .map_err(|_| "imported recording hash length is out of range")?;
         let read = file
@@ -132,6 +137,7 @@ pub(super) fn sha256_reader(file: &mut File, expected_bytes: u64) -> Result<Stri
         digest.update(&buffer[..read]);
         remaining -= read as u64;
     }
+    ensure_active()?;
     let mut trailing = [0_u8; 1];
     if file
         .read(&mut trailing)

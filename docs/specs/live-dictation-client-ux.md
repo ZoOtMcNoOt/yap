@@ -1,8 +1,8 @@
 # Spec: Live Dictation Client UX + Audio Thread
 
 **Status:** Implemented baseline; native interaction, latency, and resilience hardening continue
-**Implements:** [ADR 0006](../adr/0006-silero-agents-state-machine.md) (orchestrator/pre-warm), [ADR 0013](../adr/0013-global-hotkey-injection.md) (hotkeys/safe delivery), [ADR 0019](../adr/0019-local-streaming-model-selection.md) (Nemotron local live fallback)
-**Scope:** Define the **English-only client live path** as an implemented local baseline plus explicitly separate follow-on server/audio features.
+**Implements:** [ADR 0006](../adr/0006-silero-agents-state-machine.md) (orchestrator/pre-warm), [ADR 0013](../adr/0013-global-hotkey-injection.md) (hotkeys/safe delivery), [ADR 0019](../adr/0019-local-streaming-model-selection.md) (Nemotron local live fallback), and [ADR 0024](../adr/0024-global-language-routing.md) (primary locale and optional Preview language switching)
+**Scope:** Define the client live path as one local Nemotron baseline conditioned by a confirmed primary locale, plus one optional default-off acoustic-LID Preview and explicitly separate follow-on server/audio features.
 
 > **Historical 2026-07-05 amendment:** The top-positioned `live-overlay`,
 > configurable capture hotkey, mic device settings, and typed live state landed
@@ -18,6 +18,16 @@
 
 > **2026-07-14 security amendment:** Shortcut changes require native confirmation and a bounded 15-second Rust/Windows physical-chord epoch that waits for neutral/chord/release, ignores ordinary typing without the required modifiers, and persists only the validated normalized chord. Completed transcripts use clipboard-only delivery with visible manual-paste guidance. Synthesized focused-field input is retired until an adapter can prove and revalidate authority over the exact destination field. ADR 0013 owns this behavior.
 
+> **2026-07-25 Phase 6 amendment:** `LiveRuntime` remains the sole local
+> lifecycle owner. It applies the confirmed primary locale to Nemotron and may
+> load one explicitly imported AmberNet/Silero component beside it. That
+> default-off Preview emits source-time language evidence, partitions held audio
+> exactly once at accepted switches, and returns visibly to the primary locale
+> on ambiguity or failure. Exact executable candidate
+> `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the complete Phase 6 safety
+> matrix, but the consumed natural-switch target failed; this is not default-on
+> multilingual certification.
+
 ---
 
 ## 1. Scope
@@ -28,12 +38,16 @@
 - Transactional dictation and paste-last shortcut commands with safe defaults, native-confirmed bounded physical-chord recording, Cancel, and per-action Reset.
 - CPAL capture → bounded channels → mono conversion/linear resampling → warm in-process sherpa Nemotron recognizer.
 - 1120 ms local chunks with partial/final state updates.
+- One confirmed primary locale applied to local stream creation and reset.
+- Optional `LiveRuntime`-owned AmberNet/Silero language evidence and exact-once
+  switch handoff, exposed only as a default-off Preview.
 - Windows clipboard-only delivery with a Yap HWND owner and visible manual-paste guidance.
 - Local WAV/TXT save into Home history.
 - Orchestrator states wired to UI.
 
-### Follow-on client/server work
-- Rust Silero VAD and reusable `vad_segments`.
+### Remaining client/server work
+- Reuse of current Rust-owned Silero evidence in a future live transport
+  `vad_segments` contract.
 - Opus chunk writer and server-ready manifests.
 - Server live WSS connector, reconnect/backpressure policy, and local fallback handoff.
 - Optional Scribe polish with a measured bypass budget.
@@ -42,8 +56,8 @@
 ### Out of scope
 - macOS/Linux global-hotkey and clipboard adapters; any future direct-insertion adapter requires separate exact-field authority and permission design ([ADR 0013](../adr/0013-global-hotkey-injection.md)).
 - L3 enrichment/OKF and server diarization (canonical phases 8-9).
-- Multilingual live (future ADR).
-- LID on live (canonical Phase 6 remains batch-only).
+- Default-on automatic language switching, broad natural/noisy locale
+  qualification, and low-end physical battery/thermal certification.
 
 ---
 
@@ -86,7 +100,10 @@ cpal input stream (16 kHz mono f32)
 | Threading | Current bounded capture + recognizer workers; follow-on dedicated **VAD/dispatch** and **writer** workers | Callback stays real-time; no model inference or file I/O on the callback |
 | Resampling | resample to 16 kHz mono before VAD/STT | Nemotron + Silero expect 16 kHz |
 
-When Silero lands, it is owned by **Rust on the audio path** ([ADR 0006](../adr/0006-silero-agents-state-machine.md)); the server/knowledge worker never re-runs it.
+The current Preview speech gate and any future live-transport segmentation remain
+owned by **Rust on the audio path** ([ADR 0006](../adr/0006-silero-agents-state-machine.md)).
+Server validation may reject inconsistent evidence, but it does not become a
+second client-state owner.
 
 ---
 

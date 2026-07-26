@@ -6,7 +6,7 @@ use super::{
     session_identity::{active_session_matches, CRASH_CLAIM_BIT},
     LiveRuntime, LiveStartFailure,
 };
-use crate::live::state::LiveSessionState;
+use crate::live::state::{LiveSessionState, LiveSessionView};
 
 impl LiveRuntime {
     pub fn handle_stream_crash(&self, app: tauri::AppHandle, session: u64, message: &str) {
@@ -45,6 +45,21 @@ impl LiveRuntime {
         self.active_session
             .compare_exchange(session, 0, Ordering::SeqCst, Ordering::SeqCst)
             .is_ok()
+    }
+
+    pub(crate) fn cancel_uninstalled_capture_start(
+        &self,
+        state: &LiveSessionState,
+        session: u64,
+    ) -> Option<LiveSessionView> {
+        let inner = self.inner.lock().expect("live runtime poisoned");
+        if !inner.can_install_capture(session, self.active_session.load(Ordering::SeqCst))
+            || !self.clear_active_session_if_current(session)
+        {
+            return None;
+        }
+        drop(inner);
+        state.try_cancel_armed_local_start()
     }
 
     pub(crate) fn claim_start_failure(&self, failure: LiveStartFailure) -> Option<String> {

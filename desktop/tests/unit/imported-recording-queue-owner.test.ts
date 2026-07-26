@@ -58,8 +58,7 @@ describe("Rust recording job ownership", () => {
   });
 
   it("routes native picker create, remove, retry, and clear through Rust commands", () => {
-    expect(hookSource).toContain("pickRecordingImports()");
-    expect(bridgeSource).toContain('invoke<RecordingJobView[]>("recording_jobs_pick_imports")');
+    expect(hookSource).toContain("pickRecordingImports(choice)");
     expect(bridgeSource).not.toMatch(/recording_jobs_create_imports|recording_jobs_import_legacy/);
     expect(hookSource).toContain("cancelRecordingJob(id)");
     expect(hookSource).toContain("dismissRecordingJob(id)");

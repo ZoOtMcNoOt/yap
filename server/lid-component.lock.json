@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 3,
+  "component": {
+    "id": "ambernet-batch-language-preflight",
+    "role": "assistive-batch-language-suggestion",
+    "runtime": {
+      "image": "python",
+      "sourceTag": "3.12.13-slim-bookworm",
+      "source": "https://hub.docker.com/_/python",
+      "platform": "linux/arm64",
+      "indexDigest": "sha256:d50fb7611f86d04a3b0471b46d7557818d88983fc3136726336b2a4c657aa30b",
+      "platformDigest": "sha256:c18c7a910432dde3311fc54d02e5d5220f3ebe26fec43ff15745982863dd7b3b",
+      "pythonVersion": "3.12.13",
+      "cpuOnly": true,
+      "packages": {
+        "numpy": "2.4.6",
+        "onnxruntime": "1.27.0"
+      },
+      "requirementsLock": "server/runtime/lid/requirements.lock",
+      "requirementsSha256": "747b9fdd516a0662b91e3f9a5fa6a1fc1ab5607039149df72b507fb1d9654bc0"
+    },
+    "model": {
+      "id": "nvidia/nemo/langid_ambernet",
+      "revision": "1.12.0",
+      "license": "NVIDIA-NGC-Terms",
+      "source": "https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/langid_ambernet",
+      "distributionPolicy": "verify-only-import",
+      "redistributionApproval": "not-approved",
+      "frontendRevision": "nemo-fixed-3s-v1",
+      "labelCount": 107,
+      "labelOrderSha256": "9c64d2027a37ed72852eea368a7c81eff62efb3c39e72a1567dad35fb83d2e50",
+      "artifacts": [
+        {
+          "path": "ambernet-1.12.0-classifier-int8-qdq.onnx",
+          "size": 29613392,
+          "sha256": "ef1006c7637803540e12ab01021e442382857689cbe0b1909d3128acf66a0a3e"
+        }
+      ]
+    },
+    "policy": {
+      "revision": "ambernet-stratified-five-region-v1",
+      "sampleRateHz": 16000,
+      "channelCount": 1,
+      "sampleWidthBytes": 2,
+      "minimumSourceSamples": 480000,
+      "maximumWindows": 5,
+      "maximumWindowSamples": 96000,
+      "minimumVoicedSamplesPerWindow": 51200,
+      "scoreSemantics": "mean-logit-log-softmax",
+      "userConfirmationRequired": true
+    }
+  }
+}

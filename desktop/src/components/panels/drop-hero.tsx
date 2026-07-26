@@ -3,6 +3,19 @@ import { CloudArrowUp as UploadCloud } from "@phosphor-icons/react/CloudArrowUp"
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  fixedBatchQualityLabel,
+  type RecordingImportLanguageOption,
+} from "@/language-preference";
+import { formatLanguageTag } from "@/lib/language-display";
 import { acceptedFormats } from "@/lib/media-file";
 import { cn } from "@/lib/utils";
 
@@ -12,19 +25,30 @@ export function DropHero({
   onDragOver,
   onDrop,
   onOpenHelp,
+  onOpenLanguageSettings,
+  onLanguageChange,
   onPickFiles,
+  languageOptions,
+  selectedLanguageOptionId,
 }: {
   dragging: boolean;
   onDragLeave: () => void;
   onDragOver: (event: DragEvent<HTMLElement>) => void;
   onDrop: (event: DragEvent<HTMLElement>) => void;
   onOpenHelp?: () => void;
+  onOpenLanguageSettings: () => void;
+  onLanguageChange: (optionId: string) => void;
   onPickFiles: () => void;
+  languageOptions: RecordingImportLanguageOption[];
+  selectedLanguageOptionId: string | null;
 }) {
+  const languageReady = languageOptions.some(
+    (option) => option.id === selectedLanguageOptionId,
+  );
   return (
     <section
       className={cn(
-        "surface-workspace-inset mt-5 w-full border-2 border-dashed bg-[var(--surface-transcript)] transition-[border-color,background-color,box-shadow] duration-200",
+        "surface-workspace-inset mt-5 w-full border-2 border-dashed bg-[var(--surface-transcript)] transition-[border-color,background-color,box-shadow] duration-200 motion-reduce:transition-none",
         dragging ? "border-primary bg-[var(--primary-soft)] shadow-sm" : "border-border",
       )}
       onDragLeave={onDragLeave}
@@ -38,11 +62,38 @@ export function DropHero({
         <div className="max-w-md">
           <h2 className="text-lg font-semibold tracking-tight">Drop recordings here</h2>
           <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-            Choose files to add them to your organization's transcription server queue. {acceptedFormats}.
+            Choose a fixed language or verified automatic detection, then add files to your organization's transcription server queue. Dropped files use your primary language. {acceptedFormats}.
           </p>
         </div>
+        <div className="flex w-full max-w-md flex-wrap items-center justify-center gap-2">
+          <Select
+            disabled={!languageOptions.length}
+            onValueChange={onLanguageChange}
+            value={selectedLanguageOptionId ?? undefined}
+          >
+            <SelectTrigger aria-label="Recording language" className="min-w-[220px] flex-1">
+              <SelectValue placeholder="Choose recording language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {languageOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.mode === "dynamic"
+                      ? `Auto-detect per segment · ${fixedBatchQualityLabel(option.qualityTier)}`
+                      : `${formatLanguageTag(option.languageBcp47)} · ${fixedBatchQualityLabel(option.qualityTier)}`}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          {!languageReady ? (
+            <Button onClick={onOpenLanguageSettings} size="sm" type="button" variant="outline">
+              Set primary language
+            </Button>
+          ) : null}
+        </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button onClick={onPickFiles} type="button">
+          <Button disabled={!languageReady} onClick={onPickFiles} type="button">
             <UploadCloud data-icon="inline-start" />
             Choose files
           </Button>

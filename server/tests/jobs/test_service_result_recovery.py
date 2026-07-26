@@ -38,7 +38,7 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
                     track_id="track-1",
                     sequence_start=0,
                     sequence_end=159,
-                    idempotency_key="1/s-phase5-create/track-1/0/159",
+                    idempotency_key="1/s-batch-create/track-1/0/159",
                     content_sha256=hashlib.sha256(chunk).hexdigest(),
                     audio_codec="pcm_s16le",
                     sample_rate_hz=16000,
@@ -78,6 +78,7 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             for name in (
                 "input.wav",
                 "input.wav.part",
+                "utterance-plan.json",
                 "worker-result.json",
                 "result-revision.json",
             ):
@@ -111,7 +112,7 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
                     track_id="track-1",
                     sequence_start=0,
                     sequence_end=159,
-                    idempotency_key="1/s-phase5-create/track-1/0/159",
+                    idempotency_key="1/s-batch-create/track-1/0/159",
                     content_sha256=hashlib.sha256(chunk).hexdigest(),
                     audio_codec="pcm_s16le",
                     sample_rate_hz=16000,
@@ -165,6 +166,17 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
                 restarted.get_result(created["jobId"])["transcript"],
                 "Crash-safe private transcript.",
             )
+            self.assertEqual(
+                [
+                    (stage["stage"], stage["state"])
+                    for stage in restarted.get_stages(created["jobId"])["stages"]
+                ],
+                [
+                    ("asr", "succeeded"),
+                    ("alignment", "unavailable"),
+                    ("result_publication", "succeeded"),
+                ],
+            )
 
     def test_restart_promotes_an_atomically_published_result_to_complete(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -185,6 +197,11 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             state_path = job_root / "state.json"
             state = json.loads(state_path.read_text(encoding="utf-8"))
             state["projection"]["status"] = "server_processing"
+            state["schemaVersion"] = 3
+            del state["asrRouting"]
+            del state["stageHistoryComplete"]
+            del state["stageAttempts"]
+            del state["projectionRevision"]
             state_path.write_text(
                 json.dumps(state, separators=(",", ":")) + "\n",
                 encoding="utf-8",
@@ -202,6 +219,9 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             self.assertEqual(restarted.get_result(created["jobId"]), result)
             persisted = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(persisted["projection"]["status"], "complete")
+            self.assertEqual(persisted["schemaVersion"], 5)
+            self.assertFalse(persisted["stageHistoryComplete"])
+            self.assertIsNone(persisted["asrRouting"])
 
     def test_restart_discards_an_orphan_result_for_a_cancelled_job(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -214,7 +234,16 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             )
             created = service.create(_create_request())
             cancelled = service.cancel(created["jobId"])
-            result_path = root / "jobs" / created["jobId"] / "result-revision.json"
+            job_root = root / "jobs" / created["jobId"]
+            state_path = job_root / "state.json"
+            legacy = json.loads(state_path.read_text(encoding="utf-8"))
+            legacy["schemaVersion"] = 3
+            del legacy["asrRouting"]
+            del legacy["stageHistoryComplete"]
+            del legacy["stageAttempts"]
+            del legacy["projectionRevision"]
+            state_path.write_text(json.dumps(legacy), encoding="utf-8")
+            result_path = job_root / "result-revision.json"
             result_path.write_text(
                 json.dumps(_published_result(created), separators=(",", ":")) + "\n",
                 encoding="utf-8",
@@ -223,16 +252,60 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             restarted = RecordingJobService(
                 root,
                 processor=_Processor(),
-                supported_languages=("en",),
+                supported_languages=("fr",),
                 now=lambda: "2026-07-14T21:23:00Z",
                 startup_worker_cleanup_verified=True,
             )
 
             self.assertEqual(restarted.get(created["jobId"]), cancelled)
             self.assertFalse(result_path.exists())
+            migrated = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(migrated["schemaVersion"], 5)
+            self.assertFalse(migrated["stageHistoryComplete"])
+            self.assertIsNone(migrated["asrRouting"])
             with self.assertRaises(JobServiceError) as unavailable:
                 restarted.get_result(created["jobId"])
             self.assertEqual(unavailable.exception.code, "RESULT_NOT_READY")
+
+    def test_invalid_legacy_processing_result_is_quarantined_after_cleanup(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            service = RecordingJobService(
+                root,
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: "2026-07-14T21:24:00Z",
+            )
+            created = service.create(_create_request())
+            job_root = root / "jobs" / created["jobId"]
+            state_path = job_root / "state.json"
+            legacy = json.loads(state_path.read_text(encoding="utf-8"))
+            legacy["schemaVersion"] = 3
+            legacy["projection"]["status"] = "server_processing"
+            del legacy["asrRouting"]
+            del legacy["stageHistoryComplete"]
+            del legacy["stageAttempts"]
+            del legacy["projectionRevision"]
+            state_path.write_text(json.dumps(legacy), encoding="utf-8")
+            (job_root / "result-revision.json").write_text(
+                "{not-json}\n",
+                encoding="utf-8",
+            )
+
+            restarted = RecordingJobService(
+                root,
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: "2026-07-14T21:25:00Z",
+                startup_worker_cleanup_verified=True,
+            )
+
+            failed = restarted.get(created["jobId"])
+            self.assertEqual(failed["status"], "failed")
+            self.assertEqual(failed["error"]["code"], "ASR_ROUTE_UNRECOVERABLE")
+            self.assertFalse((job_root / "result-revision.json").exists())
 
     def test_cancelled_result_publication_removes_the_uncommitted_result(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -253,7 +326,7 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
                     track_id="track-1",
                     sequence_start=0,
                     sequence_end=159,
-                    idempotency_key="1/s-phase5-create/track-1/0/159",
+                    idempotency_key="1/s-batch-create/track-1/0/159",
                     content_sha256=hashlib.sha256(chunk).hexdigest(),
                     audio_codec="pcm_s16le",
                     sample_rate_hz=16000,

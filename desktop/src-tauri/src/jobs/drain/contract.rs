@@ -78,6 +78,20 @@ pub(super) fn validate_result_revision(
             .iter()
             .all(|value| !value.is_empty() && value.len() <= 256)
         });
+    let source_duration_ms = request
+        .chunks
+        .iter()
+        .try_fold(0_u64, |total, chunk| {
+            total.checked_add(u64::from(chunk.duration_ms))
+        })
+        .ok_or_else(|| "prepared recording duration overflowed".to_string())?;
+    let source_end_sample = request
+        .chunks
+        .iter()
+        .try_fold(0_u64, |total, chunk| {
+            total.checked_add(chunk.content_identity.byte_length / 2)
+        })
+        .ok_or_else(|| "prepared recording sample count overflowed".to_string())?;
     if result.session_id != request.metadata.session_id.as_str()
         || result.revision != 1
         || result.authority != "server_authoritative"
@@ -86,9 +100,9 @@ pub(super) fn validate_result_revision(
         || result.previous_result_sha256.is_some()
         || result.status != "complete"
         || !language_valid
-        || result.transcript.trim().is_empty()
-        || result.transcript.len() > 2 * 1024 * 1024 - 1
-        || !result.aligned_words.is_empty()
+        || !result.transcript_is_canonical()
+        || !result.language_evidence_is_valid(Some(source_end_sample), source_duration_ms)
+        || !result.alignment_is_valid(source_duration_ms)
         || !provenance_valid
     {
         return Err("server result revision conflicts with the prepared recording".into());

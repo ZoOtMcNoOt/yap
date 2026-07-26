@@ -2,10 +2,14 @@ use super::super::remote;
 use super::*;
 use crate::{
     jobs::{
-        JobLedger, NewRecordingJob, RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin,
-        SourceOwnership,
+        JobLedger, NewClientPreflightArtifact, NewRecordingJob, RecordingJobStatus, RecordingRoute,
+        SessionMode, SessionOrigin, SourceOwnership,
     },
     media_protocol::MediaOwner,
+    server_connector::batch::{
+        NormalizationEvidence, PreprocessingEvidence, SourceVadInterval, VadComponentEvidence,
+        VadEvidence,
+    },
 };
 use std::{
     cell::{Cell, RefCell},
@@ -108,4 +112,44 @@ fn write_pcm_wav(path: &Path, pcm: &[u8]) {
     file.write_all(&(pcm.len() as u32).to_le_bytes()).unwrap();
     file.write_all(pcm).unwrap();
     file.sync_all().unwrap();
+}
+
+fn attach_test_client_preflight(
+    jobs: &RecordingJobs,
+    job_id: &str,
+    completed_at_ms: u64,
+) -> (PathBuf, String) {
+    let spool = jobs.remote_jobs_directory().join(job_id);
+    fs::create_dir_all(&spool).unwrap();
+    let manifest = spool.join("client-preflight.json");
+    fs::write(&manifest, b"owned-preflight").unwrap();
+    let source_pcm_sha256 = "1".repeat(64);
+    jobs.ledger()
+        .attach_client_preflight_artifact(
+            job_id,
+            &NewClientPreflightArtifact {
+                manifest_path: manifest.clone(),
+                manifest_sha256: "2".repeat(64),
+                source_pcm_sha256: source_pcm_sha256.clone(),
+                source_sample_count: 320_000,
+            },
+            &PreprocessingEvidence::new(
+                NormalizationEvidence::canonical_pcm16_identity(
+                    "3".repeat(64),
+                    source_pcm_sha256.clone(),
+                    "1".repeat(64),
+                    320_000,
+                    320_000,
+                    0,
+                ),
+                VadEvidence::complete(
+                    VadComponentEvidence::for_test("test-vad", "test-v1"),
+                    320_000,
+                    vec![SourceVadInterval::for_test(0, 320_000)],
+                ),
+            ),
+            completed_at_ms,
+        )
+        .unwrap();
+    (manifest, source_pcm_sha256)
 }

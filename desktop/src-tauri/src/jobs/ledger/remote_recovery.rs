@@ -64,7 +64,6 @@ impl JobLedger {
         &self,
         configured_origin: Option<&str>,
         updated_at_ms: u64,
-        cleanup_owned_spool: impl FnOnce(&str) -> Result<(), String>,
     ) -> Result<Option<String>, JobLedgerError> {
         if let Some(origin) = configured_origin {
             validate_server_base_url(origin)?;
@@ -100,7 +99,6 @@ impl JobLedger {
             &create_request_json,
             updated_at_ms,
         )?;
-        cleanup_owned_spool(&job_id).map_err(JobLedgerError::OwnedSpoolCleanup)?;
         let next_attempt_count = if current.status == RecordingJobStatus::Failed {
             current.attempt_count
         } else {
@@ -122,11 +120,19 @@ impl JobLedger {
                 "changed-origin job was not durably failed",
             ));
         }
-        transaction.execute("DELETE FROM job_chunks WHERE job_id = ?1", [&job_id])?;
         transaction.execute(
-            "DELETE FROM prepared_remote_jobs WHERE job_id = ?1",
+            "UPDATE job_chunks SET upload_offset = 0, acknowledged_object_id = NULL, acknowledged_at_ms = NULL WHERE job_id = ?1",
             [&job_id],
         )?;
+        let detached = transaction.execute(
+            "UPDATE prepared_remote_jobs SET server_job_id = NULL, server_base_url = NULL, server_cancellation_acknowledged_at_ms = NULL WHERE job_id = ?1 AND server_job_id = ?2 AND server_base_url = ?3",
+            params![job_id, server_job_id, server_base_url],
+        )?;
+        if detached != 1 {
+            return Err(JobLedgerError::InvalidRecord(
+                "changed-origin server binding was not detached",
+            ));
+        }
         transaction.commit()?;
         Ok(Some(job_id))
     }
@@ -136,7 +142,6 @@ impl JobLedger {
         job_id: &str,
         server_base_url: &str,
         updated_at_ms: u64,
-        cleanup_owned_spool: impl FnOnce() -> Result<(), String>,
     ) -> Result<RecordingJobRecord, JobLedgerError> {
         validate_server_base_url(server_base_url)?;
         let updated_at_ms = sqlite_integer(updated_at_ms, "updated_at_ms")?;
@@ -169,7 +174,6 @@ impl JobLedger {
                 "abandoned create attempt no longer matches its cleanup origin",
             ));
         }
-        cleanup_owned_spool().map_err(JobLedgerError::OwnedSpoolCleanup)?;
         let next_attempt_count =
             current
                 .attempt_count
@@ -188,11 +192,19 @@ impl JobLedger {
                 "abandoned remote create attempt was not durably failed",
             ));
         }
-        transaction.execute("DELETE FROM job_chunks WHERE job_id = ?1", [job_id])?;
         transaction.execute(
-            "DELETE FROM prepared_remote_jobs WHERE job_id = ?1",
+            "UPDATE job_chunks SET upload_offset = 0, acknowledged_object_id = NULL, acknowledged_at_ms = NULL WHERE job_id = ?1",
             [job_id],
         )?;
+        let detached = transaction.execute(
+            "UPDATE prepared_remote_jobs SET create_attempt_base_url = NULL WHERE job_id = ?1 AND server_job_id IS NULL AND server_base_url IS NULL AND create_attempt_base_url = ?2",
+            params![job_id, server_base_url],
+        )?;
+        if detached != 1 {
+            return Err(JobLedgerError::InvalidRecord(
+                "abandoned remote create attempt was not detached",
+            ));
+        }
         let updated = query_job(&transaction, job_id)?.expect("abandoned create job exists");
         transaction.commit()?;
         updated.try_into()

@@ -11,7 +11,6 @@ use std::time::{Duration, Instant};
 use crate::audio::coordinator::RECORDING_QUEUE_CAPACITY;
 use crate::audio::recording::RecordingFinalizeResult;
 
-use super::stream::LiveStreamEngine;
 #[cfg(test)]
 use super::stream::{self, StreamMessage};
 
@@ -20,6 +19,8 @@ mod capture_installation;
 mod capture_worker;
 mod control;
 mod finalization;
+mod inference;
+mod language_session;
 mod level_channel;
 mod lifecycle_gate;
 mod local_start;
@@ -27,6 +28,7 @@ mod resources;
 mod session_control;
 mod session_identity;
 mod stop;
+mod stream_events;
 mod stream_session;
 mod warmup;
 mod worker;
@@ -34,10 +36,13 @@ mod worker;
 #[cfg(test)]
 use asr_adapter::set_reaper_spawn_failure_for_test;
 #[cfg(test)]
-use asr_adapter::{AdapterDrainStatus, PendingAsrAdapter, SessionAsrAdapter};
+use asr_adapter::{
+    AdapterDrainStatus, PendingAsrAdapter, SessionAsrAdapter, ASR_ADAPTER_DRAIN_TIMEOUT,
+};
 #[cfg(test)]
 use capture_worker::*;
 use finalization::{RecordingFinalization, StopCompletion};
+use inference::LiveInferenceBundle;
 #[cfg(test)]
 use level_channel::{level_channel, publish_level};
 use lifecycle_gate::{LifecycleGate, OwnedLifecycleOperation};
@@ -53,6 +58,7 @@ use session_identity::{active_session_matches, CRASH_CLAIM_BIT};
 use stream_session::should_accept_stream_samples;
 #[cfg(test)]
 use stream_session::SessionStream;
+pub(crate) use stream_session::StreamFinishReport;
 pub use stream_session::StreamFinishStatus;
 #[cfg(test)]
 use stream_session::StreamFinisher;
@@ -66,7 +72,7 @@ pub struct LiveRuntime {
     recording_finalization: Arc<RecordingFinalization>,
     stop_completion: Arc<StopCompletion<LiveStopResult>>,
     transition: Arc<LifecycleGate>,
-    model_warmup: Arc<SharedWarmup<LiveStreamEngine>>,
+    model_warmup: Arc<SharedWarmup<LiveInferenceBundle>>,
     model_mutation_active: Arc<AtomicBool>,
 }
 
@@ -83,6 +89,7 @@ pub struct LiveStopResult {
 pub(crate) struct ModelMutationLease {
     runtime: LiveRuntime,
     _operation: OwnedLifecycleOperation,
+    cancel_pending_start_on_drop: bool,
 }
 
 pub(crate) struct LiveStartFailure {
@@ -99,7 +106,9 @@ impl LiveStartFailure {
 impl Drop for ModelMutationLease {
     fn drop(&mut self) {
         // A start requested during a long install must not run unexpectedly afterward.
-        self.runtime.cancel_pending_start();
+        if self.cancel_pending_start_on_drop {
+            self.runtime.cancel_pending_start();
+        }
         self.runtime
             .model_mutation_active
             .store(false, Ordering::Release);

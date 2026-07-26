@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "dataset": {
+    "id": "google/fleurs",
+    "revision": "70bb2e84b976b7e960aa89f1c648e09c59f894dd",
+    "config": "es_419",
+    "split": "test",
+    "localeBcp47": "es-419",
+    "source": "https://huggingface.co/datasets/google/fleurs/tree/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/es_419"
+  },
+  "expectedCaseCount": 908,
+  "license": {
+    "id": "CC-BY-4.0",
+    "declarationSource": "https://huggingface.co/datasets/google/fleurs",
+    "legalCodeSource": "https://creativecommons.org/licenses/by/4.0/legalcode.txt",
+    "legalCodeSha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411"
+  },
+  "artifacts": {
+    "audioArchive": {
+      "repositoryPath": "data/es_419/audio/test.tar.gz",
+      "downloadSource": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/es_419/audio/test.tar.gz?download=true",
+      "size": 582112372,
+      "sha256": "981802f6c828fd214fcf8bfc1036d80c9184b6eeb5650b3f7882f8affec046c9"
+    },
+    "metadata": {
+      "repositoryPath": "data/es_419/test.tsv",
+      "downloadSource": "https://huggingface.co/datasets/google/fleurs/resolve/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/es_419/test.tsv?download=true",
+      "size": 599882,
+      "sha256": "d107a93a4f54a18ac25cd470bb4cdadce14fb075b0c1d1542258e274d209ec09",
+      "gitBlobOid": "cdec7d5980706c7f354b89a4a4d31949b65c100f"
+    }
+  }
+}

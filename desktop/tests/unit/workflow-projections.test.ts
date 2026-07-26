@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import repositoryAsrCatalog from "../../../server/openapi/examples/asr-capabilities.ok.json";
+
 import {
   liveSettingsLocked,
   projectFallbackLifecycle,
@@ -20,7 +22,12 @@ import {
   setupStateLabel,
 } from "@/lib/setup-model";
 import { isWorkspaceView } from "@/lib/workspace";
-import { serverCanRouteImportedRecording, serverCanRouteLive } from "@/server";
+import {
+  catalogSupportsMode,
+  serverCanRouteImportedRecording,
+  serverCanRouteLive,
+  type AsrCapabilityCatalog,
+} from "@/server";
 
 describe("client workflow projections", () => {
   const baseFallbackModel = {
@@ -94,6 +101,14 @@ describe("client workflow projections", () => {
       state: "offline",
       capabilities: { ...readyWithoutCapabilities.capabilities, liveStreaming: true },
     })).toBe(false);
+  });
+
+  it("keeps fixed-language and dynamic-language availability distinct", () => {
+    const catalog = repositoryAsrCatalog as unknown as AsrCapabilityCatalog;
+
+    expect(catalogSupportsMode(catalog, "en-US", "fixedBatch")).toBe(true);
+    expect(catalogSupportsMode(catalog, "en-US", "dynamicBatch")).toBe(false);
+    expect(catalogSupportsMode(catalog, "es-US", "fixedBatch")).toBe(false);
   });
 
   it("labels the pinned local fallback model clearly", () => {

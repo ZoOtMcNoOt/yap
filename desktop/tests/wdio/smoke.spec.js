@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import path from "node:path";
 import process from "node:process";
 import { setTimeout as delay } from "node:timers/promises";
@@ -15,9 +16,16 @@ import {
 const execFileAsync = promisify(execFile);
 const specRoot = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(specRoot, "..", "..");
+const repositoryRoot = path.resolve(desktopRoot, "..");
 const binaryName = process.platform === "win32" ? "yap-desktop.exe" : "yap-desktop";
 const appBinaryPath = process.env.APP_BINARY
   ?? path.join(desktopRoot, "src-tauri", "target", "debug", binaryName);
+const restartRecoveryHealthFixture = readFileSync(
+  path.join(repositoryRoot, "server", "openapi", "examples", "health.ok.json"),
+);
+const restartRecoveryCatalogFixture = readFileSync(
+  path.join(repositoryRoot, "server", "openapi", "examples", "asr-capabilities.ok.json"),
+);
 
 function requiredIsolationPath(name) {
   const value = process.env[name];
@@ -27,7 +35,14 @@ function requiredIsolationPath(name) {
   return value;
 }
 
-function restartSessionCapabilities(port, appDataRoot, liveRoot, modelsRoot, webviewRoot, pickerPath) {
+function recordingRecoverySessionCapabilities(
+  port,
+  appDataRoot,
+  liveRoot,
+  modelsRoot,
+  webviewRoot,
+  pickerPath,
+) {
   const capabilities = createTauriCapabilities(appBinaryPath, {
     driverProvider: "embedded",
     logLevel: "info",
@@ -43,6 +58,7 @@ function restartSessionCapabilities(port, appDataRoot, liveRoot, modelsRoot, web
     env: {
       WEBVIEW2_USER_DATA_FOLDER: webviewRoot,
       YAP_APP_DATA_DIR: appDataRoot,
+      YAP_ALLOW_INSECURE_PRIVATE_SERVER: "1",
       YAP_LIVE_RECORDINGS_DIR: liveRoot,
       YAP_MODELS_DIR: modelsRoot,
       YAP_WDIO_PICKER_PATH: pickerPath,
@@ -51,6 +67,53 @@ function restartSessionCapabilities(port, appDataRoot, liveRoot, modelsRoot, web
     startTimeout: 60_000,
   };
   return capabilities;
+}
+
+async function startRestartRecoveryCapabilityServer() {
+  const responses = new Map([
+    ["/v1/health", restartRecoveryHealthFixture],
+    ["/v1/asr/capabilities", restartRecoveryCatalogFixture],
+  ]);
+  const server = createServer((request, response) => {
+    const body = request.method === "GET" ? responses.get(request.url) : undefined;
+    if (!body) {
+      response.writeHead(404, { connection: "close" });
+      response.end();
+      return;
+    }
+    response.writeHead(200, {
+      connection: "close",
+      "content-length": body.length,
+      "content-type": "application/json",
+    });
+    response.end(body);
+  });
+  server.on("clientError", (_error, socket) => socket.destroy());
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      server.off("error", reject);
+      resolve();
+    });
+  });
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    server.close();
+    throw new Error("The restart-recovery capability server has no numeric loopback port.");
+  }
+  return {
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    server,
+  };
+}
+
+async function stopRestartRecoveryCapabilityServer(server) {
+  await new Promise((resolve, reject) => {
+    server.close((error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
 }
 
 async function invokeTauriCommandInSession(session, command, args = {}) {
@@ -123,29 +186,30 @@ async function waitForProcessExit(processId, timeoutMs = 10_000) {
   throw new Error(`Native Yap process ${processId} remained alive after ${timeoutMs}ms.`);
 }
 
-async function stopRestartSession(session, processId) {
-  console.info(`[Task 7 restart] stop process=${processId ?? "unknown"}`);
+async function terminateRecordingRecoverySession(session, processId) {
+  console.info(`[recording job restart recovery] stop process=${processId ?? "unknown"}`);
   if (processId && isProcessAlive(processId)) {
     process.kill(processId, "SIGTERM");
     await waitForProcessExit(processId);
   }
   if (processId) {
-    console.info(`[Task 7 restart] stopped process=${processId}`);
+    console.info(`[recording job restart recovery] stopped process=${processId}`);
     session.sessionId = undefined;
     // The standalone service always attempts a remote mock reset during cleanup.
     // This proof intentionally terminated the only remote session and installs no
     // mocks, so keep that impossible post-termination command local and bounded.
     session.overwriteCommand("execute", async () => undefined);
   }
-  console.info(`[Task 7 restart] cleanup start process=${processId ?? "unknown"}`);
+  console.info(`[recording job restart recovery] cleanup start process=${processId ?? "unknown"}`);
   await cleanupWdioSession(session);
-  console.info(`[Task 7 restart] cleanup complete process=${processId ?? "unknown"}`);
+  console.info(`[recording job restart recovery] cleanup complete process=${processId ?? "unknown"}`);
 }
 
-function writeEmptyWaveFile(filePath) {
-  const wave = Buffer.alloc(44);
+function writeOneSecondPcmWaveFile(filePath) {
+  const pcmByteLength = 16_000 * 2;
+  const wave = Buffer.alloc(44 + pcmByteLength);
   wave.write("RIFF", 0, "ascii");
-  wave.writeUInt32LE(36, 4);
+  wave.writeUInt32LE(36 + pcmByteLength, 4);
   wave.write("WAVE", 8, "ascii");
   wave.write("fmt ", 12, "ascii");
   wave.writeUInt32LE(16, 16);
@@ -156,7 +220,7 @@ function writeEmptyWaveFile(filePath) {
   wave.writeUInt16LE(2, 32);
   wave.writeUInt16LE(16, 34);
   wave.write("data", 36, "ascii");
-  wave.writeUInt32LE(0, 40);
+  wave.writeUInt32LE(pcmByteLength, 40);
   writeFileSync(filePath, wave, { flag: "wx" });
 }
 
@@ -257,7 +321,7 @@ describe("Yap desktop shell", () => {
     expect(violation.disposition).toBe("enforce");
   });
 
-  it("restores a Rust-owned queued job after a genuine native process restart", async function () {
+  it("restores a Rust-owned preflight job after a genuine native process restart", async function () {
     this.timeout(180_000);
     const runRoot = requiredIsolationPath("YAP_WDIO_RUN_ROOT");
     const proofRoot = path.join(runRoot, "native-restart-proof");
@@ -277,7 +341,12 @@ describe("Yap desktop shell", () => {
     ]) {
       mkdirSync(directory, { recursive: true });
     }
-    writeEmptyWaveFile(sourcePath);
+    writeOneSecondPcmWaveFile(sourcePath);
+    writeFileSync(
+      path.join(appDataRoot, "primary-language.json"),
+      `${JSON.stringify({ schemaVersion: 1, languageBcp47: "en-US" }, null, 2)}\n`,
+      { encoding: "utf8", flag: "wx" },
+    );
 
     const firstPort = 4455;
     const secondPort = 4456;
@@ -285,28 +354,89 @@ describe("Yap desktop shell", () => {
     let secondSession;
     let firstProcessId;
     let secondProcessId;
+    let capabilityServer;
     try {
+      const capabilityFixture = await startRestartRecoveryCapabilityServer();
+      capabilityServer = capabilityFixture.server;
+      writeFileSync(
+        path.join(appDataRoot, "server-settings.json"),
+        `${JSON.stringify({
+          schemaVersion: 1,
+          enabled: true,
+          baseUrl: capabilityFixture.baseUrl,
+        }, null, 2)}\n`,
+        { encoding: "utf8", flag: "wx" },
+      );
+      writeFileSync(
+        path.join(appDataRoot, "server-origin-approval.json"),
+        `${JSON.stringify({
+          schemaVersion: 1,
+          origin: capabilityFixture.baseUrl,
+        }, null, 2)}\n`,
+        { encoding: "utf8", flag: "wx" },
+      );
       firstSession = await startWdioSession(
-        restartSessionCapabilities(firstPort, appDataRoot, liveRoot, modelsRoot, firstWebviewRoot, sourcePath),
+        recordingRecoverySessionCapabilities(
+          firstPort,
+          appDataRoot,
+          liveRoot,
+          modelsRoot,
+          firstWebviewRoot,
+          sourcePath,
+        ),
       );
       await firstSession.switchToWindow("main");
       expect(await firstSession.getWindowHandle()).toBe("main");
       firstProcessId = await findProcessIdListeningOn(firstPort);
-      const created = await invokeTauriCommandInSession(firstSession, "recording_jobs_pick_imports");
+      const connection = await invokeTauriCommandInSession(
+        firstSession,
+        "refresh_server_connection",
+      );
+      expect(connection.state).toBe("ready");
+      expect(connection.capabilities).toEqual({
+        batchJobs: false,
+        liveStreaming: false,
+        jobStatus: false,
+      });
+      const catalog = await invokeTauriCommandInSession(
+        firstSession,
+        "server_asr_capabilities",
+      );
+      expect(catalog?.catalogRevision).toMatch(/^[0-9a-f]{64}$/);
+      const created = await invokeTauriCommandInSession(
+        firstSession,
+        "recording_jobs_pick_imports",
+        {
+          languageBcp47: "en-US",
+          catalogRevision: catalog.catalogRevision,
+        },
+      );
       expect(created).toHaveLength(1);
-      expect(created[0].status).toBe("queued_server");
+      expect(created[0].status).toBe("preflighting");
+      expect(created[0].languageDecision).toEqual({
+        mode: "fixed",
+        languageBcp47: "en-US",
+        disposition: "primary",
+      });
       expect(typeof created[0].id).toBe("string");
       expect(await firstSession.execute(() =>
         window.localStorage.getItem("yap.recordingQueue.v1"))).toBeNull();
       console.info(
-        `[Task 7 restart] processA=${firstProcessId} job=${created[0].id} status=${created[0].status}`,
+        `[recording job restart recovery] firstProcess=${firstProcessId} job=${created[0].id} status=${created[0].status}`,
       );
 
-      await stopRestartSession(firstSession, firstProcessId);
+      await terminateRecordingRecoverySession(firstSession, firstProcessId);
       firstSession = undefined;
 
       secondSession = await startWdioSession(
-        restartSessionCapabilities(secondPort, appDataRoot, liveRoot, modelsRoot, secondWebviewRoot, sourcePath),
+        recordingRecoverySessionCapabilities(
+          secondPort,
+          appDataRoot,
+          liveRoot,
+          modelsRoot,
+          secondWebviewRoot,
+          sourcePath,
+        ),
       );
       await secondSession.switchToWindow("main");
       expect(await secondSession.getWindowHandle()).toBe("main");
@@ -316,19 +446,27 @@ describe("Yap desktop shell", () => {
       const reopened = await invokeTauriCommandInSession(secondSession, "recording_jobs_snapshot");
       const restored = reopened.find((job) => job.id === created[0].id);
       expect(restored).toBeDefined();
-      expect(restored.status).toBe("queued_server");
-      expect(comparableWindowsPath(restored.sourcePath)).toBe(comparableWindowsPath(sourcePath));
+      expect(restored.status).toBe("preflighting");
+      expect(restored.name).toBe(path.basename(sourcePath));
+      expect(restored.error).toBeUndefined();
+      expect(restored.languageDecision).toEqual(created[0].languageDecision);
+      if (restored.sourcePath !== undefined) {
+        expect(comparableWindowsPath(restored.sourcePath)).toBe(comparableWindowsPath(sourcePath));
+      }
       expect(await secondSession.execute(() =>
         window.localStorage.getItem("yap.recordingQueue.v1"))).toBeNull();
       console.info(
-        `[Task 7 restart] processB=${secondProcessId} recovered=${restored.id} status=${restored.status}`,
+        `[recording job restart recovery] secondProcess=${secondProcessId} recovered=${restored.id} status=${restored.status}`,
       );
     } finally {
       if (secondSession) {
-        await stopRestartSession(secondSession, secondProcessId);
+        await terminateRecordingRecoverySession(secondSession, secondProcessId);
       }
       if (firstSession) {
-        await stopRestartSession(firstSession, firstProcessId);
+        await terminateRecordingRecoverySession(firstSession, firstProcessId);
+      }
+      if (capabilityServer) {
+        await stopRestartRecoveryCapabilityServer(capabilityServer);
       }
     }
   });

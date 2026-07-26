@@ -73,6 +73,9 @@ decisions remain unchanged.
   integration.
 - Production promotion requires durable-queue, cancellation, recovery,
   authenticated-owner, and mixed-load latency/capacity evidence.
+- Phase 7 owns authenticated owner derivation. Phase 10 owns the persistent
+  supervised live/batch service and mixed-load capacity evidence; neither is a
+  Phase 6 completion condition.
 
 ## Alternatives considered
 

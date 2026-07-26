@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use yap_desktop_lib::jobs::{
-    JobLedger, NewRecordingJob, RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin,
-    SourceOwnership,
+    AsrCatalogBinding, JobLedger, NewRecordingJob, RecordingJobStatus, RecordingLanguageDecision,
+    RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
 };
 
 static NEXT_TEMP_DIR: AtomicU64 = AtomicU64::new(0);
@@ -98,6 +98,12 @@ fn accepted_job(job_id: &str, source: &Path) -> NewRecordingJob {
         created_at_ms: 100,
         updated_at_ms: 100,
         expires_at_ms: Some(10_000),
+        language_decision: RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+        language_decision_locked: true,
+        client_stage_history_complete: true,
+        asr_catalog_binding: Some(
+            AsrCatalogBinding::try_new("http://127.0.0.1:18765".into(), "a".repeat(64)).unwrap(),
+        ),
     }
 }
 
@@ -107,7 +113,7 @@ impl TestDir {
     fn new(label: &str) -> Self {
         let sequence = NEXT_TEMP_DIR.fetch_add(1, Ordering::Relaxed);
         let path = std::env::temp_dir().join(format!(
-            "yap-task7-{label}-{}-{sequence}",
+            "yap-job-ledger-{label}-{}-{sequence}",
             std::process::id()
         ));
         fs::create_dir_all(&path).unwrap();

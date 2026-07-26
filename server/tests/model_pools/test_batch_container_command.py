@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import tempfile
 import unittest
 from pathlib import Path
 
 from yap_server.pools.batch_asr import BatchAsrJob, ContainerBatchAsrWorker
+
+from tests.asr_route_fixtures import test_asr_route
 
 from .batch_asr_fixtures import (
     AUDIO_SHA256,
@@ -43,6 +46,7 @@ class ContainerBatchAsrCommandTests(unittest.TestCase):
                     root / "result.json",
                     language="en",
                     input_sha256=AUDIO_SHA256,
+                    route=test_asr_route(),
                 )
             )
 
@@ -89,11 +93,12 @@ class ContainerBatchAsrCommandTests(unittest.TestCase):
                     result_path,
                     language="en",
                     input_sha256=AUDIO_SHA256,
+                    route=test_asr_route(),
                 )
             )
             rendered = " ".join(command)
 
-            self.assertRegex(rendered, r"--name yap-phase4-asr-[0-9a-f]{32}")
+            self.assertRegex(rendered, r"--name yap-batch-asr-[0-9a-f]{32}")
             self.assertIn("--network none", rendered)
             self.assertIn("--read-only", command)
             self.assertIn("--cap-drop ALL", rendered)
@@ -111,11 +116,18 @@ class ContainerBatchAsrCommandTests(unittest.TestCase):
                 rendered,
             )
             self.assertIn(
-                "--tmpfs /triton-cache:rw,nosuid,nodev,exec,size=256m,"
+                "--tmpfs /torch-compile-cache:rw,nosuid,nodev,exec,size=256m,"
                 "mode=0700,uid=1000,gid=1000",
                 rendered,
             )
-            self.assertIn("TRITON_CACHE_DIR=/triton-cache", rendered)
+            self.assertIn(
+                "TRITON_CACHE_DIR=/torch-compile-cache",
+                rendered,
+            )
+            self.assertIn(
+                "--lock /opt/yap-server/model-locks/cohere-batch.json",
+                rendered,
+            )
             self.assertIn("--language en", rendered)
             self.assertNotIn(str(result_path), rendered)
 
@@ -147,6 +159,7 @@ class ContainerBatchAsrCommandTests(unittest.TestCase):
                         root / "result.json",
                         language="en",
                         input_sha256=AUDIO_SHA256,
+                        route=test_asr_route(),
                     )
                 )
             )
@@ -160,12 +173,53 @@ class ContainerBatchAsrCommandTests(unittest.TestCase):
             ):
                 self.assertIn(f"--label {label}", rendered)
 
+    def test_worker_requires_the_exact_locked_fixed_batch_route(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model_dir = root / "model"
+            model_dir.mkdir()
+            input_path = root / "speech.wav"
+            input_path.write_bytes(b"wav")
+            worker = ContainerBatchAsrWorker(
+                image=IMAGE_ID,
+                model_dir=model_dir,
+                lock=self.lock,
+                run_as_uid=1000,
+                run_as_gid=1000,
+                checked_head=CHECKED_HEAD,
+                storage_namespace=STORAGE_NAMESPACE,
+            )
+            baseline = test_asr_route()
+            invalid_routes = (
+                replace(baseline, pool_id="other-batch"),
+                replace(baseline, model_revision="c" * 40),
+                replace(
+                    baseline,
+                    execution_mode="dynamicBatch",
+                    provider_language="auto",
+                ),
+            )
+
+            for route in invalid_routes:
+                with self.subTest(route=route):
+                    with self.assertRaises(ValueError):
+                        worker.build_command(
+                            BatchAsrJob(
+                                "job-1",
+                                input_path,
+                                root / "result.json",
+                                language="en",
+                                input_sha256=AUDIO_SHA256,
+                                route=route,
+                            )
+                        )
+
     def test_rejects_implicit_latest_image(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             for image in (
                 "yap-asr",
                 "yap-asr:latest",
-                "yap-asr:phase4-0123456789abcdef",
+                "yap-gb10-asr:checked-head-0123456789abcdef",
             ):
                 with self.subTest(image=image):
                     with self.assertRaises(ValueError):

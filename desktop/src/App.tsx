@@ -1,5 +1,5 @@
 import { isTauri } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppChrome } from "@/components/app/app-chrome";
@@ -28,6 +28,10 @@ import { isRecordingFinished } from "@/lib/recording-job";
 import { workspaceCopy } from "@/lib/workspace";
 import { fireAndReport } from "@/lib/fire-and-report";
 import { cn } from "@/lib/utils";
+import {
+  fixedBatchLanguageOptions,
+  recordingImportLanguageOptions,
+} from "@/language-preference";
 
 function reportRecordingAction(action: () => unknown, message: string) {
   fireAndReport(action, (error) => toast.error(`${message}: ${error.message}`));
@@ -35,6 +39,7 @@ function reportRecordingAction(action: () => unknown, message: string) {
 
 export default function App() {
   const [status, setStatus] = useState("Starting");
+  const [recordingLanguageOptionId, setRecordingLanguageOptionId] = useState<string | null>(null);
   const settingsRefreshRef = useRef<() => Promise<void>>(async () => undefined);
   const {
     clearTranscriptText,
@@ -48,6 +53,7 @@ export default function App() {
   const {
     addRecordings: pickImportedRecordings,
     clearQueue,
+    confirmLanguage,
     discardLegacyQueue,
     legacyDiscardAllowed,
     migrationError,
@@ -79,6 +85,7 @@ export default function App() {
     selectHistoryEntry,
     selectQueueItem,
     selectedHistoryItem,
+    selectedHistoryEntry,
     selectedHistoryOutput,
     selectedId,
     selectedItem,
@@ -101,12 +108,6 @@ export default function App() {
       setStatus(isRecordingFinished(selectedItem?.status) ? "Transcript ready" : "Select a finished transcript first");
     },
   });
-  const addRecordings = useCallback(async () => {
-    const selectedQueueId = await pickImportedRecordings();
-    if (selectedQueueId === undefined) return;
-    openWorkspace("transcribe");
-    selectQueueItem(selectedQueueId);
-  }, [openWorkspace, pickImportedRecordings, selectQueueItem]);
   const recordingDrop = useRecordingDrop();
   const onNativeTranscriptSaved = useCallback((entry: TranscriptHistoryEntry) => {
     selectHistoryEntry(entry);
@@ -135,6 +136,54 @@ export default function App() {
   const settings = useSettingsControl({
     onStatusChange: setStatus,
   });
+  const languageCatalog = settings.language.status?.capabilityCatalog;
+  const languageOptions = useMemo(
+    () => fixedBatchLanguageOptions(languageCatalog),
+    [languageCatalog],
+  );
+  const importLanguageOptions = useMemo(
+    () => recordingImportLanguageOptions(languageCatalog),
+    [languageCatalog],
+  );
+  const primaryLanguageBcp47 = settings.language.status?.confirmedLanguageBcp47 ?? null;
+  useEffect(() => {
+    setRecordingLanguageOptionId((current) => {
+      if (current && importLanguageOptions.some((option) => option.id === current)) {
+        return current;
+      }
+      const primaryId = primaryLanguageBcp47 ? `fixed:${primaryLanguageBcp47}` : null;
+      return importLanguageOptions.some((option) => option.id === primaryId)
+        ? primaryId
+        : null;
+    });
+  }, [importLanguageOptions, primaryLanguageBcp47]);
+  const addRecordings = useCallback(async () => {
+    const catalogRevision = languageCatalog?.catalogRevision;
+    const option = importLanguageOptions.find(({ id }) => id === recordingLanguageOptionId);
+    if (!option || !catalogRevision) {
+      throw new Error("Confirm a currently supported recording language in Settings first.");
+    }
+    const selectedQueueId = await pickImportedRecordings(option.mode === "dynamic"
+      ? { mode: "dynamic", catalogRevision }
+      : { mode: "fixed", languageBcp47: option.languageBcp47, catalogRevision });
+    if (selectedQueueId === undefined) return;
+    openWorkspace("transcribe");
+    selectQueueItem(selectedQueueId);
+  }, [
+    languageCatalog?.catalogRevision,
+    openWorkspace,
+    pickImportedRecordings,
+    importLanguageOptions,
+    recordingLanguageOptionId,
+    selectQueueItem,
+  ]);
+  const confirmQueuedLanguage = useCallback(async (jobId: string, languageBcp47: string) => {
+    const catalogRevision = languageCatalog?.catalogRevision;
+    if (!catalogRevision) {
+      throw new Error("Current server language capabilities are unavailable.");
+    }
+    await confirmLanguage(jobId, languageBcp47, catalogRevision);
+  }, [confirmLanguage, languageCatalog?.catalogRevision]);
   settingsRefreshRef.current = settings.refresh;
   const workspace = workspaceCopy[workspaceView];
   const showQueue = workspaceView === "transcribe";
@@ -200,11 +249,13 @@ export default function App() {
           legacyDiscardAllowed={legacyDiscardAllowed}
           onClear={() => reportRecordingAction(clearQueue, "Could not clear queue")}
           onDiscardLegacyQueue={() => reportRecordingAction(discardLegacyQueue, "Could not discard old queue")}
+          onConfirmLanguage={confirmQueuedLanguage}
           onRemove={(id) => reportRecordingAction(() => removeItem(id), "Could not remove recording")}
           onReveal={(path) => void revealPath(path)}
           onRetryMigration={retryMigration}
           onSelect={selectQueueItem}
           queue={queue}
+          languageOptions={languageOptions}
           migrationError={migrationError}
           migrationPending={migrationState === "pending"}
           selectedId={selectedId}
@@ -290,8 +341,12 @@ export default function App() {
           onDragLeave={recordingDrop.onDragLeave}
           onDragOver={recordingDrop.onDragOver}
           onDrop={recordingDrop.onDrop}
+          languageOptions={importLanguageOptions}
+          onLanguageChange={setRecordingLanguageOptionId}
           onOpenHelp={() => openWorkspace("help")}
+          onOpenLanguageSettings={showDetails}
           onPickFiles={() => void pickFiles()}
+          selectedLanguageOptionId={recordingLanguageOptionId}
         />
       ) : null}
 
@@ -323,6 +378,7 @@ export default function App() {
         helpOpen={helpOpen}
         historyJob={historyJob}
         historyReviewOpen={workspaceView === "home" && Boolean(selectedHistoryItem)}
+        languageOptions={languageOptions}
         onDetailsOpenChange={onDetailsOpenChange}
         onHelpOpenChange={onHelpOpenChange}
         openAppPath={openAppPath}
@@ -332,6 +388,7 @@ export default function App() {
         revealPath={revealPath}
         reviewMorphOrigin={reviewMorphOrigin}
         selectedHistoryItem={selectedHistoryItem}
+        selectedHistoryEntry={selectedHistoryEntry}
         settings={settings}
         status={status}
         transcriptText={transcriptText}

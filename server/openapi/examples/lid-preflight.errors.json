@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "invalid-envelope",
+      "path": "/v1/lid/preflight",
+      "method": "post",
+      "status": 400,
+      "value": {
+        "code": "INVALID_LID_PREFLIGHT",
+        "message": "LID preflight request is invalid.",
+        "retryable": false,
+        "requestId": "req-01J..."
+      }
+    },
+    {
+      "id": "stale-contract",
+      "path": "/v1/lid/preflight",
+      "method": "post",
+      "status": 409,
+      "value": {
+        "code": "STALE_LID_PREFLIGHT_CONTRACT",
+        "message": "LID preflight contract identity is stale.",
+        "retryable": false,
+        "requestId": "req-01J..."
+      }
+    },
+    {
+      "id": "request-too-large",
+      "path": "/v1/lid/preflight",
+      "method": "post",
+      "status": 413,
+      "value": {
+        "code": "REQUEST_TOO_LARGE",
+        "message": "Request body exceeds the 1048576-byte limit.",
+        "retryable": false,
+        "requestId": "req-01J..."
+      }
+    },
+    {
+      "id": "unsupported-media-type",
+      "path": "/v1/lid/preflight",
+      "method": "post",
+      "status": 415,
+      "value": {
+        "code": "UNSUPPORTED_MEDIA_TYPE",
+        "message": "LID preflight requires its versioned binary media type.",
+        "retryable": false,
+        "requestId": "req-01J..."
+      }
+    },
+    {
+      "id": "capacity-busy",
+      "path": "/v1/lid/preflight",
+      "method": "post",
+      "status": 429,
+      "value": {
+        "code": "LID_PREFLIGHT_BUSY",
+        "message": "LID preflight capacity is temporarily full.",
+        "retryable": true,
+        "requestId": "req-01J..."
+      }
+    },
+    {
+      "id": "storage-error",
+      "path": "/v1/lid/preflight",
+      "method": "post",
+      "status": 500,
+      "value": {
+        "code": "LID_PREFLIGHT_STORAGE_ERROR",
+        "message": "Private LID preflight storage could not complete the request.",
+        "retryable": true,
+        "requestId": "req-01J..."
+      }
+    },
+    {
+      "id": "not-configured",
+      "path": "/v1/lid/preflight",
+      "method": "post",
+      "status": 501,
+      "value": {
+        "code": "NOT_IMPLEMENTED",
+        "message": "LID preflight is not configured.",
+        "retryable": false,
+        "requestId": "req-01J..."
+      }
+    },
+    {
+      "id": "temporarily-unavailable",
+      "path": "/v1/lid/preflight",
+      "method": "post",
+      "status": 503,
+      "value": {
+        "code": "LID_PREFLIGHT_UNAVAILABLE",
+        "message": "LID preflight is temporarily unavailable.",
+        "retryable": true,
+        "requestId": "req-01J..."
+      }
+    },
+    {
+      "id": "preflight-not-found",
+      "path": "/v1/lid/preflights/{requestId}",
+      "method": "delete",
+      "status": 404,
+      "value": {
+        "code": "LID_PREFLIGHT_NOT_FOUND",
+        "message": "Active LID preflight request was not found.",
+        "retryable": false,
+        "requestId": "req-01J..."
+      }
+    }
+  ]
+}

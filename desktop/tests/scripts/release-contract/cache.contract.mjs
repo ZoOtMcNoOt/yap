@@ -106,9 +106,9 @@ test("pnpm cache policy rejects inline npm-compatible store overrides", async ()
   const ci = await readWorkflow(".github/workflows/ci.yml");
   const unsafe = structuredClone(ci);
   const audit = unsafe.jobs.frontend.steps.find(
-    (step) => step.run === "pnpm audit --audit-level high",
+    (step) => step.run === "pnpm audit:dependencies",
   );
-  audit.run = "$env:NPM_CONFIG_STORE_DIR = 'C:\\unsafe-pnpm-store'\npnpm audit --audit-level high";
+  audit.run = "$env:NPM_CONFIG_STORE_DIR = 'C:\\unsafe-pnpm-store'\npnpm audit:dependencies";
   assert.throws(
     () => assertExactPnpmStoreBindings(unsafe, ".github/workflows/ci.yml"),
     /must not override PNPM_CONFIG_STORE_DIR/,

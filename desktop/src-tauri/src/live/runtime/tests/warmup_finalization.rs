@@ -116,6 +116,39 @@ fn clearing_idle_warmup_cancels_and_waits_for_a_loading_model() {
 }
 
 #[test]
+fn shutdown_clear_returns_at_its_bound_when_model_loading_is_blocked() {
+    let warmup = Arc::new(SharedWarmup::<usize>::new());
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+    warmup
+        .request("blocked-shutdown-warmup", move || {
+            entered_tx.send(()).unwrap();
+            release_rx.recv().unwrap();
+            Ok(7)
+        })
+        .unwrap();
+    entered_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+
+    let started = Instant::now();
+    let error = warmup
+        .clear_idle_for_shutdown(Duration::from_millis(25))
+        .unwrap_err();
+
+    assert!(error.contains("shutdown deadline"));
+    assert!(started.elapsed() < Duration::from_secs(1));
+    assert!(warmup.is_loading_for_test());
+    release_tx.send(()).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while !warmup.is_empty_for_test() {
+        assert!(
+            Instant::now() < deadline,
+            "cancelled warmup did not retire after its loader returned"
+        );
+        std::thread::yield_now();
+    }
+}
+
+#[test]
 fn model_mutation_lease_invalidates_a_start_queued_behind_it() {
     let runtime = LiveRuntime::new();
     let mutation = runtime.begin_model_mutation().unwrap();
@@ -149,6 +182,88 @@ fn model_mutation_lease_rejects_new_start_work_without_waiting() {
 
     assert!(result.is_none());
     assert!(!ran.load(Ordering::Acquire));
+}
+
+#[test]
+fn primary_language_mutation_invalidates_idle_warmup_state() {
+    let runtime = LiveRuntime::new();
+    runtime
+        .model_warmup
+        .seed_failed_for_test("warmup used the previous primary language");
+
+    let mutation = runtime.begin_primary_language_mutation().unwrap();
+
+    assert!(runtime.model_warmup.is_empty_for_test());
+    drop(mutation);
+}
+
+#[test]
+fn regional_language_mutation_invalidates_idle_warmup_state() {
+    let runtime = LiveRuntime::new();
+    runtime
+        .model_warmup
+        .seed_failed_for_test("warmup used the previous regional language mapping");
+
+    let mutation = runtime.begin_language_support_mutation().unwrap();
+
+    assert!(runtime.model_warmup.is_empty_for_test());
+    drop(mutation);
+}
+
+#[test]
+fn primary_language_mutation_has_an_actionable_live_busy_error() {
+    let runtime = LiveRuntime::new();
+    let intent = runtime.capture_start_intent();
+    runtime
+        .inner
+        .lock()
+        .unwrap()
+        .mark_resources_present_for_test();
+
+    let error = match runtime.begin_primary_language_mutation() {
+        Ok(_) => panic!("active live capture unexpectedly allowed a language mutation"),
+        Err(error) => error,
+    };
+
+    assert_eq!(error, "Stop live before changing the primary language.");
+    assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+    assert!(runtime.start_intent_is_current(intent));
+}
+
+#[test]
+fn regional_language_mutation_has_an_actionable_live_busy_error() {
+    let runtime = LiveRuntime::new();
+    runtime
+        .inner
+        .lock()
+        .unwrap()
+        .mark_resources_present_for_test();
+
+    let error = match runtime.begin_language_support_mutation() {
+        Ok(_) => panic!("active live capture unexpectedly allowed a regional-language mutation"),
+        Err(error) => error,
+    };
+
+    assert_eq!(error, "Stop live before changing local language support.");
+    assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+}
+
+#[test]
+fn local_model_mutations_are_mutually_exclusive_across_components() {
+    let runtime = LiveRuntime::new();
+    let first = runtime.begin_model_mutation().unwrap();
+
+    let second_error = match runtime.begin_model_mutation() {
+        Ok(_) => panic!("a second local-model mutation unexpectedly acquired ownership"),
+        Err(error) => error,
+    };
+
+    assert_eq!(
+        second_error,
+        "Another local model change is already in progress."
+    );
+    drop(first);
+    assert!(runtime.begin_model_mutation().is_ok());
 }
 
 #[test]

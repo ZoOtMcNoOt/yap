@@ -83,6 +83,7 @@ impl StreamingRecording {
             sink_degraded: self.journal.sink_degraded,
             directory_sync_supported: sync_parent_directory(&self.paths.directory),
             session_metadata: Some(self.session_metadata.clone()),
+            language_evidence: self.journal.language_evidence.clone(),
         };
         validate_audio_metadata_presence(sidecar.audio_bytes, &sidecar.tracks)?;
         validate_timeline_control_metadata(
@@ -99,6 +100,11 @@ impl StreamingRecording {
             sidecar.sequence_gap_overflow.as_ref(),
             sidecar.sink_degraded,
         )?;
+        if let Some(evidence) = &sidecar.language_evidence {
+            evidence
+                .validate()
+                .map_err(|error| format!("capture language evidence is invalid: {error}"))?;
+        }
         let sidecar_file =
             write_json_file_open(&self.paths.sidecar_part, &sidecar, "capture sidecar")?;
         self.hit_fault(CommitFaultPoint::SidecarSync)?;

@@ -1,8 +1,11 @@
 use std::{sync::atomic::Ordering, time::Duration};
 
 use super::{
-    log_worker_shutdown_errors, LiveRuntime, LiveStreamEngine, ModelMutationLease, StartIntent,
+    inference::LiveInferenceBundle, log_worker_shutdown_errors, LiveRuntime, ModelMutationLease,
+    StartIntent,
 };
+
+const LIVE_MODEL_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
 
 impl LiveRuntime {
     pub fn is_active(&self) -> bool {
@@ -37,24 +40,52 @@ impl LiveRuntime {
         self.start_intent_is_current(intent).then(run)
     }
 
+    pub(crate) fn run_installed_capture_lifecycle<T>(
+        &self,
+        intent: StartIntent,
+        run: impl FnOnce() -> T,
+    ) -> Option<T> {
+        let _operation = self.transition.begin_start();
+        self.start_intent_is_current(intent).then(run)
+    }
+
     pub(crate) fn run_stop_lifecycle<T>(&self, run: impl FnOnce() -> T) -> T {
         let _operation = self.transition.begin_stop();
         run()
     }
 
     pub(crate) fn begin_model_mutation(&self) -> Result<ModelMutationLease, String> {
-        self.cancel_pending_start();
+        self.begin_local_runtime_mutation("Stop live before changing local fallback.")
+    }
+
+    pub(crate) fn begin_primary_language_mutation(&self) -> Result<ModelMutationLease, String> {
+        self.begin_local_runtime_mutation("Stop live before changing the primary language.")
+    }
+
+    pub(crate) fn begin_language_support_mutation(&self) -> Result<ModelMutationLease, String> {
+        self.begin_local_runtime_mutation("Stop live before changing local language support.")
+    }
+
+    fn begin_local_runtime_mutation(
+        &self,
+        active_message: &'static str,
+    ) -> Result<ModelMutationLease, String> {
+        self.model_mutation_active
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| "Another local model change is already in progress.".to_string())?;
         let operation = self.transition.begin_stop_owned();
-        self.model_mutation_active.store(true, Ordering::Release);
-        let lease = ModelMutationLease {
+        let mut lease = ModelMutationLease {
             runtime: self.clone(),
             _operation: operation,
+            cancel_pending_start_on_drop: false,
         };
 
         let mut inner = self.inner.lock().expect("live runtime poisoned");
         if inner.is_capturing() {
-            return Err("Stop live before changing local fallback.".to_string());
+            return Err(active_message.to_string());
         }
+        self.cancel_pending_start();
+        lease.cancel_pending_start_on_drop = true;
         inner.retire_stream();
         drop(inner);
         self.model_warmup.clear_idle()?;
@@ -78,9 +109,8 @@ impl LiveRuntime {
     }
 
     pub(super) fn request_model_warmup(&self) -> Result<bool, String> {
-        self.model_warmup.request("live-model-warmup", || {
-            LiveStreamEngine::new().map_err(|error| error.user_message().to_string())
-        })
+        self.model_warmup
+            .request("live-model-warmup", LiveInferenceBundle::load)
     }
 
     pub fn unload_if_idle(&self, threshold: Duration) {
@@ -102,7 +132,14 @@ impl LiveRuntime {
             inner.retire_stream();
             self.active_session.store(0, Ordering::SeqCst);
             drop(inner);
-            let _ = self.model_warmup.clear_idle();
+            if let Err(error) = self
+                .model_warmup
+                .clear_idle_for_shutdown(LIVE_MODEL_SHUTDOWN_TIMEOUT)
+            {
+                crate::stt::log_yap(&format!(
+                    "live model shutdown continued after bounded warmup cancellation: {error}"
+                ));
+            }
             let _ = self.finalize_recording();
             log_worker_shutdown_errors(shutdown_errors);
         });

@@ -69,6 +69,7 @@ fn terminal_history_is_bounded_without_pruning_recoverable_or_current_jobs() {
         let mut job = imported_job(&id);
         if index == 0 {
             job.route = Some(RecordingRoute::ServerBatch);
+            job.asr_catalog_binding = Some(crate::jobs::AsrCatalogBinding::for_test());
         }
         if index == 0 {
             ledger
@@ -135,11 +136,12 @@ fn terminal_pruning_preserves_a_cancelled_create_attempt_until_remote_cleanup() 
     fs::create_dir_all(manifest.parent().unwrap()).unwrap();
     fs::write(&source, b"RIFF-source").unwrap();
     fs::write(&manifest, b"{}").unwrap();
-    fs::write(&chunk, b"private audio").unwrap();
+    fs::write(&chunk, vec![7_u8; 320]).unwrap();
     let ledger = JobLedger::open_in_memory().unwrap();
     let mut job = imported_job_at("job-create", source);
     job.status = RecordingJobStatus::QueuedServer;
     job.route = Some(RecordingRoute::ServerBatch);
+    job.asr_catalog_binding = Some(crate::jobs::AsrCatalogBinding::for_test());
     ledger.insert_job(&job).unwrap();
     ledger
         .transition("job-create", RecordingJobStatus::Preprocessing, 2)
@@ -147,12 +149,7 @@ fn terminal_pruning_preserves_a_cancelled_create_attempt_until_remote_cleanup() 
     ledger
         .attach_prepared_remote_job(
             "job-create",
-            &NewPreparedRemoteJob {
-                create_request_json: "{}".into(),
-                capture_manifest_path: manifest,
-                capture_manifest_sha256: "a".repeat(64),
-                chunks: vec![chunk_at(chunk)],
-            },
+            &prepared_remote_job_at(manifest, chunk, &"a".repeat(64)),
             3,
         )
         .unwrap();

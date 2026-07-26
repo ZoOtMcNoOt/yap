@@ -9,6 +9,7 @@
   },
   "scripts": {
     "check:node": "node ./tests/scripts/assert-node24.mjs",
+    "audit:dependencies": "pnpm check:node && node ./tests/scripts/audit-dependencies.mjs",
     "dev": "pnpm check:node && vite",
     "build": "pnpm check:node && tsc && vite build",
     "preview": "pnpm check:node && vite preview",
@@ -19,8 +20,10 @@
     "test:e2e:update": "pnpm check:node && node ./tests/scripts/run-playwright-e2e.mjs --update-snapshots",
     "test:desktop": "pnpm check:node && wdio run ./tests/wdio.conf.ts",
     "test:desktop:build": "pnpm check:node && node ./tests/scripts/tauri-wdio-build.mjs",
+    "test:desktop:build:release": "pnpm check:node && node ./tests/scripts/tauri-wdio-build.mjs --release",
     "test:desktop:all": "pnpm test:desktop:build && pnpm test:desktop",
-    "test:phase5-gate": "pnpm test:desktop:build && pnpm check:node && wdio run ./tests/wdio.phase5-gate.conf.ts",
+    "test:target-client-language-routing-ui": "pnpm check:node && wdio run ./tests/wdio.target-client-language-routing.conf.ts",
+    "test:private-server-asr-gate": "pnpm test:desktop:build && pnpm check:node && wdio run ./tests/wdio.private-server-asr-gate.conf.ts",
     "test:nsis:disposable": "pnpm check:node && pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./tests/scripts/smoke-nsis.ps1"
   },
   "dependencies": {

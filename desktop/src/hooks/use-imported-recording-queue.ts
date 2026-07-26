@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { isRecordingCancellable, type RecordingJobView } from "@/lib/recording-job";
+import type { RecordingImportLanguageChoice } from "@/lib/recording-language";
 import {
   cancelRecordingJob,
+  confirmRecordingJobLanguage,
   pickRecordingImports,
   discardLegacyRecordingQueue,
   dismissRecordingJob,
@@ -98,9 +100,9 @@ export function useRecordingJobs(onClear: () => void) {
     setStartupAttempt((attempt) => attempt + 1);
   }, [updateMigrationState]);
 
-  const addRecordings = useCallback(async () => {
+  const addRecordings = useCallback(async (choice: RecordingImportLanguageChoice) => {
     ensureMigrationReady();
-    const created = await pickRecordingImports();
+    const created = await pickRecordingImports(choice);
     await refresh();
     return created[created.length - 1]?.id;
   }, [ensureMigrationReady, refresh]);
@@ -125,6 +127,16 @@ export function useRecordingJobs(onClear: () => void) {
     await refresh();
   }, [ensureMigrationReady, refresh]);
 
+  const confirmLanguage = useCallback(async (
+    id: string,
+    languageBcp47: string,
+    catalogRevision: string,
+  ) => {
+    ensureMigrationReady();
+    await confirmRecordingJobLanguage(id, languageBcp47, catalogRevision);
+    await refresh();
+  }, [ensureMigrationReady, refresh]);
+
   const clearQueue = useCallback(async () => {
     ensureMigrationReady();
     for (const item of queue) {
@@ -141,6 +153,7 @@ export function useRecordingJobs(onClear: () => void) {
   return {
     addRecordings,
     clearQueue,
+    confirmLanguage,
     discardLegacyQueue,
     legacyDiscardAllowed,
     migrationError,

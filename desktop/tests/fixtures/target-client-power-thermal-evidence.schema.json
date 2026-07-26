@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yap.local/schemas/target-client-power-thermal-evidence.schema.json",
+  "title": "Yap target-client power and thermal evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "checkedHead",
+    "processorName",
+    "appBinarySha256",
+    "stimulusSha256",
+    "measurementBoundary",
+    "measurementMethod",
+    "measurementToolVersion",
+    "powerPlanGuid",
+    "baselineDurationMs",
+    "candidateDurationMs",
+    "idlePackagePowerDeltaWatts",
+    "activeEnergyOverheadPercent",
+    "temperatureTelemetry",
+    "thermalLimitSource",
+    "minimumThermalHeadroomC",
+    "thermalThrottlingObserved",
+    "rawEvidenceSha256",
+    "transcriptTextRecorded"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "checkedHead": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "processorName": { "type": "string", "minLength": 3, "maxLength": 128 },
+    "appBinarySha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "stimulusSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "measurementBoundary": {
+      "const": "nemotron-only-vs-nemotron-plus-silero-ambernet"
+    },
+    "measurementMethod": {
+      "enum": [
+        "calibrated-external-meter+wpr",
+        "windows-adk-energy-efficiency+wpr"
+      ]
+    },
+    "measurementToolVersion": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "powerPlanGuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "baselineDurationMs": { "type": "integer", "minimum": 900000, "maximum": 3600000 },
+    "candidateDurationMs": { "type": "integer", "minimum": 900000, "maximum": 3600000 },
+    "idlePackagePowerDeltaWatts": { "type": "number", "minimum": -10, "maximum": 0.5 },
+    "activeEnergyOverheadPercent": { "type": "number", "minimum": -100, "maximum": 15 },
+    "temperatureTelemetry": { "const": "measured" },
+    "thermalLimitSource": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "minimumThermalHeadroomC": { "type": "number", "minimum": 10, "maximum": 200 },
+    "thermalThrottlingObserved": { "const": false },
+    "rawEvidenceSha256": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+    },
+    "transcriptTextRecorded": { "const": false }
+  }
+}

@@ -111,6 +111,23 @@ pub(super) fn open_snapshot_for_identity(path: &Path) -> Result<File, SttError> 
         .map_err(map_model_path_error)
 }
 
+/// Opens the finalized snapshot exactly as native inference runtimes do: read-only while
+/// denying later writers and path replacement. Callers use a permissive read-only bridge
+/// while transitioning away from the original writable creation handle, so there is never
+/// an unleased path identity.
+pub(super) fn open_snapshot_for_native_read(path: &Path) -> Result<File, SttError> {
+    let metadata = std::fs::symlink_metadata(path).map_err(map_model_path_error)?;
+    if !metadata.is_file() || metadata_is_link_or_reparse(&metadata) {
+        return Err(SttError::ModelCorrupt);
+    }
+    OpenOptions::new()
+        .read(true)
+        .share_mode(FILE_SHARE_READ_VALUE)
+        .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT_VALUE)
+        .open(path)
+        .map_err(map_model_path_error)
+}
+
 pub(super) fn metadata_is_link_or_reparse(metadata: &std::fs::Metadata) -> bool {
     metadata.file_type().is_symlink() || metadata.file_attributes() & 0x400 != 0
 }

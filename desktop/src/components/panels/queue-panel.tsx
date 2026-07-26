@@ -25,16 +25,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { RecordingJobView } from "@/lib/recording-job";
+import type { FixedBatchLanguageOption } from "@/language-preference";
 
 export function QueuePanel({
   legacyDiscardAllowed,
   onClear,
   onDiscardLegacyQueue,
+  onConfirmLanguage,
   onRemove,
   onReveal,
   onRetryMigration,
   onSelect,
   queue,
+  languageOptions,
   migrationError,
   migrationPending,
   selectedId,
@@ -42,11 +45,13 @@ export function QueuePanel({
   legacyDiscardAllowed: boolean;
   onClear: () => void | Promise<void>;
   onDiscardLegacyQueue: () => void;
+  onConfirmLanguage: (jobId: string, languageBcp47: string) => Promise<void>;
   onRemove: (id: string) => void | Promise<void>;
   onReveal: (path: string) => void;
   onRetryMigration: () => void | Promise<unknown>;
   onSelect: (id: string) => void;
   queue: RecordingJobView[];
+  languageOptions: FixedBatchLanguageOption[];
   migrationError?: string;
   migrationPending: boolean;
   selectedId?: string;
@@ -143,6 +148,8 @@ export function QueuePanel({
         ) : null}
         <StackedUpload
           items={queue}
+          languageOptions={languageOptions}
+          onConfirmLanguage={onConfirmLanguage}
           onRemove={onRemove}
           onReveal={onReveal}
           onSelect={onSelect}

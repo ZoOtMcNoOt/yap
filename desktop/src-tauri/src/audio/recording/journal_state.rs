@@ -46,6 +46,8 @@ pub(super) struct CaptureJournal {
     pub(super) sequence_gaps: Vec<SequenceGap>,
     #[serde(default)]
     pub(super) sequence_gap_overflow: Option<SequenceGapOverflow>,
+    #[serde(default)]
+    pub(super) language_evidence: Option<crate::language::live_evidence::LiveLanguageEvidence>,
     pub(super) sink_degraded: bool,
 }
 
@@ -61,8 +63,23 @@ impl CaptureJournal {
             sequence_coverage: Vec::new(),
             sequence_gaps: Vec::new(),
             sequence_gap_overflow: None,
+            language_evidence: None,
             sink_degraded: false,
         }
+    }
+
+    pub(super) fn observe_language_evidence(
+        &mut self,
+        evidence: crate::language::live_evidence::LiveLanguageEvidence,
+    ) -> Result<(), String> {
+        if self.language_evidence.is_some() {
+            return Err("recording language evidence was already committed".into());
+        }
+        evidence
+            .validate()
+            .map_err(|error| format!("recording language evidence is invalid: {error}"))?;
+        self.language_evidence = Some(evidence);
+        Ok(())
     }
 
     pub(super) fn observe_frame(

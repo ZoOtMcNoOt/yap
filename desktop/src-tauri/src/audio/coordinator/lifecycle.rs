@@ -71,15 +71,32 @@ impl Coordinator {
     }
 
     pub fn close(&mut self) {
-        if self.pending_losses.is_empty() {
+        self.finish_pending_recording_losses();
+        if !self.recording_completion_handed_off {
             self.ports.recording.close();
-        } else {
+        }
+        self.close_frame_sinks();
+    }
+
+    /// Ends capture delivery while leaving the recording worker available for
+    /// terminal language evidence. The recording handle owns the later,
+    /// explicit close and durable finalization.
+    pub(crate) fn handoff_recording_completion(&mut self) {
+        self.finish_pending_recording_losses();
+        self.recording_completion_handed_off = true;
+        self.close_frame_sinks();
+    }
+
+    fn finish_pending_recording_losses(&mut self) {
+        if !self.pending_losses.is_empty() {
             self.pending_losses.clear();
             self.ports
                 .recording
-                .degrade("recording closed with unpublished pre-configuration loss");
-            self.ports.recording.close();
+                .degrade("capture ended with unpublished pre-configuration loss");
         }
+    }
+
+    fn close_frame_sinks(&self) {
         for sink in [
             self.ports.local_asr.as_ref(),
             self.ports.speaker_evidence.as_ref(),

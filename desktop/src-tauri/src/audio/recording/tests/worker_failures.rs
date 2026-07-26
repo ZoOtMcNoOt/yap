@@ -1,6 +1,38 @@
 use super::*;
 
 #[test]
+fn language_evidence_queue_timeout_degrades_the_recording_sink() {
+    let session = SessionId::new("s-language-evidence-queue-timeout").unwrap();
+    let (sink, receiver) = bounded_sink(SinkKind::Recording, 1);
+    sink.try_send(RecordingInput::LanguageEvidence(fixed_language_evidence(1)))
+        .unwrap();
+    let handle = RecordingSinkHandle::spawn_unavailable_for_test(sink.clone(), session);
+
+    let error = handle
+        .append_language_evidence(fixed_language_evidence(1))
+        .unwrap_err();
+
+    assert!(error.contains("Full"));
+    assert!(sink.outcome().error.is_some());
+    drop(receiver);
+}
+
+#[test]
+fn disconnected_language_evidence_worker_degrades_the_recording_sink() {
+    let session = SessionId::new("s-language-evidence-disconnected").unwrap();
+    let (sink, receiver) = bounded_sink(SinkKind::Recording, 1);
+    drop(receiver);
+    let handle = RecordingSinkHandle::spawn_unavailable_for_test(sink.clone(), session);
+
+    let error = handle
+        .append_language_evidence(fixed_language_evidence(1))
+        .unwrap_err();
+
+    assert!(error.contains("Closed"));
+    assert!(sink.outcome().error.is_some());
+}
+
+#[test]
 fn worker_caches_the_first_append_failure_while_draining_later_frames() {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -238,6 +270,7 @@ fn journal_replay_rejects_sequence_coverage_that_starts_after_zero() {
             gap_start_index: 0,
             sequence_gaps: Vec::new(),
             sequence_gap_overflow: None,
+            language_evidence: None,
             sink_degraded: false,
         },
     };

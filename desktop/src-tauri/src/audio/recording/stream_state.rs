@@ -13,6 +13,7 @@ pub struct StreamingRecording {
     pub(super) journal_growth_stopped: bool,
     pub(super) journal_terminal_written: bool,
     pub(super) data_bytes: u64,
+    pub(super) language_source_end_sample: Option<u64>,
     pub(super) samples_since_sync: u64,
     pub(super) sync_interval_samples: u64,
     pub(super) data_limit: u64,

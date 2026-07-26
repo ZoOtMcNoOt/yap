@@ -36,7 +36,18 @@ pub fn restore_recording_playback_path(
         &crate::recording_access::recording_job_playback_registry_path(),
         &crate::live::recordings::recordings_dir(),
     )?;
-    mint_playback_admission(&path, &owner)
+    let recordings_dir = crate::live::recordings::recordings_dir();
+    let is_owned_live_recording = crate::live::recordings::canonical_committed_live_path_from_dir(
+        &path,
+        &recordings_dir,
+        false,
+    )
+    .is_ok_and(|canonical| canonical == path);
+    if is_owned_live_recording {
+        mint_removable_live_playback_admission(&path, &owner)
+    } else {
+        mint_playback_admission(&path, &owner)
+    }
 }
 
 #[tauri::command]
@@ -85,6 +96,19 @@ fn mint_playback_admission(
     owner: &crate::media_protocol::MediaOwner,
 ) -> Result<RecordingPlaybackAdmission, String> {
     let admission = owner.admit(path, crate::recording_access::MAX_DECODED_WAVEFORM_BYTES)?;
+    Ok(RecordingPlaybackAdmission {
+        playback_path: admission.url,
+        byte_length: admission.byte_length,
+        waveform_eligible: admission.waveform_eligible,
+    })
+}
+
+fn mint_removable_live_playback_admission(
+    path: &std::path::Path,
+    owner: &crate::media_protocol::MediaOwner,
+) -> Result<RecordingPlaybackAdmission, String> {
+    let admission =
+        owner.admit_with_path_removal(path, crate::recording_access::MAX_DECODED_WAVEFORM_BYTES)?;
     Ok(RecordingPlaybackAdmission {
         playback_path: admission.url,
         byte_length: admission.byte_length,

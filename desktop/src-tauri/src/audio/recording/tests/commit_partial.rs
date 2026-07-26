@@ -23,6 +23,69 @@ fn streamed_pcm_finalizes_only_after_a_commit_manifest() {
 }
 
 #[test]
+fn source_time_language_evidence_is_persisted_inside_the_hash_bound_sidecar() {
+    let dir = tempfile_dir("language-evidence");
+    let session = SessionId::new("s-language-evidence").unwrap();
+    let track = TrackId::new("live-microphone").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    recording
+        .append_input(recording_revision(&track, 1, 0, 16_000, 0))
+        .unwrap();
+    recording
+        .append_input(RecordingInput::PreparedFrame(prepared_frame(&session)))
+        .unwrap();
+    recording
+        .append_input(RecordingInput::LanguageEvidence(fixed_language_evidence(1)))
+        .unwrap();
+
+    assert_eq!(
+        recording.finalize().unwrap().status,
+        CaptureStatus::Complete
+    );
+    let sidecar: serde_json::Value = serde_json::from_slice(
+        &fs::read(dir.join(format!("live-{session}.capture.json"))).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(sidecar["languageEvidence"]["sourceEndSample"], 1);
+    assert_eq!(
+        sidecar["languageEvidence"]["spans"][0]["languageBcp47"],
+        "en-US"
+    );
+    assert_eq!(scan_recordings(&dir).unwrap().len(), 1);
+    fs::remove_dir_all(dir).ok();
+}
+
+#[test]
+fn complete_language_evidence_cannot_cover_only_a_prefix_of_recorded_pcm() {
+    let dir = tempfile_dir("language-evidence-prefix");
+    let session = SessionId::new("s-language-evidence-prefix").unwrap();
+    let track = TrackId::new("live-microphone").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    recording
+        .append_input(recording_revision(&track, 1, 0, 16_000, 0))
+        .unwrap();
+    recording
+        .append_input(RecordingInput::PreparedFrame(prepared_frame(&session)))
+        .unwrap();
+    recording
+        .append_input(RecordingInput::PreparedFrame(prepared_frame_at(
+            &session, 1, 1,
+        )))
+        .unwrap();
+
+    let error = recording
+        .append_input(RecordingInput::LanguageEvidence(fixed_language_evidence(1)))
+        .unwrap_err();
+    let result = recording.finalize().unwrap();
+
+    assert!(error.contains("committed PCM extent"));
+    assert_eq!(result.status, CaptureStatus::Partial);
+    assert!(result.committed.is_none());
+    assert!(scan_recordings(&dir).unwrap().complete.is_empty());
+    fs::remove_dir_all(dir).ok();
+}
+
+#[test]
 fn nonempty_audio_without_timeline_metadata_cannot_publish_complete() {
     let dir = tempfile_dir("nonempty-audio-without-metadata");
     let session = SessionId::new("s-nonempty-audio-without-metadata").unwrap();

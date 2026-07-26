@@ -11,6 +11,16 @@ export function parsePlaywrightPort(value) {
   return port;
 }
 
+export function parsePlaywrightServerReuse(value) {
+  if (value === undefined || value === "0") {
+    return false;
+  }
+  if (value === "1") {
+    return true;
+  }
+  throw new Error("YAP_PLAYWRIGHT_REUSE_SERVER must be 0 or 1.");
+}
+
 export function allocateLoopbackPort() {
   return new Promise((resolve, reject) => {
     const server = createServer();

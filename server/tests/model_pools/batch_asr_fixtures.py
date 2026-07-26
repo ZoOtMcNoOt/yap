@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import threading
 
+from yap_server.alignment_contract import (
+    AlignmentUnavailableReason,
+    unavailable_alignment,
+)
 from yap_server.pools.batch_asr import (
     BatchAsrJob,
     WorkerContainmentError,
@@ -31,6 +35,7 @@ def test_lock() -> ModelPoolLock:
         runtime_torch_cuda_version="13.3",
         runtime_overlay_packages=(("transformers", "5.13.1"),),
         pool_id="cohere-batch",
+        engine="transformers",
         model_id="CohereLabs/cohere-transcribe-03-2026",
         model_revision="b" * 40,
         model_license="Apache-2.0",
@@ -70,6 +75,9 @@ def valid_worker_result(lock: ModelPoolLock) -> dict[str, object]:
             "language": "en",
             "punctuation": True,
         },
+        "alignment": unavailable_alignment(
+            AlignmentUnavailableReason.RUNTIME_FAILED
+        ),
         "runtime": {
             "device": "cuda",
             "pythonVersion": "3.12.9",
@@ -111,6 +119,24 @@ class ClosableWorker:
 
     def close(self) -> None:
         self.closed.set()
+
+
+class CloseContainmentFailureWorker:
+    def __init__(self) -> None:
+        self.started = threading.Event()
+        self.release = threading.Event()
+
+    def run(
+        self,
+        job: BatchAsrJob,
+        _cancellation: threading.Event,
+    ) -> dict[str, object]:
+        self.started.set()
+        self.release.wait()
+        return {"schemaVersion": 1, "jobId": job.job_id}
+
+    def close(self) -> None:
+        raise WorkerContainmentError("owned worker cleanup could not be verified")
 
 
 class CancellationAwareWorker:

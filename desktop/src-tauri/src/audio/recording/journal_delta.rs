@@ -13,6 +13,8 @@ pub(super) struct JournalDelta {
     pub(super) gap_start_index: usize,
     pub(super) sequence_gaps: Vec<SequenceGap>,
     pub(super) sequence_gap_overflow: Option<SequenceGapOverflow>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) language_evidence: Option<crate::language::live_evidence::LiveLanguageEvidence>,
     pub(super) sink_degraded: bool,
 }
 
@@ -38,6 +40,7 @@ pub(super) struct DurableJournalState {
     pub(super) timeline_gaps: Vec<AudioGap>,
     pub(super) sequence_coverage: BTreeMap<String, SequenceCoverage>,
     pub(super) sequence_gaps: usize,
+    pub(super) has_language_evidence: bool,
 }
 
 impl DurableJournalState {
@@ -56,6 +59,7 @@ impl DurableJournalState {
                 .map(|coverage| (coverage.track_id.clone(), coverage.clone()))
                 .collect(),
             sequence_gaps: journal.sequence_gaps.len(),
+            has_language_evidence: journal.language_evidence.is_some(),
         }
     }
 
@@ -100,6 +104,9 @@ impl DurableJournalState {
             gap_start_index,
             sequence_gaps: journal.sequence_gaps[gap_start_index..].to_vec(),
             sequence_gap_overflow: journal.sequence_gap_overflow.clone(),
+            language_evidence: (!self.has_language_evidence)
+                .then(|| journal.language_evidence.clone())
+                .flatten(),
             sink_degraded: journal.sink_degraded,
         }
     }

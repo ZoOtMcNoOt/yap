@@ -1,7 +1,9 @@
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+
 
 def load_json(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as handle:
@@ -23,13 +25,18 @@ def make_job_request(origin: str, track_source: dict[str, Any]) -> dict[str, Any
             "triggerMode": "toggle",
             "startedAtUtc": "2026-07-12T16:00:00Z",
             "utcOffsetMinutesAtStart": None,
-            "localeHintBcp47": None,
+            "localeHintBcp47": "en-US",
             "countryCodeHint": None,
             "preferredLanguagesBcp47": ["en-US"],
             "appVersion": "0.1.0",
             "platform": "windows",
             "privacyPolicyVersion": "unconfigured",
             "retentionExpiresAtUtc": "2026-08-11T16:00:00Z",
+        },
+        "languageDecision": {
+            "mode": "fixed",
+            "languageBcp47": "en-US",
+            "disposition": "primary",
         },
         "tracks": [
             {
@@ -262,6 +269,29 @@ def assert_schema_subset(
                 f"{path}: expected type {expected_types!r}, got {type(value).__name__}"
             )
 
+    if isinstance(value, str):
+        minimum_length = schema.get("minLength")
+        maximum_length = schema.get("maxLength")
+        pattern = schema.get("pattern")
+        if isinstance(minimum_length, int) and len(value) < minimum_length:
+            raise AssertionError(
+                f"{path}: length {len(value)} is below {minimum_length}"
+            )
+        if isinstance(maximum_length, int) and len(value) > maximum_length:
+            raise AssertionError(
+                f"{path}: length {len(value)} exceeds {maximum_length}"
+            )
+        if isinstance(pattern, str) and re.search(pattern, value) is None:
+            raise AssertionError(f"{path}: value does not match {pattern!r}")
+
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        minimum = schema.get("minimum")
+        maximum = schema.get("maximum")
+        if isinstance(minimum, (int, float)) and value < minimum:
+            raise AssertionError(f"{path}: value {value} is below {minimum}")
+        if isinstance(maximum, (int, float)) and value > maximum:
+            raise AssertionError(f"{path}: value {value} exceeds {maximum}")
+
     if isinstance(value, dict):
         required = schema.get("required", [])
         missing = [name for name in required if name not in value]
@@ -300,15 +330,26 @@ def assert_schema_subset(
             if extras:
                 raise AssertionError(f"{path}: unexpected fields {extras!r}")
 
-    if isinstance(value, list) and "items" in schema:
-        for index, child in enumerate(value):
-            assert_schema_subset(
-                child,
-                schema["items"],
-                document_name=document_name,
-                documents=documents,
-                path=f"{path}[{index}]",
+    if isinstance(value, list):
+        minimum_items = schema.get("minItems")
+        maximum_items = schema.get("maxItems")
+        if isinstance(minimum_items, int) and len(value) < minimum_items:
+            raise AssertionError(
+                f"{path}: item count {len(value)} is below {minimum_items}"
             )
+        if isinstance(maximum_items, int) and len(value) > maximum_items:
+            raise AssertionError(
+                f"{path}: item count {len(value)} exceeds {maximum_items}"
+            )
+        if "items" in schema:
+            for index, child in enumerate(value):
+                assert_schema_subset(
+                    child,
+                    schema["items"],
+                    document_name=document_name,
+                    documents=documents,
+                    path=f"{path}[{index}]",
+                )
 
 
 def schema_property_names(value: Any) -> list[str]:

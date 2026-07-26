@@ -1,6 +1,6 @@
 # Spec: Testing strategy
 
-**Status:** Living verification contract (updated 2026-07-15); future phase gates activate only when their fixtures exist
+**Status:** Living verification contract (updated 2026-07-25); future phase gates activate only when their fixtures exist
 **Scope:** Cross-cutting tests for the desktop runtime, track-aware audio contracts, local fallback, source-aware diarization, server contracts, and native UI.
 
 This is the shared reference the phase specs point to for their acceptance tests.
@@ -8,13 +8,33 @@ This is the shared reference the phase specs point to for their acceptance tests
 **Current activation:** deterministic generated-tone and contract fixtures exist.
 Phase 4 also has one committed, licensed LibriSpeech WAV with a locked golden
 transcript and a standard-library WER gate for the private Cohere worker. The
-Phase 5 adds frontend, Rust, Python 3.12, API, contract, restart, reconnect,
+Phase 5 added frontend, Rust, Python 3.12, API, contract, restart, reconnect,
 cancellation, retention, result-publication, native, and GB10 coverage; its
 one-time complete gate passed on exact PR head
 `4771d9be60562fa009ccecbcd3c7111b699883a5`. The
 desktop speech suite, meeting RTTM manifest, diarization benchmark harness,
 bundled llama-server, and per-OS real-model matrix described below do not exist
-yet. Their tables are target gates, not claims about active CI.
+yet. Phase 6 catalog, deterministic preprocessing/VAD, guarded server LID,
+Preview local LID/span routing, provider-specific server candidates, alignment,
+private-corpus trust, scoring, and runtime-qualification components execute
+under focused tests. Exact executable candidate
+`a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the frozen one-attempt
+30-child local/native/server/private-runtime matrix. Its candidate receipt was
+independently validated for the exact head and all 30 children and has SHA-256
+`74f183041082c77d05a0633202fa1052222d6a77bd9bef5ce2706546bf3e9647`;
+the 18-child GB10 public-safe aggregate has SHA-256
+`98cdc087b574f35a0e12b386a5d8c4c576a9ada548afe88101d1442868e96deb`.
+The repaired implementation passed one bounded final three-agent re-review.
+Hosted CI, CodeQL, and stock-NSIS passed at first attempt on docs-only review
+head `cee13f819a85417ea43a3c63e263be85f0570838`; its private closure receipt
+was independently validated outside Git. Any later docs-only successor in PR
+#67 must pass the same exact-head hosted and final-read-back policy before
+merge.
+The representative provider-promotion corpus and frozen Phase 8 comparisons
+remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
+baseline, but no Tiron worker or meeting scorer executes yet. The tables below
+distinguish executable checked coverage from future phase-gate requirements and
+from the separate hosted PR closure.
 
 ---
 
@@ -50,6 +70,227 @@ restart replay, malformed input, worker failure, saturation, storage limits,
 and retention are covered by the complete Rust/Python matrix on the same frozen
 SHA, while the GB10 portion supplies the real image/model/runtime/WER and clean
 host-boundary evidence.
+
+### Phase 6 target boundary
+
+Focused suites covered each Phase 6 slice while the branch changed. The complete
+local/native/server/private-runtime matrix ran exactly once on exact candidate
+`a92f338546a2f8bbaded96b04f8987f0ac475c88` after focused remediation and
+three-reviewer read-back.
+
+The exact executable inventory and private receipt contract are frozen in the
+[integrated preprocessing and language-routing gate](../runbooks/integrated-preprocessing-language-routing-gate.md).
+Its validator rejected omissions, additions, duplicate or reordered children,
+more than one admitted attempt, definition drift, failure, and checked-head
+drift. This documentation reconciliation identifies the unchanged executable
+candidate explicitly. Hosted CI, the
+complete current CodeQL language matrix, and disposable-Windows NSIS closure
+form the separate PR receipt that revalidates source-to-docs lineage before
+merge.
+
+The gate must use license-clear public fixtures to prove contract shape, the
+currently advertised `en-US` regression, language decisions, source
+preservation, restart/cancel/retry behavior, alignment failure semantics,
+resource ceilings, and clean teardown. It does not run an exhaustive Cohere
+quality campaign or promote either resident provider candidate. Aggregate
+candidate research cannot promote a locale, provider, or alignment capability
+by itself. Private recordings, raw benchmark output, host paths, and scan
+evidence remain outside Git and hosted artifacts.
+
+The local-language resource harness has two distinct development-host modes.
+Its accelerated mode measures throughput, model load, incremental memory, and
+ASR interference; its source-paced mode feeds the production-sized bounded
+local-ASR queue at ten-millisecond source cadence while concurrently sampling
+scheduler wake delay, frame loss, queue high-water, CPU use, and bounded drain.
+A developer-host affinity limit is useful diagnostic evidence but cannot
+replace current-host rendered-UI/audio interference and sustained-session
+qualification. It also cannot be relabeled as representative low-end physical
+battery or thermal certification.
+
+The Phase 6 target-client qualification is executable as two deliberately
+separate evidence channels under the
+[target-client language-routing runbook](../runbooks/target-client-language-routing-qualification.md).
+The native collector records and validates the actual Windows processor and
+processor count; an optional named-hardware constraint remains available for
+later physical-device certification. It also rejects a dirty/different head,
+in-repository evidence, missing model artifacts, and altered fixture identity
+before it starts model inference. Its bounded repeated-session mode has no
+server client and does not claim physical capture or UI behavior. The
+release-mode WDIO path then consumes the same checked-head native receipt,
+requires a fresh profile with no configured server and no listener at the
+numeric-loopback development origin, and proves a 30-second unattended
+default-microphone/rendered-UI lifecycle smoke while the launcher supplies the
+licensed stimulus through the current Windows output device. Speech, routing,
+and transcription semantics come from the preceding checked-head prepared-audio
+profile, so the 30-second UI smoke does not fail merely because Windows output
+is isolated from the selected microphone. It retains no transcript or recording
+content. This application-level no-server boundary keeps Wi-Fi
+available to the operator and does not claim whole-host network isolation. A
+matched low-end physical power/thermal comparison and longer manual
+physical-device soak remain required only before default-on or Phase 10 release
+qualification; missing telemetry can never be turned into a passing
+hardware-certification claim.
+
+The deterministic local-duration runner starts at Yap's prepared-audio-frame
+boundary, not at the physical microphone. It binds the exact checked Git SHA,
+public runtime-plan hash, an out-of-band-hash-pinned private suite, every track
+manifest, and both raw-WAV and decoded-PCM identity. It streams ten-millisecond
+frames through the production-sized local-ASR queue, reuses the single live
+worker across start/finalize cycles, and records exact accepted/dropped/decoded
+sample counts, drain/finalization timing, and text-present booleans without
+recording transcript text. It deliberately does not replace the native
+microphone/rendered-UI target-device test or natural quick-correction accuracy
+scoring. The machine plan therefore names this boundary
+`desktop-prepared-audio-frame-to-final`; stronger microphone-to-final claims
+require the separate hardware gate.
+
+Build that suite with
+`python -m yap_server.evaluation.local_stream_duration_suite`, one or more
+repeated `--source` arguments naming vetted mono PCM16/16-kHz WAVs, and the
+external `YAP_EVAL_CACHE`. The required `--profile short-boundaries` selection
+reads the nine 250-ms-through-30-second cases from the validated plan. The
+separate `--profile complete-local-duration-ladders` selection retains all 15
+cases for default-on or Phase 10 release qualification. Each functional profile
+has a distinct immutable collection identity. The builder decodes and hashes
+each source once, rechecks raw identity before publishing the selected cases as
+one atomic private collection, and prints the `suite.json` path and SHA-256
+needed by the native gate.
+`--expect-text-case` is opt-in per planned case; it
+asserts only that text appears and must not be used to turn looped runtime
+controls into accuracy evidence. The Phase 6 `short-boundaries` gate permits
+blank 250/500/750-ms inputs and requires text for the speech-bearing one-second,
+1.12-second, two-second, five-second, ten-second, and 30-second cases. Source
+license/provenance records and natural references remain separately vetted
+private-corpus inputs.
+
+The [ASR evaluation corpus and runtime qualification](../research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md)
+owns the reusable corpus tiers, provenance manifest, per-slice metrics, live
+and batch duration ladder, and risk-weighted concurrency matrix. Natural
+quality evidence and deterministic duration/load evidence are separate. Phase
+6 consumes the bounded current-route regression and runtime-safety slices; the
+broad natural-quality subset activates when a resident provider or the Phase 8
+Tiron challenger is actually considered for promotion.
+`server/asr-evaluation-plan.json` is the machine-validated runtime matrix. Every
+quality case also carries a model-revision exposure decision; public benchmark
+membership does not prove the model did not train on it. Only contractually
+excluded or post-model-freeze sealed cases support independent promotion.
+
+Resident-provider qualification aggregates additionally bind the full checked
+Git head, clean worktree state, runtime-plan hash, and exact provider-serving
+lock hash. The runner reads those identities before work and again before
+publishing the evidence envelope. This prevents an otherwise valid private
+result from being relabeled as evidence for a later candidate; the enclosing
+GB10 lifecycle gate must still attest the launched image and teardown boundary.
+Every provider workload also consumes one out-of-band-hash-pinned duration suite
+derived from that plan; ad hoc track-manifest lists are not a gate interface.
+Only the selected cell's audio is admitted, the loaded tracks are reused by the
+runner, and the suite plus selected audio are re-read before evidence is
+published.
+
+The resident exact-duration runner selects only the matching unpaced plan
+ladder, executes each duration once at c1, and may add the exact four-hour
+boundary only to `batch-file`. Its aggregate is explicitly scoped to duration
+transport and lifecycle and carries no representative-accuracy claim. Natural
+WER, deterministic long-form sentinel integrity, concurrency, and provider
+promotion remain independent evidence even when every duration completes. A
+canonical empty transcript is a valid completed transport result for silence or
+audio too short to decode; provider-behavior, request-lifecycle, and resource-
+lifecycle loads still require every speech-bearing result to be non-empty.
+
+Provider-behavior exact-track loads require one non-empty lexical identity per
+repeated audio duration and report formatting identities separately. They are
+model-promotion evidence, not the Phase 6 replacement-candidate boundary. A
+`request-lifecycle` load instead requires every identity-rich job/result,
+non-empty speech-fixture output, provider-idle read-back, and planned concurrency
+while recording lexical variance; repeating the same input cannot prove
+cross-request mixing. A `resource-lifecycle` load adds the frozen resource
+profile and teardown requirements while likewise recording transcript variance
+without converting lifecycle evidence into a model-promotion gate.
+
+The resident NeMo fixed/automatic cell is likewise request-lifecycle evidence.
+It requires both result shapes, model/audio/job identity, fixed locale, automatic
+language segments, and model/plan-bound source-time spans at c1/c8. Lexical and
+exact-text parity are recorded but not required: automatic utterance
+segmentation can alter decoding, and provider-quality comparison belongs to the
+Phase 8 Tiron gate.
+
+The resident-provider lifecycle wrapper is the checked-head owner for the
+launched-image and teardown boundary. It verifies already-present model assets,
+verifies already-prepared exact-head ARM64 images against frozen private
+preparation-receipt hashes, creates a labeled internal Docker bridge, launches
+and records the receipt-bound immutable image IDs with
+no Docker-published port or external egress, owns bounded numeric-loopback proxy
+process groups, and runs vLLM and NeMo sequentially. It
+requires typed exact-model readiness, the bounded candidate-safety duration/
+load/specialized cells, and each c8/1,600 resource profile. The resource
+observation window is at least 125 seconds, so its last-half tail exceeds the
+predeclared 60-second minimum even when the provider gets faster. Finalization
+rejects missing/extra children, partial concurrency,
+omitted exact-maximum batch evidence, stale head/suite hashes, changed host
+listener/firewall/service-unit state, or a retained provider container,
+proxy, launcher, or network. Raw samples, service logs, host snapshots, audio, and
+transcripts stay in the dedicated mode-0700 external cache. Focused contract
+tests do not consume this GB10 gate, representative quality, or the complete
+Phase 6 matrix. Provider cgroup samples exclude host-proxy CPU/RSS, while
+request wall latency includes the proxy; the Phase 10 system gate owns
+whole-host and persistent-supervision evidence.
+
+That decision covers base-model and adapter/fine-tune lineage, and transformed
+copies inherit their source exposure. Missing lineage evidence stays `unknown`.
+The manifest is not its own trust root: independent cases use the dedicated
+promotion loader, a private registry, an out-of-band registry SHA-256, and
+hash-verified candidate-lock/freeze/exposure artifacts binding the complete
+candidate set and exact case hashes. Every independent case also requires one
+case-level human-reference receipt. The registry authorizes two distinct
+listeners and an independent adjudicator, plus locale-reviewer and rights-owner
+roles, and separately pins the blind assignment, reviews, adjudication, locale
+basis, rights decision, source identity, attribution, and preprocessing
+artifacts. Reviewed rights, known defects, locale, fractional recording time,
+source URI/retrieval time, suite/condition labels, audio shape, speaker/timing
+metadata, and candidate exposure set must match the manifest exactly. Artifact
+reads recheck opened-handle cache containment, reject nonportable/alternate-stream
+paths, and enforce per-file plus aggregate bounds. Schema v2 admits only natural
+source audio
+to that gate and rejects duplicate raw or decoded audio; derived and generated
+inputs stay nonpromotion. Controlled suite/condition labels make required
+acoustic slices auditable, while typed derivation recipes bind source-audio and
+recipe hashes and cannot silently masquerade as natural coverage.
+The private registry also binds an exact scorer lock and canonical per-case
+evaluation-policy digest. Promotion scoring must use `score_manifest_case`,
+which verifies the private reference, scorer lock, manifest identity, model,
+hash-pinned inference-result/runtime lock, and manifest-frozen language/metric
+policies before invoking the scorer. The inference-result lock binds the case,
+hypothesis hash, raw and decoded audio, candidate lock, exact model revision,
+and runtime identity. The adapter streams the verified PCM WAV and derives its
+duration; a self-attested manifest duration cannot dilute silence metrics.
+Private case evidence remains under `YAP_EVAL_CACHE`; public evidence is
+aggregate and omits transcript and critical-policy hashes.
+No production review registry or trust anchor is tracked in Git. Implementing
+the fail-closed loader does not create a production-quality claim, and the
+resident Phase 6 provider services remain unpromoted. A completed production
+registry is required when a route is selected for promotion, not merely to
+retain a replaceable candidate behind Yap's bounded contract.
+The locked public ASR fixture is therefore an exposure-unknown regression
+comparator, not a promotion holdout. Exact-duration controls are generated and
+validated outside Git under `YAP_EVAL_CACHE`; their benchmark evidence must
+report null WER, zero accuracy-sample increment, and independent-promotion
+ineligibility even when the worker returns transcript text internally.
+The Cohere vLLM gate uses independent multipart transcription requests rather
+than Yap-owned tensor batching. It measures the exact duration ladder and
+c1/c2/c4/c8 waves, verifies every response against an identity-rich request and
+reference transcript, and records server-observed concurrency, latency,
+throughput, memory, and queue behavior. Continuous batching is an internal vLLM
+optimization; Yap must never concatenate, pad, or mix audio across owners to
+manufacture a batch. Cancellation is accepted only when the client connection
+closes, bounded acknowledgement completes, siblings remain isolated, an
+immediate request recovers, and teardown leaves no listener, container, or GPU
+work attributable to the checked run. A server-side success after client
+cancellation is recorded explicitly rather than misreported as preemption.
+
+Nemotron NeMo streaming uses a separate gate because it has different state,
+cache, and streaming-boundary semantics. It cannot inherit Cohere vLLM parity or
+capacity evidence. The retired Triton batching probes remain historical negative
+evidence and are not part of the current Phase 6 matrix.
 
 ### Windows installer safety boundary
 
@@ -110,8 +351,9 @@ The active server fixture is
 `server/tests/fixtures/asr/2086-149220-0033.wav`; its source, CC BY 4.0 license,
 SHA-256, and golden transcript are locked in `server/model-pools.lock.json`.
 
-Future desktop and meeting speech fixtures should be stored under
-`desktop/tests/fixtures/` (small, license-clear audio):
+Tiny hosted-CI desktop and meeting smoke fixtures may be stored under
+`desktop/tests/fixtures/` when their license and provenance permit
+redistribution:
 
 | File | Purpose | Expectation |
 |------|---------|-------------|
@@ -125,7 +367,12 @@ Future desktop and meeting speech fixtures should be stored under
 | `meeting-overlap.wav` + RTTM | Concurrent speakers | Overlap scored explicitly; challenger promotion gate |
 | `meeting-echo-two-track/` | Future mic/system leakage | No duplicate speaker inflation; track drift and gaps represented |
 
-Golden transcripts live beside fixtures. Comparison is **WER-tolerant**, never byte-equal (quantized models drift).
+Only tiny redistributable public golden transcripts live beside fixtures. The
+comprehensive corpus, Yap-adjudicated references, hypotheses, and raw
+per-utterance results live in the private external evaluation cache and are
+addressed by hashes in the committed manifest. Comparison is **WER-tolerant**,
+never byte-equal (quantized models drift), but sentinel order, job identity,
+language tags, and fail-closed result structure remain exact.
 
 Real sidecar parity tests stay opt-in: set `YAP_PARITY_CLIP` and run the ignored
 Cargo parity tests when a licensed audio clip is available. Normal CI uses
@@ -134,13 +381,29 @@ timestamp-shape coverage without shipping private or unclear audio.
 
 ---
 
-## 3. Accuracy spot-checks (WER)
+## 3. Accuracy scoring and spot-checks
 
-- Active server implementation:
-  `yap_server.pools.phase4_gate.word_error_rate` compares normalized words
-  without adding a runtime dependency. Future suites may introduce a separately
-  locked scorer only when needed.
-- Gates (tune with real data; starting points):
+- The GB10 gate's `yap_server.evaluation.word_error_rate.word_error_rate` and desktop Rust
+  parity helper remain dependency-free, single-fixture smoke diagnostics. They
+  cannot produce multilingual promotion claims.
+- Route promotion uses the separately pinned `evaluation` extra and
+  `yap_server.evaluation.transcript_scoring`. It reports raw and normalized word
+  plus extended-grapheme edit counts, boundary-position punctuation metrics,
+  and optional hash-pinned critical-token retention, order, and exact-surface
+  metrics without transcript or policy text. It selects grapheme error for the
+  admitted whitespace-free/CJK
+  profiles, records exact Unicode/package/scorer/profile revisions, and fails
+  closed on empty primary references, policy/hash mismatch, silence-policy
+  misuse, mixed or partial critical-policy aggregation, or bounded-input/
+  alignment limits. Long recordings are scored in immutable
+  source-time segments and aggregate edit counts, not one unbounded alignment.
+- Normalized critical-token occurrence and ordered-sequence metrics catch
+  missing, excess, substituted, and reordered policy phrases. A separate
+  case/punctuation-sensitive surface metric catches acronym, number, and unit
+  form drift that normalized WER intentionally ignores. Neither establishes
+  general clinical number/unit semantic equivalence; that remains a separate
+  executable fixture and review gate.
+- Early single-fixture gates (not broad quality certification):
 
 | Path | WER gate |
 |------|----------|
@@ -149,6 +412,12 @@ timestamp-shape coverage without shipping private or unclear audio.
 
 - A regression beyond the threshold fails that backend's applicable gate. The
   private GB10 check is a phase gate, not a portable hosted-CI inference job.
+  Any production promotion additionally requires the frozen per-locale,
+  per-domain, acoustic, duration, and critical-token slices activated by that
+  capability. Phase 8 owns meeting and overlap promotion. The Phase 6 resident
+  candidates do not gain production status from their bounded regression and
+  lifecycle gate. A better macro WER cannot offset a failed required slice,
+  hallucination-on-silence, cross-request leak, or long-form integrity failure.
 
 ### Diarization and identity gates
 
@@ -167,7 +436,38 @@ Starting targets from the source-aware design:
 
 Named-identity gates remain inactive until the purpose-authorized server identity phase exists. Anonymous clustering must never manufacture a name to improve a metric.
 
-The approved diarization suite is a checked-in `desktop/tests/fixtures/diarization/manifest.json` plus license/provenance records, SHA-256 hashes, audio, transcripts, and RTTM annotations for the meeting cases above. The baseline cannot be accepted while any required fixture or license record is missing. The initial client reference profile is Windows 11 x64, CPU-only, 4 physical cores/8 threads in the Intel Core i5-1135G7 performance class, 16 GB RAM, normal process priority, and the OS balanced power plan. Every benchmark result records exact CPU, RAM, OS build, runtime/model revisions, and power mode.
+The future approved diarization suite is rooted at
+`desktop/tests/fixtures/diarization/manifest.json` and binds
+license/provenance records, SHA-256 hashes, redistributable smoke audio,
+transcripts, and RTTM annotations for the meeting cases above. It does not
+exist yet. Comprehensive or private meeting media and references remain in the
+external private cache and are addressed only by public-safe hashes. No
+baseline can be accepted while any required fixture, private registry, or
+license record is missing. The initial client reference profile is Windows 11
+x64, CPU-only, 4 physical cores/8 threads in the Intel Core i5-1135G7
+performance class, 16 GB RAM, normal process priority, and the OS balanced
+power plan. Every benchmark result records exact CPU, RAM, OS build,
+runtime/model revisions, and power mode.
+
+The Phase 8 server meeting gate adds a frozen **messy-meeting acceptance
+suite**. AMI, ICSI, and open NOTSOFAR-1 subsets are exposure-known public
+comparators for Tiron; they cannot independently promote it. A separate sealed,
+license-clear, Yap-adjudicated holdout supplies independent evidence. Before
+model output is revealed, its manifest freezes sources, hashes, defects,
+reviewer/adjudication receipts, transformations, scorer versions, slice
+thresholds, and normalization/collar/permutation policies.
+
+Required server metrics include cpWER, time-constrained or speaker-attributed
+WER, overlap-region word deletion/recall, DER/JER where compatible,
+speaker-count error, timestamp error, and speaker merge/split/fragmentation.
+Required runtime metrics include cold/warm latency, RTF, VRAM/RAM,
+c1/c2/c4/c8 admission and p50/p95/p99, cancellation and cross-request
+isolation, restart/teardown, and duration-dependent memory plus speaker-linking
+stability. The suite covers more-than-15-attendee sessions with a small active
+subset separately from Tiron's one-to-eight window-local slots and released
+eight-identity global cap. It distinguishes attendee count from 9/16/32
+distinct talkers across epochs and includes an explicit more-than-eight-talker
+window pressure case.
 
 The supported-load callback test runs 48 kHz stereo capture converted to the required prepared format while local ASR, recording, and anonymous speaker evidence are active. It includes deterministic queue saturation and a four-hour accelerated timeline. Hardware-specific performance gates run on the pinned reference host; portable CI still runs deterministic contract, fixture-shape, and loss-accounting tests.
 
@@ -197,11 +497,11 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 | 3 Contract | OpenAPI/schema validation, loopback health bounds, connector failure/retry, durable client ledger restart |
 | 4 Server node | Router fairness/backpressure, immutable runtime/model/fixture locks, isolated non-root container, ARM64/CUDA attestation, WER, atomic evidence, no persistent listener |
 | 5 Remote STT | Resumable upload identity, queue drain, job state/cancel/retry, capability truth, result ingestion, tunnel-loss recovery |
-| 6 Preprocessing | mixed-session rejection, track-aware content IDs, explicit gaps, bounded windows, advisory VAD |
+| 6 Preprocessing | versioned provider/language/timing catalog; primary/per-job choice; mixed-session rejection; track-aware content IDs; exact gaps; bounded windows; advisory VAD/source preservation; verify-only AmberNet five-region strict-agreement/manual gate including exact long-tail selection; fixed/dynamic routing; durable stage restart/cancel/retry; fail-closed aligned words; model/license locks; AMD64/ARM64 frontend parity plus checked-head GB10 resource/accuracy/teardown evidence |
 | 7 Identity/access | Yap API token audience, `(tid, oid)` isolation, consent and withdrawal, profile-version compatibility |
-| 8 Meeting evidence | one/two/overlap/short/noisy speakers, stable result revisions, bounded clusters, no local names or persistent embeddings |
+| 8 Meeting evidence | local one/two/overlap/short/noisy anonymous evidence; pinned Tiron eight-window/eight-global server baseline; separately switched speaker-epoch extension; messy-meeting public comparators plus independent holdout; 1–8 and over-capacity window pressure; >15-attendee/small-active-subset and 9/16/32-talker cross-epoch cases; stable result revisions; bounded clusters; no local names or persistent embeddings |
 | 9 Knowledge/agents | Google OKF conformance, permission-safe projection, citation-required Analyst, three-strike Student, RAG confidence floor |
-| 10 Enterprise/release | approved network/policy evidence, deployment rollback, publication governance, repo-boundary checks |
+| 10 Enterprise/release | authenticated multi-owner fairness/no-starvation; bounded overload/backpressure; cancellation and timeout isolation; restart recovery; fixed worker/memory ceilings; sustained mixed live/batch p50/p95 latency, throughput, and queue-age evidence on GB10; approved network/policy evidence; deployment rollback; publication governance; repo-boundary checks |
 
 ---
 
@@ -226,6 +526,18 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 - Speaker-turn and aligned-word intervals are end-exclusive, monotonic, bounded by the capture timeline, and preserve overlap.
 - Alignment failure leaves timestamped speaker turns intact and omits or marks word timing unavailable.
 - The local baseline passes the absolute DER, speaker-count, CPU, RSS, latency, and callback-drop gates before release.
+- The server Tiron route consumes the same source timeline as the fallback,
+  preserves concurrent segments, and cannot publish malformed speaker tokens,
+  out-of-bounds timestamps, or a result whose runtime/capture identity differs
+  from the admitted job.
+- The eight-speaker decode-window cap and released eight-identity global cap
+  are tested independently from the 32-target/64-ceiling product roster. The
+  larger roster requires a separately switched and qualified speaker-epoch
+  reconciler. Reaching or plausibly exceeding a selected route's cap yields an
+  explicit partial/degraded region and retained source for fallback.
+- Public Tiron benchmark corpora remain comparator-only; promotion uses the
+  separately frozen independent messy-meeting holdout and fails on any required
+  overlap, locale, capacity, isolation, or lifecycle slice.
 - Server reconciliation appends a revision and cannot silently overwrite a user correction.
 - Contact import and transcript renaming create no biometric enrollment.
 - Unenrolled, withdrawn, expired, cross-tenant, and incompatible-model profiles cannot match; enrollment, matching, and adaptation grants are checked separately, and matching-grant withdrawal denies naming without requiring profile deletion.
@@ -241,5 +553,5 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 ## 8. Non-goals
 
 - No cloud test infra (local-first; fixtures are committed/small).
-- No generic enterprise load laboratory in v1; targeted capture, ASR, diarization, and reconnect stress tests are required for their phases.
+- No unbounded generic enterprise load laboratory in v1. Phase 10 still requires a bounded, reproducible multi-owner mixed-load test that proves the promoted service limits and SLO evidence above.
 - No telemetry — debugging uses Tauri app-data logs (`%APPDATA%/com.mcnatg1.yap/logs/` on Windows).

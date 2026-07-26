@@ -19,17 +19,31 @@ from .contract_values import (
     utc_timestamp,
     valid_sha256,
 )
+from .preprocessing_contract import validate_preprocessing_evidence
 
 
 def validate_create_request(
     request: Mapping[str, object],
     supported_languages: frozenset[str],
+    expected_catalog_revision: str | None = None,
+    *,
+    require_supported_language: bool = True,
 ) -> None:
-    exact_keys(
-        request,
-        {"displayName", "metadata", "tracks", "route", "captureManifest", "chunks"},
-        "job",
-    )
+    required_keys = {
+        "displayName",
+        "metadata",
+        "tracks",
+        "route",
+        "captureManifest",
+        "chunks",
+    }
+    optional_keys = {
+        "languageDecision",
+        "asrCatalogRevision",
+        "preprocessingEvidence",
+    }
+    if not required_keys.issubset(request) or set(request) - required_keys - optional_keys:
+        raise ValueError("job fields differ from the contract")
     display_name = text(request.get("displayName"), "displayName")
     if len(display_name) > 256 or request.get("route") != "server_batch":
         raise ValueError("invalid display name or route")
@@ -57,10 +71,10 @@ def validate_create_request(
     session_id = identifier(metadata.get("sessionId"), 128, "sessionId")
     mode = metadata.get("mode")
     if mode != "meeting":
-        raise ValueError("the Phase 5 batch slice accepts meeting sessions only")
+        raise ValueError("the current batch contract accepts meeting sessions only")
     origin = metadata.get("origin")
     if origin != "imported_file":
-        raise ValueError("the Phase 5 batch slice accepts imported recordings only")
+        raise ValueError("the current batch contract accepts imported recordings only")
     if metadata.get("triggerMode") not in {"push_to_talk", "toggle"}:
         raise ValueError("invalid trigger mode")
     started_at = utc_timestamp(metadata.get("startedAtUtc"), "startedAtUtc")
@@ -80,8 +94,19 @@ def validate_create_request(
         raise ValueError("an explicit preferred language is required")
     for index, language in enumerate(languages):
         language_tag(language, f"preferredLanguagesBcp47[{index}]")
-    if languages[0].split("-", 1)[0].lower() not in supported_languages:
+    if (
+        require_supported_language
+        and not _language_is_supported(languages[0], supported_languages)
+    ):
         raise ValueError("preferred language is unsupported")
+    if "languageDecision" in request:
+        _validate_language_decision(
+            request.get("languageDecision"),
+            locale=locale,
+            preferred_languages=languages,
+            supported_languages=supported_languages,
+            require_supported_language=require_supported_language,
+        )
     for field, maximum in (
         ("appVersion", 64),
         ("platform", 64),
@@ -137,8 +162,9 @@ def validate_create_request(
         {"schemaVersion", "sessionId", "sha256", "byteLength"},
         "captureManifest",
     )
+    manifest_schema_version = capture_manifest.get("schemaVersion")
     if (
-        not integer_between(capture_manifest.get("schemaVersion"), 1, 2**31 - 1)
+        not integer_between(manifest_schema_version, 1, 2)
         or capture_manifest.get("sessionId") != session_id
         or not valid_sha256(capture_manifest.get("sha256"))
         or not integer_between(capture_manifest.get("byteLength"), 1, 2**63 - 1)
@@ -217,6 +243,39 @@ def validate_create_request(
     if len(track_ids) != 1:
         raise ValueError("the current batch slice accepts exactly one track")
     validated_single_track_chunks(chunks)
+    if manifest_schema_version == 1:
+        if "preprocessingEvidence" in request or "asrCatalogRevision" in request:
+            raise ValueError(
+                "capture manifest schema 1 cannot carry preprocessing route evidence"
+            )
+        if selected_batch_mode(request) == "dynamicBatch":
+            raise ValueError(
+                "dynamic batch processing requires capture manifest schema 2"
+            )
+    else:
+        if (
+            "languageDecision" not in request
+            or "asrCatalogRevision" not in request
+            or "preprocessingEvidence" not in request
+        ):
+            raise ValueError(
+                "capture manifest schema 2 requires language, catalog, and preprocessing evidence"
+            )
+        catalog_revision = text(
+            request.get("asrCatalogRevision"),
+            "asrCatalogRevision",
+        )
+        if not valid_sha256(catalog_revision):
+            raise ValueError("ASR catalog revision is invalid")
+        if (
+            expected_catalog_revision is not None
+            and catalog_revision != expected_catalog_revision
+        ):
+            raise ValueError("ASR catalog revision is no longer current")
+        validate_preprocessing_evidence(
+            request.get("preprocessingEvidence"),
+            output_sample_count=total_bytes // 2,
+        )
 
 
 def _validate_track_source(value: object, origin: object) -> None:
@@ -248,12 +307,87 @@ def _validate_track_source(value: object, origin: object) -> None:
 def selected_language(
     request: Mapping[str, object],
     supported_languages: frozenset[str],
+    *,
+    require_supported_language: bool = True,
 ) -> str:
+    decision_value = request.get("languageDecision")
+    if decision_value is not None:
+        decision = mapping(decision_value, "languageDecision")
+        if decision.get("mode") == "dynamic":
+            return "und"
+        selected = text(decision.get("languageBcp47"), "languageDecision.languageBcp47")
+        if require_supported_language and not _language_is_supported(
+            selected,
+            supported_languages,
+        ):
+            raise ValueError("selected language is not supported by the locked model")
+        return selected
     metadata = mapping(request.get("metadata"), "metadata")
     languages = metadata.get("preferredLanguagesBcp47")
     if not isinstance(languages, list) or not languages:
         raise ValueError("server batch processing requires an explicit language")
     selected = text(languages[0], "preferredLanguagesBcp47[0]")
-    if selected.split("-", 1)[0].lower() not in supported_languages:
+    if require_supported_language and not _language_is_supported(
+        selected,
+        supported_languages,
+    ):
         raise ValueError("selected language is not supported by the locked model")
     return selected
+
+
+def selected_batch_mode(request: Mapping[str, object]) -> str:
+    decision_value = request.get("languageDecision")
+    if decision_value is None:
+        return "fixedBatch"
+    decision = mapping(decision_value, "languageDecision")
+    return "dynamicBatch" if decision.get("mode") == "dynamic" else "fixedBatch"
+
+
+def _validate_language_decision(
+    value: object,
+    *,
+    locale: object,
+    preferred_languages: list[object],
+    supported_languages: frozenset[str],
+    require_supported_language: bool,
+) -> None:
+    decision = mapping(value, "languageDecision")
+    exact_keys(
+        decision,
+        {"mode", "languageBcp47", "disposition"},
+        "languageDecision",
+    )
+    if decision.get("mode") == "dynamic":
+        if (
+            decision.get("languageBcp47") is not None
+            or decision.get("disposition") != "explicitDynamic"
+            or locale != "und"
+            or preferred_languages != ["und"]
+            or (require_supported_language and "und" not in supported_languages)
+        ):
+            raise ValueError("language decision differs from dynamic batch metadata")
+        return
+    language = language_tag(
+        decision.get("languageBcp47"),
+        "languageDecision.languageBcp47",
+    )
+    if (
+        decision.get("mode") != "fixed"
+        or language == "und"
+        or decision.get("disposition")
+        not in {"primary", "manualOverride", "detectedSuggestionConfirmed"}
+        or locale != language
+        or preferred_languages != [language]
+        or (
+            require_supported_language
+            and not _language_is_supported(language, supported_languages)
+        )
+    ):
+        raise ValueError("language decision differs from fixed batch metadata")
+
+
+def _language_is_supported(language: str, supported_languages: frozenset[str]) -> bool:
+    return (
+        language in supported_languages
+        or language.split("-", 1)[0].lower() in supported_languages
+    )

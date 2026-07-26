@@ -20,6 +20,26 @@ export type NativeHistoryIdentity = {
   sessionId: string;
 };
 
+export type LanguageLabelReviewSegment = {
+  effectiveLanguageBcp47: string | null;
+  hasUserCorrection: boolean;
+  index: number;
+  sourceLanguageBcp47: string | null;
+  sourceSpanIndex: number;
+  sourceStatus: "detected" | "unknown";
+  text: string;
+};
+
+export type LanguageLabelReview = {
+  activeCorrectionCount: number;
+  reviewRequiredCount: number;
+  revision: number;
+  schemaVersion: 1;
+  segments: LanguageLabelReviewSegment[];
+  sessionId: string;
+  sourceResultSha256: string;
+};
+
 type HiddenHistoryMigration = {
   migratedOutputPaths: string[];
 };
@@ -47,6 +67,38 @@ export async function hideNativeHistoryEntry(entry: TranscriptHistoryEntry) {
   if (!identity) throw new Error("Native history identity is unavailable.");
   if (!isTauri()) throw new Error("Native history is unavailable outside the desktop app.");
   await invoke("history_hide_native", { identity });
+}
+
+function remoteHistoryIdentity(entry: TranscriptHistoryEntry): NativeHistoryIdentity {
+  const identity = nativeHistoryIdentity(entry);
+  if (!identity || identity.origin !== "remote") {
+    throw new Error("Remote transcript identity is unavailable.");
+  }
+  return identity;
+}
+
+export async function loadLanguageLabelReview(
+  entry: TranscriptHistoryEntry,
+): Promise<LanguageLabelReview> {
+  if (!isTauri()) throw new Error("Language-label review is available only in the desktop app.");
+  return invoke<LanguageLabelReview>("history_language_label_review", {
+    identity: remoteHistoryIdentity(entry),
+  });
+}
+
+export async function saveLanguageLabelCorrection(
+  entry: TranscriptHistoryEntry,
+  expectedRevision: number,
+  segmentIndex: number,
+  replacementLanguageBcp47: string | null,
+): Promise<LanguageLabelReview> {
+  if (!isTauri()) throw new Error("Language-label correction is available only in the desktop app.");
+  return invoke<LanguageLabelReview>("history_append_language_label_correction", {
+    expectedRevision,
+    identity: remoteHistoryIdentity(entry),
+    replacementLanguageBcp47,
+    segmentIndex,
+  });
 }
 
 export async function migrateHiddenNativeHistory(

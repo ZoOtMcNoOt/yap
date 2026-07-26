@@ -40,6 +40,32 @@ describe("history job projection", () => {
     expect(job.playbackPath).toBeUndefined();
   });
 
+  it("preserves verified remote result details and remote ownership", () => {
+    const job = historyEntryToRecordingJob(savedSessionToTranscriptHistoryEntry({
+      createdAtMs: Date.UTC(2026, 6, 18),
+      name: "Global meeting",
+      origin: "remote",
+      outputPath: "C:\\Yap\\remote.txt",
+      resultSummary: {
+        languageBcp47: "und",
+        languageStatus: "unknownSegments",
+        timingStatus: "unavailable",
+      },
+      sessionId: "remote-1",
+      sourcePath: "C:\\Yap\\source.wav",
+    }));
+
+    expect(job.route).toBe("serverBatch");
+    expect(job.sessionOrigin).toBe("importedFile");
+    expect(job.pipeline.preprocessing).toBe("done");
+    expect(job.pipeline.alignment).toBe("skipped");
+    expect(job.resultSummary).toEqual({
+      languageBcp47: "und",
+      languageStatus: "unknownSegments",
+      timingStatus: "unavailable",
+    });
+  });
+
   it("does not trust foreign history source paths for playback", () => {
     const job = historyEntryToRecordingJob({
       createdAt: "2026-01-01T00:00:00.000Z",

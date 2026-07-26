@@ -4,7 +4,7 @@ from yap_server.api import health
 
 
 class HealthTests(unittest.TestCase):
-    def test_health_matches_the_frozen_phase_3_contract(self) -> None:
+    def test_health_matches_the_frozen_health_only_contract(self) -> None:
         self.assertEqual(
             health(),
             {

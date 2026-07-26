@@ -1,18 +1,18 @@
 use super::{
     artifact_io::{
-        metadata_is_link_or_reparse, next_staging_nonce, open_no_follow_read, valid_sha256,
-        validate_identifier, write_new_synced, StagingDirectory,
+        metadata_is_link_or_reparse, next_staging_nonce, open_no_follow_read, sha256_bytes,
+        valid_sha256, validate_identifier, write_new_synced, StagingDirectory,
     },
     spool::prepare_spool_root,
 };
-use crate::server_connector::batch::TranscriptResultRevision;
+use crate::server_connector::batch::{TranscriptResultRevision, MAX_TRANSCRIPT_RESULT_BYTES};
 use std::{
     fs,
     path::{Path, PathBuf},
 };
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
-const MAX_RESULT_ARTIFACT_BYTES: usize = 2 * 1024 * 1024;
+const MAX_RECORDING_DURATION_MS: u64 = 4 * 60 * 60 * 1_000;
 
 pub(in crate::jobs) fn publish_remote_result(
     job_id: &str,
@@ -30,14 +30,14 @@ pub(in crate::jobs) fn publish_remote_result(
     }
     let encoded_result = serde_json::to_vec(result)
         .map_err(|error| format!("failed to encode server result revision: {error}"))?;
-    if encoded_result.len() > MAX_RESULT_ARTIFACT_BYTES {
+    if encoded_result.len() > MAX_TRANSCRIPT_RESULT_BYTES {
         return Err("server result revision is too large to publish".into());
     }
     let mut transcript = result.transcript.as_bytes().to_vec();
     if !transcript.ends_with(b"\n") {
         transcript.push(b'\n');
     }
-    if transcript.len() > MAX_RESULT_ARTIFACT_BYTES {
+    if transcript.len() > MAX_TRANSCRIPT_RESULT_BYTES {
         return Err("server transcript is too large to publish".into());
     }
 
@@ -69,6 +69,8 @@ pub(in crate::jobs) fn publish_remote_result(
 
 pub(in crate::jobs) struct VerifiedRemoteTranscript {
     pub(in crate::jobs) result: TranscriptResultRevision,
+    pub(in crate::jobs) result_directory: PathBuf,
+    pub(in crate::jobs) result_sha256: String,
     pub(in crate::jobs) text: String,
 }
 
@@ -126,7 +128,7 @@ pub(in crate::jobs) fn read_published_remote_transcript(
     let result_path = destination.join("result.json");
     let result_bytes = read_bounded_regular_artifact(
         &result_path,
-        MAX_RESULT_ARTIFACT_BYTES,
+        MAX_TRANSCRIPT_RESULT_BYTES,
         "remote result revision",
     )?;
     let result: TranscriptResultRevision = serde_json::from_slice(&result_bytes)
@@ -139,7 +141,12 @@ pub(in crate::jobs) fn read_published_remote_transcript(
     verify_published_remote_result(&destination, &result_bytes, &expected_transcript)?;
     let text = String::from_utf8(expected_transcript)
         .map_err(|_| "remote transcript is not valid UTF-8".to_string())?;
-    Ok(VerifiedRemoteTranscript { result, text })
+    Ok(VerifiedRemoteTranscript {
+        result,
+        result_directory: destination,
+        result_sha256: sha256_bytes(&result_bytes),
+        text,
+    })
 }
 
 fn normal_path_component<'a>(component: &'a std::path::Component<'a>) -> Option<&'a str> {
@@ -149,7 +156,7 @@ fn normal_path_component<'a>(component: &'a std::path::Component<'a>) -> Option<
     }
 }
 
-fn read_bounded_regular_artifact(
+pub(super) fn read_bounded_regular_artifact(
     path: &Path,
     maximum_bytes: usize,
     label: &str,
@@ -218,9 +225,9 @@ pub(super) fn validate_published_result_contract(
             .is_some_and(|value| !valid_sha256(value))
         || result.status != "complete"
         || !language_valid
-        || result.transcript.trim().is_empty()
-        || result.transcript.len() > MAX_RESULT_ARTIFACT_BYTES - 1
-        || !result.aligned_words.is_empty()
+        || !result.transcript_is_canonical()
+        || !result.language_evidence_is_valid(None, MAX_RECORDING_DURATION_MS)
+        || !result.alignment_is_valid(MAX_RECORDING_DURATION_MS)
         || !provenance_valid
     {
         return Err("remote result revision conflicts with the published transcript".into());

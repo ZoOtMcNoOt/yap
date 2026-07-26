@@ -77,13 +77,7 @@ test("NSIS uses stock Tauri behavior inside a disposable Windows boundary", asyn
 });
 
 test("Windows release automation requires PowerShell 7.4 Core", async () => {
-  const powerShellFiles = [
-    "desktop/tests/scripts/bind-pnpm-cache-store.ps1",
-    "desktop/tests/scripts/native-window-recovery.test.ps1",
-    "desktop/tests/scripts/smoke-nsis.ps1",
-    "desktop/tests/wdio/native-window-recovery.psm1",
-  ];
-  const trackedPowerShellFiles = execFileSync(
+  const powerShellFiles = execFileSync(
     "git",
     ["ls-files", "--", "*.ps1", "*.psm1"],
     { cwd: repoRoot, encoding: "utf8" },
@@ -92,10 +86,9 @@ test("Windows release automation requires PowerShell 7.4 Core", async () => {
     .split(/\r?\n/)
     .filter(Boolean)
     .sort();
-  assert.deepEqual(
-    trackedPowerShellFiles,
-    [...powerShellFiles].sort(),
-    "PowerShell runtime contract inventory must cover every tracked script and module",
+  assert.ok(
+    powerShellFiles.length > 0,
+    "PowerShell runtime contract requires at least one tracked script or module",
   );
   const runtimeRequirement = /^#requires -Version 7\.4\r?\n#requires -PSEdition Core\b/i;
 

@@ -115,7 +115,7 @@ pub(super) fn open_persisted_file(_path: &Path) -> std::io::Result<std::fs::File
     ))
 }
 
-pub(super) struct SettingsFileLock {
+pub(crate) struct SettingsFileLock {
     file: std::fs::File,
 }
 

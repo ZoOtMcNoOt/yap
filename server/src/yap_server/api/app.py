@@ -4,7 +4,7 @@ import logging
 from functools import partial
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -19,6 +19,7 @@ from .http_server import (
     server_type,
 )
 from .job_requests import JobRequestMixin
+from .lid_requests import LidPreflightServiceProtocol, LidRequestMixin
 from .request_io import (
     BoundedRequestBody,
     REQUEST_IO_TIMEOUT_SECONDS,
@@ -26,13 +27,23 @@ from .request_io import (
     request_deadline,
 )
 from .responses import ResponseMixin
-from .routes import SUPPORTED_HTTP_VERSIONS, allowed_methods as methods_for_path
+from .routes import (
+    LID_PREFLIGHT_CANCEL_PATH,
+    LID_PREFLIGHT_PATH,
+    SUPPORTED_HTTP_VERSIONS,
+    allowed_methods as methods_for_path,
+)
 
 
 _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 
-class _HealthRequestHandler(JobRequestMixin, ResponseMixin, BaseHTTPRequestHandler):
+class _HealthRequestHandler(
+    LidRequestMixin,
+    JobRequestMixin,
+    ResponseMixin,
+    BaseHTTPRequestHandler,
+):
     server_version = "yap-server"
     sys_version = ""
     timeout = REQUEST_IO_TIMEOUT_SECONDS
@@ -42,10 +53,14 @@ class _HealthRequestHandler(JobRequestMixin, ResponseMixin, BaseHTTPRequestHandl
         *args: Any,
         request_logger: logging.Logger,
         job_service: RecordingJobService | None,
+        lid_preflight_service: LidPreflightServiceProtocol | None,
+        asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
     ) -> None:
         self._request_logger = request_logger
         self._job_service = job_service
+        self._lid_preflight_service = lid_preflight_service
+        self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
         self._request_logged = False
         self._request_body = BoundedRequestBody(self)
@@ -130,6 +145,32 @@ class _HealthRequestHandler(JobRequestMixin, ResponseMixin, BaseHTTPRequestHandl
             )
             return
 
+        if path == "/v1/asr/capabilities":
+            if self._asr_capabilities is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="ASR capabilities are not configured.",
+                )
+                return
+            self._send_json(HTTPStatus.OK, self._asr_capabilities)
+            return
+
+        is_lid_route = (
+            path == LID_PREFLIGHT_PATH
+            or LID_PREFLIGHT_CANCEL_PATH.fullmatch(path) is not None
+        )
+        if is_lid_route:
+            if self._lid_preflight_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="LID preflight is not configured.",
+                )
+                return
+            self._dispatch_lid_request(path)
+            return
+
         if self._job_service is not None and path != "/v1/live":
             self._dispatch_job_request(path)
             return
@@ -137,7 +178,7 @@ class _HealthRequestHandler(JobRequestMixin, ResponseMixin, BaseHTTPRequestHandl
         self._send_error(
             HTTPStatus.NOT_IMPLEMENTED,
             code="NOT_IMPLEMENTED",
-            message="This route is contract-only in Phase 3.",
+            message="This route is unavailable in the active runtime profile.",
         )
 
 
@@ -146,6 +187,8 @@ def create_server(
     *,
     logger: logging.Logger | None = None,
     job_service: RecordingJobService | None = None,
+    lid_preflight_service: LidPreflightServiceProtocol | None = None,
+    asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
     ensure_bind_is_allowed(settings.host)
     request_logger = logger or _REQUEST_LOGGER
@@ -153,10 +196,12 @@ def create_server(
         _HealthRequestHandler,
         request_logger=request_logger,
         job_service=job_service,
+        lid_preflight_service=lid_preflight_service,
+        asr_capabilities=asr_capabilities,
     )
     server = server_type(
         settings.host,
-        threaded=job_service is not None,
+        threaded=(job_service is not None or lid_preflight_service is not None),
     )((settings.host, settings.port), handler)
     server._request_error_logger = request_logger
     if isinstance(server, ThreadingYapHTTPServer):
@@ -168,6 +213,13 @@ def serve(
     settings: ServerSettings,
     *,
     job_service: RecordingJobService | None = None,
+    lid_preflight_service: LidPreflightServiceProtocol | None = None,
+    asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
-    with create_server(settings, job_service=job_service) as server:
+    with create_server(
+        settings,
+        job_service=job_service,
+        lid_preflight_service=lid_preflight_service,
+        asr_capabilities=asr_capabilities,
+    ) as server:
         server.serve_forever()

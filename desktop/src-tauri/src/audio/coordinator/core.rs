@@ -32,6 +32,7 @@ pub struct Coordinator {
     pub(super) resampler: Option<LinearResampler>,
     pub(super) level_normalizer: AudioLevelNormalizer,
     pub(super) pending_losses: PendingLosses,
+    pub(super) recording_completion_handed_off: bool,
     #[cfg(test)]
     pub(super) revision_events: Vec<RevisionEvent>,
     #[cfg(test)]
@@ -51,6 +52,7 @@ impl Coordinator {
             resampler: None,
             level_normalizer: AudioLevelNormalizer::new(),
             pending_losses: PendingLosses::new(),
+            recording_completion_handed_off: false,
             #[cfg(test)]
             revision_events: Vec::new(),
             #[cfg(test)]

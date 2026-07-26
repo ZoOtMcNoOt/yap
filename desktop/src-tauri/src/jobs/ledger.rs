@@ -1,6 +1,9 @@
 //! Durable authority for recording-job metadata and state transitions.
 //! Domain modules extend `JobLedger`; this facade owns connection setup and core record access.
 
+mod catalog_binding;
+mod client_preflight;
+mod client_stages;
 mod lifecycle;
 mod records;
 mod remote_progress;
@@ -8,6 +11,8 @@ mod remote_recovery;
 mod remote_state;
 mod retention;
 mod row_mapping;
+
+pub(crate) use client_preflight::{LidPreflightDispatchFailure, LidPreflightDispatchStart};
 
 use self::records::{path_text, ValidatedChunk, ValidatedJob};
 use self::retention::prune_terminal_history;
@@ -21,7 +26,7 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-const JOB_COLUMNS: &str = "job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms";
+const JOB_COLUMNS: &str = "job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms, language_mode, language_bcp47, language_disposition, language_decision_locked, client_stage_history_complete, asr_catalog_origin, asr_catalog_revision";
 const MAX_TERMINAL_JOB_HISTORY: usize = 500;
 const MAX_PREPARED_REQUEST_BYTES: usize = 1024 * 1024;
 const MAX_PREPARED_CHUNKS: usize = 4096;
@@ -71,30 +76,7 @@ impl JobLedger {
         let mut connection = self.lock()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
         for job in &jobs {
-            transaction.execute(
-                "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
-                params![
-                    job.job_id,
-                    job.session_mode,
-                    job.session_origin,
-                    job.source_path,
-                    job.source_ownership,
-                    job.output_path,
-                    job.display_name,
-                    job.status,
-                    job.route,
-                    job.attempt_count,
-                    job.next_attempt_at_ms,
-                    job.cancellation_requested,
-                    job.capture_commit_path,
-                    job.capture_manifest_sha256,
-                    job.error_code,
-                    job.error_message,
-                    job.created_at_ms,
-                    job.updated_at_ms,
-                    job.expires_at_ms,
-                ],
-            )?;
+            insert_validated_job(&transaction, job)?;
         }
         let records = jobs
             .iter()
@@ -121,30 +103,7 @@ impl JobLedger {
             .collect::<Result<Vec<_>, _>>()?;
         let mut connection = self.lock()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        transaction.execute(
-            "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
-            params![
-                job.job_id,
-                job.session_mode,
-                job.session_origin,
-                job.source_path,
-                job.source_ownership,
-                job.output_path,
-                job.display_name,
-                job.status,
-                job.route,
-                job.attempt_count,
-                job.next_attempt_at_ms,
-                job.cancellation_requested,
-                job.capture_commit_path,
-                job.capture_manifest_sha256,
-                job.error_code,
-                job.error_message,
-                job.created_at_ms,
-                job.updated_at_ms,
-                job.expires_at_ms,
-            ],
-        )?;
+        insert_validated_job(&transaction, &job)?;
         for chunk in &chunks {
             transaction.execute(
                 "INSERT INTO job_chunks (job_id, owner_namespace, session_id, track_id, sequence_start, sequence_end, content_sha256, artifact_path, upload_offset, acknowledged_object_id, acknowledged_at_ms, content_byte_length) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
@@ -247,11 +206,65 @@ impl JobLedger {
         .collect()
     }
 
+    /// Commits a real SQLite write without touching job state. The background
+    /// drain uses this only after a state mutation failed; remote/local work
+    /// remains circuit-broken until the probe transaction commits.
+    pub(crate) fn commit_write_probe(&self) -> Result<(), JobLedgerError> {
+        let mut connection = self.lock()?;
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let changed = transaction.execute(
+            "UPDATE job_ledger_write_probe SET generation = CASE WHEN generation >= 9223372036854775806 THEN 0 ELSE generation + 1 END WHERE singleton = 1",
+            [],
+        )?;
+        if changed != 1 {
+            return Err(JobLedgerError::InvalidRecord(
+                "job ledger write probe row is unavailable",
+            ));
+        }
+        transaction.commit()?;
+        Ok(())
+    }
+
     fn lock(&self) -> Result<MutexGuard<'_, Connection>, JobLedgerError> {
         self.connection
             .lock()
             .map_err(|_| JobLedgerError::LockPoisoned)
     }
+}
+
+fn insert_validated_job(connection: &Connection, job: &ValidatedJob) -> Result<(), JobLedgerError> {
+    connection.execute(
+        "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, source_ownership, output_path, display_name, status, route, attempt_count, next_attempt_at_ms, cancellation_requested, capture_commit_path, capture_manifest_sha256, error_code, error_message, created_at_ms, updated_at_ms, expires_at_ms, language_mode, language_bcp47, language_disposition, language_decision_locked, client_stage_history_complete, asr_catalog_origin, asr_catalog_revision) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26)",
+        params![
+            job.job_id,
+            job.session_mode,
+            job.session_origin,
+            job.source_path,
+            job.source_ownership,
+            job.output_path,
+            job.display_name,
+            job.status,
+            job.route,
+            job.attempt_count,
+            job.next_attempt_at_ms,
+            job.cancellation_requested,
+            job.capture_commit_path,
+            job.capture_manifest_sha256,
+            job.error_code,
+            job.error_message,
+            job.created_at_ms,
+            job.updated_at_ms,
+            job.expires_at_ms,
+            job.language_mode,
+            job.language_bcp47,
+            job.language_disposition,
+            job.language_decision_locked,
+            job.client_stage_history_complete,
+            job.asr_catalog_origin,
+            job.asr_catalog_revision,
+        ],
+    )?;
+    Ok(())
 }
 
 #[cfg(test)]

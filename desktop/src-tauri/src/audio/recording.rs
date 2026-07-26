@@ -143,6 +143,7 @@ mod scan;
 pub use scan::scan_recordings;
 pub(crate) use scan::{
     is_regular_artifact, open_regular_artifact, recover_partial_wav_with_identity,
+    recoverable_complete_sidecar_is_owned,
 };
 
 mod artifact_admission;

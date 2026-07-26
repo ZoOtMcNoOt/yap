@@ -1,1 +1,1 @@
-"""Phase 4 model-pool tests."""
+"""Model-pool tests."""

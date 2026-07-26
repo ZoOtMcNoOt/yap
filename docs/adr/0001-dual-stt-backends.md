@@ -5,6 +5,7 @@
 **Amended by:** [ADR 0019](0019-local-streaming-model-selection.md) — the desktop-local live/offline fallback model is now Nemotron 3.5 ASR Streaming 0.6B INT8 through `sherpa-onnx`, not Moonshine v2 tiny or Parakeet Q4. The durable decision that live/offline streaming and larger recording/batch paths are separate remains.
 **Amended by:** [ADR 0002](0002-crispasr-unified-stt-runtime.md) — runtime implementation uses CrispASR + GGUF + a pinned Moonshine v2 tiny fallback instead of the earlier PyTorch / `moonshine-voice` ONNX sketch. The **dual-model split** (streaming model for live, Cohere for batch) remains authoritative. **Live v1 is English-only** per ADR 0002 language policy. **Recordings = Cohere; LID + voice OS roadmap** in [ADR 0003](0003-long-term-voice-architecture.md).
 **Amended by:** [ADR 0014](0014-server-tier-compute-topology.md) — in the **team profile**, the live path is server-hosted streaming ASR (Wispr-style WSS) rather than a local fallback. The **solo/local-first profile** retains the local streaming fallback. The dual-model principle (streaming for live, server batch for recordings) is preserved in both profiles.
+**Amended by:** [ADR 0024](0024-global-language-routing.md) — the local live path is no longer constrained to the historical English-only v1 rule: one confirmed supported primary locale executes, and one bounded auxiliary acoustic-LID path is available only as an explicit default-off Preview. Provider and locale promotion remains evidence-gated.
 
 ## Context
 
