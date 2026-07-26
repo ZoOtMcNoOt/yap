@@ -156,6 +156,25 @@ describe("Yap live overlay window", () => {
     });
 
     await focusOverlayAction("Open scratch", nativeInput.appProcessId);
+    await browser.tauri.switchWindow("live-overlay");
+    await browser.tauri.execute(() => {
+      const root = document.querySelector('[data-overlay-surface="expanded"]');
+      if (!root) throw new Error("expanded overlay surface disappeared before pointer exit");
+      root.dispatchEvent(new PointerEvent("pointerout", {
+        bubbles: true,
+        relatedTarget: document.body,
+      }));
+    });
+    await browser.pause(300);
+    const focusedAfterPointerExit = await browser.tauri.execute(() => ({
+      ariaLabel: document.activeElement?.getAttribute("aria-label"),
+      surface: document.querySelector("[data-overlay-surface]")
+        ?.getAttribute("data-overlay-surface"),
+    }));
+    expect(focusedAfterPointerExit).toEqual({
+      ariaLabel: "Open scratch",
+      surface: "expanded",
+    });
     await pressNativeOverlayKey(nativeVirtualKey.space, nativeInput.appProcessId);
     await browser.waitUntil(async () => browser.tauri.execute(({ core }) =>
       core.invoke("plugin:window|is_focused", { label: "main" })), {
@@ -163,6 +182,14 @@ describe("Yap live overlay window", () => {
       timeout: 5_000,
       timeoutMsg: "Space did not activate Open scratch from the externally focused overlay",
     });
+    await browser.tauri.switchWindow("live-overlay");
+    await browser.waitUntil(async () => browser.tauri.execute(() =>
+      document.querySelector('[data-overlay-surface="collapsed"]') !== null), {
+      interval: 25,
+      timeout: 5_000,
+      timeoutMsg: "overlay did not collapse after keyboard focus returned to the main window",
+    });
+    await browser.tauri.switchWindow("main");
   });
 
   it("reuses one native window whose bounds equal each visible island surface", async () => {

@@ -288,6 +288,24 @@ This admission must not be resumed, retried, or relabeled. A successor must
 bind the corrected exact local provenance hash and repeat every private lane
 and command child from fresh evidence.
 
+Provenance-corrected successor
+`e8d3a0579cf3ccf252376324330d13b97e3173ff` then passed its complete
+target-client, sequential GB10, connected desktop/private-server, and exact
+teardown lanes. The integrated command matrix passed its frontend runtime,
+dependency, audit, release-contract, provenance, unit, build, Chromium, and
+browser-workflow children; its native format, Clippy, test, connector,
+Windows-dependency, and audit children; and its desktop WDIO build. The
+required desktop WDIO child then found that keyboard activation could return
+focus to the main window while leaving the idle overlay expanded. Later
+operations therefore inherited the prior expanded surface instead of a
+collapsed island. The runner marked the attempt failed before later command
+children ran. Independent read-back found no retained local or remote process,
+provider container, private network, listener, or transient service. This
+admission must not be resumed, retried, or relabeled. A successor must make
+focus-loss collapse explicit, prove that transition directly, refresh the
+reviewed local provenance hash, and repeat every private lane and command child
+from fresh evidence.
+
 ## Phase 7 cadence
 
 Phase 7 begins only after Checkpoint B merges. Its implementation remains on a

@@ -38,6 +38,11 @@ export function LiveOverlay({
 
   useOverlayTransition(contentRef, surface, prefersReducedMotion);
 
+  const scheduleIdleCollapseWithoutFocus = (root: HTMLDivElement) => {
+    if (root.contains(document.activeElement)) return;
+    if (surface === "expanded") scheduleIdleCollapse();
+  };
+
   if (hiddenIdle) return null;
 
   return (
@@ -51,6 +56,13 @@ export function LiveOverlay({
       data-testid="live-overlay-root"
       aria-label="Yap dictation controls"
       role="toolbar"
+      onBlur={(event) => {
+        if (
+          event.relatedTarget instanceof Node
+          && event.currentTarget.contains(event.relatedTarget)
+        ) return;
+        if (surface === "expanded") scheduleIdleCollapse();
+      }}
       onFocus={() => {
         if (model.phase === "idle") openIdleIsland();
       }}
@@ -66,12 +78,12 @@ export function LiveOverlay({
       onPointerEnter={() => {
         if (model.phase === "idle") openIdleIsland();
       }}
-      onMouseLeave={() => {
-        if (surface === "expanded") scheduleIdleCollapse();
+      onMouseLeave={(event) => {
+        scheduleIdleCollapseWithoutFocus(event.currentTarget);
       }}
       onPointerOut={(event) => {
         if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
-        if (surface === "expanded") scheduleIdleCollapse();
+        scheduleIdleCollapseWithoutFocus(event.currentTarget);
       }}
       style={rootFrameStyle}
       tabIndex={model.phase === "idle" ? 0 : -1}

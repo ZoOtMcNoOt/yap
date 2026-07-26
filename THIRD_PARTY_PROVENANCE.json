@@ -30,7 +30,7 @@
       "files": [
         {
           "path": "desktop/src/components/live/live-overlay.tsx",
-          "sha256": "1e1e848c6e97f2483d75d9908794b249a85e3db0fdcb9e9725b9bd381c8957be"
+          "sha256": "c4aeb9cc238e1cc8bf22a5b3e8b2972c419f00821f0cfdd0b3ca8ebfde999572"
         },
         {
           "path": "desktop/src/components/live/live-overlay-views.tsx",
