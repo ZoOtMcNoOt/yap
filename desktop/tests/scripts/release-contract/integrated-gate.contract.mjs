@@ -93,7 +93,7 @@ const candidateIds = [
   "frontend.unit",
   "frontend.production-build",
   "frontend.chromium-runtime",
-  "frontend.accessibility-and-workflows",
+  "frontend.browser-workflows",
   "native.format",
   "native.clippy",
   "native.tests",
@@ -103,6 +103,7 @@ const candidateIds = [
   "desktop.wdio-build",
   "desktop.required-wdio",
   "server.python-3.12",
+  "server.lint",
   "target-client.native-resource-and-restart",
   "target-client.prepared-audio-boundaries",
   "target-client.rendered-ui-and-microphone",
@@ -141,7 +142,7 @@ const exactCommands = {
   "frontend.unit": ["pnpm", "test"],
   "frontend.production-build": ["pnpm", "build"],
   "frontend.chromium-runtime": ["pnpm", "exec", "playwright", "install", "chromium"],
-  "frontend.accessibility-and-workflows": ["pnpm", "test:e2e"],
+  "frontend.browser-workflows": ["pnpm", "test:e2e"],
   "native.format": ["cargo", "fmt", "--all", "--check"],
   "native.clippy": ["cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings"],
   "native.tests": ["cargo", "test", "--locked"],
@@ -183,6 +184,7 @@ const exactCommands = {
     "-File",
     "./verification/test-portable-python-server.ps1",
   ],
+  "server.lint": ["uv", "run", "--locked", "ruff", "check", "."],
 };
 
 function createReceipt(scope) {

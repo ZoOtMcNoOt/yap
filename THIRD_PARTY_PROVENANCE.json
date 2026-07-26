@@ -30,11 +30,11 @@
       "files": [
         {
           "path": "desktop/src/components/live/live-overlay.tsx",
-          "sha256": "d7215f4cb4aa0b3c28dda5c9ddfd7053aa8c5e83cad94f40468d4435a559f856"
+          "sha256": "84552958225024739ee40715fc5992327588781a7396e581257daea0af6b05a4"
         },
         {
           "path": "desktop/src/components/live/live-overlay-views.tsx",
-          "sha256": "6d87e1e161de5b75b69513a6d423aa4559340f82f33b1bbe77cbef9c09f781a7"
+          "sha256": "fcba59d0711f0babed467a4225d2970026e0aa0e32735c215c221dbd113ee295"
         },
         {
           "path": "desktop/src/components/live/live-waveform.tsx",

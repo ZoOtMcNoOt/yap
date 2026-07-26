@@ -132,6 +132,9 @@ GPU pressure, model teardown, private evaluation evidence, and unavailable timin
   and `F`). Ruff formatting is available but is not mass-applied in this mixed
   behavioral checkpoint; a repository-wide formatter baseline remains a
   separately reviewable mechanical change.
+- The complete gate calls the broad Playwright surface
+  `frontend.browser-workflows` and records Ruff separately as `server.lint`;
+  neither label claims accessibility coverage that its command does not prove.
 
 ## Phase 7 cadence
 
