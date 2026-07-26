@@ -96,6 +96,7 @@ instructions. Detailed historical task reports live under
 - [Repository housekeeping](runbooks/repo-housekeeping.md)
 - [Target-client language-routing qualification](runbooks/target-client-language-routing-qualification.md)
 - [Integrated product checkpoint gate](runbooks/integrated-product-checkpoint-gate.md)
+- [Integrated identity and access gate](runbooks/integrated-identity-access-gate.md)
 - [Historical Phase 6 preprocessing and language-routing gate](runbooks/integrated-preprocessing-language-routing-gate.md)
 - [Independent transcript-reference review](runbooks/independent-transcript-reference-review.md)
 - [Research index](research/README.md)

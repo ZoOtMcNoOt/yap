@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -381,7 +381,7 @@ function dotnetRuntimePackageSources() {
   const nativeRoot = path.join(repoRoot, "desktop", "native");
   const projectDirectory = path.join(nativeRoot, "Yap.Identity.Broker");
   const projectPath = path.join(projectDirectory, "Yap.Identity.Broker.csproj");
-  const dotnet = process.platform === "win32" ? "dotnet.exe" : "dotnet";
+  const dotnet = pinnedDotnetExecutable(nativeRoot);
   run(dotnet, [
     "restore",
     projectPath,
@@ -478,6 +478,30 @@ function dotnetRuntimePackageSources() {
     appendPackage(identity.slice(0, separator), identity.slice(separator + 1));
   }
   return uniqueSortedSources(packages);
+}
+
+function pinnedDotnetExecutable(nativeRoot) {
+  const expectedVersion = JSON.parse(
+    readFileSync(path.join(nativeRoot, "global.json"), "utf8"),
+  ).sdk?.version;
+  assert(
+    typeof expectedVersion === "string" && /^\d+\.\d+\.\d+$/.test(expectedVersion),
+    "The pinned .NET SDK version is invalid.",
+  );
+  const executableName = process.platform === "win32" ? "dotnet.exe" : "dotnet";
+  const candidates = [
+    path.join(repoRoot, ".tools", "dotnet", executableName),
+    executableName,
+  ];
+  for (const candidate of candidates) {
+    if (path.isAbsolute(candidate) && !existsSync(candidate)) continue;
+    try {
+      if (run(candidate, ["--version"]).trim() === expectedVersion) return candidate;
+    } catch {
+      // Continue to the next bounded candidate.
+    }
+  }
+  throw new Error(`The shipped dependency inventory requires .NET SDK ${expectedVersion}.`);
 }
 
 function nugetLicenseExpression(nuspec, sourceDirectory) {

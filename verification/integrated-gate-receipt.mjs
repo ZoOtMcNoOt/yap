@@ -15,6 +15,7 @@ const RECEIPT_SCOPES = Object.freeze({
   "hosted-closure": "hostedClosureCells",
 });
 const INTEGRATED_GATE_IDS = new Set([
+  "integrated-identity-access",
   "integrated-product-checkpoint",
   "integrated-preprocessing-language-routing",
 ]);

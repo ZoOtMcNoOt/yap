@@ -43,7 +43,15 @@ const LEGACY_MANIFEST_PATH = path.join(
   RUNNER_DIRECTORY,
   "integrated-preprocessing-language-routing-gate.json",
 );
+const IDENTITY_ACCESS_MANIFEST_PATH = path.join(
+  RUNNER_DIRECTORY,
+  "integrated-identity-access-gate.json",
+);
 const CANONICAL_MANIFEST_CONTRACTS = Object.freeze([
+  Object.freeze({
+    path: IDENTITY_ACCESS_MANIFEST_PATH,
+    gateId: "integrated-identity-access",
+  }),
   Object.freeze({
     path: MANIFEST_PATH,
     gateId: "integrated-product-checkpoint",
@@ -54,6 +62,7 @@ const CANONICAL_MANIFEST_CONTRACTS = Object.freeze([
   }),
 ]);
 const INTEGRATED_GATE_IDS = new Set([
+  "integrated-identity-access",
   "integrated-product-checkpoint",
   "integrated-preprocessing-language-routing",
 ]);

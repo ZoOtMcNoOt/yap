@@ -59,6 +59,15 @@ const manifestPath = path.join(
 const manifestBytes = readFileSync(manifestPath);
 const manifest = validateIntegratedGateManifest(JSON.parse(manifestBytes.toString("utf8")));
 const manifestSha256 = integratedGateManifestSha256(manifestBytes);
+const identityManifestPath = path.join(
+  repoRoot,
+  "verification",
+  "integrated-identity-access-gate.json",
+);
+const identityManifestBytes = readFileSync(identityManifestPath);
+const identityManifest = validateIntegratedGateManifest(
+  JSON.parse(identityManifestBytes.toString("utf8")),
+);
 const phase6ManifestPath = path.join(
   repoRoot,
   "verification",
@@ -130,6 +139,40 @@ const candidateIds = [
   "integrated.authoritative-history-result",
   "integrated.teardown",
 ];
+const identityCandidateIds = [
+  "frontend.node-runtime",
+  "frontend.dependencies",
+  "frontend.dependency-audit",
+  "frontend.release-contracts",
+  "frontend.provenance",
+  "frontend.unit",
+  "frontend.production-build",
+  "frontend.chromium-runtime",
+  "frontend.identity-access-workflows",
+  "native.format",
+  "native.clippy",
+  "native.tests",
+  "native.server-connector",
+  "native.windows-dependency-boundary",
+  "native.dependency-audit",
+  "desktop.identity-broker",
+  "desktop.wdio-build",
+  "desktop.required-wdio",
+  "server.python-3.12",
+  "server.lint",
+  "target-client.native-resource-and-restart",
+  "target-client.prepared-audio-boundaries",
+  "target-client.rendered-ui-and-microphone",
+  "target-client.teardown",
+  "gb10.provider-duration-and-concurrency",
+  "gb10.provider-cancellation-and-recovery",
+  "gb10.provider-resource-bounds",
+  "gb10.provider-teardown",
+  "integrated.desktop-private-server",
+  "integrated.tunnel-interruption-recovery",
+  "integrated.authoritative-history-result",
+  "integrated.teardown",
+];
 const phase6CandidateIds = [
   "frontend.node-runtime",
   "frontend.dependencies",
@@ -165,6 +208,18 @@ const phase6CandidateIds = [
 const hostedClosureIds = [
   "hosted.ci.frontend",
   "hosted.ci.rust",
+  "hosted.ci.native-wdio",
+  "hosted.ci.server",
+  "hosted.codeql.rust",
+  "hosted.codeql.actions",
+  "hosted.codeql.javascript-typescript",
+  "hosted.codeql.python",
+  "hosted.nsis.disposable-windows",
+];
+const identityHostedClosureIds = [
+  "hosted.ci.frontend",
+  "hosted.ci.rust",
+  "hosted.ci.identity-broker",
   "hosted.ci.native-wdio",
   "hosted.ci.server",
   "hosted.codeql.rust",
@@ -231,6 +286,12 @@ const exactCommands = {
   ],
   "server.lint": ["uv", "run", "--locked", "ruff", "check", "."],
 };
+const identityExactCommands = {
+  ...exactCommands,
+  "frontend.identity-access-workflows": ["pnpm", "test:e2e"],
+  "desktop.identity-broker": ["pnpm", "build:identity"],
+};
+delete identityExactCommands["frontend.browser-workflows"];
 
 function createReceipt(scope) {
   const cells = scope === "candidate" ? manifest.candidateCells : manifest.hostedClosureCells;
@@ -271,6 +332,24 @@ test("integrated gate freezes the complete candidate and hosted child inventorie
   assert.deepEqual(commandCells, exactCommands);
 });
 
+test("identity and access gate freezes its complete behavior inventory", () => {
+  assert.equal(identityManifest.gateId, "integrated-identity-access");
+  assert.deepEqual(
+    identityManifest.candidateCells.map(({ id }) => id),
+    identityCandidateIds,
+  );
+  assert.deepEqual(
+    identityManifest.hostedClosureCells.map(({ id }) => id),
+    identityHostedClosureIds,
+  );
+  const commandCells = Object.fromEntries(
+    identityManifest.candidateCells
+      .filter(({ executor }) => executor === "command")
+      .map(({ id, command }) => [id, command]),
+  );
+  assert.deepEqual(commandCells, identityExactCommands);
+});
+
 test("historical Phase 6 gate identity and bytes remain frozen", () => {
   assert.equal(phase6Manifest.gateId, "integrated-preprocessing-language-routing");
   assert.deepEqual(
@@ -284,9 +363,19 @@ test("historical Phase 6 gate identity and bytes remain frozen", () => {
 });
 
 test("runner manifest selection preserves each canonical gate identity and child set", () => {
+  const identitySelection = loadIntegratedGateManifestSelection(identityManifestPath);
   const productSelection = loadIntegratedGateManifestSelection(manifestPath);
   const phase6Selection = loadIntegratedGateManifestSelection(phase6ManifestPath);
 
+  assert.equal(identitySelection.manifest.gateId, "integrated-identity-access");
+  assert.deepEqual(
+    identitySelection.manifest.candidateCells.map(({ id }) => id),
+    identityCandidateIds,
+  );
+  assert.equal(
+    identitySelection.manifestSha256,
+    integratedGateManifestSha256(identityManifestBytes),
+  );
   assert.equal(productSelection.manifest.gateId, "integrated-product-checkpoint");
   assert.deepEqual(
     productSelection.manifest.candidateCells.map(({ id }) => id),
@@ -431,8 +520,13 @@ test("runner requires an explicit canonical manifest and rejects cross-gate comp
   }
 });
 
-test("both integrated gate runbooks select their exact manifest for begin and complete", () => {
+test("integrated gate runbooks select their exact manifest for begin and complete", () => {
   const contracts = [
+    {
+      runbook: "integrated-identity-access-gate.md",
+      manifestArgument:
+        ".\\verification\\integrated-identity-access-gate.json",
+    },
     {
       runbook: "integrated-product-checkpoint-gate.md",
       manifestArgument:
