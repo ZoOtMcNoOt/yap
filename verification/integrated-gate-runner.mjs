@@ -96,6 +96,14 @@ const IDENTITY_ADMISSION_KEYS = new Set([
   "reservationSha256",
   "statusAuthority",
 ]);
+const LEGACY_RESERVATION_KEYS = new Set([
+  "schemaVersion",
+  "gateId",
+  "checkedHead",
+  "manifestSha256",
+  "evidenceRoot",
+  "reservedAt",
+]);
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message);
@@ -321,6 +329,28 @@ function legacyIntegratedGateReservationPath({
   );
 }
 
+export function validateLegacyIntegratedGateReservationValue(reservation) {
+  requireCondition(
+    reservation
+      && typeof reservation === "object"
+      && !Array.isArray(reservation)
+      && Object.keys(reservation).length === LEGACY_RESERVATION_KEYS.size
+      && Object.keys(reservation).every((key) => LEGACY_RESERVATION_KEYS.has(key)),
+    "Legacy gate admission reservation fields differ from the frozen contract.",
+  );
+  requireCondition(
+    reservation.schemaVersion === 1
+      && INTEGRATED_GATE_IDS.has(reservation.gateId)
+      && SHA40.test(reservation.checkedHead ?? "")
+      && SHA256.test(reservation.manifestSha256 ?? "")
+      && typeof reservation.evidenceRoot === "string"
+      && reservation.evidenceRoot.length > 0
+      && Number.isFinite(Date.parse(reservation.reservedAt)),
+    "Legacy gate admission reservation is invalid.",
+  );
+  return reservation;
+}
+
 function assertLegacyIntegratedGateReservation(admission, runDirectory) {
   const reservationPath = legacyIntegratedGateReservationPath({
     authorityRoot: canonicalLegacyAdmissionAuthorityRoot(),
@@ -328,17 +358,17 @@ function assertLegacyIntegratedGateReservation(admission, runDirectory) {
     checkedHead: admission.checkedHead,
     manifestSha256: admission.manifestSha256,
   });
-  const reservation = readExactJson(
-    reservationPath,
-    "Legacy gate admission reservation",
-    INTEGRATED_GATE_BYTE_LIMITS.runMarkerBytes,
-  ).value;
+  const reservation = validateLegacyIntegratedGateReservationValue(
+    readExactJson(
+      reservationPath,
+      "Legacy gate admission reservation",
+      INTEGRATED_GATE_BYTE_LIMITS.runMarkerBytes,
+    ).value,
+  );
   requireCondition(
-    reservation?.schemaVersion === 1
-      && reservation.gateId === admission.gateId
+    reservation.gateId === admission.gateId
       && reservation.checkedHead === admission.checkedHead
       && reservation.manifestSha256 === admission.manifestSha256
-      && Number.isFinite(Date.parse(reservation.reservedAt))
       && samePath(reservation.evidenceRoot, path.dirname(runDirectory)),
     "Legacy gate admission reservation does not match the admitted attempt.",
   );

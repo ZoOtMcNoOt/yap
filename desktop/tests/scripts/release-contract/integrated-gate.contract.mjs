@@ -28,6 +28,7 @@ import {
   parseIntegratedGateRunnerInvocation,
   runCommandCell,
   reserveIntegratedGateAttemptDirectory,
+  validateLegacyIntegratedGateReservationValue,
 } from "../../../../verification/integrated-gate-runner.mjs";
 import {
   INTEGRATED_GATE_BYTE_LIMITS,
@@ -869,6 +870,27 @@ test("historical gates retain their local deterministic reservation boundary", (
     rmSync(root, { recursive: true, force: true });
     rmSync(authority, { recursive: true, force: true });
   }
+});
+
+test("historical gate reservations retain their exact frozen schema", () => {
+  const reservation = {
+    schemaVersion: 1,
+    gateId: manifest.gateId,
+    checkedHead,
+    manifestSha256,
+    evidenceRoot: "C:\\private-evidence",
+    reservedAt: startedAt,
+  };
+  assert.doesNotThrow(
+    () => validateLegacyIntegratedGateReservationValue(reservation),
+  );
+  assert.throws(
+    () => validateLegacyIntegratedGateReservationValue({
+      ...reservation,
+      unexpected: true,
+    }),
+    /fields differ from the frozen contract/,
+  );
 });
 
 test("integrated gate reservation authority rejects same-root and cross-root retries", () => {
