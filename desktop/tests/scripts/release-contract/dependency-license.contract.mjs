@@ -2,10 +2,24 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  cargoCommandEnvironment,
   verifyShippedDependencyInventory,
   verifyShippedDependencyNotices,
 } from "../shipped-dependency-inventory.mjs";
 import { readRepoFile } from "./workflow-access.mjs";
+
+test("Cargo dependency inventory disables terminal color in machine-readable output", () => {
+  assert.deepEqual(
+    cargoCommandEnvironment({
+      CARGO_TERM_COLOR: "always",
+      PRESERVED_ENVIRONMENT_VALUE: "preserved",
+    }),
+    {
+      CARGO_TERM_COLOR: "never",
+      PRESERVED_ENVIRONMENT_VALUE: "preserved",
+    },
+  );
+});
 
 test("desktop runtime dependencies are exhaustively mapped from exact lockfiles", async () => {
   const inventory = await verifyShippedDependencyInventory();

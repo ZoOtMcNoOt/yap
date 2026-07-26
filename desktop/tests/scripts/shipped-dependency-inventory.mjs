@@ -301,7 +301,7 @@ function javascriptRuntimePackageSources() {
 
 function rustRuntimePackageSources() {
   const executable = process.platform === "win32" ? "cargo.exe" : "cargo";
-  const treeOutput = run(executable, [
+  const treeOutput = runCargo(executable, [
     "tree",
     "--locked",
     "--manifest-path",
@@ -315,7 +315,7 @@ function rustRuntimePackageSources() {
     "--format",
     "{p}\t{l}",
   ]);
-  const metadata = JSON.parse(run(executable, [
+  const metadata = JSON.parse(runCargo(executable, [
     "metadata",
     "--locked",
     "--format-version",
@@ -351,6 +351,19 @@ function rustRuntimePackageSources() {
     });
   }
   return uniqueSortedSources(packages);
+}
+
+export function cargoCommandEnvironment(environment = process.env) {
+  return {
+    ...environment,
+    CARGO_TERM_COLOR: "never",
+  };
+}
+
+function runCargo(executable, args) {
+  return run(executable, args, {
+    env: cargoCommandEnvironment(),
+  });
 }
 
 function packageRecord(ecosystem, name, version, licenseExpression) {
