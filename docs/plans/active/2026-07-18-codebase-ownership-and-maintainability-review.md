@@ -190,6 +190,18 @@ service. This attempt remains failed private evidence and must not be resumed,
 retried, or relabeled. Replacement candidates must fully materialize and parse
 both hardware controllers before admission.
 
+Exact candidate `726256bd48cfde68226c2c6b7c196a53e88fae3e` was admitted once
+after both materialized hardware controllers passed PowerShell or Bash syntax
+validation and a separate no-op transient-service probe passed. Its GB10
+transient service then failed before the lifecycle wrapper started because the
+controller file had no executable shebang; Bash syntax validation did not
+exercise the direct `execve` boundary. The Windows lane never started, no
+hardware evidence destination was written, the collected transient unit
+disappeared, and independent read-back found no retained process, provider
+container, private network, or listener. This attempt remains failed private
+evidence and must not be resumed, retried, or relabeled. Replacement preflight
+must execute the actual controller through the same transient-service boundary.
+
 ## Phase 7 cadence
 
 Phase 7 begins only after Checkpoint B merges. Its implementation remains on a
