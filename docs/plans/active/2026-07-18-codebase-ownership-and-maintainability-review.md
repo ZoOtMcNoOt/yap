@@ -146,6 +146,16 @@ stopped, and independent read-back found no retained local or remote process,
 listener, container, or network. That attempt remains failed private evidence
 and must not be resumed, retried, or relabeled.
 
+Exact candidate `8fdb0057e73f7b3a31f09c3cd11756e043557d59` was admitted
+once and failed closed before the GB10 lifecycle script started. The Windows
+controller passed a CRLF-terminated script path through standard input, so Bash
+resolved the target as `resident-provider-lifecycle-gate.sh\r`. The concurrent
+Windows collector was stopped, and independent read-back found no retained
+local process or remote provider container, private network, or listener. That
+attempt remains failed private evidence and must not be resumed, retried, or
+relabeled. The replacement controller must normalize its generated remote
+script to LF before invoking Bash.
+
 ## Phase 7 cadence
 
 Phase 7 begins only after Checkpoint B merges. Its implementation remains on a
