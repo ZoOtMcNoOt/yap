@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-import shutil
+import os
 import tempfile
 import time
 import unittest
@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from yap_server.jobs import JobServiceError, RecordingJobService
+from yap_server.jobs.job_store import DurableJobState, RecordingJobStore
 from yap_server.pools.batch_asr import BatchAsrPool
 
 from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
@@ -17,6 +18,291 @@ from .service_fixtures import _DelayedCancellationWorker, _Processor, _create_re
 
 
 class RecordingJobRetentionTests(unittest.TestCase):
+    def test_legacy_tombstone_cleanup_has_a_global_entry_budget_and_finishes(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            jobs_root = root / "jobs"
+            tombstone = jobs_root / f".deleting-job-{1:032x}"
+            chunks = tombstone / "chunks"
+            chunks.mkdir(parents=True)
+            for index in range(17):
+                (chunks / f"legacy-{index:04d}.pcm").write_bytes(b"x")
+            (tombstone / "state.json").write_text("{}", encoding="utf-8")
+            state = DurableJobState(
+                pending_deletions={tombstone.name: None},
+            )
+            store = _job_store(root)
+            passes = 0
+
+            with (
+                patch("os.unlink", wraps=os.unlink) as unlink,
+                patch("os.rmdir", wraps=os.rmdir) as rmdir,
+            ):
+                while state.pending_deletions and passes < 20:
+                    unlink.reset_mock()
+                    rmdir.reset_mock()
+                    store.reconcile_pending_deletions(
+                        state,
+                        max_tombstones=1,
+                        max_entries=5,
+                    )
+                    self.assertLessEqual(unlink.call_count + rmdir.call_count, 5)
+                    passes += 1
+
+            self.assertGreater(passes, 1)
+            self.assertEqual(state.pending_deletions, {})
+            self.assertFalse(tombstone.exists())
+
+    def test_incremental_tombstone_cleanup_does_not_follow_directory_links(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            outside = root / "outside"
+            outside.mkdir()
+            protected = outside / "protected.txt"
+            protected.write_text("keep", encoding="utf-8")
+            tombstone = root / "jobs" / f".deleting-job-{4:032x}"
+            tombstone.mkdir(parents=True)
+            link = tombstone / "redirect"
+            try:
+                link.symlink_to(outside, target_is_directory=True)
+            except OSError as error:
+                self.skipTest(f"directory links are unavailable: {error}")
+            state = DurableJobState(
+                pending_deletions={tombstone.name: None},
+            )
+
+            _job_store(root).reconcile_pending_deletions(
+                state,
+                max_tombstones=1,
+                max_entries=4,
+            )
+
+            self.assertTrue(protected.is_file())
+            self.assertEqual(protected.read_text(encoding="utf-8"), "keep")
+            self.assertEqual(state.pending_deletions, {})
+
+    def test_max_chunk_shaped_tombstone_cleanup_is_bounded_and_eventual(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            jobs_root = root / "jobs"
+            tombstone = jobs_root / f".deleting-job-{2:032x}"
+            chunks = tombstone / "chunks"
+            chunks.mkdir(parents=True)
+            for index in range(4096):
+                (chunks / f"{index:08d}.pcm").touch()
+            state = DurableJobState(
+                pending_deletions={tombstone.name: None},
+            )
+            store = _job_store(root)
+            passes = 0
+
+            with (
+                patch("os.unlink", wraps=os.unlink) as unlink,
+                patch("os.rmdir", wraps=os.rmdir) as rmdir,
+            ):
+                while state.pending_deletions and passes < 40:
+                    unlink.reset_mock()
+                    rmdir.reset_mock()
+                    store.reconcile_pending_deletions(
+                        state,
+                        max_tombstones=1,
+                        max_entries=257,
+                    )
+                    self.assertLessEqual(
+                        unlink.call_count + rmdir.call_count,
+                        257,
+                    )
+                    passes += 1
+
+            self.assertGreater(passes, 1)
+            self.assertLess(passes, 40)
+            self.assertEqual(state.pending_deletions, {})
+            self.assertFalse(tombstone.exists())
+
+    def test_expired_job_transition_only_renames_a_max_chunk_shaped_tree(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            clock = {"now": "2026-07-14T21:15:00Z"}
+            service = RecordingJobService(
+                root,
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: clock["now"],
+            )
+            created = service.create(
+                _create_request(retention_expires_at_utc="2026-07-15T00:00:00Z")
+            )
+            job_root = root / "jobs" / created["jobId"]
+            chunks = job_root / "chunks"
+            for index in range(4096):
+                (chunks / f"legacy-{index:08d}.pcm").touch()
+            clock["now"] = "2026-07-16T00:00:00Z"
+
+            with (
+                patch("os.unlink", wraps=os.unlink) as unlink,
+                patch("os.rmdir", wraps=os.rmdir) as rmdir,
+            ):
+                self.assertEqual(service.prune_expired(), 1)
+
+            self.assertEqual(unlink.call_count + rmdir.call_count, 0)
+            self.assertFalse(job_root.exists())
+            tombstones = list((root / "jobs").glob(".deleting-*"))
+            self.assertEqual(len(tombstones), 1)
+            self.assertEqual(len(list((tombstones[0] / "chunks").iterdir())), 4096)
+
+            for _ in range(40):
+                service.prune_expired()
+                if not list((root / "jobs").glob(".deleting-*")):
+                    break
+            self.assertEqual(list((root / "jobs").glob(".deleting-*")), [])
+
+    def test_startup_does_not_eagerly_purge_expired_cancelled_legacy_chunks(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            clock = {"now": "2026-07-14T21:15:00Z"}
+            original = RecordingJobService(
+                root,
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: clock["now"],
+            )
+            created = original.create(
+                _create_request(retention_expires_at_utc="2026-07-15T00:00:00Z")
+            )
+            original.cancel(created["jobId"])
+            chunks = root / "jobs" / created["jobId"] / "chunks"
+            for index in range(257):
+                (chunks / f"legacy-{index:08d}.pcm").touch()
+            clock["now"] = "2026-07-16T00:00:00Z"
+
+            with (
+                patch("os.unlink", wraps=os.unlink) as unlink,
+                patch("os.rmdir", wraps=os.rmdir) as rmdir,
+            ):
+                RecordingJobService(
+                    root,
+                    processor=_Processor(),
+                    supported_languages=("en",),
+                    now=lambda: clock["now"],
+                    startup_worker_cleanup_verified=True,
+                )
+
+            self.assertEqual(unlink.call_count + rmdir.call_count, 0)
+            tombstones = list((root / "jobs").glob(".deleting-*"))
+            self.assertEqual(len(tombstones), 1)
+            self.assertEqual(len(list((tombstones[0] / "chunks").iterdir())), 257)
+
+    def test_startup_and_create_bound_expired_job_transitions_per_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            clock = {"now": "2026-07-14T21:15:00Z"}
+            original = RecordingJobService(
+                root,
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: clock["now"],
+            )
+            expired_ids = []
+            for index in range(5):
+                created = original.create(
+                    _create_request(
+                        session_id=f"s-batch-expired-{index}",
+                        retention_expires_at_utc="2026-07-15T00:00:00Z",
+                    )
+                )
+                original.cancel(created["jobId"])
+                expired_ids.append(created["jobId"])
+            clock["now"] = "2026-07-16T00:00:00Z"
+
+            with patch(
+                "yap_server.jobs.service._MAX_EXPIRED_JOB_TRANSITIONS_PER_PASS",
+                2,
+                create=True,
+            ):
+                restarted = RecordingJobService(
+                    root,
+                    processor=_Processor(),
+                    supported_languages=("en",),
+                    now=lambda: clock["now"],
+                    startup_worker_cleanup_verified=True,
+                )
+                jobs_root = root / "jobs"
+                self.assertEqual(len(list(jobs_root.glob(".deleting-*"))), 2)
+                self.assertEqual(
+                    sum((jobs_root / job_id).exists() for job_id in expired_ids),
+                    3,
+                )
+
+                fresh = restarted.create(
+                    _create_request(
+                        session_id="s-batch-after-bounded-expiry",
+                        retention_expires_at_utc="2026-08-13T21:00:00Z",
+                    )
+                )
+
+                self.assertEqual(fresh["status"], "accepted")
+                self.assertLessEqual(
+                    len(list(jobs_root.glob(".deleting-*"))),
+                    2,
+                )
+                self.assertEqual(
+                    sum((jobs_root / job_id).exists() for job_id in expired_ids),
+                    1,
+                )
+                for _ in range(10):
+                    restarted.prune_expired()
+                    if not any(
+                        (jobs_root / job_id).exists() for job_id in expired_ids
+                    ) and not list(jobs_root.glob(".deleting-*")):
+                        break
+
+            self.assertFalse(
+                any((root / "jobs" / job_id).exists() for job_id in expired_ids)
+            )
+            self.assertEqual(list((root / "jobs").glob(".deleting-*")), [])
+
+    def test_startup_uses_one_bounded_legacy_debt_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tombstone = root / "jobs" / f".deleting-job-{3:032x}"
+            tombstone.mkdir(parents=True)
+            for index in range(20):
+                (tombstone / f"legacy-{index:04d}.bin").touch()
+
+            with (
+                patch(
+                    "yap_server.jobs.job_store._MAX_PENDING_DELETION_ENTRIES_PER_PASS",
+                    4,
+                    create=True,
+                ),
+                patch(
+                    "yap_server.jobs.job_store._MAX_PENDING_DELETION_TOMBSTONES_PER_PASS",
+                    1,
+                    create=True,
+                ),
+                patch("os.unlink", wraps=os.unlink) as unlink,
+                patch("os.rmdir", wraps=os.rmdir) as rmdir,
+            ):
+                RecordingJobService(
+                    root,
+                    processor=_Processor(),
+                    supported_languages=("en",),
+                    now=lambda: "2026-07-14T21:15:00Z",
+                )
+
+            self.assertLessEqual(unlink.call_count + rmdir.call_count, 4)
+            self.assertTrue(tombstone.exists())
+
     def test_expired_terminal_jobs_are_pruned_before_new_intake(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -115,24 +401,26 @@ class RecordingJobRetentionTests(unittest.TestCase):
                 )
             )
             clock["now"] = "2026-07-16T00:00:00Z"
-            original_rmtree = shutil.rmtree
             interrupted = {"raised": False}
 
-            def remove_state_then_fail(path: Path) -> None:
-                candidate = Path(path)
-                if not interrupted["raised"] and candidate.name.startswith(
-                    ".deleting-"
-                ):
-                    (candidate / "state.json").unlink()
+            def remove_state_then_fail(
+                _directory: Path,
+                **details: object,
+            ) -> bool:
+                tombstone = Path(details["tombstone_root"])
+                if not interrupted["raised"]:
+                    (tombstone / "state.json").unlink()
                     interrupted["raised"] = True
                     raise OSError("injected partial retention deletion")
-                original_rmtree(candidate)
+                return False
 
-            with patch(
-                "yap_server.jobs.job_store.shutil.rmtree",
+            self.assertEqual(service.prune_expired(), 1)
+            with patch.object(
+                service._store,
+                "_delete_directory_incrementally",
                 side_effect=remove_state_then_fail,
             ):
-                self.assertEqual(service.prune_expired(), 1)
+                self.assertEqual(service.prune_expired(), 0)
 
             tombstones = list((root / "jobs").glob(".deleting-*"))
             self.assertEqual(len(tombstones), 1)
@@ -260,8 +548,9 @@ class RecordingJobRetentionTests(unittest.TestCase):
 
             with (
                 patch("yap_server.jobs.service._MAX_STORED_JOBS", 2),
-                patch(
-                    "yap_server.jobs.job_store.shutil.rmtree",
+                patch.object(
+                    service._store,
+                    "_delete_directory_incrementally",
                     side_effect=OSError("persistent deletion failure"),
                 ),
             ):
@@ -298,12 +587,13 @@ class RecordingJobRetentionTests(unittest.TestCase):
 
             with (
                 patch(
-                    "yap_server.jobs.job_store._MAX_PENDING_DELETION_RECONCILIATIONS",
+                    "yap_server.jobs.job_store._MAX_PENDING_DELETION_TOMBSTONES_PER_PASS",
                     3,
                     create=True,
                 ),
-                patch(
-                    "yap_server.jobs.job_store.shutil.rmtree",
+                patch.object(
+                    RecordingJobStore,
+                    "_delete_directory_incrementally",
                     side_effect=OSError("persistent deletion failure"),
                 ) as remove,
             ):
@@ -323,3 +613,14 @@ class RecordingJobRetentionTests(unittest.TestCase):
                 len(list(jobs_root.glob(".deleting-*"))),
                 10,
             )
+
+
+def _job_store(root: Path) -> RecordingJobStore:
+    return RecordingJobStore(
+        root,
+        supported_languages=("en",),
+        now=lambda: "2026-07-14T21:15:00Z",
+        startup_worker_cleanup_verified=True,
+        route_resolver=test_asr_route,
+        asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
+    )

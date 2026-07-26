@@ -54,6 +54,7 @@ from .stage_attempts import (
 
 
 _MAX_STORED_JOBS = _DEFAULT_MAX_STORED_JOBS
+_MAX_EXPIRED_JOB_TRANSITIONS_PER_PASS = 8
 _CANCELLATION_ACK_TIMEOUT_SECONDS = 2.0
 
 
@@ -131,7 +132,8 @@ class RecordingJobService:
         )
         with self._lock:
             self._prune_expired_jobs_locked(
-                _utc_timestamp(self._now(), "server clock")
+                _utc_timestamp(self._now(), "server clock"),
+                reconcile_deletion_debt=False,
             )
             self._recover_interrupted_stages_locked()
             self._pending_processing.extend(
@@ -264,7 +266,7 @@ class RecordingJobService:
             try:
                 self._persist_job_locked(job_id)
             except Exception:
-                self._delete_job_locked(job_id)
+                self._store.rollback_unpersisted_create(self._state, job_id)
                 raise
         return deepcopy(projection)
 
@@ -1046,12 +1048,20 @@ class RecordingJobService:
             self._finalize_cancellation_locked(job_id)
             return deepcopy(self._state.jobs[job_id])
 
-    def _finalize_cancellation_locked(self, job_id: str) -> None:
+    def _finalize_cancellation_locked(
+        self,
+        job_id: str,
+        *,
+        purge_private_audio: bool = True,
+    ) -> None:
         job = self._state.jobs[job_id]
         job["status"] = "cancelled"
         job["updatedAtUtc"] = self._now()
         job.pop("error", None)
-        self._purge_private_audio_locked(job_id)
+        if purge_private_audio:
+            self._purge_private_audio_locked(job_id)
+        else:
+            self._persist_job_locked(job_id)
         completion_event = self._completion_events.pop(job_id, None)
         if completion_event is not None:
             completion_event.set()
@@ -1083,8 +1093,14 @@ class RecordingJobService:
                 _utc_timestamp(self._now(), "server clock")
             )
 
-    def _prune_expired_jobs_locked(self, now: datetime) -> int:
-        self._store.reconcile_pending_deletions(self._state)
+    def _prune_expired_jobs_locked(
+        self,
+        now: datetime,
+        *,
+        reconcile_deletion_debt: bool = True,
+    ) -> int:
+        if reconcile_deletion_debt:
+            self._store.reconcile_pending_deletions(self._state)
         expired: list[str] = []
         for job_id, job in self._state.jobs.items():
             metadata = _mapping(self._state.requests[job_id].get("metadata"), "metadata")
@@ -1095,7 +1111,7 @@ class RecordingJobService:
             ) <= now:
                 expired.append(job_id)
         deleted = 0
-        for job_id in expired:
+        for job_id in expired[:_MAX_EXPIRED_JOB_TRANSITIONS_PER_PASS]:
             job = self._state.jobs[job_id]
             if job.get("status") not in _TERMINAL_STATUSES:
                 if job_id not in self._state.cancelled:
@@ -1109,10 +1125,12 @@ class RecordingJobService:
                     else:
                         future.cancel()
                 if job_id in self._futures:
+                    self._state.jobs[job_id] = self._state.jobs.pop(job_id)
                     continue
-                self._finalize_cancellation_locked(job_id)
-            if job.get("status") == "cancelled":
-                self._purge_private_audio_locked(job_id)
+                self._finalize_cancellation_locked(
+                    job_id,
+                    purge_private_audio=False,
+                )
             self._delete_job_locked(job_id)
             deleted += 1
         return deleted
