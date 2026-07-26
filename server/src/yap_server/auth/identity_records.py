@@ -74,6 +74,7 @@ class PrincipalRecord:
     created_at_utc: str
     last_seen_at_utc: str
     access_revoked_after_unix: int
+    access_disabled: bool
 
 
 @dataclass(frozen=True, slots=True)

@@ -338,7 +338,7 @@ Imported canonical PCM WAV preprocessing
 records identity normalization, then optionally runs the explicitly installed,
 hash-verified Silero artifact through the existing `sherpa-onnx` CPU runtime.
 It emits ordered source-sample/source-millisecond advisory intervals or a typed
-bounded error and always retains the complete source. Server schema 5 records
+bounded error and always retains the complete source. Server schema 6 records
 ASR, alignment, and result-publication attempts with restart/retry admission and
 bounded evidence; legacy rows remain readable without invented stage history.
 
@@ -537,20 +537,33 @@ native-client actor. Bounded signing-key retrieval/cache logic validates issuer,
 tenant, audience, time, and key identity before the request adapter creates an
 immutable `(tenant_id, subject_id)` principal. The exact health route remains
 public; every other current API route requires authentication. The identity
-repository owns principal upsert, local access revocation, purpose-control
-records, and redacted append-only audit events. The executable SQLite adapter
-is development evidence, not the selected production database or audit sink.
+repository owns principal upsert, a durable access-disabled latch with explicit
+administrative restore, purpose-control records, and redacted append-only audit
+events. Existing-principal admission is read-only; only the first observed
+principal creates a row, and repository failure returns a stable retryable
+authentication-unavailable response. The executable SQLite adapter is
+development evidence, not the selected production database or audit sink.
 
 The Windows client keeps local/offline dictation independent of authentication.
 For server work, Rust owns one bounded sidecar protocol and token-cache
 projection; the official MSAL.NET public-client adapter owns Authorization
 Code + PKCE, WAM/system-browser interaction, silent refresh, and its OS-protected
 cache. No token or raw MSAL account ID crosses into React or ordinary Yap
-persistence. The native owner hashes the selected MSAL home account ID and
-schema 12 immutably binds every remote job and detached cancellation to that
-local account authority before dispatch. An account switch, sign-out, or attempt
-to attach pre-Phase-7 development work fails before a different bearer can be
-sent.
+persistence. The adapter selects the configured tenant profile and Rust hashes
+its canonical tenant-specific `tenant:oid` identity. Desktop schema 13 writes
+version-2 authority bindings; authenticated schema-12 bindings created from a
+cross-tenant home-account identifier are quarantined and never reinterpreted.
+An account switch, sign-out, or attempt to attach pre-Phase-7 development work
+fails before a different bearer can be sent. Public health describes server
+configuration, while `Ready` additionally requires a bearer-authenticated
+protected-capability probe; 401, 403, and retryable admission failure remain
+distinct states.
+
+Phase 7 carries the authenticated principal through HTTP middleware and the
+job/LID service admission boundary. The current batch adapter still dispatches
+directly to its bounded provider pool. Owner-fair pool/router scheduling,
+durable multi-tenant queuing, and sustained mixed-user capacity remain the
+Phase 10 work defined by ADR 0023 rather than a Phase 7 completion claim.
 
 The branch has focused synthetic signed-token, restart, cross-owner
 non-disclosure, account-switch, package, and protocol evidence. It has not yet
@@ -587,7 +600,7 @@ jobs, admission, cancellation, immutable revisions, and publication.
 
 | Durable boundary | Recovery invariant |
 | --- | --- |
-| Desktop SQLite job ledger | Transactional migration and replay preserve one job identity and accepted remote progress. Schema 8 adds a singleton metadata write probe; schema 9 adds bounded client-stage attempts without fabricating history for legacy rows; schema 10 binds the immutable preflight artifact and persisted LID dispatch identity; schema 11 renames the legacy language disposition; schema 12 binds remote work to one development or hashed MSAL-account authority. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
+| Desktop SQLite job ledger | Transactional migration and replay preserve one job identity and accepted remote progress. Schema 8 adds a singleton metadata write probe; schema 9 adds bounded client-stage attempts without fabricating history for legacy rows; schema 10 binds the immutable preflight artifact and persisted LID dispatch identity; schema 11 renames the legacy language disposition; schema 12 introduces development or hashed account authority; schema 13 writes tenant-principal authority version 2 and quarantines ambiguous older authenticated bindings as version 1. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
 | Recording commit/sidecar/transcript | Only hash-valid, atomically published lineage becomes complete History truth. |
 | Remote result review | Native History derives fixed/dynamic/unknown-language and available/unavailable/legacy-timing summaries only from a verified immutable result, then projects them into the one existing transcript review surface. |
 | Prepared spool/chunks | Only verified Yap-owned paths are cleaned; external sources are preserved. |

@@ -19,6 +19,7 @@ from yap_server.auth.identity_records import (
     utc_timestamp,
     validated_purpose,
 )
+from yap_server.auth.principal_admission import PrincipalAdmissionUnavailable
 from yap_server.auth.identity_storage import (
     append_identity_audit,
     audit_events,
@@ -109,8 +110,9 @@ class SqliteIdentityRepository:
                         display_name_snapshot,
                         created_at_utc,
                         last_seen_at_utc,
-                        access_revoked_after_unix
-                    ) VALUES (?, ?, ?, ?, ?, 0)
+                        access_revoked_after_unix,
+                        access_disabled
+                    ) VALUES (?, ?, ?, ?, ?, 0, 0)
                     """,
                     (
                         principal.tenant_id,
@@ -188,15 +190,33 @@ class SqliteIdentityRepository:
             row = principal_row(self._active_connection(), principal.key)
             if row is None:
                 return False
-            if principal.issued_at_unix is None:
-                return principal.tenant_id == "development-loopback"
-            return principal.issued_at_unix > int(row[5])
+            return self._row_allows_access(principal, row)
+
+    @staticmethod
+    def _row_allows_access(
+        principal: AuthenticatedPrincipal,
+        row: tuple[object, ...],
+    ) -> bool:
+        if bool(row[6]):
+            return False
+        if principal.issued_at_unix is None:
+            return principal.tenant_id == "development-loopback"
+        return principal.issued_at_unix > int(row[5])
 
     def admit_principal(self, principal: AuthenticatedPrincipal) -> bool:
-        """Atomically upsert a valid principal and enforce local revocation."""
-        with self._lock:
-            self.upsert_principal(principal)
-            return self.access_is_allowed(principal)
+        """Create once, then keep the request authorization path read-only."""
+        try:
+            with self._lock:
+                row = principal_row(self._active_connection(), principal.key)
+                if row is None:
+                    self.upsert_principal(principal)
+                    row = principal_row(self._active_connection(), principal.key)
+                    assert row is not None
+                return self._row_allows_access(principal, row)
+        except (sqlite3.Error, RuntimeError) as error:
+            raise PrincipalAdmissionUnavailable(
+                "principal admission repository is unavailable"
+            ) from error
 
     def revoke_access(
         self,
@@ -212,7 +232,8 @@ class SqliteIdentityRepository:
             connection.execute(
                 """
                 UPDATE principal_identity
-                SET access_revoked_after_unix = ?
+                SET access_revoked_after_unix = ?,
+                    access_disabled = 1
                 WHERE tenant_id = ? AND subject_id = ?
                 """,
                 (epoch, target.tenant_id, target.subject_id),
@@ -222,6 +243,37 @@ class SqliteIdentityRepository:
                 actor=actor,
                 target=target,
                 action="principal.access_revoked",
+                outcome="succeeded",
+                occurred_at_utc=occurred_at_utc,
+                epoch=epoch,
+            )
+            return epoch
+
+    def restore_access(
+        self,
+        actor: PrincipalKey,
+        target: PrincipalKey,
+    ) -> int:
+        occurred_at_utc, occurred_at_unix = utc_timestamp(self._clock())
+        self._require_same_tenant(actor, target)
+        with self._lock, self._transaction() as connection:
+            require_principal(connection, actor)
+            target_row = require_principal(connection, target)
+            epoch = max(occurred_at_unix, int(target_row[5]) + 1)
+            connection.execute(
+                """
+                UPDATE principal_identity
+                SET access_revoked_after_unix = ?,
+                    access_disabled = 0
+                WHERE tenant_id = ? AND subject_id = ?
+                """,
+                (epoch, target.tenant_id, target.subject_id),
+            )
+            append_identity_audit(
+                connection,
+                actor=actor,
+                target=target,
+                action="principal.access_restored",
                 outcome="succeeded",
                 occurred_at_utc=occurred_at_utc,
                 epoch=epoch,

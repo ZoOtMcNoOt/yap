@@ -95,10 +95,13 @@ class IdentityRepositoryTests(unittest.TestCase):
                 "created_at_utc",
                 "last_seen_at_utc",
                 "access_revoked_after_unix",
+                "access_disabled",
             },
         )
 
-    def test_access_revocation_rejects_old_tokens_and_allows_newer_tokens(self) -> None:
+    def test_access_revocation_requires_explicit_restore_before_new_tokens_work(
+        self,
+    ) -> None:
         issued_at = int(self.clock().timestamp()) - 1
         user = _principal(issued_at_unix=issued_at)
         self.repository.upsert_principal(user)
@@ -109,11 +112,71 @@ class IdentityRepositoryTests(unittest.TestCase):
         self.assertEqual(epoch, int(self.clock().timestamp()))
         self.assertFalse(self.repository.access_is_allowed(user))
         self.clock.advance()
+        newer = _principal(issued_at_unix=int(self.clock().timestamp()))
+        self.assertFalse(self.repository.access_is_allowed(newer))
+
+        restored_epoch = self.repository.restore_access(self.admin.key, user.key)
+        self.assertEqual(restored_epoch, int(self.clock().timestamp()))
+        self.assertFalse(self.repository.access_is_allowed(newer))
+        self.clock.advance()
         self.assertTrue(
             self.repository.access_is_allowed(
                 _principal(issued_at_unix=int(self.clock().timestamp()))
             )
         )
+
+    def test_existing_principal_admission_is_read_only_and_denials_do_not_write(
+        self,
+    ) -> None:
+        self.repository.upsert_principal(self.user)
+        original = self.repository.principal(self.user.key)
+        self.assertIsNotNone(original)
+        original_events = self.repository.audit_events()
+
+        self.clock.advance(30)
+        self.assertTrue(self.repository.admit_principal(self.user))
+        after_read = self.repository.principal(self.user.key)
+        self.assertEqual(after_read, original)
+        self.assertEqual(self.repository.audit_events(), original_events)
+
+        self.repository.upsert_principal(self.admin)
+        self.repository.revoke_access(self.admin.key, self.user.key)
+        denied_before = self.repository.principal(self.user.key)
+        denied_events = self.repository.audit_events()
+        self.clock.advance(30)
+        self.assertFalse(self.repository.admit_principal(self.user))
+        self.assertEqual(self.repository.principal(self.user.key), denied_before)
+        self.assertEqual(self.repository.audit_events(), denied_events)
+
+    def test_version_one_repository_migrates_to_durable_disabled_access(self) -> None:
+        self.repository.close()
+        with closing(sqlite3.connect(self.path)) as connection:
+            connection.executescript(
+                """
+                DROP TABLE IF EXISTS authorization_audit;
+                DROP TABLE IF EXISTS purpose_grant_revision;
+                DROP TABLE IF EXISTS principal_identity;
+                CREATE TABLE principal_identity (
+                    tenant_id TEXT NOT NULL,
+                    subject_id TEXT NOT NULL,
+                    display_name_snapshot TEXT,
+                    created_at_utc TEXT NOT NULL,
+                    last_seen_at_utc TEXT NOT NULL,
+                    access_revoked_after_unix INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY (tenant_id, subject_id)
+                );
+                PRAGMA user_version = 1;
+                """
+            )
+        self.repository = SqliteIdentityRepository(self.path, clock=self.clock)
+        with closing(sqlite3.connect(self.path)) as connection:
+            version = connection.execute("PRAGMA user_version").fetchone()[0]
+            columns = {
+                row[1]
+                for row in connection.execute("PRAGMA table_info(principal_identity)")
+            }
+        self.assertEqual(version, 2)
+        self.assertIn("access_disabled", columns)
 
     def test_purpose_grant_and_revocation_are_separate_revisioned_controls(
         self,

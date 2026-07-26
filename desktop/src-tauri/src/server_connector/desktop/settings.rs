@@ -20,11 +20,6 @@ pub(in crate::server_connector) async fn save(
     let normalized = config::normalize_settings(&settings, allow_insecure_private_server())
         .map_err(|error| error.to_string())?;
     let current = config::load().map_err(|error| error.to_string())?;
-    if current.authentication.is_some()
-        && current.authentication.as_ref() != normalized.authentication.as_ref()
-    {
-        connector.identity.sign_out().await?;
-    }
     let origin_is_approved = normalized
         .base_url
         .as_deref()
@@ -43,26 +38,35 @@ pub(in crate::server_connector) async fn save(
         None
     };
 
-    let mut inner = connector.inner.lock().expect("server connector poisoned");
-    let generation = connector.invalidate_locked(&mut inner);
+    let (result, effective_authentication) = {
+        let mut inner = connector.inner.lock().expect("server connector poisoned");
+        let generation = connector.invalidate_locked(&mut inner);
 
-    // Revoke the old lease before either durable setting changes or approval
-    // publication. If approval publication fails, the origin stays unauthorized.
-    let save_result = config::save(&normalized).and_then(|saved| {
-        if let Some(origin) = approval_origin.as_deref() {
-            config::approve_origin(origin)?;
-        }
-        Ok(saved)
-    });
-    let result = finish_after_revocation(save_result);
-    let effective = result
-        .as_ref()
-        .ok()
-        .cloned()
-        .or_else(|| config::load().ok())
-        .unwrap_or(current);
-    inner.apply_server_settings(generation, effective.enabled, effective.base_url.clone());
-    emit_transition(&app, &inner.snapshot());
+        // Revoke the old lease before either durable setting changes or approval
+        // publication. If approval publication fails, the origin stays unauthorized.
+        let save_result = config::save(&normalized).and_then(|saved| {
+            if let Some(origin) = approval_origin.as_deref() {
+                config::approve_origin(origin)?;
+            }
+            Ok(saved)
+        });
+        let result = finish_after_revocation(save_result);
+        let effective = result
+            .as_ref()
+            .ok()
+            .cloned()
+            .or_else(|| config::load().ok())
+            .unwrap_or_else(|| current.clone());
+        inner.apply_server_settings(generation, effective.enabled, effective.base_url.clone());
+        emit_transition(&app, &inner.snapshot());
+        (result, effective.authentication)
+    };
+    if current.authentication != effective_authentication {
+        connector
+            .identity
+            .configuration_changed(current.authentication.as_ref())
+            .await;
+    }
     result
 }
 

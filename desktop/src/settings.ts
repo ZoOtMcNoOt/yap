@@ -34,6 +34,8 @@ export function projectServerConnectionTestMessage(state: ServerConnectionState)
       return "Server is offline.";
     case "sign_in_required":
       return "Sign-in required.";
+    case "access_denied":
+      return "Server access denied.";
     case "retrying":
       return "Server reconnecting.";
   }

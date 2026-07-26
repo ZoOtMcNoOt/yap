@@ -82,8 +82,9 @@ baseline, not a production database approval or the Phase 9
 Postgres/pgvector knowledge store. The schema owns:
 
 - minimal principals keyed by `(tenant_id, subject_id)`;
-- principal access revocation epochs, which can immediately stop new Yap
-  operations without claiming instantaneous Entra token revocation;
+- a durable principal access-disabled latch plus revocation epoch, which
+  immediately stops new Yap operations until an explicit administrative
+  restore without claiming instantaneous Entra token revocation;
 - purpose grants with deployment-supplied legal-basis and privacy-review
   references;
 - immutable grant/revoke/access events; and
@@ -126,9 +127,9 @@ scanning, capacity/SLO promotion, and deployment evidence.
       authorization principal-scoped. Migrate legacy development state only to
       the disabled-auth development principal; never attach it to the first
       authenticated user.
-- [x] Carry the authenticated principal through LID and the existing batch
-      admission seam, with non-disclosing cross-owner tests and no Phase 8
-      speaker behavior.
+- [x] Carry the authenticated principal through LID and server job-service
+      admission, with non-disclosing cross-owner tests and no Phase 8 speaker
+      behavior. Owner-fair provider-pool/router admission remains Phase 10.
 - [x] Add the official MSAL native adapter, encrypted cache integration,
       bounded Rust protocol owner, connector-generation token acquisition, and
       bearer injection for capabilities, LID, and batch calls. Preserve local
@@ -142,9 +143,17 @@ scanning, capacity/SLO promotion, and deployment evidence.
       roadmap, executable ownership, current status, provenance, runbooks, and
       IT handoffs with observed behavior. Do not mark biometric, knowledge, or
       enterprise work complete.
-- [ ] Run exactly three bounded antagonistic reviews of the ready executable
+- [x] Repair the initial adversarial findings: tenant-specific MSAL authority,
+      schema-13 quarantine for ambiguous older authenticated bindings,
+      protected readiness, durable access disable/restore, read-only steady
+      principal admission, truthful OpenAPI/health, post-publication settings
+      cleanup, live settings status, accessible async status, and complete
+      self-contained .NET runtime-pack inventory.
+- [x] Run exactly three bounded antagonistic reviews of the ready executable
       branch, repair all P0-P2 correctness/security/privacy/maintainability
       findings, and run focused verification for those repairs.
+- [ ] Obtain bounded read-only closure from the same three reviewers on the
+      exact repair head; do not add a fourth reviewer or consume the full gate.
 - [ ] Freeze one exact candidate and run the complete applicable
       local/native/server/target-client/private-server Phase 7 matrix once.
 - [ ] Open a focused PR; require first-attempt hosted CI, CodeQL, and
@@ -173,6 +182,15 @@ scanning, capacity/SLO promotion, and deployment evidence.
 
 The complete matrix is reserved for the frozen candidate. Focused tests may run
 repeatedly while implementation is changing.
+
+The accepted-review repair head passed the narrow Ruff baseline, 24 focused
+server authorization/health/OpenAPI/owner-flow tests, 129 connector tests plus
+the final access-denied state check, 17 desktop migration tests, 31 ledger
+tests, 35 drain tests, the self-contained broker publish/protocol smoke,
+TypeScript compilation, 16 focused settings/accessibility tests, exact
+dependency inventory (88 JavaScript, 296 Rust, 10 .NET packages, 224 notice
+documents), and all 59 release-contract tests. This is development evidence,
+not the reserved complete Phase 7 matrix.
 
 ## IT, security, privacy, and deployment handoffs
 

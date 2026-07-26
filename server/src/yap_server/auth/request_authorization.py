@@ -6,6 +6,10 @@ from pathlib import Path
 import stat
 
 from yap_server.auth.identity_repository import SqliteIdentityRepository
+from yap_server.auth.principal_admission import (
+    PrincipalAdmissionRepository,
+    PrincipalAdmissionUnavailable,
+)
 from yap_server.auth.principal import AuthenticatedPrincipal
 from yap_server.auth.request_authentication import (
     AuthenticationFailure,
@@ -23,7 +27,7 @@ class RepositoryBackedRequestAuthenticator:
     def __init__(
         self,
         token_authenticator: RequestAuthenticator,
-        identity_repository: SqliteIdentityRepository,
+        identity_repository: PrincipalAdmissionRepository,
     ) -> None:
         if not token_authenticator.authentication_required:
             raise ValueError("repository authorization requires token authentication")
@@ -32,7 +36,11 @@ class RepositoryBackedRequestAuthenticator:
 
     def authenticate(self, authorization: str | None) -> AuthenticatedPrincipal:
         principal = self._token_authenticator.authenticate(authorization)
-        if not self._identity_repository.admit_principal(principal):
+        try:
+            admitted = self._identity_repository.admit_principal(principal)
+        except PrincipalAdmissionUnavailable as error:
+            raise AuthenticationFailure.unavailable() from error
+        if not admitted:
             raise AuthenticationFailure.forbidden(
                 code="PRINCIPAL_ACCESS_REVOKED",
                 message="The authenticated principal is not authorized.",

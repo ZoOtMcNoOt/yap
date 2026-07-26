@@ -9,7 +9,7 @@
     "dotnetGlobalJsonSha256": "248c17bb46fd7ff31402c62dc1870e90005fc1d9bcbc9a31cefcc78691149d76",
     "dotnetProjectSha256": "e8284f68a62cfb15a739a565c1db0b5c3e62be2eee686cd858de34825fb4a885",
     "dotnetPackagesLockSha256": "22731e848000fddbecb50a0bec9b92eaefa8218e4df830c2774c28f211cc67f6",
-    "noticeExemptionsSha256": "e6e7e3e9c79bbbc87fc2c55a7313ea4e09a4249caad6d037a7f6a250a77767af"
+    "noticeExemptionsSha256": "02214522c9906f4cb767b6c49681b855fb5012f8f7a7b04dfe4e41a27866f4a0"
   },
   "packages": {
     "javascript": [
@@ -7361,6 +7361,39 @@
           {
             "sourceFile": "microsoft.identitymodel.abstractions.nuspec",
             "sha256": "4049fb99213889eee0d67fcc3f851732cbd49507b890a9c20fa89f572be22fcc"
+          }
+        ]
+      },
+      {
+        "name": "Microsoft.NETCore.App.Runtime.win-x64",
+        "version": "8.0.29",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE.TXT",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+          }
+        ]
+      },
+      {
+        "name": "Microsoft.Windows.SDK.NET.Ref",
+        "version": "10.0.17763.56",
+        "licenseExpression": "MS-Windows-SDK",
+        "licenseTerms": [
+          "MS-Windows-SDK"
+        ],
+        "reviewDisposition": "reviewed-custom-runtime-license",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The exact self-contained broker runtime-pack manifest includes this Microsoft Windows SDK reference package; its signed package metadata points to the applicable Windows SDK license terms and the installed package has no standalone notice file.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "microsoft.windows.sdk.net.ref.nuspec",
+            "sha256": "c28821d5a7d51c81b9e0af1440b2127bf35529b380cc723e574e6f2aae488476"
           }
         ]
       },

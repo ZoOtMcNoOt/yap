@@ -132,7 +132,7 @@ internal static class Program
         var result = await application
             .AcquireTokenSilent([request.ApiScope], account)
             .ExecuteAsync();
-        return BrokerResponse.Token(request.RequestId, result);
+        return BrokerResponse.Token(request, result);
     }
 
     private static async Task<BrokerResponse> SignInInteractivelyAsync(
@@ -153,7 +153,7 @@ internal static class Program
                 new IntPtr(checked((long)request.ParentWindowHandle.Value)));
         }
         var result = await acquisition.ExecuteAsync();
-        return BrokerResponse.SignedIn(request.RequestId, result);
+        return BrokerResponse.SignedIn(request, result);
     }
 
     private static async Task<BrokerResponse> SignOutAsync(
@@ -177,9 +177,39 @@ internal static class Program
         {
             return BrokerResponse.InteractionRequired(request.RequestId);
         }
-        return accountList.SingleOrDefault() is { } account
-            ? BrokerResponse.SignedInStatus(request.RequestId, account)
-            : BrokerResponse.SignedOutStatus(request.RequestId);
+        var account = accountList.SingleOrDefault();
+        if (account is null)
+        {
+            return BrokerResponse.SignedOutStatus(request.RequestId);
+        }
+        return TryTenantAccountId(account, request.TenantId, out var accountId)
+            ? BrokerResponse.SignedInStatus(request.RequestId, accountId)
+            : BrokerResponse.InteractionRequired(request.RequestId);
+    }
+
+    private static bool TryTenantAccountId(
+        IAccount account,
+        string tenantId,
+        out string accountId)
+    {
+        accountId = string.Empty;
+        if (!Guid.TryParse(tenantId, out var normalizedTenant))
+        {
+            return false;
+        }
+        var profiles = account
+            .GetTenantProfiles()
+            .Where(profile =>
+                Guid.TryParse(profile.TenantId, out var profileTenant)
+                && profileTenant == normalizedTenant)
+            .ToArray();
+        if (profiles.Length != 1
+            || !Guid.TryParse(profiles[0].Oid, out var objectId))
+        {
+            return false;
+        }
+        accountId = $"{normalizedTenant:D}:{objectId:D}";
+        return accountId.Length <= MaximumIdentityValueCharacters;
     }
 
     private sealed record BrokerRequest(
@@ -229,23 +259,27 @@ internal static class Program
         string? AccountId,
         string? ErrorCode)
     {
-        public static BrokerResponse Token(string requestId, AuthenticationResult result) =>
-            WithToken(requestId, BrokerOutcome.Token, result);
+        public static BrokerResponse Token(
+            BrokerRequest request,
+            AuthenticationResult result) =>
+            WithToken(request, BrokerOutcome.Token, result);
 
-        public static BrokerResponse SignedIn(string requestId, AuthenticationResult result) =>
-            WithToken(requestId, BrokerOutcome.SignedIn, result);
+        public static BrokerResponse SignedIn(
+            BrokerRequest request,
+            AuthenticationResult result) =>
+            WithToken(request, BrokerOutcome.SignedIn, result);
 
         public static BrokerResponse SignedOut(string requestId) =>
             WithoutToken(requestId, BrokerOutcome.SignedOut);
 
-        public static BrokerResponse SignedInStatus(string requestId, IAccount account) =>
+        public static BrokerResponse SignedInStatus(string requestId, string accountId) =>
             new(
                 Program.SchemaVersion,
                 requestId,
                 BrokerOutcome.SignedInStatus,
                 null,
                 null,
-                RequiredAccountId(account),
+                accountId,
                 null);
 
         public static BrokerResponse SignedOutStatus(string requestId) =>
@@ -270,16 +304,16 @@ internal static class Program
                 "IDENTITY_PROVIDER_UNAVAILABLE");
 
         private static BrokerResponse WithToken(
-            string requestId,
+            BrokerRequest request,
             BrokerOutcome outcome,
             AuthenticationResult result) =>
             new(
                 Program.SchemaVersion,
-                requestId,
+                request.RequestId,
                 outcome,
                 result.AccessToken,
                 result.ExpiresOn.ToUnixTimeSeconds(),
-                RequiredAccountId(result.Account),
+                RequiredTenantAccountId(result.Account, request.TenantId),
                 null);
 
         private static BrokerResponse WithoutToken(
@@ -288,14 +322,13 @@ internal static class Program
             string? errorCode = null) =>
             new(Program.SchemaVersion, requestId, outcome, null, null, null, errorCode);
 
-        private static string RequiredAccountId(IAccount? account)
+        private static string RequiredTenantAccountId(
+            IAccount? account,
+            string tenantId)
         {
-            var identifier = account?.HomeAccountId?.Identifier;
-            return identifier is { Length: > 0 and <= MaximumIdentityValueCharacters }
-                && identifier.All(character =>
-                    character <= 0x7f && !char.IsWhiteSpace(character)
-                    && !char.IsControl(character))
-                ? identifier
+            return account is not null
+                && Program.TryTenantAccountId(account, tenantId, out var accountId)
+                ? accountId
                 : throw new InvalidOperationException("MSAL did not return an account identity.");
         }
 

@@ -173,10 +173,6 @@ impl RequestAuthorization {
         Ok(request.header(AUTHORIZATION, header))
     }
 
-    pub(crate) async fn has_access_token(&self) -> Result<bool, RequestAuthorizationError> {
-        self.source.access().await.map(|access| access.is_some())
-    }
-
     fn matches_expected_account(&self, access: Option<&AuthorizedAccess>) -> bool {
         match (&self.expected_account, access) {
             (None, _) => true,

@@ -11,6 +11,7 @@ use crate::server_connector::{config::CURRENT_SCHEMA_VERSION, RequestAuthorizati
 struct FakeIdentityAdapter {
     calls: AtomicUsize,
     silent_outcome: IdentityOutcome,
+    status_account: StandardMutex<String>,
 }
 
 impl FakeIdentityAdapter {
@@ -18,7 +19,12 @@ impl FakeIdentityAdapter {
         Self {
             calls: AtomicUsize::new(0),
             silent_outcome,
+            status_account: StandardMutex::new("test-account.tenant".into()),
         }
+    }
+
+    fn set_status_account(&self, account_id: &str) {
+        *self.status_account.lock().unwrap() = account_id.into();
     }
 }
 
@@ -31,6 +37,10 @@ impl IdentityAdapter for FakeIdentityAdapter {
             IdentityOperation::SignOut => IdentityOutcome::SignedOut,
             IdentityOperation::GetStatus => IdentityOutcome::SignedInStatus,
         };
+        let account_id = match request.operation {
+            IdentityOperation::GetStatus => self.status_account.lock().unwrap().clone(),
+            _ => "test-account.tenant".into(),
+        };
         Box::pin(async move {
             let token_outcome =
                 matches!(outcome, IdentityOutcome::Token | IdentityOutcome::SignedIn);
@@ -41,7 +51,7 @@ impl IdentityAdapter for FakeIdentityAdapter {
                 outcome,
                 access_token: token_outcome.then(|| Zeroizing::new("test-token".into())),
                 expires_at_unix_seconds: token_outcome.then(|| now_unix_seconds() + 3_600),
-                account_id: signed_in.then(|| "test-account.tenant".into()),
+                account_id: signed_in.then_some(account_id),
                 error_code: None,
             })
         })
@@ -119,6 +129,24 @@ fn identity_reconfiguration_invalidates_the_in_memory_token() {
 }
 
 #[test]
+fn published_identity_reconfiguration_clears_memory_and_signs_out_the_old_configuration() {
+    let adapter = Arc::new(FakeIdentityAdapter::new(IdentityOutcome::Token));
+    let previous = entra_settings(1);
+    let settings = Arc::new(StandardMutex::new(server_settings(Some(previous.clone()))));
+    let manager = manager(adapter.clone(), settings);
+
+    assert!(tauri::async_runtime::block_on(manager.access_token())
+        .unwrap()
+        .is_some());
+    tauri::async_runtime::block_on(manager.configuration_changed(Some(&previous)));
+
+    assert!(tauri::async_runtime::block_on(manager.state.lock())
+        .cached_token
+        .is_none());
+    assert_eq!(adapter.calls.load(Ordering::SeqCst), 2);
+}
+
+#[test]
 fn absent_configuration_keeps_local_operation_unauthenticated() {
     let adapter = Arc::new(FakeIdentityAdapter::new(IdentityOutcome::Token));
     let settings = Arc::new(StandardMutex::new(server_settings(None)));
@@ -158,6 +186,24 @@ fn interactive_sign_in_status_and_sign_out_share_one_native_owner() {
     assert!(status.signed_in);
     tauri::async_runtime::block_on(manager.sign_out()).unwrap();
     assert_eq!(adapter.calls.load(Ordering::SeqCst), 3);
+}
+
+#[test]
+fn status_clears_a_cached_token_when_the_broker_account_changes() {
+    let adapter = Arc::new(FakeIdentityAdapter::new(IdentityOutcome::Token));
+    let settings = Arc::new(StandardMutex::new(server_settings(Some(entra_settings(1)))));
+    let manager = manager(adapter.clone(), settings);
+
+    assert!(tauri::async_runtime::block_on(manager.access_token())
+        .unwrap()
+        .is_some());
+    adapter.set_status_account("different-account.tenant");
+    let status = tauri::async_runtime::block_on(manager.status()).unwrap();
+
+    assert!(status.signed_in);
+    assert!(tauri::async_runtime::block_on(manager.state.lock())
+        .cached_token
+        .is_none());
 }
 
 #[test]

@@ -198,6 +198,7 @@ fn restart_database_has_exact_metadata_surface_and_no_payload_content() {
                 ("create_request_json", "TEXT"),
                 ("queued_at_ms", "INTEGER"),
                 ("remote_authority_binding", "TEXT"),
+                ("remote_authority_version", "INTEGER"),
             ][..],
         ),
         (
@@ -283,6 +284,7 @@ fn restart_database_has_exact_metadata_surface_and_no_payload_content() {
                 ("language_decision_locked", "INTEGER"),
                 ("client_stage_history_complete", "INTEGER"),
                 ("remote_authority_binding", "TEXT"),
+                ("remote_authority_version", "INTEGER"),
             ][..],
         ),
         (

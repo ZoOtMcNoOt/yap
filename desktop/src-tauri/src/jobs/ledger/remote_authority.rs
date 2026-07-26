@@ -17,17 +17,22 @@ impl JobLedger {
         validate_remote_authority(authority)?;
         let mut connection = self.lock()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let current: (String, Option<String>) = transaction
+        let current: (String, Option<String>, i64) = transaction
             .query_row(
-                "SELECT route, remote_authority_binding FROM recording_jobs WHERE job_id = ?1",
+                "SELECT route, remote_authority_binding, remote_authority_version FROM recording_jobs WHERE job_id = ?1",
                 [job_id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
             )
             .optional()?
             .ok_or_else(|| JobLedgerError::NotFound(job_id.into()))?;
         if RecordingRoute::from_db(&current.0)? != RecordingRoute::ServerBatch {
             return Err(JobLedgerError::InvalidRecord(
                 "remote authority belongs only to server-batch work",
+            ));
+        }
+        if current.2 != 2 {
+            return Err(JobLedgerError::InvalidRecord(
+                "legacy account-only remote authority is quarantined",
             ));
         }
         match current.1.as_deref() {
@@ -54,7 +59,7 @@ impl JobLedger {
             ));
         }
         let changed = transaction.execute(
-            "UPDATE recording_jobs SET remote_authority_binding = ?1 WHERE job_id = ?2 AND remote_authority_binding IS NULL",
+            "UPDATE recording_jobs SET remote_authority_binding = ?1, remote_authority_version = 2 WHERE job_id = ?2 AND remote_authority_binding IS NULL AND remote_authority_version = 2",
             params![authority, job_id],
         )?;
         if changed != 1 {
@@ -68,17 +73,22 @@ impl JobLedger {
 
     pub(crate) fn remote_authority(&self, job_id: &str) -> Result<String, JobLedgerError> {
         let connection = self.lock()?;
-        connection
+        let (authority, version): (Option<String>, i64) = connection
             .query_row(
-                "SELECT remote_authority_binding FROM recording_jobs WHERE job_id = ?1",
+                "SELECT remote_authority_binding, remote_authority_version FROM recording_jobs WHERE job_id = ?1",
                 [job_id],
-                |row| row.get::<_, Option<String>>(0),
+                |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .optional()?
-            .ok_or_else(|| JobLedgerError::NotFound(job_id.into()))?
-            .ok_or(JobLedgerError::InvalidRecord(
-                "remote work has no server-account binding",
-            ))
+            .ok_or_else(|| JobLedgerError::NotFound(job_id.into()))?;
+        if version != 2 {
+            return Err(JobLedgerError::InvalidRecord(
+                "legacy account-only remote authority is quarantined",
+            ));
+        }
+        authority.ok_or(JobLedgerError::InvalidRecord(
+            "remote work has no server-account binding",
+        ))
     }
 }
 

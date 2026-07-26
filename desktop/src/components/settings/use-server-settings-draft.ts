@@ -107,16 +107,20 @@ export function useServerSettingsDraft(open: boolean): ServerSettingsDraftContro
       setTenantId(saved.authentication?.tenantId ?? "");
       setClientId(saved.authentication?.clientId ?? "");
       setApiScope(saved.authentication?.apiScope ?? "");
-      setIdentity((current) => ({
-        configured: saved.authentication !== null,
-        signedIn: saved.authentication === null ? false : current.signedIn,
-      }));
       setNotice("Saved.");
       return saved;
     } catch (saveError) {
       setError(terseSettingsError(saveError, "Could not save server settings."));
       return null;
     } finally {
+      try {
+        setIdentity(await serverIdentityStatus());
+      } catch (statusError) {
+        setError((current) =>
+          current
+          || terseSettingsError(statusError, "Could not refresh server sign-in status.")
+        );
+      }
       setPending(false);
     }
   }

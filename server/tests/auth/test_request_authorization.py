@@ -11,6 +11,7 @@ from yap_server.auth import (
     RepositoryBackedRequestAuthenticator,
 )
 from yap_server.auth.identity_repository import SqliteIdentityRepository
+from yap_server.auth.principal_admission import PrincipalAdmissionUnavailable
 
 
 TENANT_ID = "11111111-1111-4111-8111-111111111111"
@@ -43,7 +44,7 @@ def _principal(subject_id: str, issued_at_unix: int) -> AuthenticatedPrincipal:
 
 
 class RepositoryBackedRequestAuthenticatorTests(unittest.TestCase):
-    def test_request_upserts_principal_and_local_revocation_blocks_old_token(
+    def test_request_upserts_principal_and_local_revocation_blocks_all_tokens(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -86,12 +87,34 @@ class RepositoryBackedRequestAuthenticatorTests(unittest.TestCase):
                     _TokenAuthenticator(newer),
                     repository,
                 )
+                with self.assertRaises(AuthenticationFailure) as still_denied:
+                    refreshed.authenticate("Bearer synthetic")
                 self.assertEqual(
-                    refreshed.authenticate("Bearer synthetic"),
-                    newer,
+                    still_denied.exception.code,
+                    "PRINCIPAL_ACCESS_REVOKED",
                 )
             finally:
                 repository.close()
+
+    def test_repository_unavailability_is_a_stable_fail_closed_response(self) -> None:
+        class _UnavailableRepository:
+            def admit_principal(self, principal: AuthenticatedPrincipal) -> bool:
+                del principal
+                raise PrincipalAdmissionUnavailable("synthetic outage")
+
+        authenticator = RepositoryBackedRequestAuthenticator(
+            _TokenAuthenticator(_principal(SUBJECT_ID, 1)),
+            _UnavailableRepository(),
+        )
+
+        with self.assertRaises(AuthenticationFailure) as unavailable:
+            authenticator.authenticate("Bearer synthetic")
+        self.assertEqual(unavailable.exception.status, 503)
+        self.assertEqual(
+            unavailable.exception.code,
+            "AUTHENTICATION_UNAVAILABLE",
+        )
+        self.assertTrue(unavailable.exception.retryable)
 
     def test_repository_authorization_rejects_disabled_token_authentication(
         self,

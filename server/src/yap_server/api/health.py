@@ -27,8 +27,8 @@ def health(
         api_version="1",
         auth="required" if authentication_required else "not_configured",
         capabilities=ServerCapabilities(
-            batch_jobs=True,
+            batch_jobs=batch_jobs,
             live_streaming=False,
-            job_status=True,
+            job_status=batch_jobs,
         ),
     ).to_wire()

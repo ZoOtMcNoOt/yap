@@ -24,6 +24,10 @@ package's exact declared license expression rather than collapsing alternatives.
 inside the official WAM broker dependency. Its exact installed terms are bound
 in `SHIPPED_DEPENDENCY_NOTICES.json`; redistribution outside an approved
 organizational deployment remains subject to legal review of those terms.
+`MS-Windows-SDK` identifies the Microsoft Windows SDK terms referenced by the
+exact SDK reference runtime-pack entry in the self-contained broker manifest.
+Its signed installed package metadata is bound in the notice bundle, and
+redistribution remains subject to organizational legal review.
 
 This dependency inventory is separate from direct source-adaptation provenance
 in `THIRD_PARTY_PROVENANCE.json`. Package-manager metadata does not authorize

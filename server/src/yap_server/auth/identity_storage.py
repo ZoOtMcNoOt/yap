@@ -17,12 +17,23 @@ from yap_server.auth.identity_records import (
 from yap_server.auth.principal import PrincipalKey
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def create_identity_schema(connection: sqlite3.Connection) -> None:
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        _create_identity_schema(connection)
+    except BaseException:
+        connection.rollback()
+        raise
+    else:
+        connection.commit()
+
+
+def _create_identity_schema(connection: sqlite3.Connection) -> None:
     user_version = int(connection.execute("PRAGMA user_version").fetchone()[0])
-    if user_version not in {0, SCHEMA_VERSION}:
+    if user_version not in {0, 1, SCHEMA_VERSION}:
         raise ValueError("identity repository schema is unsupported")
     connection.execute(
         """
@@ -33,10 +44,20 @@ def create_identity_schema(connection: sqlite3.Connection) -> None:
             created_at_utc TEXT NOT NULL,
             last_seen_at_utc TEXT NOT NULL,
             access_revoked_after_unix INTEGER NOT NULL DEFAULT 0,
+            access_disabled INTEGER NOT NULL DEFAULT 0
+                CHECK (access_disabled IN (0, 1)),
             PRIMARY KEY (tenant_id, subject_id)
         )
         """
     )
+    if user_version == 1:
+        connection.execute(
+            """
+            ALTER TABLE principal_identity
+            ADD COLUMN access_disabled INTEGER NOT NULL DEFAULT 0
+                CHECK (access_disabled IN (0, 1))
+            """
+        )
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS purpose_grant_revision (
@@ -74,7 +95,8 @@ def principal_row(
             display_name_snapshot,
             created_at_utc,
             last_seen_at_utc,
-            access_revoked_after_unix
+            access_revoked_after_unix,
+            access_disabled
         FROM principal_identity
         WHERE tenant_id = ? AND subject_id = ?
         """,
@@ -89,6 +111,7 @@ def principal_record(row: tuple[object, ...]) -> PrincipalRecord:
         created_at_utc=str(row[3]),
         last_seen_at_utc=str(row[4]),
         access_revoked_after_unix=int(row[5]),
+        access_disabled=bool(row[6]),
     )
 
 

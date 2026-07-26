@@ -90,7 +90,7 @@ any third party.
 CREATE TABLE principal_identity (
     tenant_id            TEXT NOT NULL,
     subject_id           TEXT NOT NULL,
-    display_name_snapshot TEXT NOT NULL,
+    display_name_snapshot TEXT,
     updated_at           TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (tenant_id, subject_id)
 );
@@ -147,7 +147,15 @@ CREATE TABLE speaker_profile (
 - Optional email, department, job-title, and Graph claims are fetched on demand or stored in separate purpose-bound records with their own retention. They are not copied into the base principal merely because Entra exposes them.
 - All server jobs, chunks, results, profiles, object keys, and audit events are namespaced by the token-derived tenant and owner. A client-provided owner identifier is never authoritative.
 
-The minimum sign-in record is `(tenant_id, subject_id, display_name_snapshot, updated_at)`. Optional Graph claims are not persisted by default. If an enabled feature needs a short-lived claim cache, its default TTL is 24 hours and its schema records the purpose and expiry. Authorization material compiled under ADR 0017 follows that ledger's separately reviewed lifecycle. Principal snapshots are reviewed on sign-in and removed through account-offboarding/deletion policy; they are not an indefinite directory mirror.
+The minimum sign-in record is `(tenant_id, subject_id, updated_at)`.
+`display_name_snapshot` is optional because a valid Yap API access token need
+not carry a display name. Optional Graph claims are not fetched or persisted by
+default. If an enabled feature later needs a short-lived claim cache, its
+default TTL is 24 hours and its schema records the purpose and expiry.
+Authorization material compiled under ADR 0017 follows that ledger's separately
+reviewed lifecycle. Principal snapshots are reviewed on sign-in and removed
+through account-offboarding/deletion policy; they are not an indefinite
+directory mirror.
 
 The purpose-grant row records the deployment-approved legal-basis code, any required special-category condition, and a reference to the supporting privacy assessment. Yap does not infer those values. Explicit enrollment remains a product requirement, but clicking its button is not itself proof that consent is a valid legal basis. In employment settings, the deployment privacy review must determine whether consent can be freely given and select an applicable lawful basis before identity matching is enabled.
 
@@ -250,10 +258,18 @@ account already selected through Yap's interactive flow; it does not silently
 adopt the ambient Windows account. Rust bounds request/response bytes, suppresses
 sidecar stderr, owns timeouts and child teardown, keeps access tokens in
 zeroizing memory, and marks the outbound authorization header sensitive.
+The adapter resolves the configured tenant's `TenantProfile.Oid` and returns
+only the canonical tenant-specific `tenant:oid` account identity; it does not
+use the cross-tenant MSAL home-account identifier as resource ownership.
+Desktop ledger schema 13 therefore writes version-2 tenant-principal authority
+bindings and quarantines pre-repair authenticated schema-12 bindings instead
+of guessing their tenant subject.
 `Microsoft.Identity.Client.NativeInterop` is transitively required by the WAM
 broker and uses Microsoft-specific license terms. The repository records those
 exact terms; distribution still requires the named legal/provenance review and
-is not inferred from a successful local build.
+is not inferred from a successful local build. Release inventory is generated
+from the produced self-contained broker dependency manifest, including its
+exact .NET runtime-pack and Windows SDK reference identities.
 
 ### Token validation (`yap-server`)
 
@@ -273,6 +289,8 @@ is not inferred from a successful local build.
 - [x] Tenant-scoped job/LID/idempotency/artifact ownership with legacy-unowned quarantine
 - [x] Versioned purpose-control, access-revocation, and redacted audit records
 - [x] Synthetic two-principal signed-token/restart/account-switch gate
+- [x] Protected readiness probe, tenant-specific desktop authority, and
+      quarantine of ambiguous pre-repair authenticated bindings
 
 These checks describe focused executable implementation on the active Phase 7
 branch. They do not claim that the frozen phase matrix, adversarial review,

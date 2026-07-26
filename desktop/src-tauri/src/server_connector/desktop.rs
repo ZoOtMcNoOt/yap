@@ -65,7 +65,14 @@ impl ServerConnector {
             config::origin_is_approved,
         )
         .await;
-        let result = resolve_health_authentication(result, &self.authorization).await;
+        let result = resolve_health_authentication(
+            result,
+            &self.client,
+            &self.authorization,
+            &base_url,
+            allow_insecure_private_server(),
+        )
+        .await;
         let retry_app = app.clone();
         self.accept_health_result_with(
             generation,
@@ -112,23 +119,63 @@ where
 
 async fn resolve_health_authentication(
     result: client::HealthCheckResult,
+    http_client: &reqwest::Client,
     authorization: &super::authorization::RequestAuthorization,
+    base_url: &str,
+    allow_insecure_private: bool,
 ) -> client::HealthCheckResult {
-    let access_token_available = authorization.has_access_token().await.unwrap_or(false);
-    project_authenticated_health(result, access_token_available)
+    if !matches!(
+        result,
+        client::HealthCheckResult::SignInRequired {
+            api_version: Some(_),
+            ..
+        }
+    ) {
+        return result;
+    }
+    let access = client::verify_protected_access(
+        http_client,
+        authorization,
+        base_url,
+        allow_insecure_private,
+    )
+    .await;
+    project_authenticated_health(result, access)
 }
 
 fn project_authenticated_health(
     result: client::HealthCheckResult,
-    access_token_available: bool,
+    access: client::ProtectedAccessResult,
 ) -> client::HealthCheckResult {
     match result {
         client::HealthCheckResult::SignInRequired {
             api_version: Some(api_version),
             capabilities,
-        } if access_token_available => client::HealthCheckResult::Ready {
-            api_version,
-            capabilities,
+        } => match access {
+            client::ProtectedAccessResult::Accepted => client::HealthCheckResult::Ready {
+                api_version,
+                capabilities,
+            },
+            client::ProtectedAccessResult::SignInRequired => {
+                client::HealthCheckResult::SignInRequired {
+                    api_version: Some(api_version),
+                    capabilities,
+                }
+            }
+            client::ProtectedAccessResult::AccessDenied => {
+                client::HealthCheckResult::AccessDenied {
+                    api_version: Some(api_version),
+                    capabilities,
+                }
+            }
+            client::ProtectedAccessResult::Unavailable {
+                error_code,
+                retryable,
+            } => client::HealthCheckResult::Offline {
+                api_version: Some(api_version),
+                error_code,
+                retryable,
+            },
         },
         result => result,
     }
@@ -167,7 +214,14 @@ async fn run_scheduled_retry<R: tauri::Runtime>(
         config::origin_is_approved,
     )
     .await;
-    let result = resolve_health_authentication(result, &connector.authorization).await;
+    let result = resolve_health_authentication(
+        result,
+        &connector.client,
+        &connector.authorization,
+        &base_url,
+        allow_insecure_private_server(),
+    )
+    .await;
     let retry_app = app.clone();
     connector.accept_health_result_with(
         generation,
@@ -292,7 +346,10 @@ pub(crate) fn last_known_asr_capabilities(
 #[cfg(test)]
 mod authentication_projection_tests {
     use super::project_authenticated_health;
-    use crate::server_connector::{client::HealthCheckResult, state::ServerCapabilities};
+    use crate::server_connector::{
+        client::{HealthCheckResult, ProtectedAccessResult},
+        state::ServerCapabilities,
+    };
 
     fn protected_health() -> HealthCheckResult {
         HealthCheckResult::SignInRequired {
@@ -308,7 +365,7 @@ mod authentication_projection_tests {
     #[test]
     fn token_promotes_public_protected_health_to_ready() {
         assert!(matches!(
-            project_authenticated_health(protected_health(), true),
+            project_authenticated_health(protected_health(), ProtectedAccessResult::Accepted),
             HealthCheckResult::Ready {
                 api_version,
                 capabilities,
@@ -322,7 +379,10 @@ mod authentication_projection_tests {
     #[test]
     fn missing_token_keeps_public_protected_health_signed_out() {
         assert!(matches!(
-            project_authenticated_health(protected_health(), false),
+            project_authenticated_health(
+                protected_health(),
+                ProtectedAccessResult::SignInRequired,
+            ),
             HealthCheckResult::SignInRequired {
                 api_version: Some(api_version),
                 ..
@@ -338,12 +398,44 @@ mod authentication_projection_tests {
                     api_version: None,
                     capabilities: ServerCapabilities::default(),
                 },
-                true,
+                ProtectedAccessResult::Accepted,
             ),
             HealthCheckResult::SignInRequired {
                 api_version: None,
                 ..
             }
+        ));
+    }
+
+    #[test]
+    fn denied_access_is_distinct_from_missing_sign_in() {
+        assert!(matches!(
+            project_authenticated_health(
+                protected_health(),
+                ProtectedAccessResult::AccessDenied,
+            ),
+            HealthCheckResult::AccessDenied {
+                api_version: Some(api_version),
+                ..
+            } if api_version == "1"
+        ));
+    }
+
+    #[test]
+    fn unavailable_admission_is_retryable_without_claiming_readiness() {
+        assert!(matches!(
+            project_authenticated_health(
+                protected_health(),
+                ProtectedAccessResult::Unavailable {
+                    error_code: "AUTHENTICATION_UNAVAILABLE",
+                    retryable: true,
+                },
+            ),
+            HealthCheckResult::Offline {
+                api_version: Some(api_version),
+                error_code: "AUTHENTICATION_UNAVAILABLE",
+                retryable: true,
+            } if api_version == "1"
         ));
     }
 }

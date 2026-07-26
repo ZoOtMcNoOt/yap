@@ -154,13 +154,34 @@ impl NativeIdentityManager {
                 signed_in: false,
             });
         };
+        let mut state = self.state.lock().await;
         let response = self
             .execute(IdentityOperation::GetStatus, &configuration, None)
             .await
             .map_err(project_identity_error)?;
+        let signed_in = if response.outcome == IdentityOutcome::SignedInStatus {
+            let current_binding = account_binding(
+                response
+                    .account_id
+                    .as_deref()
+                    .ok_or("Microsoft Entra returned an invalid account identity.")?,
+            )
+            .map_err(|_| "Microsoft Entra returned an invalid account identity.")?;
+            if state
+                .cached_token
+                .as_ref()
+                .is_some_and(|cached| cached.account_binding != current_binding)
+            {
+                state.cached_token = None;
+            }
+            true
+        } else {
+            state.cached_token = None;
+            false
+        };
         Ok(IdentitySessionStatus {
             configured: true,
-            signed_in: matches!(response.outcome, IdentityOutcome::SignedInStatus),
+            signed_in,
         })
     }
 
@@ -227,6 +248,23 @@ impl NativeIdentityManager {
             return Err("Microsoft Entra sign-out did not complete.".into());
         }
         Ok(())
+    }
+
+    pub(super) async fn configuration_changed(&self, previous: Option<&MicrosoftEntraSettings>) {
+        let mut state = self.state.lock().await;
+        state.cached_token = None;
+        let Some(previous) = previous else {
+            return;
+        };
+        match self.execute(IdentityOperation::SignOut, previous, None).await {
+            Ok(response) if response.outcome == IdentityOutcome::SignedOut => {}
+            Ok(_) => crate::diagnostics::log(
+                "previous Microsoft Entra session cleanup did not complete after configuration change",
+            ),
+            Err(_) => crate::diagnostics::log(
+                "previous Microsoft Entra session cleanup is unavailable after configuration change",
+            ),
+        }
     }
 
     fn load_configuration(

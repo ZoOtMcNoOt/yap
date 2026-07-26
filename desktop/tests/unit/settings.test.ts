@@ -254,5 +254,6 @@ describe("settings model lifecycle bindings", () => {
     expect(projectServerConnectionTestMessage("ready")).toBe("Connection ready.");
     expect(projectServerConnectionTestMessage("offline")).toBe("Server is offline.");
     expect(projectServerConnectionTestMessage("sign_in_required")).toBe("Sign-in required.");
+    expect(projectServerConnectionTestMessage("access_denied")).toBe("Server access denied.");
   });
 });

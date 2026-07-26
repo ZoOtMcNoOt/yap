@@ -2,7 +2,7 @@ use crate::jobs::model::{JobLedgerError, RecordingLanguageDecision};
 use rusqlite::{Connection, OpenFlags, OptionalExtension, Transaction, TransactionBehavior};
 use std::{path::Path, time::Duration};
 
-const CURRENT_SCHEMA_VERSION: i64 = 12;
+const CURRENT_SCHEMA_VERSION: i64 = 13;
 const MIGRATION_1_SQL: &str = include_str!("../../migrations/0001_job_ledger.sql");
 const MIGRATION_2_SQL: &str = include_str!("../../migrations/0002_prepared_remote_jobs.sql");
 const MIGRATION_3_SQL: &str = include_str!("../../migrations/0003_remote_spool_cleanup.sql");
@@ -17,6 +17,7 @@ const MIGRATION_10_SQL: &str = include_str!("../../migrations/0010_client_prefli
 const MIGRATION_11_SQL: &str =
     include_str!("../../migrations/0011_functional_language_disposition.sql");
 const MIGRATION_12_SQL: &str = include_str!("../../migrations/0012_remote_authority_binding.sql");
+const MIGRATION_13_SQL: &str = include_str!("../../migrations/0013_tenant_principal_authority.sql");
 const PRE_FUNCTIONAL_LANGUAGE_DISPOSITION: &str = "legacy_phase5_default";
 const FUNCTIONAL_LANGUAGE_DISPOSITION: &str = "legacy_implicit_english_default";
 
@@ -66,6 +67,8 @@ fn migrate_with_hook(
         let version: i64 = transaction.query_row("PRAGMA user_version", [], |row| row.get(0))?;
         match version {
             CURRENT_SCHEMA_VERSION => {}
+            12 => {}
+            11 => {}
             10 => {}
             9 => {}
             8 => {}
@@ -120,6 +123,9 @@ fn migrate_with_hook(
         }
         if version < 12 {
             transaction.execute_batch(MIGRATION_12_SQL)?;
+        }
+        if version < 13 {
+            transaction.execute_batch(MIGRATION_13_SQL)?;
         }
         let foreign_key_violation: Option<i64> = transaction
             .query_row(
@@ -273,6 +279,58 @@ mod tests {
     }
 
     #[test]
+    fn account_only_schema_twelve_bindings_are_quarantined() {
+        let mut connection = Connection::open_in_memory().unwrap();
+        configure_connection(&connection, false).unwrap();
+        for migration in [
+            MIGRATION_1_SQL,
+            MIGRATION_2_SQL,
+            MIGRATION_3_SQL,
+            MIGRATION_4_SQL,
+            MIGRATION_5_SQL,
+            MIGRATION_6_SQL,
+            MIGRATION_7_SQL,
+            MIGRATION_8_SQL,
+            MIGRATION_9_SQL,
+            MIGRATION_10_SQL,
+            MIGRATION_11_SQL,
+            MIGRATION_12_SQL,
+        ] {
+            connection.execute_batch(migration).unwrap();
+        }
+        connection
+            .execute(
+                "INSERT INTO recording_jobs (job_id, session_mode, session_origin, source_path, display_name, status, route, created_at_ms, updated_at_ms, language_mode, language_bcp47, language_disposition, remote_authority_binding) VALUES ('legacy-account', 'meeting', 'imported_file', 'legacy.wav', 'legacy.wav', 'queued_server', 'server_batch', 1, 1, 'fixed', 'en-US', 'manual_override', ?1)",
+                ["a".repeat(64)],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO detached_remote_cancellations (server_base_url, server_job_id, create_request_json, queued_at_ms, remote_authority_binding) VALUES ('http://127.0.0.1:18765', 'server-job', '{}', 1, ?1)",
+                ["b".repeat(64)],
+            )
+            .unwrap();
+
+        migrate(&mut connection).unwrap();
+
+        let job_version: i64 = connection
+            .query_row(
+                "SELECT remote_authority_version FROM recording_jobs WHERE job_id = 'legacy-account'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let cancellation_version: i64 = connection
+            .query_row(
+                "SELECT remote_authority_version FROM detached_remote_cancellations WHERE server_job_id = 'server-job'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!((job_version, cancellation_version), (1, 1));
+    }
+
+    #[test]
     fn file_database_uses_wal_full_sync_and_five_second_timeout() {
         let dir = temp_dir("pragmas");
         let path = dir.join("jobs.sqlite3");
@@ -356,13 +414,13 @@ mod tests {
             .execute_batch(
                 "CREATE TABLE future_owned_data (value TEXT NOT NULL); \
                  INSERT INTO future_owned_data VALUES ('preserve'); \
-                 PRAGMA user_version = 13;",
+                 PRAGMA user_version = 14;",
             )
             .unwrap();
 
         let error = migrate(&mut connection).unwrap_err();
 
-        assert!(matches!(error, JobLedgerError::UnsupportedSchema(13)));
+        assert!(matches!(error, JobLedgerError::UnsupportedSchema(14)));
         let state: (i64, String) = connection
             .query_row(
                 "SELECT (SELECT user_version FROM pragma_user_version), value FROM future_owned_data",
@@ -370,7 +428,7 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .unwrap();
-        assert_eq!(state, (13, "preserve".into()));
+        assert_eq!(state, (14, "preserve".into()));
     }
 
     #[test]

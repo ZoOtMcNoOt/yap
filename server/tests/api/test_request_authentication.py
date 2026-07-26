@@ -61,7 +61,16 @@ class RequestAuthenticationTests(HealthServerTestCase):
         status, _, body = self._request("/v1/health")
 
         self.assertEqual(status, HTTPStatus.OK)
-        self.assertEqual(json.loads(body)["auth"], "required")
+        health_view = json.loads(body)
+        self.assertEqual(health_view["auth"], "required")
+        self.assertEqual(
+            health_view["capabilities"],
+            {
+                "batchJobs": False,
+                "liveStreaming": False,
+                "jobStatus": False,
+            },
+        )
         self.assertEqual(self.authenticator.headers, [])
 
         status, _, _ = self._request("/v1/health/")

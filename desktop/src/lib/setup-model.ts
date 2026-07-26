@@ -57,6 +57,7 @@ export type ServerConnectionState =
   | "ready"
   | "offline"
   | "sign_in_required"
+  | "access_denied"
   | "retrying"
   | "disabled";
 
@@ -145,6 +146,8 @@ export function serverConnectionLabel(state: ServerConnectionState) {
       return "Offline";
     case "sign_in_required":
       return "Sign in";
+    case "access_denied":
+      return "Access denied";
     case "retrying":
       return "Retrying";
     case "disabled":

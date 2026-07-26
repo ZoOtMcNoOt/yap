@@ -9,6 +9,54 @@ from . import contract_schema_support as contract_schema
 
 
 class ContractTests(unittest.TestCase):
+    def test_openapi_requires_yap_bearer_auth_except_exact_health(self) -> None:
+        document = contract_schema.load_json(http_contract.OPENAPI_PATH)
+        self.assertEqual(document["security"], [{"YapAccessToken": []}])
+        self.assertEqual(
+            document["components"]["securitySchemes"]["YapAccessToken"],
+            {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": (
+                    "Microsoft Entra access token issued for the Yap API. "
+                    "The server derives tenant and owner identity from validated "
+                    "claims; clients never submit owner fields."
+                ),
+            },
+        )
+        self.assertEqual(document["paths"]["/v1/health"]["get"]["security"], [])
+
+        for path, method in http_contract.HTTP_OPERATIONS:
+            if path == "/v1/health":
+                continue
+            operation = document["paths"][path][method]
+            self.assertNotEqual(operation.get("security"), [])
+            self.assertTrue(
+                {"401", "403", "503"}.issubset(operation["responses"]),
+                f"{method.upper()} {path} must declare stable auth failures",
+            )
+
+        responses = document["components"]["responses"]
+        self.assertEqual(
+            responses["AuthenticationRequiredResponse"]["content"][
+                "application/json"
+            ]["example"]["code"],
+            "AUTHENTICATION_REQUIRED",
+        )
+        self.assertEqual(
+            responses["AccessDeniedResponse"]["content"]["application/json"][
+                "example"
+            ]["code"],
+            "ACCESS_DENIED",
+        )
+        self.assertEqual(
+            responses["AuthenticationUnavailableResponse"]["content"][
+                "application/json"
+            ]["example"]["code"],
+            "AUTHENTICATION_UNAVAILABLE",
+        )
+
     def test_openapi_declares_each_operation_runtime_and_owner(self) -> None:
         document = contract_schema.load_json(http_contract.OPENAPI_PATH)
 

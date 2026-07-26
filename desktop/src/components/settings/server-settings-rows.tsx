@@ -14,6 +14,7 @@ export function ServerSettingsRows({
         detail={server.notice || "HTTPS required outside approved private development."}
         error={server.error}
         label="Server"
+        liveStatus
         value={server.pending ? "Checking" : server.enabled ? "Enabled" : "Disabled"}
       >
         <div className="flex w-full max-w-[520px] flex-wrap justify-end gap-2">
@@ -58,6 +59,7 @@ export function ServerSettingsRows({
       <SettingsRow
         detail="Uses Microsoft Entra through Windows Web Account Manager. Tokens stay outside the Yap renderer and settings files."
         label="Server sign-in"
+        liveStatus
         value={server.identity.signedIn
           ? "Signed in"
           : server.identity.configured

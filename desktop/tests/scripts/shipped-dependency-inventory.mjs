@@ -379,20 +379,30 @@ function rustRuntimePackageSources() {
 
 function dotnetRuntimePackageSources() {
   const nativeRoot = path.join(repoRoot, "desktop", "native");
-  const projectPath = path.join(
-    nativeRoot,
-    "Yap.Identity.Broker",
-    "Yap.Identity.Broker.csproj",
-  );
-  run(process.platform === "win32" ? "dotnet.exe" : "dotnet", [
+  const projectDirectory = path.join(nativeRoot, "Yap.Identity.Broker");
+  const projectPath = path.join(projectDirectory, "Yap.Identity.Broker.csproj");
+  const dotnet = process.platform === "win32" ? "dotnet.exe" : "dotnet";
+  run(dotnet, [
     "restore",
     projectPath,
     "-p:RestoreLockedMode=true",
     "--nologo",
   ], { cwd: nativeRoot });
+  run(dotnet, [
+    "publish",
+    projectPath,
+    "--configuration",
+    "Release",
+    "--runtime",
+    "win-x64",
+    "--self-contained",
+    "true",
+    "-p:RestoreLockedMode=true",
+    "--no-restore",
+    "--nologo",
+  ], { cwd: nativeRoot });
   const assetsPath = path.join(
-    nativeRoot,
-    "Yap.Identity.Broker",
+    projectDirectory,
     "obj",
     "project.assets.json",
   );
@@ -407,17 +417,7 @@ function dotnetRuntimePackageSources() {
   );
   const packageRoot = packageRoots[0];
   const packages = [];
-  for (const [identity, packageAssets] of Object.entries(assets.targets[targetName])) {
-    if (
-      packageAssets.type !== "package"
-      || (!packageAssets.runtime && !packageAssets.runtimeTargets)
-    ) {
-      continue;
-    }
-    const separator = identity.lastIndexOf("/");
-    assert(separator > 0, `NuGet dependency identity is invalid: ${identity}.`);
-    const name = identity.slice(0, separator);
-    const version = identity.slice(separator + 1);
+  const appendPackage = (name, version) => {
     const sourceDirectory = path.join(
       packageRoot,
       name.toLowerCase(),
@@ -440,6 +440,42 @@ function dotnetRuntimePackageSources() {
       ),
       sourceDirectories: [sourceDirectory],
     });
+  };
+  for (const [identity, packageAssets] of Object.entries(assets.targets[targetName])) {
+    if (
+      packageAssets.type !== "package"
+      || (!packageAssets.runtime && !packageAssets.runtimeTargets)
+    ) {
+      continue;
+    }
+    const separator = identity.lastIndexOf("/");
+    assert(separator > 0, `NuGet dependency identity is invalid: ${identity}.`);
+    const name = identity.slice(0, separator);
+    const version = identity.slice(separator + 1);
+    appendPackage(name, version);
+  }
+  const project = readFileSync(projectPath, "utf8");
+  const targetFramework = xmlElement(project, "TargetFramework");
+  const dependencyManifestPath = path.join(
+    projectDirectory,
+    "bin",
+    "Release",
+    targetFramework,
+    "win-x64",
+    "yap-identity-broker.deps.json",
+  );
+  const dependencyManifest = JSON.parse(readFileSync(dependencyManifestPath, "utf8"));
+  const runtimePacks = Object.entries(dependencyManifest.libraries)
+    .filter(([, metadata]) => metadata.type === "runtimepack")
+    .map(([identity]) => identity.replace(/^runtimepack\./, ""));
+  assert(
+    runtimePacks.length > 0,
+    "The self-contained identity broker dependency manifest omits its runtime packs.",
+  );
+  for (const identity of runtimePacks) {
+    const separator = identity.lastIndexOf("/");
+    assert(separator > 0, `Runtime-pack identity is invalid: ${identity}.`);
+    appendPackage(identity.slice(0, separator), identity.slice(separator + 1));
   }
   return uniqueSortedSources(packages);
 }
@@ -448,6 +484,10 @@ function nugetLicenseExpression(nuspec, sourceDirectory) {
   const expression = /<license\s+type=["']expression["']>([^<]+)<\/license>/i.exec(nuspec)?.[1]
     ?.trim();
   if (expression) return expression;
+  const licenseUrl = xmlElement(nuspec, "licenseUrl");
+  if (licenseUrl === "https://aka.ms/WinSDKLicenseURL") {
+    return "MS-Windows-SDK";
+  }
   const licenseName = readdirSync(sourceDirectory).find((name) =>
     /^(?:licen[cs]e)(?:[._-].*)?$/i.test(name));
   assert(licenseName, `NuGet dependency at ${sourceDirectory} has no license declaration.`);
@@ -509,6 +549,19 @@ function packageRecord(ecosystem, name, version, licenseExpression) {
       version,
       licenseExpression,
       licenseTerms: ["MS-MSAL-NativeInterop"],
+      reviewDisposition: "reviewed-custom-runtime-license",
+    };
+  }
+  if (
+    ecosystem === "dotnet"
+    && name === "Microsoft.Windows.SDK.NET.Ref"
+    && licenseExpression === "MS-Windows-SDK"
+  ) {
+    return {
+      name,
+      version,
+      licenseExpression,
+      licenseTerms: ["MS-Windows-SDK"],
       reviewDisposition: "reviewed-custom-runtime-license",
     };
   }

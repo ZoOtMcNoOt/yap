@@ -20,7 +20,7 @@ impl JobLedger {
     ) -> Result<Vec<PreparedRemoteJobRecord>, JobLedgerError> {
         let connection = self.lock()?;
         let mut statement = connection.prepare(
-            "SELECT prepared.job_id, prepared.create_request_json, prepared.capture_manifest_path, prepared.capture_manifest_sha256, prepared.server_job_id, prepared.server_base_url, prepared.server_cancellation_acknowledged_at_ms, prepared.create_attempt_base_url FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE job.status = 'cancelled' AND job.cancellation_requested = 1 AND prepared.server_job_id IS NOT NULL AND prepared.server_base_url IS NOT NULL AND prepared.server_cancellation_acknowledged_at_ms IS NULL ORDER BY job.updated_at_ms, prepared.job_id",
+            "SELECT prepared.job_id, prepared.create_request_json, prepared.capture_manifest_path, prepared.capture_manifest_sha256, prepared.server_job_id, prepared.server_base_url, prepared.server_cancellation_acknowledged_at_ms, prepared.create_attempt_base_url FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE job.status = 'cancelled' AND job.cancellation_requested = 1 AND job.remote_authority_version = 2 AND prepared.server_job_id IS NOT NULL AND prepared.server_base_url IS NOT NULL AND prepared.server_cancellation_acknowledged_at_ms IS NULL ORDER BY job.updated_at_ms, prepared.job_id",
         )?;
         let rows = statement.query_map([], raw_prepared_remote_job_from_row)?;
         rows.map(|row| {
@@ -35,7 +35,7 @@ impl JobLedger {
     ) -> Result<Vec<PreparedRemoteJobRecord>, JobLedgerError> {
         let connection = self.lock()?;
         let mut statement = connection.prepare(
-            "SELECT prepared.job_id, prepared.create_request_json, prepared.capture_manifest_path, prepared.capture_manifest_sha256, prepared.server_job_id, prepared.server_base_url, prepared.server_cancellation_acknowledged_at_ms, prepared.create_attempt_base_url FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE job.status = 'uploading' AND prepared.server_job_id IS NULL AND prepared.server_base_url IS NULL AND prepared.create_attempt_base_url IS NOT NULL ORDER BY job.updated_at_ms, prepared.job_id",
+            "SELECT prepared.job_id, prepared.create_request_json, prepared.capture_manifest_path, prepared.capture_manifest_sha256, prepared.server_job_id, prepared.server_base_url, prepared.server_cancellation_acknowledged_at_ms, prepared.create_attempt_base_url FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE job.status = 'uploading' AND job.remote_authority_version = 2 AND prepared.server_job_id IS NULL AND prepared.server_base_url IS NULL AND prepared.create_attempt_base_url IS NOT NULL ORDER BY job.updated_at_ms, prepared.job_id",
         )?;
         let rows = statement.query_map([], raw_prepared_remote_job_from_row)?;
         rows.map(|row| {
@@ -50,7 +50,7 @@ impl JobLedger {
     ) -> Result<Vec<PreparedRemoteJobRecord>, JobLedgerError> {
         let connection = self.lock()?;
         let mut statement = connection.prepare(
-            "SELECT prepared.job_id, prepared.create_request_json, prepared.capture_manifest_path, prepared.capture_manifest_sha256, prepared.server_job_id, prepared.server_base_url, prepared.server_cancellation_acknowledged_at_ms, prepared.create_attempt_base_url FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE job.status = 'cancelled' AND job.cancellation_requested = 1 AND prepared.server_job_id IS NULL AND prepared.server_base_url IS NULL AND prepared.create_attempt_base_url IS NOT NULL ORDER BY job.updated_at_ms, prepared.job_id",
+            "SELECT prepared.job_id, prepared.create_request_json, prepared.capture_manifest_path, prepared.capture_manifest_sha256, prepared.server_job_id, prepared.server_base_url, prepared.server_cancellation_acknowledged_at_ms, prepared.create_attempt_base_url FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE job.status = 'cancelled' AND job.cancellation_requested = 1 AND job.remote_authority_version = 2 AND prepared.server_job_id IS NULL AND prepared.server_base_url IS NULL AND prepared.create_attempt_base_url IS NOT NULL ORDER BY job.updated_at_ms, prepared.job_id",
         )?;
         let rows = statement.query_map([], raw_prepared_remote_job_from_row)?;
         rows.map(|row| {
@@ -73,7 +73,7 @@ impl JobLedger {
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
         let candidate: Option<(String, String, String, String, String)> = transaction
             .query_row(
-                "SELECT prepared.job_id, prepared.server_base_url, prepared.server_job_id, prepared.create_request_json, COALESCE(job.remote_authority_binding, 'development-loopback') FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE prepared.server_job_id IS NOT NULL AND prepared.server_base_url IS NOT NULL AND prepared.server_cancellation_acknowledged_at_ms IS NULL AND job.status IN ('uploading', 'server_processing', 'saving', 'failed') AND (?1 IS NULL OR prepared.server_base_url <> ?1) ORDER BY job.updated_at_ms, prepared.job_id LIMIT 1",
+                "SELECT prepared.job_id, prepared.server_base_url, prepared.server_job_id, prepared.create_request_json, COALESCE(job.remote_authority_binding, 'development-loopback') FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE prepared.server_job_id IS NOT NULL AND prepared.server_base_url IS NOT NULL AND prepared.server_cancellation_acknowledged_at_ms IS NULL AND job.remote_authority_version = 2 AND job.status IN ('uploading', 'server_processing', 'saving', 'failed') AND (?1 IS NULL OR prepared.server_base_url <> ?1) ORDER BY job.updated_at_ms, prepared.job_id LIMIT 1",
                 [configured_origin],
                 |row| {
                     Ok((
@@ -231,7 +231,7 @@ impl JobLedger {
     ) -> Result<Vec<DetachedRemoteCancellationRecord>, JobLedgerError> {
         let connection = self.lock()?;
         let mut statement = connection.prepare(
-            "SELECT server_base_url, server_job_id, create_request_json, queued_at_ms, remote_authority_binding FROM detached_remote_cancellations ORDER BY queued_at_ms, server_base_url, server_job_id",
+            "SELECT server_base_url, server_job_id, create_request_json, queued_at_ms, remote_authority_binding FROM detached_remote_cancellations WHERE remote_authority_version = 2 ORDER BY queued_at_ms, server_base_url, server_job_id",
         )?;
         let rows = statement.query_map([], |row| {
             Ok((
@@ -352,7 +352,7 @@ pub(super) fn enqueue_detached_cancellation(
         ));
     }
     let inserted = connection.execute(
-        "INSERT OR IGNORE INTO detached_remote_cancellations (server_base_url, server_job_id, create_request_json, queued_at_ms, remote_authority_binding) VALUES (?1, ?2, ?3, ?4, ?5)",
+        "INSERT OR IGNORE INTO detached_remote_cancellations (server_base_url, server_job_id, create_request_json, queued_at_ms, remote_authority_binding, remote_authority_version) VALUES (?1, ?2, ?3, ?4, ?5, 2)",
         params![
             server_base_url,
             server_job_id,
@@ -362,12 +362,15 @@ pub(super) fn enqueue_detached_cancellation(
         ],
     )?;
     if inserted == 0 {
-        let existing: (String, String) = connection.query_row(
-            "SELECT create_request_json, remote_authority_binding FROM detached_remote_cancellations WHERE server_base_url = ?1 AND server_job_id = ?2",
+        let existing: (String, String, i64) = connection.query_row(
+            "SELECT create_request_json, remote_authority_binding, remote_authority_version FROM detached_remote_cancellations WHERE server_base_url = ?1 AND server_job_id = ?2",
             params![server_base_url, server_job_id],
-            |row| Ok((row.get(0)?, row.get(1)?)),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
         )?;
-        if existing.0 != create_request_json || existing.1 != remote_authority_binding {
+        if existing.0 != create_request_json
+            || existing.1 != remote_authority_binding
+            || existing.2 != 2
+        {
             return Err(JobLedgerError::InvalidRecord(
                 "detached server cancellation conflicts with an existing outbox entry",
             ));
