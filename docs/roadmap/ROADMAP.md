@@ -65,7 +65,7 @@ Automatic cross-provider switching, named speaker identity, and enterprise
 infrastructure are not Phase 6 claims. Within-utterance language spans are a
 Phase 6 target and remain an explicit default-off Preview because the frozen
 natural-switch quality target failed. Exact executable candidate
-`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed the frozen 30-child
+`a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the frozen 30-child
 local/native/server/private-runtime matrix after bounded three-agent
 remediation re-review, including the target-client, 18-child resident-provider,
 and connected interruption/recovery/History channels with exact teardown.

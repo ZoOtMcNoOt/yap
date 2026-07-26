@@ -4,7 +4,7 @@
 **Status:** Accepted (canonical Phase 2 local fallback; narrowly amended by
 [ADR 0024](0024-global-language-routing.md) for Phase 6 acoustic language
 evidence). Exact executable candidate
-`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed the complete Phase 6
+`a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the complete Phase 6
 target-client and integrated safety matrix after bounded three-agent
 remediation re-review; automatic switching remains an explicit default-off
 Preview because its consumed natural-switch target failed. Hosted PR closure,

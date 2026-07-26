@@ -8,7 +8,7 @@ complete Phase 6 gate.
 
 ## Last consumed result
 
-Exact executable candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`
+Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88`
 passed both channels inside the complete Phase 6 matrix on 2026-07-25. Twelve
 paced native cycles and all nine
 250-ms-through-30-second cases completed with zero dropped frames. The

@@ -1,6 +1,6 @@
 # Yap Server Node Setup Runbook
 
-Yap's team profile treats an NVIDIA GB-class server node as a private server tier, not a public service. The desktop stays thin: local Nemotron INT8 is the live/offline fallback. Phase 3 provides health reachability and durable queued-job ownership. Phase 4 adds one transient, server-internal Cohere batch reference worker. The gated Phase 5 path sends imported recordings through the durable loopback batch contract. Phase 6 adds bounded Cohere vLLM and Nemotron NeMo resident candidates behind the same job/result authority; exact executable candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed their lifecycle boundary inside the complete Phase 6 matrix. Neither candidate is promoted. This remains a development profile, not a public or persistent production service.
+Yap's team profile treats an NVIDIA GB-class server node as a private server tier, not a public service. The desktop stays thin: local Nemotron INT8 is the live/offline fallback. Phase 3 provides health reachability and durable queued-job ownership. Phase 4 adds one transient, server-internal Cohere batch reference worker. The gated Phase 5 path sends imported recordings through the durable loopback batch contract. Phase 6 adds bounded Cohere vLLM and Nemotron NeMo resident candidates behind the same job/result authority; exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed their lifecycle boundary inside the complete Phase 6 matrix. Neither candidate is promoted. This remains a development profile, not a public or persistent production service.
 
 The first supported node profile is DGX Spark GB10. A later GB300-class node should keep the same server contract and change only host-specific config: NIC names, CIDRs, GPU/runtime sizing, and deployment capacity.
 
@@ -620,10 +620,10 @@ on 18000/18001. Keep the raw suite, child evidence, logs, and samples private;
 only these bounded facts belong in repository status. This result closed the
 Phase 6 resident-provider candidate-safety component but did not install either
 service persistently or promote Cohere/NeMo over a later Tiron comparison.
-Exact executable candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`
+Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88`
 later repeated all 18 provider children inside the complete 30-child Phase 6
 matrix; its public-safe provider aggregate has SHA-256
-`506341b3c173de12e29b397beb944eaa20f4a0d5ed50c1028f3f7b9b1c6c9edc`.
+`98cdc087b574f35a0e12b386a5d8c4c576a9ada548afe88101d1442868e96deb`.
 
 Representative provider quality and low-end physical client hardware
 certification remain later gates. Provider cgroup evidence excludes the small host

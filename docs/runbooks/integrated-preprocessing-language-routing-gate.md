@@ -9,21 +9,30 @@ phase number.
 
 ## Latest admitted result and history
 
-Exact executable candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb`
+Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88`
 passed its sole admitted 30-child attempt on 2026-07-25. The manifest SHA-256 is
 `46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52`;
 the candidate receipt was independently validated for the exact head and all 30
-children. The target-client, 18-child sequential provider, connected
+children and has SHA-256
+`74f183041082c77d05a0633202fa1052222d6a77bd9bef5ce2706546bf3e9647`.
+The target-client, 18-child sequential provider, connected
 interruption/recovery/History, complete local/native/server inventory, and
 exact teardown all passed. The public-safe GB10 aggregate file SHA-256 is
-`506341b3c173de12e29b397beb944eaa20f4a0d5ed50c1028f3f7b9b1c6c9edc`.
+`98cdc087b574f35a0e12b386a5d8c4c576a9ada548afe88101d1442868e96deb`.
 Private audio, transcripts, raw metrics, host paths, logs, and process ledgers
-remain outside Git. Final adversarial review subsequently found local-start
-cancellation races across concurrent model/language mutation. The focused
-repair distinguishes uninstalled cancellation from installed-capture
-completion and preserves exact session ownership, but it invalidates
-`e4a62f4b...` as merge authority. A new complete candidate, hosted exact-head
-closure, final read-back, and merge remain separate.
+remain outside Git. Hosted exact-head closure, final read-back, PR review, and
+merge remain separate.
+
+Historical exact executable candidate
+`e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` passed its sole admitted 30-child
+attempt. Final adversarial review subsequently found local-start cancellation
+races across concurrent model/language mutation. The repair distinguishes
+uninstalled cancellation from installed-capture completion and preserves exact
+session ownership, so the executable correction invalidated `e4a62f4b...` as
+merge authority. Candidate `a92f3385...` rebuilt the checked runtime
+preparations and reran every admitted channel and all 30 children after the
+repair. The `e4a62f4b...` receipt remains historical evidence and must not be
+reused or relabeled.
 
 Historical exact executable candidate
 `cf9b5453270a8afa87cfca42206767a1bf7d82ee` also passed its sole admitted
@@ -104,7 +113,7 @@ base digest, runtime identity, and receipt-bound immutable image ID. They launch
 and record that exact ID; they never build, pull, reconnect, or substitute an
 image.
 Focused route-less verification passed on the GB10 before admission. Exact
-candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` then consumed the frozen,
+candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` then consumed the frozen,
 receipt-bound images in its passing admitted complete gate. Historical
 candidate `c82fe47a683dabd72231ffca377095ff16f2d4f5` had consumed the prior
 receipt-bound images before a hosted-only timing correction invalidated it as
