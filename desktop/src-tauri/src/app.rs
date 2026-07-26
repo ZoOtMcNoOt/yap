@@ -576,8 +576,40 @@ fn begin_instance_activation_shutdown_at(
     publish_instance_shutdown_at(&app_data_directory.join(INSTANCE_SHUTDOWN_FILE))
 }
 
+fn reopen_instance_activation_after_abandoned_shutdown_at(
+    app_data_directory: &std::path::Path,
+    max_polls: usize,
+    poll_interval: std::time::Duration,
+    pause: impl FnMut(std::time::Duration),
+) -> std::io::Result<()> {
+    let _handoff_lease = acquire_instance_activation_handoff_lease_at(
+        app_data_directory,
+        max_polls,
+        poll_interval,
+        pause,
+    )?;
+    let shutdown_path = app_data_directory.join(INSTANCE_SHUTDOWN_FILE);
+
+    // A secondary that arrived during the abandoned shutdown may be waiting
+    // without its own request marker. Publish one before reopening consumption
+    // so marker absence cannot be mistaken for an acknowledgment.
+    request_existing_instance_activation_at(
+        &app_data_directory.join(INSTANCE_ACTIVATION_REQUEST_FILE),
+    )?;
+    discard_instance_shutdown_at(&shutdown_path)
+}
+
 pub(crate) fn begin_instance_activation_shutdown() -> std::io::Result<()> {
     begin_instance_activation_shutdown_at(
+        &paths::app_data_dir(),
+        INSTANCE_ACTIVATION_HANDOFF_POLLS,
+        INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL,
+        std::thread::sleep,
+    )
+}
+
+pub(crate) fn reopen_instance_activation_after_abandoned_shutdown() -> std::io::Result<()> {
+    reopen_instance_activation_after_abandoned_shutdown_at(
         &paths::app_data_dir(),
         INSTANCE_ACTIVATION_HANDOFF_POLLS,
         INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL,
@@ -927,7 +959,8 @@ mod tests {
         consume_existing_instance_activation_request_at, exit_request_disposition,
         instance_lease_startup_message, is_allowed_app_navigation,
         prepare_primary_instance_activation_state_at,
-        publish_existing_instance_activation_request_at, report_activation_request_result,
+        publish_existing_instance_activation_request_at,
+        reopen_instance_activation_after_abandoned_shutdown_at, report_activation_request_result,
         request_existing_instance_activation_at,
         request_existing_instance_activation_at_with_before_publish,
         take_existing_instance_activation_request_at,
@@ -1171,6 +1204,59 @@ mod tests {
             std::fs::read(&request).unwrap(),
             INSTANCE_ACTIVATION_REQUEST
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn abandoned_shutdown_reopens_activation_without_false_acknowledgment() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-shutdown-reopen-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        begin_instance_activation_shutdown_at(&root, 1, Duration::ZERO, |_| {}).unwrap();
+
+        reopen_instance_activation_after_abandoned_shutdown_at(&root, 1, Duration::ZERO, |_| {})
+            .unwrap();
+
+        assert!(!root.join(INSTANCE_SHUTDOWN_FILE).exists());
+        assert_eq!(
+            std::fs::read(root.join(INSTANCE_ACTIVATION_REQUEST_FILE)).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        let activated = AtomicBool::new(false);
+        assert!(consume_existing_instance_activation_request_at(&root, || {
+            activated.store(true, Ordering::SeqCst);
+        })
+        .unwrap());
+        assert!(activated.load(Ordering::SeqCst));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn failed_shutdown_publication_reopen_still_requires_activation() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-instance-activation-shutdown-publication-reopen-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+
+        reopen_instance_activation_after_abandoned_shutdown_at(&root, 1, Duration::ZERO, |_| {})
+            .unwrap();
+
+        assert_eq!(
+            std::fs::read(root.join(INSTANCE_ACTIVATION_REQUEST_FILE)).unwrap(),
+            INSTANCE_ACTIVATION_REQUEST
+        );
+        assert!(consume_existing_instance_activation_request_at(&root, || {}).unwrap());
         std::fs::remove_dir_all(root).unwrap();
     }
 
