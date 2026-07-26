@@ -146,9 +146,10 @@ scanning, capacity/SLO promotion, and deployment evidence.
 - [x] Repair the initial adversarial findings: tenant-specific MSAL authority,
       schema-13 quarantine for ambiguous older authenticated bindings,
       protected readiness, durable access disable/restore, read-only steady
-      principal admission, truthful OpenAPI/health, post-publication settings
-      cleanup, live settings status, accessible async status, and complete
-      self-contained .NET runtime-pack inventory.
+      principal admission, rollback on failed first-principal commit,
+      revoked-principal migration backfill, truthful OpenAPI/health,
+      post-publication settings cleanup, live settings status, accessible async
+      status, and complete self-contained .NET runtime-pack inventory.
 - [x] Run exactly three bounded antagonistic reviews of the ready executable
       branch, repair all P0-P2 correctness/security/privacy/maintainability
       findings, and run focused verification for those repairs.
@@ -183,7 +184,7 @@ scanning, capacity/SLO promotion, and deployment evidence.
 The complete matrix is reserved for the frozen candidate. Focused tests may run
 repeatedly while implementation is changing.
 
-The accepted-review repair head passed the narrow Ruff baseline, 24 focused
+The accepted-review repair head passed the narrow Ruff baseline, 25 focused
 server authorization/health/OpenAPI/owner-flow tests, 129 connector tests plus
 the final access-denied state check, 17 desktop migration tests, 31 ledger
 tests, 35 drain tests, the self-contained broker publish/protocol smoke,

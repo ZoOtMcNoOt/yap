@@ -168,6 +168,35 @@ class IdentityRepositoryTests(unittest.TestCase):
                 PRAGMA user_version = 1;
                 """
             )
+            connection.executemany(
+                """
+                INSERT INTO principal_identity (
+                    tenant_id,
+                    subject_id,
+                    display_name_snapshot,
+                    created_at_utc,
+                    last_seen_at_utc,
+                    access_revoked_after_unix
+                ) VALUES (?, ?, NULL, ?, ?, ?)
+                """,
+                [
+                    (
+                        TENANT_ID,
+                        SUBJECT_ID,
+                        "2026-07-25T12:00:00Z",
+                        "2026-07-25T12:00:00Z",
+                        100,
+                    ),
+                    (
+                        TENANT_ID,
+                        ADMIN_ID,
+                        "2026-07-25T12:00:00Z",
+                        "2026-07-25T12:00:00Z",
+                        0,
+                    ),
+                ],
+            )
+            connection.commit()
         self.repository = SqliteIdentityRepository(self.path, clock=self.clock)
         with closing(sqlite3.connect(self.path)) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
@@ -175,8 +204,23 @@ class IdentityRepositoryTests(unittest.TestCase):
                 row[1]
                 for row in connection.execute("PRAGMA table_info(principal_identity)")
             }
+            disabled = dict(
+                connection.execute(
+                    "SELECT subject_id, access_disabled FROM principal_identity"
+                )
+            )
         self.assertEqual(version, 2)
         self.assertIn("access_disabled", columns)
+        self.assertEqual(disabled, {SUBJECT_ID: 1, ADMIN_ID: 0})
+        newer = _principal(issued_at_unix=int(self.clock().timestamp()) + 100)
+        self.assertFalse(self.repository.access_is_allowed(newer))
+        self.repository.restore_access(self.admin.key, newer.key)
+        self.clock.advance()
+        self.assertTrue(
+            self.repository.access_is_allowed(
+                _principal(issued_at_unix=int(self.clock().timestamp()))
+            )
+        )
 
     def test_purpose_grant_and_revocation_are_separate_revisioned_controls(
         self,

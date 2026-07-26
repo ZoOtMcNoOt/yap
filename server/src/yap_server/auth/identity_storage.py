@@ -58,6 +58,13 @@ def _create_identity_schema(connection: sqlite3.Connection) -> None:
                 CHECK (access_disabled IN (0, 1))
             """
         )
+        connection.execute(
+            """
+            UPDATE principal_identity
+            SET access_disabled = 1
+            WHERE access_revoked_after_unix > 0
+            """
+        )
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS purpose_grant_revision (

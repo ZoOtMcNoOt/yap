@@ -85,11 +85,14 @@ class SqliteIdentityRepository:
         connection.execute("BEGIN IMMEDIATE")
         try:
             yield connection
-        except BaseException:
-            connection.rollback()
-            raise
-        else:
             connection.commit()
+        except BaseException:
+            try:
+                connection.rollback()
+            except BaseException:
+                connection.close()
+                self._connection = None
+            raise
 
     def upsert_principal(
         self,

@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from yap_server.auth import (
     AuthenticatedPrincipal,
@@ -44,6 +46,66 @@ def _principal(subject_id: str, issued_at_unix: int) -> AuthenticatedPrincipal:
 
 
 class RepositoryBackedRequestAuthenticatorTests(unittest.TestCase):
+    def test_failed_first_principal_commits_never_admit_visible_uncommitted_state(
+        self,
+    ) -> None:
+        class _FailingCommitConnection(sqlite3.Connection):
+            remaining_commit_failures = 0
+
+            def commit(self) -> None:
+                if self.remaining_commit_failures > 0:
+                    self.remaining_commit_failures -= 1
+                    raise sqlite3.OperationalError("synthetic commit failure")
+                super().commit()
+
+        sqlite_connect = sqlite3.connect
+
+        def connect(*args: object, **kwargs: object) -> sqlite3.Connection:
+            return sqlite_connect(*args, **kwargs, factory=_FailingCommitConnection)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "identity.sqlite3"
+            with patch(
+                "yap_server.auth.identity_repository.sqlite3.connect",
+                side_effect=connect,
+            ):
+                repository = SqliteIdentityRepository(path)
+            try:
+                connection = repository._active_connection()
+                self.assertIsInstance(connection, _FailingCommitConnection)
+                connection.remaining_commit_failures = 2
+                principal = _principal(SUBJECT_ID, 1)
+                authenticator = RepositoryBackedRequestAuthenticator(
+                    _TokenAuthenticator(principal),
+                    repository,
+                )
+
+                for _ in range(2):
+                    with self.assertRaises(AuthenticationFailure) as unavailable:
+                        authenticator.authenticate("Bearer synthetic")
+                    self.assertEqual(unavailable.exception.status, 503)
+                    self.assertEqual(
+                        unavailable.exception.code,
+                        "AUTHENTICATION_UNAVAILABLE",
+                    )
+                    self.assertFalse(connection.in_transaction)
+                    self.assertIsNone(repository.principal(principal.key))
+
+                self.assertEqual(
+                    authenticator.authenticate("Bearer synthetic"),
+                    principal,
+                )
+                self.assertFalse(connection.in_transaction)
+            finally:
+                repository.close()
+
+            reopened = SqliteIdentityRepository(path)
+            try:
+                self.assertIsNotNone(reopened.principal(principal.key))
+                reopened.verify_audit_chain()
+            finally:
+                reopened.close()
+
     def test_request_upserts_principal_and_local_revocation_blocks_all_tokens(
         self,
     ) -> None:
