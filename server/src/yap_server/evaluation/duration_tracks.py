@@ -14,7 +14,7 @@ from typing import Callable, Mapping, Protocol
 from uuid import uuid4
 import wave
 
-from yap_server.pools.batch_asr_worker import MAX_AUDIO_SECONDS, SAMPLE_RATE_HZ
+from yap_server.pools.pcm_audio import MAX_AUDIO_SECONDS, SAMPLE_RATE_HZ
 
 
 _CASE_ID = re.compile(r"^[a-z][a-z0-9-]{0,63}$")

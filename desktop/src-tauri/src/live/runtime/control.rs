@@ -139,7 +139,7 @@ impl LiveRuntime {
                 .model_warmup
                 .clear_idle_for_shutdown(LIVE_MODEL_SHUTDOWN_TIMEOUT)
             {
-                crate::stt::log_yap(&format!(
+                crate::diagnostics::log(&format!(
                     "live model shutdown continued after bounded warmup cancellation: {error}"
                 ));
             }

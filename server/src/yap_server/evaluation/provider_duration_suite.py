@@ -25,7 +25,7 @@ from yap_server.evaluation.runtime_plan import (
     select_runtime_load_case,
     validate_runtime_evaluation_plan,
 )
-from yap_server.pools.batch_asr_worker import MAX_AUDIO_SECONDS, SAMPLE_RATE_HZ
+from yap_server.pools.pcm_audio import MAX_AUDIO_SECONDS, SAMPLE_RATE_HZ
 
 
 _COLLECTION_ID = "resident-provider-duration-suite-v1"

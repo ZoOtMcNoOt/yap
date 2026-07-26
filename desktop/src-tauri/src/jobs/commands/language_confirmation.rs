@@ -149,7 +149,7 @@ pub(crate) async fn recording_job_confirm_language(
     )
     .await
     .map_err(|detail| {
-        crate::stt::log_yap(&format!(
+        crate::diagnostics::log(&format!(
             "language confirmation could not refresh the current ASR catalog: {detail}"
         ));
         command_error(

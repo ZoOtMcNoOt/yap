@@ -75,6 +75,6 @@ pub(crate) fn remove_owned_staging(source: &Path, owned_staging: &File, label: &
         Err(error) => Some(format!("Published {label}, but staging cleanup is pending: {error}")),
     };
     if let Some(warning) = cleanup_warning {
-        crate::stt::log_yap(&warning);
+        crate::diagnostics::log(&warning);
     }
 }

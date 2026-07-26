@@ -939,13 +939,13 @@ privacy review and ADR.
 
 **Build specs:** [Client state machine](specs/client-state-machine.md) · [Model download UX](specs/model-download-ux.md) · [Local audio preprocessing](specs/local-audio-preprocessing-stack.md) · [Local live fallback](specs/local-live-fallback-sidecar.md) · [Local LLM sidecar](specs/local-llm-sidecar.md) · [Live dictation client](specs/live-dictation-client-ux.md) · [Server tier MVP](specs/server-tier-mvp.md) · [Source-aware diarization](specs/source-aware-diarization.md) · [Testing](specs/testing-strategy.md).
 
-**Next execution order:** finish exact-head hosted and adversarial read-back on
-the final docs-only head of Phase 6 PR #67. Merge only that green reviewed head,
-then run the separately queued Checkpoint B before
-continuing Phases 7–10 on separate branches in documented order. WSS/live
-ASR, authentication, diarization, and the HTTP/3 edge remain gated by their
-canonical phases. ADR 0021 does not authorize UDP exposure from the loopback
-application boundary.
+**Next execution order:** Phase 6 PR #67 is merged. Finish Checkpoint B's narrow
+ownership and maintainability repairs, run its complete applicable matrix once
+on the frozen candidate, and merge only the green reviewed head. Then continue
+Phases 7–10 on separate branches in documented order. WSS/live ASR,
+authentication, diarization, and the HTTP/3 edge remain gated by their canonical
+phases. ADR 0021 does not authorize UDP exposure from the loopback application
+boundary.
 
 ---
 

@@ -17,7 +17,7 @@ from typing import Mapping
 from yap_server.bounded_file import read_regular_file
 from yap_server.limits import MAX_WORKER_RESULT_BYTES
 from yap_server.pools.authenticated_loopback_http import validate_private_api_key
-from yap_server.pools.batch_asr_worker import (
+from yap_server.pools.pcm_audio import (
     MAX_ENCODED_AUDIO_BYTES,
     decode_pcm16_wav,
 )

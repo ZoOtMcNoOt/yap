@@ -292,3 +292,9 @@ def _published_result(job: dict[str, object]) -> dict[str, object]:
             }
         ],
     }
+
+
+# Public fixture seam for API and future job tests. The underscored names remain
+# temporary compatibility aliases for the existing focused service suites.
+ControlledJobProcessor = _ControlledProcessor
+create_recording_job_request = _create_request

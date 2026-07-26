@@ -4,7 +4,6 @@ import os
 import socket
 import struct
 import threading
-import time
 from contextlib import redirect_stderr
 from unittest.mock import patch
 

@@ -111,7 +111,7 @@ class BatchAsrWorkerTests(unittest.TestCase):
                 return real_wave_open(file, mode)
 
             with patch(
-                "yap_server.pools.batch_asr_worker.wave.open",
+                "yap_server.pools.pcm_audio.wave.open",
                 side_effect=replace_path_then_open,
             ):
                 audio = read_pcm16_wav(path)

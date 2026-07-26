@@ -40,7 +40,7 @@ fn navigation_guard<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
 
 fn log_lifecycle_shutdown_errors(errors: Vec<String>) {
     for error in errors {
-        stt::log_yap(&format!("desktop background shutdown failed: {error}"));
+        crate::diagnostics::log(&format!("desktop background shutdown failed: {error}"));
     }
 }
 
@@ -192,7 +192,7 @@ fn take_existing_instance_activation_request_at(path: &std::path::Path) -> bool 
         Ok(()) => true,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
         Err(error) => {
-            stt::log_yap(&format!(
+            crate::diagnostics::log(&format!(
                 "existing instance activation request could not be consumed: {error}"
             ));
             false
@@ -277,9 +277,9 @@ pub(crate) fn run() {
         stop_for_migration_error(&error);
     }
     std::panic::set_hook(Box::new(|panic| {
-        stt::log_yap(&format!("panic: {panic}"));
+        crate::diagnostics::log(&format!("panic: {panic}"));
     }));
-    stt::log_yap("app start");
+    crate::diagnostics::log("app start");
 
     let stt_state = stt::dispatch::SttState::new();
     let live_settings = live::settings::load();
@@ -326,7 +326,7 @@ pub(crate) fn run() {
                     live::overlay_window::ensure_active(app.handle())
                 };
                 if let Err(error) = result {
-                    stt::log_yap(&format!("live overlay startup failed: {error}"));
+                    crate::diagnostics::log(&format!("live overlay startup failed: {error}"));
                 }
             }
             let live_runtime = app.state::<live::runtime::LiveRuntime>();
@@ -376,7 +376,7 @@ pub(crate) fn run() {
             tauri::RunEvent::Exit => {
                 let quit = app_handle.state::<live::actions::QuitCoordinator>();
                 if !quit.exit_authorized() {
-                    stt::log_yap("process exit reached degraded live shutdown fallback");
+                    crate::diagnostics::log("process exit reached degraded live shutdown fallback");
                 }
                 // Authorized quit finalizes the active capture, but the runtime
                 // can still own resident warmup models. Always retire it before

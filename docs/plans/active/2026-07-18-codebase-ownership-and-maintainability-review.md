@@ -80,37 +80,58 @@ GPU pressure, model teardown, private evaluation evidence, and unavailable timin
 
 ## Ordered checkpoint slices
 
-- [ ] Create the checkpoint branch from the reviewed Phase 6 merge and record
+- [x] Create the checkpoint branch from the reviewed Phase 6 merge and record
       the exact base.
-- [ ] Inventory changed modules, tests, docs, dependencies, generated/runtime
+- [x] Inventory changed modules, tests, docs, dependencies, generated/runtime
       artifacts, model locks, evaluation manifests, and Git/object state.
-- [ ] Run the parallel antagonistic review and publish a public-safe findings
+- [x] Run the parallel antagonistic review and publish a public-safe findings
       register, ownership map, file inventory, and verification plan.
-- [ ] Resolve correctness/security/privacy/provenance/resource findings before
+- [x] Resolve correctness/security/privacy/provenance/resource findings before
       structural refactors that depend on them.
-- [ ] Remove duplicate/dead/speculative machinery and decompose mixed owners,
+- [x] Remove duplicate/dead/speculative machinery and decompose mixed owners,
       oversized modules, and catch-all test harnesses without adding Phase 7
       behavior.
-- [ ] Break the server worker-to-engine dependency cycle. Accept only a
+- [x] Break the server worker-to-engine dependency cycle. Accept only a
       one-way provider protocol/adapter dependency, retain the same runtime
       contract and lifecycle behavior, and add an import/dependency check that
       fails if the cycle returns.
-- [ ] Restore desktop language-routing-to-STT dependency direction under one
+- [x] Restore desktop language-routing-to-STT dependency direction under one
       composite routing-revision owner. Remove reverse/cross-owner state access
       while preserving the accepted local decision, span, fallback, and model
       replacement behavior in focused tests.
-- [ ] Consolidate duplicate server request fixtures behind behavior-named
+- [x] Consolidate duplicate server request fixtures behind behavior-named
       builders without weakening endpoint-specific assertions. The resulting
       fixtures must keep immutable request identities explicit and must not
       become one catch-all mutable test object.
-- [ ] Reconcile architecture, ADR implementation status, current status,
+- [x] Reconcile architecture, ADR implementation status, current status,
       roadmap, runbooks, active/completed plans, and evidence classifications
       with the refactored executable system.
-- [ ] Run focused verification throughout each affected slice.
+- [x] Run focused verification throughout each affected slice.
 - [ ] Freeze one checkpoint candidate and run the complete applicable local,
       native, server, release, disposable-Windows, and GB10 matrix exactly once.
 - [ ] Open a focused PR, require green exact-head hosted checks and review, and
       merge only the checked SHA.
+
+## Implemented checkpoint repairs
+
+- Correctness and lifecycle repairs now cover retention reconciliation, fail-stop
+  NeMo teardown, desktop quit ordering, Windows file identity, language-routing
+  ownership, accessible overlay/main-window activation, and same-process
+  second-launch recovery.
+- Provider engines depend on a neutral PCM module; an AST contract prevents a
+  return to the executable-worker dependency cycle.
+- `RecordingJobService` receives the real `BatchAsrPool` owner directly. The
+  removed wrapper added an immediate enqueue/dequeue hop but no independent
+  fairness, capacity, or lifecycle behavior.
+- Shared API/job request fixtures use behavior-named builders, while
+  endpoint-specific assertions remain local.
+- Generic bounded desktop logging is crate-root diagnostics infrastructure.
+  STT retains only ASR-specific log ownership.
+- Python 3.12 linting is pinned in the locked `uv` environment and enforced in
+  hosted CI with a deliberately narrow correctness baseline (`E4`, `E7`, `E9`,
+  and `F`). Ruff formatting is available but is not mass-applied in this mixed
+  behavioral checkpoint; a repository-wide formatter baseline remains a
+  separately reviewable mechanical change.
 
 ## Phase 7 cadence
 

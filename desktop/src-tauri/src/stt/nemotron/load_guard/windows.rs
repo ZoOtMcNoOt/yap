@@ -80,7 +80,7 @@ impl Drop for WindowsModelLoadGuard {
         self.directories.clear();
         if let Err(error) = std::fs::remove_dir_all(&self.snapshot_root) {
             if error.kind() != std::io::ErrorKind::NotFound {
-                crate::stt::log_yap(&format!(
+                crate::diagnostics::log(&format!(
                     "local model load snapshot cleanup failed: {error}"
                 ));
             }

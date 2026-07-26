@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from concurrent.futures import Future
-import hashlib
 import json
 from pathlib import Path
 import socket
@@ -17,10 +15,19 @@ from yap_server.api.app import create_server
 from yap_server.api.request_io import MAX_REQUEST_BODY_BYTES
 from yap_server.config import ServerSettings
 from yap_server.jobs import RecordingJobService
-from yap_server.pools.batch_asr import BatchAsrJob
-from yap_server.pools.batch_contract import BatchJobFactory
 
-from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
+from tests.jobs.service_fixtures import (
+    ControlledJobProcessor,
+    create_recording_job_request,
+)
+
+__all__ = [
+    "BatchJobApiTestCase",
+    "ControlledJobProcessor",
+    "HealthServerTestCase",
+    "MAX_REQUEST_BODY_BYTES",
+    "meeting_import_job_request",
+]
 
 
 class _CapturingLogger:
@@ -29,48 +36,6 @@ class _CapturingLogger:
 
     def info(self, message: str) -> None:
         self.messages.append(message)
-
-
-class _ControlledProcessor:
-    def __init__(self) -> None:
-        self.jobs: list[BatchAsrJob] = []
-        self.future: Future[dict[str, object]] = Future()
-
-    def submit(self, job: BatchAsrJob) -> Future[dict[str, object]]:
-        self.jobs.append(job)
-        return self.future
-
-    @property
-    def asr_catalog_revision(self) -> str:
-        return TEST_ASR_CATALOG_REVISION
-
-    def resolve_route(self, catalog_language_bcp47: str):
-        return test_asr_route(catalog_language_bcp47)
-
-    def reserve(
-        self,
-        job_id: str,
-        *,
-        pcm_byte_length: int,
-    ) -> _ImmediateReservation:
-        if pcm_byte_length < 1:
-            raise ValueError("test PCM reservation must be positive")
-        return _ImmediateReservation(self, job_id)
-
-
-class _ImmediateReservation:
-    def __init__(self, processor: _ControlledProcessor, job_id: str) -> None:
-        self._processor = processor
-        self._job_id = job_id
-
-    def start(self, factory: BatchJobFactory) -> Future[dict[str, object]]:
-        job = factory(threading.Event())
-        if job.job_id != self._job_id:
-            raise AssertionError("test reservation identity changed")
-        return self._processor.submit(job)
-
-    def abort(self) -> None:
-        return None
 
 
 class _BlockingStatusService:
@@ -97,67 +62,10 @@ class _BlockingStatusService:
                 self.active -= 1
 
 
-def _meeting_import_job_request() -> dict[str, object]:
-    chunk = bytes(320)
-    return {
-        "displayName": "Batch API fixture",
-        "metadata": {
-            "sessionId": "s-batch-api",
-            "mode": "meeting",
-            "origin": "imported_file",
-            "triggerMode": "toggle",
-            "startedAtUtc": "2026-07-14T21:00:00Z",
-            "utcOffsetMinutesAtStart": -300,
-            "localeHintBcp47": "en-US",
-            "countryCodeHint": "US",
-            "preferredLanguagesBcp47": ["en-US"],
-            "appVersion": "0.1.0",
-            "platform": "windows",
-            "privacyPolicyVersion": "development-only",
-            "retentionExpiresAtUtc": "2026-08-13T21:00:00Z",
-        },
-        "languageDecision": {
-            "mode": "fixed",
-            "languageBcp47": "en-US",
-            "disposition": "primary",
-        },
-        "tracks": [
-            {
-                "trackId": "track-1",
-                "source": {"kind": "imported", "provenance": "unknown"},
-                "deviceId": None,
-                "originalSampleRateHz": 16000,
-                "originalChannels": 1,
-            }
-        ],
-        "route": "server_batch",
-        "captureManifest": {
-            "schemaVersion": 1,
-            "sessionId": "s-batch-api",
-            "sha256": "a" * 64,
-            "byteLength": 4096,
-        },
-        "chunks": [
-            {
-                "replayKey": {
-                    "schemaVersion": 1,
-                    "sessionId": "s-batch-api",
-                    "trackId": "track-1",
-                    "sequenceStart": 0,
-                    "sequenceEnd": 159,
-                },
-                "contentIdentity": {
-                    "sha256": hashlib.sha256(chunk).hexdigest(),
-                    "byteLength": len(chunk),
-                },
-                "audioCodec": "pcm_s16le",
-                "sampleRateHz": 16000,
-                "channels": 1,
-                "startMs": 0,
-                "durationMs": 10,
-            }
-        ],
-    }
+def meeting_import_job_request() -> dict[str, object]:
+    request = create_recording_job_request(session_id="s-batch-api")
+    request["displayName"] = "Batch API fixture"
+    return request
 
 
 class HealthServerTestCase(unittest.TestCase):
@@ -270,7 +178,7 @@ class HealthServerTestCase(unittest.TestCase):
 class BatchJobApiTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
-        self.processor = _ControlledProcessor()
+        self.processor = ControlledJobProcessor()
         self.logger = _CapturingLogger()
         self.jobs = RecordingJobService(
             Path(self.temporary.name),

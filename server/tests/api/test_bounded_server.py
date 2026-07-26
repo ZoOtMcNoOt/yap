@@ -7,8 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
-from urllib.error import HTTPError
-from urllib.request import Request, urlopen
+from urllib.request import urlopen
 
 from yap_server.api.app import MAX_CONCURRENT_REQUEST_THREADS, create_server
 from yap_server.config import ServerSettings
@@ -17,8 +16,8 @@ from yap_server.jobs import RecordingJobService
 from .api_fixtures import (
     _BlockingStatusService,
     _CapturingLogger,
-    _ControlledProcessor,
-    _meeting_import_job_request,
+    ControlledJobProcessor,
+    meeting_import_job_request,
 )
 
 
@@ -27,7 +26,7 @@ class BoundedBatchJobServerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             service = RecordingJobService(
                 Path(temporary),
-                processor=_ControlledProcessor(),
+                processor=ControlledJobProcessor(),
                 supported_languages=("en",),
                 now=lambda: "2026-07-14T21:00:00Z",
             )
@@ -73,11 +72,11 @@ class BoundedBatchJobServerTests(unittest.TestCase):
             clock = {"now": "2026-07-14T21:00:00Z"}
             service = RecordingJobService(
                 root,
-                processor=_ControlledProcessor(),
+                processor=ControlledJobProcessor(),
                 supported_languages=("en",),
                 now=lambda: clock["now"],
             )
-            request = _meeting_import_job_request()
+            request = meeting_import_job_request()
             request["metadata"]["retentionExpiresAtUtc"] = "2026-07-15T00:00:00Z"
             created = service.create(request)
             service.cancel(created["jobId"])

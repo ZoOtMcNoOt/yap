@@ -7,7 +7,7 @@ from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
-from .api_fixtures import BatchJobApiTestCase, _meeting_import_job_request
+from .api_fixtures import BatchJobApiTestCase, meeting_import_job_request
 
 
 class BatchJobApiTests(BatchJobApiTestCase):
@@ -16,7 +16,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
             "/v1/jobs",
             method="POST",
             headers={"Content-Type": "application/json"},
-            data=json.dumps(_meeting_import_job_request()).encode("utf-8"),
+            data=json.dumps(meeting_import_job_request()).encode("utf-8"),
         )
 
         self.assertEqual(status, 400)
@@ -66,7 +66,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
                         "Content-Type": "application/json",
                         "Idempotency-Key": "job-api-storage-error",
                     },
-                    data=json.dumps(_meeting_import_job_request()).encode("utf-8"),
+                    data=json.dumps(meeting_import_job_request()).encode("utf-8"),
                 )
 
         self.assertEqual(status, 500)
@@ -82,7 +82,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
         self.assertNotIn(private_path, observable_output)
 
     def test_batch_contract_runs_create_upload_commit_status_and_result(self) -> None:
-        job_request = _meeting_import_job_request()
+        job_request = meeting_import_job_request()
         status, _, health_payload = self._request("/v1/health")
         self.assertEqual(status, 200)
         self.assertEqual(
@@ -199,7 +199,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
                 "Content-Type": "application/json",
                 "Idempotency-Key": "job-api-cancel",
             },
-            data=json.dumps(_meeting_import_job_request()).encode("utf-8"),
+            data=json.dumps(meeting_import_job_request()).encode("utf-8"),
         )
         self.assertEqual(status, 202)
 
@@ -218,7 +218,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
         self.assertEqual(replayed, cancelled)
 
     def test_stage_routes_expose_latest_evidence_and_retry_exact_failed_asr(self) -> None:
-        request = _meeting_import_job_request()
+        request = meeting_import_job_request()
         created = self.jobs.create(request, idempotency_key="stage-api-create")
         job_id = created["jobId"]
         chunk = bytes(320)

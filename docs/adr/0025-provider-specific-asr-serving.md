@@ -165,6 +165,10 @@ specific behind that seam.
   budget, must fail before release with retryable pool backpressure and then
   succeed after the accepted work drains. NeMo separately owns an authenticated
   eight-active service limit and returns typed HTTP 429 for the ninth request.
+  Checkpoint B passes that pool directly to `RecordingJobService`; the removed
+  immediate enqueue/dequeue wrapper was not a second scheduler. Provider
+  engines now depend on neutral `pools/pcm_audio.py`, while
+  `batch_asr_worker.py` remains the executable process adapter.
 - Specialized private qualification runners distinguish typed cancellation
   from generic failure and prove immediate recovery. The pinned vLLM
   client-disconnect path calls the engine abort boundary, but externally freed

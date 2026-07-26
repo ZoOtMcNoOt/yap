@@ -104,7 +104,7 @@ pub(super) fn run_capture_worker(
                 },
                 move |error| {
                     let message = format!("Microphone input stopped: {error}");
-                    crate::stt::log_yap(&format!("live input stream error: {error}"));
+                    crate::diagnostics::log(&format!("live input stream error: {error}"));
                     spawn_stream_crash_handler(
                         error_app.clone(),
                         error_runtime.clone(),
@@ -129,7 +129,7 @@ pub(super) fn run_capture_worker(
     );
     if let Ok(mut coordinator) = coordinator.lock() {
         for outcome in coordinator.outcomes() {
-            crate::stt::log_yap(&format!(
+            crate::diagnostics::log(&format!(
                 "audio sink {:?} accepted={} dropped={} closed={} error={:?}",
                 outcome.kind,
                 outcome.accepted_frames,

@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use tauri::Manager;
 
-use crate::{authorization, live, stt};
+use crate::{authorization, live};
 
 use super::{
     completion::{append_error, CompletionMode},
@@ -96,7 +96,7 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
         QuitClaim::Finalize => {}
         QuitClaim::Coalesced => return,
         QuitClaim::Blocked(error) => {
-            stt::log_yap(&format!(
+            crate::diagnostics::log(&format!(
                 "quit remains blocked by an unacknowledged save failure: {error}"
             ));
             present_quit_failure(app);
@@ -123,7 +123,7 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
                 worker_app
                     .state::<QuitCoordinator>()
                     .finish(Err(error.clone()));
-                stt::log_yap(&format!(
+                crate::diagnostics::log(&format!(
                     "quit deferred after live finalization failed: {error}"
                 ));
                 present_quit_failure(&worker_app);
@@ -131,7 +131,7 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
         })
     {
         app.state::<QuitCoordinator>().worker_start_failed();
-        stt::log_yap(&format!("quit worker failed to start: {error}"));
+        crate::diagnostics::log(&format!("quit worker failed to start: {error}"));
         present_quit_failure(app);
     }
 }
@@ -172,7 +172,7 @@ fn present_quit_failure(app: &tauri::AppHandle) {
     });
     show_main_window(app);
     if let Err(error) = live::overlay_window::ensure_active(app) {
-        stt::log_yap(&format!("quit failure overlay show failed: {error}"));
+        crate::diagnostics::log(&format!("quit failure overlay show failed: {error}"));
     }
     live::events::emit_session(app, &view);
 }

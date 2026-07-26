@@ -17,7 +17,6 @@ from yap_server.alignment_contract import (
     unavailable_alignment,
 )
 from yap_server.limits import MAX_WORKER_RESULT_BYTES
-from yap_server.pools.batch_asr_worker import PcmAudio
 from yap_server.pools.cohere_alignment import (
     ALIGNMENT_MEDIAN_FILTER_WIDTH,
     ALIGNMENT_SELECTED_HEADS,
@@ -27,6 +26,7 @@ from yap_server.pools.cohere_alignment import (
     valid_encoder_frame_count,
 )
 from yap_server.pools.model_lock import ModelPoolLock
+from yap_server.pools.pcm_audio import PcmAudio
 
 
 MAX_ENGINE_BATCH_SIZE = 8

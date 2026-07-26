@@ -508,15 +508,17 @@ base-digest identity, or runtime identity.
 
 The living [decision and evidence queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 preserves the detailed discussion register, open questions, later-phase owners,
-and reviewable sub-tasks. The active Phase 6 plan remains the delivery authority.
-The concise
+and reviewable sub-tasks. Phase 6 is merged. The active
+[codebase ownership and maintainability review](plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md)
+is the Checkpoint B delivery authority. The concise
 [integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Complete final exact-head hosted and adversarial read-back on Phase 6 PR #67.
-2. Merge only that reviewed green head, then start the separately queued
-   Checkpoint B before Phase 7.
+1. Finish the narrow Checkpoint B repairs and documentation reconciliation.
+2. Consume the complete applicable checkpoint matrix exactly once on the frozen
+   candidate, then open and review the focused PR.
+3. Merge only its green checked head, then begin Phase 7 on a separate branch.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
 point. Checkpoint B reviews broadly but changes narrowly before that integrated

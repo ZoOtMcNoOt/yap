@@ -23,7 +23,7 @@ from yap_server.evaluation.ami_word_timeline import (
 from yap_server.evaluation.private_evaluation_artifact import (
     read_bounded_regular_file,
 )
-from yap_server.pools.batch_asr_worker import PcmAudio, decode_pcm16_wav
+from yap_server.pools.pcm_audio import PcmAudio, decode_pcm16_wav
 
 
 @dataclass(frozen=True, slots=True)

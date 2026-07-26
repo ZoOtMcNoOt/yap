@@ -30,7 +30,7 @@ pub(crate) fn configured_hotkey_matches_shortcut(configured: &str, shortcut: &Sh
 
 pub(crate) fn warm_on_intent(app: &tauri::AppHandle, live_runtime: &live::runtime::LiveRuntime) {
     if let Err(error) = live_runtime.request_warm(app.clone()) {
-        stt::log_yap(&format!("live warmup skipped: {error}"));
+        crate::diagnostics::log(&format!("live warmup skipped: {error}"));
     }
 }
 
@@ -103,7 +103,9 @@ pub(crate) fn start_live_runtime_with_intent(
                         view.active_capture_mode = None;
                     });
                     if let Err(error) = live::overlay_window::ensure_active(&app) {
-                        stt::log_yap(&format!("live overlay model failure show failed: {error}"));
+                        crate::diagnostics::log(&format!(
+                            "live overlay model failure show failed: {error}"
+                        ));
                     }
                     live::events::emit_session(&app, &view);
                     view
@@ -130,7 +132,7 @@ fn start_live_runtime_serialized(
         let view = live.block_with_error(stt::error::SttError::Busy.user_message());
         if view.visibility == live::state::LiveOverlayVisibility::Enabled {
             if let Err(error) = live::overlay_window::ensure_active(&app) {
-                stt::log_yap(&format!("live overlay busy show failed: {error}"));
+                crate::diagnostics::log(&format!("live overlay busy show failed: {error}"));
             }
         }
         live::events::emit_session(&app, &view);
@@ -142,7 +144,7 @@ fn start_live_runtime_serialized(
         let view = block_for_setup(live, setup);
         if view.visibility == live::state::LiveOverlayVisibility::Enabled {
             if let Err(error) = live::overlay_window::ensure_active(&app) {
-                stt::log_yap(&format!("live overlay blocked show failed: {error}"));
+                crate::diagnostics::log(&format!("live overlay blocked show failed: {error}"));
             }
         }
         live::events::emit_session(&app, &view);
@@ -159,7 +161,7 @@ fn start_live_runtime_serialized(
         return StartLifecycleResult::Complete(live.snapshot());
     };
     if let Err(error) = live::overlay_window::ensure_active(&app) {
-        stt::log_yap(&format!("live overlay initializing show failed: {error}"));
+        crate::diagnostics::log(&format!("live overlay initializing show failed: {error}"));
     }
     live::events::emit_session(&app, &armed);
 
@@ -181,7 +183,7 @@ fn start_live_runtime_serialized(
             };
             if live::state::is_live_capture_active(view.status) {
                 if let Err(error) = live::overlay_window::ensure_active(&app) {
-                    stt::log_yap(&format!("live overlay start show failed: {error}"));
+                    crate::diagnostics::log(&format!("live overlay start show failed: {error}"));
                 }
                 live::events::emit_session(&app, &view);
             }
@@ -194,7 +196,9 @@ fn start_live_runtime_serialized(
             };
             let view = live.block_with_error(&message);
             if let Err(error) = live::overlay_window::ensure_active(&app) {
-                stt::log_yap(&format!("live overlay start failure show failed: {error}"));
+                crate::diagnostics::log(&format!(
+                    "live overlay start failure show failed: {error}"
+                ));
             }
             live::events::emit_session(&app, &view);
             StartLifecycleResult::Complete(view)

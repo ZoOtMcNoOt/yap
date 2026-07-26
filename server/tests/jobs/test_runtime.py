@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 import unittest
-from concurrent.futures import Future
 from dataclasses import replace
 import os
 from pathlib import Path
 import tempfile
-import threading
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import yap_server.__main__ as server_main
 from yap_server.config import ServerSettings
 from yap_server.jobs.runtime import (
-    RoutedBatchProcessor,
     StorageRuntimeLease,
     _build_provider_worker_plans,
     _configured_model_pools,
@@ -21,56 +18,15 @@ from yap_server.jobs.runtime import (
     ensure_development_batch_bind,
 )
 from yap_server.jobs.contract_values import MAX_JOB_PCM_BYTES
-from yap_server.pools.batch_asr import BatchAsrJob, WorkerContainmentError
-from yap_server.pools.batch_contract import BatchJobFactory
+from yap_server.pools.batch_asr import WorkerContainmentError
 from yap_server.pools.provider_worker_factory import (
     AsrWorkerPlan,
     build_asr_worker_plan,
     resolve_checked_worker_image,
 )
-from yap_server.workload_router import WorkloadRouter
 
-from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
+from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION
 from tests.model_pools.batch_asr_fixtures import test_lock as _test_lock
-
-
-class _Pool:
-    def __init__(self) -> None:
-        self.jobs: list[BatchAsrJob] = []
-        self.future: Future[dict[str, object]] = Future()
-
-    def submit(self, job: BatchAsrJob) -> Future[dict[str, object]]:
-        self.jobs.append(job)
-        return self.future
-
-    def reserve(
-        self,
-        job_id: str,
-        *,
-        pcm_byte_length: int = 1,
-    ) -> _PoolReservation:
-        if pcm_byte_length < 1:
-            raise ValueError("test PCM reservation must be positive")
-        return _PoolReservation(self, job_id)
-
-    def cancel(self, job_id: str) -> bool:
-        return bool(self.jobs and self.jobs[-1].job_id == job_id)
-
-
-class _PoolReservation:
-    def __init__(self, pool: _Pool, job_id: str) -> None:
-        self._pool = pool
-        self._job_id = job_id
-        self._aborted = False
-
-    def start(self, factory: BatchJobFactory) -> Future[dict[str, object]]:
-        job = factory(threading.Event())
-        if job.job_id != self._job_id:
-            raise AssertionError("test reservation identity changed")
-        return self._pool.submit(job)
-
-    def abort(self) -> None:
-        self._aborted = True
 
 
 class _Runtime:
@@ -118,61 +74,7 @@ class _RetainingTestStorageLease:
         self._owned.discard(self.storage_root)
 
 
-class RoutedBatchProcessorTests(unittest.TestCase):
-    def test_submit_routes_batch_work_before_entering_the_isolated_pool(self) -> None:
-        pool = _Pool()
-        router = WorkloadRouter(
-            max_pending=3,
-            max_pending_per_owner=3,
-            max_consecutive_live=8,
-        )
-        processor = RoutedBatchProcessor(
-            router=router,
-            pool=pool,
-            owner_key="development-loopback",
-            route_resolver=test_asr_route,
-            asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
-        )
-        job = BatchAsrJob(
-            job_id="job-routed-batch-runtime",
-            input_path=Path("input.wav"),
-            result_path=Path("result.json"),
-            language="en",
-            input_sha256="a" * 64,
-            route=test_asr_route(),
-        )
-
-        returned = processor.submit(job)
-
-        self.assertIs(returned, pool.future)
-        self.assertEqual(pool.jobs, [job])
-        self.assertEqual(router.pending_count, 0)
-
-    def test_cancel_routes_to_the_same_isolated_pool_owner(self) -> None:
-        pool = _Pool()
-        processor = RoutedBatchProcessor(
-            router=WorkloadRouter(
-                max_pending=3,
-                max_pending_per_owner=3,
-                max_consecutive_live=8,
-            ),
-            pool=pool,
-            owner_key="development-loopback",
-            route_resolver=test_asr_route,
-            asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
-        )
-        job = BatchAsrJob(
-            job_id="job-routed-batch-cancel",
-            input_path=Path("input.wav"),
-            result_path=Path("result.json"),
-            language="en",
-            input_sha256="a" * 64,
-            route=test_asr_route(),
-        )
-        processor.submit(job)
-
-        self.assertTrue(processor.cancel(job.job_id))
-
+class BatchRuntimeTests(unittest.TestCase):
     @unittest.skipUnless(os.name == "posix", "POSIX storage lease")
     def test_storage_runtime_lease_excludes_a_second_server_process(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -466,7 +368,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
             patch(
                 "yap_server.jobs.runtime.RecordingJobService",
                 return_value=service,
-            ),
+            ) as service_type,
             patch(
                 "yap_server.jobs.runtime.build_language_detection_runtime",
                 side_effect=RuntimeError("later startup step failed"),
@@ -483,6 +385,7 @@ class RoutedBatchProcessorTests(unittest.TestCase):
                     )
 
                 service.begin_runtime_shutdown.assert_called_once_with()
+                self.assertIs(service_type.call_args.kwargs["processor"], pool)
                 pool.shutdown.assert_called_once_with()
                 self.assertTrue(storage_lease.retained)
                 self.assertEqual(storage_lease.close_calls, 0)

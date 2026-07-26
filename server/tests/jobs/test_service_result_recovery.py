@@ -339,7 +339,6 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
                 created["jobId"],
                 {"captureManifest": request["captureManifest"], "chunkCount": 1},
             )
-            worker_job = processor.jobs[0]
             payload = {
                 "transcript": {"text": "Cancelled private transcript."},
                 "model": {"id": "private-asr", "revision": "revision-1"},

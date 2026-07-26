@@ -1,8 +1,4 @@
-import json
 import unittest
-from copy import deepcopy
-from pathlib import Path
-from typing import Any
 from urllib.parse import urlparse
 
 from . import contract_http_values as http_contract

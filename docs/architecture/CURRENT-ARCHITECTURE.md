@@ -238,6 +238,18 @@ cancellation, capacity, and fixed/automatic-language runners so completion
 counts cannot stand in for the named semantics. Their composed frozen GB10
 candidate-safety evidence passed at `a21964c19e56648e9fddcb5200de419e59a7687c`.
 
+Checkpoint B removes two accidental dependency inversions without changing
+those owners. Provider engines consume the neutral
+`pools/pcm_audio.py` contract instead of importing the executable
+`batch_asr_worker.py` adapter, with an AST dependency test guarding the seam.
+The loopback server passes `BatchAsrPool` directly to `RecordingJobService`;
+the removed wrapper only enqueued and immediately dispatched the same batch
+request, so it never provided independent scheduling or fairness. The retained
+`WorkloadRouter` remains a policy/reference surface for future mixed live and
+batch admission, not a claimed second owner in the current batch runtime.
+Desktop-wide bounded logging now belongs to crate-root `diagnostics.rs`; the
+STT module owns only its ASR-specific log path and timing helpers.
+
 The production result contract permits canonical empty ASR text. Duration-
 transport evidence therefore counts a published empty result as completed for
 silent or too-short audio, while provider-behavior, request-lifecycle, and

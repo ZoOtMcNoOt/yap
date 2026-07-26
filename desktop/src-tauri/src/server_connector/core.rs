@@ -447,7 +447,9 @@ impl ServerConnector {
             lid_policy_revision.as_deref(),
             || {
                 if super::capability_snapshot::save(lease.base_url(), &catalog).is_err() {
-                    crate::stt::log_yap("verified ASR capability snapshot could not be updated");
+                    crate::diagnostics::log(
+                        "verified ASR capability snapshot could not be updated",
+                    );
                 }
                 let binding = AsrCatalogBinding::try_new(
                     lease.base_url.clone(),

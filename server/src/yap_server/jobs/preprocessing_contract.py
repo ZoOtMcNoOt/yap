@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Mapping
 
 from .contract_values import exact_keys, integer_between, mapping, valid_sha256
 

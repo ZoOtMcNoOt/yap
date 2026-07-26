@@ -18,7 +18,7 @@ from urllib.parse import urlsplit
 
 from yap_server.bounded_file import read_regular_text
 from yap_server.language_tags import canonical_bcp47
-from yap_server.pools.batch_asr_worker import PcmAudio, decode_pcm16_wav
+from yap_server.pools.pcm_audio import PcmAudio, decode_pcm16_wav
 
 
 _MAX_LOCK_BYTES = 128 * 1024

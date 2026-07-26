@@ -1,6 +1,6 @@
 use tauri::Manager;
 
-use crate::{live, stt};
+use crate::live;
 
 use super::completion::{
     append_error, apply_injection_result, run_completion_effects_with_mode, CompletionMode,
@@ -96,7 +96,7 @@ pub(super) fn finalize_live_runtime_with_mode(
     live::events::emit_session(&app, &saving);
     let finish_status = live_runtime.stop_stream();
     if finish_status.should_report() {
-        stt::log_yap(&format!(
+        crate::diagnostics::log(&format!(
             "live stream stop completed with {finish_status:?}"
         ));
     }
@@ -126,7 +126,7 @@ pub(super) fn finalize_live_runtime_with_mode(
         Ok(Some(saved)) => live::events::emit_saved(&app, &saved),
         Ok(None) => {}
         Err(error) => {
-            stt::log_yap(&format!("live save failed: {error}"));
+            crate::diagnostics::log(&format!("live save failed: {error}"));
             live.update(|view| {
                 let save_error = "Couldn't save this recording to Home.";
                 view.error = Some(append_error(view.error.take(), save_error));
@@ -145,11 +145,11 @@ fn finish_live_finalization(
     let view = live.finish_saving();
     if view.error.is_some() {
         if let Err(error) = live::overlay_window::ensure_active(&app) {
-            stt::log_yap(&format!("live overlay feedback show failed: {error}"));
+            crate::diagnostics::log(&format!("live overlay feedback show failed: {error}"));
         }
     } else if view.visibility == live::state::LiveOverlayVisibility::Enabled {
         if let Err(error) = live::overlay_window::ensure_idle(&app) {
-            stt::log_yap(&format!("live overlay idle show failed: {error}"));
+            crate::diagnostics::log(&format!("live overlay idle show failed: {error}"));
         }
     } else if let Some(window) = app.get_webview_window(live::overlay_window::WINDOW_LABEL) {
         let _ = window.hide();

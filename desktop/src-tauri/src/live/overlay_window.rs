@@ -54,7 +54,7 @@ pub(crate) fn recover(app: &tauri::AppHandle) {
         ensure_idle(app)
     };
     if let Err(error) = result {
-        crate::stt::log_yap(&format!("live overlay recovery failed: {error}"));
+        crate::diagnostics::log(&format!("live overlay recovery failed: {error}"));
     }
 }
 

@@ -1,7 +1,7 @@
 use tauri::Manager;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
-use crate::{live, stt};
+use crate::live;
 
 mod dispatcher;
 
@@ -141,7 +141,7 @@ fn record_startup_shortcut_failure(
     registration: &LiveShortcutRegistration,
     reason: &str,
 ) {
-    stt::log_yap(&format!(
+    crate::diagnostics::log(&format!(
         "live {} hotkey unavailable: {reason}",
         if registration.is_paste {
             "paste"
@@ -155,7 +155,7 @@ fn record_startup_shortcut_failure(
         apply_startup_shortcut_failure(view, registration.is_paste);
     });
     if let Err(persist_error) = live::settings::save_view(&view) {
-        stt::log_yap(&format!(
+        crate::diagnostics::log(&format!(
             "failed to persist unavailable live shortcut cleanup: {persist_error}"
         ));
     }

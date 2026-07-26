@@ -44,6 +44,25 @@ from yap_server.pools.container_runtime import (
 from yap_server.pools.model_lock import ModelPoolLock
 
 
+__all__ = [
+    "AsrRouteDecision",
+    "BatchAsrJob",
+    "BatchAsrPool",
+    "BatchWorker",
+    "ContainerBatchAsrWorker",
+    "DuplicatePoolJob",
+    "DurableAsrRouting",
+    "PoolBackpressure",
+    "PoolFenced",
+    "ProviderBatchWorkerRegistry",
+    "ProviderCapacityUnavailable",
+    "WorkerCancellationAcknowledged",
+    "WorkerContainmentError",
+    "WorkerExecutionError",
+    "inspect_worker_image",
+    "reconcile_owned_containers",
+]
+
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _IMMUTABLE_IMAGE = re.compile(r"^(?:sha256:[0-9a-f]{64}|.+@sha256:[0-9a-f]{64})$")
 _WORKER_MEMORY_LIMIT = "96g"

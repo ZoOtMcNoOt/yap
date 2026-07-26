@@ -91,9 +91,11 @@ Phase 3 health process into a production service:
   `nvcr.io/nvidia/pytorch:26.06-py3` by immutable digest, Python 3.12, the
   NVIDIA Torch/CUDA build from that image, and a hash-locked resolver-minimal
   Python overlay.
-- `WorkloadRouter` provides bounded total/per-owner admission, bounded live
-  priority without batch starvation, round-robin owner fairness, and explicit
-  pool dispatch in memory.
+- `WorkloadRouter` remains the bounded live-versus-batch policy and reference
+  evaluation seam. The current loopback batch runtime does not enqueue and
+  immediately dispatch through a second scheduler: it delegates directly to
+  `BatchAsrPool`, the executable slot, queue, cancellation, and aggregate-PCM
+  admission owner.
 - `BatchAsrPool` provides a bounded thread-backed queue. Its container adapter
   runs each job non-root with no network, a read-only root filesystem, dropped
   capabilities, `no-new-privileges`, memory/CPU/PID/output ceilings, read-only
@@ -410,3 +412,9 @@ indefinitely. The service accepts HTTP/1.0 and HTTP/1.1 only.
 Skipped for now: Nx/Turborepo, package workspace wiring, framework/server
 dependencies, checked-in model weights, persistent worker deployment, and fake
 GB300 profiles.
+
+Python 3.12 server development uses the locked `uv` environment. Run
+`uv run --locked ruff check .` from `server/` before focused tests. Ruff's
+formatter is available for deliberate mechanical formatting work, but the
+checkpoint does not mass-format the established server tree inside a behavioral
+change.

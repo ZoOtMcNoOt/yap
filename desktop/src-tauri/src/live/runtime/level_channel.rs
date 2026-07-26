@@ -50,7 +50,7 @@ impl LevelWorker {
     ) {
         if let Some(handle) = self.handle.take() {
             if let Err(error) = join_worker(handle) {
-                crate::stt::log_yap(&format!("live level worker shutdown failed: {error}"));
+                crate::diagnostics::log(&format!("live level worker shutdown failed: {error}"));
             }
         }
         self.handle = Some(std::thread::spawn(move || {

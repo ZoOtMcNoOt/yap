@@ -317,7 +317,7 @@ pub(crate) fn emit_jobs_changed(app: &tauri::AppHandle) {
         "recording-jobs-changed",
         (),
     ) {
-        crate::stt::log_yap(&format!(
+        crate::diagnostics::log(&format!(
             "recording jobs event failed after commit: {error}"
         ));
     }
@@ -399,7 +399,7 @@ fn renewed_expiry(now_ms: u64) -> Result<u64, JobCommandError> {
 }
 
 fn log_registry_cleanup_failure(action: &str, error: &str) {
-    crate::stt::log_yap(&format!(
+    crate::diagnostics::log(&format!(
         "recording job playback registry {action} failed; snapshot reconciliation will retry: {error}"
     ));
 }
