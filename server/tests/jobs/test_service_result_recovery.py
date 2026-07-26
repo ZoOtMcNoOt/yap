@@ -19,7 +19,9 @@ from .service_fixtures import (
 
 
 class RecordingJobResultRecoveryTests(unittest.TestCase):
-    def test_delete_after_completion_purges_private_artifacts_and_returns_cancelled(self) -> None:
+    def test_delete_after_completion_purges_private_artifacts_and_returns_cancelled(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             processor = _ControlledProcessor()
@@ -93,7 +95,9 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             )
             self.assertEqual(restarted.get(created["jobId"]), cancelled)
 
-    def test_completion_state_failure_is_private_and_restart_recovers_result(self) -> None:
+    def test_completion_state_failure_is_private_and_restart_recovers_result(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             processor = _ControlledProcessor()
@@ -138,9 +142,10 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             original_publish_json = store_module.publish_json
 
             def fail_final_state(path: Path, value: object) -> None:
-                if path.name == "state.json" and (
-                    path.parent / "result-revision.json"
-                ).exists():
+                if (
+                    path.name == "state.json"
+                    and (path.parent / "result-revision.json").exists()
+                ):
                     raise OSError("C:/private/recordings/patient-audio.wav")
                 original_publish_json(path, value)
 
@@ -198,6 +203,7 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             state = json.loads(state_path.read_text(encoding="utf-8"))
             state["projection"]["status"] = "server_processing"
             state["schemaVersion"] = 3
+            del state["owner"]
             del state["asrRouting"]
             del state["stageHistoryComplete"]
             del state["stageAttempts"]
@@ -219,7 +225,7 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             self.assertEqual(restarted.get_result(created["jobId"]), result)
             persisted = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(persisted["projection"]["status"], "complete")
-            self.assertEqual(persisted["schemaVersion"], 5)
+            self.assertEqual(persisted["schemaVersion"], 6)
             self.assertFalse(persisted["stageHistoryComplete"])
             self.assertIsNone(persisted["asrRouting"])
 
@@ -238,6 +244,7 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             state_path = job_root / "state.json"
             legacy = json.loads(state_path.read_text(encoding="utf-8"))
             legacy["schemaVersion"] = 3
+            del legacy["owner"]
             del legacy["asrRouting"]
             del legacy["stageHistoryComplete"]
             del legacy["stageAttempts"]
@@ -260,7 +267,7 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             self.assertEqual(restarted.get(created["jobId"]), cancelled)
             self.assertFalse(result_path.exists())
             migrated = json.loads(state_path.read_text(encoding="utf-8"))
-            self.assertEqual(migrated["schemaVersion"], 5)
+            self.assertEqual(migrated["schemaVersion"], 6)
             self.assertFalse(migrated["stageHistoryComplete"])
             self.assertIsNone(migrated["asrRouting"])
             with self.assertRaises(JobServiceError) as unavailable:
@@ -283,6 +290,7 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             state_path = job_root / "state.json"
             legacy = json.loads(state_path.read_text(encoding="utf-8"))
             legacy["schemaVersion"] = 3
+            del legacy["owner"]
             legacy["projection"]["status"] = "server_processing"
             del legacy["asrRouting"]
             del legacy["stageHistoryComplete"]

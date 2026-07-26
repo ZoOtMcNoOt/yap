@@ -6,6 +6,8 @@ import json
 import threading
 import unittest
 
+from yap_server.auth import PrincipalKey
+from yap_server.jobs.ownership import DEVELOPMENT_JOB_OWNER
 from yap_server.lid.errors import (
     LidPreflightCancelled,
     LidPreflightConflict,
@@ -23,11 +25,19 @@ MEDIA_TYPE = "application/vnd.yap.lid-preflight.v1+octet-stream"
 class _LidService:
     def __init__(self) -> None:
         self.bodies: list[bytes] = []
+        self.owners: list[PrincipalKey] = []
+        self.cancel_owners: list[PrincipalKey] = []
         self.error: Exception | None = None
         self.cancelled: set[str] = set()
 
-    def run_envelope(self, body: bytes) -> dict[str, object]:
+    def run_envelope(
+        self,
+        body: bytes,
+        *,
+        owner: PrincipalKey,
+    ) -> dict[str, object]:
         self.bodies.append(body)
+        self.owners.append(owner)
         if self.error is not None:
             raise self.error
         return {
@@ -38,7 +48,8 @@ class _LidService:
             "userConfirmationRequired": True,
         }
 
-    def cancel(self, request_id: str) -> bool:
+    def cancel(self, request_id: str, *, owner: PrincipalKey) -> bool:
+        self.cancel_owners.append(owner)
         if request_id not in self.cancelled:
             return False
         self.cancelled.remove(request_id)
@@ -65,6 +76,7 @@ class LidPreflightApiTests(HealthServerTestCase):
         self.assertEqual(status, 200)
         self.assert_json_headers(headers, response)
         self.assertEqual(self.lid_service.bodies, [body])
+        self.assertEqual(self.lid_service.owners, [DEVELOPMENT_JOB_OWNER])
         self.assertEqual(json.loads(response)["status"], "manual")
         self.assertNotIn(body.decode("ascii"), "\n".join(self.logger.messages))
 
@@ -190,6 +202,10 @@ class LidPreflightApiTests(HealthServerTestCase):
                 "status": "cancellation_requested",
             },
         )
+        self.assertEqual(
+            self.lid_service.cancel_owners,
+            [DEVELOPMENT_JOB_OWNER],
+        )
 
         status, headers, response = self._request(
             "/v1/lid/preflights/unknown",
@@ -210,7 +226,13 @@ class _BlockingLidService:
         self.started = threading.Event()
         self.cancelled = threading.Event()
 
-    def run_envelope(self, body: bytes) -> dict[str, object]:
+    def run_envelope(
+        self,
+        body: bytes,
+        *,
+        owner: PrincipalKey,
+    ) -> dict[str, object]:
+        self.owner = owner
         if body != b"blocking-probe":
             raise AssertionError("unexpected test body")
         self.started.set()
@@ -218,7 +240,9 @@ class _BlockingLidService:
             raise AssertionError("test preflight was not cancelled")
         raise LidPreflightCancelled("cancelled")
 
-    def cancel(self, request_id: str) -> bool:
+    def cancel(self, request_id: str, *, owner: PrincipalKey) -> bool:
+        if owner != self.owner:
+            return False
         if request_id != "lid-blocking-01" or not self.started.is_set():
             return False
         self.cancelled.set()

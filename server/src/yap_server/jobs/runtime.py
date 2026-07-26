@@ -9,6 +9,7 @@ from pathlib import Path
 import stat
 from typing import Mapping, Sequence
 
+from yap_server.auth import PrincipalKey
 from yap_server.capabilities import load_verified_asr_capability_catalog
 from yap_server.config.runtime_environment import (
     ASR_MODEL_DIR_ENV,
@@ -20,6 +21,7 @@ from yap_server.config.runtime_environment import (
     NEMOTRON_MODEL_LOCK_ENV,
 )
 from yap_server.jobs.service import RecordingJobService
+from yap_server.jobs.ownership import DEVELOPMENT_JOB_OWNER
 from yap_server.lid.runtime import (
     LANGUAGE_DETECTION_ENABLED_ENV,
     LanguageDetectionRuntime,
@@ -149,13 +151,16 @@ def build_batch_runtime(
     environ: Mapping[str, str] | None = None,
     *,
     server_root: Path | None = None,
+    development_principal: PrincipalKey | None = DEVELOPMENT_JOB_OWNER,
 ) -> BatchRuntime | None:
     source = os.environ if environ is None else environ
     enabled = source.get(BATCH_ASR_ENABLED_ENV, "0")
     if enabled == "0":
         lid_enabled = source.get(LANGUAGE_DETECTION_ENABLED_ENV, "0")
         if lid_enabled == "1":
-            raise ValueError("language detection requires the verified batch ASR runtime")
+            raise ValueError(
+                "language detection requires the verified batch ASR runtime"
+            )
         if lid_enabled != "0":
             raise ValueError(f"{LANGUAGE_DETECTION_ENABLED_ENV} must be 0 or 1")
         return None
@@ -181,9 +186,9 @@ def build_batch_runtime(
     )
     configured_pools = _configured_model_pools(source, root)
     storage_dir = _private_storage_directory(source, BATCH_JOB_STORAGE_DIR_ENV)
-    storage_namespace = "storage-" + hashlib.sha256(
-        os.fsencode(storage_dir)
-    ).hexdigest()[:24]
+    storage_namespace = (
+        "storage-" + hashlib.sha256(os.fsencode(storage_dir)).hexdigest()[:24]
+    )
     timeout_seconds = _positive_float(
         source.get(ASR_WORKER_TIMEOUT_SECONDS_ENV, "1800"),
         ASR_WORKER_TIMEOUT_SECONDS_ENV,
@@ -221,10 +226,7 @@ def build_batch_runtime(
                 "provider startup reconciliation could not verify cleanup"
             )
         worker_registry = ProviderBatchWorkerRegistry(
-            {
-                provider_id: plan.worker
-                for provider_id, plan in worker_plans.items()
-            }
+            {provider_id: plan.worker for provider_id, plan in worker_plans.items()}
         )
         max_workers = min(plan.max_workers for plan in worker_plans.values())
         max_queued = min(plan.max_queued for plan in worker_plans.values())
@@ -246,6 +248,7 @@ def build_batch_runtime(
             supported_languages=route_resolver.supported_languages,
             now=_utc_now,
             startup_worker_cleanup_verified=startup_cleanup_verified,
+            development_principal=development_principal,
         )
         language_detection_runtime = build_language_detection_runtime(
             source,

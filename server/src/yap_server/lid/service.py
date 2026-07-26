@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 import stat
 import threading
 import time
 from typing import Any
 
+from yap_server.auth import AuthenticatedPrincipal, PrincipalKey
+from yap_server.jobs.ownership import (
+    DEVELOPMENT_JOB_OWNER,
+    principal_key,
+)
 from yap_server.pools.batch_contract import WorkerContainmentError
 
 from .component_lock import LidComponentLock
@@ -24,6 +30,12 @@ from .transport import (
     materialize_lid_transport_request,
     parse_lid_preflight_envelope,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class _ActiveLidRequest:
+    owner: PrincipalKey
+    cancellation: threading.Event
 
 
 class LidPreflightService:
@@ -52,7 +64,7 @@ class LidPreflightService:
         self._work_root = root.resolve(strict=True)
         self._catalog_revision = catalog_revision
         self._lock_guard = threading.Lock()
-        self._active: dict[str, threading.Event] = {}
+        self._active: dict[str, _ActiveLidRequest] = {}
         self._idle = threading.Condition(self._lock_guard)
         self._shutdown = False
         self._fenced_reason: str | None = None
@@ -62,7 +74,13 @@ class LidPreflightService:
         with self._lock_guard:
             return self._fenced_reason is not None
 
-    def run_envelope(self, body: bytes) -> dict[str, Any]:
+    def run_envelope(
+        self,
+        body: bytes,
+        *,
+        owner: AuthenticatedPrincipal | PrincipalKey = DEVELOPMENT_JOB_OWNER,
+    ) -> dict[str, Any]:
+        operation_owner = principal_key(owner)
         request = parse_lid_preflight_envelope(
             body,
             lock=self._lock,
@@ -71,21 +89,26 @@ class LidPreflightService:
         cancellation = threading.Event()
         with self._lock_guard:
             if self._shutdown:
-                raise LidPreflightUnavailable(
-                    "LID preflight service is shutting down"
-                )
+                raise LidPreflightUnavailable("LID preflight service is shutting down")
             if self._fenced_reason is not None:
                 raise LidPreflightUnavailable(self._fenced_reason)
-            if request.request_id in self._active:
-                raise LidPreflightConflict(
-                    "LID preflight request is already active"
-                )
-            self._active[request.request_id] = cancellation
+            active = self._active.get(request.request_id)
+            if active is not None:
+                if active.owner != operation_owner:
+                    raise LidPreflightUnavailable(
+                        "LID preflight capacity is temporarily unavailable"
+                    )
+                raise LidPreflightConflict("LID preflight request is already active")
+            self._active[request.request_id] = _ActiveLidRequest(
+                operation_owner,
+                cancellation,
+            )
         materialized: LidMaterializedRequest | None = None
         containment_error: (
             WorkerContainmentError | LidPreflightContainmentError | None
         ) = None
         try:
+
             def ensure_active() -> None:
                 if cancellation.is_set():
                     raise LidPreflightCancelled("LID preflight was cancelled")
@@ -136,20 +159,26 @@ class LidPreflightService:
             if cancelled and containment_error is None:
                 raise LidPreflightCancelled("LID preflight was cancelled")
 
-    def cancel(self, request_id: str) -> bool:
+    def cancel(
+        self,
+        request_id: str,
+        *,
+        owner: AuthenticatedPrincipal | PrincipalKey = DEVELOPMENT_JOB_OWNER,
+    ) -> bool:
+        operation_owner = principal_key(owner)
         with self._lock_guard:
-            cancellation = self._active.get(request_id)
-            if cancellation is None:
+            active = self._active.get(request_id)
+            if active is None or active.owner != operation_owner:
                 return False
-            cancellation.set()
+            active.cancellation.set()
             return True
 
     def close(self) -> None:
         with self._lock_guard:
             self._shutdown = True
             active = tuple(self._active.values())
-        for cancellation in active:
-            cancellation.set()
+        for request in active:
+            request.cancellation.set()
         self._engine.close()
         deadline = time.monotonic() + 5.0
         with self._lock_guard:

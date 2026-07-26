@@ -47,6 +47,9 @@ class _BlockingStatusService:
         self.active = 0
         self.maximum_active = 0
 
+    def for_principal(self, _principal: object) -> _BlockingStatusService:
+        return self
+
     def get(self, job_id: str) -> dict[str, object]:
         with self._lock:
             self.active += 1
@@ -69,14 +72,17 @@ def meeting_import_job_request() -> dict[str, object]:
 class HealthServerTestCase(unittest.TestCase):
     asr_capabilities: dict[str, object] | None = None
     lid_preflight_service: object | None = None
+    request_authenticator: object | None = None
+    server_settings = ServerSettings(host="127.0.0.1", port=0)
 
     def setUp(self) -> None:
         self.logger = _CapturingLogger()
         self.server = create_server(
-            ServerSettings(host="127.0.0.1", port=0),
+            self.server_settings,
             logger=self.logger,
             asr_capabilities=self.asr_capabilities,
             lid_preflight_service=self.lid_preflight_service,
+            request_authenticator=self.request_authenticator,
         )
         self.assertIsInstance(self.server, HTTPServer)
         if self.lid_preflight_service is None:

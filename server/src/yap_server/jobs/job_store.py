@@ -9,6 +9,7 @@ import re
 import stat
 from typing import Callable, Mapping, Sequence
 
+from yap_server.auth import PrincipalKey
 from yap_server.pools.batch_contract import (
     AsrRouteResolver,
     DurableAsrRouting,
@@ -37,6 +38,11 @@ from .intake_contract import (
     selected_language,
     validate_create_request,
 )
+from .ownership import (
+    DEVELOPMENT_JOB_OWNER,
+    LEGACY_UNOWNED_JOB_OWNER,
+    idempotency_owner_key,
+)
 from .result_contract import (
     capture_duration_ms,
     validate_persisted_projection,
@@ -62,8 +68,9 @@ class DurableJobState:
     results: dict[str, dict[str, object]] = field(default_factory=dict)
     receipts: dict[tuple[object, ...], dict[str, object]] = field(default_factory=dict)
     cancelled: set[str] = field(default_factory=set)
+    owners: dict[str, PrincipalKey] = field(default_factory=dict)
     create_keys: dict[str, str | None] = field(default_factory=dict)
-    created_by_key: dict[str, str] = field(default_factory=dict)
+    created_by_key: dict[tuple[str, str, str], str] = field(default_factory=dict)
     asr_routing: dict[str, DurableAsrRouting | None] = field(default_factory=dict)
     stage_history_complete: dict[str, bool] = field(default_factory=dict)
     stage_attempts: dict[str, list[dict[str, object]]] = field(default_factory=dict)
@@ -107,6 +114,7 @@ class RecordingJobStore:
         startup_worker_cleanup_verified: bool,
         route_resolver: AsrRouteResolver,
         asr_catalog_revision: str,
+        legacy_owner: PrincipalKey | None = DEVELOPMENT_JOB_OWNER,
     ) -> None:
         self.root = storage_root.resolve()
         self.root.mkdir(parents=True, exist_ok=True)
@@ -114,6 +122,7 @@ class RecordingJobStore:
         self._now = now
         self._startup_worker_cleanup_verified = startup_worker_cleanup_verified
         self._route_resolver = route_resolver
+        self._legacy_owner = legacy_owner
         validate_asr_catalog_revision(asr_catalog_revision)
         self._asr_catalog_revision = asr_catalog_revision
 
@@ -261,9 +270,7 @@ class RecordingJobStore:
             return
         except ValueError as error:
             raise ValueError("pending job deletion escaped its tombstone") from error
-        if _metadata_is_link_or_reparse(metadata) or not stat.S_ISDIR(
-            metadata.st_mode
-        ):
+        if _metadata_is_link_or_reparse(metadata) or not stat.S_ISDIR(metadata.st_mode):
             raise ValueError("pending job deletion contains an unsafe directory")
 
     @staticmethod
@@ -296,9 +303,7 @@ class RecordingJobStore:
         if _DELETION_TOMBSTONE.fullmatch(tombstone_root.name) is None:
             raise ValueError("pending job deletion identity is invalid")
         metadata = tombstone_root.lstat()
-        if _metadata_is_link_or_reparse(metadata) or not stat.S_ISDIR(
-            metadata.st_mode
-        ):
+        if _metadata_is_link_or_reparse(metadata) or not stat.S_ISDIR(metadata.st_mode):
             raise ValueError("pending job deletion is unsafe")
 
     def persist(self, state: DurableJobState, job_id: str) -> None:
@@ -327,7 +332,11 @@ class RecordingJobStore:
         publish_json(
             self.root / "jobs" / job_id / "state.json",
             {
-                "schemaVersion": 5,
+                "schemaVersion": 6,
+                "owner": {
+                    "tenantId": state.owners[job_id].tenant_id,
+                    "subjectId": state.owners[job_id].subject_id,
+                },
                 "createIdempotencyKey": state.create_keys[job_id],
                 "cancellationRequested": job_id in state.cancelled,
                 "asrRouting": None if routing is None else routing.to_persisted(),
@@ -385,9 +394,12 @@ class RecordingJobStore:
         state.stage_attempts.pop(job_id, None)
         state.projection_revisions.pop(job_id, None)
         state.cleanup_unverified.discard(job_id)
+        owner = state.owners.pop(job_id, None)
         create_key = state.create_keys.pop(job_id, None)
-        if create_key is not None and state.created_by_key.get(create_key) == job_id:
-            state.created_by_key.pop(create_key, None)
+        if create_key is not None and owner is not None:
+            owner_key = idempotency_owner_key(owner, create_key)
+            if state.created_by_key.get(owner_key) == job_id:
+                state.created_by_key.pop(owner_key, None)
         for stored_receipt_key in tuple(state.receipts):
             if stored_receipt_key[0] == job_id:
                 state.receipts.pop(stored_receipt_key, None)
@@ -425,6 +437,7 @@ class RecordingJobStore:
         persisted = read_json_file(job_root / "state.json")
         (
             schema_version,
+            persisted_owner,
             create_idempotency_key,
             cancellation_requested,
             persisted_asr_routing,
@@ -441,10 +454,18 @@ class RecordingJobStore:
         projection = dict(mapping(persisted.get("projection"), "persisted projection"))
         validate_persisted_projection(job_id, creation, projection)
         status = projection.get("status")
-        migration_needed = schema_version < 5
+        migration_needed = schema_version < 6
+        owner = (
+            persisted_owner
+            if persisted_owner is not None
+            else self._legacy_owner or LEGACY_UNOWNED_JOB_OWNER
+        )
+        if persisted_owner is None and self._legacy_owner is None:
+            self._quarantine_legacy_owner(job_id, projection)
+            status = projection.get("status")
         requires_worker_cleanup = False
         legacy_processing_without_route = False
-        if schema_version in {4, 5}:
+        if schema_version in {4, 5, 6}:
             asr_routing = (
                 None
                 if persisted_asr_routing is None
@@ -461,8 +482,7 @@ class RecordingJobStore:
                 declared_catalog_revision = creation.get("asrCatalogRevision")
                 if (
                     declared_catalog_revision is not None
-                    and declared_catalog_revision
-                    != asr_routing.asr_catalog_revision
+                    and declared_catalog_revision != asr_routing.asr_catalog_revision
                 ):
                     raise ValueError(
                         "persisted creation catalog revision differs from frozen routing"
@@ -487,15 +507,17 @@ class RecordingJobStore:
             raise ValueError("persisted receipts must be an array")
         state.requests[job_id] = deepcopy(dict(creation))
         state.jobs[job_id] = projection
+        state.owners[job_id] = owner
         state.asr_routing[job_id] = asr_routing
         state.stage_history_complete[job_id] = stage_history_complete
         state.stage_attempts[job_id] = stage_attempts
         state.projection_revisions[job_id] = projection_revision
         state.create_keys[job_id] = create_idempotency_key
         if create_idempotency_key is not None:
-            if create_idempotency_key in state.created_by_key:
+            owner_key = idempotency_owner_key(owner, create_idempotency_key)
+            if owner_key in state.created_by_key:
                 raise ValueError("persisted create idempotency key is duplicated")
-            state.created_by_key[create_idempotency_key] = job_id
+            state.created_by_key[owner_key] = job_id
         for raw_receipt in receipts:
             self._load_receipt(state, job_id, job_root, creation, raw_receipt)
         self._reconcile_projection(
@@ -509,6 +531,22 @@ class RecordingJobStore:
         )
         if migration_needed:
             self.persist(state, job_id)
+
+    def _quarantine_legacy_owner(
+        self,
+        job_id: str,
+        projection: dict[str, object],
+    ) -> None:
+        if projection.get("status") in {"cancelled", "complete", "failed", "partial"}:
+            return
+        projection["status"] = "failed"
+        projection["updatedAtUtc"] = self._now()
+        projection["error"] = {
+            "code": "OWNER_UNRECOVERABLE",
+            "message": "The persisted job has no authenticated owner.",
+            "retryable": False,
+            "requestId": f"job-{job_id}",
+        }
 
     def _freeze_legacy_routing(
         self,
@@ -592,10 +630,9 @@ class RecordingJobStore:
         if key in state.receipts:
             raise ValueError("persisted receipt is duplicated")
         body = read_regular_file(chunk_path(job_root, replay), MAX_CHUNK_BYTES)
-        if (
-            len(body) != content.get("byteLength")
-            or hashlib.sha256(body).hexdigest() != content.get("sha256")
-        ):
+        if len(body) != content.get("byteLength") or hashlib.sha256(
+            body
+        ).hexdigest() != content.get("sha256"):
             raise ValueError("persisted chunk differs from its receipt")
         state.receipts[key] = receipt
 

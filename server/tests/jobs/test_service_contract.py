@@ -55,7 +55,9 @@ class RecordingJobContractTests(unittest.TestCase):
                     self.assertEqual(invalid.exception.status, 400)
                     self.assertEqual(invalid.exception.code, "INVALID_JOB")
 
-    def test_intake_rejects_retention_that_is_already_expired_by_server_time(self) -> None:
+    def test_intake_rejects_retention_that_is_already_expired_by_server_time(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             service = RecordingJobService(
                 Path(temporary),
@@ -66,15 +68,15 @@ class RecordingJobContractTests(unittest.TestCase):
 
             with self.assertRaises(JobServiceError) as invalid:
                 service.create(
-                    _create_request(
-                        retention_expires_at_utc="2026-07-15T20:59:59Z"
-                    )
+                    _create_request(retention_expires_at_utc="2026-07-15T20:59:59Z")
                 )
 
             self.assertEqual(invalid.exception.status, 400)
             self.assertEqual(invalid.exception.code, "INVALID_JOB")
 
-    def test_intake_rejects_a_sequence_range_that_does_not_cover_the_pcm_frames(self) -> None:
+    def test_intake_rejects_a_sequence_range_that_does_not_cover_the_pcm_frames(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             service = RecordingJobService(
                 Path(temporary),
@@ -91,7 +93,9 @@ class RecordingJobContractTests(unittest.TestCase):
             self.assertEqual(invalid.exception.status, 400)
             self.assertEqual(invalid.exception.code, "INVALID_JOB")
 
-    def test_intake_rejects_session_shapes_outside_the_imported_meeting_slice(self) -> None:
+    def test_intake_rejects_session_shapes_outside_the_imported_meeting_slice(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             service = RecordingJobService(
                 Path(temporary),
@@ -149,7 +153,11 @@ class RecordingJobContractTests(unittest.TestCase):
 
             for mutation in (
                 {"languageBcp47": "fr-FR"},
-                {"mode": "dynamic", "languageBcp47": None, "disposition": "explicitDynamic"},
+                {
+                    "mode": "dynamic",
+                    "languageBcp47": None,
+                    "disposition": "explicitDynamic",
+                },
                 {"disposition": "legacyImplicitEnglishDefault"},
             ):
                 with self.subTest(mutation=mutation):
@@ -208,7 +216,9 @@ class RecordingJobContractTests(unittest.TestCase):
         self.assertEqual(routing.route.execution_mode, "dynamicBatch")
         self.assertEqual(routing.route.provider_language, "auto")
 
-    def test_dynamic_result_segments_are_lossless_and_never_use_primary_fallback(self) -> None:
+    def test_dynamic_result_segments_are_lossless_and_never_use_primary_fallback(
+        self,
+    ) -> None:
         projection = {
             "sessionId": "s-dynamic",
             "captureManifest": {"sha256": "a" * 64},
@@ -333,7 +343,8 @@ class RecordingJobContractTests(unittest.TestCase):
             created = service.create(request, idempotency_key="legacy-implicit-default")
             self.assertEqual(created["status"], "accepted")
             self.assertEqual(
-                service.create(request, idempotency_key="legacy-implicit-default"), created
+                service.create(request, idempotency_key="legacy-implicit-default"),
+                created,
             )
 
     def test_preprocessing_evidence_is_validated_and_survives_restart(self) -> None:
@@ -349,9 +360,7 @@ class RecordingJobContractTests(unittest.TestCase):
 
             created = service.create(request, idempotency_key="route-evidence-v1")
             state_path = root / "jobs" / created["jobId"] / "state.json"
-            persisted = json.loads(
-                state_path.read_text(encoding="utf-8")
-            )
+            persisted = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 persisted["creation"]["preprocessingEvidence"],
                 request["preprocessingEvidence"],
@@ -448,6 +457,7 @@ class RecordingJobContractTests(unittest.TestCase):
             state_path = root / "jobs" / created["jobId"] / "state.json"
             legacy = json.loads(state_path.read_text(encoding="utf-8"))
             legacy["schemaVersion"] = 3
+            del legacy["owner"]
             del legacy["asrRouting"]
             del legacy["stageHistoryComplete"]
             del legacy["stageAttempts"]
@@ -468,13 +478,22 @@ class RecordingJobContractTests(unittest.TestCase):
 
             self.assertEqual(restarted.get(created["jobId"])["status"], "accepted")
             migrated = json.loads(state_path.read_text(encoding="utf-8"))
-            self.assertEqual(migrated["schemaVersion"], 5)
+            self.assertEqual(migrated["schemaVersion"], 6)
+            self.assertEqual(
+                migrated["owner"],
+                {
+                    "tenantId": "development-loopback",
+                    "subjectId": "local-server",
+                },
+            )
             self.assertFalse(migrated["stageHistoryComplete"])
             self.assertEqual(migrated["stageAttempts"], [])
             self.assertGreaterEqual(migrated["projectionRevision"], 1)
             self.assertEqual(migrated["asrRouting"]["asrCatalogRevision"], "d" * 64)
 
-    def test_preprocessing_evidence_rejects_unbounded_or_incoherent_shapes(self) -> None:
+    def test_preprocessing_evidence_rejects_unbounded_or_incoherent_shapes(
+        self,
+    ) -> None:
         invalid_requests: list[dict[str, object]] = []
 
         output_count_mismatch = _request_with_preprocessing_evidence()
@@ -484,9 +503,7 @@ class RecordingJobContractTests(unittest.TestCase):
         invalid_requests.append(output_count_mismatch)
 
         source_count_mismatch = _request_with_preprocessing_evidence()
-        source_count_mismatch["preprocessingEvidence"]["vad"][
-            "sourceSampleCount"
-        ] = 159
+        source_count_mismatch["preprocessingEvidence"]["vad"]["sourceSampleCount"] = 159
         invalid_requests.append(source_count_mismatch)
 
         interval_time_mismatch = _request_with_preprocessing_evidence()
@@ -520,9 +537,9 @@ class RecordingJobContractTests(unittest.TestCase):
         invalid_requests.append(excessive_intervals)
 
         unknown_nested_field = _request_with_preprocessing_evidence()
-        unknown_nested_field["preprocessingEvidence"]["normalization"][
-            "unexpected"
-        ] = True
+        unknown_nested_field["preprocessingEvidence"]["normalization"]["unexpected"] = (
+            True
+        )
         invalid_requests.append(unknown_nested_field)
 
         for request in invalid_requests:
@@ -538,7 +555,9 @@ class RecordingJobContractTests(unittest.TestCase):
                         service.create(request)
                     self.assertEqual(invalid.exception.code, "INVALID_JOB")
 
-    def test_result_model_provenance_matches_the_openapi_256_character_bound(self) -> None:
+    def test_result_model_provenance_matches_the_openapi_256_character_bound(
+        self,
+    ) -> None:
         from yap_server.jobs.result_contract import validate_result_revision
 
         projection = {
@@ -551,7 +570,9 @@ class RecordingJobContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_result_revision(result, projection)
 
-    def test_result_contract_accepts_empty_but_not_whitespace_only_transcript(self) -> None:
+    def test_result_contract_accepts_empty_but_not_whitespace_only_transcript(
+        self,
+    ) -> None:
         from yap_server.jobs.result_contract import validate_result_revision
 
         projection = {
@@ -579,17 +600,23 @@ class RecordingJobContractTests(unittest.TestCase):
 
             self.assertRegex(created["jobId"], r"^job-[0-9a-f]{32}$")
             self.assertEqual(created["sessionId"], "s-batch-create")
-            self.assertEqual(created["displayName"], "Batch transcription vertical slice")
+            self.assertEqual(
+                created["displayName"], "Batch transcription vertical slice"
+            )
             self.assertEqual(created["sessionMode"], "meeting")
             self.assertEqual(created["sessionOrigin"], "imported_file")
             self.assertEqual(created["status"], "accepted")
             self.assertEqual(created["route"], "server_batch")
-            self.assertEqual(created["captureManifest"], _create_request()["captureManifest"])
+            self.assertEqual(
+                created["captureManifest"], _create_request()["captureManifest"]
+            )
             self.assertEqual(created["createdAtUtc"], "2026-07-14T21:01:00Z")
             self.assertEqual(created["updatedAtUtc"], "2026-07-14T21:01:00Z")
             self.assertEqual(service.get(created["jobId"]), created)
 
-    def test_create_idempotency_survives_restart_and_rejects_conflicting_content(self) -> None:
+    def test_create_idempotency_survives_restart_and_rejects_conflicting_content(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             service = RecordingJobService(
@@ -623,7 +650,9 @@ class RecordingJobContractTests(unittest.TestCase):
             )
             self.assertEqual(len(list((root / "jobs").iterdir())), 1)
 
-    def test_create_persistence_failure_rolls_back_before_retry_and_restart(self) -> None:
+    def test_create_persistence_failure_rolls_back_before_retry_and_restart(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             service = RecordingJobService(

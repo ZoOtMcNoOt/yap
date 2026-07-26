@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Mapping
 
-from .contract_values import exact_keys, identifier
+from yap_server.auth import PrincipalKey
+
+from .contract_values import exact_keys, identifier, mapping
 from .stage_attempts import validate_stage_attempts
 
 
@@ -10,6 +12,7 @@ def persisted_state_metadata(
     state: Mapping[str, object],
 ) -> tuple[
     int,
+    PrincipalKey | None,
     str | None,
     bool,
     object | None,
@@ -24,7 +27,7 @@ def persisted_state_metadata(
             {"schemaVersion", "creation", "projection", "receipts"},
             "persisted job state",
         )
-        return 1, None, False, None, False, [], 0
+        return 1, None, None, False, None, False, [], 0
     if schema_version == 2:
         exact_keys(
             state,
@@ -38,7 +41,7 @@ def persisted_state_metadata(
             "persisted job state",
         )
         cancellation_requested = False
-    elif schema_version in {3, 4, 5}:
+    elif schema_version in {3, 4, 5, 6}:
         expected_keys = {
             "schemaVersion",
             "createIdempotencyKey",
@@ -47,12 +50,14 @@ def persisted_state_metadata(
             "projection",
             "receipts",
         }
-        if schema_version in {4, 5}:
+        if schema_version in {4, 5, 6}:
             expected_keys.add("asrRouting")
-        if schema_version == 5:
+        if schema_version in {5, 6}:
             expected_keys.update(
                 {"stageHistoryComplete", "stageAttempts", "projectionRevision"}
             )
+        if schema_version == 6:
+            expected_keys.add("owner")
         exact_keys(
             state,
             expected_keys,
@@ -69,8 +74,28 @@ def persisted_state_metadata(
         if raw_create_key is None
         else identifier(raw_create_key, 128, "create idempotency key")
     )
-    routing = state.get("asrRouting") if schema_version in {4, 5} else None
-    if schema_version == 5:
+    owner = None
+    if schema_version == 6:
+        owner_value = mapping(state.get("owner"), "persisted owner")
+        exact_keys(
+            owner_value,
+            {"tenantId", "subjectId"},
+            "persisted owner",
+        )
+        owner = PrincipalKey(
+            tenant_id=identifier(
+                owner_value.get("tenantId"),
+                128,
+                "persisted owner tenant",
+            ),
+            subject_id=identifier(
+                owner_value.get("subjectId"),
+                128,
+                "persisted owner subject",
+            ),
+        )
+    routing = state.get("asrRouting") if schema_version in {4, 5, 6} else None
+    if schema_version in {5, 6}:
         stage_history_complete = state.get("stageHistoryComplete")
         if not isinstance(stage_history_complete, bool):
             raise ValueError("persisted stage-history completeness is invalid")
@@ -88,6 +113,7 @@ def persisted_state_metadata(
         projection_revision = 0
     return (
         schema_version,
+        owner,
         create_idempotency_key,
         cancellation_requested,
         routing,

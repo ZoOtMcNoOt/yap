@@ -84,7 +84,9 @@ class _InProcessStorageLease:
         self._root = root
         self._retained_for_fail_stop = False
         if root in self._owned:
-            raise ValueError("private server storage is already owned by another runtime")
+            raise ValueError(
+                "private server storage is already owned by another runtime"
+            )
         self._owned.add(root)
 
     def retain_until_process_exit(self) -> None:
@@ -176,9 +178,7 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
             service.begin_runtime_shutdown()
 
             operations = (
-                lambda: service.create(
-                    _create_request(session_id="s-after-shutdown")
-                ),
+                lambda: service.create(_create_request(session_id="s-after-shutdown")),
                 lambda: service.prepare_chunk_upload(
                     created["jobId"],
                     track_id="track-1",
@@ -233,7 +233,9 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
         self._assert_containment_failure_retains_lease(_InProcessStorageLease)
 
     @unittest.skipUnless(os.name == "posix", "POSIX storage lease")
-    def test_containment_failure_retains_lease_and_blocks_late_publication(self) -> None:
+    def test_containment_failure_retains_lease_and_blocks_late_publication(
+        self,
+    ) -> None:
         self._assert_containment_failure_retains_lease(StorageRuntimeLease)
 
     def _assert_containment_failure_retains_lease(self, lease_type: type) -> None:
@@ -328,11 +330,15 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
                     "publish_wav",
                     blocked_publish_wav,
                 ):
-                    committed = service.commit(created["jobId"], _commit_request(request))
+                    committed = service.commit(
+                        created["jobId"], _commit_request(request)
+                    )
                     self.assertEqual(committed["status"], "server_processing")
                     self.assertTrue(entered_preparation.wait(timeout=2))
 
-                    replayed = service.commit(created["jobId"], _commit_request(request))
+                    replayed = service.commit(
+                        created["jobId"], _commit_request(request)
+                    )
                     self.assertEqual(replayed, committed)
                     self.assertEqual(publication_count, 1)
                     self.assertEqual(pool.outstanding_count, 1)
@@ -403,7 +409,9 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
                     self.assertTrue(busy.exception.retryable)
                     self.assertEqual(publication_count, 1)
                     self.assertFalse(
-                        (Path(temporary) / "jobs" / second["jobId"] / "input.wav").exists()
+                        (
+                            Path(temporary) / "jobs" / second["jobId"] / "input.wav"
+                        ).exists()
                     )
             finally:
                 release_preparation.set()
@@ -446,7 +454,9 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
                     "publish_wav",
                     cancellable_publish_wav,
                 ):
-                    committed = service.commit(created["jobId"], _commit_request(request))
+                    committed = service.commit(
+                        created["jobId"], _commit_request(request)
+                    )
                     self.assertEqual(committed["status"], "server_processing")
                     self.assertTrue(entered_preparation.wait(timeout=2))
                     cancelled = service.cancel(created["jobId"])
@@ -510,7 +520,9 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
                 service.begin_runtime_shutdown()
                 pool.shutdown()
 
-    def test_preprocessed_pcm_digest_mismatch_never_reaches_the_gpu_worker(self) -> None:
+    def test_preprocessed_pcm_digest_mismatch_never_reaches_the_gpu_worker(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             worker = _ControlledWorker()
@@ -587,7 +599,7 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
                 )
             )
             self.assertEqual(persisted["projection"]["status"], "server_processing")
-            self.assertEqual(persisted["schemaVersion"], 5)
+            self.assertEqual(persisted["schemaVersion"], 6)
             self.assertEqual(
                 persisted["asrRouting"],
                 {
@@ -658,6 +670,7 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
             state_path = root / "jobs" / created["jobId"] / "state.json"
             legacy = json.loads(state_path.read_text(encoding="utf-8"))
             legacy["schemaVersion"] = 3
+            del legacy["owner"]
             del legacy["asrRouting"]
             del legacy["stageHistoryComplete"]
             del legacy["stageAttempts"]
@@ -695,7 +708,7 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
                 )
                 self.assertFalse(resumed_worker.started.is_set())
                 migrated = json.loads(state_path.read_text(encoding="utf-8"))
-                self.assertEqual(migrated["schemaVersion"], 5)
+                self.assertEqual(migrated["schemaVersion"], 6)
                 self.assertFalse(migrated["stageHistoryComplete"])
                 self.assertIsNone(migrated["asrRouting"])
                 self.assertFalse(
