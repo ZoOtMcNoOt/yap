@@ -32,9 +32,9 @@ private evidence plan and new absent destinations outside the repository, then
 admit the sole attempt:
 
 ```powershell
-$checkedHead = (git rev-parse HEAD).Trim()
+$candidateHead = (git rev-parse HEAD).Trim()
 node .\verification\integrated-gate-runner.mjs begin `
-  --checked-head $checkedHead `
+  --checked-head $candidateHead `
   --evidence-root <existing-private-gate-root> `
   --manifest .\verification\integrated-product-checkpoint-gate.json `
   --private-plan <new-private-plan.json>
@@ -64,7 +64,7 @@ node .\verification\integrated-gate-receipt.mjs validate `
   --manifest .\verification\integrated-product-checkpoint-gate.json `
   --receipt <private-candidate-receipt.json> `
   --scope candidate `
-  --checked-head $checkedHead
+  --checked-head $candidateHead
 ```
 
 Any failure consumes the attempt. Any executable change, manifest change,
@@ -74,18 +74,40 @@ admission.
 
 ## Hosted closure
 
-After the candidate pull request exists and its required first-attempt hosted
-checks finish, derive a separate hosted-closure receipt from the candidate
-admission:
+After the candidate pull request exists, reconcile only public-safe evidence in
+`docs/` if required and commit that documentation-only descendant. An
+executable, test, workflow, manifest, or verification-tool change requires a
+new candidate; it is not eligible for this lineage exception. After the
+required first-attempt hosted checks finish on the exact final reviewed head,
+derive a separate hosted-closure receipt from the original candidate admission:
 
 ```powershell
+$candidateAdmissionPath = '<private-admission.json>'
+$candidateHead = [string](
+  Get-Content -LiteralPath $candidateAdmissionPath -Raw | ConvertFrom-Json
+).checkedHead
+$hostedHead = (git rev-parse HEAD).Trim()
 node .\verification\integrated-hosted-closure.mjs `
-  --checked-head $checkedHead `
-  --candidate-admission <private-admission.json> `
+  --checked-head $hostedHead `
+  --candidate-admission $candidateAdmissionPath `
   --output <new-private-hosted-closure-receipt.json>
 ```
 
-Validate it with the same product-checkpoint manifest, `hosted-closure` scope,
-exact candidate receipt SHA-256, and exact candidate head. Record only
-public-safe hashes and counts in repository documentation after independent
-validation succeeds.
+The hosted head may equal the candidate head or be its documentation-only
+descendant. The collector proves candidate ancestry, rejects any path outside
+`docs/` in the cumulative candidate-to-hosted tree diff, and
+revalidates the canonical candidate admission and receipt before querying the
+exact hosted SHA. Validate the result with both identities:
+
+```powershell
+node .\verification\integrated-gate-receipt.mjs validate `
+  --manifest .\verification\integrated-product-checkpoint-gate.json `
+  --receipt <private-hosted-closure-receipt.json> `
+  --scope hosted-closure `
+  --checked-head $hostedHead `
+  --candidate-head $candidateHead `
+  --candidate-receipt-sha256 <private-candidate-receipt-sha256>
+```
+
+Record only public-safe hashes and counts in repository documentation after
+independent validation succeeds.

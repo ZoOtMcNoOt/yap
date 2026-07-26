@@ -781,13 +781,16 @@ The reviewed Phase 6 merge activates
 [codebase ownership and maintainability review](2026-07-18-codebase-ownership-and-maintainability-review.md).
 It has completed exactly three parallel antagonistic reviews and applies the same
 ownership/decomposition/maintainability checkpoint used after Phase 5, on a
-separate refactor branch with no Phase 7 behavior. Exact executable candidate
-`f3f2f910c2340bbab016f98c51438414415b7206` passed its one-time
-31-child checkpoint matrix, but final antagonistic read-back found concrete
-blockers and invalidated it as merge authority. The narrow repairs pass focused
-verification; final repaired-head read-back, one exact candidate gate, hosted
-exact-head closure, review, and merge remain before Phase 7 starts. Phase 7 then
-uses the same phase -> adversarial checkpoint -> next-phase cadence.
+separate refactor branch with no Phase 7 behavior. Historical candidates and
+the consumed first hosted head remain recorded in the detailed checkpoint plan
+but are not merge authority. After the narrow hosted-failure repairs and
+three-agent read-back, exact executable candidate
+`9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted
+31-child checkpoint matrix and independent receipt validation with exact
+teardown. First-attempt hosted CI, CodeQL, and stock-NSIS closure on the
+documentation-only descendant, final review, and merge remain before Phase 7
+starts. Phase 7 then uses the same phase -> adversarial checkpoint -> next-phase
+cadence.
 
 ## Later-phase queue
 

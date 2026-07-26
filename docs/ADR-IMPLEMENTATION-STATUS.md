@@ -22,16 +22,19 @@ three-agent adversarial re-review. Hosted CI, CodeQL, and stock-NSIS passed at
 first attempt on final reviewed head
 `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as
 `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
-Post-Phase-6 Checkpoint B changes no ADR score. Its exact executable candidate
-`66267af0abf38af0a6b8d3d2fac76543673c0331` passed the single admitted
-31-child checkpoint matrix and independent receipt validation with exact
-teardown after the narrow repairs and three-agent antagonistic read-back.
-First-attempt hosted CI on later reviewed head
-`08ab49ba8d727cb8331a40f28c7c4c70d75d4035` exposed Cargo color
-contamination in dependency inventory and a same-process Windows atomic
-replacement race. Both are repaired with no ADR score change, but the
-executable/test-definition changes require a fresh exact-head checkpoint
-candidate before hosted closure, review, and merge.
+Post-Phase-6 Checkpoint B changes no ADR score. Historical candidate
+`66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
+`08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence
+but are not merge authority. After repairing the hosted Cargo color
+contamination and same-process Windows atomic replacement race, fresh exact
+executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353`
+passed its single admitted 31-child checkpoint matrix and independent receipt
+validation with exact teardown. The frozen manifest SHA-256 remains
+`2641f613a2a8dfbf0d2e1c7989b37c3af7e85aab732c3ae20381b52c1d144ac2`;
+the private receipt SHA-256 is
+`6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`.
+First-attempt hosted closure, review, and merge remain pending with no ADR score
+change.
 **Authority:** ADRs define decisions; current code and executable tests define implementation truth.
 
 An ADR can be accepted while its implementation score is zero. Superseded ADRs remain in the table for historical completeness, but a low score on a superseded decision is not backlog authorization.

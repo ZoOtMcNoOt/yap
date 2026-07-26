@@ -939,16 +939,16 @@ privacy review and ADR.
 
 **Build specs:** [Client state machine](specs/client-state-machine.md) · [Model download UX](specs/model-download-ux.md) · [Local audio preprocessing](specs/local-audio-preprocessing-stack.md) · [Local live fallback](specs/local-live-fallback-sidecar.md) · [Local LLM sidecar](specs/local-llm-sidecar.md) · [Live dictation client](specs/live-dictation-client-ux.md) · [Server tier MVP](specs/server-tier-mvp.md) · [Source-aware diarization](specs/source-aware-diarization.md) · [Testing](specs/testing-strategy.md).
 
-**Next execution order:** Phase 6 PR #67 is merged. Checkpoint B exact executable
-candidate `f3f2f910c2340bbab016f98c51438414415b7206` passed its one-time
-31-child matrix, but final antagonistic read-back found concrete blockers and
-invalidated it as merge authority. Those narrow repairs pass focused
-verification. Finish the repaired-head read-back, gate one exact candidate,
-require hosted exact-head closure, and merge only the green reviewed head. Then
-continue Phases 7–10 on separate branches in documented order. WSS/live ASR,
-authentication, diarization, and the HTTP/3 edge remain gated by their canonical
-phases. ADR 0021 does not authorize UDP exposure from the loopback application
-boundary.
+**Next execution order:** Phase 6 PR #67 is merged. After the narrow
+Checkpoint B hosted-failure repairs and three-agent read-back, exact executable
+candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single
+admitted 31-child matrix and independent receipt validation with exact
+teardown. Require first-attempt hosted CI, CodeQL, and stock-NSIS closure on
+its documentation-only descendant, finish review, and merge only that green
+checked head. Then continue Phases 7–10 on separate branches in documented
+order. WSS/live ASR, authentication, diarization, and the HTTP/3 edge remain
+gated by their canonical phases. ADR 0021 does not authorize UDP exposure from
+the loopback application boundary.
 
 ---
 

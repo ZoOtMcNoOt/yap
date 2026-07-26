@@ -96,16 +96,17 @@ reviews the complete Phase 1–6 executable system before Phase 7 starts. It use
 exactly three completed antagonistic reviews, then applies the same ownership,
 comprehensibility, decomposition, maintainability, resource, provenance, and
 documentation standard as post-Phase-5 Checkpoint A. It adds no Phase 7 product
-functionality. Exact executable candidate
-`66267af0abf38af0a6b8d3d2fac76543673c0331` passed its single admitted
+functionality. Historical candidate
+`66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
+`08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence
+but are not merge authority. After the Cargo-output and same-process Windows
+atomic replacement repairs, fresh exact executable candidate
+`9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted
 31-child checkpoint matrix and independent receipt validation with exact
-teardown after the narrow repairs and three final antagonistic read-backs.
-The first hosted attempt on later reviewed head
-`08ab49ba8d727cb8331a40f28c7c4c70d75d4035` then exposed deterministic
-Cargo-output contamination in dependency inventory and a same-process Windows
-atomic replacement race. The workflow was not rerun. Both defects are repaired
-and focused three-agent review is clean; those executable/test changes require
-a fresh exact-head 31-child candidate before hosted closure, review, and merge.
+teardown. Its private receipt SHA-256 is
+`6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`.
+First-attempt hosted CI, CodeQL, and stock-NSIS closure on the
+documentation-only descendant, final review, and merge remain pending.
 
 Phase 7 follows the same cadence: independently merge the phase, run a separate
 post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that

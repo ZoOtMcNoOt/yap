@@ -109,12 +109,13 @@ GPU pressure, model teardown, private evaluation evidence, and unavailable timin
 - [x] Run focused verification throughout each affected slice.
 - [x] Preserve the historical passed 31-child candidate and its independently
       validated receipt without relabeling it after later executable changes.
-- [ ] Freeze the replacement merge-authority checkpoint candidate and run the
-      complete applicable local, native, server, release,
-      disposable-Windows, and GB10 matrix exactly once.
+- [x] Freeze the replacement merge-authority checkpoint candidate and run the
+      complete 31-child local, native, server, release, target-client, and GB10
+      matrix exactly once.
 - [x] Open a focused PR.
-- [ ] Require green exact-head hosted checks and review, and merge only the
-      checked SHA.
+- [ ] Require green first-attempt hosted CI, CodeQL, and disposable-Windows
+      checks on the documentation-only descendant, complete review, and merge
+      only that checked SHA.
 
 ## Implemented checkpoint repairs
 
@@ -342,8 +343,24 @@ the existing replacement APIs. The focused hostile-environment dependency
 contract and 100-by-four existing-output replacement stress passed, and three
 antagonistic read-backs found no P0-P2 issue in either repair. Because these are
 executable and test-definition changes, candidate `66267af0...` remains valid
-historical evidence but is no longer merge authority. A fresh clean exact-head
-31-child admission and first-attempt hosted closure are required.
+historical evidence but is no longer merge authority.
+
+Fresh replacement candidate
+`9dfa8a68b02cdf854d14fb046e51a166cd3da353` then passed its single
+admitted checkpoint gate. Independent validation bound that exact executable
+head, all 31 children, frozen manifest SHA-256
+`2641f613a2a8dfbf0d2e1c7989b37c3af7e85aab732c3ae20381b52c1d144ac2`,
+and private candidate receipt SHA-256
+`6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`.
+The target-client, sequential GB10, connected desktop/private-server, exact
+teardown, frontend, native, required desktop WDIO, Python 3.12, and Ruff cells
+all passed. The candidate includes the Cargo color and Windows atomic
+replacement repairs, and independent post-run validation found the repository
+clean at the same head. Private audio, transcripts, raw metrics, process
+ledgers, host paths, logs, image receipts, and gate receipts remain outside Git
+and hosted artifacts. This candidate is the executable merge authority;
+first-attempt hosted closure on its documentation-only descendant, final
+review, and merge remain pending.
 
 ## Phase 7 cadence
 
