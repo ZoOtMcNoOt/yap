@@ -33,28 +33,27 @@ fn atomic_text_write_replaces_existing_output() {
 }
 
 #[test]
-fn atomic_text_write_uses_unique_temps_for_concurrent_writes() {
+fn concurrent_atomic_text_writers_replace_existing_output_without_partial_content() {
     let dir = temp_test_dir("atomic-polish-concurrent");
     let output = dir.join("take.polished.txt");
-    let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
-    let left_output = output.clone();
-    let left_barrier = std::sync::Arc::clone(&barrier);
-    let left = std::thread::spawn(move || {
-        left_barrier.wait();
-        write_text_atomically(&left_output, "left")
-    });
-    let right_output = output.clone();
-    let right_barrier = std::sync::Arc::clone(&barrier);
-    let right = std::thread::spawn(move || {
-        right_barrier.wait();
-        write_text_atomically(&right_output, "right")
+    std::fs::write(&output, "existing").unwrap();
+    let texts = ["first", "second", "third", "fourth"];
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(texts.len()));
+    let writers = texts.map(|text| {
+        let writer_output = output.clone();
+        let writer_barrier = std::sync::Arc::clone(&barrier);
+        std::thread::spawn(move || {
+            writer_barrier.wait();
+            write_text_atomically(&writer_output, text)
+        })
     });
 
-    left.join().unwrap().unwrap();
-    right.join().unwrap().unwrap();
+    for writer in writers {
+        writer.join().unwrap().unwrap();
+    }
 
     let text = std::fs::read_to_string(&output).unwrap();
-    assert!(text == "left" || text == "right");
+    assert!(texts.contains(&text.as_str()));
     let leftovers = std::fs::read_dir(&dir)
         .unwrap()
         .filter_map(Result::ok)

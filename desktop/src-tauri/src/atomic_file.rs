@@ -26,6 +26,9 @@ fn require_same_directory(source: &Path, destination: &Path) -> io::Result<()> {
 }
 
 #[cfg(windows)]
+static WINDOWS_REPLACE_SAME_DIRECTORY_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+#[cfg(windows)]
 pub(crate) fn replace_same_directory(source: &Path, destination: &Path) -> io::Result<()> {
     use std::os::windows::ffi::OsStrExt;
     use windows::core::PCWSTR;
@@ -35,6 +38,9 @@ pub(crate) fn replace_same_directory(source: &Path, destination: &Path) -> io::R
     };
 
     require_same_directory(source, destination)?;
+    let _replace_guard = WINDOWS_REPLACE_SAME_DIRECTORY_LOCK
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let source_wide = source
         .as_os_str()
         .encode_wide()
