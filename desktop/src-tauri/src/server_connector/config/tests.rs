@@ -15,6 +15,14 @@ fn temp_dir(name: &str) -> std::path::PathBuf {
     dir
 }
 
+fn test_microsoft_entra_settings() -> MicrosoftEntraSettings {
+    MicrosoftEntraSettings {
+        tenant_id: "11111111-1111-1111-1111-111111111111".into(),
+        client_id: "22222222-2222-2222-2222-222222222222".into(),
+        api_scope: "api://33333333-3333-3333-3333-333333333333/access_as_user".into(),
+    }
+}
+
 #[cfg(unix)]
 fn create_file_symlink(source: &Path, destination: &Path) -> std::io::Result<()> {
     std::os::unix::fs::symlink(source, destination)
@@ -67,7 +75,7 @@ const CROSS_PROCESS_CHILD_PATH: &str = "YAP_TEST_SETTINGS_CHILD_PATH";
 const CROSS_PROCESS_READY_PATH: &str = "YAP_TEST_SETTINGS_READY_PATH";
 const CROSS_PROCESS_RELEASE_PATH: &str = "YAP_TEST_SETTINGS_RELEASE_PATH";
 const CROSS_PROCESS_FUTURE: &str = r#"{
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "enabled": true,
   "baseUrl": "https://future-process.example",
   "futureField": "preserve-cross-process"

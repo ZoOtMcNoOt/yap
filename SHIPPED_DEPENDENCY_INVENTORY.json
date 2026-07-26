@@ -1,12 +1,15 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "target": "x86_64-pc-windows-msvc",
   "generatedFrom": {
-    "packageJsonSha256": "9c6ae23b9870e97a3315fc77889dd9ce8169a3a9ea199dc0f2a6220bf0fbc281",
+    "packageJsonSha256": "3b97aac5c1d94b80c798afe14f76a47a141f9a07bb6f774f1a9d1dbcfdcf1190",
     "pnpmLockSha256": "38e470ea1726b1aa0ad777e5967d8f91a7e7e342d5283c4bc82d2577a236d438",
-    "cargoTomlSha256": "274bb66d7f2a51bca1bb39213fe62f1d3506b194a36d04e83c52fb0aeecfd29c",
-    "cargoLockSha256": "c5dafb940adad4963f9fc4cecb0846dfbe4cc5f526b9165e5e9e9bb288cc5c8e",
-    "noticeExemptionsSha256": "776c6f501cb98b08029ec95e41284d224ec912c819a5f0a6155eedc2ed45b215"
+    "cargoTomlSha256": "d9e66f9c548c05ffbbea4c1846874210deab670b21a3d10d709ad56eedad8a39",
+    "cargoLockSha256": "7f8594bc98695989265612f0ea2103bac0dfc3902d9fc0b74471a2afbea192b6",
+    "dotnetGlobalJsonSha256": "248c17bb46fd7ff31402c62dc1870e90005fc1d9bcbc9a31cefcc78691149d76",
+    "dotnetProjectSha256": "e8284f68a62cfb15a739a565c1db0b5c3e62be2eee686cd858de34825fb4a885",
+    "dotnetPackagesLockSha256": "22731e848000fddbecb50a0bec9b92eaefa8218e4df830c2774c28f211cc67f6",
+    "noticeExemptionsSha256": "e6e7e3e9c79bbbc87fc2c55a7313ea4e09a4249caad6d037a7f6a250a77767af"
   },
   "packages": {
     "javascript": [
@@ -7272,6 +7275,140 @@
           {
             "sourceFile": "LICENSE-MIT",
             "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+          }
+        ]
+      }
+    ],
+    "dotnet": [
+      {
+        "name": "Microsoft.Identity.Client",
+        "version": "4.86.1",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "microsoft.identity.client.nuspec",
+            "sha256": "4c6682f2522663a358f357a7f8e073e2dad8cb7cb32cc40239506701b5470b4d"
+          }
+        ]
+      },
+      {
+        "name": "Microsoft.Identity.Client.Broker",
+        "version": "4.86.1",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "microsoft.identity.client.broker.nuspec",
+            "sha256": "6f770a5fa71c1dc922a8be756fb464d0f66cb5f0865c23c182ca3c8cc05bafc8"
+          }
+        ]
+      },
+      {
+        "name": "Microsoft.Identity.Client.Extensions.Msal",
+        "version": "4.86.1",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "microsoft.identity.client.extensions.msal.nuspec",
+            "sha256": "5c35a2654576724a6d26ef3e00ad20eee9ef03a436343eccb6eca6fbdf20ecdf"
+          }
+        ]
+      },
+      {
+        "name": "Microsoft.Identity.Client.NativeInterop",
+        "version": "0.20.6",
+        "licenseExpression": "MS-MSAL-NativeInterop",
+        "licenseTerms": [
+          "MS-MSAL-NativeInterop"
+        ],
+        "reviewDisposition": "reviewed-custom-runtime-license",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0fe665c2ada5962fd01190ab5b2947b9a9d2c625a9f8225577441eb3256e14e3"
+          }
+        ]
+      },
+      {
+        "name": "Microsoft.IdentityModel.Abstractions",
+        "version": "8.14.0",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "microsoft.identitymodel.abstractions.nuspec",
+            "sha256": "4049fb99213889eee0d67fcc3f851732cbd49507b890a9c20fa89f572be22fcc"
+          }
+        ]
+      },
+      {
+        "name": "System.Diagnostics.DiagnosticSource",
+        "version": "6.0.1",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE.TXT",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+          }
+        ]
+      },
+      {
+        "name": "System.Runtime.CompilerServices.Unsafe",
+        "version": "6.0.0",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE.TXT",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+          }
+        ]
+      },
+      {
+        "name": "System.Security.Cryptography.ProtectedData",
+        "version": "4.5.0",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE.TXT",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
           }
         ]
       }

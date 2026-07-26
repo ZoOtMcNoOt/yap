@@ -85,6 +85,11 @@ jobs:
           ref: ${{ needs.resolve-release.outputs.commit_sha }}
           fetch-depth: 1
           persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 8.0.423
+          cache: true
+          cache-dependency-path: desktop/native/Yap.Identity.Broker/packages.lock.json
       - name: Verify PowerShell 7.4 Core
         shell: pwsh
         run: |
@@ -201,8 +206,13 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($tauriVersion)) {
             throw "Failed to capture the Tauri CLI version."
           }
+          $dotnetVersion = (& dotnet --version 2>&1 | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $dotnetVersion -cne "8.0.423") {
+            throw "Failed to capture the pinned .NET SDK version."
+          }
           "YAP_RELEASE_PNPM_VERSION=$pnpmVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "YAP_RELEASE_TAURI_VERSION=$tauriVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "YAP_RELEASE_DOTNET_VERSION=$dotnetVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "YAP_RELEASE_POWERSHELL_EDITION=$($PSVersionTable.PSEdition)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "YAP_RELEASE_POWERSHELL_VERSION=$($PSVersionTable.PSVersion)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
@@ -316,7 +326,7 @@ jobs:
           if ([long]$metadata.artifact.sizeBytes -ne $installers[0].Length) { throw "Release installer length does not match metadata." }
           if ([string]::IsNullOrWhiteSpace($metadata.buildEnvironment.runner.imageOs)) { throw "Release metadata is missing the runner image." }
           if ([string]::IsNullOrWhiteSpace($metadata.buildEnvironment.runner.imageVersion)) { throw "Release metadata is missing the runner image version." }
-          foreach ($tool in @("node", "nsis", "pnpm", "powershellEdition", "powershellVersion", "rustcVv", "tauriCli")) {
+          foreach ($tool in @("dotnet", "node", "nsis", "pnpm", "powershellEdition", "powershellVersion", "rustcVv", "tauriCli")) {
             if ([string]::IsNullOrWhiteSpace($metadata.buildEnvironment.tools.$tool)) {
               throw "Release metadata is missing build tool evidence for $tool."
             }
@@ -341,12 +351,17 @@ jobs:
             "THIRD_PARTY_NOTICES.md",
             "THIRD_PARTY_PROVENANCE.json",
             "desktop/model-artifacts.lock.json",
+            "desktop/native/global.json",
+            "desktop/native/Yap.Identity.Broker/packages.lock.json",
+            "desktop/native/Yap.Identity.Broker/Program.cs",
+            "desktop/native/Yap.Identity.Broker/Yap.Identity.Broker.csproj",
             "desktop/package.json",
             "desktop/pnpm-lock.yaml",
             "desktop/src-tauri/Cargo.lock",
             "desktop/src-tauri/Cargo.toml",
             "desktop/src-tauri/rust-toolchain.toml",
             "desktop/src-tauri/tauri.conf.json",
+            "desktop/tests/scripts/build-identity-broker.ps1",
             "server/runtime/asr/licenses/APACHE-2.0.txt"
           )
           foreach ($inputPath in $requiredInputs) {

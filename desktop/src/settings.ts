@@ -12,10 +12,13 @@ import type {
 
 export {
   saveServerSettings,
+  serverIdentityStatus,
   serverSettings,
+  signInToServer,
+  signOutOfServer,
   testServerConnection,
 } from "@/server";
-export type { ServerSettings } from "@/server";
+export type { ServerIdentityStatus, ServerSettings } from "@/server";
 
 export function projectServerConnectionTestMessage(state: ServerConnectionState): string {
   switch (state) {

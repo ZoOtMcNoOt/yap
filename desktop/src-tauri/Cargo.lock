@@ -4850,6 +4850,7 @@ dependencies = [
  "libc",
  "mio",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "windows-sys 0.61.2",
@@ -6195,6 +6196,7 @@ dependencies = [
  "time",
  "tokio",
  "windows 0.61.3",
+ "zeroize",
 ]
 
 [[package]]

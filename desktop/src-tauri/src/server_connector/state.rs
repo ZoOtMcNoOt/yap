@@ -230,9 +230,13 @@ impl ConnectorInner {
                 self.retry_allowed = false;
                 None
             }
-            HealthCheckResult::SignInRequired { api_version } => {
+            HealthCheckResult::SignInRequired {
+                api_version,
+                capabilities,
+            } => {
                 self.snapshot.state = ServerConnectorState::SignInRequired;
                 self.snapshot.api_version = api_version;
+                self.snapshot.capabilities = capabilities;
                 self.retry_attempt = 0;
                 self.retry_allowed = false;
                 None
@@ -558,6 +562,7 @@ mod tests {
                 5,
                 HealthCheckResult::SignInRequired {
                     api_version: Some("1".to_owned()),
+                    capabilities: ServerCapabilities::default(),
                 },
                 20,
                 zero_jitter,

@@ -117,6 +117,11 @@ async fn advance_processing_job_once_guarded(
     let Some(candidate) = candidate else {
         return Ok(false);
     };
+    let (pinned_client, remote_authority) = client.pin_current_authority().await?;
+    ledger
+        .bind_remote_authority(&candidate.job_id, &remote_authority)
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?;
+    let client = &pinned_client;
     let prepared = ledger
         .get_prepared_remote_job(&candidate.job_id)
         .map_err(|error| error.to_string())?

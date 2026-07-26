@@ -116,29 +116,29 @@ scanning, capacity/SLO promotion, and deployment evidence.
       identity-platform support.
 - [x] Reconcile the completed checkpoint status and record this active plan
       without changing executable behavior.
-- [ ] Add typed server auth configuration, immutable principal context,
+- [x] Add typed server auth configuration, immutable principal context,
       authentication middleware, bounded Entra signing-key validation, and
       focused claim/route tests. Keep `/v1/health` public.
-- [ ] Add the identity repository, principal upsert, access revocation,
+- [x] Add the identity repository, principal upsert, access revocation,
       purpose-grant lifecycle, redacted append-only audit behavior, schema
       migration tests, and explicit production-storage handoff.
-- [ ] Make job state, idempotency, artifacts, service calls, and lookup
+- [x] Make job state, idempotency, artifacts, service calls, and lookup
       authorization principal-scoped. Migrate legacy development state only to
       the disabled-auth development principal; never attach it to the first
       authenticated user.
-- [ ] Carry the authenticated principal through LID and the existing batch
+- [x] Carry the authenticated principal through LID and the existing batch
       admission seam, with non-disclosing cross-owner tests and no Phase 8
       speaker behavior.
-- [ ] Add the official MSAL native adapter, encrypted cache integration,
+- [x] Add the official MSAL native adapter, encrypted cache integration,
       bounded Rust protocol owner, connector-generation token acquisition, and
       bearer injection for capabilities, LID, and batch calls. Preserve local
       dictation and offline history when sign-in or the server is unavailable.
-- [ ] Add focused end-to-end fixtures for two tenants, two users in one tenant,
+- [x] Add focused end-to-end fixtures for two tenants, two users in one tenant,
       token expiry/not-before, wrong resource/scope/issuer/tenant/algorithm,
       wrong/app-only client actor, unknown-key single-flight refresh, access
       revocation, grant revocation, restart, cancellation, idempotency, and
       cross-owner non-disclosure.
-- [ ] Reconcile ADR 0016, ADR implementation scores, Voice OS architecture,
+- [x] Reconcile ADR 0016, ADR implementation scores, Voice OS architecture,
       roadmap, executable ownership, current status, provenance, runbooks, and
       IT handoffs with observed behavior. Do not mark biometric, knowledge, or
       enterprise work complete.

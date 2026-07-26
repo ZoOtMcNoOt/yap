@@ -4,7 +4,7 @@ This document describes implemented controls and explicit handoffs without
 publishing private security evidence. It is not a penetration-test report,
 certification, production authorization, or substitute for enterprise review.
 
-## Implemented Phase 1–5 controls
+## Implemented controls through the active Phase 7 branch
 
 ### Local data and filesystem
 
@@ -60,6 +60,21 @@ certification, production authorization, or substitute for enterprise review.
   publication.
 - Health advertises capability only when the runtime is ready. Unsupported live
   transport remains unavailable rather than being presented as healthy.
+- In Entra mode, every current route except exact `/v1/health` requires a Yap
+  API bearer token with fixed RS256, tenant issuer, audience, delegated scope,
+  allowed client actor, time, key, `tid`, and `oid` validation. Signing-key
+  retrieval and refresh are bounded and single-flight.
+- Server jobs, LID requests, idempotency, artifacts, revocation, purpose-control,
+  and audit events are scoped by the validated `(tid, oid)` principal.
+  Cross-owner and absent resources use the same non-disclosing response.
+- The Windows desktop uses a bounded official MSAL.NET/WAM sidecar with
+  system-browser fallback and an OS-protected cache. Rust keeps tokens in
+  zeroizing memory, marks bearer headers sensitive, and hashes the selected
+  account identity before durable account binding. Raw tokens and account IDs
+  never enter React, ordinary app-data configuration, the job ledger, or logs.
+- Durable remote work is immutably account-bound before dispatch. Account
+  switching, sign-out, and attempts to claim pre-Phase-7 development work fail
+  before another user's bearer can be sent.
 
 ### UI and local control
 
@@ -91,10 +106,14 @@ certification, production authorization, or substitute for enterprise review.
 
 ## Known boundaries, not hidden controls
 
-The current loopback/SSH development profile does not provide:
+The current loopback/SSH development profile and focused Phase 7 evidence do
+not provide:
 
-- Entra/MSAL authentication or Yap API token validation;
-- tenant-derived `(tid, oid)` ownership, authorization, revocation, or purpose grants;
+- real enterprise tenant/app registration or approved Entra/MSAL/WAM,
+  Conditional Access, MFA, consent, token-protection, guest, or offboarding
+  conformance;
+- production identity storage, encryption/keys, backup/deletion, audit
+  retention/export, administrator roles, or legal/privacy approval;
 - an external TLS endpoint, enterprise certificate, internal DNS, or app-owned WSS;
 - an IT-approved firewall policy or ZPA application segment;
 - persistent production service supervision, backup/restore, disaster recovery,

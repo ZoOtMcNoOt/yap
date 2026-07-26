@@ -16,6 +16,8 @@ use super::{
 
 pub struct ServerConnector {
     pub(super) client: reqwest::Client,
+    pub(super) authorization: super::RequestAuthorization,
+    pub(super) identity: Arc<super::identity_adapter::NativeIdentityManager>,
     pub(super) inner: Mutex<ConnectorInner>,
     pub(super) generation: AtomicU64,
     asr_request_sequence: AtomicU64,
@@ -124,8 +126,11 @@ impl BatchConnectionLease {
 
 impl Default for ServerConnector {
     fn default() -> Self {
+        let identity = super::identity_adapter::NativeIdentityManager::discover();
         Self {
             client: client::bounded_client().expect("bounded server connector client must build"),
+            authorization: super::RequestAuthorization::from_source(identity.clone()),
+            identity,
             inner: Mutex::new(ConnectorInner::default()),
             generation: AtomicU64::new(0),
             asr_request_sequence: AtomicU64::new(0),
@@ -145,7 +150,11 @@ impl ServerConnector {
         &self,
         base_url: &str,
     ) -> Result<batch::BatchApiClient, batch::BatchClientError> {
-        batch::BatchApiClient::new(self.client.clone(), base_url)
+        batch::BatchApiClient::new_authorized(
+            self.client.clone(),
+            base_url,
+            self.authorization.clone(),
+        )
     }
 
     pub(super) fn begin_settings_save(&self) -> Result<SettingsSaveLease, String> {
@@ -242,8 +251,12 @@ impl ServerConnector {
         let Some(base_url) = inner.configured_base_url(generation) else {
             return Ok(None);
         };
-        let client = batch::BatchApiClient::new(self.client.clone(), &base_url)
-            .map_err(|error| error.to_string())?;
+        let client = batch::BatchApiClient::new_authorized(
+            self.client.clone(),
+            &base_url,
+            self.authorization.clone(),
+        )
+        .map_err(|error| error.to_string())?;
         let base_url = client.base_url_identity().to_owned();
         Ok(Some(BatchConnectionLease {
             generation,
@@ -282,7 +295,12 @@ impl ServerConnector {
     ) -> Result<batch::BatchApiClient, String> {
         // A durable cancellation record is a cleanup-only authority for its
         // exact previously validated origin. It does not authorize new work.
-        batch::BatchApiClient::new(self.client.clone(), base_url).map_err(|error| error.to_string())
+        batch::BatchApiClient::new_authorized(
+            self.client.clone(),
+            base_url,
+            self.authorization.clone(),
+        )
+        .map_err(|error| error.to_string())
     }
 
     pub(crate) fn configured_batch_origin(&self) -> Result<Option<String>, String> {

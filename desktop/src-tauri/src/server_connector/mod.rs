@@ -1,3 +1,4 @@
+mod authorization;
 pub(crate) mod batch;
 mod boundary;
 mod capabilities;
@@ -6,9 +7,11 @@ mod client;
 pub mod config;
 mod core;
 mod desktop;
+mod identity_adapter;
 pub(crate) mod lid;
 mod state;
 
+pub(crate) use authorization::RequestAuthorization;
 pub use boundary::ServerConnectorBoundary;
 pub use capabilities::AsrCapabilityCatalog;
 pub(crate) use capabilities::LidPreflightCapability;
@@ -68,6 +71,32 @@ pub(crate) async fn set_server_settings(
     settings: config::ServerSettings,
 ) -> Result<config::ServerSettings, String> {
     desktop::save_settings(window, app, connector, settings).await
+}
+
+#[tauri::command]
+pub(crate) async fn server_identity_status(
+    window: tauri::WebviewWindow,
+    connector: tauri::State<'_, ServerConnector>,
+) -> Result<identity_adapter::IdentitySessionStatus, String> {
+    desktop::identity_session_status(window, connector).await
+}
+
+#[tauri::command]
+pub(crate) async fn sign_in_to_server(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    connector: tauri::State<'_, ServerConnector>,
+) -> Result<identity_adapter::IdentitySessionStatus, String> {
+    desktop::sign_in_to_server(window, app, connector).await
+}
+
+#[tauri::command]
+pub(crate) async fn sign_out_of_server(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    connector: tauri::State<'_, ServerConnector>,
+) -> Result<identity_adapter::IdentitySessionStatus, String> {
+    desktop::sign_out_of_server(window, app, connector).await
 }
 
 #[cfg(test)]

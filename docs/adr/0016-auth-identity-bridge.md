@@ -17,6 +17,15 @@
 > they are not Phase 7 completion claims. Phase 7 uses a provider-neutral
 > identity-repository contract with a SQLite executable development adapter.
 > Production database topology and approval remain an explicit handoff.
+> The Windows client now uses an official MSAL.NET public-client sidecar with
+> WAM and system-browser fallback, an OS-protected per-tenant/client cache, and
+> a bounded single-request JSON protocol owned by Rust. The raw MSAL home
+> account ID is immediately reduced to a one-way local account binding; it is
+> never renderer, ledger, or log material. Every durable remote desktop job is
+> immutably bound to that account before network dispatch, so sign-out or
+> account switching fails closed instead of sending another user's bearer
+> token. Pre-Phase-7 remote work remains bound only to the development-loopback
+> authority and is never claimed by the first signer.
 
 ## Context
 
@@ -235,6 +244,17 @@ architecture contract for the Tauri desktop app.
 
 Request the Yap API scope for Yap calls. Request Microsoft Graph scopes only for separate Graph operations. Tokens and refresh material are stored through OS credential storage and are never exposed to ordinary frontend persistence.
 
+The packaged adapter is a self-contained Windows executable built from the
+pinned .NET 8 SDK and locked MSAL packages. Its silent path uses only the one
+account already selected through Yap's interactive flow; it does not silently
+adopt the ambient Windows account. Rust bounds request/response bytes, suppresses
+sidecar stderr, owns timeouts and child teardown, keeps access tokens in
+zeroizing memory, and marks the outbound authorization header sensitive.
+`Microsoft.Identity.Client.NativeInterop` is transitively required by the WAM
+broker and uses Microsoft-specific license terms. The repository records those
+exact terms; distribution still requires the named legal/provenance review and
+is not inferred from a successful local build.
+
 ### Token validation (`yap-server`)
 
 - Validate JWT signature against Entra JWKS (`https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys`) with a fixed `RS256` allow-list and bounded key caching/refresh.
@@ -245,14 +265,20 @@ Request the Yap API scope for Yap calls. Request Microsoft Graph scopes only for
 
 ### Phase 7 deliverables
 
-- [ ] Native/public-client MSAL.NET/WAM sign-in adapter in `yap-desktop`, with a system-browser fallback
-- [ ] MSAL/WAM protected token cache; no token or refresh material in renderer or ordinary app-data persistence
-- [ ] Token validation middleware in `yap-server`
-- [ ] Provider-neutral identity repository + SQLite development migration
-- [ ] Upsert-on-first-sign-in logic
-- [ ] Tenant-scoped job/LID/idempotency/artifact ownership with legacy-unowned quarantine
-- [ ] Versioned purpose-control, access-revocation, and redacted audit records
-- [ ] Synthetic two-principal signed-token/restart/account-switch gate
+- [x] Native/public-client MSAL.NET/WAM sign-in adapter in `yap-desktop`, with a system-browser fallback
+- [x] MSAL/WAM protected token cache; no token or refresh material in renderer or ordinary app-data persistence
+- [x] Token validation middleware in `yap-server`
+- [x] Provider-neutral identity repository + SQLite development migration
+- [x] Upsert-on-first-sign-in logic
+- [x] Tenant-scoped job/LID/idempotency/artifact ownership with legacy-unowned quarantine
+- [x] Versioned purpose-control, access-revocation, and redacted audit records
+- [x] Synthetic two-principal signed-token/restart/account-switch gate
+
+These checks describe focused executable implementation on the active Phase 7
+branch. They do not claim that the frozen phase matrix, adversarial review,
+hosted exact-head closure, a real enterprise tenant login, Conditional Access,
+MFA, WAM policy conformance, legal distribution review, or production storage
+and deployment approval has passed.
 
 Phase 8 owns the enrollment UI, profile records, matching, and voice-profile
 deletion. Phase 9 owns KB permission compilation and its Postgres/pgvector

@@ -143,10 +143,14 @@ export async function installQueuedServerBridge(
             return serverSnapshot;
           }
           if (command === "server_settings") return {
+            authentication: null,
             baseUrl: state === "offline" ? "https://server.example" : null,
             enabled: state === "offline",
-            schemaVersion: 1,
+            schemaVersion: 2,
           };
+          if (command === "server_identity_status") {
+            return { configured: false, signedIn: false };
+          }
           if (command === "live_status") return liveSnapshot;
           if (command === "record_live_hotkey") {
             shortcutCalls.push({ args, command });

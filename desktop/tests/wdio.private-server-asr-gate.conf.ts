@@ -121,7 +121,12 @@ function stageLicensedFixture() {
     copyFileSync(source, staged, constants.COPYFILE_EXCL);
     writeFileSync(
       path.join(appDataRoot, "server-settings.json"),
-      `${JSON.stringify({ schemaVersion: 1, enabled: true, baseUrl }, null, 2)}\n`,
+      `${JSON.stringify({
+        schemaVersion: 2,
+        enabled: true,
+        baseUrl,
+        authentication: null,
+      }, null, 2)}\n`,
       { encoding: "utf8", flag: "wx" },
     );
     writeFileSync(

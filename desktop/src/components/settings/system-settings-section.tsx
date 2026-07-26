@@ -1,12 +1,12 @@
 import { useId } from "react";
 
 import { SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
+import { ServerSettingsRows } from "@/components/settings/server-settings-rows";
 import type { FallbackLifecycleActionId, FallbackLifecycleProjection } from "@/components/settings/settings-lifecycle";
 import type { ServerSettingsDraftController } from "@/components/settings/use-server-settings-draft";
 import type { AcousticLanguageDetectorControl } from "@/hooks/use-acoustic-language-detector-control";
 import type { SileroVadControl } from "@/hooks/use-silero-vad-control";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -100,51 +100,7 @@ export function SystemSettingsSection({
 
   return (
     <SettingsGroup>
-      <SettingsRow
-        detail={server.notice || "HTTPS required outside approved private development."}
-        error={server.error}
-        label="Server"
-        value={server.pending ? "Checking" : server.enabled ? "Enabled" : "Disabled"}
-      >
-        <div className="flex w-full max-w-[520px] flex-wrap justify-end gap-2">
-          <Input
-            aria-label="Server URL"
-            className="min-w-[240px] flex-1"
-            disabled={server.pending}
-            onChange={(event) => server.setUrl(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") void server.save();
-            }}
-            placeholder="https://server.example"
-            value={server.url}
-          />
-          <Button
-            aria-checked={server.enabled}
-            disabled={server.pending}
-            onClick={server.toggleEnabled}
-            role="switch"
-            type="button"
-            variant={server.enabled ? "default" : "secondary"}
-          >
-            {server.enabled ? "Enabled" : "Disabled"}
-          </Button>
-          <Button
-            disabled={server.pending}
-            onClick={() => void server.save()}
-            type="button"
-            variant="secondary"
-          >
-            Save
-          </Button>
-          <Button
-            disabled={server.pending || !server.enabled || !server.url.trim()}
-            onClick={() => void server.testConnection()}
-            type="button"
-          >
-            Test Connection
-          </Button>
-        </div>
-      </SettingsRow>
+      <ServerSettingsRows server={server} />
       <SettingsRow
         detail={liveActive ? "Stop live before changing compute." : "Local live uses the CPU runtime. Server owns GPU routing."}
         label="Compute"

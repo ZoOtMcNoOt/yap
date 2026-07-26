@@ -400,7 +400,19 @@ async fn dispatch(
     let Some(lease) = connector.batch_connection_lease().ok().flatten() else {
         return Ok(ClientPreflightProgress::ServerUnavailable);
     };
-    let base_url = lease.client().base_url_identity();
+    let (client, remote_authority) =
+        lease
+            .client()
+            .pin_current_authority()
+            .await
+            .map_err(|error| ClientPreflightAdvanceError {
+                detail: error.to_string(),
+            })?;
+    drain
+        .resources
+        .ledger()
+        .bind_remote_authority(&job.job_id, &remote_authority)?;
+    let base_url = client.base_url_identity();
     let active_dispatch = artifact.lid_request_id.is_some();
     if active_dispatch
         && (artifact.lid_server_base_url.as_deref() != Some(base_url)
@@ -408,7 +420,7 @@ async fn dispatch(
                 != Some(snapshot.catalog.catalog_revision.as_str())
             || artifact.lid_policy_revision.as_deref() != Some(policy_revision.as_str()))
     {
-        if !cancel_persisted_dispatch(connector, &artifact).await? {
+        if !cancel_persisted_dispatch(connector, drain.resources.ledger(), &artifact).await? {
             return Ok(ClientPreflightProgress::ServerUnavailable);
         }
         return finish_dispatch_failure(
@@ -459,7 +471,7 @@ async fn dispatch(
     };
     let submitted = submit_with_cancellation(
         drain.resources.ledger(),
-        lease.client(),
+        &client,
         &job.job_id,
         request.request_id(),
         &request,
@@ -583,6 +595,7 @@ fn finish_dispatch_failure(
 
 async fn cancel_persisted_dispatch(
     connector: &ServerConnector,
+    ledger: &JobLedger,
     artifact: &crate::jobs::ClientPreflightArtifactRecord,
 ) -> Result<bool, ClientPreflightAdvanceError> {
     let (Some(base_url), Some(request_id)) = (
@@ -593,8 +606,15 @@ async fn cancel_persisted_dispatch(
             detail: "persisted LID dispatch has incomplete cancellation identity".into(),
         });
     };
+    let authority = ledger
+        .remote_authority(&artifact.job_id)
+        .map_err(ClientPreflightAdvanceError::from)?;
     let client = connector
         .batch_client_for_persisted_origin(base_url)
+        .map_err(|error| ClientPreflightAdvanceError {
+            detail: error.to_string(),
+        })?
+        .expect_persisted_authority(&authority)
         .map_err(|error| ClientPreflightAdvanceError {
             detail: error.to_string(),
         })?;
@@ -673,6 +693,7 @@ fn lid_failure_reason(error: &LidPreflightError) -> &'static str {
         LidPreflightError::InvalidRequest(_) => "invalid_request",
         LidPreflightError::Encode(_) => "encode_failed",
         LidPreflightError::Transport(_) => "transport_failed",
+        LidPreflightError::Authorization(_) => "authorization_failed",
         LidPreflightError::ResponseTooLarge => "response_too_large",
         LidPreflightError::MalformedResponse => "malformed_response",
         LidPreflightError::Api { .. } => "server_rejected",

@@ -71,14 +71,29 @@ impl JobLedger {
         let updated_at_ms = sqlite_integer(updated_at_ms, "updated_at_ms")?;
         let mut connection = self.lock()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let candidate: Option<(String, String, String, String)> = transaction
+        let candidate: Option<(String, String, String, String, String)> = transaction
             .query_row(
-                "SELECT prepared.job_id, prepared.server_base_url, prepared.server_job_id, prepared.create_request_json FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE prepared.server_job_id IS NOT NULL AND prepared.server_base_url IS NOT NULL AND prepared.server_cancellation_acknowledged_at_ms IS NULL AND job.status IN ('uploading', 'server_processing', 'saving', 'failed') AND (?1 IS NULL OR prepared.server_base_url <> ?1) ORDER BY job.updated_at_ms, prepared.job_id LIMIT 1",
+                "SELECT prepared.job_id, prepared.server_base_url, prepared.server_job_id, prepared.create_request_json, COALESCE(job.remote_authority_binding, 'development-loopback') FROM prepared_remote_jobs AS prepared JOIN recording_jobs AS job ON job.job_id = prepared.job_id WHERE prepared.server_job_id IS NOT NULL AND prepared.server_base_url IS NOT NULL AND prepared.server_cancellation_acknowledged_at_ms IS NULL AND job.status IN ('uploading', 'server_processing', 'saving', 'failed') AND (?1 IS NULL OR prepared.server_base_url <> ?1) ORDER BY job.updated_at_ms, prepared.job_id LIMIT 1",
                 [configured_origin],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                |row| {
+                    Ok((
+                        row.get(0)?,
+                        row.get(1)?,
+                        row.get(2)?,
+                        row.get(3)?,
+                        row.get(4)?,
+                    ))
+                },
             )
             .optional()?;
-        let Some((job_id, server_base_url, server_job_id, create_request_json)) = candidate else {
+        let Some((
+            job_id,
+            server_base_url,
+            server_job_id,
+            create_request_json,
+            remote_authority_binding,
+        )) = candidate
+        else {
             transaction.commit()?;
             return Ok(None);
         };
@@ -97,6 +112,7 @@ impl JobLedger {
             &server_base_url,
             &server_job_id,
             &create_request_json,
+            &remote_authority_binding,
             updated_at_ms,
         )?;
         let next_attempt_count = if current.status == RecordingJobStatus::Failed {
@@ -215,7 +231,7 @@ impl JobLedger {
     ) -> Result<Vec<DetachedRemoteCancellationRecord>, JobLedgerError> {
         let connection = self.lock()?;
         let mut statement = connection.prepare(
-            "SELECT server_base_url, server_job_id, create_request_json, queued_at_ms FROM detached_remote_cancellations ORDER BY queued_at_ms, server_base_url, server_job_id",
+            "SELECT server_base_url, server_job_id, create_request_json, queued_at_ms, remote_authority_binding FROM detached_remote_cancellations ORDER BY queued_at_ms, server_base_url, server_job_id",
         )?;
         let rows = statement.query_map([], |row| {
             Ok((
@@ -223,12 +239,20 @@ impl JobLedger {
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
                 row.get::<_, i64>(3)?,
+                row.get::<_, String>(4)?,
             ))
         })?;
         rows.map(|row| {
-            let (server_base_url, server_job_id, create_request_json, queued_at_ms) = row?;
+            let (
+                server_base_url,
+                server_job_id,
+                create_request_json,
+                queued_at_ms,
+                remote_authority_binding,
+            ) = row?;
             validate_server_base_url(&server_base_url)?;
             validate_opaque_identifier(&server_job_id, 128, "server job ID")?;
+            super::remote_authority::validate_remote_authority(&remote_authority_binding)?;
             if !(2..=MAX_PREPARED_REQUEST_BYTES).contains(&create_request_json.len()) {
                 return Err(JobLedgerError::InvalidRecord(
                     "detached cancellation request is outside the persisted contract",
@@ -239,6 +263,7 @@ impl JobLedger {
                 server_job_id,
                 create_request_json,
                 queued_at_ms: stored_unsigned(queued_at_ms, "queued_at_ms")?,
+                remote_authority_binding,
             })
         })
         .collect()
@@ -315,31 +340,34 @@ pub(super) fn enqueue_detached_cancellation(
     server_base_url: &str,
     server_job_id: &str,
     create_request_json: &str,
+    remote_authority_binding: &str,
     queued_at_ms: i64,
 ) -> Result<(), JobLedgerError> {
     validate_server_base_url(server_base_url)?;
     validate_opaque_identifier(server_job_id, 128, "server job ID")?;
+    super::remote_authority::validate_remote_authority(remote_authority_binding)?;
     if !(2..=MAX_PREPARED_REQUEST_BYTES).contains(&create_request_json.len()) {
         return Err(JobLedgerError::InvalidRecord(
             "detached cancellation request is outside the persisted contract",
         ));
     }
     let inserted = connection.execute(
-        "INSERT OR IGNORE INTO detached_remote_cancellations (server_base_url, server_job_id, create_request_json, queued_at_ms) VALUES (?1, ?2, ?3, ?4)",
+        "INSERT OR IGNORE INTO detached_remote_cancellations (server_base_url, server_job_id, create_request_json, queued_at_ms, remote_authority_binding) VALUES (?1, ?2, ?3, ?4, ?5)",
         params![
             server_base_url,
             server_job_id,
             create_request_json,
             queued_at_ms,
+            remote_authority_binding,
         ],
     )?;
     if inserted == 0 {
-        let existing: String = connection.query_row(
-            "SELECT create_request_json FROM detached_remote_cancellations WHERE server_base_url = ?1 AND server_job_id = ?2",
+        let existing: (String, String) = connection.query_row(
+            "SELECT create_request_json, remote_authority_binding FROM detached_remote_cancellations WHERE server_base_url = ?1 AND server_job_id = ?2",
             params![server_base_url, server_job_id],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
-        if existing != create_request_json {
+        if existing.0 != create_request_json || existing.1 != remote_authority_binding {
             return Err(JobLedgerError::InvalidRecord(
                 "detached server cancellation conflicts with an existing outbox entry",
             ));

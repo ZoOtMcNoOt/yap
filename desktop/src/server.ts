@@ -5,12 +5,24 @@ import type {
   ServerConnectionState,
 } from "@/lib/setup-model";
 
-export const SERVER_SETTINGS_SCHEMA_VERSION = 1 as const;
+export const SERVER_SETTINGS_SCHEMA_VERSION = 2 as const;
+
+export type MicrosoftEntraSettings = {
+  tenantId: string;
+  clientId: string;
+  apiScope: string;
+};
 
 export type ServerSettings = {
   schemaVersion: typeof SERVER_SETTINGS_SCHEMA_VERSION;
   enabled: boolean;
   baseUrl: string | null;
+  authentication: MicrosoftEntraSettings | null;
+};
+
+export type ServerIdentityStatus = {
+  configured: boolean;
+  signedIn: boolean;
 };
 
 export type ServerCapabilities = {
@@ -108,6 +120,18 @@ export function serverSettings(): Promise<ServerSettings> {
 
 export function saveServerSettings(settings: ServerSettings): Promise<ServerSettings> {
   return invoke<ServerSettings>("set_server_settings", { settings });
+}
+
+export function serverIdentityStatus(): Promise<ServerIdentityStatus> {
+  return invoke<ServerIdentityStatus>("server_identity_status");
+}
+
+export function signInToServer(): Promise<ServerIdentityStatus> {
+  return invoke<ServerIdentityStatus>("sign_in_to_server");
+}
+
+export function signOutOfServer(): Promise<ServerIdentityStatus> {
+  return invoke<ServerIdentityStatus>("sign_out_of_server");
 }
 
 export async function testServerConnection(): Promise<ServerConnectionState> {

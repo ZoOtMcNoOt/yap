@@ -1,4 +1,8 @@
-use std::time::{Duration, UNIX_EPOCH};
+use std::{
+    io::{Read, Write},
+    net::TcpListener,
+    time::{Duration, UNIX_EPOCH},
+};
 
 use sha2::Digest;
 
@@ -6,10 +10,11 @@ use crate::audio::session::{SessionId, SessionMetadata, SessionMode, SessionOrig
 use crate::language::RecordingLanguageDecision;
 
 use super::{
-    validate_development_batch_base_url, AlignmentUnavailableReason, ApiError, BatchClientError,
-    CaptureChunkReference, CaptureManifestReference, ContentIdentity, CreateRecordingJobRequest,
-    ServerReplayKey, ServerStageProjectionEnvelope, UploadTrack,
+    validate_batch_base_url, AlignmentUnavailableReason, ApiError, BatchApiClient,
+    BatchClientError, CaptureChunkReference, CaptureManifestReference, ContentIdentity,
+    CreateRecordingJobRequest, ServerReplayKey, ServerStageProjectionEnvelope, UploadTrack,
 };
+use crate::server_connector::{client::bounded_client, RequestAuthorization};
 
 #[test]
 fn alignment_unavailable_reason_preserves_provider_and_language_limits() {
@@ -26,18 +31,66 @@ fn alignment_unavailable_reason_preserves_provider_and_language_limits() {
 }
 
 #[test]
-fn unauthenticated_audio_transport_accepts_only_loopback_tunnel_origins() {
+fn batch_transport_accepts_https_and_explicit_local_development_origins() {
     assert_eq!(
-        validate_development_batch_base_url("http://127.0.0.1:18765").unwrap(),
+        validate_batch_base_url("http://127.0.0.1:18765").unwrap(),
         "http://127.0.0.1:18765"
     );
     assert_eq!(
-        validate_development_batch_base_url("http://[::1]:18765/v1").unwrap(),
+        validate_batch_base_url("http://[::1]:18765/v1").unwrap(),
         "http://[::1]:18765"
     );
-    assert!(validate_development_batch_base_url("http://localhost:18765").is_err());
-    assert!(validate_development_batch_base_url("http://192.168.50.1:18765").is_err());
-    assert!(validate_development_batch_base_url("https://yap.internal").is_err());
+    assert_eq!(
+        validate_batch_base_url("http://localhost:18765").unwrap(),
+        "http://localhost:18765"
+    );
+    assert_eq!(
+        validate_batch_base_url("https://yap.internal/v1").unwrap(),
+        "https://yap.internal"
+    );
+    assert!(validate_batch_base_url("http://192.0.2.1:18765").is_err());
+}
+
+#[test]
+fn shared_batch_dispatch_attaches_the_native_bearer_token() {
+    let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut request = [0_u8; 4096];
+        let read = stream.read(&mut request).unwrap();
+        let request = String::from_utf8_lossy(&request[..read]);
+        assert!(request.starts_with("GET /v1/jobs/job-0123456789abcdef0123456789abcdef HTTP/1.1"));
+        assert!(request
+            .to_ascii_lowercase()
+            .contains("authorization: bearer batch-token"));
+        let body = br#"{"code":"JOB_NOT_FOUND","message":"Recording job not found.","retryable":false,"requestId":"request-1"}"#;
+        let headers = format!(
+            "HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            body.len()
+        );
+        stream.write_all(headers.as_bytes()).unwrap();
+        stream.write_all(body).unwrap();
+    });
+    let client = BatchApiClient::new_authorized(
+        bounded_client().unwrap(),
+        &format!("http://{address}"),
+        RequestAuthorization::fixed("batch-token"),
+    )
+    .unwrap();
+
+    let error =
+        tauri::async_runtime::block_on(client.status("job-0123456789abcdef0123456789abcdef"))
+            .unwrap_err();
+    server.join().unwrap();
+
+    assert!(matches!(
+        error,
+        BatchClientError::Api {
+            status: reqwest::StatusCode::NOT_FOUND,
+            ..
+        }
+    ));
 }
 
 #[test]

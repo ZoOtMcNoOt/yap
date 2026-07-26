@@ -2,7 +2,7 @@ use crate::jobs::model::{JobLedgerError, RecordingLanguageDecision};
 use rusqlite::{Connection, OpenFlags, OptionalExtension, Transaction, TransactionBehavior};
 use std::{path::Path, time::Duration};
 
-const CURRENT_SCHEMA_VERSION: i64 = 11;
+const CURRENT_SCHEMA_VERSION: i64 = 12;
 const MIGRATION_1_SQL: &str = include_str!("../../migrations/0001_job_ledger.sql");
 const MIGRATION_2_SQL: &str = include_str!("../../migrations/0002_prepared_remote_jobs.sql");
 const MIGRATION_3_SQL: &str = include_str!("../../migrations/0003_remote_spool_cleanup.sql");
@@ -16,6 +16,7 @@ const MIGRATION_9_SQL: &str = include_str!("../../migrations/0009_client_stage_a
 const MIGRATION_10_SQL: &str = include_str!("../../migrations/0010_client_preflight_artifacts.sql");
 const MIGRATION_11_SQL: &str =
     include_str!("../../migrations/0011_functional_language_disposition.sql");
+const MIGRATION_12_SQL: &str = include_str!("../../migrations/0012_remote_authority_binding.sql");
 const PRE_FUNCTIONAL_LANGUAGE_DISPOSITION: &str = "legacy_phase5_default";
 const FUNCTIONAL_LANGUAGE_DISPOSITION: &str = "legacy_implicit_english_default";
 
@@ -116,6 +117,9 @@ fn migrate_with_hook(
         }
         if version < 11 {
             transaction.execute_batch(MIGRATION_11_SQL)?;
+        }
+        if version < 12 {
+            transaction.execute_batch(MIGRATION_12_SQL)?;
         }
         let foreign_key_violation: Option<i64> = transaction
             .query_row(
@@ -221,7 +225,7 @@ mod tests {
                 .unwrap()
         };
 
-        assert_eq!(version, 11);
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
         assert_eq!(foreign_keys, 1);
         assert_eq!(
             tables,
@@ -339,7 +343,7 @@ mod tests {
             [],
             |row| row.get(0),
         ).unwrap();
-        assert_eq!((version, table_count), (11, 8));
+        assert_eq!((version, table_count), (CURRENT_SCHEMA_VERSION, 8));
         drop(connection);
         fs::remove_dir_all(dir).unwrap();
     }
@@ -352,13 +356,13 @@ mod tests {
             .execute_batch(
                 "CREATE TABLE future_owned_data (value TEXT NOT NULL); \
                  INSERT INTO future_owned_data VALUES ('preserve'); \
-                 PRAGMA user_version = 12;",
+                 PRAGMA user_version = 13;",
             )
             .unwrap();
 
         let error = migrate(&mut connection).unwrap_err();
 
-        assert!(matches!(error, JobLedgerError::UnsupportedSchema(12)));
+        assert!(matches!(error, JobLedgerError::UnsupportedSchema(13)));
         let state: (i64, String) = connection
             .query_row(
                 "SELECT (SELECT user_version FROM pragma_user_version), value FROM future_owned_data",
@@ -366,7 +370,7 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .unwrap();
-        assert_eq!(state, (12, "preserve".into()));
+        assert_eq!(state, (13, "preserve".into()));
     }
 
     #[test]
@@ -407,7 +411,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             (version, existing.as_str(), remote_table),
-            (11, "existing.wav", 1)
+            (CURRENT_SCHEMA_VERSION, "existing.wav", 1)
         );
         assert_eq!(
             language,
@@ -447,7 +451,7 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .unwrap();
-        assert_eq!(version, 11);
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
         assert_eq!(prepared, ("{}".into(), None));
     }
 
@@ -470,7 +474,7 @@ mod tests {
         let version: i64 = connection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap();
-        assert_eq!(version, 11);
+        assert_eq!(version, CURRENT_SCHEMA_VERSION);
         let error = connection
             .execute(
                 "UPDATE recording_jobs SET language_mode = 'fixed', language_bcp47 = 'de-DE', language_disposition = 'primary' WHERE job_id = 'existing-language'",
@@ -550,14 +554,22 @@ mod tests {
 
         migrate(&mut connection).unwrap();
 
-        let migrated: (i64, Option<String>, Option<String>) = connection
+        let migrated: (i64, Option<String>, Option<String>, String) = connection
             .query_row(
-                "SELECT (SELECT user_version FROM pragma_user_version), asr_catalog_origin, asr_catalog_revision FROM recording_jobs WHERE job_id = 'legacy-six'",
+                "SELECT (SELECT user_version FROM pragma_user_version), asr_catalog_origin, asr_catalog_revision, remote_authority_binding FROM recording_jobs WHERE job_id = 'legacy-six'",
                 [],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
             )
             .unwrap();
-        assert_eq!(migrated, (11, None, None));
+        assert_eq!(
+            migrated,
+            (
+                CURRENT_SCHEMA_VERSION,
+                None,
+                None,
+                "development-loopback".into()
+            )
+        );
         assert!(connection
             .execute(
                 "UPDATE recording_jobs SET asr_catalog_origin = 'http://127.0.0.1:18765' WHERE job_id = 'legacy-six'",
@@ -609,7 +621,7 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
             )
             .unwrap();
-        assert_eq!(migrated, (11, 1, 0));
+        assert_eq!(migrated, (CURRENT_SCHEMA_VERSION, 1, 0));
         assert!(connection
             .execute(
                 "UPDATE recording_jobs SET language_decision_locked = 0 WHERE job_id = 'legacy-eight'",
@@ -668,7 +680,14 @@ mod tests {
                 |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
             )
             .unwrap();
-        assert_eq!(migrated, (11, "legacy_implicit_english_default".into(), 1));
+        assert_eq!(
+            migrated,
+            (
+                CURRENT_SCHEMA_VERSION,
+                "legacy_implicit_english_default".into(),
+                1
+            )
+        );
         let foreign_key_errors: i64 = connection
             .query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |row| {
                 row.get(0)

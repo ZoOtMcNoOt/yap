@@ -138,4 +138,5 @@ pub struct DetachedRemoteCancellationRecord {
     pub server_job_id: String,
     pub create_request_json: String,
     pub queued_at_ms: u64,
+    pub remote_authority_binding: String,
 }

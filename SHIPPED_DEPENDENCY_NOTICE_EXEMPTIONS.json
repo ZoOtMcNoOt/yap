@@ -2,6 +2,34 @@
   "schemaVersion": 1,
   "exemptions": [
     {
+      "ecosystem": "dotnet",
+      "name": "Microsoft.Identity.Client",
+      "version": "4.86.1",
+      "sourceFile": "microsoft.identity.client.nuspec",
+      "reason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression."
+    },
+    {
+      "ecosystem": "dotnet",
+      "name": "Microsoft.Identity.Client.Broker",
+      "version": "4.86.1",
+      "sourceFile": "microsoft.identity.client.broker.nuspec",
+      "reason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression."
+    },
+    {
+      "ecosystem": "dotnet",
+      "name": "Microsoft.Identity.Client.Extensions.Msal",
+      "version": "4.86.1",
+      "sourceFile": "microsoft.identity.client.extensions.msal.nuspec",
+      "reason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression."
+    },
+    {
+      "ecosystem": "dotnet",
+      "name": "Microsoft.IdentityModel.Abstractions",
+      "version": "8.14.0",
+      "sourceFile": "microsoft.identitymodel.abstractions.nuspec",
+      "reason": "The installed NuGet package omits a standalone license file; its signed package metadata contains the exact installed MIT license expression."
+    },
+    {
       "ecosystem": "javascript",
       "name": "gsap",
       "version": "3.15.0",

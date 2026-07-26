@@ -14,9 +14,11 @@ pub(crate) use persistence::{
     write_atomically_locked_with_limit_and_hooks,
 };
 
-pub const CURRENT_SCHEMA_VERSION: u16 = 1;
+pub const CURRENT_SCHEMA_VERSION: u16 = 2;
+const LEGACY_SCHEMA_VERSION: u16 = 1;
 const ORIGIN_APPROVAL_SCHEMA_VERSION: u16 = 1;
 const MAX_SERVER_URL_BYTES: usize = 2048;
+const MAX_IDENTITY_VALUE_BYTES: usize = 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -24,6 +26,16 @@ pub struct ServerSettings {
     pub schema_version: u16,
     pub enabled: bool,
     pub base_url: Option<String>,
+    #[serde(default)]
+    pub authentication: Option<MicrosoftEntraSettings>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct MicrosoftEntraSettings {
+    pub tenant_id: String,
+    pub client_id: String,
+    pub api_scope: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -39,6 +51,7 @@ impl Default for ServerSettings {
             schema_version: CURRENT_SCHEMA_VERSION,
             enabled: false,
             base_url: None,
+            authentication: None,
         }
     }
 }
@@ -272,10 +285,13 @@ fn decode_persisted_settings(
         Err(_) => return Ok(ServerSettings::default()),
     };
     ensure_schema_compatible(&value)?;
-    let settings = match serde_json::from_value::<ServerSettings>(value) {
+    let mut settings = match serde_json::from_value::<ServerSettings>(value) {
         Ok(settings) => settings,
         Err(_) => return Ok(ServerSettings::default()),
     };
+    if settings.schema_version == LEGACY_SCHEMA_VERSION {
+        settings.schema_version = CURRENT_SCHEMA_VERSION;
+    }
     normalize_settings(&settings, allow_insecure_private)
 }
 
@@ -295,7 +311,9 @@ fn ensure_schema_compatible(value: &serde_json::Value) -> Result<(), ConfigError
         .get("schemaVersion")
         .and_then(serde_json::Value::as_u64)
     {
-        if version != u64::from(CURRENT_SCHEMA_VERSION) {
+        if version != u64::from(CURRENT_SCHEMA_VERSION)
+            && version != u64::from(LEGACY_SCHEMA_VERSION)
+        {
             return Err(ConfigError::IncompatibleSchema(version));
         }
     }
@@ -319,11 +337,79 @@ pub(super) fn normalize_settings(
     if settings.enabled && base_url.is_none() {
         return Err(ConfigError::Invalid("Enter a server URL before enabling."));
     }
+    let authentication = settings
+        .authentication
+        .as_ref()
+        .map(normalize_microsoft_entra_settings)
+        .transpose()?;
+    if let Some(base_url) = base_url.as_deref() {
+        let url =
+            Url::parse(base_url).map_err(|_| ConfigError::Invalid("Enter a valid server URL."))?;
+        let host = url
+            .host_str()
+            .ok_or(ConfigError::Invalid("Server URL must include a host."))?;
+        if authentication.is_some() && url.scheme() != "https" && !is_loopback_host(host) {
+            return Err(ConfigError::Invalid(
+                "Authenticated server connections require HTTPS outside loopback.",
+            ));
+        }
+        if settings.enabled
+            && authentication.is_none()
+            && url.scheme() == "https"
+            && !is_loopback_host(host)
+        {
+            return Err(ConfigError::Invalid(
+                "Remote HTTPS servers require Microsoft Entra configuration.",
+            ));
+        }
+    }
     Ok(ServerSettings {
         schema_version: CURRENT_SCHEMA_VERSION,
         enabled: settings.enabled,
         base_url,
+        authentication,
     })
+}
+
+fn normalize_microsoft_entra_settings(
+    settings: &MicrosoftEntraSettings,
+) -> Result<MicrosoftEntraSettings, ConfigError> {
+    let tenant_id = normalize_uuid(&settings.tenant_id, "Enter a valid Entra tenant ID.")?;
+    let client_id = normalize_uuid(&settings.client_id, "Enter a valid Entra client ID.")?;
+    let api_scope = settings.api_scope.trim();
+    if api_scope.is_empty()
+        || api_scope.len() > MAX_IDENTITY_VALUE_BYTES
+        || !api_scope.is_ascii()
+        || api_scope
+            .bytes()
+            .any(|byte| byte.is_ascii_control() || byte.is_ascii_whitespace())
+        || !api_scope.ends_with("/access_as_user")
+        || !(api_scope.starts_with("api://") || api_scope.starts_with("https://"))
+    {
+        return Err(ConfigError::Invalid(
+            "Enter a valid Yap API access_as_user scope.",
+        ));
+    }
+    Ok(MicrosoftEntraSettings {
+        tenant_id,
+        client_id,
+        api_scope: api_scope.to_owned(),
+    })
+}
+
+fn normalize_uuid(raw: &str, message: &'static str) -> Result<String, ConfigError> {
+    let value = raw.trim();
+    if value.len() > MAX_IDENTITY_VALUE_BYTES
+        || value.len() != 36
+        || !value.is_ascii()
+        || value.bytes().enumerate().any(|(index, byte)| match index {
+            8 | 13 | 18 | 23 => byte != b'-',
+            _ => !byte.is_ascii_hexdigit(),
+        })
+    {
+        return Err(ConfigError::Invalid(message));
+    }
+    Ok(value.to_ascii_lowercase())
 }
 
 fn settings_path() -> PathBuf {

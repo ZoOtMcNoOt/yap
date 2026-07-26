@@ -26,6 +26,11 @@ jobs:
         working-directory: desktop
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 8.0.423
+          cache: true
+          cache-dependency-path: desktop/native/Yap.Identity.Broker/packages.lock.json
       - name: Verify PowerShell 7.4 Core
         shell: pwsh
         run: |
@@ -248,6 +253,30 @@ jobs:
             ~/.cargo/git/db
           key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
 
+  identity-broker:
+    name: Native identity broker
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 8.0.423
+          cache: true
+          cache-dependency-path: desktop/native/Yap.Identity.Broker/packages.lock.json
+      - name: Verify PowerShell 7.4 Core
+        shell: pwsh
+        run: |
+          if ($PSVersionTable.PSEdition -cne "Core" -or $PSVersionTable.PSVersion -lt [version]"7.4") {
+            throw "CI requires PowerShell Core 7.4 or newer."
+          }
+      - name: Publish and smoke the MSAL/WAM identity broker
+        run: ./tests/scripts/build-identity-broker.ps1
+
   native-wdio:
     name: Native WDIO smoke (required, no hardware)
     runs-on: windows-latest
@@ -261,6 +290,11 @@ jobs:
         working-directory: desktop
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 8.0.423
+          cache: true
+          cache-dependency-path: desktop/native/Yap.Identity.Broker/packages.lock.json
       - name: Verify PowerShell 7.4 Core
         shell: pwsh
         run: |

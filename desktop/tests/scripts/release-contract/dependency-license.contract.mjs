@@ -28,8 +28,9 @@ test("desktop runtime dependencies are exhaustively mapped from exact lockfiles"
 
   assert.ok(inventory.packages.javascript.length > 0);
   assert.ok(inventory.packages.rust.length > 0);
+  assert.ok(inventory.packages.dotnet.length > 0);
   assert.ok(notices.documents.length > 0);
-  for (const ecosystem of ["javascript", "rust"]) {
+  for (const ecosystem of ["javascript", "rust", "dotnet"]) {
     assert.deepEqual(
       notices.packages[ecosystem].map(({ name, version }) => ({ name, version })),
       inventory.packages[ecosystem].map(({ name, version }) => ({ name, version })),

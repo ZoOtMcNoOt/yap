@@ -263,6 +263,7 @@ fn configure(
         schema_version: CURRENT_SCHEMA_VERSION,
         enabled,
         base_url,
+        authentication: None,
     })
 }
 

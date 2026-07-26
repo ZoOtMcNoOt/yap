@@ -6,12 +6,17 @@ const releaseInputPaths = Object.freeze([
   "THIRD_PARTY_NOTICES.md",
   "THIRD_PARTY_PROVENANCE.json",
   "desktop/model-artifacts.lock.json",
+  "desktop/native/global.json",
+  "desktop/native/Yap.Identity.Broker/packages.lock.json",
+  "desktop/native/Yap.Identity.Broker/Program.cs",
+  "desktop/native/Yap.Identity.Broker/Yap.Identity.Broker.csproj",
   "desktop/package.json",
   "desktop/pnpm-lock.yaml",
   "desktop/src-tauri/Cargo.lock",
   "desktop/src-tauri/Cargo.toml",
   "desktop/src-tauri/rust-toolchain.toml",
   "desktop/src-tauri/tauri.conf.json",
+  "desktop/tests/scripts/build-identity-broker.ps1",
   "server/runtime/asr/licenses/APACHE-2.0.txt",
 ]);
 
@@ -119,6 +124,7 @@ export function collectBuildEnvironment(repoRoot, commitSha) {
     },
     tools: {
       node: process.version,
+      dotnet: process.env.YAP_RELEASE_DOTNET_VERSION ?? null,
       nsis: process.env.YAP_RELEASE_NSIS_VERSION ?? null,
       nsisCompilerSha256: process.env.YAP_RELEASE_NSIS_COMPILER_SHA256 ?? null,
       nsisLauncherSha256: process.env.YAP_RELEASE_NSIS_LAUNCHER_SHA256 ?? null,

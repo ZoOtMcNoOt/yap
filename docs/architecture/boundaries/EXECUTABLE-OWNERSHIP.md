@@ -1,9 +1,9 @@
 # Executable Ownership and Trust Boundaries
 
 This map records the executable ownership baseline established by architecture
-checkpoint A and the executing Phase 6 branch. Paths are relative to the
-repository root; later implementation must update this map only after its
-behavior is executable and verified.
+checkpoints A/B and the focused Phase 7 implementation under review. Paths are
+relative to the repository root; later implementation must update this map only
+after its behavior is executable and verified.
 
 ## Dependency direction
 
@@ -16,10 +16,17 @@ desktop/src components
 
 desktop jobs/drain
   -> desktop server_connector/batch
+  -> desktop server_connector/authorization
   -> loopback HTTP
+  -> server auth request adapter
   -> server api request adapters
   -> server jobs service
   -> job store/artifacts + bounded router/pool
+
+desktop settings/identity commands
+  -> desktop native identity manager
+  -> bounded MSAL.NET/WAM sidecar
+  -> OS-protected MSAL cache
 ```
 
 Imports may point down this diagram. Durable owners must not import React,
@@ -192,7 +199,8 @@ owner's state but may not recreate its transition logic.
   `client_preflight_artifacts`, and owned artifact references. Schema 11 rewrites
   the former phase-derived implicit-English disposition to the functional
   `legacy_implicit_english_default` token while preserving child rows and
-  foreign-key integrity.
+  foreign-key integrity. Schema 12 binds each remote job and detached
+  cancellation to one development or hashed MSAL-account authority.
 - **Transient state:** transaction-local rows and snapshots.
 - **Trust boundary:** database migrations, row decoding, monotonic status
   transitions, origin generation, and bounded retention.
@@ -210,19 +218,26 @@ owner's state but may not recreate its transition logic.
 - **Authoritative owner:** `server_connector/state.rs` for connection state and
   generations; `config/*` for validated persisted configuration; and
   `server_connector/capability_snapshot.rs` for the bounded last-known catalog
-  projection.
+  projection. `identity_adapter.rs` owns native sign-in state and the in-memory
+  access-token projection; `authorization.rs` owns bearer injection and durable
+  account pinning.
 - **Persisted state:** server configuration and approved origin, plus
   `asr-capabilities-snapshot.json`. Each is admitted through bounded no-follow
   regular-file I/O before schema validation. The capability file is an offline
   last-known projection, never current readiness or live server authority.
-- **Transient state:** in-flight health request, retry schedule, generation, and
-  latest capability snapshot.
-- **Trust boundary:** untrusted origin/configuration and bounded HTTP response.
+- **Transient state:** in-flight health request, retry schedule, generation,
+  latest capability snapshot, zeroizing access token, and hashed selected-account
+  binding.
+- **Trust boundary:** untrusted origin/configuration, bounded HTTP response, and
+  the bounded single-request MSAL sidecar protocol. Raw tokens and raw MSAL
+  account IDs never enter React or ordinary app-data persistence.
 - **Dependencies/events:** core policy -> health/batch clients -> connector
   state -> typed frontend events.
 - **Failure/recovery:** stale generation responses are discarded; typed offline
   reasons schedule bounded retry. Oversized, linked/reparse, or future-schema
-  configuration fails without replacing the existing entry.
+  configuration fails without replacing the existing entry. Missing/expired
+  identity, sign-out, reconfiguration, and account switching fail before
+  authenticated remote dispatch; local/offline behavior remains available.
 - **Publication serialization:** one settings-save lease spans normalization,
   origin confirmation, durable settings/approval publication, generation
   invalidation, and applied-state projection.
@@ -235,13 +250,17 @@ owner's state but may not recreate its transition logic.
 - **Entry point:** `server/api/app.py` and `api/job_requests.py`.
 - **Authoritative owner:** `jobs/service.py` coordinates the transaction;
   `job_store.py`, `chunk_upload.py`, `completion.py`, and `artifacts.py` own
-  durable mechanisms.
-- **Persisted state:** private job JSON/state, chunk receipts/files, assembled
-  WAV, immutable result, idempotency key, cancellation, and retention metadata.
+  durable mechanisms. The request-authentication adapter supplies the immutable
+  principal; handlers never accept a client-supplied owner as authority.
+- **Persisted state:** principal-scoped private job JSON/state, chunk
+  receipts/files, assembled WAV, immutable result, idempotency key,
+  cancellation, and retention metadata.
 - **Transient state:** admitted HTTP request, router/pool work, and processing
   cancellation set.
-- **Trust boundary:** HTTP body/headers, manifest/chunk/result contracts,
-  filesystem identity, worker output, and retained private content.
+- **Trust boundary:** bearer authentication, HTTP body/headers,
+  manifest/chunk/result contracts, filesystem identity, worker output, and
+  retained private content. Absent and cross-owner resources share the same
+  non-disclosing projection.
 - **Dependencies/events:** request adapter -> service -> store/artifacts ->
   router/pool -> completion; status/result responses are bounded projections.
 - **Failure/recovery:** startup converts interrupted processing into an explicit
@@ -437,21 +456,35 @@ owner's state but may not recreate its transition logic.
 - **Cancellation:** reconfiguration/shutdown cancels polling.
 - **Duplicate owner:** none; UI labels do not infer readiness.
 
-### 18. Security, authentication, and enterprise networking handoffs
+### 18. Authentication, authorization, and enterprise networking handoffs
 
-- **Entry point:** current development profile uses explicit loopback and a
-  user-managed SSH forward.
-- **Authoritative owner:** current application only enforces loopback/origin and
-  contract controls. IT/security owns future enterprise infrastructure.
-- **Persisted state:** approved development origin; no production identity or
-  enterprise credential store exists.
-- **Transient state:** SSH tunnel is outside Yap process ownership.
-- **Trust boundary:** numeric loopback application endpoint; future TLS, DNS,
-  certificate, ZPA, firewall, tenant identity, and policy boundaries are absent.
-- **Dependencies/events:** connector observes availability; it does not create or
-  silently fail over tunnels.
-- **Failure/recovery:** tunnel loss projects retrying and resumes against the
-  unchanged origin when connectivity returns.
+- **Entry point:** desktop identity commands and request authorization;
+  `server/auth/*` middleware and repository authorization; the current
+  development profile still uses explicit loopback and a user-managed SSH
+  forward.
+- **Authoritative owner:** the MSAL.NET adapter owns provider token
+  acquisition/cache behavior; Rust owns adapter lifecycle, token projection,
+  account binding, and request injection; the server authenticator owns Entra
+  claim validation; the identity repository owns principal, access-revocation,
+  purpose-control, and redacted audit records. IT/security owns tenant policy
+  and enterprise infrastructure.
+- **Persisted state:** approved origin, schema-12 remote account binding,
+  OS-protected MSAL cache, and the SQLite development identity repository. No
+  token or raw MSAL account ID is stored in the renderer or job ledger.
+- **Transient state:** zeroizing access tokens and SSH tunnel state; the tunnel
+  remains outside Yap process ownership.
+- **Trust boundary:** fixed-tenant/audience/scope/client RS256 validation,
+  bounded JWKS retrieval/cache, owner-scoped authorization, numeric loopback,
+  and the native sidecar protocol. Real tenant registration, Conditional
+  Access, MFA, consent, TLS, DNS, certificates, ZPA, firewall, production
+  database/audit, and deployment policy remain external.
+- **Dependencies/events:** validated identity -> immutable request principal ->
+  repository authorization -> owner-scoped job/LID service. The connector
+  observes availability; it does not create or silently fail over tunnels.
+- **Failure/recovery:** invalid/expired/revoked access fails closed; account
+  switching cannot reuse another account's durable work; absent and cross-owner
+  lookup are non-disclosing. Tunnel loss projects retrying and resumes against
+  the unchanged origin when connectivity returns.
 - **Cancellation:** user/IT controls the tunnel; job cancellation remains a
   durable application action.
 - **Duplicate owner:** none; developer infrastructure is not a substitute for

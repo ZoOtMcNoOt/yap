@@ -21,6 +21,7 @@ fn save_replaces_a_stale_partial_and_persists_only_the_public_schema() {
         schema_version: CURRENT_SCHEMA_VERSION,
         enabled: true,
         base_url: Some("https://server.example/v1".into()),
+        authentication: Some(test_microsoft_entra_settings()),
     };
 
     let saved = save_to_path(&settings, &path, false).unwrap();
@@ -36,7 +37,7 @@ fn save_replaces_a_stale_partial_and_persists_only_the_public_schema() {
             .keys()
             .cloned()
             .collect::<Vec<_>>(),
-        ["baseUrl", "enabled", "schemaVersion"]
+        ["authentication", "baseUrl", "enabled", "schemaVersion"]
     );
     assert_eq!(load_from_path(&path, false).unwrap(), saved);
     assert!(!std::fs::read_to_string(path).unwrap().contains("secret"));
@@ -55,11 +56,13 @@ fn concurrent_writers_publish_only_complete_payloads_without_temp_leaks() {
         schema_version: CURRENT_SCHEMA_VERSION,
         enabled: true,
         base_url: Some("https://left.example".into()),
+        authentication: Some(test_microsoft_entra_settings()),
     };
     let right = ServerSettings {
         schema_version: CURRENT_SCHEMA_VERSION,
         enabled: true,
         base_url: Some("https://right.example:8443/v1".into()),
+        authentication: Some(test_microsoft_entra_settings()),
     };
     let expected_right = ServerSettings {
         base_url: Some("https://right.example:8443".into()),

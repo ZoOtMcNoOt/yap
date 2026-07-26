@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -13,6 +13,7 @@ const noticeExemptionsPath = path.join(
   "SHIPPED_DEPENDENCY_NOTICE_EXEMPTIONS.json",
 );
 const windowsTarget = "x86_64-pc-windows-msvc";
+const shippedEcosystems = Object.freeze(["javascript", "rust", "dotnet"]);
 const exactNoticeName =
   /^(?:licen[cs]e|copying|notices?|copyright|authors?)(?:[._-].*)?$/i;
 const knownLicenseTerms = new Set([
@@ -38,12 +39,13 @@ export async function buildShippedDependencyArtifacts() {
   const packageSources = {
     javascript: javascriptRuntimePackageSources(),
     rust: rustRuntimePackageSources(),
+    dotnet: dotnetRuntimePackageSources(),
   };
   const documents = new Map();
   const usedExemptions = new Set();
   const packages = {};
 
-  for (const ecosystem of ["javascript", "rust"]) {
+  for (const ecosystem of shippedEcosystems) {
     packages[ecosystem] = [];
     for (const sourcePackage of packageSources[ecosystem]) {
       const notice = await resolvePackageNotice({
@@ -85,20 +87,41 @@ export async function buildShippedDependencyArtifacts() {
     cargoLockSha256: await sha256File(
       path.join(repoRoot, "desktop", "src-tauri", "Cargo.lock"),
     ),
+    dotnetGlobalJsonSha256: await sha256File(
+      path.join(repoRoot, "desktop", "native", "global.json"),
+    ),
+    dotnetProjectSha256: await sha256File(
+      path.join(
+        repoRoot,
+        "desktop",
+        "native",
+        "Yap.Identity.Broker",
+        "Yap.Identity.Broker.csproj",
+      ),
+    ),
+    dotnetPackagesLockSha256: await sha256File(
+      path.join(
+        repoRoot,
+        "desktop",
+        "native",
+        "Yap.Identity.Broker",
+        "packages.lock.json",
+      ),
+    ),
     noticeExemptionsSha256: await sha256File(noticeExemptionsPath),
   };
   const inventory = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     target: windowsTarget,
     generatedFrom,
     packages,
   };
   const notices = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     target: windowsTarget,
     generatedFrom,
     packages: Object.fromEntries(
-      ["javascript", "rust"].map((ecosystem) => [
+      shippedEcosystems.map((ecosystem) => [
         ecosystem,
         packages[ecosystem].map((packageRecord) => ({
           name: packageRecord.name,
@@ -134,6 +157,7 @@ export async function verifyShippedDependencyInventory() {
   for (const packageRecord of [
     ...inventory.packages.javascript,
     ...inventory.packages.rust,
+    ...inventory.packages.dotnet,
   ]) {
     for (const term of packageRecord.licenseTerms) {
       assert(
@@ -167,7 +191,7 @@ export async function verifyShippedDependencyNotices(inventory = null) {
     );
     documentHashes.add(document.sha256);
   }
-  for (const ecosystem of ["javascript", "rust"]) {
+  for (const ecosystem of shippedEcosystems) {
     assert(
       serialize(notices.packages[ecosystem])
         === serialize(comparedInventory.packages[ecosystem].map((packageRecord) => ({
@@ -353,6 +377,95 @@ function rustRuntimePackageSources() {
   return uniqueSortedSources(packages);
 }
 
+function dotnetRuntimePackageSources() {
+  const nativeRoot = path.join(repoRoot, "desktop", "native");
+  const projectPath = path.join(
+    nativeRoot,
+    "Yap.Identity.Broker",
+    "Yap.Identity.Broker.csproj",
+  );
+  run(process.platform === "win32" ? "dotnet.exe" : "dotnet", [
+    "restore",
+    projectPath,
+    "-p:RestoreLockedMode=true",
+    "--nologo",
+  ], { cwd: nativeRoot });
+  const assetsPath = path.join(
+    nativeRoot,
+    "Yap.Identity.Broker",
+    "obj",
+    "project.assets.json",
+  );
+  const assets = JSON.parse(readFileSync(assetsPath, "utf8"));
+  const targetName = Object.keys(assets.targets).find((candidate) =>
+    candidate.endsWith("/win-x64"));
+  assert(targetName, "The identity broker assets omit the win-x64 runtime target.");
+  const packageRoots = Object.keys(assets.packageFolders ?? {});
+  assert(
+    packageRoots.length === 1,
+    "The identity broker must resolve one exact NuGet global package directory.",
+  );
+  const packageRoot = packageRoots[0];
+  const packages = [];
+  for (const [identity, packageAssets] of Object.entries(assets.targets[targetName])) {
+    if (
+      packageAssets.type !== "package"
+      || (!packageAssets.runtime && !packageAssets.runtimeTargets)
+    ) {
+      continue;
+    }
+    const separator = identity.lastIndexOf("/");
+    assert(separator > 0, `NuGet dependency identity is invalid: ${identity}.`);
+    const name = identity.slice(0, separator);
+    const version = identity.slice(separator + 1);
+    const sourceDirectory = path.join(
+      packageRoot,
+      name.toLowerCase(),
+      version.toLowerCase(),
+    );
+    const nuspecPath = path.join(sourceDirectory, `${name.toLowerCase()}.nuspec`);
+    const nuspec = readFileSync(nuspecPath, "utf8");
+    const declaredId = xmlElement(nuspec, "id");
+    const declaredVersion = xmlElement(nuspec, "version");
+    assert(
+      declaredId === name && declaredVersion === version,
+      `NuGet dependency source identity differs from assets at ${sourceDirectory}.`,
+    );
+    packages.push({
+      ...packageRecord(
+        "dotnet",
+        name,
+        version,
+        nugetLicenseExpression(nuspec, sourceDirectory),
+      ),
+      sourceDirectories: [sourceDirectory],
+    });
+  }
+  return uniqueSortedSources(packages);
+}
+
+function nugetLicenseExpression(nuspec, sourceDirectory) {
+  const expression = /<license\s+type=["']expression["']>([^<]+)<\/license>/i.exec(nuspec)?.[1]
+    ?.trim();
+  if (expression) return expression;
+  const licenseName = readdirSync(sourceDirectory).find((name) =>
+    /^(?:licen[cs]e)(?:[._-].*)?$/i.test(name));
+  assert(licenseName, `NuGet dependency at ${sourceDirectory} has no license declaration.`);
+  const licenseText = readFileSync(path.join(sourceDirectory, licenseName), "utf8");
+  if (/^MICROSOFT SOFTWARE LICENSE TERMS\b/.test(licenseText)) {
+    return "MS-MSAL-NativeInterop";
+  }
+  assert(
+    /\bMIT License\b/i.test(licenseText),
+    `NuGet dependency at ${sourceDirectory} has an unreviewed file license.`,
+  );
+  return "MIT";
+}
+
+function xmlElement(document, name) {
+  return new RegExp(`<${name}>([^<]+)</${name}>`, "i").exec(document)?.[1]?.trim();
+}
+
 export function cargoCommandEnvironment(environment = process.env) {
   return {
     ...environment,
@@ -383,6 +496,19 @@ function packageRecord(ecosystem, name, version, licenseExpression) {
       version,
       licenseExpression,
       licenseTerms: ["GSAP-Standard"],
+      reviewDisposition: "reviewed-custom-runtime-license",
+    };
+  }
+  if (
+    ecosystem === "dotnet"
+    && name === "Microsoft.Identity.Client.NativeInterop"
+    && licenseExpression === "MS-MSAL-NativeInterop"
+  ) {
+    return {
+      name,
+      version,
+      licenseExpression,
+      licenseTerms: ["MS-MSAL-NativeInterop"],
       reviewDisposition: "reviewed-custom-runtime-license",
     };
   }
@@ -440,7 +566,7 @@ async function loadNoticeExemptions() {
   for (const exemption of value.exemptions) {
     assert(
       exemption
-        && ["javascript", "rust"].includes(exemption.ecosystem)
+        && shippedEcosystems.includes(exemption.ecosystem)
         && typeof exemption.name === "string"
         && typeof exemption.version === "string"
         && typeof exemption.sourceFile === "string"
@@ -479,7 +605,7 @@ function run(executable, args, options = {}) {
 
 function decodeUtf8(bytes, label) {
   try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
   } catch {
     throw new Error(`Installed dependency notice is not UTF-8 text: ${label}.`);
   }
@@ -529,7 +655,8 @@ async function main(args) {
   const notices = await verifyShippedDependencyNotices(inventory);
   console.log(
     `Shipped dependency inventory passed (${inventory.packages.javascript.length} JavaScript, `
-      + `${inventory.packages.rust.length} Rust packages, ${notices.documents.length} exact notice documents).`,
+      + `${inventory.packages.rust.length} Rust, ${inventory.packages.dotnet.length} .NET packages, `
+      + `${notices.documents.length} exact notice documents).`,
   );
 }
 

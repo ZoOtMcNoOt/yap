@@ -1,4 +1,4 @@
-use reqwest::{Client, Response, StatusCode, Url};
+use reqwest::{Client, RequestBuilder, Response, StatusCode, Url};
 use serde::de::DeserializeOwned;
 
 use super::{
@@ -12,6 +12,7 @@ use super::{
 use crate::server_connector::lid::{
     cancel_preflight, submit_preflight, LidPreflightError, LidPreflightRequest, LidPreflightResult,
 };
+use crate::server_connector::RequestAuthorization;
 
 const MAX_JOB_RESPONSE_BYTES: usize = 256 * 1024;
 const MAX_STAGE_RESPONSE_BYTES: usize = 32 * 1024;
@@ -21,17 +22,28 @@ pub(crate) struct BatchApiClient {
     client: Client,
     base_url: Url,
     base_url_identity: String,
+    authorization: RequestAuthorization,
 }
 
 impl BatchApiClient {
+    #[cfg(test)]
     pub(crate) fn new(client: Client, base_url: &str) -> Result<Self, BatchClientError> {
-        let normalized = validate_development_batch_base_url(base_url)
-            .map_err(BatchClientError::InvalidOrigin)?;
+        Self::new_authorized(client, base_url, RequestAuthorization::none())
+    }
+
+    pub(crate) fn new_authorized(
+        client: Client,
+        base_url: &str,
+        authorization: RequestAuthorization,
+    ) -> Result<Self, BatchClientError> {
+        let normalized =
+            validate_batch_base_url(base_url).map_err(BatchClientError::InvalidOrigin)?;
         let base_url = Url::parse(&normalized).map_err(|_| BatchClientError::MalformedResponse)?;
         Ok(Self {
             client,
             base_url,
             base_url_identity: normalized,
+            authorization,
         })
     }
 
@@ -39,18 +51,47 @@ impl BatchApiClient {
         &self.base_url_identity
     }
 
+    pub(crate) async fn pin_current_authority(&self) -> Result<(Self, String), BatchClientError> {
+        let (authorization, authority) = self
+            .authorization
+            .pin_current_authority()
+            .await
+            .map_err(BatchClientError::Authorization)?;
+        let mut pinned = self.clone();
+        pinned.authorization = authorization;
+        Ok((pinned, authority))
+    }
+
+    pub(crate) fn expect_persisted_authority(
+        &self,
+        authority: &str,
+    ) -> Result<Self, BatchClientError> {
+        let mut pinned = self.clone();
+        pinned.authorization = self
+            .authorization
+            .expect_persisted_authority(authority)
+            .map_err(BatchClientError::Authorization)?;
+        Ok(pinned)
+    }
+
     pub(crate) async fn lid_preflight(
         &self,
         request: &LidPreflightRequest,
     ) -> Result<LidPreflightResult, LidPreflightError> {
-        submit_preflight(&self.client, &self.base_url, request).await
+        submit_preflight(&self.client, &self.base_url, &self.authorization, request).await
     }
 
     pub(crate) async fn cancel_lid_preflight(
         &self,
         request_id: &str,
     ) -> Result<(), LidPreflightError> {
-        cancel_preflight(&self.client, &self.base_url, request_id).await
+        cancel_preflight(
+            &self.client,
+            &self.base_url,
+            &self.authorization,
+            request_id,
+        )
+        .await
     }
 
     pub(crate) async fn create(
@@ -62,15 +103,15 @@ impl BatchApiClient {
             return Err(BatchClientError::InvalidIdentifier);
         }
         let response = self
-            .client
-            .post(self.endpoint(&["jobs"])?)
-            .header(reqwest::header::ACCEPT, "application/json")
-            .header(reqwest::header::CONTENT_TYPE, "application/json")
-            .header("Idempotency-Key", idempotency_key)
-            .body(serde_json::to_vec(request).map_err(BatchClientError::Encode)?)
-            .send()
-            .await
-            .map_err(BatchClientError::Transport)?;
+            .send(
+                self.client
+                    .post(self.endpoint(&["jobs"])?)
+                    .header(reqwest::header::ACCEPT, "application/json")
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .header("Idempotency-Key", idempotency_key)
+                    .body(serde_json::to_vec(request).map_err(BatchClientError::Encode)?),
+            )
+            .await?;
         decode_response(response, &[StatusCode::ACCEPTED], MAX_JOB_RESPONSE_BYTES).await
     }
 
@@ -88,19 +129,25 @@ impl BatchApiClient {
             chunk.replay_key.sequence_start, chunk.replay_key.sequence_end
         );
         let response = self
-            .client
-            .put(self.endpoint(&["jobs", job_id, "chunks", &chunk.replay_key.track_id, &range])?)
-            .header(reqwest::header::ACCEPT, "application/json")
-            .header(reqwest::header::CONTENT_TYPE, "application/octet-stream")
-            .header("Idempotency-Key", chunk.replay_key.idempotency_key())
-            .header("X-Yap-Content-SHA256", &chunk.content_identity.sha256)
-            .header("X-Yap-Audio-Codec", &chunk.audio_codec)
-            .header("X-Yap-Sample-Rate-Hz", chunk.sample_rate_hz)
-            .header("X-Yap-Channels", chunk.channels)
-            .body(body)
-            .send()
-            .await
-            .map_err(BatchClientError::Transport)?;
+            .send(
+                self.client
+                    .put(self.endpoint(&[
+                        "jobs",
+                        job_id,
+                        "chunks",
+                        &chunk.replay_key.track_id,
+                        &range,
+                    ])?)
+                    .header(reqwest::header::ACCEPT, "application/json")
+                    .header(reqwest::header::CONTENT_TYPE, "application/octet-stream")
+                    .header("Idempotency-Key", chunk.replay_key.idempotency_key())
+                    .header("X-Yap-Content-SHA256", &chunk.content_identity.sha256)
+                    .header("X-Yap-Audio-Codec", &chunk.audio_codec)
+                    .header("X-Yap-Sample-Rate-Hz", chunk.sample_rate_hz)
+                    .header("X-Yap-Channels", chunk.channels)
+                    .body(body),
+            )
+            .await?;
         decode_response(
             response,
             &[StatusCode::OK, StatusCode::CREATED],
@@ -115,25 +162,25 @@ impl BatchApiClient {
         request: &CommitRecordingJobRequest,
     ) -> Result<RecordingJob, BatchClientError> {
         let response = self
-            .client
-            .post(self.endpoint(&["jobs", job_id, "commit"])?)
-            .header(reqwest::header::ACCEPT, "application/json")
-            .header(reqwest::header::CONTENT_TYPE, "application/json")
-            .body(serde_json::to_vec(request).map_err(BatchClientError::Encode)?)
-            .send()
-            .await
-            .map_err(BatchClientError::Transport)?;
+            .send(
+                self.client
+                    .post(self.endpoint(&["jobs", job_id, "commit"])?)
+                    .header(reqwest::header::ACCEPT, "application/json")
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .body(serde_json::to_vec(request).map_err(BatchClientError::Encode)?),
+            )
+            .await?;
         decode_response(response, &[StatusCode::ACCEPTED], MAX_JOB_RESPONSE_BYTES).await
     }
 
     pub(crate) async fn status(&self, job_id: &str) -> Result<RecordingJob, BatchClientError> {
         let response = self
-            .client
-            .get(self.endpoint(&["jobs", job_id])?)
-            .header(reqwest::header::ACCEPT, "application/json")
-            .send()
-            .await
-            .map_err(BatchClientError::Transport)?;
+            .send(
+                self.client
+                    .get(self.endpoint(&["jobs", job_id])?)
+                    .header(reqwest::header::ACCEPT, "application/json"),
+            )
+            .await?;
         decode_response(response, &[StatusCode::OK], MAX_JOB_RESPONSE_BYTES).await
     }
 
@@ -142,12 +189,12 @@ impl BatchApiClient {
         job_id: &str,
     ) -> Result<TranscriptResultRevision, BatchClientError> {
         let response = self
-            .client
-            .get(self.endpoint(&["jobs", job_id, "result"])?)
-            .header(reqwest::header::ACCEPT, "application/json")
-            .send()
-            .await
-            .map_err(BatchClientError::Transport)?;
+            .send(
+                self.client
+                    .get(self.endpoint(&["jobs", job_id, "result"])?)
+                    .header(reqwest::header::ACCEPT, "application/json"),
+            )
+            .await?;
         decode_response(response, &[StatusCode::OK], MAX_TRANSCRIPT_RESULT_BYTES).await
     }
 
@@ -156,12 +203,12 @@ impl BatchApiClient {
         job_id: &str,
     ) -> Result<ServerStageProjectionEnvelope, BatchClientError> {
         let response = self
-            .client
-            .get(self.endpoint(&["jobs", job_id, "stages"])?)
-            .header(reqwest::header::ACCEPT, "application/json")
-            .send()
-            .await
-            .map_err(BatchClientError::Transport)?;
+            .send(
+                self.client
+                    .get(self.endpoint(&["jobs", job_id, "stages"])?)
+                    .header(reqwest::header::ACCEPT, "application/json"),
+            )
+            .await?;
         let projection: ServerStageProjectionEnvelope =
             decode_response(response, &[StatusCode::OK], MAX_STAGE_RESPONSE_BYTES).await?;
         if !projection.is_valid_for(job_id) {
@@ -184,14 +231,14 @@ impl BatchApiClient {
             return Err(BatchClientError::InvalidIdentifier);
         }
         let response = self
-            .client
-            .post(self.endpoint(&["jobs", job_id, "stages", stage.as_path(), "retry"])?)
-            .header(reqwest::header::ACCEPT, "application/json")
-            .header(reqwest::header::CONTENT_TYPE, "application/json")
-            .body(serde_json::to_vec(request).map_err(BatchClientError::Encode)?)
-            .send()
-            .await
-            .map_err(BatchClientError::Transport)?;
+            .send(
+                self.client
+                    .post(self.endpoint(&["jobs", job_id, "stages", stage.as_path(), "retry"])?)
+                    .header(reqwest::header::ACCEPT, "application/json")
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .body(serde_json::to_vec(request).map_err(BatchClientError::Encode)?),
+            )
+            .await?;
         let projection: ServerStageProjectionEnvelope =
             decode_response(response, &[StatusCode::ACCEPTED], MAX_STAGE_RESPONSE_BYTES).await?;
         if !projection.is_valid_for(job_id) {
@@ -202,12 +249,12 @@ impl BatchApiClient {
 
     pub(crate) async fn cancel(&self, job_id: &str) -> Result<RecordingJob, BatchClientError> {
         let response = self
-            .client
-            .delete(self.endpoint(&["jobs", job_id])?)
-            .header(reqwest::header::ACCEPT, "application/json")
-            .send()
-            .await
-            .map_err(BatchClientError::Transport)?;
+            .send(
+                self.client
+                    .delete(self.endpoint(&["jobs", job_id])?)
+                    .header(reqwest::header::ACCEPT, "application/json"),
+            )
+            .await?;
         decode_response(response, &[StatusCode::ACCEPTED], MAX_JOB_RESPONSE_BYTES).await
     }
 
@@ -226,6 +273,16 @@ impl BatchApiClient {
             }
         }
         Ok(url)
+    }
+
+    async fn send(&self, request: RequestBuilder) -> Result<Response, BatchClientError> {
+        self.authorization
+            .authorize(request)
+            .await
+            .map_err(BatchClientError::Authorization)?
+            .send()
+            .await
+            .map_err(BatchClientError::Transport)
     }
 }
 
@@ -280,22 +337,6 @@ async fn read_bounded(
     Ok(body)
 }
 
-pub(crate) fn validate_development_batch_base_url(raw: &str) -> Result<String, ConfigError> {
-    let normalized = config::validate_base_url(raw, false)?;
-    let url =
-        Url::parse(&normalized).map_err(|_| ConfigError::Invalid("Enter a valid server URL."))?;
-    let host = url
-        .host_str()
-        .ok_or(ConfigError::Invalid("Server URL must include a host."))?;
-    let is_loopback = host
-        .trim_start_matches('[')
-        .trim_end_matches(']')
-        .parse::<std::net::IpAddr>()
-        .is_ok_and(|address| address.is_loopback());
-    if !is_loopback {
-        return Err(ConfigError::Invalid(
-            "Remote audio requires a loopback SSH tunnel until authenticated server transport ships.",
-        ));
-    }
-    Ok(normalized)
+pub(crate) fn validate_batch_base_url(raw: &str) -> Result<String, ConfigError> {
+    config::validate_base_url(raw, super::super::allow_insecure_private_server())
 }

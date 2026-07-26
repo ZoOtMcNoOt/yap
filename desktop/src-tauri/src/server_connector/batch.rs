@@ -5,7 +5,7 @@ mod request;
 mod response;
 mod validation;
 
-pub(crate) use client::{validate_development_batch_base_url, BatchApiClient};
+pub(crate) use client::{validate_batch_base_url, BatchApiClient};
 pub(crate) use error::BatchClientError;
 pub(crate) use preprocessing::{
     validate_vad_intervals, NormalizationEvidence, PreprocessingEvidence, SourceVadInterval,

@@ -33,7 +33,10 @@ import {
   removeSileroVad,
   removeAcousticLanguageDetector,
   saveServerSettings,
+  serverIdentityStatus,
   serverSettings,
+  signInToServer,
+  signOutOfServer,
   setFallbackModelEnabled,
   sileroVadStatus,
   testServerConnection,
@@ -217,20 +220,31 @@ describe("settings model lifecycle bindings", () => {
 
   it("invokes typed server settings and connection commands", async () => {
     const settings = {
-      schemaVersion: 1 as const,
+      schemaVersion: 2 as const,
       enabled: true,
       baseUrl: "https://server.example",
+      authentication: {
+        tenantId: "11111111-1111-1111-1111-111111111111",
+        clientId: "22222222-2222-2222-2222-222222222222",
+        apiScope: "api://33333333-3333-3333-3333-333333333333/access_as_user",
+      },
     };
     invokeMock.mockResolvedValue(settings);
 
     await serverSettings();
     await saveServerSettings(settings);
+    await serverIdentityStatus();
+    await signInToServer();
+    await signOutOfServer();
     await testServerConnection();
     await serverAsrCapabilities();
 
     expect(invokeMock.mock.calls).toEqual([
       ["server_settings"],
       ["set_server_settings", { settings }],
+      ["server_identity_status"],
+      ["sign_in_to_server"],
+      ["sign_out_of_server"],
       ["refresh_server_connection"],
       ["server_asr_capabilities"],
     ]);

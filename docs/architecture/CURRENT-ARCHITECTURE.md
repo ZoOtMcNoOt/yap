@@ -1,6 +1,7 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–6 system: provider
+This document describes the merged executable Phase 1–6 system plus the focused
+Phase 7 implementation currently under review: provider
 catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
 VAD, local language spans, verify-only AmberNet batch preflight, and
@@ -31,8 +32,11 @@ flowchart LR
   UI --> Native["Tauri Rust owners"]
   Native --> Local["Local Nemotron fallback"]
   Native --> DB["SQLite and app-data artifacts"]
-  Native --> Loopback["Numeric loopback HTTP"]
+  Native --> Identity["Rust identity owner\nMSAL.NET/WAM sidecar"]
+  Identity -. "Yap API token" .-> Entra["Microsoft Entra ID\nIT-provided environment"]
+  Native --> Loopback["HTTP + optional sensitive bearer"]
   Loopback -. "explicit SSH forward" .-> Server["Private Yap server"]
+  Server --> Auth["Token validation +\nidentity repository"]
   Server --> Store["Private job store and artifacts"]
   Server --> Pool["Bounded provider admission pools"]
   Pool --> Reference["Transformers reference workers"]
@@ -497,11 +501,11 @@ provider-promotion comparisons have not run. Both
 candidate containers stay on an
 egress-blocked internal bridge with no Docker-published port; their launchers
 own bounded numeric-loopback proxy process groups and require separate private
-API keys. This does not implement
-the still-false live capability. Phase 6 does not claim authenticated ownership
-or a persistent supervised mixed-load production service. Phase 7 owns
-authenticated tenant/user identity. Phase 10 owns production supervision,
-capacity promotion, observability, and enterprise deployment.
+API keys. This does not implement the still-false live capability. The active
+Phase 7 branch adds authenticated tenant/user identity to the existing REST/LID
+boundary, but it does not create a live transport or persistent supervised
+mixed-load production service. Phase 10 owns production supervision, capacity
+promotion, observability, and enterprise deployment.
 
 Local and server language evidence now share the narrow version-1 16 kHz
 `LanguageSpan` wire contract without sharing a state owner. Local acoustic
@@ -524,6 +528,34 @@ never rewritten; restoring the server label appends another correction. History
 shows effective correction and remaining-review counts only after the complete
 chain verifies, and React renders the list in bounded pages rather than creating
 one DOM row per possible segment.
+
+## Authenticated identity and durable remote-account ownership
+
+In Entra mode, the server accepts only fixed-algorithm RS256 Yap API access
+tokens from the configured tenant, audience, delegated scope, and allowed
+native-client actor. Bounded signing-key retrieval/cache logic validates issuer,
+tenant, audience, time, and key identity before the request adapter creates an
+immutable `(tenant_id, subject_id)` principal. The exact health route remains
+public; every other current API route requires authentication. The identity
+repository owns principal upsert, local access revocation, purpose-control
+records, and redacted append-only audit events. The executable SQLite adapter
+is development evidence, not the selected production database or audit sink.
+
+The Windows client keeps local/offline dictation independent of authentication.
+For server work, Rust owns one bounded sidecar protocol and token-cache
+projection; the official MSAL.NET public-client adapter owns Authorization
+Code + PKCE, WAM/system-browser interaction, silent refresh, and its OS-protected
+cache. No token or raw MSAL account ID crosses into React or ordinary Yap
+persistence. The native owner hashes the selected MSAL home account ID and
+schema 12 immutably binds every remote job and detached cancellation to that
+local account authority before dispatch. An account switch, sign-out, or attempt
+to attach pre-Phase-7 development work fails before a different bearer can be
+sent.
+
+The branch has focused synthetic signed-token, restart, cross-owner
+non-disclosure, account-switch, package, and protocol evidence. It has not yet
+passed the complete Phase 7 gate or a real IT-provided Entra/WAM/Conditional
+Access environment.
 
 ## Accepted meeting direction, not current execution
 
@@ -555,13 +587,14 @@ jobs, admission, cancellation, immutable revisions, and publication.
 
 | Durable boundary | Recovery invariant |
 | --- | --- |
-| Desktop SQLite job ledger | Transactional migration and replay preserve one job identity and accepted remote progress. Schema 8 adds a singleton metadata write probe; schema 9 adds bounded client-stage attempts without fabricating history for legacy rows; schema 10 binds the immutable preflight artifact and persisted LID dispatch identity. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
+| Desktop SQLite job ledger | Transactional migration and replay preserve one job identity and accepted remote progress. Schema 8 adds a singleton metadata write probe; schema 9 adds bounded client-stage attempts without fabricating history for legacy rows; schema 10 binds the immutable preflight artifact and persisted LID dispatch identity; schema 11 renames the legacy language disposition; schema 12 binds remote work to one development or hashed MSAL-account authority. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
 | Recording commit/sidecar/transcript | Only hash-valid, atomically published lineage becomes complete History truth. |
 | Remote result review | Native History derives fixed/dynamic/unknown-language and available/unavailable/legacy-timing summaries only from a verified immutable result, then projects them into the one existing transcript review surface. |
 | Prepared spool/chunks | Only verified Yap-owned paths are cleaned; external sources are preserved. |
 | Install identity | Bounded no-follow regular-file admission rejects linked, oversized, or invalid namespace state. |
 | Connector configuration | Bounded no-follow regular-file admission precedes schema validation; one save lease spans confirmation, publication, approval, generation change, and applied-state projection. |
 | Server job/chunk/result state | Schema 5 retains bounded ASR/alignment/result-publication attempts. Idempotency survives restart; interrupted processing and retry admission remain explicit without rewriting completed result authority. |
+| Server identity repository | The provider-neutral repository owns principal, access-revocation, purpose-control, and redacted audit records. The SQLite adapter persists focused development/restart evidence; production topology, encryption, backup/deletion, retention/export, and administrative access remain external approvals. |
 | Deletion intent/quarantine | Destructive work revalidates identity and resumes without following replacement paths. |
 
 ## Trust boundaries and limits
@@ -577,9 +610,11 @@ jobs, admission, cancellation, immutable revisions, and publication.
   revalidation/leases where mutation requires it.
 - Logs and public errors describe stable codes/state without private audio or
   transcript content.
-- The application boundary is numeric loopback during development. External
-  networking, authentication, certificates, DNS, firewall policy, ZPA, and
-  enterprise deployment are not implied.
+- The application boundary remains numeric loopback during development. Entra
+  mode implements application authentication and owner authorization, but
+  synthetic tokens and a packaged MSAL adapter do not imply real tenant policy,
+  Conditional Access, MFA, certificates, DNS, firewall policy, ZPA, or
+  enterprise deployment.
 
 See the complete [ownership map](boundaries/EXECUTABLE-OWNERSHIP.md) and public
 [security posture](../security/SECURITY-POSTURE.md).
@@ -588,7 +623,8 @@ See the complete [ownership map](boundaries/EXECUTABLE-OWNERSHIP.md) and public
 
 The frontend uses Node 24 and pnpm 11.7.0. Native code uses Rust 1.96. The
 portable server supports Python 3.12 only. Windows automation requires
-PowerShell Core 7.4 or newer. Installer lifecycle tests run only in a
+PowerShell Core 7.4 or newer. The Windows identity sidecar uses pinned .NET SDK
+8.0.423 and locked MSAL dependencies. Installer lifecycle tests run only in a
 disposable Windows environment.
 
 Focused suites protect each extraction. Browser automation allocates an

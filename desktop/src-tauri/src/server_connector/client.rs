@@ -16,6 +16,7 @@ pub(crate) enum HealthCheckResult {
     },
     SignInRequired {
         api_version: Option<String>,
+        capabilities: ServerCapabilities,
     },
     Offline {
         api_version: Option<String>,
@@ -63,7 +64,10 @@ pub(crate) async fn check_health(
 
     match response.status() {
         StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => {
-            return HealthCheckResult::SignInRequired { api_version: None };
+            return HealthCheckResult::SignInRequired {
+                api_version: None,
+                capabilities: ServerCapabilities::default(),
+            };
         }
         status if status.is_server_error() => return offline(None, "SERVER_ERROR", true),
         StatusCode::OK => {}
@@ -120,7 +124,10 @@ fn project_health(body: &[u8]) -> HealthCheckResult {
             api_version: envelope.api_version,
             capabilities,
         },
-        "required" => HealthCheckResult::SignInRequired { api_version },
+        "required" => HealthCheckResult::SignInRequired {
+            api_version,
+            capabilities,
+        },
         _ => offline(api_version, "MALFORMED_HEALTH_RESPONSE", true),
     }
 }
@@ -364,7 +371,10 @@ mod tests {
             let fixture = Fixture::response(status, Vec::new(), Duration::ZERO);
             assert_eq!(
                 check(&fixture.base_url()),
-                HealthCheckResult::SignInRequired { api_version: None }
+                HealthCheckResult::SignInRequired {
+                    api_version: None,
+                    capabilities: ServerCapabilities::default(),
+                }
             );
         }
 
@@ -381,6 +391,11 @@ mod tests {
             check(&fixture.base_url()),
             HealthCheckResult::SignInRequired {
                 api_version: Some("1".to_owned()),
+                capabilities: ServerCapabilities {
+                    batch_jobs: true,
+                    live_streaming: true,
+                    job_status: true,
+                },
             }
         );
     }

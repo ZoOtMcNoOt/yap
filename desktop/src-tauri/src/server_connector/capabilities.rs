@@ -134,6 +134,7 @@ pub(crate) enum AsrCatalogError {
 
 pub(crate) async fn fetch_asr_capabilities(
     client: &reqwest::Client,
+    authorization: &super::RequestAuthorization,
     base_url: &str,
     allow_insecure_private: bool,
 ) -> Result<AsrCapabilityCatalog, AsrCatalogError> {
@@ -143,9 +144,14 @@ pub(crate) async fn fetch_asr_capabilities(
     url.set_path("/v1/asr/capabilities");
     url.set_query(None);
     url.set_fragment(None);
-    let mut response = client
-        .get(url)
-        .header(reqwest::header::ACCEPT, "application/json")
+    let mut response = authorization
+        .authorize(
+            client
+                .get(url)
+                .header(reqwest::header::ACCEPT, "application/json"),
+        )
+        .await
+        .map_err(|_| AsrCatalogError::Unavailable)?
         .send()
         .await
         .map_err(|_| AsrCatalogError::Transport)?;
@@ -544,8 +550,11 @@ mod tests {
             let (mut stream, _) = listener.accept().unwrap();
             let mut request = [0_u8; 2048];
             let read = stream.read(&mut request).unwrap();
-            assert!(String::from_utf8_lossy(&request[..read])
-                .starts_with("GET /v1/asr/capabilities HTTP/1.1"));
+            let request = String::from_utf8_lossy(&request[..read]);
+            assert!(request.starts_with("GET /v1/asr/capabilities HTTP/1.1"));
+            assert!(request
+                .to_ascii_lowercase()
+                .contains("authorization: bearer capability-token"));
             let headers = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                 REPOSITORY_EXAMPLE.len()
@@ -556,6 +565,7 @@ mod tests {
 
         let catalog = tauri::async_runtime::block_on(fetch_asr_capabilities(
             &bounded_client().unwrap(),
+            &crate::server_connector::RequestAuthorization::fixed("capability-token"),
             &format!("http://{address}"),
             false,
         ))

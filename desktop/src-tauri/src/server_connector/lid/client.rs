@@ -1,5 +1,7 @@
 use reqwest::{Client, Response, StatusCode, Url};
 
+use crate::server_connector::RequestAuthorization;
+
 use crate::server_connector::batch::ApiError;
 
 use super::{
@@ -12,14 +14,20 @@ const MAX_CANCEL_RESPONSE_BYTES: usize = 16 * 1024;
 pub(in crate::server_connector) async fn submit_preflight(
     client: &Client,
     base_url: &Url,
+    authorization: &RequestAuthorization,
     request: &LidPreflightRequest,
 ) -> Result<LidPreflightResult, LidPreflightError> {
-    let response = client
-        .post(endpoint(base_url, &["lid", "preflight"])?)
-        .header(reqwest::header::ACCEPT, "application/json")
-        .header(reqwest::header::CONTENT_TYPE, request.media_type())
-        .timeout(request.timeout())
-        .body(request.body().to_vec())
+    let response = authorization
+        .authorize(
+            client
+                .post(endpoint(base_url, &["lid", "preflight"])?)
+                .header(reqwest::header::ACCEPT, "application/json")
+                .header(reqwest::header::CONTENT_TYPE, request.media_type())
+                .timeout(request.timeout())
+                .body(request.body().to_vec()),
+        )
+        .await
+        .map_err(LidPreflightError::Authorization)?
         .send()
         .await
         .map_err(LidPreflightError::Transport)?;
@@ -34,14 +42,20 @@ pub(in crate::server_connector) async fn submit_preflight(
 pub(in crate::server_connector) async fn cancel_preflight(
     client: &Client,
     base_url: &Url,
+    authorization: &RequestAuthorization,
     request_id: &str,
 ) -> Result<(), LidPreflightError> {
     if !valid_request_id(request_id) {
         return Err(LidPreflightError::invalid("request ID is invalid"));
     }
-    let response = client
-        .delete(endpoint(base_url, &["lid", "preflights", request_id])?)
-        .header(reqwest::header::ACCEPT, "application/json")
+    let response = authorization
+        .authorize(
+            client
+                .delete(endpoint(base_url, &["lid", "preflights", request_id])?)
+                .header(reqwest::header::ACCEPT, "application/json"),
+        )
+        .await
+        .map_err(LidPreflightError::Authorization)?
         .send()
         .await
         .map_err(LidPreflightError::Transport)?;

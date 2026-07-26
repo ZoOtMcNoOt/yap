@@ -126,6 +126,13 @@ uses a synthetic signed two-principal gate where IT-owned Entra registration is
 not yet available. Biometric profiles remain Phase 8; Postgres/pgvector
 knowledge permission compilation remains Phase 9.
 
+The active branch now has focused executable evidence for the server
+resource/ownership boundary and the bounded native MSAL.NET/WAM bridge. That is
+implementation progress, not phase completion: documentation reconciliation,
+exactly three adversarial reviews, the one admitted complete matrix,
+first-attempt hosted closure, and merge remain required. Real enterprise Entra
+and WAM policy conformance remains an IT-authorized follow-up.
+
 ## Accepted later phases
 
 | Phase | Boundary | Exit direction |

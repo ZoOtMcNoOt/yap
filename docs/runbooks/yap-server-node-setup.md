@@ -167,8 +167,10 @@ is a development profile, not an enterprise deployment:
 - the application service still binds only to server loopback;
 - Windows reaches it only through an explicitly started SSH local forward;
 - the desktop remains configured with `http://127.0.0.1:18765`;
-- SSH access is the temporary transport authorization boundary; the service
-  does not yet derive a tenant or owner from an Entra token;
+- in the default `development_loopback` auth mode, SSH access remains the
+  temporary transport authorization boundary and the service uses only the
+  isolated development principal; the Phase 7 `entra` mode instead derives
+  tenant/owner from a validated Yap API token;
 - no GB10 application firewall rule, TLS listener, DNS record, ZPA segment, or
   persistent service is created; and
 - the merged Phase 5 reference worker remains a transient, non-root, networkless
@@ -178,6 +180,42 @@ is a development profile, not an enterprise deployment:
   key remains mandatory. Optional Nemotron jobs use the same shape on a
   different loopback port and API key. None is a persistent supervised
   production service.
+
+### Phase 7 application-authentication mode
+
+The executable Entra mode is an application boundary, not permission to invent
+or deploy enterprise identity configuration. IT must supply the approved
+single-tenant native-client and Yap API registrations, exposed delegated scope,
+assignment/consent policy, and test principals. Use only canonical identifiers
+from that handoff:
+
+```powershell
+$env:YAP_AUTH_MODE = 'entra'
+$env:YAP_ENTRA_TENANT_ID = '<approved-tenant-uuid>'
+$env:YAP_ENTRA_AUDIENCE = '<approved-yap-api-app-uuid>'
+$env:YAP_ENTRA_ALLOWED_CLIENT_IDS = '<approved-desktop-client-uuid>'
+$env:YAP_ENTRA_REQUIRED_SCOPE = 'access_as_user'
+$env:YAP_IDENTITY_STORAGE_DIR = '<private-owner-restricted-identity-directory>'
+```
+
+The desktop Settings entry uses the same approved tenant and desktop client IDs
+plus the full delegated scope, for example
+`api://<approved-yap-api-app-uuid>/access_as_user`. It never accepts a Graph
+scope as the Yap API scope. Remote HTTPS requires this public identity
+configuration; bearer tokens are never sent over private plaintext HTTP.
+Loopback HTTP remains available for the isolated development profile.
+
+Before any real-provider test, verify the identity directory is private,
+untracked, outside hosted artifacts, and covered by the approved encryption,
+backup, deletion, audit-retention, and administrator-access policy. The current
+SQLite adapter is for executable development/restart evidence; it is not the
+approved production database or audit sink.
+
+The checked branch proves signed-token validation and multi-owner isolation
+with a local synthetic issuer. That evidence does not prove real login, WAM,
+Conditional Access, MFA, consent, revocation propagation, guest behavior,
+packaged enterprise policy, or production approval. Run those only in a
+separately authorized IT-provided environment.
 
 On the Linux node, use Python 3.12 and private mode-0700 job storage. Replace
 the angle-bracket paths only with a clean staged candidate and the already
@@ -777,8 +815,8 @@ step fails. Treat any reported recovery failure as a console repair condition.
 
 | Owner | Responsibilities |
 | --- | --- |
-| Product | Configurable HTTPS origin (with loopback HTTP limited to the Phase 3 tunnel), capability and auth-required state gating, no embedded node IP, and fail-closed retry without automatic network failover |
-| IT | Internal DNS, ZPA app segment and policy, App Connector placement and redundancy, connector-to-server routing, TLS termination and certificates, firewall source ranges, and Entra policy |
+| Product | Configurable HTTPS origin (with loopback HTTP limited to the development tunnel), capability and auth-required state gating, strict Yap API token validation and owner authorization, no embedded node IP, and fail-closed retry without automatic network failover |
+| IT | Entra tenant/native/API registrations and policy, internal DNS, ZPA app segment and policy, App Connector placement and redundancy, connector-to-server routing, TLS termination and certificates, firewall source ranges, production identity storage/audit, and deployment approval |
 
 Product configuration cannot substitute for approved network topology, and IT
 network reachability does not imply that upload, authentication, or inference
@@ -792,7 +830,8 @@ For corporate use, get these from IT before opening the app endpoint:
 - DHCP reservation or static IP for the server node, including wireless if the node is intended to live on Wi-Fi
 - Client CIDR or VPN CIDR allowed to reach the service
 - TLS certificate source, preferably corporate CA or approved internal ACME
-- Auth plan from ADR 0016, likely Entra/MSAL bearer tokens
+- Approved ADR 0016 Entra/MSAL registration and policy values for the executable
+  Yap API bearer-token boundary
 
 Then run with corporate CIDRs:
 
