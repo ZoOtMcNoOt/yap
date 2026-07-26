@@ -156,6 +156,19 @@ attempt remains failed private evidence and must not be resumed, retried, or
 relabeled. The replacement controller must normalize its generated remote
 script to LF before invoking Bash.
 
+Exact candidate `307c8a5c08827b36c7f54cc1453498ed6e7f5623` was admitted
+once and failed closed in both hardware preflight lanes. PowerShell's native
+process pipeline re-encoded the already-normalized remote script as CRLF, so
+the GB10 lifecycle script again did not start. Independently, the Windows
+native collector rejected its private Nemotron staging as `ModelCorrupt`
+before inference began. The source artifacts subsequently matched their pinned
+sizes and hashes, but the staging also retained load snapshots from the
+forcibly stopped prior collector. Read-back found no retained local process or
+remote provider container, private network, or listener. This attempt remains
+failed private evidence and must not be resumed, retried, or relabeled. A new
+candidate requires a fresh model staging without retained load snapshots and
+an LF-only SSH input file that is validated before admission.
+
 ## Phase 7 cadence
 
 Phase 7 begins only after Checkpoint B merges. Its implementation remains on a
