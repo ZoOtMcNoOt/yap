@@ -7,7 +7,9 @@ implemented. Exact executable candidate
 `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed all 18 provider children
 and exact teardown inside the frozen 30-child Phase 6 matrix; neither
 replaceable provider is promoted, and broad model-quality/replacement decisions
-remain Phase 8 work. Hosted exact-head closure, final review, and merge remain.
+remain Phase 8 work. Hosted CI, CodeQL, and stock-NSIS passed at first attempt
+on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`;
+PR #67 requires final exact-head hosted and adversarial read-back before merge.
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md) and
 [ADR 0024](0024-global-language-routing.md)
 **Meeting serving amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 selects a separate Tiron joint speaker-attributed worker without changing the Phase 6 Cohere/Nemotron gates)

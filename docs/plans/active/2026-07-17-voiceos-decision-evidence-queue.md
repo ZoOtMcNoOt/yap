@@ -718,8 +718,11 @@ unavailable.
   historical evidence only; it is not merge authority.
 - [x] Freeze one repaired replacement Phase 6 head and run its complete
   local/native/server/GB10 matrix exactly once.
-- [ ] Open a focused PR, require green hosted checks on that exact head, resolve
-  review findings, and merge only the checked SHA.
+- [x] Open focused PR #67 and obtain first-attempt hosted CI, CodeQL, and
+  stock-NSIS checks on docs-only review head
+  `cee13f819a85417ea43a3c63e263be85f0570838`.
+- [ ] Require the final docs-only successor to pass exact-head hosted checks,
+  resolve the final review findings, and merge only that checked SHA.
 
 Focused July 20 evidence classified the recurring native warning without
 speculative dependency churn. The exact locked Windows graph contained 994
@@ -763,8 +766,10 @@ all 14 release-contract checks passed. Exact replacement candidate
 `a92f338546a2f8bbaded96b04f8987f0ac475c88` subsequently passed the complete
 30-child matrix, all 18 GB10 provider children, the target-client and connected
 channels, and exact teardown on 2026-07-25. Its candidate receipt was
-independently validated for the exact head and all 30 children. Hosted closure,
-final adversarial review, PR review, and merge remain open.
+independently validated for the exact head and all 30 children. Hosted CI,
+CodeQL, and stock-NSIS passed at first attempt on docs-only review head
+`cee13f819a85417ea43a3c63e263be85f0570838`; PR #67 requires final exact-head
+hosted and adversarial read-back before merge.
 
 ## Queued post-Phase-6 checkpoint
 
@@ -856,7 +861,7 @@ next-phase cadence.
 
 | ID | Question | Evidence required before closure | Default while open |
 | --- | --- | --- | --- |
-| OQ-01 | Which exact acoustic-LID model and native format should power required local switching? | Immutable released artifact, compatible commercial use and explicit redistribution boundary, exact locale mapping, representative span accuracy and boundary error, packaging, CPU latency, incremental memory/energy, and ASR interference beside Nemotron | **Selected for the Phase 6 candidate:** NVIDIA AmberNet 1.12.0 static QDQ INT8, exact 29,613,392-byte graph and NeMo-compatible native frontend, three observations, `0.40` margin, full-label abstention, and user-selected Nemotron regional locales. The original natural/noisy gate failed; the product owner deliberately accepted that limitation instead of continuing model research. The later frozen holdout and natural product-route evidence remain recorded without retuning: the natural route detected 0/4 required switches, so automatic switching stays explicit, default-off Preview behavior. The artifact remains verified local-import only while NGC redistribution review is open. Exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed current-host resource/interference, lifecycle, short-boundary, UI, production-quit, teardown, and the complete Phase 6 matrix. Hosted closure and merge remain; low-end battery/thermal certification remains default-on or Phase 10 work. |
+| OQ-01 | Which exact acoustic-LID model and native format should power required local switching? | Immutable released artifact, compatible commercial use and explicit redistribution boundary, exact locale mapping, representative span accuracy and boundary error, packaging, CPU latency, incremental memory/energy, and ASR interference beside Nemotron | **Selected for the Phase 6 candidate:** NVIDIA AmberNet 1.12.0 static QDQ INT8, exact 29,613,392-byte graph and NeMo-compatible native frontend, three observations, `0.40` margin, full-label abstention, and user-selected Nemotron regional locales. The original natural/noisy gate failed; the product owner deliberately accepted that limitation instead of continuing model research. The later frozen holdout and natural product-route evidence remain recorded without retuning: the natural route detected 0/4 required switches, so automatic switching stays explicit, default-off Preview behavior. The artifact remains verified local-import only while NGC redistribution review is open. Exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed current-host resource/interference, lifecycle, short-boundary, UI, production-quit, teardown, and the complete Phase 6 matrix. Hosted CI, CodeQL, and stock-NSIS passed on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`; final exact-head read-back and merge remain controlled in PR #67. Low-end battery/thermal certification remains default-on or Phase 10 work. |
 
 The completed AmberNet trial started from original waveform, preserved the
 checkpoint feature configuration and all 107 logits, treated disabled-language

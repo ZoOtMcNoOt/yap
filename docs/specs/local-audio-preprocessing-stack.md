@@ -1,6 +1,6 @@
 # Spec: Local Audio Preprocessing Stack
 
-**Status:** Accepted design contract; desktop capture/timeline/recording foundation and the gated Phase 5 canonical-WAV path are merged. Exact Phase 6 candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its complete local/private matrix after bounded three-agent remediation re-review. Hosted closure, final adversarial review, PR review, and merge remain.
+**Status:** Accepted design contract; desktop capture/timeline/recording foundation and the gated Phase 5 canonical-WAV path are merged. Exact Phase 6 candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its complete local/private matrix after bounded three-agent remediation re-review. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`; PR #67 requires any later docs-only successor to pass the same exact-head hosted and final-read-back policy before merge.
 **Scope:** Desktop-side capture and deterministic preprocessing before local fallback or server upload.
 **Amended by:** [ADR 0020](../adr/0020-meeting-capture-diarization-authority.md), [ADR 0024](../adr/0024-global-language-routing.md), and the [Source-Aware Diarization Design](source-aware-diarization.md).
 **Active implementation:** [audio preprocessing and language routing plan](../plans/active/2026-07-16-audio-preprocessing-and-language-routing.md).

@@ -22,7 +22,7 @@ frame contains alternate or historical sequencing.
 
 Evidence and limits are summarized in [current status](../CURRENT-STATUS.md).
 
-## Current gate: Phase 6 PR and hosted closure
+## Current gate: Phase 6 exact-head review and merge
 
 Phase 6 turns the merged fixed-language canonical-WAV vertical slice into a
 durable preprocessing and language-aware pipeline without pulling later
@@ -74,8 +74,12 @@ and pinned dependencies and emitted private receipts after a second clean-head
 check. The admitted gate verified each frozen receipt hash, then required the
 already-prepared ARM64 image ID, checked-head revision, base digest, and runtime
 identity to match it. The receipt-bound ID was launched and recorded; the gate
-could not build, pull, reconnect, or substitute an image. Hosted checks, final
-adversarial review, PR review, and merge remain.
+could not build, pull, reconnect, or substitute an image. Hosted CI, CodeQL,
+and stock-NSIS passed at first attempt on docs-only review head
+`cee13f819a85417ea43a3c63e263be85f0570838`; a private closure receipt was
+independently validated outside Git. PR #67 may merge only after its final
+docs-only successor passes the same exact-head hosted policy and final
+adversarial read-back.
 Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
 SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
 and SGLang services, production multi-worker/mixed-load capacity promotion, production

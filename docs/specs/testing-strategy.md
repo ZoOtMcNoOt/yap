@@ -25,7 +25,11 @@ independently validated for the exact head and all 30 children and has SHA-256
 the 18-child GB10 public-safe aggregate has SHA-256
 `98cdc087b574f35a0e12b386a5d8c4c576a9ada548afe88101d1442868e96deb`.
 The repaired implementation passed one bounded final three-agent re-review.
-Hosted closure, final adversarial review, PR review, and merge remain.
+Hosted CI, CodeQL, and stock-NSIS passed at first attempt on docs-only review
+head `cee13f819a85417ea43a3c63e263be85f0570838`; its private closure receipt
+was independently validated outside Git. Any later docs-only successor in PR
+#67 must pass the same exact-head hosted and final-read-back policy before
+merge.
 The representative provider-promotion corpus and frozen Phase 8 comparisons
 remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
 baseline, but no Tiron worker or meeting scorer executes yet. The tables below

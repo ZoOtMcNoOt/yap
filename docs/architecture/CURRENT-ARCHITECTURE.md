@@ -13,8 +13,11 @@ validated a frozen private preparation-receipt hash, inspected the exact
 prepared ARM64 image, and required its checked-head
 revision, base digest, runtime identity, and immutable image ID to match that
 receipt. They launch and record that exact ID; they cannot build, pull,
-reconnect, or substitute an image. Hosted PR checks, final adversarial review,
-PR review, and merge remain open. The
+reconnect, or substitute an image. Hosted CI, CodeQL, and stock-NSIS passed at
+first attempt on docs-only review head
+`cee13f819a85417ea43a3c63e263be85f0570838`, and its private closure receipt
+was independently validated outside Git. PR #67 retains the rule that any
+later docs-only successor must pass exact-head hosted checks before merge. The
 [Voice OS architecture](../VOICE-OS-ARCHITECTURE.md) remains the first-class
 long-term frame; accepted future work is sequenced by the
 [roadmap](../roadmap/ROADMAP.md) and ADRs, not promoted into current-state

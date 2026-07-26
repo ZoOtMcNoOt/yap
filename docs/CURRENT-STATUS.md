@@ -29,7 +29,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 4: private ASR node | Merged and gated | A bounded router/pool and transient isolated Cohere worker ran on GB10 using the pinned Python 3.12 / NVIDIA PyTorch 26.06 stack. This is reference-worker proof, not a production service. |
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
-| Phase 6: preprocessing | Full gate green; hosted closure pending | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its sole admitted target-client channel, all 18 sequential GB10 provider children, the connected interruption/recovery/History channel, exact teardown, and the complete 30-child local/native/server/private-runtime matrix. Its receipt SHA-256 is `74f183041082c77d05a0633202fa1052222d6a77bd9bef5ce2706546bf3e9647`. Historical candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` was invalidated after final adversarial review found local-start cancellation races across concurrent model/language mutation; the repaired exact-session ownership and installed-capture completion paths are included in `a92f3385...` and passed focused three-reviewer read-back plus the fresh full gate. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Hosted CI/CodeQL/stock-NSIS closure, final exact-head adversarial read-back, PR review, and merge remain. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
+| Phase 6: preprocessing | Full gate and hosted closure green; final exact-head review/merge controlled in PR #67 | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [active plan](plans/active/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its sole admitted target-client channel, all 18 sequential GB10 provider children, the connected interruption/recovery/History channel, exact teardown, and the complete 30-child local/native/server/private-runtime matrix. Its receipt SHA-256 is `74f183041082c77d05a0633202fa1052222d6a77bd9bef5ce2706546bf3e9647`. Historical candidate `e4a62f4b8914e9233cd5229fa8f134f0c59fdbbb` was invalidated after final adversarial review found local-start cancellation races across concurrent model/language mutation; the repaired exact-session ownership and installed-capture completion paths are included in `a92f3385...` and passed focused three-reviewer read-back plus the fresh full gate. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`; its private closure receipt was independently validated outside Git. The final docs-only successor remains subject to the same exact-head hosted and adversarial-review policy. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Phase 7: identity/access | Planned | Entra/MSAL, token-derived ownership, purpose grants, and authorization remain unimplemented. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
@@ -418,9 +418,19 @@ adversarial review found that concurrent model/language mutation could cancel
 a local start before capture installation or reject an installed capture while
 preventing its ASR completion. Candidate `a92f3385...` contains the repaired
 uninstalled-cancellation and installed-capture completion ownership and passed
-the fresh complete gate. Hosted exact-head CI, CodeQL, stock-NSIS lifecycle,
-final adversarial read-back, PR review, and merge remain separate closure
-steps. Neither candidate promotes a provider or claims representative
+the fresh complete gate. Hosted CI
+[`30181745360`](https://github.com/mcnatg1/yap/actions/runs/30181745360),
+CodeQL
+[`30181744574`](https://github.com/mcnatg1/yap/actions/runs/30181744574),
+and stock-NSIS
+[`30181806848`](https://github.com/mcnatg1/yap/actions/runs/30181806848)
+all passed at first attempt on docs-only review head
+`cee13f819a85417ea43a3c63e263be85f0570838`. Its private closure receipt was
+independently validated outside Git and has public-safe SHA-256
+`2ee79c2223b52c7fbb006291811e43226aecdc5fa6bccdcf51d8e675705d7bb0`.
+PR #67 requires any later docs-only successor to pass the same exact-head
+policy before merge. Neither candidate
+promotes a provider or claims representative
 physical-device power/thermal, broad language quality, persistent production
 capacity, authentication, or enterprise deployment.
 
@@ -503,8 +513,7 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Open the focused Phase 6 PR and require hosted CI/CodeQL and applicable
-   Windows checks on the reviewed PR head.
+1. Complete final exact-head hosted and adversarial read-back on Phase 6 PR #67.
 2. Merge only that reviewed green head, then start the separately queued
    Checkpoint B before Phase 7.
 

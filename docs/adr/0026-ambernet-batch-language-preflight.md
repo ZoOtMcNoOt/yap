@@ -5,7 +5,9 @@
 execute. Exact executable candidate
 `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the source-exact ARM64
 resource/lifecycle boundary, five-window connected route, and complete 30-child
-Phase 6 matrix. Hosted exact-head closure, final review, and merge remain.
+Phase 6 matrix. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on
+docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`;
+PR #67 requires final exact-head hosted and adversarial read-back before merge.
 Representative suggestion quality remains unpromoted and is not a Phase 6
 product claim.
 **Builds on:** [ADR 0020](0020-meeting-capture-diarization-authority.md),

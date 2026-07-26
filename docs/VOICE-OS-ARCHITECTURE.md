@@ -767,24 +767,32 @@ quality tier.
 
 ### Target solo / local-first profile
 
-Only the in-process sherpa recognizer, explicitly managed Silero model cache,
-transcripts/history artifacts, remote-job spool/ledger, and normal logs exist
-today. The other entries below are deferred targets.
+The in-process sherpa recognizer, explicitly managed Silero and AmberNet model
+caches, persisted language preferences, transcripts/history artifacts,
+remote-job spool/ledger, connector settings/snapshot, and normal logs exist
+today. Entries explicitly marked deferred below remain targets.
 
 ```
 Yap (Tauri)  [yap-desktop]
   ├─ sherpa recognizer         STT — Nemotron INT8 fallback
+  ├─ AmberNet detector         optional resident INT8 QDQ acoustic LID
   ├─ llama-server sidecar      [deferred] Polish + LLM agents (CPU -ngl 0)
   └─ speaker-evidence worker   [deferred] anonymous meeting labels; no durable identity
 
 %APPDATA%/com.mcnatg1.yap/     Tauri app_data_dir on Windows
   models/                      pinned model cache
     silero-vad/<digest>/       optional explicitly installed advisory VAD model
+    ambernet-lid/<digest>/     optional explicitly installed AmberNet LID model
   live-recordings/             committed audio/transcript history
   remote-jobs/                 Yap-owned immutable Phase 5 prep/results spool
   jobs.sqlite3                 durable imported-job ledger
+  primary-language.json        confirmed BCP 47 primary-language preference
+  live-language-routing.json   default-off Preview routing preference
   live-settings.json           client capture/overlay settings
   server-settings.json         validated server origin settings
+  server-origin-approval.json  explicit approved-origin binding
+  asr-capabilities-snapshot.json  origin-bound last-known provider projection
+  logs/                        local diagnostics
   knowledge_base/              [deferred] OKF (Phase 9)
     conversations/
     jargon_glossary/
@@ -891,7 +899,7 @@ timeline
 | **4** | Merged and verified | Executable candidate `309a2d427707e3483b2649f13940bd48dfaee836` passed the one-time local/native/server/GB10 matrix. Its transient isolated ARM64 raw Transformers worker ran the locked Cohere revision on NVIDIA GB10 in CUDA/BF16 at WER `0.0`; immutable evidence confirmed matching before/after listener, firewall-policy, and service-unit observations plus complete container/worker teardown. Hosted closure passed before final PR head `43f9c43f37e1893dbfe1565d3636fca1e4e3fedf` became reachable from merged main `7d967a5b9f1021fd995af77a421ebaa13d8f9925`. This proves the one-job reference slice, not authenticated/persistent production service or capacity. |
 | **5** | Merged and verified | Already-canonical mono PCM16/16 kHz WAV files are strictly validated and extracted into an immutable Yap-owned spool, durably created/uploaded/committed/resumed/cancelled through the approved loopback origin, processed through the bounded router and isolated Cohere worker, and published to History only after native result verification. Exact PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the one-time local/native/server/GB10 gate and hosted checks, then merged as `b6677631b2cc8283f0f6466622f2dfa7cfdb38f6`. Private review evidence remains outside the repository. General media conversion, WSS/live, authentication, persistent service, external networking, and measured multi-worker capacity remain later gates. |
 | **Checkpoint A** | Merged and verified | Exact implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time complete local/native/server/GB10 gate. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS, then merged as `a80934d844a068110e7f86b30b6e29d35146db57` through PR #59. Private security evidence remains outside Git. |
-| **6** | Exact local/private gate passed; hosted closure pending | ADRs 0024–0026 and the active plan define the provider catalog, primary language, bounded resident AmberNet/Nemotron Preview, verify-only five-region AmberNet batch preflight, explicit server Nemotron auto mode, fail-closed alignment, and provider-specific serving gates. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its frozen 30-child local/native/server/private-runtime matrix after bounded three-agent remediation re-review. Runtime images were prepared before admission and emitted private receipts after a second clean-head check. The admitted gates verified each frozen receipt hash and exact prepared ARM64 image identity, launched the receipt-bound immutable ID, and bound it into evidence; they could not build, pull, reconnect, or substitute an image. The local route remains default-off Preview because its natural-switch target failed; the catalog still advertises only gated Cohere `en-US` with `wordAlignment: false`; neither resident server provider is promoted. Hosted exact-head checks, final adversarial review, PR review, and merge remain open. Tiron/provider quality selection stays in Phase 8; authentication and persistent supervised mixed-load production remain Phases 7 and 10. |
+| **6** | Local/private gate and hosted closure green; exact-head review/merge controlled in PR #67 | ADRs 0024–0026 and the active plan define the provider catalog, primary language, bounded resident AmberNet/Nemotron Preview, verify-only five-region AmberNet batch preflight, explicit server Nemotron auto mode, fail-closed alignment, and provider-specific serving gates. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its frozen 30-child local/native/server/private-runtime matrix after bounded three-agent remediation re-review. Runtime images were prepared before admission and emitted private receipts after a second clean-head check. The admitted gates verified each frozen receipt hash and exact prepared ARM64 image identity, launched the receipt-bound immutable ID, and bound it into evidence; they could not build, pull, reconnect, or substitute an image. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`, and its private closure receipt was independently validated outside Git. The final docs-only successor remains subject to the same exact-head hosted and adversarial-review policy before merge. The local route remains default-off Preview because its natural-switch target failed; the catalog still advertises only gated Cohere `en-US` with `wordAlignment: false`; neither resident server provider is promoted. Tiron/provider quality selection stays in Phase 8; authentication and persistent supervised mixed-load production remain Phases 7 and 10. |
 | **7** | Planned | Auth/identity design exists but requires the corrected Yap API token audience, `(tid, oid)` key, purpose-grant records, and a server entrypoint. |
 | **8** | Capture prerequisites implemented; meeting inference deferred | ADR 0020, ADR 0027, and the source-aware design are canonical. Track/timeline/recording prerequisites are implemented and pinned Tiron's eight-window/eight-global route is selected as the server development baseline; the local anonymous model, Tiron worker, larger-roster speaker-epoch reconciler, frozen messy-meeting benchmark, result production, and server reconciliation do not exist. |
 | **9** | Planned | Google OKF conformance, KB compiler, Postgres permission/relationship ledger, pgvector baseline, optional Neo4j challenger, agents, RAG, and MCP wait on preprocessing, identity, and diarization outputs. |
@@ -931,9 +939,9 @@ privacy review and ADR.
 
 **Build specs:** [Client state machine](specs/client-state-machine.md) · [Model download UX](specs/model-download-ux.md) · [Local audio preprocessing](specs/local-audio-preprocessing-stack.md) · [Local live fallback](specs/local-live-fallback-sidecar.md) · [Local LLM sidecar](specs/local-llm-sidecar.md) · [Live dictation client](specs/live-dictation-client-ux.md) · [Server tier MVP](specs/server-tier-mvp.md) · [Source-aware diarization](specs/source-aware-diarization.md) · [Testing](specs/testing-strategy.md).
 
-**Next execution order:** open the focused Phase 6 PR and run hosted checks on
-its exact head. Review and merge only that green head, then run the separately
-queued Checkpoint B before
+**Next execution order:** finish exact-head hosted and adversarial read-back on
+the final docs-only head of Phase 6 PR #67. Merge only that green reviewed head,
+then run the separately queued Checkpoint B before
 continuing Phases 7–10 on separate branches in documented order. WSS/live
 ASR, authentication, diarization, and the HTTP/3 edge remain gated by their
 canonical phases. ADR 0021 does not authorize UDP exposure from the loopback

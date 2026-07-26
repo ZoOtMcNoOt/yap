@@ -39,7 +39,9 @@ complexity.
   plus its independently validated exact-head 30-child candidate receipt bind
   the current local/private evidence. The receipt SHA-256 is
   `74f183041082c77d05a0633202fa1052222d6a77bd9bef5ce2706546bf3e9647`.
-  Hosted closure, final adversarial review, PR review, and merge remain.
+  Hosted CI, CodeQL, and stock-NSIS passed at first attempt on docs-only review
+  head `cee13f819a85417ea43a3c63e263be85f0570838`. PR #67 requires final
+  exact-head hosted and adversarial read-back before merge.
 - Its target-client channel passed twelve paced native cycles, all nine
   250-ms-through-30-second prepared-audio cases, and the unattended 30-second
   release-mode microphone/UI lifecycle with no retained recording, model
@@ -201,8 +203,10 @@ not deferred.
 - [x] Run every replacement-candidate child frozen by the machine-validated
       [integrated preprocessing and language-routing gate](../../runbooks/integrated-preprocessing-language-routing-gate.md)
       on the same frozen head.
-- [ ] Validate the separate exact-head hosted CI/CodeQL/disposable-Windows
-      closure after the PR opens.
+- [x] Validate first-attempt hosted CI/CodeQL/disposable-Windows closure on
+      docs-only review head
+      `cee13f819a85417ea43a3c63e263be85f0570838`.
+- [ ] Validate the same hosted closure on the final docs-only successor.
 - [x] Verify cancellation, retry, restart, recovery, immutable identity,
       resource bounds, model/process/listener teardown, and private-evidence
       handling.
@@ -212,9 +216,9 @@ not deferred.
 
 - [ ] Review the exact checked SHA and resulting Phase 6 diff.
 - [x] Open one focused Phase 6 PR: [PR #67](https://github.com/mcnatg1/yap/pull/67).
-- [ ] Require hosted CI, CodeQL, and applicable Windows checks to be green on
-      that exact head, or explicitly disclose a genuinely unavailable check
-      with equivalent local evidence.
+- [x] Require hosted CI, CodeQL, and applicable Windows checks to be green on
+      review head `cee13f819a85417ea43a3c63e263be85f0570838`.
+- [ ] Require those checks to be green again on the final docs-only successor.
 - [ ] Resolve blocking review findings, repeat only invalidated gates when
       necessary, and merge only the reviewed green SHA.
 

@@ -27,8 +27,13 @@ launched and recorded that receipt-bound ID and could not build, pull,
 reconnect, or substitute an image. A later hosted-only teardown-timing contract
 correction invalidated historical candidate
 `c82fe47a683dabd72231ffca377095ff16f2d4f5`; no receipt or child evidence was
-reused or relabeled. Hosted checks, final adversarial review, PR review, and
-merge remain for `e4a62f4b...`. Earlier replacement candidate
+reused or relabeled. Hosted CI, CodeQL, and stock-NSIS passed at first attempt
+on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`,
+whose direct executable parent is `a92f3385...`; the private hosted-closure
+receipt was independently validated outside Git. Final adversarial review found
+stale lineage, hosted-state, and process/data-layout documentation only. The
+resulting docs-only successor must pass exact-head hosted checks before PR #67
+is merged. Earlier replacement candidate
 `72c089f42c1358f4f0b86c793af39a8e762d6137` passed the complete
 Windows target-client channel and all 18 sequential GB10 provider children,
 then failed connected-server readiness because its private controller selected
@@ -1828,9 +1833,11 @@ retried, or relabeled.
       exactly once. Exact candidate
       `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed all 30 frozen children,
       all three private hardware/integration channels, and exact teardown.
-- [ ] Open a focused PR, require hosted exact-head CI/CodeQL and any applicable
-      disposable-Windows lifecycle evidence, review the checked SHA, and merge
-      only that green reviewed head.
+- [x] Open focused PR #67 and obtain first-attempt hosted CI, CodeQL, and
+      disposable-Windows stock-NSIS evidence on docs-only review head
+      `cee13f819a85417ea43a3c63e263be85f0570838`.
+- [ ] Require the final docs-only successor to pass exact-head hosted checks,
+      review that checked SHA, and merge only that green reviewed head.
 
 Exactly three read-only adversarial reviews covered runtime/concurrency,
 architecture/maintainability, and contracts/evidence. The latest read-back

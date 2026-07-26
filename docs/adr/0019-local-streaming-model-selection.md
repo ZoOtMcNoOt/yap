@@ -7,8 +7,10 @@ evidence). Exact executable candidate
 `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the complete Phase 6
 target-client and integrated safety matrix after bounded three-agent
 remediation re-review; automatic switching remains an explicit default-off
-Preview because its consumed natural-switch target failed. Hosted PR closure,
-final review, and merge remain.
+Preview because its consumed natural-switch target failed. Hosted CI, CodeQL,
+and stock-NSIS passed at first attempt on docs-only review head
+`cee13f819a85417ea43a3c63e263be85f0570838`; PR #67 requires final exact-head
+hosted and adversarial read-back before merge.
 **Amends:** [ADR 0001](0001-dual-stt-backends.md), [ADR 0002](0002-crispasr-unified-stt-runtime.md), [ADR 0003](0003-long-term-voice-architecture.md), [ADR 0006](0006-silero-agents-state-machine.md), [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0018](0018-three-repo-topology.md)
 
 ## Context
