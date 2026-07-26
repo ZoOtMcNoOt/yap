@@ -122,6 +122,131 @@ class _FakeEngine:
 
 
 class NemotronNemoServiceTests(unittest.TestCase):
+    def test_partial_pipeline_constructor_failure_fail_stops_before_atexit_join(
+        self,
+    ) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(server_root / "src")
+        script = textwrap.dedent(
+            """
+            import os
+            from concurrent.futures import ThreadPoolExecutor
+            from pathlib import Path
+            import threading
+            from types import SimpleNamespace
+            from unittest.mock import patch
+
+            import yap_server.pools.nemotron_nemo_streaming as streaming
+            from yap_server.pools.nemotron_nemo_pipeline import (
+                NemotronNemoPartialInitializationError,
+            )
+
+
+            def fail_after_native_allocation(**_kwargs):
+                started = threading.Event()
+                release = threading.Event()
+                executor = ThreadPoolExecutor(max_workers=1)
+                executor.submit(lambda: (started.set(), release.wait()))
+                if not started.wait(timeout=1):
+                    raise RuntimeError("synthetic native owner did not start")
+                executor.shutdown(wait=False, cancel_futures=True)
+                raise NemotronNemoPartialInitializationError(
+                    "private partial native identity"
+                )
+
+
+            root = Path.cwd().resolve()
+            os.environ[streaming.NEMOTRON_STREAMING_CONFIG_ENV] = str(
+                root / "synthetic-streaming-config.yaml"
+            )
+            lock = SimpleNamespace(
+                pool_id="nemotron-batch",
+                engine="nemo",
+                supported_languages=("auto",),
+                artifacts=(SimpleNamespace(path="synthetic.nemo"),),
+                runtime_overlay_packages=(),
+                runtime_torch_version="expected-torch",
+                runtime_torch_cuda_version="expected-cuda",
+            )
+            with patch.object(
+                streaming,
+                "NemotronNemoPipeline",
+                side_effect=fail_after_native_allocation,
+            ):
+                streaming.NemotronNemoStreamingEngine(model_dir=root, lock=lock)
+            """
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=server_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 70)
+        self.assertIn("fail-stopping the service process", completed.stderr)
+        self.assertNotIn("private partial native identity", completed.stderr)
+
+    def test_request_executor_wedge_fail_stops_before_atexit_join(self) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(server_root / "src")
+        script = textwrap.dedent(
+            """
+            import threading
+            from unittest.mock import patch
+
+            from yap_server.pools.batch_contract import WorkerContainmentError
+            import yap_server.pools.nemotron_nemo_service as service
+
+
+            class Application:
+                def request_shutdown(self):
+                    pass
+
+
+            server = service._NemotronNemoHttpServer(
+                ("127.0.0.1", 0),
+                application=Application(),
+                api_key="private-test-key",
+            )
+            started = threading.Event()
+            release = threading.Event()
+            server._request_executor.submit(lambda: (started.set(), release.wait()))
+            if not started.wait(timeout=1):
+                raise RuntimeError("synthetic request did not start")
+
+            with patch.object(
+                service,
+                "_REQUEST_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS",
+                0.05,
+                create=True,
+            ):
+                try:
+                    server.server_close()
+                except WorkerContainmentError:
+                    service._fail_stop_shutdown()
+            """
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=server_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 70)
+        self.assertIn("fail-stopping the service process", completed.stderr)
+
     def test_engine_identity_failure_bounds_native_cleanup_before_publication(
         self,
     ) -> None:
@@ -282,7 +407,7 @@ class NemotronNemoServiceTests(unittest.TestCase):
         self.assertIn("fail-stopping the service process", completed.stderr)
         self.assertNotIn("Traceback", completed.stderr)
 
-    def test_server_close_releases_listener_without_waiting_for_wedged_request(
+    def test_server_close_releases_listener_and_reports_wedged_request(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -309,12 +434,17 @@ class NemotronNemoServiceTests(unittest.TestCase):
 
             server._request_executor.submit(wedged_request)
             self.assertTrue(started.wait(timeout=2))
-            closed = threading.Thread(target=server.server_close)
-            closed.start()
-            closed.join(timeout=0.5)
 
             try:
-                self.assertFalse(closed.is_alive())
+                with (
+                    patch(
+                        "yap_server.pools.nemotron_nemo_service."
+                        "_REQUEST_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS",
+                        0.05,
+                    ),
+                    self.assertRaises(WorkerContainmentError),
+                ):
+                    server.server_close()
                 with self.assertRaises(OSError):
                     socket.create_connection(address, timeout=0.1)
                 self.assertEqual(application.readiness()[0], 503)

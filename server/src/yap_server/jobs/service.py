@@ -30,6 +30,7 @@ from .chunk_upload import ChunkUploadCoordinator, ChunkUploadPlan
 from .completion import JobCompletionCoordinator
 from .contract_values import (
     MAX_CLIENT_CLOCK_SKEW as _MAX_CLIENT_CLOCK_SKEW,
+    MAX_STORED_JOBS as _DEFAULT_MAX_STORED_JOBS,
     TERMINAL_STATUSES as _TERMINAL_STATUSES,
     identifier as _identifier,
     mapping as _mapping,
@@ -52,7 +53,7 @@ from .stage_attempts import (
 )
 
 
-_MAX_STORED_JOBS = 512
+_MAX_STORED_JOBS = _DEFAULT_MAX_STORED_JOBS
 _CANCELLATION_ACK_TIMEOUT_SECONDS = 2.0
 
 
@@ -214,7 +215,10 @@ class RecordingJobService:
                     "INVALID_JOB",
                     "Recording job declaration is invalid.",
                 ) from error
-            if len(self._state.jobs) >= _MAX_STORED_JOBS:
+            if (
+                len(self._state.jobs) + len(self._state.pending_deletions)
+                >= _MAX_STORED_JOBS
+            ):
                 raise JobServiceError(
                     429,
                     "SERVER_STORAGE_LIMIT",
@@ -1080,7 +1084,7 @@ class RecordingJobService:
             )
 
     def _prune_expired_jobs_locked(self, now: datetime) -> int:
-        self._store.reconcile_pending_deletions()
+        self._store.reconcile_pending_deletions(self._state)
         expired: list[str] = []
         for job_id, job in self._state.jobs.items():
             metadata = _mapping(self._state.requests[job_id].get("metadata"), "metadata")

@@ -9,8 +9,10 @@ import unittest
 from yap_server.pools.nemotron_nemo_pipeline import (
     NEMOTRON_CPU_THREAD_COUNT,
     NEMOTRON_STREAMING_MAX_STREAMS,
+    NemotronNemoPartialInitializationError,
     NemotronNemoPipeline,
     _configure_torch_thread_pools,
+    _initialize_native_runtime,
     _is_locked_streaming_profile,
     _validated_prompt_dictionary,
     _validated_runtime_file,
@@ -80,6 +82,20 @@ class _Cuda:
 
 
 class NemotronNemoPipelineTests(unittest.TestCase):
+    def test_first_native_allocation_failure_is_typed_for_process_fail_stop(
+        self,
+    ) -> None:
+        private_detail = "private partial native allocation"
+
+        def fail() -> object:
+            raise RuntimeError(private_detail)
+
+        with self.assertRaises(NemotronNemoPartialInitializationError) as failed:
+            _initialize_native_runtime(fail)
+
+        self.assertIsInstance(failed.exception.__cause__, RuntimeError)
+        self.assertEqual(str(failed.exception.__cause__), private_detail)
+
     def test_cpu_thread_pools_match_the_gpu_stream_bound(self) -> None:
         torch = _ThreadedTorch()
 

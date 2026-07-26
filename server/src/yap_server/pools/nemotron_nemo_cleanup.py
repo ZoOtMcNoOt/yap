@@ -3,14 +3,16 @@ from __future__ import annotations
 from collections.abc import Callable
 import os
 import sys
-import threading
+from typing import Never
+
+from yap_server.pools.cleanup_deadline import run_cleanup_before_deadline
 
 
 NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS = 15.0
 _SHUTDOWN_FAILURE_EXIT_CODE = 70
 
 
-def fail_stop_native_runtime() -> None:
+def fail_stop_native_runtime() -> Never:
     print(
         "resident Nemotron NeMo shutdown exceeded its safe cleanup boundary; "
         "fail-stopping the service process",
@@ -24,29 +26,11 @@ def close_native_runtime_or_fail_stop(
     *,
     timeout_seconds: float,
 ) -> None:
-    if timeout_seconds <= 0:
-        raise ValueError("shutdown cleanup timeout must be positive")
-    completed = threading.Event()
-    errors: list[BaseException] = []
-
-    def close_in_background() -> None:
-        try:
-            close_runtime()
-        except BaseException as error:
-            errors.append(error)
-        finally:
-            completed.set()
-
     try:
-        cleanup_thread = threading.Thread(
-            target=close_in_background,
-            name="yap-nemotron-nemo-cleanup",
-            daemon=True,
+        run_cleanup_before_deadline(
+            close_runtime,
+            timeout_seconds=timeout_seconds,
+            thread_name="yap-nemotron-nemo-cleanup",
         )
-        cleanup_thread.start()
-        cleanup_completed = completed.wait(timeout_seconds)
     except BaseException:
-        fail_stop_native_runtime()
-        return
-    if not cleanup_completed or errors:
         fail_stop_native_runtime()

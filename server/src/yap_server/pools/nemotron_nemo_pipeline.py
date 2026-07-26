@@ -8,6 +8,7 @@ import logging
 import stat
 import threading
 import time
+from typing import TypeVar
 
 from yap_server.pools.nemo_stream_scheduler import (
     NemoStreamScheduler,
@@ -19,6 +20,22 @@ NEMOTRON_STREAMING_ATTENTION_CONTEXT = (56, 13)
 NEMOTRON_STREAMING_CHUNK_SECONDS = 1.12
 NEMOTRON_STREAMING_MAX_STREAMS = 8
 NEMOTRON_CPU_THREAD_COUNT = NEMOTRON_STREAMING_MAX_STREAMS
+_NativeRuntime = TypeVar("_NativeRuntime")
+
+
+class NemotronNemoPartialInitializationError(RuntimeError):
+    """Native NeMo ownership became uncertain before a closeable owner returned."""
+
+
+def _initialize_native_runtime(
+    initialize: Callable[[], _NativeRuntime],
+) -> _NativeRuntime:
+    try:
+        return initialize()
+    except BaseException as error:
+        raise NemotronNemoPartialInitializationError(
+            "Nemotron NeMo initialization failed after native allocation began"
+        ) from error
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,34 +73,44 @@ class NemotronNemoPipeline:
         torch.set_grad_enabled(False)
 
         loaded_at = time.monotonic()
-        pipeline = _build_prompted_pipeline(
-            checkpoint=checkpoint,
-            config_path=config_path,
-            torch_module=torch,
-        )
-        torch.cuda.synchronize()
-        self._model_load_ms = round((time.monotonic() - loaded_at) * 1_000)
-        self._torch = torch
-        self._pipeline = pipeline
-        self._closed = threading.Event()
-        self._close_lock = threading.Lock()
-        self._close_error: BaseException | None = None
+        pipeline = None
+        try:
+            pipeline = _build_prompted_pipeline(
+                checkpoint=checkpoint,
+                config_path=config_path,
+                torch_module=torch,
+            )
+            torch.cuda.synchronize()
+            self._model_load_ms = round((time.monotonic() - loaded_at) * 1_000)
+            self._torch = torch
+            self._pipeline = pipeline
+            self._closed = threading.Event()
+            self._close_lock = threading.Lock()
+            self._close_error: BaseException | None = None
 
-        model = pipeline.asr_model.asr_model
-        model_defaults = getattr(model.cfg, "model_defaults", None)
-        prompts = getattr(model_defaults, "prompt_dictionary", None)
-        num_prompts = getattr(model_defaults, "num_prompts", None)
-        self._prompt_dictionary = _validated_prompt_dictionary(
-            prompts,
-            num_prompts=num_prompts,
-        )
-        self._dtype = str(next(model.parameters()).dtype).removeprefix("torch.")
-        self._scheduler = NemoStreamScheduler(
-            pipeline=pipeline,
-            stream_factory=self._stream_factory,
-            release_stream=self._release_stream,
-            max_streams=NEMOTRON_STREAMING_MAX_STREAMS,
-        )
+            model = pipeline.asr_model.asr_model
+            model_defaults = getattr(model.cfg, "model_defaults", None)
+            prompts = getattr(model_defaults, "prompt_dictionary", None)
+            num_prompts = getattr(model_defaults, "num_prompts", None)
+            self._prompt_dictionary = _validated_prompt_dictionary(
+                prompts,
+                num_prompts=num_prompts,
+            )
+            self._dtype = str(next(model.parameters()).dtype).removeprefix("torch.")
+            self._scheduler = NemoStreamScheduler(
+                pipeline=pipeline,
+                stream_factory=self._stream_factory,
+                release_stream=self._release_stream,
+                max_streams=NEMOTRON_STREAMING_MAX_STREAMS,
+            )
+        except NemotronNemoPartialInitializationError:
+            raise
+        except BaseException as error:
+            if pipeline is not None:
+                raise NemotronNemoPartialInitializationError(
+                    "Nemotron NeMo initialization failed after native allocation"
+                ) from error
+            raise
 
     @property
     def model_load_ms(self) -> int:
@@ -374,26 +401,39 @@ def _build_prompted_pipeline(*, checkpoint: Path, config_path: Path, torch_modul
     PipelineBuilder.set_log_level(cfg.log_level)
     PipelineBuilder.set_matmul_precision(cfg.matmul_precision)
     decoding_cfg = CacheAwarePipelineBuilder.get_rnnt_decoding_cfg(cfg)
-    wrapper = PerStreamPromptCacheAwareRnntWrapper(
-        model_name=str(checkpoint),
-        decoding_cfg=decoding_cfg,
-        device=cfg.asr.device,
-        device_id=cfg.asr.device_id,
-        compute_dtype=cfg.asr.compute_dtype,
-        use_amp=cfg.asr.use_amp,
-    )
-    pipeline = CacheAwareRNNTPipeline(cfg, wrapper)
-    if not pipeline.prompt_enabled:
-        raise RuntimeError("Nemotron NeMo checkpoint is not prompt-conditioned")
-    if (
-        tuple(wrapper.asr_model.encoder.att_context_size)
-        != NEMOTRON_STREAMING_ATTENTION_CONTEXT
-    ):
-        raise RuntimeError("Nemotron NeMo attention context differs from the locked profile")
-    if abs(pipeline.chunk_size_in_secs - NEMOTRON_STREAMING_CHUNK_SECONDS) > 1e-9:
-        raise RuntimeError("Nemotron NeMo chunk duration differs from the locked profile")
-    pipeline.open_session()
-    return pipeline
+    def initialize_pipeline():
+        # The wrapper constructor is the first native model-allocation boundary.
+        # From this point until a complete owner returns, any exception leaves
+        # cleanup ownership uncertain and must fail-stop the worker process.
+        wrapper = PerStreamPromptCacheAwareRnntWrapper(
+            model_name=str(checkpoint),
+            decoding_cfg=decoding_cfg,
+            device=cfg.asr.device,
+            device_id=cfg.asr.device_id,
+            compute_dtype=cfg.asr.compute_dtype,
+            use_amp=cfg.asr.use_amp,
+        )
+        pipeline = CacheAwareRNNTPipeline(cfg, wrapper)
+        if not pipeline.prompt_enabled:
+            raise RuntimeError("Nemotron NeMo checkpoint is not prompt-conditioned")
+        if (
+            tuple(wrapper.asr_model.encoder.att_context_size)
+            != NEMOTRON_STREAMING_ATTENTION_CONTEXT
+        ):
+            raise RuntimeError(
+                "Nemotron NeMo attention context differs from the locked profile"
+            )
+        if (
+            abs(pipeline.chunk_size_in_secs - NEMOTRON_STREAMING_CHUNK_SECONDS)
+            > 1e-9
+        ):
+            raise RuntimeError(
+                "Nemotron NeMo chunk duration differs from the locked profile"
+            )
+        pipeline.open_session()
+        return pipeline
+
+    return _initialize_native_runtime(initialize_pipeline)
 
 
 def _is_locked_streaming_profile(cfg) -> bool:

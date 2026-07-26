@@ -21,12 +21,14 @@ from yap_server.pools.nemo_stream_scheduler import NemoStreamCancelled
 from yap_server.pools.nemotron_nemo_cleanup import (
     NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
     close_native_runtime_or_fail_stop,
+    fail_stop_native_runtime,
 )
 from yap_server.pools.nemotron_nemo_pipeline import (
     NEMOTRON_STREAMING_ATTENTION_CONTEXT,
     NEMOTRON_STREAMING_CHUNK_SECONDS,
     NEMOTRON_STREAMING_MAX_STREAMS,
     NemotronNemoPipeline,
+    NemotronNemoPartialInitializationError,
 )
 from yap_server.transcript_text import canonical_transcript
 
@@ -165,10 +167,16 @@ class NemotronNemoStreamingEngine(NemotronAsrEngine):
         config_path = Path(config_value)
         if not config_path.is_absolute():
             raise RuntimeError("NeMo streaming configuration path must be absolute")
-        runtime = NemotronNemoPipeline(
-            checkpoint=checkpoint,
-            config_path=config_path,
-        )
+        try:
+            runtime = NemotronNemoPipeline(
+                checkpoint=checkpoint,
+                config_path=config_path,
+            )
+        except NemotronNemoPartialInitializationError:
+            # No complete owner exists to close. Immediate process exit is the
+            # only bounded cleanup boundary that cannot be stranded by Python
+            # finalizers or partially initialized native worker threads.
+            fail_stop_native_runtime()
         try:
             versions = {
                 name: package_version(name)

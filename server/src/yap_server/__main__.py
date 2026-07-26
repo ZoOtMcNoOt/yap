@@ -10,9 +10,11 @@ from yap_server.jobs.runtime import (
     ensure_development_batch_bind,
 )
 from yap_server.pools.batch_contract import WorkerContainmentError
+from yap_server.pools.cleanup_deadline import run_cleanup_before_deadline
 
 
 _SHUTDOWN_FAILURE_EXIT_CODE = 70
+_RUNTIME_CLEANUP_TIMEOUT_SECONDS = 30.0
 
 
 def _fail_stop_worker_containment() -> None:
@@ -30,7 +32,11 @@ def _raise_keyboard_interrupt(signum: int, frame: object) -> None:
 
 def _close_runtime_or_fail_stop(runtime: BatchRuntime) -> None:
     try:
-        runtime.close()
+        run_cleanup_before_deadline(
+            runtime.close,
+            timeout_seconds=_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+            thread_name="yap-server-runtime-cleanup",
+        )
     except BaseException:
         _fail_stop_worker_containment()
 

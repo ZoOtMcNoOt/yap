@@ -712,6 +712,96 @@ class BatchRuntimeTests(unittest.TestCase):
 
 
 class ServerMainTests(unittest.TestCase):
+    def test_normal_pool_shutdown_fail_stops_before_executor_atexit_join(
+        self,
+    ) -> None:
+        server_root = Path(__file__).resolve().parents[2]
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(server_root / "src")
+        script = textwrap.dedent(
+            """
+            import threading
+            from unittest.mock import patch
+
+            import yap_server.__main__ as server_main
+            import yap_server.pools.batch_pool as batch_pool
+            from yap_server.config import ServerSettings
+            from yap_server.pools.batch_asr import BatchAsrPool
+            from tests.asr_route_fixtures import (
+                TEST_ASR_CATALOG_REVISION,
+                test_asr_route,
+            )
+
+
+            class Worker:
+                def run(self, _job, _cancellation):
+                    raise AssertionError("wedged preparation never reaches the worker")
+
+                def close(self):
+                    pass
+
+
+            pool = BatchAsrPool(
+                Worker(),
+                route_resolver=test_asr_route,
+                asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
+                max_workers=1,
+                max_queued=0,
+            )
+            started = threading.Event()
+            release = threading.Event()
+
+
+            def wedge_preparation(_cancellation):
+                started.set()
+                release.wait()
+                raise AssertionError("synthetic preparation unexpectedly resumed")
+
+
+            pool.reserve("job-wedged").start(wedge_preparation)
+            if not started.wait(timeout=1):
+                raise RuntimeError("synthetic preparation did not start")
+
+
+            class Runtime:
+                service = object()
+                lid_preflight_service = object()
+                asr_capabilities = {"schemaVersion": 1, "providers": []}
+
+                def close(self):
+                    pool.shutdown()
+
+
+            with (
+                patch.object(batch_pool, "_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS", 0.05, create=True),
+                patch.object(server_main, "_RUNTIME_CLEANUP_TIMEOUT_SECONDS", 0.5, create=True),
+                patch.object(server_main.signal, "signal"),
+                patch.object(
+                    server_main.ServerSettings,
+                    "from_env",
+                    return_value=ServerSettings(),
+                ),
+                patch.object(server_main, "build_batch_runtime", return_value=Runtime()),
+                patch.object(server_main, "serve", side_effect=KeyboardInterrupt),
+            ):
+                server_main.main()
+            """
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=server_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 70)
+        self.assertIn("fail-stopping the service process", completed.stderr)
+        self.assertNotIn("synthetic preparation", completed.stderr)
+
     def test_cleanup_containment_failure_hard_exits_before_executor_atexit_join(
         self,
     ) -> None:

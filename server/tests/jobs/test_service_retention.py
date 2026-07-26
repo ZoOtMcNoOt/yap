@@ -241,3 +241,85 @@ class RecordingJobRetentionTests(unittest.TestCase):
                 [path.name for path in (root / "jobs").iterdir()],
                 [first["jobId"]],
             )
+
+    def test_pending_deletion_debt_still_counts_against_job_capacity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            clock = {"now": "2026-07-14T21:15:00Z"}
+            service = RecordingJobService(
+                root,
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: clock["now"],
+            )
+            expired = service.create(
+                _create_request(retention_expires_at_utc="2026-07-15T00:00:00Z")
+            )
+            service.cancel(expired["jobId"])
+            clock["now"] = "2026-07-16T00:00:00Z"
+
+            with (
+                patch("yap_server.jobs.service._MAX_STORED_JOBS", 2),
+                patch(
+                    "yap_server.jobs.job_store.shutil.rmtree",
+                    side_effect=OSError("persistent deletion failure"),
+                ),
+            ):
+                self.assertEqual(service.prune_expired(), 1)
+                accepted = service.create(
+                    _create_request(
+                        session_id="s-batch-after-deletion-debt",
+                        retention_expires_at_utc="2026-08-13T21:00:00Z",
+                    )
+                )
+                with self.assertRaises(JobServiceError) as full:
+                    service.create(
+                        _create_request(
+                            session_id="s-batch-over-deletion-debt",
+                            retention_expires_at_utc="2026-08-13T21:00:00Z",
+                        )
+                    )
+
+            self.assertEqual(accepted["status"], "accepted")
+            self.assertEqual(full.exception.status, 429)
+            self.assertEqual(full.exception.code, "SERVER_STORAGE_LIMIT")
+            self.assertEqual(
+                len(list((root / "jobs").glob(".deleting-*"))),
+                1,
+            )
+
+    def test_create_retries_only_a_bounded_deletion_debt_batch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            jobs_root = root / "jobs"
+            jobs_root.mkdir(parents=True)
+            for index in range(10):
+                (jobs_root / f".deleting-job-{index:032x}").mkdir()
+
+            with (
+                patch(
+                    "yap_server.jobs.job_store._MAX_PENDING_DELETION_RECONCILIATIONS",
+                    3,
+                    create=True,
+                ),
+                patch(
+                    "yap_server.jobs.job_store.shutil.rmtree",
+                    side_effect=OSError("persistent deletion failure"),
+                ) as remove,
+            ):
+                service = RecordingJobService(
+                    root,
+                    processor=_Processor(),
+                    supported_languages=("en",),
+                    now=lambda: "2026-07-14T21:15:00Z",
+                )
+                remove.reset_mock()
+
+                created = service.create(_create_request())
+
+            self.assertEqual(created["status"], "accepted")
+            self.assertEqual(remove.call_count, 3)
+            self.assertEqual(
+                len(list(jobs_root.glob(".deleting-*"))),
+                10,
+            )

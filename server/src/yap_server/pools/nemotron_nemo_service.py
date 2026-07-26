@@ -17,6 +17,10 @@ from typing import Mapping
 from yap_server.bounded_file import read_regular_file
 from yap_server.limits import MAX_WORKER_RESULT_BYTES
 from yap_server.pools.authenticated_loopback_http import validate_private_api_key
+from yap_server.pools.executor_cleanup import (
+    EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS,
+    shutdown_executor_or_raise,
+)
 from yap_server.pools.pcm_audio import (
     MAX_ENCODED_AUDIO_BYTES,
     decode_pcm16_wav,
@@ -55,6 +59,7 @@ _API_KEY_ENV = "YAP_NEMOTRON_NEMO_API_KEY"
 _REQUEST_TIMEOUT_SECONDS = 10.0
 _MAX_HTTP_REQUEST_WORKERS = NEMOTRON_NEMO_MAX_ACTIVE_REQUESTS * 2 + 2
 _SHUTDOWN_CLEANUP_TIMEOUT_SECONDS = NATIVE_RUNTIME_CLEANUP_TIMEOUT_SECONDS
+_REQUEST_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS
 
 
 class NemotronNemoRequestCancelled(RuntimeError):
@@ -238,14 +243,17 @@ class _NemotronNemoHttpServer(HTTPServer):
             self._request_slots.release()
 
     def server_close(self) -> None:
-        self.application.request_shutdown()
         try:
-            super().server_close()
+            self.application.request_shutdown()
         finally:
-            # Active inference is owned by the bounded scheduler shutdown below.
-            # Waiting here would keep the listener and container alive forever if
-            # a native inference call stopped returning.
-            self._request_executor.shutdown(wait=False, cancel_futures=True)
+            try:
+                super().server_close()
+            finally:
+                shutdown_executor_or_raise(
+                    self._request_executor,
+                    timeout_seconds=_REQUEST_EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS,
+                    component="Nemotron NeMo HTTP request",
+                )
 
     def handle_error(self, request, client_address) -> None:
         del request, client_address
