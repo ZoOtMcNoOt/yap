@@ -7,6 +7,27 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 const MAX_LOCAL_LANGUAGES: usize = 128;
+const SUPPORTED_LOCAL_ASR_LOCALES: &[&str] = &[
+    // Transcription-ready.
+    "en-US", "en-GB", "es-US", "es-ES", "fr-FR", "fr-CA", "it-IT", "pt-BR", "pt-PT", "nl-NL",
+    "de-DE", "tr-TR", "ru-RU", "ar-AR", "hi-IN", "ja-JP", "ko-KR", "vi-VN", "uk-UA",
+    // Broad coverage. Availability is not a quality-promotion claim.
+    "pl-PL", "sv-SE", "cs-CZ", "nb-NO", "da-DK", "bg-BG", "fi-FI", "hr-HR", "sk-SK", "zh-CN",
+    "hu-HU", "ro-RO", "et-EE",
+];
+
+/// Changes when the executable local ASR locale catalog, automatic-route
+/// preview matrix, or language detector identity changes.
+pub(crate) const LOCAL_LANGUAGE_ROUTING_REVISION: &str =
+    "nemotron-3.5-asr-streaming-0.6b-1120ms-int8@d2f58fb3c1ae44829133de74c1b5aa6e3e6dda04/locales-v1/ambernet-1.12.0-int8-qdq-ef1006c-margin0.4-v1";
+
+pub(crate) fn supports_local_asr_language(language_bcp47: &str) -> bool {
+    SUPPORTED_LOCAL_ASR_LOCALES.contains(&language_bcp47)
+}
+
+pub(crate) fn supported_local_asr_locales() -> &'static [&'static str] {
+    SUPPORTED_LOCAL_ASR_LOCALES
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LocalLanguageCatalogError {
@@ -64,7 +85,7 @@ impl LocalLanguageCatalog {
             if !super::valid_bcp47(locale) {
                 return Err(LocalLanguageCatalogError::InvalidLocale);
             }
-            if !crate::stt::nemotron::supports_live_language(locale) {
+            if !supports_local_asr_language(locale) {
                 return Err(LocalLanguageCatalogError::UnsupportedLocale);
             }
             if !exact.insert(locale.to_owned()) {
@@ -94,7 +115,7 @@ impl LocalLanguageCatalog {
     /// and user-enabled alternates in the explicitly bounded preview matrix.
     /// Model support alone never enables an automatic route, and availability
     /// is not a locale-specific quality claim.
-    pub fn nemotron_with_explicit_alternates<I, S>(
+    pub fn with_explicit_automatic_alternates<I, S>(
         primary_language_bcp47: &str,
         enabled_alternate_locales: I,
     ) -> Result<Self, LocalLanguageCatalogError>
@@ -102,7 +123,7 @@ impl LocalLanguageCatalog {
         I: IntoIterator<Item = S>,
         S: AsRef<str>,
     {
-        if !crate::stt::nemotron::supports_live_language(primary_language_bcp47) {
+        if !supports_local_asr_language(primary_language_bcp47) {
             return Err(LocalLanguageCatalogError::InvalidPrimary);
         }
         let available = available_automatic_alternates(primary_language_bcp47);
@@ -112,7 +133,7 @@ impl LocalLanguageCatalog {
             if !super::valid_bcp47(locale) {
                 return Err(LocalLanguageCatalogError::InvalidLocale);
             }
-            if !crate::stt::nemotron::supports_live_language(locale) {
+            if !supports_local_asr_language(locale) {
                 return Err(LocalLanguageCatalogError::UnsupportedLocale);
             }
             if !available.contains(locale) {
@@ -143,7 +164,7 @@ impl LocalLanguageCatalog {
 
 pub(crate) fn available_automatic_alternates(primary_locale: &str) -> BTreeSet<&'static str> {
     let primary_language = base_language(primary_locale);
-    crate::stt::nemotron::supported_live_locales()
+    supported_local_asr_locales()
         .iter()
         .copied()
         // Acoustic LID cannot choose between regional variants. Every other
@@ -200,7 +221,7 @@ mod tests {
 
     #[test]
     fn automatic_catalog_requires_explicit_alternates_even_when_routes_are_available() {
-        let catalog = LocalLanguageCatalog::nemotron_with_explicit_alternates(
+        let catalog = LocalLanguageCatalog::with_explicit_automatic_alternates(
             "en-US",
             std::iter::empty::<&str>(),
         )
@@ -214,7 +235,7 @@ mod tests {
     #[test]
     fn same_language_regional_alternates_fail_closed() {
         assert_eq!(
-            LocalLanguageCatalog::nemotron_with_explicit_alternates("en-US", ["en-GB"]),
+            LocalLanguageCatalog::with_explicit_automatic_alternates("en-US", ["en-GB"]),
             Err(LocalLanguageCatalogError::AutomaticAlternateUnavailable)
         );
     }
@@ -241,5 +262,31 @@ mod tests {
             LocalLanguageCatalog::try_new("el-GR", ["el-GR"]),
             Err(LocalLanguageCatalogError::UnsupportedLocale)
         );
+    }
+
+    #[test]
+    fn local_asr_catalog_contains_exactly_the_executable_locales() {
+        assert_eq!(SUPPORTED_LOCAL_ASR_LOCALES.len(), 32);
+        assert_eq!(
+            SUPPORTED_LOCAL_ASR_LOCALES
+                .iter()
+                .copied()
+                .collect::<std::collections::HashSet<_>>()
+                .len(),
+            SUPPORTED_LOCAL_ASR_LOCALES.len()
+        );
+        assert!(SUPPORTED_LOCAL_ASR_LOCALES
+            .iter()
+            .all(|locale| super::super::valid_bcp47(locale)));
+        assert!(supports_local_asr_language("en-US"));
+        assert!(supports_local_asr_language("et-EE"));
+        for locale in [
+            "el-GR", "lt-LT", "lv-LV", "mt-MT", "sl-SI", "he-IL", "th-TH", "nn-NO", "es-MX",
+        ] {
+            assert!(
+                !supports_local_asr_language(locale),
+                "unexpected support: {locale}"
+            );
+        }
     }
 }

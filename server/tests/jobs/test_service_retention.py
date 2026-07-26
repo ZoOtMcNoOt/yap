@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import shutil
 import tempfile
 import threading
 import time
@@ -91,6 +92,62 @@ class RecordingJobRetentionTests(unittest.TestCase):
             self.assertFalse(expired_root.exists())
             with self.assertRaises(KeyError):
                 service.get(expired["jobId"])
+
+    def test_restart_recovers_when_retention_delete_stops_after_state_removal(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            clock = {"now": "2026-07-14T21:15:00Z"}
+            service = RecordingJobService(
+                root,
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: clock["now"],
+            )
+            expired = service.create(
+                _create_request(retention_expires_at_utc="2026-07-15T00:00:00Z")
+            )
+            service.cancel(expired["jobId"])
+            healthy = service.create(
+                _create_request(
+                    session_id="s-batch-healthy",
+                    retention_expires_at_utc="2026-08-13T21:00:00Z",
+                )
+            )
+            clock["now"] = "2026-07-16T00:00:00Z"
+            original_rmtree = shutil.rmtree
+            interrupted = {"raised": False}
+
+            def remove_state_then_fail(path: Path) -> None:
+                candidate = Path(path)
+                if not interrupted["raised"] and candidate.name.startswith(
+                    ".deleting-"
+                ):
+                    (candidate / "state.json").unlink()
+                    interrupted["raised"] = True
+                    raise OSError("injected partial retention deletion")
+                original_rmtree(candidate)
+
+            with patch(
+                "yap_server.jobs.job_store.shutil.rmtree",
+                side_effect=remove_state_then_fail,
+            ):
+                self.assertEqual(service.prune_expired(), 1)
+
+            tombstones = list((root / "jobs").glob(".deleting-*"))
+            self.assertEqual(len(tombstones), 1)
+            self.assertFalse((root / "jobs" / expired["jobId"]).exists())
+
+            restarted = RecordingJobService(
+                root,
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: clock["now"],
+            )
+
+            self.assertEqual(restarted.get(healthy["jobId"])["status"], "accepted")
+            self.assertEqual(list((root / "jobs").glob(".deleting-*")), [])
 
     def test_expired_running_job_stays_nonterminal_until_worker_cleanup_finishes(
         self,

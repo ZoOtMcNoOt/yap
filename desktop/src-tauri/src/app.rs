@@ -315,8 +315,6 @@ pub(crate) fn run() {
                 }
             }
             tauri::RunEvent::Exit => {
-                let lifecycle = app_handle.state::<runtime::DesktopLifecycle>();
-                log_lifecycle_shutdown_errors(lifecycle.shutdown());
                 let quit = app_handle.state::<live::actions::QuitCoordinator>();
                 if !quit.exit_authorized() {
                     stt::log_yap("process exit reached degraded live shutdown fallback");
@@ -325,6 +323,8 @@ pub(crate) fn run() {
                 // can still own resident warmup models. Always retire it before
                 // process exit so model-load snapshots release deterministically.
                 live_runtime_for_exit.shutdown();
+                let lifecycle = app_handle.state::<runtime::DesktopLifecycle>();
+                log_lifecycle_shutdown_errors(lifecycle.shutdown());
             }
             _ => {}
         });

@@ -4,6 +4,7 @@ from dataclasses import replace
 import hashlib
 import http.client
 from pathlib import Path
+import socket
 import tempfile
 import threading
 import time
@@ -117,6 +118,47 @@ class _FakeEngine:
 
 
 class NemotronNemoServiceTests(unittest.TestCase):
+    def test_server_close_releases_listener_without_waiting_for_wedged_request(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            lock = _test_lock()
+            engine = _FakeEngine(lock)
+            application = NemotronNemoApplication(
+                engine=engine,
+                lock=lock,
+                storage_root=root,
+            )
+            server = _NemotronNemoHttpServer(
+                ("127.0.0.1", 0),
+                application=application,
+                api_key="private-test-key",
+            )
+            address = server.server_address
+            started = threading.Event()
+            release = threading.Event()
+
+            def wedged_request() -> None:
+                started.set()
+                release.wait()
+
+            server._request_executor.submit(wedged_request)
+            self.assertTrue(started.wait(timeout=2))
+            closed = threading.Thread(target=server.server_close)
+            closed.start()
+            closed.join(timeout=0.5)
+
+            try:
+                self.assertFalse(closed.is_alive())
+                with self.assertRaises(OSError):
+                    socket.create_connection(address, timeout=0.1)
+                self.assertEqual(application.readiness()[0], 503)
+            finally:
+                release.set()
+                server._request_executor.shutdown(wait=True)
+                application.close()
+
     def test_http_workers_are_bounded_but_leave_control_request_capacity(self) -> None:
         self.assertEqual(
             _MAX_HTTP_REQUEST_WORKERS,

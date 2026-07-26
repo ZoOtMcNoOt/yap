@@ -89,7 +89,7 @@ fn legacy_regional_choices_migrate_without_enabling_other_model_languages() {
         &path,
         format!(
             "{{\"schemaVersion\":1,\"catalogRevision\":{:?},\"regionalLocales\":[\"fr-CA\"]}}",
-            crate::stt::nemotron::LIVE_LANGUAGE_CATALOG_REVISION
+            crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION
         ),
     )
     .unwrap();

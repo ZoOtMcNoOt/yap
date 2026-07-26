@@ -1080,6 +1080,7 @@ class RecordingJobService:
             )
 
     def _prune_expired_jobs_locked(self, now: datetime) -> int:
+        self._store.reconcile_pending_deletions()
         expired: list[str] = []
         for job_id, job in self._state.jobs.items():
             metadata = _mapping(self._state.requests[job_id].get("metadata"), "metadata")

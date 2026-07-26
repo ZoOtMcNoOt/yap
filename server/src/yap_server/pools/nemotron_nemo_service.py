@@ -49,6 +49,7 @@ from yap_server.pools.utterance_plan import read_utterance_plan
 _API_KEY_ENV = "YAP_NEMOTRON_NEMO_API_KEY"
 _REQUEST_TIMEOUT_SECONDS = 10.0
 _MAX_HTTP_REQUEST_WORKERS = NEMOTRON_NEMO_MAX_ACTIVE_REQUESTS * 2 + 2
+_SHUTDOWN_FAILURE_EXIT_CODE = 70
 
 
 class NemotronNemoRequestCancelled(RuntimeError):
@@ -232,10 +233,14 @@ class _NemotronNemoHttpServer(HTTPServer):
             self._request_slots.release()
 
     def server_close(self) -> None:
+        self.application.request_shutdown()
         try:
-            self._request_executor.shutdown(wait=True, cancel_futures=False)
-        finally:
             super().server_close()
+        finally:
+            # Active inference is owned by the bounded scheduler shutdown below.
+            # Waiting here would keep the listener and container alive forever if
+            # a native inference call stopped returning.
+            self._request_executor.shutdown(wait=False, cancel_futures=True)
 
     def handle_error(self, request, client_address) -> None:
         del request, client_address
@@ -418,6 +423,7 @@ def main(argv: list[str] | None = None) -> int:
     application: NemotronNemoApplication | None = None
     server: _NemotronNemoHttpServer | None = None
     server_thread: threading.Thread | None = None
+    shutdown_error: BaseException | None = None
     try:
         application = NemotronNemoApplication(
             engine=engine,
@@ -448,17 +454,27 @@ def main(argv: list[str] | None = None) -> int:
         if not server_thread.is_alive() and not stopped.is_set():
             raise RuntimeError("resident Nemotron NeMo HTTP server stopped unexpectedly")
     finally:
-        if application is not None:
-            application.request_shutdown()
-        if server is not None and server_thread is not None:
-            if server_thread.ident is not None:
-                server.shutdown()
-                server_thread.join()
-            server.server_close()
-        if application is not None:
-            application.close()
-        else:
-            engine.close()
+        try:
+            if application is not None:
+                application.request_shutdown()
+            if server is not None and server_thread is not None:
+                if server_thread.ident is not None:
+                    server.shutdown()
+                    server_thread.join()
+                server.server_close()
+            if application is not None:
+                application.close()
+            else:
+                engine.close()
+        except BaseException as error:
+            shutdown_error = error
+    if shutdown_error is not None:
+        print(
+            "resident Nemotron NeMo shutdown exceeded its safe cleanup boundary; "
+            "fail-stopping the service process",
+            file=sys.stderr,
+        )
+        os._exit(_SHUTDOWN_FAILURE_EXIT_CODE)
     return 0
 
 

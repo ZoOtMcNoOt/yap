@@ -3,13 +3,9 @@ use std::path::{Path, PathBuf};
 use crate::stt::error::SttError;
 
 mod catalog;
-mod language;
 mod lifecycle;
 mod load_guard;
 
-pub(crate) use language::{
-    supported_live_locales, supports_live_language, LIVE_LANGUAGE_CATALOG_REVISION,
-};
 pub(crate) use load_guard::{
     cleanup_stale_snapshots as cleanup_stale_model_snapshots, ModelLoadGuard,
 };

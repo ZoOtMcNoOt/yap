@@ -360,7 +360,7 @@ mod tests {
     #[test]
     fn every_live_nemotron_language_resolves_without_collapsing_nynorsk() {
         let mut seen = std::collections::BTreeSet::new();
-        let locales = crate::stt::nemotron::supported_live_locales()
+        let locales = crate::language::live_catalog::supported_local_asr_locales()
             .iter()
             .copied()
             .filter(|locale| seen.insert(crate::language::live_catalog::base_language(locale)))

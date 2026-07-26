@@ -77,7 +77,7 @@ impl LiveStreamEngine {
         language_bcp47: &str,
         inference_threads: i32,
     ) -> Result<Self, SttError> {
-        if !crate::stt::nemotron::supports_live_language(language_bcp47) {
+        if !crate::language::live_catalog::supports_local_asr_language(language_bcp47) {
             return Err(SttError::BadLang);
         }
         assert!(
@@ -127,7 +127,7 @@ impl LiveStreamEngine {
     }
 
     pub(crate) fn reset_for_language(&mut self, language_bcp47: &str) -> Result<(), SttError> {
-        if !crate::stt::nemotron::supports_live_language(language_bcp47) {
+        if !crate::language::live_catalog::supports_local_asr_language(language_bcp47) {
             return Err(SttError::BadLang);
         }
         self.language_bcp47.clear();
@@ -145,7 +145,7 @@ impl LiveStreamEngine {
         &mut self,
         language_bcp47: &str,
     ) -> Result<StreamLanguageTransition, SttError> {
-        if !crate::stt::nemotron::supports_live_language(language_bcp47) {
+        if !crate::language::live_catalog::supports_local_asr_language(language_bcp47) {
             return Err(SttError::BadLang);
         }
         if language_bcp47 == self.language_bcp47 {

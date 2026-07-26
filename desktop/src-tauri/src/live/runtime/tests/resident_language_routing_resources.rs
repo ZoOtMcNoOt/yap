@@ -249,7 +249,7 @@ fn resident_language_routing_profiles_nemotron_interference_and_teardown() {
             by_base.entry(base_language(locale)).or_insert(locale);
             by_base
         });
-    let catalog = LocalLanguageCatalog::nemotron_with_explicit_alternates(
+    let catalog = LocalLanguageCatalog::with_explicit_automatic_alternates(
         PROFILE_PRIMARY_LANGUAGE_BCP47,
         alternates.values().copied(),
     )

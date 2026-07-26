@@ -119,7 +119,10 @@ impl LiveRuntime {
             if inner.is_idle_for(threshold) {
                 inner.retire_stream();
                 drop(inner);
-                let _ = self.model_warmup.clear_idle();
+                // Periodic lifecycle work must never wait for a native model
+                // loader. It requests cancellation and lets the loader retire
+                // its own value when it returns.
+                let _ = self.model_warmup.request_idle_clear();
             }
         });
     }

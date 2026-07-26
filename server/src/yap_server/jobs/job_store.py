@@ -46,6 +46,7 @@ from .stage_attempts import canonical_json_sha256, finish_stage, validate_stage_
 
 
 _JOB_DIRECTORY = re.compile(r"^job-[0-9a-f]{32}$")
+_DELETION_TOMBSTONE = re.compile(r"^\.deleting-(job-[0-9a-f]{32})$")
 
 
 @dataclass(slots=True)
@@ -97,9 +98,32 @@ class RecordingJobStore:
             return state
         if jobs_root.is_symlink() or not jobs_root.is_dir():
             raise ValueError("job storage root must be a real directory")
+        self.reconcile_pending_deletions()
         for job_root in sorted(jobs_root.iterdir(), key=lambda path: path.name):
+            if _DELETION_TOMBSTONE.fullmatch(job_root.name) is not None:
+                continue
             self._load_job(state, job_root)
         return state
+
+    def reconcile_pending_deletions(self) -> int:
+        jobs_root = self.root / "jobs"
+        if not jobs_root.exists():
+            return 0
+        if jobs_root.is_symlink() or not jobs_root.is_dir():
+            raise ValueError("job storage root must be a real directory")
+        removed = 0
+        for tombstone_root in sorted(jobs_root.iterdir(), key=lambda path: path.name):
+            if _DELETION_TOMBSTONE.fullmatch(tombstone_root.name) is None:
+                continue
+            metadata = tombstone_root.lstat()
+            if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
+                raise ValueError("pending job deletion is unsafe")
+            try:
+                shutil.rmtree(tombstone_root)
+            except OSError:
+                continue
+            removed += 1
+        return removed
 
     def persist(self, state: DurableJobState, job_id: str) -> None:
         receipts = [
@@ -171,7 +195,10 @@ class RecordingJobStore:
         metadata = job_root.lstat()
         if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
             raise ValueError("expired job storage is unsafe")
-        shutil.rmtree(job_root)
+        tombstone_root = job_root.with_name(f".deleting-{job_id}")
+        if tombstone_root.exists() or tombstone_root.is_symlink():
+            raise ValueError("pending deletion already exists for expired job")
+        job_root.rename(tombstone_root)
         state.jobs.pop(job_id, None)
         state.requests.pop(job_id, None)
         state.results.pop(job_id, None)
@@ -187,6 +214,12 @@ class RecordingJobStore:
         for stored_receipt_key in tuple(state.receipts):
             if stored_receipt_key[0] == job_id:
                 state.receipts.pop(stored_receipt_key, None)
+        try:
+            shutil.rmtree(tombstone_root)
+        except OSError:
+            # The atomic rename committed logical deletion. A later maintenance
+            # pass or restart resumes removal without reloading partial state.
+            pass
 
     def _load_job(self, state: DurableJobState, job_root: Path) -> None:
         if job_root.is_symlink() or not job_root.is_dir():
