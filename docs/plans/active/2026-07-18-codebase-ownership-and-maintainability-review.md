@@ -252,11 +252,27 @@ the crate root; binds every shipped dependency to exact notice documents or a
 reviewed own-source exemption; adds a reserved, settings-visible native shortcut
 that acquires the overlay from another foreground process; hardens the
 versioned app-data activation signal against stale, wrong-type, and redirected
-entries; and gives maintainability checkpoints their own manifest/runbook
-identity while preserving the Phase 6 manifest bytes. Focused server, Rust,
-frontend, release-contract, installer-contract, and external-foreground WDIO
-verification pass. Final repaired-head read-back and the new exact-candidate
-gate remain.
+entries; linearizes second-launch activation with primary shutdown; preserves
+native keyboard activation on child overlay controls; makes executor teardown,
+retention deletion, expired-job recovery, and deletion-debt admission
+deterministically bounded; and gives maintainability checkpoints their own
+manifest/runbook identity while preserving the Phase 6 manifest bytes. Focused
+server, Rust, frontend, release-contract, installer-contract, and
+external-foreground WDIO verification pass. Three independent final read-backs
+found no remaining P0-P2 issue at exact executable head
+`e4c1eb5d614182ba942ddbf7947794276636871e`.
+
+That exact head was then admitted once after fresh local, GB10, runtime-image,
+model, duration-suite, controller, transient-service, and ownership-zero
+preflights passed. No target-client, GB10, connected, or integrated workload
+started. The operator's immediate display-only admission read-back expected
+two fields that are not part of the admission schema and returned nonzero after
+the valid admission had already been created. The one-attempt rule therefore
+consumes this admission even though no evidence destination was written.
+Independent read-back found no retained local or remote process, provider
+container, private network, listener, or transient service. The admission must
+not be resumed, retried, or relabeled; a docs-only successor requires fresh
+runtime receipts, private destinations, controller preflights, and admission.
 
 ## Phase 7 cadence
 
