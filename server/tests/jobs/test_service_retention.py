@@ -14,7 +14,12 @@ from yap_server.pools.batch_asr import BatchAsrPool
 
 from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
 
-from .service_fixtures import _DelayedCancellationWorker, _Processor, _create_request
+from .service_fixtures import (
+    _ControlledProcessor,
+    _DelayedCancellationWorker,
+    _Processor,
+    _create_request,
+)
 
 
 class RecordingJobRetentionTests(unittest.TestCase):
@@ -270,6 +275,80 @@ class RecordingJobRetentionTests(unittest.TestCase):
                 any((root / "jobs" / job_id).exists() for job_id in expired_ids)
             )
             self.assertEqual(list((root / "jobs").glob(".deleting-*")), [])
+
+    def test_startup_does_not_recover_expired_processing_beyond_transition_budget(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            clock = {"now": "2026-07-14T21:15:00Z"}
+            original_processor = _ControlledProcessor()
+            original = RecordingJobService(
+                root,
+                processor=original_processor,
+                supported_languages=("en",),
+                now=lambda: clock["now"],
+            )
+            expired_ids: list[str] = []
+            chunk = bytes(320)
+            for index in range(10):
+                session_id = f"s-expired-processing-{index}"
+                request = _create_request(
+                    session_id=session_id,
+                    retention_expires_at_utc="2026-07-15T00:00:00Z",
+                )
+                created = original.create(request)
+                original.accept_chunk(
+                    original.prepare_chunk_upload(
+                        created["jobId"],
+                        track_id="track-1",
+                        sequence_start=0,
+                        sequence_end=159,
+                        idempotency_key=f"1/{session_id}/track-1/0/159",
+                        content_sha256=hashlib.sha256(chunk).hexdigest(),
+                        audio_codec="pcm_s16le",
+                        sample_rate_hz=16000,
+                        channels=1,
+                        content_length=len(chunk),
+                    ),
+                    chunk,
+                )
+                committed = original.commit(
+                    created["jobId"],
+                    {
+                        "captureManifest": request["captureManifest"],
+                        "chunkCount": 1,
+                    },
+                )
+                self.assertEqual(committed["status"], "server_processing")
+                expired_ids.append(created["jobId"])
+            self.assertEqual(len(original_processor.jobs), 10)
+            original.begin_runtime_shutdown()
+            clock["now"] = "2026-07-16T00:00:00Z"
+            restarted_processor = _ControlledProcessor()
+
+            restarted = RecordingJobService(
+                root,
+                processor=restarted_processor,
+                supported_languages=("en",),
+                now=lambda: clock["now"],
+                startup_worker_cleanup_verified=True,
+            )
+
+            jobs_root = root / "jobs"
+            remaining = [
+                job_id for job_id in expired_ids if (jobs_root / job_id).is_dir()
+            ]
+            self.assertEqual(len(list(jobs_root.glob(".deleting-*"))), 8)
+            self.assertEqual(len(remaining), 2)
+            self.assertEqual(restarted_processor.jobs, [])
+            for job_id in remaining:
+                self.assertEqual(restarted.get(job_id)["status"], "server_processing")
+                state = (jobs_root / job_id / "state.json").read_text(
+                    encoding="utf-8"
+                )
+                self.assertEqual(state.count('"state":"running"'), 1)
+                self.assertNotIn("SERVER_RESTARTED", state)
 
     def test_startup_uses_one_bounded_legacy_debt_pass(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
