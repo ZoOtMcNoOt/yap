@@ -133,11 +133,11 @@ describe("Yap live overlay window", () => {
     await browser.waitUntil(async () => browser.tauri.execute(async ({ core }, scale) => {
       const inner = await core.invoke("plugin:window|inner_size", { label: "live-overlay" });
       return Math.abs(inner.width / scale - 180) <= 0.5
-        && Math.abs(inner.height / scale - 88) <= 0.5;
+        && Math.abs(inner.height / scale - 96) <= 0.5;
     }, scaleFactor), {
       interval: 25,
       timeout: 5_000,
-      timeoutMsg: "expanded native bounds did not converge to 180 by 88",
+      timeoutMsg: "expanded native bounds did not converge to 180 by 96",
     });
     expect(await browser.tauri.execute(({ core }) =>
       core.invoke("plugin:window|is_focused", { label: "live-overlay" }))).toBe(false);

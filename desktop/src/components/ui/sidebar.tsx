@@ -51,6 +51,8 @@ function SidebarProvider({
 }) {
   const [_open, _setOpen] = React.useState(defaultOpen)
   const open = openProp ?? _open
+  const setOpenPropRef = React.useRef(setOpenProp)
+  setOpenPropRef.current = setOpenProp
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
       const openState = typeof value === "function" ? value(open) : value
@@ -68,6 +70,21 @@ function SidebarProvider({
   const toggleSidebar = React.useCallback(() => {
     setOpen((open) => !open)
   }, [setOpen])
+
+  React.useEffect(() => {
+    const narrowViewport = window.matchMedia("(max-width: 48rem)")
+    const collapseWhenNarrow = () => {
+      if (!narrowViewport.matches) return
+      if (setOpenPropRef.current) {
+        setOpenPropRef.current(false)
+      } else {
+        _setOpen(false)
+      }
+    }
+    collapseWhenNarrow()
+    narrowViewport.addEventListener("change", collapseWhenNarrow)
+    return () => narrowViewport.removeEventListener("change", collapseWhenNarrow)
+  }, [])
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

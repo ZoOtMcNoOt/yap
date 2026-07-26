@@ -9,8 +9,7 @@ use windows::Win32::Graphics::Gdi::{CreateRoundRectRgn, SetWindowRgn, HRGN};
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{
     GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, SWP_FRAMECHANGED,
-    SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, WS_EX_APPWINDOW, WS_EX_NOACTIVATE,
-    WS_EX_TOOLWINDOW,
+    SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
 };
 
 pub(crate) const WINDOW_LABEL: &str = crate::authorization::LIVE_OVERLAY_WINDOW_LABEL;
@@ -20,7 +19,7 @@ static IDLE_COLLAPSED_ACTIVE: AtomicBool = AtomicBool::new(true);
 const COMPACT_HEIGHT: f64 = 40.0;
 const COLLAPSED_WIDTH: f64 = 104.0;
 const EXPANDED_WIDTH: f64 = 180.0;
-const EXPANDED_HEIGHT: f64 = 88.0;
+const EXPANDED_HEIGHT: f64 = 96.0;
 const ACTIVE_WIDTH: f64 = 112.0;
 const SUCCESS_WIDTH: f64 = 168.0;
 const FEEDBACK_WIDTH: f64 = 252.0;
@@ -100,12 +99,12 @@ pub(crate) fn ensure_surface(app: &tauri::AppHandle, surface: &str) -> Result<()
     .always_on_top(true)
     .skip_taskbar(true)
     .focused(false)
-    .focusable(false)
+    .focusable(true)
     .build()
     .map_err(|err| format!("Failed to create live overlay: {err}"))?;
     window
-        .set_focusable(false)
-        .map_err(|err| format!("Failed to keep live overlay unfocusable: {err}"))?;
+        .set_focusable(true)
+        .map_err(|err| format!("Failed to make live overlay keyboard accessible: {err}"))?;
     make_system_window(&window)?;
     apply_visible_region(&window, width, height)?;
     IDLE_COLLAPSED_ACTIVE.store(surface == "collapsed", Ordering::Release);
@@ -284,7 +283,7 @@ fn make_system_window(window: &tauri::WebviewWindow) -> Result<(), String> {
         .map_err(|err| format!("Failed to read live overlay window handle: {err}"))?;
     unsafe {
         let style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE) as u32;
-        let next_style = (style | WS_EX_TOOLWINDOW.0 | WS_EX_NOACTIVATE.0) & !WS_EX_APPWINDOW.0;
+        let next_style = (style | WS_EX_TOOLWINDOW.0) & !WS_EX_APPWINDOW.0;
         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, next_style as isize);
         SetWindowPos(
             hwnd,
@@ -312,7 +311,7 @@ mod tests {
     #[test]
     fn frame_matches_visible_surface_contract() {
         assert_eq!(frame("collapsed"), Ok((104.0, 40.0)));
-        assert_eq!(frame("expanded"), Ok((180.0, 88.0)));
+        assert_eq!(frame("expanded"), Ok((180.0, 96.0)));
         for surface in ["recording", "processing", "initializing"] {
             assert_eq!(frame(surface), Ok((112.0, 40.0)));
         }

@@ -5,7 +5,7 @@ type Frame = { height: number; width: number };
 const previewUrl = "/?window=live-overlay&preview=live-overlay";
 const frames = {
   collapsed: { height: 40, width: 104 },
-  expanded: { height: 88, width: 180 },
+  expanded: { height: 96, width: 180 },
   feedback: { height: 40, width: 252 },
   recording: { height: 40, width: 112 },
   success: { height: 40, width: 168 },
@@ -66,6 +66,29 @@ test("one visible island expands downward quickly without taking focus", async (
     animations: "disabled",
     maxDiffPixelRatio: 0.04,
   });
+});
+
+test("keyboard focus expands the island and exposes 40-pixel primary actions", async ({ page }) => {
+  await openOverlayPreview(page);
+
+  const root = page.getByTestId("live-overlay-root");
+  await root.focus();
+  await expect(root).toBeFocused();
+  await expect(root).toHaveAttribute("data-overlay-surface", "expanded");
+
+  const actions = [
+    page.getByRole("button", { name: "Start dictating" }),
+    page.getByRole("button", { name: "Open scratch" }),
+    page.getByRole("button", { name: "Open transform" }),
+  ];
+  await page.keyboard.press("Tab");
+  await expect(actions[0]).toBeFocused();
+  for (const action of actions) {
+    const bounds = await action.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.height).toBeGreaterThanOrEqual(39.9);
+    expect(bounds!.width).toBeGreaterThanOrEqual(39.9);
+  }
 });
 
 test("collapse grace keeps the visible pointer target before shrinking", async ({ page }) => {

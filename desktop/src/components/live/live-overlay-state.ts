@@ -17,7 +17,7 @@ export const successVisibleMs = 2_500;
 // Browser preview only. Rust is the sole owner of production native-window bounds.
 const previewSurfaceFrames: Record<OverlaySurface, { height: number; width: number }> = {
   collapsed: { height: 40, width: 104 },
-  expanded: { height: 88, width: 180 },
+  expanded: { height: 96, width: 180 },
   feedback: { height: 40, width: 252 },
   initializing: { height: 40, width: 112 },
   processing: { height: 40, width: 112 },

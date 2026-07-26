@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "Yap",
-        "width": 1122,
-        "height": 760,
-        "minWidth": 1122,
-        "minHeight": 740,
+        "width": 960,
+        "height": 700,
+        "minWidth": 640,
+        "minHeight": 480,
         "backgroundColor": "#f3f0ea",
         "decorations": false,
         "dragDropEnabled": true

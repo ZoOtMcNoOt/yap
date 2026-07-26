@@ -168,7 +168,8 @@ second client-state owner.
 - [x] A completed Windows transcript is copied with Yap clipboard ownership and visible manual-paste status; no synthesized input is sent.
 - [x] Paste-last recopies only the dedicated last completed transcript and never an active partial.
 - [ ] Mic-denied path is recoverable (no dead end).
-- [ ] `prefers-reduced-motion` honored.
+- [x] `prefers-reduced-motion` suppresses primitive-wide CSS motion and the
+  bounded GSAP projections.
 
 ### Native interaction convergence
 
@@ -178,7 +179,7 @@ second client-state owner.
 - [x] Shortcut recording starts only after native confirmation, lasts at most 15 seconds, requires neutral/chord/release, stores only the final normalized chord, never logs raw events, and supports Cancel and per-action Reset.
 - [x] Invalid, reserved, conflicting, or failed registrations leave the previous working shortcut active.
 
-Focused evidence covers Rust physical-enrollment neutral/chord/release and modifier-policy tests, normalized/reserved-chord tests, transactional registration tests, clipboard-only delivery tests, overlay listener-order/state tests, Playwright visual/state/reduced-motion tests, a 20-sample hover p95 at or below 220 ms, and native WDIO proof that one unfocused `live-overlay` changes from `104×40` to `180×88` and back while its webview root equals the visible island. The optional real-microphone/model lifecycle remains explicitly skipped when the verified Nemotron model is absent; that skip does not weaken the geometry, shortcut, or delivery evidence.
+Focused evidence covers Rust physical-enrollment neutral/chord/release and modifier-policy tests, normalized/reserved-chord tests, transactional registration tests, clipboard-only delivery tests, overlay listener-order/state tests, Playwright visual/state/reduced-motion and narrow reflow tests, a 20-sample hover p95 at or below 220 ms, and native WDIO proof that one initially unfocused `live-overlay` changes from `104×40` to `180×96` and back while its webview root equals the visible island. Explicit focus expands the idle surface and exposes 40 px primary actions. The optional real-microphone/model lifecycle remains explicitly skipped when the verified Nemotron model is absent; that skip does not weaken the geometry, shortcut, or delivery evidence.
 
 ### Follow-on preprocessing/server path
 

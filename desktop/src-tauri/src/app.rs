@@ -3,6 +3,7 @@ use tauri::Manager;
 use crate::{authorization, commands, exclusive_file_lease, jobs, live, paths, runtime, stt, tray};
 
 const INSTANCE_LEASE_FILE: &str = ".yap-instance.lock";
+const INSTANCE_ACTIVATION_REQUEST_PREFIX: &str = "Yap-existing-instance-activation";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ExitRequestDisposition {
@@ -61,6 +62,9 @@ fn start_owned_background_work(
             "live-overlay-monitor",
             std::time::Duration::from_millis(125),
             move || {
+                if take_existing_instance_activation_request() {
+                    live::actions::show_main_window(&overlay_app);
+                }
                 live::overlay_window::follow_cursor_if_idle(&overlay_app);
                 recovery_ticks = recovery_ticks.saturating_add(1);
                 if recovery_ticks >= 16 {
@@ -160,6 +164,50 @@ fn acquire_instance_lease_at(
     }
 }
 
+fn instance_activation_request_path() -> std::path::PathBuf {
+    let app_data_directory = paths::app_data_dir();
+    let identity = app_data_directory
+        .as_os_str()
+        .as_encoded_bytes()
+        .iter()
+        .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| {
+            (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
+        });
+    std::env::temp_dir().join(format!(
+        "{INSTANCE_ACTIVATION_REQUEST_PREFIX}-{:016x}.request",
+        identity
+    ))
+}
+
+fn request_existing_instance_activation_at(path: &std::path::Path) -> std::io::Result<()> {
+    match std::fs::create_dir(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+        Err(error) => Err(error),
+    }
+}
+
+fn take_existing_instance_activation_request_at(path: &std::path::Path) -> bool {
+    match std::fs::remove_dir(path) {
+        Ok(()) => true,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+        Err(error) => {
+            stt::log_yap(&format!(
+                "existing instance activation request could not be consumed: {error}"
+            ));
+            false
+        }
+    }
+}
+
+fn request_existing_instance_activation() -> std::io::Result<()> {
+    request_existing_instance_activation_at(&instance_activation_request_path())
+}
+
+fn take_existing_instance_activation_request() -> bool {
+    take_existing_instance_activation_request_at(&instance_activation_request_path())
+}
+
 fn instance_lease_startup_message(error: &std::io::Error) -> String {
     if error.kind() == std::io::ErrorKind::WouldBlock {
         return format!(
@@ -212,6 +260,17 @@ pub(crate) fn run() {
     // This guard remains in this stack frame until Tauri's blocking event loop returns.
     let _instance_lease = match acquire_instance_lease_at(&paths::app_data_dir()) {
         Ok(lease) => lease,
+        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+            if let Err(signal_error) = request_existing_instance_activation() {
+                stop_for_instance_lease_error(&std::io::Error::new(
+                    signal_error.kind(),
+                    format!(
+                        "{error}; could not ask the existing Yap process to show its window: {signal_error}"
+                    ),
+                ));
+            }
+            std::process::exit(0);
+        }
         Err(error) => stop_for_instance_lease_error(&error),
     };
     if let Err(error) = paths::migrate_legacy_app_data() {
@@ -334,7 +393,9 @@ pub(crate) fn run() {
 mod tests {
     use super::{
         acquire_instance_lease_at, exit_request_disposition, instance_lease_startup_message,
-        is_allowed_app_navigation, write_startup_migration_diagnostic, ExitRequestDisposition,
+        is_allowed_app_navigation, request_existing_instance_activation_at,
+        take_existing_instance_activation_request_at, write_startup_migration_diagnostic,
+        ExitRequestDisposition,
     };
 
     #[test]
@@ -430,5 +491,23 @@ mod tests {
         assert!(message.contains("could not establish exclusive access"));
         assert!(message.contains("stopped before migration and runtime startup"));
         assert!(!message.contains("already running"));
+    }
+
+    #[test]
+    fn second_instance_activation_request_is_coalesced_and_consumed_once() {
+        let request = std::env::temp_dir().join(format!(
+            "yap-instance-activation-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+
+        assert!(!take_existing_instance_activation_request_at(&request));
+        request_existing_instance_activation_at(&request).unwrap();
+        request_existing_instance_activation_at(&request).unwrap();
+        assert!(take_existing_instance_activation_request_at(&request));
+        assert!(!take_existing_instance_activation_request_at(&request));
     }
 }

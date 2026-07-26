@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const execFileAsync = promisify(execFile);
 const mainWindowTitle = "Yap";
-const minMainWindowWidth = Math.floor(1122 * 0.7);
-const minMainWindowHeight = Math.floor(740 * 0.7);
+const minMainWindowWidth = Math.floor(640 * 0.9);
+const minMainWindowHeight = Math.floor(480 * 0.9);
 const nativeWindowRecoveryModule = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "native-window-recovery.psm1",

@@ -65,3 +65,19 @@ test("language settings remain visible without horizontal clipping in a narrow w
   expect(pickerBox!.x + pickerBox!.width)
     .toBeLessThanOrEqual(settingsBox!.x + settingsBox!.width);
 });
+
+test("main workspace reflows at a 200-percent-equivalent viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 480, width: 320 });
+  await installQueuedServerBridge(page, "not_set");
+  await page.goto("/");
+
+  const sidebar = page.locator('[data-slot="sidebar-container"]');
+  const workspace = page.locator(".surface-workspace");
+  await expect(workspace).toBeVisible();
+
+  const sidebarBox = await sidebar.boundingBox();
+  expect(sidebarBox).not.toBeNull();
+  expect(sidebarBox!.width).toBeLessThanOrEqual(52);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await expect(page.getByRole("button", { name: "Open settings" })).toBeVisible();
+});

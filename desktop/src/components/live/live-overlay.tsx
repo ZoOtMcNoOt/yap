@@ -49,6 +49,16 @@ export function LiveOverlay({
       data-overlay-phase={model.phase}
       data-overlay-surface={surface}
       data-testid="live-overlay-root"
+      aria-label="Yap dictation controls"
+      role="toolbar"
+      onFocus={() => {
+        if (model.phase === "idle") openIdleIsland();
+      }}
+      onKeyDown={(event) => {
+        if (model.phase !== "idle" || !["Enter", " "].includes(event.key)) return;
+        event.preventDefault();
+        openIdleIsland();
+      }}
       onPointerEnter={() => {
         if (model.phase === "idle") openIdleIsland();
       }}
@@ -60,6 +70,7 @@ export function LiveOverlay({
         if (surface === "expanded") scheduleIdleCollapse();
       }}
       style={rootFrameStyle}
+      tabIndex={model.phase === "idle" ? 0 : -1}
     >
       <div
         className="pointer-events-auto h-full w-full text-white"
