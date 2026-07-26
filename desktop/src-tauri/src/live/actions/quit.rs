@@ -28,6 +28,20 @@ pub(super) enum QuitClaim {
     ExitAuthorized,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub(super) enum QuitRunError {
+    Finalization(String),
+    Shutdown(String),
+}
+
+impl QuitRunError {
+    fn detail(&self) -> &str {
+        match self {
+            Self::Finalization(error) | Self::Shutdown(error) => error,
+        }
+    }
+}
+
 impl QuitCoordinator {
     pub(crate) fn new() -> Self {
         Self {
@@ -97,9 +111,9 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
         QuitClaim::Coalesced => return,
         QuitClaim::Blocked(error) => {
             crate::diagnostics::log(&format!(
-                "quit remains blocked by an unacknowledged save failure: {error}"
+                "quit remains blocked by an unacknowledged shutdown failure: {error}"
             ));
-            present_quit_failure(app);
+            present_quit_failure(app, None);
             return;
         }
         QuitClaim::ExitAuthorized => {
@@ -115,40 +129,48 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
             let result = run_quit_with(
                 || finalize_live_before_quit(&worker_app),
                 || {
+                    crate::app::begin_instance_activation_shutdown().map_err(|error| {
+                        format!("could not publish the instance shutdown handoff: {error}")
+                    })?;
                     let lifecycle = worker_app.state::<crate::runtime::DesktopLifecycle>();
                     for error in lifecycle.shutdown() {
                         crate::diagnostics::log(&format!(
                             "desktop background shutdown failed: {error}"
                         ));
                     }
-                    worker_app.state::<QuitCoordinator>().finish(Ok(()));
-                    worker_app.exit(0);
+                    Ok(())
                 },
             );
-            if let Err(error) = result {
-                worker_app
-                    .state::<QuitCoordinator>()
-                    .finish(Err(error.clone()));
-                crate::diagnostics::log(&format!(
-                    "quit deferred after live finalization failed: {error}"
-                ));
-                present_quit_failure(&worker_app);
+            match result {
+                Ok(()) => {
+                    worker_app.state::<QuitCoordinator>().finish(Ok(()));
+                    worker_app.exit(0);
+                }
+                Err(error) => {
+                    let detail = error.detail().to_string();
+                    worker_app
+                        .state::<QuitCoordinator>()
+                        .finish(Err(detail.clone()));
+                    crate::diagnostics::log(&format!(
+                        "quit deferred because shutdown could not complete: {detail}"
+                    ));
+                    present_quit_failure(&worker_app, Some(&error));
+                }
             }
         })
     {
         app.state::<QuitCoordinator>().worker_start_failed();
         crate::diagnostics::log(&format!("quit worker failed to start: {error}"));
-        present_quit_failure(app);
+        present_quit_failure(app, None);
     }
 }
 
 pub(super) fn run_quit_with(
     finalize: impl FnOnce() -> Result<(), String>,
-    exit: impl FnOnce(),
-) -> Result<(), String> {
-    finalize()?;
-    exit();
-    Ok(())
+    prepare_exit: impl FnOnce() -> Result<(), String>,
+) -> Result<(), QuitRunError> {
+    finalize().map_err(QuitRunError::Finalization)?;
+    prepare_exit().map_err(QuitRunError::Shutdown)
 }
 
 fn finalize_live_before_quit(app: &tauri::AppHandle) -> Result<(), String> {
@@ -168,13 +190,18 @@ fn finalize_live_before_quit(app: &tauri::AppHandle) -> Result<(), String> {
     outcome.save_error.map_or(Ok(()), Err)
 }
 
-fn present_quit_failure(app: &tauri::AppHandle) {
+fn present_quit_failure(app: &tauri::AppHandle, failure: Option<&QuitRunError>) {
+    let message = match failure {
+        Some(QuitRunError::Finalization(_)) => {
+            "Yap stayed open because the current recording could not be saved."
+        }
+        Some(QuitRunError::Shutdown(_)) | None => {
+            "Yap stayed open because shutdown could not be completed safely."
+        }
+    };
     let live = app.state::<live::LiveSessionState>();
     let view = live.update(|view| {
-        view.error = Some(append_error(
-            view.error.take(),
-            "Yap stayed open because the current recording could not be saved.",
-        ));
+        view.error = Some(append_error(view.error.take(), message));
     });
     show_main_window(app);
     if let Err(error) = live::overlay_window::ensure_active(app) {

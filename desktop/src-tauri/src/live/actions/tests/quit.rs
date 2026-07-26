@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use super::super::quit::{run_quit_with, QuitClaim, QuitCoordinator};
+use super::super::quit::{run_quit_with, QuitClaim, QuitCoordinator, QuitRunError};
 
 #[test]
 fn quit_does_not_exit_when_finalization_fails() {
@@ -11,10 +11,16 @@ fn quit_does_not_exit_when_finalization_fails() {
             events.borrow_mut().push("finalize");
             Err("save failed".to_string())
         },
-        || events.borrow_mut().push("exit"),
+        || {
+            events.borrow_mut().push("exit");
+            Ok(())
+        },
     );
 
-    assert_eq!(result, Err("save failed".into()));
+    assert_eq!(
+        result,
+        Err(QuitRunError::Finalization("save failed".into()))
+    );
     assert_eq!(events.into_inner(), vec!["finalize"]);
 }
 
@@ -27,11 +33,36 @@ fn quit_exits_only_after_successful_finalization() {
             events.borrow_mut().push("finalize");
             Ok(())
         },
-        || events.borrow_mut().push("exit"),
+        || {
+            events.borrow_mut().push("exit");
+            Ok(())
+        },
     );
 
     assert_eq!(result, Ok(()));
     assert_eq!(events.into_inner(), vec!["finalize", "exit"]);
+}
+
+#[test]
+fn quit_stays_open_when_shutdown_handoff_cannot_start() {
+    let events = RefCell::new(Vec::new());
+
+    let result = run_quit_with(
+        || {
+            events.borrow_mut().push("finalize");
+            Ok(())
+        },
+        || {
+            events.borrow_mut().push("handoff");
+            Err("handoff unavailable".to_string())
+        },
+    );
+
+    assert_eq!(
+        result,
+        Err(QuitRunError::Shutdown("handoff unavailable".into()))
+    );
+    assert_eq!(events.into_inner(), vec!["finalize", "handoff"]);
 }
 
 #[test]
