@@ -136,6 +136,16 @@ GPU pressure, model teardown, private evaluation evidence, and unavailable timin
   `frontend.browser-workflows` and records Ruff separately as `server.lint`;
   neither label claims accessibility coverage that its command does not prove.
 
+## Gate attempt history
+
+Exact candidate `79956ec67eee59f26d1f9845df28d8a5e2a21bf0` was admitted
+once and failed closed during GB10 preflight before any provider started. The
+controller placed the planned provider evidence beside, rather than beneath,
+the declared private evaluation cache. The concurrent Windows collector was
+stopped, and independent read-back found no retained local or remote process,
+listener, container, or network. That attempt remains failed private evidence
+and must not be resumed, retried, or relabeled.
+
 ## Phase 7 cadence
 
 Phase 7 begins only after Checkpoint B merges. Its implementation remains on a
