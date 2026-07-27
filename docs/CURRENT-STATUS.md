@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-07-26
+**As of:** 2026-07-27
 
 **Current work:** Phase 7 tenant-scoped identity and access on
 `feat/phase7-identity-access`, based on reviewed Checkpoint B merge
@@ -31,7 +31,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
-| Phase 7: identity/access | Active; replacement gate-runner repair reviewed and release-contract-green; new full gate pending | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. A provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` principals, durable access disable/restore, owner-scoped job/LID/idempotency/artifact behavior, role-gated and audited purpose grants, enforced enrollment/matching/adaptation purpose checks, protected readiness, authenticated bounded private WebSocket admission, and the native lower WebSocket handshake execute under focused tests. The desktop now has only a narrow in-process native token-provider seam; no production adapter is selected or approved. Candidate `134ec08002aeb1deca83547d511528b282966731` is consumed after its one complete matrix exposed a post-hoc Windows `taskkill /T` timeout in the release-contract command limiter. The replacement owns commands from suspended creation through nested kill-on-close Job accounting-zero proof, passes its ten-case protocol/lifecycle supervisor qualification, closed the same-three antagonistic review with no P0–P2 findings, and passed the post-review complete release-contract cell 80/80. A new exact head and admission, fresh private evidence, the one replacement matrix, hosted PR closure, and merge remain open. |
+| Phase 7: identity/access | Active; second replacement repair same-three reviewed and release-contract-green; new full gate pending | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. A provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` principals, durable access disable/restore, owner-scoped job/LID/idempotency/artifact behavior, role-gated and audited purpose grants, enforced enrollment/matching/adaptation purpose checks, protected readiness, authenticated bounded private WebSocket admission, and the native lower WebSocket handshake execute under focused tests. The desktop now has only a narrow in-process native token-provider seam; no production adapter is selected or approved. Candidates `134ec08002aeb1deca83547d511528b282966731` and `7046d98d61fec90d4c639e92aff09ff8f6a2083a` are consumed. The first exposed a post-hoc Windows `taskkill /T` timeout in the release-contract command limiter. The Job Object replacement passed all 13 fresh private children on the second, whose one complete matrix then exposed a missing `#requires -PSEdition Core` declaration. Follow-up runtime review proved that dynamic script-block loading ignores `#requires`; the corrected encoded-command boundary checks both Core edition and version 7.4 before creating the loader. Thirteen focused Windows/installer contracts and the complete release-contract cell pass 81/81, and same-three closure found no P0–P2 issue. A new exact head and admission, fresh private evidence, the one replacement matrix, hosted PR closure, and merge remain open. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -324,12 +324,17 @@ ownership.
   real tenant registration, Conditional Access, MFA, consent, enterprise sign-in
   policy, production storage/audit, or distribution approval. No internal DNS,
   enterprise certificate, ZPA policy, or production firewall rule exists.
-- Phase 7 candidate `134ec08002aeb1deca83547d511528b282966731` is
-  consumed after its one complete matrix exposed an unproven Windows command-
-  tree cleanup path. The function-named Job Object replacement is same-three
-  reviewed and passed the post-review complete release-contract cell 80/80, but
-  a new exact-head admission and fresh evidence, the one replacement phase
-  gate, hosted PR closure, and merge remain open. Persistent warm model
+- Phase 7 candidates `134ec08002aeb1deca83547d511528b282966731` and
+  `7046d98d61fec90d4c639e92aff09ff8f6a2083a` are consumed. The first exposed an
+  unproven Windows command-tree cleanup path. The Job Object replacement passed
+  all 13 fresh private children on the second, whose complete matrix then
+  exposed a missing PowerShell Core fail-fast declaration. Follow-up review
+  proved dynamic script blocks ignore `#requires`; the encoded boundary now
+  checks both edition and version before loader creation. Thirteen focused
+  Windows/installer contracts and the complete release-contract cell pass
+  81/81 with no same-three P0–P2 finding, but a new exact-head admission and
+  fresh evidence, the one replacement phase gate, hosted PR
+  closure, and merge remain open. Persistent warm model
   services, multi-worker and mixed live/batch capacity promotion, production
   supervision/observability, and external deployment remain Phase 10 gates;
   they are not Phase 6 completion criteria.
@@ -545,8 +550,9 @@ is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
 1. The same-three bounded review of the Windows Job Object command-supervision
-   repair is complete with no P0–P2 findings; the post-review release-contract
-   cell passed 80/80.
+   repair and its explicit encoded-loader PowerShell runtime check is complete
+   with no P0–P2 finding; 13 focused Windows/installer contracts and the
+   complete release-contract cell pass 81/81.
 2. Freeze a new exact Phase 7 head, prequalify its Windows supervisor, connected
    executor, and no-receipt mock OIDC path, then reserve a fresh admission.
 3. Regenerate every private child and run the one-time applicable local/native/

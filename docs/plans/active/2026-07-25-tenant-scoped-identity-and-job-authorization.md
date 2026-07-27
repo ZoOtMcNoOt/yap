@@ -8,15 +8,23 @@
 `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
 **Current closure state:** The original Phase 7 implementation and exactly-three
-review closure exist. Candidate
-`134ec08002aeb1deca83547d511528b282966731` is consumed: all fresh private
-children validated, but its one complete matrix exposed a post-hoc Windows
-`taskkill /T` timeout in the release-contract command limiter. The replacement
-uses suspended creation, nested Job assignment, kill-on-close, and
-authoritative Job accounting-zero proof. Its same-three review closed with no
-P0–P2 findings and the post-review complete release-contract cell passed 80/80.
-A new exact-head admission, fresh private evidence, the one complete replacement
-matrix, first-attempt hosted closure, the focused PR, and merge remain open.
+review closure exist. Candidates
+`134ec08002aeb1deca83547d511528b282966731` and
+`7046d98d61fec90d4c639e92aff09ff8f6a2083a` are consumed. The first candidate's
+fresh private children validated, but its one complete matrix exposed a
+post-hoc Windows `taskkill /T` timeout in the release-contract command limiter.
+The replacement uses suspended creation, nested Job assignment, kill-on-close,
+and authoritative Job accounting-zero proof. The second candidate passed all
+13 fresh private children, then its one complete matrix exposed that the new
+supervisor declared PowerShell 7.4 without also requiring the Core edition.
+Follow-up runtime review then proved that dynamically created script blocks do
+not enforce `#requires`. The corrected encoded-command boundary checks both
+Core edition and version 7.4 before creating the loader script block. Thirteen
+focused Windows/installer contracts and the complete affected release-contract
+cell pass 81/81, and same-three closure found no P0–P2 issue. A new exact-head
+admission, fresh private evidence, the one
+complete replacement matrix, first-attempt hosted closure, the focused PR, and
+merge remain open.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -185,7 +193,7 @@ scanning, capacity/SLO promotion, and deployment evidence.
       findings, and run focused verification for those repairs.
 - [x] Obtain bounded read-only closure from the same three reviewers on the
       exact repair head; do not add a fourth reviewer or consume the full gate.
-- [ ] Obtain bounded closure from those same three reviewers on the
+- [x] Obtain bounded closure from those same three reviewers on the
       function-named Windows bounded-command Job supervisor repair. Preserve
       the typed primary failure, prove nested active-process-zero, and keep the
       archived installer implementation recoverable without restoring its
@@ -228,12 +236,15 @@ repeatedly while implementation is changing.
 
 The focused identity implementation and original exactly-three review closure
 are complete. The mock-OIDC harness suite is 8/8 green. The replacement Windows
-command boundary has a ten-case functional contract covering invocation-bound
+command boundary has an eleven-case functional contract covering invocation-bound
 status, pre-assignment cleanup, typed-error preservation, private-file cleanup,
 launch and immutable supervisor-source integrity, bounded watchdog settlement,
 retained descendants, nested Jobs, and batch-command and exact-environment
-fidelity. After the final integrity split and same-three repair closure, the
-complete affected release-contract cell passed 80/80. This remains focused
+fidelity. After the second consumed candidate exposed the missing
+`#requires -PSEdition Core` declaration, follow-up runtime review proved that
+dynamic script blocks ignore `#requires`. The corrected encoded-command
+boundary passed 13 focused Windows/installer contracts and the complete
+affected release-contract cell 81/81 with no same-three P0–P2 finding. This remains focused
 evidence, not a rerun of the consumed complete phase matrix. A Docker 29 ARM64
 diagnostic
 proved the bounded Linux loopback proxy against the locked provider on an

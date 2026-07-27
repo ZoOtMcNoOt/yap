@@ -80,6 +80,7 @@ function encodedSupervisorCommand(loaderBytes, parameters) {
     "utf8",
   ).toString("base64");
   const command = [
+    "if($PSVersionTable.PSEdition -cne 'Core' -or $PSVersionTable.PSVersion -lt [version] '7.4'){throw 'The Windows command Job supervisor requires PowerShell Core 7.4 or newer.'};",
     `$loaderBytes=[Convert]::FromBase64String('${loaderBase64}');`,
     "$loader=[Text.UTF8Encoding]::new($false,$true).GetString($loaderBytes);",
     `$parameterBytes=[Convert]::FromBase64String('${parametersBase64}');`,

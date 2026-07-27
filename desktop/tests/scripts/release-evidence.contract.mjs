@@ -8,5 +8,6 @@ import "./release-contract/provenance.contract.mjs";
 import "./release-contract/release-workflow.contract.mjs";
 import "./release-contract/windows-installer.contract.mjs";
 import "./release-contract/windows-command-job-protocol.contract.mjs";
+import "./release-contract/windows-command-powershell-runtime.contract.mjs";
 import "./release-contract/windows-command-supervisor-watchdog.contract.mjs";
 import "./release-contract/workflow.contract.mjs";

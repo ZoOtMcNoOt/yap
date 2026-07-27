@@ -5,18 +5,25 @@ behavior identity is `integrated-identity-access`. It is separate from the
 historical Phase 6 gate and the earlier whole-product checkpoint, so neither
 their admissions nor their pass receipts can be relabeled or reused.
 
-**Current status:** candidate
-`134ec08002aeb1deca83547d511528b282966731` is consumed. Its fresh private
-children validated, but its one complete matrix exposed a Windows command-tree
-cleanup race in `frontend.release-contracts`: post-hoc `taskkill /T` exceeded
-its own bound and masked the typed output-limit failure. The replacement
-working tree owns every Windows command from suspended creation through a
-nested kill-on-close Job Object, requires signaled root exit plus authoritative
-zero-active-process Job accounting before settlement, and is focused-green.
-Its same-three review closed with no P0–P2 findings and the post-review complete
-release-contract cell passed 80/80. A new exact head and admission, fresh
-private evidence, the one complete replacement matrix, first-attempt hosted
-closure, the focused PR, and merge remain open.
+**Current status:** candidates
+`134ec08002aeb1deca83547d511528b282966731` and
+`7046d98d61fec90d4c639e92aff09ff8f6a2083a` are consumed. The first candidate's
+fresh private children validated, but its one complete matrix exposed a Windows
+command-tree cleanup race in `frontend.release-contracts`: post-hoc
+`taskkill /T` exceeded its own bound and masked the typed output-limit failure.
+The replacement owns every Windows command from suspended creation through a
+nested kill-on-close Job Object and requires signaled root exit plus
+authoritative zero-active-process Job accounting before settlement. The second
+candidate then passed all 13 fresh private children, but its one complete
+matrix exposed a fail-fast declaration gap in that new supervisor:
+`#requires -PSEdition Core` was absent. Follow-up runtime review then proved
+that dynamic `ScriptBlock::Create` loading does not enforce `#requires`. The
+corrected boundary checks Core edition and version 7.4 before creating the
+loader script block. Thirteen focused Windows/installer contracts and the
+complete release-contract cell now pass 81/81, and same-three closure found no
+P0–P2 issue. A new exact head and
+admission, fresh private evidence, the one complete replacement matrix,
+first-attempt hosted closure, the focused PR, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
@@ -82,15 +89,17 @@ command supervisor before reservation:
 node --test `
   .\desktop\tests\scripts\release-contract\bounded-command-windows-job.contract.mjs `
   .\desktop\tests\scripts\release-contract\windows-command-job-protocol.contract.mjs `
+  .\desktop\tests\scripts\release-contract\windows-command-powershell-runtime.contract.mjs `
   .\desktop\tests\scripts\release-contract\windows-command-supervisor-watchdog.contract.mjs
 ```
 
-Require all ten contracts to pass. They prove invocation-bound atomic status
+Require all eleven contracts to pass. They prove invocation-bound atomic status
 validation, pre-assignment cleanup semantics, typed primary-error preservation,
 private-file cleanup, launch-spec and immutable supervisor-source integrity
 before execution, bounded watchdog settlement with late-status cleanup,
 retained-descendant rejection and cleanup, nested outer/inner Job ownership,
-and batch-command argument/exact-environment/byte fidelity. The supervisor
+batch-command argument/exact-environment/byte fidelity, and runtime-version and
+edition rejection at the encoded dynamic-loader boundary. The supervisor
 creates the target suspended, assigns and verifies the inner Job before resume,
 and accepts post-assignment cleanup proof only after the retained root handle
 signals and `QueryInformationJobObject` reports zero active processes.
@@ -166,9 +175,11 @@ contains no token, log, container ID, or private path. The current working tree
 has 8/8 focused harness tests, including executable fake-Docker lifecycle,
 loopback forwarding, overload-rejection, exact-readiness, and port-release
 regressions, plus the focused workflow, integrated-gate, and Windows Job
-supervisor contracts. The replacement working tree passed the complete
-release-contract cell 80/80 after the final ten-contract integrity split and
-same-three repair closure. On Linux,
+supervisor contracts. After the second consumed candidate exposed the missing
+PowerShell-edition declaration and follow-up review found that dynamic script
+blocks ignore `#requires`, the repaired working tree passed 13 focused
+Windows/installer contracts and the complete release-contract cell 81/81 with
+no same-three P0–P2 finding. On Linux,
 the provider remains on an egress-blocked internal bridge and a bounded Python
 3.12 child exposes only numeric IPv4 loopback; Windows and macOS retain
 Docker's loopback-only publish path. The Docker 29 ARM64 diagnostic proves the
