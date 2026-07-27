@@ -135,13 +135,56 @@ $ServerRoot = Join-Path $Repository 'server'
 $LockPath = Join-Path $PSScriptRoot 'mock-oidc-provider.lock.json'
 $Lock = Get-Content -LiteralPath $LockPath -Raw | ConvertFrom-Json
 $ExpectedDigest = 'sha256:f625692f5bf84939f3d0af4931f2c0f038dca84c4f1bac1171710d544181f97f'
+$ExpectedPlatformManifestDigests = @{
+    'linux/amd64' = 'sha256:26c173827c93382eab6543dfc66d5707e39024868618d3c3fd8e6f694717333c'
+    'linux/arm64' = 'sha256:9687bd8fdd9d9ddbbe10de97aac103f7aa6e1b9f9f1426e0cf476945ecdde5b9'
+}
+$ExpectedPlatformConfigDigests = @{
+    'linux/amd64' = 'sha256:9acf7f7170b230703710e7454105b9bd8cd7922460b3403837821b78e1272e17'
+    'linux/arm64' = 'sha256:06bfe1111be534917068f27b5424bd64feb0fb2be3d4eace7f34765d6b4be508'
+}
+$LockedDigestMaps = @{}
+foreach ($LockField in @('platformManifests', 'platformConfigDigests')) {
+    $LockedDigestMaps[$LockField] = @{}
+    $LockValue = $Lock.$LockField
+    if ($null -ne $LockValue) {
+        foreach ($Property in $LockValue.PSObject.Properties) {
+            $LockedDigestMaps[$LockField][$Property.Name] = (
+                [string]$Property.Value
+            )
+        }
+    }
+}
+$ExpectedDigestMaps = @{
+    platformManifests = $ExpectedPlatformManifestDigests
+    platformConfigDigests = $ExpectedPlatformConfigDigests
+}
+$PlatformDigestLocksMatch = @(
+    foreach ($LockField in $ExpectedDigestMaps.Keys) {
+        $ExpectedMap = $ExpectedDigestMaps[$LockField]
+        $LockedMap = $LockedDigestMaps[$LockField]
+        if (
+            $LockedMap.Count -ne $ExpectedMap.Count -or
+            @(
+                $ExpectedMap.GetEnumerator() |
+                    Where-Object {
+                        -not $LockedMap.ContainsKey($_.Key) -or
+                        $LockedMap[$_.Key] -cne $_.Value
+                    }
+            ).Count -ne 0
+        ) {
+            $false
+        }
+    }
+).Count -eq 0
 if (
     $Lock.schemaVersion -ne 1 -or
     $Lock.provider -cne 'navikt/mock-oauth2-server' -or
     $Lock.version -cne '5.0.2' -or
     $Lock.license -cne 'MIT' -or
     $Lock.manifestDigest -cne $ExpectedDigest -or
-    $Lock.reference -cne "ghcr.io/navikt/mock-oauth2-server:5.0.2@$ExpectedDigest"
+    $Lock.reference -cne "ghcr.io/navikt/mock-oauth2-server:5.0.2@$ExpectedDigest" -or
+    -not $PlatformDigestLocksMatch
 ) {
     throw 'The synthetic OIDC provider lock is invalid.'
 }
@@ -273,15 +316,14 @@ try {
     [Console]::add_CancelKeyPress($CancelHandler)
     $CancelHandlerRegistered = $true
 
-    $PullResult = Invoke-MockOidcDockerCommand `
+    $ResolvedImage = Resolve-LockedMockOidcDockerImage `
         -DockerPath $Docker.Source `
-        -Arguments @('pull', $ImageReference) `
-        -TimeoutMilliseconds 120000 `
-        -CancellationToken $RunCancellationSource.Token `
-        -Operation 'synthetic OIDC image pull'
-    if ($PullResult.ExitCode -ne 0) {
-        throw 'Synthetic OIDC image pull failed.'
-    }
+        -ManifestReference $ImageReference `
+        -PlatformManifestDigests $ExpectedPlatformManifestDigests `
+        -PlatformConfigDigests $ExpectedPlatformConfigDigests `
+        -CancellationToken $RunCancellationSource.Token
+    $DockerPlatform = $ResolvedImage.Platform
+    $RunnableImageReference = $ResolvedImage.Reference
 
     $NetworkCreateAttempted = $true
     Invoke-MockOidcDockerResourceCreate `
@@ -323,6 +365,8 @@ try {
         '--rm'
         '--pull'
         'never'
+        '--platform'
+        $DockerPlatform
         '--name'
         $ContainerName
         '--label'
@@ -354,7 +398,7 @@ try {
         'SERVER_HOSTNAME=0.0.0.0'
         '--env'
         'JSON_CONFIG'
-        $ImageReference
+        $RunnableImageReference
     )
 
     $ContainerRunAttempted = $true
@@ -380,9 +424,9 @@ try {
     $ConfiguredImage = $ConfiguredImageResult.StandardOutput.Trim()
     if (
         $ConfiguredImageResult.ExitCode -ne 0 -or
-        $ConfiguredImage -cne $ImageReference
+        $ConfiguredImage -cne $RunnableImageReference
     ) {
-        throw 'Synthetic OIDC container did not retain the locked image reference.'
+        throw 'Synthetic OIDC container did not retain the locked image ID.'
     }
 
     if ($RunningOnLinux) {

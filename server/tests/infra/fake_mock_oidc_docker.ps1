@@ -12,6 +12,18 @@ $Mode = [Environment]::GetEnvironmentVariable(
     'YAP_FAKE_DOCKER_MODE',
     [EnvironmentVariableTarget]::Process
 )
+$ConfigDigest = [Environment]::GetEnvironmentVariable(
+    'YAP_FAKE_DOCKER_CONFIG_DIGEST',
+    [EnvironmentVariableTarget]::Process
+)
+$PlatformManifestDigest = [Environment]::GetEnvironmentVariable(
+    'YAP_FAKE_DOCKER_PLATFORM_MANIFEST_DIGEST',
+    [EnvironmentVariableTarget]::Process
+)
+$ManifestReference = [Environment]::GetEnvironmentVariable(
+    'YAP_FAKE_DOCKER_MANIFEST_REFERENCE',
+    [EnvironmentVariableTarget]::Process
+)
 if (
     [string]::IsNullOrWhiteSpace($StateRoot) -or
     -not [IO.Path]::IsPathFullyQualified($StateRoot)
@@ -53,6 +65,92 @@ function Write-Trace {
 
 $Group = $Arguments[0]
 $Action = $Arguments[1]
+if ($Group -ceq 'version' -and $Action -ceq '--format') {
+    Write-Trace -Value 'docker version'
+    if ($Mode -ceq 'wrong-platform') {
+        Write-Output 'linux/s390x'
+    }
+    else {
+        Write-Output 'linux/arm64'
+    }
+    exit 0
+}
+
+if ($Group -ceq 'image' -and $Action -ceq 'inspect') {
+    $PlatformIndex = [Array]::IndexOf($Arguments, '--platform')
+    if (
+        $PlatformIndex -lt 0 -or
+        $PlatformIndex + 1 -ge $Arguments.Count -or
+        $Arguments[$PlatformIndex + 1] -cne 'linux/arm64'
+    ) {
+        exit 2
+    }
+    $Reference = $Arguments[-1]
+    Write-Trace -Value "image inspect reference=$Reference"
+    $ImageState = Join-Path $StateRoot 'image-available'
+    if ($Mode -in @('staged-classic', 'staged-classic-and-run')) {
+        if ($Reference -cne $ConfigDigest) {
+            exit 1
+        }
+        Write-Output "$ConfigDigest|linux/arm64"
+        exit 0
+    }
+    if ($Mode -in @('staged-containerd', 'staged-containerd-and-run')) {
+        if ($Reference -cne $PlatformManifestDigest) {
+            exit 1
+        }
+        Write-Output "$PlatformManifestDigest|linux/arm64"
+        exit 0
+    }
+    if ($Mode -ceq 'wrong-staged-id' -and $Reference -ceq $ConfigDigest) {
+        Write-Output "sha256:$('f' * 64)|linux/arm64"
+        exit 0
+    }
+    if (
+        $Mode -ceq 'wrong-staged-platform' -and
+        $Reference -ceq $ConfigDigest
+    ) {
+        Write-Output "$ConfigDigest|linux/amd64"
+        exit 0
+    }
+    if (
+        -not (Test-Path -LiteralPath $ImageState -PathType Leaf) -or
+        $Reference -cne $ManifestReference
+    ) {
+        exit 1
+    }
+    if ($Mode -ceq 'pull-wrong-image-id') {
+        Write-Output "sha256:$('f' * 64)|linux/arm64"
+    }
+    elseif ($Mode -ceq 'pull-containerd') {
+        Write-Output "$PlatformManifestDigest|linux/arm64"
+    }
+    else {
+        Write-Output "$ConfigDigest|linux/arm64"
+    }
+    exit 0
+}
+
+if ($Group -ceq 'pull') {
+    $PlatformIndex = [Array]::IndexOf($Arguments, '--platform')
+    if (
+        $PlatformIndex -lt 0 -or
+        $PlatformIndex + 1 -ge $Arguments.Count -or
+        $Arguments[$PlatformIndex + 1] -cne 'linux/arm64' -or
+        $Arguments[-1] -cne $ManifestReference
+    ) {
+        exit 2
+    }
+    Write-Trace -Value 'image pull platform=linux/arm64'
+    if ($Mode -ceq 'pull-fails') {
+        exit 1
+    }
+    Set-Content -LiteralPath (Join-Path $StateRoot 'image-available') `
+        -Value $ManifestReference
+    Write-Output $ManifestReference
+    exit 0
+}
+
 if ($Group -ceq 'network' -and $Action -ceq 'create') {
     $Name = $Arguments[-1]
     Set-Content -LiteralPath (
@@ -69,6 +167,16 @@ if ($Group -ceq 'network' -and $Action -ceq 'create') {
 }
 
 if ($Group -ceq 'run') {
+    if ($Mode -in @('staged-classic-and-run', 'staged-containerd-and-run')) {
+        $PlatformIndex = [Array]::IndexOf($Arguments, '--platform')
+        if (
+            $PlatformIndex -lt 0 -or
+            $PlatformIndex + 1 -ge $Arguments.Count -or
+            $Arguments[$PlatformIndex + 1] -cne 'linux/arm64'
+        ) {
+            exit 2
+        }
+    }
     $NameIndex = [Array]::IndexOf($Arguments, '--name')
     if ($NameIndex -lt 0 -or $NameIndex + 1 -ge $Arguments.Count) {
         exit 2
@@ -77,7 +185,12 @@ if ($Group -ceq 'run') {
     Set-Content -LiteralPath (
         Resolve-ResourceState -ResourceKind container -ResourceName $Name
     ) -Value 'mock-oidc'
-    Write-Trace -Value 'container run'
+    if ($Mode -in @('staged-classic-and-run', 'staged-containerd-and-run')) {
+        Write-Trace -Value "container run image=$($Arguments[-1])"
+    }
+    else {
+        Write-Trace -Value 'container run'
+    }
     if ($Mode -ceq 'hang-container-run') {
         while ($true) {
             Start-Sleep -Seconds 1

@@ -174,6 +174,190 @@ function Invoke-MockOidcDockerCommand {
     }
 }
 
+function Test-LockedMockOidcDockerImageInspection {
+    param(
+        [Parameter(Mandatory)]
+        [pscustomobject]$Result,
+
+        [Parameter(Mandatory)]
+        [string]$ExpectedPlatform,
+
+        [Parameter(Mandatory)]
+        [string[]]$AllowedImageIds
+    )
+
+    if ($Result.ExitCode -ne 0) {
+        return $false
+    }
+    $Parts = @($Result.StandardOutput.Trim() -split '\|')
+    if (
+        $Parts.Count -ne 2 -or
+        $AllowedImageIds -cnotcontains $Parts[0] -or
+        $Parts[1] -cne $ExpectedPlatform
+    ) {
+        throw 'Synthetic OIDC image differs from the locked platform image.'
+    }
+    return $true
+}
+
+function Resolve-LockedMockOidcDockerImage {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$DockerPath,
+
+        [Parameter()]
+        [string[]]$DockerPrefixArguments = @(),
+
+        [Parameter(Mandatory)]
+        [string]$ManifestReference,
+
+        [Parameter(Mandatory)]
+        [hashtable]$PlatformManifestDigests,
+
+        [Parameter(Mandatory)]
+        [hashtable]$PlatformConfigDigests,
+
+        [Parameter(Mandatory)]
+        [Threading.CancellationToken]$CancellationToken
+    )
+
+    Assert-MockOidcDockerText -Value $ManifestReference `
+        -Field 'Synthetic OIDC manifest reference' -MaximumChars 512
+    if ($ManifestReference -cnotmatch '@sha256:[0-9a-f]{64}$') {
+        throw 'Synthetic OIDC manifest reference is not digest locked.'
+    }
+    if (
+        $PlatformManifestDigests.Count -eq 0 -or
+        $PlatformManifestDigests.Count -ne $PlatformConfigDigests.Count
+    ) {
+        throw 'Synthetic OIDC platform image identities are required.'
+    }
+    foreach ($Platform in $PlatformManifestDigests.Keys) {
+        if (
+            $Platform -isnot [string] -or
+            [string]$Platform -cnotmatch '^[a-z0-9]+/[a-z0-9_]+$' -or
+            -not $PlatformConfigDigests.ContainsKey($Platform)
+        ) {
+            throw 'Synthetic OIDC platform image identities are invalid.'
+        }
+        foreach ($Digest in @(
+            $PlatformManifestDigests[$Platform],
+            $PlatformConfigDigests[$Platform]
+        )) {
+            if (
+                $Digest -isnot [string] -or
+                [string]$Digest -cnotmatch '^sha256:[0-9a-f]{64}$'
+            ) {
+                throw 'Synthetic OIDC platform image identities are invalid.'
+            }
+        }
+    }
+
+    $PlatformResult = Invoke-MockOidcDockerCommand `
+        -DockerPath $DockerPath `
+        -DockerPrefixArguments $DockerPrefixArguments `
+        -Arguments @(
+            'version'
+            '--format'
+            '{{.Server.Os}}/{{.Server.Arch}}'
+        ) `
+        -TimeoutMilliseconds 15000 `
+        -CancellationToken $CancellationToken `
+        -Operation 'synthetic OIDC Docker platform inspection'
+    $DockerPlatform = $PlatformResult.StandardOutput.Trim()
+    if (
+        $PlatformResult.ExitCode -ne 0 -or
+        -not $PlatformManifestDigests.ContainsKey($DockerPlatform)
+    ) {
+        throw 'Synthetic OIDC Docker platform is not locked.'
+    }
+
+    $ExpectedConfigDigest = [string]$PlatformConfigDigests[$DockerPlatform]
+    $ExpectedPlatformManifest = [string](
+        $PlatformManifestDigests[$DockerPlatform]
+    )
+    foreach ($StagedReference in @(
+        $ExpectedConfigDigest,
+        $ExpectedPlatformManifest
+    )) {
+        $StagedImageResult = Invoke-MockOidcDockerCommand `
+            -DockerPath $DockerPath `
+            -DockerPrefixArguments $DockerPrefixArguments `
+            -Arguments @(
+                'image'
+                'inspect'
+                '--platform'
+                $DockerPlatform
+                '--format'
+                '{{.Id}}|{{.Os}}/{{.Architecture}}'
+                $StagedReference
+            ) `
+            -TimeoutMilliseconds 15000 `
+            -CancellationToken $CancellationToken `
+            -Operation 'synthetic OIDC staged-image inspection'
+        if (
+            Test-LockedMockOidcDockerImageInspection `
+                -Result $StagedImageResult `
+                -ExpectedPlatform $DockerPlatform `
+                -AllowedImageIds @($StagedReference)
+        ) {
+            return [pscustomobject]@{
+                Platform = $DockerPlatform
+                Reference = $StagedReference
+            }
+        }
+    }
+
+    $PullResult = Invoke-MockOidcDockerCommand `
+        -DockerPath $DockerPath `
+        -DockerPrefixArguments $DockerPrefixArguments `
+        -Arguments @(
+            'pull'
+            '--platform'
+            $DockerPlatform
+            $ManifestReference
+        ) `
+        -TimeoutMilliseconds 120000 `
+        -CancellationToken $CancellationToken `
+        -Operation 'synthetic OIDC image pull'
+    if ($PullResult.ExitCode -ne 0) {
+        throw 'Synthetic OIDC image pull failed.'
+    }
+    $PulledImageResult = Invoke-MockOidcDockerCommand `
+        -DockerPath $DockerPath `
+        -DockerPrefixArguments $DockerPrefixArguments `
+        -Arguments @(
+            'image'
+            'inspect'
+            '--platform'
+            $DockerPlatform
+            '--format'
+            '{{.Id}}|{{.Os}}/{{.Architecture}}'
+            $ManifestReference
+        ) `
+        -TimeoutMilliseconds 15000 `
+        -CancellationToken $CancellationToken `
+        -Operation 'synthetic OIDC pulled-image inspection'
+    if (
+        -not (
+            Test-LockedMockOidcDockerImageInspection `
+                -Result $PulledImageResult `
+                -ExpectedPlatform $DockerPlatform `
+                -AllowedImageIds @(
+                    $ExpectedConfigDigest,
+                    $ExpectedPlatformManifest
+                )
+        )
+    ) {
+        throw 'Synthetic OIDC pulled image could not be inspected.'
+    }
+    return [pscustomobject]@{
+        Platform = $DockerPlatform
+        Reference = $ManifestReference
+    }
+}
+
 function Invoke-MockOidcDockerResourceCreate {
     [CmdletBinding()]
     param(
@@ -438,5 +622,6 @@ function Remove-OwnedMockOidcDockerResource {
 Export-ModuleMember -Function @(
     'Invoke-MockOidcDockerCommand',
     'Invoke-MockOidcDockerResourceCreate',
+    'Resolve-LockedMockOidcDockerImage',
     'Remove-OwnedMockOidcDockerResource'
 )

@@ -9,6 +9,10 @@
     "linux/amd64": "sha256:26c173827c93382eab6543dfc66d5707e39024868618d3c3fd8e6f694717333c",
     "linux/arm64": "sha256:9687bd8fdd9d9ddbbe10de97aac103f7aa6e1b9f9f1426e0cf476945ecdde5b9"
   },
+  "platformConfigDigests": {
+    "linux/amd64": "sha256:9acf7f7170b230703710e7454105b9bd8cd7922460b3403837821b78e1272e17",
+    "linux/arm64": "sha256:06bfe1111be534917068f27b5424bd64feb0fb2be3d4eace7f34765d6b4be508"
+  },
   "license": "MIT",
   "releaseSource": "https://github.com/navikt/mock-oauth2-server/releases/tag/5.0.2",
   "sourceRevision": "b33a0c8",

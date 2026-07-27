@@ -219,11 +219,21 @@ supervisor contracts. After the second consumed candidate exposed the missing
 PowerShell-edition declaration and follow-up review found that dynamic script
 blocks ignore `#requires`, the repaired working tree passed 13 focused
 Windows/installer contracts and the complete release-contract cell 81/81 with
-no same-three P0–P2 finding. On Linux,
-the provider remains on an egress-blocked internal bridge and a bounded Python
-3.12 child exposes only numeric IPv4 loopback; Windows and macOS retain
-Docker's loopback-only publish path. The Docker 29 ARM64 diagnostic proves the
-Linux internal-bridge topology, but it is not an exact-head owner-flow receipt.
+no same-three P0–P2 finding. On Linux, the provider remains on an
+egress-blocked internal bridge and a bounded Python 3.12 child exposes only
+numeric IPv4 loopback; Windows and macOS retain Docker's loopback-only publish
+path. The harness resolves the Docker server platform to both the frozen
+platform-manifest and config digests because Docker's classic and containerd
+image stores expose different immutable IDs. An already staged image is
+accepted only when one of those bare digests resolves to itself and Docker
+reports the exact locked OS and architecture. Otherwise the harness pulls the
+named index-digest reference for the detected platform and rechecks its
+store-specific immutable ID. The container runs with `--pull never`, the same
+explicit platform, and either the verified bare staged digest or the pulled
+named index-digest reference. An offline/private executor can therefore use a
+separately transported locked image without trusting a mutable tag. The Docker
+29 ARM64 diagnostic proves the Linux internal-bridge topology, but it is not
+an exact-head owner-flow receipt.
 That admitted receipt and the hosted `mock-oidc` first-attempt result must still
 be collected on the final reviewed head.
 

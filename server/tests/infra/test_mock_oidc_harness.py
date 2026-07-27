@@ -27,6 +27,13 @@ FAKE_DOCKER = Path(__file__).with_name("fake_mock_oidc_docker.ps1")
 EXPECTED_DIGEST = (
     "sha256:f625692f5bf84939f3d0af4931f2c0f038dca84c4f1bac1171710d544181f97f"
 )
+EXPECTED_REFERENCE = f"ghcr.io/navikt/mock-oauth2-server:5.0.2@{EXPECTED_DIGEST}"
+EXPECTED_ARM64_CONFIG_DIGEST = (
+    "sha256:06bfe1111be534917068f27b5424bd64feb0fb2be3d4eace7f34765d6b4be508"
+)
+EXPECTED_ARM64_PLATFORM_MANIFEST = (
+    "sha256:9687bd8fdd9d9ddbbe10de97aac103f7aa6e1b9f9f1426e0cf476945ecdde5b9"
+)
 
 
 class MockOidcHarnessTests(unittest.TestCase):
@@ -70,7 +77,13 @@ class MockOidcHarnessTests(unittest.TestCase):
             )
             environment = {
                 **os.environ,
+                "DOCKER_DEFAULT_PLATFORM": "linux/amd64",
                 "YAP_FAKE_DOCKER_MODE": mode,
+                "YAP_FAKE_DOCKER_CONFIG_DIGEST": EXPECTED_ARM64_CONFIG_DIGEST,
+                "YAP_FAKE_DOCKER_MANIFEST_REFERENCE": EXPECTED_REFERENCE,
+                "YAP_FAKE_DOCKER_PLATFORM_MANIFEST_DIGEST": (
+                    EXPECTED_ARM64_PLATFORM_MANIFEST
+                ),
                 "YAP_FAKE_DOCKER_STATE_ROOT": str(root / "state"),
             }
             completed = subprocess.run(
@@ -96,6 +109,41 @@ class MockOidcHarnessTests(unittest.TestCase):
             )
             return completed, trace
 
+    @staticmethod
+    def _locked_image_driver_body(follow_up: str) -> str:
+        return f"""
+$Cancellation = [Threading.CancellationTokenSource]::new()
+$PlatformManifestDigests = @{{
+    'linux/arm64' = '{EXPECTED_ARM64_PLATFORM_MANIFEST}'
+}}
+$PlatformConfigDigests = @{{
+    'linux/arm64' = '{EXPECTED_ARM64_CONFIG_DIGEST}'
+}}
+try {{
+    $Resolved = Resolve-LockedMockOidcDockerImage `
+        -DockerPath $DockerPath `
+        -DockerPrefixArguments $DockerPrefix `
+        -ManifestReference '{EXPECTED_REFERENCE}' `
+        -PlatformManifestDigests $PlatformManifestDigests `
+        -PlatformConfigDigests $PlatformConfigDigests `
+        -CancellationToken $Cancellation.Token
+    if (
+        $Resolved.Platform -cne 'linux/arm64' -or
+        @(
+            '{EXPECTED_ARM64_CONFIG_DIGEST}'
+            '{EXPECTED_ARM64_PLATFORM_MANIFEST}'
+            '{EXPECTED_REFERENCE}'
+        ) -cnotcontains $Resolved.Reference
+    ) {{
+        throw 'The fake locked-image result changed.'
+    }}
+{follow_up}
+}}
+finally {{
+    $Cancellation.Dispose()
+}}
+"""
+
     def test_provider_is_exact_version_digest_and_mit_provenance_locked(self) -> None:
         lock = json.loads(LOCK.read_text(encoding="utf-8"))
 
@@ -105,6 +153,29 @@ class MockOidcHarnessTests(unittest.TestCase):
         self.assertEqual(
             lock["reference"],
             f"ghcr.io/navikt/mock-oauth2-server:5.0.2@{EXPECTED_DIGEST}",
+        )
+        self.assertEqual(
+            lock["platformManifests"],
+            {
+                "linux/amd64": (
+                    "sha256:"
+                    "26c173827c93382eab6543dfc66d5707e39024868618d3c3fd8e6f694717333c"
+                ),
+                "linux/arm64": EXPECTED_ARM64_PLATFORM_MANIFEST,
+            },
+        )
+        self.assertEqual(
+            lock["platformConfigDigests"],
+            {
+                "linux/amd64": (
+                    "sha256:"
+                    "9acf7f7170b230703710e7454105b9bd8cd7922460b3403837821b78e1272e17"
+                ),
+                "linux/arm64": (
+                    "sha256:"
+                    "06bfe1111be534917068f27b5424bd64feb0fb2be3d4eace7f34765d6b4be508"
+                ),
+            },
         )
         self.assertEqual(lock["license"], "MIT")
         self.assertEqual(
@@ -138,13 +209,15 @@ class MockOidcHarnessTests(unittest.TestCase):
             "MOCK_OIDC_LOOPBACK_PROXY=READY",
             "$ProxyStartInfo.ArgumentList.Add",
             "'--pull'\n        'never'",
+            "$ResolvedImage.Reference",
+            "$RunnableImageReference",
+            "'--platform'\n        $DockerPlatform",
             "--read-only",
             "'--cap-drop'\n        'ALL'",
             "no-new-privileges=true",
             '"$ProviderBaseUrl/isalive"',
             "[Console]::add_CancelKeyPress",
             "CancellationTokenSource",
-            "-TimeoutMilliseconds 120000",
             "AddSeconds(30)",
             "AddSeconds(60)",
             "finally {",
@@ -160,6 +233,21 @@ class MockOidcHarnessTests(unittest.TestCase):
         self.assertNotIn("YAP_AUTH_MODE", script)
         self.assertNotIn("YAP_OIDC_ISSUER", script)
         self.assertNotIn("Get-Content -LiteralPath $FlowErr -Raw", script)
+        for expected in (
+            "Resolve-LockedMockOidcDockerImage",
+            "synthetic OIDC Docker platform inspection",
+            "synthetic OIDC staged-image inspection",
+            "$ExpectedConfigDigest",
+            "$ExpectedPlatformManifest",
+            "'{{.Id}}|{{.Os}}/{{.Architecture}}'",
+            "-TimeoutMilliseconds 120000",
+        ):
+            with self.subTest(owner_expected=expected):
+                self.assertIn(expected, owner)
+        self.assertLess(
+            owner.index("synthetic OIDC staged-image inspection"),
+            owner.index("synthetic OIDC image pull"),
+        )
         self.assertIn("$RunFailure = $null", script)
         self.assertIn("$TeardownFailures", script)
         self.assertNotIn("& $Docker.Source", script)
@@ -214,6 +302,138 @@ class MockOidcHarnessTests(unittest.TestCase):
         self.assertNotIn(".venv\\Scripts\\python.exe", runtime)
         self.assertIn("'Scripts'", runtime)
         self.assertIn("'bin'", runtime)
+
+    def test_staged_classic_and_containerd_images_skip_pull(self) -> None:
+        expectations = {
+            "staged-classic": [
+                "docker version",
+                f"image inspect reference={EXPECTED_ARM64_CONFIG_DIGEST}",
+            ],
+            "staged-containerd": [
+                "docker version",
+                f"image inspect reference={EXPECTED_ARM64_CONFIG_DIGEST}",
+                f"image inspect reference={EXPECTED_ARM64_PLATFORM_MANIFEST}",
+            ],
+        }
+        for mode, expected_trace in expectations.items():
+            with self.subTest(mode=mode):
+                completed, trace = self._run_fake_docker_driver(
+                    mode=mode,
+                    body=self._locked_image_driver_body(
+                        "    Write-Output 'FAKE_STAGED_IMAGE=PASS'",
+                    ),
+                )
+
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                self.assertEqual(
+                    completed.stdout.strip(),
+                    "FAKE_STAGED_IMAGE=PASS",
+                )
+                self.assertEqual(trace, expected_trace)
+
+    def test_missing_locked_image_pulls_selected_platform_once_and_reinspects(
+        self,
+    ) -> None:
+        expected_trace = [
+            "docker version",
+            f"image inspect reference={EXPECTED_ARM64_CONFIG_DIGEST}",
+            f"image inspect reference={EXPECTED_ARM64_PLATFORM_MANIFEST}",
+            "image pull platform=linux/arm64",
+            f"image inspect reference={EXPECTED_REFERENCE}",
+        ]
+        for mode in ("pull-image", "pull-containerd"):
+            with self.subTest(mode=mode):
+                completed, trace = self._run_fake_docker_driver(
+                    mode=mode,
+                    body=self._locked_image_driver_body(
+                        "    Write-Output 'FAKE_PULL_IMAGE=PASS'",
+                    ),
+                )
+
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                self.assertEqual(
+                    completed.stdout.strip(),
+                    "FAKE_PULL_IMAGE=PASS",
+                )
+                self.assertEqual(trace, expected_trace)
+
+    def test_unlocked_platform_identity_and_architecture_fail_closed(self) -> None:
+        expectations = {
+            "wrong-platform": ["docker version"],
+            "wrong-staged-id": [
+                "docker version",
+                f"image inspect reference={EXPECTED_ARM64_CONFIG_DIGEST}",
+            ],
+            "wrong-staged-platform": [
+                "docker version",
+                f"image inspect reference={EXPECTED_ARM64_CONFIG_DIGEST}",
+            ],
+            "pull-wrong-image-id": [
+                "docker version",
+                f"image inspect reference={EXPECTED_ARM64_CONFIG_DIGEST}",
+                f"image inspect reference={EXPECTED_ARM64_PLATFORM_MANIFEST}",
+                "image pull platform=linux/arm64",
+                f"image inspect reference={EXPECTED_REFERENCE}",
+            ],
+        }
+        for mode, expected_trace in expectations.items():
+            with self.subTest(mode=mode):
+                completed, trace = self._run_fake_docker_driver(
+                    mode=mode,
+                    body=self._locked_image_driver_body(
+                        "    throw 'An invalid image unexpectedly resolved.'",
+                    ),
+                )
+                self.assertNotEqual(completed.returncode, 0)
+                self.assertEqual(trace, expected_trace)
+
+    def test_store_specific_digest_and_platform_are_passed_to_container_run(
+        self,
+    ) -> None:
+        follow_up = """
+    $Name = 'yap-mock-oidc-fake-image-run'
+    Invoke-MockOidcDockerResourceCreate `
+        -DockerPath $DockerPath `
+        -DockerPrefixArguments $DockerPrefix `
+        -Arguments @(
+            'run'
+            '--platform'
+            $Resolved.Platform
+            '--name'
+            $Name
+            $Resolved.Reference
+        ) `
+        -TimeoutMilliseconds 5000 `
+        -CancellationToken $Cancellation.Token `
+        -Operation 'fake exact-image container startup' | Out-Null
+    Write-Output 'FAKE_EXACT_IMAGE_RUN=PASS'
+"""
+        expectations = {
+            "staged-classic-and-run": [
+                "docker version",
+                f"image inspect reference={EXPECTED_ARM64_CONFIG_DIGEST}",
+                f"container run image={EXPECTED_ARM64_CONFIG_DIGEST}",
+            ],
+            "staged-containerd-and-run": [
+                "docker version",
+                f"image inspect reference={EXPECTED_ARM64_CONFIG_DIGEST}",
+                f"image inspect reference={EXPECTED_ARM64_PLATFORM_MANIFEST}",
+                f"container run image={EXPECTED_ARM64_PLATFORM_MANIFEST}",
+            ],
+        }
+        for mode, expected_trace in expectations.items():
+            with self.subTest(mode=mode):
+                completed, trace = self._run_fake_docker_driver(
+                    mode=mode,
+                    body=self._locked_image_driver_body(follow_up),
+                )
+
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                self.assertEqual(
+                    completed.stdout.strip(),
+                    "FAKE_EXACT_IMAGE_RUN=PASS",
+                )
+                self.assertEqual(trace, expected_trace)
 
     def test_linux_proxy_marks_ready_rejects_overload_and_releases_port(
         self,
