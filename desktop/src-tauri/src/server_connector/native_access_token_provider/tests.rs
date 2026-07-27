@@ -779,10 +779,101 @@ fn absent_configuration_preserves_unauthenticated_local_operation() {
     let settings = Arc::new(StandardMutex::new(server_settings(None)));
     let manager = manager(provider.clone(), settings);
 
+    let status = tauri::async_runtime::block_on(manager.status()).unwrap();
+    assert!(!status.configured);
+    assert!(!status.signed_in);
+    assert!(manager.session_is_open());
     assert!(tauri::async_runtime::block_on(manager.access_token())
         .unwrap()
         .is_none());
     assert_eq!(provider.silent_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(provider.status_calls.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn absent_configuration_status_requires_connector_reset_before_reopening_a_closed_session() {
+    let provider = Arc::new(FakeNativeAccessTokenProvider::valid());
+    let settings = Arc::new(StandardMutex::new(server_settings(None)));
+    let manager = manager(provider.clone(), settings);
+
+    tauri::async_runtime::block_on(manager.session.invalidate_and_wait());
+    assert!(!manager.session_is_open());
+
+    let status = tauri::async_runtime::block_on(manager.status()).unwrap();
+    assert!(!status.configured);
+    assert!(!status.signed_in);
+    assert!(!manager.session_is_open());
+    assert!(tauri::async_runtime::block_on(manager.access_token())
+        .unwrap()
+        .is_none());
+    assert_eq!(provider.silent_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(provider.status_calls.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn absent_configuration_status_drains_prior_identity_before_connector_reset_and_reopen() {
+    let provider = Arc::new(FakeNativeAccessTokenProvider::valid());
+    let settings = Arc::new(StandardMutex::new(server_settings(Some(entra_settings(1)))));
+    let manager = manager(provider.clone(), settings.clone());
+    assert!(tauri::async_runtime::block_on(manager.access_token())
+        .unwrap()
+        .is_some());
+
+    settings.lock().unwrap().authentication = None;
+    let status = tauri::async_runtime::block_on(manager.status()).unwrap();
+
+    assert!(!status.configured);
+    assert!(!status.signed_in);
+    assert!(!manager.session_is_open());
+    let state = tauri::async_runtime::block_on(manager.state.lock());
+    assert!(state.cached_token.is_none());
+    assert!(state.active_binding.is_none());
+    assert!(state.session_authentication.is_none());
+    drop(state);
+    assert!(!manager.session_is_open());
+    assert_eq!(provider.silent_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(provider.status_calls.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn direct_dispatch_rejects_configuration_removal_after_provider_unavailability() {
+    let settings = Arc::new(StandardMutex::new(server_settings(Some(entra_settings(1)))));
+    let loaded_settings = settings.clone();
+    let manager = Arc::new(NativeAccessTokenManager {
+        provider: None,
+        settings_loader: Arc::new(move || Ok(loaded_settings.lock().unwrap().clone())),
+        state: Mutex::new(AccessTokenState::default()),
+        lifecycle: Mutex::new(()),
+        session: AuthenticatedSession::new(),
+        clock: Arc::new(now_unix_seconds),
+    });
+    assert_eq!(
+        tauri::async_runtime::block_on(manager.access_token())
+            .err()
+            .unwrap(),
+        RequestAuthorizationError::Unavailable
+    );
+    assert!(manager.session_is_open());
+
+    settings.lock().unwrap().authentication = None;
+    let authenticated = dispatcher(&manager);
+    let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+    let address = listener.local_addr().unwrap();
+    let error = tauri::async_runtime::block_on(
+        authenticated.send(authenticated.get(format!("http://{address}/protected"))),
+    )
+    .unwrap_err();
+
+    assert!(matches!(
+        error,
+        AuthenticatedDispatchError::Authorization(RequestAuthorizationError::AccountChanged)
+    ));
+    assert!(!manager.session_is_open());
+    listener.set_nonblocking(true).unwrap();
+    assert_eq!(
+        listener.accept().unwrap_err().kind(),
+        std::io::ErrorKind::WouldBlock
+    );
 }
 
 #[test]

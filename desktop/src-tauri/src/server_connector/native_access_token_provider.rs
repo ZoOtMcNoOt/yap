@@ -110,12 +110,14 @@ impl ActiveSessionBinding {
 struct AccessTokenState {
     cached_token: Option<CachedAccessToken>,
     active_binding: Option<ActiveSessionBinding>,
+    session_authentication: Option<MicrosoftEntraSettings>,
 }
 
 impl AccessTokenState {
     fn clear(&mut self) {
         self.cached_token = None;
         self.active_binding = None;
+        self.session_authentication = None;
     }
 }
 
@@ -153,6 +155,7 @@ impl NativeAccessTokenManager {
         Arc::clone(&self.session)
     }
 
+    #[cfg(test)]
     pub(super) fn session_is_open(&self) -> bool {
         self.session.is_open()
     }
@@ -167,7 +170,8 @@ impl NativeAccessTokenManager {
             }
             Ok(None) => {
                 let mut state = self.state.lock().await;
-                let account_changed = state.active_binding.is_some();
+                let account_changed =
+                    state.active_binding.is_some() || state.session_authentication.is_some();
                 state.clear();
                 drop(state);
                 if account_changed {
@@ -179,6 +183,7 @@ impl NativeAccessTokenManager {
         };
 
         let mut state = self.state.lock().await;
+        state.session_authentication = Some(configuration.clone());
         let now = (self.clock)();
         if let Some(cached) = state.cached_token.as_ref() {
             if cached.configuration == configuration
@@ -233,13 +238,25 @@ impl NativeAccessTokenManager {
         Ok(Some(outbound))
     }
 
+    #[cfg(test)]
     pub(super) async fn status(&self) -> Result<AccessTokenSessionStatus, String> {
         let _lifecycle = self.lifecycle.lock().await;
+        self.status_locked().await
+    }
+
+    async fn status_locked(&self) -> Result<AccessTokenSessionStatus, String> {
         let configuration = match self.load_configuration() {
             Ok(Some(configuration)) => configuration,
             Ok(None) => {
-                self.state.lock().await.clear();
-                self.session.invalidate_and_wait().await;
+                let mut state = self.state.lock().await;
+                let had_authenticated_state = state.cached_token.is_some()
+                    || state.active_binding.is_some()
+                    || state.session_authentication.is_some();
+                state.clear();
+                drop(state);
+                if had_authenticated_state || !self.session.is_open() {
+                    self.session.invalidate_and_wait().await;
+                }
                 return Ok(AccessTokenSessionStatus {
                     configured: false,
                     signed_in: false,
@@ -252,6 +269,7 @@ impl NativeAccessTokenManager {
             }
         };
 
+        self.state.lock().await.session_authentication = Some(configuration.clone());
         let provider = match self.provider_for_ui() {
             Ok(provider) => provider,
             Err(error) => {
@@ -330,6 +348,44 @@ impl NativeAccessTokenManager {
         })
     }
 
+    pub(super) async fn status_with_connector_reconciliation<Reset>(
+        &self,
+        reset: Reset,
+    ) -> Result<AccessTokenSessionStatus, String>
+    where
+        Reset: FnOnce() -> Result<(), String>,
+    {
+        let _lifecycle = self.lifecycle.lock().await;
+        let identity_result = self.status_locked().await;
+        if identity_result.is_ok() && self.session.is_open() {
+            return identity_result;
+        }
+
+        let reset_result = reset();
+        let status = match identity_result {
+            Err(error) => {
+                let _ = reset_result;
+                return Err(error);
+            }
+            Ok(status) => {
+                reset_result?;
+                status
+            }
+        };
+        if !status.configured {
+            match self.load_configuration() {
+                Ok(None) => self.session.open_new_generation(),
+                Ok(Some(_)) => {
+                    return Err(
+                        "Server identity configuration changed during connector reset.".into(),
+                    )
+                }
+                Err(_) => return Err("Server identity configuration is unavailable.".into()),
+            }
+        }
+        Ok(status)
+    }
+
     pub(super) async fn sign_in(&self, parent_window_handle: Option<u64>) -> Result<(), String> {
         let _lifecycle = self.lifecycle.lock().await;
         self.session.invalidate_and_wait().await;
@@ -356,6 +412,7 @@ impl NativeAccessTokenManager {
         let accepted_at = (self.clock)();
         let cached = cache_grant(configuration, grant, accepted_at)
             .map_err(|_| "Microsoft Entra returned an invalid sign-in response.")?;
+        state.session_authentication = Some(cached.configuration.clone());
         state.active_binding = Some(ActiveSessionBinding::from_cached(&cached));
         state.cached_token = Some(cached);
         drop(state);
@@ -394,6 +451,7 @@ impl NativeAccessTokenManager {
                 );
             }
         }
+        state.session_authentication = self.load_configuration().ok().and_then(|settings| settings);
         drop(state);
         self.session.open_new_generation();
     }
@@ -419,6 +477,7 @@ impl NativeAccessTokenManager {
                 }
             }
         }
+        self.state.lock().await.session_authentication = effective_authentication;
         self.session.open_new_generation();
         result
     }
@@ -439,6 +498,30 @@ impl NativeAccessTokenManager {
         self.provider
             .as_ref()
             .ok_or_else(|| project_provider_error(NativeAccessTokenProviderError::UNAVAILABLE))
+    }
+
+    #[cfg(test)]
+    pub(super) fn unconfigured_loopback_for_test() -> Arc<Self> {
+        Self::with_settings_for_test(Arc::new(std::sync::Mutex::new(ServerSettings {
+            schema_version: super::config::CURRENT_SCHEMA_VERSION,
+            enabled: true,
+            base_url: Some("http://127.0.0.1:18765".into()),
+            authentication: None,
+        })))
+    }
+
+    #[cfg(test)]
+    pub(super) fn with_settings_for_test(
+        settings: Arc<std::sync::Mutex<ServerSettings>>,
+    ) -> Arc<Self> {
+        Arc::new(Self {
+            provider: None,
+            settings_loader: Arc::new(move || Ok(settings.lock().unwrap().clone())),
+            state: Mutex::new(AccessTokenState::default()),
+            lifecycle: Mutex::new(()),
+            session: AuthenticatedSession::new(),
+            clock: Arc::new(now_unix_seconds),
+        })
     }
 }
 

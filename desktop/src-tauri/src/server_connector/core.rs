@@ -133,6 +133,14 @@ impl Default for ServerConnector {
     fn default() -> Self {
         let access_tokens =
             super::native_access_token_provider::NativeAccessTokenManager::discover();
+        Self::with_access_tokens(access_tokens)
+    }
+}
+
+impl ServerConnector {
+    fn with_access_tokens(
+        access_tokens: Arc<super::native_access_token_provider::NativeAccessTokenManager>,
+    ) -> Self {
         let client = client::bounded_client().expect("bounded server connector client must build");
         let generation = Arc::new(AtomicU64::new(0));
         let authenticated = super::AuthenticatedRequestDispatcher::from_source(
@@ -153,11 +161,16 @@ impl Default for ServerConnector {
             settings_save_active: Arc::new(AtomicBool::new(false)),
         }
     }
-}
 
-impl ServerConnector {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    #[cfg(test)]
+    pub(super) fn with_access_tokens_for_test(
+        access_tokens: Arc<super::native_access_token_provider::NativeAccessTokenManager>,
+    ) -> Self {
+        Self::with_access_tokens(access_tokens)
     }
 
     pub(crate) fn batch_client_for_persisted_origin(
