@@ -775,6 +775,10 @@ test("connected gate records a real five-window AmberNet preflight", () => {
     path.join(repoRoot, "desktop", "tests", "wdio", "private-server-asr.gate.spec.js"),
     "utf8",
   );
+  assert.match(
+    source,
+    /expect\(await invoke\("wdio_build_git_sha"\)\)\.toBe\(checkedHead\)/,
+  );
   assert.match(source, /runLanguagePreflightExecution\(/);
   assert.match(source, /fetch\(`http:\/\/\$\{tunnelHost\}:\$\{tunnelPort\}\/v1\/lid\/preflight`/);
   assert.match(source, /expect\(result\.observations\)\.toHaveLength/);

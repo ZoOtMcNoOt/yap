@@ -422,6 +422,7 @@ describe("checked-head private-server ASR gate", () => {
       requireEnvironment("YAP_PRIVATE_SERVER_ASR_GATE_TIMEOUT_MS"),
     );
 
+    expect(await invoke("wdio_build_git_sha")).toBe(checkedHead);
     const settings = await invoke("server_settings");
     expect(matchesEnabledLoopbackServerSettings(settings, expectedOrigin)).toBe(true);
     await invoke("refresh_server_connection");
