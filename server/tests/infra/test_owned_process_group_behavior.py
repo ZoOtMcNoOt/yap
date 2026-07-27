@@ -312,6 +312,75 @@ wait "$child_pid" 2>/dev/null || true
             ),
         )
 
+    def test_exit_trap_stop_does_not_leak_interrupted_wait_status(self) -> None:
+        bash = find_linux_bash()
+        if bash is None:
+            self.skipTest("Linux-compatible bash is unavailable for the EXIT-trap replay")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            group_file = _bash_path(root / "group.pid")
+            status_file = _bash_path(root / "cleanup.status")
+            harness = f"""
+set -euo pipefail
+owner_token={shlex.quote(OWNER_TOKEN)}
+group_file={shlex.quote(group_file)}
+status_file={shlex.quote(status_file)}
+set +e
+(
+  set -euo pipefail
+  wrapper_pid="$BASHPID"
+  child_pid=
+  cleanup() {{
+    initial_status="$?"
+    trap - EXIT HUP INT TERM
+    set +e
+    stop_status=0
+    stop_owned_child_process_group \
+      "$child_pid" "$owner_token" "EXIT-trap child" "$wrapper_pid" \
+      || stop_status="$?"
+    printf '%s\\n' "$stop_status" >"$status_file"
+    wait "$child_pid" 2>/dev/null || true
+    exit "$initial_status"
+  }}
+  trap cleanup EXIT
+  trap 'exit 143' TERM
+  setsid env YAP_RUNTIME_OWNER_TOKEN="$owner_token" \
+    bash -c 'sleep 60 & wait' &
+  child_pid="$!"
+  printf '%s\\n' "$child_pid" >"$group_file"
+  (sleep 0.2; kill -TERM "$wrapper_pid") &
+  wait "$child_pid"
+)
+wrapper_status="$?"
+set -e
+test "$wrapper_status" -eq 143
+test "$(cat -- "$status_file")" -eq 0
+group="$(cat -- "$group_file")"
+test -z "$(yap_process_group_members "$group")"
+"""
+            completed = subprocess.run(
+                [bash],
+                input=(
+                    PROCESS_GROUP_HELPER.read_text(encoding="utf-8")
+                    .replace("\r\n", "\n")
+                    .replace("\r", "\n")
+                    + harness
+                ).encode("utf-8"),
+                check=False,
+                capture_output=True,
+                timeout=30,
+            )
+
+            self.assertEqual(
+                completed.returncode,
+                0,
+                (completed.stdout + completed.stderr).decode(
+                    "utf-8",
+                    errors="replace",
+                ),
+            )
+
 
 def _bash_path(path: Path) -> str:
     resolved = path.resolve()

@@ -74,6 +74,7 @@ verify_token_owned_process_group_members() {
       return 1
     fi
   done <<<"$members"
+  return 0
 }
 
 stop_owned_child_process_group() {
@@ -81,7 +82,7 @@ stop_owned_child_process_group() {
   local owner_token="$2"
   local description="$3"
   local expected_parent_pid="$4"
-  local members deadline child_state=0
+  local members deadline child_state=0 delegated_status=0
   if [[ ! "$child_pid" =~ ^[0-9]+$ ]] \
     || [[ ! "$expected_parent_pid" =~ ^[0-9]+$ ]]; then
     echo "$description child process identity is invalid" >&2
@@ -93,8 +94,15 @@ stop_owned_child_process_group() {
   fi
   if [ -n "$members" ]; then
     stop_token_owned_process_group \
-      "$child_pid" "$owner_token" "$description"
-    return
+      "$child_pid" "$owner_token" "$description" \
+      || delegated_status="$?"
+    if [ "$delegated_status" -ne 0 ]; then
+      echo \
+        "$description delegated process-group stop failed with status $delegated_status" \
+        >&2
+      return "$delegated_status"
+    fi
+    return 0
   fi
   yap_direct_child_state \
     "$child_pid" "$expected_parent_pid" "$owner_token" \
@@ -155,6 +163,7 @@ stop_owned_child_process_group() {
     fi
     sleep 0.1
   done
+  return 0
 }
 
 stop_token_owned_process_group() {
@@ -211,6 +220,7 @@ stop_token_owned_process_group() {
     fi
     sleep 0.1
   done
+  return 0
 }
 
 stop_recorded_token_owned_process_group() {
