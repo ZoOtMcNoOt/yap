@@ -80,13 +80,16 @@ independent receipt validation.
 
 Select and prove the mock-OIDC executor **before** reserving the candidate.
 `test-mock-oidc-owner-flow.ps1` requires PowerShell 7.4+ Core, Docker with a
-reachable daemon and pinned-GHCR-image pull access, Python 3.12, and an `uv`
-cache that can complete the script's offline locked exact sync. Resolving the
-command names on the admission workstation is not evidence that another
-executor has them. Before reservation, verify the selected checkout is exact
-and clean, then run the complete harness in no-receipt mode by omitting both
-`CheckedHead` and `ReceiptOutput`. Require its pass marker and verified
-teardown. No transferable receipt may be produced during pre-admission.
+reachable daemon, Python 3.12, and an `uv` cache that can complete the script's
+offline locked exact sync. The Docker executor must either have access to pull
+the pinned GHCR index digest for its locked platform or already contain the
+corresponding locked platform-manifest or config digest with the exact expected
+OS and architecture. Resolving the command names or a mutable image tag on the
+admission workstation is not evidence that another executor has the frozen
+runtime. Before reservation, verify the selected checkout is exact and clean,
+then run the complete harness in no-receipt mode by omitting both `CheckedHead`
+and `ReceiptOutput`. Require its pass marker and verified teardown. No
+transferable receipt may be produced during pre-admission.
 
 If the workstation does not have Docker, use a Docker-capable exact-clean
 Linux executor and copy only its bounded receipt to the new path frozen in the
@@ -212,7 +215,7 @@ network, child-process, loopback-port, cancellation-handler, and state-directory
 teardown is verified. The receipt contains only the checked head, locked image
 digest, validator/owner-flow source hashes, and public-safe teardown facts; it
 contains no token, log, container ID, or private path. The current working tree
-has 8/8 focused harness tests, including executable fake-Docker lifecycle,
+has 12/12 focused harness tests, including executable fake-Docker lifecycle,
 loopback forwarding, overload-rejection, exact-readiness, and port-release
 regressions, plus the focused workflow, integrated-gate, and Windows Job
 supervisor contracts. After the second consumed candidate exposed the missing
