@@ -21,6 +21,11 @@ const transientAuditFailurePatterns = [
   /\b(?:502 Bad Gateway|503 Service Unavailable|504 Gateway Timeout)\b/i,
   /\b(?:audit endpoint|security\/(?:advisories\/bulk|audits))\b[^\r\n]{0,200}\b(?:502|503|504)\b/i,
   /\bPOST https?:\/\/[^\s]+\/-\/npm\/v1\/security\/advisories\/bulk error \((?:502|503|504)\)/i,
+  /^(?:\[ERROR\]\s+|TypeError:\s*)fetch failed\s*$/im,
+];
+const dependencyAuditFindingPatterns = [
+  /\b\d+\s+(?:low|moderate|high|critical)\s+severity vulnerabilit(?:y|ies)\b/i,
+  /\b\d+\s+vulnerabilit(?:y|ies)\s+found\b/i,
 ];
 
 function appendBoundedOutput(current, chunk) {
@@ -35,6 +40,9 @@ function wait(delayMs) {
 }
 
 export function isTransientDependencyAuditFailure(output) {
+  if (dependencyAuditFindingPatterns.some((pattern) => pattern.test(output))) {
+    return false;
+  }
   return transientAuditFailurePatterns.some((pattern) => pattern.test(output));
 }
 
@@ -114,14 +122,26 @@ function runPnpmCommand({
     child.once("close", (exitCode, signal) => {
       if (settled) return;
       settled = true;
-      resolve({
+      const result = {
         exitCode: exitCode ?? 1,
         output: signal
           ? appendBoundedOutput(capturedOutput, `\nProcess signal: ${signal}`)
           : capturedOutput,
-      });
+      };
+      if (signal) result.signal = signal;
+      resolve(result);
     });
   });
+}
+
+function dependencyAuditEnvironment(environment) {
+  const boundedEnvironment = Object.fromEntries(
+    Object.entries(environment).filter(
+      ([key]) => key.toLowerCase() !== "pnpm_config_fetch_retries",
+    ),
+  );
+  boundedEnvironment.pnpm_config_fetch_retries = "0";
+  return boundedEnvironment;
 }
 
 export function runPnpmDependencyAudit({
@@ -136,10 +156,7 @@ export function runPnpmDependencyAudit({
 
   return runPnpmCommand({
     invocation,
-    environment: {
-      ...environment,
-      pnpm_config_fetch_retries: "0",
-    },
+    environment: dependencyAuditEnvironment(environment),
     spawnProcess,
     stdout,
     stderr,
@@ -227,6 +244,13 @@ export async function auditDependencies({
     if (result.exitCode === 0) {
       writeStatus(`DEPENDENCY_AUDIT=PASS attempts=${attempt}`);
       return { ok: true, attempts: attempt, exitCode: 0 };
+    }
+
+    if (result.signal) {
+      writeStatus(
+        `DEPENDENCY_AUDIT=FAIL attempts=${attempt} reason=audit-process-signaled`,
+      );
+      return { ok: false, attempts: attempt, exitCode: result.exitCode };
     }
 
     const transient = isTransientDependencyAuditFailure(result.output);
