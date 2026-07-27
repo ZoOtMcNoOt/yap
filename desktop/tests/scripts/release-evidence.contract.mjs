@@ -1,4 +1,5 @@
 import "./release-contract/artifact.contract.mjs";
+import "./release-contract/bounded-command-windows-job.contract.mjs";
 import "./release-contract/cache.contract.mjs";
 import "./release-contract/dependency-license.contract.mjs";
 import "./release-contract/integrated-gate.contract.mjs";
@@ -6,4 +7,6 @@ import "./release-contract/model-provenance.contract.mjs";
 import "./release-contract/provenance.contract.mjs";
 import "./release-contract/release-workflow.contract.mjs";
 import "./release-contract/windows-installer.contract.mjs";
+import "./release-contract/windows-command-job-protocol.contract.mjs";
+import "./release-contract/windows-command-supervisor-watchdog.contract.mjs";
 import "./release-contract/workflow.contract.mjs";

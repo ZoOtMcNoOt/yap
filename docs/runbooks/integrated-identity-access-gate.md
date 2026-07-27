@@ -5,10 +5,18 @@ behavior identity is `integrated-identity-access`. It is separate from the
 historical Phase 6 gate and the earlier whole-product checkpoint, so neither
 their admissions nor their pass receipts can be relabeled or reused.
 
-**Current status:** focused development checks and the exactly-three
-antagonistic review plus same-three closure are green. A fresh exact-head
-admission, the complete candidate matrix, first-attempt hosted closure, the
-focused PR, and merge remain open.
+**Current status:** candidate
+`134ec08002aeb1deca83547d511528b282966731` is consumed. Its fresh private
+children validated, but its one complete matrix exposed a Windows command-tree
+cleanup race in `frontend.release-contracts`: post-hoc `taskkill /T` exceeded
+its own bound and masked the typed output-limit failure. The replacement
+working tree owns every Windows command from suspended creation through a
+nested kill-on-close Job Object, requires signaled root exit plus authoritative
+zero-active-process Job accounting before settlement, and is focused-green.
+Its same-three review closed with no P0–P2 findings and the post-review complete
+release-contract cell passed 80/80. A new exact head and admission, fresh
+private evidence, the one complete replacement matrix, first-attempt hosted
+closure, the focused PR, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
@@ -66,6 +74,31 @@ private plan. A hash-verified portable PowerShell archive may be prepared
 privately on that executor; it is gate tooling, not a Yap runtime dependency.
 Do not discover a missing executor dependency after admission and then retry
 the same checked head.
+
+On the exact clean Windows admission workstation, qualify the checked-head
+command supervisor before reservation:
+
+```powershell
+node --test `
+  .\desktop\tests\scripts\release-contract\bounded-command-windows-job.contract.mjs `
+  .\desktop\tests\scripts\release-contract\windows-command-job-protocol.contract.mjs `
+  .\desktop\tests\scripts\release-contract\windows-command-supervisor-watchdog.contract.mjs
+```
+
+Require all ten contracts to pass. They prove invocation-bound atomic status
+validation, pre-assignment cleanup semantics, typed primary-error preservation,
+private-file cleanup, launch-spec and immutable supervisor-source integrity
+before execution, bounded watchdog settlement with late-status cleanup,
+retained-descendant rejection and cleanup, nested outer/inner Job ownership,
+and batch-command argument/exact-environment/byte fidelity. The supervisor
+creates the target suspended, assigns and verifies the inner Job before resume,
+and accepts post-assignment cleanup proof only after the retained root handle
+signals and `QueryInformationJobObject` reports zero active processes.
+Completion-port notifications are not used as proof because Windows does not
+guarantee their delivery. This is release-gate process
+ownership, not a return to the retired custom installer boundary. The earlier
+implementation remains recoverable on
+`archive/phase3-contained-process-pre-lean-20260713`.
 
 Qualify the connected-server executor from the same non-login SSH shape used
 by the admitted controller. The private wrapper must receive an explicit
@@ -132,7 +165,10 @@ digest, validator/owner-flow source hashes, and public-safe teardown facts; it
 contains no token, log, container ID, or private path. The current working tree
 has 8/8 focused harness tests, including executable fake-Docker lifecycle,
 loopback forwarding, overload-rejection, exact-readiness, and port-release
-regressions, plus 38/38 focused workflow/integrated-gate contracts. On Linux,
+regressions, plus the focused workflow, integrated-gate, and Windows Job
+supervisor contracts. The replacement working tree passed the complete
+release-contract cell 80/80 after the final ten-contract integrity split and
+same-three repair closure. On Linux,
 the provider remains on an egress-blocked internal bridge and a bounded Python
 3.12 child exposes only numeric IPv4 loopback; Windows and macOS retain
 Docker's loopback-only publish path. The Docker 29 ARM64 diagnostic proves the

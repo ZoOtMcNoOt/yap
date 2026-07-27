@@ -7,10 +7,16 @@
 **Base:** Reviewed post-Phase-6 checkpoint merge
 `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
-**Current closure state:** Focused implementation evidence and the
-exactly-three antagonistic review plus same-three closure exist. A fresh
-exact-head admission, the one-time complete matrix, first-attempt hosted
-closure, the focused PR, and merge remain open.
+**Current closure state:** The original Phase 7 implementation and exactly-three
+review closure exist. Candidate
+`134ec08002aeb1deca83547d511528b282966731` is consumed: all fresh private
+children validated, but its one complete matrix exposed a post-hoc Windows
+`taskkill /T` timeout in the release-contract command limiter. The replacement
+uses suspended creation, nested Job assignment, kill-on-close, and
+authoritative Job accounting-zero proof. Its same-three review closed with no
+P0–P2 findings and the post-review complete release-contract cell passed 80/80.
+A new exact-head admission, fresh private evidence, the one complete replacement
+matrix, first-attempt hosted closure, the focused PR, and merge remain open.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -179,6 +185,11 @@ scanning, capacity/SLO promotion, and deployment evidence.
       findings, and run focused verification for those repairs.
 - [x] Obtain bounded read-only closure from the same three reviewers on the
       exact repair head; do not add a fourth reviewer or consume the full gate.
+- [ ] Obtain bounded closure from those same three reviewers on the
+      function-named Windows bounded-command Job supervisor repair. Preserve
+      the typed primary failure, prove nested active-process-zero, and keep the
+      archived installer implementation recoverable without restoring its
+      NSIS-specific machinery.
 - [ ] Freeze one exact candidate and run the complete applicable
       local/native/server/target-client/private-server Phase 7 matrix once.
 - [ ] Open a focused PR; require first-attempt hosted CI, CodeQL, and
@@ -215,9 +226,16 @@ will consume.
 The complete matrix is reserved for the frozen candidate. Focused tests may run
 repeatedly while implementation is changing.
 
-The focused implementation and exactly-three review closure are complete. The
-mock-OIDC harness suite is 8/8 green, and the focused workflow plus
-integrated-gate contract set is 38/38 green. A Docker 29 ARM64 diagnostic
+The focused identity implementation and original exactly-three review closure
+are complete. The mock-OIDC harness suite is 8/8 green. The replacement Windows
+command boundary has a ten-case functional contract covering invocation-bound
+status, pre-assignment cleanup, typed-error preservation, private-file cleanup,
+launch and immutable supervisor-source integrity, bounded watchdog settlement,
+retained descendants, nested Jobs, and batch-command and exact-environment
+fidelity. After the final integrity split and same-three repair closure, the
+complete affected release-contract cell passed 80/80. This remains focused
+evidence, not a rerun of the consumed complete phase matrix. A Docker 29 ARM64
+diagnostic
 proved the bounded Linux loopback proxy against the locked provider on an
 internal bridge, but it did not produce an exact-head owner-flow receipt.
 These are focused development results, not the reserved complete Phase 7

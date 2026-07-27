@@ -1,0 +1,253 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+import {
+  executeBoundedCommand,
+} from "../../../../verification/bounded-command-execution.mjs";
+
+const contractRoot = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(contractRoot, "..", "..", "..", "..");
+const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+
+function createCanonicalTemporaryDirectory(prefix) {
+  return mkdtempSync(path.join(realpathSync.native(os.tmpdir()), prefix));
+}
+
+function processIsAlive(processId) {
+  try {
+    process.kill(processId, 0);
+    return true;
+  } catch (error) {
+    if (error?.code === "ESRCH") return false;
+    throw error;
+  }
+}
+
+test("bounded Windows commands reject and clean retained descendants", {
+  skip: process.platform !== "win32",
+}, async () => {
+  const root = createCanonicalTemporaryDirectory("yap-gate-retained-descendant-");
+  const commandLogDirectory = path.join(root, "command-logs");
+  mkdirSync(commandLogDirectory);
+  const readyPath = path.join(root, "grandchild-ready");
+  const escapedReadyPath = readyPath.replaceAll("'", "''");
+  const childEncodedCommand = Buffer.from(
+    "Start-Sleep -Seconds 30",
+    "utf16le",
+  ).toString("base64");
+  const commandSource = [
+    "$child = Start-Process",
+    "-FilePath (Get-Command pwsh.exe).Source",
+    `-ArgumentList '-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand','${childEncodedCommand}'`,
+    "-WindowStyle Hidden",
+    "-PassThru;",
+    `[IO.File]::WriteAllText('${escapedReadyPath}', [string] $child.Id);`,
+    "exit 0",
+  ].join(" ");
+  const encodedCommand = Buffer.from(commandSource, "utf16le").toString("base64");
+  const started = Date.now();
+  try {
+    await assert.rejects(
+      executeBoundedCommand({
+        command: [
+          "pwsh.exe",
+          "-NoLogo",
+          "-NoProfile",
+          "-NonInteractive",
+          "-EncodedCommand",
+          encodedCommand,
+        ],
+        cwd: repoRoot,
+        environment: process.env,
+        label: "Retained-descendant fixture",
+        logPath: path.join(commandLogDirectory, "retained-descendant.log"),
+        expectedLogDirectory: commandLogDirectory,
+        maximumLogBytes: 1_024,
+      }),
+      (error) => {
+        assert.equal(error.code, "INTEGRATED_GATE_COMMAND_RETAINED_DESCENDANT");
+        assert.equal(error.rootExitCode, 0);
+        assert.equal(
+          error.terminationEvidence.terminationReason,
+          "retained-descendant",
+        );
+        assert.equal(error.terminationEvidence.activeProcessZeroObserved, true);
+        assert.equal(error.terminationEvidence.activeProcessCount, 0);
+        assert.equal(error.terminationEvidence.cleanupProven, true);
+        return true;
+      },
+    );
+    assert.ok(
+      Date.now() - started < 8_000,
+      "retained descendants must be removed within the focused contract bound",
+    );
+    const grandchildProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
+    assert.equal(processIsAlive(grandchildProcessId), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("nested bounded Windows commands retain independent Job ownership", {
+  skip: process.platform !== "win32",
+}, async () => {
+  const root = createCanonicalTemporaryDirectory("yap-gate-nested-command-");
+  const outerLogDirectory = path.join(root, "outer-command-logs");
+  const innerLogDirectory = path.join(root, "inner-command-logs");
+  mkdirSync(outerLogDirectory);
+  mkdirSync(innerLogDirectory);
+  const readyPath = path.join(root, "inner-grandchild-ready");
+  const resultPath = path.join(root, "inner-result.json");
+  const maximumLogBytes = 1_024;
+  const grandchildSource = Buffer.from(
+    `require("node:fs").writeFileSync(${JSON.stringify(readyPath)},String(process.pid));`
+      + "setTimeout(process.exit,30000,0);",
+  ).toString("base64");
+  const overflowingSource = [
+    'const{spawn}=require("node:child_process");',
+    'const{existsSync}=require("node:fs");',
+    `const source=Buffer.from("${grandchildSource}","base64").toString("utf8");`,
+    'spawn(process.execPath,["-e",source],{stdio:"ignore"});',
+    `const ready=${JSON.stringify(readyPath)};`,
+    `const overflow=()=>process.stdout.write(Buffer.alloc(${maximumLogBytes + 1},120));`,
+    "const wait=()=>existsSync(ready)?overflow():setTimeout(wait,10);wait();",
+    "setTimeout(process.exit,30000,0);",
+  ].join("");
+  const boundedCommandModuleUrl = pathToFileURL(path.join(
+    repoRoot,
+    "verification",
+    "bounded-command-execution.mjs",
+  )).href;
+  const driverPath = path.join(root, "nested-command-driver.mjs");
+  writeFileSync(driverPath, [
+    `import { writeFileSync } from "node:fs";`,
+    `import { executeBoundedCommand } from ${JSON.stringify(boundedCommandModuleUrl)};`,
+    "try {",
+    "  await executeBoundedCommand({",
+    `    command: [process.execPath, "-e", ${JSON.stringify(overflowingSource)}],`,
+    `    cwd: ${JSON.stringify(repoRoot)},`,
+    "    environment: process.env,",
+    '    label: "Nested bounded command",',
+    `    logPath: ${JSON.stringify(path.join(innerLogDirectory, "inner.log"))},`,
+    `    expectedLogDirectory: ${JSON.stringify(innerLogDirectory)},`,
+    `    maximumLogBytes: ${maximumLogBytes},`,
+    "  });",
+    `  writeFileSync(${JSON.stringify(resultPath)}, JSON.stringify({ unexpectedSuccess: true }));`,
+    "  process.exitCode = 1;",
+    "} catch (error) {",
+    `  writeFileSync(${JSON.stringify(resultPath)}, JSON.stringify({`,
+    "    code: error.code,",
+    "    maximumBytes: error.maximumBytes,",
+    "    observedBytes: error.observedBytes,",
+    "    terminationEvidence: error.terminationEvidence,",
+    "  }));",
+    "  process.exitCode = error.code === "
+      + '"INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED" ? 0 : 1;',
+    "}",
+    "",
+  ].join("\n"));
+  try {
+    const outerResult = await executeBoundedCommand({
+      command: [process.execPath, driverPath],
+      cwd: repoRoot,
+      environment: process.env,
+      label: "Outer bounded command",
+      logPath: path.join(outerLogDirectory, "outer.log"),
+      expectedLogDirectory: outerLogDirectory,
+      maximumLogBytes: 64 * 1024,
+    });
+    assert.equal(outerResult.exitCode, 0);
+    assert.equal(outerResult.terminationEvidence.assignedBeforeResume, true);
+    assert.equal(outerResult.terminationEvidence.activeProcessZeroObserved, true);
+    assert.equal(outerResult.terminationEvidence.cleanupProven, true);
+
+    const innerResult = JSON.parse(readFileSync(resultPath, "utf8"));
+    assert.equal(
+      innerResult.code,
+      "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED",
+    );
+    assert.equal(innerResult.maximumBytes, maximumLogBytes);
+    assert.ok(innerResult.observedBytes > maximumLogBytes);
+    assert.equal(innerResult.terminationEvidence.assignedBeforeResume, true);
+    assert.equal(
+      innerResult.terminationEvidence.activeProcessZeroObserved,
+      true,
+    );
+    assert.equal(innerResult.terminationEvidence.activeProcessCount, 0);
+    assert.equal(innerResult.terminationEvidence.cleanupProven, true);
+    assert.notEqual(
+      innerResult.terminationEvidence.rootProcessId,
+      outerResult.terminationEvidence.rootProcessId,
+    );
+    const grandchildProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
+    assert.equal(processIsAlive(grandchildProcessId), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("bounded Windows commands preserve batch arguments, environment, bytes, and exit code", {
+  skip: process.platform !== "win32",
+}, async () => {
+  const root = createCanonicalTemporaryDirectory("yap-gate-batch-command-");
+  const commandLogDirectory = path.join(root, "command-logs");
+  mkdirSync(commandLogDirectory);
+  const commandPath = path.join(root, "command-fixture.cmd");
+  writeFileSync(
+    commandPath,
+    [
+      "@echo off",
+      'if not "%YAP_BOUNDED_COMMAND_FIXTURE%"=="environment value" exit /b 41',
+      'if not "%~1"=="argument value" exit /b 42',
+      "if defined PSExecutionPolicyPreference exit /b 43",
+      "if defined PSModulePath exit /b 44",
+      "<nul set /p =exact-output",
+      "exit /b 37",
+      "",
+    ].join("\r\n"),
+  );
+  try {
+    const environment = {
+      ...process.env,
+      YAP_BOUNDED_COMMAND_FIXTURE: "environment value",
+    };
+    delete environment.PSExecutionPolicyPreference;
+    delete environment.PSModulePath;
+    const result = await executeBoundedCommand({
+      command: [commandPath, "argument value"],
+      cwd: repoRoot,
+      environment,
+      label: "Batch command fixture",
+      logPath: path.join(commandLogDirectory, "batch-command.log"),
+      expectedLogDirectory: commandLogDirectory,
+      maximumLogBytes: 1_024,
+    });
+    assert.equal(result.exitCode, 37);
+    assert.equal(result.signal, null);
+    assert.equal(result.evidenceSha256, sha256("exact-output"));
+    assert.equal(
+      readFileSync(path.join(commandLogDirectory, "batch-command.log"), "utf8"),
+      "exact-output",
+    );
+    assert.equal(result.terminationEvidence.assignedBeforeResume, true);
+    assert.equal(result.terminationEvidence.terminationReason, "none");
+    assert.equal(result.terminationEvidence.terminateRequested, false);
+    assert.equal(result.terminationEvidence.activeProcessZeroObserved, true);
+    assert.equal(result.terminationEvidence.activeProcessCount, 0);
+    assert.equal(result.terminationEvidence.cleanupProven, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

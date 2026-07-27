@@ -1060,6 +1060,22 @@ test("integrated gate terminates a command whose output exceeds its bounded log"
         assert.equal(error.code, "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED");
         assert.equal(error.maximumBytes, maximumLogBytes);
         assert.ok(error.observedBytes > maximumLogBytes);
+        assert.deepEqual(error.terminationEvidence, {
+          schemaVersion: 1,
+          containment: "windows-job-object",
+          rootProcessId: error.terminationEvidence?.rootProcessId,
+          assignedBeforeResume: true,
+          terminationReason: "output-limit",
+          terminateRequested: true,
+          rootExited: true,
+          activeProcessCount: 0,
+          activeProcessZeroObserved: true,
+          cleanupProven: true,
+        });
+        assert.ok(
+          Number.isSafeInteger(error.terminationEvidence.rootProcessId)
+            && error.terminationEvidence.rootProcessId > 0,
+        );
         return true;
       },
     );
