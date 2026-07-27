@@ -9,8 +9,9 @@
 
 **Current closure state:** The original Phase 7 implementation and exactly-three
 review closure exist. Candidates
-`134ec08002aeb1deca83547d511528b282966731` and
-`7046d98d61fec90d4c639e92aff09ff8f6a2083a` are consumed. The first candidate's
+`134ec08002aeb1deca83547d511528b282966731`,
+`7046d98d61fec90d4c639e92aff09ff8f6a2083a`, and
+`dae316ceab60fe395a1899290ca184148f0e9b27` are consumed. The first candidate's
 fresh private children validated, but its one complete matrix exposed a
 post-hoc Windows `taskkill /T` timeout in the release-contract command limiter.
 The replacement uses suspended creation, nested Job assignment, kill-on-close,
@@ -21,7 +22,12 @@ Follow-up runtime review then proved that dynamically created script blocks do
 not enforce `#requires`. The corrected encoded-command boundary checks both
 Core edition and version 7.4 before creating the loader script block. Thirteen
 focused Windows/installer contracts and the complete affected release-contract
-cell pass 81/81, and same-three closure found no P0–P2 issue. A new exact-head
+cell pass 81/81, and same-three closure found no P0–P2 issue. The third
+candidate passed Windows, mock-OIDC, target-client, and GB10 qualification, but
+the private connected-server readiness poll called `String.Contains` on its
+initially empty redirected stdout file and failed before WDIO. Graceful remote
+cleanup and independent zero-owner checks passed. That infrastructure failure
+consumes the candidate. A new exact-head
 admission, fresh private evidence, the one
 complete replacement matrix, first-attempt hosted closure, the focused PR, and
 merge remain open.
@@ -251,6 +257,11 @@ proved the bounded Linux loopback proxy against the locked provider on an
 internal bridge, but it did not produce an exact-head owner-flow receipt.
 These are focused development results, not the reserved complete Phase 7
 matrix or hosted first-attempt evidence.
+
+The next exact head must also prequalify the private connected-server
+controller against absent and zero-length redirected stdout files. Both states
+must remain ordinary not-ready observations rather than `$null` method calls,
+and that no-server preflight must finish before admission.
 
 ## IT, security, privacy, and deployment handoffs
 

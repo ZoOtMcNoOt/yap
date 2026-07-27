@@ -6,8 +6,9 @@ historical Phase 6 gate and the earlier whole-product checkpoint, so neither
 their admissions nor their pass receipts can be relabeled or reused.
 
 **Current status:** candidates
-`134ec08002aeb1deca83547d511528b282966731` and
-`7046d98d61fec90d4c639e92aff09ff8f6a2083a` are consumed. The first candidate's
+`134ec08002aeb1deca83547d511528b282966731`,
+`7046d98d61fec90d4c639e92aff09ff8f6a2083a`, and
+`dae316ceab60fe395a1899290ca184148f0e9b27` are consumed. The first candidate's
 fresh private children validated, but its one complete matrix exposed a Windows
 command-tree cleanup race in `frontend.release-contracts`: post-hoc
 `taskkill /T` exceeded its own bound and masked the typed output-limit failure.
@@ -21,7 +22,13 @@ that dynamic `ScriptBlock::Create` loading does not enforce `#requires`. The
 corrected boundary checks Core edition and version 7.4 before creating the
 loader script block. Thirteen focused Windows/installer contracts and the
 complete release-contract cell now pass 81/81, and same-three closure found no
-P0–P2 issue. A new exact head and
+P0–P2 issue. The third candidate passed the Windows, mock-OIDC, target-client,
+and GB10 qualifications with exact teardown, but its admitted connected-server
+controller called `String.Contains` on the initially empty redirected stdout
+file and failed before WDIO. The remote wrapper still emitted its one cleanup
+marker, and independent inspection proved zero retained local or remote owners.
+That private-controller failure consumes the candidate; none of its passing
+children may be relabeled. A new exact head and
 admission, fresh private evidence, the one complete replacement matrix,
 first-attempt hosted closure, the focused PR, and merge remain open.
 
@@ -122,6 +129,20 @@ reported by that helper rather than restating unobserved input.
 Resolving `uv` only from an interactive shell is not evidence. Verify the
 private wrapper's exact hash, the configured `uv` identity, the clean release,
 and absent run roots and owners before reservation.
+
+Also qualify the private Windows readiness controller before reservation. Its
+poll must treat both an absent redirected stdout file and an existing
+zero-length file as an empty string, continue polling, and never call a string
+method on `$null`. Parse the complete controller under PowerShell 7.4 Core and
+exercise those two no-server states without creating an admitted destination.
+The controller must still launch the real admitted SSH owner with
+`-NoNewWindow`, stop the exact remote wrapper through a separate bounded
+control connection with live wall-clock and output limits, wait for the
+original SSH process to exit naturally, and create teardown evidence only after
+independent zero-owner checks. The remote wrapper must place the Yap server in
+its own token-owned process group and use the checked bounded TERM/KILL group
+helper; a plain unbounded `kill` followed by `wait` is not sufficient teardown
+proof.
 
 Start from the exact clean reviewed candidate. Push that exact candidate branch
 without opening the pull request so GitHub can address the commit. Use a
