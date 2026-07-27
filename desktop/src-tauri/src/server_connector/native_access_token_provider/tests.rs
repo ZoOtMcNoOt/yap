@@ -10,7 +10,7 @@ use std::{
 };
 use tungstenite::{
     accept_hdr,
-    handshake::server::{Request, Response},
+    handshake::server::{Callback, ErrorResponse, Request, Response},
     http::{
         header::{AUTHORIZATION, SEC_WEBSOCKET_PROTOCOL},
         HeaderValue,
@@ -30,6 +30,29 @@ struct FakeGrant {
     access_token: String,
     expires_at_unix_seconds: u64,
     account_id: String,
+}
+
+struct ExpectedAuthorizationHandshake {
+    authorization: &'static str,
+    subprotocol: &'static str,
+}
+
+impl Callback for ExpectedAuthorizationHandshake {
+    fn on_request(
+        self,
+        request: &Request,
+        mut response: Response,
+    ) -> Result<Response, ErrorResponse> {
+        assert_eq!(
+            request.headers().get(AUTHORIZATION).unwrap(),
+            self.authorization
+        );
+        response.headers_mut().insert(
+            SEC_WEBSOCKET_PROTOCOL,
+            HeaderValue::from_static(self.subprotocol),
+        );
+        Ok(response)
+    }
 }
 
 impl FakeGrant {
@@ -668,17 +691,13 @@ fn silent_account_switch_closes_an_active_live_session_without_dispatching_accou
         stream
             .set_write_timeout(Some(Duration::from_secs(5)))
             .unwrap();
-        let mut websocket = accept_hdr(stream, |request: &Request, mut response: Response| {
-            assert_eq!(
-                request.headers().get(AUTHORIZATION).unwrap(),
-                "Bearer account-a-token"
-            );
-            response.headers_mut().insert(
-                SEC_WEBSOCKET_PROTOCOL,
-                HeaderValue::from_static("yap.live.v1"),
-            );
-            Ok(response)
-        })
+        let mut websocket = accept_hdr(
+            stream,
+            ExpectedAuthorizationHandshake {
+                authorization: "Bearer account-a-token",
+                subprotocol: "yap.live.v1",
+            },
+        )
         .unwrap();
         loop {
             match websocket.read() {

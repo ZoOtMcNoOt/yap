@@ -8,7 +8,7 @@ use std::{
 
 use tungstenite::{
     accept_hdr,
-    handshake::server::{Request, Response},
+    handshake::server::{Callback, ErrorResponse, NoCallback, Request, Response},
     http::{
         header::{AUTHORIZATION, SEC_WEBSOCKET_PROTOCOL},
         HeaderValue,
@@ -30,6 +30,41 @@ struct HandshakeObservation {
     target: String,
     authorization: Option<String>,
     protocols: Option<String>,
+}
+
+struct ObservingHandshake {
+    observed: std_mpsc::Sender<HandshakeObservation>,
+}
+
+impl Callback for ObservingHandshake {
+    fn on_request(
+        self,
+        request: &Request,
+        mut response: Response,
+    ) -> Result<Response, ErrorResponse> {
+        let authorization = request
+            .headers()
+            .get(AUTHORIZATION)
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
+        let protocols = request
+            .headers()
+            .get(SEC_WEBSOCKET_PROTOCOL)
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
+        self.observed
+            .send(HandshakeObservation {
+                target: request.uri().to_string(),
+                authorization,
+                protocols,
+            })
+            .unwrap();
+        response.headers_mut().insert(
+            SEC_WEBSOCKET_PROTOCOL,
+            HeaderValue::from_static(LIVE_SUBPROTOCOL),
+        );
+        Ok(response)
+    }
 }
 
 struct FixedTokenSource;
@@ -104,31 +139,7 @@ fn spawn_websocket_server(
         let (stream, _) = listener.accept().unwrap();
         stream.set_read_timeout(Some(TEST_TIMEOUT)).unwrap();
         stream.set_write_timeout(Some(TEST_TIMEOUT)).unwrap();
-        let websocket = accept_hdr(stream, move |request: &Request, mut response: Response| {
-            let authorization = request
-                .headers()
-                .get(AUTHORIZATION)
-                .and_then(|value| value.to_str().ok())
-                .map(str::to_owned);
-            let protocols = request
-                .headers()
-                .get(SEC_WEBSOCKET_PROTOCOL)
-                .and_then(|value| value.to_str().ok())
-                .map(str::to_owned);
-            observed
-                .send(HandshakeObservation {
-                    target: request.uri().to_string(),
-                    authorization,
-                    protocols,
-                })
-                .unwrap();
-            response.headers_mut().insert(
-                SEC_WEBSOCKET_PROTOCOL,
-                HeaderValue::from_static(LIVE_SUBPROTOCOL),
-            );
-            Ok(response)
-        })
-        .unwrap();
+        let websocket = accept_hdr(stream, ObservingHandshake { observed }).unwrap();
         handler(websocket);
     });
     (format!("http://{address}"), observations, server)
@@ -318,9 +329,7 @@ fn missing_required_subprotocol_fails_closed() {
     let server = thread::spawn(move || {
         let (stream, _) = listener.accept().unwrap();
         stream.set_read_timeout(Some(TEST_TIMEOUT)).unwrap();
-        let _ = accept_hdr(stream, |_request: &Request, response: Response| {
-            Ok(response)
-        });
+        let _ = accept_hdr(stream, NoCallback);
     });
     let authenticated = dispatcher(Arc::new(FixedTokenSource), AuthenticatedSession::new());
 
