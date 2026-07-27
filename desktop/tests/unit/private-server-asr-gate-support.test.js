@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   isValidInFlightRemotePipeline,
   matchCompletedRemoteHistoryEntry,
+  matchesEnabledLoopbackServerSettings,
   matchesVerifiedHistoryDialog,
   resolvePrivateServerAsrGateTimeout,
   sameWindowsPath,
@@ -15,6 +16,34 @@ describe("private-server ASR gate support", () => {
 
   it("treats Windows case and extended-length prefixes as the same path", () => {
     expect(sameWindowsPath("C:\\Private\\Evidence", "\\\\?\\c:\\private\\evidence\\")).toBe(true);
+  });
+
+  it("requires the current enabled loopback server-settings contract", () => {
+    const origin = "http://127.0.0.1:18765";
+    const settings = {
+      schemaVersion: 2,
+      enabled: true,
+      baseUrl: origin,
+      authentication: null,
+    };
+
+    expect(matchesEnabledLoopbackServerSettings(settings, origin)).toBe(true);
+    expect(matchesEnabledLoopbackServerSettings(
+      { ...settings, schemaVersion: 1 },
+      origin,
+    )).toBe(false);
+    expect(matchesEnabledLoopbackServerSettings(
+      { ...settings, authentication: { mode: "entra" } },
+      origin,
+    )).toBe(false);
+    expect(matchesEnabledLoopbackServerSettings(
+      { ...settings, unexpected: true },
+      origin,
+    )).toBe(false);
+    expect(matchesEnabledLoopbackServerSettings(
+      settings,
+      "http://127.0.0.1:18766",
+    )).toBe(false);
   });
 
   it("accepts every legitimate in-flight server pipeline projection", () => {

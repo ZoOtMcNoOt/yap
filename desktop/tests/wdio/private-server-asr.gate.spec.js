@@ -12,6 +12,7 @@ import path from "node:path";
 import {
   isValidInFlightRemotePipeline,
   matchCompletedRemoteHistoryEntry,
+  matchesEnabledLoopbackServerSettings,
   matchesVerifiedHistoryDialog,
 } from "./private-server-asr-gate-support.js";
 
@@ -422,7 +423,7 @@ describe("checked-head private-server ASR gate", () => {
     );
 
     const settings = await invoke("server_settings");
-    expect(settings).toEqual({ schemaVersion: 1, enabled: true, baseUrl: expectedOrigin });
+    expect(matchesEnabledLoopbackServerSettings(settings, expectedOrigin)).toBe(true);
     await invoke("refresh_server_connection");
     const connection = await waitForConnectionState("ready", "become ready");
     expect(connection.capabilities).toEqual({

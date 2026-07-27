@@ -71,6 +71,16 @@ export function matchesVerifiedHistoryDialog(dialogs, name, expectedTranscript) 
   );
 }
 
+export function matchesEnabledLoopbackServerSettings(settings, expectedOrigin) {
+  return settings
+    && typeof settings === "object"
+    && Object.keys(settings).length === 4
+    && settings.schemaVersion === 2
+    && settings.enabled === true
+    && settings.baseUrl === expectedOrigin
+    && settings.authentication === null;
+}
+
 export function resolvePrivateServerAsrGateTimeout(value) {
   const timeoutMs = Number(value ?? defaultPrivateServerAsrGateTimeoutMs);
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 60_000 || timeoutMs > 7_200_000) {
