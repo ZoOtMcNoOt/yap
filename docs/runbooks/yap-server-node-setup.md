@@ -459,7 +459,12 @@ advertise `languagePreflight`, and the client must not advance as though a
 language preflight had succeeded. The launcher uses the server's locked Python
 3.12 `uv` project with network access disabled. Prepare that environment and
 its cache before launch; a missing locked dependency fails closed instead of
-falling back to ambient system packages.
+falling back to ambient system packages. Because this is the explicit
+loopback-only development launcher, it also selects
+`YAP_SERVER_CONFIGURATION=development` and
+`YAP_AUTH_MODE=development_loopback` itself. It does not inherit an ambient
+release or Entra mode, and the fixed development principal cannot be selected
+by a client or used on a non-loopback application bind.
 
 Only a frozen qualification that intentionally exercises the provider-neutral
 Yap job boundary should use the complete invocation below. Create a matching

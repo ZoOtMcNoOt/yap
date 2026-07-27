@@ -164,6 +164,8 @@ fi
 exec env \
   PYTHONNOUSERSITE=1 \
   PYTHONPATH="$repo_root/server/src" \
+  YAP_SERVER_CONFIGURATION=development \
+  YAP_AUTH_MODE=development_loopback \
   YAP_SERVER_HOST=127.0.0.1 \
   YAP_SERVER_PORT=18765 \
   YAP_BATCH_ASR_ENABLED=1 \

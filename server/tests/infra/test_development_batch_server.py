@@ -40,6 +40,8 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
         self.assertNotIn("python3.12 -c", script)
         self.assertNotIn(" run \\", script)
         self.assertIn("exec env", script)
+        self.assertIn("YAP_SERVER_CONFIGURATION=development", script)
+        self.assertIn("YAP_AUTH_MODE=development_loopback", script)
         self.assertIn("YAP_SERVER_HOST=127.0.0.1", script)
         self.assertIn("YAP_SERVER_PORT=18765", script)
         self.assertIn("YAP_BATCH_ASR_ENABLED=1", script)
@@ -199,7 +201,7 @@ if [ "$1" = "-c" ]; then
 fi
 printf '%s\\n' "$@" >"$YAP_TEST_SERVER_CAPTURE"
 printf '%s\\n' \
-  "${UV_NO_SYNC-unset}|${UV_PROJECT_ENVIRONMENT-unset}|${UV_PROJECT-unset}|${UV_WORKING_DIR-unset}|${UV_NO_PROJECT-unset}|${UV_PYTHON-unset}|${VIRTUAL_ENV-unset}|${PYTHONHOME-unset}|${PYTHONPLATLIBDIR-unset}|${PYTHONUSERBASE-unset}|${PYTHONNOUSERSITE-unset}|${PYTHONPATH-unset}" \
+  "${UV_NO_SYNC-unset}|${UV_PROJECT_ENVIRONMENT-unset}|${UV_PROJECT-unset}|${UV_WORKING_DIR-unset}|${UV_NO_PROJECT-unset}|${UV_PYTHON-unset}|${VIRTUAL_ENV-unset}|${PYTHONHOME-unset}|${PYTHONPLATLIBDIR-unset}|${PYTHONUSERBASE-unset}|${PYTHONNOUSERSITE-unset}|${PYTHONPATH-unset}|${YAP_SERVER_CONFIGURATION-unset}|${YAP_AUTH_MODE-unset}" \
   >"$YAP_TEST_SERVER_ENVIRONMENT_CAPTURE"
 exit 23
 """,
@@ -234,6 +236,8 @@ exit 23
                     "PYTHONPLATLIBDIR": "wrong-platlib",
                     "PYTHONPATH": str(root / "wrong-python-path"),
                     "PYTHONUSERBASE": str(root / "wrong-user-base"),
+                    "YAP_AUTH_MODE": "entra",
+                    "YAP_SERVER_CONFIGURATION": "release",
                 }
             )
 
@@ -271,7 +275,10 @@ exit 23
             )
             self.assertEqual(
                 server_environment_capture.read_text(encoding="utf-8").strip(),
-                f"unset|unset|unset|unset|unset|unset|unset|unset|unset|unset|1|{server / 'src'}",
+                (
+                    "unset|unset|unset|unset|unset|unset|unset|unset|unset|unset|1|"
+                    f"{server / 'src'}|development|development_loopback"
+                ),
             )
 
 
