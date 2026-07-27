@@ -7,8 +7,9 @@ their admissions nor their pass receipts can be relabeled or reused.
 
 **Current status:** candidates
 `134ec08002aeb1deca83547d511528b282966731`,
-`7046d98d61fec90d4c639e92aff09ff8f6a2083a`, and
-`dae316ceab60fe395a1899290ca184148f0e9b27` are consumed. The first candidate's
+`7046d98d61fec90d4c639e92aff09ff8f6a2083a`,
+`dae316ceab60fe395a1899290ca184148f0e9b27`, and
+`e6fcabd0f77a604092997839e45e6cada09304f9` are consumed. The first candidate's
 fresh private children validated, but its one complete matrix exposed a Windows
 command-tree cleanup race in `frontend.release-contracts`: post-hoc
 `taskkill /T` exceeded its own bound and masked the typed output-limit failure.
@@ -28,7 +29,12 @@ controller called `String.Contains` on the initially empty redirected stdout
 file and failed before WDIO. The remote wrapper still emitted its one cleanup
 marker, and independent inspection proved zero retained local or remote owners.
 That private-controller failure consumes the candidate; none of its passing
-children may be relabeled. A new exact head and
+children may be relabeled. The fourth candidate passed fresh Windows,
+mock-OIDC, target-client, GB10, and connected WDIO evidence. Its remote wrapper
+emitted cleanup PASS and both independent zero-owner checks passed, but the
+owned SSH process returned `1` rather than the required `143`. Because that
+wrapper marker did not bind its TERM trigger and helper results, the teardown
+status remained ambiguous and consumes the candidate. A new exact head and
 admission, fresh private evidence, the one complete replacement matrix,
 first-attempt hosted closure, the focused PR, and merge remain open.
 
@@ -143,6 +149,19 @@ independent zero-owner checks. The remote wrapper must place the Yap server in
 its own token-owned process group and use the checked bounded TERM/KILL group
 helper; a plain unbounded `kill` followed by `wait` is not sufficient teardown
 proof.
+
+Cleanup PASS must additionally mean that the wrapper entered cleanup through
+the expected TERM status, every checked child/group helper succeeded, and the
+final container, listener, and network inventories are empty. A helper or
+unexpected-trigger failure must emit FAIL and exit nonzero even if later
+inspection finds no retained owner. Every `docker`, `ss`, Git, and process
+inventory command must itself succeed before its captured output can prove
+absence; command failure is not an empty inventory, and `pgrep` not-found must
+be distinguished from an inventory error. Prequalify one exact connected
+request and bounded stop before reservation. Windows OpenSSH exit `1` may be
+normalized only when the strengthened wrapper emitted exactly one PASS marker
+with an empty cleanup-error stream and the separate local-forward and remote
+zero-owner checks pass; otherwise it is a consumed failure.
 
 Start from the exact clean reviewed candidate. Push that exact candidate branch
 without opening the pull request so GitHub can address the commit. Use a

@@ -10,8 +10,9 @@
 **Current closure state:** The original Phase 7 implementation and exactly-three
 review closure exist. Candidates
 `134ec08002aeb1deca83547d511528b282966731`,
-`7046d98d61fec90d4c639e92aff09ff8f6a2083a`, and
-`dae316ceab60fe395a1899290ca184148f0e9b27` are consumed. The first candidate's
+`7046d98d61fec90d4c639e92aff09ff8f6a2083a`,
+`dae316ceab60fe395a1899290ca184148f0e9b27`, and
+`e6fcabd0f77a604092997839e45e6cada09304f9` are consumed. The first candidate's
 fresh private children validated, but its one complete matrix exposed a
 post-hoc Windows `taskkill /T` timeout in the release-contract command limiter.
 The replacement uses suspended creation, nested Job assignment, kill-on-close,
@@ -27,7 +28,13 @@ candidate passed Windows, mock-OIDC, target-client, and GB10 qualification, but
 the private connected-server readiness poll called `String.Contains` on its
 initially empty redirected stdout file and failed before WDIO. Graceful remote
 cleanup and independent zero-owner checks passed. That infrastructure failure
-consumes the candidate. A new exact-head
+consumes the candidate. The fourth candidate passed Windows, mock-OIDC,
+target-client, GB10, and connected WDIO. Its wrapper emitted cleanup PASS and
+independent local and remote zero-owner checks passed, but the directly owned
+SSH process returned `1` rather than the controller's required `143`. The
+wrapper's old PASS marker did not prove whether its TERM trigger remained
+authoritative or one cleanup helper had changed the final status, so the
+candidate is consumed. A new exact-head
 admission, fresh private evidence, the one
 complete replacement matrix, first-attempt hosted closure, the focused PR, and
 merge remain open.
@@ -262,6 +269,15 @@ The next exact head must also prequalify the private connected-server
 controller against absent and zero-length redirected stdout files. Both states
 must remain ordinary not-ready observations rather than `$null` method calls,
 and that no-server preflight must finish before admission.
+
+The remote wrapper must emit cleanup PASS only when its trigger status is the
+expected TERM result, every checked process-group helper succeeds, and final
+owner inspection is empty. Before admission, exercise one exact connected
+request followed by the bounded stop control and independently verify the
+wrapper marker, Windows SSH exit interpretation, and zero local and remote
+owners. Exit `1` may be normalized only when the strengthened wrapper emitted
+exactly one PASS marker, wrote no cleanup error, and the independent teardown
+checks pass.
 
 ## IT, security, privacy, and deployment handoffs
 
