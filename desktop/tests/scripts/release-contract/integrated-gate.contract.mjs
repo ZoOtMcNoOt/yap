@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   existsSync,
@@ -802,6 +803,39 @@ test("portable Python gate rejects project and uv.lock drift", () => {
   );
   assert.match(source, /'--offline'\s*'--locked'\s*'--exact'/);
   assert.doesNotMatch(source, /'--frozen'/);
+});
+
+test("identity gate prequalifies the non-login connected uv executor", () => {
+  const runbook = readFileSync(
+    path.join(repoRoot, "docs", "runbooks", "integrated-identity-access-gate.md"),
+    "utf8",
+  );
+  assert.match(runbook, /non-login SSH shape/);
+  assert.match(runbook, /absolute `YAP_UV_EXECUTABLE` plus its byte length, SHA-256/);
+  assert.match(runbook, /checked-uv-executor\.py` as `YAP_UV_BINARY`/);
+  assert.match(runbook, /seals that exact\s+in-memory image\s+against mutation/);
+
+  const helperRelativePath = "infra/yap-server-node/checked-uv-executor.py";
+  const helperPath = path.join(repoRoot, helperRelativePath);
+  const helper = readFileSync(
+    helperPath,
+    "utf8",
+  );
+  assert.match(helper, /YAP_UV_EXECUTABLE_SHA256/);
+  assert.match(helper, /YAP_UV_EXECUTABLE_SIZE_BYTES/);
+  assert.match(helper, /MAX_EXECUTABLE_BYTES/);
+  assert.match(helper, /source_stat\.st_size != expected_size_bytes/);
+  assert.match(helper, /remaining = expected_size_bytes/);
+  assert.match(helper, /os\.O_NOFOLLOW/);
+  assert.match(helper, /os\.memfd_create/);
+  assert.match(helper, /fcntl\.F_ADD_SEALS/);
+  assert.match(helper, /os\.execve\(memfd/);
+  const indexEntry = execFileSync(
+    "git",
+    ["-C", repoRoot, "ls-files", "--stage", "--", helperRelativePath],
+    { encoding: "utf8" },
+  ).trim();
+  assert.match(indexEntry, /^100755 [0-9a-f]{40} 0\t/);
 });
 
 test("gate admission pins GitHub.com and the canonical repository", () => {

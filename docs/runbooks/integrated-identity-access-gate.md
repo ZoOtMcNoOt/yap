@@ -67,6 +67,20 @@ privately on that executor; it is gate tooling, not a Yap runtime dependency.
 Do not discover a missing executor dependency after admission and then retry
 the same checked head.
 
+Qualify the connected-server executor from the same non-login SSH shape used
+by the admitted controller. The private wrapper must receive an explicit
+absolute `YAP_UV_EXECUTABLE` plus its byte length, SHA-256, and exact version
+output. The wrapper forwards the checked-head
+`infra/yap-server-node/checked-uv-executor.py` as `YAP_UV_BINARY`. Every actual
+`uv` invocation rejects an unexpected or over-limit size, copies and hashes the
+configured file once within that frozen bound, seals that exact in-memory image
+against mutation, verifies its version from the sealed image, and executes the
+same image by file descriptor. The wrapper records the observed size and digest
+reported by that helper rather than restating unobserved input.
+Resolving `uv` only from an interactive shell is not evidence. Verify the
+private wrapper's exact hash, the configured `uv` identity, the clean release,
+and absent run roots and owners before reservation.
+
 Start from the exact clean reviewed candidate. Push that exact candidate branch
 without opening the pull request so GitHub can address the commit. Use a
 dedicated `GH_TOKEN` limited to commit-status read/write for admission. Prepare
