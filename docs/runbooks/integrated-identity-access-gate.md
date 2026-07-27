@@ -50,6 +50,23 @@ independent receipt validation.
 
 ## Sole candidate attempt
 
+Select and prove the mock-OIDC executor **before** reserving the candidate.
+`test-mock-oidc-owner-flow.ps1` requires PowerShell 7.4+ Core, Docker with a
+reachable daemon and pinned-GHCR-image pull access, Python 3.12, and an `uv`
+cache that can complete the script's offline locked exact sync. Resolving the
+command names on the admission workstation is not evidence that another
+executor has them. Before reservation, verify the selected checkout is exact
+and clean, then run the complete harness in no-receipt mode by omitting both
+`CheckedHead` and `ReceiptOutput`. Require its pass marker and verified
+teardown. No transferable receipt may be produced during pre-admission.
+
+If the workstation does not have Docker, use a Docker-capable exact-clean
+Linux executor and copy only its bounded receipt to the new path frozen in the
+private plan. A hash-verified portable PowerShell archive may be prepared
+privately on that executor; it is gate tooling, not a Yap runtime dependency.
+Do not discover a missing executor dependency after admission and then retry
+the same checked head.
+
 Start from the exact clean reviewed candidate. Push that exact candidate branch
 without opening the pull request so GitHub can address the commit. Use a
 dedicated `GH_TOKEN` limited to commit-status read/write for admission. Prepare
