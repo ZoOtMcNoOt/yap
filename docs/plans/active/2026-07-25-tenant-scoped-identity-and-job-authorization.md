@@ -7,9 +7,10 @@
 **Base:** Reviewed post-Phase-6 checkpoint merge
 `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
-**Current closure state:** Focused implementation evidence exists, but no
-Phase 7 exact head is frozen. Final three-agent review, the one-time complete
-matrix, first-attempt hosted closure, the focused PR, and merge remain open.
+**Current closure state:** Focused implementation evidence and the
+exactly-three antagonistic review plus same-three closure exist. A fresh
+exact-head admission, the one-time complete matrix, first-attempt hosted
+closure, the focused PR, and merge remain open.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -214,12 +215,13 @@ will consume.
 The complete matrix is reserved for the frozen candidate. Focused tests may run
 repeatedly while implementation is changing.
 
-The current working tree is not an accepted-review or frozen candidate head.
-The mock-OIDC static harness suite is 5/5 green, and the focused workflow plus
-integrated-gate contract set is 38/38 green. The actual Docker-backed
-mock-provider flow has not run locally; the hosted `mock-oidc` job is its
-executable closure. These are focused development results, not the reserved
-complete Phase 7 matrix or hosted first-attempt evidence.
+The focused implementation and exactly-three review closure are complete. The
+mock-OIDC harness suite is 8/8 green, and the focused workflow plus
+integrated-gate contract set is 38/38 green. A Docker 29 ARM64 diagnostic
+proved the bounded Linux loopback proxy against the locked provider on an
+internal bridge, but it did not produce an exact-head owner-flow receipt.
+These are focused development results, not the reserved complete Phase 7
+matrix or hosted first-attempt evidence.
 
 ## IT, security, privacy, and deployment handoffs
 

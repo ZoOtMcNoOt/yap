@@ -5,10 +5,10 @@ behavior identity is `integrated-identity-access`. It is separate from the
 historical Phase 6 gate and the earlier whole-product checkpoint, so neither
 their admissions nor their pass receipts can be relabeled or reused.
 
-**Current status:** no Phase 7 exact head is frozen or admitted. Focused
-development checks are green, but final three-agent review, the complete
-candidate matrix, first-attempt hosted closure, the focused PR, and merge
-remain open.
+**Current status:** focused development checks and the exactly-three
+antagonistic review plus same-three closure are green. A fresh exact-head
+admission, the complete candidate matrix, first-attempt hosted closure, the
+focused PR, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
@@ -99,11 +99,15 @@ network, child-process, loopback-port, cancellation-handler, and state-directory
 teardown is verified. The receipt contains only the checked head, locked image
 digest, validator/owner-flow source hashes, and public-safe teardown facts; it
 contains no token, log, container ID, or private path. The current working tree
-has 7/7 focused harness tests, including two executable fake-Docker lifecycle
-regressions, and 38/38 focused workflow/integrated-gate contracts. Its actual
-Docker-backed flow was not run locally; the hosted
-`mock-oidc` job is the current executable Docker closure, and its first-attempt
-result must be collected on the final reviewed head.
+has 8/8 focused harness tests, including executable fake-Docker lifecycle,
+loopback forwarding, overload-rejection, exact-readiness, and port-release
+regressions, plus 38/38 focused workflow/integrated-gate contracts. On Linux,
+the provider remains on an egress-blocked internal bridge and a bounded Python
+3.12 child exposes only numeric IPv4 loopback; Windows and macOS retain
+Docker's loopback-only publish path. The Docker 29 ARM64 diagnostic proves the
+Linux internal-bridge topology, but it is not an exact-head owner-flow receipt.
+That admitted receipt and the hosted `mock-oidc` first-attempt result must still
+be collected on the final reviewed head.
 
 Populate the admitted destinations through the approved target-client, GB10,
 connected-server, mock-OIDC, and teardown controllers. Then invoke completion

@@ -301,8 +301,9 @@ and real-provider evidence.
 - [x] Pinned mock-OIDC harness and focused static/contract coverage
 - [x] Protected readiness probe, tenant-specific desktop authority, and
       quarantine of ambiguous pre-repair authenticated bindings
-- [ ] Final three-agent review, exact-head full matrix, first-attempt hosted
-      closure, focused PR, and reviewed-green merge
+- [x] Exactly-three antagonistic review and same-three read-only closure
+- [ ] Exact-head full matrix, first-attempt hosted closure, focused PR, and
+      reviewed-green merge
 
 The IT-approved production native provider, protected cache, packaging, and
 real-provider conformance are enterprise handoffs rather than
@@ -310,13 +311,14 @@ developer-controlled Phase 7 completion criteria. A production same-origin
 HTTPS/WSS edge or approved live-endpoint discovery contract remains a later
 transport/deployment decision, principally Phase 10.
 
-The current working tree has focused-green mock evidence: 7/7 focused harness
-tests, including two executable fake-Docker lifecycle regressions, and 38/38
-focused workflow/integrated-gate contract tests. The actual
-Docker-backed mock-provider flow is wired as the hosted `mock-oidc` job and was
-not run on this local host. No Phase 7 exact head is frozen, and the final
-three-agent review, complete matrix, hosted first-attempt evidence, PR, and
-merge remain open. These checks do not prove a real enterprise tenant login,
+The current working tree has focused-green mock evidence: 8/8 focused harness
+tests, including fake-Docker lifecycle plus bounded loopback forwarding,
+overload, exact-readiness, and teardown regressions, and 38/38 focused
+workflow/integrated-gate contract tests. A Docker 29 ARM64 diagnostic proves
+the Linux internal-bridge proxy topology while preserving the internal
+network; it is not an exact-head owner-flow receipt. The complete matrix,
+admitted mock receipt, hosted first-attempt evidence, PR, and merge remain
+open. These checks do not prove a real enterprise tenant login,
 Conditional Access, MFA, WAM policy conformance, legal distribution review, or
 production storage and deployment approval.
 

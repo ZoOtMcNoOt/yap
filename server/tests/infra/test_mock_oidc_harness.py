@@ -3,10 +3,16 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import queue
 import re
 import shutil
+import socket
+import socketserver
 import subprocess
+import sys
 import tempfile
+import threading
+import time
 import unittest
 
 
@@ -14,6 +20,7 @@ REPOSITORY = Path(__file__).resolve().parents[3]
 LOCK = REPOSITORY / "verification" / "mock-oidc-provider.lock.json"
 HARNESS = REPOSITORY / "verification" / "test-mock-oidc-owner-flow.ps1"
 FLOW = REPOSITORY / "verification" / "mock-oidc-owner-flow.py"
+LOOPBACK_PROXY = REPOSITORY / "verification" / "mock-oidc-loopback-proxy.py"
 EXACT_RUNTIME = REPOSITORY / "verification" / "exact-python-runtime.psm1"
 DOCKER_OWNER = REPOSITORY / "verification" / "mock-oidc-docker-owner.psm1"
 FAKE_DOCKER = Path(__file__).with_name("fake_mock_oidc_docker.ps1")
@@ -120,11 +127,19 @@ class MockOidcHarnessTests(unittest.TestCase):
             "mock-oidc-docker-owner.psm1",
             "$NetworkCreateAttempted = $true",
             "$ContainerRunAttempted = $true",
+            "$RunningOnLinux = [OperatingSystem]::IsLinux()",
             "'network',\n            'create',",
+            "            '--internal',",
             '"127.0.0.1:${ProviderPort}:8080"',
-            "'--pull',\n            'never'",
+            "mock-oidc-loopback-proxy.py",
+            "synthetic OIDC network identity inspection",
+            "synthetic OIDC internal network inspection",
+            "'{{.Name}}|{{.Internal}}'",
+            "MOCK_OIDC_LOOPBACK_PROXY=READY",
+            "$ProxyStartInfo.ArgumentList.Add",
+            "'--pull'\n        'never'",
             "--read-only",
-            "'--cap-drop',\n            'ALL'",
+            "'--cap-drop'\n        'ALL'",
             "no-new-privileges=true",
             '"$ProviderBaseUrl/isalive"',
             "[Console]::add_CancelKeyPress",
@@ -182,6 +197,16 @@ class MockOidcHarnessTests(unittest.TestCase):
         self.assertNotIn("cmd.exe", owner)
         self.assertNotIn("/bin/sh", owner)
 
+        proxy = LOOPBACK_PROXY.read_text(encoding="utf-8")
+        self.assertIn('host="127.0.0.1"', proxy)
+        self.assertIn("_MAX_CONNECTIONS = 32", proxy)
+        self.assertIn("_CONNECTION_TIMEOUT_SECONDS = 10", proxy)
+        self.assertIn("if connections.locked():", proxy)
+        self.assertIn("asyncio.Semaphore(_MAX_CONNECTIONS)", proxy)
+        self.assertIn("backlog=_MAX_CONNECTIONS", proxy)
+        self.assertNotIn("0.0.0.0", proxy)
+        self.assertNotIn("$LoopbackProxy = Start-Process", script)
+
         self.assertIn("[OperatingSystem]::IsWindows()", runtime)
         self.assertNotIn("Get-Command uv.exe", runtime)
         self.assertNotIn("Get-Command py.exe", runtime)
@@ -189,6 +214,112 @@ class MockOidcHarnessTests(unittest.TestCase):
         self.assertNotIn(".venv\\Scripts\\python.exe", runtime)
         self.assertIn("'Scripts'", runtime)
         self.assertIn("'bin'", runtime)
+
+    def test_linux_proxy_marks_ready_rejects_overload_and_releases_port(
+        self,
+    ) -> None:
+        target_connections = 0
+        target_connections_lock = threading.Lock()
+        target_capacity_reached = threading.Event()
+
+        class EchoHandler(socketserver.BaseRequestHandler):
+            def handle(self) -> None:
+                nonlocal target_connections
+                with target_connections_lock:
+                    target_connections += 1
+                    if target_connections >= 33:
+                        target_capacity_reached.set()
+                while payload := self.request.recv(4096):
+                    self.request.sendall(payload)
+
+        with socketserver.ThreadingTCPServer(
+            ("127.0.0.1", 0),
+            EchoHandler,
+        ) as target:
+            target.daemon_threads = True
+            target_thread = threading.Thread(target=target.serve_forever)
+            target_thread.start()
+            reservation = socket.socket()
+            reservation.bind(("127.0.0.1", 0))
+            proxy_port = reservation.getsockname()[1]
+            reservation.close()
+            process = subprocess.Popen(
+                [
+                    sys.executable,
+                    str(LOOPBACK_PROXY),
+                    "--listen-port",
+                    str(proxy_port),
+                    "--target-address",
+                    target.server_address[0],
+                    "--target-port",
+                    str(target.server_address[1]),
+                ],
+                cwd=REPOSITORY,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            marker_queue: queue.Queue[str] = queue.Queue(maxsize=1)
+            marker_thread = threading.Thread(
+                target=lambda: marker_queue.put(process.stdout.readline()),
+            )
+            marker_thread.start()
+            try:
+                try:
+                    marker = marker_queue.get(timeout=5)
+                except queue.Empty:
+                    self.fail("Loopback proxy did not publish its readiness marker.")
+                self.assertEqual(marker, "MOCK_OIDC_LOOPBACK_PROXY=READY\n")
+                deadline = time.monotonic() + 5
+                while True:
+                    if process.poll() is not None:
+                        stderr = process.stderr.read() if process.stderr else ""
+                        self.fail(f"Loopback proxy exited early: {stderr}")
+                    try:
+                        with socket.create_connection(
+                            ("127.0.0.1", proxy_port),
+                            timeout=0.2,
+                        ) as client:
+                            client.sendall(b"bounded-loopback")
+                            client.shutdown(socket.SHUT_WR)
+                            self.assertEqual(client.recv(4096), b"bounded-loopback")
+                        break
+                    except OSError:
+                        if time.monotonic() >= deadline:
+                            self.fail("Loopback proxy did not become ready.")
+                        time.sleep(0.05)
+                pinned_clients = [
+                    socket.create_connection(
+                        ("127.0.0.1", proxy_port),
+                        timeout=1,
+                    )
+                    for _ in range(32)
+                ]
+                try:
+                    self.assertTrue(target_capacity_reached.wait(timeout=3))
+                    with socket.create_connection(
+                        ("127.0.0.1", proxy_port),
+                        timeout=1,
+                    ) as overflow:
+                        overflow.settimeout(1)
+                        self.assertEqual(overflow.recv(1), b"")
+                finally:
+                    for pinned_client in pinned_clients:
+                        pinned_client.close()
+            finally:
+                process.terminate()
+                process.wait(timeout=5)
+                target.shutdown()
+                target.server_close()
+                target_thread.join(timeout=5)
+                if process.stdout:
+                    process.stdout.close()
+                if process.stderr:
+                    process.stderr.close()
+                marker_thread.join(timeout=5)
+        with self.assertRaises(OSError):
+            socket.create_connection(("127.0.0.1", proxy_port), timeout=0.2)
 
     def test_cancelled_hung_docker_call_is_killed_then_owned_container_is_removed(
         self,

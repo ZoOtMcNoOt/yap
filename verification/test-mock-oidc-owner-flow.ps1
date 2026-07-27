@@ -16,6 +16,7 @@ $Repository = [IO.Path]::GetFullPath(
     (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
 )
 $RunningOnWindows = [OperatingSystem]::IsWindows()
+$RunningOnLinux = [OperatingSystem]::IsLinux()
 $PathComparison = if ($RunningOnWindows) {
     [StringComparison]::OrdinalIgnoreCase
 }
@@ -255,6 +256,7 @@ $CancelHandler = [ConsoleCancelEventHandler]{
 }
 
 $Flow = $null
+$LoopbackProxy = $null
 $Result = $null
 $RunFailure = $null
 $CancelHandlerRegistered = $false
@@ -296,42 +298,69 @@ try {
         -CancellationToken $RunCancellationSource.Token `
         -Operation 'synthetic OIDC internal network creation' | Out-Null
 
+    $InternalNetworkResult = Invoke-MockOidcDockerCommand `
+        -DockerPath $Docker.Source `
+        -Arguments @(
+            'network'
+            'inspect'
+            '--format'
+            '{{.Name}}|{{.Internal}}'
+            $NetworkName
+        ) `
+        -TimeoutMilliseconds 15000 `
+        -CancellationToken $RunCancellationSource.Token `
+        -Operation 'synthetic OIDC internal network inspection'
+    if (
+        $InternalNetworkResult.ExitCode -ne 0 -or
+        $InternalNetworkResult.StandardOutput.Trim() -cne "$NetworkName|true"
+    ) {
+        throw 'Synthetic OIDC network is not the required internal bridge.'
+    }
+
+    $ContainerArguments = @(
+        'run'
+        '--detach'
+        '--rm'
+        '--pull'
+        'never'
+        '--name'
+        $ContainerName
+        '--label'
+        "$OwnerLabelKey=$OwnerLabelValue"
+        '--hostname'
+        'localhost'
+        '--network'
+        $NetworkName
+    )
+    if (-not $RunningOnLinux) {
+        $ContainerArguments += @(
+            '--publish'
+            "127.0.0.1:${ProviderPort}:8080"
+        )
+    }
+    $ContainerArguments += @(
+        '--read-only'
+        '--tmpfs'
+        '/tmp:rw,noexec,nosuid,size=32m'
+        '--cap-drop'
+        'ALL'
+        '--security-opt'
+        'no-new-privileges=true'
+        '--memory'
+        '512m'
+        '--cpus'
+        '1'
+        '--env'
+        'SERVER_HOSTNAME=0.0.0.0'
+        '--env'
+        'JSON_CONFIG'
+        $ImageReference
+    )
+
     $ContainerRunAttempted = $true
     Invoke-MockOidcDockerResourceCreate `
         -DockerPath $Docker.Source `
-        -Arguments @(
-            'run',
-            '--detach',
-            '--rm',
-            '--pull',
-            'never',
-            '--name',
-            $ContainerName,
-            '--label',
-            "$OwnerLabelKey=$OwnerLabelValue",
-            '--hostname',
-            'localhost',
-            '--network',
-            $NetworkName,
-            '--publish',
-            "127.0.0.1:${ProviderPort}:8080",
-            '--read-only',
-            '--tmpfs',
-            '/tmp:rw,noexec,nosuid,size=32m',
-            '--cap-drop',
-            'ALL',
-            '--security-opt',
-            'no-new-privileges=true',
-            '--memory',
-            '512m',
-            '--cpus',
-            '1',
-            '--env',
-            'SERVER_HOSTNAME=0.0.0.0',
-            '--env',
-            'JSON_CONFIG',
-            $ImageReference
-        ) `
+        -Arguments $ContainerArguments `
         -TimeoutMilliseconds 30000 `
         -CancellationToken $RunCancellationSource.Token `
         -Operation 'synthetic OIDC container startup' `
@@ -354,6 +383,82 @@ try {
         $ConfiguredImage -cne $ImageReference
     ) {
         throw 'Synthetic OIDC container did not retain the locked image reference.'
+    }
+
+    if ($RunningOnLinux) {
+        $NetworkIdentityResult = Invoke-MockOidcDockerCommand `
+            -DockerPath $Docker.Source `
+            -Arguments @(
+                'container'
+                'inspect'
+                '--format'
+                '{{.HostConfig.NetworkMode}}|{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
+                $ContainerName
+            ) `
+            -TimeoutMilliseconds 15000 `
+            -CancellationToken $RunCancellationSource.Token `
+            -Operation 'synthetic OIDC network identity inspection'
+        $NetworkIdentity = $NetworkIdentityResult.StandardOutput.Trim()
+        $NetworkIdentityParts = $NetworkIdentity.Split('|')
+        if (
+            $NetworkIdentityResult.ExitCode -ne 0 -or
+            $NetworkIdentityParts.Count -ne 2 -or
+            $NetworkIdentityParts[0] -cne $NetworkName -or
+            $NetworkIdentityParts[1] -cnotmatch (
+                '^(?:25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})' +
+                '(?:\.(?:25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})){3}$'
+            )
+        ) {
+            throw 'Synthetic OIDC container network identity is invalid.'
+        }
+        $ProxyStartInfo = [Diagnostics.ProcessStartInfo]::new()
+        $ProxyStartInfo.FileName = $Runtime.Python
+        $ProxyStartInfo.UseShellExecute = $false
+        $ProxyStartInfo.CreateNoWindow = $true
+        $ProxyStartInfo.RedirectStandardOutput = $true
+        $ProxyStartInfo.RedirectStandardError = $true
+        foreach ($ProxyArgument in @(
+            (Join-Path $PSScriptRoot 'mock-oidc-loopback-proxy.py')
+            '--listen-port'
+            $ProviderPort
+            '--target-address'
+            $NetworkIdentityParts[1]
+            '--target-port'
+            8080
+        )) {
+            $ProxyStartInfo.ArgumentList.Add([string]$ProxyArgument)
+        }
+        $LoopbackProxy = [Diagnostics.Process]::new()
+        $LoopbackProxy.StartInfo = $ProxyStartInfo
+        if (-not $LoopbackProxy.Start()) {
+            throw 'Synthetic OIDC loopback proxy failed to start.'
+        }
+        $ProxyReadyLine = $LoopbackProxy.StandardOutput.ReadLineAsync()
+        $ProxyDeadline = [DateTime]::UtcNow.AddSeconds(10)
+        $ProxyReady = $false
+        while (-not $ProxyReady) {
+            $LoopbackProxy.Refresh()
+            if ($LoopbackProxy.HasExited) {
+                throw 'Synthetic OIDC loopback proxy exited during startup.'
+            }
+            if ([DateTime]::UtcNow -ge $ProxyDeadline) {
+                throw [TimeoutException]::new(
+                    'Synthetic OIDC loopback proxy readiness timed out.'
+                )
+            }
+            if ($ProxyReadyLine.IsCompleted) {
+                $ProxyReady = (
+                    $ProxyReadyLine.GetAwaiter().GetResult() -ceq
+                    'MOCK_OIDC_LOOPBACK_PROXY=READY'
+                )
+                if (-not $ProxyReady) {
+                    throw 'Synthetic OIDC loopback proxy readiness was invalid.'
+                }
+            }
+            if (-not $ProxyReady) {
+                Start-Sleep -Milliseconds 100
+            }
+        }
     }
 
     $ProviderBaseUrl = "http://127.0.0.1:$ProviderPort"
@@ -438,7 +543,7 @@ finally {
     $CleanupCancellationSource = [Threading.CancellationTokenSource]::new()
     $script:CancellationSource = $CleanupCancellationSource
 
-    foreach ($ChildProcess in @($Flow)) {
+    foreach ($ChildProcess in @($Flow, $LoopbackProxy)) {
         if ($null -eq $ChildProcess -or $ChildProcess.HasExited) {
             continue
         }
