@@ -175,7 +175,7 @@ describe("target-client language-routing hardware gate", () => {
       },
       model: { status: "ready" },
       serverConnection: { state: "disabled" },
-      serverSettings: { schemaVersion: 1, enabled: false, baseUrl: null },
+      serverSettings: { schemaVersion: 2, enabled: false, baseUrl: null },
       silero: { status: "ready" },
     };
     const gate = createTargetClientLanguageRoutingHardwareGate({
@@ -192,6 +192,11 @@ describe("target-client language-routing hardware gate", () => {
     await expect(gate.assertResidentRuntimeReady({
       enabledLocales: ["en-US", "de-DE"],
     })).resolves.toBeUndefined();
+    status.serverSettings.schemaVersion = 1;
+    await expect(gate.assertResidentRuntimeReady({
+      enabledLocales: ["en-US", "de-DE"],
+    })).rejects.toThrow(/server disabled and no base URL/);
+    status.serverSettings.schemaVersion = 2;
     status.serverConnection.state = "not_set";
     await expect(gate.assertResidentRuntimeReady({
       enabledLocales: ["en-US", "de-DE"],

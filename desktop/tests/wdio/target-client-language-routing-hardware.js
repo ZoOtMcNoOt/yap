@@ -137,7 +137,7 @@ export function createTargetClientLanguageRoutingHardwareGate({
       "The target-client gate requires a primary locale and a German alternate.",
     );
     requireCondition(
-      status.serverSettings.schemaVersion === 1
+      status.serverSettings.schemaVersion === 2
         && status.serverSettings.enabled === false
         && status.serverSettings.baseUrl === null
         && status.serverConnection.state === "disabled",
