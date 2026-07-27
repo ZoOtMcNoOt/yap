@@ -25,6 +25,7 @@ repo_root="$(cd -- "$script_dir/../.." && pwd)"
 : "${YAP_LANGUAGE_DETECTION_WORKER_IMAGE:=}"
 : "${YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT:=}"
 : "${YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256:=}"
+: "${YAP_UV_BINARY:=uv}"
 
 if [[ ! "$YAP_CHECKED_HEAD" =~ ^[0-9a-f]{40}$ ]]; then
   echo "YAP_CHECKED_HEAD must be a full lowercase Git SHA" >&2
@@ -109,15 +110,23 @@ if [ -n "$YAP_NEMOTRON_MODEL_DIR" ]; then
       ;;
   esac
 fi
-if ! command -v python3.12 >/dev/null 2>&1; then
-  echo "The batch server requires python3.12" >&2
+if ! command -v "$YAP_UV_BINARY" >/dev/null 2>&1; then
+  echo "The batch server requires the configured uv executable" >&2
   exit 2
 fi
-python_version="$(python3.12 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')"
-if [ "$python_version" != "3.12" ]; then
-  echo "The batch server requires Python 3.12" >&2
-  exit 2
-fi
+unset \
+  UV_NO_SYNC \
+  UV_PROJECT_ENVIRONMENT \
+  UV_PROJECT \
+  UV_WORKING_DIR \
+  UV_NO_PROJECT \
+  UV_PYTHON \
+  VIRTUAL_ENV \
+  PYTHONHOME \
+  PYTHONPLATLIBDIR \
+  PYTHONPATH \
+  PYTHONUSERBASE
+export PYTHONNOUSERSITE=1
 
 umask 077
 mkdir -p -- "$YAP_BATCH_JOB_STORAGE_DIR"
@@ -128,6 +137,27 @@ fi
 storage_mode="$(stat -Lc '%a' "$YAP_BATCH_JOB_STORAGE_DIR")"
 if [ "$storage_mode" != "700" ]; then
   echo "YAP_BATCH_JOB_STORAGE_DIR must have mode 0700" >&2
+  exit 2
+fi
+
+"$YAP_UV_BINARY" \
+  --offline \
+  --project "$repo_root/server" \
+  sync \
+  --locked \
+  --no-dev \
+  --python python3.12 \
+  --no-python-downloads
+server_python="$repo_root/server/.venv/bin/python"
+if [ ! -x "$server_python" ]; then
+  echo "The locked batch-server Python environment is unavailable" >&2
+  exit 2
+fi
+server_python_version="$(
+  "$server_python" -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'
+)"
+if [ "$server_python_version" != "3.12" ]; then
+  echo "The locked batch-server environment requires Python 3.12" >&2
   exit 2
 fi
 
@@ -159,4 +189,4 @@ exec env \
   YAP_LANGUAGE_DETECTION_WORKER_IMAGE="$YAP_LANGUAGE_DETECTION_WORKER_IMAGE" \
   YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT="$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT" \
   YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256="$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256" \
-  python3.12 -m yap_server
+  "$server_python" -m yap_server

@@ -135,6 +135,11 @@ group that forwards only `127.0.0.1:18000` to the container-private address.
 Each launcher requires a private `YAP_PROXY_PROCESS_GROUP_FILE`; the proxy
 publishes its group identity there until verified teardown so the lifecycle
 owner can recover it after an abnormal launcher exit.
+The Yap launcher resolves Python 3.12 dependencies through the server's locked
+`uv` project with network access disabled; it never falls back to ambient
+system packages. Set `YAP_UV_BINARY` to an absolute executable when `uv` is not
+on the noninteractive service path, and prepare the locked cache/environment
+before launching the offline runtime.
 The same foreground launcher can enable the verified AmberNet language
 preflight by passing `YAP_LANGUAGE_DETECTION_ENABLED=1`, the private verify-only
 model directory, the receipt-bound raw `server/runtime/lid` image ID, and the

@@ -449,13 +449,17 @@ YAP_LANGUAGE_DETECTION_MODEL_DIR="$lid_model_dir" \
 YAP_LANGUAGE_DETECTION_WORKER_IMAGE="$lid_image" \
 YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT="$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT" \
 YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256="$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256" \
+YAP_UV_BINARY="/absolute/path/to/uv" \
 bash infra/yap-server-node/development-batch-server.sh
 ```
 
 Omit the five language-detection variables only when intentionally testing
 the explicit manual-review fallback. In that mode the server does not
 advertise `languagePreflight`, and the client must not advance as though a
-language preflight had succeeded.
+language preflight had succeeded. The launcher uses the server's locked Python
+3.12 `uv` project with network access disabled. Prepare that environment and
+its cache before launch; a missing locked dependency fails closed instead of
+falling back to ambient system packages.
 
 Only a frozen qualification that intentionally exercises the provider-neutral
 Yap job boundary should use the complete invocation below. Create a matching
@@ -481,6 +485,7 @@ YAP_NEMOTRON_MODEL_DIR="$nemotron_model_dir" \
 YAP_NEMOTRON_MODEL_LOCK="$release_root/server/nemotron-nemo-serving.lock.json" \
 YAP_NEMOTRON_NEMO_ENDPOINT="http://127.0.0.1:18001" \
 YAP_NEMOTRON_NEMO_API_KEY="$YAP_NEMOTRON_NEMO_API_KEY" \
+YAP_UV_BINARY="/absolute/path/to/uv" \
 bash infra/yap-server-node/development-batch-server.sh
 ```
 
