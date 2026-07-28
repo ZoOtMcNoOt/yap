@@ -1,5 +1,7 @@
 import json
 import re
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -33,12 +35,69 @@ GATE = REPO_ROOT / "infra" / "yap-server-node" / "gb10-asr-runtime-gate.sh"
 
 
 class Gb10AsrRuntimeContractTests(unittest.TestCase):
+    def test_appends_standard_system_command_fallbacks_after_caller_path(
+        self,
+    ) -> None:
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash is unavailable for the command-path replay")
+        script = GATE.read_text(encoding="utf-8")
+        function_start = script.index("append_command_path_fallbacks() {")
+        function_end = script.index("\n}\n", function_start) + len("\n}\n")
+        function = script[function_start:function_end]
+        production_call = (
+            'append_command_path_fallbacks "/usr/local/sbin:/usr/local/bin:'
+            '/usr/sbin:/usr/bin:/sbin:/bin"'
+        )
+        self.assertIn(production_call, script)
+        self.assertLess(
+            script.index(production_call), script.index("capture_host_boundary()")
+        )
+        harness = r"""
+set -euo pipefail
+caller_bin="$(mktemp -d)"
+fallback_bin="$(mktemp -d)"
+trap 'rm -rf "$caller_bin" "$fallback_bin"' EXIT
+for command_name in python3.12 uv; do
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$caller_bin/$command_name"
+  chmod 0700 "$caller_bin/$command_name"
+done
+for command_name in ufw nft iptables-save; do
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$fallback_bin/$command_name"
+  chmod 0700 "$fallback_bin/$command_name"
+done
+PATH="$caller_bin:/usr/bin:/bin"
+append_command_path_fallbacks "$fallback_bin"
+test "$PATH" = "$caller_bin:/usr/bin:/bin:$fallback_bin"
+test "$(command -v python3.12)" = "$caller_bin/python3.12"
+test "$(command -v uv)" = "$caller_bin/uv"
+test "$(command -v ufw)" = "$fallback_bin/ufw"
+test "$(command -v nft)" = "$fallback_bin/nft"
+test "$(command -v iptables-save)" = "$fallback_bin/iptables-save"
+test "$(/bin/bash -c 'printf %s "$PATH"')" = "$PATH"
+"""
+        completed = subprocess.run(
+            [bash],
+            input=(function + harness).encode("utf-8"),
+            check=False,
+            capture_output=True,
+            timeout=30,
+        )
+        self.assertEqual(
+            completed.returncode,
+            0,
+            (completed.stdout + completed.stderr).decode(
+                "utf-8",
+                errors="replace",
+            ),
+        )
+
     def test_server_and_hosted_checks_pin_python_312(self) -> None:
         pyproject = PYPROJECT.read_text(encoding="utf-8")
         workflow = CI_WORKFLOW.read_text(encoding="utf-8")
 
         self.assertIn('requires-python = ">=3.12,<3.13"', pyproject)
-        self.assertEqual(workflow.count('python-version: "3.12"'), 2)
+        self.assertEqual(workflow.count('python-version: "3.12"'), 3)
         self.assertNotIn('python-version: "3.13"', workflow)
 
     def test_container_uses_the_locked_arm64_base_digest(self) -> None:

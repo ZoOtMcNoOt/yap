@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Non-interactive SSH callers can omit system directories such as /usr/sbin.
+# Preserve their runtime-command precedence, then add standard fallbacks.
+append_command_path_fallbacks() {
+  local fallback_path="$1"
+  PATH="${PATH:+$PATH:}$fallback_path"
+  export PATH
+}
+append_command_path_fallbacks "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "$script_dir/../.." && pwd)"
 # shellcheck source=owned-process-group.sh
