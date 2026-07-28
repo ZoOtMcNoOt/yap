@@ -45,14 +45,14 @@ this handoff:
   discovery contract exists.
 - The mock provider is pinned by version and manifest digest in
   [`verification/mock-oidc-provider.lock.json`](../../verification/mock-oidc-provider.lock.json).
-  Current focused evidence is 7/7 focused harness tests, including two
-  executable fake-Docker lifecycle regressions, and 38/38 focused
-  workflow/integrated-gate contracts. The Docker-backed flow was not run on
-  this local host; the reviewed `ubuntu-latest` `mock-oidc` job is the
-  executable hosted closure.
+  Focused executable fake-Docker lifecycle, workflow, and integrated-gate
+  contracts are green. The Docker-backed exact-head flow still belongs to the
+  reviewed `ubuntu-latest` `mock-oidc` hosted closure.
 
-No Phase 7 exact head is frozen. The final three-agent review, one-time full
-matrix, first-attempt hosted evidence, focused PR, and merge remain open. Use
+The three-agent working-tree review found no P0–P2 issue, but no replacement
+Phase 7 exact head is frozen. Private-controller prequalification, the one-time
+full matrix, first-attempt hosted evidence, focused PR, and merge remain open.
+Use
 the [integrated identity and access gate](integrated-identity-access-gate.md)
 only after those prerequisites are ready.
 

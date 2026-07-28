@@ -15,6 +15,10 @@ import {
   readBoundedJsonArtifact,
   readBoundedRegularFile,
 } from "./integrated-gate-artifact-bounds.mjs";
+import {
+  assertPrivateDirectory,
+  assertPrivateFile,
+} from "./private-gate-artifacts.mjs";
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
@@ -131,9 +135,11 @@ function requireRealParent(candidate, label) {
         === path.normalize(parent).toLowerCase(),
     `${label} parent must be an existing real directory.`,
   );
+  assertPrivateDirectory(parent);
 }
 
 function readRealBytesFile(candidate, label) {
+  assertPrivateFile(candidate);
   return readBoundedRegularFile(
     candidate,
     label,
@@ -142,6 +148,7 @@ function readRealBytesFile(candidate, label) {
 }
 
 function readRealFile(candidate, label) {
+  assertPrivateFile(candidate);
   return readBoundedJsonArtifact(
     candidate,
     label,
@@ -158,10 +165,12 @@ function requireRealDirectory(candidate, label) {
         === path.normalize(candidate).toLowerCase(),
     `${label} must be an existing real directory.`,
   );
+  assertPrivateDirectory(candidate);
 }
 
 function readRuntimePreparation(plan, runtime, expectedHead) {
   const preparation = plan.gb10.runtimePreparation[runtime];
+  assertPrivateFile(preparation.receiptFile);
   const receipt = readBoundedJsonArtifact(
     preparation.receiptFile,
     `${runtime} preparation receipt`,
@@ -286,9 +295,26 @@ export function validateIntegratedPrivateEvidencePlan(
   }
   requireExactKeys(
     plan.integrated,
-    new Set(["evidenceDirectory", "remoteCleanupLogFile", "teardownEvidenceFile"]),
+    plan.schemaVersion === 2
+      ? new Set([
+        "evidenceDirectory",
+        "remoteCleanupLogFile",
+        "teardownEvidenceFile",
+        "remoteHelperSetSha256",
+      ])
+      : new Set([
+        "evidenceDirectory",
+        "remoteCleanupLogFile",
+        "teardownEvidenceFile",
+      ]),
     "Integrated private plan",
   );
+  if (plan.schemaVersion === 2) {
+    requireCondition(
+      SHA256.test(plan.integrated.remoteHelperSetSha256 ?? ""),
+      "Integrated remote helper-set identity is invalid.",
+    );
+  }
   const paths = [
     ...(plan.schemaVersion === 2
       ? [["Mock OIDC receipt file", plan.mockOidc.receiptFile]]
@@ -360,6 +386,7 @@ function validateMockOidcEvidence(plan, expectedHead, repositoryRoot) {
     typeof repositoryRoot === "string" && path.isAbsolute(repositoryRoot),
     "Mock OIDC evidence requires an absolute repository root.",
   );
+  assertPrivateFile(plan.mockOidc.receiptFile);
   const receipt = readBoundedJsonArtifact(
     plan.mockOidc.receiptFile,
     "Mock OIDC owner-flow receipt",
@@ -641,6 +668,9 @@ function validateIntegratedEvidence(plan, expectedHead) {
   const cleanupLines = cleanupLogText
     .split(/\r?\n/)
     .filter((line) => line.startsWith("REMOTE_GATE_CLEANUP="));
+  const helperSetLines = cleanupLogText
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith("REMOTE_HELPER_SET_SHA256="));
   const runtimeMarkerLines = cleanupLogText
     .split(/\r?\n/)
     .filter((line) => line.startsWith("REMOTE_RUNTIME_"));
@@ -736,7 +766,7 @@ function validateIntegratedEvidence(plan, expectedHead) {
     "Integrated server runtime did not use the frozen prepared images.",
   );
   requireCondition(
-    teardown.value.schemaVersion === 1
+    teardown.value.schemaVersion === (plan.schemaVersion === 2 ? 2 : 1)
       && teardown.value.checkedHead === expectedHead
       && teardown.value.remoteCleanupPassed === true
       && teardown.value.localForwardAbsent === true
@@ -748,6 +778,11 @@ function validateIntegratedEvidence(plan, expectedHead) {
       && SHA256.test(teardown.value.remoteCleanupLogSha256 ?? "")
       && teardown.value.remoteCleanupLogSha256 === sha256(cleanupLogBytes)
       && teardown.value.tunnelProcessLedgerSha256 === sha256(tunnelLedger.bytes)
+      && (
+        plan.schemaVersion !== 2
+        || teardown.value.remoteHelperSetSha256
+          === plan.integrated.remoteHelperSetSha256
+      )
       && teardown.value.status === "passed",
     "Integrated desktop/private-server teardown evidence did not pass.",
   );
@@ -755,6 +790,14 @@ function validateIntegratedEvidence(plan, expectedHead) {
     cleanupLines.length === 1
       && cleanupLines[0] === "REMOTE_GATE_CLEANUP=PASS"
       && cleanupLogText.includes(`REMOTE_PRIVATE_SERVER_READY=${expectedHead}`)
+      && (
+        plan.schemaVersion !== 2
+        || (
+          helperSetLines.length === 1
+          && helperSetLines[0]
+            === `REMOTE_HELPER_SET_SHA256=${plan.integrated.remoteHelperSetSha256}`
+        )
+      )
       && !cleanupLogText.includes("REMOTE_GATE_CLEANUP=FAIL"),
     "Integrated remote cleanup log did not prove exact checked-head teardown.",
   );

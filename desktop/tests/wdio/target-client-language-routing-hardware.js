@@ -1,11 +1,12 @@
-import { writeFileSync } from "node:fs";
-
 import {
   assertRecordingRootEmpty,
   listRecordingArtifacts,
   ownedLiveSessionDeletion,
 } from "./recording-artifact-ownership.js";
 import { registerLiveSessionEventListeners } from "./live-session-event-listeners.js";
+import {
+  writeExclusivePrivateFile,
+} from "../../../verification/private-gate-artifacts.mjs";
 
 const RESTART_STOP_DELAYS_MS = Object.freeze([5, 25, 25, 25]);
 const MINIMUM_TARGET_CAPTURE_MS = 30_000;
@@ -366,10 +367,10 @@ export function createTargetClientLanguageRoutingHardwareGate({
       targetClientGate: true,
       transcriptTextRecorded: false,
     };
-    writeFileSync(evidenceFile, `${JSON.stringify(aggregate, null, 2)}\n`, {
-      encoding: "utf8",
-      flag: "wx",
-    });
+    writeExclusivePrivateFile(
+      evidenceFile,
+      Buffer.from(`${JSON.stringify(aggregate, null, 2)}\n`),
+    );
   }
 
   return Object.freeze({

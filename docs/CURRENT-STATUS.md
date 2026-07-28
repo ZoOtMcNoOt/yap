@@ -31,7 +31,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
-| Phase 7: identity/access | Active; sixth candidate consumed by a bounded natural-drain gap; repair reviewed and focused-green | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. A provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` principals, durable access disable/restore, owner-scoped job/LID/idempotency/artifact behavior, role-gated and audited purpose grants, enforced enrollment/matching/adaptation purpose checks, protected readiness, authenticated bounded private WebSocket admission, and the native lower WebSocket handshake execute under focused tests. The desktop now has only a narrow in-process native token-provider seam; no production adapter is selected or approved. Candidates `134ec08002aeb1deca83547d511528b282966731`, `7046d98d61fec90d4c639e92aff09ff8f6a2083a`, `dae316ceab60fe395a1899290ca184148f0e9b27`, `e6fcabd0f77a604092997839e45e6cada09304f9`, `59267c46a60ab9bb77494fc03d5666c1d1471f98`, and `2bd43b33638685ff2caccd7fdcf01c157a229c45` are consumed. The first four exposed the historical Windows cleanup, PowerShell loader, readiness-poll, and SSH teardown-status gaps. The fifth mock-OIDC receipt violated the owner-only private boundary with mode `0664`. The sixth passed every private child and all Rust tests, but Cargo exited while its Job remained nonzero beyond the former 250-millisecond natural-drain allowance; the supervisor terminated the Job and consumed the candidate. The replacement preserves fail-closed containment while allowing a bounded 2,000-millisecond natural drain before typed failure and the separate 5,000-millisecond cleanup proof. Its causal paired contract passed three consecutive runs, the focused Windows/installer set passes 14/14, the release-contract cell passes 82/82 under nested Job ownership, and the exact Cargo cell passes under the repaired supervisor. The same-three repair review found no P0–P2 issue. A new exact head/admission, fresh evidence, the one replacement matrix, hosted PR closure, and merge remain open. |
+| Phase 7: identity/access | Active; replacement gate boundary focused-green and three-agent reviewed | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. A provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` principals, durable access disable/restore, owner-scoped job/LID/idempotency/artifact behavior, role-gated and audited purpose grants, enforced enrollment/matching/adaptation purpose checks, protected readiness, authenticated bounded private WebSocket admission, and the native lower WebSocket handshake execute under focused tests. The desktop now has only a narrow in-process native token-provider seam; no production adapter is selected or approved. Candidates `134ec08002aeb1deca83547d511528b282966731`, `7046d98d61fec90d4c639e92aff09ff8f6a2083a`, `dae316ceab60fe395a1899290ca184148f0e9b27`, `e6fcabd0f77a604092997839e45e6cada09304f9`, `59267c46a60ab9bb77494fc03d5666c1d1471f98`, and `2bd43b33638685ff2caccd7fdcf01c157a229c45` are consumed. Exact head `2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was admitted but withdrawn before GB10, connected-server, or complete-matrix execution after pre-execution review rejected its unbounded command cells, ambient SSH/helper trust, terminal-carried attempt secret, and incomplete Windows private-artifact boundary. The current replacement freezes per-cell deadlines, retains bounded Job accounting and typed retained-descendant authority, stores only a digest of a protected one-attempt capability, pins no-config system OpenSSH and the system PowerShell ACL host, enforces exact gate/OpenSSH DACL policies, binds authenticated remote helpers as one frozen set, and bounds tunnel/controller settlement. Focused containment, SSH/profile, target-evidence, private-publication, teardown, and complete private-evidence contracts pass; the three-agent working-tree review found no P0–P2 issue. A new clean exact head and private-controller prequalification, admission, fresh private evidence, the one replacement matrix, hosted PR closure, and merge remain open. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -337,16 +337,20 @@ ownership.
   exited while its Job remained nonzero beyond the former 250-millisecond
   natural-drain allowance. The supervisor terminated the Job and consumed the
   attempt. The private failure did not preserve a lingering PID, so no
-  particular test or process is blamed. The replacement retains
-  assigned-before-resume, kill-on-close, immediate explicit termination, and
-  accounting-zero proof while allowing a bounded 2,000-millisecond natural
-  drain before typed failure and the separate 5,000-millisecond forced-cleanup
-  proof. Its causal paired contract passed three consecutive runs, the focused
-  Windows/installer set passes 14/14, the complete release-contract cell passes
-  82/82 under nested Job ownership, and the exact Cargo cell passes under the
-  repaired supervisor. The same-three repair review found no P0–P2 issue. A
-  new exact-head admission, fresh evidence, the one replacement phase gate,
-  hosted PR closure, and merge remain open. Persistent warm model
+  particular test or process is blamed. Exact head
+  `2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was admitted but withdrawn
+  before GB10, connected-server, or complete-matrix execution
+  after pre-execution adversarial review rejected its gate boundary. The
+  replacement retains assigned-before-resume, kill-on-close, immediate explicit
+  termination, and accounting-zero proof; allows at most 5,000 milliseconds
+  for natural descendant drain; freezes command deadlines; keeps the
+  one-attempt capability in a protected private file; pins no-config system
+  OpenSSH and the ACL helper host; verifies exact DACLs; authenticates and binds
+  the remote helper set; and bounds tunnel/controller settlement. Focused
+  containment and private-evidence contracts pass, and the three-agent
+  working-tree review found no P0–P2 issue. A clean exact-head freeze,
+  private-controller prequalification, admission, fresh evidence, the one
+  replacement phase gate, hosted PR closure, and merge remain open. Persistent warm model
   services, multi-worker and mixed live/batch capacity promotion, production
   supervision/observability, and external deployment remain Phase 10 gates;
   they are not Phase 6 completion criteria.
@@ -561,20 +565,14 @@ is the Phase 7 delivery authority. The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. The historical encoded-loader repair passed 13 focused Windows/installer
-   contracts and the release-contract cell 81/81 on its consumed supervisor
-   identity. The current natural-drain replacement passes the causal paired
-   contract three consecutive times, the new focused set 14/14, the complete
-   release-contract cell 82/82 under nested Job ownership, and the exact Cargo
-   cell under the repaired supervisor. The same-three repair review found no
-   P0–P2 issue.
-2. Freeze a new exact Phase 7 head; prequalify its Windows supervisor, connected
-   executor, absent/empty redirected-stdout readiness polling, exact
-   request/TERM/SSH-exit lifecycle, and no-receipt mock OIDC path; then reserve
-   a fresh admission.
-3. Regenerate every private child and run the one-time applicable local/native/
+1. Commit and push one new exact Phase 7 head using the existing authenticated
+   GitHub CLI identity. Prequalify its Windows supervisor, authenticated remote
+   helper set, contained connected controller, exact request/TERM/SSH-exit
+   lifecycle, and no-receipt mock OIDC path; then reserve a fresh admission
+   with the separate least-privilege commit-status credential.
+2. Regenerate every private child and run the one-time applicable local/native/
    server/target-client/private-server matrix for that new head.
-4. Open the focused PR only after the full gate is green, then merge only after
+3. Open the focused PR only after the full gate is green, then merge only after
    hosted CI, CodeQL, and disposable-Windows stock-NSIS closure.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision

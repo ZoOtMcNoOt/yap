@@ -7,7 +7,12 @@ ownership, enforced purpose authorization, authenticated bounded private
 WebSocket admission, and the native lower handshake. The desktop exposes a
 narrow native token-provider seam but has no approved production adapter; the
 live boundary has no ASR route, endpoint discovery, or external secure edge.
-Final review, the full phase gate, PR closure, and merge remain open.
+The replacement delivery gate now freezes command deadlines, keeps its
+one-attempt capability private, verifies exact Windows DACLs, pins system
+SSH/PowerShell hosts, and binds authenticated remote helpers through cleanup
+and teardown. The three-agent working-tree review found no P0–P2 issue. A clean
+exact-head freeze, private-controller prequalification, admission, the full
+phase gate, PR closure, and merge remain open.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -598,9 +603,14 @@ external same-origin WSS/TLS, live ASR, owner-fair pool/router scheduling,
 durable multi-tenant queuing, and sustained mixed-user capacity remain absent.
 
 The pinned mock OIDC provider and owner-flow harness are focused-green. Hosted
-Docker execution of that pinned provider, final review, the full Phase 7 gate,
-hosted PR closure, and merge remain open. Real IT-provided Entra/Conditional
-Access policy and an approved native adapter remain external conformance work.
+Docker execution of that pinned provider remains pending. Exact head
+`2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was withdrawn before GB10,
+connected-server, or complete-matrix execution after pre-execution review
+rejected its gate boundary. The hardened replacement's three-agent working-tree
+review found no P0–P2 issue; a clean exact-head freeze, private-controller
+prequalification, admission, the full Phase 7 gate, hosted PR closure, and merge
+remain open. Real IT-provided Entra/Conditional Access policy and an approved
+native adapter remain external conformance work.
 
 ## Accepted meeting direction, not current execution
 

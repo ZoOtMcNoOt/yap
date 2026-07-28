@@ -306,6 +306,53 @@ plan points to those local byte-identical copies. The remote wrappers use the
 GB10 copies and the same frozen hashes; changing either copy invalidates the
 attempt.
 
+Protect and read back the plan, all three copied receipts, the gate root, and
+every parent required by the plan before admission. Named evidence
+destinations must remain absent:
+
+```powershell
+$PrivatePlanPath = (
+  Resolve-Path -LiteralPath '<private-plan.json>'
+).Path
+$PrivatePlan = Get-Content -LiteralPath $PrivatePlanPath -Raw |
+  ConvertFrom-Json -Depth 20
+$EvidenceRoot = [IO.Path]::GetFullPath('<existing-private-gate-root>')
+$PrivateArtifactHelper = (
+  Resolve-Path -LiteralPath '.\verification\private-gate-artifacts.ps1'
+).Path
+$RuntimeReceipts = @(
+  $PrivatePlan.gb10.runtimePreparation.'cohere-vllm'.receiptFile
+  $PrivatePlan.gb10.runtimePreparation.'nemotron-nemo'.receiptFile
+  $PrivatePlan.gb10.runtimePreparation.'language-detection'.receiptFile
+)
+$RequiredParents = @(
+  $EvidenceRoot
+  (Split-Path -Parent $PrivatePlanPath)
+  (Split-Path -Parent $PrivatePlan.targetClient.evidenceDirectory)
+  (Split-Path -Parent $PrivatePlan.gb10.lifecycleEvidenceFile)
+  (Split-Path -Parent $PrivatePlan.integrated.evidenceDirectory)
+  (Split-Path -Parent $PrivatePlan.integrated.remoteCleanupLogFile)
+  ($RuntimeReceipts | ForEach-Object { Split-Path -Parent $_ })
+) | Sort-Object -Unique
+foreach ($PrivateParent in $RequiredParents) {
+  New-Item -ItemType Directory -Force -Path $PrivateParent | Out-Null
+  & $PrivateArtifactHelper `
+    -Operation protect-directory `
+    -LiteralPath $PrivateParent | Out-Null
+  & $PrivateArtifactHelper `
+    -Operation verify-directory `
+    -LiteralPath $PrivateParent | Out-Null
+}
+foreach ($PrivateInput in @($PrivatePlanPath) + $RuntimeReceipts) {
+  & $PrivateArtifactHelper `
+    -Operation protect-file `
+    -LiteralPath $PrivateInput | Out-Null
+  & $PrivateArtifactHelper `
+    -Operation verify-file `
+    -LiteralPath $PrivateInput | Out-Null
+}
+```
+
 Before admission, stage the complete frozen provider duration-track collection
 on the GB10, not only its `suite.json`. The evaluation cache,
 `runtime-tracks` parent, collection directory, and every case directory must be
@@ -321,9 +368,9 @@ Admit the sole attempt from the clean frozen checkout:
 ```powershell
 node .\verification\integrated-gate-runner.mjs begin `
   --checked-head <full-lowercase-git-sha> `
-  --evidence-root <existing-private-gate-root> `
+  --evidence-root $EvidenceRoot `
   --manifest .\verification\integrated-preprocessing-language-routing-gate.json `
-  --private-plan <private-plan.json>
+  --private-plan $PrivatePlanPath
 ```
 
 Use the returned exact destinations for the unattended target-client channel,
@@ -363,13 +410,17 @@ PIDs only after both have exited. The teardown writer combines that immutable
 ledger with the directly launched remote-server SSH PID; arbitrary or partial
 caller-supplied PID lists are not accepted.
 
-On Windows, launch the directly owned background `ssh.exe` with
-`Start-Process -NoNewWindow -PassThru` and redirect standard output and standard
-error to separate private files. Do not combine redirected Windows OpenSSH with
+On Windows, launch the directly owned background OpenSSH process from the
+checked profile emitted by
+`verification/private-server-ssh-profile.mjs describe`. Use
+`ProcessStartInfo.ArgumentList`, the profile's minimal environment, no shell,
+and separate bounded private stdout/stderr files. Main and control invocations
+must allow no forwarding; the tunnel invocation owns exactly the one reviewed
+loopback forward. Do not combine redirected Windows OpenSSH with
 `-WindowStyle Hidden`: that combination can authenticate and then deadlock
-before sending the remote command. `-NoNewWindow` keeps the controller
-non-interactive without creating a new visible window and preserves the direct
-SSH process ID required by the teardown receipt.
+before sending the remote command. The controller preserves the direct SSH
+process ID required by the teardown receipt and never resolves a mutable SSH
+alias.
 
 Construct the connected wrapper environment from an explicit allowlist. Export
 only the Cohere and language-detection preparation receipt paths and hashes
@@ -390,12 +441,13 @@ marker can no longer reach its frozen log.
 
 Then invoke `complete` once. It runs the complete local/native/server command
 matrix and publishes the private candidate receipt only if every prepared
-private artifact and final local teardown check also passes:
+private artifact and final local teardown check also passes. The runner consumes
+the protected `attempt.capability` beside the admission; no capability value
+belongs in the command line, environment, or terminal output:
 
 ```powershell
 node .\verification\integrated-gate-runner.mjs complete `
   --admission <private-admission.json> `
-  --attempt-token <admitted-token> `
   --manifest .\verification\integrated-preprocessing-language-routing-gate.json
 ```
 

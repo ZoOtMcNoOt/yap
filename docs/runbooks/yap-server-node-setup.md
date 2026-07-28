@@ -236,12 +236,12 @@ The mock-OIDC dependency is digest-pinned in
 [`verification/mock-oidc-provider.lock.json`](../../verification/mock-oidc-provider.lock.json),
 and its bounded owner-flow harness is
 [`verification/test-mock-oidc-owner-flow.ps1`](../../verification/test-mock-oidc-owner-flow.ps1).
-Current focused evidence is 7/7 focused harness tests, including two executable
-fake-Docker lifecycle regressions, and 38/38 workflow/integrated-gate contracts.
-Docker was unavailable for the actual flow locally, so the dedicated hosted
-`mock-oidc` job remains the executable Docker
-closure. No exact Phase 7 head is frozen; final three-agent review, the complete
-gate, first-attempt hosted closure, the focused PR, and merge remain open.
+Focused executable fake-Docker lifecycle, workflow, and integrated-gate
+contracts are green. The dedicated hosted `mock-oidc` job remains the
+exact-head Docker closure. The three-agent working-tree review found no P0–P2
+issue, but no replacement Phase 7 exact head is frozen. Private-controller
+prequalification, the complete gate, first-attempt hosted closure, the focused
+PR, and merge remain open.
 This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
 revocation propagation, guest behavior, packaged enterprise policy, or
 production approval. Run those only in a separately authorized IT-provided
@@ -757,21 +757,46 @@ result. Cancellation must remain cancelled across reconnect, and a user retry
 must create a new server job without changing the original source.
 
 For the one-time checked-head native gate, do not start the forward manually.
-The gate owns one explicit SSH alias, proves port 18765 is initially
+The gate owns one checked no-config SSH profile, proves port 18765 is initially
 unreachable, starts the forward, imports the locked CC-BY-4.0 fixture, drops
 the forward around that same durable client job, observes `Retrying`, restores
-the same alias/origin, and waits for the verified History result. Its evidence
-directory is a new private path outside the repository and contains only
-non-content metadata and hashes:
+the same destination/origin, and waits for the verified History result. Its
+evidence directory is a new private path outside the repository and contains
+only non-content metadata and hashes:
 
 ```powershell
 $CheckedHead = (git rev-parse HEAD).Trim()
 $EvidenceParent = Join-Path $env:LOCALAPPDATA 'Yap-private-gate-evidence'
 New-Item -ItemType Directory -Force -Path $EvidenceParent | Out-Null
+$PrivateArtifactHelper = (
+  Resolve-Path -LiteralPath '.\verification\private-gate-artifacts.ps1'
+).Path
+& $PrivateArtifactHelper `
+  -Operation protect-directory `
+  -LiteralPath $EvidenceParent | Out-Null
+
+$SshIdentity = (
+  Resolve-Path -LiteralPath (Join-Path $HOME '.ssh\dgx_spark_eth')
+).Path
+$SshKnownHosts = (
+  Resolve-Path -LiteralPath (Join-Path $HOME '.ssh\known_hosts')
+).Path
+foreach ($SshFile in @($SshIdentity, $SshKnownHosts)) {
+  & $PrivateArtifactHelper `
+    -Operation protect-ssh-file `
+    -LiteralPath $SshFile | Out-Null
+  & $PrivateArtifactHelper `
+    -Operation verify-ssh-file `
+    -LiteralPath $SshFile | Out-Null
+}
 
 $env:YAP_CHECKED_HEAD = $CheckedHead
 $env:YAP_PRIVATE_SERVER_ASR_GATE_BASE_URL = 'http://127.0.0.1:18765'
-$env:YAP_PRIVATE_SERVER_ASR_GATE_SSH_ALIAS = 'dgx-spark-eth'
+$env:YAP_PRIVATE_SERVER_SSH_DESTINATION = 'admin@192.168.50.1'
+$env:YAP_PRIVATE_SERVER_SSH_EXECUTABLE = Join-Path `
+  $env:SystemRoot 'System32\OpenSSH\ssh.exe'
+$env:YAP_PRIVATE_SERVER_SSH_IDENTITY_FILE = $SshIdentity
+$env:YAP_PRIVATE_SERVER_SSH_KNOWN_HOSTS_FILE = $SshKnownHosts
 $env:YAP_PRIVATE_SERVER_ASR_GATE_EVIDENCE_DIR = Join-Path $EvidenceParent $CheckedHead
 $env:YAP_PRIVATE_SERVER_ASR_GATE_TIMEOUT_MS = '2700000'
 
@@ -779,11 +804,18 @@ Set-Location desktop
 pnpm test:private-server-asr-gate
 ```
 
-Use `dgx-spark-lan` only for the separately authorized Wi-Fi rehearsal. The
-gate never resolves or substitutes aliases and refuses an alias containing
-shell syntax. It also refuses to run from a dirty/different head, with a
-pre-existing local listener/forward, or with an evidence destination that
-already exists.
+Use `dgx-spark-lan` only for the separately authorized manual Wi-Fi rehearsal;
+the admitted checked-head gate remains bound to the private-Ethernet address.
+The gate supplies `-F NUL`, the absolute key and known-hosts paths, strict host
+checking, and disabled ambient forwarding, agents, proxies, local commands,
+passwords, and keyboard-interactive authentication. It refuses a mutable SSH
+alias, a PATH-selected or non-system SSH executable, SSH material without the
+exact private DACL, a dirty/different head, a pre-existing local
+listener/forward, or an evidence destination that already exists.
+Private gate artifacts use explicit Owner Rights, SYSTEM, and Administrators
+rules. The SSH key and known-hosts database use the OpenSSH-compatible variant:
+the concrete current Windows identity, SYSTEM, and Administrators. Both
+variants disable inheritance and reject every other or inherited rule.
 
 After the rehearsal, stop the desktop, forward, and server process. Confirm no
 Yap listener or worker remains before treating cleanup as complete:

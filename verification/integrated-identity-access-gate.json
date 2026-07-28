@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "gateId": "integrated-identity-access",
   "candidateCells": [
     {
@@ -9,7 +9,8 @@
       "command": [
         "node",
         "./tests/scripts/assert-node24.mjs"
-      ]
+      ],
+      "timeoutMs": 120000
     },
     {
       "id": "frontend.dependencies",
@@ -20,7 +21,8 @@
         "pnpm@11.7.0",
         "install",
         "--frozen-lockfile"
-      ]
+      ],
+      "timeoutMs": 1800000
     },
     {
       "id": "frontend.dependency-audit",
@@ -29,7 +31,8 @@
       "command": [
         "pnpm",
         "audit:dependencies"
-      ]
+      ],
+      "timeoutMs": 900000
     },
     {
       "id": "frontend.release-contracts",
@@ -38,7 +41,8 @@
       "command": [
         "pnpm",
         "test:release-contract"
-      ]
+      ],
+      "timeoutMs": 1800000
     },
     {
       "id": "frontend.provenance",
@@ -49,7 +53,8 @@
         "./tests/scripts/assert-third-party-provenance.mjs",
         "--require-reviewed",
         "--verify-upstream"
-      ]
+      ],
+      "timeoutMs": 1800000
     },
     {
       "id": "frontend.unit",
@@ -58,7 +63,8 @@
       "command": [
         "pnpm",
         "test"
-      ]
+      ],
+      "timeoutMs": 1800000
     },
     {
       "id": "frontend.production-build",
@@ -67,7 +73,8 @@
       "command": [
         "pnpm",
         "build"
-      ]
+      ],
+      "timeoutMs": 1800000
     },
     {
       "id": "frontend.chromium-runtime",
@@ -79,7 +86,8 @@
         "playwright",
         "install",
         "chromium"
-      ]
+      ],
+      "timeoutMs": 1800000
     },
     {
       "id": "frontend.browser-workflows",
@@ -88,7 +96,8 @@
       "command": [
         "pnpm",
         "test:e2e"
-      ]
+      ],
+      "timeoutMs": 1800000
     },
     {
       "id": "native.format",
@@ -99,7 +108,8 @@
         "fmt",
         "--all",
         "--check"
-      ]
+      ],
+      "timeoutMs": 300000
     },
     {
       "id": "native.clippy",
@@ -113,7 +123,8 @@
         "--",
         "-D",
         "warnings"
-      ]
+      ],
+      "timeoutMs": 3600000
     },
     {
       "id": "native.tests",
@@ -123,7 +134,8 @@
         "cargo",
         "test",
         "--locked"
-      ]
+      ],
+      "timeoutMs": 3600000
     },
     {
       "id": "native.server-connector",
@@ -137,7 +149,8 @@
         "Bypass",
         "-File",
         "./verification/test-server-connector.ps1"
-      ]
+      ],
+      "timeoutMs": 900000
     },
     {
       "id": "native.authenticated-server-connector",
@@ -151,7 +164,8 @@
         "Bypass",
         "-File",
         "./verification/test-authenticated-server-connector.ps1"
-      ]
+      ],
+      "timeoutMs": 900000
     },
     {
       "id": "native.windows-dependency-boundary",
@@ -165,7 +179,8 @@
         "Bypass",
         "-File",
         "./verification/test-windows-rust-dependency-boundary.ps1"
-      ]
+      ],
+      "timeoutMs": 900000
     },
     {
       "id": "native.dependency-audit",
@@ -179,7 +194,8 @@
         "Bypass",
         "-File",
         "./verification/audit-windows-rust-dependencies.ps1"
-      ]
+      ],
+      "timeoutMs": 1800000
     },
     {
       "id": "desktop.wdio-build",
@@ -188,7 +204,8 @@
       "command": [
         "pnpm",
         "test:desktop:build"
-      ]
+      ],
+      "timeoutMs": 3600000
     },
     {
       "id": "desktop.required-wdio",
@@ -200,7 +217,8 @@
         "wdio",
         "run",
         "./tests/wdio.required.conf.ts"
-      ]
+      ],
+      "timeoutMs": 1800000
     },
     {
       "id": "server.python-3.12",
@@ -214,7 +232,8 @@
         "Bypass",
         "-File",
         "./verification/test-portable-python-server.ps1"
-      ]
+      ],
+      "timeoutMs": 3600000
     },
     {
       "id": "server.lint",
@@ -227,7 +246,8 @@
         "ruff",
         "check",
         "."
-      ]
+      ],
+      "timeoutMs": 900000
     },
     {
       "id": "server.mock-oidc-owner-flow",

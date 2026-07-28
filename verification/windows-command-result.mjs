@@ -22,9 +22,13 @@ function readSupervisorResult(exitCode, signal, protocol) {
 }
 
 function primaryTerminationReason(primaryError) {
-  return primaryError.code === "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED"
-    ? "output-limit"
-    : "command-log-write";
+  if (primaryError.code === "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED") {
+    return "output-limit";
+  }
+  if (primaryError.code === "INTEGRATED_GATE_COMMAND_TIMEOUT") {
+    return "timeout";
+  }
+  return "command-log-write";
 }
 
 function unboundCleanupEvidence(status) {
@@ -45,6 +49,9 @@ function unboundCleanupEvidence(status) {
 }
 
 function interpretPrimaryFailure(label, primaryError, status, statusFailure) {
+  if (status?.cleanupProven && status.outcome === "retained-descendant") {
+    return retainedDescendantError(label, status);
+  }
   if (status?.cleanupProven) {
     primaryError.terminatedProcessIds = status.rootProcessId > 0
       ? [status.rootProcessId]

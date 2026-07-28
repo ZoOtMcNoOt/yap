@@ -6,6 +6,7 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
@@ -16,13 +17,24 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   executeBoundedCommand,
 } from "../../../../verification/bounded-command-execution.mjs";
+import {
+  protectAndVerifyPrivateDirectory,
+} from "../../../../verification/private-gate-artifacts.mjs";
 
 const contractRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(contractRoot, "..", "..", "..", "..");
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
 function createCanonicalTemporaryDirectory(prefix) {
-  return mkdtempSync(path.join(realpathSync.native(os.tmpdir()), prefix));
+  return protectAndVerifyPrivateDirectory(
+    mkdtempSync(path.join(realpathSync.native(os.tmpdir()), prefix)),
+  );
+}
+
+function createProtectedDirectory(parent, name) {
+  const directory = path.join(parent, name);
+  mkdirSync(directory);
+  return protectAndVerifyPrivateDirectory(directory);
 }
 
 function processIsAlive(processId) {
@@ -83,12 +95,10 @@ test("bounded Windows commands allow owned descendants to drain naturally", {
   const root = createCanonicalTemporaryDirectory(
     "yap-gate-natural-descendant-drain-",
   );
-  const commandLogDirectory = path.join(root, "command-logs");
-  mkdirSync(commandLogDirectory);
+  const commandLogDirectory = createProtectedDirectory(root, "command-logs");
   const readyPath = path.join(root, "child-ready");
   const completionPath = path.join(root, "child-completed");
   const escapedCompletionPath = completionPath.replaceAll("'", "''");
-  const started = Date.now();
   try {
     const result = await executeBoundedCommand({
       command: ownedPowerShellChildCommand(
@@ -102,6 +112,7 @@ test("bounded Windows commands allow owned descendants to drain naturally", {
       logPath: path.join(commandLogDirectory, "natural-descendant-drain.log"),
       expectedLogDirectory: commandLogDirectory,
       maximumLogBytes: 1_024,
+      timeoutMs: 15_000,
     });
     assert.equal(result.exitCode, 0);
     assert.equal(result.terminationEvidence.terminationReason, "none");
@@ -109,7 +120,7 @@ test("bounded Windows commands allow owned descendants to drain naturally", {
     assert.equal(result.terminationEvidence.activeProcessZeroObserved, true);
     assert.equal(result.terminationEvidence.activeProcessCount, 0);
     assert.equal(result.terminationEvidence.cleanupProven, true);
-    const elapsedMilliseconds = Date.now() - started;
+    const elapsedMilliseconds = Date.now() - statSync(readyPath).mtimeMs;
     assert.ok(
       elapsedMilliseconds < 12_000,
       "naturally draining descendants must settle within the focused contract bound",
@@ -130,10 +141,8 @@ test("bounded Windows commands reject and clean retained descendants", {
   skip: process.platform !== "win32",
 }, async () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-retained-descendant-");
-  const commandLogDirectory = path.join(root, "command-logs");
-  mkdirSync(commandLogDirectory);
+  const commandLogDirectory = createProtectedDirectory(root, "command-logs");
   const readyPath = path.join(root, "grandchild-ready");
-  const started = Date.now();
   try {
     await assert.rejects(
       executeBoundedCommand({
@@ -147,6 +156,7 @@ test("bounded Windows commands reject and clean retained descendants", {
         logPath: path.join(commandLogDirectory, "retained-descendant.log"),
         expectedLogDirectory: commandLogDirectory,
         maximumLogBytes: 1_024,
+        timeoutMs: 15_000,
       }),
       (error) => {
         assert.equal(error.code, "INTEGRATED_GATE_COMMAND_RETAINED_DESCENDANT");
@@ -162,8 +172,8 @@ test("bounded Windows commands reject and clean retained descendants", {
       },
     );
     assert.ok(
-      Date.now() - started < 12_000,
-      "retained descendants must be removed well before their delayed natural exit",
+      Date.now() - statSync(readyPath).mtimeMs < 10_000,
+      "retained descendants must be removed promptly after they become active",
     );
     const grandchildProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
     assert.equal(processIsAlive(grandchildProcessId), false);
@@ -176,10 +186,8 @@ test("nested bounded Windows commands retain independent Job ownership", {
   skip: process.platform !== "win32",
 }, async () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-nested-command-");
-  const outerLogDirectory = path.join(root, "outer-command-logs");
-  const innerLogDirectory = path.join(root, "inner-command-logs");
-  mkdirSync(outerLogDirectory);
-  mkdirSync(innerLogDirectory);
+  const outerLogDirectory = createProtectedDirectory(root, "outer-command-logs");
+  const innerLogDirectory = createProtectedDirectory(root, "inner-command-logs");
   const readyPath = path.join(root, "inner-grandchild-ready");
   const resultPath = path.join(root, "inner-result.json");
   const maximumLogBytes = 1_024;
@@ -215,6 +223,7 @@ test("nested bounded Windows commands retain independent Job ownership", {
     `    logPath: ${JSON.stringify(path.join(innerLogDirectory, "inner.log"))},`,
     `    expectedLogDirectory: ${JSON.stringify(innerLogDirectory)},`,
     `    maximumLogBytes: ${maximumLogBytes},`,
+    "    timeoutMs: 15_000,",
     "  });",
     `  writeFileSync(${JSON.stringify(resultPath)}, JSON.stringify({ unexpectedSuccess: true }));`,
     "  process.exitCode = 1;",
@@ -239,6 +248,7 @@ test("nested bounded Windows commands retain independent Job ownership", {
       logPath: path.join(outerLogDirectory, "outer.log"),
       expectedLogDirectory: outerLogDirectory,
       maximumLogBytes: 64 * 1024,
+      timeoutMs: 30_000,
     });
     assert.equal(outerResult.exitCode, 0);
     assert.equal(outerResult.terminationEvidence.assignedBeforeResume, true);
@@ -274,8 +284,7 @@ test("bounded Windows commands preserve batch arguments, environment, bytes, and
   skip: process.platform !== "win32",
 }, async () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-batch-command-");
-  const commandLogDirectory = path.join(root, "command-logs");
-  mkdirSync(commandLogDirectory);
+  const commandLogDirectory = createProtectedDirectory(root, "command-logs");
   const commandPath = path.join(root, "command-fixture.cmd");
   writeFileSync(
     commandPath,
@@ -305,6 +314,7 @@ test("bounded Windows commands preserve batch arguments, environment, bytes, and
       logPath: path.join(commandLogDirectory, "batch-command.log"),
       expectedLogDirectory: commandLogDirectory,
       maximumLogBytes: 1_024,
+      timeoutMs: 15_000,
     });
     assert.equal(result.exitCode, 37);
     assert.equal(result.signal, null);
@@ -319,6 +329,57 @@ test("bounded Windows commands preserve batch arguments, environment, bytes, and
     assert.equal(result.terminationEvidence.activeProcessZeroObserved, true);
     assert.equal(result.terminationEvidence.activeProcessCount, 0);
     assert.equal(result.terminationEvidence.cleanupProven, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("bounded Windows commands enforce their wall-clock deadline and clean descendants", {
+  skip: process.platform !== "win32",
+}, async () => {
+  const root = createCanonicalTemporaryDirectory("yap-gate-command-timeout-");
+  const commandLogDirectory = createProtectedDirectory(root, "command-logs");
+  const readyPath = path.join(root, "timeout-child-ready");
+  const childSource = Buffer.from(
+    `require("node:fs").writeFileSync(${JSON.stringify(readyPath)},String(process.pid));`
+      + "setTimeout(process.exit,30000,0);",
+  ).toString("base64");
+  const commandSource = [
+    'const{spawn}=require("node:child_process");',
+    `const source=Buffer.from("${childSource}","base64").toString("utf8");`,
+    'spawn(process.execPath,["-e",source],{stdio:"ignore"});',
+    "setTimeout(process.exit,30000,0);",
+  ].join("");
+  const started = Date.now();
+  try {
+    await assert.rejects(
+      executeBoundedCommand({
+        command: [process.execPath, "-e", commandSource],
+        cwd: repoRoot,
+        environment: process.env,
+        label: "Wall-clock timeout fixture",
+        logPath: path.join(commandLogDirectory, "timeout.log"),
+        expectedLogDirectory: commandLogDirectory,
+        maximumLogBytes: 1_024,
+        timeoutMs: 9_000,
+      }),
+      (error) => {
+        assert.equal(error.code, "INTEGRATED_GATE_COMMAND_TIMEOUT");
+        assert.equal(error.timeoutMs, 9_000);
+        assert.equal(error.terminationEvidence.terminationReason, "timeout");
+        assert.equal(error.terminationEvidence.terminateRequested, true);
+        assert.equal(error.terminationEvidence.activeProcessZeroObserved, true);
+        assert.equal(error.terminationEvidence.activeProcessCount, 0);
+        assert.equal(error.terminationEvidence.cleanupProven, true);
+        return true;
+      },
+    );
+    assert.ok(
+      Date.now() - started < 20_000,
+      "the deadline must settle the owned Job before the fixture exits naturally",
+    );
+    const childProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
+    assert.equal(processIsAlive(childProcessId), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

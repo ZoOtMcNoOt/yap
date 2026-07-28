@@ -91,32 +91,6 @@ function Assert-PathOutsideRepository {
     }
 }
 
-function Set-PrivateDirectoryAcl {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Path
-    )
-
-    $identity = [Security.Principal.WindowsIdentity]::GetCurrent().User
-    if ($null -eq $identity) {
-        throw 'The current Windows security identity is unavailable.'
-    }
-    $acl = [Security.AccessControl.DirectorySecurity]::new()
-    $acl.SetAccessRuleProtection($true, $false)
-    $rights = [Security.AccessControl.FileSystemRights]::FullControl
-    $inheritance = [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
-        [Security.AccessControl.InheritanceFlags]::ObjectInherit
-    $rule = [Security.AccessControl.FileSystemAccessRule]::new(
-        $identity,
-        $rights,
-        $inheritance,
-        [Security.AccessControl.PropagationFlags]::None,
-        [Security.AccessControl.AccessControlType]::Allow
-    )
-    [void]$acl.AddAccessRule($rule)
-    Set-Acl -LiteralPath $Path -AclObject $acl
-}
-
 function Get-ProcessorName {
     $key = 'HKLM:\HARDWARE\DESCRIPTION\System\CentralProcessor\0'
     $name = (Get-ItemProperty -LiteralPath $key -Name ProcessorNameString).ProcessorNameString
@@ -180,9 +154,15 @@ if (Test-Path -LiteralPath $evidence) {
 }
 $evidenceParent = Resolve-ExistingRealPath -Path (Split-Path -Parent $evidence) -PathType Container -Label 'EvidenceDirectory parent'
 Assert-PathOutsideRepository -Candidate $evidenceParent -RepositoryRoot $repositoryRoot
+$privateArtifactHelper = Join-Path $repositoryRoot 'verification\private-gate-artifacts.ps1'
+& $privateArtifactHelper `
+    -Operation verify-directory `
+    -LiteralPath $evidenceParent | Out-Null
 
 New-Item -ItemType Directory -Path $evidence -ErrorAction Stop | Out-Null
-Set-PrivateDirectoryAcl -Path $evidence
+& $privateArtifactHelper `
+    -Operation protect-directory `
+    -LiteralPath $evidence | Out-Null
 
 $contextPath = Join-Path $evidence 'resource-gate-context.json'
 $profilePath = Join-Path $evidence 'resident-language-routing-profile.json'
@@ -211,6 +191,9 @@ $context = [ordered]@{
     )
 }
 $context | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $contextPath -Encoding utf8NoBOM
+& $privateArtifactHelper `
+    -Operation protect-file `
+    -LiteralPath $contextPath | Out-Null
 
 $savedEnvironment = @{}
 $environment = [ordered]@{
@@ -265,6 +248,9 @@ try {
             }
         )
         $nativeOutput | Set-Content -LiteralPath $logPath -Encoding utf8NoBOM
+        & $privateArtifactHelper `
+            -Operation protect-file `
+            -LiteralPath $logPath | Out-Null
         if ($nativeTimedOut) {
             throw "The native target-client resource collector exceeded its $NativeTimeoutSeconds-second wall-clock limit."
         }
@@ -289,6 +275,9 @@ finally {
 if (-not (Test-Path -LiteralPath $profilePath -PathType Leaf)) {
     throw 'The native resource collector did not publish its aggregate profile.'
 }
+& $privateArtifactHelper `
+    -Operation verify-file `
+    -LiteralPath $profilePath | Out-Null
 $profile = Get-Content -LiteralPath $profilePath -Raw | ConvertFrom-Json
 if (
     $profile.schemaVersion -ne 5 -or
@@ -308,6 +297,12 @@ $context.status = 'passed'
 $context.profileSha256 = (Get-FileHash -LiteralPath $profilePath -Algorithm SHA256).Hash.ToLowerInvariant()
 $context.logSha256 = (Get-FileHash -LiteralPath $logPath -Algorithm SHA256).Hash.ToLowerInvariant()
 $context | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $contextPath -Encoding utf8NoBOM
+& $privateArtifactHelper `
+    -Operation verify-file `
+    -LiteralPath $contextPath | Out-Null
+& $privateArtifactHelper `
+    -Operation verify-file `
+    -LiteralPath $logPath | Out-Null
 
 Write-Output 'TARGET_CLIENT_NATIVE_RESOURCE_GATE=PASS'
 Write-Output "CHECKED_HEAD=$CheckedHead"

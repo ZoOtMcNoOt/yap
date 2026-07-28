@@ -19,6 +19,14 @@ import {
   resolvePrivateServerAsrGateTimeout,
   sameWindowsPath,
 } from "./wdio/private-server-asr-gate-support.js";
+import {
+  loadPrivateServerSshProfile,
+} from "../../verification/private-server-ssh-profile.mjs";
+import {
+  assertPrivateDirectory,
+  protectAndVerifyPrivateDirectory,
+  writeExclusivePrivateFile,
+} from "../../verification/private-gate-artifacts.mjs";
 
 const testsRoot = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(testsRoot, "..");
@@ -88,8 +96,10 @@ function requirePrivateEvidenceDirectory() {
   if (!sameWindowsPath(canonicalParent, parent)) {
     throw new Error("The private evidence parent must not redirect elsewhere.");
   }
+  assertPrivateDirectory(canonicalParent);
   if (!worker) {
-    mkdirSync(evidenceDirectory);
+    mkdirSync(evidenceDirectory, { mode: 0o700 });
+    protectAndVerifyPrivateDirectory(evidenceDirectory);
   }
   if (
     !existsSync(evidenceDirectory)
@@ -99,6 +109,7 @@ function requirePrivateEvidenceDirectory() {
   ) {
     throw new Error("The launcher-owned private evidence directory is unavailable.");
   }
+  assertPrivateDirectory(evidenceDirectory);
 }
 
 function stageLicensedFixture() {
@@ -139,17 +150,16 @@ function stageLicensedFixture() {
       `${JSON.stringify({ schemaVersion: 1, languageBcp47: "en-US" }, null, 2)}\n`,
       { encoding: "utf8", flag: "wx" },
     );
-    writeFileSync(
+    writeExclusivePrivateFile(
       path.join(evidenceDirectory, "gate-context.json"),
-      `${JSON.stringify({
+      Buffer.from(`${JSON.stringify({
         schemaVersion: 1,
         checkedHead,
         fixtureLicense: lock.fixture.license,
         fixtureSha256: sha256,
         serverOrigin: baseUrl,
         status: "started",
-      }, null, 2)}\n`,
-      { encoding: "utf8", flag: "wx" },
+      }, null, 2)}\n`),
     );
   }
   if (!existsSync(staged) || !statSync(staged).isFile() || lstatSync(staged).isSymbolicLink()) {
@@ -163,6 +173,7 @@ function stageLicensedFixture() {
 
 requireCheckedHead();
 requireLoopbackGateOrigin();
+loadPrivateServerSshProfile();
 requirePrivateEvidenceDirectory();
 stageLicensedFixture();
 

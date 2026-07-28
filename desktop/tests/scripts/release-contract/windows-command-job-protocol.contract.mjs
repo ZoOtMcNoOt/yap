@@ -15,6 +15,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  BoundedCommandTimeoutError,
   BoundedCommandOutputLimitError,
 } from "../../../../verification/bounded-command-execution.mjs";
 import {
@@ -156,6 +157,63 @@ test("Windows Job status accepts proven pre-assignment supervisor cleanup", () =
     assert.throws(
       () => readWindowsSupervisorStatus(protocol),
       /status values differed from its contract/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("retained-descendant status remains authoritative over a racing timeout", () => {
+  const root = createCanonicalTemporaryDirectory("yap-gate-timeout-retained-status-");
+  const statusPath = path.join(root, "status.json");
+  const protocol = {
+    expectedLogDirectory: root,
+    environmentSha256: "e".repeat(64),
+    launchNonce: "b".repeat(64),
+    launchSpecPath: path.join(root, "unused-launch.json"),
+    launchSpecSha256: "c".repeat(64),
+    statusPath,
+    supervisorIdentitySha256: "a".repeat(64),
+  };
+  const status = {
+    schemaVersion: 1,
+    containment: "windows-job-object",
+    environmentSha256: protocol.environmentSha256,
+    supervisorIdentitySha256: protocol.supervisorIdentitySha256,
+    launchNonce: protocol.launchNonce,
+    launchSpecSha256: protocol.launchSpecSha256,
+    outcome: "retained-descendant",
+    rootProcessId: 1234,
+    assignedBeforeResume: true,
+    targetExitCode: 0,
+    terminationRequested: true,
+    rootExited: true,
+    activeProcessCount: 0,
+    activeProcessZeroObserved: true,
+    cleanupProven: true,
+    retainedDescendantDetected: true,
+    elapsedMilliseconds: 5_010,
+    nativeErrorCode: null,
+  };
+  try {
+    writeFileSync(statusPath, `${JSON.stringify(status)}\n`, { flag: "wx" });
+    const interpreted = interpretWindowsCommandResult({
+      exitCode: 0,
+      label: "Timeout/retained-descendant race fixture",
+      primaryError: new BoundedCommandTimeoutError(
+        "Timeout/retained-descendant race fixture",
+        5_000,
+      ),
+      protocol,
+      signal: null,
+    });
+    assert.equal(
+      interpreted.error.code,
+      "INTEGRATED_GATE_COMMAND_RETAINED_DESCENDANT",
+    );
+    assert.equal(
+      interpreted.error.terminationEvidence.terminationReason,
+      "retained-descendant",
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

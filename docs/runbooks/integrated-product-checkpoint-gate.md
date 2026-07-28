@@ -8,8 +8,8 @@ The authoritative manifest is
 [`verification/integrated-product-checkpoint-gate.json`](../../verification/integrated-product-checkpoint-gate.json).
 The runner requires that manifest to be selected explicitly for both admission
 and completion, and freezes its exact bytes, checked Git head, private-plan
-bytes, one-attempt token, command logs, private evidence, and child definitions
-into the admission and receipt.
+bytes, one-attempt capability digest, command logs, private evidence, and child
+definitions into the admission and receipt.
 
 ## Identity boundary
 
@@ -28,8 +28,14 @@ hashes, first attempt, timestamps, and pass statuses.
 ## Candidate attempt
 
 Start from a clean checkout at the exact candidate head. Prepare a new bounded
-private evidence plan and new absent destinations outside the repository, then
-admit the sole attempt:
+private evidence plan and new absent destinations outside the repository.
+Before admission, use
+`verification/private-gate-artifacts.ps1` to protect and verify the existing
+gate root, private-plan file, all three runtime-preparation receipt files, and
+the real parent of each planned destination. The detailed copy/paste preflight
+in the preprocessing and language-routing runbook is the schema-1 contract for
+this checkpoint; named evidence destinations themselves must remain absent.
+Then admit the sole attempt:
 
 ```powershell
 $candidateHead = (git rev-parse HEAD).Trim()
@@ -40,20 +46,23 @@ node .\verification\integrated-gate-runner.mjs begin `
   --private-plan <new-private-plan.json>
 ```
 
-The returned admission names the only accepted evidence destinations and
-attempt token. Populate those destinations through the approved target-client,
+The returned safe projection names the admission and candidate-receipt paths;
+the admission stores only the one-attempt capability digest. The raw
+`attempt.capability` remains in the protected run directory and is never
+printed. Populate the admitted destinations through the approved target-client,
 GB10 provider, connected-server, and teardown controllers. Do not place private
-audio, transcript text, host paths, raw logs, process ledgers, tokens, or
-receipts in Git.
+audio, transcript text, host paths, raw logs, process ledgers, capabilities,
+tokens, or receipts in Git.
 
 After every private child and teardown receipt is complete, invoke completion
 once. Completion runs the manifest's command cells and publishes a candidate
-receipt only when every exact child passes:
+receipt only when every exact child passes. The runner consumes the protected
+`attempt.capability` beside the admission; no capability value belongs in the
+command line, environment, or terminal output:
 
 ```powershell
 node .\verification\integrated-gate-runner.mjs complete `
   --admission <private-admission.json> `
-  --attempt-token <admitted-token> `
   --manifest .\verification\integrated-product-checkpoint-gate.json
 ```
 

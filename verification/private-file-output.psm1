@@ -130,8 +130,13 @@ function Write-NewPrivateFileAtomically {
         [IO.UnixFileMode]::UserWrite -bor
         [IO.UnixFileMode]::UserExecute
     )
-    if (
-        -not [OperatingSystem]::IsWindows() -and
+    $PrivateArtifactHelper = Join-Path $PSScriptRoot 'private-gate-artifacts.ps1'
+    if ([OperatingSystem]::IsWindows()) {
+        & $PrivateArtifactHelper `
+            -Operation verify-directory `
+            -LiteralPath $ParentItem.FullName | Out-Null
+    }
+    elseif (
         [IO.File]::GetUnixFileMode($ParentItem.FullName) -ne
             $PrivateDirectoryMode
     ) {
@@ -176,8 +181,12 @@ function Write-NewPrivateFileAtomically {
             $OutputStream.Dispose()
         }
 
-        if (
-            -not [OperatingSystem]::IsWindows() -and
+        if ([OperatingSystem]::IsWindows()) {
+            & $PrivateArtifactHelper `
+                -Operation protect-file `
+                -LiteralPath $TemporaryPath | Out-Null
+        }
+        elseif (
             [IO.File]::GetUnixFileMode($TemporaryPath) -ne $PrivateUnixMode
         ) {
             throw 'Private file output was not created with user-only access.'
@@ -196,6 +205,11 @@ function Write-NewPrivateFileAtomically {
             throw 'Private file output did not retain user-only access.'
         }
         Remove-Item -LiteralPath $TemporaryPath -Force
+        if ([OperatingSystem]::IsWindows()) {
+            & $PrivateArtifactHelper `
+                -Operation verify-file `
+                -LiteralPath $CanonicalDestination | Out-Null
+        }
         $PublicationSucceeded = $true
     }
     finally {

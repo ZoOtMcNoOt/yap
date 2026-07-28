@@ -48,20 +48,27 @@ supervisor terminated the owned Job and correctly consumed the candidate. The
 private failure did not preserve the lingering PID, so no particular Rust test
 or process is blamed.
 
-The replacement retains assigned-before-resume, kill-on-close, immediate
-explicit termination, and authoritative accounting-zero proof. It allows at
-most 2,000 milliseconds after a signaled root exit for already-exiting
-descendants and asynchronous Job accounting to drain before returning the
-typed retained-descendant failure and enforcing the separate 5,000-millisecond
-cleanup proof. A causal child-owned handshake proves the child remains alive
-for one second after the exact root PID exits, then completes naturally; the
-unchanged 30-second fixture still fails and is force-cleaned. Those paired
-contracts passed three consecutive times, the focused Windows/installer set
-passes 14/14, the affected release-contract cell passes 82/82 under nested Job
-ownership, and the exact Cargo cell passes under the repaired supervisor.
-The final same-three repair review found no P0–P2 issue. A new exact head and
-admission, fresh private evidence, the one complete replacement matrix,
-first-attempt hosted closure, the focused PR, and merge remain open.
+Exact head `2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was then admitted but
+withdrawn before GB10, connected-server, or complete-matrix execution.
+Pre-execution adversarial review found that command cells had no frozen
+wall-clock deadline, the connected path still trusted an ambient SSH alias and
+mutable remote helpers, the one-attempt secret crossed terminal/argument
+boundaries, and Windows private artifacts did not verify a protected DACL.
+Passing child evidence collected for that head is not replacement-candidate
+evidence and must not be relabeled.
+
+The current replacement retains assigned-before-resume, kill-on-close,
+immediate explicit termination, and authoritative accounting-zero proof. It
+allows at most 5,000 milliseconds after a signaled root exit for already-
+exiting descendants and asynchronous Job accounting to drain before returning
+the typed retained-descendant failure and enforcing the separate
+5,000-millisecond cleanup proof. It also freezes per-cell wall-clock deadlines,
+uses a protected one-attempt capability file, verifies private Windows DACLs,
+and requires one no-config SSH profile with bounded tunnel settlement. A new
+working-tree three-agent review found no P0–P2 issue. A clean exact-head freeze
+and match review, private-controller prequalification, admission, fresh private
+evidence, the one complete replacement matrix, first-attempt hosted closure,
+the focused PR, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
@@ -146,7 +153,7 @@ creates the target suspended, assigns and verifies the inner Job before resume,
 and accepts post-assignment cleanup proof only after the retained root handle
 signals and `QueryInformationJobObject` reports zero active processes.
 After any signaled root exit, zero or nonzero, when no explicit termination
-request has arrived, it allows the owned Job at most 2,000 milliseconds to
+request has arrived, it allows the owned Job at most 5,000 milliseconds to
 drain already-exiting descendants and asynchronous Job accounting naturally.
 A nonzero count after that bound is terminated and fails as a retained
 descendant, and zero must then be proven within the separate existing
@@ -159,9 +166,25 @@ implementation remains recoverable on
 `archive/phase3-contained-process-pre-lean-20260713`.
 
 Qualify the connected-server executor from the same non-login SSH shape used
-by the admitted controller. The private wrapper must receive an explicit
-absolute `YAP_UV_EXECUTABLE` plus its byte length, SHA-256, and exact version
-output. The wrapper forwards the checked-head
+by the admitted controller. Main, control, and tunnel SSH processes must use
+the checked profile emitted by
+`verification/private-server-ssh-profile.mjs`: the absolute OpenSSH
+executable, fixed `admin@192.168.50.1` destination, absolute single-link
+identity and known-hosts files, `-F NUL`, strict host checking, and disabled
+ambient agents, forwarding, proxies, local commands, passwords, and
+keyboard-interactive authentication. The tunnel profile owns exactly one
+loopback forward. An SSH config alias is not admission evidence.
+
+Before starting any remote owner, the private controller must authenticate the
+exact checked-head Start, Stop, Verify, and Wrapper helpers as regular,
+single-link, `admin`-owned mode-`0700` files with reviewed SHA-256 identities
+and clean `bash -n` parsing. Stop and Verify are rechecked immediately before
+use. The supported Windows entrypoint Job-contains the complete controller,
+OpenSSH, PNPM, WDIO, desktop, and tunnel tree with a finite wall-clock and
+bounded private log.
+
+The private wrapper must receive an explicit absolute `YAP_UV_EXECUTABLE` plus
+its byte length, SHA-256, and exact version output. The wrapper forwards the checked-head
 `infra/yap-server-node/checked-uv-executor.py` as `YAP_UV_BINARY`. Every actual
 `uv` invocation rejects an unexpected or over-limit size, copies and hashes the
 configured file once within that frozen bound, seals that exact in-memory image
@@ -208,7 +231,103 @@ bind to that head.
 
 The identity gate requires private-plan schema version 2 and a new absolute
 `mockOidc.receiptFile` outside the repository. Like every other admitted
-destination, that file must not exist at admission.
+destination, that file must not exist at admission. The schema also binds the
+reviewed remote start, stop, verification, and wrapper helpers as one
+`integrated.remoteHelperSetSha256`:
+
+```json
+{
+  "schemaVersion": 2,
+  "checkedHead": "<full-lowercase-git-sha>",
+  "mockOidc": {
+    "receiptFile": "<new-absolute-private-mock-oidc-receipt>"
+  },
+  "targetClient": {
+    "evidenceDirectory": "<new-absolute-private-directory>",
+    "preparedAudioEvidenceFile": "<that-directory>/local-stream-short-boundaries.json",
+    "preparedAudioSuiteSha256": "<frozen-suite-sha256>"
+  },
+  "gb10": {
+    "lifecycleEvidenceFile": "<new-absolute-private-json-file>",
+    "runtimePreparation": {
+      "cohere-vllm": {
+        "receiptFile": "<absolute-private-cohere-preparation-receipt>",
+        "receiptSha256": "<frozen-receipt-sha256>"
+      },
+      "nemotron-nemo": {
+        "receiptFile": "<absolute-private-nemotron-preparation-receipt>",
+        "receiptSha256": "<frozen-receipt-sha256>"
+      },
+      "language-detection": {
+        "receiptFile": "<absolute-private-lid-preparation-receipt>",
+        "receiptSha256": "<frozen-receipt-sha256>"
+      }
+    }
+  },
+  "integrated": {
+    "evidenceDirectory": "<new-absolute-private-directory>",
+    "remoteCleanupLogFile": "<new-absolute-private-log-file>",
+    "teardownEvidenceFile": "<that-directory>/teardown.json",
+    "remoteHelperSetSha256": "<frozen-helper-set-sha256>"
+  }
+}
+```
+
+The reviewed private controller calculates the helper-set identity from exactly
+four lowercase file SHA-256 values in fixed role order (`start`, `stop`,
+`verify`, `wrapper`), using one UTF-8
+`<role>=<sha256>\n` line per helper. It authenticates each remote helper as a
+real, single-link, administrator-owned mode-0700 file and runs `bash -n` before
+freezing that digest. The wrapper emits exactly one matching
+`REMOTE_HELPER_SET_SHA256=<sha256>` line in the bounded private cleanup log.
+
+Protect and read back every existing private input and every required parent
+before admission. Do not create any named evidence destination:
+
+```powershell
+$candidateHead = (git rev-parse HEAD).Trim()
+$PrivatePlanPath = (
+  Resolve-Path -LiteralPath '<new-private-plan.json>'
+).Path
+$PrivatePlan = Get-Content -LiteralPath $PrivatePlanPath -Raw |
+  ConvertFrom-Json -Depth 20
+$EvidenceRoot = [IO.Path]::GetFullPath('<existing-private-gate-root>')
+$PrivateArtifactHelper = (
+  Resolve-Path -LiteralPath '.\verification\private-gate-artifacts.ps1'
+).Path
+$RuntimeReceipts = @(
+  $PrivatePlan.gb10.runtimePreparation.'cohere-vllm'.receiptFile
+  $PrivatePlan.gb10.runtimePreparation.'nemotron-nemo'.receiptFile
+  $PrivatePlan.gb10.runtimePreparation.'language-detection'.receiptFile
+)
+$RequiredParents = @(
+  $EvidenceRoot
+  (Split-Path -Parent $PrivatePlanPath)
+  (Split-Path -Parent $PrivatePlan.mockOidc.receiptFile)
+  (Split-Path -Parent $PrivatePlan.targetClient.evidenceDirectory)
+  (Split-Path -Parent $PrivatePlan.gb10.lifecycleEvidenceFile)
+  (Split-Path -Parent $PrivatePlan.integrated.evidenceDirectory)
+  (Split-Path -Parent $PrivatePlan.integrated.remoteCleanupLogFile)
+  ($RuntimeReceipts | ForEach-Object { Split-Path -Parent $_ })
+) | Sort-Object -Unique
+foreach ($PrivateParent in $RequiredParents) {
+  New-Item -ItemType Directory -Force -Path $PrivateParent | Out-Null
+  & $PrivateArtifactHelper `
+    -Operation protect-directory `
+    -LiteralPath $PrivateParent | Out-Null
+  & $PrivateArtifactHelper `
+    -Operation verify-directory `
+    -LiteralPath $PrivateParent | Out-Null
+}
+foreach ($PrivateInput in @($PrivatePlanPath) + $RuntimeReceipts) {
+  & $PrivateArtifactHelper `
+    -Operation protect-file `
+    -LiteralPath $PrivateInput | Out-Null
+  & $PrivateArtifactHelper `
+    -Operation verify-file `
+    -LiteralPath $PrivateInput | Out-Null
+}
+```
 
 Admission creates one GitHub commit status whose normalized context binds the
 gate ID and manifest hash and whose description contains only the SHA-256 of
@@ -226,12 +345,11 @@ history with case-insensitive contexts; see the
 [commit-status API](https://docs.github.com/en/rest/commits/statuses).
 
 ```powershell
-$candidateHead = (git rev-parse HEAD).Trim()
 node .\verification\integrated-gate-runner.mjs begin `
   --checked-head $candidateHead `
-  --evidence-root <existing-private-gate-root> `
+  --evidence-root $EvidenceRoot `
   --manifest .\verification\integrated-identity-access-gate.json `
-  --private-plan <new-private-plan.json>
+  --private-plan $PrivatePlanPath
 ```
 
 After admission, populate the admitted `mockOidc.receiptFile` on a
@@ -265,12 +383,13 @@ consumed candidate exposed the missing PowerShell-edition declaration and
 follow-up review found that dynamic script blocks ignore `#requires`, that
 historical working tree passed 13 focused Windows/installer contracts and the
 complete release-contract cell 81/81 with no same-three P0–P2 finding. The
-current replacement for the sixth candidate's 250-millisecond natural-drain
-race passes the causal paired contract three consecutive times, the focused
-Windows/installer set 14/14, the complete release-contract cell 82/82 under
-nested Job ownership, and the exact Cargo cell under the repaired supervisor.
-The final same-three repair review found no P0–P2 issue; a new exact-head
-admission remains open. On Linux, the provider remains on an
+historical repair for the sixth candidate's 250-millisecond natural-drain race
+passed its causal paired contract, focused Windows/installer set, complete
+release-contract cell, and exact Cargo cell. The later adversarial rejection of
+`2f8b127...` supersedes that pre-admission review as merge authority. The
+current timeout, capability, DACL, SSH-profile, helper-authentication, and
+controller-containment replacement still requires its own exact-head review
+and admission. On Linux, the provider remains on an
 egress-blocked internal bridge and a bounded Python 3.12 child exposes only
 numeric IPv4 loopback; Windows and macOS retain Docker's loopback-only publish
 path. The harness resolves the Docker server platform to both the frozen
@@ -288,15 +407,32 @@ an exact-head owner-flow receipt.
 That admitted receipt and the hosted `mock-oidc` first-attempt result must still
 be collected on the final reviewed head.
 
+After the owned tunnel and remote server have settled, derive the schema-2
+teardown receipt with the same frozen helper-set identity:
+
+```powershell
+node .\verification\write-connected-server-teardown-receipt.mjs `
+  --checked-head $candidateHead `
+  --remote-cleanup-log $PrivatePlan.integrated.remoteCleanupLogFile `
+  --tunnel-process-ledger (
+    Join-Path $PrivatePlan.integrated.evidenceDirectory 'tunnel-process-ledger.json'
+  ) `
+  --remote-server-process-id <directly-launched-ssh-pid> `
+  --remote-helper-set-sha256 $PrivatePlan.integrated.remoteHelperSetSha256 `
+  --output $PrivatePlan.integrated.teardownEvidenceFile
+```
+
 Populate the admitted destinations through the approved target-client, GB10,
 connected-server, mock-OIDC, and teardown controllers. Then invoke completion
 exactly once. Completion runs every command cell and accepts every private child
-only when its receipt matches the frozen plan:
+only when its receipt matches the frozen plan. The runner consumes the protected
+32-byte `attempt.capability` beside the admission and proves it absent before
+the first command cell; no capability value belongs in the command line,
+environment, admission JSON, or terminal output:
 
 ```powershell
 node .\verification\integrated-gate-runner.mjs complete `
   --admission <private-admission.json> `
-  --attempt-token <admitted-token> `
   --manifest .\verification\integrated-identity-access-gate.json
 ```
 
@@ -327,10 +463,11 @@ and the disposable-Windows NSIS job must all pass on the exact final reviewed
 head on their first attempt. A documentation-only descendant may reconcile
 public-safe evidence; any other change requires a new candidate gate.
 
-Remove the admission token after candidate completion. For hosted closure, set
-`GH_TOKEN` to a separate read-only credential limited to commit-status read and
-Actions read. Hosted collection pins `github.com/mcnatg1/yap`; it does not use
-the mutable Git remote or `GH_HOST`.
+Candidate completion has already consumed and deleted the raw attempt
+capability. For hosted closure, set `GH_TOKEN` to a separate read-only
+credential limited to commit-status read and Actions read. Hosted collection
+pins `github.com/mcnatg1/yap`; it does not use the mutable Git remote or
+`GH_HOST`.
 
 Derive the hosted receipt from the original candidate admission:
 

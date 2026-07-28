@@ -7,6 +7,10 @@ import {
   writeSync,
 } from "node:fs";
 import path from "node:path";
+import {
+  assertPrivateDirectory,
+  protectAndVerifyPrivateFile,
+} from "./private-gate-artifacts.mjs";
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message);
@@ -25,7 +29,9 @@ export function openVerifiedCommandLog(logPath, expectedLogDirectory) {
     path.isAbsolute(logPath) && path.isAbsolute(expectedLogDirectory),
     "Command log paths must be absolute.",
   );
-  const normalizedDirectory = path.normalize(expectedLogDirectory);
+  const normalizedDirectory = assertPrivateDirectory(
+    path.normalize(expectedLogDirectory),
+  );
   const directoryMetadata = lstatSync(normalizedDirectory);
   requireCondition(
     directoryMetadata.isDirectory() && !directoryMetadata.isSymbolicLink(),
@@ -46,6 +52,7 @@ export function openVerifiedCommandLog(logPath, expectedLogDirectory) {
 
   const descriptor = openSync(normalizedLogPath, "wx", 0o600);
   try {
+    protectAndVerifyPrivateFile(normalizedLogPath);
     const descriptorMetadata = fstatSync(descriptor);
     const pathMetadata = lstatSync(normalizedLogPath);
     const realLogPath = path.normalize(realpathSync.native(normalizedLogPath));

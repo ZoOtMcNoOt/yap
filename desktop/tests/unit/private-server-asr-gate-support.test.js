@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -7,6 +8,7 @@ import {
   matchesVerifiedHistoryDialog,
   resolvePrivateServerAsrGateTimeout,
   sameWindowsPath,
+  settleSshTunnelChild,
 } from "../wdio/private-server-asr-gate-support.js";
 
 describe("private-server ASR gate support", () => {
@@ -159,5 +161,61 @@ describe("private-server ASR gate support", () => {
       name,
       transcript,
     )).toBe(false);
+  });
+
+  it("settles SSH tunnel children gracefully before requesting force", async () => {
+    const child = new EventEmitter();
+    child.exitCode = null;
+    child.signalCode = null;
+    child.kill = (signal) => {
+      expect(signal).toBeUndefined();
+      queueMicrotask(() => {
+        child.exitCode = 0;
+        child.emit("exit", 0, null);
+      });
+      return true;
+    };
+
+    await expect(settleSshTunnelChild(child, {
+      gracefulTimeoutMs: 100,
+      forceTimeoutMs: 100,
+    })).resolves.toEqual({ forceKillRequested: false });
+  });
+
+  it("force-settles an SSH tunnel child that ignores graceful termination", async () => {
+    const child = new EventEmitter();
+    child.exitCode = null;
+    child.signalCode = null;
+    const signals = [];
+    child.kill = (signal) => {
+      signals.push(signal ?? "graceful");
+      if (signal === "SIGKILL") {
+        queueMicrotask(() => {
+          child.signalCode = "SIGKILL";
+          child.emit("exit", null, "SIGKILL");
+        });
+      }
+      return true;
+    };
+
+    await expect(settleSshTunnelChild(child, {
+      gracefulTimeoutMs: 5,
+      forceTimeoutMs: 100,
+    })).resolves.toEqual({ forceKillRequested: true });
+    expect(signals).toEqual(["graceful", "SIGKILL"]);
+  });
+
+  it("fails closed when forced SSH tunnel settlement cannot be proven", async () => {
+    const child = new EventEmitter();
+    child.exitCode = null;
+    child.signalCode = null;
+    child.kill = () => true;
+
+    await expect(settleSshTunnelChild(child, {
+      gracefulTimeoutMs: 5,
+      forceTimeoutMs: 5,
+    })).rejects.toMatchObject({
+      code: "PRIVATE_SERVER_SSH_TUNNEL_CLEANUP_UNPROVEN",
+    });
   });
 });

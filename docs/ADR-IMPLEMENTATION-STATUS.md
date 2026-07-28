@@ -1,7 +1,7 @@
 # ADR implementation status
 
 **Status:** Living, non-normative implementation audit
-**As of:** 2026-07-26; Phases 3–6 and Architecture Checkpoint A are merged and
+**As of:** 2026-07-28; Phases 3–6 and Architecture Checkpoints A/B are merged and
 their checked-head evidence remains recorded below. Exact Phase 6
 executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its frozen
 30-child local/native/server/private-runtime gate. Its target-client evidence
@@ -43,8 +43,17 @@ authentication defaults, tenant-scoped ownership, enforced and audited purpose
 grants, a narrow native token-provider seam, authenticated bounded private
 WebSocket admission, and the qualified native lower handshake. No production
 native token adapter or live ASR route is approved or wired. The pinned mock
-OIDC flow is focused-green; its hosted Docker execution is pending. Final
-review, the full phase gate, PR closure, and merge have not occurred.
+OIDC flow is focused-green; its hosted Docker execution is pending. Admitted
+head `2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was withdrawn before GB10,
+connected-server, or complete-matrix execution after pre-execution review
+rejected its gate boundary. The replacement now freezes command deadlines,
+retains bounded Job settlement, keeps its one-attempt capability private,
+verifies exact Windows DACLs, pins system SSH/PowerShell hosts, and binds
+authenticated remote helpers through cleanup and teardown. Focused
+containment/private-evidence contracts pass, and the three-agent working-tree
+review found no P0–P2 issue. A clean exact-head freeze, private-controller
+prequalification, admission, full phase gate, PR closure, and merge have not
+occurred. No ADR completion score changes on focused evidence alone.
 
 **Authority:** ADRs define decisions; current code and executable tests define implementation truth.
 

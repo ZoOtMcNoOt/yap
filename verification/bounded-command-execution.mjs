@@ -97,10 +97,15 @@ export function executeBoundedCommand({
   logPath,
   expectedLogDirectory,
   maximumLogBytes,
+  timeoutMs,
 }) {
   requireCondition(
     Number.isSafeInteger(maximumLogBytes) && maximumLogBytes > 0,
     "Command-log byte limit must be one positive safe integer.",
+  );
+  requireCondition(
+    Number.isSafeInteger(timeoutMs) && timeoutMs > 0,
+    "Command timeout must be one positive safe integer in milliseconds.",
   );
   const logDescriptor = openVerifiedCommandLog(
     logPath,
@@ -130,12 +135,14 @@ export function executeBoundedCommand({
     let terminalError = null;
     let terminationPromise = Promise.resolve();
     let cancelWindowsWatchdog = () => {};
+    let commandTimeout = null;
     let settled = false;
     let child;
 
     const settle = (error, result) => {
       if (settled) return;
       settled = true;
+      if (commandTimeout !== null) clearTimeout(commandTimeout);
       cancelWindowsWatchdog();
       let finalError = error;
       try {
@@ -315,7 +322,22 @@ export function executeBoundedCommand({
         signal,
       });
     });
+    commandTimeout = setTimeout(() => {
+      requestTermination(new BoundedCommandTimeoutError(label, timeoutMs));
+    }, timeoutMs);
   });
+}
+
+export class BoundedCommandTimeoutError extends Error {
+  constructor(label, timeoutMs) {
+    super(
+      `${label} exceeded its ${timeoutMs}-millisecond wall-clock limit; `
+      + "process-tree termination was requested.",
+    );
+    this.name = "BoundedCommandTimeoutError";
+    this.code = "INTEGRATED_GATE_COMMAND_TIMEOUT";
+    this.timeoutMs = timeoutMs;
+  }
 }
 
 export { BoundedCommandOutputLimitError };

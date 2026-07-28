@@ -47,18 +47,30 @@ exited while the Windows Job remained nonzero beyond the former
 consumed the candidate. Its private failure did not preserve the lingering PID,
 so this plan does not attribute the race to a particular Rust test or process.
 
-The replacement keeps suspended creation, assigned-before-resume,
-kill-on-close, immediate explicit termination, and authoritative zero-active
-accounting. It gives any signaled root exit without an explicit termination
-request at most 2,000 milliseconds to drain naturally before typed failure and
-the separate 5,000-millisecond forced-cleanup proof. A causal child-owned
-root-exit/PID/completion fixture and the unchanged long-lived descendant
-fixture pass three consecutive paired runs. The focused Windows/installer set
-passes 14/14, the affected release-contract cell passes 82/82 under nested Job
-ownership, and the exact Cargo cell passes under the repaired supervisor.
-The final same-three repair review found no P0–P2 issue. A new exact-head
-admission, fresh private evidence, the one complete replacement matrix,
-first-attempt hosted closure, the focused PR, and merge remain open.
+Exact head `2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was admitted but
+withdrawn before GB10, connected-server, or complete-matrix execution.
+Pre-execution adversarial review rejected its unbounded command cells, ambient
+SSH alias and mutable remote-helper trust, terminal-carried attempt secret, and
+incomplete Windows private-artifact boundary. No passing evidence from that
+head is replacement evidence.
+
+The current replacement keeps suspended creation, assigned-before-resume,
+kill-on-close, immediate explicit termination, authoritative zero-active
+accounting, and typed retained-descendant authority. It gives a signaled root
+exit at most 5,000 milliseconds to drain naturally and freezes a separate
+deadline for every active command cell. The one-attempt capability is a
+protected 32-byte private file; only its digest is admitted, and completion
+consumes it before the first command cell. The boundary pins system OpenSSH and
+the system PowerShell ACL host, enforces exact gate and OpenSSH DACL policies,
+uses one no-config SSH profile, authenticates the remote start/stop/verify/
+wrapper helpers and binds their set digest through cleanup and teardown, and
+bounds tunnel/controller settlement. Focused containment, SSH/profile,
+target-evidence, Rust/PowerShell private publication, connected teardown, and
+comprehensive private-evidence contracts pass. The three-agent working-tree
+review found no P0–P2 issue. A new clean exact-head freeze and
+private-controller prequalification, admission, fresh private evidence, the one
+complete replacement matrix, first-attempt hosted closure, the focused PR, and
+merge remain open.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
