@@ -943,7 +943,10 @@ test("identity gate prequalifies the non-login connected uv executor", () => {
     "utf8",
   );
   assert.match(runbook, /non-login SSH shape/);
-  assert.match(runbook, /absolute `YAP_UV_EXECUTABLE` plus its byte length, SHA-256/);
+  assert.match(
+    runbook,
+    /absolute `YAP_UV_EXECUTABLE` plus\s+its byte length, SHA-256/,
+  );
   assert.match(runbook, /checked-uv-executor\.py` as `YAP_UV_BINARY`/);
   assert.match(runbook, /seals that exact\s+in-memory image\s+against mutation/);
 
