@@ -33,6 +33,7 @@ namespace Yap.Verification
         private const uint WaitTimeout = 258;
         private const uint Infinite = 0xffffffff;
         private const uint ForcedTerminationExitCode = 0xe0000001;
+        private const int NaturalDescendantDrainMilliseconds = 2_000;
         private static readonly IntPtr InvalidHandleValue = new IntPtr(-1);
 
         public static int Run(
@@ -221,7 +222,8 @@ namespace Yap.Verification
                         && rootExited
                         && rootExitObservedAt.HasValue
                         && finalActiveProcessCount > 0
-                        && elapsed.ElapsedMilliseconds - rootExitObservedAt.Value >= 250)
+                        && elapsed.ElapsedMilliseconds - rootExitObservedAt.Value
+                            >= NaturalDescendantDrainMilliseconds)
                     {
                         retainedDescendantDetected = true;
                         terminationRequested = true;

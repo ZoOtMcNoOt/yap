@@ -35,6 +35,92 @@ function processIsAlive(processId) {
   }
 }
 
+function ownedPowerShellChildCommand(readyPath, childSource) {
+  const escapedReadyPath = readyPath.replaceAll("'", "''");
+  const escapedRootProcessIdPath = `${readyPath}.root-pid`.replaceAll("'", "''");
+  const ownedChildSource = [
+    `$rootProcessId = [int] [IO.File]::ReadAllText('${escapedRootProcessIdPath}');`,
+    `[IO.File]::WriteAllText('${escapedReadyPath}', [string] $PID);`,
+    "while (Get-Process -Id $rootProcessId -ErrorAction SilentlyContinue) {",
+    "Start-Sleep -Milliseconds 10;",
+    "}",
+    childSource,
+  ].join(" ");
+  const childEncodedCommand = Buffer.from(
+    ownedChildSource,
+    "utf16le",
+  ).toString("base64");
+  const rootSource = [
+    `[IO.File]::WriteAllText('${escapedRootProcessIdPath}', [string] $PID);`,
+    "$child = Start-Process",
+    "-FilePath (Get-Command pwsh.exe).Source",
+    `-ArgumentList '-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand','${childEncodedCommand}'`,
+    "-WindowStyle Hidden",
+    "-PassThru;",
+    "$readyDeadline = [DateTime]::UtcNow.AddSeconds(5);",
+    `while (-not [IO.File]::Exists('${escapedReadyPath}')) {`,
+    "if ([DateTime]::UtcNow -ge $readyDeadline) {",
+    "Stop-Process -Id $child.Id -Force -ErrorAction SilentlyContinue;",
+    "exit 97;",
+    "}",
+    "Start-Sleep -Milliseconds 10;",
+    "}",
+    "exit 0",
+  ].join(" ");
+  return [
+    "pwsh.exe",
+    "-NoLogo",
+    "-NoProfile",
+    "-NonInteractive",
+    "-EncodedCommand",
+    Buffer.from(rootSource, "utf16le").toString("base64"),
+  ];
+}
+
+test("bounded Windows commands allow owned descendants to drain naturally", {
+  skip: process.platform !== "win32",
+}, async () => {
+  const root = createCanonicalTemporaryDirectory(
+    "yap-gate-natural-descendant-drain-",
+  );
+  const commandLogDirectory = path.join(root, "command-logs");
+  mkdirSync(commandLogDirectory);
+  const readyPath = path.join(root, "child-ready");
+  const completionPath = path.join(root, "child-completed");
+  const escapedCompletionPath = completionPath.replaceAll("'", "''");
+  const started = Date.now();
+  try {
+    const result = await executeBoundedCommand({
+      command: ownedPowerShellChildCommand(
+        readyPath,
+        "Start-Sleep -Milliseconds 1000;"
+          + ` [IO.File]::WriteAllText('${escapedCompletionPath}', 'completed')`,
+      ),
+      cwd: repoRoot,
+      environment: process.env,
+      label: "Natural-descendant-drain fixture",
+      logPath: path.join(commandLogDirectory, "natural-descendant-drain.log"),
+      expectedLogDirectory: commandLogDirectory,
+      maximumLogBytes: 1_024,
+    });
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.terminationEvidence.terminationReason, "none");
+    assert.equal(result.terminationEvidence.terminateRequested, false);
+    assert.equal(result.terminationEvidence.activeProcessZeroObserved, true);
+    assert.equal(result.terminationEvidence.activeProcessCount, 0);
+    assert.equal(result.terminationEvidence.cleanupProven, true);
+    assert.ok(
+      Date.now() - started < 8_000,
+      "naturally draining descendants must settle within the focused contract bound",
+    );
+    const childProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
+    assert.equal(readFileSync(completionPath, "utf8"), "completed");
+    assert.equal(processIsAlive(childProcessId), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("bounded Windows commands reject and clean retained descendants", {
   skip: process.platform !== "win32",
 }, async () => {
@@ -42,33 +128,14 @@ test("bounded Windows commands reject and clean retained descendants", {
   const commandLogDirectory = path.join(root, "command-logs");
   mkdirSync(commandLogDirectory);
   const readyPath = path.join(root, "grandchild-ready");
-  const escapedReadyPath = readyPath.replaceAll("'", "''");
-  const childEncodedCommand = Buffer.from(
-    "Start-Sleep -Seconds 30",
-    "utf16le",
-  ).toString("base64");
-  const commandSource = [
-    "$child = Start-Process",
-    "-FilePath (Get-Command pwsh.exe).Source",
-    `-ArgumentList '-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand','${childEncodedCommand}'`,
-    "-WindowStyle Hidden",
-    "-PassThru;",
-    `[IO.File]::WriteAllText('${escapedReadyPath}', [string] $child.Id);`,
-    "exit 0",
-  ].join(" ");
-  const encodedCommand = Buffer.from(commandSource, "utf16le").toString("base64");
   const started = Date.now();
   try {
     await assert.rejects(
       executeBoundedCommand({
-        command: [
-          "pwsh.exe",
-          "-NoLogo",
-          "-NoProfile",
-          "-NonInteractive",
-          "-EncodedCommand",
-          encodedCommand,
-        ],
+        command: ownedPowerShellChildCommand(
+          readyPath,
+          "Start-Sleep -Seconds 30",
+        ),
         cwd: repoRoot,
         environment: process.env,
         label: "Retained-descendant fixture",

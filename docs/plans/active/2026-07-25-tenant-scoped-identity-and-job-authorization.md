@@ -11,8 +11,10 @@
 review closure exist. Candidates
 `134ec08002aeb1deca83547d511528b282966731`,
 `7046d98d61fec90d4c639e92aff09ff8f6a2083a`,
-`dae316ceab60fe395a1899290ca184148f0e9b27`, and
-`e6fcabd0f77a604092997839e45e6cada09304f9` are consumed. The first candidate's
+`dae316ceab60fe395a1899290ca184148f0e9b27`,
+`e6fcabd0f77a604092997839e45e6cada09304f9`,
+`59267c46a60ab9bb77494fc03d5666c1d1471f98`, and
+`2bd43b33638685ff2caccd7fdcf01c157a229c45` are consumed. The first candidate's
 fresh private children validated, but its one complete matrix exposed a
 post-hoc Windows `taskkill /T` timeout in the release-contract command limiter.
 The replacement uses suspended creation, nested Job assignment, kill-on-close,
@@ -22,8 +24,9 @@ supervisor declared PowerShell 7.4 without also requiring the Core edition.
 Follow-up runtime review then proved that dynamically created script blocks do
 not enforce `#requires`. The corrected encoded-command boundary checks both
 Core edition and version 7.4 before creating the loader script block. Thirteen
-focused Windows/installer contracts and the complete affected release-contract
-cell pass 81/81, and same-three closure found no P0–P2 issue. The third
+focused Windows/installer contracts and the 81-case release-contract cell
+passed on that consumed encoded-loader supervisor identity, and same-three
+closure found no P0–P2 issue. The third
 candidate passed Windows, mock-OIDC, target-client, and GB10 qualification, but
 the private connected-server readiness poll called `String.Contains` on its
 initially empty redirected stdout file and failed before WDIO. Graceful remote
@@ -34,10 +37,28 @@ independent local and remote zero-owner checks passed, but the directly owned
 SSH process returned `1` rather than the controller's required `143`. The
 wrapper's old PASS marker did not prove whether its TERM trigger remained
 authoritative or one cleanup helper had changed the final status, so the
-candidate is consumed. A new exact-head
-admission, fresh private evidence, the one
-complete replacement matrix, first-attempt hosted closure, the focused PR, and
-merge remain open.
+candidate is consumed. The fifth candidate's admitted Linux mock-OIDC flow
+passed, but the receipt inherited mode `0664` instead of the required
+owner-only private-evidence boundary, so that private child consumes the
+candidate. The sixth candidate passed all 13 private children and the complete
+matrix through strict Clippy. Every Rust test then passed, but the Cargo root
+exited while the Windows Job remained nonzero beyond the former
+250-millisecond natural-drain allowance. The supervisor terminated the Job and
+consumed the candidate. Its private failure did not preserve the lingering PID,
+so this plan does not attribute the race to a particular Rust test or process.
+
+The replacement keeps suspended creation, assigned-before-resume,
+kill-on-close, immediate explicit termination, and authoritative zero-active
+accounting. It gives any signaled root exit without an explicit termination
+request at most 2,000 milliseconds to drain naturally before typed failure and
+the separate 5,000-millisecond forced-cleanup proof. A causal child-owned
+root-exit/PID/completion fixture and the unchanged long-lived descendant
+fixture pass three consecutive paired runs. The focused Windows/installer set
+passes 14/14, the affected release-contract cell passes 82/82 under nested Job
+ownership, and the exact Cargo cell passes under the repaired supervisor.
+The final same-three repair review found no P0–P2 issue. A new exact-head
+admission, fresh private evidence, the one complete replacement matrix,
+first-attempt hosted closure, the focused PR, and merge remain open.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -249,16 +270,22 @@ repeatedly while implementation is changing.
 
 The focused identity implementation and original exactly-three review closure
 are complete. The mock-OIDC harness suite is 8/8 green. The replacement Windows
-command boundary has an eleven-case functional contract covering invocation-bound
-status, pre-assignment cleanup, typed-error preservation, private-file cleanup,
-launch and immutable supervisor-source integrity, bounded watchdog settlement,
-retained descendants, nested Jobs, and batch-command and exact-environment
-fidelity. After the second consumed candidate exposed the missing
+command boundary has a twelve-case functional contract covering
+invocation-bound status, pre-assignment cleanup, typed-error preservation,
+private-file cleanup, launch and immutable supervisor-source integrity, bounded
+watchdog settlement, causal natural descendant drain, retained descendants,
+nested Jobs, and batch-command and exact-environment fidelity. After the second
+consumed candidate exposed the missing
 `#requires -PSEdition Core` declaration, follow-up runtime review proved that
 dynamic script blocks ignore `#requires`. The corrected encoded-command
 boundary passed 13 focused Windows/installer contracts and the complete
-affected release-contract cell 81/81 with no same-three P0–P2 finding. This remains focused
-evidence, not a rerun of the consumed complete phase matrix. A Docker 29 ARM64
+affected release-contract cell 81/81 with no same-three P0–P2 finding. That
+count remains historical evidence for the consumed supervisor identity. The
+current natural-drain replacement passes the causal paired contract three
+consecutive times, the new 14 focused Windows/installer contracts, the affected
+release-contract cell 82/82 under nested Job ownership, and the exact Cargo
+cell under the repaired supervisor. This remains focused evidence, not a rerun
+of the consumed complete phase matrix. A Docker 29 ARM64
 diagnostic
 proved the bounded Linux loopback proxy against the locked provider on an
 internal bridge, but it did not produce an exact-head owner-flow receipt.

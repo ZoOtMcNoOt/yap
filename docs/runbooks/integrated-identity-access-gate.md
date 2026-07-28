@@ -8,8 +8,10 @@ their admissions nor their pass receipts can be relabeled or reused.
 **Current status:** candidates
 `134ec08002aeb1deca83547d511528b282966731`,
 `7046d98d61fec90d4c639e92aff09ff8f6a2083a`,
-`dae316ceab60fe395a1899290ca184148f0e9b27`, and
-`e6fcabd0f77a604092997839e45e6cada09304f9` are consumed. The first candidate's
+`dae316ceab60fe395a1899290ca184148f0e9b27`,
+`e6fcabd0f77a604092997839e45e6cada09304f9`,
+`59267c46a60ab9bb77494fc03d5666c1d1471f98`, and
+`2bd43b33638685ff2caccd7fdcf01c157a229c45` are consumed. The first candidate's
 fresh private children validated, but its one complete matrix exposed a Windows
 command-tree cleanup race in `frontend.release-contracts`: post-hoc
 `taskkill /T` exceeded its own bound and masked the typed output-limit failure.
@@ -21,9 +23,10 @@ matrix exposed a fail-fast declaration gap in that new supervisor:
 `#requires -PSEdition Core` was absent. Follow-up runtime review then proved
 that dynamic `ScriptBlock::Create` loading does not enforce `#requires`. The
 corrected boundary checks Core edition and version 7.4 before creating the
-loader script block. Thirteen focused Windows/installer contracts and the
-complete release-contract cell now pass 81/81, and same-three closure found no
-P0–P2 issue. The third candidate passed the Windows, mock-OIDC, target-client,
+loader script block. That consumed encoded-loader supervisor identity passed
+13 focused Windows/installer contracts and its 81-case release-contract cell,
+and same-three closure found no P0–P2 issue. The third candidate passed the
+Windows, mock-OIDC, target-client,
 and GB10 qualifications with exact teardown, but its admitted connected-server
 controller called `String.Contains` on the initially empty redirected stdout
 file and failed before WDIO. The remote wrapper still emitted its one cleanup
@@ -34,7 +37,29 @@ mock-OIDC, target-client, GB10, and connected WDIO evidence. Its remote wrapper
 emitted cleanup PASS and both independent zero-owner checks passed, but the
 owned SSH process returned `1` rather than the required `143`. Because that
 wrapper marker did not bind its TERM trigger and helper results, the teardown
-status remained ambiguous and consumes the candidate. A new exact head and
+status remained ambiguous and consumes the candidate. The fifth candidate's
+Linux mock-OIDC flow passed, but its receipt inherited mode `0664` instead of
+the required owner-only boundary; that private-child failure is preserved and
+consumes the candidate. The sixth candidate passed all 13 private children and
+the complete matrix through strict Clippy. Every Rust test in `native.tests`
+then passed, but the Cargo root exited while the Job still reported a nonzero
+process count beyond the former 250-millisecond natural-drain allowance. The
+supervisor terminated the owned Job and correctly consumed the candidate. The
+private failure did not preserve the lingering PID, so no particular Rust test
+or process is blamed.
+
+The replacement retains assigned-before-resume, kill-on-close, immediate
+explicit termination, and authoritative accounting-zero proof. It allows at
+most 2,000 milliseconds after a signaled root exit for already-exiting
+descendants and asynchronous Job accounting to drain before returning the
+typed retained-descendant failure and enforcing the separate 5,000-millisecond
+cleanup proof. A causal child-owned handshake proves the child remains alive
+for one second after the exact root PID exits, then completes naturally; the
+unchanged 30-second fixture still fails and is force-cleaned. Those paired
+contracts passed three consecutive times, the focused Windows/installer set
+passes 14/14, the affected release-contract cell passes 82/82 under nested Job
+ownership, and the exact Cargo cell passes under the repaired supervisor.
+The final same-three repair review found no P0–P2 issue. A new exact head and
 admission, fresh private evidence, the one complete replacement matrix,
 first-attempt hosted closure, the focused PR, and merge remain open.
 
@@ -109,16 +134,24 @@ node --test `
   .\desktop\tests\scripts\release-contract\windows-command-supervisor-watchdog.contract.mjs
 ```
 
-Require all eleven contracts to pass. They prove invocation-bound atomic status
+Require all twelve contracts to pass. They prove invocation-bound atomic status
 validation, pre-assignment cleanup semantics, typed primary-error preservation,
 private-file cleanup, launch-spec and immutable supervisor-source integrity
 before execution, bounded watchdog settlement with late-status cleanup,
-retained-descendant rejection and cleanup, nested outer/inner Job ownership,
+bounded natural descendant drain, retained-descendant rejection and cleanup,
+nested outer/inner Job ownership,
 batch-command argument/exact-environment/byte fidelity, and runtime-version and
 edition rejection at the encoded dynamic-loader boundary. The supervisor
 creates the target suspended, assigns and verifies the inner Job before resume,
 and accepts post-assignment cleanup proof only after the retained root handle
 signals and `QueryInformationJobObject` reports zero active processes.
+After any signaled root exit, zero or nonzero, when no explicit termination
+request has arrived, it allows the owned Job at most 2,000 milliseconds to
+drain already-exiting descendants and asynchronous Job accounting naturally.
+A nonzero count after that bound is terminated and fails as a retained
+descendant, and zero must then be proven within the separate existing
+5,000-millisecond forced-cleanup budget. Explicit termination and output-limit
+paths bypass the natural-drain window.
 Completion-port notifications are not used as proof because Windows does not
 guarantee their delivery. This is release-gate process
 ownership, not a return to the retired custom installer boundary. The earlier
@@ -229,10 +262,15 @@ atomic no-overwrite, permissive-umask Unix receipt-output regressions, plus the
 replaceable-ancestor and linked-ancestor rejections, focused workflow,
 integrated-gate, and Windows Job supervisor contracts. After the second
 consumed candidate exposed the missing PowerShell-edition declaration and
-follow-up review found that dynamic script blocks ignore `#requires`, the
-repaired working tree passed 13 focused
-Windows/installer contracts and the complete release-contract cell 81/81 with
-no same-three P0–P2 finding. On Linux, the provider remains on an
+follow-up review found that dynamic script blocks ignore `#requires`, that
+historical working tree passed 13 focused Windows/installer contracts and the
+complete release-contract cell 81/81 with no same-three P0–P2 finding. The
+current replacement for the sixth candidate's 250-millisecond natural-drain
+race passes the causal paired contract three consecutive times, the focused
+Windows/installer set 14/14, the complete release-contract cell 82/82 under
+nested Job ownership, and the exact Cargo cell under the repaired supervisor.
+The final same-three repair review found no P0–P2 issue; a new exact-head
+admission remains open. On Linux, the provider remains on an
 egress-blocked internal bridge and a bounded Python 3.12 child exposes only
 numeric IPv4 loopback; Windows and macOS retain Docker's loopback-only publish
 path. The harness resolves the Docker server platform to both the frozen
