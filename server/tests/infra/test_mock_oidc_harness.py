@@ -23,6 +23,7 @@ FLOW = REPOSITORY / "verification" / "mock-oidc-owner-flow.py"
 LOOPBACK_PROXY = REPOSITORY / "verification" / "mock-oidc-loopback-proxy.py"
 EXACT_RUNTIME = REPOSITORY / "verification" / "exact-python-runtime.psm1"
 DOCKER_OWNER = REPOSITORY / "verification" / "mock-oidc-docker-owner.psm1"
+PRIVATE_FILE_OUTPUT = REPOSITORY / "verification" / "private-file-output.psm1"
 FAKE_DOCKER = Path(__file__).with_name("fake_mock_oidc_docker.ps1")
 EXPECTED_DIGEST = (
     "sha256:f625692f5bf84939f3d0af4931f2c0f038dca84c4f1bac1171710d544181f97f"
@@ -695,7 +696,8 @@ Write-Output 'FAKE_DOCKER_MALFORMED_TEARDOWN=PASS'
             "remainingContainers = 0",
             "remainingNetworks = 0",
             "$ReceiptBytes.Length -gt 4096",
-            "[IO.File]::Move(",
+            "receipt publication supports Windows or Linux",
+            "Write-NewPrivateFileAtomically",
         ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, script)
@@ -723,6 +725,196 @@ Write-Output 'FAKE_DOCKER_MALFORMED_TEARDOWN=PASS'
             receipt_start,
         )
         self.assertLess(receipt_start, script.index("Write-Output $Result"))
+
+    def test_private_file_output_is_user_only_and_never_overwrites(self) -> None:
+        if os.name != "nt" and not sys.platform.startswith("linux"):
+            self.skipTest("Private receipt output supports Windows and Linux")
+        powershell = shutil.which("pwsh")
+        self.assertIsNotNone(powershell, "PowerShell Core is required")
+        with tempfile.TemporaryDirectory(prefix="yap-private-output-") as temporary:
+            root = Path(temporary)
+            destination = root / "receipt.json"
+            driver = root / "driver.ps1"
+            driver.write_text(
+                "\n".join(
+                    (
+                        "#requires -Version 7.4",
+                        "#requires -PSEdition Core",
+                        "Set-StrictMode -Version Latest",
+                        "$ErrorActionPreference = 'Stop'",
+                        (
+                            "Import-Module "
+                            f"{self._powershell_literal(PRIVATE_FILE_OUTPUT)} "
+                            "-Force"
+                        ),
+                        "$Content = [Text.Encoding]::UTF8.GetBytes('first')",
+                        (
+                            "Write-NewPrivateFileAtomically "
+                            f"-DestinationPath "
+                            f"{self._powershell_literal(destination)} "
+                            "-Content $Content"
+                        ),
+                        "$Rejected = $false",
+                        "try {",
+                        (
+                            "    Write-NewPrivateFileAtomically "
+                            f"-DestinationPath "
+                            f"{self._powershell_literal(destination)} "
+                            "-Content ([byte[]](1))"
+                        ),
+                        "}",
+                        "catch {",
+                        "    $Rejected = $true",
+                        "}",
+                        "if (-not $Rejected) {",
+                        "    throw 'Private output overwrote an existing file.'",
+                        "}",
+                        "if (-not [OperatingSystem]::IsWindows()) {",
+                        (
+                            "    $UnsafeContainer = Join-Path "
+                            f"{self._powershell_literal(root)} "
+                            "'unsafe-container'"
+                        ),
+                        ("    $UnsafeParent = Join-Path $UnsafeContainer 'private'"),
+                        (
+                            "    New-Item -ItemType Directory "
+                            "-Path $UnsafeParent | Out-Null"
+                        ),
+                        (
+                            "    $PrivateDirectoryMode = "
+                            "[IO.UnixFileMode]::UserRead -bor "
+                            "[IO.UnixFileMode]::UserWrite -bor "
+                            "[IO.UnixFileMode]::UserExecute"
+                        ),
+                        (
+                            "    [IO.File]::SetUnixFileMode("
+                            "$UnsafeParent, $PrivateDirectoryMode)"
+                        ),
+                        (
+                            "    [IO.File]::SetUnixFileMode("
+                            "$UnsafeContainer, "
+                            "$PrivateDirectoryMode -bor "
+                            "[IO.UnixFileMode]::GroupWrite)"
+                        ),
+                        "    $UnsafeDestination = Join-Path $UnsafeParent 'output'",
+                        "    $UnsafeRejected = $false",
+                        "    try {",
+                        (
+                            "        Write-NewPrivateFileAtomically "
+                            "-DestinationPath $UnsafeDestination "
+                            "-Content ([byte[]](1))"
+                        ),
+                        "    }",
+                        "    catch {",
+                        "        $UnsafeRejected = $true",
+                        "    }",
+                        "    if (-not $UnsafeRejected) {",
+                        (
+                            "        throw "
+                            "'Private output accepted a replaceable ancestor.'"
+                        ),
+                        "    }",
+                        "    if (Test-Path -LiteralPath $UnsafeDestination) {",
+                        ("        throw 'Rejected private output left a destination.'"),
+                        "    }",
+                        (
+                            "    $RealContainer = Join-Path "
+                            f"{self._powershell_literal(root)} "
+                            "'real-container'"
+                        ),
+                        ("    $RealParent = Join-Path $RealContainer 'private'"),
+                        (
+                            "    $LinkedContainer = Join-Path "
+                            f"{self._powershell_literal(root)} "
+                            "'linked-container'"
+                        ),
+                        (
+                            "    New-Item -ItemType Directory "
+                            "-Path $RealParent | Out-Null"
+                        ),
+                        (
+                            "    [IO.File]::SetUnixFileMode("
+                            "$RealContainer, $PrivateDirectoryMode)"
+                        ),
+                        (
+                            "    [IO.File]::SetUnixFileMode("
+                            "$RealParent, $PrivateDirectoryMode)"
+                        ),
+                        (
+                            "    New-Item -ItemType SymbolicLink "
+                            "-Path $LinkedContainer "
+                            "-Target $RealContainer | Out-Null"
+                        ),
+                        (
+                            "    $LinkedDestination = Join-Path "
+                            "$LinkedContainer 'private/output'"
+                        ),
+                        "    $LinkRejected = $false",
+                        "    try {",
+                        (
+                            "        Write-NewPrivateFileAtomically "
+                            "-DestinationPath $LinkedDestination "
+                            "-Content ([byte[]](1))"
+                        ),
+                        "    }",
+                        "    catch {",
+                        "        $LinkRejected = $true",
+                        "    }",
+                        "    if (-not $LinkRejected) {",
+                        ("        throw 'Private output accepted a linked ancestor.'"),
+                        "    }",
+                        ("    if (Test-Path -LiteralPath $LinkedDestination) {"),
+                        (
+                            "        throw "
+                            "'Linked-ancestor rejection left a destination.'"
+                        ),
+                        "    }",
+                        "}",
+                        "Write-Output 'PRIVATE_FILE_OUTPUT=PASS'",
+                    )
+                ),
+                encoding="utf-8",
+            )
+
+            command = [
+                powershell,
+                "-NoLogo",
+                "-NoProfile",
+                "-File",
+                str(driver),
+            ]
+            if os.name != "nt":
+                command = [
+                    "/bin/sh",
+                    "-c",
+                    'umask 0002; exec "$@"',
+                    "yap-private-output-test",
+                    *command,
+                ]
+            completed = subprocess.run(
+                command,
+                cwd=REPOSITORY,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(
+                completed.stdout.strip(),
+                "PRIVATE_FILE_OUTPUT=PASS",
+            )
+            self.assertEqual(destination.read_bytes(), b"first")
+            self.assertEqual(
+                list(root.glob(f".{destination.name}.*.tmp")),
+                [],
+            )
+            if os.name != "nt":
+                self.assertEqual(destination.stat().st_mode & 0o777, 0o600)
+
+        writer = PRIVATE_FILE_OUTPUT.read_text(encoding="utf-8")
+        self.assertIn("-ItemType HardLink", writer)
+        self.assertNotIn("[IO.File]::Move", writer)
 
     def test_flow_uses_only_reserved_synthetic_uuid_authority(self) -> None:
         flow = FLOW.read_text(encoding="utf-8")

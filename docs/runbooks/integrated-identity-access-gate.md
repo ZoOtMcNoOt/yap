@@ -202,7 +202,15 @@ node .\verification\integrated-gate-runner.mjs begin `
 ```
 
 After admission, populate the admitted `mockOidc.receiptFile` on a
-Docker-capable exact-clean candidate executor only through the bounded harness:
+Docker-capable exact-clean Windows or Linux candidate executor only through the
+bounded harness. macOS remains a supported no-receipt owner-flow diagnostic,
+but it is not a receipt-capable admitted executor; the harness rejects that
+selection before starting the owner flow. On Linux, the existing receipt parent
+must have mode `0700` and belong to the executor identity. Every ancestor must
+belong to that identity or root; a shared-writable ancestor is accepted only
+when its sticky-bit and ownership protect the child. Linked directory
+components are forbidden. The harness rejects a replaceable path before it
+creates any file:
 
 ```powershell
 .\verification\test-mock-oidc-owner-flow.ps1 `
@@ -215,12 +223,14 @@ network, child-process, loopback-port, cancellation-handler, and state-directory
 teardown is verified. The receipt contains only the checked head, locked image
 digest, validator/owner-flow source hashes, and public-safe teardown facts; it
 contains no token, log, container ID, or private path. The current working tree
-has 12/12 focused harness tests, including executable fake-Docker lifecycle,
-loopback forwarding, overload-rejection, exact-readiness, and port-release
-regressions, plus the focused workflow, integrated-gate, and Windows Job
-supervisor contracts. After the second consumed candidate exposed the missing
-PowerShell-edition declaration and follow-up review found that dynamic script
-blocks ignore `#requires`, the repaired working tree passed 13 focused
+has 13/13 focused harness tests, including executable fake-Docker lifecycle,
+loopback forwarding, overload-rejection, exact-readiness, port-release, and
+atomic no-overwrite, permissive-umask Unix receipt-output regressions, plus the
+replaceable-ancestor and linked-ancestor rejections, focused workflow,
+integrated-gate, and Windows Job supervisor contracts. After the second
+consumed candidate exposed the missing PowerShell-edition declaration and
+follow-up review found that dynamic script blocks ignore `#requires`, the
+repaired working tree passed 13 focused
 Windows/installer contracts and the complete release-contract cell 81/81 with
 no same-three P0–P2 finding. On Linux, the provider remains on an
 egress-blocked internal bridge and a bounded Python 3.12 child exposes only

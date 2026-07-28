@@ -124,6 +124,9 @@ if ($HasCheckedHead -xor $HasReceiptOutput) {
 $ReceiptMode = $HasCheckedHead -and $HasReceiptOutput
 $ReceiptDestination = $null
 if ($ReceiptMode) {
+    if (-not ($RunningOnWindows -or $RunningOnLinux)) {
+        throw 'Synthetic OIDC receipt publication supports Windows or Linux.'
+    }
     if ($CheckedHead -cnotmatch '^[0-9a-f]{40}$') {
         throw 'The synthetic OIDC receipt head must be a lowercase SHA-1.'
     }
@@ -193,6 +196,7 @@ $Docker = Get-Command docker -CommandType Application -ErrorAction Stop |
     Select-Object -First 1
 Import-Module (Join-Path $PSScriptRoot 'mock-oidc-docker-owner.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'exact-python-runtime.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'private-file-output.psm1') -Force
 $Runtime = Sync-LockedServerEnvironment -ServerRoot $ServerRoot
 $OwnerLabelKey = 'com.mcnatg1.yap.test-owner'
 $OwnerLabelValue = 'mock-oidc'
@@ -770,34 +774,8 @@ if ($ReceiptMode) {
     if ($ReceiptBytes.Length -gt 4096) {
         throw 'The synthetic OIDC receipt exceeded its public evidence bound.'
     }
-    $TemporaryReceipt = Join-Path $ReceiptDestination.Parent (
-        ".$([IO.Path]::GetFileName($ReceiptDestination.Path))." +
-        "$([guid]::NewGuid().ToString('N')).tmp"
-    )
-    try {
-        $ReceiptStream = [IO.File]::Open(
-            $TemporaryReceipt,
-            [IO.FileMode]::CreateNew,
-            [IO.FileAccess]::Write,
-            [IO.FileShare]::None
-        )
-        try {
-            $ReceiptStream.Write($ReceiptBytes, 0, $ReceiptBytes.Length)
-            $ReceiptStream.Flush($true)
-        }
-        finally {
-            $ReceiptStream.Dispose()
-        }
-        [IO.File]::Move(
-            $TemporaryReceipt,
-            $ReceiptDestination.Path,
-            $false
-        )
-    }
-    finally {
-        if (Test-Path -LiteralPath $TemporaryReceipt) {
-            Remove-Item -LiteralPath $TemporaryReceipt -Force
-        }
-    }
+    Write-NewPrivateFileAtomically `
+        -DestinationPath $ReceiptDestination.Path `
+        -Content $ReceiptBytes
 }
 Write-Output $Result
