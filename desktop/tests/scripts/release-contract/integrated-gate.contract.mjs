@@ -1014,6 +1014,125 @@ test("integrated gate rejects a wrong runner runtime before consuming the attemp
   );
 });
 
+test("integrated gate failure records retain only sanitized command termination evidence", () => {
+  const failure = new Error("synthetic retained descendant");
+  failure.code = "INTEGRATED_GATE_COMMAND_RETAINED_DESCENDANT";
+  failure.rootExitCode = 0;
+  failure.terminationEvidence = {
+    schemaVersion: 1,
+    containment: "windows-job-object",
+    rootProcessId: 42,
+    assignedBeforeResume: true,
+    terminationReason: "retained-descendant",
+    terminateRequested: true,
+    rootExited: true,
+    activeProcessCount: 0,
+    activeProcessZeroObserved: true,
+    cleanupProven: true,
+    privateSupervisorNonce: "must-not-persist",
+  };
+
+  const record = integratedGateFailureRecord({ checkedHead }, failure);
+
+  assert.equal(record.schemaVersion, 3);
+  assert.deepEqual(record.commandTermination, {
+    schemaVersion: 1,
+    targetExitCode: 0,
+    containment: "windows-job-object",
+    assignedBeforeResume: true,
+    terminationReason: "retained-descendant",
+    terminateRequested: true,
+    rootExited: true,
+    activeProcessCount: 0,
+    activeProcessZeroObserved: true,
+    cleanupProven: true,
+  });
+  assert.doesNotMatch(JSON.stringify(record), /must-not-persist/);
+  assert.equal(Object.hasOwn(record.commandTermination, "rootProcessId"), false);
+
+  failure.terminationEvidence.cleanupProven = "not-a-boolean";
+  assert.equal(
+    integratedGateFailureRecord({ checkedHead }, failure).commandTermination,
+    null,
+  );
+  failure.terminationEvidence = {
+    schemaVersion: 1,
+    containment: "windows-job-object",
+    rootProcessId: 42,
+    assignedBeforeResume: true,
+    terminationReason: "retained-descendant",
+    terminateRequested: true,
+    rootExited: true,
+    activeProcessCount: 0,
+    activeProcessZeroObserved: true,
+    cleanupProven: true,
+  };
+
+  const conflictingFailure = new Error("synthetic output overflow");
+  conflictingFailure.code = "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED";
+  conflictingFailure.terminationEvidence = {
+    ...failure.terminationEvidence,
+    cleanupProven: true,
+    terminationReason: "retained-descendant",
+  };
+  assert.equal(
+    integratedGateFailureRecord(
+      { checkedHead },
+      new AggregateError([conflictingFailure, failure]),
+    ).commandTermination,
+    null,
+  );
+});
+
+test("integrated gate records proven cleanup for a clean nonzero command exit", {
+  skip: process.platform !== "win32",
+}, async () => {
+  const root = createCanonicalTemporaryDirectory("yap-gate-command-nonzero-");
+  const commandLogDirectory = path.join(root, "command-logs");
+  mkdirSync(commandLogDirectory);
+  const cell = {
+    id: "bounded.command-nonzero",
+    executor: "command",
+    cwd: ".",
+    command: [process.execPath, "-e", "process.exit(23)"],
+  };
+  const admission = {
+    checkedHead,
+    runDirectory: root,
+    commandLogDirectory,
+  };
+  try {
+    await assert.rejects(
+      runCommandCell(cell, admission, { maximumLogBytes: 1_024 }),
+      (error) => {
+        assert.equal(error.code, "INTEGRATED_GATE_COMMAND_EXITED_NONZERO");
+        assert.equal(error.rootExitCode, 23);
+        assert.equal(error.terminationEvidence.terminationReason, "none");
+        assert.equal(error.terminationEvidence.cleanupProven, true);
+
+        const record = integratedGateFailureRecord(admission, error);
+        assert.equal(record.code, error.code);
+        assert.deepEqual(record.commandTermination, {
+          schemaVersion: 1,
+          targetExitCode: 23,
+          containment: "windows-job-object",
+          assignedBeforeResume: true,
+          terminationReason: "none",
+          terminateRequested: false,
+          rootExited: true,
+          activeProcessCount: 0,
+          activeProcessZeroObserved: true,
+          cleanupProven: true,
+        });
+        assert.equal(Object.hasOwn(record.commandTermination, "rootProcessId"), false);
+        return true;
+      },
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("integrated gate terminates a command whose output exceeds its bounded log", async () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-command-output-");
   const commandLogDirectory = path.join(root, "command-logs");
@@ -1089,12 +1208,36 @@ test("integrated gate terminates a command whose output exceeds its bounded log"
       maximumLogBytes,
     );
     const failureRecord = integratedGateFailureRecord(admission, boundedFailure);
-    assert.equal(failureRecord.schemaVersion, 2);
+    assert.equal(failureRecord.schemaVersion, 3);
     assert.equal(
       failureRecord.code,
       "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED",
     );
     assert.match(failureRecord.message, /1024-byte command-log limit/);
+    assert.deepEqual(failureRecord.commandTermination, {
+      schemaVersion: 1,
+      targetExitCode: null,
+      containment: boundedFailure.terminationEvidence.containment,
+      assignedBeforeResume: boundedFailure.terminationEvidence.assignedBeforeResume,
+      terminationReason: boundedFailure.terminationEvidence.terminationReason,
+      terminateRequested: boundedFailure.terminationEvidence.terminateRequested,
+      rootExited: boundedFailure.terminationEvidence.rootExited,
+      activeProcessCount: boundedFailure.terminationEvidence.activeProcessCount,
+      activeProcessZeroObserved:
+        boundedFailure.terminationEvidence.activeProcessZeroObserved,
+      cleanupProven: boundedFailure.terminationEvidence.cleanupProven,
+    });
+    assert.deepEqual(
+      Object.keys(failureRecord).sort(),
+      [
+        "checkedHead",
+        "code",
+        "commandTermination",
+        "failedAt",
+        "message",
+        "schemaVersion",
+      ],
+    );
     const grandchildProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
     assert.ok(Number.isSafeInteger(grandchildProcessId) && grandchildProcessId > 0);
     assert.equal(

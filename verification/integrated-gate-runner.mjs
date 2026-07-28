@@ -689,11 +689,17 @@ export async function runCommandCell(
     expectedLogDirectory: commandLogDirectory,
     maximumLogBytes,
   });
-  requireCondition(
-    commandResult.exitCode === 0,
-    `Cell ${cell.id} failed with code ${String(commandResult.exitCode)} `
-      + `and signal ${String(commandResult.signal)}; inspect its bounded private log.`,
-  );
+  if (commandResult.exitCode !== 0) {
+    const error = new Error(
+      `Cell ${cell.id} failed with code ${String(commandResult.exitCode)} `
+        + `and signal ${String(commandResult.signal)}; inspect its bounded private log.`,
+    );
+    error.name = "IntegratedGateCommandExitError";
+    error.code = "INTEGRATED_GATE_COMMAND_EXITED_NONZERO";
+    error.rootExitCode = commandResult.exitCode;
+    error.terminationEvidence = commandResult.terminationEvidence;
+    throw error;
+  }
   assertExactCleanGitHead(admission.checkedHead);
   const finishedAt = new Date().toISOString();
   process.stdout.write(`[gate] ${cell.id}: passed\n`);
@@ -760,6 +766,78 @@ function nestedFailures(error) {
     : [error];
 }
 
+const COMMAND_TERMINATION_REASONS_BY_CODE = new Map([
+  [
+    "INTEGRATED_GATE_COMMAND_EXITED_NONZERO",
+    new Set(["none"]),
+  ],
+  [
+    "INTEGRATED_GATE_COMMAND_LOG_WRITE_FAILED",
+    new Set(["cleanup-unproven", "command-log-write"]),
+  ],
+  [
+    "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED",
+    new Set(["cleanup-unproven", "output-limit"]),
+  ],
+  [
+    "INTEGRATED_GATE_COMMAND_RETAINED_DESCENDANT",
+    new Set(["retained-descendant"]),
+  ],
+  [
+    "INTEGRATED_GATE_COMMAND_SUPERVISOR_FAILED",
+    new Set(["supervisor-failure"]),
+  ],
+  [
+    "INTEGRATED_GATE_COMMAND_TERMINATION_UNVERIFIED",
+    new Set(["cleanup-unproven"]),
+  ],
+]);
+
+function isNullableNonnegativeInteger(value) {
+  return value === null || (Number.isSafeInteger(value) && value >= 0);
+}
+
+function isNullableWindowsExitCode(value) {
+  return value === null
+    || (Number.isSafeInteger(value) && value >= 0 && value <= 0xffffffff);
+}
+
+function sanitizeCommandTerminationEvidence(cause) {
+  const evidence = cause?.terminationEvidence;
+  const allowedReasons = COMMAND_TERMINATION_REASONS_BY_CODE.get(cause?.code);
+  if (
+    !evidence
+    || typeof evidence !== "object"
+    || Array.isArray(evidence)
+    || evidence.schemaVersion !== 1
+    || evidence.containment !== "windows-job-object"
+    || !isNullableNonnegativeInteger(evidence.rootProcessId)
+    || typeof evidence.assignedBeforeResume !== "boolean"
+    || !allowedReasons?.has(evidence.terminationReason)
+    || typeof evidence.terminateRequested !== "boolean"
+    || typeof evidence.rootExited !== "boolean"
+    || !isNullableNonnegativeInteger(evidence.activeProcessCount)
+    || typeof evidence.activeProcessZeroObserved !== "boolean"
+    || typeof evidence.cleanupProven !== "boolean"
+  ) {
+    return null;
+  }
+  return {
+    schemaVersion: 1,
+    targetExitCode: isNullableWindowsExitCode(cause.rootExitCode)
+      ? (cause.rootExitCode ?? null)
+      : null,
+    containment: evidence.containment,
+    assignedBeforeResume: evidence.assignedBeforeResume,
+    terminationReason: evidence.terminationReason,
+    terminateRequested: evidence.terminateRequested,
+    rootExited: evidence.rootExited,
+    activeProcessCount: evidence.activeProcessCount,
+    activeProcessZeroObserved: evidence.activeProcessZeroObserved,
+    cleanupProven: evidence.cleanupProven,
+  };
+}
+
 export function integratedGateFailureRecord(admission, failure) {
   const causes = nestedFailures(failure);
   const typedCause = causes.find(
@@ -775,11 +853,12 @@ export function integratedGateFailureRecord(admission, failure) {
     .join(" Causes: ")
     .slice(0, 16_384);
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     checkedHead: admission.checkedHead,
     failedAt: new Date().toISOString(),
     code: typedCause?.code ?? "INTEGRATED_GATE_FAILED",
     message,
+    commandTermination: sanitizeCommandTerminationEvidence(typedCause),
   };
 }
 

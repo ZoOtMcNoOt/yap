@@ -33,7 +33,9 @@ namespace Yap.Verification
         private const uint WaitTimeout = 258;
         private const uint Infinite = 0xffffffff;
         private const uint ForcedTerminationExitCode = 0xe0000001;
-        private const int NaturalDescendantDrainMilliseconds = 2_000;
+        // Toolchain children such as rustdoc can outlive a successful root command
+        // briefly while Windows finishes process and Job accounting.
+        private const int NaturalDescendantDrainMilliseconds = 5_000;
         private static readonly IntPtr InvalidHandleValue = new IntPtr(-1);
 
         public static int Run(

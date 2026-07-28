@@ -93,7 +93,7 @@ test("bounded Windows commands allow owned descendants to drain naturally", {
     const result = await executeBoundedCommand({
       command: ownedPowerShellChildCommand(
         readyPath,
-        "Start-Sleep -Milliseconds 1000;"
+        "Start-Sleep -Milliseconds 3000;"
           + ` [IO.File]::WriteAllText('${escapedCompletionPath}', 'completed')`,
       ),
       cwd: repoRoot,
@@ -109,9 +109,14 @@ test("bounded Windows commands allow owned descendants to drain naturally", {
     assert.equal(result.terminationEvidence.activeProcessZeroObserved, true);
     assert.equal(result.terminationEvidence.activeProcessCount, 0);
     assert.equal(result.terminationEvidence.cleanupProven, true);
+    const elapsedMilliseconds = Date.now() - started;
     assert.ok(
-      Date.now() - started < 8_000,
+      elapsedMilliseconds < 12_000,
       "naturally draining descendants must settle within the focused contract bound",
+    );
+    assert.ok(
+      elapsedMilliseconds >= 2_000,
+      "the fixture must cross the former two-second drain boundary",
     );
     const childProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
     assert.equal(readFileSync(completionPath, "utf8"), "completed");
@@ -157,8 +162,8 @@ test("bounded Windows commands reject and clean retained descendants", {
       },
     );
     assert.ok(
-      Date.now() - started < 8_000,
-      "retained descendants must be removed within the focused contract bound",
+      Date.now() - started < 12_000,
+      "retained descendants must be removed well before their delayed natural exit",
     );
     const grandchildProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
     assert.equal(processIsAlive(grandchildProcessId), false);
