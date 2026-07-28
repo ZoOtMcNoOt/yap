@@ -10,8 +10,9 @@ their admissions nor their pass receipts can be relabeled or reused.
 `7046d98d61fec90d4c639e92aff09ff8f6a2083a`,
 `dae316ceab60fe395a1899290ca184148f0e9b27`,
 `e6fcabd0f77a604092997839e45e6cada09304f9`,
-`59267c46a60ab9bb77494fc03d5666c1d1471f98`, and
-`2bd43b33638685ff2caccd7fdcf01c157a229c45` are consumed. The first candidate's
+`59267c46a60ab9bb77494fc03d5666c1d1471f98`,
+`2bd43b33638685ff2caccd7fdcf01c157a229c45`, and
+`a7df6bfa0511ddd1ca59d7e1389a6c17eb133ebe` are consumed. The first candidate's
 fresh private children validated, but its one complete matrix exposed a Windows
 command-tree cleanup race in `frontend.release-contracts`: post-hoc
 `taskkill /T` exceeded its own bound and masked the typed output-limit failure.
@@ -56,6 +57,15 @@ mutable remote helpers, the one-attempt secret crossed terminal/argument
 boundaries, and Windows private artifacts did not verify a protected DACL.
 Passing child evidence collected for that head is not replacement-candidate
 evidence and must not be relabeled.
+
+Exact head `a7df6bfa0511ddd1ca59d7e1389a6c17eb133ebe` was admitted and its fresh
+mock-OIDC and target-client children passed. Its sole GB10 child then failed
+before creating any remote lifecycle owner because the fixed controller parent
+had not been materialized and the admitted controller attempted only the
+per-head child creation. Failure handling found nothing candidate-owned to
+remove, and independent cleanup proved zero retained owners. This
+private-controller failure consumes the candidate; its passing children must
+not be relabeled.
 
 The current replacement retains assigned-before-resume, kill-on-close,
 immediate explicit termination, and authoritative accounting-zero proof. It
@@ -109,6 +119,25 @@ hashes, counts, and pass/fail status may be reconciled into documentation after
 independent receipt validation.
 
 ## Sole candidate attempt
+
+Materialize and prequalify the fixed GB10 controller parent beneath the already
+verified private server root before reservation. It must be a real,
+non-redirected directory owned by the admitted remote account and group with
+mode `0700`. Reject a missing or redirected ancestor rather than recursively
+creating an unverified path. The planned per-head child must remain absent
+until the admitted controller owns the attempt. Exercise that exact parent
+validation in the no-owner GB10 preflight so a missing executor prerequisite
+cannot consume another candidate.
+
+The admitted GB10 controller must repeat the ancestor and fixed-parent
+validation immediately before a non-recursive direct-child creation. It then
+verifies that child is canonical, non-redirected, owner-only, and contained
+before exclusively creating and validating the nonce ownership marker.
+Independent cleanup must inspect the complete checked-head transient-unit
+family, not only the random unit name selected by one invocation. Every local
+bounded-command log must use no-overwrite creation and pass the protected
+private-file policy on success and failure; inherited parent permissions are
+not sufficient.
 
 Select and prove the mock-OIDC executor **before** reserving the candidate.
 `test-mock-oidc-owner-flow.ps1` requires PowerShell 7.4+ Core, Docker with a

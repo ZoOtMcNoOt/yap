@@ -973,6 +973,22 @@ test("identity gate prequalifies the non-login connected uv executor", () => {
   assert.match(indexEntry, /^100755 [0-9a-f]{40} 0\t/);
 });
 
+test("identity gate prequalifies its fixed GB10 control parent", () => {
+  const runbook = readFileSync(
+    path.join(repoRoot, "docs", "runbooks", "integrated-identity-access-gate.md"),
+    "utf8",
+  );
+  assert.match(runbook, /fixed GB10 controller parent/);
+  assert.match(runbook, /non-redirected directory[\s\S]*mode `0700`/);
+  assert.match(runbook, /planned per-head child must remain absent/);
+  assert.match(runbook, /no-owner GB10 preflight/);
+  assert.match(runbook, /repeat the ancestor and fixed-parent\s+validation immediately before/);
+  assert.match(runbook, /non-recursive direct-child creation/);
+  assert.match(runbook, /complete checked-head transient-unit\s+family/);
+  assert.match(runbook, /bounded-command log must use no-overwrite creation/);
+  assert.match(runbook, /protected\s+private-file policy on success and failure/);
+});
+
 test("gate admission pins GitHub.com and the canonical repository", () => {
   const previousHost = process.env.GH_HOST;
   try {
