@@ -35,6 +35,17 @@ fn blocking_drop_fixture() -> (
     )
 }
 
+fn wait_for_empty_warmup<T: Send + 'static>(warmup: &SharedWarmup<T>) {
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while !warmup.is_empty_for_test() {
+        assert!(
+            Instant::now() < deadline,
+            "warmup did not become fully empty"
+        );
+        std::thread::yield_now();
+    }
+}
+
 #[test]
 fn shared_warmup_is_cancellable_reentrant_and_never_duplicates_the_model() {
     let warmup = Arc::new(SharedWarmup::<usize>::new());
@@ -137,7 +148,7 @@ fn clearing_idle_warmup_drops_a_ready_model() {
     }
 
     let dropped = Arc::new(AtomicBool::new(false));
-    let warmup = SharedWarmup::new();
+    let warmup = Arc::new(SharedWarmup::new());
     warmup.seed_ready_for_test(DropSignal(Arc::clone(&dropped)));
 
     warmup
@@ -166,6 +177,10 @@ fn bounded_clear_returns_before_a_ready_model_destructor_finishes() {
         .unwrap();
 
     let result = cleared_rx.recv_timeout(Duration::from_millis(250));
+    assert!(warmup.is_retirement_active_for_test());
+    let retry_error = warmup
+        .clear_idle_with_timeout(Duration::from_millis(25))
+        .expect_err("cleanup retry lost pending native retirement");
     let _ = release_drop_tx.send(());
     drop_finished_rx
         .recv_timeout(Duration::from_secs(1))
@@ -176,7 +191,33 @@ fn bounded_clear_returns_before_a_ready_model_destructor_finishes() {
         .expect("bounded clear waited for the ready model destructor")
         .expect_err("blocked ready model destruction unexpectedly completed within its deadline");
     assert!(error.contains("cleanup deadline"));
-    assert!(warmup.is_empty_for_test());
+    assert!(retry_error.contains("cleanup deadline"));
+    wait_for_empty_warmup(&warmup);
+}
+
+#[test]
+fn panicked_ready_model_retirement_remains_fail_closed() {
+    struct PanicDrop;
+
+    impl Drop for PanicDrop {
+        fn drop(&mut self) {
+            panic!("synthetic ready model destructor panic");
+        }
+    }
+
+    let warmup = Arc::new(SharedWarmup::new());
+    warmup.seed_ready_for_test(PanicDrop);
+
+    let error = warmup
+        .clear_idle_with_timeout(Duration::from_millis(25))
+        .expect_err("panicked retirement unexpectedly completed cleanup");
+    let retry_error = warmup
+        .clear_idle_with_timeout(Duration::from_millis(25))
+        .expect_err("cleanup retry forgot the incomplete retirement");
+
+    assert!(error.contains("cleanup deadline"));
+    assert!(retry_error.contains("cleanup deadline"));
+    assert!(warmup.is_retirement_active_for_test());
 }
 
 #[test]
@@ -219,7 +260,56 @@ fn bounded_clear_rechecks_late_warmup_after_ready_model_retirement() {
         .recv_timeout(Duration::from_secs(1))
         .unwrap();
     clearer.join().unwrap();
-    assert!(warmup.is_empty_for_test());
+    wait_for_empty_warmup(&warmup);
+}
+
+#[test]
+fn bounded_clear_cancels_a_late_load_when_ready_model_retirement_times_out() {
+    let warmup = Arc::new(SharedWarmup::new());
+    let (blocking_drop, drop_started_rx, release_drop_tx, drop_finished_rx) =
+        blocking_drop_fixture();
+    warmup.seed_ready_for_test(blocking_drop);
+
+    let clearing = Arc::clone(&warmup);
+    let (cleared_tx, cleared_rx) = mpsc::channel();
+    let clearer = std::thread::spawn(move || {
+        let result = clearing.clear_idle_with_timeout(Duration::from_millis(250));
+        let _ = cleared_tx.send(result);
+    });
+    drop_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
+    let (release_loader_tx, release_loader_rx) = mpsc::channel();
+    assert!(warmup
+        .request("late-retirement-timeout-race", move || {
+            loader_entered_tx.send(()).unwrap();
+            let _ = release_loader_rx.recv();
+            Err("late synthetic warmup".to_string())
+        })
+        .unwrap());
+    loader_entered_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let error = cleared_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap()
+        .expect_err("blocked retirement unexpectedly cleared before its deadline");
+    assert!(error.contains("cleanup deadline"));
+    assert!(
+        warmup.is_loading_cancelled_for_test(),
+        "late load remained publishable after cleanup timed out"
+    );
+
+    let _ = release_loader_tx.send(());
+    let _ = release_drop_tx.send(());
+    drop_finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    clearer.join().unwrap();
+    wait_for_empty_warmup(&warmup);
 }
 
 #[test]
@@ -240,6 +330,10 @@ fn idle_clear_returns_before_a_ready_model_destructor_finishes() {
         .unwrap();
 
     let result = cleared_rx.recv_timeout(Duration::from_millis(250));
+    assert!(warmup.is_retirement_active_for_test());
+    let pending_error = warmup
+        .clear_idle_with_timeout(Duration::from_millis(25))
+        .expect_err("bounded cleanup lost the idle retirement");
     let _ = release_drop_tx.send(());
     drop_finished_rx
         .recv_timeout(Duration::from_secs(1))
@@ -250,7 +344,8 @@ fn idle_clear_returns_before_a_ready_model_destructor_finishes() {
         result.expect("idle clear waited for the ready model destructor"),
         Ok(())
     );
-    assert!(warmup.is_empty_for_test());
+    assert!(pending_error.contains("cleanup deadline"));
+    wait_for_empty_warmup(&warmup);
 }
 
 #[test]

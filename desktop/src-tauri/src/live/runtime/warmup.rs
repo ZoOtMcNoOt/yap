@@ -1,7 +1,7 @@
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    mpsc, Arc, Condvar, Mutex,
+    Arc, Condvar, Mutex, MutexGuard,
 };
 use std::thread;
 use std::time::{Duration, Instant};
@@ -12,6 +12,7 @@ const CLEANUP_DEADLINE_ERROR: &str =
 pub(super) struct SharedWarmup<T> {
     state: Mutex<SharedWarmupState<T>>,
     changed: Condvar,
+    retirement_active: AtomicBool,
 }
 
 enum SharedWarmupState<T> {
@@ -27,6 +28,11 @@ pub(super) struct SharedWarmupLease<T: Send + 'static> {
     warmup: Arc<SharedWarmup<T>>,
 }
 
+struct RetirementCompletion<T: Send + 'static> {
+    warmup: Arc<SharedWarmup<T>>,
+    completed: bool,
+}
+
 impl<T> SharedWarmup<T>
 where
     T: Send + 'static,
@@ -35,6 +41,7 @@ where
         Self {
             state: Mutex::new(SharedWarmupState::Empty),
             changed: Condvar::new(),
+            retirement_active: AtomicBool::new(false),
         }
     }
 
@@ -59,6 +66,7 @@ where
             *state = SharedWarmupState::Loading {
                 cancelled: Arc::clone(&cancelled),
             };
+            self.changed.notify_all();
             cancelled
         };
 
@@ -200,26 +208,42 @@ where
     }
 
     fn spawn_retirement(
+        self: &Arc<Self>,
         retired: SharedWarmupState<T>,
-    ) -> Result<mpsc::Receiver<()>, (SharedWarmupState<T>, String)> {
+    ) -> Result<(), (SharedWarmupState<T>, String)> {
+        if self
+            .retirement_active
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .is_err()
+        {
+            return Err((
+                retired,
+                "Another live model retirement is already in progress.".to_string(),
+            ));
+        }
         // Keep recoverable ownership outside the closure so a failed thread
         // spawn never drops a native model on the lifecycle thread.
         let payload = Arc::new(Mutex::new(Some(retired)));
         let worker_payload = Arc::clone(&payload);
-        let (completed_tx, completed_rx) = mpsc::sync_channel(1);
+        let worker_warmup = Arc::clone(self);
         match thread::Builder::new()
             .name("live-model-retirement".to_string())
             .spawn(move || {
+                let mut completion = RetirementCompletion {
+                    warmup: worker_warmup,
+                    completed: false,
+                };
                 let retired = worker_payload
                     .lock()
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
                     .take()
                     .expect("live model retirement worker owns one payload");
                 drop(retired);
-                let _ = completed_tx.send(());
+                completion.completed = true;
             }) {
-            Ok(_) => Ok(completed_rx),
+            Ok(_) => Ok(()),
             Err(error) => {
+                self.retirement_active.store(false, Ordering::Release);
                 let retired = payload
                     .lock()
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
@@ -233,21 +257,58 @@ where
         }
     }
 
-    fn wait_for_retirement(completed: mpsc::Receiver<()>, deadline: Instant) -> Result<(), String> {
+    fn complete_retirement(&self) {
+        let _state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.retirement_active.store(false, Ordering::Release);
+        self.changed.notify_all();
+    }
+
+    fn report_incomplete_retirement(&self) {
+        {
+            let _state = self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            self.changed.notify_all();
+        }
+        crate::diagnostics::log(
+            "live model retirement stopped before completion; cleanup remains fenced",
+        );
+    }
+
+    fn cancel_loading_state(&self, state: &SharedWarmupState<T>) {
+        if let SharedWarmupState::Loading { cancelled } = state {
+            cancelled.store(true, Ordering::Release);
+        }
+        self.changed.notify_all();
+    }
+
+    fn wait_for_cleanup_progress<'a>(
+        &self,
+        state: MutexGuard<'a, SharedWarmupState<T>>,
+        deadline: Instant,
+    ) -> Result<MutexGuard<'a, SharedWarmupState<T>>, String> {
         let remaining = deadline.saturating_duration_since(Instant::now());
         if remaining.is_zero() {
+            self.cancel_loading_state(&state);
             return Err(CLEANUP_DEADLINE_ERROR.to_string());
         }
-        match completed.recv_timeout(remaining) {
-            Ok(()) => Ok(()),
-            Err(mpsc::RecvTimeoutError::Timeout) => Err(CLEANUP_DEADLINE_ERROR.to_string()),
-            Err(mpsc::RecvTimeoutError::Disconnected) => {
-                Err("Live model retirement stopped before reporting completion.".to_string())
-            }
+        let (state, wait) = self
+            .changed
+            .wait_timeout(state, remaining)
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if wait.timed_out() {
+            self.cancel_loading_state(&state);
+            Err(CLEANUP_DEADLINE_ERROR.to_string())
+        } else {
+            Ok(state)
         }
     }
 
-    pub(super) fn request_idle_clear(&self) -> Result<(), String> {
+    pub(super) fn request_idle_clear(self: &Arc<Self>) -> Result<(), String> {
         let mut state = self
             .state
             .lock()
@@ -261,9 +322,12 @@ where
                 Ok(())
             }
             SharedWarmupState::Ready(_) => {
+                if self.retirement_active.load(Ordering::Acquire) {
+                    return Ok(());
+                }
                 let retired = std::mem::replace(&mut *state, SharedWarmupState::Empty);
-                match Self::spawn_retirement(retired) {
-                    Ok(_) => {
+                match self.spawn_retirement(retired) {
+                    Ok(()) => {
                         self.changed.notify_all();
                         Ok(())
                     }
@@ -283,66 +347,58 @@ where
         }
     }
 
-    pub(super) fn clear_idle_with_timeout(&self, timeout: Duration) -> Result<(), String> {
+    pub(super) fn clear_idle_with_timeout(
+        self: &Arc<Self>,
+        timeout: Duration,
+    ) -> Result<(), String> {
         let deadline = Instant::now()
             .checked_add(timeout)
             .ok_or_else(|| "Live model cleanup deadline overflowed.".to_string())?;
         self.clear_idle_until(deadline)
     }
 
-    fn clear_idle_until(&self, deadline: Instant) -> Result<(), String> {
+    fn clear_idle_until(self: &Arc<Self>, deadline: Instant) -> Result<(), String> {
         let mut state = self
             .state
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         loop {
             match &*state {
-                SharedWarmupState::Empty => return Ok(()),
+                SharedWarmupState::Empty => {
+                    if !self.retirement_active.load(Ordering::Acquire) {
+                        return Ok(());
+                    }
+                    state = self.wait_for_cleanup_progress(state, deadline)?;
+                }
                 SharedWarmupState::InUse => {
                     return Err("Live model is still owned by a stream.".to_string())
                 }
                 SharedWarmupState::Loading { cancelled } => {
                     cancelled.store(true, Ordering::Release);
                     self.changed.notify_all();
-                    let remaining = deadline.saturating_duration_since(Instant::now());
-                    if remaining.is_zero() {
-                        return Err(CLEANUP_DEADLINE_ERROR.to_string());
-                    }
-                    let (next, wait) = self
-                        .changed
-                        .wait_timeout(state, remaining)
-                        .unwrap_or_else(|poisoned| poisoned.into_inner());
-                    if wait.timed_out() && matches!(*next, SharedWarmupState::Loading { .. }) {
-                        return Err(CLEANUP_DEADLINE_ERROR.to_string());
-                    }
-                    state = next;
+                    state = self.wait_for_cleanup_progress(state, deadline)?;
                 }
                 SharedWarmupState::Ready(_) => {
+                    if self.retirement_active.load(Ordering::Acquire) {
+                        state = self.wait_for_cleanup_progress(state, deadline)?;
+                        continue;
+                    }
                     let retired = std::mem::replace(&mut *state, SharedWarmupState::Empty);
-                    let completed = match Self::spawn_retirement(retired) {
-                        Ok(completed) => completed,
+                    match self.spawn_retirement(retired) {
+                        Ok(()) => {}
                         Err((retired, error)) => {
                             *state = retired;
                             self.changed.notify_all();
                             return Err(error);
                         }
-                    };
+                    }
                     self.changed.notify_all();
-                    drop(state);
-                    Self::wait_for_retirement(completed, deadline)?;
-                    // A request already in flight can observe Empty while the
-                    // native destructor runs. Re-check it under the same
-                    // deadline so stale work cannot survive cleanup.
-                    state = self
-                        .state
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    state = self.wait_for_cleanup_progress(state, deadline)?;
                 }
                 SharedWarmupState::Failed(_) => {
                     let retired = std::mem::replace(&mut *state, SharedWarmupState::Empty);
                     self.changed.notify_all();
                     drop(retired);
-                    return Ok(());
                 }
             }
         }
@@ -398,13 +454,27 @@ where
 
     #[cfg(test)]
     pub(super) fn is_empty_for_test(&self) -> bool {
-        matches!(
-            *self
-                .state
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner()),
-            SharedWarmupState::Empty
-        )
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        matches!(*state, SharedWarmupState::Empty)
+            && !self.retirement_active.load(Ordering::Acquire)
+    }
+
+    #[cfg(test)]
+    pub(super) fn is_retirement_active_for_test(&self) -> bool {
+        self.retirement_active.load(Ordering::Acquire)
+    }
+}
+
+impl<T: Send + 'static> Drop for RetirementCompletion<T> {
+    fn drop(&mut self) {
+        if self.completed {
+            self.warmup.complete_retirement();
+        } else {
+            self.warmup.report_incomplete_retirement();
+        }
     }
 }
 
