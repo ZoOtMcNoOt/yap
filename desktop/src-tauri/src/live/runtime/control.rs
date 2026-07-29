@@ -5,7 +5,7 @@ use super::{
     StartIntent,
 };
 
-const LIVE_MODEL_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
+const LIVE_MODEL_CLEANUP_TIMEOUT: Duration = Duration::from_secs(2);
 
 impl LiveRuntime {
     pub fn is_active(&self) -> bool {
@@ -33,7 +33,8 @@ impl LiveRuntime {
 
     pub(super) fn cancel_pending_start_and_clear_warmup(&self) -> Result<(), String> {
         self.invalidate_pending_start();
-        self.model_warmup.clear_idle()
+        self.model_warmup
+            .clear_idle_with_timeout(LIVE_MODEL_CLEANUP_TIMEOUT)
     }
 
     fn invalidate_pending_start(&self) {
@@ -99,7 +100,8 @@ impl LiveRuntime {
         self.cancel_pending_start();
         inner.retire_stream();
         drop(inner);
-        self.model_warmup.clear_idle()?;
+        self.model_warmup
+            .clear_idle_with_timeout(LIVE_MODEL_CLEANUP_TIMEOUT)?;
         lease.cancel_pending_start_on_drop = true;
         Ok(lease)
     }
@@ -150,7 +152,7 @@ impl LiveRuntime {
             drop(inner);
             if let Err(error) = self
                 .model_warmup
-                .clear_idle_for_shutdown(LIVE_MODEL_SHUTDOWN_TIMEOUT)
+                .clear_idle_with_timeout(LIVE_MODEL_CLEANUP_TIMEOUT)
             {
                 crate::diagnostics::log(&format!(
                     "live model shutdown continued after bounded warmup cancellation: {error}"

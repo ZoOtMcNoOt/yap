@@ -196,10 +196,6 @@ where
         self.changed.notify_all();
     }
 
-    pub(super) fn clear_idle(&self) -> Result<(), String> {
-        self.clear_idle_until(None)
-    }
-
     pub(super) fn request_idle_clear(&self) -> Result<(), String> {
         let mut state = self
             .state
@@ -223,14 +219,14 @@ where
         }
     }
 
-    pub(super) fn clear_idle_for_shutdown(&self, timeout: Duration) -> Result<(), String> {
+    pub(super) fn clear_idle_with_timeout(&self, timeout: Duration) -> Result<(), String> {
         let deadline = Instant::now()
             .checked_add(timeout)
-            .ok_or_else(|| "Live model warmup shutdown deadline overflowed.".to_string())?;
-        self.clear_idle_until(Some(deadline))
+            .ok_or_else(|| "Live model warmup cleanup deadline overflowed.".to_string())?;
+        self.clear_idle_until(deadline)
     }
 
-    fn clear_idle_until(&self, deadline: Option<Instant>) -> Result<(), String> {
+    fn clear_idle_until(&self, deadline: Instant) -> Result<(), String> {
         let mut state = self
             .state
             .lock()
@@ -244,30 +240,24 @@ where
                 SharedWarmupState::Loading { cancelled } => {
                     cancelled.store(true, Ordering::Release);
                     self.changed.notify_all();
-                    state = if let Some(deadline) = deadline {
-                        let remaining = deadline.saturating_duration_since(Instant::now());
-                        if remaining.is_zero() {
-                            return Err(
-                                "Live model warmup did not stop before the shutdown deadline."
-                                    .to_string(),
-                            );
-                        }
-                        let (next, wait) = self
-                            .changed
-                            .wait_timeout(state, remaining)
-                            .unwrap_or_else(|poisoned| poisoned.into_inner());
-                        if wait.timed_out() && matches!(*next, SharedWarmupState::Loading { .. }) {
-                            return Err(
-                                "Live model warmup did not stop before the shutdown deadline."
-                                    .to_string(),
-                            );
-                        }
-                        next
-                    } else {
-                        self.changed
-                            .wait(state)
-                            .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    };
+                    let remaining = deadline.saturating_duration_since(Instant::now());
+                    if remaining.is_zero() {
+                        return Err(
+                            "Live model warmup did not stop before the cleanup deadline."
+                                .to_string(),
+                        );
+                    }
+                    let (next, wait) = self
+                        .changed
+                        .wait_timeout(state, remaining)
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    if wait.timed_out() && matches!(*next, SharedWarmupState::Loading { .. }) {
+                        return Err(
+                            "Live model warmup did not stop before the cleanup deadline."
+                                .to_string(),
+                        );
+                    }
+                    state = next;
                 }
                 SharedWarmupState::Ready(_) | SharedWarmupState::Failed(_) => {
                     let retired = std::mem::replace(&mut *state, SharedWarmupState::Empty);
