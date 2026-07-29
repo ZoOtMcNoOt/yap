@@ -110,6 +110,7 @@ function Write-NewPrivateFileAtomically {
         [string]$DestinationPath,
 
         [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
         [byte[]]$Content
     )
 

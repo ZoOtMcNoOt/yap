@@ -67,6 +67,14 @@ remove, and independent cleanup proved zero retained owners. This
 private-controller failure consumes the candidate; its passing children must
 not be relabeled.
 
+Successor head `30b18c8c4a26266210657d11cf66b1a5e0c2a893` was not admitted.
+Its pre-reservation bounded-log causal test exposed two mandatory `byte[]`
+parameter binders that rejected a legitimate zero-byte stream: first the
+controller's protected-output wrapper, then the shared atomic private-file
+publisher it calls. No remote owner or candidate evidence was created. Both
+binders and the controller-level causal contract must accept empty byte arrays
+before the next head is frozen.
+
 The current replacement retains assigned-before-resume, kill-on-close,
 immediate explicit termination, and authoritative accounting-zero proof. It
 allows at most 5,000 milliseconds after a signaled root exit for already-

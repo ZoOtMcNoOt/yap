@@ -754,6 +754,20 @@ Write-Output 'FAKE_DOCKER_MALFORMED_TEARDOWN=PASS'
                             f"{self._powershell_literal(destination)} "
                             "-Content $Content"
                         ),
+                        (
+                            "$EmptyDestination = Join-Path "
+                            f"{self._powershell_literal(root)} "
+                            "'empty.bin'"
+                        ),
+                        "$EmptyContent = [byte[]]::new(0)",
+                        (
+                            "Write-NewPrivateFileAtomically "
+                            "-DestinationPath $EmptyDestination "
+                            "-Content $EmptyContent"
+                        ),
+                        "if ((Get-Item -LiteralPath $EmptyDestination).Length -ne 0) {",
+                        "    throw 'Private output changed an empty file.'",
+                        "}",
                         "$Rejected = $false",
                         "try {",
                         (
