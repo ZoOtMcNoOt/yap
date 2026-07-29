@@ -1009,6 +1009,14 @@ test("identity gate prequalifies its fixed GB10 control parent", () => {
     "utf8",
   );
   assert.match(runbook, /fixed GB10 controller parent/);
+  assert.match(
+    runbook,
+    /GB10 receipt controller[\s\S]*no\s+group\/world write access[\s\S]*receipt parent and\s+per-head child[\s\S]*mode `0600` on the receipt/,
+  );
+  assert.match(
+    runbook,
+    /reusable cross-platform[\s\S]*distinct from the stricter fixed GB10 receipt-controller path[\s\S]*shared-writable\s+ancestor[\s\S]*sticky-bit/,
+  );
   assert.match(runbook, /non-redirected directory[\s\S]*mode `0700`/);
   assert.match(runbook, /planned per-head child must remain absent/);
   assert.match(runbook, /no-owner GB10 preflight/);

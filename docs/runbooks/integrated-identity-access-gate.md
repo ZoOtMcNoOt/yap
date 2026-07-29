@@ -118,9 +118,13 @@ before starting the harness because orchestration required the fixed
 was a real admin-owned mode-`0755` directory with no group/world write bit; the
 receipt parent, per-head child, receipt, container, and network remained
 absent. Do not retry, complete, or relabel any of these heads. The next
-controller must validate safe ownership and no group/world write access on
-ancestors while continuing to require mode `0700` on the receipt parent and
-per-head child and mode `0600` on the receipt.
+admitted GB10 receipt controller must validate safe ownership and no
+group/world write access on its fixed `/srv/yap-server/private/...` ancestor
+chain while continuing to require mode `0700` on the receipt parent and
+per-head child and mode `0600` on the receipt. This fixed-host controller rule
+is intentionally stricter than the reusable cross-platform mock-OIDC harness
+policy described below; that generic harness retains its protected
+sticky-directory exception.
 
 The reviewed canonical-path successor retains assigned-before-resume,
 kill-on-close, immediate
@@ -474,12 +478,13 @@ After admission, populate the admitted `mockOidc.receiptFile` on a
 Docker-capable exact-clean Windows or Linux candidate executor only through the
 bounded harness. macOS remains a supported no-receipt owner-flow diagnostic,
 but it is not a receipt-capable admitted executor; the harness rejects that
-selection before starting the owner flow. On Linux, the existing receipt parent
-must have mode `0700` and belong to the executor identity. Every ancestor must
-belong to that identity or root; a shared-writable ancestor is accepted only
-when its sticky-bit and ownership protect the child. Linked directory
-components are forbidden. The harness rejects a replaceable path before it
-creates any file:
+selection before starting the owner flow. For this reusable cross-platform
+harness, distinct from the stricter fixed GB10 receipt-controller path, the
+existing Linux receipt parent must have mode `0700` and belong to the executor
+identity. Every ancestor must belong to that identity or root; a shared-writable
+ancestor is accepted only when its sticky-bit and ownership protect the child.
+Linked directory components are forbidden. The harness rejects a replaceable
+path before it creates any file:
 
 ```powershell
 .\verification\test-mock-oidc-owner-flow.ps1 `
