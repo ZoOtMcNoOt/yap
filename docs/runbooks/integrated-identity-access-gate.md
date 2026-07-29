@@ -96,7 +96,16 @@ unverified state without signalling the exact pending child. Runtime and
 assurance review rejected `4dc572f` before any private gate evidence or complete
 matrix. Preserve it as a NO-GO; do not admit, retry, or relabel it.
 
-The next replacement retains assigned-before-resume, kill-on-close, immediate
+Committed and pushed head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` implemented the retained-pidfd
+replacement below and passed its unaffected focused prechecks. Connected
+prequalification then failed before provider startup because the proxy rejected
+the stock GB10 `/usr/bin/socat -> /usr/bin/socat1` package link. No admission,
+private gate receipt, complete matrix, PR, or hosted closure occurred. Preserve
+that head and its private outputs only as rejected pre-admission evidence.
+
+The reviewed canonical-path successor retains assigned-before-resume,
+kill-on-close, immediate
 explicit termination, authoritative accounting-zero proof, frozen per-cell
 deadlines, protected one-attempt capability, exact Windows DACLs, and the
 no-config SSH boundary. On Linux, every resident provider launcher, sampler,
@@ -124,13 +133,15 @@ an unclean launcher result. Normal gate teardown independently requires the
 recovery record, partial publication, and container-ID file absent before it
 clears the proxy path. Provider containers omit Docker auto-removal so normal
 exit remains addressable for bounded log capture before explicit immutable-ID
-removal.
+removal. Before any container mutation, the proxy resolves the PATH-selected
+`socat` command with GNU `readlink -f` and requires one absolute, regular,
+executable target. All 14 focused proxy contracts and the actual qualified GB10
+mapping to root-owned `/usr/bin/socat1` pass.
 
-Three-lens exact-tree closure is complete with no P0-P2 finding. A clean
-exact-head freeze and tree-match confirmation, private-controller
-prequalification, admission, fresh private evidence, the one complete
-replacement matrix, first-attempt hosted closure, the focused PR, and merge
-remain open.
+Three-lens exact-tree closure is complete with no P0-P2 finding. Fresh
+exact-head private-controller packaging and prequalification, admission, fresh
+private evidence, the one complete replacement matrix, first-attempt hosted
+closure, the focused PR, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).

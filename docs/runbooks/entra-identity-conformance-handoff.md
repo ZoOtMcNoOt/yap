@@ -49,12 +49,16 @@ this handoff:
   contracts are green. The Docker-backed exact-head flow still belongs to the
   reviewed `ubuntu-latest` `mock-oidc` hosted closure.
 
-The retained-pidfd and interrupted-container-create recovery successor is
-three-lens reviewed with every P0-P2 finding resolved; no replacement Phase 7
-exact head is frozen. Private-controller prequalification, the one-time full
-matrix, first-attempt hosted evidence, focused PR, and merge remain open. Use
-the [integrated identity and access gate](integrated-identity-access-gate.md)
-only after those prerequisites are ready.
+Retained-pidfd and interrupted-container-create recovery head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` was three-lens reviewed, then
+rejected before admission when connected prequalification exposed the stock
+GB10 `socat` package-link incompatibility. The canonical-path successor passes
+focused local and real-host proof and is three-lens reviewed with every P0–P2
+finding resolved. Fresh exact-head private-controller prequalification, the
+one-time full matrix, first-attempt hosted evidence, focused PR, and merge
+remain open. Use the
+[integrated identity and access gate](integrated-identity-access-gate.md) only
+after those prerequisites are ready.
 
 ## Required enterprise decisions and inputs
 

@@ -3,11 +3,14 @@
 This map records the executable ownership baseline established by architecture
 checkpoints A/B and the active Phase 7 implementation. Focused identity,
 purpose-authorization, private-WebSocket, and native lower-handshake evidence is
-green, and the retained-pidfd successor completed exact three-lens review. A
-clean freeze, private prequalification/admission/evidence, the full phase gate,
-PR closure, and merge remain open. Paths are relative to the repository root;
-later implementation must update this map only after its behavior is executable
-and verified.
+green. Retained-pidfd head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` was rejected before admission when
+connected prequalification exposed the stock GB10 `socat` package-link
+incompatibility. The canonical-path successor completed exact three-lens review
+after focused local and real-host proof. Fresh exact-head private
+prequalification/admission/evidence, the full phase gate, PR closure, and merge
+remain open. Paths are relative to the repository root; later implementation
+must update this map only after its behavior is executable and verified.
 
 ## Dependency direction
 

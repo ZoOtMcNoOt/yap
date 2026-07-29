@@ -154,12 +154,16 @@ These are accepted Phase 7/10 and IT/security/network handoffs in the
 [roadmap](../roadmap/ROADMAP.md). Developer-owned infrastructure must not be
 described as satisfying them.
 
-The Phase 7 retained-pidfd successor resolved the P0–P2 findings from its
-three-agent exact-tree review, including fail-closed recovery for an interrupted
-Docker create with no immutable ID. All three lenses returned GO with no P0-P2
-finding. A clean exact-head freeze, private-controller prequalification, the
-full phase gate, hosted PR closure, and merge are still open. Focused green
-evidence is not release or production authorization.
+Phase 7 retained-pidfd head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` resolved the P0–P2 findings from
+its three-agent exact-tree review, including fail-closed recovery for an
+interrupted Docker create with no immutable ID, but connected prequalification
+rejected it before admission because its executable guard refused the stock
+GB10 `socat` package link. The canonical-path successor passes focused local and
+real-host proof, and all three lenses returned GO with no P0–P2 finding. Fresh
+exact-head private-controller prequalification, the full phase gate, hosted PR
+closure, and merge are still open. Focused green evidence is not release or
+production authorization.
 
 ## Security review and disclosure handling
 

@@ -244,14 +244,18 @@ found and drove repairs for `SIGPIPE`, ambient Python startup, bounded pidfd
 failure, missing-result group recovery, container-start interruption, and stale
 numeric log-follower ownership. Re-review added post-reap proof latching,
 zombie-environment recheck, bounded Docker probes, delayed daemon publication,
-and created/stopped container removal. No replacement Phase 7 exact head is frozen.
-Final re-review also rejected the old timed-absence heuristic for an interrupted
-Docker request. The current repair separates create/start, uses an exclusive
-container-ID file, and retains a private pre-create recovery record whenever the
-daemon outcome cannot be resolved.
-Exact-tree re-review is complete with no P0-P2 finding. Private-controller
-prequalification, the complete gate, first-attempt hosted closure, the focused
-PR, and merge remain open.
+and created/stopped container removal. Final re-review also rejected the old
+timed-absence heuristic for an interrupted Docker request. Retained-pidfd head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` implemented those repairs but was
+rejected before admission when connected prequalification exposed the stock
+GB10 `socat` package-link incompatibility. Reviewed and pushed implementation
+head `3bae8ae0306c1c96c3378ef2aa090c08f9bd2cad` canonicalizes that command before
+container mutation, separates create/start, uses an exclusive container-ID
+file, and retains a private pre-create recovery record whenever the daemon
+outcome cannot be resolved. Exact-tree re-review, all 14 focused proxy
+contracts, and the real root-owned GB10 target proof pass with no P0–P2 finding.
+Fresh final-head private-controller packaging/prequalification, the complete
+gate, first-attempt hosted closure, the focused PR, and merge remain open.
 This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
 revocation propagation, guest behavior, packaged enterprise policy, or
 production approval. Run those only in a separately authorized IT-provided
