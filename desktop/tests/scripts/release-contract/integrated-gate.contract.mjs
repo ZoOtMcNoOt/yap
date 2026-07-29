@@ -1014,6 +1014,10 @@ test("identity gate prequalifies its fixed GB10 control parent", () => {
   assert.ok(fixedControllerPolicy);
   assert.match(
     fixedControllerPolicy,
+    /validate that every real directory\s+component/,
+  );
+  assert.match(
+    fixedControllerPolicy,
     /fixed `\/srv\/yap-server\/private\/\.\.\.` chain/,
   );
   assert.match(
@@ -1036,7 +1040,7 @@ test("identity gate prequalifies its fixed GB10 control parent", () => {
   );
   assert.match(
     genericHarnessPolicy,
-    /shared-writable\s+ancestor[\s\S]*sticky-bit/,
+    /shared-writable\s+ancestor is accepted only when its sticky-bit and ownership protect the child/,
   );
   assert.match(runbook, /fixed GB10 controller parent/);
   assert.match(runbook, /non-redirected directory[\s\S]*mode `0700`/);
