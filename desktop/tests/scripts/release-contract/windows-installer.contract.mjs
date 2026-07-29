@@ -78,7 +78,7 @@ test("NSIS uses stock Tauri behavior inside a disposable Windows boundary", asyn
   }
 });
 
-test("Windows release automation requires PowerShell 7.4 Core", async () => {
+test("tracked PowerShell automation declares its reviewed runtime boundary", async () => {
   const powerShellFiles = execFileSync(
     "git",
     ["ls-files", "--", "*.ps1", "*.psm1"],
@@ -92,13 +92,35 @@ test("Windows release automation requires PowerShell 7.4 Core", async () => {
     powerShellFiles.length > 0,
     "PowerShell runtime contract requires at least one tracked script or module",
   );
-  const runtimeRequirement = /^#requires -Version 7\.4\r?\n#requires -PSEdition Core\b/i;
+  const coreRuntimeRequirement =
+    /^#requires -Version 7\.4\r?\n#requires -PSEdition Core\b/i;
+  const inboxRuntimeFiles = new Set([
+    "verification/private-gate-artifacts.ps1",
+  ]);
+  assert.deepEqual(
+    powerShellFiles.filter((relativePath) => inboxRuntimeFiles.has(relativePath)),
+    [...inboxRuntimeFiles].sort(),
+    "The reviewed inbox-runtime exception must stay explicit and exhaustive",
+  );
 
   for (const relativePath of powerShellFiles) {
     const source = await readRepoFile(relativePath);
+    if (inboxRuntimeFiles.has(relativePath)) {
+      assert.match(
+        source,
+        /^#requires -Version 5\.1\b/i,
+        `${relativePath} must remain compatible with its pinned inbox host`,
+      );
+      assert.doesNotMatch(
+        source,
+        /^#requires -PSEdition Core\b/im,
+        `${relativePath} must not reject its pinned Desktop-edition host`,
+      );
+      continue;
+    }
     assert.match(
       source,
-      runtimeRequirement,
+      coreRuntimeRequirement,
       `${relativePath} must fail fast outside PowerShell Core 7.4 or newer`,
     );
   }

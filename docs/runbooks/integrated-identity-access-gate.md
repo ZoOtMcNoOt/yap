@@ -75,7 +75,18 @@ publisher it calls. No remote owner or candidate evidence was created. Both
 binders and the controller-level causal contract must accept empty byte arrays
 before the next head is frozen.
 
-The current replacement retains assigned-before-resume, kill-on-close,
+Exact head `3f9a8b7195dad3afd8b66034349c0482caef0a4a` corrected both empty-stream
+binders, passed the three-lens admission review, and produced fresh passing
+mock-OIDC, target-client, GB10, and connected-server evidence with exact
+teardown. Its sole complete matrix then stopped in
+`frontend.release-contracts`: the older tracked-PowerShell inventory still
+required every `.ps1` and `.psm1` file to declare PowerShell Core 7.4, even
+though the reviewed Phase 7 DACL helper is intentionally invoked through the
+pinned inbox Windows PowerShell 5.1 host. The command exited cleanly with zero
+retained processes. This is a stale contract failure, not permission to relabel
+the passing private children; the admitted head is consumed.
+
+The next replacement retains assigned-before-resume, kill-on-close,
 immediate explicit termination, and authoritative accounting-zero proof. It
 allows at most 5,000 milliseconds after a signaled root exit for already-
 exiting descendants and asynchronous Job accounting to drain before returning
@@ -83,10 +94,11 @@ the typed retained-descendant failure and enforcing the separate
 5,000-millisecond cleanup proof. It also freezes per-cell wall-clock deadlines,
 uses a protected one-attempt capability file, verifies private Windows DACLs,
 and requires one no-config SSH profile with bounded tunnel settlement. A new
-working-tree three-agent review found no P0–P2 issue. A clean exact-head freeze
-and match review, private-controller prequalification, admission, fresh private
-evidence, the one complete replacement matrix, first-attempt hosted closure,
-the focused PR, and merge remain open.
+runtime-inventory contract must encode the single pinned inbox-host exception
+explicitly while continuing to require Core 7.4 everywhere else. A clean exact-
+head freeze and match review, private-controller prequalification, admission,
+fresh private evidence, the one complete replacement matrix, first-attempt
+hosted closure, the focused PR, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
