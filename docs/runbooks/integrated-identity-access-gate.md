@@ -118,13 +118,14 @@ before starting the harness because orchestration required the fixed
 was a real admin-owned mode-`0755` directory with no group/world write bit; the
 receipt parent, per-head child, receipt, container, and network remained
 absent. Do not retry, complete, or relabel any of these heads. The next
-admitted GB10 receipt controller must validate safe ownership and no
-group/world write access on its fixed `/srv/yap-server/private/...` ancestor
-chain while continuing to require mode `0700` on the receipt parent and
-per-head child and mode `0600` on the receipt. This fixed-host controller rule
-is intentionally stricter than the reusable cross-platform mock-OIDC harness
-policy described below; that generic harness retains its protected
-sticky-directory exception.
+admitted GB10 receipt controller must validate that every real directory
+component in its fixed `/srv/yap-server/private/...` chain is owned by root or
+the admitted remote account (`admin`), is not redirected, and has no
+group/world write access. It must continue to require mode `0700` on the
+receipt parent and per-head child and mode `0600` on the receipt. This
+fixed-host controller rule is intentionally stricter than the reusable
+cross-platform mock-OIDC harness policy described below; that generic harness
+retains its protected sticky-directory exception.
 
 The reviewed canonical-path successor retains assigned-before-resume,
 kill-on-close, immediate

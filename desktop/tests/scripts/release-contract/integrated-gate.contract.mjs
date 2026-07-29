@@ -1008,15 +1008,37 @@ test("identity gate prequalifies its fixed GB10 control parent", () => {
     path.join(repoRoot, "docs", "runbooks", "integrated-identity-access-gate.md"),
     "utf8",
   );
+  const fixedControllerPolicy = runbook.match(
+    /The next\s+admitted GB10 receipt controller[\s\S]*?sticky-directory exception\./,
+  )?.[0];
+  assert.ok(fixedControllerPolicy);
+  assert.match(
+    fixedControllerPolicy,
+    /fixed `\/srv\/yap-server\/private\/\.\.\.` chain/,
+  );
+  assert.match(
+    fixedControllerPolicy,
+    /owned by root or\s+the admitted remote account \(`admin`\)/,
+  );
+  assert.match(fixedControllerPolicy, /is not redirected/);
+  assert.match(fixedControllerPolicy, /has no\s+group\/world write access/);
+  assert.match(
+    fixedControllerPolicy,
+    /mode `0700` on the\s+receipt parent and per-head child and mode `0600` on the receipt/,
+  );
+  const genericHarnessPolicy = runbook.match(
+    /For this reusable cross-platform\s+harness,[\s\S]*?creates any file:/,
+  )?.[0];
+  assert.ok(genericHarnessPolicy);
+  assert.match(
+    genericHarnessPolicy,
+    /distinct from the stricter fixed GB10 receipt-controller path/,
+  );
+  assert.match(
+    genericHarnessPolicy,
+    /shared-writable\s+ancestor[\s\S]*sticky-bit/,
+  );
   assert.match(runbook, /fixed GB10 controller parent/);
-  assert.match(
-    runbook,
-    /GB10 receipt controller[\s\S]*no\s+group\/world write access[\s\S]*receipt parent and\s+per-head child[\s\S]*mode `0600` on the receipt/,
-  );
-  assert.match(
-    runbook,
-    /reusable cross-platform[\s\S]*distinct from the stricter fixed GB10 receipt-controller path[\s\S]*shared-writable\s+ancestor[\s\S]*sticky-bit/,
-  );
   assert.match(runbook, /non-redirected directory[\s\S]*mode `0700`/);
   assert.match(runbook, /planned per-head child must remain absent/);
   assert.match(runbook, /no-owner GB10 preflight/);
