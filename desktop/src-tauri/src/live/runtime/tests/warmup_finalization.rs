@@ -237,6 +237,39 @@ fn model_mutation_lease_invalidates_a_start_queued_behind_it() {
 }
 
 #[test]
+fn model_mutation_drop_cancels_warmup_started_after_its_initial_clear() {
+    let runtime = LiveRuntime::new();
+    let mutation = runtime.begin_model_mutation().unwrap();
+    let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
+    let (release_loader_tx, release_loader_rx) = mpsc::channel();
+
+    assert!(runtime
+        .model_warmup
+        .request("late-stale-live-warmup", move || {
+            loader_entered_tx.send(()).unwrap();
+            release_loader_rx.recv().unwrap();
+            Err("stale synthetic warmup".to_string())
+        })
+        .unwrap());
+    loader_entered_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    drop(mutation);
+    release_loader_tx.send(()).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while runtime.model_warmup.is_loading_for_test() {
+        assert!(
+            Instant::now() < deadline,
+            "mutation-cancelled warmup did not retire after its loader returned"
+        );
+        std::thread::yield_now();
+    }
+
+    assert!(runtime.model_warmup.is_empty_for_test());
+}
+
+#[test]
 fn model_mutation_lease_rejects_new_start_work_without_waiting() {
     let runtime = LiveRuntime::new();
     let _mutation = runtime.begin_model_mutation().unwrap();

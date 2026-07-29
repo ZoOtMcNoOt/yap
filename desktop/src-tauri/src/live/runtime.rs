@@ -107,7 +107,7 @@ impl Drop for ModelMutationLease {
     fn drop(&mut self) {
         // A start requested during a long install must not run unexpectedly afterward.
         if self.cancel_pending_start_on_drop {
-            self.runtime.cancel_pending_start();
+            self.runtime.cancel_pending_start_and_warmup();
         }
         self.runtime
             .model_mutation_active

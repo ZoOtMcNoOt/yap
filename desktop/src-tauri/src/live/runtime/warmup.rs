@@ -120,7 +120,6 @@ where
         }
     }
 
-    #[cfg(test)]
     pub(super) fn cancel_loading(&self) {
         let state = self
             .state
