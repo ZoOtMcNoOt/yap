@@ -26,8 +26,12 @@ class PrivateContainerLoopbackProxyContractTests(unittest.TestCase):
         ownership_helper = PROCESS_GROUP_HELPER.read_text(encoding="utf-8")
 
         for required in (
-            "for program in docker env python3.12 socat ss ps timeout; do",
+            "for program in docker env python3.12 readlink socat ss ps timeout; do",
             'command -v "$program"',
+            "resolve_private_container_socat_executable() {",
+            'socat_command="$(command -v socat)"',
+            'socat_path="$(readlink -f -- "$socat_command")"',
+            'socat_path="$(resolve_private_container_socat_executable)"',
             'YAP_RUNTIME_OWNER_TOKEN="$_yap_owner_token"',
             "yap_start_owned_process_group",
             "yap_stop_or_recover_owned_process_group",

@@ -4,6 +4,22 @@
 # on an egress-blocked Docker internal bridge; one bounded host process group
 # exposes only its service port on numeric IPv4 loopback.
 
+resolve_private_container_socat_executable() {
+  local socat_command socat_path
+  if ! socat_command="$(command -v socat)"; then
+    return 1
+  fi
+  if [[ "$socat_command" != /* ]] \
+    || ! socat_path="$(readlink -f -- "$socat_command")" \
+    || [[ "$socat_path" != /* ]] \
+    || [ -L "$socat_path" ] \
+    || [ ! -f "$socat_path" ] \
+    || [ ! -x "$socat_path" ]; then
+    return 1
+  fi
+  printf '%s\n' "$socat_path"
+}
+
 stop_private_loopback_proxy_process_group() {
   local process_status_variable="$1"
   local control_variable="$2"
@@ -109,17 +125,14 @@ run_private_container_with_loopback_proxy() {
     echo "private proxy process-group identity path is unsafe" >&2
     return 2
   fi
-  for program in docker env python3.12 socat ss ps timeout; do
+  for program in docker env python3.12 readlink socat ss ps timeout; do
     if ! command -v "$program" >/dev/null 2>&1; then
       echo "private container proxy requires $program" >&2
       return 2
     fi
   done
   local socat_path
-  socat_path="$(command -v socat)"
-  if [[ "$socat_path" != /* ]] \
-    || [ -L "$socat_path" ] \
-    || [ ! -x "$socat_path" ]; then
+  if ! socat_path="$(resolve_private_container_socat_executable)"; then
     echo "private container proxy requires a real socat executable" >&2
     return 2
   fi

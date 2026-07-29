@@ -369,18 +369,18 @@ network, or a network whose owner/revision labels do not match the candidate.
 The containers therefore have no registry or Internet egress. Docker 29 on the
 qualified GB10 did not make an `--internal` bridge's requested published port
 reachable, so the checked launchers intentionally publish no Docker ports.
-They require the real system `/usr/bin/python3.12`, `socat` 1.8+, `ss`, `ps`,
-and `timeout`. Python starts with `-I -S`; output logs are exclusively created
-regular files, so user-site hooks and replaceable/FIFO output paths cannot run
-or block before supervision. The checked Python supervisor—not a shell
-`setsid` background job—forks each launcher, sampler, and proxy behind a
-release barrier, immediately opens a pidfd, binds PID plus start time, proves
-exec/token-owned group membership, and reaps with `waitid(P_PIDFD)`. Explicit
-stop, controller loss, launch deadline, exec failure, and pidfd-acquisition
-failure are bounded even before `/proc/<pid>/environ` exposes the exec-time
-token. The proxy group forwards only numeric IPv4 loopback to the fixed
-container-private address, starts with a cleared environment, and does not
-inherit the provider API key:
+They require the real system `/usr/bin/python3.12`, GNU `readlink -f`, `socat`
+1.8+, `ss`, `ps`, and `timeout`. Python starts with `-I -S`; output logs are
+exclusively created regular files, so user-site hooks and replaceable/FIFO
+output paths cannot run or block before supervision. The checked Python
+supervisor—not a shell `setsid` background job—forks each launcher, sampler,
+and proxy behind a release barrier, immediately opens a pidfd, binds PID plus
+start time, proves exec/token-owned group membership, and reaps with
+`waitid(P_PIDFD)`. Explicit stop, controller loss, launch deadline, exec
+failure, and pidfd-acquisition failure are bounded even before
+`/proc/<pid>/environ` exposes the exec-time token. The proxy group forwards only
+numeric IPv4 loopback to the fixed container-private address, starts with a
+cleared environment, and does not inherit the provider API key:
 
 ```bash
 inference_network="yap-private-inference-${checked_head:0:12}"

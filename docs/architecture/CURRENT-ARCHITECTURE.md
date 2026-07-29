@@ -10,10 +10,15 @@ live boundary has no ASR route, endpoint discovery, or external secure edge.
 The replacement delivery gate now freezes command deadlines, keeps its
 one-attempt capability private, verifies exact Windows DACLs, pins system
 SSH/PowerShell hosts, and binds authenticated remote helpers through cleanup
-and teardown. The current Linux retained-pidfd successor resolved the P0–P2
-findings from its exact-tree review, and all three lenses returned GO. A clean
-exact-head freeze, private-controller prequalification, admission, the full
-phase gate, PR closure, and merge remain open.
+and teardown. Committed/pushed Linux retained-pidfd successor
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` resolved its exact-tree P0–P2
+findings, but connected prequalification rejected it before admission because
+it refused the stock GB10 `/usr/bin/socat -> /usr/bin/socat1` package link. The
+corrected successor resolves that command to its absolute regular executable
+before container mutation; focused tests, the real root-owned host-path proof,
+and all three review lenses pass. Fresh corrected-head private-controller
+prequalification, admission, the full phase gate, PR closure, and merge remain
+open.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -224,7 +229,10 @@ integration, checked image contracts, and launchers under focused tests. The
 current three-lens-reviewed Phase 7 lifecycle successor starts both
 launchers, their sampler, and the numeric-loopback proxy behind an explicit
 release barrier, retains a pidfd before release, and reaps the exact child.
-Provider launch separates Docker create and start, records the exclusive
+Before container mutation, the proxy canonicalizes the PATH-selected `socat`
+command and retains only its absolute regular executable target; this accepts
+the qualified GB10 package symlink without executing through a replaceable
+link. Provider launch separates Docker create and start, records the exclusive
 container ID, and publishes private recovery identity before creation. A
 signal-interrupted create is clean only after the token-owned immutable ID is
 captured and directly proven absent; otherwise the identity remains and the gate
@@ -632,12 +640,15 @@ The pinned mock OIDC provider and owner-flow harness are focused-green. Hosted
 Docker execution of that pinned provider remains pending. Exact head
 `2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was withdrawn before GB10,
 connected-server, or complete-matrix execution after pre-execution review
-rejected its gate boundary. The current retained-pidfd replacement resolved the
-three-agent exact-tree findings and received GO from all three lenses with no
-P0-P2 finding. A clean exact-head freeze, private-controller prequalification,
-admission, the full Phase 7 gate, hosted PR closure, and merge remain open. Real
-IT-provided Entra/Conditional Access policy and an approved native adapter
-remain external conformance work.
+rejected its gate boundary. Retained-pidfd head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` resolved the later three-agent
+exact-tree findings but was itself rejected before admission when connected
+prequalification exposed the GB10 `socat` package-link incompatibility. The
+canonical-path successor passes focused local and real-host proof and received
+GO from all three lenses with no P0–P2 finding. Fresh corrected-head
+private-controller prequalification, admission, the full Phase 7 gate, hosted
+PR closure, and merge remain open. Real IT-provided Entra/Conditional Access
+policy and an approved native adapter remain external conformance work.
 
 ## Accepted meeting direction, not current execution
 

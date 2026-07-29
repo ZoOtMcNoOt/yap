@@ -24,6 +24,59 @@ OWNER_TOKEN = "b" * 64
 
 
 class PrivateContainerLoopbackProxyBehaviorTests(unittest.TestCase):
+    def test_canonical_system_socat_target_is_accepted(self) -> None:
+        bash = find_linux_bash()
+        if bash is None:
+            self.skipTest(
+                "Linux-compatible bash is unavailable for the socat path replay"
+            )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fake_socat_target = root / "socat1"
+            fake_socat_target.write_text(
+                "#!/usr/bin/env bash\nexit 0\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            fake_socat_target.chmod(0o700)
+            harness = f"""
+set -euo pipefail
+root={shlex.quote(_bash_path(root))}
+ln -s socat1 "$root/socat"
+PATH="$root:$PATH"
+export PATH
+resolved="$(resolve_private_container_socat_executable)"
+expected="$(readlink -f -- "$root/socat1")"
+if [ "$resolved" != "$expected" ]; then
+  echo "canonical socat target did not resolve to the executable" >&2
+  exit 90
+fi
+"""
+            completed = subprocess.run(
+                [bash],
+                input=(
+                    PROCESS_GROUP_HELPER.read_text(encoding="utf-8")
+                    .replace("\r\n", "\n")
+                    .replace("\r", "\n")
+                    + PROXY_HELPER.read_text(encoding="utf-8")
+                    .replace("\r\n", "\n")
+                    .replace("\r", "\n")
+                    + harness
+                ).encode("utf-8"),
+                check=False,
+                capture_output=True,
+                timeout=10,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                (completed.stdout + completed.stderr).decode(
+                    "utf-8",
+                    errors="replace",
+                ),
+            )
+
     def test_inspect_and_inventory_failure_cannot_claim_container_absence(
         self,
     ) -> None:

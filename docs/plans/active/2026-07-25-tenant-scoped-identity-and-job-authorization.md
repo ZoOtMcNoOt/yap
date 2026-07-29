@@ -71,19 +71,30 @@ then-current cancellation fallback could return without signalling the exact
 pending child. Runtime and assurance review therefore rejected `4dc572f` as a
 NO-GO before any admitted evidence or complete matrix.
 
-The current successor retains the reviewed Windows Job boundary and replaces
-the Linux initial-launch inference with one function-named supervisor under
-system Python 3.12. It forks the target behind an explicit release barrier,
-immediately retains a pidfd, publishes immutable PID/start-time identity,
-releases `exec`, and reaps the exact child through `waitid(P_PIDFD)`. Explicit
-`STOP`, controller loss, deadline expiry, and exec failure remain bounded;
-numeric PID signals are forbidden, and process-group signals are allowed only
-after the retained leader and every live token-owned member are reverified.
-The resident provider launchers, resource sampler, and loopback proxy use this
-same lifecycle owner. Focused causal tests and exact three-lens working-tree
-closure pass. A clean successor commit, fresh private packaging and
-prequalification, admission, private evidence, the one complete replacement
-matrix, first-attempt hosted closure, the focused PR, and merge remain open.
+Committed and pushed head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` retained the reviewed Windows Job
+boundary and replaced the Linux initial-launch inference with one
+function-named supervisor under system Python 3.12. It forks the target behind
+an explicit release barrier, immediately retains a pidfd, publishes immutable
+PID/start-time identity, releases `exec`, and reaps the exact child through
+`waitid(P_PIDFD)`. Explicit `STOP`, controller loss, deadline expiry, and exec
+failure remain bounded; numeric PID signals are forbidden, and process-group
+signals are allowed only after the retained leader and every live token-owned
+member are reverified. The resident provider launchers, resource sampler, and
+loopback proxy use this same lifecycle owner.
+
+Fresh prequalification of `9defb4a...` passed the unaffected focused controller
+and lifecycle checks, then failed before connected provider startup because the
+proxy rejected the stock GB10 `/usr/bin/socat -> /usr/bin/socat1` package link.
+That committed head is preserved as rejected pre-admission evidence; it has no
+admitted receipt or complete matrix. The corrected successor canonicalizes the
+PATH-selected `socat` command with GNU `readlink -f`, then requires the captured
+target to be absolute, regular, and executable before container mutation. All
+14 focused proxy contracts, the real root-owned GB10 target proof, and exact
+architecture/runtime/assurance re-review pass with no P0–P2 finding. Fresh
+corrected-head private packaging and prequalification, admission, private
+evidence, the one complete replacement matrix, first-attempt hosted closure,
+the focused PR, and merge remain open.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -286,9 +297,22 @@ scanning, capacity/SLO promotion, and deployment evidence.
       missing-result, sampler-handle, delayed-create, retained-recovery,
       renamed-container, created-container, normal-exit log ordering, and
       hung-probe tests execute. The same architecture, runtime, and assurance
-      reviewers returned GO on the exact uncommitted tree with no P0-P2 finding.
-- [ ] Freeze one exact candidate and run the complete applicable
-      local/native/server/target-client/private-server Phase 7 matrix once.
+      reviewers returned GO on that exact repair tree with no P0-P2 finding.
+- [x] Preserve and push the retained-pidfd successor as
+      `9defb4a2202b5743f161dafb40f8fb2bc41b8fde`, reject it before admission when
+      connected prequalification exposes the stock GB10 `socat` package-link
+      incompatibility, and retain its private outputs only as failed
+      prequalification evidence.
+- [x] Canonicalize the PATH-selected `socat` command to its absolute regular
+      executable before container mutation. Prove the synthetic package-link
+      layout, all 14 focused proxy contracts, and the actual
+      `/usr/bin/socat -> /usr/bin/socat1` root-owned GB10 target, then obtain
+      GO from the same architecture, runtime, and assurance reviewers with no
+      P0–P2 finding.
+- [ ] Freeze and push the reviewed canonical-`socat` successor, freshly package
+      and prequalify that exact head, and complete one new admission.
+- [ ] Run the complete applicable local/native/server/target-client/
+      private-server Phase 7 matrix exactly once for that admitted head.
 - [ ] Open a focused PR; require first-attempt hosted CI, CodeQL, and
       disposable-Windows stock-NSIS closure on the checked head, or record
       equivalent local evidence and explicitly disclose unavailable hosted
@@ -354,10 +378,13 @@ Focused successor tests now exercise retained-pidfd pre-exec cancellation,
 one monotonic five-second ownership deadline, controller death, complete
 descendant teardown, natural exit, contaminated pending-child rejection, and
 an unowned sentinel negative case. They also exercise the migrated resident
-launcher, sampler, and loopback-proxy contracts. This is development evidence
-on a three-lens-reviewed tree, but it remains uncommitted until the exact tree is
-frozen. These are focused development results, not the reserved complete
-Phase 7 matrix or hosted first-attempt evidence.
+launcher, sampler, and loopback-proxy contracts. Committed successor
+`9defb4a...` preserved that repair but failed connected prequalification before
+provider startup because it rejected GB10's system `socat` package link. The
+corrected successor passes the synthetic link replay, all 14 focused proxy
+contracts, and the actual canonical/root-owned GB10 executable proof, with
+three-lens GO and no P0–P2 finding. These are focused development results, not
+the reserved complete Phase 7 matrix or hosted first-attempt evidence.
 
 The next exact head must also prequalify the private connected-server
 controller against absent and zero-length redirected stdout files. Both states

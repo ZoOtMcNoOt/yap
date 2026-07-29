@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-07-28
+**As of:** 2026-07-29
 
 **Current work:** Phase 7 tenant-scoped identity and access on
 `feat/phase7-identity-access`, based on reviewed Checkpoint B merge
@@ -31,7 +31,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
-| Phase 7: identity/access | Active; retained-pidfd lifecycle repair reviewed, freeze pending | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. A provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` principals, durable access disable/restore, owner-scoped job/LID/idempotency/artifact behavior, role-gated and audited purpose grants, enforced enrollment/matching/adaptation purpose checks, protected readiness, authenticated bounded private WebSocket admission, and the native lower WebSocket handshake execute under focused tests. The desktop has only a narrow in-process native token-provider seam; no production adapter is selected or approved. Exact head `3f9a8b7195dad3afd8b66034349c0482caef0a4a` passed all fresh private children, then consumed its sole complete matrix in the stale tracked-PowerShell inventory contract. Head `4dc572f120f7e284f7453dfd11bd817a2c034104` fixed that contract but was never admitted: it was freshly packaged, unaffected prechecks and a temporary private connected retry passed, then review exposed unsafe fork-before-exec token inference, so it is a preserved NO-GO. The current successor launches provider owners through isolated/no-site Python behind an explicit barrier, immediately retains a pidfd, contains control-pipe `SIGPIPE`, bounds setup and pidfd failure, latches post-reap proof failure, causally rechecks zombie environment denial, reaps the exact child, token-recovers missing-result descendants, and reconciles/removes only a verified immutable container identity within the outer supervisor deadline. Focused causal and migrated launcher/proxy tests pass, and the same three reviewers returned exact-tree GO with no P0-P2 finding. A clean successor commit, fresh private prequalification/admission/evidence, the one complete matrix, hosted PR closure, and merge remain open. |
+| Phase 7: identity/access | Active; corrected lifecycle successor reviewed, fresh prequalification pending | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. A provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` principals, durable access disable/restore, owner-scoped job/LID/idempotency/artifact behavior, role-gated and audited purpose grants, enforced enrollment/matching/adaptation purpose checks, protected readiness, authenticated bounded private WebSocket admission, and the native lower WebSocket handshake execute under focused tests. The desktop has only a narrow in-process native token-provider seam; no production adapter is selected or approved. Exact head `3f9a8b7195dad3afd8b66034349c0482caef0a4a` passed all fresh private children, then consumed its sole complete matrix in the stale tracked-PowerShell inventory contract. Head `4dc572f120f7e284f7453dfd11bd817a2c034104` fixed that contract but was never admitted: it was freshly packaged, unaffected prechecks and a temporary private connected retry passed, then review exposed unsafe fork-before-exec token inference, so it is a preserved NO-GO. Committed and pushed head `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` repaired that lifecycle boundary and passed focused private prechecks, but connected prequalification then proved that the stock GB10 `/usr/bin/socat -> /usr/bin/socat1` package link was rejected before provider startup; no admission, complete matrix, PR, or hosted closure occurred. The corrected successor retains the pidfd lifecycle and canonicalizes the selected `socat` command to its absolute regular executable before container mutation. All 14 focused proxy tests and the real root-owned GB10 package-link proof pass, and the same three reviewers returned exact-tree GO with no P0-P2 finding. Fresh corrected-head private packaging, prequalification, admission/evidence, the one complete matrix, hosted PR closure, and merge remain open. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -343,8 +343,9 @@ ownership.
   after pre-execution adversarial review rejected its gate boundary.
   `a7df6bfa0511ddd1ca59d7e1389a6c17eb133ebe` and
   `3f9a8b7195dad3afd8b66034349c0482caef0a4a` are also consumed as recorded in
-  the gate runbook; `30b18c8c4a26266210657d11cf66b1a5e0c2a893` and
-  `4dc572f120f7e284f7453dfd11bd817a2c034104` were rejected before admission.
+  the gate runbook; `30b18c8c4a26266210657d11cf66b1a5e0c2a893`,
+  `4dc572f120f7e284f7453dfd11bd817a2c034104`, and
+  `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` were rejected before admission.
   The current successor retains assigned-before-resume, kill-on-close,
   immediate explicit termination, Windows accounting-zero proof, frozen
   command deadlines, protected private capability/DACL handling, no-config
@@ -363,10 +364,15 @@ ownership.
   recovery record, partial record, and container-ID file absent before clearing
   their path. The providers disable Docker auto-removal so normal-exit logs are
   captured through the still-addressable immutable ID before explicit removal.
-  Focused tests pass, and the same three reviewers returned exact-tree GO with
-  no P0-P2 finding. A clean exact-head freeze, private
-  prequalification/admission/evidence, the one replacement phase gate, hosted
-  PR closure, and merge remain open. Persistent warm model
+  Head `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` preserved these lifecycle
+  repairs but failed connected prequalification because it rejected GB10's
+  canonical system `socat` package link. The current successor resolves the
+  selected command to its absolute regular executable before container
+  mutation. Focused tests and the real GB10 link/owner/mode proof pass, and the
+  same three reviewers returned exact-tree GO with no P0-P2 finding. Fresh
+  corrected-head private prequalification/admission/evidence, the one
+  replacement phase gate, hosted PR closure, and merge remain open. Persistent
+  warm model
   services, multi-worker and mixed live/batch capacity promotion, production
   supervision/observability, and external deployment remain Phase 10 gates;
   they are not Phase 6 completion criteria.
@@ -584,17 +590,25 @@ provider optimization or non-blocking architecture work.
 1. Closed: the retained-pidfd implementation and documentation completed the
    exact architecture, Linux-runtime, and assurance review lenses with every
    P0–P2 finding resolved before commit.
-2. Commit and push one clean successor using the existing authenticated GitHub
-   CLI identity. Rebuild its fresh private release and prequalify the Windows
-   supervisor, authenticated remote helper set, contained connected controller,
-   exact request/TERM/SSH-exit lifecycle, and no-receipt mock OIDC path.
-3. Reserve one fresh admission. The user explicitly authorized transient use of
+2. Closed as rejected prequalification evidence: committed/pushed head
+   `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` passed its unaffected focused
+   prechecks, then the connected launcher failed before provider startup because
+   it rejected GB10's stock `/usr/bin/socat -> /usr/bin/socat1` package link.
+3. Closed for the next freeze candidate: canonicalize the selected `socat`
+   command to its absolute regular executable, prove the real root-owned GB10
+   target plus all 14 focused proxy contracts, and obtain GO from the same three
+   review lenses with no P0–P2 finding.
+4. Build a fresh private release from the next clean corrected head and
+   prequalify the Windows supervisor, authenticated remote helper set, contained
+   connected controller, exact request/TERM/SSH-exit lifecycle, and no-receipt
+   mock OIDC path.
+5. Reserve one fresh admission. The user explicitly authorized transient use of
    the existing GitHub CLI credential for this successor because a separate
    least-privilege status token is unavailable; do not print, persist, or pass
    it into command cells, and record the broader-scope exception.
-4. Regenerate every private child and run the one-time applicable local/native/
+6. Regenerate every private child and run the one-time applicable local/native/
    server/target-client/private-server matrix for that exact head.
-5. Open the focused PR only after the full gate is green, then merge only after
+7. Open the focused PR only after the full gate is green, then merge only after
    hosted CI, CodeQL, and disposable-Windows stock-NSIS closure.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
