@@ -237,9 +237,19 @@ The mock-OIDC dependency is digest-pinned in
 and its bounded owner-flow harness is
 [`verification/test-mock-oidc-owner-flow.ps1`](../../verification/test-mock-oidc-owner-flow.ps1).
 Focused executable fake-Docker lifecycle, workflow, and integrated-gate
-contracts are green. The dedicated hosted `mock-oidc` job remains the
-exact-head Docker closure. The three-agent working-tree review found no P0–P2
-issue, but no replacement Phase 7 exact head is frozen. Private-controller
+contracts are green. The dedicated hosted
+`mock-oidc` job is both the exact-head Docker closure and the required
+no-skip Linux owned-process lifecycle lane. The three-agent working-tree review
+found and drove repairs for `SIGPIPE`, ambient Python startup, bounded pidfd
+failure, missing-result group recovery, container-start interruption, and stale
+numeric log-follower ownership. Re-review added post-reap proof latching,
+zombie-environment recheck, bounded Docker probes, delayed daemon publication,
+and created/stopped container removal. No replacement Phase 7 exact head is frozen.
+Final re-review also rejected the old timed-absence heuristic for an interrupted
+Docker request. The current repair separates create/start, uses an exclusive
+container-ID file, and retains a private pre-create recovery record whenever the
+daemon outcome cannot be resolved.
+Exact-tree re-review is complete with no P0-P2 finding. Private-controller
 prequalification, the complete gate, first-attempt hosted closure, the focused
 PR, and merge remain open.
 This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
@@ -359,10 +369,18 @@ network, or a network whose owner/revision labels do not match the candidate.
 The containers therefore have no registry or Internet egress. Docker 29 on the
 qualified GB10 did not make an `--internal` bridge's requested published port
 reachable, so the checked launchers intentionally publish no Docker ports.
-They require `socat` 1.8+, `setsid`, `ss`, and `ps`; each launcher starts one
-bounded process group that forwards only numeric IPv4 loopback to the fixed
-container-private address. The proxy process starts with a cleared environment
-and does not inherit the provider API key:
+They require the real system `/usr/bin/python3.12`, `socat` 1.8+, `ss`, `ps`,
+and `timeout`. Python starts with `-I -S`; output logs are exclusively created
+regular files, so user-site hooks and replaceable/FIFO output paths cannot run
+or block before supervision. The checked Python supervisor—not a shell
+`setsid` background job—forks each launcher, sampler, and proxy behind a
+release barrier, immediately opens a pidfd, binds PID plus start time, proves
+exec/token-owned group membership, and reaps with `waitid(P_PIDFD)`. Explicit
+stop, controller loss, launch deadline, exec failure, and pidfd-acquisition
+failure are bounded even before `/proc/<pid>/environ` exposes the exec-time
+token. The proxy group forwards only numeric IPv4 loopback to the fixed
+container-private address, starts with a cleared environment, and does not
+inherit the provider API key:
 
 ```bash
 inference_network="yap-private-inference-${checked_head:0:12}"
@@ -503,12 +521,27 @@ exactly numeric IPv4 loopback. The model containers use the invoking non-root
 UID/GID so mode-0700 private model directories remain readable without widening
 host permissions. Run every
 configured service and Yap in the foreground so `Ctrl+C`, SSH loss, and
-`SIGTERM` stop the container, its log follower, and the complete proxy process
-and must not be installed as persistent units before their separate frozen
-lifecycle/capacity gates and later production-supervision work. An external
-candidate capability lock is qualification input, not evidence that Nemotron is
-selected or advertised. After both foreground model containers are stopped,
-verify that neither private `*.pgid` identity remains. If a launcher was
+`SIGTERM` reconcile and stop/remove only a token-verified immutable container ID
+before retiring the complete proxy process. Docker create and start are
+separate; the launcher writes a private recovery record before create and
+supplies Docker an exclusive container-ID file. A create interrupted before its
+ID is resolved is an explicit cleanup failure, and the record remains under the
+private gate runtime directory; elapsed name absence is never proof. Every
+Docker probe and operation fits below the outer supervisor TERM deadline.
+Recovery records retire only after Docker proves the immutable container ID
+absent; a renamed or relabeled container is retained for explicit recovery.
+Deletion failure remains an unclean launcher result, and normal gate teardown
+independently proves the recovery record, partial publication, and container-ID
+file absent before clearing their path. Provider containers omit Docker
+auto-removal so normal-exit logs remain available to a bounded teardown command
+before explicit immutable-ID removal; no independently signalled numeric-PID log
+follower exists. These launchers must not be installed as persistent units
+before their separate frozen lifecycle/capacity gates and later
+production-supervision work. An external candidate capability lock is
+qualification input, not evidence that Nemotron is selected or advertised.
+After both foreground model containers are stopped,
+verify that no private `*.pgid`, `*.container-id`, or `*.container-recovery`
+identity remains. If a launcher was
 abnormally killed, first recover its container by the expected name, require
 the same run token, checked revision, and internal network, then stop only the
 returned immutable ID:
@@ -530,14 +563,20 @@ for provider_name in yap-cohere-vllm yap-nemotron-nemo; do
     echo "refusing to stop an unowned replacement provider" >&2
     exit 1
   fi
-  docker stop --time 10 "$provider_id"
+  docker rm --force "$provider_id"
 done
 ```
 
-Then source `infra/yap-server-node/owned-process-group.sh` and call
+Normal checked teardown uses the shared owned-process lifecycle helper, whose
+retained-pidfd supervisor owns TERM/KILL, exact reaping, and the zero-member
+postcondition. A missing or failed supervisor result falls back only after the
+direct supervisor is proved exited and reaped; recorded state plus the same
+`runtime_owner_token` must validate every surviving member before group
+cleanup. For manual recovery after controller loss or a prior crash, source
+`infra/yap-server-node/owned-process-group.sh` and call
 `stop_recorded_token_owned_process_group` with that provider's identity file,
-the same `runtime_owner_token`, and a descriptive label; it refuses to signal a
-group unless every surviving member still carries that token. Then
+the same token, and a descriptive label. A mismatched member is retained rather
+than signalled. Then
 remove the exact temporary network explicitly with
 its immutable ID after checking its name and run-token label:
 

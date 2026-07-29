@@ -38,6 +38,11 @@ certification, production authorization, or substitute for enterprise review.
 - Installer-only custom containment has been retired. Stock Tauri NSIS behavior
   is tested in a disposable Windows environment; genuine runtime process safety
   remains in product/server code.
+- Private provider teardown treats recovery-artifact retirement as executable
+  proof: deletion failure propagates, and the outer lifecycle gate independently
+  verifies every recovery identity absent before forgetting its path.
+- Provider containers omit Docker auto-removal so bounded logs are captured
+  through a verified immutable ID before explicit removal.
 
 ### Network and protocol
 
@@ -149,10 +154,12 @@ These are accepted Phase 7/10 and IT/security/network handoffs in the
 [roadmap](../roadmap/ROADMAP.md). Developer-owned infrastructure must not be
 described as satisfying them.
 
-The Phase 7 three-agent working-tree review found no P0–P2 issue. A clean
-exact-head freeze, private-controller prequalification, the full phase gate,
-hosted PR closure, and merge are still open. Focused green evidence is not
-release or production authorization.
+The Phase 7 retained-pidfd successor resolved the P0–P2 findings from its
+three-agent exact-tree review, including fail-closed recovery for an interrupted
+Docker create with no immutable ID. All three lenses returned GO with no P0-P2
+finding. A clean exact-head freeze, private-controller prequalification, the
+full phase gate, hosted PR closure, and merge are still open. Focused green
+evidence is not release or production authorization.
 
 ## Security review and disclosure handling
 

@@ -3,9 +3,11 @@
 This map records the executable ownership baseline established by architecture
 checkpoints A/B and the active Phase 7 implementation. Focused identity,
 purpose-authorization, private-WebSocket, and native lower-handshake evidence is
-green; final review, the full phase gate, PR closure, and merge remain open. Paths are
-relative to the repository root; later implementation must update this map only
-after its behavior is executable and verified.
+green, and the retained-pidfd successor completed exact three-lens review. A
+clean freeze, private prequalification/admission/evidence, the full phase gate,
+PR closure, and merge remain open. Paths are relative to the repository root;
+later implementation must update this map only after its behavior is executable
+and verified.
 
 ## Dependency direction
 
@@ -392,27 +394,52 @@ owner's state but may not recreate its transition logic.
   fixed shortcut/native-import dispatchers for process-lifetime event work; and
   `server/pools/container_runtime.py` plus `batch_asr_worker.py` for the
   transient reference worker. The two provider-specific foreground launchers
-  own normal resident-container and bounded loopback-proxy teardown; the
-  lifecycle gate owns their sequential qualification run, temporary internal
-  bridge, and abnormal-exit recovery.
-- **Persisted state:** each active proxy publishes its immutable process-group
-  identity into the gate's private runtime directory until verified teardown.
-  No handle survives successful cleanup; durable job/cancellation state drives
+  own normal resident-container teardown. The Phase 7 successor's
+  `owned-process-supervisor.py` owns initial launcher, sampler, and proxy child
+  identity, release, signalling, and exact reap; the lifecycle gate owns their
+  sequential qualification run, temporary internal bridge, and abnormal-exit
+  recovery.
+- **Persisted state:** each active supervised target publishes private
+  versioned PID/start-time/supervisor state and an authoritative cleanup result.
+  Each active proxy also publishes its immutable token-owned process-group
+  identity until verified teardown. Before Docker create, the launcher publishes
+  a private container recovery record; Docker writes its exclusive container-ID
+  file. Neither survives successful cleanup, while an unresolved create retains
+  the record and fails the gate. Durable job/cancellation state drives
   application restart behavior.
-- **Transient state:** task handles, child/container identity, proxy process
-  group and fixed child ceiling, timeouts, and cleanup guards. Shortcut/import
+- **Transient state:** retained pidfd, release/control/exec-status descriptors,
+  task handles, child/container identity, proxy process group and fixed child
+  ceiling, deadlines, and cleanup guards. Shortcut/import
   worker counts and queue capacities are fixed; they end with the desktop
   process rather than being dynamically multiplied.
 - **Trust boundary:** subprocess environment, image/revision identity, resource
   ceilings, filesystem mounts, and termination.
 - **Dependencies/events:** job pool invokes runtime; lifecycle errors become
   safe status/failure projections.
-- **Failure/recovery:** the recovery owner validates the per-run token on every
-  live process-group member before bounded TERM/KILL cleanup. The private
-  process-group identity lets it retire a proxy even after the launcher leader
-  dies; restart relies on durable job state rather than pretending a child
-  survived.
-- **Cancellation:** explicit terminate/kill fallback with bounded wait.
+- **Failure/recovery:** isolated/no-site system Python starts behind a release
+  barrier and keeps the exact child pidfd from fork through
+  `waitid(P_PIDFD)`, including the interval before exec-time token visibility.
+  Control writes contain `SIGPIPE`; setup and pidfd-acquisition failures are
+  bounded. After a missing or failed supervisor result, recovery first proves
+  and reaps the direct supervisor, then validates the per-run token on every
+  live process-group member before bounded TERM/KILL cleanup. Cleanup proof
+  remains latched after reap; an `EACCES` environment race is treated as exit
+  only after the same identity is causally gone or zombie. Proxy teardown
+  bounds every Docker probe/operation below the supervisor TERM deadline and
+  separates Docker create from start. It resolves fixed name, immutable
+  container ID, and token before stopping and force-removing that exact external
+  container. If an interrupted create cannot be resolved, timed absence is not
+  proof: cleanup fails and its private recovery identity remains. Recovery
+  retires only after direct immutable-ID absence; renamed, relabeled, or foreign
+  state is retained and refused. A failed recovery-artifact deletion remains an
+  unclean launcher result, and the outer lifecycle gate independently requires
+  the recovery record, partial publication, and container-ID file absent before
+  clearing their path. Provider containers omit Docker auto-removal so bounded
+  log capture precedes explicit immutable-ID removal. It has no stale numeric-PID
+  log follower. Restart relies on durable job state rather than pretending a
+  child survived.
+- **Cancellation:** explicit control-channel stop, retained-pidfd pending-child
+  kill, verified process-group TERM/KILL, and bounded exact reap.
 - **Duplicate owner:** installer-only containment was retired; real runtime
   process safety remains.
 

@@ -86,27 +86,61 @@ pinned inbox Windows PowerShell 5.1 host. The command exited cleanly with zero
 retained processes. This is a stale contract failure, not permission to relabel
 the passing private children; the admitted head is consumed.
 
-The next replacement retains assigned-before-resume, kill-on-close,
-immediate explicit termination, and authoritative accounting-zero proof. It
-allows at most 5,000 milliseconds after a signaled root exit for already-
-exiting descendants and asynchronous Job accounting to drain before returning
-the typed retained-descendant failure and enforcing the separate
-5,000-millisecond cleanup proof. It also freezes per-cell wall-clock deadlines,
-uses a protected one-attempt capability file, verifies private Windows DACLs,
-and requires one no-config SSH profile with bounded tunnel settlement. A new
-runtime-inventory contract must encode the single pinned inbox-host exception
-explicitly while continuing to require Core 7.4 everywhere else. A clean exact-
-head freeze and match review, private-controller prequalification, admission,
-fresh private evidence, the one complete replacement matrix, first-attempt
-hosted closure, the focused PR, and merge remain open.
+Exact head `4dc572f120f7e284f7453dfd11bd817a2c034104` encoded that single
+pinned inbox-host exception while continuing to require Core 7.4 everywhere
+else. It was freshly packaged; the unaffected pre-admission checks passed, and
+a temporary private connected-path retry passed, but the head was never
+admitted. Review found that `/proc/<pid>/environ` can be temporarily empty
+between `fork` and `exec`; the cancellation fallback could then return an
+unverified state without signalling the exact pending child. Runtime and
+assurance review rejected `4dc572f` before any private gate evidence or complete
+matrix. Preserve it as a NO-GO; do not admit, retry, or relabel it.
+
+The next replacement retains assigned-before-resume, kill-on-close, immediate
+explicit termination, authoritative accounting-zero proof, frozen per-cell
+deadlines, protected one-attempt capability, exact Windows DACLs, and the
+no-config SSH boundary. On Linux, every resident provider launcher, sampler,
+and loopback proxy must launch through
+`infra/yap-server-node/owned-process-supervisor.py` under the real system
+Python 3.12 in isolated/no-site mode (`-I -S`). The supervisor must fork behind
+a release barrier, retain the pidfd before release, bind PID plus start time,
+prove `exec` and token-owned group membership, and reap with
+`waitid(P_PIDFD)`. Output files are exclusively created regular files; setup
+failure publishes an authoritative no-child result instead of blocking on an
+unsafe path. `RELEASE` and `STOP` writes contain `SIGPIPE`. `STOP`,
+parent/control loss, deadline expiry, exec failure, and pidfd-acquisition
+failure are bounded. Bash may use the supervisor PID only to reap its direct
+child; it must never signal that numeric PID. If the supervisor dies without a
+result, state plus the per-run token is the fail-closed recovery boundary:
+every surviving group member must verify before bounded cleanup. The proxy
+separates Docker create from start and publishes private recovery identity
+before create. It reconciles the fixed container name, immutable ID, and run
+token before teardown; a foreign replacement is retained and refused. If a
+create request is interrupted before the immutable ID is resolved, the record
+is retained and the gate fails rather than treating elapsed absence as proof.
+Recovery artifacts retire only after direct immutable-ID absence; name or label
+replacement is retained and refused. Failure to delete any recovery artifact is
+an unclean launcher result. Normal gate teardown independently requires the
+recovery record, partial publication, and container-ID file absent before it
+clears the proxy path. Provider containers omit Docker auto-removal so normal
+exit remains addressable for bounded log capture before explicit immutable-ID
+removal.
+
+Three-lens exact-tree closure is complete with no P0-P2 finding. A clean
+exact-head freeze and tree-match confirmation, private-controller
+prequalification, admission, fresh private evidence, the one complete
+replacement matrix, first-attempt hosted closure, the focused PR, and merge
+remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
 It retains the complete frontend, native, server, target-client, GB10, and
 desktop-to-private-server matrix. The local inventory includes the
 receipt-backed mock-OIDC owner flow, and hosted closure includes the dedicated
-`mock-oidc` job. No production desktop-provider job is listed because no
-production provider is selected or shipped.
+`mock-oidc` job. That Ubuntu job also runs the Linux pidfd/supervisor,
+resident-lifecycle, and proxy behavior suites with skips converted to
+failures. No production desktop-provider job is listed because no production
+provider is selected or shipped.
 
 ## Evidence boundary
 
@@ -253,10 +287,10 @@ The controller must still launch the real admitted SSH owner with
 `-NoNewWindow`, stop the exact remote wrapper through a separate bounded
 control connection with live wall-clock and output limits, wait for the
 original SSH process to exit naturally, and create teardown evidence only after
-independent zero-owner checks. The remote wrapper must place the Yap server in
-its own token-owned process group and use the checked bounded TERM/KILL group
-helper; a plain unbounded `kill` followed by `wait` is not sufficient teardown
-proof.
+independent zero-owner checks. The remote wrapper must place the Yap server
+under the checked retained-pidfd supervisor and preserve its token-owned
+process-group recovery record; a plain unbounded `kill` followed by `wait` is
+not sufficient teardown proof.
 
 Cleanup PASS must additionally mean that the wrapper entered cleanup through
 the expected TERM status, every checked child/group helper succeeded, and the
@@ -272,10 +306,16 @@ with an empty cleanup-error stream and the separate local-forward and remote
 zero-owner checks pass; otherwise it is a consumed failure.
 
 Start from the exact clean reviewed candidate. Push that exact candidate branch
-without opening the pull request so GitHub can address the commit. Use a
-dedicated `GH_TOKEN` limited to commit-status read/write for admission. Prepare
-a new private plan for that head with new absent evidence destinations outside
-the repository. Runtime preparation receipts and every private result must also
+without opening the pull request so GitHub can address the commit. A dedicated
+`GH_TOKEN` limited to commit-status read/write remains the preferred admission
+credential. For the current Phase 7 successor only, the user explicitly
+authorized transient use of the existing authenticated GitHub CLI credential
+because a separate status token is unavailable. Resolve it without printing,
+inject it only into the admission process, never persist it, and record that
+broader-scope exception in the private admission record. The runner must still
+remove GitHub credential variables from every command cell. Prepare a new
+private plan for that head with new absent evidence destinations outside the
+repository. Runtime preparation receipts and every private result must also
 bind to that head.
 
 The identity gate requires private-plan schema version 2 and a new absolute
@@ -513,10 +553,12 @@ head on their first attempt. A documentation-only descendant may reconcile
 public-safe evidence; any other change requires a new candidate gate.
 
 Candidate completion has already consumed and deleted the raw attempt
-capability. For hosted closure, set `GH_TOKEN` to a separate read-only
-credential limited to commit-status read and Actions read. Hosted collection
-pins `github.com/mcnatg1/yap`; it does not use the mutable Git remote or
-`GH_HOST`.
+capability. For hosted closure, a separate credential limited to commit-status
+read and Actions read remains preferred. Under the explicit current-successor
+exception above, the existing authenticated GitHub CLI credential may instead
+be resolved and injected transiently; never print or persist it, and record the
+broader scope. Hosted collection pins `github.com/mcnatg1/yap`; it does not use
+the mutable Git remote or `GH_HOST`.
 
 Derive the hosted receipt from the original candidate admission:
 

@@ -49,10 +49,10 @@ this handoff:
   contracts are green. The Docker-backed exact-head flow still belongs to the
   reviewed `ubuntu-latest` `mock-oidc` hosted closure.
 
-The three-agent working-tree review found no P0–P2 issue, but no replacement
-Phase 7 exact head is frozen. Private-controller prequalification, the one-time
-full matrix, first-attempt hosted evidence, focused PR, and merge remain open.
-Use
+The retained-pidfd and interrupted-container-create recovery successor is
+three-lens reviewed with every P0-P2 finding resolved; no replacement Phase 7
+exact head is frozen. Private-controller prequalification, the one-time full
+matrix, first-attempt hosted evidence, focused PR, and merge remain open. Use
 the [integrated identity and access gate](integrated-identity-access-gate.md)
 only after those prerequisites are ready.
 

@@ -52,25 +52,38 @@ withdrawn before GB10, connected-server, or complete-matrix execution.
 Pre-execution adversarial review rejected its unbounded command cells, ambient
 SSH alias and mutable remote-helper trust, terminal-carried attempt secret, and
 incomplete Windows private-artifact boundary. No passing evidence from that
-head is replacement evidence.
+head is replacement evidence. Exact head
+`a7df6bfa0511ddd1ca59d7e1389a6c17eb133ebe` was later admitted; mock OIDC and
+target-client passed, but GB10 failed before creating a remote owner because
+the fixed controller parent was absent. Successor
+`30b18c8c4a26266210657d11cf66b1a5e0c2a893` was not admitted after its
+pre-reservation causal test exposed legitimate empty-stream binder failures.
 
-The current replacement keeps suspended creation, assigned-before-resume,
-kill-on-close, immediate explicit termination, authoritative zero-active
-accounting, and typed retained-descendant authority. It gives a signaled root
-exit at most 5,000 milliseconds to drain naturally and freezes a separate
-deadline for every active command cell. The one-attempt capability is a
-protected 32-byte private file; only its digest is admitted, and completion
-consumes it before the first command cell. The boundary pins system OpenSSH and
-the system PowerShell ACL host, enforces exact gate and OpenSSH DACL policies,
-uses one no-config SSH profile, authenticates the remote start/stop/verify/
-wrapper helpers and binds their set digest through cleanup and teardown, and
-bounds tunnel/controller settlement. Focused containment, SSH/profile,
-target-evidence, Rust/PowerShell private publication, connected teardown, and
-comprehensive private-evidence contracts pass. The three-agent working-tree
-review found no P0–P2 issue. A new clean exact-head freeze and
-private-controller prequalification, admission, fresh private evidence, the one
-complete replacement matrix, first-attempt hosted closure, the focused PR, and
-merge remain open.
+Exact head `3f9a8b7195dad3afd8b66034349c0482caef0a4a` repaired those binders,
+passed admission review and all fresh private children, then consumed its sole
+complete matrix in a stale release contract: the inventory did not encode the
+one intentional system Windows PowerShell 5.1 DACL-host exception. Head
+`4dc572f120f7e284f7453dfd11bd817a2c034104` fixed only that inventory and
+documentation contract. It was freshly packaged and prequalified but was
+never admitted. Connected-path review exposed a fork-before-exec interval in
+which `/proc/<pid>/environ` could not yet prove the runtime token, and the
+then-current cancellation fallback could return without signalling the exact
+pending child. Runtime and assurance review therefore rejected `4dc572f` as a
+NO-GO before any admitted evidence or complete matrix.
+
+The current successor retains the reviewed Windows Job boundary and replaces
+the Linux initial-launch inference with one function-named supervisor under
+system Python 3.12. It forks the target behind an explicit release barrier,
+immediately retains a pidfd, publishes immutable PID/start-time identity,
+releases `exec`, and reaps the exact child through `waitid(P_PIDFD)`. Explicit
+`STOP`, controller loss, deadline expiry, and exec failure remain bounded;
+numeric PID signals are forbidden, and process-group signals are allowed only
+after the retained leader and every live token-owned member are reverified.
+The resident provider launchers, resource sampler, and loopback proxy use this
+same lifecycle owner. Focused causal tests and exact three-lens working-tree
+closure pass. A clean successor commit, fresh private packaging and
+prequalification, admission, private evidence, the one complete replacement
+matrix, first-attempt hosted closure, the focused PR, and merge remain open.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -244,6 +257,36 @@ scanning, capacity/SLO promotion, and deployment evidence.
       the typed primary failure, prove nested active-process-zero, and keep the
       archived installer implementation recoverable without restoring its
       NSIS-specific machinery.
+- [x] Correct the stale tracked-PowerShell inventory by naming the one pinned
+      system Windows PowerShell 5.1 ACL-host exception while retaining the
+      PowerShell Core 7.4 requirement for every other tracked entrypoint.
+- [x] Replace fork-before-exec token inference in the Linux resident-provider
+      lifecycle with retained-pidfd supervision, migrate every affected
+      launcher/proxy/sampler owner, and close the exact working tree through the
+      same architecture, runtime, and assurance review lenses.
+      The working-tree successor now uses `/usr/bin/python3.12 -I -S`, an
+      exclusive regular-file output boundary, a release barrier, retained
+      pidfd, contained control writes, bounded pidfd/setup failure, and exact
+      reap. Post-reap proof failures remain latched, and denied zombie
+      environment reads require causal identity recheck. Missing/failed results
+      can recover only after the direct supervisor exits and every surviving
+      group member verifies the run token. The proxy bounds Docker calls below
+      the outer supervisor deadline, splits Docker create from start, and writes
+      an exclusive container-ID file plus a private pre-create recovery record.
+      It reconciles fixed name, immutable container ID, and run token before
+      stopping/removing only that verified container. Unknown interrupted
+      creation retains recovery identity and fails instead of treating timed
+      absence as proof. Recovery retires only after direct immutable-ID absence;
+      renamed or relabeled state is retained and refused. Deletion failure is
+      propagated, and normal gate teardown independently requires all three
+      recovery artifacts absent before clearing their path. Docker auto-removal
+      is disabled so bounded logs are captured before exact-ID removal. It has
+      no raw numeric-PID log follower. Causal owned/foreign recovery,
+      closed-pipe, FIFO, ambient-site, repeated exec-failure, post-reap,
+      missing-result, sampler-handle, delayed-create, retained-recovery,
+      renamed-container, created-container, normal-exit log ordering, and
+      hung-probe tests execute. The same architecture, runtime, and assurance
+      reviewers returned GO on the exact uncommitted tree with no P0-P2 finding.
 - [ ] Freeze one exact candidate and run the complete applicable
       local/native/server/target-client/private-server Phase 7 matrix once.
 - [ ] Open a focused PR; require first-attempt hosted CI, CodeQL, and
@@ -276,6 +319,10 @@ will consume.
   ownership boundary, not Entra consent, Conditional Access, WAM, or a final
   production audience. The digest-pinned Docker provider is exercised by the
   hosted `mock-oidc` job, not by this Docker-less local host.
+- The same `ubuntu-latest` `mock-oidc` job runs the Linux supervisor,
+  resident-lifecycle, and proxy behavior modules with
+  `YAP_REQUIRE_LINUX_LIFECYCLE_TESTS=1`; an unavailable Linux process model is
+  a hosted failure rather than a successful skip.
 
 The complete matrix is reserved for the frozen candidate. Focused tests may run
 repeatedly while implementation is changing.
@@ -301,8 +348,16 @@ of the consumed complete phase matrix. A Docker 29 ARM64
 diagnostic
 proved the bounded Linux loopback proxy against the locked provider on an
 internal bridge, but it did not produce an exact-head owner-flow receipt.
-These are focused development results, not the reserved complete Phase 7
-matrix or hosted first-attempt evidence.
+The later `4dc572f` prequalification was rejected before admission because
+`/proc/<pid>/environ` is not an initial fork-to-exec ownership authority.
+Focused successor tests now exercise retained-pidfd pre-exec cancellation,
+one monotonic five-second ownership deadline, controller death, complete
+descendant teardown, natural exit, contaminated pending-child rejection, and
+an unowned sentinel negative case. They also exercise the migrated resident
+launcher, sampler, and loopback-proxy contracts. This is development evidence
+on a three-lens-reviewed tree, but it remains uncommitted until the exact tree is
+frozen. These are focused development results, not the reserved complete
+Phase 7 matrix or hosted first-attempt evidence.
 
 The next exact head must also prequalify the private connected-server
 controller against absent and zero-length redirected stdout files. Both states

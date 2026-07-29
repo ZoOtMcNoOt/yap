@@ -350,7 +350,7 @@ jobs:
         run: uv sync --locked --exact --extra evaluation --extra test --python (Get-Command python.exe).Source --no-python-downloads
       - name: Lint the Python server
         working-directory: server
-        run: uv run --locked ruff check .
+        run: uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py
       - name: Run the portable Python 3.12 server suite
         run: ./verification/test-portable-python-server.ps1
 
@@ -401,5 +401,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw "Mock OIDC CI could not populate the locked server environment."
           }
+      - name: Run required Linux owned-process lifecycle tests without skips
+        shell: bash
+        env:
+          PYTHONPATH: server
+          YAP_REQUIRE_LINUX_LIFECYCLE_TESTS: "1"
+        run: |
+          test -x /usr/bin/python3.12
+          test "$(/usr/bin/python3.12 -I -S -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')" = 3.12
+          uv run --project server --locked python -m unittest -v \
+            tests.infra.test_owned_process_group_behavior \
+            tests.infra.test_owned_process_supervisor \
+            tests.infra.test_resident_provider_lifecycle_gate \
+            tests.infra.test_private_container_loopback_proxy \
+            tests.infra.test_private_container_loopback_proxy_behavior
       - name: Run the pinned mock OIDC owner flow
         run: ./verification/test-mock-oidc-owner-flow.ps1

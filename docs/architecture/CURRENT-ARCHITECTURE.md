@@ -10,7 +10,8 @@ live boundary has no ASR route, endpoint discovery, or external secure edge.
 The replacement delivery gate now freezes command deadlines, keeps its
 one-attempt capability private, verifies exact Windows DACLs, pins system
 SSH/PowerShell hosts, and binds authenticated remote helpers through cleanup
-and teardown. The three-agent working-tree review found no P0–P2 issue. A clean
+and teardown. The current Linux retained-pidfd successor resolved the P0–P2
+findings from its exact-tree review, and all three lenses returned GO. A clean
 exact-head freeze, private-controller prequalification, admission, the full
 phase gate, PR closure, and merge remain open.
 
@@ -220,6 +221,23 @@ sherpa-onnx. The Cohere
 vLLM adapter and a resident Nemotron NeMo adapter each now have bounded
 loopback/API-key transport, exact readiness identity, provider-neutral worker
 integration, checked image contracts, and launchers under focused tests. The
+current three-lens-reviewed Phase 7 lifecycle successor starts both
+launchers, their sampler, and the numeric-loopback proxy behind an explicit
+release barrier, retains a pidfd before release, and reaps the exact child.
+Provider launch separates Docker create and start, records the exclusive
+container ID, and publishes private recovery identity before creation. A
+signal-interrupted create is clean only after the token-owned immutable ID is
+captured and directly proven absent; otherwise the identity remains and the gate
+fails closed. Name or label replacement never substitutes for immutable-ID
+absence. The launcher propagates failure to retire any private recovery
+artifact, while normal gate teardown independently requires the recovery
+record, partial publication, and container-ID file all absent before it clears
+the proxy path. Docker auto-removal is disabled so a naturally exited provider
+remains addressable for bounded log capture before explicit immutable-ID
+removal.
+Recorded token-owned process-group identity remains the abnormal-exit recovery
+boundary; this focused repair is not complete-gate or provider-promotion
+evidence. The
 NeMo candidate retains one cache-aware scheduler owner and bounded independent
 job cancellation. Its transport uses a bounded reusable HTTP worker pool, while
 the distinct model admission boundary remains eight active requests so control-
@@ -523,8 +541,16 @@ passed on exact executable candidate
 provider-promotion comparisons have not run. Both
 candidate containers stay on an
 egress-blocked internal bridge with no Docker-published port; their launchers
-own bounded numeric-loopback proxy process groups and require separate private
-API keys. The active Phase 7 branch adds authenticated tenant/user identity to
+require separate private API keys. Their focused Phase 7 lifecycle successor
+places launcher, sampler, and proxy targets behind one retained-pidfd
+supervisor interface. Isolated/no-site system Python, exclusive regular-file
+outputs, contained control-pipe writes, bounded pidfd failure, and exact
+`waitid(P_PIDFD)` reaping protect initial ownership. Missing/failed results
+fall back only after the direct supervisor is reaped and every surviving group
+member verifies the run token. Proxy teardown reconciles the fixed container
+name, immutable ID, and token before stopping it; no independently signalled
+numeric-PID log follower remains. The active Phase 7 branch adds authenticated
+tenant/user identity to
 the existing REST/LID boundary and bounded private WebSocket admission on a
 separate internal port. The native lower handshake is qualified, but no live ASR
 route, endpoint discovery, external same-origin WSS/TLS edge, or persistent
@@ -606,11 +632,12 @@ The pinned mock OIDC provider and owner-flow harness are focused-green. Hosted
 Docker execution of that pinned provider remains pending. Exact head
 `2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was withdrawn before GB10,
 connected-server, or complete-matrix execution after pre-execution review
-rejected its gate boundary. The hardened replacement's three-agent working-tree
-review found no P0–P2 issue; a clean exact-head freeze, private-controller
-prequalification, admission, the full Phase 7 gate, hosted PR closure, and merge
-remain open. Real IT-provided Entra/Conditional Access policy and an approved
-native adapter remain external conformance work.
+rejected its gate boundary. The current retained-pidfd replacement resolved the
+three-agent exact-tree findings and received GO from all three lenses with no
+P0-P2 finding. A clean exact-head freeze, private-controller prequalification,
+admission, the full Phase 7 gate, hosted PR closure, and merge remain open. Real
+IT-provided Entra/Conditional Access policy and an approved native adapter
+remain external conformance work.
 
 ## Accepted meeting direction, not current execution
 

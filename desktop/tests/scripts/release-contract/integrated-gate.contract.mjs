@@ -360,6 +360,15 @@ const exactCommands = {
 };
 const identityExactCommands = {
   ...exactCommands,
+  "server.lint": [
+    "uv",
+    "run",
+    "--locked",
+    "ruff",
+    "check",
+    ".",
+    "../infra/yap-server-node/owned-process-supervisor.py",
+  ],
   "native.authenticated-server-connector": [
     "pwsh.exe",
     "-NoProfile",
@@ -461,6 +470,27 @@ test("identity and access gate binds mock OIDC candidate and hosted closure", ()
       job: "mock-oidc",
     },
   );
+});
+
+test("mock OIDC hosted closure executes Linux lifecycle tests without skips", () => {
+  const workflow = readFileSync(
+    path.join(repoRoot, ".github", "workflows", "ci.yml"),
+    "utf8",
+  );
+  assert.match(
+    workflow,
+    /name: Run required Linux owned-process lifecycle tests without skips/,
+  );
+  assert.match(workflow, /YAP_REQUIRE_LINUX_LIFECYCLE_TESTS: "1"/);
+  for (const moduleName of [
+    "tests.infra.test_owned_process_group_behavior",
+    "tests.infra.test_owned_process_supervisor",
+    "tests.infra.test_resident_provider_lifecycle_gate",
+    "tests.infra.test_private_container_loopback_proxy",
+    "tests.infra.test_private_container_loopback_proxy_behavior",
+  ]) {
+    assert.match(workflow, new RegExp(moduleName.replaceAll(".", String.raw`\.`)));
+  }
 });
 
 test("identity and access receipts bind the canonical admission", () => {

@@ -245,7 +245,8 @@
         "--locked",
         "ruff",
         "check",
-        "."
+        ".",
+        "../infra/yap-server-node/owned-process-supervisor.py"
       ],
       "timeoutMs": 900000
     },
