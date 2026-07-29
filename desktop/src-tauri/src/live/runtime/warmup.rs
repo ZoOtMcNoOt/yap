@@ -1,10 +1,13 @@
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc, Condvar, Mutex,
+    mpsc, Arc, Condvar, Mutex,
 };
 use std::thread;
 use std::time::{Duration, Instant};
+
+const CLEANUP_DEADLINE_ERROR: &str =
+    "Live model cleanup did not finish before the cleanup deadline.";
 
 pub(super) struct SharedWarmup<T> {
     state: Mutex<SharedWarmupState<T>>,
@@ -196,6 +199,54 @@ where
         self.changed.notify_all();
     }
 
+    fn spawn_retirement(
+        retired: SharedWarmupState<T>,
+    ) -> Result<mpsc::Receiver<()>, (SharedWarmupState<T>, String)> {
+        // Keep recoverable ownership outside the closure so a failed thread
+        // spawn never drops a native model on the lifecycle thread.
+        let payload = Arc::new(Mutex::new(Some(retired)));
+        let worker_payload = Arc::clone(&payload);
+        let (completed_tx, completed_rx) = mpsc::sync_channel(1);
+        match thread::Builder::new()
+            .name("live-model-retirement".to_string())
+            .spawn(move || {
+                let retired = worker_payload
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .take()
+                    .expect("live model retirement worker owns one payload");
+                drop(retired);
+                let _ = completed_tx.send(());
+            }) {
+            Ok(_) => Ok(completed_rx),
+            Err(error) => {
+                let retired = payload
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .take()
+                    .expect("failed retirement spawn leaves the payload owned locally");
+                Err((
+                    retired,
+                    format!("Live model retirement worker could not start: {error}"),
+                ))
+            }
+        }
+    }
+
+    fn wait_for_retirement(completed: mpsc::Receiver<()>, deadline: Instant) -> Result<(), String> {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return Err(CLEANUP_DEADLINE_ERROR.to_string());
+        }
+        match completed.recv_timeout(remaining) {
+            Ok(()) => Ok(()),
+            Err(mpsc::RecvTimeoutError::Timeout) => Err(CLEANUP_DEADLINE_ERROR.to_string()),
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                Err("Live model retirement stopped before reporting completion.".to_string())
+            }
+        }
+    }
+
     pub(super) fn request_idle_clear(&self) -> Result<(), String> {
         let mut state = self
             .state
@@ -209,10 +260,23 @@ where
                 self.changed.notify_all();
                 Ok(())
             }
-            SharedWarmupState::Ready(_) | SharedWarmupState::Failed(_) => {
+            SharedWarmupState::Ready(_) => {
+                let retired = std::mem::replace(&mut *state, SharedWarmupState::Empty);
+                match Self::spawn_retirement(retired) {
+                    Ok(_) => {
+                        self.changed.notify_all();
+                        Ok(())
+                    }
+                    Err((retired, error)) => {
+                        *state = retired;
+                        self.changed.notify_all();
+                        Err(error)
+                    }
+                }
+            }
+            SharedWarmupState::Failed(_) => {
                 let retired = std::mem::replace(&mut *state, SharedWarmupState::Empty);
                 self.changed.notify_all();
-                drop(state);
                 drop(retired);
                 Ok(())
             }
@@ -222,7 +286,7 @@ where
     pub(super) fn clear_idle_with_timeout(&self, timeout: Duration) -> Result<(), String> {
         let deadline = Instant::now()
             .checked_add(timeout)
-            .ok_or_else(|| "Live model warmup cleanup deadline overflowed.".to_string())?;
+            .ok_or_else(|| "Live model cleanup deadline overflowed.".to_string())?;
         self.clear_idle_until(deadline)
     }
 
@@ -242,27 +306,41 @@ where
                     self.changed.notify_all();
                     let remaining = deadline.saturating_duration_since(Instant::now());
                     if remaining.is_zero() {
-                        return Err(
-                            "Live model warmup did not stop before the cleanup deadline."
-                                .to_string(),
-                        );
+                        return Err(CLEANUP_DEADLINE_ERROR.to_string());
                     }
                     let (next, wait) = self
                         .changed
                         .wait_timeout(state, remaining)
                         .unwrap_or_else(|poisoned| poisoned.into_inner());
                     if wait.timed_out() && matches!(*next, SharedWarmupState::Loading { .. }) {
-                        return Err(
-                            "Live model warmup did not stop before the cleanup deadline."
-                                .to_string(),
-                        );
+                        return Err(CLEANUP_DEADLINE_ERROR.to_string());
                     }
                     state = next;
                 }
-                SharedWarmupState::Ready(_) | SharedWarmupState::Failed(_) => {
+                SharedWarmupState::Ready(_) => {
                     let retired = std::mem::replace(&mut *state, SharedWarmupState::Empty);
+                    let completed = match Self::spawn_retirement(retired) {
+                        Ok(completed) => completed,
+                        Err((retired, error)) => {
+                            *state = retired;
+                            self.changed.notify_all();
+                            return Err(error);
+                        }
+                    };
                     self.changed.notify_all();
                     drop(state);
+                    Self::wait_for_retirement(completed, deadline)?;
+                    // A request already in flight can observe Empty while the
+                    // native destructor runs. Re-check it under the same
+                    // deadline so stale work cannot survive cleanup.
+                    state = self
+                        .state
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                }
+                SharedWarmupState::Failed(_) => {
+                    let retired = std::mem::replace(&mut *state, SharedWarmupState::Empty);
+                    self.changed.notify_all();
                     drop(retired);
                     return Ok(());
                 }

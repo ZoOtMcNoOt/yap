@@ -134,8 +134,8 @@ impl LiveRuntime {
                 inner.retire_stream();
                 drop(inner);
                 // Periodic lifecycle work must never wait for a native model
-                // loader. It requests cancellation and lets the loader retire
-                // its own value when it returns.
+                // loader or destructor. This cancels an active load or hands
+                // a ready bundle to the model-retirement worker.
                 let _ = self.model_warmup.request_idle_clear();
             }
         });
@@ -155,7 +155,7 @@ impl LiveRuntime {
                 .clear_idle_with_timeout(LIVE_MODEL_CLEANUP_TIMEOUT)
             {
                 crate::diagnostics::log(&format!(
-                    "live model shutdown continued after bounded warmup cancellation: {error}"
+                    "live model shutdown continued after bounded model cleanup: {error}"
                 ));
             }
             let _ = self.finalize_recording();

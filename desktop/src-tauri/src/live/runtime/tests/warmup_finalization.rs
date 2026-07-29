@@ -1,5 +1,40 @@
 use super::*;
 
+struct BlockingDrop {
+    started: mpsc::Sender<()>,
+    release: mpsc::Receiver<()>,
+    finished: mpsc::Sender<()>,
+}
+
+impl Drop for BlockingDrop {
+    fn drop(&mut self) {
+        let _ = self.started.send(());
+        let _ = self.release.recv();
+        let _ = self.finished.send(());
+    }
+}
+
+fn blocking_drop_fixture() -> (
+    BlockingDrop,
+    mpsc::Receiver<()>,
+    mpsc::Sender<()>,
+    mpsc::Receiver<()>,
+) {
+    let (started_tx, started_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+    let (finished_tx, finished_rx) = mpsc::channel();
+    (
+        BlockingDrop {
+            started: started_tx,
+            release: release_rx,
+            finished: finished_tx,
+        },
+        started_rx,
+        release_tx,
+        finished_rx,
+    )
+}
+
 #[test]
 fn shared_warmup_is_cancellable_reentrant_and_never_duplicates_the_model() {
     let warmup = Arc::new(SharedWarmup::<usize>::new());
@@ -110,6 +145,111 @@ fn clearing_idle_warmup_drops_a_ready_model() {
         .unwrap();
 
     assert!(dropped.load(Ordering::Acquire));
+    assert!(warmup.is_empty_for_test());
+}
+
+#[test]
+fn bounded_clear_returns_before_a_ready_model_destructor_finishes() {
+    let warmup = Arc::new(SharedWarmup::new());
+    let (blocking_drop, drop_started_rx, release_drop_tx, drop_finished_rx) =
+        blocking_drop_fixture();
+    warmup.seed_ready_for_test(blocking_drop);
+
+    let clearing = Arc::clone(&warmup);
+    let (cleared_tx, cleared_rx) = mpsc::channel();
+    let clearer = std::thread::spawn(move || {
+        let result = clearing.clear_idle_with_timeout(Duration::from_millis(25));
+        let _ = cleared_tx.send(result);
+    });
+    drop_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let result = cleared_rx.recv_timeout(Duration::from_millis(250));
+    let _ = release_drop_tx.send(());
+    drop_finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    clearer.join().unwrap();
+
+    let error = result
+        .expect("bounded clear waited for the ready model destructor")
+        .expect_err("blocked ready model destruction unexpectedly completed within its deadline");
+    assert!(error.contains("cleanup deadline"));
+    assert!(warmup.is_empty_for_test());
+}
+
+#[test]
+fn bounded_clear_rechecks_late_warmup_after_ready_model_retirement() {
+    let warmup = Arc::new(SharedWarmup::new());
+    let (blocking_drop, drop_started_rx, release_drop_tx, drop_finished_rx) =
+        blocking_drop_fixture();
+    warmup.seed_ready_for_test(blocking_drop);
+
+    let clearing = Arc::clone(&warmup);
+    let (cleared_tx, cleared_rx) = mpsc::channel();
+    let clearer = std::thread::spawn(move || {
+        let result = clearing.clear_idle_with_timeout(Duration::from_secs(1));
+        let _ = cleared_tx.send(result);
+    });
+    drop_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    assert!(warmup
+        .request("late-retirement-race", || {
+            Err("late synthetic warmup".to_string())
+        })
+        .unwrap());
+    let late_load_deadline = Instant::now() + Duration::from_secs(1);
+    while warmup.is_loading_for_test() {
+        assert!(
+            Instant::now() < late_load_deadline,
+            "late synthetic warmup did not publish"
+        );
+        std::thread::yield_now();
+    }
+    let _ = release_drop_tx.send(());
+
+    assert_eq!(
+        cleared_rx.recv_timeout(Duration::from_secs(1)).unwrap(),
+        Ok(())
+    );
+    drop_finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    clearer.join().unwrap();
+    assert!(warmup.is_empty_for_test());
+}
+
+#[test]
+fn idle_clear_returns_before_a_ready_model_destructor_finishes() {
+    let warmup = Arc::new(SharedWarmup::new());
+    let (blocking_drop, drop_started_rx, release_drop_tx, drop_finished_rx) =
+        blocking_drop_fixture();
+    warmup.seed_ready_for_test(blocking_drop);
+
+    let clearing = Arc::clone(&warmup);
+    let (cleared_tx, cleared_rx) = mpsc::channel();
+    let clearer = std::thread::spawn(move || {
+        let result = clearing.request_idle_clear();
+        let _ = cleared_tx.send(result);
+    });
+    drop_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let result = cleared_rx.recv_timeout(Duration::from_millis(250));
+    let _ = release_drop_tx.send(());
+    drop_finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    clearer.join().unwrap();
+
+    assert_eq!(
+        result.expect("idle clear waited for the ready model destructor"),
+        Ok(())
+    );
     assert!(warmup.is_empty_for_test());
 }
 
@@ -295,7 +435,7 @@ fn model_mutation_drop_retires_late_warmup_even_if_a_stale_request_retries() {
 }
 
 #[test]
-fn stalled_mutation_cleanup_releases_the_lifecycle_gate_for_shutdown() {
+fn stalled_mutation_cleanup_releases_the_lifecycle_gate_and_preserves_the_fence() {
     let runtime = Arc::new(LiveRuntime::new());
     let mutation = runtime.begin_model_mutation().unwrap();
     let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
@@ -327,15 +467,23 @@ fn stalled_mutation_cleanup_releases_the_lifecycle_gate_for_shutdown() {
         std::thread::yield_now();
     }
 
-    let shutdown_runtime = Arc::clone(&runtime);
-    let (shutdown_done_tx, shutdown_done_rx) = mpsc::channel();
-    let shutdown = std::thread::spawn(move || {
-        shutdown_runtime.shutdown();
-        let _ = shutdown_done_tx.send(());
+    let contender_gate = Arc::clone(&runtime.transition);
+    let (contender_waiting_tx, contender_waiting_rx) = mpsc::channel();
+    let (contender_acquired_tx, contender_acquired_rx) = mpsc::channel();
+    let contender = std::thread::spawn(move || {
+        let _operation =
+            contender_gate.begin_stop_with_wait_hook(|| contender_waiting_tx.send(()).unwrap());
+        let _ = contender_acquired_tx.send(());
     });
+    contender_waiting_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
 
     let cleanup_finished = mutation_dropped_rx
         .recv_timeout(Duration::from_secs(3))
+        .is_ok();
+    let contender_acquired = contender_acquired_rx
+        .recv_timeout(Duration::from_secs(1))
         .is_ok();
     let _ = release_loader_tx.send(());
     assert!(
@@ -343,14 +491,15 @@ fn stalled_mutation_cleanup_releases_the_lifecycle_gate_for_shutdown() {
         "mutation cleanup held the lifecycle gate past its shutdown bound"
     );
     assert!(
+        contender_acquired,
+        "queued shutdown work did not acquire the released lifecycle gate"
+    );
+    assert!(
         runtime.model_mutation_active.load(Ordering::Acquire),
         "timed-out mutation cleanup must leave new live work fenced"
     );
-    shutdown_done_rx
-        .recv_timeout(Duration::from_secs(1))
-        .unwrap();
     dropper.join().unwrap();
-    shutdown.join().unwrap();
+    contender.join().unwrap();
 }
 
 #[test]
@@ -379,17 +528,44 @@ fn stalled_warmup_rejects_mutation_without_latching_the_lifecycle_gate() {
         });
         let _ = mutation_result_tx.send(result);
     });
+    let cancellation_deadline = Instant::now() + Duration::from_secs(1);
+    while !runtime.model_warmup.is_loading_cancelled_for_test() {
+        assert!(
+            Instant::now() < cancellation_deadline,
+            "mutation admission did not cancel the existing warmup"
+        );
+        std::thread::yield_now();
+    }
+
+    let contender_gate = Arc::clone(&runtime.transition);
+    let (contender_waiting_tx, contender_waiting_rx) = mpsc::channel();
+    let (contender_acquired_tx, contender_acquired_rx) = mpsc::channel();
+    let contender = std::thread::spawn(move || {
+        let _operation =
+            contender_gate.begin_stop_with_wait_hook(|| contender_waiting_tx.send(()).unwrap());
+        let _ = contender_acquired_tx.send(());
+    });
+    contender_waiting_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
 
     let result = mutation_result_rx.recv_timeout(Duration::from_secs(3));
+    let contender_acquired = contender_acquired_rx
+        .recv_timeout(Duration::from_secs(1))
+        .is_ok();
     let _ = release_loader_tx.send(());
     mutation.join().unwrap();
+    contender.join().unwrap();
 
     let error = result
         .expect("mutation admission held the lifecycle gate past its cleanup bound")
         .expect_err("stalled warmup unexpectedly admitted model mutation");
     assert!(error.contains("cleanup deadline"));
+    assert!(
+        contender_acquired,
+        "queued shutdown work did not acquire after rejected mutation admission"
+    );
     assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
-    assert!(runtime.run_stop_lifecycle(|| true));
 }
 
 #[test]
