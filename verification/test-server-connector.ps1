@@ -35,6 +35,12 @@ if (Test-LoopbackListener) {
 $env:PYTHONPATH = Join-Path $Repository 'server\src'
 $env:YAP_SERVER_HOST = '127.0.0.1'
 $env:YAP_SERVER_PORT = '18765'
+# This gate owns the unauthenticated development-loopback integration. The
+# ordinary server default intentionally fails closed when no identity provider
+# is configured, so relying on that default would test the sign-in-required
+# contract instead of this connector path.
+$env:YAP_SERVER_CONFIGURATION = 'development'
+$env:YAP_AUTH_MODE = 'development_loopback'
 $Server = Start-Process `
     -FilePath $Runtime.Python `
     -ArgumentList '-m', 'yap_server' `

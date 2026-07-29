@@ -240,7 +240,7 @@ fn dropping_the_final_boundary_releases_the_connector_and_cancels_retry() {
 }
 
 #[test]
-fn python_health_process_matches_the_rust_connector_contract_when_provided() {
+fn development_loopback_python_health_projects_ready_without_server_capabilities() {
     let Ok(url) = std::env::var("YAP_TEST_SERVER_URL") else {
         return;
     };
