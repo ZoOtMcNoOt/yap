@@ -237,8 +237,8 @@ fn model_mutation_lease_invalidates_a_start_queued_behind_it() {
 }
 
 #[test]
-fn model_mutation_drop_cancels_warmup_started_after_its_initial_clear() {
-    let runtime = LiveRuntime::new();
+fn model_mutation_drop_retires_late_warmup_even_if_a_stale_request_retries() {
+    let runtime = Arc::new(LiveRuntime::new());
     let mutation = runtime.begin_model_mutation().unwrap();
     let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
     let (release_loader_tx, release_loader_rx) = mpsc::channel();
@@ -247,7 +247,7 @@ fn model_mutation_drop_cancels_warmup_started_after_its_initial_clear() {
         .model_warmup
         .request("late-stale-live-warmup", move || {
             loader_entered_tx.send(()).unwrap();
-            release_loader_rx.recv().unwrap();
+            let _ = release_loader_rx.recv();
             Err("stale synthetic warmup".to_string())
         })
         .unwrap());
@@ -255,16 +255,59 @@ fn model_mutation_drop_cancels_warmup_started_after_its_initial_clear() {
         .recv_timeout(Duration::from_secs(1))
         .unwrap();
 
-    drop(mutation);
+    let (mutation_dropped_tx, mutation_dropped_rx) = mpsc::channel();
+    let dropper = std::thread::spawn(move || {
+        drop(mutation);
+        mutation_dropped_tx.send(()).unwrap();
+    });
+    assert!(
+        mutation_dropped_rx
+            .recv_timeout(Duration::from_millis(50))
+            .is_err(),
+        "mutation ownership ended before its late warmup retired"
+    );
+    assert!(!runtime
+        .model_warmup
+        .request("retry-during-mutation-cleanup", || {
+            panic!("a retry must adopt or await the existing load")
+        })
+        .unwrap());
     release_loader_tx.send(()).unwrap();
+
+    mutation_dropped_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    dropper.join().unwrap();
+    assert!(runtime.model_warmup.is_empty_for_test());
+    assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+}
+
+#[test]
+fn model_mutation_drop_clears_a_late_warmup_that_already_completed() {
+    let runtime = LiveRuntime::new();
+    let mutation = runtime.begin_model_mutation().unwrap();
+    let (loader_completed_tx, loader_completed_rx) = mpsc::channel();
+
+    assert!(runtime
+        .model_warmup
+        .request("completed-late-live-warmup", move || {
+            loader_completed_tx.send(()).unwrap();
+            Err("completed stale synthetic warmup".to_string())
+        })
+        .unwrap());
+    loader_completed_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
     let deadline = Instant::now() + Duration::from_secs(1);
     while runtime.model_warmup.is_loading_for_test() {
         assert!(
             Instant::now() < deadline,
-            "mutation-cancelled warmup did not retire after its loader returned"
+            "late synthetic warmup did not publish before mutation drop"
         );
         std::thread::yield_now();
     }
+
+    drop(mutation);
 
     assert!(runtime.model_warmup.is_empty_for_test());
 }
