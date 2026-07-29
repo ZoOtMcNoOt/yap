@@ -96,6 +96,21 @@ corrected-head private packaging and prequalification, admission, private
 evidence, the one complete replacement matrix, first-attempt hosted closure,
 the focused PR, and merge remain open.
 
+Later admitted heads `c4df39f305f739d3eb2987f24ba8387e54627902`,
+`7f047c6a1a2838f70908a7c0f5ee106fd84d5fb2`, and
+`c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` are consumed. The first exposed a
+private mock-OIDC receipt-publication parser defect. The second passed mock
+OIDC but failed target-client qualification because an equivalent canonical
+language-routing save retired the warm model. `c5d826f...` fixed that runtime
+no-op, passed focused verification, three-lens exact-head review, all private
+prequalification, and GitHub-backed admission. Its first admitted controller
+failed before starting mock OIDC because orchestration incorrectly required
+the fixed `/srv/yap-server/private` ancestor itself to be mode `0700`.
+Readback proved it was a real admin-owned, non-group/world-writable `0755`
+directory; the receipt parent, per-head child, receipt, container, and network
+were absent. The next exact head must validate safe ancestor ownership and
+write bits while retaining owner-only receipt-specific directories and files.
+
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
 implementing Phase 8 speaker inference, pulling Phase 9 knowledge/agent work
@@ -309,8 +324,13 @@ scanning, capacity/SLO promotion, and deployment evidence.
       `/usr/bin/socat -> /usr/bin/socat1` root-owned GB10 target, then obtain
       GO from the same architecture, runtime, and assurance reviewers with no
       P0–P2 finding.
-- [ ] Freeze and push the reviewed canonical-`socat` successor, freshly package
-      and prequalify that exact head, and complete one new admission.
+- [x] Freeze, push, package, prequalify, and admit the canonical-`socat`
+      successor lineage through `c5d826f...`; preserve the three consumed
+      admissions and their private evidence without retry or relabeling.
+- [ ] Freeze and push a new exact head that accepts a real admin/root-owned,
+      non-group/world-writable mock-OIDC receipt ancestor while requiring the
+      receipt parent and per-head child to be mode `0700` and the receipt to be
+      mode `0600`; freshly package, prequalify, and admit it once.
 - [ ] Run the complete applicable local/native/server/target-client/
       private-server Phase 7 matrix exactly once for that admitted head.
 - [ ] Open a focused PR; require first-attempt hosted CI, CodeQL, and

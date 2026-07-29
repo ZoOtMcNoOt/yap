@@ -104,6 +104,24 @@ the stock GB10 `/usr/bin/socat -> /usr/bin/socat1` package link. No admission,
 private gate receipt, complete matrix, PR, or hosted closure occurred. Preserve
 that head and its private outputs only as rejected pre-admission evidence.
 
+Exact heads `c4df39f305f739d3eb2987f24ba8387e54627902`,
+`7f047c6a1a2838f70908a7c0f5ee106fd84d5fb2`, and
+`c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` are later consumed admissions.
+The first exposed a private mock-OIDC receipt-publication parser defect. The
+second passed mock OIDC but its target-client child proved that saving an
+already canonical language selection needlessly retired the warm live model.
+The third made equivalent canonical saves true no-ops, passed focused
+verification, three-lens exact-head review, full prequalification, and
+GitHub-backed admission. Its first admitted mock-OIDC controller then failed
+before starting the harness because orchestration required the fixed
+`/srv/yap-server/private` ancestor itself to be mode `0700`. Readback proved it
+was a real admin-owned mode-`0755` directory with no group/world write bit; the
+receipt parent, per-head child, receipt, container, and network remained
+absent. Do not retry, complete, or relabel any of these heads. The next
+controller must validate safe ownership and no group/world write access on
+ancestors while continuing to require mode `0700` on the receipt parent and
+per-head child and mode `0600` on the receipt.
+
 The reviewed canonical-path successor retains assigned-before-resume,
 kill-on-close, immediate
 explicit termination, authoritative accounting-zero proof, frozen per-cell

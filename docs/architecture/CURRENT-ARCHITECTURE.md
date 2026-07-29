@@ -10,15 +10,18 @@ live boundary has no ASR route, endpoint discovery, or external secure edge.
 The replacement delivery gate now freezes command deadlines, keeps its
 one-attempt capability private, verifies exact Windows DACLs, pins system
 SSH/PowerShell hosts, and binds authenticated remote helpers through cleanup
-and teardown. Committed/pushed Linux retained-pidfd successor
-`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` resolved its exact-tree P0–P2
-findings, but connected prequalification rejected it before admission because
-it refused the stock GB10 `/usr/bin/socat -> /usr/bin/socat1` package link. The
-corrected successor resolves that command to its absolute regular executable
-before container mutation; focused tests, the real root-owned host-path proof,
-and all three review lenses pass. Fresh corrected-head private-controller
-prequalification, admission, the full phase gate, PR closure, and merge remain
-open.
+and teardown. The current lifecycle resolves GB10's stock `socat` package link
+to its absolute regular executable before container mutation and passed all
+three exact-tree review lenses. Exact head
+`c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` also makes equivalent canonical
+language-routing saves true runtime no-ops. It passed fresh prequalification
+and admission, then was consumed before the mock-OIDC harness started because
+private orchestration incorrectly required the fixed
+`/srv/yap-server/private` ancestor itself to be mode `0700`. The actual
+admin-owned `0755` ancestor is not group/world writable; the owner-only
+receipt parent, per-head child, and receipt remained absent. A new exact head
+must correct that controller rule before admission, the full phase gate, PR
+closure, and merge.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -645,9 +648,14 @@ rejected its gate boundary. Retained-pidfd head
 exact-tree findings but was itself rejected before admission when connected
 prequalification exposed the GB10 `socat` package-link incompatibility. The
 canonical-path successor passes focused local and real-host proof and received
-GO from all three lenses with no P0–P2 finding. Fresh corrected-head
-private-controller prequalification, admission, the full Phase 7 gate, hosted
-PR closure, and merge remain open. Real IT-provided Entra/Conditional Access
+GO from all three lenses with no P0–P2 finding. Later exact head `c5d826f...`
+passed fresh private prequalification and admission but was consumed before
+mock-OIDC execution by an over-strict private-ancestor mode assertion. No
+receipt or runtime owner was created. The next controller accepts a real
+admin/root-owned, non-group/world-writable ancestor and continues to require
+the receipt-specific parent, child, and file to be owner-only. Fresh successor
+prequalification, admission, the full Phase 7 gate, hosted PR closure, and
+merge remain open. Real IT-provided Entra/Conditional Access
 policy and an approved native adapter remain external conformance work.
 
 ## Accepted meeting direction, not current execution
