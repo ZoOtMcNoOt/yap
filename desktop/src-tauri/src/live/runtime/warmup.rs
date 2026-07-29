@@ -292,6 +292,18 @@ where
     }
 
     #[cfg(test)]
+    pub(super) fn is_loading_cancelled_for_test(&self) -> bool {
+        match &*self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+        {
+            SharedWarmupState::Loading { cancelled } => cancelled.load(Ordering::Acquire),
+            _ => false,
+        }
+    }
+
+    #[cfg(test)]
     pub(super) fn seed_ready_for_test(&self, value: T) {
         *self
             .state
@@ -306,6 +318,14 @@ where
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) =
             SharedWarmupState::Failed(error.into());
+    }
+
+    #[cfg(test)]
+    pub(super) fn seed_in_use_for_test(&self) {
+        *self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = SharedWarmupState::InUse;
     }
 
     #[cfg(test)]

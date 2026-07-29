@@ -97,10 +97,10 @@ impl LiveRuntime {
             return Err(active_message.to_string());
         }
         self.cancel_pending_start();
-        lease.cancel_pending_start_on_drop = true;
         inner.retire_stream();
         drop(inner);
         self.model_warmup.clear_idle()?;
+        lease.cancel_pending_start_on_drop = true;
         Ok(lease)
     }
 

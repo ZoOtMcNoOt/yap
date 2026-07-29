@@ -260,10 +260,16 @@ fn model_mutation_drop_retires_late_warmup_even_if_a_stale_request_retries() {
         drop(mutation);
         mutation_dropped_tx.send(()).unwrap();
     });
+    let cancellation_deadline = Instant::now() + Duration::from_secs(1);
+    while !runtime.model_warmup.is_loading_cancelled_for_test() {
+        assert!(
+            Instant::now() < cancellation_deadline,
+            "mutation cleanup did not cancel its late warmup"
+        );
+        std::thread::yield_now();
+    }
     assert!(
-        mutation_dropped_rx
-            .recv_timeout(Duration::from_millis(50))
-            .is_err(),
+        mutation_dropped_rx.try_recv().is_err(),
         "mutation ownership ended before its late warmup retired"
     );
     assert!(!runtime
@@ -272,6 +278,10 @@ fn model_mutation_drop_retires_late_warmup_even_if_a_stale_request_retries() {
             panic!("a retry must adopt or await the existing load")
         })
         .unwrap());
+    assert!(
+        !runtime.model_warmup.is_loading_cancelled_for_test(),
+        "the stale retry did not revive the loading warmup"
+    );
     release_loader_tx.send(()).unwrap();
 
     mutation_dropped_rx
@@ -326,6 +336,24 @@ fn model_mutation_lease_rejects_new_start_work_without_waiting() {
 
     assert!(result.is_none());
     assert!(!ran.load(Ordering::Acquire));
+}
+
+#[test]
+fn transient_in_use_warmup_rejects_mutation_without_latching_the_fence() {
+    let runtime = LiveRuntime::new();
+    let intent = runtime.capture_start_intent();
+    runtime.model_warmup.seed_in_use_for_test();
+
+    let error = match runtime.begin_model_mutation() {
+        Ok(_) => panic!("in-use warmup unexpectedly admitted model mutation"),
+        Err(error) => error,
+    };
+
+    assert_eq!(error, "Live model is still owned by a stream.");
+    assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+    assert!(!runtime.start_intent_is_current(intent));
+    runtime.model_warmup.release_in_use();
+    assert!(runtime.begin_model_mutation().is_ok());
 }
 
 #[test]
