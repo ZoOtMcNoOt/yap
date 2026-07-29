@@ -6,6 +6,9 @@ use std::sync::{
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(test)]
+use std::sync::atomic::AtomicU64;
+
 const CLEANUP_DEADLINE_ERROR: &str =
     "Live model cleanup did not finish before the cleanup deadline.";
 
@@ -13,6 +16,8 @@ pub(super) struct SharedWarmup<T> {
     state: Mutex<SharedWarmupState<T>>,
     changed: Condvar,
     retirement_active: AtomicBool,
+    #[cfg(test)]
+    incomplete_retirement_epoch: AtomicU64,
 }
 
 enum SharedWarmupState<T> {
@@ -42,6 +47,8 @@ where
             state: Mutex::new(SharedWarmupState::Empty),
             changed: Condvar::new(),
             retirement_active: AtomicBool::new(false),
+            #[cfg(test)]
+            incomplete_retirement_epoch: AtomicU64::new(0),
         }
     }
 
@@ -272,6 +279,9 @@ where
                 .state
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
+            #[cfg(test)]
+            self.incomplete_retirement_epoch
+                .fetch_add(1, Ordering::Release);
             self.changed.notify_all();
         }
         crate::diagnostics::log(
@@ -465,6 +475,30 @@ where
     #[cfg(test)]
     pub(super) fn is_retirement_active_for_test(&self) -> bool {
         self.retirement_active.load(Ordering::Acquire)
+    }
+
+    #[cfg(test)]
+    pub(super) fn incomplete_retirement_epoch_for_test(&self) -> u64 {
+        self.incomplete_retirement_epoch.load(Ordering::Acquire)
+    }
+
+    #[cfg(test)]
+    pub(super) fn wait_for_incomplete_retirement_after_for_test(
+        &self,
+        observed_epoch: u64,
+        timeout: Duration,
+    ) -> bool {
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let (_state, _) = self
+            .changed
+            .wait_timeout_while(state, timeout, |_| {
+                self.incomplete_retirement_epoch.load(Ordering::Acquire) <= observed_epoch
+            })
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.incomplete_retirement_epoch.load(Ordering::Acquire) > observed_epoch
     }
 }
 

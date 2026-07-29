@@ -206,11 +206,19 @@ fn panicked_ready_model_retirement_remains_fail_closed() {
     }
 
     let warmup = Arc::new(SharedWarmup::new());
+    let observed_retirement_epoch = warmup.incomplete_retirement_epoch_for_test();
     warmup.seed_ready_for_test(PanicDrop);
 
     let error = warmup
         .clear_idle_with_timeout(Duration::from_millis(25))
         .expect_err("panicked retirement unexpectedly completed cleanup");
+    assert!(
+        warmup.wait_for_incomplete_retirement_after_for_test(
+            observed_retirement_epoch,
+            Duration::from_secs(1),
+        ),
+        "retirement worker did not report its incomplete unwind"
+    );
     let retry_error = warmup
         .clear_idle_with_timeout(Duration::from_millis(25))
         .expect_err("cleanup retry forgot the incomplete retirement");
