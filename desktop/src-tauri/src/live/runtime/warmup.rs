@@ -120,6 +120,7 @@ where
         }
     }
 
+    #[cfg(test)]
     pub(super) fn cancel_loading(&self) {
         let state = self
             .state
@@ -128,6 +129,10 @@ where
         if let SharedWarmupState::Loading { cancelled } = &*state {
             cancelled.store(true, Ordering::Release);
         }
+        self.changed.notify_all();
+    }
+
+    pub(super) fn notify_waiters(&self) {
         self.changed.notify_all();
     }
 

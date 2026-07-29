@@ -54,6 +54,44 @@ fn shared_warmup_is_cancellable_reentrant_and_never_duplicates_the_model() {
 }
 
 #[test]
+fn cancelling_capture_intent_preserves_inflight_warmup_for_the_next_session() {
+    let runtime = LiveRuntime::new();
+    let intent = runtime.capture_start_intent();
+    let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
+    let (release_loader_tx, release_loader_rx) = mpsc::channel();
+
+    assert!(runtime
+        .model_warmup
+        .request("reusable-live-warmup", move || {
+            loader_entered_tx.send(()).unwrap();
+            release_loader_rx.recv().unwrap();
+            Err("synthetic warmup result".to_string())
+        })
+        .unwrap());
+    loader_entered_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    runtime.cancel_pending_start();
+
+    assert!(!runtime.start_intent_is_current(intent));
+    release_loader_tx.send(()).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while runtime.model_warmup.is_loading_for_test() {
+        assert!(
+            Instant::now() < deadline,
+            "in-flight warmup did not publish its reusable result"
+        );
+        std::thread::yield_now();
+    }
+    let error = match runtime.model_warmup.wait_cancellable(|| false) {
+        Ok(_) => panic!("synthetic warmup unexpectedly produced a model"),
+        Err(error) => error,
+    };
+    assert_eq!(error, "synthetic warmup result");
+}
+
+#[test]
 fn clearing_idle_warmup_drops_a_ready_model() {
     struct DropSignal(Arc<AtomicBool>);
 

@@ -25,7 +25,10 @@ impl LiveRuntime {
 
     pub(crate) fn cancel_pending_start(&self) {
         self.start_generation.fetch_add(1, Ordering::AcqRel);
-        self.model_warmup.cancel_loading();
+        // A normal stop invalidates only the waiting capture start. The shared
+        // warmup remains reusable; mutation, idle eviction, and shutdown own
+        // the explicit model-cancellation paths.
+        self.model_warmup.notify_waiters();
     }
 
     pub(crate) fn run_start_lifecycle<T>(
