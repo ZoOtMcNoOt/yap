@@ -49,8 +49,15 @@ PR #69 opened on that head. GitHub rejected the first CI dispatch while parsing
 the workflow, before any job or runner started, because job-level `env`
 referenced `runner.environment` before runner assignment. That exact head is
 therefore consumed as merge authority without relabeling its private results.
-The narrow successor step-scopes the runner binding and adds a regression
-contract before repeating fresh exact-head qualification.
+Workflow successor `cafbe307...` step-scopes the runner binding and adds the
+regression contract; it is preserved after fresh target-client qualification
+exposed bounded pending-ASR saturation during cold warmup. Exact repair
+`32cf528...` adds bounded FIFO batch catch-up, passed focused same-three review,
+and passed repeated-resource, nine-case prepared-audio, and physical-
+microphone/rendered-UI qualification with zero audio drops. Its first isolated
+scheduler-outlier attempt remains failed evidence. Final documentation-
+inclusive review, prequalification/admission, the complete replacement matrix,
+hosted closure, and merge remain open.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -713,9 +720,15 @@ the complete 25-cell candidate matrix before PR #69 opened. Its first CI
 dispatch was rejected during workflow parsing, before job creation, because
 `runner.environment` was used at job-level `env`. The exact-head rule consumes
 that merge candidate while preserving its private evidence. The narrow
-step-scoped workflow successor, focused re-review, fresh prequalification,
-admission, candidate gate, first valid hosted native/PR closure, and merge
-remain open. Real
+step-scoped workflow successor `cafbe307...` passed focused review and is
+preserved after its fresh target-client controller exposed bounded pending-ASR
+saturation during cold warmup. Repair `32cf528...` keeps recording independent,
+adds bounded FIFO batch catch-up, and passed focused same-three review plus
+repeated-resource, nine-case prepared-audio, and physical-microphone/rendered-UI
+qualification with zero audio drops. Its first isolated scheduler-outlier
+attempt remains failed evidence. Documentation reconciliation, final exact-tree
+prequalification/admission, the one complete candidate gate, first valid hosted
+native/PR closure, and merge remain open. Real
 IT-provided Entra/Conditional
 Access policy and an approved native adapter remain external conformance work.
 

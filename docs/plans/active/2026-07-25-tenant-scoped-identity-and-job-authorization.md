@@ -95,8 +95,9 @@ architecture/runtime/assurance re-review passed with no P0–P2 finding. That
 proof remains in the later consumed lineages described below; it is not current
 merge authority. The later `9446730...` lineage completed that private and
 candidate evidence before exposing a workflow-parse defect during hosted
-closure, as recorded below. Its narrow workflow successor, first valid hosted
-closure, PR update, and merge remain open.
+closure, as recorded below. Its narrow workflow successor and subsequent
+target-client repair are also recorded below; final exact-tree admission, the
+first valid hosted closure, PR update, and merge remain open.
 
 Later admitted heads `c4df39f305f739d3eb2987f24ba8387e54627902`,
 `7f047c6a1a2838f70908a7c0f5ee106fd84d5fb2`,
@@ -158,6 +159,31 @@ parsing, before any job or runner started, because job-level `env` evaluated
 rule, that workflow-authoring defect consumes the head as merge authority
 without changing or relabeling its private results. Its protected private
 package and receipts remain historical evidence.
+
+Exact workflow successor `cafbe307e7203e09050fdbe2eb080d5d84b65026`
+step-scoped the runner binding and added the job-level-context regression
+contract. It passed focused verification and the same three review lenses and
+is preserved at `origin/phase7-admission-cafbe307`. Its fresh target-client
+controller then exposed a real local-start defect before the complete matrix:
+the 1,024-frame pending-ASR queue saturated during cold model warmup, 11
+local-ASR frames dropped, and adapter stop reached its 12-second bound. The
+recording consumer itself reported zero drops. That private failure remains
+immutable and consumes `cafbe307...` as merge authority.
+
+Exact repair `32cf52891c277a4a3d47aa9fb3cab105ca58af98` retains independent
+recording ownership and replaces one-frame, real-time-speed forwarding with
+bounded FIFO batches so accepted pre-roll catches up after adapter start.
+Focused Rust runtime tests passed 93/93, strict Clippy and format passed, the
+prepared-audio validator passed, and the same three read-only review lenses
+reported no P0–P2 finding. Fresh private qualification then passed all 12
+repeated resource sessions, all nine 250-ms-through-30-second prepared-audio
+cases, and the 30-second physical-microphone/rendered-UI lifecycle with zero
+audio drops. The first resource attempt is preserved as a failed environmental
+measurement because one of 2,936 scheduler probes woke at 300.172 ms against
+the frozen 250-ms maximum during cycle 11; that cycle's p99 was 0.816 ms, all
+3,000 frames arrived, and the identical fresh rerun passed with a 9.525-ms
+maximum. No complete Phase 7 matrix or hosted closure is claimed for this
+repair yet.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -430,10 +456,19 @@ scanning, capacity/SLO promotion, and deployment evidence.
 - [x] Preserve `9446730...` without retry, completion, or relabeling after
       GitHub rejected its first CI dispatch before job creation because
       job-level `env` referenced `runner.environment` before runner assignment.
-- [ ] Move the runner-owner binding onto only the three contained-runtime
-      steps, add a release contract forbidding `runner.*` in job-level
-      environments, pass focused verification and the same-three exact-tree
-      review, then freeze, package, prequalify, and admit one fresh successor.
+- [x] Move the runner-owner binding onto only the three contained-runtime
+      steps and add a release contract forbidding `runner.*` in job-level
+      environments. Preserve admitted `cafbe307...` after its fresh
+      target-client controller exposed bounded pending-ASR saturation; do not
+      relabel or reuse that private evidence.
+- [x] Implement bounded batched pre-roll catch-up at `32cf528...`, pass focused
+      runtime/validator verification and same-three exact-tree review, and pass
+      fresh repeated-resource, nine-case prepared-audio, and physical
+      microphone/rendered-UI qualification while preserving the first isolated
+      scheduler-outlier attempt as failed evidence.
+- [ ] Commit the documentation-reconciled descendant, obtain final same-three
+      exact-tree closure, then freeze, package, prequalify, and admit that exact
+      successor.
 - [ ] Run the complete applicable local/server/target-client/private-server
       candidate matrix exactly once for that admitted successor.
 - [ ] Update PR #69; require the five exact-head CI cells, CodeQL, and

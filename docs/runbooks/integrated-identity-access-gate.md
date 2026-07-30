@@ -222,12 +222,29 @@ assignment. That workflow-authoring defect consumes the head as merge authority
 under this runbook's exact-head rule. Preserve its private package and receipts;
 do not retry, complete, or relabel them.
 
-The narrow workflow successor moves the runner-owner binding onto only the
-three steps that launch contained product runtimes and adds a release contract
-that rejects `runner.*` context in job-level environments. Focused contract
-verification, the same three read-only review lenses, fresh exact-head
-prequalification, admission, private evidence, one complete replacement
-matrix, first-attempt hosted closure, PR #69 update, and merge remain open.
+Exact workflow successor `cafbe307e7203e09050fdbe2eb080d5d84b65026`
+moved the runner-owner binding onto only the three steps that launch contained
+product runtimes and added a release contract that rejects `runner.*` context
+in job-level environments. It passed focused verification and the same three
+read-only review lenses and is preserved at
+`origin/phase7-admission-cafbe307`. Its fresh target-client controller then
+failed before the complete matrix because cold model warmup saturated the
+1,024-frame pending-ASR queue, dropped 11 local-ASR frames, and reached the
+adapter-stop bound. Recording reported zero drops. Preserve that private
+failure; do not reuse or relabel it.
+
+Exact repair `32cf52891c277a4a3d47aa9fb3cab105ca58af98` adds bounded FIFO
+batch catch-up without weakening recording ownership or stop semantics.
+Focused runtime, Clippy, format, and evidence-validator checks passed, and the
+same three review lenses found no P0–P2 issue. A fresh target-client
+qualification passed 12 repeated resource sessions, nine prepared-audio
+boundaries, and the 30-second physical-microphone/rendered-UI lifecycle with
+zero audio drops. Its first resource attempt remains failed evidence because
+one external scheduler sample exceeded the frozen maximum; the identical fresh
+rerun passed without a code or threshold change. Documentation reconciliation,
+final exact-tree closure, fresh package/prequalification/admission, one complete
+replacement matrix, first-attempt hosted closure, PR #69 update, and merge
+remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).

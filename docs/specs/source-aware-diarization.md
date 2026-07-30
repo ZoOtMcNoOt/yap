@@ -9,7 +9,18 @@ reconciliation for Yap meeting sessions.
 
 ## Problem
 
-Yap's implemented live path records one microphone stream through the source-aware coordinator after Nemotron and its local-ASR adapter start successfully. Track-aware prepared frames, atomic configuration/clock revisions, and exact gaps fan out through independent bounded ports. Production wires recording and local ASR; the evidence and server-transport ports are implemented but their consumers are `None`. The recording sink streams to disk and publishes an immutable capture sidecar and commit; recovery and deletion operate on that canonical lineage. System loopback, server transport, speaker inference, and ASR-independent production capture remain future work on the same contract.
+Yap's implemented live path starts its streaming recording and source-aware
+microphone coordinator before Nemotron warmup completes. Track-aware prepared
+frames, atomic configuration/clock revisions, and exact gaps fan out through
+independent bounded ports. Production wires recording and a bounded pending-ASR
+port; after the Nemotron stream is installed or reused, a batched adapter drains
+accepted pre-roll in FIFO order and catches up with ongoing capture. The
+evidence and server-transport ports are implemented but their consumers are
+`None`. The recording sink publishes an immutable capture sidecar and commit;
+recovery and deletion operate on that canonical lineage. A successful dictation
+start still requires local ASR completion, so system loopback, server transport,
+speaker inference, and an ASR-independent recording-only product mode remain
+future work on the same contract.
 
 The existing diarization ADRs also disagree about ownership and algorithms. This design establishes the contract before selecting or integrating a heavier diarization model.
 
@@ -39,7 +50,7 @@ The existing diarization ADRs also disagree about ownership and algorithms. This
 
 | File | Current role | Design implication |
 |------|--------------|--------------------|
-| `desktop/src-tauri/src/live/runtime.rs` | Nemotron-gated CPAL microphone adapter, source-aware coordinator, bounded recording/local-ASR consumers, bounded evidence/transport ports, and streaming recording | Add future source/transport/evidence consumers without changing dictation behavior. |
+| `desktop/src-tauri/src/live/runtime/local_start.rs` | Recording-first CPAL startup, source-aware coordinator installation, bounded pending-ASR pre-roll, and Nemotron-gated local-ASR completion | Add future source/transport/evidence consumers without changing dictation behavior or capture/recording ownership. |
 | `desktop/src-tauri/src/audio/frame.rs` | Track-aware prepared-frame, exact-gap, chunk, replay-key, and content-identity contracts | Keep this as the canonical media contract. |
 | `desktop/src-tauri/src/audio/manifest.rs` | Strict session/chunk envelope builders with ownership, content identity, and timeline validation | Extend only through current schema decisions; do not add a compatibility adapter. |
 | `desktop/src-tauri/src/audio/preprocess.rs` | Deterministic mono conversion, resampling, RMS | Reuse per track. |
@@ -498,7 +509,7 @@ Client transient embedding and exemplar types must not implement ordinary persis
 ## Acceptance For The Client Foundation Plan
 
 - [x] Dictation behavior and existing serialized settings remain backward compatible.
-- [ ] Production microphone capture can record without constructing local ASR. Current production still requires Nemotron stream and local-ASR adapter construction before CPAL capture.
+- [ ] Production microphone capture can complete as a supported recording-only session without constructing local ASR. Current dictation startup installs CPAL capture first, but successful start completion still requires the Nemotron stream and local-ASR adapter.
 - [x] Long capture streams to disk with bounded memory and recoverable partial state; there is no retained-PCM duration cap.
 - [x] Audio drops are explicit timeline gaps.
 - [x] Gap reporting still works when the ordinary callback queue is saturated.
