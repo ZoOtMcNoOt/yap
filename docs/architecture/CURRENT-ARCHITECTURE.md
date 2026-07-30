@@ -55,9 +55,10 @@ exposed bounded pending-ASR saturation during cold warmup. Exact repair
 `32cf528...` adds bounded FIFO batch catch-up, passed focused same-three review,
 and passed repeated-resource, nine-case prepared-audio, and physical-
 microphone/rendered-UI qualification with zero audio drops. Its first isolated
-scheduler-outlier attempt remains failed evidence. Final documentation-
-inclusive review, prequalification/admission, the complete replacement matrix,
-hosted closure, and merge remain open.
+scheduler-outlier attempt remains failed evidence. Documentation reconciliation
+is committed at `e019036...`. Final exact-tree closure,
+prequalification/admission, the complete replacement matrix, hosted closure,
+and merge remain open.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -726,9 +727,10 @@ saturation during cold warmup. Repair `32cf528...` keeps recording independent,
 adds bounded FIFO batch catch-up, and passed focused same-three review plus
 repeated-resource, nine-case prepared-audio, and physical-microphone/rendered-UI
 qualification with zero audio drops. Its first isolated scheduler-outlier
-attempt remains failed evidence. Documentation reconciliation, final exact-tree
-prequalification/admission, the one complete candidate gate, first valid hosted
-native/PR closure, and merge remain open. Real
+attempt remains failed evidence. Documentation reconciliation is committed at
+`e019036...`. Final exact-tree closure and prequalification/admission, the one
+complete candidate gate, first valid hosted native/PR closure, and merge remain
+open. Real
 IT-provided Entra/Conditional
 Access policy and an approved native adapter remain external conformance work.
 

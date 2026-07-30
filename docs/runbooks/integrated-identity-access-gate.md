@@ -241,8 +241,9 @@ qualification passed 12 repeated resource sessions, nine prepared-audio
 boundaries, and the 30-second physical-microphone/rendered-UI lifecycle with
 zero audio drops. Its first resource attempt remains failed evidence because
 one external scheduler sample exceeded the frozen maximum; the identical fresh
-rerun passed without a code or threshold change. Documentation reconciliation,
-final exact-tree closure, fresh package/prequalification/admission, one complete
+rerun passed without a code or threshold change. Documentation reconciliation
+is committed at `e019036...`. Final exact-tree closure, fresh
+package/prequalification/admission, one complete
 replacement matrix, first-attempt hosted closure, PR #69 update, and merge
 remain open.
 

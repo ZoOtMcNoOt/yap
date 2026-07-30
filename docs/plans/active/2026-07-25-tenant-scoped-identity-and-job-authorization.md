@@ -466,9 +466,10 @@ scanning, capacity/SLO promotion, and deployment evidence.
       fresh repeated-resource, nine-case prepared-audio, and physical
       microphone/rendered-UI qualification while preserving the first isolated
       scheduler-outlier attempt as failed evidence.
-- [ ] Commit the documentation-reconciled descendant, obtain final same-three
-      exact-tree closure, then freeze, package, prequalify, and admit that exact
-      successor.
+- [x] Commit documentation-reconciled descendant
+      `e019036184398833ebfd5fef25aa9e0148fadc49`.
+- [ ] Obtain final same-three exact-tree closure, then freeze, package,
+      prequalify, and admit that exact successor.
 - [ ] Run the complete applicable local/server/target-client/private-server
       candidate matrix exactly once for that admitted successor.
 - [ ] Update PR #69; require the five exact-head CI cells, CodeQL, and
