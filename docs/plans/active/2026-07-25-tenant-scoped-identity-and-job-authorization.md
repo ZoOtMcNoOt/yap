@@ -93,9 +93,10 @@ target to be absolute, regular, and executable before container mutation. All
 14 focused proxy contracts, the real root-owned GB10 target proof, and exact
 architecture/runtime/assurance re-review passed with no P0–P2 finding. That
 proof remains in the later consumed lineages described below; it is not current
-merge authority. Fresh next-successor qualification, admission, and evidence,
-the one complete replacement matrix, first-attempt hosted closure, the focused
-PR, and merge remain open.
+merge authority. The later `9446730...` lineage completed that private and
+candidate evidence before exposing a workflow-parse defect during hosted
+closure, as recorded below. Its narrow workflow successor, first valid hosted
+closure, PR update, and merge remain open.
 
 Later admitted heads `c4df39f305f739d3eb2987f24ba8387e54627902`,
 `7f047c6a1a2838f70908a7c0f5ee106fd84d5fb2`,
@@ -146,6 +147,17 @@ remain unaffected. The successor therefore keeps strict Job containment for
 Yap runtime and ordinary candidate commands, requires the fail-closed
 optional-diagnostics registry preflight locally, and runs native compile/link
 evidence on the exact reviewed head in fresh GitHub-hosted Windows VMs.
+
+Exact head `944673071804d8178776efa1d1e13651c87df6fb` passed the same
+three review lenses, complete private prequalification, GitHub-backed
+admission, all four admitted private controllers, independent validation of all
+13 private receipt children, and its one complete 25-cell matrix. PR #69 opened
+on that exact head. GitHub then rejected its first CI dispatch during workflow
+parsing, before any job or runner started, because job-level `env` evaluated
+`${{ runner.environment }}` before runner assignment. Under the exact-head
+rule, that workflow-authoring defect consumes the head as merge authority
+without changing or relabeling its private results. Its protected private
+package and receipts remain historical evidence.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -409,15 +421,25 @@ scanning, capacity/SLO promotion, and deployment evidence.
       GitHub credentials, verify the embedded WDIO build SHA, and require
       active-process-zero evidence. Reject self-hosted or wrong-OS
       substitution.
-- [ ] After focused verification and same-three exact-tree review, freeze,
-      push, package, prequalify, and admit one fresh successor.
+- [x] After focused verification and same-three exact-tree review, freeze,
+      push, package, prequalify, and admit exact successor `9446730...`.
+- [x] Run all four admitted private controllers, independently validate the 13
+      private receipt children, and run the complete 25-cell candidate matrix
+      exactly once for `9446730...`; open focused PR #69 only after those
+      results passed.
+- [x] Preserve `9446730...` without retry, completion, or relabeling after
+      GitHub rejected its first CI dispatch before job creation because
+      job-level `env` referenced `runner.environment` before runner assignment.
+- [ ] Move the runner-owner binding onto only the three contained-runtime
+      steps, add a release contract forbidding `runner.*` in job-level
+      environments, pass focused verification and the same-three exact-tree
+      review, then freeze, package, prequalify, and admit one fresh successor.
 - [ ] Run the complete applicable local/server/target-client/private-server
-      candidate matrix exactly once for that admitted head, then require the
-      five exact-head CI cells exactly once in first-attempt hosted closure.
-- [ ] Open a focused PR; require first-attempt hosted CI, CodeQL, and
-      disposable-Windows stock-NSIS closure on the checked head, or record
-      equivalent local evidence and explicitly disclose unavailable hosted
-      checks.
+      candidate matrix exactly once for that admitted successor.
+- [ ] Update PR #69; require the five exact-head CI cells, CodeQL, and
+      disposable-Windows stock-NSIS closure exactly once on the checked head,
+      or record equivalent local evidence and explicitly disclose unavailable
+      hosted checks.
 - [ ] Merge only the reviewed green SHA, then create the separate post-Phase-7
       ownership/maintainability checkpoint before Phase 8.
 

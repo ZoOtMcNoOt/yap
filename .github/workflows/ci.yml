@@ -227,7 +227,6 @@ jobs:
     timeout-minutes: 30
     env:
       YAP_CHECKED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-      YAP_RUNNER_ENVIRONMENT: ${{ runner.environment }}
     defaults:
       run:
         shell: pwsh
@@ -285,9 +284,13 @@ jobs:
       - run: cargo test --locked
       - name: Run exact server connector integration
         working-directory: ${{ github.workspace }}
+        env:
+          YAP_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: node ./verification/run-hosted-windows-runtime-check.mjs server-connector
       - name: Run exact authenticated connector integration
         working-directory: ${{ github.workspace }}
+        env:
+          YAP_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: node ./verification/run-hosted-windows-runtime-check.mjs authenticated-server-connector
       - name: Verify exact Windows dependency boundary
         working-directory: ${{ github.workspace }}
@@ -382,7 +385,6 @@ jobs:
       RUST_TARGET: x86_64-pc-windows-msvc
       RUST_TOOLCHAIN: stable
       YAP_CHECKED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-      YAP_RUNNER_ENVIRONMENT: ${{ runner.environment }}
     defaults:
       run:
         shell: pwsh
@@ -448,6 +450,8 @@ jobs:
         run: pnpm test:desktop:build
       - name: Run required hardware-independent WDIO specs
         working-directory: ${{ github.workspace }}
+        env:
+          YAP_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: node ./verification/run-hosted-windows-runtime-check.mjs native-wdio
       - name: Verify exact GitHub-hosted checkout remained unchanged
         shell: 'C:\Windows\System32\cmd.exe /d /s /c ""C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo -NoProfile -NonInteractive -Command - < "{0}""'

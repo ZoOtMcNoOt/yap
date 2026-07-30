@@ -41,7 +41,16 @@ the kernel object-manager SystemRoot, and executes native compile/link evidence
 outside the product Job on the exact reviewed head in fresh GitHub-hosted
 Windows VMs before merge. Connector and required WDIO runtime trees on those
 VMs remain Job-contained and must prove zero active processes; the running WDIO
-binary also reports the reviewed build SHA.
+binary also reports the reviewed build SHA. Exact head
+`944673071804d8178776efa1d1e13651c87df6fb` passed all three review lenses,
+prequalification, admission, all four private controllers, independent
+validation of all 13 private receipt children, and its complete 25-cell matrix.
+PR #69 opened on that head. GitHub rejected the first CI dispatch while parsing
+the workflow, before any job or runner started, because job-level `env`
+referenced `runner.environment` before runner assignment. That exact head is
+therefore consumed as merge authority without relabeling its private results.
+The narrow successor step-scopes the runner binding and adds a regression
+contract before repeating fresh exact-head qualification.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -698,8 +707,15 @@ WDIO runtime trees remain in kill-on-close Jobs, run without GitHub
 credentials, and must prove assigned-before-resume plus active-process-zero.
 The fresh runner is populated from the locked Python 3.12 environment before
 the connector's offline recheck, and the running WDIO binary must report the
-reviewed build SHA. Fresh successor review, prequalification, admission, the
-candidate gate, hosted native/PR closure, and merge remain open. Real
+reviewed build SHA. Exact head `9446730...` passed review, prequalification,
+admission, all four private controllers, independent 13-child validation, and
+the complete 25-cell candidate matrix before PR #69 opened. Its first CI
+dispatch was rejected during workflow parsing, before job creation, because
+`runner.environment` was used at job-level `env`. The exact-head rule consumes
+that merge candidate while preserving its private evidence. The narrow
+step-scoped workflow successor, focused re-review, fresh prequalification,
+admission, candidate gate, first valid hosted native/PR closure, and merge
+remain open. Real
 IT-provided Entra/Conditional
 Access policy and an approved native adapter remain external conformance work.
 

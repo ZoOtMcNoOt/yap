@@ -211,10 +211,23 @@ removal. Before any container mutation, the proxy resolves the PATH-selected
 executable target. All 14 focused proxy contracts and the actual qualified GB10
 mapping to root-owned `/usr/bin/socat1` pass.
 
-Three-lens exact-tree closure for the current successor, forced non-optimistic
-copied-package prequalification, fresh exact-head private-controller packaging,
-admission, fresh private evidence, the one complete replacement matrix,
-first-attempt hosted closure, the focused PR, and merge remain open.
+Exact head `944673071804d8178776efa1d1e13651c87df6fb` passed the same
+three review lenses, forced copied-package prequalification, GitHub-backed
+admission, all four admitted private controllers, independent validation of all
+13 private receipt children, and its one complete 25-cell matrix. PR #69 opened
+on that exact head. Its first hosted CI dispatch was rejected while GitHub
+parsed the workflow, before any job or runner started, because
+`${{ runner.environment }}` was evaluated in job-level `env` before runner
+assignment. That workflow-authoring defect consumes the head as merge authority
+under this runbook's exact-head rule. Preserve its private package and receipts;
+do not retry, complete, or relabel them.
+
+The narrow workflow successor moves the runner-owner binding onto only the
+three steps that launch contained product runtimes and adds a release contract
+that rejects `runner.*` context in job-level environments. Focused contract
+verification, the same three read-only review lenses, fresh exact-head
+prequalification, admission, private evidence, one complete replacement
+matrix, first-attempt hosted closure, PR #69 update, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).

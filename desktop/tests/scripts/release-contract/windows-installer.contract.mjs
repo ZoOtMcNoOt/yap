@@ -213,8 +213,8 @@ test("tracked PowerShell automation declares its reviewed runtime boundary", asy
     );
     assert.equal(
       job.env?.YAP_RUNNER_ENVIRONMENT,
-      "${{ runner.environment }}",
-      `${jobName} must bind its runtime boundary to the runner owner`,
+      undefined,
+      `${jobName} must not evaluate runner context before runner assignment`,
     );
     const boundary = job.steps.find(
       (step) => step.name === "Verify exact GitHub-hosted checkout",
@@ -302,17 +302,27 @@ test("tracked PowerShell automation declares its reviewed runtime boundary", asy
   }
 
   const rustSteps = ciWorkflow.jobs.rust.steps;
+  const serverConnectorStep = rustSteps.find(
+    (step) => step.name === "Run exact server connector integration",
+  );
   assert.equal(
-    rustSteps.find(
-      (step) => step.name === "Run exact server connector integration",
-    )?.run,
+    serverConnectorStep?.run,
     "node ./verification/run-hosted-windows-runtime-check.mjs server-connector",
   );
   assert.equal(
-    rustSteps.find(
-      (step) => step.name === "Run exact authenticated connector integration",
-    )?.run,
+    serverConnectorStep?.env?.YAP_RUNNER_ENVIRONMENT,
+    "${{ runner.environment }}",
+  );
+  const authenticatedConnectorStep = rustSteps.find(
+    (step) => step.name === "Run exact authenticated connector integration",
+  );
+  assert.equal(
+    authenticatedConnectorStep?.run,
     "node ./verification/run-hosted-windows-runtime-check.mjs authenticated-server-connector",
+  );
+  assert.equal(
+    authenticatedConnectorStep?.env?.YAP_RUNNER_ENVIRONMENT,
+    "${{ runner.environment }}",
   );
   assert.equal(
     rustSteps.find(
@@ -333,11 +343,16 @@ test("tracked PowerShell automation declares its reviewed runtime boundary", asy
     )?.run,
     "pnpm test:desktop:build",
   );
+  const requiredNativeWdioStep = nativeWdioSteps.find(
+    (step) => step.name === "Run required hardware-independent WDIO specs",
+  );
   assert.match(
-    nativeWdioSteps.find(
-      (step) => step.name === "Run required hardware-independent WDIO specs",
-    )?.run,
+    requiredNativeWdioStep?.run,
     /^node \.\/verification\/run-hosted-windows-runtime-check\.mjs native-wdio$/,
+  );
+  assert.equal(
+    requiredNativeWdioStep?.env?.YAP_RUNNER_ENVIRONMENT,
+    "${{ runner.environment }}",
   );
 
   const compatibilityJob = ciWorkflow.jobs?.frontend;

@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-07-29
+**As of:** 2026-07-30
 
 **Current work:** Phase 7 tenant-scoped identity and access on
 `feat/phase7-identity-access`, based on reviewed Checkpoint B merge
@@ -31,7 +31,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
-| Phase 7: identity/access | Active; disposable native-build successor required | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Provider-neutral OIDC/Entra policy, tenant-scoped ownership, purpose authorization, protected readiness, authenticated bounded private WebSocket admission, and the native lower handshake execute under focused tests. The desktop still has no selected production token adapter. Exact head `d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` fixed copied dependency materialization, passed the same three review lenses, complete private prequalification, GitHub-backed admission, all four admitted private controllers, and independent validation of all 13 private receipt children. Its one complete matrix passed the frontend cells, formatting, strict Clippy, and every Rust test. Visual Studio Build Tools then retained its `vctip.exe` helper inside the owned Windows Job, so strict cleanup correctly consumed the head. Do not retry or complete it. The approved `OptIn=0` change was applied and verified, but signed `VCTIP.EXE` still launched from `link.exe`; Microsoft documents that required diagnostics are unaffected by VSCEIP opt-out. The successor roots the optional-diagnostics proof in the kernel object-manager SystemRoot and binds native compile/link evidence outside the product Job to the exact reviewed head on fresh GitHub-hosted Windows VMs. Connector and required WDIO runtime trees stay Job-contained with active-process-zero proof, and the running WDIO binary verifies the reviewed build SHA. |
+| Phase 7: identity/access | Active; workflow successor required | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Provider-neutral OIDC/Entra policy, tenant-scoped ownership, purpose authorization, protected readiness, authenticated bounded private WebSocket admission, and the native lower handshake execute under focused tests. The desktop still has no selected production token adapter. Exact head `944673071804d8178776efa1d1e13651c87df6fb` passed the same three review lenses, complete private prequalification, GitHub-backed admission, all four admitted private controllers, independent validation of all 13 private receipt children, and its one complete 25-cell matrix. PR #69 opened on that head. GitHub rejected its first hosted CI dispatch while parsing the workflow, before any job or runner started, because job-level `env` referenced `runner.environment` before runner assignment. The exact-head rule consumes that head as merge authority without relabeling its passing private evidence. The narrow successor step-scopes the runner binding, adds regression coverage, and must repeat the fresh exact-head gate before the first valid hosted closure. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -414,17 +414,24 @@ ownership.
   `OptIn` DWORD was set to `0`, a clean focused trace still observed signed
   `VCTIP.EXE` launched by `link.exe` beyond the drain. Microsoft documents that
   VSCEIP opt-out affects optional diagnostics, not required diagnostics. The
-  current successor retains MSVC, requires a fail-closed 64-bit registry-API
+  successor retained MSVC, requires a fail-closed 64-bit registry-API
   proof whose helper is rooted in the kernel object-manager SystemRoot, and
   runs native compile/link evidence outside the product Job on clean exact-head
   GitHub-hosted Windows VMs. Actual connector and required WDIO runtime trees
   stay inside kill-on-close Jobs, run without GitHub credentials, and must
   prove active-process-zero; the cold runner first populates the locked Python
   3.12 environment, and the running WDIO binary verifies its embedded reviewed
-  SHA. Fresh successor
-  prequalification,
-  admission, evidence, the one replacement phase gate, hosted PR closure, and
-  merge remain open. Persistent
+  SHA. Exact head `944673071804d8178776efa1d1e13651c87df6fb`
+  passed three-lens review, prequalification, admission, all four private
+  controllers, independent 13-child validation, and its complete 25-cell
+  matrix. PR #69 opened, but GitHub rejected the first CI dispatch during
+  workflow parsing, before any job or runner started, because job-level `env`
+  referenced `runner.environment` before runner assignment. Preserve that
+  private evidence without relabeling it; the exact-head rule consumes the head
+  for merge authority. The narrow workflow successor step-scopes the runner
+  binding and adds a regression contract. Fresh successor prequalification,
+  admission, evidence, the one replacement phase gate, first-valid-attempt
+  hosted PR closure, and merge remain open. Persistent
   warm model
   services, multi-worker and mixed live/batch capacity promotion, production
   supervision/observability, and external deployment remain Phase 10 gates;
@@ -698,9 +705,9 @@ provider optimization or non-blocking architecture work.
    broader-scope exception.
 7. Regenerate every private child and run the one-time applicable local/server/
    target-client/private-server candidate matrix for that exact head.
-8. Open the focused PR only after the candidate gate is green, then merge only
-   after first-attempt hosted native CI, remaining CI, CodeQL, and
-   disposable-Windows stock-NSIS closure on that exact head.
+8. Update focused PR #69 only after the replacement candidate gate is green,
+   then merge only after first-valid-attempt hosted native CI, remaining CI,
+   CodeQL, and disposable-Windows stock-NSIS closure on that exact head.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
 point. Phase 7 remains bounded to identity and access before that integrated

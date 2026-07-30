@@ -18,6 +18,17 @@ import {
   workflowPaths,
 } from "./workflow-policy.mjs";
 
+function assertNoRunnerContextInJobEnvironment(value, location) {
+  const text = String(value);
+  if (text.includes("${{")) {
+    assert.doesNotMatch(
+      text,
+      /\brunner\b/i,
+      `${location} uses runner context before runner assignment`,
+    );
+  }
+}
+
 test("release contract has an explicit package command outside Vitest discovery", async () => {
   const packageJson = JSON.parse(await readRepoFile("desktop/package.json"));
   assert.equal(
@@ -56,10 +67,14 @@ test("required native WDIO executes every deterministic spec with Mocha runtime 
     job.env.YAP_CHECKED_HEAD,
     "${{ github.event.pull_request.head.sha || github.sha }}",
   );
-  assert.equal(job.env.YAP_RUNNER_ENVIRONMENT, "${{ runner.environment }}");
+  assert.equal(job.env.YAP_RUNNER_ENVIRONMENT, undefined);
   assert.ok(steps.some((step) => step.run === "pnpm test:desktop:build"));
   const runtimeStep = steps.find(
     (step) => step.name === "Run required hardware-independent WDIO specs",
+  );
+  assert.equal(
+    runtimeStep?.env?.YAP_RUNNER_ENVIRONMENT,
+    "${{ runner.environment }}",
   );
   assert.equal(runtimeStep?.["working-directory"], "${{ github.workspace }}");
   assert.equal(
@@ -311,6 +326,41 @@ test("reviewed workflow inventory covers every workflow YAML file", async () => 
   );
 });
 
+test("runner context is evaluated only after a workflow job has a runner", async () => {
+  for (const workflowPath of workflowPaths) {
+    const workflow = await readWorkflow(workflowPath);
+    for (const [jobName, job] of Object.entries(workflow.jobs ?? {})) {
+      for (const [environmentName, value] of Object.entries(job.env ?? {})) {
+        assertNoRunnerContextInJobEnvironment(
+          value,
+          `${workflowPath} ${jobName}.env.${environmentName}`,
+        );
+      }
+    }
+  }
+});
+
+test("job-level runner guard rejects direct, indexed, and nested references", () => {
+  for (const value of [
+    "${{ runner.environment }}",
+    "${{ runner['environment'] }}",
+    "${{ format('{0}', runner.environment) }}",
+    "${{ format('{{{0}}}', runner.environment) }}",
+    "${{ toJson(runner) }}",
+  ]) {
+    assert.throws(
+      () => assertNoRunnerContextInJobEnvironment(value, "synthetic.env.VALUE"),
+      /uses runner context before runner assignment/,
+    );
+  }
+  assert.doesNotThrow(
+    () => assertNoRunnerContextInJobEnvironment(
+      "prefix-${{ github.sha }}",
+      "synthetic.env.VALUE",
+    ),
+  );
+});
+
 test("all CI, smoke, and release actions use exact reviewed commit pins", async () => {
   for (const workflowPath of workflowPaths) {
     assertReviewedActionPins(await readWorkflow(workflowPath), workflowPath);
@@ -358,7 +408,15 @@ test("Rust connector CI populates a cold locked environment before contained run
     job.env.YAP_CHECKED_HEAD,
     "${{ github.event.pull_request.head.sha || github.sha }}",
   );
-  assert.equal(job.env.YAP_RUNNER_ENVIRONMENT, "${{ runner.environment }}");
+  assert.equal(job.env.YAP_RUNNER_ENVIRONMENT, undefined);
+  assert.equal(
+    serverConnector?.env?.YAP_RUNNER_ENVIRONMENT,
+    "${{ runner.environment }}",
+  );
+  assert.equal(
+    authenticatedConnector?.env?.YAP_RUNNER_ENVIRONMENT,
+    "${{ runner.environment }}",
+  );
   assert.ok(populateEnvironment);
   assert.equal(populateEnvironment["working-directory"], "server");
   assert.equal(
