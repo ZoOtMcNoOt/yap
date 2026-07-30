@@ -34,6 +34,7 @@ import {
   runCommandCell,
   reserveIntegratedGateAttemptDirectory,
   validateLegacyIntegratedGateReservationValue,
+  verifyIdentityAccessAdmissionPrerequisites,
 } from "../../../../verification/integrated-gate-runner.mjs";
 import {
   INTEGRATED_GATE_BYTE_LIMITS,
@@ -220,15 +221,7 @@ const identityCandidateIds = [
   "frontend.production-build",
   "frontend.chromium-runtime",
   "frontend.browser-workflows",
-  "native.format",
-  "native.clippy",
-  "native.tests",
-  "native.server-connector",
-  "native.authenticated-server-connector",
-  "native.windows-dependency-boundary",
-  "native.dependency-audit",
-  "desktop.wdio-build",
-  "desktop.required-wdio",
+  "windows.build-tools-optional-diagnostics-disabled",
   "server.python-3.12",
   "server.lint",
   "server.mock-oidc-owner-flow",
@@ -359,7 +352,15 @@ const exactCommands = {
   "server.lint": ["uv", "run", "--locked", "ruff", "check", "."],
 };
 const identityExactCommands = {
-  ...exactCommands,
+  ...Object.fromEntries(
+    Object.entries(exactCommands).filter(([id]) => (
+      !id.startsWith("native.") && !id.startsWith("desktop.")
+    )),
+  ),
+  "windows.build-tools-optional-diagnostics-disabled": [
+    "node",
+    "verification/verify-windows-build-tools-optional-diagnostics-opt-out.mjs",
+  ],
   "frontend.dependencies": [
     "corepack",
     "pnpm@11.7.0",
@@ -377,15 +378,6 @@ const identityExactCommands = {
     "check",
     ".",
     "../infra/yap-server-node/owned-process-supervisor.py",
-  ],
-  "native.authenticated-server-connector": [
-    "pwsh.exe",
-    "-NoProfile",
-    "-NonInteractive",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-    "./verification/test-authenticated-server-connector.ps1",
   ],
 };
 
@@ -455,6 +447,88 @@ test("identity and access gate freezes its complete behavior inventory", () => {
       .map(({ id, command }) => [id, command]),
   );
   assert.deepEqual(commandCells, identityExactCommands);
+});
+
+test("identity and access gate keeps native toolchain work on disposable hosted Windows", () => {
+  const candidateIds = new Set(
+    identityManifest.candidateCells.map(({ id }) => id),
+  );
+  for (const nativeId of [
+    "native.format",
+    "native.clippy",
+    "native.tests",
+    "native.server-connector",
+    "native.authenticated-server-connector",
+    "native.windows-dependency-boundary",
+    "native.dependency-audit",
+    "desktop.wdio-build",
+    "desktop.required-wdio",
+  ]) {
+    assert.equal(
+      candidateIds.has(nativeId),
+      false,
+      `${nativeId} must execute only through the hosted Windows closure`,
+    );
+  }
+  assert.ok(
+    candidateIds.has("windows.build-tools-optional-diagnostics-disabled"),
+    "the local Windows optional-diagnostics prerequisite must remain in the candidate gate",
+  );
+  assert.ok(
+    identityHostedClosureIds.includes("hosted.ci.rust"),
+    "the hosted closure must retain exact Rust and connector evidence",
+  );
+  assert.ok(
+    identityHostedClosureIds.includes("hosted.ci.native-wdio"),
+    "the hosted closure must retain exact native UI evidence",
+  );
+});
+
+test("identity admission delegates to the bounded optional-diagnostics verifier", () => {
+  const calls = [];
+  const environment = {
+    SystemRoot: String.raw`C:\Windows`,
+    PATH: process.env.PATH,
+    GH_TOKEN: "removed by the verifier's process boundary",
+  };
+  verifyIdentityAccessAdmissionPrerequisites({
+    checkedHead,
+    platform: "win32",
+    environment,
+    verifyOptionalDiagnostics(options) {
+      calls.push(options);
+      return { applicable: true, optIn: 0, source: "installation" };
+    },
+  });
+  assert.deepEqual(calls, [{ platform: "win32", environment }]);
+});
+
+test("identity admission rejects unsupported runners and invalid prerequisite results", () => {
+  assert.throws(
+    () => verifyIdentityAccessAdmissionPrerequisites({
+      checkedHead,
+      platform: "linux",
+    }),
+    /must be admitted from its exact Windows runner/,
+  );
+  assert.throws(
+    () => verifyIdentityAccessAdmissionPrerequisites({
+      checkedHead,
+      platform: "win32",
+      verifyOptionalDiagnostics() {
+        throw new Error("registry unavailable");
+      },
+    }),
+    /failed before admission; no attempt was reserved: registry unavailable/,
+  );
+  assert.throws(
+    () => verifyIdentityAccessAdmissionPrerequisites({
+      checkedHead,
+      platform: "win32",
+      verifyOptionalDiagnostics: () => ({ applicable: false }),
+    }),
+    /returned an invalid result; no attempt was reserved/,
+  );
 });
 
 test("identity and access gate binds mock OIDC candidate and hosted closure", () => {
@@ -1320,15 +1394,40 @@ test("identity admission returns no capability and stores only its protected dig
   })}\n`);
   writeExclusivePrivateFile(privatePlanPath, privatePlanBytes);
   const statusClient = createGateStatusClient();
+  const rejectedStatusClient = createGateStatusClient();
 
   try {
+    assert.throws(
+      () => admitIntegratedGateAttempt({
+        checkedHead: repositoryHead,
+        evidenceRoot: root,
+        manifestPath: identityManifestPath,
+        privatePlanPath,
+        statusClient: rejectedStatusClient,
+        verifyAdmissionPrerequisites() {
+          throw new Error("Windows optional-diagnostics prerequisite rejected");
+        },
+      }),
+      /Windows optional-diagnostics prerequisite rejected/,
+    );
+    assert.equal(
+      rejectedStatusClient.statuses.length,
+      0,
+      "a failed prerequisite must not reserve remote admission status",
+    );
+    const prerequisiteHeads = [];
     const admitted = admitIntegratedGateAttempt({
       checkedHead: repositoryHead,
       evidenceRoot: root,
       manifestPath: identityManifestPath,
       privatePlanPath,
       statusClient,
+      verifyAdmissionPrerequisites({ checkedHead: prerequisiteHead }) {
+        prerequisiteHeads.push(prerequisiteHead);
+        assert.equal(statusClient.statuses.length, 0);
+      },
     });
+    assert.deepEqual(prerequisiteHeads, [repositoryHead]);
     assert.deepEqual(Object.keys(admitted).sort(), [
       "admissionPath",
       "candidateReceiptPath",

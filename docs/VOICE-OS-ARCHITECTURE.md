@@ -931,7 +931,7 @@ timeline
 | **5** | Merged and verified | Already-canonical mono PCM16/16 kHz WAV files are strictly validated and extracted into an immutable Yap-owned spool, durably created/uploaded/committed/resumed/cancelled through the approved loopback origin, processed through the bounded router and isolated Cohere worker, and published to History only after native result verification. Exact PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the one-time local/native/server/GB10 gate and hosted checks, then merged as `b6677631b2cc8283f0f6466622f2dfa7cfdb38f6`. Private review evidence remains outside the repository. General media conversion, WSS/live, authentication, persistent service, external networking, and measured multi-worker capacity remain later gates. |
 | **Checkpoint A** | Merged and verified | Exact implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time complete local/native/server/GB10 gate. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS, then merged as `a80934d844a068110e7f86b30b6e29d35146db57` through PR #59. Private security evidence remains outside Git. |
 | **6** | Merged and verified | ADRs 0024–0026 and the completed plan define the provider catalog, primary language, bounded resident AmberNet/Nemotron Preview, verify-only five-region AmberNet batch preflight, explicit server Nemotron auto mode, fail-closed alignment, and provider-specific serving gates. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its frozen 30-child local/native/server/private-runtime matrix after bounded three-agent remediation re-review. Runtime images were prepared before admission and emitted private receipts after a second clean-head check. The admitted gates verified each frozen receipt hash and exact prepared ARM64 image identity, launched the receipt-bound immutable ID, and bound it into evidence; they could not build, pull, reconnect, or substitute an image. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`, and its private closure receipt was independently validated outside Git. PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. The local route remains default-off Preview because its natural-switch target failed; the catalog still advertises only gated Cohere `en-US` with `wordAlignment: false`; neither resident server provider is promoted. Tiron/provider quality selection stays in Phase 8; authentication and persistent supervised mixed-load production remain Phases 7 and 10. |
-| **7** | Active; corrected lifecycle successor reviewed, fresh prequalification pending | The branch has a provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` ownership, owner-scoped jobs/LID, enforced and audited purpose grants, identity/revocation/audit records, authenticated bounded private WebSocket admission, and a qualified native lower handshake. The desktop has only a narrow native token-provider seam; no production adapter is approved. Exact head `3f9a8b7195dad3afd8b66034349c0482caef0a4a` is consumed, and `4dc572f120f7e284f7453dfd11bd817a2c034104` was rejected before admission after review exposed fork-before-exec token inference. Committed/pushed retained-pidfd head `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` closed those lifecycle findings but was rejected during connected prequalification because it refused GB10's stock `/usr/bin/socat -> /usr/bin/socat1` package link. The corrected successor canonicalizes the selected command to its absolute regular executable before container mutation. All 14 focused proxy tests and the real root-owned GB10 host-path proof pass, and the same three reviewers returned exact-tree GO with no P0–P2 finding. Fresh corrected-head private prequalification/admission/evidence, the complete matrix, hosted PR closure, merge, and real IT-provided Entra policy conformance remain open. |
+| **7** | Active; disposable native-build successor pending | The branch has a provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` ownership, owner-scoped jobs/LID, enforced and audited purpose grants, identity/revocation/audit records, authenticated bounded private WebSocket admission, and a qualified native lower handshake. The desktop has only a narrow native token-provider seam; no production adapter is approved. Exact head `d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` retained the reviewed Linux lifecycle, canonical `socat`, non-login `uv`, language-routing no-op, and copied-package repairs. It passed complete private prequalification, admission, all four admitted controllers, and independent validation of all 13 private receipt children. Its one complete matrix passed the frontend cells, formatting, strict Clippy, and every Rust test, then failed closed because Visual Studio Build Tools retained `vctip.exe` inside the owned Windows Job. The head is consumed. The approved `OptIn=0` change was applied and verified, but signed `VCTIP.EXE` still launched from `link.exe`, consistent with Microsoft's required-diagnostics exception. The successor requires a kernel-rooted fail-closed registry proof, binds native compile/link evidence outside the product Job to the exact reviewed head on fresh GitHub-hosted Windows VMs, and keeps connector plus required WDIO runtime trees Job-contained with active-process-zero proof. The running WDIO binary verifies the reviewed build SHA. Fresh exact-tree review, prequalification/admission/evidence, the candidate matrix, first-attempt hosted native/PR closure, merge, and real IT-provided Entra policy conformance remain open. |
 | **8** | Capture prerequisites implemented; meeting inference deferred | ADR 0020, ADR 0027, and the source-aware design are canonical. Track/timeline/recording prerequisites are implemented and pinned Tiron's eight-window/eight-global route is selected as the server development baseline; the local anonymous model, Tiron worker, larger-roster speaker-epoch reconciler, frozen messy-meeting benchmark, result production, and server reconciliation do not exist. |
 | **9** | Planned | Google OKF conformance, KB compiler, Postgres permission/relationship ledger, pgvector baseline, optional Neo4j challenger, agents, RAG, and MCP wait on preprocessing, identity, and diarization outputs. |
 | **10** | Later | Persistent supervised model services, warm/multi-worker and mixed-load capacity promotion, observability, corporate access hardening, HTTP/3 edge promotion, production publication governance, and repo split come after the remote transport and authentication baselines are real. Stock installer packaging and disposable-Windows lifecycle proof exist; production release governance remains later work. |
@@ -950,8 +950,9 @@ Solo/local fallback and team/server mode share concepts, but the server path is 
 identity, auth-derived server ownership, enforced purpose authorization,
 bounded private WebSocket admission, and the qualified native lower handshake.
 It does not implement live ASR, endpoint discovery, or an external WSS/TLS edge.
-Fresh corrected-head private prequalification/admission/evidence, the one-time
-matrix, hosted PR closure, and merge remain pending.
+Fresh disposable-native-build successor review, private prequalification/
+admission/evidence, the one-time candidate matrix, hosted native/PR closure,
+and merge remain pending.
 Phase 10 owns the service-integrated production router,
 authenticated external batch and WSS/live transport, persistent supervised
 model services, warm/multi-worker and mixed live/batch capacity promotion,
@@ -974,11 +975,29 @@ privacy review and ADR.
 
 **Build specs:** [Client state machine](specs/client-state-machine.md) · [Model download UX](specs/model-download-ux.md) · [Local audio preprocessing](specs/local-audio-preprocessing-stack.md) · [Local live fallback](specs/local-live-fallback-sidecar.md) · [Local LLM sidecar](specs/local-llm-sidecar.md) · [Live dictation client](specs/live-dictation-client-ux.md) · [Server tier MVP](specs/server-tier-mvp.md) · [Source-aware diarization](specs/source-aware-diarization.md) · [Testing](specs/testing-strategy.md).
 
-**Next execution order:** Phase 6 and Checkpoint B are merged. Freeze the
-three-lens-reviewed canonical-`socat` Phase 7 successor, run fresh private
-prequalification/admission/evidence and the one admitted complete matrix
-(including hosted Docker for the pinned mock OIDC flow), obtain hosted PR
-closure, and merge only the green checked head. Then run the separate
+**Next execution order:** Phase 6 and Checkpoint B are merged. Qualify the
+admission workstation with the approved Build Tools optional-diagnostics
+opt-out, prove its fail-closed registry state through the kernel-rooted inbox
+helper, and bind native compile/link cells to clean exact-head GitHub-hosted
+Windows jobs. Keep the connector and required WDIO runtime trees inside
+kill-on-close Jobs with active-process-zero proof, populate the cold locked
+Python environment, and verify the running WDIO build reports that exact head.
+Require every CI closure job to disable persisted checkout credentials and
+verify that same head before and after project execution on its declared hosted
+OS. Use a no-space absolute System32 bootstrap for the absolute Windows
+PowerShell host and launch the absolute Linux host directly. Capture the
+PowerShell and Git hosts, guard source, Git index, and index-independent
+tracked-content manifest with their hashes. Final verification reuses that
+shell chain, rejects hidden index state, linked tracked ancestors, and Linux
+executable-bit drift, rehashes tracked content, and replays the admitted guard
+bytes in memory without trusting the mutable workspace helper or re-resolving
+`PATH`. Obtain
+the same three exact-tree reviews, then freeze one fresh Phase 7
+successor. Run fresh private
+prequalification/admission/evidence and its one candidate matrix (including
+Docker-backed evidence for the pinned mock OIDC flow), open the focused PR, and
+require first-attempt hosted native CI, remaining CI, CodeQL, and stock-NSIS
+closure before merging only the green checked head. Then run the separate
 post-Phase-7 architecture checkpoint before Phase 8 and continue Phases 8–10 on
 separate branches in documented order. Live ASR, product endpoint discovery,
 external same-origin WSS/TLS, real enterprise identity-policy conformance,

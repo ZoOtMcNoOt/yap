@@ -232,11 +232,25 @@ function comparableWindowsPath(candidate) {
 }
 
 describe("Yap desktop shell", () => {
-  it("opens the main window and exposes the WDIO Tauri bridge", async () => {
+  it("opens the exact checked-head app and exposes the WDIO Tauri bridge", async () => {
     await browser.tauri.switchWindow("main");
     await browser.pause(500);
 
     expect(typeof browser.tauri.execute).toBe("function");
+    const checkedHead = process.env.YAP_CHECKED_HEAD;
+    if (
+      process.env.GITHUB_ACTIONS === "true"
+      && !/^[0-9a-f]{40}$/.test(checkedHead ?? "")
+    ) {
+      throw new Error(
+        "Hosted native WDIO requires the exact lowercase YAP_CHECKED_HEAD.",
+      );
+    }
+    const expectedBuildGitSha = checkedHead ?? "unbound";
+    expect(await browser.tauri.execute(
+      ({ core }) => core.invoke("wdio_build_git_sha"),
+    )).toBe(expectedBuildGitSha);
+
     const bridge = await browser.execute(() => ({
       hasTauriInternals: typeof window.__TAURI_INTERNALS__?.invoke === "function",
       hasWdioTauri: typeof window.wdioTauri?.execute === "function",

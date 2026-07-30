@@ -31,7 +31,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
-| Phase 7: identity/access | Active; copied-dependency successor required | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Provider-neutral OIDC/Entra policy, tenant-scoped ownership, purpose authorization, protected readiness, authenticated bounded private WebSocket admission, and the native lower handshake execute under focused tests. The desktop still has no selected production token adapter. Exact head `63600096cd8afe9f4435f6302c584f89dbdb5915` corrected the earlier admitted `uv` boundary, passed the same three review lenses, complete private prequalification, GitHub-backed admission, all four admitted private controllers, and independent validation of all 13 private receipt children. Its one complete matrix failed when `frontend.release-contracts` correctly rejected a reparse-tagged installed `@floating-ui/core@1.7.5` notice; that failure consumed the head. The lockfile, generated inventory, and MIT notice hash were already exact; the private checkout's default pnpm hardlink shared the reparse-tagged content-store inode with another OneDrive-managed checkout. Do not retry or complete that head. The next exact head must require forced non-optimistic copied package imports in the active manifest, begin private prequalification with an absent `desktop/node_modules`, and pass the complete release-contract cell from the copied private install before admission. |
+| Phase 7: identity/access | Active; disposable native-build successor required | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Provider-neutral OIDC/Entra policy, tenant-scoped ownership, purpose authorization, protected readiness, authenticated bounded private WebSocket admission, and the native lower handshake execute under focused tests. The desktop still has no selected production token adapter. Exact head `d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` fixed copied dependency materialization, passed the same three review lenses, complete private prequalification, GitHub-backed admission, all four admitted private controllers, and independent validation of all 13 private receipt children. Its one complete matrix passed the frontend cells, formatting, strict Clippy, and every Rust test. Visual Studio Build Tools then retained its `vctip.exe` helper inside the owned Windows Job, so strict cleanup correctly consumed the head. Do not retry or complete it. The approved `OptIn=0` change was applied and verified, but signed `VCTIP.EXE` still launched from `link.exe`; Microsoft documents that required diagnostics are unaffected by VSCEIP opt-out. The successor roots the optional-diagnostics proof in the kernel object-manager SystemRoot and binds native compile/link evidence outside the product Job to the exact reviewed head on fresh GitHub-hosted Windows VMs. Connector and required WDIO runtime trees stay Job-contained with active-process-zero proof, and the running WDIO binary verifies the reviewed build SHA. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -401,13 +401,30 @@ ownership.
   another OneDrive-managed checkout. The repository lock, inventory, and MIT
   notice hash were already exact, so the failure is preserved as
   package-materialization evidence rather than misreported as license drift.
-  The next exact head must retain the runtime repairs, require `--force`,
-  `--no-optimistic-repeat-install`, and `--package-import-method=copy` in the
-  active manifest, begin with an absent private `desktop/node_modules`, hydrate
-  the checkout with copied package files, and pass the complete
-  release-contract cell before reservation. Fresh successor
-  prequalification/admission/evidence, the one replacement phase gate, hosted
-  PR closure, and merge remain open. Persistent
+  Exact head `d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` implemented that copied
+  materialization, passed review, prequalification, admission, all four private
+  controllers, and independent 13-child validation. Its one complete matrix
+  passed the frontend cells, formatting, strict Clippy, and every Rust test,
+  then failed closed because Visual Studio Build Tools retained `vctip.exe`
+  inside the owned Windows Job. A focused default-linker probe reproduced that
+  diagnostic helper beyond two minutes, so extending the natural drain is not
+  a fix.
+  Bundled Rust LLD does not correctly link this SQLite/AWS-LC native graph and
+  still invokes Microsoft native tooling. After the documented Build Tools
+  `OptIn` DWORD was set to `0`, a clean focused trace still observed signed
+  `VCTIP.EXE` launched by `link.exe` beyond the drain. Microsoft documents that
+  VSCEIP opt-out affects optional diagnostics, not required diagnostics. The
+  current successor retains MSVC, requires a fail-closed 64-bit registry-API
+  proof whose helper is rooted in the kernel object-manager SystemRoot, and
+  runs native compile/link evidence outside the product Job on clean exact-head
+  GitHub-hosted Windows VMs. Actual connector and required WDIO runtime trees
+  stay inside kill-on-close Jobs, run without GitHub credentials, and must
+  prove active-process-zero; the cold runner first populates the locked Python
+  3.12 environment, and the running WDIO binary verifies its embedded reviewed
+  SHA. Fresh successor
+  prequalification,
+  admission, evidence, the one replacement phase gate, hosted PR closure, and
+  merge remain open. Persistent
   warm model
   services, multi-worker and mixed live/batch capacity promotion, production
   supervision/observability, and external deployment remain Phase 10 gates;
@@ -649,20 +666,41 @@ provider optimization or non-blocking architecture work.
    admission, every private child, and independent 13-child validation, but its
    one complete matrix correctly rejected a reparse-tagged installed notice
    produced by default pnpm hardlink materialization. Preserve it without retry.
-5. Freeze and prequalify one new exact head whose active manifest requires
-   forced non-optimistic copied package imports. Begin with an absent private
-   `desktop/node_modules`, hydrate it with `--force`,
-   `--no-optimistic-repeat-install`, and `--package-import-method=copy`, run
-   the complete release-contract cell before reservation, then reserve one
-   fresh admission.
+5. Closed as consumed admission evidence: `d4adc832...` used forced
+   non-optimistic copied package imports, passed every fresh private child, and
+   reached `native.tests` in its one complete matrix. Every Rust test passed,
+   but the owned Windows Job retained the Build Tools `vctip.exe` diagnostic
+   helper.
+   Preserve the head without retry or completion.
+6. The approved Microsoft Build Tools optional-diagnostics opt-out is applied
+   and read back on the admission workstation. Require that fail-closed 64-bit
+   registry proof before remote reservation and again in the candidate
+   manifest. Every required CI closure job now disables persisted checkout
+   credentials, explicitly checks out the reviewed head, and brackets project
+   execution with the shared hosted-runner head/state guard. Windows uses an
+   absolute no-space System32 bootstrap for the absolute PowerShell host; Linux
+   launches the absolute PowerShell host directly. Initial admission captures
+   that PowerShell host, the first resolved Git executable, exact guard source,
+   Git index, and index-independent tracked-content manifest with their hashes.
+   Final verification reuses the absolute shell chain, replays the admitted
+   guard bytes in memory, rejects hidden index state, linked tracked ancestors,
+   and Linux executable-bit drift, and reuses the admitted Git identity instead
+   of trusting post-project workspace files or `PATH`. Bind native
+   formatting, Clippy, tests, connector integrations, dependency checks, WDIO
+   build, and required native specs to the exact-head `rust` and `Native WDIO`
+   jobs on clean GitHub-hosted Windows VMs; keep `mock-oidc` on the declared
+   fresh Linux runner. Reject persistent/self-hosted or wrong-OS substitution.
+   Run the same three exact-tree review lenses, then freeze, package,
+   prequalify, and reserve one fresh admission.
    The user explicitly authorized transient use of the existing GitHub CLI
    credential because a separate least-privilege status token is unavailable;
    do not print, persist, or pass it into command cells, and record the
    broader-scope exception.
-6. Regenerate every private child and run the one-time applicable local/native/
-   server/target-client/private-server matrix for that exact head.
-7. Open the focused PR only after the full gate is green, then merge only after
-   hosted CI, CodeQL, and disposable-Windows stock-NSIS closure.
+7. Regenerate every private child and run the one-time applicable local/server/
+   target-client/private-server candidate matrix for that exact head.
+8. Open the focused PR only after the candidate gate is green, then merge only
+   after first-attempt hosted native CI, remaining CI, CodeQL, and
+   disposable-Windows stock-NSIS closure on that exact head.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
 point. Phase 7 remains bounded to identity and access before that integrated

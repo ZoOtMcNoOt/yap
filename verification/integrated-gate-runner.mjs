@@ -45,6 +45,9 @@ import {
   readExactPrivateFile,
   writeExclusivePrivateFile,
 } from "./private-gate-artifacts.mjs";
+import {
+  verifyWindowsBuildToolsOptionalDiagnosticsOptOut,
+} from "./verify-windows-build-tools-optional-diagnostics-opt-out.mjs";
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
@@ -143,6 +146,41 @@ export function integratedGateCommandEnvironment(checkedHead, source = process.e
   }
   environment.YAP_CHECKED_HEAD = checkedHead;
   return environment;
+}
+
+export function verifyIdentityAccessAdmissionPrerequisites({
+  checkedHead,
+  platform = process.platform,
+  environment = process.env,
+  verifyOptionalDiagnostics =
+    verifyWindowsBuildToolsOptionalDiagnosticsOptOut,
+} = {}) {
+  requireCondition(
+    platform === "win32",
+    "The identity/access gate must be admitted from its exact Windows runner.",
+  );
+  requireCondition(
+    SHA40.test(checkedHead ?? ""),
+    "Identity/access admission prerequisites require one lowercase checked-head SHA.",
+  );
+  let result;
+  try {
+    result = verifyOptionalDiagnostics({ platform, environment });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      "Windows Build Tools optional-diagnostics opt-out failed before "
+        + `admission; no attempt was reserved: ${detail}`,
+      { cause: error },
+    );
+  }
+  requireCondition(
+    result?.applicable === true
+      && result.optIn === 0
+      && (result.source === "policy" || result.source === "installation"),
+    "Windows Build Tools optional-diagnostics opt-out returned an invalid "
+      + "result; no attempt was reserved.",
+  );
 }
 
 function normalizedRealPath(candidate, label, expectedType) {
@@ -638,6 +676,7 @@ export function admitIntegratedGateAttempt({
   manifestPath,
   privatePlanPath,
   statusClient,
+  verifyAdmissionPrerequisites = verifyIdentityAccessAdmissionPrerequisites,
 }) {
   const manifestSelection = loadIntegratedGateManifestSelection(manifestPath);
   assertExactCleanGitHead(checkedHead);
@@ -656,6 +695,13 @@ export function admitIntegratedGateAttempt({
       ({ id }) => id === "server.mock-oidc-owner-flow",
     ),
   });
+  if (frozen.manifest.gateId === "integrated-identity-access") {
+    verifyAdmissionPrerequisites({
+      checkedHead,
+      environment: integratedGateCommandEnvironment(checkedHead),
+    });
+    assertExactCleanGitHead(checkedHead);
+  }
 
   const manifestSha256 = frozen.manifestSha256;
   const reservation = reserveIntegratedGateAttemptDirectory({

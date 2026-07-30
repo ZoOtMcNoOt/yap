@@ -116,10 +116,11 @@ and GitHub-backed admission. Its first admitted mock-OIDC controller then
 failed before the locked `uv sync` command or owner flow because the
 non-interactive SSH `PATH` did not expose the reviewed absolute `uv` executable
 to portable PowerShell. The mode-`0700` per-head directory existed, but the
-receipt remained absent and no runtime owner started. The next exact head must
-retain the safe owner-only receipt boundary, authenticate every real component
-of the selected absolute `uv` path plus the executable, and prove that the
-identical non-interactive admitted invocation resolves it before reservation.
+receipt remained absent and no runtime owner started. The following exact head
+therefore had to retain the safe owner-only receipt boundary, authenticate
+every real component of the selected absolute `uv` path plus the executable,
+and prove that the identical non-interactive admitted invocation resolved it
+before reservation.
 
 Exact head `63600096cd8afe9f4435f6302c584f89dbdb5915` satisfied that `uv`
 boundary, passed the same three review lenses, complete private
@@ -130,11 +131,21 @@ installed `@floating-ui/core@1.7.5` notice was a Windows reparse point; that
 failure consumed the head.
 The exact lockfile, generated inventory, and MIT notice hash were already
 correct; the private checkout's default pnpm hardlink shared a reparse-tagged
-inode with the content store and another OneDrive-managed checkout. The next
-head must make forced, non-optimistic copied package imports part of the active
-manifest, begin private prequalification with an absent
-`desktop/node_modules`, and pass the complete release-contract cell from that
-copied private install before reservation.
+inode with the content store and another OneDrive-managed checkout. Exact head
+`d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` corrected that materialization,
+passed the same review, prequalification, admission, and 13-child private
+boundary, and reached `native.tests` in its one complete matrix. Every Rust test
+passed, but Visual Studio Build Tools retained its `vctip.exe` diagnostic helper
+inside the owned Windows Job, so the supervisor failed closed and consumed the
+head.
+The approved Build Tools `OptIn=0` change was applied and read back, but a clean
+default-MSVC link still launched Microsoft's signed `VCTIP.EXE` from
+`link.exe` and retained it beyond the five-second drain. Microsoft documents
+that VSCEIP opt-out disables optional diagnostics while required diagnostics
+remain unaffected. The successor therefore keeps strict Job containment for
+Yap runtime and ordinary candidate commands, requires the fail-closed
+optional-diagnostics registry preflight locally, and runs native compile/link
+evidence on the exact reviewed head in fresh GitHub-hosted Windows VMs.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -366,14 +377,43 @@ scanning, capacity/SLO promotion, and deployment evidence.
       pinned portable PowerShell process. Preserve its passing 13 private
       receipt children and failed one-shot release-contract cell without retry,
       completion, or relabeling.
-- [ ] Freeze and push a new exact head whose active dependency cell requires
+- [x] Freeze and push `d4adc832...`, whose active dependency cell requires
       `--force`, `--no-optimistic-repeat-install`, and
       `--package-import-method=copy`; begin from an absent private
       `desktop/node_modules`, hydrate it with those options, run the complete
       release-contract cell before reservation, then freshly package,
-      prequalify, and admit it once.
-- [ ] Run the complete applicable local/native/server/target-client/
-      private-server Phase 7 matrix exactly once for that admitted head.
+      prequalify, and admit it once. Preserve its passing 13 private receipt
+      children and failed one-shot native-test containment cell without retry,
+      completion, or relabeling: Visual Studio Build Tools retained its
+      `vctip.exe` diagnostic helper after every Rust test passed.
+- [x] Require the admission workstation to pass the read-only Build Tools
+      optional-diagnostics registry preflight before reservation and again in
+      the candidate manifest. The reader now roots helper resolution in the
+      kernel object-manager SystemRoot and rejects conflicting environment
+      roots before launch. Require all five CI closure jobs to explicitly check
+      out the reviewed head without persisted credentials and verify it before
+      and after execution on the declared fresh hosted OS. Use an absolute
+      no-space System32 bootstrap for the absolute Windows PowerShell host and
+      launch the absolute Linux host directly. Capture deterministic PowerShell
+      and Git executable identities, the exact guard source, the Git index, and
+      an index-independent tracked-content manifest during initial admission.
+      Final verification must reuse that shell chain, replay the verified guard
+      bytes in memory, reject hidden index state and linked tracked ancestors,
+      force Linux executable-bit comparison, rehash tracked content, and reuse
+      the admitted Git identity rather than resolving a mutable workspace helper
+      or post-project `PATH`. Bind native
+      formatting, Clippy, compilation, tests, dependency checks, and WDIO build
+      to the existing `rust` and `Native WDIO smoke (required, no hardware)`
+      `windows-latest` jobs. Keep connector and required WDIO runtime trees in
+      kill-on-close Jobs, prepopulate the locked Python environment, strip
+      GitHub credentials, verify the embedded WDIO build SHA, and require
+      active-process-zero evidence. Reject self-hosted or wrong-OS
+      substitution.
+- [ ] After focused verification and same-three exact-tree review, freeze,
+      push, package, prequalify, and admit one fresh successor.
+- [ ] Run the complete applicable local/server/target-client/private-server
+      candidate matrix exactly once for that admitted head, then require the
+      five exact-head CI cells exactly once in first-attempt hosted closure.
 - [ ] Open a focused PR; require first-attempt hosted CI, CodeQL, and
       disposable-Windows stock-NSIS closure on the checked head, or record
       equivalent local evidence and explicitly disclose unavailable hosted
@@ -447,10 +487,10 @@ contracts, and the actual canonical/root-owned GB10 executable proof, with
 three-lens GO and no P0–P2 finding. These are focused development results, not
 the reserved complete Phase 7 matrix or hosted first-attempt evidence.
 
-The next exact head must also prequalify the private connected-server
-controller against absent and zero-length redirected stdout files. Both states
-must remain ordinary not-ready observations rather than `$null` method calls,
-and that no-server preflight must finish before admission.
+The consumed `d4adc832...` prequalification also exercised the private
+connected-server controller against absent and zero-length redirected stdout
+files. Both states remained ordinary not-ready observations rather than
+`$null` method calls, and that no-server preflight finished before admission.
 
 The remote wrapper must emit cleanup PASS only when its trigger status is the
 expected TERM result, every checked process-group helper succeeds, and final

@@ -28,11 +28,20 @@ three review lenses, complete prequalification, admission, and all 13 private
 receipt children, then was consumed when its one complete matrix rejected a
 reparse-tagged installed JavaScript notice. The repository lock, inventory,
 and MIT notice were exact; the private checkout's default pnpm hardlink shared
-the reparse-tagged content-store inode. The next exact head must retain the
-runtime repairs, require forced non-optimistic copied package imports in the
-active manifest, begin private prequalification with an absent
-`desktop/node_modules`, and pass the complete release-contract cell from that
-copied private install before the full phase gate, PR closure, and merge.
+the reparse-tagged content-store inode. Exact head
+`d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` corrected that materialization,
+passed all 13 private children, and reached native tests in its one complete
+matrix. Every Rust test passed, but the supported MSVC toolchain retained its
+`vctip.exe` helper inside the owned Windows Job and correctly consumed the
+head. The approved `OptIn=0` change did not prevent signed `VCTIP.EXE` from
+being launched by `link.exe`, consistent with Microsoft's required-diagnostics
+exception. The successor keeps strict Job containment for Yap runtime and
+ordinary candidate commands, resolves the optional-diagnostics reader through
+the kernel object-manager SystemRoot, and executes native compile/link evidence
+outside the product Job on the exact reviewed head in fresh GitHub-hosted
+Windows VMs before merge. Connector and required WDIO runtime trees on those
+VMs remain Job-contained and must prove zero active processes; the running WDIO
+binary also reports the reviewed build SHA.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -673,13 +682,26 @@ before reservation. Exact head `63600096...` satisfied that boundary and passed
 all four admitted private controllers plus independent validation of all 13
 private receipt children. Its one complete matrix then correctly rejected a
 reparse-tagged installed JavaScript notice produced by default pnpm hardlink
-materialization. The next manifest requires forced non-optimistic copied
-package imports, private prequalification starts with an absent
-`desktop/node_modules`, and the complete release-contract cell must pass from
-that copied private install before reservation.
-Fresh successor prequalification, admission, the full Phase 7 gate, hosted PR
-closure, and merge remain open. Real IT-provided Entra/Conditional Access
-policy and an approved native adapter remain external conformance work.
+materialization. Exact head `d4adc832...` corrected that boundary and passed
+fresh review, prequalification, admission, all four private controllers, and
+independent validation of all 13 private receipt children. Its one complete
+matrix passed every Rust test, then failed because the owned Windows Job
+retained the Build Tools `vctip.exe` helper. The approved optional-diagnostics
+opt-out was applied and verified, but a clean link still launched signed
+`VCTIP.EXE` from `link.exe`. The next manifest verifies that local
+optional-diagnostics setting with a fail-closed 64-bit registry-API read whose
+helper path is rooted in the kernel object-manager SystemRoot. Native
+formatting, Clippy, compilation, tests, dependency checks, and the WDIO build
+move outside the product Job to exact-head clean GitHub-hosted Windows jobs
+whose VMs are decommissioned after execution. Actual connector and required
+WDIO runtime trees remain in kill-on-close Jobs, run without GitHub
+credentials, and must prove assigned-before-resume plus active-process-zero.
+The fresh runner is populated from the locked Python 3.12 environment before
+the connector's offline recheck, and the running WDIO binary must report the
+reviewed build SHA. Fresh successor review, prequalification, admission, the
+candidate gate, hosted native/PR closure, and merge remain open. Real
+IT-provided Entra/Conditional
+Access policy and an approved native adapter remain external conformance work.
 
 ## Accepted meeting direction, not current execution
 
@@ -754,7 +776,26 @@ disposable Windows environment.
 
 Focused suites protect each extraction. Browser automation allocates an
 OS-selected loopback port, and native restart automation terminates only its
-exact isolated app process before bounded session cleanup. The full
-local/native/server/GB10 matrix runs once only after an exact phase/checkpoint
-implementation head is ready. Hosted CI and disposable installer automation
-then verify the final PR head before merge.
+exact isolated app process before bounded session cleanup. Phase 7 runs its
+local/server/target-client/private-server candidate matrix once after an exact
+head is ready. Every required CI closure job explicitly checks out that head
+without persisted credentials and verifies the checkout before and after
+project execution on its declared fresh hosted OS. Windows uses an absolute
+no-space System32 bootstrap to stream the runner's extensionless temporary
+script into the absolute PowerShell host; Linux starts that PowerShell host
+directly. The initial proof captures PowerShell, one
+deterministic Git application, the exact guard source, the Git index, and an
+index-independent tracked-content manifest with their hashes. The final proof
+reuses that absolute shell chain, verifies and executes the admitted guard bytes
+in memory, rejects hidden index flags and linked tracked ancestors, forces Linux
+executable-bit comparison, rehashes every tracked file, and reuses the admitted
+Git identity; it does not resolve a mutable workspace helper or post-project
+`PATH`. Native formatting, Clippy,
+compilation, tests, dependency checks, and build run normally on that exact
+reviewed head in required fresh GitHub-hosted Windows jobs. Connector and
+required WDIO runtime trees run there
+under the same kill-on-close Job supervisor used by candidate commands and
+must finish with zero active processes. Hosted CodeQL and disposable installer
+automation complete the closure before merge. The fresh VM is the lifecycle
+boundary for Microsoft build-tool helpers; it is not the product runtime
+cleanup mechanism.

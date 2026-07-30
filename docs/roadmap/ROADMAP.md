@@ -135,9 +135,29 @@ desktop exposes only a narrow in-process token-provider seam; no production
 adapter is selected or approved. There is no live ASR, product endpoint
 discovery, external same-origin WSS/TLS, or HTTP/3 edge.
 
-This is implementation progress, not phase completion. The pinned mock OIDC
-flow is focused-green, while hosted Docker execution, final review, the one
-admitted complete matrix, hosted PR closure, and merge remain required. Real
+This is implementation progress, not phase completion. Exact head `d4adc832...`
+passed all four admitted private controllers and independent validation of all
+13 private children. Its sole complete matrix passed every Rust test, then
+failed closed because Visual Studio Build Tools retained its signed
+`VCTIP.EXE` diagnostic helper inside the owned Windows Job. The head is
+consumed. The current successor retains
+strict process containment for launched Yap server/desktop runtime checks,
+requires the documented Build Tools optional-diagnostics opt-out through a
+fail-closed registry read rooted through the Windows object manager, and moves
+native compile/link evidence outside the product Job to exact-head fresh
+GitHub-hosted Windows VMs. Connector and required WDIO runtime execution on
+those VMs remains inside a kill-on-close Job and must prove zero active
+processes. Every required hosted closure cell uses its absolute shell chain and
+captures its PowerShell and Git hosts, guard source, Git index, and
+index-independent tracked-content manifest with hashes, then verifies tracked
+state by replaying that admitted guard in memory after project execution.
+Hidden index state, linked tracked ancestors, Linux executable-bit drift,
+mutable workspace code, and a re-resolved `PATH` cannot satisfy the receipt.
+This reflects the observed signed
+`link.exe` → `VCTIP.EXE` behavior after `OptIn=0` and Microsoft's documented
+required-diagnostics exception; it does not weaken product process ownership.
+Fresh exact-tree review, private admission/evidence, the one candidate matrix,
+first-attempt hosted native/PR closure, and merge remain required. Real
 enterprise Entra policy conformance and an approved native adapter remain
 IT-authorized follow-ups.
 

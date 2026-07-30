@@ -152,6 +152,31 @@ inode with the content store and another OneDrive-managed checkout, where the
 Microsoft reparse tag had become visible. Do not retry, complete, or relabel
 this head.
 
+Exact head `d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` replaced the
+hardlinked dependency materialization with a forced copied-package install,
+passed the same three review lenses, complete private prequalification,
+GitHub-backed admission, all four admitted private controllers, and independent
+validation of all 13 private receipt children. Its one complete matrix passed
+the frontend cells, native formatting, and strict Clippy. All Rust tests in
+`native.tests` then passed, but Visual Studio Build Tools left its `vctip.exe`
+diagnostic helper inside the owned Windows Job beyond the
+five-second natural drain. The supervisor terminated the Job and correctly
+consumed the head. A longer drain is not an acceptable substitute: a focused
+default-linker probe reproduced the helper for more than two minutes.
+Bundled Rust LLD was rejected because this graph's SQLite and AWS-LC native
+archives did not link correctly and native compilation still invoked the
+Microsoft helper. Do not retry, complete, or relabel this head.
+
+The approved Build Tools `OptIn=0` change was then applied and read back
+successfully. A clean default-MSVC link still launched Microsoft's signed
+`VCTIP.EXE` from `link.exe` and retained it beyond the Job drain. This matches
+Microsoft's documented boundary: VSCEIP opt-out disables optional diagnostic
+collection, while required diagnostic collection is unaffected. The successor
+therefore does not delete or replace Microsoft binaries, extend the drain, or
+teach Yap's runtime supervisor about compiler-specific exceptions. It keeps
+strict descendant cleanup for Yap runtime processes and moves native
+compile/link evidence to fresh GitHub-hosted Windows VMs.
+
 The implementation boundary retains assigned-before-resume,
 kill-on-close, immediate
 explicit termination, authoritative accounting-zero proof, frozen per-cell
@@ -186,20 +211,22 @@ removal. Before any container mutation, the proxy resolves the PATH-selected
 executable target. All 14 focused proxy contracts and the actual qualified GB10
 mapping to root-owned `/usr/bin/socat1` pass.
 
-Three-lens exact-tree closure for the next successor, forced non-optimistic
+Three-lens exact-tree closure for the current successor, forced non-optimistic
 copied-package prequalification, fresh exact-head private-controller packaging,
 admission, fresh private evidence, the one complete replacement matrix,
 first-attempt hosted closure, the focused PR, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
-It retains the complete frontend, native, server, target-client, GB10, and
-desktop-to-private-server matrix. The local inventory includes the
-receipt-backed mock-OIDC owner flow, and hosted closure includes the dedicated
-`mock-oidc` job. That Ubuntu job also runs the Linux pidfd/supervisor,
-resident-lifecycle, and proxy behavior suites with skips converted to
-failures. No production desktop-provider job is listed because no production
-provider is selected or shipped.
+It splits the complete required evidence across the admitted candidate and
+hosted closure. The local inventory retains frontend, server, target-client,
+GB10, desktop-to-private-server, optional-diagnostics, and receipt-backed
+mock-OIDC behavior. Native compilation and WDIO evidence execute in the
+required disposable hosted Windows jobs. Hosted closure also includes the
+dedicated `mock-oidc` job; that Ubuntu job runs the Linux pidfd/supervisor,
+resident-lifecycle, and proxy behavior suites with skips converted to failures.
+No production desktop-provider job is listed because no production provider is
+selected or shipped.
 
 ## Evidence boundary
 
@@ -285,6 +312,90 @@ private plan. A hash-verified portable PowerShell archive may be prepared
 privately on that executor; it is gate tooling, not a Yap runtime dependency.
 Do not discover a missing executor dependency after admission and then retry
 the same checked head.
+
+On the local Windows admission workstation, configure Visual Studio Build Tools
+to opt out of the optional Visual Studio Customer Experience Improvement
+Program before reservation.
+[Microsoft documents the Build Tools configuration](https://learn.microsoft.com/en-us/visualstudio/ide/visual-studio-experience-improvement-program?view=visualstudio)
+through the `OptIn` DWORD: Group Policy at
+`HKLM\Software\Policies\Microsoft\VisualStudio\SQM` takes precedence; otherwise
+Visual Studio 2022 uses
+`HKLM\SOFTWARE\Wow6432Node\Microsoft\VSCommon\17.0\SQM`. The effective value
+must be `0`. This disables optional collection only; it does not claim that
+Microsoft's required diagnostics are disabled. Yap does not modify machine
+policy during a gate. Prequalify the exact workstation with:
+
+```powershell
+node .\verification\verify-windows-build-tools-optional-diagnostics-opt-out.mjs
+if ($LASTEXITCODE -ne 0) {
+    throw 'Build Tools optional-diagnostics prerequisite failed.'
+}
+```
+
+Require
+`WINDOWS_BUILD_TOOLS_OPTIONAL_DIAGNOSTICS=disabled:policy` or
+`WINDOWS_BUILD_TOOLS_OPTIONAL_DIAGNOSTICS=disabled:installation`. The registry
+reader uses the 64-bit .NET registry API, distinguishes an absent key/value
+from an unreadable one, requires an actual DWORD, and rejects access, schema,
+type, or process failures without falling back from policy to installation
+state. It resolves the inbox Windows PowerShell executable through the kernel
+object-manager `GLOBALROOT\SystemRoot` alias, derives the real OS root from
+that executable, and rejects a conflicting `SystemRoot` or `WINDIR` before
+process launch.
+
+The `begin` operation reruns this optional-diagnostics prerequisite before it reserves remote
+GitHub admission status, then rechecks the clean head. The candidate manifest
+repeats it as
+`windows.build-tools-optional-diagnostics-disabled`. Native formatting,
+Clippy, compilation, tests, dependency checks, and the WDIO build do not run
+inside the persistent admission workstation's command Jobs. They execute on
+the exact reviewed pull-request head in the required `rust` and `Native WDIO
+smoke (required, no hardware)` CI jobs. The connector integrations and
+required WDIO specs also execute there, but their actual Yap server/desktop
+runtime trees remain inside the repository's kill-on-close Windows Job
+wrapper.
+
+Every CI job named by `hostedClosureCells`—`frontend`, `rust`, required native
+WDIO, `server`, and `mock-oidc`—must:
+
+- check out `${{ github.event.pull_request.head.sha || github.sha }}`;
+- disable persisted checkout credentials;
+- reject any runner whose `runner.environment` is not `github-hosted`;
+- prove the checkout head and clean worktree before project setup or execution;
+- on Windows, use the no-space absolute System32 command bootstrap to stream
+  the runner's extensionless temporary script into the declared absolute
+  PowerShell host; on Linux, launch that PowerShell host directly. Then select
+  the first resolved Git application deterministically and capture the
+  PowerShell and Git paths and SHA-256 identities;
+- capture the exact checkout-guard bytes/hash, Git-index hash, and an
+  index-independent manifest that hashes every tracked file as initial step
+  outputs;
+- use `windows-latest` for the four Windows jobs and `ubuntu-latest` for the
+  Linux mock-OIDC lifecycle; and
+- prove tracked source and the index remain unchanged after execution by
+  using the same absolute shell chain, verifying and executing the admitted
+  guard bytes in memory, rejecting hidden index flags and linked tracked
+  ancestors, forcing Linux executable-bit comparison, rehashing the
+  tracked-content manifest, and reusing the admitted Git path/hash. The final
+  step must not reread the mutable workspace helper or resolve a shell or Git
+  from post-project `PATH`.
+
+The two native jobs additionally must:
+
+- bind `YAP_CHECKED_HEAD` to that expression and verify the running WDIO binary
+  reports the same embedded SHA;
+- populate the locked Python 3.12 server environment online before connector
+  scripts reverify it offline on the fresh runner;
+- run connector and required WDIO runtime profiles without GitHub credentials,
+  with a private bounded command log, and require assigned-before-resume plus
+  active-process-zero Job evidence.
+
+[GitHub documents](https://docs.github.com/en/actions/how-tos/manage-runners/github-hosted-runners/use-github-hosted-runners)
+that each such job receives a new VM and that the VM is decommissioned when the
+job finishes. That disposable VM is the lifecycle boundary for Microsoft build
+helpers. The Job wrapper remains the lifecycle boundary for launched Yap
+runtime and rejects even a non-listening retained descendant. A persistent
+self-hosted runner is not an equivalent substitute.
 
 On the exact clean Windows admission workstation, qualify the checked-head
 command supervisor before reservation:
