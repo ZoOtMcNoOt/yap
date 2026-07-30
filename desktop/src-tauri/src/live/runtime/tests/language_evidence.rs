@@ -81,7 +81,7 @@ fn stop_persists_worker_language_evidence_before_recording_finalization() {
             })
             .unwrap();
         }
-        StreamMessage::Samples { .. } => panic!("expected a finish message"),
+        StreamMessage::PreparedFrames { .. } => panic!("expected a finish message"),
     });
 
     {

@@ -21,6 +21,7 @@ pub(super) struct LocalStreamDurationEvidence {
     pub(super) logical_processor_budget: usize,
     pub(super) sample_rate_hz: u32,
     pub(super) paced_frame_samples: usize,
+    pub(super) queue_capacity_frames: usize,
     pub(super) measurement_boundary: &'static str,
     pub(super) adapter_drain_target_ms: u128,
     pub(super) adapter_drain_timeout_ms: u128,

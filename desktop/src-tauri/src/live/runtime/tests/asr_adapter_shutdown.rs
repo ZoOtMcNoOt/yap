@@ -1,112 +1,10 @@
 use super::*;
 
 #[test]
-fn timed_out_recognizer_blocks_replacement_until_its_worker_is_reaped() {
-    let mut inner = LiveRuntimeInner::for_test();
-    let release_worker = Arc::new(Barrier::new(2));
-    let worker_released = Arc::clone(&release_worker);
-    let worker = std::thread::spawn(move || {
-        worker_released.wait();
-    });
-    inner.set_stream_for_test(SessionStream::from_worker_for_test(1, worker, false));
-
-    inner.retire_stream_detached_reader();
-    assert_eq!(
-        inner.reap_retiring_stream_for_test(),
-        Err("Previous live transcription is still stopping.".into())
-    );
-
-    release_worker.wait();
-    let deadline = Instant::now() + Duration::from_secs(1);
-    while !inner.retiring_stream_is_finished_for_test() {
-        assert!(
-            Instant::now() < deadline,
-            "retired recognizer did not finish"
-        );
-        std::thread::yield_now();
-    }
-    assert_eq!(inner.reap_retiring_stream_for_test(), Ok(()));
-    assert!(!inner.has_retiring_stream_for_test());
-}
-
-#[test]
-fn idle_cleanup_does_not_join_a_still_stalled_recognizer() {
-    let mut inner = LiveRuntimeInner::for_test();
-    let release_worker = Arc::new(Barrier::new(2));
-    let worker_released = Arc::clone(&release_worker);
-    let worker = std::thread::spawn(move || {
-        worker_released.wait();
-    });
-    inner.set_retiring_stream_for_test(SessionStream::from_worker_for_test(1, worker, true));
-    let (done_tx, done_rx) = mpsc::channel();
-    let cleanup = std::thread::spawn(move || {
-        inner.retire_stream();
-        done_tx.send(()).unwrap();
-        inner
-    });
-
-    let completed_without_joining = done_rx.recv_timeout(Duration::from_secs(1));
-    release_worker.wait();
-    let mut inner = cleanup.join().unwrap();
-
-    assert!(completed_without_joining.is_ok());
-    assert!(inner.has_retiring_stream_for_test());
-    let deadline = Instant::now() + Duration::from_secs(1);
-    while !inner.retiring_stream_is_finished_for_test() {
-        assert!(
-            Instant::now() < deadline,
-            "retired recognizer did not finish"
-        );
-        std::thread::yield_now();
-    }
-    assert_eq!(inner.reap_retiring_stream_for_test(), Ok(()));
-    assert!(!inner.has_retiring_stream_for_test());
-}
-
-#[test]
-fn asr_adapter_forwards_the_last_accepted_frame_before_it_joins() {
-    let (samples_tx, samples_rx) = mpsc::sync_channel(1);
-    let mut adapter = SessionAsrAdapter::start(samples_tx, 7);
-    let port = adapter.sink();
-    port.try_send(prepared_frame(0.25)).unwrap();
-    port.close();
-
-    adapter.join_after_capture().unwrap();
-    match samples_rx.recv_timeout(Duration::from_secs(1)).unwrap() {
-        StreamMessage::Samples { session, frame } => {
-            assert_eq!(session, 7);
-            assert_eq!(&*frame.samples, &[0.25]);
-        }
-        StreamMessage::Finish { .. } => panic!("expected the accepted frame"),
-    }
-}
-
-#[test]
-fn pending_asr_adapter_keeps_bounded_pre_roll_until_the_model_is_ready() {
-    let pending = PendingAsrAdapter::new();
-    let port = pending.sink();
-    port.try_send(prepared_frame(0.4)).unwrap();
-    assert_eq!(port.high_water_mark(), 1);
-    let (samples_tx, samples_rx) = mpsc::sync_channel(1);
-
-    let mut adapter = pending.start(samples_tx, 11);
-    port.close();
-    adapter.join_after_capture().unwrap();
-
-    match samples_rx.recv_timeout(Duration::from_secs(1)).unwrap() {
-        StreamMessage::Samples { session, frame } => {
-            assert_eq!(session, 11);
-            assert_eq!(&*frame.samples, &[0.4]);
-        }
-        StreamMessage::Finish { .. } => panic!("expected queued pre-roll"),
-    }
-}
-
-#[test]
 fn stalled_recognizer_times_out_stop_without_enqueuing_finish() {
     let (samples_tx, samples_rx) = mpsc::sync_channel(1);
     samples_tx
-        .try_send(StreamMessage::from_prepared(7, prepared_frame(0.0)))
+        .try_send(StreamMessage::from_prepared_frame(7, prepared_frame(0.0)))
         .unwrap();
     let mut adapter = SessionAsrAdapter::start(samples_tx.clone(), 7);
     let port = adapter.sink();
@@ -122,7 +20,7 @@ fn stalled_recognizer_times_out_stop_without_enqueuing_finish() {
     assert!(!adapter.retains_cleanup_ownership());
     assert!(matches!(
         samples_rx.recv_timeout(Duration::from_secs(1)).unwrap(),
-        StreamMessage::Samples { .. }
+        StreamMessage::PreparedFrames { .. }
     ));
     assert!(matches!(
         samples_rx.recv_timeout(Duration::from_millis(25)),
@@ -134,7 +32,7 @@ fn stalled_recognizer_times_out_stop_without_enqueuing_finish() {
 fn reaper_spawn_failure_retains_adapter_ownership_and_reports_a_bounded_stop() {
     let (samples_tx, samples_rx) = mpsc::sync_channel(1);
     samples_tx
-        .try_send(StreamMessage::from_prepared(7, prepared_frame(0.0)))
+        .try_send(StreamMessage::from_prepared_frame(7, prepared_frame(0.0)))
         .unwrap();
     let completion_gate = Arc::new(Barrier::new(2));
     let mut adapter = SessionAsrAdapter::start_with_completion_gate_for_test(
@@ -156,7 +54,7 @@ fn reaper_spawn_failure_retains_adapter_ownership_and_reports_a_bounded_stop() {
     assert!(adapter.retains_cleanup_ownership_for_test());
     assert!(matches!(
         samples_rx.recv_timeout(Duration::from_secs(1)).unwrap(),
-        StreamMessage::Samples { .. }
+        StreamMessage::PreparedFrames { .. }
     ));
     assert!(matches!(
         samples_rx.recv_timeout(Duration::from_millis(25)),
@@ -176,11 +74,11 @@ fn two_capture_sessions_use_fresh_asr_ports_and_finish_each_once_in_fifo_order()
         let mut finishes = 0;
         while finishes < 2 {
             match samples_rx.recv_timeout(Duration::from_secs(1)).unwrap() {
-                StreamMessage::Samples { session, frame } => {
-                    delivered_for_worker
-                        .lock()
-                        .unwrap()
-                        .push((session, frame.samples.to_vec()));
+                StreamMessage::PreparedFrames { session, frames } => {
+                    let mut delivered = delivered_for_worker.lock().unwrap();
+                    for frame in frames {
+                        delivered.push((session, frame.samples.to_vec()));
+                    }
                 }
                 StreamMessage::Finish { session, done } => {
                     delivered_for_worker

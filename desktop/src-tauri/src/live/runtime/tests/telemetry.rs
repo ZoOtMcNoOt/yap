@@ -76,9 +76,13 @@ fn stream_finisher_reports_backed_up_channel() {
     let (samples_tx, _samples_rx) = mpsc::sync_channel(0);
     let finisher = StreamFinisher::new(samples_tx, 1);
 
-    let status = finisher.finish_session();
+    let started = Instant::now();
+    let status = finisher
+        .finish_session_report_for_test(Duration::from_millis(25), Duration::from_millis(25))
+        .status;
 
     assert_eq!(status, StreamFinishStatus::BackedUp);
+    assert!(started.elapsed() < Duration::from_millis(250));
     assert!(status.should_retire_stream());
     assert!(status.should_report());
 }
@@ -87,12 +91,12 @@ fn stream_finisher_reports_backed_up_channel() {
 fn stream_finisher_waits_briefly_for_queue_space() {
     let (samples_tx, samples_rx) = mpsc::sync_channel(1);
     samples_tx
-        .try_send(StreamMessage::from_prepared(42, prepared_frame(1.0)))
+        .try_send(StreamMessage::from_prepared_frame(42, prepared_frame(1.0)))
         .unwrap();
     let worker = std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(30));
         match samples_rx.recv().unwrap() {
-            StreamMessage::Samples { session, .. } => assert_eq!(session, 42),
+            StreamMessage::PreparedFrames { session, .. } => assert_eq!(session, 42),
             StreamMessage::Finish { .. } => panic!("expected queued samples first"),
         }
         match samples_rx.recv().unwrap() {
@@ -100,7 +104,7 @@ fn stream_finisher_waits_briefly_for_queue_space() {
                 assert_eq!(session, 42);
                 done.send(StreamFinishStatus::Completed.into()).unwrap();
             }
-            StreamMessage::Samples { .. } => panic!("expected finish message"),
+            StreamMessage::PreparedFrames { .. } => panic!("expected finish message"),
         }
     });
     let finisher = StreamFinisher::new(samples_tx, 42);
@@ -120,7 +124,7 @@ fn stream_finisher_reports_completed_channel() {
             assert_eq!(session, 42);
             done.send(StreamFinishStatus::Completed.into()).unwrap();
         }
-        StreamMessage::Samples { .. } => panic!("expected finish message"),
+        StreamMessage::PreparedFrames { .. } => panic!("expected finish message"),
     });
     let finisher = StreamFinisher::new(samples_tx, 42);
 
@@ -129,6 +133,34 @@ fn stream_finisher_reports_completed_channel() {
     assert_eq!(status, StreamFinishStatus::Completed);
     assert!(!status.should_retire_stream());
     assert!(!status.should_report());
+    worker.join().unwrap();
+}
+
+#[test]
+fn stream_finisher_reports_acknowledgement_timeout_separately_from_queue_backup() {
+    let (samples_tx, samples_rx) = mpsc::sync_channel(1);
+    let (finish_reached_tx, finish_reached_rx) = mpsc::channel();
+    let (release_finish_tx, release_finish_rx) = mpsc::channel();
+    let worker = std::thread::spawn(move || match samples_rx.recv().unwrap() {
+        StreamMessage::Finish { session, done } => {
+            assert_eq!(session, 42);
+            finish_reached_tx.send(()).unwrap();
+            release_finish_rx.recv().unwrap();
+            drop(done);
+        }
+        StreamMessage::PreparedFrames { .. } => panic!("expected a finish message"),
+    });
+    let finisher = StreamFinisher::new(samples_tx, 42);
+
+    let status = finisher
+        .finish_session_report_for_test(Duration::from_millis(50), Duration::from_millis(25))
+        .status;
+
+    assert_eq!(status, StreamFinishStatus::TimedOut);
+    finish_reached_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    release_finish_tx.send(()).unwrap();
     worker.join().unwrap();
 }
 

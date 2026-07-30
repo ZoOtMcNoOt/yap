@@ -145,6 +145,7 @@ fn local_stream_duration_ladders_preserve_audio_and_finalize() {
         logical_processor_budget,
         sample_rate_hz: SAMPLE_RATE_HZ,
         paced_frame_samples: PACED_FRAME_SAMPLES,
+        queue_capacity_frames: crate::audio::coordinator::LOCAL_ASR_QUEUE_CAPACITY,
         measurement_boundary: "desktop-prepared-audio-frame-to-final",
         adapter_drain_target_ms: ADAPTER_DRAIN_TARGET.as_millis(),
         adapter_drain_timeout_ms: ASR_ADAPTER_DRAIN_TIMEOUT.as_millis(),
@@ -235,11 +236,13 @@ fn run_duration_case(
         .duration_samples
         .div_ceil(PACED_FRAME_SAMPLES as u64);
     let text_seen = observed.partial_updates > 0 || observed.final_updates > 0;
+    let adapter_drain_target_met = adapter_drain_target_met(drain, adapter_drain_ms);
     let passed = source_samples == definition.duration_samples
         && outcome.accepted_frames == expected_frames
         && outcome.dropped_frames == 0
         && processing.audio_samples as u64 == definition.duration_samples
         && report.status == StreamFinishStatus::Completed
+        && adapter_drain_target_met
         && !observed.language_degraded
         && !observed.transcription_unavailable
         && (!definition.expect_text || text_seen);
@@ -257,7 +260,7 @@ fn run_duration_case(
         source_overrun_ms: source_wall_ms.saturating_sub(u128::from(audio_ms)),
         adapter_status: adapter_drain_status_name(drain),
         adapter_drain_ms,
-        adapter_drain_target_met: adapter_drain_target_met(drain, adapter_drain_ms),
+        adapter_drain_target_met,
         finalization_ms,
         processed_audio_samples: processing.audio_samples,
         decode_chunks: processing.chunks,

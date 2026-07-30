@@ -297,7 +297,7 @@ fn stop_finalizes_before_a_concurrent_start_activates_the_next_session() {
         let mut expected_session = 1;
         while expected_session <= 2 {
             match samples_rx.recv_timeout(Duration::from_secs(1)).unwrap() {
-                StreamMessage::Samples { session, .. } => {
+                StreamMessage::PreparedFrames { session, .. } => {
                     assert_eq!(session, expected_session);
                 }
                 StreamMessage::Finish { session, done } => {

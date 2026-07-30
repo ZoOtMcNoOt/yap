@@ -38,6 +38,7 @@ use asr_adapter::set_reaper_spawn_failure_for_test;
 #[cfg(test)]
 use asr_adapter::{
     AdapterDrainStatus, PendingAsrAdapter, SessionAsrAdapter, ASR_ADAPTER_DRAIN_TIMEOUT,
+    ASR_ADAPTER_MAX_BATCH_FRAMES,
 };
 #[cfg(test)]
 use capture_worker::*;

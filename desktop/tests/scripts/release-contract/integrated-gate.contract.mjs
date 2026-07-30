@@ -2075,6 +2075,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
       measurementBoundary: "desktop-prepared-audio-frame-to-final",
       adapterDrainTargetMs: 6_000,
       adapterDrainTimeoutMs: 12_000,
+      queueCapacityFrames: 1_024,
       logicalProcessorBudget: os.cpus().length,
       allCasesPassed: true,
       cases: durations.map((durationMs) => ({
@@ -2087,6 +2088,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
         adapterStatus: "drained",
         droppedFrames: 0,
         processedAudioSamples: durationMs * 16,
+        queueHighWaterMark: 1,
         streamStatus: "completed",
         passed: true,
         languageDegraded: false,
