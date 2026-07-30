@@ -31,7 +31,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
-| Phase 7: identity/access | Active; admitted controller correction requires a new exact head | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Provider-neutral OIDC/Entra policy, tenant-scoped ownership, purpose authorization, protected readiness, authenticated bounded private WebSocket admission, and the native lower handshake execute under focused tests. The desktop still has no selected production token adapter. Exact head `c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` was consumed when its first admitted controller over-constrained the safe fixed receipt ancestor. Exact head `dece4265e052d775d2d11f1883cd8cc4b2b25191` corrected and reviewed that boundary, passed complete private prequalification and GitHub-backed admission, then was consumed when its first admitted mock-OIDC controller entered portable PowerShell under a non-interactive SSH `PATH` that excluded the reviewed absolute `uv` executable. The locked `uv sync` command and owner flow never started; the per-head directory existed but the receipt remained absent. Neither head may be retried or completed. The next exact head must preserve the corrected owner-only receipt boundary, authenticate the complete absolute `uv` directory chain and executable, and prove the identical non-interactive controller resolves that exact path before admission. |
+| Phase 7: identity/access | Active; copied-dependency successor required | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Provider-neutral OIDC/Entra policy, tenant-scoped ownership, purpose authorization, protected readiness, authenticated bounded private WebSocket admission, and the native lower handshake execute under focused tests. The desktop still has no selected production token adapter. Exact head `63600096cd8afe9f4435f6302c584f89dbdb5915` corrected the earlier admitted `uv` boundary, passed the same three review lenses, complete private prequalification, GitHub-backed admission, all four admitted private controllers, and independent validation of all 13 private receipt children. Its one complete matrix failed when `frontend.release-contracts` correctly rejected a reparse-tagged installed `@floating-ui/core@1.7.5` notice; that failure consumed the head. The lockfile, generated inventory, and MIT notice hash were already exact; the private checkout's default pnpm hardlink shared the reparse-tagged content-store inode with another OneDrive-managed checkout. Do not retry or complete that head. The next exact head must require forced non-optimistic copied package imports in the active manifest, begin private prequalification with an absent `desktop/node_modules`, and pass the complete release-contract cell from the copied private install before admission. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -390,12 +390,24 @@ ownership.
   resolves the selected command to its absolute regular executable, retains
   the canonical language-routing no-op, and accepts a safe receipt ancestor.
   Focused tests, the real GB10 link/owner/mode proof, and its three-lens review
-  passed before its later private-controller failure. The next exact head must
-  retain those repairs, authenticate every real component of the selected
-  absolute `uv` path plus the executable, and prove the identical
-  non-interactive controller resolves that authenticated path before
-  reservation. Fresh successor prequalification/admission/evidence, the one
-  replacement phase gate, hosted PR closure, and merge remain open. Persistent
+  passed before its later private-controller failure. Exact head
+  `63600096cd8afe9f4435f6302c584f89dbdb5915` retained those repairs,
+  authenticated and resolved the absolute `uv` path, passed complete
+  prequalification, admission, all four private controllers, and independent
+  validation of all 13 private receipt children. Its one complete matrix then
+  failed in `frontend.release-contracts`: the installed
+  `@floating-ui/core@1.7.5` `LICENSE` was a Windows reparse point because the
+  private checkout's default pnpm hardlink shared a content-store inode with
+  another OneDrive-managed checkout. The repository lock, inventory, and MIT
+  notice hash were already exact, so the failure is preserved as
+  package-materialization evidence rather than misreported as license drift.
+  The next exact head must retain the runtime repairs, require `--force`,
+  `--no-optimistic-repeat-install`, and `--package-import-method=copy` in the
+  active manifest, begin with an absent private `desktop/node_modules`, hydrate
+  the checkout with copied package files, and pass the complete
+  release-contract cell before reservation. Fresh successor
+  prequalification/admission/evidence, the one replacement phase gate, hosted
+  PR closure, and merge remain open. Persistent
   warm model
   services, multi-worker and mixed live/batch capacity promotion, production
   supervision/observability, and external deployment remain Phase 10 gates;
@@ -633,10 +645,16 @@ provider optimization or non-blocking architecture work.
    failed before the locked `uv sync` command or owner flow because portable
    PowerShell could not resolve the reviewed `uv` path under non-interactive
    SSH. Its per-head directory existed, but its receipt remained absent.
-5. Freeze and prequalify one new exact head that retains the corrected receipt
-   ancestry, authenticates every real component of the selected absolute `uv`
-   path plus the executable, and proves the exact non-interactive admitted
-   invocation resolves it before reservation. Then reserve one fresh admission.
+   `63600096...` retained those repairs and passed review, prequalification,
+   admission, every private child, and independent 13-child validation, but its
+   one complete matrix correctly rejected a reparse-tagged installed notice
+   produced by default pnpm hardlink materialization. Preserve it without retry.
+5. Freeze and prequalify one new exact head whose active manifest requires
+   forced non-optimistic copied package imports. Begin with an absent private
+   `desktop/node_modules`, hydrate it with `--force`,
+   `--no-optimistic-repeat-install`, and `--package-import-method=copy`, run
+   the complete release-contract cell before reservation, then reserve one
+   fresh admission.
    The user explicitly authorized transient use of the existing GitHub CLI
    credential because a separate least-privilege status token is unavailable;
    do not print, persist, or pass it into command cells, and record the

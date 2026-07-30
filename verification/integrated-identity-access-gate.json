@@ -20,7 +20,10 @@
         "corepack",
         "pnpm@11.7.0",
         "install",
-        "--frozen-lockfile"
+        "--frozen-lockfile",
+        "--force",
+        "--no-optimistic-repeat-install",
+        "--package-import-method=copy"
       ],
       "timeoutMs": 1800000
     },

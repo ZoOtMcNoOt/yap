@@ -121,6 +121,21 @@ retain the safe owner-only receipt boundary, authenticate every real component
 of the selected absolute `uv` path plus the executable, and prove that the
 identical non-interactive admitted invocation resolves it before reservation.
 
+Exact head `63600096cd8afe9f4435f6302c584f89dbdb5915` satisfied that `uv`
+boundary, passed the same three review lenses, complete private
+prequalification, GitHub-backed admission, all four admitted private
+controllers, and independent validation of all 13 private receipt children.
+Its one complete matrix failed in `frontend.release-contracts` because the
+installed `@floating-ui/core@1.7.5` notice was a Windows reparse point; that
+failure consumed the head.
+The exact lockfile, generated inventory, and MIT notice hash were already
+correct; the private checkout's default pnpm hardlink shared a reparse-tagged
+inode with the content store and another OneDrive-managed checkout. The next
+head must make forced, non-optimistic copied package imports part of the active
+manifest, begin private prequalification with an absent
+`desktop/node_modules`, and pass the complete release-contract cell from that
+copied private install before reservation.
+
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
 implementing Phase 8 speaker inference, pulling Phase 9 knowledge/agent work
@@ -343,12 +358,20 @@ scanning, capacity/SLO promotion, and deployment evidence.
       and the receipt to be mode `0600`. Preserve its failed first-child
       evidence without retry or completion: the admitted non-interactive
       controller did not resolve the reviewed `uv` executable.
-- [ ] Freeze and push a new exact head that retains the corrected receipt
+- [x] Freeze, push, package, prequalify, and admit `63600096...`, which retains
+      the corrected receipt
       ancestry, authenticates every real directory component plus the
       executable in the selected absolute `uv` path, and proves the identical
       non-interactive admitted invocation resolves that exact path inside the
-      pinned portable PowerShell process; freshly package, prequalify, and admit
-      it once.
+      pinned portable PowerShell process. Preserve its passing 13 private
+      receipt children and failed one-shot release-contract cell without retry,
+      completion, or relabeling.
+- [ ] Freeze and push a new exact head whose active dependency cell requires
+      `--force`, `--no-optimistic-repeat-install`, and
+      `--package-import-method=copy`; begin from an absent private
+      `desktop/node_modules`, hydrate it with those options, run the complete
+      release-contract cell before reservation, then freshly package,
+      prequalify, and admit it once.
 - [ ] Run the complete applicable local/native/server/target-client/
       private-server Phase 7 matrix exactly once for that admitted head.
 - [ ] Open a focused PR; require first-attempt hosted CI, CodeQL, and

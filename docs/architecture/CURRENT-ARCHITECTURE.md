@@ -21,11 +21,18 @@ exact-tree review lenses, complete private prequalification, and admission,
 then was consumed before the locked `uv sync` command or owner flow because
 portable PowerShell could not resolve the reviewed absolute `uv` executable
 under the non-interactive SSH `PATH`. Its mode-`0700` per-head directory
-existed, but its receipt remained absent and no runtime owner started. A new
-exact head must preserve the corrected receipt boundary, authenticate the
-complete absolute `uv` directory chain and executable, and prove the identical
-admitted command environment resolves that exact path before the full phase
-gate, PR closure, and merge.
+existed, but its receipt remained absent and no runtime owner started. Exact
+head `63600096cd8afe9f4435f6302c584f89dbdb5915` preserved that boundary,
+authenticated the complete absolute `uv` chain and executable, passed all
+three review lenses, complete prequalification, admission, and all 13 private
+receipt children, then was consumed when its one complete matrix rejected a
+reparse-tagged installed JavaScript notice. The repository lock, inventory,
+and MIT notice were exact; the private checkout's default pnpm hardlink shared
+the reparse-tagged content-store inode. The next exact head must retain the
+runtime repairs, require forced non-optimistic copied package imports in the
+active manifest, begin private prequalification with an absent
+`desktop/node_modules`, and pass the complete release-contract cell from that
+copied private install before the full phase gate, PR closure, and merge.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -662,7 +669,14 @@ started; the per-head directory existed and the receipt remained absent. The
 next controller retains the safe receipt ancestry, authenticates every real
 directory component and file in the absolute `uv` path, and proves that exact
 path resolves inside portable PowerShell under the admitted command environment
-before reservation.
+before reservation. Exact head `63600096...` satisfied that boundary and passed
+all four admitted private controllers plus independent validation of all 13
+private receipt children. Its one complete matrix then correctly rejected a
+reparse-tagged installed JavaScript notice produced by default pnpm hardlink
+materialization. The next manifest requires forced non-optimistic copied
+package imports, private prequalification starts with an absent
+`desktop/node_modules`, and the complete release-contract cell must pass from
+that copied private install before reservation.
 Fresh successor prequalification, admission, the full Phase 7 gate, hosted PR
 closure, and merge remain open. Real IT-provided Entra/Conditional Access
 policy and an approved native adapter remain external conformance work.

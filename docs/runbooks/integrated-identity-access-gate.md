@@ -139,6 +139,19 @@ proved that the mode-`0700` per-head receipt directory existed, the receipt
 remained absent, and no owner flow started. Do not retry, complete, or relabel
 this head.
 
+Exact head `63600096cd8afe9f4435f6302c584f89dbdb5915` corrected the admitted
+`uv` resolution boundary, passed the same three review lenses, complete private
+prequalification, GitHub-backed admission, and all four admitted private
+controllers. Independent validation accepted all 13 private receipt children.
+Its one complete matrix then failed when the frontend release-contract cell
+correctly rejected the installed `@floating-ui/core@1.7.5` `LICENSE` as a
+Windows reparse point; that failure consumed the head. The repository lockfile,
+generated inventory, and reviewed MIT notice hash were already exact. Readback
+instead proved that the private checkout's default pnpm hardlink shared an
+inode with the content store and another OneDrive-managed checkout, where the
+Microsoft reparse tag had become visible. Do not retry, complete, or relabel
+this head.
+
 The implementation boundary retains assigned-before-resume,
 kill-on-close, immediate
 explicit termination, authoritative accounting-zero proof, frozen per-cell
@@ -173,10 +186,10 @@ removal. Before any container mutation, the proxy resolves the PATH-selected
 executable target. All 14 focused proxy contracts and the actual qualified GB10
 mapping to root-owned `/usr/bin/socat1` pass.
 
-Three-lens exact-tree closure for the next successor, fresh exact-head
-private-controller packaging and prequalification, admission, fresh private
-evidence, the one complete replacement matrix, first-attempt hosted closure,
-the focused PR, and merge remain open.
+Three-lens exact-tree closure for the next successor, forced non-optimistic
+copied-package prequalification, fresh exact-head private-controller packaging,
+admission, fresh private evidence, the one complete replacement matrix,
+first-attempt hosted closure, the focused PR, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
@@ -377,6 +390,41 @@ remove GitHub credential variables from every command cell. Prepare a new
 private plan for that head with new absent evidence destinations outside the
 repository. Runtime preparation receipts and every private result must also
 bind to that head.
+
+Start from a new exact checkout whose `desktop/node_modules` path is absent.
+Do not accept Git cleanliness as proof because that ignored path can contain a
+prior hardlinked install. Materialize the candidate's desktop dependencies
+through the pinned package manager with forced copied package files, never the
+default clone/hardlink selection:
+
+```powershell
+Push-Location .\desktop
+try {
+  corepack pnpm@11.7.0 install --offline --frozen-lockfile `
+    --force --no-optimistic-repeat-install --package-import-method=copy
+  if ($LASTEXITCODE -ne 0) {
+    throw "Copied dependency materialization failed with exit $LASTEXITCODE."
+  }
+  pnpm test:release-contract
+  if ($LASTEXITCODE -ne 0) {
+    throw "The release-contract preflight failed with exit $LASTEXITCODE."
+  }
+} finally {
+  Pop-Location
+}
+```
+
+The active identity manifest repeats `--force`,
+`--no-optimistic-repeat-install`, and `--package-import-method=copy` in its
+admitted dependency cell. Disabling optimistic repeat installation prevents
+pnpm from retaining an existing hardlinked package merely because the install
+appears current; force plus copy then rematerializes package bytes. Before
+reservation, the complete release-contract cell must pass from the exact
+private checkout after this install. That contract authenticates every
+installed notice source as a real, non-redirected file and rejects a
+content-store or OneDrive reparse tag. The tracked dependency inventory or
+notice bundle is not a substitute for proving the installed bytes that the
+release cell will consume.
 
 The identity gate requires private-plan schema version 2 and a new absolute
 `mockOidc.receiptFile` outside the repository. Like every other admitted

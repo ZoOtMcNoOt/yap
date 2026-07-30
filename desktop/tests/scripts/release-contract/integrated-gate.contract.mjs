@@ -360,6 +360,15 @@ const exactCommands = {
 };
 const identityExactCommands = {
   ...exactCommands,
+  "frontend.dependencies": [
+    "corepack",
+    "pnpm@11.7.0",
+    "install",
+    "--frozen-lockfile",
+    "--force",
+    "--no-optimistic-repeat-install",
+    "--package-import-method=copy",
+  ],
   "server.lint": [
     "uv",
     "run",
