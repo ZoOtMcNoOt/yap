@@ -56,7 +56,13 @@ exposed bounded pending-ASR saturation during cold warmup. Exact repair
 and passed repeated-resource, nine-case prepared-audio, and physical-
 microphone/rendered-UI qualification with zero audio drops. Its first isolated
 scheduler-outlier attempt remains failed evidence. Documentation reconciliation
-is committed at `e019036...`. Final exact-tree closure,
+is committed at `e019036...`. Exact successor `dc635916...` passed its complete
+private 25-cell matrix and independent receipt validation. CodeQL passed, while
+hosted CI run `30574652702` exposed only checkout-test dependency timing,
+GitHub Windows temp-owner mismatch, and equivalent 8.3/long-path spelling
+assumptions. Stock NSIS was not dispatched after that failure. Reviewed repair
+`558fed0...` makes those boundaries portable without changing product runtime,
+identity policy, or the enterprise ownership boundary. Fresh exact-tree
 prequalification/admission, the complete replacement matrix, hosted closure,
 and merge remain open.
 
@@ -728,11 +734,15 @@ adds bounded FIFO batch catch-up, and passed focused same-three review plus
 repeated-resource, nine-case prepared-audio, and physical-microphone/rendered-UI
 qualification with zero audio drops. Its first isolated scheduler-outlier
 attempt remains failed evidence. Documentation reconciliation is committed at
-`e019036...`. Final exact-tree closure and prequalification/admission, the one
-complete candidate gate, first valid hosted native/PR closure, and merge remain
-open. Real
-IT-provided Entra/Conditional
-Access policy and an approved native adapter remain external conformance work.
+`e019036...`. Exact successor `dc635916...` passed the complete private
+25-cell matrix and independent receipt validation; CodeQL passed, but hosted CI
+run `30574652702` consumed it on the pre-install YAML import, Windows temp
+owner, and equivalent 8.3/long-path assumptions. Reviewed repair `558fed0...`
+passes focused contracts and all three review lenses. Fresh exact-tree closure
+and prequalification/admission, the one complete replacement gate, first valid
+hosted native/PR closure, and merge remain open. Real IT-provided Entra and
+Conditional Access policy and an approved native adapter remain external
+conformance work.
 
 ## Accepted meeting direction, not current execution
 

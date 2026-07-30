@@ -49,16 +49,23 @@ this handoff:
   contracts are green. The Docker-backed exact-head flow still belongs to the
   reviewed `ubuntu-latest` `mock-oidc` hosted closure.
 
-Retained-pidfd and interrupted-container-create recovery head
-`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` was three-lens reviewed, then
-rejected before admission when connected prequalification exposed the stock
-GB10 `socat` package-link incompatibility. The canonical-path successor passes
-focused local and real-host proof and is three-lens reviewed with every P0–P2
-finding resolved. Fresh exact-head private-controller prequalification, the
-one-time full matrix, first-attempt hosted evidence, focused PR, and merge
-remain open. Use the
+Exact application-boundary head
+`dc6359162fb16909d38f410cdb75c2729d83972f` passed its complete private
+25-cell matrix and independent receipt validation. Its hosted CI exposed
+checkout-test dependency timing, GitHub Windows temp-owner mismatch, and
+equivalent 8.3/long-path spelling assumptions; CodeQL passed and stock NSIS was
+not dispatched after CI failed. Reviewed portability repair
+`558fed05e0f959a28fbe4d92499bbe185b0532d6` addresses those hosted assumptions
+without changing identity policy or implementing any enterprise-controlled
+input. Fresh exact-head package/prequalification/admission, the one-time
+replacement matrix, hosted evidence, focused PR, and merge remain open. Use the
 [integrated identity and access gate](integrated-identity-access-gate.md) only
 after those prerequisites are ready.
+
+This developer-owned closure does not authorize or attempt real-provider,
+enterprise-network, certificate, DNS, ZPA, firewall, policy, storage, audit, or
+deployment work. Retain each such dependency as the named handoff below until
+IT supplies the input and the user separately authorizes conformance.
 
 ## Required enterprise decisions and inputs
 

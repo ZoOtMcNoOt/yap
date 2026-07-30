@@ -242,10 +242,27 @@ boundaries, and the 30-second physical-microphone/rendered-UI lifecycle with
 zero audio drops. Its first resource attempt remains failed evidence because
 one external scheduler sample exceeded the frozen maximum; the identical fresh
 rerun passed without a code or threshold change. Documentation reconciliation
-is committed at `e019036...`. Final exact-tree closure, fresh
-package/prequalification/admission, one complete
-replacement matrix, first-attempt hosted closure, PR #69 update, and merge
-remain open.
+is committed at `e019036...`.
+
+Exact documentation successor `dc6359162fb16909d38f410cdb75c2729d83972f`
+then passed its one complete private 25-cell matrix and independent receipt
+validation. All four CodeQL analyses passed. Hosted CI run `30574652702`
+consumed the head when the Linux pre-install executable-bit probe loaded `yaml`
+before package materialization. GitHub Windows temp artifacts had an owner
+different from the current runner identity; two checkout contracts treated
+equivalent `RUNNER~1` and `runneradmin` paths as distinct. Those causes account
+for every
+failed hosted job. Stock NSIS was not dispatched after CI failed.
+
+Reviewed repair `558fed05e0f959a28fbe4d92499bbe185b0532d6` defers workflow YAML
+loading to workflow-reading tests, explicitly applies the current Windows owner
+with the protected private DACL, and compares existing checkout-test paths by
+canonical identity. Focused contracts pass and the same three review lenses
+report no P0–P2 finding. Preserve `dc635916...` as consumed hosted-failure
+evidence and its validated receipts separately as passing private evidence; do
+not retry, extend, or relabel that head or its receipts. Fresh exact-tree
+package/prequalification/admission, one complete replacement matrix,
+first-attempt hosted closure, PR #69 update, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).

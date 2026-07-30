@@ -185,6 +185,28 @@ the frozen 250-ms maximum during cycle 11; that cycle's p99 was 0.816 ms, all
 maximum. No complete Phase 7 matrix or hosted closure is claimed for this
 repair yet.
 
+Exact documentation successor `dc6359162fb16909d38f410cdb75c2729d83972f`
+then passed its one complete private 25-cell matrix and independent receipt
+validation. All four CodeQL analyses passed. Hosted CI run `30574652702`
+nevertheless consumed that exact head:
+the Linux pre-install executable-bit probe loaded the `yaml` package before
+dependency materialization, GitHub Windows temp artifacts reported an owner
+different from the current runner identity, and two checkout contracts
+compared the equivalent `RUNNER~1` and `runneradmin` path spellings as
+different strings. Those three causes account for every failed hosted job.
+Stock NSIS was not dispatched after CI failed.
+
+Reviewed portability repair
+`558fed05e0f959a28fbe4d92499bbe185b0532d6` lazily loads workflow YAML only
+for tests that inspect workflows, assigns the current Windows owner in the same
+descriptor as the protected private DACL, and confines canonical path-identity
+comparison to checkout tests. Focused checkout, private-artifact, server-output,
+and SSH-profile contracts pass. The same three independent architecture,
+assurance, and runtime lenses report no P0–P2 finding. A fresh exact-tree
+package/prequalification/admission, one complete replacement matrix, and
+exact-head hosted closure remain required; none of `dc635916...`'s private
+evidence may be retried or relabeled.
+
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
 implementing Phase 8 speaker inference, pulling Phase 9 knowledge/agent work
@@ -468,10 +490,22 @@ scanning, capacity/SLO promotion, and deployment evidence.
       scheduler-outlier attempt as failed evidence.
 - [x] Commit documentation-reconciled descendant
       `e019036184398833ebfd5fef25aa9e0148fadc49`.
-- [ ] Obtain final same-three exact-tree closure, then freeze, package,
-      prequalify, and admit that exact successor.
+- [x] Obtain final same-three exact-tree closure, freeze, package, prequalify,
+      and admit exact successor `dc635916...`; run its complete 25-cell matrix
+      exactly once and independently validate its private receipt.
+- [x] Preserve `dc635916...` without retry or relabeling after all four CodeQL
+      analyses passed but hosted CI run `30574652702` exposed the pre-install
+      YAML import, Windows temp-owner mismatch, and equivalent
+      8.3/long-path spelling assumptions. Do not dispatch NSIS for that failed
+      head.
+- [x] Implement portability repair `558fed0...`, pass focused checkout,
+      private-artifact, server-output, and SSH-profile contracts, obtain the
+      same three independent review approvals, and reconcile the resulting
+      evidence and IT boundary in current documents.
+- [ ] Freeze, push, package, prequalify, and admit the resulting exact
+      documentation successor.
 - [ ] Run the complete applicable local/server/target-client/private-server
-      candidate matrix exactly once for that admitted successor.
+      replacement matrix exactly once for that admitted successor.
 - [ ] Update PR #69; require the five exact-head CI cells, CodeQL, and
       disposable-Windows stock-NSIS closure exactly once on the checked head,
       or record equivalent local evidence and explicitly disclose unavailable
