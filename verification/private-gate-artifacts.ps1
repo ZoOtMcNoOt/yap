@@ -37,6 +37,7 @@ function Get-ExpectedPrivateAcl {
     else {
         [Security.AccessControl.FileSecurity]::new()
     }
+    $security.SetOwner($Owner)
     $security.SetAccessRuleProtection($true, $false)
     $inheritance = if ($Directory) {
         [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor

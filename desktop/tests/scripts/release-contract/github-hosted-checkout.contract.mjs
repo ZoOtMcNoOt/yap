@@ -7,6 +7,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -15,8 +16,6 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-
-import { readWorkflow, workflowSteps } from "./workflow-access.mjs";
 
 const contractRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(contractRoot, "..", "..", "..", "..");
@@ -34,8 +33,29 @@ const checkedHead = "a".repeat(40);
 const localRunnerOs = process.platform === "win32" ? "Windows" : "Linux";
 const powerShellCommand = process.platform === "win32" ? "pwsh.exe" : "pwsh";
 
+// The Linux executable-bit probe runs before package materialization, so only
+// tests that inspect workflow YAML may load the parser dependency.
+async function readWorkflowJobSteps(workflowPath, jobName) {
+  const { readWorkflow, workflowSteps } = await import("./workflow-access.mjs");
+  return workflowSteps(await readWorkflow(workflowPath), jobName).steps;
+}
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
+}
+
+function canonicalExistingPath(value) {
+  const canonicalPath = realpathSync.native(value);
+  return process.platform === "win32"
+    ? canonicalPath.toLowerCase()
+    : canonicalPath;
+}
+
+function assertSameExistingPath(actual, expected) {
+  assert.equal(
+    canonicalExistingPath(actual),
+    canonicalExistingPath(expected),
+  );
 }
 
 function resolveApplicationPath(commandName) {
@@ -395,8 +415,11 @@ test(
     try {
       const probeScript = path.join(root, "runner-generated-script");
       writeFileSync(probeScript, "exit 17\n");
-      const ci = await readWorkflow(".github/workflows/ci.yml");
-      const boundary = workflowSteps(ci, "frontend").steps.find(
+      const steps = await readWorkflowJobSteps(
+        ".github/workflows/ci.yml",
+        "frontend",
+      );
+      const boundary = steps.find(
         (step) => step.name === "Verify exact GitHub-hosted checkout",
       );
       assert.ok(boundary);
@@ -494,9 +517,9 @@ $InitializerArguments = @{
     const outputs = readOutputFile(outputFile);
     const guardBytes = readFileSync(guardPath);
     const expectedProof = proofForFixture(fixture);
-    assert.equal(
+    assertSameExistingPath(
       Buffer.from(outputs.git_executable_base64, "base64").toString("utf8"),
-      path.resolve(fixture.fakeGit),
+      fixture.fakeGit,
     );
     assert.equal(outputs.git_sha256, sha256(readFileSync(fixture.fakeGit)));
     assert.equal(outputs.guard_sha256, sha256(guardBytes));
@@ -511,7 +534,7 @@ $InitializerArguments = @{
       trustedPowerShell,
     );
     assert.equal(outputs.powershell_sha256, trustedPowerShellSha256);
-    assert.equal(
+    assertSameExistingPath(
       Buffer.from(outputs.repository_root_base64, "base64").toString("utf8"),
       fixture.fakeRepository,
     );
@@ -927,9 +950,9 @@ test("final workflow proof resists mutable helper and post-project PATH substitu
           env: substitutedEnvironment,
         });
     assert.equal(bareLookup.status, 0, bareLookup.stderr || bareLookup.stdout);
-    assert.equal(
-      path.resolve(bareLookup.stdout.trim().split(/\r?\n/)[0]),
-      path.resolve(fakeShell),
+    assertSameExistingPath(
+      bareLookup.stdout.trim().split(/\r?\n/)[0],
+      fakeShell,
     );
 
     const guardBytes = readFileSync(guardPath);
@@ -944,7 +967,9 @@ test("final workflow proof resists mutable helper and post-project PATH substitu
       ],
       [
         "${{ steps.exact_head_checkout.outputs.git_executable_base64 }}",
-        Buffer.from(path.resolve(fixture.fakeGit), "utf8").toString("base64"),
+        Buffer.from(realpathSync.native(fixture.fakeGit), "utf8").toString(
+          "base64",
+        ),
       ],
       [
         "${{ steps.exact_head_checkout.outputs.git_sha256 }}",
@@ -960,7 +985,10 @@ test("final workflow proof resists mutable helper and post-project PATH substitu
       ],
       [
         "${{ steps.exact_head_checkout.outputs.repository_root_base64 }}",
-        Buffer.from(fixture.fakeRepository, "utf8").toString("base64"),
+        Buffer.from(
+          realpathSync.native(fixture.fakeRepository),
+          "utf8",
+        ).toString("base64"),
       ],
       [
         "${{ steps.exact_head_checkout.outputs.tracked_manifest_sha256 }}",
@@ -973,8 +1001,11 @@ test("final workflow proof resists mutable helper and post-project PATH substitu
       ["${{ github.event.pull_request.head.sha || github.sha }}", checkedHead],
       ["${{ runner.environment }}", "github-hosted"],
     ]);
-    const ci = await readWorkflow(".github/workflows/ci.yml");
-    const finalStep = workflowSteps(ci, "frontend").steps.find(
+    const steps = await readWorkflowJobSteps(
+      ".github/workflows/ci.yml",
+      "frontend",
+    );
+    const finalStep = steps.find(
       (step) => (
         step.name === "Verify exact GitHub-hosted checkout remained unchanged"
       ),
