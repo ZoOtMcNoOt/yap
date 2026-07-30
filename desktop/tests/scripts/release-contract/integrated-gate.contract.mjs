@@ -1592,6 +1592,25 @@ test("Windows private artifact protection removes broad access rules", {
   }
 });
 
+test("Windows private artifact protection avoids redundant owner rewrites", {
+  skip: process.platform !== "win32",
+}, () => {
+  const root = mkdtempSync(path.join(
+    path.dirname(repoRoot),
+    "yap-private-artifact-owner-",
+  ));
+  const privateFile = path.join(root, "private-evidence.json");
+  try {
+    writeFileSync(privateFile, "{}\n");
+    assert.equal(protectAndVerifyPrivateDirectory(root), root);
+    assert.equal(protectAndVerifyPrivateFile(privateFile), privateFile);
+    assert.equal(assertPrivateDirectory(root), root);
+    assert.equal(assertPrivateFile(privateFile), privateFile);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("integrated gate failure records retain only sanitized command termination evidence", () => {
   const failure = new Error("synthetic retained descendant");
   failure.code = "INTEGRATED_GATE_COMMAND_RETAINED_DESCENDANT";

@@ -28,7 +28,10 @@ function Get-ExpectedPrivateAcl {
         [bool]$Directory,
 
         [Parameter(Mandatory)]
-        [bool]$SshCompatible
+        [bool]$SshCompatible,
+
+        [Parameter(Mandatory)]
+        [bool]$SetOwner
     )
 
     $security = if ($Directory) {
@@ -37,7 +40,9 @@ function Get-ExpectedPrivateAcl {
     else {
         [Security.AccessControl.FileSecurity]::new()
     }
-    $security.SetOwner($Owner)
+    if ($SetOwner) {
+        $security.SetOwner($Owner)
+    }
     $security.SetAccessRuleProtection($true, $false)
     $inheritance = if ($Directory) {
         [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
@@ -221,10 +226,14 @@ if ($Operation.StartsWith('protect-', [StringComparison]::Ordinal)) {
         $requiresProtection = $true
     }
     if ($requiresProtection) {
+        $observedOwner = $observed.GetOwner(
+            [Security.Principal.SecurityIdentifier]
+        )
         $security = Get-ExpectedPrivateAcl `
             -Owner $owner `
             -Directory $directory `
-            -SshCompatible $sshCompatible
+            -SshCompatible $sshCompatible `
+            -SetOwner ($observedOwner.Value -cne $owner.Value)
         Set-ExpectedPrivateAcl -Security $security
         $observed = Get-ObservedPrivateAcl
     }
