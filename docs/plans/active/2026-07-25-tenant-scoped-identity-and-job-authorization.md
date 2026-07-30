@@ -198,14 +198,20 @@ Stock NSIS was not dispatched after CI failed.
 
 Reviewed portability repair
 `558fed05e0f959a28fbe4d92499bbe185b0532d6` lazily loads workflow YAML only
-for tests that inspect workflows, assigns the current Windows owner in the same
-descriptor as the protected private DACL, and confines canonical path-identity
-comparison to checkout tests. Focused checkout, private-artifact, server-output,
-and SSH-profile contracts pass. The same three independent architecture,
-assurance, and runtime lenses report no P0–P2 finding. A fresh exact-tree
-package/prequalification/admission, one complete replacement matrix, and
-exact-head hosted closure remain required; none of `dc635916...`'s private
-evidence may be retried or relabeled.
+for tests that inspect workflows, corrects a mismatched Windows owner in the
+same descriptor as the protected private DACL, and confines canonical
+path-identity comparison to checkout tests. Pre-admission preparation of exact
+descendant `c95cfe02a4a1df81dfc4aaed58ac15f61247c4f4` then exposed that an
+unnecessary same-owner rewrite could require elevation under inherited
+development-root ACLs. No admission capability was created and no matrix cell
+ran for that head. Repair `a823b28...` writes the owner only when the observed
+SID differs from the current identity and retains the exact post-write
+owner/DACL verification. The three Windows ACL behaviors, all 16 applicable
+hosted-portability contracts, and the clean-tree admission fixture pass. The
+same three independent architecture, assurance, and runtime lenses report no
+P0–P2 finding. A fresh exact-tree package/prequalification/admission, one
+complete replacement matrix, and exact-head hosted closure remain required;
+none of `dc635916...`'s private evidence may be retried or relabeled.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -502,6 +508,11 @@ scanning, capacity/SLO promotion, and deployment evidence.
       private-artifact, server-output, and SSH-profile contracts, obtain the
       same three independent review approvals, and reconcile the resulting
       evidence and IT boundary in current documents.
+- [x] Preserve pre-admission descendant `c95cfe0...` without claiming a
+      consumed attempt after ordinary development-root ACLs exposed the
+      redundant same-owner write. Implement `a823b28...`, retain mismatch-owner
+      correction plus exact read-back, pass focused ACL/hosted/admission
+      contracts, and obtain the same three independent review approvals.
 - [ ] Freeze, push, package, prequalify, and admit the resulting exact
       documentation successor.
 - [ ] Run the complete applicable local/server/target-client/private-server

@@ -57,8 +57,12 @@ equivalent 8.3/long-path spelling assumptions; CodeQL passed and stock NSIS was
 not dispatched after CI failed. Reviewed portability repair
 `558fed05e0f959a28fbe4d92499bbe185b0532d6` addresses those hosted assumptions
 without changing identity policy or implementing any enterprise-controlled
-input. Fresh exact-head package/prequalification/admission, the one-time
-replacement matrix, hosted evidence, focused PR, and merge remain open. Use the
+input. Pre-admission descendant `c95cfe0...` then exposed a redundant
+same-owner write under ordinary development-root ACLs before any attempt was
+reserved. Repair `a823b28...` makes owner mutation conditional on an exact SID
+mismatch and retains exact read-back verification. Fresh exact-head
+package/prequalification/admission, the one-time replacement matrix, hosted
+evidence, focused PR, and merge remain open. Use the
 [integrated identity and access gate](integrated-identity-access-gate.md) only
 after those prerequisites are ready.
 

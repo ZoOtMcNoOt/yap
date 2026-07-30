@@ -255,14 +255,19 @@ for every
 failed hosted job. Stock NSIS was not dispatched after CI failed.
 
 Reviewed repair `558fed05e0f959a28fbe4d92499bbe185b0532d6` defers workflow YAML
-loading to workflow-reading tests, explicitly applies the current Windows owner
-with the protected private DACL, and compares existing checkout-test paths by
-canonical identity. Focused contracts pass and the same three review lenses
-report no P0–P2 finding. Preserve `dc635916...` as consumed hosted-failure
-evidence and its validated receipts separately as passing private evidence; do
-not retry, extend, or relabel that head or its receipts. Fresh exact-tree
-package/prequalification/admission, one complete replacement matrix,
-first-attempt hosted closure, PR #69 update, and merge remain open.
+loading to workflow-reading tests, corrects a mismatched Windows owner with the
+protected private DACL, and compares existing checkout-test paths by canonical
+identity. Pre-admission preparation of exact descendant `c95cfe0...` exposed
+that rewriting an already-correct owner could require elevation under ordinary
+development-root ACLs. It was never admitted and no matrix cell ran. Repair
+`a823b28...` writes the owner only on an exact observed/current SID mismatch and
+still re-reads the exact owner and three-rule protected DACL. Focused ACL,
+hosted-portability, and clean-tree admission contracts pass; the same three
+review lenses report no P0–P2 finding. Preserve `dc635916...` as consumed
+hosted-failure evidence and its validated receipts separately as passing
+private evidence; do not retry, extend, or relabel that head or its receipts.
+Fresh exact-tree package/prequalification/admission, one complete replacement
+matrix, first-attempt hosted closure, PR #69 update, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).

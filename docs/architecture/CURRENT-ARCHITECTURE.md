@@ -62,9 +62,13 @@ hosted CI run `30574652702` exposed only checkout-test dependency timing,
 GitHub Windows temp-owner mismatch, and equivalent 8.3/long-path spelling
 assumptions. Stock NSIS was not dispatched after that failure. Reviewed repair
 `558fed0...` makes those boundaries portable without changing product runtime,
-identity policy, or the enterprise ownership boundary. Fresh exact-tree
-prequalification/admission, the complete replacement matrix, hosted closure,
-and merge remain open.
+identity policy, or the enterprise ownership boundary. Pre-admission
+preparation of exact descendant `c95cfe0...` then exposed that writing an
+already-correct owner can require elevation under ordinary development-root
+ACLs. That head was never admitted. Repair `a823b28...` writes the owner only
+when the observed SID differs, while the exact post-write owner/DACL check
+remains fail-closed. Fresh exact-tree prequalification/admission, the complete
+replacement matrix, hosted closure, and merge remain open.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -738,11 +742,16 @@ attempt remains failed evidence. Documentation reconciliation is committed at
 25-cell matrix and independent receipt validation; CodeQL passed, but hosted CI
 run `30574652702` consumed it on the pre-install YAML import, Windows temp
 owner, and equivalent 8.3/long-path assumptions. Reviewed repair `558fed0...`
-passes focused contracts and all three review lenses. Fresh exact-tree closure
-and prequalification/admission, the one complete replacement gate, first valid
-hosted native/PR closure, and merge remain open. Real IT-provided Entra and
-Conditional Access policy and an approved native adapter remain external
-conformance work.
+passes focused contracts and all three review lenses. Exact pre-admission
+descendant `c95cfe0...` was not consumed, but its private-input preparation
+exposed an unnecessary same-owner write that could require elevation. Repair
+`a823b28...` makes that write conditional on an exact owner-SID mismatch,
+retains the final exact owner/DACL verification, passes focused Windows and
+hosted-portability contracts, and has the same three review approvals. Fresh
+exact-tree closure and prequalification/admission, the one complete replacement
+gate, first valid hosted native/PR closure, and merge remain open. Real
+IT-provided Entra and Conditional Access policy and an approved native adapter
+remain external conformance work.
 
 ## Accepted meeting direction, not current execution
 
