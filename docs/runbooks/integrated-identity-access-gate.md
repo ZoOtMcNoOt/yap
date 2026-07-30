@@ -127,7 +127,19 @@ fixed-host controller rule is intentionally stricter than the reusable
 cross-platform mock-OIDC harness policy described below; that generic harness
 retains its protected sticky-directory exception.
 
-The reviewed canonical-path successor retains assigned-before-resume,
+Exact head `dece4265e052d775d2d11f1883cd8cc4b2b25191` is also consumed. It
+passed focused verification, three-lens exact-head review, complete private
+prequalification, and GitHub-backed admission. Its first admitted mock-OIDC
+controller authenticated the checked-head helper and fixed receipt path, then
+failed before the locked `uv sync` command or owner flow because
+non-interactive SSH did not put the reviewed absolute `uv` executable's parent
+on `PATH`. The executable remained available at its authenticated private path,
+but portable PowerShell could not resolve the bare command name. Readback
+proved that the mode-`0700` per-head receipt directory existed, the receipt
+remained absent, and no owner flow started. Do not retry, complete, or relabel
+this head.
+
+The implementation boundary retains assigned-before-resume,
 kill-on-close, immediate
 explicit termination, authoritative accounting-zero proof, frozen per-cell
 deadlines, protected one-attempt capability, exact Windows DACLs, and the
@@ -161,10 +173,10 @@ removal. Before any container mutation, the proxy resolves the PATH-selected
 executable target. All 14 focused proxy contracts and the actual qualified GB10
 mapping to root-owned `/usr/bin/socat1` pass.
 
-Three-lens exact-tree closure is complete with no P0-P2 finding. Fresh
-exact-head private-controller packaging and prequalification, admission, fresh
-private evidence, the one complete replacement matrix, first-attempt hosted
-closure, the focused PR, and merge remain open.
+Three-lens exact-tree closure for the next successor, fresh exact-head
+private-controller packaging and prequalification, admission, fresh private
+evidence, the one complete replacement matrix, first-attempt hosted closure,
+the focused PR, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).
@@ -239,6 +251,20 @@ runtime. Before reservation, verify the selected checkout is exact and clean,
 then run the complete harness in no-receipt mode by omitting both `CheckedHead`
 and `ReceiptOutput`. Require its pass marker and verified teardown. No
 transferable receipt may be produced during pre-admission.
+
+For the fixed GB10 mock-OIDC controller, do not rely on a login shell to extend
+`PATH`. Before reservation and again immediately before admitted use,
+authenticate every real directory component from the filesystem anchor through
+the selected absolute `uv` parent as canonical, non-redirected, owned by root
+or `admin`, and not group/world writable. Then authenticate the `uv` path as one
+canonical, regular, single-link, `admin`-owned executable with no group/world
+write bit and with the reviewed SHA-256, size, and version. In the same
+non-interactive SSH command environment used by the admitted controller, make
+that exact executable resolvable inside the pinned portable PowerShell process
+and prove that `Get-Command uv` returns the authenticated absolute path. The
+no-owner preflight must exercise this exact controller invocation, not a login
+shell or an environment assembled by a different diagnostic. A resolution
+mismatch is a pre-admission failure.
 
 If the workstation does not have Docker, use a Docker-capable exact-clean
 Linux executor and copy only its bounded receipt to the new path frozen in the

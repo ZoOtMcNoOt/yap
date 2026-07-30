@@ -1053,6 +1053,55 @@ test("identity gate prequalifies its fixed GB10 control parent", () => {
   assert.match(runbook, /protected\s+private-file policy on success and failure/);
 });
 
+test("identity gate prequalifies uv in the admitted mock-OIDC environment", () => {
+  const runbook = readFileSync(
+    path.join(repoRoot, "docs", "runbooks", "integrated-identity-access-gate.md"),
+    "utf8",
+  );
+  const consumedAdmission = runbook.match(
+    /Exact head `dece4265e052d775d2d11f1883cd8cc4b2b25191`[\s\S]*?Do not retry, complete, or relabel\s+this head\./,
+  )?.[0];
+  assert.ok(consumedAdmission);
+  assert.match(
+    consumedAdmission,
+    /failed before the locked `uv sync` command or owner flow because\s+non-interactive SSH did not put the reviewed absolute `uv` executable's parent\s+on `PATH`\./,
+  );
+  assert.match(
+    consumedAdmission,
+    /The executable remained available at its authenticated private path,\s+but portable PowerShell could not resolve the bare command name\./,
+  );
+  assert.match(
+    consumedAdmission,
+    /Readback\s+proved that the mode-`0700` per-head receipt directory existed, the receipt\s+remained absent, and no owner flow started\./,
+  );
+  assert.doesNotMatch(consumedAdmission, /\/home\//);
+
+  const executorPolicy = runbook.match(
+    /For the fixed GB10 mock-OIDC controller,[\s\S]*?A resolution\s+mismatch is a pre-admission failure\./,
+  )?.[0];
+  assert.ok(executorPolicy);
+  assert.match(
+    executorPolicy,
+    /For the fixed GB10 mock-OIDC controller, do not rely on a login shell to extend\s+`PATH`\./,
+  );
+  assert.match(
+    executorPolicy,
+    /Before reservation and again immediately before admitted use,\s+authenticate every real directory component from the filesystem anchor through\s+the selected absolute `uv` parent as canonical, non-redirected, owned by root\s+or `admin`, and not group\/world writable\./,
+  );
+  assert.match(
+    executorPolicy,
+    /Then authenticate the `uv` path as one\s+canonical, regular, single-link, `admin`-owned executable with no group\/world\s+write bit and with the reviewed SHA-256, size, and version\./,
+  );
+  assert.match(
+    executorPolicy,
+    /In the same\s+non-interactive SSH command environment used by the admitted controller, make\s+that exact executable resolvable inside the pinned portable PowerShell process\s+and prove that `Get-Command uv` returns the authenticated absolute path\./,
+  );
+  assert.match(
+    executorPolicy,
+    /The\s+no-owner preflight must exercise this exact controller invocation, not a login\s+shell or an environment assembled by a different diagnostic\./,
+  );
+});
+
 test("gate admission pins GitHub.com and the canonical repository", () => {
   const previousHost = process.env.GH_HOST;
   try {

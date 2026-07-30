@@ -11,17 +11,21 @@ The replacement delivery gate now freezes command deadlines, keeps its
 one-attempt capability private, verifies exact Windows DACLs, pins system
 SSH/PowerShell hosts, and binds authenticated remote helpers through cleanup
 and teardown. The current lifecycle resolves GB10's stock `socat` package link
-to its absolute regular executable before container mutation and passed all
-three exact-tree review lenses. Exact head
-`c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` also makes equivalent canonical
-language-routing saves true runtime no-ops. It passed fresh prequalification
-and admission, then was consumed before the mock-OIDC harness started because
-private orchestration incorrectly required the fixed
-`/srv/yap-server/private` ancestor itself to be mode `0700`. The actual
-admin-owned `0755` ancestor is not group/world writable; the owner-only
-receipt parent, per-head child, and receipt remained absent. A new exact head
-must correct that controller rule before admission, the full phase gate, PR
-closure, and merge.
+to its absolute regular executable before container mutation. Exact head
+`c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` made equivalent canonical
+language-routing saves true runtime no-ops, then was consumed when its first
+admitted controller over-constrained the safe fixed receipt ancestor. Exact
+head `dece4265e052d775d2d11f1883cd8cc4b2b25191` retained the lifecycle and
+language-routing repairs, corrected the receipt ancestry, passed all three
+exact-tree review lenses, complete private prequalification, and admission,
+then was consumed before the locked `uv sync` command or owner flow because
+portable PowerShell could not resolve the reviewed absolute `uv` executable
+under the non-interactive SSH `PATH`. Its mode-`0700` per-head directory
+existed, but its receipt remained absent and no runtime owner started. A new
+exact head must preserve the corrected receipt boundary, authenticate the
+complete absolute `uv` directory chain and executable, and prove the identical
+admitted command environment resolves that exact path before the full phase
+gate, PR closure, and merge.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -647,15 +651,20 @@ rejected its gate boundary. Retained-pidfd head
 `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` resolved the later three-agent
 exact-tree findings but was itself rejected before admission when connected
 prequalification exposed the GB10 `socat` package-link incompatibility. The
-canonical-path successor passes focused local and real-host proof and received
-GO from all three lenses with no P0–P2 finding. Later exact head `c5d826f...`
-passed fresh private prequalification and admission but was consumed before
-mock-OIDC execution by an over-strict private-ancestor mode assertion. No
-receipt or runtime owner was created. The next controller accepts a real
-admin/root-owned, non-group/world-writable ancestor and continues to require
-the receipt-specific parent, child, and file to be owner-only. Fresh successor
-prequalification, admission, the full Phase 7 gate, hosted PR closure, and
-merge remain open. Real IT-provided Entra/Conditional Access
+canonical-path lineage passes focused local and real-host proof. Later exact
+head `c5d826f...` passed fresh private prequalification and admission but was
+consumed by an over-strict private-ancestor mode assertion. Exact head
+`dece426...` corrected that boundary, received GO from all three lenses, passed
+fresh private prequalification and admission, then was consumed when its first
+mock-OIDC controller could not resolve the reviewed `uv` executable under the
+non-interactive SSH environment. No locked `uv sync` command or owner flow
+started; the per-head directory existed and the receipt remained absent. The
+next controller retains the safe receipt ancestry, authenticates every real
+directory component and file in the absolute `uv` path, and proves that exact
+path resolves inside portable PowerShell under the admitted command environment
+before reservation.
+Fresh successor prequalification, admission, the full Phase 7 gate, hosted PR
+closure, and merge remain open. Real IT-provided Entra/Conditional Access
 policy and an approved native adapter remain external conformance work.
 
 ## Accepted meeting direction, not current execution

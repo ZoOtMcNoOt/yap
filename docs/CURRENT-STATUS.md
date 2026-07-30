@@ -31,7 +31,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
-| Phase 7: identity/access | Active; admitted controller correction requires a new exact head | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Provider-neutral OIDC/Entra policy, tenant-scoped ownership, purpose authorization, protected readiness, authenticated bounded private WebSocket admission, and the native lower handshake execute under focused tests. The desktop still has no selected production token adapter. Exact head `c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` passed focused verification, three-lens exact-head review, fresh private prequalification, and GitHub-backed admission. Its first admitted mock-OIDC controller then failed before starting the harness because private orchestration incorrectly required the real admin-owned `/srv/yap-server/private` ancestor itself to be mode `0700`; the actual non-writable ancestor is `0755`, while the receipt parent and per-head child are the owner-only boundaries. No container, network, receipt, complete matrix, PR, or hosted closure was created. The head is consumed and will not be retried or completed. The next exact head must accept a real admin/root-owned, non-group/world-writable ancestor while still requiring the receipt parent, per-head child, and receipt to be owner-only. |
+| Phase 7: identity/access | Active; admitted controller correction requires a new exact head | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Provider-neutral OIDC/Entra policy, tenant-scoped ownership, purpose authorization, protected readiness, authenticated bounded private WebSocket admission, and the native lower handshake execute under focused tests. The desktop still has no selected production token adapter. Exact head `c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` was consumed when its first admitted controller over-constrained the safe fixed receipt ancestor. Exact head `dece4265e052d775d2d11f1883cd8cc4b2b25191` corrected and reviewed that boundary, passed complete private prequalification and GitHub-backed admission, then was consumed when its first admitted mock-OIDC controller entered portable PowerShell under a non-interactive SSH `PATH` that excluded the reviewed absolute `uv` executable. The locked `uv sync` command and owner flow never started; the per-head directory existed but the receipt remained absent. Neither head may be retried or completed. The next exact head must preserve the corrected owner-only receipt boundary, authenticate the complete absolute `uv` directory chain and executable, and prove the identical non-interactive controller resolves that exact path before admission. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -347,8 +347,9 @@ ownership.
   `4dc572f120f7e284f7453dfd11bd817a2c034104`, and
   `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` were rejected before admission.
   Heads `c4df39f305f739d3eb2987f24ba8387e54627902`,
-  `7f047c6a1a2838f70908a7c0f5ee106fd84d5fb2`, and
-  `c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` are later consumed admissions.
+  `7f047c6a1a2838f70908a7c0f5ee106fd84d5fb2`,
+  `c5d826ffb85a841e412e41155a3c6c82a2fbe3e4`, and
+  `dece4265e052d775d2d11f1883cd8cc4b2b25191` are later consumed admissions.
   The first exposed a private mock-OIDC publication parser defect. The second
   passed mock OIDC but its target-client child exposed redundant canonical
   language-routing saves retiring the already warm live model. The third
@@ -358,7 +359,14 @@ ownership.
   be mode `0700`. Readback proved that ancestor was a real, admin-owned,
   non-group/world-writable `0755` directory; the receipt parent, per-head
   child, receipt, container, and network were all absent.
-  The current successor retains assigned-before-resume, kill-on-close,
+  The fourth corrected that ancestor rule, passed focused verification,
+  three-lens exact-head review, complete private prequalification, and
+  GitHub-backed admission, then failed its first admitted mock-OIDC controller
+  before the locked `uv sync` command or owner flow because non-interactive SSH
+  did not expose the reviewed absolute `uv` executable to portable PowerShell.
+  The per-head receipt directory existed, but the receipt remained absent and
+  no runtime owner started. The implementation boundary retains
+  assigned-before-resume, kill-on-close,
   immediate explicit termination, Windows accounting-zero proof, frozen
   command deadlines, protected private capability/DACL handling, no-config
   OpenSSH, and authenticated remote helpers. Its Linux path replaces initial
@@ -378,14 +386,15 @@ ownership.
   captured through the still-addressable immutable ID before explicit removal.
   Head `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` preserved these lifecycle
   repairs but failed connected prequalification because it rejected GB10's
-  canonical system `socat` package link. The current successor resolves the
-  selected command to its absolute regular executable before container
-  mutation. Focused tests and the real GB10 link/owner/mode proof pass, and the
-  same three reviewers returned exact-tree GO with no P0-P2 finding. The next
-  exact head retains the canonical language-routing no-op and accepts a real
-  admin/root-owned, non-group/world-writable receipt ancestor while requiring
-  the receipt-specific parent, per-head child, and file to remain owner-only.
-  Fresh successor prequalification/admission/evidence, the one
+  canonical system `socat` package link. The consumed `dece426...` lineage
+  resolves the selected command to its absolute regular executable, retains
+  the canonical language-routing no-op, and accepts a safe receipt ancestor.
+  Focused tests, the real GB10 link/owner/mode proof, and its three-lens review
+  passed before its later private-controller failure. The next exact head must
+  retain those repairs, authenticate every real component of the selected
+  absolute `uv` path plus the executable, and prove the identical
+  non-interactive controller resolves that authenticated path before
+  reservation. Fresh successor prequalification/admission/evidence, the one
   replacement phase gate, hosted PR closure, and merge remain open. Persistent
   warm model
   services, multi-worker and mixed live/batch capacity promotion, production
@@ -619,11 +628,19 @@ provider optimization or non-blocking architecture work.
    runtime no-op and passed all prequalification before its first admitted
    controller over-constrained the fixed private ancestor mode. No mock-OIDC
    harness or runtime owner started for the `c5d826f...` failure.
-5. Freeze and prequalify one new exact head with the corrected receipt-ancestry
-   rule, then reserve one fresh admission. The user explicitly authorized
-   transient use of the existing GitHub CLI credential because a separate
-   least-privilege status token is unavailable; do not print, persist, or pass
-   it into command cells, and record the broader-scope exception.
+   `dece426...` corrected that ancestry rule and passed review,
+   prequalification, and admission, but its first admitted mock-OIDC controller
+   failed before the locked `uv sync` command or owner flow because portable
+   PowerShell could not resolve the reviewed `uv` path under non-interactive
+   SSH. Its per-head directory existed, but its receipt remained absent.
+5. Freeze and prequalify one new exact head that retains the corrected receipt
+   ancestry, authenticates every real component of the selected absolute `uv`
+   path plus the executable, and proves the exact non-interactive admitted
+   invocation resolves it before reservation. Then reserve one fresh admission.
+   The user explicitly authorized transient use of the existing GitHub CLI
+   credential because a separate least-privilege status token is unavailable;
+   do not print, persist, or pass it into command cells, and record the
+   broader-scope exception.
 6. Regenerate every private child and run the one-time applicable local/native/
    server/target-client/private-server matrix for that exact head.
 7. Open the focused PR only after the full gate is green, then merge only after

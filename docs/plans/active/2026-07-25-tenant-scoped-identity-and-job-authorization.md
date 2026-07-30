@@ -91,14 +91,16 @@ admitted receipt or complete matrix. The corrected successor canonicalizes the
 PATH-selected `socat` command with GNU `readlink -f`, then requires the captured
 target to be absolute, regular, and executable before container mutation. All
 14 focused proxy contracts, the real root-owned GB10 target proof, and exact
-architecture/runtime/assurance re-review pass with no P0–P2 finding. Fresh
-corrected-head private packaging and prequalification, admission, private
-evidence, the one complete replacement matrix, first-attempt hosted closure,
-the focused PR, and merge remain open.
+architecture/runtime/assurance re-review passed with no P0–P2 finding. That
+proof remains in the later consumed lineages described below; it is not current
+merge authority. Fresh next-successor qualification, admission, and evidence,
+the one complete replacement matrix, first-attempt hosted closure, the focused
+PR, and merge remain open.
 
 Later admitted heads `c4df39f305f739d3eb2987f24ba8387e54627902`,
-`7f047c6a1a2838f70908a7c0f5ee106fd84d5fb2`, and
-`c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` are consumed. The first exposed a
+`7f047c6a1a2838f70908a7c0f5ee106fd84d5fb2`,
+`c5d826ffb85a841e412e41155a3c6c82a2fbe3e4`, and
+`dece4265e052d775d2d11f1883cd8cc4b2b25191` are consumed. The first exposed a
 private mock-OIDC receipt-publication parser defect. The second passed mock
 OIDC but failed target-client qualification because an equivalent canonical
 language-routing save retired the warm model. `c5d826f...` fixed that runtime
@@ -108,8 +110,16 @@ failed before starting mock OIDC because orchestration incorrectly required
 the fixed `/srv/yap-server/private` ancestor itself to be mode `0700`.
 Readback proved it was a real admin-owned, non-group/world-writable `0755`
 directory; the receipt parent, per-head child, receipt, container, and network
-were absent. The next exact head must validate safe ancestor ownership and
-write bits while retaining owner-only receipt-specific directories and files.
+were absent. `dece426...` corrected that ancestry rule, passed focused
+verification, three-lens exact-head review, complete private prequalification,
+and GitHub-backed admission. Its first admitted mock-OIDC controller then
+failed before the locked `uv sync` command or owner flow because the
+non-interactive SSH `PATH` did not expose the reviewed absolute `uv` executable
+to portable PowerShell. The mode-`0700` per-head directory existed, but the
+receipt remained absent and no runtime owner started. The next exact head must
+retain the safe owner-only receipt boundary, authenticate every real component
+of the selected absolute `uv` path plus the executable, and prove that the
+identical non-interactive admitted invocation resolves it before reservation.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -325,12 +335,20 @@ scanning, capacity/SLO promotion, and deployment evidence.
       GO from the same architecture, runtime, and assurance reviewers with no
       P0–P2 finding.
 - [x] Freeze, push, package, prequalify, and admit the canonical-`socat`
-      successor lineage through `c5d826f...`; preserve the three consumed
+      successor lineage through `c5d826f...`; preserve the first three consumed
       admissions and their private evidence without retry or relabeling.
-- [ ] Freeze and push a new exact head that accepts a real admin/root-owned,
-      non-group/world-writable mock-OIDC receipt ancestor while requiring the
-      receipt parent and per-head child to be mode `0700` and the receipt to be
-      mode `0600`; freshly package, prequalify, and admit it once.
+- [x] Freeze, push, package, prequalify, and admit `dece426...`, which accepts a
+      safe admin/root-owned, non-group/world-writable mock-OIDC receipt ancestor
+      while requiring the receipt parent and per-head child to be mode `0700`
+      and the receipt to be mode `0600`. Preserve its failed first-child
+      evidence without retry or completion: the admitted non-interactive
+      controller did not resolve the reviewed `uv` executable.
+- [ ] Freeze and push a new exact head that retains the corrected receipt
+      ancestry, authenticates every real directory component plus the
+      executable in the selected absolute `uv` path, and proves the identical
+      non-interactive admitted invocation resolves that exact path inside the
+      pinned portable PowerShell process; freshly package, prequalify, and admit
+      it once.
 - [ ] Run the complete applicable local/native/server/target-client/
       private-server Phase 7 matrix exactly once for that admitted head.
 - [ ] Open a focused PR; require first-attempt hosted CI, CodeQL, and
