@@ -1,4 +1,8 @@
 version: 2
+# One grouped pull request per ecosystem per week. Ungrouped bumps each needed
+# their own regeneration of the shipped dependency inventory, so a quiet week
+# of patch releases produced several pull requests that were all individually
+# unmergeable.
 updates:
   - package-ecosystem: npm
     directory: /desktop
@@ -16,10 +20,23 @@ updates:
         patterns:
           - "@wdio/tauri-plugin"
           - "@wdio/tauri-service"
+      npm-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
   - package-ecosystem: cargo
     directory: /desktop/src-tauri
     schedule:
       interval: weekly
+    groups:
+      cargo-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
     ignore:
       - dependency-name: cpal
         versions:
@@ -29,3 +46,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"

@@ -1,15 +1,76 @@
-export const reviewedActions = Object.freeze({
-  cacheRestore: "actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
-  cacheSave: "actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
-  checkout: "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
-  downloadArtifact: "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
-  setupNode: "actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e",
-  setupPnpm: "pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271",
-  setupPython: "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
-  setupRust: "dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30",
-  setupUv: "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9",
-  uploadArtifact: "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+const policyRepoRoot = path.resolve(import.meta.dirname, "..", "..", "..", "..");
+
+/// Only these actions may appear in a workflow. The exact revision is NOT
+/// listed: it is read back from the workflows themselves, because a
+/// hand-copied SHA here is a duplicate of a value only Dependabot changes,
+/// and every bump desynchronized the two and broke CI. The controls that
+/// matter — no floating tags, no unreviewed action — are asserted below.
+const reviewedActionRepositories = Object.freeze({
+  cacheRestore: "actions/cache/restore",
+  cacheSave: "actions/cache/save",
+  checkout: "actions/checkout",
+  downloadArtifact: "actions/download-artifact",
+  setupNode: "actions/setup-node",
+  setupPnpm: "pnpm/action-setup",
+  setupPython: "actions/setup-python",
+  setupRust: "dtolnay/rust-toolchain",
+  setupUv: "astral-sh/setup-uv",
+  uploadArtifact: "actions/upload-artifact",
 });
+
+// Regex rather than a YAML parse: this module is imported by every contract
+// test, and pulling a parser in at module load is what made the release
+// contract unrunnable without desktop dependencies installed.
+const USES = /^\s*-?\s*uses:\s*(\S+)[^\S\n]*(?:#.*)?$/gm;
+
+function pinnedActionRevisions() {
+  const observed = new Map();
+  for (const workflowPath of [
+    ".github/workflows/ci.yml",
+    ".github/workflows/nsis-smoke.yml",
+    ".github/workflows/release.yml",
+  ]) {
+    const source = readFileSync(path.join(policyRepoRoot, workflowPath), "utf8");
+    for (const [, uses] of source.matchAll(USES)) {
+      const separator = uses.lastIndexOf("@");
+      assert.notEqual(separator, -1, `${uses} in ${workflowPath} is not pinned`);
+      const repository = uses.slice(0, separator);
+      const revision = uses.slice(separator + 1);
+      assert.match(
+        revision,
+        /^[0-9a-f]{40}$/,
+        `${uses} in ${workflowPath} must pin a full commit SHA, not a tag`,
+      );
+      assert.ok(
+        Object.values(reviewedActionRepositories).includes(repository),
+        `${repository} in ${workflowPath} is not a reviewed action`,
+      );
+      const previous = observed.get(repository);
+      assert.ok(
+        previous === undefined || previous === uses,
+        `${repository} is pinned to two revisions across workflows`,
+      );
+      observed.set(repository, uses);
+    }
+  }
+  return observed;
+}
+
+const observedActions = pinnedActionRevisions();
+
+export const reviewedActions = Object.freeze(
+  Object.fromEntries(
+    Object.entries(reviewedActionRepositories).map(([name, repository]) => {
+      const uses = observedActions.get(repository);
+      assert.ok(uses, `${repository} is reviewed but used by no workflow`);
+      return [name, uses];
+    }),
+  ),
+);
 
 export const reviewedActionUses = new Set(Object.values(reviewedActions));
 

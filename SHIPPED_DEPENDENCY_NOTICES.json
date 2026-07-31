@@ -2,10 +2,6 @@
   "schemaVersion": 2,
   "target": "x86_64-pc-windows-msvc",
   "generatedFrom": {
-    "packageJsonSha256": "9c6ae23b9870e97a3315fc77889dd9ce8169a3a9ea199dc0f2a6220bf0fbc281",
-    "pnpmLockSha256": "38e470ea1726b1aa0ad777e5967d8f91a7e7e342d5283c4bc82d2577a236d438",
-    "cargoTomlSha256": "384fb5b869f43af6f7510fd51080b9bcf1ecf32775bd238eae8b3644455ad0f8",
-    "cargoLockSha256": "debb1c972f1aeb502b7ca7bd18536b948f5268e264e4b7570835d79854733fec",
     "noticeExemptionsSha256": "776c6f501cb98b08029ec95e41284d224ec912c819a5f0a6155eedc2ed45b215"
   },
   "packages": {

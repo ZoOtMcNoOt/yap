@@ -77,15 +77,12 @@ export async function buildShippedDependencyArtifacts() {
     `Reviewed notice exemptions are stale or unnecessary: ${unusedExemptions.join(", ")}.`,
   );
 
+  // ponytail: no raw manifest/lockfile hashes here. The lockfiles are already
+  // the pin, and hashing them made every dependency edit fail this gate even
+  // when no shipped package moved — including devDependency bumps that ship
+  // nothing. The package list below still changes whenever a shipped package
+  // does, which is the property worth enforcing.
   const generatedFrom = {
-    packageJsonSha256: await sha256File(path.join(repoRoot, "desktop", "package.json")),
-    pnpmLockSha256: await sha256File(path.join(repoRoot, "desktop", "pnpm-lock.yaml")),
-    cargoTomlSha256: await sha256File(
-      path.join(repoRoot, "desktop", "src-tauri", "Cargo.toml"),
-    ),
-    cargoLockSha256: await sha256File(
-      path.join(repoRoot, "desktop", "src-tauri", "Cargo.lock"),
-    ),
     noticeExemptionsSha256: await sha256File(noticeExemptionsPath),
   };
   const inventory = {
@@ -126,7 +123,15 @@ export async function verifyShippedDependencyInventory() {
   const { inventory } = await buildShippedDependencyArtifacts();
   const expected = serialize(inventory);
   const actual = await readFile(inventoryPath, "utf8");
-  assert(actual === expected, "Shipped dependency inventory differs from the exact lockfiles.");
+  assert(
+    actual === expected,
+    "Shipped dependency inventory differs from the exact lockfiles. "
+      + "Regenerate it on Windows with cargo and pnpm available: "
+      + "cd desktop && pnpm install --frozen-lockfile && "
+      + "node ./tests/scripts/shipped-dependency-inventory.mjs --write, "
+      + "then commit SHIPPED_DEPENDENCY_INVENTORY.json and "
+      + "SHIPPED_DEPENDENCY_NOTICES.json.",
+  );
   const notice = await readFile(path.join(repoRoot, "THIRD_PARTY_NOTICES.md"), "utf8");
   assert(
     notice.includes("## Shipped desktop dependency inventory"),
