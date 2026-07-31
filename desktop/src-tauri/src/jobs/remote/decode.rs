@@ -104,9 +104,23 @@ pub(super) fn decode_to_canonical_wav(
         ensure_active()?;
         let packet = match format.next_packet() {
             Ok(packet) => packet,
-            // Symphonia signals the end of a stream as an unexpected EOF.
-            Err(SymphoniaError::IoError(_)) => break,
-            Err(SymphoniaError::ResetRequired) => break,
+            // Only an unexpected EOF is the end of the stream. Any other IO
+            // failure would otherwise truncate the audio silently and hand back
+            // a short transcript with no indication anything was lost.
+            Err(SymphoniaError::IoError(error))
+                if error.kind() == std::io::ErrorKind::UnexpectedEof =>
+            {
+                break
+            }
+            Err(SymphoniaError::IoError(error)) => {
+                return Err(format!("failed to read imported audio: {error}"))
+            }
+            // The stream changed shape mid-file. Continuing would decode the
+            // remainder against stale parameters, so refuse rather than emit
+            // audio that silently stops matching its source.
+            Err(SymphoniaError::ResetRequired) => {
+                return Err("imported audio changes format mid-stream".into())
+            }
             Err(error) => return Err(format!("failed to read imported audio: {error}")),
         };
         if packet.track_id() != track_id {
@@ -119,6 +133,12 @@ pub(super) fn decode_to_canonical_wav(
             Err(error) => return Err(format!("failed to decode imported audio: {error}")),
         };
         let spec = *decoded.spec();
+        // downmix and resampling both use the header's values, so a mid-stream
+        // change would quietly mix the wrong channel count and resample at the
+        // wrong ratio.
+        if spec.channels.count() != channel_count || spec.rate != source_sample_rate_hz {
+            return Err("imported audio changes channel layout or sample rate mid-stream".into());
+        }
         let mut buffer = SampleBuffer::<f32>::new(decoded.capacity() as u64, spec);
         buffer.copy_interleaved_ref(decoded);
         let interleaved = buffer.samples();
@@ -328,6 +348,37 @@ mod tests {
             error.contains("supported container") || error.contains("no audio"),
             "{error}"
         );
+    }
+
+    /// A stream that ends mid-frame must not be mistaken for a clean EOF, or a
+    /// truncated download would publish a short transcript silently.
+    #[test]
+    fn a_truncated_stream_does_not_pass_as_complete() {
+        let directory = scratch("truncated");
+        let whole = std::fs::read(fixture("tone-44k-stereo.mp3")).expect("read fixture");
+        let cut = directory.join("truncated.mp3");
+        std::fs::write(&cut, &whole[..whole.len() / 2]).expect("write");
+
+        let (evidence, bytes) = {
+            let destination = directory.join("decoded.wav");
+            let evidence = decode_to_canonical_wav(&cut, &destination, &mut || Ok(()))
+                .expect("a truncated stream still decodes what it holds");
+            let bytes = std::fs::metadata(&destination).expect("stat").len();
+            (evidence, bytes)
+        };
+        // Half the bytes must yield materially less audio, not the full duration.
+        let (full, _) = decode("tone-44k-stereo.mp3");
+        assert!(
+            evidence.output_sample_count < full.output_sample_count,
+            "truncated input produced {} samples against {} for the whole file",
+            evidence.output_sample_count,
+            full.output_sample_count
+        );
+        assert!(
+            bytes > 44,
+            "a decoded file must carry audio past its header"
+        );
+        std::fs::remove_dir_all(&directory).ok();
     }
 
     #[test]
