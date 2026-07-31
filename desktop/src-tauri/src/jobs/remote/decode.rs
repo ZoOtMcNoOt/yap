@@ -7,7 +7,7 @@
 //! unchanged path. What the source was is recorded as evidence rather than
 //! being reported as an identity normalization.
 
-use std::{fs::File, path::Path};
+use std::path::Path;
 
 use symphonia::core::{
     audio::SampleBuffer,
@@ -17,6 +17,7 @@ use symphonia::core::{
     probe::Hint,
 };
 
+use super::artifact_io::{metadata_is_link_or_reparse, open_no_follow_read};
 use crate::audio::preprocess::{downmix_to_mono, f32_to_i16, LinearResampler};
 
 pub(super) const CANONICAL_SAMPLE_RATE_HZ: u32 = 16_000;
@@ -52,8 +53,22 @@ pub(super) fn decode_to_canonical_wav(
     ensure_active: &mut impl FnMut() -> Result<(), String>,
 ) -> Result<DecodedSource, String> {
     ensure_active()?;
-    let file = File::open(source_path)
+    // The spool admits this file by refusing links and reparse points, so
+    // re-opening it with a bare File::open would discard that refusal and let a
+    // link planted at the admitted path redirect the decode. Use the same pair
+    // of helpers the sibling chunk and spool paths already use: the open refuses
+    // a link outright on Unix, while Windows opens the reparse point itself so
+    // the metadata check is what rejects it there. Everything after this reads
+    // from the handle rather than the path, so the admitted object is the one
+    // that gets decoded.
+    let file = open_no_follow_read(source_path)
         .map_err(|error| format!("failed to open imported audio: {error}"))?;
+    let source_metadata = file
+        .metadata()
+        .map_err(|error| format!("failed to inspect imported audio: {error}"))?;
+    if !source_metadata.is_file() || metadata_is_link_or_reparse(&source_metadata) {
+        return Err("imported audio is not a regular file".into());
+    }
     let stream = MediaSourceStream::new(Box::new(file), Default::default());
     let mut hint = Hint::new();
     if let Some(extension) = source_path.extension().and_then(|value| value.to_str()) {
@@ -219,6 +234,7 @@ pub(in crate::jobs) fn decode_import_if_compressed(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::File;
     use std::io::Read;
 
     fn fixture(name: &str) -> std::path::PathBuf {
@@ -350,6 +366,58 @@ mod tests {
             .expect_err("must refuse");
         assert!(
             error.contains("supported container") || error.contains("no audio"),
+            "{error}"
+        );
+    }
+
+    #[cfg(unix)]
+    fn create_file_symlink(source: &Path, destination: &Path) -> std::io::Result<()> {
+        std::os::unix::fs::symlink(source, destination)
+    }
+
+    #[cfg(windows)]
+    fn create_file_symlink(source: &Path, destination: &Path) -> std::io::Result<()> {
+        std::os::windows::fs::symlink_file(source, destination)
+    }
+
+    /// Creating a symlink needs a privilege that Windows does not grant by
+    /// default, so an unprivileged run skips rather than failing.
+    fn test_symlink_is_unavailable(error: &std::io::Error) -> bool {
+        cfg!(windows)
+            && (error.kind() == std::io::ErrorKind::PermissionDenied
+                || error.raw_os_error() == Some(1314))
+    }
+
+    /// The spool admits an import by refusing links and reparse points. Decoding
+    /// re-opens by path, so it has to refuse them too, or a link planted at the
+    /// admitted path would be decoded instead of the file that was admitted.
+    #[test]
+    fn a_linked_source_is_refused_rather_than_followed() {
+        let directory = scratch("linked");
+        let real = directory.join("real.mp3");
+        std::fs::copy(fixture("tone-44k-stereo.mp3"), &real).expect("copy fixture");
+        let link = directory.join("link.mp3");
+        if let Err(error) = create_file_symlink(&real, &link) {
+            if test_symlink_is_unavailable(&error) {
+                std::fs::remove_dir_all(&directory).ok();
+                return;
+            }
+            panic!("could not create test symlink: {error}");
+        }
+
+        // The link resolves to a file that decodes cleanly, so anything other
+        // than an open failure means the refusal was skipped rather than the
+        // source simply being undecodable.
+        decode_to_canonical_wav(&real, &directory.join("direct.wav"), &mut || Ok(()))
+            .expect("the link target itself decodes");
+        let error = decode_to_canonical_wav(&link, &directory.join("linked.wav"), &mut || Ok(()))
+            .expect_err("a linked source must be refused");
+        // Unix refuses at the open; Windows opens the reparse point itself, so
+        // the metadata check is what rejects it there. Either is the refusal,
+        // and neither is the "not a supported container" a pass-through gives.
+        assert!(
+            error.contains("failed to open imported audio")
+                || error.contains("imported audio is not a regular file"),
             "{error}"
         );
     }
