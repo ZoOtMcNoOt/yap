@@ -1,4 +1,4 @@
-export const acceptedFormats = "WAV only for now (mono PCM16, 16 kHz)";
+export const acceptedFormats = "WAV and MP3";
 
 export const audioExtensions = ["mp3", "m4a", "wav", "mp4", "flac", "ogg", "webm"];
 export const audioExts = new Set(audioExtensions.map((format) => `.${format}`));

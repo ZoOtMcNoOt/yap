@@ -4,8 +4,8 @@ use super::{
         sha256_reader, valid_sha256, validate_identifier, write_new_synced, StagingDirectory,
     },
     preprocessing::{
-        AdvisoryVadSession, ImportedNormalizationEvidence, ImportedPreprocessingEvidence,
-        CAPTURE_MANIFEST_SCHEMA_VERSION, MAX_CAPTURE_MANIFEST_BYTES,
+        AdvisoryVadSession, ImportedDecodedSourceEvidence, ImportedNormalizationEvidence,
+        ImportedPreprocessingEvidence, CAPTURE_MANIFEST_SCHEMA_VERSION, MAX_CAPTURE_MANIFEST_BYTES,
     },
     spool::prepare_spool_root,
     wav::inspect_pcm_wav,
@@ -78,6 +78,10 @@ pub(in crate::jobs) struct ImportedPcmWavPreparation<'a> {
     pub(in crate::jobs) started_at: SystemTime,
     pub(in crate::jobs) language_decision: &'a RecordingLanguageDecision,
     pub(in crate::jobs) asr_catalog_revision: &'a str,
+    /// Set when `source` is a canonical file this build decoded from a
+    /// compressed import. Both preparation entry points carry it, so neither
+    /// can report a decoded source as an identity copy.
+    pub(in crate::jobs) decoded_from: Option<super::decode::DecodedSource>,
 }
 
 pub(in crate::jobs) struct ImportedClientPreflightPreparation<'a> {
@@ -87,6 +91,9 @@ pub(in crate::jobs) struct ImportedClientPreflightPreparation<'a> {
     pub(in crate::jobs) spool_root: &'a Path,
     pub(in crate::jobs) owner_namespace: &'a OwnerNamespace,
     pub(in crate::jobs) started_at: SystemTime,
+    /// Set when `source` is a canonical file this build decoded from a
+    /// compressed import, so the normalization record can say so.
+    pub(in crate::jobs) decoded_from: Option<super::decode::DecodedSource>,
 }
 
 pub(in crate::jobs) enum ImportedLidPreparation {
@@ -275,6 +282,8 @@ pub(in crate::jobs) fn prepare_imported_pcm_wav(
             started_at,
             language_decision,
             asr_catalog_revision: TEST_ASR_CATALOG_REVISION,
+            // This test-only entry point takes an already-canonical source.
+            decoded_from: None,
         },
         || Ok(()),
     )
@@ -293,6 +302,7 @@ pub(in crate::jobs) fn prepare_imported_pcm_wav_with_cancellation(
         started_at,
         language_decision,
         asr_catalog_revision,
+        decoded_from,
     } = preparation;
     let preflight = prepare_imported_client_preflight_with_cancellation(
         ImportedClientPreflightPreparation {
@@ -302,6 +312,7 @@ pub(in crate::jobs) fn prepare_imported_pcm_wav_with_cancellation(
             spool_root,
             owner_namespace,
             started_at,
+            decoded_from,
         },
         ensure_active,
     )?;
@@ -345,6 +356,7 @@ pub(super) fn prepare_imported_pcm_wav_with_advisory_vad_for_test(
         started_at,
         language_decision,
         asr_catalog_revision,
+        decoded_from,
     } = preparation;
     let preflight = prepare_imported_client_preflight_impl(
         ImportedClientPreflightPreparation {
@@ -354,6 +366,7 @@ pub(super) fn prepare_imported_pcm_wav_with_advisory_vad_for_test(
             spool_root,
             owner_namespace,
             started_at,
+            decoded_from,
         },
         AdvisoryVadSession::running(vad),
         || Ok(()),
@@ -378,6 +391,7 @@ fn prepare_imported_client_preflight_impl(
         spool_root,
         owner_namespace,
         started_at,
+        decoded_from,
     } = preparation;
     ensure_active()?;
     validate_identifier(job_id, 128, "job ID")?;
@@ -517,14 +531,33 @@ fn prepare_imported_client_preflight_impl(
         return Err("imported WAV normalization changed source-time length".into());
     }
 
-    let normalization = ImportedNormalizationEvidence::canonical_pcm16_identity(
-        source_sha256.clone(),
-        format_sha256(source_pcm_digest.finalize().as_slice()),
-        format_sha256(output_pcm_digest.finalize().as_slice()),
-        source_sample_count,
-        output_sample_count,
-        padding_samples,
-    );
+    let source_pcm_sha256 = format_sha256(source_pcm_digest.finalize().as_slice());
+    let output_pcm_sha256 = format_sha256(output_pcm_digest.finalize().as_slice());
+    let normalization = match decoded_from {
+        Some(decoded) => ImportedNormalizationEvidence::decoded_to_canonical_pcm16(
+            source_sha256.clone(),
+            source_pcm_sha256,
+            output_pcm_sha256,
+            source_sample_count,
+            output_sample_count,
+            padding_samples,
+            ImportedDecodedSourceEvidence::new(
+                decoded.source_codec,
+                decoded.source_sample_rate_hz,
+                decoded.source_channels,
+                decoded.source_frame_count,
+            )
+            .map_err(|reason| format!("decoded source evidence is invalid: {reason}"))?,
+        ),
+        None => ImportedNormalizationEvidence::canonical_pcm16_identity(
+            source_sha256.clone(),
+            source_pcm_sha256,
+            output_pcm_sha256,
+            source_sample_count,
+            output_sample_count,
+            padding_samples,
+        ),
+    };
     ensure_active()?;
     let vad_evidence = vad.finish(source_sample_count, &mut ensure_active)?;
     ensure_active()?;

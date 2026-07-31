@@ -17,7 +17,8 @@ use source::{
 };
 
 pub(crate) use source::{
-    inspect_media_source, open_unchanged_media_source, MediaSourceFingerprint,
+    inspect_media_source, open_decoded_media_source, open_unchanged_media_source,
+    MediaSourceFingerprint,
 };
 
 // Tauri 2.11 custom protocol responders require a complete Cow<'static, [u8]>

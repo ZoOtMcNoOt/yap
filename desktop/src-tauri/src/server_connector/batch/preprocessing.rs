@@ -4,7 +4,10 @@ mod stage_projection;
 
 use super::validation::valid_sha256;
 
-pub(crate) const PREPROCESSING_EVIDENCE_SCHEMA_VERSION: u16 = 1;
+// 2 adds normalization.decodedFrom, which records that the admitted canonical
+// source was produced by decoding a compressed import rather than copied from
+// an already-canonical file.
+pub(crate) const PREPROCESSING_EVIDENCE_SCHEMA_VERSION: u16 = 2;
 const SAMPLE_RATE_HZ: u64 = 16_000;
 const SAMPLES_PER_MILLISECOND: u64 = SAMPLE_RATE_HZ / 1_000;
 const MAX_SOURCE_SAMPLES: u64 = SAMPLE_RATE_HZ * 4 * 60 * 60;
@@ -93,6 +96,43 @@ impl VadComponentEvidence {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct DecodedSourceEvidence {
+    codec: String,
+    sample_rate_hz: u32,
+    channels: u16,
+    frame_count: u64,
+}
+
+impl DecodedSourceEvidence {
+    pub(crate) fn new(
+        codec: String,
+        sample_rate_hz: u32,
+        channels: u16,
+        frame_count: u64,
+    ) -> Result<Self, &'static str> {
+        if codec.is_empty() || codec.len() > 64 {
+            return Err("invalid_decoded_codec");
+        }
+        if !(8_000..=384_000).contains(&sample_rate_hz) {
+            return Err("invalid_decoded_sample_rate");
+        }
+        if !(1..=8).contains(&channels) {
+            return Err("invalid_decoded_channels");
+        }
+        if frame_count == 0 {
+            return Err("invalid_decoded_frame_count");
+        }
+        Ok(Self {
+            codec,
+            sample_rate_hz,
+            channels,
+            frame_count,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct NormalizationEvidence {
     status: String,
     component_id: String,
@@ -110,6 +150,11 @@ pub(crate) struct NormalizationEvidence {
     gain_applied_milli_db: i32,
     samples_modified: u64,
     source_time_preserved: bool,
+    /// Present only when the admitted canonical source was decoded from a
+    /// compressed import. Absent means the source was already canonical, so its
+    /// absence is itself a claim and must stay accurate.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    decoded_from: Option<DecodedSourceEvidence>,
 }
 
 impl NormalizationEvidence {
@@ -139,14 +184,74 @@ impl NormalizationEvidence {
             gain_applied_milli_db: 0,
             samples_modified: 0,
             source_time_preserved: true,
+            decoded_from: None,
+        }
+    }
+
+    /// The admitted source here was decoded from a compressed import, so the
+    /// normalization from it is still an identity copy: what the decode changed
+    /// is recorded in `decoded_from` rather than hidden behind an unqualified
+    /// identity claim.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn decoded_to_canonical_pcm16(
+        input_source_sha256: String,
+        source_pcm_sha256: String,
+        output_pcm_sha256: String,
+        source_sample_count: u64,
+        output_sample_count: u64,
+        padding_samples: u16,
+        decoded_from: DecodedSourceEvidence,
+    ) -> Self {
+        Self {
+            component_revision: "decoded-canonical-pcm16-normalization-v1".into(),
+            method: "decoded_to_canonical_pcm16".into(),
+            decoded_from: Some(decoded_from),
+            ..Self::canonical_pcm16_identity(
+                input_source_sha256,
+                source_pcm_sha256,
+                output_pcm_sha256,
+                source_sample_count,
+                output_sample_count,
+                padding_samples,
+            )
+        }
+    }
+
+    /// Each method owns exactly one component revision, so a record cannot
+    /// claim one provenance while carrying the other's revision.
+    fn method_matches_revision(&self) -> bool {
+        match self.method.as_str() {
+            "canonical_pcm16_identity" => {
+                self.component_revision == "canonical-pcm16-normalization-v1"
+            }
+            "decoded_to_canonical_pcm16" => {
+                self.component_revision == "decoded-canonical-pcm16-normalization-v1"
+            }
+            _ => false,
+        }
+    }
+
+    /// The decoded method must carry its source facts, and the identity method
+    /// must not, so absence stays a meaningful claim in both directions.
+    fn decoded_from_matches_method(&self) -> bool {
+        match (self.method.as_str(), self.decoded_from.as_ref()) {
+            ("decoded_to_canonical_pcm16", Some(decoded)) => DecodedSourceEvidence::new(
+                decoded.codec.clone(),
+                decoded.sample_rate_hz,
+                decoded.channels,
+                decoded.frame_count,
+            )
+            .is_ok(),
+            ("canonical_pcm16_identity", None) => true,
+            _ => false,
         }
     }
 
     fn is_valid(&self, output_sample_count: u64) -> bool {
         self.status == "complete"
             && self.component_id == "yap-imported-audio-normalizer"
-            && self.component_revision == "canonical-pcm16-normalization-v1"
-            && self.method == "canonical_pcm16_identity"
+            && self.method_matches_revision()
+            && self.decoded_from_matches_method()
             && valid_sha256(&self.input_source_sha256)
             && valid_sha256(&self.source_pcm_sha256)
             && valid_sha256(&self.output_pcm_sha256)

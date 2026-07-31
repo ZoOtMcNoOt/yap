@@ -85,7 +85,7 @@ impl RecordingJobs {
         }) {
             return Err(command_error(
                 "REMOTE_MEDIA_UNSUPPORTED",
-                "Private-server transcription currently accepts mono PCM16 16 kHz WAV files only.",
+                "Private-server transcription currently accepts WAV and MP3 recordings.",
             ));
         }
         let sources = paths

@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "target": "x86_64-pc-windows-msvc",
   "generatedFrom": {
-    "noticeExemptionsSha256": "776c6f501cb98b08029ec95e41284d224ec912c819a5f0a6155eedc2ed45b215"
+    "noticeExemptionsSha256": "38cc0aa23b70587056b0eb72f8b6a5302879a07914d5393515b95d63308fa78f"
   },
   "packages": {
     "javascript": [
@@ -1055,6 +1055,21 @@
         ]
       },
       {
+        "name": "arrayvec",
+        "version": "0.7.8",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "4da95ec4ecb65b738d470b7d762894ad9c97da93e6cbfb18b570fc2c96f4b871"
+          }
+        ]
+      },
+      {
         "name": "async-tungstenite",
         "version": "0.32.1",
         "noticeDisposition": "exact-installed-notice-files",
@@ -1234,6 +1249,25 @@
           {
             "sourceFile": "LICENSE",
             "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae"
+          }
+        ]
+      },
+      {
+        "name": "bytemuck",
+        "version": "1.25.0",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "e3ba223bb1423f0aad8c3dfce0fe3148db48926d41e6fbc3afbbf5ff9e1c89cb"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "9df9ba60a11af705f2e451b53762686e615d86f76b169cf075c3237730dbd7e2"
+          },
+          {
+            "sourceFile": "LICENSE-ZLIB",
+            "sha256": "84b34dd7608f7fb9b17bd588a6bf392bf7de504e2716f024a77d89f1b145a151"
           }
         ]
       },
@@ -1779,6 +1813,29 @@
         ]
       },
       {
+        "name": "encoding_rs",
+        "version": "0.8.35",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "COPYRIGHT",
+            "sha256": "11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190"
+          },
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c"
+          },
+          {
+            "sourceFile": "LICENSE-WHATWG",
+            "sha256": "838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50"
+          }
+        ]
+      },
+      {
         "name": "equivalent",
         "version": "1.0.2",
         "noticeDisposition": "exact-installed-notice-files",
@@ -2131,6 +2188,17 @@
           {
             "sourceFile": "LICENSE-MIT",
             "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0"
+          }
+        ]
+      },
+      {
+        "name": "hound",
+        "version": "3.5.1",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "license",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
           }
         ]
       },
@@ -2499,6 +2567,21 @@
           {
             "sourceFile": "LICENSE-MIT",
             "sha256": "31dbbab009f1b2e59a1622d5955dfafc38ebe834000215b49d954c6f85fe927c"
+          }
+        ]
+      },
+      {
+        "name": "lazy_static",
+        "version": "1.5.0",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "0621878e61f0d0fda054bcbe02df75192c28bde1ecc8289cbd86aeba2dd72720"
           }
         ]
       },
@@ -3842,6 +3925,54 @@
           {
             "sourceFile": "LICENSE",
             "sha256": "d1fc1bc0d155df60b2e7705b6b2ae02a05c96f948e1cec6e2fb86360b09f346b"
+          }
+        ]
+      },
+      {
+        "name": "symphonia",
+        "version": "0.5.5",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "Cargo.toml.orig",
+            "sha256": "4b70825a31e1532fc3498e7337ef784d71d509bd6fcc03934d642e033a00796e"
+          }
+        ]
+      },
+      {
+        "name": "symphonia-bundle-mp3",
+        "version": "0.5.5",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "Cargo.toml.orig",
+            "sha256": "6feaf01b6ea4eaebfa7c5e9ca5687765b5be84322ef8637801547e7b7bdce7ad"
+          }
+        ]
+      },
+      {
+        "name": "symphonia-core",
+        "version": "0.5.5",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "Cargo.toml.orig",
+            "sha256": "71257fae3cfb0301afe43ad4a01ad53c8e603c802153728ad2073844a1323e6b"
+          }
+        ]
+      },
+      {
+        "name": "symphonia-metadata",
+        "version": "0.5.5",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "Cargo.toml.orig",
+            "sha256": "fa1a5d332bae78422f4f1c1e10e686bf9e6b5903fc7f9bb1878f806e509425bf"
           }
         ]
       },
@@ -5383,6 +5514,10 @@
       "content": "Copyright 2022 Kirill Chibisov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL\nTHE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\n"
     },
     {
+      "sha256": "0621878e61f0d0fda054bcbe02df75192c28bde1ecc8289cbd86aeba2dd72720",
+      "content": "Copyright (c) 2010 The Rust Project Developers\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
+    },
+    {
       "sha256": "070dbc7dda03a29296f2d58bdb9b7331af90f2abc9f31df22875d1eabaf29852",
       "content": "Copyright (c) 2023 Jacob Pratt et al.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
     },
@@ -5441,6 +5576,10 @@
     {
       "sha256": "104bce84b453f732f4bd571e7c604d271380b02890d70f1c753af9d58063c7a4",
       "content": "[package]\nname = \"webview2-com\"\ndescription = \"Rust bindings for the WebView2 COM APIs\"\n\nedition.workspace = true\nrust-version.workspace = true\nrepository.workspace = true\nlicense.workspace = true\nkeywords.workspace = true\ncategories.workspace = true\nversion.workspace = true\n\n[package.metadata.docs.rs]\ndefault-target = \"x86_64-pc-windows-msvc\"\ntargets = [\n    \"i686-pc-windows-msvc\",\n    \"aarch64-pc-windows-msvc\",\n    \"x86_64-pc-windows-gnu\",\n    \"i686-pc-windows-gnu\",\n]\n\n[dependencies]\nwebview2-com-sys.workspace = true\nwebview2-com-macros.workspace = true\n\nwindows.workspace = true\nwindows-core.workspace = true\nwindows-implement.workspace = true\nwindows-interface.workspace = true\n\n[dev-dependencies]\nregex.workspace = true\nserde.workspace = true\nserde_json.workspace = true\n\n[dev-dependencies.windows]\nworkspace = true\nfeatures = [\n    \"Win32_Graphics_Gdi\",\n    \"Win32_System_LibraryLoader\",\n    \"Win32_System_Threading\",\n    \"Win32_UI_HiDpi\",\n    \"Win32_UI_Input_KeyboardAndMouse\",\n]\n"
+    },
+    {
+      "sha256": "11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190",
+      "content": "encoding_rs is copyright Mozilla Foundation.\n\nLicensed under the Apache License, Version 2.0\n<LICENSE-APACHE or\nhttps://www.apache.org/licenses/LICENSE-2.0> or the MIT\nlicense <LICENSE-MIT or https://opensource.org/licenses/MIT>,\nat your option. All files in the project carrying such\nnotice may not be copied, modified, or distributed except\naccording to those terms.\n\nThis crate includes data derived from the data files supplied\nwith the WHATWG Encoding Standard, which, when incorporated into\nsource code, are licensed under the BSD 3-Clause License\n<LICENSE-WHATWG>.\n\nTest code within encoding_rs is dedicated to the Public Domain when so\ndesignated (see the individual files for PD/CC0-dedicated sections).\n"
     },
     {
       "sha256": "11d55bd4541c75ee7879547ac49089c489163dae49551389713c3d026cab383e",
@@ -5631,8 +5770,16 @@
       "content": "Copyright 2017 Juniper Networks, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
     },
     {
+      "sha256": "4b70825a31e1532fc3498e7337ef784d71d509bd6fcc03934d642e033a00796e",
+      "content": "[package]\nname = \"symphonia\"\nversion = \"0.5.5\"\ndescription = \"Pure Rust media container and audio decoding library.\"\nhomepage = \"https://github.com/pdeljanov/Symphonia\"\nrepository = \"https://github.com/pdeljanov/Symphonia\"\nauthors = [\"Philip Deljanov <philip.deljanov@gmail.com>\"]\nlicense = \"MPL-2.0\"\nreadme = \"README.md\"\ncategories = [\"multimedia\", \"multimedia::audio\", \"multimedia::encoding\"]\nkeywords = [\"audio\", \"codec\", \"decoder\", \"multimedia\", \"media\"]\nedition = \"2018\"\nrust-version = \"1.53\"\n\n[features]\n# Only royalty-free open standard codecs and formats are enabled by default.\n# TODO: Remove all defaults for v0.6.0. Features should be additive.\ndefault = [\"adpcm\", \"flac\", \"mkv\", \"ogg\", \"pcm\", \"vorbis\", \"wav\"]\n\n# Enable specific codecs and formats.\n# TODO: Use \"dep:\" after MSRV is raised to >= 1.60.\naac = [\"symphonia-codec-aac\"]\nadpcm = [\"symphonia-codec-adpcm\"]\nalac = [\"symphonia-codec-alac\"]\nflac = [\"symphonia-bundle-flac\"]\ncaf = [\"symphonia-format-caf\"]\nisomp4 = [\"symphonia-format-isomp4\"]\nmkv = [\"symphonia-format-mkv\"]\nmp1 = [\"symphonia-bundle-mp3/mp1\"]\nmp2 = [\"symphonia-bundle-mp3/mp2\"]\nmp3 = [\"symphonia-bundle-mp3/mp3\"]\nogg = [\"symphonia-format-ogg\"]\npcm = [\"symphonia-codec-pcm\"]\naiff = [\"symphonia-format-riff/aiff\"]\nvorbis = [\"symphonia-codec-vorbis\"]\nwav = [\"symphonia-format-riff/wav\"]\n\n# MPEG audio codecs.\nmpa = [\"mp1\", \"mp2\", \"mp3\"]\n\n# Enable all supported codecs.\nall-codecs = [\n    \"aac\",\n    \"adpcm\",\n    \"alac\",\n    \"flac\",\n    \"mp1\",\n    \"mp2\",\n    \"mp3\",\n    \"pcm\",\n    \"vorbis\",\n]\n\n# Enable all supported formats.\nall-formats = [\n    \"caf\",\n    \"isomp4\",\n    \"mkv\",\n    \"ogg\",\n    \"aiff\",\n    \"wav\"\n]\n\n# Enable all supported codecs and formats.\nall = [\n    \"all-codecs\",\n    \"all-formats\",\n]\n\n# SIMD support.\nopt-simd-sse = [\"symphonia-core/opt-simd-sse\"]\nopt-simd-avx = [\"symphonia-core/opt-simd-avx\"]\nopt-simd-neon = [\"symphonia-core/opt-simd-neon\"]\n\n# Enable all SIMD support.\nopt-simd = [\n    \"opt-simd-sse\",\n    \"opt-simd-avx\",\n    \"opt-simd-neon\",\n]\n\n[dependencies]\nlazy_static = \"1.4.0\"\n\n[dependencies.symphonia-core]\nversion = \"0.5.5\"\npath = \"../symphonia-core\"\n\n[dependencies.symphonia-metadata]\nversion = \"0.5.5\"\npath = \"../symphonia-metadata\"\n\n[dependencies.symphonia-bundle-flac]\nversion = \"0.5.5\"\npath = \"../symphonia-bundle-flac\"\noptional = true\n\n[dependencies.symphonia-bundle-mp3]\nversion = \"0.5.5\"\npath = \"../symphonia-bundle-mp3\"\noptional = true\n# Standalone crate enables all MP1, MP2, and MP3 decoders by default.\ndefault-features = false\n\n[dependencies.symphonia-codec-aac]\nversion = \"0.5.5\"\npath = \"../symphonia-codec-aac\"\noptional = true\n\n[dependencies.symphonia-codec-adpcm]\nversion = \"0.5.5\"\npath = \"../symphonia-codec-adpcm\"\noptional = true\n\n[dependencies.symphonia-codec-alac]\nversion = \"0.5.5\"\npath = \"../symphonia-codec-alac\"\noptional = true\n\n[dependencies.symphonia-codec-pcm]\nversion = \"0.5.5\"\npath = \"../symphonia-codec-pcm\"\noptional = true\n\n[dependencies.symphonia-codec-vorbis]\nversion = \"0.5.5\"\npath = \"../symphonia-codec-vorbis\"\noptional = true\n\n[dependencies.symphonia-format-riff]\nversion = \"0.5.5\"\npath = \"../symphonia-format-riff\"\noptional = true\n# Standalone crate enables AIFF and WAVE by default.\ndefault-features = false\n\n[dependencies.symphonia-format-ogg]\nversion = \"0.5.5\"\npath = \"../symphonia-format-ogg\"\noptional = true\n\n[dependencies.symphonia-format-isomp4]\nversion = \"0.5.5\"\npath = \"../symphonia-format-isomp4\"\noptional = true\n\n[dependencies.symphonia-format-mkv]\nversion = \"0.5.5\"\npath = \"../symphonia-format-mkv\"\noptional = true\n\n[dependencies.symphonia-format-caf]\nversion = \"0.5.5\"\npath = \"../symphonia-format-caf\"\noptional = true\n\n# Show documentation with all features enabled on docs.rs\n[package.metadata.docs.rs]\nall-features = true\n"
+    },
+    {
       "sha256": "4cada0bd02ea3692eee6f16400d86c6508bbd3bafb2b65fed0419f36d4f83e8f",
       "content": "Copyright (c) 2019 The CryptoCorrosion Contributors\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
+    },
+    {
+      "sha256": "4da95ec4ecb65b738d470b7d762894ad9c97da93e6cbfb18b570fc2c96f4b871",
+      "content": "Copyright (c) Ulrik Sverdrup \"bluss\" 2015-2023\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
     },
     {
       "sha256": "5049cf464977eff4b4fcfa7988d84e74116956a3eb9d5f1d451b3f828f945233",
@@ -5775,12 +5922,20 @@
       "content": "Copyright (c) Individual contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
     },
     {
+      "sha256": "6feaf01b6ea4eaebfa7c5e9ca5687765b5be84322ef8637801547e7b7bdce7ad",
+      "content": "[package]\nname = \"symphonia-bundle-mp3\"\nversion = \"0.5.5\"\ndescription = \"Pure Rust MP1, MP2, and MP3 demuxer and decoder (a part of project Symphonia).\"\nhomepage = \"https://github.com/pdeljanov/Symphonia\"\nrepository = \"https://github.com/pdeljanov/Symphonia\"\nauthors = [\"Philip Deljanov <philip.deljanov@gmail.com>\"]\nlicense = \"MPL-2.0\"\nreadme = \"README.md\"\ncategories = [\"multimedia\", \"multimedia::audio\", \"multimedia::encoding\"]\nkeywords = [\"audio\", \"codec\", \"decoder\", \"mp3\", \"mpeg\"]\nedition = \"2018\"\nrust-version = \"1.53\"\n\n[features]\ndefault = [\"mp1\", \"mp2\", \"mp3\"]\nmp1 = []\nmp2 = []\nmp3 = []\n\n[dependencies]\nlog = \"0.4\"\nlazy_static = \"1.4.0\"\nsymphonia-core = { version = \"0.5.5\", path = \"../symphonia-core\" }\nsymphonia-metadata = { version = \"0.5.5\", path = \"../symphonia-metadata\" }"
+    },
+    {
       "sha256": "709e3175b4212f7b13aa93971c9f62ff8c69ec45ad8c6532a7e0c41d7a7d6f8c",
       "content": "Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com>\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
     },
     {
       "sha256": "70c9d40f1f9545c3f133b8a67206e89da850f6468eed072281bb3701514114a9",
       "content": "Copyright (c) 2022-2026 The RustCrypto Project Developers\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
+    },
+    {
+      "sha256": "71257fae3cfb0301afe43ad4a01ad53c8e603c802153728ad2073844a1323e6b",
+      "content": "[package]\nname = \"symphonia-core\"\nversion = \"0.5.5\"\ndescription = \"Project Symphonia shared structs, traits, and features.\"\nhomepage = \"https://github.com/pdeljanov/Symphonia\"\nrepository = \"https://github.com/pdeljanov/Symphonia\"\nauthors = [\"Philip Deljanov <philip.deljanov@gmail.com>\"]\nlicense = \"MPL-2.0\"\nreadme = \"README.md\"\ncategories = [\"multimedia\", \"multimedia::audio\", \"multimedia::encoding\"]\nkeywords = [\"audio\", \"codec\", \"decoder\", \"multimedia\", \"media\"]\nedition = \"2018\"\nrust-version = \"1.53\"\n\n[features]\ndefault = []\n\n# SIMD support.\nopt-simd-sse = [\"rustfft/sse\"]\nopt-simd-avx = [\"rustfft/avx\"]\nopt-simd-neon = [\"rustfft/neon\"]\n\n# Enable all SIMD support.\nopt-simd = [\n    \"opt-simd-sse\",\n    \"opt-simd-avx\",\n    \"opt-simd-neon\",\n]\n\n[dependencies]\narrayvec = \"0.7.1\"\nbitflags = \"1.2.1\"\nbytemuck = \"1.7\"\nlazy_static = \"1.4.0\"\nlog = \"0.4\"\n\n[dependencies.rustfft]\nversion = \"6.1.0\"\noptional = true\ndefault-features = false"
     },
     {
       "sha256": "728536b4160e051f86d7c9c388f704866b3d512cd7df97ac3516c65279523c4e",
@@ -5855,8 +6010,16 @@
       "content": "Copyright (c) 2016-2026 The RustCrypto Project Developers\nCopyright (c) 2016 Artyom Pavlov\nCopyright (c) 2009-2013 Mozilla Foundation\nCopyright (c) 2006-2009 Graydon Hoare\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
     },
     {
+      "sha256": "838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50",
+      "content": "Copyright © WHATWG (Apple, Google, Mozilla, Microsoft).\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this\n   list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice,\n   this list of conditions and the following disclaimer in the documentation\n   and/or other materials provided with the distribution.\n\n3. Neither the name of the copyright holder nor the names of its\n   contributors may be used to endorse or promote products derived from\n   this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+    },
+    {
       "sha256": "83c1763356e822adde0a2cae748d938a73fdc263849ccff6b27776dff213bd32",
       "content": "Copyright 2019 The Fuchsia Authors.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+    },
+    {
+      "sha256": "84b34dd7608f7fb9b17bd588a6bf392bf7de504e2716f024a77d89f1b145a151",
+      "content": "Copyright (c) 2019 Daniel \"Lokathor\" Gee.\n\nThis software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.\n\nPermission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:\n\n1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.\n\n2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.\n\n3. This notice may not be removed or altered from any source distribution.\n"
     },
     {
       "sha256": "861399f8c21c042b110517e76dc6b63a2b334276c8cf17412fc3c8908ca8dc17",
@@ -5957,6 +6120,10 @@
     {
       "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d",
       "content": "MIT License\n\nCopyright (c) 2017 - Present Tauri Apps Contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "sha256": "9df9ba60a11af705f2e451b53762686e615d86f76b169cf075c3237730dbd7e2",
+      "content": "MIT License\n\nCopyright (c) 2019 Daniel \"Lokathor\" Gee.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice (including the next paragraph) shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
     },
     {
       "sha256": "9e0a97848ea543aef745c98e84fde696a9a3e0735538f6daefdd3cb1942effc1",
@@ -6211,6 +6378,10 @@
       "content": "{\n  \"name\": \"react-remove-scroll-bar\",\n  \"version\": \"2.3.8\",\n  \"description\": \"Removes body scroll without content _shake_\",\n  \"main\": \"dist/es5/index.js\",\n  \"jsnext:main\": \"dist/es2015/index.js\",\n  \"module\": \"dist/es2015/index.js\",\n  \"types\": \"dist/es5/index.d.ts\",\n  \"scripts\": {\n    \"dev\": \"lib-builder dev\",\n    \"test\": \"jest\",\n    \"test:ci\": \"jest --runInBand --coverage\",\n    \"build\": \"lib-builder build && yarn size:report\",\n    \"release\": \"yarn build && yarn test\",\n    \"size\": \"yarn size-limit\",\n    \"size:report\": \"yarn --silent size-limit --json > .size.json\",\n    \"lint\": \"lib-builder lint\",\n    \"format\": \"lib-builder format\",\n    \"update\": \"lib-builder update\",\n    \"prepublish\": \"yarn build && yarn changelog\",\n    \"changelog\": \"conventional-changelog -p angular -i CHANGELOG.md -s\",\n    \"changelog:rewrite\": \"conventional-changelog -p angular -i CHANGELOG.md -s -r 0\",\n    \"storybook\": \"start-storybook -p 6006\"\n  },\n  \"keywords\": [\n    \"scroll\"\n  ],\n  \"author\": \"Anton Korzunov <thekashey@gmail.com>\",\n  \"license\": \"MIT\",\n  \"devDependencies\": {\n    \"@size-limit/preset-small-lib\": \"^11.0.2\",\n    \"size-limit\": \"^11.0.2\",\n    \"@storybook/react\": \"^6.4.22\",\n    \"@testing-library/react\": \"^12.1.5\",\n    \"@types/react\": \"^16.14.56\",\n    \"@theuiteam/lib-builder\": \"^0.1.4\",\n    \"react\": \"^16.8.6\",\n    \"react-dom\": \"^16.8.6\"\n  },\n  \"engines\": {\n    \"node\": \">=10\"\n  },\n  \"peerDependencies\": {\n    \"@types/react\": \"*\",\n    \"react\": \"^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0\"\n  },\n  \"peerDependenciesMeta\": {\n    \"@types/react\": {\n      \"optional\": true\n    }\n  },\n  \"files\": [\n    \"dist\",\n    \"constants\"\n  ],\n  \"repository\": \"https://github.com/theKashey/react-remove-scroll-bar\",\n  \"dependencies\": {\n    \"react-style-singleton\": \"^2.2.2\",\n    \"tslib\": \"^2.0.0\"\n  },\n  \"module:es2019\": \"dist/es2019/index.js\",\n  \"husky\": {\n    \"hooks\": {\n      \"pre-commit\": \"lint-staged\"\n    }\n  },\n  \"lint-staged\": {\n    \"*.{ts,tsx}\": [\n      \"prettier --write\",\n      \"eslint --fix\",\n      \"git add\"\n    ],\n    \"*.{js,css,json,md}\": [\n      \"prettier --write\",\n      \"git add\"\n    ]\n  },\n  \"prettier\": {\n    \"printWidth\": 120,\n    \"trailingComma\": \"es5\",\n    \"tabWidth\": 2,\n    \"semi\": true,\n    \"singleQuote\": true\n  }\n}\n"
     },
     {
+      "sha256": "e3ba223bb1423f0aad8c3dfce0fe3148db48926d41e6fbc3afbbf5ff9e1c89cb",
+      "content": "Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n    1. Definitions.\n\n        \"License\" shall mean the terms and conditions for use, reproduction, and distribution as defined by Sections 1 through 9 of this document.\n\n        \"Licensor\" shall mean the copyright owner or entity authorized by the copyright owner that is granting the License.\n\n        \"Legal Entity\" shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity. For the purposes of this definition, \"control\" means (i) the power, direct or indirect, to cause the direction or management of such entity, whether by contract or otherwise, or (ii) ownership of fifty percent (50%) or more of the outstanding shares, or (iii) beneficial ownership of such entity.\n\n        \"You\" (or \"Your\") shall mean an individual or Legal Entity exercising permissions granted by this License.\n\n        \"Source\" form shall mean the preferred form for making modifications, including but not limited to software source code, documentation source, and configuration files.\n\n        \"Object\" form shall mean any form resulting from mechanical transformation or translation of a Source form, including but not limited to compiled object code, generated documentation, and conversions to other media types.\n\n        \"Work\" shall mean the work of authorship, whether in Source or Object form, made available under the License, as indicated by a copyright notice that is included in or attached to the work (an example is provided in the Appendix below).\n\n        \"Derivative Works\" shall mean any work, whether in Source or Object form, that is based on (or derived from) the Work and for which the editorial revisions, annotations, elaborations, or other modifications represent, as a whole, an original work of authorship. For the purposes of this License, Derivative Works shall not include works that remain separable from, or merely link (or bind by name) to the interfaces of, the Work and Derivative Works thereof.\n\n        \"Contribution\" shall mean any work of authorship, including the original version of the Work and any modifications or additions to that Work or Derivative Works thereof, that is intentionally submitted to Licensor for inclusion in the Work by the copyright owner or by an individual or Legal Entity authorized to submit on behalf of the copyright owner. For the purposes of this definition, \"submitted\" means any form of electronic, verbal, or written communication sent to the Licensor or its representatives, including but not limited to communication on electronic mailing lists, source code control systems, and issue tracking systems that are managed by, or on behalf of, the Licensor for the purpose of discussing and improving the Work, but excluding communication that is conspicuously marked or otherwise designated in writing by the copyright owner as \"Not a Contribution.\"\n\n        \"Contributor\" shall mean Licensor and any individual or Legal Entity on behalf of whom a Contribution has been received by Licensor and subsequently incorporated within the Work.\n    2. Grant of Copyright License. Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, publicly display, publicly perform, sublicense, and distribute the Work and such Derivative Works in Source or Object form.\n    3. Grant of Patent License. Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this section) patent license to make, have made, use, offer to sell, sell, import, and otherwise transfer the Work, where such license applies only to those patent claims licensable by such Contributor that are necessarily infringed by their Contribution(s) alone or by combination of their Contribution(s) with the Work to which such Contribution(s) was submitted. If You institute patent litigation against any entity (including a cross-claim or counterclaim in a lawsuit) alleging that the Work or a Contribution incorporated within the Work constitutes direct or contributory patent infringement, then any patent licenses granted to You under this License for that Work shall terminate as of the date such litigation is filed.\n    4. Redistribution. You may reproduce and distribute copies of the Work or Derivative Works thereof in any medium, with or without modifications, and in Source or Object form, provided that You meet the following conditions:\n        (a) You must give any other recipients of the Work or Derivative Works a copy of this License; and\n        (b) You must cause any modified files to carry prominent notices stating that You changed the files; and\n        (c) You must retain, in the Source form of any Derivative Works that You distribute, all copyright, patent, trademark, and attribution notices from the Source form of the Work, excluding those notices that do not pertain to any part of the Derivative Works; and\n        (d) If the Work includes a \"NOTICE\" text file as part of its distribution, then any Derivative Works that You distribute must include a readable copy of the attribution notices contained within such NOTICE file, excluding those notices that do not pertain to any part of the Derivative Works, in at least one of the following places: within a NOTICE text file distributed as part of the Derivative Works; within the Source form or documentation, if provided along with the Derivative Works; or, within a display generated by the Derivative Works, if and wherever such third-party notices normally appear. The contents of the NOTICE file are for informational purposes only and do not modify the License. You may add Your own attribution notices within Derivative Works that You distribute, alongside or as an addendum to the NOTICE text from the Work, provided that such additional attribution notices cannot be construed as modifying the License.\n\n        You may add Your own copyright statement to Your modifications and may provide additional or different license terms and conditions for use, reproduction, or distribution of Your modifications, or for any such Derivative Works as a whole, provided Your use, reproduction, and distribution of the Work otherwise complies with the conditions stated in this License.\n    5. Submission of Contributions. Unless You explicitly state otherwise, any Contribution intentionally submitted for inclusion in the Work by You to the Licensor shall be under the terms and conditions of this License, without any additional terms or conditions. Notwithstanding the above, nothing herein shall supersede or modify the terms of any separate license agreement you may have executed with Licensor regarding such Contributions.\n    6. Trademarks. This License does not grant permission to use the trade names, trademarks, service marks, or product names of the Licensor, except as required for reasonable and customary use in describing the origin of the Work and reproducing the content of the NOTICE file.\n    7. Disclaimer of Warranty. Unless required by applicable law or agreed to in writing, Licensor provides the Work (and each Contributor provides its Contributions) on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE. You are solely responsible for determining the appropriateness of using or redistributing the Work and assume any risks associated with Your exercise of permissions under this License.\n    8. Limitation of Liability. In no event and under no legal theory, whether in tort (including negligence), contract, or otherwise, unless required by applicable law (such as deliberate and grossly negligent acts) or agreed to in writing, shall any Contributor be liable to You for damages, including any direct, indirect, special, incidental, or consequential damages of any character arising as a result of this License or out of the use or inability to use the Work (including but not limited to damages for loss of goodwill, work stoppage, computer failure or malfunction, or any and all other commercial damages or losses), even if such Contributor has been advised of the possibility of such damages.\n    9. Accepting Warranty or Additional Liability. While redistributing the Work or Derivative Works thereof, You may choose to offer, and charge a fee for, acceptance of support, warranty, indemnity, or other liability obligations and/or rights consistent with this License. However, in accepting such obligations, You may act only on Your own behalf and on Your sole responsibility, not on behalf of any other Contributor, and only if You agree to indemnify, defend, and hold each Contributor harmless for any liability incurred by, or claims asserted against, such Contributor by reason of your accepting any such warranty or additional liability.\n\nEND OF TERMS AND CONDITIONS\n\nAPPENDIX: How to apply the Apache License to your work.\n\nTo apply the Apache License to your work, attach the following boilerplate notice, with the fields enclosed by brackets \"[]\" replaced with your own identifying information. (Don't include the brackets!) The text should be enclosed in the appropriate comment syntax for the file format. We also recommend that a file or class name and description of purpose be included on the same \"printed page\" as the copyright notice for easier identification within third-party archives.\n\nCopyright [yyyy] [name of copyright owner]\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n"
+    },
+    {
       "sha256": "e53a7165e8bc3ced5e5628404b3d2d28ecc14ad720f1c09ba28385d5151ecf93",
       "content": "MIT License\n\nCopyright (c) 2021 Chip Reed\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
     },
@@ -6261,6 +6432,10 @@
     {
       "sha256": "f7db81051789b729fea528a63ec4c938fdcb93d9d61d97dc8cc2e9df6d47f2a1",
       "content": "UNICODE LICENSE V3\n\nCOPYRIGHT AND PERMISSION NOTICE\n\nCopyright © 1991-2023 Unicode, Inc.\n\nNOTICE TO USER: Carefully read the following legal agreement. BY\nDOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR\nSOFTWARE, YOU UNEQUIVOCALLY ACCEPT, AND AGREE TO BE BOUND BY, ALL OF THE\nTERMS AND CONDITIONS OF THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT\nDOWNLOAD, INSTALL, COPY, DISTRIBUTE OR USE THE DATA FILES OR SOFTWARE.\n\nPermission is hereby granted, free of charge, to any person obtaining a\ncopy of data files and any associated documentation (the \"Data Files\") or\nsoftware and any associated documentation (the \"Software\") to deal in the\nData Files or Software without restriction, including without limitation\nthe rights to use, copy, modify, merge, publish, distribute, and/or sell\ncopies of the Data Files or Software, and to permit persons to whom the\nData Files or Software are furnished to do so, provided that either (a)\nthis copyright and permission notice appear with all copies of the Data\nFiles or Software, or (b) this copyright and permission notice appear in\nassociated Documentation.\n\nTHE DATA FILES AND SOFTWARE ARE PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY\nKIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF\nTHIRD PARTY RIGHTS.\n\nIN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE\nBE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES,\nOR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,\nWHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,\nARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA\nFILES OR SOFTWARE.\n\nExcept as contained in this notice, the name of a copyright holder shall\nnot be used in advertising or otherwise to promote the sale, use or other\ndealings in these Data Files or Software without prior written\nauthorization of the copyright holder.\n"
+    },
+    {
+      "sha256": "fa1a5d332bae78422f4f1c1e10e686bf9e6b5903fc7f9bb1878f806e509425bf",
+      "content": "[package]\nname = \"symphonia-metadata\"\nversion = \"0.5.5\"\ndescription = \"Project Symphonia multimedia tag and metadata readers.\"\nhomepage = \"https://github.com/pdeljanov/Symphonia\"\nrepository = \"https://github.com/pdeljanov/Symphonia\"\nauthors = [\"Philip Deljanov <philip.deljanov@gmail.com>\"]\nlicense = \"MPL-2.0\"\nreadme = \"README.md\"\ncategories = [\"multimedia\", \"multimedia::audio\", \"multimedia::encoding\"]\nkeywords = [\"multimedia\", \"media\", \"metadata\", \"id3v1\", \"id3v2\"]\nedition = \"2018\"\nrust-version = \"1.53\"\n\n[dependencies]\nencoding_rs = \"0.8.17\"\nlazy_static = \"1.4.0\"\nlog = \"0.4\"\nsymphonia-core = { version = \"0.5.5\", path = \"../symphonia-core\" }"
     },
     {
       "sha256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85",

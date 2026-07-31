@@ -39,7 +39,8 @@ use native_import_dispatcher::{
 
 const PENDING_JOB_LIFETIME_MS: u64 = 7 * 24 * 60 * 60 * 1_000;
 const MAX_RECORDING_JOBS: usize = 200;
-const REMOTE_IMPORT_AUDIO_EXTENSIONS: &[&str] = &["wav"];
+// Canonical WAV plus the compressed containers this build can decode into it.
+const REMOTE_IMPORT_AUDIO_EXTENSIONS: &[&str] = &["wav", "mp3"];
 static NEXT_JOB_NONCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, serde::Serialize)]
@@ -160,7 +161,7 @@ pub(crate) async fn recording_jobs_pick_imports(
             .dialog()
             .file()
             .set_title("Choose recordings")
-            .add_filter("Canonical WAV audio", REMOTE_IMPORT_AUDIO_EXTENSIONS)
+            .add_filter("Audio recordings", REMOTE_IMPORT_AUDIO_EXTENSIONS)
             .blocking_pick_files()
     })
     .await

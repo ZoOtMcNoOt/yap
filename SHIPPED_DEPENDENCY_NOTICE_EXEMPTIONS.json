@@ -45,6 +45,34 @@
     },
     {
       "ecosystem": "rust",
+      "name": "symphonia",
+      "version": "0.5.5",
+      "sourceFile": "Cargo.toml.orig",
+      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
+    },
+    {
+      "ecosystem": "rust",
+      "name": "symphonia-bundle-mp3",
+      "version": "0.5.5",
+      "sourceFile": "Cargo.toml.orig",
+      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
+    },
+    {
+      "ecosystem": "rust",
+      "name": "symphonia-core",
+      "version": "0.5.5",
+      "sourceFile": "Cargo.toml.orig",
+      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
+    },
+    {
+      "ecosystem": "rust",
+      "name": "symphonia-metadata",
+      "version": "0.5.5",
+      "sourceFile": "Cargo.toml.orig",
+      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
+    },
+    {
+      "ecosystem": "rust",
       "name": "unic-char-property",
       "version": "0.9.0",
       "sourceFile": "Cargo.toml.orig",

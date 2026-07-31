@@ -8,8 +8,8 @@ mod validation;
 pub(crate) use client::{validate_batch_base_url, BatchApiClient};
 pub(crate) use error::BatchClientError;
 pub(crate) use preprocessing::{
-    validate_vad_intervals, NormalizationEvidence, PreprocessingEvidence, SourceVadInterval,
-    VadComponentEvidence, VadEvidence, MAX_VAD_INTERVALS,
+    validate_vad_intervals, DecodedSourceEvidence, NormalizationEvidence, PreprocessingEvidence,
+    SourceVadInterval, VadComponentEvidence, VadEvidence, MAX_VAD_INTERVALS,
 };
 pub(crate) use request::{
     CaptureChunkReference, CaptureManifestReference, CommitRecordingJobRequest, ContentIdentity,

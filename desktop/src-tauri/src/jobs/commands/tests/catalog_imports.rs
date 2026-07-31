@@ -448,9 +448,12 @@ fn per_job_language_override_is_frozen_when_a_source_is_admitted() {
 }
 
 #[test]
-fn create_imports_rejects_media_outside_the_canonical_wav_contract() {
+fn create_imports_rejects_media_outside_the_admitted_container_set() {
     let dir = temp_dir("create-unsupported-remote-media");
-    let source = dir.join("meeting.mp3");
+    // MP3 is admitted now and decoded during preparation, so the rejection case
+    // has to be a container this build cannot decode at all. A malformed file
+    // with an admitted extension is refused later, by the decoder.
+    let source = dir.join("meeting.m4a");
     fs::write(&source, b"not admitted before remote preparation").unwrap();
     let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
     let media = MediaOwner::new();
@@ -460,7 +463,7 @@ fn create_imports_rejects_media_outside_the_canonical_wav_contract() {
         .unwrap_err();
 
     assert_eq!(error.code, "REMOTE_MEDIA_UNSUPPORTED");
-    assert!(error.message.contains("mono PCM16 16 kHz WAV"));
+    assert!(error.message.contains("WAV and MP3"));
     assert!(jobs.snapshot(&media, 1_001).unwrap().is_empty());
 
     drop(media);

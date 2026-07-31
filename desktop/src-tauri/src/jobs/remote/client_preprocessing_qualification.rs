@@ -81,6 +81,7 @@ fn natural_speech_screen_uses_the_production_client_preprocessing_path() {
                 spool_root: &spool_root,
                 owner_namespace: &owner,
                 started_at: UNIX_EPOCH + Duration::from_secs(1_800_000_000 + index as u64),
+                decoded_from: None,
             },
             || Ok(()),
         )

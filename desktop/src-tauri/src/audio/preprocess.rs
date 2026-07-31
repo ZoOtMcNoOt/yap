@@ -8,17 +8,20 @@ pub fn downmix_to_mono(samples: &[f32], channels: usize) -> Vec<f32> {
         .collect()
 }
 
+pub fn f32_to_i16(sample: f32) -> i16 {
+    if sample <= -1.0 {
+        i16::MIN
+    } else if sample >= 1.0 {
+        i16::MAX
+    } else {
+        (sample * i16::MAX as f32).round() as i16
+    }
+}
+
 pub fn f32_to_i16_le_bytes(samples: &[f32]) -> Vec<u8> {
     let mut bytes = Vec::with_capacity(samples.len() * 2);
     for sample in samples {
-        let value = if *sample <= -1.0 {
-            i16::MIN
-        } else if *sample >= 1.0 {
-            i16::MAX
-        } else {
-            (*sample * i16::MAX as f32).round() as i16
-        };
-        bytes.extend_from_slice(&value.to_le_bytes());
+        bytes.extend_from_slice(&f32_to_i16(*sample).to_le_bytes());
     }
     bytes
 }

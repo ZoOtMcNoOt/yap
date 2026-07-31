@@ -1,5 +1,6 @@
 use crate::server_connector::batch::{validate_vad_intervals, VadEvidence, MAX_VAD_INTERVALS};
 pub(super) use crate::server_connector::batch::{
+    DecodedSourceEvidence as ImportedDecodedSourceEvidence,
     NormalizationEvidence as ImportedNormalizationEvidence,
     PreprocessingEvidence as ImportedPreprocessingEvidence, SourceVadInterval,
     VadComponentEvidence,
