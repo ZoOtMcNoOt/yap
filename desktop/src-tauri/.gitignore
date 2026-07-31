@@ -11,5 +11,8 @@
 /binaries/*
 !/binaries/.gitkeep
 
-# Local crispasr copies for dev (prefer YAP_CRISPASR_BIN or binaries/)
+# Staged local resources, kept out of the tree. The rule predates ADR 0019 and
+# originally held crispasr copies; that runtime is retired and YAP_CRISPASR_BIN
+# is read by nothing, so the rule is kept only because no build step is proven
+# not to stage here.
 /resources/
