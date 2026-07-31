@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "target": "x86_64-pc-windows-msvc",
   "generatedFrom": {
-    "noticeExemptionsSha256": "776c6f501cb98b08029ec95e41284d224ec912c819a5f0a6155eedc2ed45b215"
+    "noticeExemptionsSha256": "38cc0aa23b70587056b0eb72f8b6a5302879a07914d5393515b95d63308fa78f"
   },
   "packages": {
     "javascript": [
@@ -1525,6 +1525,27 @@
         ]
       },
       {
+        "name": "arrayvec",
+        "version": "0.7.8",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "4da95ec4ecb65b738d470b7d762894ad9c97da93e6cbfb18b570fc2c96f4b871"
+          }
+        ]
+      },
+      {
         "name": "async-tungstenite",
         "version": "0.32.1",
         "licenseExpression": "MIT",
@@ -1784,6 +1805,32 @@
           {
             "sourceFile": "LICENSE",
             "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae"
+          }
+        ]
+      },
+      {
+        "name": "bytemuck",
+        "version": "1.25.0",
+        "licenseExpression": "Zlib OR Apache-2.0 OR MIT",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT",
+          "Zlib"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "e3ba223bb1423f0aad8c3dfce0fe3148db48926d41e6fbc3afbbf5ff9e1c89cb"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "9df9ba60a11af705f2e451b53762686e615d86f76b169cf075c3237730dbd7e2"
+          },
+          {
+            "sourceFile": "LICENSE-ZLIB",
+            "sha256": "84b34dd7608f7fb9b17bd588a6bf392bf7de504e2716f024a77d89f1b145a151"
           }
         ]
       },
@@ -2556,6 +2603,36 @@
         ]
       },
       {
+        "name": "encoding_rs",
+        "version": "0.8.35",
+        "licenseExpression": "(Apache-2.0 OR MIT) AND BSD-3-Clause",
+        "licenseTerms": [
+          "Apache-2.0",
+          "BSD-3-Clause",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "COPYRIGHT",
+            "sha256": "11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190"
+          },
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c"
+          },
+          {
+            "sourceFile": "LICENSE-WHATWG",
+            "sha256": "838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50"
+          }
+        ]
+      },
+      {
         "name": "equivalent",
         "version": "1.0.2",
         "licenseExpression": "Apache-2.0 OR MIT",
@@ -3050,6 +3127,22 @@
           {
             "sourceFile": "LICENSE-MIT",
             "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0"
+          }
+        ]
+      },
+      {
+        "name": "hound",
+        "version": "3.5.1",
+        "licenseExpression": "Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "license",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
           }
         ]
       },
@@ -3574,6 +3667,27 @@
           {
             "sourceFile": "LICENSE-MIT",
             "sha256": "31dbbab009f1b2e59a1622d5955dfafc38ebe834000215b49d954c6f85fe927c"
+          }
+        ]
+      },
+      {
+        "name": "lazy_static",
+        "version": "1.5.0",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "0621878e61f0d0fda054bcbe02df75192c28bde1ecc8289cbd86aeba2dd72720"
           }
         ]
       },
@@ -5462,6 +5576,74 @@
           {
             "sourceFile": "LICENSE",
             "sha256": "d1fc1bc0d155df60b2e7705b6b2ae02a05c96f948e1cec6e2fb86360b09f346b"
+          }
+        ]
+      },
+      {
+        "name": "symphonia",
+        "version": "0.5.5",
+        "licenseExpression": "MPL-2.0",
+        "licenseTerms": [
+          "MPL-2.0"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "Cargo.toml.orig",
+            "sha256": "4b70825a31e1532fc3498e7337ef784d71d509bd6fcc03934d642e033a00796e"
+          }
+        ]
+      },
+      {
+        "name": "symphonia-bundle-mp3",
+        "version": "0.5.5",
+        "licenseExpression": "MPL-2.0",
+        "licenseTerms": [
+          "MPL-2.0"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "Cargo.toml.orig",
+            "sha256": "6feaf01b6ea4eaebfa7c5e9ca5687765b5be84322ef8637801547e7b7bdce7ad"
+          }
+        ]
+      },
+      {
+        "name": "symphonia-core",
+        "version": "0.5.5",
+        "licenseExpression": "MPL-2.0",
+        "licenseTerms": [
+          "MPL-2.0"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "Cargo.toml.orig",
+            "sha256": "71257fae3cfb0301afe43ad4a01ad53c8e603c802153728ad2073844a1323e6b"
+          }
+        ]
+      },
+      {
+        "name": "symphonia-metadata",
+        "version": "0.5.5",
+        "licenseExpression": "MPL-2.0",
+        "licenseTerms": [
+          "MPL-2.0"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "reviewed-installed-metadata-exemption",
+        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "noticeDocuments": [
+          {
+            "sourceFile": "Cargo.toml.orig",
+            "sha256": "fa1a5d332bae78422f4f1c1e10e686bf9e6b5903fc7f9bb1878f806e509425bf"
           }
         ]
       },

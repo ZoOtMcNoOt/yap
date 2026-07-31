@@ -175,11 +175,24 @@ pub(super) fn prepare_client_preflight_for_resources(
             }
             crate::recording_access::RecordingJobSourceError::Unsafe(message) => message,
         })?;
+        // The selected file is fingerprint-checked first either way. A
+        // compressed import is then decoded into a Yap-owned canonical WAV and
+        // that file becomes the source, so the hardened parser below still sees
+        // canonical bytes and its admission rules are untouched.
         let mut source = crate::media_protocol::open_unchanged_media_source(
             &validated.canonical_path,
             &validated.fingerprint,
         )?;
         remote::reset_unattached_spool(job_id, resources.remote_jobs_directory())?;
+        let decoded = remote::decode_import_if_compressed(
+            &validated.canonical_path,
+            job_id,
+            resources.remote_jobs_directory(),
+            || cancellation.ensure_active(),
+        )?;
+        if let Some(decoded) = decoded.as_ref() {
+            source = crate::media_protocol::open_decoded_media_source(&decoded.path)?;
+        }
         let prepared = remote::prepare_imported_client_preflight_with_cancellation(
             remote::ImportedClientPreflightPreparation {
                 job_id,
@@ -188,9 +201,14 @@ pub(super) fn prepare_client_preflight_for_resources(
                 spool_root: resources.remote_jobs_directory(),
                 owner_namespace,
                 started_at,
+                decoded_from: decoded.as_ref().map(|decoded| decoded.evidence.clone()),
             },
             || cancellation.ensure_active(),
         )?;
+        drop(source);
+        if let Some(decoded) = decoded {
+            decoded.remove();
+        }
         let (artifact, preprocessing) = prepared.into_ledger_state();
         ensure_job_is_active(
             ledger,
@@ -385,6 +403,21 @@ fn prepare_next_queued_job_impl(
             })?
             .catalog_revision();
         remote::reset_unattached_spool(&job_id, remote_jobs_directory)?;
+        let decoded = remote::decode_import_if_compressed(
+            &validated.canonical_path,
+            &job_id,
+            remote_jobs_directory,
+            || {
+                if let Some(cancellation) = cancellation.as_ref() {
+                    cancellation.ensure_active()
+                } else {
+                    Ok(())
+                }
+            },
+        )?;
+        if let Some(decoded) = decoded.as_ref() {
+            source = crate::media_protocol::open_decoded_media_source(&decoded.path)?;
+        }
         let prepared = remote::prepare_imported_pcm_wav_with_cancellation(
             remote::ImportedPcmWavPreparation {
                 job_id: &job_id,
@@ -395,6 +428,7 @@ fn prepare_next_queued_job_impl(
                 started_at,
                 language_decision: &candidate.language_decision,
                 asr_catalog_revision,
+                decoded_from: decoded.as_ref().map(|decoded| decoded.evidence.clone()),
             },
             || {
                 if let Some(cancellation) = cancellation.as_ref() {
@@ -405,6 +439,10 @@ fn prepare_next_queued_job_impl(
             },
         )?
         .into_ledger_state()?;
+        drop(source);
+        if let Some(decoded) = decoded {
+            decoded.remove();
+        }
         ensure_job_is_active(
             ledger,
             &job_id,

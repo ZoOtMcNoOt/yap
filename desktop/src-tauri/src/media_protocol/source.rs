@@ -95,6 +95,17 @@ pub(crate) fn open_unchanged_media_source(
     Ok(file)
 }
 
+/// Opens a canonical WAV this build just decoded. No fingerprint is compared
+/// because Yap wrote the file itself moments earlier; the user's original was
+/// fingerprint-checked before the decode ran.
+pub(crate) fn open_decoded_media_source(path: &Path) -> Result<File, String> {
+    if !path.is_absolute() {
+        return Err("Recording preprocessing requires an absolute path.".into());
+    }
+    open_no_follow(path, false)
+        .map_err(|error| format!("Failed to open decoded recording: {error}"))
+}
+
 pub(super) fn file_snapshot(file: &File) -> Result<MediaSourceFingerprint, String> {
     let metadata = file
         .metadata()

@@ -7,11 +7,7 @@
 //! unchanged path. What the source was is recorded as evidence rather than
 //! being reported as an identity normalization.
 
-use std::{
-    fs::File,
-    io::{BufWriter, Seek, SeekFrom, Write},
-    path::Path,
-};
+use std::{fs::File, path::Path};
 
 use symphonia::core::{
     audio::SampleBuffer,
@@ -21,7 +17,7 @@ use symphonia::core::{
     probe::Hint,
 };
 
-use crate::audio::preprocess::{downmix_to_mono, f32_to_i16_le_bytes, LinearResampler};
+use crate::audio::preprocess::{downmix_to_mono, f32_to_i16, LinearResampler};
 
 pub(super) const CANONICAL_SAMPLE_RATE_HZ: u32 = 16_000;
 /// Four hours at the canonical rate, matching the WAV admission ceiling. A
@@ -42,12 +38,12 @@ pub(super) fn is_decodable_extension(path: &Path) -> bool {
 
 /// What the decode observed about the source, for the normalization record.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) struct DecodedSource {
-    pub(super) source_codec: String,
-    pub(super) source_sample_rate_hz: u32,
-    pub(super) source_channels: u16,
-    pub(super) source_frame_count: u64,
-    pub(super) output_sample_count: u64,
+pub(in crate::jobs) struct DecodedSource {
+    pub(in crate::jobs) source_codec: String,
+    pub(in crate::jobs) source_sample_rate_hz: u32,
+    pub(in crate::jobs) source_channels: u16,
+    pub(in crate::jobs) source_frame_count: u64,
+    pub(in crate::jobs) output_sample_count: u64,
 }
 
 pub(super) fn decode_to_canonical_wav(
@@ -90,11 +86,16 @@ pub(super) fn decode_to_canonical_wav(
         .make(&track.codec_params, &DecoderOptions::default())
         .map_err(|_| "imported audio uses an unsupported codec".to_string())?;
 
-    let mut writer = BufWriter::new(
-        File::create(destination)
-            .map_err(|error| format!("failed to create decoded audio: {error}"))?,
-    );
-    write_wav_header(&mut writer, 0)?;
+    let mut writer = hound::WavWriter::create(
+        destination,
+        hound::WavSpec {
+            channels: 1,
+            sample_rate: CANONICAL_SAMPLE_RATE_HZ,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        },
+    )
+    .map_err(|error| format!("failed to create decoded audio: {error}"))?;
 
     let mut resampler = LinearResampler::new(source_sample_rate_hz, CANONICAL_SAMPLE_RATE_HZ);
     let mut source_frame_count = 0_u64;
@@ -128,20 +129,21 @@ pub(super) fn decode_to_canonical_wav(
         if output_sample_count > MAX_OUTPUT_SAMPLES as u64 {
             return Err("imported audio decodes to more than the four-hour ceiling".into());
         }
-        writer
-            .write_all(&f32_to_i16_le_bytes(&resampled))
-            .map_err(|error| format!("failed to write decoded audio: {error}"))?;
+        for sample in &resampled {
+            writer
+                .write_sample(f32_to_i16(*sample))
+                .map_err(|error| format!("failed to write decoded audio: {error}"))?;
+        }
     }
     if output_sample_count == 0 {
         return Err("imported audio decoded to no audio".into());
     }
 
-    let mut file = writer
-        .into_inner()
-        .map_err(|error| format!("failed to flush decoded audio: {error}"))?;
-    write_wav_header(&mut file, output_sample_count)?;
-    file.sync_all()
-        .map_err(|error| format!("failed to persist decoded audio: {error}"))?;
+    // finalize patches the RIFF and data lengths, which is the part that most
+    // wants a library rather than a hand-rolled seek back over the header.
+    writer
+        .finalize()
+        .map_err(|error| format!("failed to finalize decoded audio: {error}"))?;
 
     Ok(DecodedSource {
         source_codec,
@@ -152,37 +154,43 @@ pub(super) fn decode_to_canonical_wav(
     })
 }
 
-/// Writes the 44-byte canonical header. Called twice: once to reserve the space
-/// before streaming, then again with the real length so the file never needs to
-/// be held in memory.
-fn write_wav_header(file: &mut impl WriteSeek, sample_count: u64) -> Result<(), String> {
-    let data_bytes = u32::try_from(sample_count * 2)
-        .map_err(|_| "decoded audio exceeds the WAV container limit".to_string())?;
-    let riff_bytes = data_bytes
-        .checked_add(36)
-        .ok_or_else(|| "decoded audio exceeds the WAV container limit".to_string())?;
-    file.seek(SeekFrom::Start(0))
-        .map_err(|error| format!("failed to seek decoded audio: {error}"))?;
-    let mut header = Vec::with_capacity(44);
-    header.extend_from_slice(b"RIFF");
-    header.extend_from_slice(&riff_bytes.to_le_bytes());
-    header.extend_from_slice(b"WAVEfmt ");
-    header.extend_from_slice(&16_u32.to_le_bytes());
-    header.extend_from_slice(&1_u16.to_le_bytes());
-    header.extend_from_slice(&1_u16.to_le_bytes());
-    header.extend_from_slice(&CANONICAL_SAMPLE_RATE_HZ.to_le_bytes());
-    header.extend_from_slice(&(CANONICAL_SAMPLE_RATE_HZ * 2).to_le_bytes());
-    header.extend_from_slice(&2_u16.to_le_bytes());
-    header.extend_from_slice(&16_u16.to_le_bytes());
-    header.extend_from_slice(b"data");
-    header.extend_from_slice(&data_bytes.to_le_bytes());
-    file.write_all(&header)
-        .map_err(|error| format!("failed to write decoded audio header: {error}"))?;
-    Ok(())
+/// A decoded canonical WAV owned by this job, deleted once preparation has
+/// frozen its own snapshot.
+pub(in crate::jobs) struct DecodedImport {
+    pub(in crate::jobs) path: std::path::PathBuf,
+    pub(in crate::jobs) evidence: DecodedSource,
 }
 
-trait WriteSeek: Write + Seek {}
-impl<T: Write + Seek> WriteSeek for T {}
+impl DecodedImport {
+    pub(in crate::jobs) fn remove(self) {
+        // Preparation has already frozen its own snapshot, so losing this is
+        // recoverable; the next run re-decodes.
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
+/// Decodes `source_path` when it is a compressed import, or returns `None` when
+/// it is already canonical and belongs to the hardened parser unchanged.
+pub(in crate::jobs) fn decode_import_if_compressed(
+    source_path: &Path,
+    job_id: &str,
+    spool_root: &Path,
+    mut ensure_active: impl FnMut() -> Result<(), String>,
+) -> Result<Option<DecodedImport>, String> {
+    if !is_decodable_extension(source_path) {
+        return Ok(None);
+    }
+    std::fs::create_dir_all(spool_root)
+        .map_err(|error| format!("failed to prepare the decode directory: {error}"))?;
+    let path = spool_root.join(format!(".{job_id}-decoded-{}.wav", std::process::id()));
+    match decode_to_canonical_wav(source_path, &path, &mut ensure_active) {
+        Ok(evidence) => Ok(Some(DecodedImport { path, evidence })),
+        Err(error) => {
+            let _ = std::fs::remove_file(&path);
+            Err(error)
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -316,7 +324,10 @@ mod tests {
         std::fs::write(&bogus, b"this is not audio").expect("write");
         let error = decode_to_canonical_wav(&bogus, &directory.join("out.wav"), &mut || Ok(()))
             .expect_err("must refuse");
-        assert!(error.contains("supported container") || error.contains("no audio"), "{error}");
+        assert!(
+            error.contains("supported container") || error.contains("no audio"),
+            "{error}"
+        );
     }
 
     #[test]

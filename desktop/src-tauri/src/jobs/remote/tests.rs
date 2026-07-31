@@ -173,6 +173,7 @@ fn advisory_vad_evidence_never_removes_non_speech_source_audio() {
             started_at: UNIX_EPOCH + Duration::from_secs(1_720_000_000),
             language_decision: &language_decision,
             asr_catalog_revision: TEST_ASR_CATALOG_REVISION,
+            decoded_from: None,
         },
         &mut vad,
     )
@@ -251,6 +252,7 @@ fn advisory_vad_discards_unbounded_backend_output() {
             started_at: UNIX_EPOCH + Duration::from_secs(1_720_000_000),
             language_decision: &language_decision,
             asr_catalog_revision: TEST_ASR_CATALOG_REVISION,
+            decoded_from: None,
         },
         &mut vad,
     )
@@ -300,6 +302,7 @@ fn source_mutation_during_admission_is_rejected_without_publishing_a_spool() {
             started_at: UNIX_EPOCH + Duration::from_secs(1_720_000_000),
             language_decision: &RecordingLanguageDecision::primary("en-US".into()).unwrap(),
             asr_catalog_revision: TEST_ASR_CATALOG_REVISION,
+            decoded_from: None,
         },
         || {
             if mutated_at.is_none() {
@@ -366,6 +369,7 @@ fn cancellation_interrupts_chunking_and_removes_unpublished_spool() {
             started_at: UNIX_EPOCH + Duration::from_secs(1_720_000_000),
             language_decision: &RecordingLanguageDecision::primary("en-US".into()).unwrap(),
             asr_catalog_revision: TEST_ASR_CATALOG_REVISION,
+            decoded_from: None,
         },
         || {
             let first_chunk_exists = fs::read_dir(&spool)
@@ -421,6 +425,7 @@ fn cancellation_interrupts_riff_chunk_inspection_before_spooling() {
             started_at: UNIX_EPOCH + Duration::from_secs(1_720_000_000),
             language_decision: &RecordingLanguageDecision::primary("en-US".into()).unwrap(),
             asr_catalog_revision: TEST_ASR_CATALOG_REVISION,
+            decoded_from: None,
         },
         || {
             checks += 1;
@@ -944,4 +949,71 @@ fn write_pcm_wav_with_empty_chunks(path: &std::path::Path, pcm: &[u8], chunk_cou
         .unwrap();
     file.write_all(pcm).unwrap();
     file.sync_all().unwrap();
+}
+
+/// An MP3 has to survive the whole preparation path, not just the decoder: the
+/// decoded file must satisfy the hardened parser, and the manifest the server
+/// reads must say the source was decoded rather than received canonical.
+#[test]
+fn a_compressed_import_reaches_the_manifest_as_a_decoded_source() {
+    let root = std::env::temp_dir().join(format!(
+        "yap-decoded-preparation-{}-{:?}",
+        std::process::id(),
+        std::thread::current().id()
+    ));
+    fs::create_dir_all(&root).unwrap();
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join("tone-44k-stereo.mp3");
+    let spool_root = root.join("spool");
+    fs::create_dir_all(&spool_root).unwrap();
+
+    let decoded =
+        super::decode_import_if_compressed(&fixture, "job-decoded-import", &spool_root, || Ok(()))
+            .expect("decode must succeed")
+            .expect("an mp3 must be decoded");
+    assert_eq!(decoded.evidence.source_sample_rate_hz, 44_100);
+    assert_eq!(decoded.evidence.source_channels, 2);
+
+    let owner = OwnerNamespace::local("i-decoded-import").unwrap();
+    let language_decision = RecordingLanguageDecision::primary("en-US".into()).unwrap();
+    let mut vad = FixedIntervalVad {
+        accepted_pcm_bytes: 0,
+    };
+    let mut source = File::open(&decoded.path).unwrap();
+    let prepared = prepare_imported_pcm_wav_with_advisory_vad_for_test(
+        ImportedPcmWavPreparation {
+            job_id: "job-decoded-import",
+            display_name: "tone-44k-stereo.mp3",
+            source: &mut source,
+            spool_root: &spool_root,
+            owner_namespace: &owner,
+            started_at: UNIX_EPOCH + Duration::from_secs(1_720_000_000),
+            language_decision: &language_decision,
+            asr_catalog_revision: TEST_ASR_CATALOG_REVISION,
+            decoded_from: Some(decoded.evidence.clone()),
+        },
+        &mut vad,
+    )
+    .expect("decoded audio must satisfy the canonical admission path");
+
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&fs::read(&prepared.capture_manifest_path).unwrap()).unwrap();
+    let normalization = &manifest["preprocessing"]["normalization"];
+    // The admitted source is canonical, so normalization from it is still an
+    // identity copy; decodedFrom is what stops that being the whole story.
+    assert_eq!(normalization["method"], "decoded_to_canonical_pcm16");
+    assert_eq!(
+        normalization["componentRevision"],
+        "decoded-canonical-pcm16-normalization-v1"
+    );
+    assert_eq!(normalization["decodedFrom"]["sampleRateHz"], 44_100);
+    assert_eq!(normalization["decodedFrom"]["channels"], 2);
+    assert!(normalization["decodedFrom"]["frameCount"].as_u64().unwrap() > 0);
+    assert_eq!(normalization["sourceTimePreserved"], true);
+    assert_eq!(manifest["schemaVersion"], 2);
+
+    decoded.remove();
+    fs::remove_dir_all(&root).ok();
 }

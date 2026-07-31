@@ -9,6 +9,7 @@ mod spool;
 mod wav;
 
 pub(super) use chunk::read_prepared_chunk;
+pub(in crate::jobs) use decode::decode_import_if_compressed;
 pub(crate) use language_label_corrections::{
     append_language_label_correction, read_language_label_review, LanguageLabelCorrectionError,
     LanguageLabelReview,
