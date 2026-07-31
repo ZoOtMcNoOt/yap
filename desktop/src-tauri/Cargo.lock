@@ -2331,9 +2331,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.189"
+version = "0.2.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
+checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
 name = "libdbus-sys"
@@ -3837,9 +3837,9 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.229"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
+checksum = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e"
 dependencies = [
  "serde_core",
  "serde_derive",
@@ -3859,22 +3859,22 @@ dependencies = [
 
 [[package]]
 name = "serde_core"
-version = "1.0.229"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48"
+checksum = "41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.229"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
+checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.3",
+ "syn 2.0.118",
 ]
 
 [[package]]
@@ -4266,17 +4266,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "syn"
-version = "3.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53e9bae58849f64dfa4f5d5ae372c8341f7305f82a3868709269343628b659a3"
-dependencies = [
- "proc-macro2",
- "quote",
- "unicode-ident",
-]
-
-[[package]]
 name = "sync_wrapper"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4557,9 +4546,9 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-dialog"
-version = "2.7.2"
+version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2d3c1dbe38037e7f590cdf2492594d5ceebe031e7bc7e827509b22a999d2940"
+checksum = "65981abb771e74e571a38196c3baa11c459379164791eba0e67abc1a5fac9884"
 dependencies = [
  "log",
  "raw-window-handle",
@@ -4849,9 +4838,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.54"
+version = "0.3.53"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e1d5e639ff6bab73cb6885cc7e7b1de96c3f32c68ec55f3952614bec1092244"
+checksum = "18dfaaeddcb932337b5e7866ee7d0ce9b76d2fd092997146f187ec09b4558a50"
 dependencies = [
  "deranged",
  "num-conv",
@@ -4869,9 +4858,9 @@ checksum = "9e1c906769ad99c88eaa54e728060edef082f8e358ff32030cb7c7d315e81109"
 
 [[package]]
 name = "time-macros"
-version = "0.2.32"
+version = "0.2.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e689342a48d2ea927c87ea50cabf8594854bf940e9310208848d680d668ed85"
+checksum = "c431b87111666e491a90baa837f914fb45cd5dc3c268591b0220ff5057f2085f"
 dependencies = [
  "num-conv",
  "time-core",
@@ -4904,9 +4893,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.53.1"
+version = "1.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
+checksum = "8fc7f01b389ac15039e4dc9531aa973a135d7a4135281b12d7c1bc79fd57fffe"
 dependencies = [
  "bytes",
  "libc",
