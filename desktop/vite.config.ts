@@ -11,7 +11,22 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react(), tailwindcss()],
   test: {
-    exclude: ["tests/e2e/**", "tests/wdio/**", "tests/results/**", "node_modules/**", "dist/**"],
+    // private-server-ssh-profile spawns Windows PowerShell once per file it
+    // validates, roughly thirteen times. That is a few seconds on a
+    // workstation and over two minutes on a hosted runner, where it timed out
+    // at 120 s while taking 313 s for the file. It measures the runner, not the
+    // code, so it runs through `pnpm test:local` before pushing instead. Same
+    // split as the release contracts.
+    exclude: [
+      "tests/e2e/**",
+      "tests/wdio/**",
+      "tests/results/**",
+      "node_modules/**",
+      "dist/**",
+      ...(process.env.YAP_RUN_LOCAL_ONLY_TESTS === "1"
+        ? []
+        : ["tests/unit/private-server-ssh-profile.test.js"]),
+    ],
   } satisfies InlineConfig,
   resolve: {
     alias: {
