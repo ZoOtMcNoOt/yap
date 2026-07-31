@@ -183,13 +183,33 @@ function requireHostedWindowsBoundary(platform, environment) {
   );
 }
 
+// The child's log is private evidence and is destroyed before this throws, so
+// a bare failure message is unfalsifiable — it has cost several investigations.
+// Every field below is an integer, a boolean, or a fixed enum, so none of it
+// can carry a path, a transcript, or a token.
+function containmentSummary(result) {
+  const evidence = result?.terminationEvidence ?? {};
+  return [
+    `exitCode=${result?.exitCode ?? "absent"}`,
+    `signal=${result?.signal ?? "null"}`,
+    `evidenceDigestPresent=${SHA256.test(result?.evidenceSha256 ?? "")}`,
+    `terminationReason=${evidence.terminationReason ?? "absent"}`,
+    `terminateRequested=${evidence.terminateRequested ?? "absent"}`,
+    `rootExited=${evidence.rootExited ?? "absent"}`,
+    `activeProcessCount=${evidence.activeProcessCount ?? "absent"}`,
+    `activeProcessZeroObserved=${evidence.activeProcessZeroObserved ?? "absent"}`,
+    `cleanupProven=${evidence.cleanupProven ?? "absent"}`,
+  ].join(" ");
+}
+
 function requireCompletedContainment(result, profileName) {
   const evidence = result?.terminationEvidence;
   requireCondition(
     result?.exitCode === 0
       && result.signal === null
       && SHA256.test(result.evidenceSha256 ?? ""),
-    `Hosted Windows runtime profile ${profileName} exited unsuccessfully.`,
+    `Hosted Windows runtime profile ${profileName} exited unsuccessfully. `
+      + containmentSummary(result),
   );
   requireCondition(
     evidence?.schemaVersion === 1
@@ -203,7 +223,8 @@ function requireCompletedContainment(result, profileName) {
       && evidence.activeProcessZeroObserved === true
       && evidence.activeProcessCount === 0
       && evidence.cleanupProven === true,
-    `Hosted Windows runtime profile ${profileName} did not prove an empty owned Job.`,
+    `Hosted Windows runtime profile ${profileName} did not prove an empty owned Job. `
+      + containmentSummary(result),
   );
 }
 

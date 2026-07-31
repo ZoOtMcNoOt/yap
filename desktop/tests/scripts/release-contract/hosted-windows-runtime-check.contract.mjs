@@ -278,3 +278,32 @@ test("hosted Windows runtime wrapper rejects and cleans a non-listening retained
     rmSync(testRoot, { recursive: true, force: true });
   }
 });
+
+test("the hosted runtime failure summary carries no private evidence", () => {
+  const source = readFileSync(
+    path.join(repositoryRoot, "verification", "run-hosted-windows-runtime-check.mjs"),
+    "utf8",
+  );
+  const summary = source.slice(
+    source.indexOf("function containmentSummary"),
+    source.indexOf("function requireCompletedContainment"),
+  );
+  assert.notEqual(summary, "", "containmentSummary is missing");
+
+  // The child's log is destroyed before the throw, so this string is the only
+  // diagnostic that survives. It may only interpolate scalars off the result.
+  const interpolated = [...summary.matchAll(/\$\{([^}]*)\}/g)].map(([, e]) => e.trim());
+  assert.ok(interpolated.length > 0, "summary interpolates nothing");
+  for (const expression of interpolated) {
+    assert.match(
+      expression,
+      /^(result\?\.(exitCode|signal|evidenceSha256)|evidence\.[A-Za-z]+|SHA256\.test\(result\?\.evidenceSha256 \?\? ""\))( \?\? ("absent"|"null"))?$/,
+      `summary interpolates ${expression}, which is not a known scalar field`,
+    );
+    assert.doesNotMatch(
+      expression,
+      /path|Path|cwd|log|Log|command|token|stdout|stderr|transcript/,
+      `summary interpolates ${expression}, which can carry private evidence`,
+    );
+  }
+});
