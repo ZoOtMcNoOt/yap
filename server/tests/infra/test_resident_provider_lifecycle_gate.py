@@ -181,9 +181,7 @@ test -z "$sampler_result_file"
         self._run_bash_harness(bash, harness, timeout=10)
 
     def test_unknown_container_creation_retains_gate_recovery_identity(self) -> None:
-        bash = shutil.which("bash")
-        if bash is None:
-            self.skipTest("bash is unavailable for the container recovery replay")
+        bash = _linux_bash_or_skip(self, "container recovery replay")
 
         function = _shell_function(
             GATE.read_text(encoding="utf-8"),
