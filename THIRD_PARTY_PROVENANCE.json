@@ -50,7 +50,7 @@
         },
         {
           "path": "desktop/src-tauri/src/audio/preprocess.rs",
-          "sha256": "d66831054096a7b85cc213faae5a5d6156486dfb85be57636b84da9a8bf06c15"
+          "sha256": "79f7dd2fd93f6871bc5a7bf3bf7f51af7acbc3abfeab268602ae51e342250034"
         }
       ]
     },
