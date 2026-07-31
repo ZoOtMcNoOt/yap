@@ -118,7 +118,7 @@ checkpoint merges.
 ## Last merged phase: tenant-scoped identity and access (Phase 7)
 
 The
-[tenant-scoped identity and job authorization plan](../plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
+[tenant-scoped identity and job authorization plan](../plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 implemented the Phase 7 boundary and merged as `66d314d7`. It keeps local/offline dictation independent,
 derives server principals from validated Yap API tokens, enforces owner-scoped
 job and LID operations, adds revocation/purpose-control/audit primitives, and

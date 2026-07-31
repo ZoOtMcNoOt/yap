@@ -61,7 +61,7 @@ availability.
 
 ### Active
 
-- [Tenant-scoped identity and job authorization](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
+- [Tenant-scoped identity and job authorization](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
 
 ### Queued

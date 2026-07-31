@@ -142,7 +142,7 @@ roadmap phase in which they were introduced. Phase-number names are reserved
 for this plan, actual one-time phase gates/evidence, and frozen legacy wire or
 persistence tokens that must remain backward-readable.
 
-The living [decision and evidence queue](2026-07-17-voiceos-decision-evidence-queue.md)
+The living [decision and evidence queue](../active/2026-07-17-voiceos-decision-evidence-queue.md)
 decomposes the unchecked work below and records discussed future/open questions.
 It is a routing aid; this plan and ADR 0024 remain the Phase 6 authority.
 

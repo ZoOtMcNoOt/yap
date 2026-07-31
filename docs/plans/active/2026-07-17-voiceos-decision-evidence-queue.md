@@ -790,7 +790,7 @@ documentation-only head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68
 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
 The active
-[tenant-scoped identity and job authorization plan](2026-07-25-tenant-scoped-identity-and-job-authorization.md)
+[tenant-scoped identity and job authorization plan](../completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 now governs Phase 7. Phase 7 uses the same phase -> adversarial checkpoint ->
 next-phase cadence.
 
