@@ -326,7 +326,7 @@ ownership.
   supervised multi-user service, or measured multi-worker capacity is shipped.
   Private WebSocket admission and a native lower handshake are not a live
   transcription path or production edge.
-- The active Phase 7 branch does not prove a production native token adapter,
+- Merged Phase 7 does not prove a production native token adapter,
   real tenant registration, Conditional Access, MFA, consent, enterprise sign-in
   policy, production storage/audit, or distribution approval. No internal DNS,
   enterprise certificate, ZPA policy, or production firewall rule exists.

@@ -1,10 +1,10 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–6 system plus the active
-Phase 7 executable boundary. Phase 7 focused evidence now covers provider-neutral
-OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
-ownership, enforced purpose authorization, authenticated bounded private
-WebSocket admission, and the native lower handshake. The desktop exposes a
+This document describes the merged executable Phase 1–7 system. Phase 7 evidence
+covers provider-neutral OIDC verification with Entra policy, fail-closed
+authentication, tenant-scoped ownership, authenticated bounded private
+WebSocket admission, and the native lower handshake. Purpose authorization is
+implemented but unwired: nothing calls it, so it does not enforce. The desktop exposes a
 narrow native token-provider seam but has no approved production adapter; the
 live boundary has no ASR route, endpoint discovery, or external secure edge.
 The replacement delivery gate now freezes command deadlines, keeps its
@@ -609,7 +609,7 @@ outputs, contained control-pipe writes, bounded pidfd failure, and exact
 fall back only after the direct supervisor is reaped and every surviving group
 member verifies the run token. Proxy teardown reconciles the fixed container
 name, immutable ID, and token before stopping it; no independently signalled
-numeric-PID log follower remains. The active Phase 7 branch adds authenticated
+numeric-PID log follower remains. Phase 7 added authenticated
 tenant/user identity to
 the existing REST/LID boundary and bounded private WebSocket admission on a
 separate internal port. The native lower handshake is qualified, but no live ASR
@@ -651,11 +651,15 @@ development-only loopback configuration. The exact health route remains public.
 
 The identity repository owns principal upsert, a durable access-disabled latch
 with explicit administrative restore, revisioned purpose grants, and redacted
-append-only audit events. The `Yap.IdentityAdministrator` role gates purpose and
-access mutations within one tenant. Enrollment requires `enrollment`; matching
-requires `enrollment` plus `matching`; adaptation requires all three active
-grants. Allowed and denied decisions are audited. This is an executable
-authorization seam, not a voice-profile, embedding, or matching implementation.
+append-only audit events. In the implemented decision service the
+`Yap.IdentityAdministrator` role gates purpose and access mutations within one
+tenant, enrollment requires `enrollment`, matching requires `enrollment` plus
+`matching`, adaptation requires all three active grants, and allowed and denied
+decisions are audited. None of it runs in the product: no HTTP route, CLI, or
+operator entry point invokes `IdentityAuthorizationService`, and enrollment,
+matching, and adaptation do not exist to be checked. Treat this as a designed
+and tested seam awaiting its Phase 8 caller, not an executable authorization
+boundary, and not a voice-profile, embedding, or matching implementation.
 The SQLite adapter is development evidence, not the selected production
 database or audit sink.
 
