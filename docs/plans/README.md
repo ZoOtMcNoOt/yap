@@ -12,7 +12,6 @@ their execution window closes.
 
 Current work:
 
-- [Tenant-scoped identity and job authorization](active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
 
 Queued work (activate only in roadmap order):
@@ -21,6 +20,7 @@ Queued work (activate only in roadmap order):
 
 Recently completed:
 
+- [Tenant-scoped identity and job authorization](completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 - [Executable ownership and maintainability review](completed/2026-07-15-executable-ownership-and-maintainability-review.md)
 - [Audio preprocessing and language routing](completed/2026-07-16-audio-preprocessing-and-language-routing.md)
 - [Codebase ownership and maintainability review](completed/2026-07-18-codebase-ownership-and-maintainability-review.md)

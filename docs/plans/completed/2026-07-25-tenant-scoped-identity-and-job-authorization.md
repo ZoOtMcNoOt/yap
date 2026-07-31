@@ -1,6 +1,6 @@
 # Tenant-scoped identity and job authorization plan
 
-**Status:** Active on `feat/phase7-identity-access`.
+**Status:** Completed. Merged as `66d314d7` from [PR #69](https://github.com/mcnatg1/yap/pull/69); the branch is deleted. The post-merge adversarial checkpoint closed at `ef6d977`, and its remaining findings at `1a6f06e` and `589197e`. Two things this plan built do not execute as product behaviour and carried forward to Phase 8 as gates: the purpose-grant and revocation layer has no HTTP or operator caller, and the desktop production token adapter fails closed.
 
 **Branch:** `feat/phase7-identity-access`
 
