@@ -1,5 +1,6 @@
 mod artifact_io;
 mod chunk;
+mod decode;
 mod language_label_corrections;
 mod preparation;
 mod preprocessing;
