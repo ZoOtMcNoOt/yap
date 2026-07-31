@@ -1014,6 +1014,6 @@ fn a_compressed_import_reaches_the_manifest_as_a_decoded_source() {
     assert_eq!(normalization["sourceTimePreserved"], true);
     assert_eq!(manifest["schemaVersion"], 2);
 
-    decoded.remove();
+    drop(decoded);
     fs::remove_dir_all(&root).ok();
 }

@@ -29,7 +29,9 @@ pub(in crate::jobs) fn reset_unattached_spool(
         let Some(name) = entry.file_name().and_then(|value| value.to_str()) else {
             continue;
         };
-        if owned_job_spool_entry(name, job_id) {
+        if owned_decoded_import(name, job_id) {
+            remove_owned_decoded_import(&entry)?;
+        } else if owned_job_spool_entry(name, job_id) {
             quarantine_and_remove_job_spool_entry(&entry, job_id, spool_root)?;
         }
     }
@@ -47,6 +49,27 @@ fn owned_job_spool_entry(name: &str, job_id: &str) -> bool {
         return decimal_pair(staging);
     }
     suffix.strip_prefix("orphan-").is_some_and(decimal_pair)
+}
+
+/// A decoded import left behind by a process that died before its DecodedImport
+/// could drop. It is a plain file rather than a spool directory, so the
+/// directory sweeper below cannot reclaim it.
+fn owned_decoded_import(name: &str, job_id: &str) -> bool {
+    name.strip_prefix(&format!(".{job_id}-decoded-"))
+        .and_then(|suffix| suffix.strip_suffix(".wav"))
+        .is_some_and(|pid| !pid.is_empty() && pid.bytes().all(|byte| byte.is_ascii_digit()))
+}
+
+fn remove_owned_decoded_import(source: &Path) -> Result<(), String> {
+    let metadata = fs::symlink_metadata(source)
+        .map_err(|error| format!("failed to inspect a prior decoded import: {error}"))?;
+    // Same boundary as the directory sweeper: never follow a link or reparse
+    // point out of the spool.
+    if !metadata.is_file() || metadata_is_link_or_reparse(&metadata) {
+        return Err("prior decoded import is not a safe owned file".into());
+    }
+    fs::remove_file(source)
+        .map_err(|error| format!("failed to remove a prior decoded import: {error}"))
 }
 
 fn decimal_pair(value: &str) -> bool {

@@ -12,7 +12,8 @@ use crate::language::RecordingLanguageDecision;
 use super::{
     validate_batch_base_url, AlignmentUnavailableReason, ApiError, BatchApiClient,
     BatchClientError, CaptureChunkReference, CaptureManifestReference, ContentIdentity,
-    CreateRecordingJobRequest, ServerReplayKey, ServerStageProjectionEnvelope, UploadTrack,
+    CreateRecordingJobRequest, PreprocessingEvidence, ServerReplayKey,
+    ServerStageProjectionEnvelope, UploadTrack,
 };
 use crate::server_connector::{client::bounded_client, AuthenticatedRequestDispatcher};
 
@@ -329,4 +330,63 @@ fn server_stage_projection_is_strict_bounded_and_job_scoped() {
     let injected_reason: ServerStageProjectionEnvelope =
         serde_json::from_value(injected_reason).unwrap();
     assert!(!injected_reason.is_valid_for(job_id));
+}
+
+/// Evidence is persisted in the job ledger, so a job created by the previous
+/// build must stay drainable after the schema bump. Refusing it would leave the
+/// job permanently unresumable with its transcript already paid for.
+#[test]
+fn a_persisted_version_one_evidence_record_still_validates() {
+    let digest = "0".repeat(64);
+    let version_one = serde_json::json!({
+        "schemaVersion": 1,
+        "normalization": {
+            "status": "complete",
+            "componentId": "yap-imported-audio-normalizer",
+            "componentRevision": "canonical-pcm16-normalization-v1",
+            "method": "canonical_pcm16_identity",
+            "inputSourceSha256": digest,
+            "sourcePcmSha256": digest,
+            "outputPcmSha256": digest,
+            "audioCodec": "pcm_s16le",
+            "sampleRateHz": 16_000,
+            "channels": 1,
+            "sourceSampleCount": 480,
+            "outputSampleCount": 480,
+            "paddingSamples": 0,
+            "gainAppliedMilliDb": 0,
+            "samplesModified": 0,
+            "sourceTimePreserved": true
+        },
+        "vad": {
+            "status": "error",
+            "component": {
+                "id": "test-vad",
+                "revision": "test-revision",
+                "modelId": "test-model",
+                "modelRevision": "test-model-revision",
+                "artifactSha256": digest
+            },
+            "sourceSampleCount": 480,
+            "intervals": [],
+            "errorCode": "VAD_UNAVAILABLE"
+        }
+    });
+
+    let evidence: PreprocessingEvidence =
+        serde_json::from_value(version_one).expect("a version 1 record must deserialize");
+    assert!(
+        evidence.is_valid_for_output_samples(480),
+        "a persisted version 1 record must remain drainable after the schema bump"
+    );
+
+    // The absence of decodedFrom at version 1 is still a claim: a record cannot
+    // borrow the decoded method without carrying its provenance.
+    let mut forged = serde_json::to_value(&evidence).expect("serialize");
+    forged["normalization"]["method"] = serde_json::json!("decoded_to_canonical_pcm16");
+    let forged: PreprocessingEvidence = serde_json::from_value(forged).expect("deserialize");
+    assert!(
+        !forged.is_valid_for_output_samples(480),
+        "a record claiming the decoded method without decodedFrom must be refused"
+    );
 }

@@ -181,9 +181,13 @@ pub(in crate::jobs) struct DecodedImport {
     pub(in crate::jobs) evidence: DecodedSource,
 }
 
-impl DecodedImport {
-    pub(in crate::jobs) fn remove(self) {
-        // Preparation has already frozen its own snapshot, so losing this is
+/// Removing on drop rather than at a call site: this file holds a plaintext
+/// copy of the user's audio, and every fallible step between the decode and
+/// the end of preparation -- cancellation, a rejected header, a failed write --
+/// would otherwise leave it behind with nothing to reclaim it.
+impl Drop for DecodedImport {
+    fn drop(&mut self) {
+        // Preparation has frozen its own snapshot by now, so losing this is
         // recoverable; the next run re-decodes.
         let _ = std::fs::remove_file(&self.path);
     }
