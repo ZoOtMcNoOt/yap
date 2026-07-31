@@ -4,11 +4,13 @@ Yap is a private, desktop-first transcription system: a Tauri/React client with
 an explicit local live fallback and a durable batch path to a private GPU
 server.
 
-Phases 1–5 and the post-MVP Architecture Checkpoint A are merged. The current
-branch is **Phase 6 preprocessing**, which is adding the benchmark-backed
-language, VAD, durable-stage, truthful timing, and provider-specific ASR serving
-boundary without pulling identity, diarization, knowledge, or enterprise
-deployment forward.
+Phases 1–7 and the post-MVP Architecture Checkpoint A are merged. Phase 7 added
+provider-neutral OIDC token validation and tenant-scoped `(tid, oid)` ownership
+across jobs, results, REST, and WSS. Two things it carried are gated rather than
+live: the purpose-grant and revocation layer has no HTTP or operator entry point,
+and the desktop production token adapter fails closed, so only
+`YAP_AUTH_MODE=development_loopback` runs end to end. Diarization, knowledge, and
+enterprise deployment are not pulled forward.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.

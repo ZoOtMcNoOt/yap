@@ -115,11 +115,11 @@ Phase 7 follows the same cadence: independently merge the phase, run a separate
 post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that
 checkpoint merges.
 
-## Current phase: tenant-scoped identity and access
+## Last merged phase: tenant-scoped identity and access (Phase 7)
 
 The
 [tenant-scoped identity and job authorization plan](../plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
-implements the Phase 7 boundary. It keeps local/offline dictation independent,
+implemented the Phase 7 boundary and merged as `66d314d7`. It keeps local/offline dictation independent,
 derives server principals from validated Yap API tokens, enforces owner-scoped
 job and LID operations, adds revocation/purpose-control/audit primitives, and
 uses a synthetic signed two-principal gate where IT-owned Entra registration is
