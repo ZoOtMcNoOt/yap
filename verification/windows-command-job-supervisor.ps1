@@ -102,8 +102,68 @@ $csharpSourceSha256 = [Convert]::ToHexString(
 if ($csharpSourceSha256 -cne $ExpectedCSharpSourceSha256) {
     throw 'The Windows command Job supervisor source changed before compilation.'
 }
-$sourceText = [Text.UTF8Encoding]::new($false, $true).GetString($sourceBytes)
-Add-Type -TypeDefinition $sourceText -Language CSharp
+# Compile once per source revision. Add-Type -TypeDefinition ran Roslyn over
+# 43 KB of C# on every bounded command, and each gate cell issues several, which
+# consumed most of the wall-clock budget on hosted runners. The cache key is the
+# source digest verified immediately above, so a cached assembly is only ever
+# loaded for source that passed that identical check; anything unexpected falls
+# back to compiling from source rather than trusting the cache.
+$supervisorAssembly = $null
+$assemblyCacheRoot = Join-Path ([IO.Path]::GetTempPath()) 'yap-windows-job-supervisor'
+$cachedAssemblyPath = Join-Path $assemblyCacheRoot "$csharpSourceSha256.dll"
+if (Test-Path -LiteralPath $cachedAssemblyPath -PathType Leaf) {
+    $supervisorAssembly = $cachedAssemblyPath
+}
+else {
+    $sourceText = [Text.UTF8Encoding]::new($false, $true).GetString($sourceBytes)
+    try {
+        if (-not (Test-Path -LiteralPath $assemblyCacheRoot -PathType Container)) {
+            $cacheDirectory = New-Item -ItemType Directory -Path $assemblyCacheRoot -Force
+            # Owner-only, uninherited, matching how the gate protects every other
+            # artifact it writes under the temporary directory.
+            $cacheSecurity = $cacheDirectory.GetAccessControl()
+            $cacheSecurity.SetAccessRuleProtection($true, $false)
+            foreach ($existing in @($cacheSecurity.Access)) {
+                $cacheSecurity.RemoveAccessRuleSpecific($existing) | Out-Null
+            }
+            $cacheSecurity.AddAccessRule(
+                [Security.AccessControl.FileSystemAccessRule]::new(
+                    [Security.Principal.WindowsIdentity]::GetCurrent().User,
+                    [Security.AccessControl.FileSystemRights]::FullControl,
+                    (
+                        [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+                        [Security.AccessControl.InheritanceFlags]::ObjectInherit
+                    ),
+                    [Security.AccessControl.PropagationFlags]::None,
+                    [Security.AccessControl.AccessControlType]::Allow
+                )
+            )
+            $cacheDirectory.SetAccessControl($cacheSecurity)
+        }
+        $stagedAssemblyPath = Join-Path $assemblyCacheRoot "$csharpSourceSha256.$PID.dll"
+        Add-Type `
+            -TypeDefinition $sourceText `
+            -Language CSharp `
+            -OutputAssembly $stagedAssemblyPath
+        Move-Item -LiteralPath $stagedAssemblyPath -Destination $cachedAssemblyPath -Force
+        $supervisorAssembly = $cachedAssemblyPath
+    }
+    catch {
+        # A concurrent supervisor may have published the same assembly first.
+        $supervisorAssembly = if (Test-Path -LiteralPath $cachedAssemblyPath -PathType Leaf) {
+            $cachedAssemblyPath
+        }
+        else {
+            $null
+        }
+    }
+}
+if ($null -eq $supervisorAssembly) {
+    Add-Type -TypeDefinition $sourceText -Language CSharp
+}
+else {
+    Add-Type -Path $supervisorAssembly
+}
 
 $launchStream = [IO.File]::Open(
     $LaunchSpecPath,
