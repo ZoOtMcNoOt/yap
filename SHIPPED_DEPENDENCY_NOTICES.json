@@ -63,127 +63,6 @@
       },
       {
         "name": "@radix-ui/number",
-        "version": "1.1.2",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/primitive",
-        "version": "1.1.4",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-accessible-icon",
-        "version": "1.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-accordion",
-        "version": "1.2.14",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-alert-dialog",
-        "version": "1.1.17",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-arrow",
-        "version": "1.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-aspect-ratio",
-        "version": "1.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-avatar",
-        "version": "1.2.0",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-checkbox",
-        "version": "1.3.5",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-collapsible",
-        "version": "1.1.14",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-collection",
-        "version": "1.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-compose-refs",
         "version": "1.1.3",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
@@ -194,8 +73,8 @@
         ]
       },
       {
-        "name": "@radix-ui/react-context",
-        "version": "1.1.4",
+        "name": "@radix-ui/primitive",
+        "version": "1.1.7",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -205,337 +84,7 @@
         ]
       },
       {
-        "name": "@radix-ui/react-context-menu",
-        "version": "2.3.1",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-dialog",
-        "version": "1.1.17",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-direction",
-        "version": "1.1.2",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-dismissable-layer",
-        "version": "1.1.13",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-dropdown-menu",
-        "version": "2.1.18",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-focus-guards",
-        "version": "1.1.4",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-focus-scope",
-        "version": "1.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-form",
-        "version": "0.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-hover-card",
-        "version": "1.1.17",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-id",
-        "version": "1.1.2",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-label",
-        "version": "2.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-menu",
-        "version": "2.1.18",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-menubar",
-        "version": "1.1.18",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-navigation-menu",
-        "version": "1.2.16",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-one-time-password-field",
-        "version": "0.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-password-toggle-field",
-        "version": "0.1.5",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-popover",
-        "version": "1.1.17",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-popper",
-        "version": "1.3.1",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-portal",
-        "version": "1.1.12",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-presence",
-        "version": "1.1.6",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-primitive",
-        "version": "2.1.6",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-progress",
-        "version": "1.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-radio-group",
-        "version": "1.4.1",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-roving-focus",
-        "version": "1.1.13",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-scroll-area",
-        "version": "1.2.12",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-select",
-        "version": "2.3.1",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-separator",
-        "version": "1.1.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-slider",
-        "version": "1.4.1",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-slot",
-        "version": "1.3.0",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-switch",
-        "version": "1.3.1",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-tabs",
+        "name": "@radix-ui/react-accessible-icon",
         "version": "1.1.15",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
@@ -546,8 +95,8 @@
         ]
       },
       {
-        "name": "@radix-ui/react-toast",
-        "version": "1.2.17",
+        "name": "@radix-ui/react-accordion",
+        "version": "1.2.20",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -557,8 +106,8 @@
         ]
       },
       {
-        "name": "@radix-ui/react-toggle",
-        "version": "1.1.12",
+        "name": "@radix-ui/react-alert-dialog",
+        "version": "1.1.23",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -568,8 +117,8 @@
         ]
       },
       {
-        "name": "@radix-ui/react-toggle-group",
-        "version": "1.1.13",
+        "name": "@radix-ui/react-arrow",
+        "version": "1.1.15",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -579,8 +128,8 @@
         ]
       },
       {
-        "name": "@radix-ui/react-toolbar",
-        "version": "1.1.13",
+        "name": "@radix-ui/react-aspect-ratio",
+        "version": "1.1.15",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -590,117 +139,7 @@
         ]
       },
       {
-        "name": "@radix-ui/react-tooltip",
-        "version": "1.2.10",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-use-callback-ref",
-        "version": "1.1.2",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-use-controllable-state",
-        "version": "1.2.3",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-use-effect-event",
-        "version": "0.0.3",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-use-escape-keydown",
-        "version": "1.1.2",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-use-is-hydrated",
-        "version": "0.1.1",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-use-layout-effect",
-        "version": "1.1.2",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-use-previous",
-        "version": "1.1.2",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-use-rect",
-        "version": "1.1.2",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-use-size",
-        "version": "1.1.2",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE",
-            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
-          }
-        ]
-      },
-      {
-        "name": "@radix-ui/react-visually-hidden",
+        "name": "@radix-ui/react-avatar",
         "version": "1.2.6",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
@@ -711,8 +150,569 @@
         ]
       },
       {
+        "name": "@radix-ui/react-checkbox",
+        "version": "1.3.11",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-collapsible",
+        "version": "1.1.20",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-collection",
+        "version": "1.1.15",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-compose-refs",
+        "version": "1.1.5",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-context",
+        "version": "1.2.2",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-context-menu",
+        "version": "2.3.7",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-dialog",
+        "version": "1.1.23",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-direction",
+        "version": "1.1.4",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-dismissable-layer",
+        "version": "1.1.19",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-dropdown-menu",
+        "version": "2.1.24",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-focus-guards",
+        "version": "1.1.6",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-focus-scope",
+        "version": "1.1.16",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-form",
+        "version": "0.1.16",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-hover-card",
+        "version": "1.1.23",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-id",
+        "version": "1.1.4",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-label",
+        "version": "2.1.15",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-menu",
+        "version": "2.1.24",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-menubar",
+        "version": "1.1.24",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-navigation-menu",
+        "version": "1.2.22",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-one-time-password-field",
+        "version": "0.1.16",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-password-toggle-field",
+        "version": "0.1.11",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-popover",
+        "version": "1.1.23",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-popper",
+        "version": "1.3.7",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-portal",
+        "version": "1.1.17",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-presence",
+        "version": "1.1.10",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-primitive",
+        "version": "2.1.10",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-progress",
+        "version": "1.1.16",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-radio-group",
+        "version": "1.4.7",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-roving-focus",
+        "version": "1.1.19",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-scroll-area",
+        "version": "1.2.18",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-select",
+        "version": "2.3.7",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-separator",
+        "version": "1.1.15",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-slider",
+        "version": "1.4.7",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-slot",
+        "version": "1.3.3",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-switch",
+        "version": "1.3.7",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-tabs",
+        "version": "1.1.21",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-toast",
+        "version": "1.2.23",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-toggle",
+        "version": "1.1.18",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-toggle-group",
+        "version": "1.1.19",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-toolbar",
+        "version": "1.1.19",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-tooltip",
+        "version": "1.2.16",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-use-callback-ref",
+        "version": "1.1.4",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-use-controllable-state",
+        "version": "1.2.6",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-use-effect-event",
+        "version": "0.0.5",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-use-escape-keydown",
+        "version": "1.1.5",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-use-is-hydrated",
+        "version": "0.1.3",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-use-layout-effect",
+        "version": "1.1.4",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-use-previous",
+        "version": "1.1.4",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-use-rect",
+        "version": "1.1.4",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-use-size",
+        "version": "1.1.4",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
+        "name": "@radix-ui/react-visually-hidden",
+        "version": "1.2.11",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "0e80a2d229d2fd4fc7e8636142ec5d0ff0bc031f14c15b682e2ac01dfd5b5138"
+          }
+        ]
+      },
+      {
         "name": "@radix-ui/rect",
-        "version": "1.1.2",
+        "version": "1.1.3",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -838,7 +838,7 @@
       },
       {
         "name": "radix-ui",
-        "version": "1.6.0",
+        "version": "1.6.7",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -849,7 +849,7 @@
       },
       {
         "name": "react",
-        "version": "19.2.7",
+        "version": "19.2.8",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -860,7 +860,7 @@
       },
       {
         "name": "react-dom",
-        "version": "19.2.7",
+        "version": "19.2.8",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
