@@ -48,9 +48,15 @@ function createFixtureProfile() {
   };
 }
 
+// The fixture makes three private-artifact ACL calls, each of which spawns
+// Windows PowerShell. That costs about 600 ms per call on a developer
+// workstation and roughly ten times that on a hosted runner, which overruns
+// vitest's 10-second default. The hook is setup, not an assertion about speed.
+const FIXTURE_TIMEOUT_MS = 120_000;
+
 beforeAll(() => {
   fixture = createFixtureProfile();
-});
+}, FIXTURE_TIMEOUT_MS);
 
 afterAll(() => {
   rmSync(fixture.root, { recursive: true, force: true });
