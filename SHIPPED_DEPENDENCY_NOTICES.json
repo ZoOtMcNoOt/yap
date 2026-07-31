@@ -1941,7 +1941,7 @@
       },
       {
         "name": "futures-core",
-        "version": "0.3.32",
+        "version": "0.3.33",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1956,7 +1956,7 @@
       },
       {
         "name": "futures-io",
-        "version": "0.3.32",
+        "version": "0.3.33",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1971,7 +1971,7 @@
       },
       {
         "name": "futures-sink",
-        "version": "0.3.32",
+        "version": "0.3.33",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1986,7 +1986,7 @@
       },
       {
         "name": "futures-task",
-        "version": "0.3.32",
+        "version": "0.3.33",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2001,7 +2001,7 @@
       },
       {
         "name": "futures-util",
-        "version": "0.3.32",
+        "version": "0.3.33",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2504,7 +2504,7 @@
       },
       {
         "name": "libc",
-        "version": "0.2.186",
+        "version": "0.2.189",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -3440,7 +3440,7 @@
       },
       {
         "name": "serde",
-        "version": "1.0.228",
+        "version": "1.0.229",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -3470,7 +3470,7 @@
       },
       {
         "name": "serde_core",
-        "version": "1.0.228",
+        "version": "1.0.229",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -3485,7 +3485,7 @@
       },
       {
         "name": "serde_derive",
-        "version": "1.0.228",
+        "version": "1.0.229",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -3515,7 +3515,7 @@
       },
       {
         "name": "serde_json",
-        "version": "1.0.150",
+        "version": "1.0.151",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -3861,6 +3861,21 @@
         ]
       },
       {
+        "name": "syn",
+        "version": "3.0.3",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+          }
+        ]
+      },
+      {
         "name": "sync_wrapper",
         "version": "1.0.2",
         "noticeDisposition": "exact-installed-notice-files",
@@ -3959,7 +3974,7 @@
       },
       {
         "name": "tauri-plugin-dialog",
-        "version": "2.7.1",
+        "version": "2.7.2",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -4155,7 +4170,7 @@
       },
       {
         "name": "time",
-        "version": "0.3.53",
+        "version": "0.3.54",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -4185,7 +4200,7 @@
       },
       {
         "name": "time-macros",
-        "version": "0.2.31",
+        "version": "0.2.32",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -4211,7 +4226,7 @@
       },
       {
         "name": "tokio",
-        "version": "1.52.3",
+        "version": "1.53.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
