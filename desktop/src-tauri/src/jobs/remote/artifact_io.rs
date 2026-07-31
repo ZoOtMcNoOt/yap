@@ -25,29 +25,23 @@ pub(super) fn open_no_follow_read(path: &Path) -> std::io::Result<File> {
         .open(path)
 }
 
-#[cfg(target_os = "linux")]
+// One arm for every unix, because the flag value is per-architecture, not just
+// per-OS. This module previously hardcoded 0x0002_0000 for linux, which is the
+// x86_64 value; on aarch64 linux O_NOFOLLOW is 0x8000 and 0x0002_0000 is
+// O_LARGEFILE, so the guard silently downgraded to a no-op and followed links
+// instead of refusing them. `libc` resolves the constant per target, which is
+// what the crate's twelve other no-follow opens already do.
+#[cfg(unix)]
 pub(super) fn open_no_follow_read(path: &Path) -> std::io::Result<File> {
     use std::os::unix::fs::OpenOptionsExt;
 
-    const O_NOFOLLOW: i32 = 0x0002_0000;
     OpenOptions::new()
         .read(true)
-        .custom_flags(O_NOFOLLOW)
+        .custom_flags(libc::O_NOFOLLOW)
         .open(path)
 }
 
-#[cfg(target_os = "macos")]
-pub(super) fn open_no_follow_read(path: &Path) -> std::io::Result<File> {
-    use std::os::unix::fs::OpenOptionsExt;
-
-    const O_NOFOLLOW: i32 = 0x0000_0100;
-    OpenOptions::new()
-        .read(true)
-        .custom_flags(O_NOFOLLOW)
-        .open(path)
-}
-
-#[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
+#[cfg(not(any(windows, unix)))]
 pub(super) fn open_no_follow_read(_path: &Path) -> std::io::Result<File> {
     Err(std::io::Error::new(
         std::io::ErrorKind::Unsupported,
