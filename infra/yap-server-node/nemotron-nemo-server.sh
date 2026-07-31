@@ -119,9 +119,7 @@ run_private_container_with_loopback_proxy \
   "$YAP_RUNTIME_OWNER_TOKEN" \
   "$YAP_PROXY_PROCESS_GROUP_FILE" \
   -- \
-  docker run \
-  --detach \
-  --rm \
+  docker container create \
   --name yap-nemotron-nemo \
   --label io.yap.owner=private-inference \
   --label "io.yap.revision=$YAP_CHECKED_HEAD" \

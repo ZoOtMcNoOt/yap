@@ -32,16 +32,31 @@ if (Test-LoopbackListener) {
     throw 'The server-connector gate requires port 18765 to be unowned before launch.'
 }
 
-$env:PYTHONPATH = Join-Path $Repository 'server\src'
-$env:YAP_SERVER_HOST = '127.0.0.1'
-$env:YAP_SERVER_PORT = '18765'
-$Server = Start-Process `
-    -FilePath $Runtime.Python `
-    -ArgumentList '-m', 'yap_server' `
-    -PassThru `
-    -WindowStyle Hidden
+# This gate owns the unauthenticated development-loopback integration. The
+# ordinary server default intentionally fails closed when no identity provider
+# is configured, so relying on that default would test the sign-in-required
+# contract instead of this connector path.
+$ServerEnvironment = @{
+    PYTHONPATH = Join-Path $Repository 'server\src'
+    YAP_SERVER_HOST = '127.0.0.1'
+    YAP_SERVER_PORT = '18765'
+    YAP_SERVER_CONFIGURATION = 'development'
+    YAP_AUTH_MODE = 'development_loopback'
+    # Test-only issuer overrides must not leak from an invoking shell into the
+    # ordinary server configuration exercised by this gate.
+    YAP_OIDC_ISSUER = $null
+    YAP_MOCK_OIDC_ISSUER = $null
+}
+$Server = $null
 
 try {
+    $Server = Start-Process `
+        -FilePath $Runtime.Python `
+        -ArgumentList '-m', 'yap_server' `
+        -Environment $ServerEnvironment `
+        -PassThru `
+        -WindowStyle Hidden
+
     $Ready = $false
     for ($Attempt = 0; $Attempt -lt 20; $Attempt++) {
         try {
@@ -96,33 +111,47 @@ try {
     if (-not $DirectOwner -and -not $LockedBaseOwner) {
         throw 'The healthy listener is not owned by the launched locked Python runtime.'
     }
-    $env:YAP_TEST_SERVER_URL = 'http://127.0.0.1:18765'
-    Push-Location -LiteralPath $Repository
+
+    $PreviousTestServerUrl = Get-Item Env:YAP_TEST_SERVER_URL -ErrorAction SilentlyContinue
     try {
-        & cargo test `
-            --locked `
-            --manifest-path '.\desktop\src-tauri\Cargo.toml' `
-            --test server_connector
-        if ($LASTEXITCODE -ne 0) {
-            throw "The server-connector integration failed with exit code $LASTEXITCODE."
+        $env:YAP_TEST_SERVER_URL = 'http://127.0.0.1:18765'
+        Push-Location -LiteralPath $Repository
+        try {
+            & cargo test `
+                --locked `
+                --manifest-path '.\desktop\src-tauri\Cargo.toml' `
+                --test server_connector
+            if ($LASTEXITCODE -ne 0) {
+                throw "The server-connector integration failed with exit code $LASTEXITCODE."
+            }
+        }
+        finally {
+            Pop-Location
         }
     }
     finally {
-        Pop-Location
+        if ($null -eq $PreviousTestServerUrl) {
+            Remove-Item Env:YAP_TEST_SERVER_URL -ErrorAction SilentlyContinue
+        }
+        else {
+            Set-Item Env:YAP_TEST_SERVER_URL -Value $PreviousTestServerUrl.Value
+        }
     }
 }
 finally {
-    Stop-Process -Id $Server.Id -Force -ErrorAction SilentlyContinue
-    $Server.WaitForExit(5000) | Out-Null
-    $Server.Refresh()
-    if (-not $Server.HasExited) {
-        throw 'The owned Python server did not exit during connector teardown.'
-    }
-    $Deadline = [DateTime]::UtcNow.AddSeconds(5)
-    while (Test-LoopbackListener) {
-        if ([DateTime]::UtcNow -ge $Deadline) {
-            throw 'Port 18765 remained owned after connector teardown.'
+    if ($null -ne $Server) {
+        Stop-Process -Id $Server.Id -Force -ErrorAction SilentlyContinue
+        $Server.WaitForExit(5000) | Out-Null
+        $Server.Refresh()
+        if (-not $Server.HasExited) {
+            throw 'The owned Python server did not exit during connector teardown.'
         }
-        Start-Sleep -Milliseconds 100
+        $Deadline = [DateTime]::UtcNow.AddSeconds(5)
+        while (Test-LoopbackListener) {
+            if ([DateTime]::UtcNow -ge $Deadline) {
+                throw 'Port 18765 remained owned after connector teardown.'
+            }
+            Start-Sleep -Milliseconds 100
+        }
     }
 }

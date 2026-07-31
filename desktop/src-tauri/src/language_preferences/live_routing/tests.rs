@@ -1,9 +1,11 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use super::{
+    desktop::routing_preference_requires_write,
     model::{project_status, LiveLanguageRoutingPreferenceIssue, CURRENT_SCHEMA_VERSION},
     persistence::{
-        load_from_path, save_to_path, LiveLanguageRoutingError, MAX_ROUTING_PREFERENCE_BYTES,
+        load_for_update_from_path, load_from_path, normalize_selection, save_to_path,
+        LiveLanguageRoutingError, LoadedRoutingPreference, MAX_ROUTING_PREFERENCE_BYTES,
     },
 };
 
@@ -94,9 +96,12 @@ fn legacy_regional_choices_migrate_without_enabling_other_model_languages() {
     )
     .unwrap();
 
+    let loaded_for_update = load_for_update_from_path(&path).unwrap();
+    assert_eq!(loaded_for_update.locales, ["fr-CA"]);
+    assert!(loaded_for_update.requires_rewrite);
     let loaded = load_from_path(&path).unwrap();
-    assert_eq!(loaded.locales, ["fr-CA"]);
     save_to_path(loaded.locales, &path).unwrap();
+    assert!(!load_for_update_from_path(&path).unwrap().requires_rewrite);
     let migrated: serde_json::Value =
         serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
     assert_eq!(migrated["schemaVersion"], CURRENT_SCHEMA_VERSION);
@@ -106,6 +111,52 @@ fn legacy_regional_choices_migrate_without_enabling_other_model_languages() {
     );
 
     std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn canonical_equivalent_selection_does_not_require_a_runtime_mutation() {
+    let requested = normalize_selection(vec!["ja-JP".into(), "fr-CA".into()]).unwrap();
+    let loaded = LoadedRoutingPreference {
+        locales: vec!["fr-CA".into(), "ja-JP".into()],
+        requires_rewrite: false,
+    };
+
+    assert!(!routing_preference_requires_write(Ok(loaded), &requested).unwrap());
+}
+
+#[test]
+fn recoverable_or_legacy_preferences_still_require_a_canonical_write() {
+    let requested = vec!["fr-CA".to_string()];
+    let legacy = LoadedRoutingPreference {
+        locales: requested.clone(),
+        requires_rewrite: true,
+    };
+
+    assert!(routing_preference_requires_write(Ok(legacy), &requested).unwrap());
+    assert!(routing_preference_requires_write(
+        Err(LiveLanguageRoutingError::InvalidStoredPreference),
+        &requested,
+    )
+    .unwrap());
+    assert!(routing_preference_requires_write(
+        Err(LiveLanguageRoutingError::StaleCatalog),
+        &requested,
+    )
+    .unwrap());
+}
+
+#[test]
+fn incompatible_routing_preferences_are_not_treated_as_recoverable_noops() {
+    let error = routing_preference_requires_write(
+        Err(LiveLanguageRoutingError::IncompatibleSchema(3)),
+        &[],
+    )
+    .unwrap_err();
+
+    assert_eq!(
+        error,
+        "Automatic-language settings were written by a newer Yap version."
+    );
 }
 
 #[test]

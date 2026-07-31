@@ -6,6 +6,7 @@ mod client_preflight;
 mod client_stages;
 mod lifecycle;
 mod records;
+mod remote_authority;
 mod remote_progress;
 mod remote_recovery;
 mod remote_state;

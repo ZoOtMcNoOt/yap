@@ -5,8 +5,16 @@ use super::{
         project_status, LiveLanguageConfiguration, LiveLanguageRoutingPreferenceIssue,
         LiveLanguageRoutingStatus,
     },
-    persistence::{self, EnabledAlternateLocales, LiveLanguageRoutingError},
+    persistence::{
+        self, EnabledAlternateLocales, LiveLanguageRoutingError, LoadedRoutingPreference,
+    },
 };
+
+struct RoutingPreferenceUpdate {
+    primary_language_bcp47: String,
+    enabled_alternate_locales: Vec<String>,
+    requires_write: bool,
+}
 
 #[tauri::command]
 pub(crate) fn live_language_routing_status(
@@ -24,23 +32,83 @@ pub(crate) fn set_live_language_routing(
     catalog_revision: String,
 ) -> Result<LiveLanguageRoutingStatus, String> {
     crate::authorization::ensure_main(&window)?;
+    {
+        let _preference_mutation = super::super::persistence::lock_mutation()
+            .map_err(super::super::desktop::preference_error_message)?;
+        let update =
+            plan_routing_preference_update(enabled_alternate_locales.clone(), &catalog_revision)?;
+        if !update.requires_write {
+            return project_status(
+                Some(update.primary_language_bcp47),
+                &update.enabled_alternate_locales,
+                None,
+            );
+        }
+    }
+
+    // A real preference change invalidates any warm model built with the old
+    // routing catalog. Recheck after acquiring that mutation fence because
+    // another settings command may have committed while this command waited.
     let _live_mutation = live_runtime.begin_language_support_mutation()?;
     let _preference_mutation = super::super::persistence::lock_mutation()
         .map_err(super::super::desktop::preference_error_message)?;
+    let update = plan_routing_preference_update(enabled_alternate_locales, &catalog_revision)?;
+    if !update.requires_write {
+        return project_status(
+            Some(update.primary_language_bcp47),
+            &update.enabled_alternate_locales,
+            None,
+        );
+    }
+    let saved =
+        persistence::save(update.enabled_alternate_locales).map_err(routing_error_message)?;
+    project_status(Some(update.primary_language_bcp47), &saved.locales, None)
+}
+
+fn plan_routing_preference_update(
+    enabled_alternate_locales: Vec<String>,
+    catalog_revision: &str,
+) -> Result<RoutingPreferenceUpdate, String> {
     if catalog_revision != crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION {
         return Err(routing_error_message(
             LiveLanguageRoutingError::StaleCatalog,
         ));
     }
-    let primary = super::super::persistence::load()
+    let primary_language_bcp47 = super::super::persistence::load()
         .map_err(super::super::desktop::preference_error_message)?
         .ok_or_else(|| {
             "Confirm a primary language before configuring automatic switching.".to_string()
         })?;
-    LocalLanguageCatalog::with_explicit_automatic_alternates(&primary, &enabled_alternate_locales)
-        .map_err(|_| routing_error_message(LiveLanguageRoutingError::InvalidSelection))?;
-    let saved = persistence::save(enabled_alternate_locales).map_err(routing_error_message)?;
-    project_status(Some(primary), &saved.locales, None)
+    let enabled_alternate_locales = persistence::normalize_selection(enabled_alternate_locales)
+        .map_err(routing_error_message)?;
+    LocalLanguageCatalog::with_explicit_automatic_alternates(
+        &primary_language_bcp47,
+        &enabled_alternate_locales,
+    )
+    .map_err(|_| routing_error_message(LiveLanguageRoutingError::InvalidSelection))?;
+    let requires_write = routing_preference_requires_write(
+        persistence::load_for_update(),
+        &enabled_alternate_locales,
+    )?;
+    Ok(RoutingPreferenceUpdate {
+        primary_language_bcp47,
+        enabled_alternate_locales,
+        requires_write,
+    })
+}
+
+pub(super) fn routing_preference_requires_write(
+    loaded: Result<LoadedRoutingPreference, LiveLanguageRoutingError>,
+    requested_locales: &[String],
+) -> Result<bool, String> {
+    match loaded {
+        Ok(loaded) => Ok(loaded.requires_rewrite || loaded.locales.as_slice() != requested_locales),
+        Err(
+            LiveLanguageRoutingError::InvalidStoredPreference
+            | LiveLanguageRoutingError::StaleCatalog,
+        ) => Ok(true),
+        Err(error) => Err(routing_error_message(error)),
+    }
 }
 
 pub(crate) fn live_language_configuration_for_warmup() -> Result<LiveLanguageConfiguration, String>

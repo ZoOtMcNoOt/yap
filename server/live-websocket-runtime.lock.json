@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "component": "private-live-websocket-transport",
+  "package": {
+    "name": "websockets",
+    "version": "16.1.1",
+    "projectUrl": "https://pypi.org/project/websockets/16.1.1/",
+    "documentationUrl": "https://websockets.readthedocs.io/en/16.1/",
+    "license": "BSD-3-Clause",
+    "requiresPython": ">=3.10",
+    "verifiedMetadataSource": "https://pypi.org/pypi/websockets/16.1.1/json",
+    "distributions": [
+      {
+        "filename": "websockets-16.1.1-py3-none-any.whl",
+        "sha256": "6abbd3e82c731c8e531714466acd5d87b5e88ac3243465337ba71d68e23ae7e3",
+        "sizeBytes": 173814
+      },
+      {
+        "filename": "websockets-16.1.1.tar.gz",
+        "sha256": "db234eda965dcce15df96bb9709f587cd87d4d52aaf0e80e2f34ec04c7670c57",
+        "sizeBytes": 182204
+      }
+    ]
+  },
+  "boundary": {
+    "bind": "loopback-only application transport",
+    "tls": "external secure edge",
+    "liveAsrInference": false
+  }
+}

@@ -13,6 +13,7 @@ const noticeExemptionsPath = path.join(
   "SHIPPED_DEPENDENCY_NOTICE_EXEMPTIONS.json",
 );
 const windowsTarget = "x86_64-pc-windows-msvc";
+const shippedEcosystems = Object.freeze(["javascript", "rust"]);
 const exactNoticeName =
   /^(?:licen[cs]e|copying|notices?|copyright|authors?)(?:[._-].*)?$/i;
 const knownLicenseTerms = new Set([
@@ -43,7 +44,7 @@ export async function buildShippedDependencyArtifacts() {
   const usedExemptions = new Set();
   const packages = {};
 
-  for (const ecosystem of ["javascript", "rust"]) {
+  for (const ecosystem of shippedEcosystems) {
     packages[ecosystem] = [];
     for (const sourcePackage of packageSources[ecosystem]) {
       const notice = await resolvePackageNotice({
@@ -88,17 +89,17 @@ export async function buildShippedDependencyArtifacts() {
     noticeExemptionsSha256: await sha256File(noticeExemptionsPath),
   };
   const inventory = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     target: windowsTarget,
     generatedFrom,
     packages,
   };
   const notices = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     target: windowsTarget,
     generatedFrom,
     packages: Object.fromEntries(
-      ["javascript", "rust"].map((ecosystem) => [
+      shippedEcosystems.map((ecosystem) => [
         ecosystem,
         packages[ecosystem].map((packageRecord) => ({
           name: packageRecord.name,
@@ -167,7 +168,7 @@ export async function verifyShippedDependencyNotices(inventory = null) {
     );
     documentHashes.add(document.sha256);
   }
-  for (const ecosystem of ["javascript", "rust"]) {
+  for (const ecosystem of shippedEcosystems) {
     assert(
       serialize(notices.packages[ecosystem])
         === serialize(comparedInventory.packages[ecosystem].map((packageRecord) => ({
@@ -440,7 +441,7 @@ async function loadNoticeExemptions() {
   for (const exemption of value.exemptions) {
     assert(
       exemption
-        && ["javascript", "rust"].includes(exemption.ecosystem)
+        && shippedEcosystems.includes(exemption.ecosystem)
         && typeof exemption.name === "string"
         && typeof exemption.version === "string"
         && typeof exemption.sourceFile === "string"
@@ -479,7 +480,7 @@ function run(executable, args, options = {}) {
 
 function decodeUtf8(bytes, label) {
   try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
   } catch {
     throw new Error(`Installed dependency notice is not UTF-8 text: ${label}.`);
   }
@@ -529,7 +530,8 @@ async function main(args) {
   const notices = await verifyShippedDependencyNotices(inventory);
   console.log(
     `Shipped dependency inventory passed (${inventory.packages.javascript.length} JavaScript, `
-      + `${inventory.packages.rust.length} Rust packages, ${notices.documents.length} exact notice documents).`,
+      + `${inventory.packages.rust.length} Rust packages, `
+      + `${notices.documents.length} exact notice documents).`,
   );
 }
 

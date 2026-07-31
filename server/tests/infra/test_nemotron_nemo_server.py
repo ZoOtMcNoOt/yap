@@ -61,6 +61,7 @@ class NemotronNemoServerContractTests(unittest.TestCase):
             script,
         )
         self.assertNotIn("nohup", script)
+        self.assertNotIn("\n  --rm \\\n", script)
         self.assertNotIn("0.0.0.0:${YAP_NEMOTRON_NEMO_PORT}", script)
         self.assertNotIn("--publish", script)
         self.assertIn("docker network inspect", script)

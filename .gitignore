@@ -19,6 +19,9 @@ desktop/test-results/
 desktop/tests/results/
 desktop/src-tauri/target/
 desktop/src-tauri/target-test/
+desktop/src-tauri/binaries/*.exe
+desktop/native/**/bin/
+desktop/native/**/obj/
 .vite/
 .tools/
 .xwin-cache/

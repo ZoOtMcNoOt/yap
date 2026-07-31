@@ -101,7 +101,9 @@ class RecordingJobStageRetryEdgeTests(unittest.TestCase):
                     ("result_publication", 1, "failed"),
                 ],
             )
-            restart_processor.future.set_result(_worker_payload("Restarted ASR completed."))
+            restart_processor.future.set_result(
+                _worker_payload("Restarted ASR completed.")
+            )
             self.assertEqual(restarted.get(job_id)["status"], "complete")
             completed_stages = restarted.get_stages(job_id)["stages"]
             self.assertEqual(
@@ -116,7 +118,9 @@ class RecordingJobStageRetryEdgeTests(unittest.TestCase):
                 ],
             )
 
-    def test_publication_intent_persist_failure_rolls_back_to_retryable_asr(self) -> None:
+    def test_publication_intent_persist_failure_rolls_back_to_retryable_asr(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             processor = _ControlledProcessor()
@@ -132,14 +136,20 @@ class RecordingJobStageRetryEdgeTests(unittest.TestCase):
 
             def fail_publication_intent_once(path: Path, value: object) -> None:
                 nonlocal failed_once
-                attempts = value.get("stageAttempts", []) if isinstance(value, dict) else []
+                attempts = (
+                    value.get("stageAttempts", []) if isinstance(value, dict) else []
+                )
                 publication_running = any(
                     attempt.get("stage") == "result_publication"
                     and attempt.get("state") == "running"
                     for attempt in attempts
                     if isinstance(attempt, dict)
                 )
-                if path.name == "state.json" and publication_running and not failed_once:
+                if (
+                    path.name == "state.json"
+                    and publication_running
+                    and not failed_once
+                ):
                     failed_once = True
                     raise OSError("injected publication-intent failure")
                 original_publish_json(path, value)
@@ -149,7 +159,9 @@ class RecordingJobStageRetryEdgeTests(unittest.TestCase):
                 "publish_json",
                 fail_publication_intent_once,
             ):
-                processor.future.set_result(_worker_payload("First result was not durable."))
+                processor.future.set_result(
+                    _worker_payload("First result was not durable.")
+                )
 
             self.assertTrue(failed_once)
             failed = service.get(job_id)
@@ -179,7 +191,9 @@ class RecordingJobStageRetryEdgeTests(unittest.TestCase):
             processor.future.set_result(_worker_payload("Retry completed safely."))
             self.assertEqual(service.get(job_id)["status"], "complete")
 
-    def test_migrated_incomplete_history_retains_new_retryable_attempt_input(self) -> None:
+    def test_migrated_incomplete_history_retains_new_retryable_attempt_input(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             initial_processor = _ControlledProcessor()
@@ -187,6 +201,7 @@ class RecordingJobStageRetryEdgeTests(unittest.TestCase):
             state_path = root / "jobs" / job_id / "state.json"
             legacy = json.loads(state_path.read_text(encoding="utf-8"))
             legacy["schemaVersion"] = 4
+            del legacy["owner"]
             del legacy["stageHistoryComplete"]
             del legacy["stageAttempts"]
             del legacy["projectionRevision"]
@@ -235,7 +250,9 @@ class RecordingJobStageRetryEdgeTests(unittest.TestCase):
                 (retried["stages"][0]["attempt"], retried["stages"][0]["state"]),
                 (2, "running"),
             )
-            retry_processor.future.set_result(_worker_payload("Migrated retry succeeded."))
+            retry_processor.future.set_result(
+                _worker_payload("Migrated retry succeeded.")
+            )
             self.assertEqual(restarted.get(job_id)["status"], "complete")
 
     def test_attempt_65_is_rejected_before_reserving_or_mutating_history(self) -> None:

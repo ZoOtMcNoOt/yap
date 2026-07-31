@@ -18,6 +18,52 @@ use std::{
 static NEXT_TEMP: AtomicU64 = AtomicU64::new(0);
 
 #[test]
+fn remote_authority_is_immutable_across_account_switch_and_restart() {
+    let dir = temp_dir("remote-authority");
+    let path = dir.join("jobs.sqlite3");
+    let job = server_batch_job("account-bound");
+    {
+        let ledger = JobLedger::open(&path).unwrap();
+        ledger.insert_job(&job).unwrap();
+        ledger
+            .bind_remote_authority(&job.job_id, &"a".repeat(64), &"1".repeat(64))
+            .unwrap();
+        ledger
+            .bind_remote_authority(&job.job_id, &"a".repeat(64), &"1".repeat(64))
+            .unwrap();
+        assert!(ledger
+            .bind_remote_authority(&job.job_id, &"b".repeat(64), &"1".repeat(64))
+            .is_err());
+        assert!(ledger
+            .bind_remote_authority(&job.job_id, "development-loopback", "development-loopback")
+            .is_err());
+        assert!(ledger
+            .bind_remote_authority(&job.job_id, &"a".repeat(64), &"2".repeat(64))
+            .is_err());
+    }
+    let reopened = JobLedger::open(&path).unwrap();
+    assert!(reopened
+        .bind_remote_authority(&job.job_id, &"b".repeat(64), &"1".repeat(64))
+        .is_err());
+    drop(reopened);
+    fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn unauthenticated_remote_authority_cannot_be_claimed_afterward() {
+    let ledger = JobLedger::open_in_memory().unwrap();
+    let job = server_batch_job("development-bound");
+    ledger.insert_job(&job).unwrap();
+    ledger
+        .bind_remote_authority(&job.job_id, "development-loopback", "development-loopback")
+        .unwrap();
+
+    assert!(ledger
+        .bind_remote_authority(&job.job_id, &"c".repeat(64), &"1".repeat(64))
+        .is_err());
+}
+
+#[test]
 fn persisted_unknown_enum_is_reported_as_corruption() {
     let ledger = JobLedger::open_in_memory().unwrap();
     ledger.insert_job(&imported_job("bad-enum")).unwrap();
@@ -43,10 +89,10 @@ fn persisted_unknown_enum_is_reported_as_corruption() {
 }
 
 #[test]
-fn durable_remote_origins_use_the_same_numeric_loopback_contract() {
+fn durable_remote_origins_use_the_same_approved_loopback_contract() {
     assert!(validate_server_base_url("http://127.0.0.1:18765").is_ok());
     assert!(validate_server_base_url("http://[::1]:18765").is_ok());
-    assert!(validate_server_base_url("http://localhost:18765").is_err());
+    assert!(validate_server_base_url("http://localhost:18765").is_ok());
     assert!(validate_server_base_url("http://127.0.0.1:18765/alternate").is_err());
 }
 
@@ -154,6 +200,9 @@ fn restart_database_has_exact_metadata_surface_and_no_payload_content() {
                 ("server_job_id", "TEXT"),
                 ("create_request_json", "TEXT"),
                 ("queued_at_ms", "INTEGER"),
+                ("remote_authority_binding", "TEXT"),
+                ("remote_authority_version", "INTEGER"),
+                ("remote_authentication_binding", "TEXT"),
             ][..],
         ),
         (
@@ -238,6 +287,9 @@ fn restart_database_has_exact_metadata_surface_and_no_payload_content() {
                 ("asr_catalog_revision", "TEXT"),
                 ("language_decision_locked", "INTEGER"),
                 ("client_stage_history_complete", "INTEGER"),
+                ("remote_authority_binding", "TEXT"),
+                ("remote_authority_version", "INTEGER"),
+                ("remote_authentication_binding", "TEXT"),
             ][..],
         ),
         (

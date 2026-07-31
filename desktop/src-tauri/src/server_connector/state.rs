@@ -230,9 +230,24 @@ impl ConnectorInner {
                 self.retry_allowed = false;
                 None
             }
-            HealthCheckResult::SignInRequired { api_version } => {
+            HealthCheckResult::SignInRequired {
+                api_version,
+                capabilities,
+            } => {
                 self.snapshot.state = ServerConnectorState::SignInRequired;
                 self.snapshot.api_version = api_version;
+                self.snapshot.capabilities = capabilities;
+                self.retry_attempt = 0;
+                self.retry_allowed = false;
+                None
+            }
+            HealthCheckResult::AccessDenied {
+                api_version,
+                capabilities,
+            } => {
+                self.snapshot.state = ServerConnectorState::AccessDenied;
+                self.snapshot.api_version = api_version;
+                self.snapshot.capabilities = capabilities;
                 self.retry_attempt = 0;
                 self.retry_allowed = false;
                 None
@@ -558,6 +573,7 @@ mod tests {
                 5,
                 HealthCheckResult::SignInRequired {
                     api_version: Some("1".to_owned()),
+                    capabilities: ServerCapabilities::default(),
                 },
                 20,
                 zero_jitter,
@@ -567,6 +583,41 @@ mod tests {
         assert_eq!(transition.retry_after, None);
         assert_eq!(inner.snapshot().state, ServerConnectorState::SignInRequired);
         assert!(!inner.arm_retry(5, 1_020));
+    }
+
+    #[test]
+    fn access_denied_is_terminal_without_erasing_truthful_server_capabilities() {
+        let mut inner = ConnectorInner::default();
+        enabled(&mut inner, 6);
+        assert!(inner.begin_health_request(6, 10));
+
+        let transition = inner
+            .finish_health_request(
+                6,
+                HealthCheckResult::AccessDenied {
+                    api_version: Some("1".to_owned()),
+                    capabilities: ServerCapabilities {
+                        batch_jobs: true,
+                        live_streaming: false,
+                        job_status: true,
+                    },
+                },
+                20,
+                zero_jitter,
+            )
+            .unwrap();
+
+        assert_eq!(transition.retry_after, None);
+        assert_eq!(inner.snapshot().state, ServerConnectorState::AccessDenied);
+        assert_eq!(
+            inner.snapshot().capabilities,
+            ServerCapabilities {
+                batch_jobs: true,
+                live_streaming: false,
+                job_status: true,
+            }
+        );
+        assert!(!inner.arm_retry(6, 1_020));
     }
 
     #[test]

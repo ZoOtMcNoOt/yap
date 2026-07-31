@@ -1,9 +1,7 @@
 # Codebase Ownership and Maintainability Review Plan
 
-**Status:** Active on `chore/codebase-maintainability-review`. Phase 6 merged in
-[PR #67](https://github.com/mcnatg1/yap/pull/67) as
-`87c8654250cba8b9eafa5007bf719c52e4749cdf`; this checkpoint remains a separate
-reviewable change and does not authorize Phase 7 product work.
+**Status:** Completed. [PR #68](https://github.com/mcnatg1/yap/pull/68)
+merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
 **Branch:** `chore/codebase-maintainability-review`
 
@@ -113,7 +111,7 @@ GPU pressure, model teardown, private evaluation evidence, and unavailable timin
       complete 31-child local, native, server, release, target-client, and GB10
       matrix exactly once.
 - [x] Open a focused PR.
-- [ ] Require green first-attempt hosted CI, CodeQL, and disposable-Windows
+- [x] Require green first-attempt hosted CI, CodeQL, and disposable-Windows
       checks on the documentation-only descendant, complete review, and merge
       only that checked SHA.
 
@@ -326,7 +324,8 @@ to the main window then collapses it. Independent final read-back found no
 retained local or remote process, provider container, private network,
 listener, or transient service. Private audio, transcripts, raw metrics,
 process ledgers, host paths, logs, and receipts remain outside Git and hosted
-artifacts. Hosted exact-head closure, PR review, and merge remain pending.
+artifacts. Its hosted descendant was later consumed by the failures below, so
+this candidate remains historical evidence rather than merge authority.
 
 The first hosted attempt on reviewed head
 `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` is consumed and must not
@@ -358,13 +357,20 @@ all passed. The candidate includes the Cargo color and Windows atomic
 replacement repairs, and independent post-run validation found the repository
 clean at the same head. Private audio, transcripts, raw metrics, process
 ledgers, host paths, logs, image receipts, and gate receipts remain outside Git
-and hosted artifacts. This candidate is the executable merge authority;
-first-attempt hosted closure on its documentation-only descendant, final
-review, and merge remain pending.
+and hosted artifacts. This candidate is the executable merge authority.
+
+Documentation-only review head
+`0bd11ae8dea34cd22029c6c09a9fd62a5951a363` passed the first hosted attempt:
+CI run `30206923702` completed all four required jobs, CodeQL run
+`30206922629` completed all four analyses, and NSIS Bundle Smoke run
+`30206941391` completed the disposable-Windows stock lifecycle. The hosted
+closure receipt remained private. Three final antagonistic read-backs reported
+no P0-P2 finding. The checked head merged through PR #68 as
+`15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
 ## Phase 7 cadence
 
-Phase 7 begins only after Checkpoint B merges. Its implementation remains on a
+Phase 7 began after Checkpoint B merged. Its implementation remains on a
 separate phase branch and uses the same cadence: focused development checks,
 normal in-phase review, exact-head phase gate and reviewed PR, followed by a
 separate antagonistic architecture/refactor checkpoint before Phase 8. Each

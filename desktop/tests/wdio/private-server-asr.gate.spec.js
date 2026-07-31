@@ -5,15 +5,24 @@ import {
   readFileSync,
   realpathSync,
   statSync,
-  writeFileSync,
 } from "node:fs";
 import path from "node:path";
 
 import {
   isValidInFlightRemotePipeline,
   matchCompletedRemoteHistoryEntry,
+  matchesEnabledLoopbackServerSettings,
   matchesVerifiedHistoryDialog,
+  settleSshTunnelChild,
 } from "./private-server-asr-gate-support.js";
+import {
+  loadPrivateServerSshProfile,
+  privateServerSshEnvironment,
+  privateServerTunnelSshInvocation,
+} from "../../../verification/private-server-ssh-profile.mjs";
+import {
+  writeExclusivePrivateFile,
+} from "../../../verification/private-gate-artifacts.mjs";
 
 const tunnelHost = "127.0.0.1";
 const tunnelPort = 18765;
@@ -68,16 +77,6 @@ async function waitForConnectionState(expectedState, label) {
 
 function canonicalPath(value) {
   return path.resolve(realpathSync.native(value));
-}
-
-function requireSshAlias() {
-  const alias = requireEnvironment("YAP_PRIVATE_SERVER_ASR_GATE_SSH_ALIAS");
-  if (!/^[A-Za-z0-9._-]+$/.test(alias)) {
-    throw new Error(
-      "YAP_PRIVATE_SERVER_ASR_GATE_SSH_ALIAS must be one explicit SSH config alias.",
-    );
-  }
-  return alias;
 }
 
 async function healthIsReachable() {
@@ -298,22 +297,24 @@ async function waitForHealth(expected, child, label) {
   throw new Error(`The gate-owned SSH forward did not ${label} within 15 seconds.`);
 }
 
-async function startTunnel(alias) {
+async function startActiveTunnel() {
+  if (tunnelProcess) {
+    throw new Error("A gate-owned SSH forward is already active.");
+  }
   if (await healthIsReachable()) {
     throw new Error("Port 18765 was already reachable before the gate-owned SSH forward.");
   }
+  const invocation = privateServerTunnelSshInvocation(
+    loadPrivateServerSshProfile(),
+  );
   const child = spawn(
-    "ssh.exe",
-    [
-      "-o", "BatchMode=yes",
-      "-o", "ExitOnForwardFailure=yes",
-      "-o", "ServerAliveInterval=15",
-      "-o", "ServerAliveCountMax=3",
-      "-N", "-T",
-      "-L", `${tunnelHost}:${tunnelPort}:${tunnelHost}:${tunnelPort}`,
-      alias,
-    ],
-    { stdio: "ignore", windowsHide: true },
+    invocation.executable,
+    invocation.args,
+    {
+      env: privateServerSshEnvironment(),
+      stdio: "ignore",
+      windowsHide: true,
+    },
   );
   if (!Number.isSafeInteger(child.pid) || child.pid <= 0) {
     if (child.exitCode === null) child.kill();
@@ -326,39 +327,32 @@ async function startTunnel(alias) {
   };
   tunnelProcesses.push(processEntry);
   tunnelProcessEntries.set(child, processEntry);
+  tunnelProcess = child;
   child.once("error", () => {});
   try {
     await waitForHealth(true, child, "become reachable");
   } catch (error) {
-    await stopTunnel(child);
+    await stopActiveTunnel();
     throw error;
   }
   return child;
 }
 
 async function stopTunnel(child) {
-  if (child.exitCode === null) {
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(
-        () => reject(new Error("The gate-owned SSH forward did not stop within 10 seconds.")),
-        10_000,
-      );
-      child.once("exit", () => {
-        clearTimeout(timeout);
-        resolve();
-      });
-      if (!child.kill()) {
-        clearTimeout(timeout);
-        reject(new Error("The private-server ASR gate could not stop its SSH forward."));
-      }
-    });
-  }
+  await settleSshTunnelChild(child);
   await waitForHealth(false, undefined, "become unreachable");
   const processEntry = tunnelProcessEntries.get(child);
   if (!processEntry) {
     throw new Error("The stopped SSH forward was absent from the owned-process ledger.");
   }
   processEntry.exitedAt = new Date().toISOString();
+}
+
+async function stopActiveTunnel() {
+  const owned = tunnelProcess;
+  if (!owned) return;
+  await stopTunnel(owned);
+  if (tunnelProcess === owned) tunnelProcess = undefined;
 }
 
 function publishTunnelProcessLedger() {
@@ -376,31 +370,26 @@ function publishTunnelProcessLedger() {
     throw new Error("The private-server gate did not retire exactly two owned SSH forwards.");
   }
   const evidenceDirectory = requireEnvironment("YAP_PRIVATE_SERVER_ASR_GATE_EVIDENCE_DIR");
-  writeFileSync(
+  writeExclusivePrivateFile(
     path.join(evidenceDirectory, "tunnel-process-ledger.json"),
-    `${JSON.stringify({
+    Buffer.from(`${JSON.stringify({
       schemaVersion: 1,
       checkedHead: requireEnvironment("YAP_CHECKED_HEAD"),
       startedProcessCount: tunnelProcesses.length,
       exitedProcessCount: tunnelProcesses.length,
       processes: tunnelProcesses,
       status: "passed",
-    }, null, 2)}\n`,
-    { encoding: "utf8", flag: "wx" },
+    }, null, 2)}\n`),
   );
 }
 
 describe("checked-head private-server ASR gate", () => {
   before(async () => {
-    tunnelProcess = await startTunnel(requireSshAlias());
+    await startActiveTunnel();
   });
 
   after(async () => {
-    if (tunnelProcess) {
-      const owned = tunnelProcess;
-      tunnelProcess = undefined;
-      await stopTunnel(owned);
-    }
+    await stopActiveTunnel();
     publishTunnelProcessLedger();
   });
 
@@ -421,8 +410,9 @@ describe("checked-head private-server ASR gate", () => {
       requireEnvironment("YAP_PRIVATE_SERVER_ASR_GATE_TIMEOUT_MS"),
     );
 
+    expect(await invoke("wdio_build_git_sha")).toBe(checkedHead);
     const settings = await invoke("server_settings");
-    expect(settings).toEqual({ schemaVersion: 1, enabled: true, baseUrl: expectedOrigin });
+    expect(matchesEnabledLoopbackServerSettings(settings, expectedOrigin)).toBe(true);
     await invoke("refresh_server_connection");
     const connection = await waitForConnectionState("ready", "become ready");
     expect(connection.capabilities).toEqual({
@@ -459,9 +449,7 @@ describe("checked-head private-server ASR gate", () => {
     let completedJobRetiredFromRecoverableQueue = false;
     let terminalFailure;
 
-    const interruptedTunnel = tunnelProcess;
-    tunnelProcess = undefined;
-    await stopTunnel(interruptedTunnel);
+    await stopActiveTunnel();
     const interruptedConnection = await invoke("refresh_server_connection");
     expect(interruptedConnection.state).toBe("retrying");
     expect((await invoke("server_settings")).baseUrl).toBe(expectedOrigin);
@@ -472,7 +460,7 @@ describe("checked-head private-server ASR gate", () => {
     observedStatuses.add(interruptedJob.status);
     observedPreprocessingStates.add(interruptedJob.pipeline.preprocessing);
 
-    tunnelProcess = await startTunnel(requireSshAlias());
+    await startActiveTunnel();
     await invoke("refresh_server_connection");
     const restoredConnection = await waitForConnectionState("ready", "recover after tunnel restart");
     expect((await invoke("server_settings")).baseUrl).toBe(expectedOrigin);
@@ -585,9 +573,9 @@ describe("checked-head private-server ASR gate", () => {
       },
     );
 
-    writeFileSync(
+    writeExclusivePrivateFile(
       path.join(evidenceDirectory, "native-vertical-slice.json"),
-      `${JSON.stringify({
+      Buffer.from(`${JSON.stringify({
         schemaVersion: 3,
         checkedHead,
         fixtureSha256,
@@ -611,8 +599,7 @@ describe("checked-head private-server ASR gate", () => {
         historyOpenedVerifiedResult: true,
         languagePreflightExecution,
         status: "passed",
-      }, null, 2)}\n`,
-      { encoding: "utf8", flag: "wx" },
+      }, null, 2)}\n`),
     );
   });
 });

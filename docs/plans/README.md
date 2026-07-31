@@ -12,7 +12,7 @@ their execution window closes.
 
 Current work:
 
-- [Codebase ownership and maintainability review](active/2026-07-18-codebase-ownership-and-maintainability-review.md)
+- [Tenant-scoped identity and job authorization](active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
 
 Queued work (activate only in roadmap order):
@@ -23,6 +23,7 @@ Recently completed:
 
 - [Executable ownership and maintainability review](completed/2026-07-15-executable-ownership-and-maintainability-review.md)
 - [Audio preprocessing and language routing](completed/2026-07-16-audio-preprocessing-and-language-routing.md)
+- [Codebase ownership and maintainability review](completed/2026-07-18-codebase-ownership-and-maintainability-review.md)
 
 When a plan closes, use `git mv` into `completed/` or `archived/`, repair all
 references, and update [current status](../CURRENT-STATUS.md) only when

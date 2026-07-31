@@ -3,41 +3,261 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from ipaddress import ip_address
-from typing import Mapping
+from pathlib import Path
+from typing import Literal, Mapping
+from uuid import UUID
 
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 18765
-PRIVATE_BIND_OPT_IN = "YAP_SERVER_ALLOW_PRIVATE_BIND"
+SERVER_CONFIGURATION = "YAP_SERVER_CONFIGURATION"
+AUTH_MODE = "YAP_AUTH_MODE"
+ENTRA_TENANT_ID = "YAP_ENTRA_TENANT_ID"
+ENTRA_AUDIENCE = "YAP_ENTRA_AUDIENCE"
+ENTRA_ALLOWED_CLIENT_IDS = "YAP_ENTRA_ALLOWED_CLIENT_IDS"
+ENTRA_REQUIRED_SCOPE = "YAP_ENTRA_REQUIRED_SCOPE"
+ENTRA_ALLOWED_ROLES = "YAP_ENTRA_ALLOWED_ROLES"
+IDENTITY_STORAGE_DIR = "YAP_IDENTITY_STORAGE_DIR"
+OIDC_ISSUER_OVERRIDE = "YAP_OIDC_ISSUER"
+MOCK_OIDC_ISSUER = "YAP_MOCK_OIDC_ISSUER"
+DISABLED_AUTH_MODE = "disabled"
+DEVELOPMENT_AUTH_MODE = "development_loopback"
+ENTRA_AUTH_MODE = "entra"
+RELEASE_CONFIGURATION = "release"
+DEVELOPMENT_CONFIGURATION = "development"
+DEFAULT_ENTRA_SCOPE = "access_as_user"
+DEFAULT_ENTRA_ROLES = ("Yap.IdentityAdministrator",)
 
 
 def _is_loopback(host: str) -> bool:
-    if host.casefold().rstrip(".") == "localhost":
-        return True
     try:
         return ip_address(host).is_loopback
     except ValueError:
         return False
 
 
-def ensure_bind_is_allowed(
-    host: str,
-    environ: Mapping[str, str] | None = None,
-) -> None:
-    source = os.environ if environ is None else environ
+def ensure_private_application_bind(host: str) -> None:
     if _is_loopback(host):
         return
-    if source.get(PRIVATE_BIND_OPT_IN) == "1":
-        return
     raise ValueError(
-        f"YAP_SERVER_HOST must be loopback unless {PRIVATE_BIND_OPT_IN}=1"
+        "YAP_SERVER_HOST must be a numeric loopback address; "
+        "use SSH local forwarding or an approved secure edge"
     )
+
+
+def _required_uuid(value: str | None, variable: str) -> str:
+    if value is None or not value.strip():
+        raise ValueError(f"{variable} is required in Entra mode")
+    text = value.strip().lower()
+    try:
+        parsed = UUID(text)
+    except ValueError as error:
+        raise ValueError(f"{variable} must be a valid UUID") from error
+    if str(parsed) != text:
+        raise ValueError(f"{variable} must be a canonical UUID")
+    return text
+
+
+def _required_scope(value: str | None) -> str:
+    scope = DEFAULT_ENTRA_SCOPE if value is None else value.strip()
+    if (
+        not scope
+        or len(scope) > 128
+        or not scope.isascii()
+        or not scope.isprintable()
+        or any(character.isspace() for character in scope)
+    ):
+        raise ValueError(f"{ENTRA_REQUIRED_SCOPE} is invalid")
+    return scope
+
+
+def _allowed_client_ids(value: str | None) -> tuple[str, ...]:
+    if value is None or not value.strip():
+        raise ValueError(f"{ENTRA_ALLOWED_CLIENT_IDS} is required in Entra mode")
+    raw_values = [entry.strip() for entry in value.split(",")]
+    if not all(raw_values):
+        raise ValueError(f"{ENTRA_ALLOWED_CLIENT_IDS} contains an empty entry")
+    clients = tuple(
+        _required_uuid(entry, ENTRA_ALLOWED_CLIENT_IDS) for entry in raw_values
+    )
+    if len(set(clients)) != len(clients):
+        raise ValueError(f"{ENTRA_ALLOWED_CLIENT_IDS} must not contain duplicates")
+    return tuple(sorted(clients))
+
+
+def _allowed_roles(value: str | None) -> tuple[str, ...]:
+    if value is None:
+        return DEFAULT_ENTRA_ROLES
+    if not value.strip():
+        return ()
+    roles = tuple(entry.strip() for entry in value.split(","))
+    if (
+        not all(roles)
+        or len(roles) > 32
+        or any(
+            len(role) > 128
+            or not role.isascii()
+            or not role.isprintable()
+            or any(character.isspace() for character in role)
+            for role in roles
+        )
+    ):
+        raise ValueError(f"{ENTRA_ALLOWED_ROLES} is invalid")
+    if len(set(roles)) != len(roles):
+        raise ValueError(f"{ENTRA_ALLOWED_ROLES} must not contain duplicates")
+    return tuple(sorted(roles))
+
+
+def _identity_storage_dir(value: str | None) -> Path:
+    if value is None or not value.strip():
+        raise ValueError(f"{IDENTITY_STORAGE_DIR} is required in Entra mode")
+    path = Path(value.strip())
+    if path.name in {"", ".", ".."}:
+        raise ValueError(f"{IDENTITY_STORAGE_DIR} is invalid")
+    return path
+
+
+@dataclass(frozen=True, slots=True)
+class ServerAuthenticationSettings:
+    mode: Literal["disabled", "development_loopback", "entra"] = DISABLED_AUTH_MODE
+    tenant_id: str | None = None
+    audience: str | None = None
+    required_scope: str | None = None
+    allowed_client_ids: tuple[str, ...] = ()
+    allowed_roles: tuple[str, ...] = ()
+    identity_storage_dir: Path | None = None
+
+    def __post_init__(self) -> None:
+        if self.mode not in {
+            DISABLED_AUTH_MODE,
+            DEVELOPMENT_AUTH_MODE,
+            ENTRA_AUTH_MODE,
+        }:
+            raise ValueError(
+                f"{AUTH_MODE} must be {DISABLED_AUTH_MODE!r}, "
+                f"{DEVELOPMENT_AUTH_MODE!r}, or {ENTRA_AUTH_MODE!r}"
+            )
+        if self.mode in {DISABLED_AUTH_MODE, DEVELOPMENT_AUTH_MODE}:
+            if (
+                self.tenant_id is not None
+                or self.audience is not None
+                or self.required_scope is not None
+                or self.allowed_client_ids
+                or self.allowed_roles
+                or self.identity_storage_dir is not None
+            ):
+                raise ValueError(
+                    "non-Entra authentication cannot include Entra configuration"
+                )
+            return
+        object.__setattr__(
+            self,
+            "tenant_id",
+            _required_uuid(self.tenant_id, ENTRA_TENANT_ID),
+        )
+        object.__setattr__(
+            self,
+            "audience",
+            _required_uuid(self.audience, ENTRA_AUDIENCE),
+        )
+        object.__setattr__(
+            self,
+            "required_scope",
+            _required_scope(self.required_scope),
+        )
+        clients = tuple(
+            _required_uuid(value, ENTRA_ALLOWED_CLIENT_IDS)
+            for value in self.allowed_client_ids
+        )
+        if not clients:
+            raise ValueError(f"{ENTRA_ALLOWED_CLIENT_IDS} is required in Entra mode")
+        if len(set(clients)) != len(clients):
+            raise ValueError(f"{ENTRA_ALLOWED_CLIENT_IDS} must not contain duplicates")
+        object.__setattr__(self, "allowed_client_ids", tuple(sorted(clients)))
+        if not isinstance(self.allowed_roles, tuple):
+            raise TypeError("allowed_roles must be a tuple")
+        object.__setattr__(
+            self,
+            "allowed_roles",
+            _allowed_roles(",".join(self.allowed_roles)),
+        )
+        if self.identity_storage_dir is None:
+            raise ValueError(f"{IDENTITY_STORAGE_DIR} is required in Entra mode")
+        object.__setattr__(
+            self,
+            "identity_storage_dir",
+            Path(self.identity_storage_dir),
+        )
+
+    @property
+    def required(self) -> bool:
+        return self.mode == ENTRA_AUTH_MODE
+
+    @property
+    def authentication_required(self) -> bool:
+        return self.mode != DEVELOPMENT_AUTH_MODE
+
+    @property
+    def development_enabled(self) -> bool:
+        return self.mode == DEVELOPMENT_AUTH_MODE
+
+    @classmethod
+    def from_env(
+        cls,
+        environ: Mapping[str, str],
+    ) -> ServerAuthenticationSettings:
+        for variable in (OIDC_ISSUER_OVERRIDE, MOCK_OIDC_ISSUER):
+            if variable in environ:
+                raise ValueError(
+                    f"{variable} is test-only and cannot enter server configuration"
+                )
+        configuration = environ.get(
+            SERVER_CONFIGURATION,
+            RELEASE_CONFIGURATION,
+        ).strip()
+        if configuration not in {
+            RELEASE_CONFIGURATION,
+            DEVELOPMENT_CONFIGURATION,
+        }:
+            raise ValueError(
+                f"{SERVER_CONFIGURATION} must be {RELEASE_CONFIGURATION!r} "
+                f"or {DEVELOPMENT_CONFIGURATION!r}"
+            )
+        mode = environ.get(AUTH_MODE, DISABLED_AUTH_MODE).strip()
+        if mode == DISABLED_AUTH_MODE:
+            return cls()
+        if mode == DEVELOPMENT_AUTH_MODE:
+            if configuration != DEVELOPMENT_CONFIGURATION:
+                raise ValueError(
+                    "development-loopback authentication is forbidden in "
+                    "release server configuration"
+                )
+            return cls(mode=DEVELOPMENT_AUTH_MODE)
+        if mode != ENTRA_AUTH_MODE:
+            raise ValueError(
+                f"{AUTH_MODE} must be {DISABLED_AUTH_MODE!r}, "
+                f"{DEVELOPMENT_AUTH_MODE!r}, or {ENTRA_AUTH_MODE!r}"
+            )
+        return cls(
+            mode=ENTRA_AUTH_MODE,
+            tenant_id=_required_uuid(environ.get(ENTRA_TENANT_ID), ENTRA_TENANT_ID),
+            audience=_required_uuid(environ.get(ENTRA_AUDIENCE), ENTRA_AUDIENCE),
+            required_scope=_required_scope(environ.get(ENTRA_REQUIRED_SCOPE)),
+            allowed_client_ids=_allowed_client_ids(
+                environ.get(ENTRA_ALLOWED_CLIENT_IDS)
+            ),
+            allowed_roles=_allowed_roles(environ.get(ENTRA_ALLOWED_ROLES)),
+            identity_storage_dir=_identity_storage_dir(
+                environ.get(IDENTITY_STORAGE_DIR)
+            ),
+        )
 
 
 @dataclass(frozen=True, slots=True)
 class ServerSettings:
     host: str = DEFAULT_HOST
     port: int = DEFAULT_PORT
+    authentication: ServerAuthenticationSettings = ServerAuthenticationSettings()
 
     def __post_init__(self) -> None:
         if not isinstance(self.host, str) or not self.host.strip():
@@ -57,5 +277,11 @@ class ServerSettings:
             raise ValueError("YAP_SERVER_PORT must be an integer") from error
 
         settings = cls(host=host, port=port)
-        ensure_bind_is_allowed(settings.host)
+        ensure_private_application_bind(settings.host)
+        authentication = ServerAuthenticationSettings.from_env(os.environ)
+        settings = cls(
+            host=host,
+            port=port,
+            authentication=authentication,
+        )
         return settings

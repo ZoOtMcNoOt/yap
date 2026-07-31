@@ -122,11 +122,93 @@ fn malformed_json_recovers_disabled_defaults() {
 }
 
 #[test]
+fn legacy_settings_migrate_without_inventing_identity_configuration() {
+    let dir = temp_dir("legacy-migration");
+    let path = dir.join("server-settings.json");
+    std::fs::write(
+        &path,
+        r#"{"schemaVersion":1,"enabled":true,"baseUrl":"http://127.0.0.1:18765"}"#,
+    )
+    .unwrap();
+
+    let migrated = load_from_path(&path, false).unwrap();
+    assert_eq!(migrated.schema_version, CURRENT_SCHEMA_VERSION);
+    assert!(migrated.enabled);
+    assert_eq!(migrated.base_url.as_deref(), Some("http://127.0.0.1:18765"));
+    assert_eq!(migrated.authentication, None);
+
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
+fn remote_https_requires_public_microsoft_entra_configuration() {
+    let mut settings = ServerSettings {
+        schema_version: CURRENT_SCHEMA_VERSION,
+        enabled: true,
+        base_url: Some("https://server.example/v1".into()),
+        authentication: None,
+    };
+    assert!(matches!(
+        normalize_settings(&settings, false),
+        Err(ConfigError::Invalid(
+            "Remote HTTPS servers require Microsoft Entra configuration."
+        ))
+    ));
+
+    settings.authentication = Some(test_microsoft_entra_settings());
+    let normalized = normalize_settings(&settings, false).unwrap();
+    assert_eq!(
+        normalized.base_url.as_deref(),
+        Some("https://server.example")
+    );
+    assert_eq!(
+        normalized.authentication,
+        Some(test_microsoft_entra_settings())
+    );
+}
+
+#[test]
+fn bearer_configuration_never_allows_plaintext_private_transport() {
+    let settings = ServerSettings {
+        schema_version: CURRENT_SCHEMA_VERSION,
+        enabled: true,
+        base_url: Some("http://192.168.50.1:18765".into()),
+        authentication: Some(test_microsoft_entra_settings()),
+    };
+
+    assert!(matches!(
+        normalize_settings(&settings, true),
+        Err(ConfigError::Invalid(
+            "Authenticated server connections require HTTPS outside loopback."
+        ))
+    ));
+}
+
+#[test]
+fn microsoft_entra_identifiers_and_api_scope_are_bounded_and_canonical() {
+    let mut identity = test_microsoft_entra_settings();
+    identity.tenant_id = " 11111111-AAAA-BBBB-CCCC-111111111111 ".into();
+    let normalized = normalize_microsoft_entra_settings(&identity).unwrap();
+    assert_eq!(normalized.tenant_id, "11111111-aaaa-bbbb-cccc-111111111111");
+
+    identity.client_id = "not-a-client-id".into();
+    assert!(normalize_microsoft_entra_settings(&identity).is_err());
+    identity = test_microsoft_entra_settings();
+    identity.api_scope = "https://graph.microsoft.com/User.Read".into();
+    assert!(normalize_microsoft_entra_settings(&identity).is_err());
+    identity.api_scope = format!(
+        "api://{}/access_as_user",
+        "a".repeat(MAX_IDENTITY_VALUE_BYTES)
+    );
+    assert!(normalize_microsoft_entra_settings(&identity).is_err());
+}
+
+#[test]
 fn future_schema_is_preserved_and_reported_instead_of_downgraded() {
     let dir = temp_dir("future-schema");
     let path = dir.join("server-settings.json");
     let future = r#"{
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "enabled": true,
   "baseUrl": "https://future.example",
   "futureField": "preserve-me"
@@ -135,16 +217,17 @@ fn future_schema_is_preserved_and_reported_instead_of_downgraded() {
 
     assert!(matches!(
         load_from_path(&path, false),
-        Err(ConfigError::IncompatibleSchema(2))
+        Err(ConfigError::IncompatibleSchema(3))
     ));
     let replacement = ServerSettings {
         schema_version: CURRENT_SCHEMA_VERSION,
         enabled: false,
         base_url: None,
+        authentication: None,
     };
     assert!(matches!(
         save_to_path(&replacement, &path, false),
-        Err(ConfigError::IncompatibleSchema(2))
+        Err(ConfigError::IncompatibleSchema(3))
     ));
     assert_eq!(std::fs::read_to_string(&path).unwrap(), future);
     assert_eq!(partial_files(&dir), Vec::<String>::new());

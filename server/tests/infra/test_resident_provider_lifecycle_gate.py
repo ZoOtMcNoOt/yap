@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
+import tempfile
 import unittest
 
 
@@ -22,9 +24,337 @@ GATE = (
     / "resident-provider-lifecycle-gate.sh"
 )
 PLAN = REPOSITORY_ROOT / "server" / "asr-evaluation-plan.json"
+PROCESS_GROUP_HELPER = (
+    REPOSITORY_ROOT / "infra" / "yap-server-node" / "owned-process-group.sh"
+)
+OWNER_TOKEN = "d" * 64
+FOREIGN_TOKEN = "e" * 64
 
 
 class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
+    def test_control_empty_recovery_stops_owned_group_and_removes_records(
+        self,
+    ) -> None:
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash is unavailable for the resident recovery replay")
+        if subprocess.run(
+            [bash, "-lc", 'test "$(uname -s)" = Linux'],
+            check=False,
+            capture_output=True,
+            timeout=5,
+        ).returncode != 0:
+            self.skipTest("Linux process groups are unavailable for the recovery replay")
+
+        function = _shell_function(
+            GATE.read_text(encoding="utf-8"),
+            "stop_owned_runtime_process",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            state_file = _bash_path(root / "resident.state")
+            result_file = _bash_path(root / "resident.result")
+            harness = f"""
+set -euo pipefail
+source {shlex.quote(_bash_path(PROCESS_GROUP_HELPER))}
+{function}
+runtime_owner_token={OWNER_TOKEN}
+state_file={shlex.quote(state_file)}
+result_file={shlex.quote(result_file)}
+setsid env YAP_RUNTIME_OWNER_TOKEN="$runtime_owner_token" \
+  bash -c 'sleep 60 & wait' &
+child_pid="$!"
+owned_group="$child_pid"
+start_ticks="$(awk '{{print $22}}' "/proc/$child_pid/stat")"
+(exit 1) &
+reap_pid="$!"
+control_fd=
+printf '1 ready %s %s %s 0\\n' \
+  "$child_pid" "$start_ticks" "$reap_pid" >"$state_file"
+printf '1 1 143 ownership-failed\\n' >"$result_file"
+set +e
+stop_owned_runtime_process \
+  child_pid reap_pid control_fd state_file result_file \
+  "Resident recovery replay"
+recovery_status="$?"
+set -e
+test "$recovery_status" -eq 1
+test -z "$child_pid"
+test -z "$reap_pid"
+test -z "$control_fd"
+test -z "$state_file"
+test -z "$result_file"
+test -z "$(yap_process_group_members "$owned_group")"
+wait "$owned_group" 2>/dev/null || true
+test ! -e {shlex.quote(state_file)}
+test ! -e {shlex.quote(result_file)}
+"""
+            self._run_bash_harness(bash, harness, timeout=30)
+
+    def test_control_empty_recovery_refuses_foreign_token_and_retains_records(
+        self,
+    ) -> None:
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash is unavailable for the resident refusal replay")
+        if subprocess.run(
+            [bash, "-lc", 'test "$(uname -s)" = Linux'],
+            check=False,
+            capture_output=True,
+            timeout=5,
+        ).returncode != 0:
+            self.skipTest("Linux process groups are unavailable for the refusal replay")
+
+        function = _shell_function(
+            GATE.read_text(encoding="utf-8"),
+            "stop_owned_runtime_process",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            state_file = _bash_path(root / "resident.state")
+            result_file = _bash_path(root / "resident.result")
+            harness = f"""
+set -euo pipefail
+source {shlex.quote(_bash_path(PROCESS_GROUP_HELPER))}
+{function}
+runtime_owner_token={OWNER_TOKEN}
+state_file={shlex.quote(state_file)}
+result_file={shlex.quote(result_file)}
+setsid env YAP_RUNTIME_OWNER_TOKEN={FOREIGN_TOKEN} bash -c 'sleep 60 & wait' &
+child_pid="$!"
+owned_group="$child_pid"
+start_ticks="$(awk '{{print $22}}' "/proc/$child_pid/stat")"
+(exit 1) &
+reap_pid="$!"
+recorded_reap_pid="$reap_pid"
+control_fd=
+printf '1 ready %s %s %s 0\\n' \
+  "$child_pid" "$start_ticks" "$reap_pid" >"$state_file"
+printf '1 1 143 ownership-failed\\n' >"$result_file"
+set +e
+stop_owned_runtime_process \
+  child_pid reap_pid control_fd state_file result_file \
+  "Resident foreign-token replay"
+recovery_status="$?"
+set -e
+test "$recovery_status" -eq 1
+test "$child_pid" = "$owned_group"
+test "$reap_pid" = "$recorded_reap_pid"
+test -z "$control_fd"
+test "$state_file" = {shlex.quote(state_file)}
+test "$result_file" = {shlex.quote(result_file)}
+test -e "$state_file"
+test -e "$result_file"
+test -n "$(yap_process_group_members "$owned_group")"
+stop_token_owned_process_group \
+  "$owned_group" {FOREIGN_TOKEN} "Foreign-token test teardown"
+wait "$owned_group" 2>/dev/null || true
+rm -f -- "$state_file" "$result_file"
+"""
+            self._run_bash_harness(bash, harness, timeout=30)
+
+    def test_sampler_handles_clear_only_after_executable_cleanup_proof(self) -> None:
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash is unavailable for the sampler lifecycle replay")
+
+        function = _shell_function(
+            GATE.read_text(encoding="utf-8"),
+            "finalize_resource_sampler_lifecycle",
+        )
+        harness = f"""
+set -euo pipefail
+{function}
+sampler_pid=101
+sampler_reap_pid=102
+sampler_control_fd=10
+sampler_state_file=/tmp/sampler-state
+sampler_result_file=/tmp/sampler-result
+yap_wait_owned_process_group() {{ return 1; }}
+yap_stop_owned_process_group() {{ exit 91; }}
+sampler_status=0
+set +e
+finalize_resource_sampler_lifecycle sampler_status
+cleanup_status="$?"
+set -e
+test "$cleanup_status" -eq 1
+test "$sampler_status" -eq 1
+test "$sampler_pid" = 101
+test "$sampler_reap_pid" = 102
+test "$sampler_control_fd" = 10
+test "$sampler_state_file" = /tmp/sampler-state
+test "$sampler_result_file" = /tmp/sampler-result
+
+yap_wait_owned_process_group() {{ return 124; }}
+yap_stop_owned_process_group() {{ return 0; }}
+sampler_status=0
+finalize_resource_sampler_lifecycle sampler_status
+test "$sampler_status" -eq 1
+test -z "$sampler_pid"
+test -z "$sampler_reap_pid"
+test -z "$sampler_control_fd"
+test -z "$sampler_state_file"
+test -z "$sampler_result_file"
+"""
+        self._run_bash_harness(bash, harness, timeout=10)
+
+    def test_unknown_container_creation_retains_gate_recovery_identity(self) -> None:
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash is unavailable for the container recovery replay")
+
+        function = _shell_function(
+            GATE.read_text(encoding="utf-8"),
+            "stop_owned_runtime",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            proxy_group_file = _bash_path(root / "proxy.pgid")
+            recovery_file = f"{proxy_group_file}.container-recovery"
+            harness = f"""
+set -euo pipefail
+{function}
+runtime_owner_token={OWNER_TOKEN}
+proxy_group_file={shlex.quote(proxy_group_file)}
+active_container_id=
+active_container_name=yap-test-provider
+observed_container_running=
+network_id=
+sampler_pid=
+sampler_reap_pid=
+sampler_control_fd=
+sampler_state_file=
+sampler_result_file=
+launcher_pid=
+launcher_reap_pid=
+launcher_control_fd=
+launcher_state_file=
+launcher_result_file=
+printf '%s\\n' \
+  "1 create-pending yap-test-provider {OWNER_TOKEN} -" \
+  >{shlex.quote(recovery_file)}
+stop_owned_runtime_process() {{ return 0; }}
+stop_recorded_proxy_group() {{ proxy_group_file=; return 0; }}
+capture_owned_provider_container() {{ return 1; }}
+capture_owned_network() {{ return 1; }}
+if stop_owned_runtime; then
+  cleanup_status=0
+else
+  cleanup_status="$?"
+fi
+test "$cleanup_status" -eq 1
+test -e {shlex.quote(recovery_file)}
+test "$active_container_name" = yap-test-provider
+"""
+            self._run_bash_harness(bash, harness, timeout=10)
+
+    def test_normal_provider_stop_requires_all_recovery_artifacts_absent(
+        self,
+    ) -> None:
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash is unavailable for the recovery-retirement replay")
+
+        script = GATE.read_text(encoding="utf-8")
+        absence_function = _shell_function(
+            script,
+            "require_private_container_recovery_absence",
+        )
+        stop_function = _shell_function(script, "stop_provider")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            group_file_prefix = _bash_path(root / "proxy")
+            harness = f"""
+set -euo pipefail
+{absence_function}
+{stop_function}
+capture_owned_provider_container() {{ return 0; }}
+docker() {{ return 0; }}
+stop_recorded_proxy_group() {{ proxy_group_file=; return 0; }}
+wait_for_owned_container_absence() {{ exit 91; }}
+ss() {{ return 1; }}
+for suffix in .container-recovery .container-recovery.part .container-id; do
+  expected_group_file={shlex.quote(group_file_prefix)}"$suffix"
+  proxy_group_file="$expected_group_file"
+  active_container_id=owned-container
+  active_container_name=yap-test-provider
+  observed_container_running=true
+  launcher_pid=
+  launcher_reap_pid=
+  launcher_control_fd=
+  launcher_state_file=
+  launcher_result_file=
+  : >"$expected_group_file$suffix"
+  if stop_provider 18000; then
+    stop_status=0
+  else
+    stop_status="$?"
+  fi
+  test "$stop_status" -eq 1
+  test "$proxy_group_file" = "$expected_group_file"
+  test -e "$expected_group_file$suffix"
+  command rm -f -- "$expected_group_file$suffix"
+done
+"""
+            self._run_bash_harness(bash, harness, timeout=10)
+
+    def test_appends_standard_system_command_fallbacks_after_caller_path(
+        self,
+    ) -> None:
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash is unavailable for the command-path replay")
+        script = GATE.read_text(encoding="utf-8")
+        function_start = script.index("append_command_path_fallbacks() {")
+        function_end = script.index("\n}\n", function_start) + len("\n}\n")
+        function = script[function_start:function_end]
+        production_call = (
+            'append_command_path_fallbacks "/usr/local/sbin:/usr/local/bin:'
+            '/usr/sbin:/usr/bin:/sbin:/bin"'
+        )
+        self.assertIn(production_call, script)
+        self.assertLess(
+            script.index(production_call), script.index("capture_host_boundary()")
+        )
+        harness = r"""
+set -euo pipefail
+caller_bin="$(mktemp -d)"
+fallback_bin="$(mktemp -d)"
+trap 'rm -rf "$caller_bin" "$fallback_bin"' EXIT
+for command_name in python3.12 uv; do
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$caller_bin/$command_name"
+  chmod 0700 "$caller_bin/$command_name"
+done
+for command_name in ufw nft iptables-save; do
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$fallback_bin/$command_name"
+  chmod 0700 "$fallback_bin/$command_name"
+done
+PATH="$caller_bin:/usr/bin:/bin"
+append_command_path_fallbacks "$fallback_bin"
+test "$PATH" = "$caller_bin:/usr/bin:/bin:$fallback_bin"
+test "$(command -v python3.12)" = "$caller_bin/python3.12"
+test "$(command -v uv)" = "$caller_bin/uv"
+test "$(command -v ufw)" = "$fallback_bin/ufw"
+test "$(command -v nft)" = "$fallback_bin/nft"
+test "$(command -v iptables-save)" = "$fallback_bin/iptables-save"
+test "$(/bin/bash -c 'printf %s "$PATH"')" = "$PATH"
+"""
+        completed = subprocess.run(
+            [bash],
+            input=(function + harness).encode("utf-8"),
+            check=False,
+            capture_output=True,
+            timeout=30,
+        )
+        self.assertEqual(
+            completed.returncode,
+            0,
+            (completed.stdout + completed.stderr).decode(
+                "utf-8",
+                errors="replace",
+            ),
+        )
+
     def test_requires_prepared_images_without_building_during_the_gate(self) -> None:
         contract = IMAGE_CONTRACT.read_text(encoding="utf-8")
         script = GATE.read_text(encoding="utf-8")
@@ -124,26 +454,35 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
             "capture_host_boundary",
             "verify_private_container_network",
             "runtime-processes.txt",
-            "[d]ocker logs --follow (yap-cohere-vllm|yap-nemotron-nemo)",
             "Resident providers require distinct loopback ports",
             "runtime_owner_token",
             "io.yap.run-token",
             "active_container_id",
             "network_id",
             "wait_for_owned_container",
-            "verify_launcher_process_group",
-            "setsid \\",
             "owned-process-group.sh",
-            "stop_token_owned_process_group",
+            "yap_start_owned_process_group",
+            "yap_wait_owned_process_group",
+            "yap_stop_owned_process_group",
+            "launcher_control_fd",
+            "launcher_reap_pid",
+            "launcher_state_file",
+            "launcher_result_file",
+            "sampler_control_fd",
+            "sampler_reap_pid",
+            "finalize_resource_sampler_lifecycle",
+            "cleanup_proven=false",
+            'if [ "$cleanup_proven" != true ]; then',
+            "yap_stop_or_recover_owned_process_group",
             "stop_recorded_proxy_group",
+            "container-recovery",
+            "container creation outcome remains unresolved",
+            'docker rm --force "$active_container_id"',
             "YAP_PROXY_PROCESS_GROUP_FILE",
-            'yap_process_group_members "$launcher_pid"',
-            'ps -o pgid= -p "$process_id"',
-            "stop_owned_child_process_group",
             'YAP_RUNTIME_OWNER_TOKEN="$runtime_owner_token"',
             'docker port "$container"',
             '("1.1.1.1", 443)',
-            'launcher_status="$?"',
+            'launcher_status="$supervisor_wait_status"',
             "Resident provider launcher reported unclean teardown",
             "--verify-only",
         ):
@@ -174,20 +513,34 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
             script,
         )
         for container_name in ("yap-cohere-vllm", "yap-nemotron-nemo"):
-            assignment = script.index(
-                f'active_container_name="{container_name}"'
-            )
-            launch = script.index("setsid \\", assignment)
+            assignment = script.index(f'active_container_name="{container_name}"')
+            launch = script.index("yap_start_owned_process_group \\", assignment)
             self.assertLess(assignment, launch)
+        self.assertEqual(script.count("yap_start_owned_process_group \\"), 3)
+        self.assertNotIn("stop_owned_child_process_group", script)
+        self.assertNotIn("\n  setsid \\\n", script)
+        proven_cleanup = script.index('if [ "$cleanup_proven" != true ]; then')
+        cleared_sampler = script.index('sampler_pid=""', proven_cleanup)
+        finalizer_call = script.rindex(
+            "finalize_resource_sampler_lifecycle sampler_status"
+        )
+        failed_workload = script.index(
+            'if [ "$workload_status" -ne 0 ]',
+            finalizer_call,
+        )
+        self.assertLess(proven_cleanup, cleared_sampler)
+        self.assertLess(finalizer_call, failed_workload)
 
-    def test_uses_a_temporary_internal_network_and_never_mutates_host_policy(self) -> None:
+    def test_uses_a_temporary_internal_network_and_never_mutates_host_policy(
+        self,
+    ) -> None:
         script = GATE.read_text(encoding="utf-8")
 
         self.assertIn("docker network create", script)
         self.assertIn("--internal", script)
         self.assertIn("io.yap.owner=private-inference", script)
-        self.assertIn('io.yap.revision=$YAP_CHECKED_HEAD', script)
-        self.assertIn('io.yap.run-token=$runtime_owner_token', script)
+        self.assertIn("io.yap.revision=$YAP_CHECKED_HEAD", script)
+        self.assertIn("io.yap.run-token=$runtime_owner_token", script)
         self.assertIn('docker network rm "$network_id"', script)
         self.assertIn(
             'if docker network rm "$network_id" >/dev/null 2>&1; then',
@@ -217,7 +570,7 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
             self.skipTest("bash is unavailable for the dead-launcher replay")
         script = GATE.read_text(encoding="utf-8")
         function_start = script.index("capture_owned_provider_container() {")
-        function_end = script.index("\nverify_owned_process_group() {")
+        function_end = script.index("\nverify_private_container_network() {")
         function = script[function_start:function_end]
         container_id = "a" * 64
         owner_token = "b" * 64
@@ -225,6 +578,8 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
 set -euo pipefail
 runtime_owner_token={owner_token}
 launcher_pid=424242
+launcher_result_file="$(mktemp)"
+trap 'rm -f "$launcher_result_file"' EXIT
 active_container_id=
 active_container_name=yap-test-provider
 observed_container_running=
@@ -399,6 +754,48 @@ test "$active_container_id" = "{original_id}"
                 errors="replace",
             ),
         )
+
+    def _run_bash_harness(
+        self,
+        bash: str,
+        harness: str,
+        *,
+        timeout: int,
+    ) -> None:
+        try:
+            completed = subprocess.run(
+                [bash],
+                input=harness.encode("utf-8"),
+                check=False,
+                capture_output=True,
+                timeout=timeout,
+            )
+        except subprocess.TimeoutExpired as error:
+            output = (error.stdout or b"") + (error.stderr or b"")
+            self.fail(output.decode("utf-8", errors="replace"))
+        self.assertEqual(
+            completed.returncode,
+            0,
+            (completed.stdout + completed.stderr).decode(
+                "utf-8",
+                errors="replace",
+            ),
+        )
+
+
+def _shell_function(script: str, name: str) -> str:
+    start = script.index(f"{name}() {{")
+    end = script.index("\n}\n", start) + len("\n}\n")
+    return script[start:end]
+
+
+def _bash_path(path: Path) -> str:
+    resolved = path.resolve()
+    if resolved.drive:
+        drive = resolved.drive.rstrip(":").lower()
+        remainder = resolved.as_posix().split(":", maxsplit=1)[1]
+        return f"/mnt/{drive}{remainder}"
+    return resolved.as_posix()
 
 
 if __name__ == "__main__":

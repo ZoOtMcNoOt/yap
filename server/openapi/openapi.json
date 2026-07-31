@@ -25,7 +25,12 @@
     },
     {
       "name": "live",
-      "description": "Contract-only WebSocket upgrade interface."
+      "description": "Authenticated private WebSocket transport interface; live ASR inference remains unavailable."
+    }
+  ],
+  "security": [
+    {
+      "YapAccessToken": []
     }
   ],
   "paths": {
@@ -58,7 +63,8 @@
           "500": {
             "$ref": "#/components/responses/ApiErrorResponse"
           }
-        }
+        },
+        "security": []
       }
     },
     "/v1/asr/capabilities": {
@@ -90,8 +96,17 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
           "501": {
             "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
           }
         }
       }
@@ -164,6 +179,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
           },
           "409": {
             "description": "The request targets stale contract identity, conflicts with active work, or was cancelled.",
@@ -361,6 +382,12 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
           "404": {
             "description": "No active LID request has the supplied identifier.",
             "content": {
@@ -392,6 +419,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
           }
         }
       }
@@ -402,7 +432,7 @@
           "jobs"
         ],
         "summary": "Create a recording job",
-        "description": "Implemented by the loopback-only batch development runtime with bounded durable intake. The request never supplies tenant or owner-subject identity; the future authenticated server derives those values from a validated token.",
+        "description": "Implemented by the bounded batch runtime with server-derived authenticated ownership in Entra mode and an isolated development principal in loopback mode. The request never supplies tenant or owner-subject identity.",
         "operationId": "createJob",
         "x-yap-runtime-status": "Implemented in the loopback batch runtime",
         "x-yap-runtime-owner": "Batch job intake",
@@ -434,6 +464,12 @@
           },
           "400": {
             "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
           },
           "429": {
             "$ref": "#/components/responses/ApiErrorResponse"
@@ -473,11 +509,20 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
           "404": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
           "501": {
             "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
           }
         }
       },
@@ -505,6 +550,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
           },
           "404": {
             "$ref": "#/components/responses/ApiErrorResponse"
@@ -544,6 +595,12 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
           "404": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
@@ -552,6 +609,9 @@
           },
           "501": {
             "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
           }
         }
       }
@@ -750,6 +810,12 @@
           "400": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
           "404": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
@@ -820,6 +886,12 @@
           "400": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
           "404": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
@@ -861,8 +933,17 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
           "404": {
             "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
           }
         }
       }
@@ -909,6 +990,12 @@
           "400": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
           "404": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
@@ -930,14 +1017,26 @@
           "live"
         ],
         "summary": "Upgrade to the Yap live event protocol",
-        "description": "The live event schema remains contract-only. The loopback batch runtime does not advertise a WebSocket runtime, streaming inference, or authentication.",
+        "description": "An authenticated loopback WebSocket application transport admits and validates live sessions on the private live listener. Clients must offer exactly Sec-WebSocket-Protocol: yap.live.v1 and the successful upgrade negotiates that protocol. Token authentication, principal admission, session ownership, replay safety, cancellation, bounded buffering, and reconnect semantics are enforced. TLS terminates at an external secure edge. Live ASR inference remains unavailable and liveStreaming remains false.",
         "operationId": "connectLive",
-        "x-yap-runtime-status": "Contract only; capability remains false",
+        "x-yap-runtime-status": "Authenticated private transport implemented; live ASR inference remains false",
         "x-yap-runtime-owner": "Live WebSocket transport",
         "x-yap-live-events-schema": "./live-events.schema.json",
+        "parameters": [
+          {
+            "name": "Sec-WebSocket-Protocol",
+            "in": "header",
+            "required": true,
+            "description": "The client must offer exactly the Yap live protocol token; missing, mismatched, or additional protocol offers are rejected.",
+            "schema": {
+              "type": "string",
+              "const": "yap.live.v1"
+            }
+          }
+        ],
         "responses": {
           "101": {
-            "description": "Future WebSocket protocol upgrade.",
+            "description": "Authenticated WebSocket upgrade with yap.live.v1 negotiated.",
             "headers": {
               "Upgrade": {
                 "schema": {
@@ -962,14 +1061,31 @@
           "400": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
           "501": {
             "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
           }
         }
       }
     }
   },
   "components": {
+    "securitySchemes": {
+      "YapAccessToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Microsoft Entra access token issued for the Yap API. The server derives tenant and owner identity from validated claims; clients never submit owner fields."
+      }
+    },
     "parameters": {
       "JobId": {
         "name": "jobId",
@@ -1012,6 +1128,62 @@
               "code": "NOT_IMPLEMENTED",
               "message": "This route is unavailable in the active runtime profile.",
               "retryable": false,
+              "requestId": "req-01J..."
+            }
+          }
+        }
+      },
+      "AuthenticationRequiredResponse": {
+        "description": "A valid Yap API bearer token is required.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "code": "AUTHENTICATION_REQUIRED",
+              "message": "A Yap API access token is required.",
+              "retryable": false,
+              "requestId": "req-01J..."
+            }
+          }
+        }
+      },
+      "AccessDeniedResponse": {
+        "description": "The authenticated principal is not authorized.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "code": "ACCESS_DENIED",
+              "message": "The authenticated principal is not authorized.",
+              "retryable": false,
+              "requestId": "req-01J..."
+            }
+          }
+        }
+      },
+      "AuthenticationUnavailableResponse": {
+        "description": "The server cannot currently establish the token authorization decision.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "code": "AUTHENTICATION_UNAVAILABLE",
+              "message": "Yap could not validate the access token.",
+              "retryable": true,
               "requestId": "req-01J..."
             }
           }
@@ -1333,7 +1505,7 @@
       "ChunkReplayKey": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Logical server replay identity. Tenant and owner-subject namespace are server-derived only after token validation exists and are never client-provided.",
+        "description": "Logical server replay identity. Tenant and owner-subject namespace are always server-derived from the authenticated principal in Entra mode and are never client-provided.",
         "required": [
           "schemaVersion",
           "sessionId",
@@ -3356,7 +3528,7 @@
           },
           "liveStreaming": {
             "type": "boolean",
-            "description": "True only when the live WebSocket runtime is implemented."
+            "description": "True only when live ASR inference is implemented; authenticated transport admission alone remains false."
           },
           "jobStatus": {
             "type": "boolean",
@@ -3620,7 +3792,7 @@
       "CreateRecordingJobRequest": {
         "type": "object",
         "additionalProperties": false,
-        "description": "The fixed-language batch intake accepts one imported meeting track with a non-null finite UTC retention expiry. Legacy capture-manifest schema 1 forbids preprocessingEvidence and asrCatalogRevision. Schema 2 requires bounded preprocessingEvidence plus the exact verified ASR catalog revision used for admission. languageDecision is immutable and MUST exactly match localeHintBcp47 and the sole preferredLanguagesBcp47 entry. metadata, captureManifest, and every chunk replay key MUST name one session; replay keys MUST be unique and contiguous from zero; and the accepted manifest reference and chunk declaration become immutable. Dynamic mode is rejected until advertised by the capability catalog. An imported physical-source hint is valid only as user_declared provenance. Identity ownership is server-derived after token validation; privacyPolicyVersion unconfigured cannot authorize a team upload once policy gating ships.",
+        "description": "The fixed-language batch intake accepts one imported meeting track with a non-null finite UTC retention expiry. Legacy capture-manifest schema 1 forbids preprocessingEvidence and asrCatalogRevision. Schema 2 requires bounded preprocessingEvidence plus the exact verified ASR catalog revision used for admission. languageDecision is immutable and MUST exactly match localeHintBcp47 and the sole preferredLanguagesBcp47 entry. metadata, captureManifest, and every chunk replay key MUST name one session; replay keys MUST be unique and contiguous from zero; and the accepted manifest reference and chunk declaration become immutable. Dynamic mode is rejected until advertised by the capability catalog. An imported physical-source hint is valid only as user_declared provenance. Identity ownership is server-derived from the validated principal in Entra mode; privacyPolicyVersion unconfigured cannot authorize a team upload once policy gating ships.",
         "x-yap-source-identity-invariants": {
           "singleSessionIdentity": {
             "rule": "all_equal",

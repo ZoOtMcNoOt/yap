@@ -1,5 +1,51 @@
 use super::*;
 
+struct BlockingDrop {
+    started: mpsc::Sender<()>,
+    release: mpsc::Receiver<()>,
+    finished: mpsc::Sender<()>,
+}
+
+impl Drop for BlockingDrop {
+    fn drop(&mut self) {
+        let _ = self.started.send(());
+        let _ = self.release.recv();
+        let _ = self.finished.send(());
+    }
+}
+
+fn blocking_drop_fixture() -> (
+    BlockingDrop,
+    mpsc::Receiver<()>,
+    mpsc::Sender<()>,
+    mpsc::Receiver<()>,
+) {
+    let (started_tx, started_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+    let (finished_tx, finished_rx) = mpsc::channel();
+    (
+        BlockingDrop {
+            started: started_tx,
+            release: release_rx,
+            finished: finished_tx,
+        },
+        started_rx,
+        release_tx,
+        finished_rx,
+    )
+}
+
+fn wait_for_empty_warmup<T: Send + 'static>(warmup: &SharedWarmup<T>) {
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while !warmup.is_empty_for_test() {
+        assert!(
+            Instant::now() < deadline,
+            "warmup did not become fully empty"
+        );
+        std::thread::yield_now();
+    }
+}
+
 #[test]
 fn shared_warmup_is_cancellable_reentrant_and_never_duplicates_the_model() {
     let warmup = Arc::new(SharedWarmup::<usize>::new());
@@ -54,6 +100,44 @@ fn shared_warmup_is_cancellable_reentrant_and_never_duplicates_the_model() {
 }
 
 #[test]
+fn cancelling_capture_intent_preserves_inflight_warmup_for_the_next_session() {
+    let runtime = LiveRuntime::new();
+    let intent = runtime.capture_start_intent();
+    let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
+    let (release_loader_tx, release_loader_rx) = mpsc::channel();
+
+    assert!(runtime
+        .model_warmup
+        .request("reusable-live-warmup", move || {
+            loader_entered_tx.send(()).unwrap();
+            release_loader_rx.recv().unwrap();
+            Err("synthetic warmup result".to_string())
+        })
+        .unwrap());
+    loader_entered_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    runtime.cancel_pending_start();
+
+    assert!(!runtime.start_intent_is_current(intent));
+    release_loader_tx.send(()).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while runtime.model_warmup.is_loading_for_test() {
+        assert!(
+            Instant::now() < deadline,
+            "in-flight warmup did not publish its reusable result"
+        );
+        std::thread::yield_now();
+    }
+    let error = match runtime.model_warmup.wait_cancellable(|| false) {
+        Ok(_) => panic!("synthetic warmup unexpectedly produced a model"),
+        Err(error) => error,
+    };
+    assert_eq!(error, "synthetic warmup result");
+}
+
+#[test]
 fn clearing_idle_warmup_drops_a_ready_model() {
     struct DropSignal(Arc<AtomicBool>);
 
@@ -64,13 +148,212 @@ fn clearing_idle_warmup_drops_a_ready_model() {
     }
 
     let dropped = Arc::new(AtomicBool::new(false));
-    let warmup = SharedWarmup::new();
+    let warmup = Arc::new(SharedWarmup::new());
     warmup.seed_ready_for_test(DropSignal(Arc::clone(&dropped)));
 
-    warmup.clear_idle().unwrap();
+    warmup
+        .clear_idle_with_timeout(Duration::from_secs(1))
+        .unwrap();
 
     assert!(dropped.load(Ordering::Acquire));
     assert!(warmup.is_empty_for_test());
+}
+
+#[test]
+fn bounded_clear_returns_before_a_ready_model_destructor_finishes() {
+    let warmup = Arc::new(SharedWarmup::new());
+    let (blocking_drop, drop_started_rx, release_drop_tx, drop_finished_rx) =
+        blocking_drop_fixture();
+    warmup.seed_ready_for_test(blocking_drop);
+
+    let clearing = Arc::clone(&warmup);
+    let (cleared_tx, cleared_rx) = mpsc::channel();
+    let clearer = std::thread::spawn(move || {
+        let result = clearing.clear_idle_with_timeout(Duration::from_millis(25));
+        let _ = cleared_tx.send(result);
+    });
+    drop_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let result = cleared_rx.recv_timeout(Duration::from_millis(250));
+    assert!(warmup.is_retirement_active_for_test());
+    let retry_error = warmup
+        .clear_idle_with_timeout(Duration::from_millis(25))
+        .expect_err("cleanup retry lost pending native retirement");
+    let _ = release_drop_tx.send(());
+    drop_finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    clearer.join().unwrap();
+
+    let error = result
+        .expect("bounded clear waited for the ready model destructor")
+        .expect_err("blocked ready model destruction unexpectedly completed within its deadline");
+    assert!(error.contains("cleanup deadline"));
+    assert!(retry_error.contains("cleanup deadline"));
+    wait_for_empty_warmup(&warmup);
+}
+
+#[test]
+fn panicked_ready_model_retirement_remains_fail_closed() {
+    struct PanicDrop;
+
+    impl Drop for PanicDrop {
+        fn drop(&mut self) {
+            panic!("synthetic ready model destructor panic");
+        }
+    }
+
+    let warmup = Arc::new(SharedWarmup::new());
+    let observed_retirement_epoch = warmup.incomplete_retirement_epoch_for_test();
+    warmup.seed_ready_for_test(PanicDrop);
+
+    let error = warmup
+        .clear_idle_with_timeout(Duration::from_millis(25))
+        .expect_err("panicked retirement unexpectedly completed cleanup");
+    assert!(
+        warmup.wait_for_incomplete_retirement_after_for_test(
+            observed_retirement_epoch,
+            Duration::from_secs(1),
+        ),
+        "retirement worker did not report its incomplete unwind"
+    );
+    let retry_error = warmup
+        .clear_idle_with_timeout(Duration::from_millis(25))
+        .expect_err("cleanup retry forgot the incomplete retirement");
+
+    assert!(error.contains("cleanup deadline"));
+    assert!(retry_error.contains("cleanup deadline"));
+    assert!(warmup.is_retirement_active_for_test());
+}
+
+#[test]
+fn bounded_clear_rechecks_late_warmup_after_ready_model_retirement() {
+    let warmup = Arc::new(SharedWarmup::new());
+    let (blocking_drop, drop_started_rx, release_drop_tx, drop_finished_rx) =
+        blocking_drop_fixture();
+    warmup.seed_ready_for_test(blocking_drop);
+
+    let clearing = Arc::clone(&warmup);
+    let (cleared_tx, cleared_rx) = mpsc::channel();
+    let clearer = std::thread::spawn(move || {
+        let result = clearing.clear_idle_with_timeout(Duration::from_secs(1));
+        let _ = cleared_tx.send(result);
+    });
+    drop_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    assert!(warmup
+        .request("late-retirement-race", || {
+            Err("late synthetic warmup".to_string())
+        })
+        .unwrap());
+    let late_load_deadline = Instant::now() + Duration::from_secs(1);
+    while warmup.is_loading_for_test() {
+        assert!(
+            Instant::now() < late_load_deadline,
+            "late synthetic warmup did not publish"
+        );
+        std::thread::yield_now();
+    }
+    let _ = release_drop_tx.send(());
+
+    assert_eq!(
+        cleared_rx.recv_timeout(Duration::from_secs(1)).unwrap(),
+        Ok(())
+    );
+    drop_finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    clearer.join().unwrap();
+    wait_for_empty_warmup(&warmup);
+}
+
+#[test]
+fn bounded_clear_cancels_a_late_load_when_ready_model_retirement_times_out() {
+    let warmup = Arc::new(SharedWarmup::new());
+    let (blocking_drop, drop_started_rx, release_drop_tx, drop_finished_rx) =
+        blocking_drop_fixture();
+    warmup.seed_ready_for_test(blocking_drop);
+
+    let clearing = Arc::clone(&warmup);
+    let (cleared_tx, cleared_rx) = mpsc::channel();
+    let clearer = std::thread::spawn(move || {
+        let result = clearing.clear_idle_with_timeout(Duration::from_millis(250));
+        let _ = cleared_tx.send(result);
+    });
+    drop_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
+    let (release_loader_tx, release_loader_rx) = mpsc::channel();
+    assert!(warmup
+        .request("late-retirement-timeout-race", move || {
+            loader_entered_tx.send(()).unwrap();
+            let _ = release_loader_rx.recv();
+            Err("late synthetic warmup".to_string())
+        })
+        .unwrap());
+    loader_entered_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let error = cleared_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap()
+        .expect_err("blocked retirement unexpectedly cleared before its deadline");
+    assert!(error.contains("cleanup deadline"));
+    assert!(
+        warmup.is_loading_cancelled_for_test(),
+        "late load remained publishable after cleanup timed out"
+    );
+
+    let _ = release_loader_tx.send(());
+    let _ = release_drop_tx.send(());
+    drop_finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    clearer.join().unwrap();
+    wait_for_empty_warmup(&warmup);
+}
+
+#[test]
+fn idle_clear_returns_before_a_ready_model_destructor_finishes() {
+    let warmup = Arc::new(SharedWarmup::new());
+    let (blocking_drop, drop_started_rx, release_drop_tx, drop_finished_rx) =
+        blocking_drop_fixture();
+    warmup.seed_ready_for_test(blocking_drop);
+
+    let clearing = Arc::clone(&warmup);
+    let (cleared_tx, cleared_rx) = mpsc::channel();
+    let clearer = std::thread::spawn(move || {
+        let result = clearing.request_idle_clear();
+        let _ = cleared_tx.send(result);
+    });
+    drop_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let result = cleared_rx.recv_timeout(Duration::from_millis(250));
+    assert!(warmup.is_retirement_active_for_test());
+    let pending_error = warmup
+        .clear_idle_with_timeout(Duration::from_millis(25))
+        .expect_err("bounded cleanup lost the idle retirement");
+    let _ = release_drop_tx.send(());
+    drop_finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    clearer.join().unwrap();
+
+    assert_eq!(
+        result.expect("idle clear waited for the ready model destructor"),
+        Ok(())
+    );
+    assert!(pending_error.contains("cleanup deadline"));
+    wait_for_empty_warmup(&warmup);
 }
 
 #[test]
@@ -100,7 +383,7 @@ fn clearing_idle_warmup_cancels_and_waits_for_a_loading_model() {
     let clearing = Arc::clone(&warmup);
     let (cleared_tx, cleared_rx) = mpsc::channel();
     let clearer = std::thread::spawn(move || {
-        let result = clearing.clear_idle();
+        let result = clearing.clear_idle_with_timeout(Duration::from_secs(1));
         cleared_tx.send(result).unwrap();
     });
     assert!(cleared_rx.recv_timeout(Duration::from_millis(50)).is_err());
@@ -116,12 +399,12 @@ fn clearing_idle_warmup_cancels_and_waits_for_a_loading_model() {
 }
 
 #[test]
-fn shutdown_clear_returns_at_its_bound_when_model_loading_is_blocked() {
+fn bounded_clear_returns_at_its_deadline_when_model_loading_is_blocked() {
     let warmup = Arc::new(SharedWarmup::<usize>::new());
     let (entered_tx, entered_rx) = mpsc::channel();
     let (release_tx, release_rx) = mpsc::channel();
     warmup
-        .request("blocked-shutdown-warmup", move || {
+        .request("blocked-bounded-warmup", move || {
             entered_tx.send(()).unwrap();
             release_rx.recv().unwrap();
             Ok(7)
@@ -131,10 +414,10 @@ fn shutdown_clear_returns_at_its_bound_when_model_loading_is_blocked() {
 
     let started = Instant::now();
     let error = warmup
-        .clear_idle_for_shutdown(Duration::from_millis(25))
+        .clear_idle_with_timeout(Duration::from_millis(25))
         .unwrap_err();
 
-    assert!(error.contains("shutdown deadline"));
+    assert!(error.contains("cleanup deadline"));
     assert!(started.elapsed() < Duration::from_secs(1));
     assert!(warmup.is_loading_for_test());
     release_tx.send(()).unwrap();
@@ -199,6 +482,226 @@ fn model_mutation_lease_invalidates_a_start_queued_behind_it() {
 }
 
 #[test]
+fn model_mutation_drop_retires_late_warmup_even_if_a_stale_request_retries() {
+    let runtime = Arc::new(LiveRuntime::new());
+    let mutation = runtime.begin_model_mutation().unwrap();
+    let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
+    let (release_loader_tx, release_loader_rx) = mpsc::channel();
+
+    assert!(runtime
+        .model_warmup
+        .request("late-stale-live-warmup", move || {
+            loader_entered_tx.send(()).unwrap();
+            let _ = release_loader_rx.recv();
+            Err("stale synthetic warmup".to_string())
+        })
+        .unwrap());
+    loader_entered_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let (mutation_dropped_tx, mutation_dropped_rx) = mpsc::channel();
+    let dropper = std::thread::spawn(move || {
+        drop(mutation);
+        mutation_dropped_tx.send(()).unwrap();
+    });
+    let cancellation_deadline = Instant::now() + Duration::from_secs(1);
+    while !runtime.model_warmup.is_loading_cancelled_for_test() {
+        assert!(
+            Instant::now() < cancellation_deadline,
+            "mutation cleanup did not cancel its late warmup"
+        );
+        std::thread::yield_now();
+    }
+    assert!(
+        mutation_dropped_rx.try_recv().is_err(),
+        "mutation ownership ended before its late warmup retired"
+    );
+    assert!(!runtime
+        .model_warmup
+        .request("retry-during-mutation-cleanup", || {
+            panic!("a retry must adopt or await the existing load")
+        })
+        .unwrap());
+    assert!(
+        !runtime.model_warmup.is_loading_cancelled_for_test(),
+        "the stale retry did not revive the loading warmup"
+    );
+    release_loader_tx.send(()).unwrap();
+
+    mutation_dropped_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    dropper.join().unwrap();
+    assert!(runtime.model_warmup.is_empty_for_test());
+    assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+}
+
+#[test]
+fn stalled_mutation_cleanup_releases_the_lifecycle_gate_and_preserves_the_fence() {
+    let runtime = Arc::new(LiveRuntime::new());
+    let mutation = runtime.begin_model_mutation().unwrap();
+    let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
+    let (release_loader_tx, release_loader_rx) = mpsc::channel();
+
+    assert!(runtime
+        .model_warmup
+        .request("stalled-mutation-cleanup", move || {
+            loader_entered_tx.send(()).unwrap();
+            let _ = release_loader_rx.recv();
+            Err("stalled synthetic warmup".to_string())
+        })
+        .unwrap());
+    loader_entered_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let (mutation_dropped_tx, mutation_dropped_rx) = mpsc::channel();
+    let dropper = std::thread::spawn(move || {
+        drop(mutation);
+        let _ = mutation_dropped_tx.send(());
+    });
+    let cancellation_deadline = Instant::now() + Duration::from_secs(1);
+    while !runtime.model_warmup.is_loading_cancelled_for_test() {
+        assert!(
+            Instant::now() < cancellation_deadline,
+            "mutation cleanup did not cancel its late warmup"
+        );
+        std::thread::yield_now();
+    }
+
+    let contender_gate = Arc::clone(&runtime.transition);
+    let (contender_waiting_tx, contender_waiting_rx) = mpsc::channel();
+    let (contender_acquired_tx, contender_acquired_rx) = mpsc::channel();
+    let contender = std::thread::spawn(move || {
+        let _operation =
+            contender_gate.begin_stop_with_wait_hook(|| contender_waiting_tx.send(()).unwrap());
+        let _ = contender_acquired_tx.send(());
+    });
+    contender_waiting_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let cleanup_finished = mutation_dropped_rx
+        .recv_timeout(Duration::from_secs(3))
+        .is_ok();
+    let contender_acquired = contender_acquired_rx
+        .recv_timeout(Duration::from_secs(1))
+        .is_ok();
+    let _ = release_loader_tx.send(());
+    assert!(
+        cleanup_finished,
+        "mutation cleanup held the lifecycle gate past its shutdown bound"
+    );
+    assert!(
+        contender_acquired,
+        "queued shutdown work did not acquire the released lifecycle gate"
+    );
+    assert!(
+        runtime.model_mutation_active.load(Ordering::Acquire),
+        "timed-out mutation cleanup must leave new live work fenced"
+    );
+    dropper.join().unwrap();
+    contender.join().unwrap();
+}
+
+#[test]
+fn stalled_warmup_rejects_mutation_without_latching_the_lifecycle_gate() {
+    let runtime = Arc::new(LiveRuntime::new());
+    let (loader_entered_tx, loader_entered_rx) = mpsc::channel();
+    let (release_loader_tx, release_loader_rx) = mpsc::channel();
+
+    assert!(runtime
+        .model_warmup
+        .request("stalled-mutation-admission", move || {
+            loader_entered_tx.send(()).unwrap();
+            let _ = release_loader_rx.recv();
+            Err("stalled synthetic warmup".to_string())
+        })
+        .unwrap());
+    loader_entered_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let mutation_runtime = Arc::clone(&runtime);
+    let (mutation_result_tx, mutation_result_rx) = mpsc::channel();
+    let mutation = std::thread::spawn(move || {
+        let result = mutation_runtime.begin_model_mutation().map(|lease| {
+            drop(lease);
+        });
+        let _ = mutation_result_tx.send(result);
+    });
+    let cancellation_deadline = Instant::now() + Duration::from_secs(1);
+    while !runtime.model_warmup.is_loading_cancelled_for_test() {
+        assert!(
+            Instant::now() < cancellation_deadline,
+            "mutation admission did not cancel the existing warmup"
+        );
+        std::thread::yield_now();
+    }
+
+    let contender_gate = Arc::clone(&runtime.transition);
+    let (contender_waiting_tx, contender_waiting_rx) = mpsc::channel();
+    let (contender_acquired_tx, contender_acquired_rx) = mpsc::channel();
+    let contender = std::thread::spawn(move || {
+        let _operation =
+            contender_gate.begin_stop_with_wait_hook(|| contender_waiting_tx.send(()).unwrap());
+        let _ = contender_acquired_tx.send(());
+    });
+    contender_waiting_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let result = mutation_result_rx.recv_timeout(Duration::from_secs(3));
+    let contender_acquired = contender_acquired_rx
+        .recv_timeout(Duration::from_secs(1))
+        .is_ok();
+    let _ = release_loader_tx.send(());
+    mutation.join().unwrap();
+    contender.join().unwrap();
+
+    let error = result
+        .expect("mutation admission held the lifecycle gate past its cleanup bound")
+        .expect_err("stalled warmup unexpectedly admitted model mutation");
+    assert!(error.contains("cleanup deadline"));
+    assert!(
+        contender_acquired,
+        "queued shutdown work did not acquire after rejected mutation admission"
+    );
+    assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+}
+
+#[test]
+fn model_mutation_drop_clears_a_late_warmup_that_already_completed() {
+    let runtime = LiveRuntime::new();
+    let mutation = runtime.begin_model_mutation().unwrap();
+    let (loader_completed_tx, loader_completed_rx) = mpsc::channel();
+
+    assert!(runtime
+        .model_warmup
+        .request("completed-late-live-warmup", move || {
+            loader_completed_tx.send(()).unwrap();
+            Err("completed stale synthetic warmup".to_string())
+        })
+        .unwrap());
+    loader_completed_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while runtime.model_warmup.is_loading_for_test() {
+        assert!(
+            Instant::now() < deadline,
+            "late synthetic warmup did not publish before mutation drop"
+        );
+        std::thread::yield_now();
+    }
+
+    drop(mutation);
+
+    assert!(runtime.model_warmup.is_empty_for_test());
+}
+
+#[test]
 fn model_mutation_lease_rejects_new_start_work_without_waiting() {
     let runtime = LiveRuntime::new();
     let _mutation = runtime.begin_model_mutation().unwrap();
@@ -212,6 +715,24 @@ fn model_mutation_lease_rejects_new_start_work_without_waiting() {
 
     assert!(result.is_none());
     assert!(!ran.load(Ordering::Acquire));
+}
+
+#[test]
+fn transient_in_use_warmup_rejects_mutation_without_latching_the_fence() {
+    let runtime = LiveRuntime::new();
+    let intent = runtime.capture_start_intent();
+    runtime.model_warmup.seed_in_use_for_test();
+
+    let error = match runtime.begin_model_mutation() {
+        Ok(_) => panic!("in-use warmup unexpectedly admitted model mutation"),
+        Err(error) => error,
+    };
+
+    assert_eq!(error, "Live model is still owned by a stream.");
+    assert!(!runtime.model_mutation_active.load(Ordering::Acquire));
+    assert!(!runtime.start_intent_is_current(intent));
+    runtime.model_warmup.release_in_use();
+    assert!(runtime.begin_model_mutation().is_ok());
 }
 
 #[test]

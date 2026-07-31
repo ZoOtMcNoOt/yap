@@ -14,6 +14,7 @@ fn new_or_reenabled_server_origins_require_native_confirmation() {
         schema_version: config::CURRENT_SCHEMA_VERSION,
         enabled: false,
         base_url: Some("https://asr.example.test/v1".into()),
+        authentication: None,
     };
     let enabled = config::ServerSettings {
         enabled: true,
@@ -83,6 +84,11 @@ fn post_publication_durability_failure_invalidates_generation_and_reports_visibl
         schema_version: config::CURRENT_SCHEMA_VERSION,
         enabled: true,
         base_url: Some("https://visible.example".into()),
+        authentication: Some(config::MicrosoftEntraSettings {
+            tenant_id: "11111111-1111-1111-1111-111111111111".into(),
+            client_id: "22222222-2222-2222-2222-222222222222".into(),
+            api_scope: "api://33333333-3333-3333-3333-333333333333/access_as_user".into(),
+        }),
     };
     let save_result = config::save_to_path_with_hooks(
         &settings,

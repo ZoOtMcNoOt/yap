@@ -19,8 +19,11 @@ use super::warmup::SharedWarmup;
 use super::worker::join_worker;
 
 const TARGET_SAMPLE_RATE: u32 = 16_000;
-const FINISH_ENQUEUE_TIMEOUT: Duration = Duration::from_millis(250);
-const DRAIN_ON_STOP: Duration = Duration::from_millis(6000);
+// These are sequential stop phases after the adapter has finished forwarding:
+// first wait for FIFO space to enqueue `Finish`, then wait for the stream
+// worker to finish its tail and acknowledge it.
+const FINISH_ENQUEUE_TIMEOUT: Duration = Duration::from_millis(6000);
+const FINISH_ACK_TIMEOUT: Duration = Duration::from_millis(6000);
 
 pub(super) struct SessionStream {
     session: Arc<AtomicU64>,
@@ -238,6 +241,23 @@ impl StreamFinisher {
     }
 
     pub(super) fn finish_session_report(&self) -> StreamFinishReport {
+        self.finish_session_report_with_timeouts(FINISH_ENQUEUE_TIMEOUT, FINISH_ACK_TIMEOUT)
+    }
+
+    #[cfg(test)]
+    pub(super) fn finish_session_report_for_test(
+        &self,
+        enqueue_timeout: Duration,
+        acknowledgement_timeout: Duration,
+    ) -> StreamFinishReport {
+        self.finish_session_report_with_timeouts(enqueue_timeout, acknowledgement_timeout)
+    }
+
+    fn finish_session_report_with_timeouts(
+        &self,
+        enqueue_timeout: Duration,
+        acknowledgement_timeout: Duration,
+    ) -> StreamFinishReport {
         let (done_tx, done_rx) = mpsc::channel();
         let mut message = StreamMessage::Finish {
             session: self.session,
@@ -248,7 +268,7 @@ impl StreamFinisher {
         loop {
             match self.samples_tx.try_send(message) {
                 Ok(()) => {
-                    return match done_rx.recv_timeout(DRAIN_ON_STOP) {
+                    return match done_rx.recv_timeout(acknowledgement_timeout) {
                         Ok(report) => report,
                         Err(mpsc::RecvTimeoutError::Timeout) => StreamFinishStatus::TimedOut.into(),
                         Err(mpsc::RecvTimeoutError::Disconnected) => {
@@ -257,7 +277,7 @@ impl StreamFinisher {
                     };
                 }
                 Err(mpsc::TrySendError::Full(returned)) => {
-                    if started.elapsed() >= FINISH_ENQUEUE_TIMEOUT {
+                    if started.elapsed() >= enqueue_timeout {
                         return StreamFinishStatus::BackedUp.into();
                     }
                     message = returned;
@@ -333,32 +353,35 @@ impl StreamWorker {
 
     fn process(&mut self, message: StreamMessage) {
         match message {
-            StreamMessage::Samples { session, frame } => {
-                if !should_accept_stream_samples(
-                    session,
-                    self.active_session.load(Ordering::SeqCst),
-                    self.stream_session.load(Ordering::SeqCst),
-                ) {
-                    return;
-                }
-                if self.active_stream_session != session {
-                    if let Err(error) = self.begin_session(session) {
+            StreamMessage::PreparedFrames { session, frames } => {
+                for frame in frames {
+                    if !should_accept_stream_samples(
+                        session,
+                        self.active_session.load(Ordering::SeqCst),
+                        self.stream_session.load(Ordering::SeqCst),
+                    ) {
+                        return;
+                    }
+                    if self.active_stream_session != session {
+                        if let Err(error) = self.begin_session(session) {
+                            crate::diagnostics::log(&format!(
+                                "live language session initialization failed code={}",
+                                error.code()
+                            ));
+                            self.fail_active_session();
+                            return;
+                        }
+                    }
+                    if self.session_failed {
+                        return;
+                    }
+                    if let Err(error) = self.process_frame(session, frame) {
                         crate::diagnostics::log(&format!(
-                            "live language session initialization failed code={}",
-                            error.code()
+                            "live language routing failed code=runtime_contract message={error}"
                         ));
                         self.fail_active_session();
                         return;
                     }
-                }
-                if self.session_failed {
-                    return;
-                }
-                if let Err(error) = self.process_frame(session, frame) {
-                    crate::diagnostics::log(&format!(
-                        "live language routing failed code=runtime_contract message={error}"
-                    ));
-                    self.fail_active_session();
                 }
             }
             StreamMessage::Finish { session, done } => {

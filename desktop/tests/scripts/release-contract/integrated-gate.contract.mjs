@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   statSync,
@@ -19,14 +22,19 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 import {
+  admitIntegratedGateAttempt,
   assertGateRunnerNodeRuntime,
   assertIntegratedGateManifestMatchesAdmission,
   completeIntegratedGateAttempt,
   integratedGateFailureRecord,
+  integratedGateCommandEnvironment,
+  integratedGateCommandLogSha256,
   loadIntegratedGateManifestSelection,
   parseIntegratedGateRunnerInvocation,
   runCommandCell,
   reserveIntegratedGateAttemptDirectory,
+  validateLegacyIntegratedGateReservationValue,
+  verifyIdentityAccessAdmissionPrerequisites,
 } from "../../../../verification/integrated-gate-runner.mjs";
 import {
   INTEGRATED_GATE_BYTE_LIMITS,
@@ -48,6 +56,20 @@ import {
 import {
   createConnectedServerTeardownReceipt,
 } from "../../../../verification/write-connected-server-teardown-receipt.mjs";
+import {
+  GITHUB_ADMISSION_AUTHORITY_HOST,
+  GITHUB_ADMISSION_REPOSITORY,
+  GITHUB_ADMISSION_REPOSITORY_ID,
+  githubApiArguments,
+} from "../../../../verification/github-gate-admission.mjs";
+import {
+  assertPrivateDirectory,
+  assertPrivateFile,
+  protectAndVerifyPrivateDirectory,
+  protectAndVerifyPrivateFile,
+  readExactPrivateFile,
+  writeExclusivePrivateFile,
+} from "../../../../verification/private-gate-artifacts.mjs";
 
 const contractRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(contractRoot, "..", "..", "..", "..");
@@ -59,6 +81,15 @@ const manifestPath = path.join(
 const manifestBytes = readFileSync(manifestPath);
 const manifest = validateIntegratedGateManifest(JSON.parse(manifestBytes.toString("utf8")));
 const manifestSha256 = integratedGateManifestSha256(manifestBytes);
+const identityManifestPath = path.join(
+  repoRoot,
+  "verification",
+  "integrated-identity-access-gate.json",
+);
+const identityManifestBytes = readFileSync(identityManifestPath);
+const identityManifest = validateIntegratedGateManifest(
+  JSON.parse(identityManifestBytes.toString("utf8")),
+);
 const phase6ManifestPath = path.join(
   repoRoot,
   "verification",
@@ -74,7 +105,57 @@ const finishedAt = "2026-07-23T13:00:00.000Z";
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
 function createCanonicalTemporaryDirectory(prefix) {
-  return mkdtempSync(path.join(realpathSync.native(os.tmpdir()), prefix));
+  return protectAndVerifyPrivateDirectory(
+    mkdtempSync(path.join(realpathSync.native(os.tmpdir()), prefix)),
+  );
+}
+
+function protectPrivateFixtureTree(root) {
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const candidate = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      protectAndVerifyPrivateDirectory(candidate);
+      protectPrivateFixtureTree(candidate);
+    } else if (entry.isFile()) {
+      protectAndVerifyPrivateFile(candidate);
+    } else {
+      throw new Error(`Private fixture tree contains an unsupported item: ${candidate}`);
+    }
+  }
+}
+
+function createGateStatusClient({ competingStatusWins = false } = {}) {
+  const statuses = [];
+  const repositoryId = 42;
+  const repositoryFullName = "example/yap";
+  function value(id, body) {
+    return {
+      id,
+      state: body.state,
+      context: body.context,
+      description: body.description,
+      created_at: `2026-07-23T12:00:0${id}.000Z`,
+      url: `https://api.github.invalid/statuses/${id}`,
+      creator: { id: 7, login: "gate-publisher" },
+    };
+  }
+  return {
+    authorityHost: GITHUB_ADMISSION_AUTHORITY_HOST,
+    repositoryId,
+    repositoryFullName,
+    statuses,
+    listStatuses() {
+      return [...statuses].sort((left, right) => right.id - left.id);
+    },
+    createStatus(_head, body) {
+      if (competingStatusWins && statuses.length === 0) {
+        statuses.push(value(1, body));
+      }
+      const created = value(statuses.length + 1, body);
+      statuses.push(created);
+      return created;
+    },
+  };
 }
 
 function processIsAlive(processId) {
@@ -130,6 +211,33 @@ const candidateIds = [
   "integrated.authoritative-history-result",
   "integrated.teardown",
 ];
+const identityCandidateIds = [
+  "frontend.node-runtime",
+  "frontend.dependencies",
+  "frontend.dependency-audit",
+  "frontend.release-contracts",
+  "frontend.provenance",
+  "frontend.unit",
+  "frontend.production-build",
+  "frontend.chromium-runtime",
+  "frontend.browser-workflows",
+  "windows.build-tools-optional-diagnostics-disabled",
+  "server.python-3.12",
+  "server.lint",
+  "server.mock-oidc-owner-flow",
+  "target-client.native-resource-and-restart",
+  "target-client.prepared-audio-boundaries",
+  "target-client.rendered-ui-and-microphone",
+  "target-client.teardown",
+  "gb10.provider-duration-and-concurrency",
+  "gb10.provider-cancellation-and-recovery",
+  "gb10.provider-resource-bounds",
+  "gb10.provider-teardown",
+  "integrated.desktop-private-server",
+  "integrated.tunnel-interruption-recovery",
+  "integrated.authoritative-history-result",
+  "integrated.teardown",
+];
 const phase6CandidateIds = [
   "frontend.node-runtime",
   "frontend.dependencies",
@@ -167,6 +275,18 @@ const hostedClosureIds = [
   "hosted.ci.rust",
   "hosted.ci.native-wdio",
   "hosted.ci.server",
+  "hosted.codeql.rust",
+  "hosted.codeql.actions",
+  "hosted.codeql.javascript-typescript",
+  "hosted.codeql.python",
+  "hosted.nsis.disposable-windows",
+];
+const identityHostedClosureIds = [
+  "hosted.ci.frontend",
+  "hosted.ci.rust",
+  "hosted.ci.native-wdio",
+  "hosted.ci.server",
+  "hosted.ci.mock-oidc",
   "hosted.codeql.rust",
   "hosted.codeql.actions",
   "hosted.codeql.javascript-typescript",
@@ -231,17 +351,57 @@ const exactCommands = {
   ],
   "server.lint": ["uv", "run", "--locked", "ruff", "check", "."],
 };
+const identityExactCommands = {
+  ...Object.fromEntries(
+    Object.entries(exactCommands).filter(([id]) => (
+      !id.startsWith("native.") && !id.startsWith("desktop.")
+    )),
+  ),
+  "windows.build-tools-optional-diagnostics-disabled": [
+    "node",
+    "verification/verify-windows-build-tools-optional-diagnostics-opt-out.mjs",
+  ],
+  "frontend.dependencies": [
+    "corepack",
+    "pnpm@11.7.0",
+    "install",
+    "--frozen-lockfile",
+    "--force",
+    "--no-optimistic-repeat-install",
+    "--package-import-method=copy",
+  ],
+  "server.lint": [
+    "uv",
+    "run",
+    "--locked",
+    "ruff",
+    "check",
+    ".",
+    "../infra/yap-server-node/owned-process-supervisor.py",
+  ],
+};
 
-function createReceipt(scope) {
-  const cells = scope === "candidate" ? manifest.candidateCells : manifest.hostedClosureCells;
+function createReceipt(
+  scope,
+  {
+    gateManifest = manifest,
+    gateManifestSha256 = manifestSha256,
+    admissionSha256 = null,
+  } = {},
+) {
+  const cells = scope === "candidate"
+    ? gateManifest.candidateCells
+    : gateManifest.hostedClosureCells;
+  const bindsAdmission = gateManifest.gateId === "integrated-identity-access";
   return {
-    schemaVersion: 2,
-    gateId: manifest.gateId,
+    schemaVersion: bindsAdmission ? 3 : 2,
+    gateId: gateManifest.gateId,
     scope,
     checkedHead,
     candidateHead: checkedHead,
     candidateReceiptSha256: scope === "candidate" ? null : "e".repeat(64),
-    manifestSha256,
+    manifestSha256: gateManifestSha256,
+    ...(bindsAdmission ? { admissionSha256 } : {}),
     status: "passed",
     startedAt,
     finishedAt,
@@ -271,6 +431,220 @@ test("integrated gate freezes the complete candidate and hosted child inventorie
   assert.deepEqual(commandCells, exactCommands);
 });
 
+test("identity and access gate freezes its complete behavior inventory", () => {
+  assert.equal(identityManifest.gateId, "integrated-identity-access");
+  assert.deepEqual(
+    identityManifest.candidateCells.map(({ id }) => id),
+    identityCandidateIds,
+  );
+  assert.deepEqual(
+    identityManifest.hostedClosureCells.map(({ id }) => id),
+    identityHostedClosureIds,
+  );
+  const commandCells = Object.fromEntries(
+    identityManifest.candidateCells
+      .filter(({ executor }) => executor === "command")
+      .map(({ id, command }) => [id, command]),
+  );
+  assert.deepEqual(commandCells, identityExactCommands);
+});
+
+test("identity and access gate keeps native toolchain work on disposable hosted Windows", () => {
+  const candidateIds = new Set(
+    identityManifest.candidateCells.map(({ id }) => id),
+  );
+  for (const nativeId of [
+    "native.format",
+    "native.clippy",
+    "native.tests",
+    "native.server-connector",
+    "native.authenticated-server-connector",
+    "native.windows-dependency-boundary",
+    "native.dependency-audit",
+    "desktop.wdio-build",
+    "desktop.required-wdio",
+  ]) {
+    assert.equal(
+      candidateIds.has(nativeId),
+      false,
+      `${nativeId} must execute only through the hosted Windows closure`,
+    );
+  }
+  assert.ok(
+    candidateIds.has("windows.build-tools-optional-diagnostics-disabled"),
+    "the local Windows optional-diagnostics prerequisite must remain in the candidate gate",
+  );
+  assert.ok(
+    identityHostedClosureIds.includes("hosted.ci.rust"),
+    "the hosted closure must retain exact Rust and connector evidence",
+  );
+  assert.ok(
+    identityHostedClosureIds.includes("hosted.ci.native-wdio"),
+    "the hosted closure must retain exact native UI evidence",
+  );
+});
+
+test("identity admission delegates to the bounded optional-diagnostics verifier", () => {
+  const calls = [];
+  const environment = {
+    SystemRoot: String.raw`C:\Windows`,
+    PATH: process.env.PATH,
+    GH_TOKEN: "removed by the verifier's process boundary",
+  };
+  verifyIdentityAccessAdmissionPrerequisites({
+    checkedHead,
+    platform: "win32",
+    environment,
+    verifyOptionalDiagnostics(options) {
+      calls.push(options);
+      return { applicable: true, optIn: 0, source: "installation" };
+    },
+  });
+  assert.deepEqual(calls, [{ platform: "win32", environment }]);
+});
+
+test("identity admission rejects unsupported runners and invalid prerequisite results", () => {
+  assert.throws(
+    () => verifyIdentityAccessAdmissionPrerequisites({
+      checkedHead,
+      platform: "linux",
+    }),
+    /must be admitted from its exact Windows runner/,
+  );
+  assert.throws(
+    () => verifyIdentityAccessAdmissionPrerequisites({
+      checkedHead,
+      platform: "win32",
+      verifyOptionalDiagnostics() {
+        throw new Error("registry unavailable");
+      },
+    }),
+    /failed before admission; no attempt was reserved: registry unavailable/,
+  );
+  assert.throws(
+    () => verifyIdentityAccessAdmissionPrerequisites({
+      checkedHead,
+      platform: "win32",
+      verifyOptionalDiagnostics: () => ({ applicable: false }),
+    }),
+    /returned an invalid result; no attempt was reserved/,
+  );
+});
+
+test("identity and access gate binds mock OIDC candidate and hosted closure", () => {
+  assert.deepEqual(
+    identityManifest.candidateCells.find(
+      ({ id }) => id === "server.mock-oidc-owner-flow",
+    ),
+    {
+      id: "server.mock-oidc-owner-flow",
+      executor: "private-receipt",
+      receiptContract: "mock-oidc-owner-flow-v1",
+    },
+  );
+  assert.deepEqual(
+    identityManifest.hostedClosureCells.find(
+      ({ id }) => id === "hosted.ci.mock-oidc",
+    ),
+    {
+      id: "hosted.ci.mock-oidc",
+      executor: "github-check",
+      workflow: "CI",
+      job: "mock-oidc",
+    },
+  );
+});
+
+test("mock OIDC hosted closure executes Linux lifecycle tests without skips", () => {
+  const workflow = readFileSync(
+    path.join(repoRoot, ".github", "workflows", "ci.yml"),
+    "utf8",
+  );
+  assert.match(
+    workflow,
+    /name: Run required Linux owned-process lifecycle tests without skips/,
+  );
+  assert.match(workflow, /YAP_REQUIRE_LINUX_LIFECYCLE_TESTS: "1"/);
+  for (const moduleName of [
+    "tests.infra.test_owned_process_group_behavior",
+    "tests.infra.test_owned_process_supervisor",
+    "tests.infra.test_resident_provider_lifecycle_gate",
+    "tests.infra.test_private_container_loopback_proxy",
+    "tests.infra.test_private_container_loopback_proxy_behavior",
+  ]) {
+    assert.match(workflow, new RegExp(moduleName.replaceAll(".", String.raw`\.`)));
+  }
+});
+
+test("identity and access receipts bind the canonical admission", () => {
+  const admissionSha256 = "9".repeat(64);
+  const identityManifestSha256 =
+    integratedGateManifestSha256(identityManifestBytes);
+  const receipt = createReceipt("candidate", {
+    gateManifest: identityManifest,
+    gateManifestSha256: identityManifestSha256,
+    admissionSha256,
+  });
+  assert.doesNotThrow(() => validateIntegratedGateReceipt({
+    receipt,
+    manifest: identityManifest,
+    manifestSha256: identityManifestSha256,
+    expectedHead: checkedHead,
+    expectedAdmissionSha256: admissionSha256,
+    expectedScope: "candidate",
+  }));
+  assert.throws(() => validateIntegratedGateReceipt({
+    receipt,
+    manifest: identityManifest,
+    manifestSha256: identityManifestSha256,
+    expectedHead: checkedHead,
+    expectedAdmissionSha256: "8".repeat(64),
+    expectedScope: "candidate",
+  }), /admission identity does not match/);
+
+  const hosted = buildHostedClosureReceipt({
+    manifest: identityManifest,
+    manifestSha256: identityManifestSha256,
+    checkedHead,
+    candidateHead: checkedHead,
+    candidateReceiptSha256: "e".repeat(64),
+    admissionSha256,
+    selected: identityManifest.hostedClosureCells.map((cell, index) => ({
+      cell,
+      run: {
+        databaseId: 20_000 + index,
+        headSha: checkedHead,
+        workflowName: cell.workflow,
+        attempt: 1,
+        status: "completed",
+        conclusion: "success",
+        createdAt: startedAt,
+        updatedAt: finishedAt,
+        url: `https://example.invalid/run/${index}`,
+      },
+      job: {
+        databaseId: 30_000 + index,
+        name: cell.job,
+        status: "completed",
+        conclusion: "success",
+        startedAt,
+        completedAt: finishedAt,
+        url: `https://example.invalid/job/${index}`,
+      },
+    })),
+  });
+  assert.doesNotThrow(() => validateIntegratedGateReceipt({
+    receipt: hosted,
+    manifest: identityManifest,
+    manifestSha256: identityManifestSha256,
+    expectedHead: checkedHead,
+    expectedCandidateHead: checkedHead,
+    expectedCandidateReceiptSha256: "e".repeat(64),
+    expectedAdmissionSha256: admissionSha256,
+    expectedScope: "hosted-closure",
+  }));
+});
+
 test("historical Phase 6 gate identity and bytes remain frozen", () => {
   assert.equal(phase6Manifest.gateId, "integrated-preprocessing-language-routing");
   assert.deepEqual(
@@ -284,9 +658,19 @@ test("historical Phase 6 gate identity and bytes remain frozen", () => {
 });
 
 test("runner manifest selection preserves each canonical gate identity and child set", () => {
+  const identitySelection = loadIntegratedGateManifestSelection(identityManifestPath);
   const productSelection = loadIntegratedGateManifestSelection(manifestPath);
   const phase6Selection = loadIntegratedGateManifestSelection(phase6ManifestPath);
 
+  assert.equal(identitySelection.manifest.gateId, "integrated-identity-access");
+  assert.deepEqual(
+    identitySelection.manifest.candidateCells.map(({ id }) => id),
+    identityCandidateIds,
+  );
+  assert.equal(
+    identitySelection.manifestSha256,
+    integratedGateManifestSha256(identityManifestBytes),
+  );
   assert.equal(productSelection.manifest.gateId, "integrated-product-checkpoint");
   assert.deepEqual(
     productSelection.manifest.candidateCells.map(({ id }) => id),
@@ -307,6 +691,38 @@ test("runner manifest selection preserves each canonical gate identity and child
   );
 });
 
+test("active command cells freeze finite wall-clock deadlines without rewriting history", () => {
+  assert.equal(identityManifest.schemaVersion, 2);
+  const commandCells = identityManifest.candidateCells.filter(
+    ({ executor }) => executor === "command",
+  );
+  assert.ok(commandCells.length > 0);
+  assert.ok(commandCells.every(({ timeoutMs }) => (
+    Number.isSafeInteger(timeoutMs)
+      && timeoutMs >= 1_000
+      && timeoutMs <= 7_200_000
+  )));
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(phase6Manifest.schemaVersion, 1);
+
+  for (const timeoutMs of [undefined, 0, 999, 1.5, 7_200_001]) {
+    const mutated = structuredClone(identityManifest);
+    if (timeoutMs === undefined) delete mutated.candidateCells[0].timeoutMs;
+    else mutated.candidateCells[0].timeoutMs = timeoutMs;
+    assert.throws(
+      () => validateIntegratedGateManifest(mutated),
+      /wall-clock timeout|unsupported fields/,
+    );
+  }
+
+  const changed = structuredClone(identityManifest.candidateCells[0]);
+  changed.timeoutMs += 1;
+  assert.notEqual(
+    integratedGateCellDefinitionSha256(identityManifest.candidateCells[0]),
+    integratedGateCellDefinitionSha256(changed),
+  );
+});
+
 test("runner requires an explicit canonical manifest and rejects cross-gate completion", async () => {
   const beginArguments = [
     "begin",
@@ -323,8 +739,6 @@ test("runner requires an explicit canonical manifest and rejects cross-gate comp
     "complete",
     "--admission",
     "admission.json",
-    "--attempt-token",
-    "f".repeat(64),
     "--manifest",
     manifestPath,
   ];
@@ -344,9 +758,17 @@ test("runner requires an explicit canonical manifest and rejects cross-gate comp
   );
   assert.throws(
     () => parseIntegratedGateRunnerInvocation(
-      completeArguments.filter((value, index) => ![5, 6].includes(index)),
+      completeArguments.filter((value, index) => ![3, 4].includes(index)),
     ),
     /complete requires exactly .*--manifest/,
+  );
+  assert.throws(
+    () => parseIntegratedGateRunnerInvocation([
+      ...completeArguments,
+      "--attempt-token",
+      "f".repeat(64),
+    ]),
+    /complete requires exactly/,
   );
 
   const productSelection = loadIntegratedGateManifestSelection(manifestPath);
@@ -399,10 +821,11 @@ test("runner requires an explicit canonical manifest and rejects cross-gate comp
       /accepts only a repository-owned integrated gate manifest/,
     );
     const admissionPath = path.join(root, "admission.json");
-    writeFileSync(
+    protectAndVerifyPrivateDirectory(root);
+    writeExclusivePrivateFile(
       admissionPath,
-      `${JSON.stringify({
-        schemaVersion: 1,
+      Buffer.from(`${JSON.stringify({
+        schemaVersion: 2,
         gateId: phase6Admission.gateId,
         checkedHead,
         manifestPath: phase6Admission.manifestPath,
@@ -410,17 +833,16 @@ test("runner requires an explicit canonical manifest and rejects cross-gate comp
         privatePlanPath: path.join(root, "private-plan.json"),
         privatePlanSha256: "1".repeat(64),
         attempt: 1,
-        attemptToken: "f".repeat(64),
+        attemptCapabilitySha256: "f".repeat(64),
         admittedAt: startedAt,
         runDirectory: root,
         commandLogDirectory: path.join(root, "command-logs"),
         candidateReceiptPath: path.join(root, "candidate-receipt.json"),
-      }, null, 2)}\n`,
+      }, null, 2)}\n`),
     );
     await assert.rejects(
       completeIntegratedGateAttempt({
         admissionPath,
-        attemptToken: "f".repeat(64),
         manifestPath,
       }),
       /does not match the admitted manifest/,
@@ -431,8 +853,13 @@ test("runner requires an explicit canonical manifest and rejects cross-gate comp
   }
 });
 
-test("both integrated gate runbooks select their exact manifest for begin and complete", () => {
+test("integrated gate runbooks select their exact manifest for begin and complete", () => {
   const contracts = [
+    {
+      runbook: "integrated-identity-access-gate.md",
+      manifestArgument:
+        ".\\verification\\integrated-identity-access-gate.json",
+    },
     {
       runbook: "integrated-product-checkpoint-gate.md",
       manifestArgument:
@@ -449,6 +876,7 @@ test("both integrated gate runbooks select their exact manifest for begin and co
       path.join(repoRoot, "docs", "runbooks", contract.runbook),
       "utf8",
     );
+    assert.doesNotMatch(runbook, /--attempt-token|<admitted-token>/);
     const runnerCommands = runbook
       .split("```powershell")
       .slice(1)
@@ -466,6 +894,71 @@ test("both integrated gate runbooks select their exact manifest for begin and co
       );
     }
   }
+});
+
+test("integrated runbooks protect admission inputs and bind the remote helper set", () => {
+  const identityRunbook = readFileSync(
+    path.join(repoRoot, "docs", "runbooks", "integrated-identity-access-gate.md"),
+    "utf8",
+  );
+  const preprocessingRunbook = readFileSync(
+    path.join(
+      repoRoot,
+      "docs",
+      "runbooks",
+      "integrated-preprocessing-language-routing-gate.md",
+    ),
+    "utf8",
+  );
+  const productRunbook = readFileSync(
+    path.join(repoRoot, "docs", "runbooks", "integrated-product-checkpoint-gate.md"),
+    "utf8",
+  );
+  for (const [label, runbook] of [
+    ["identity", identityRunbook],
+    ["preprocessing", preprocessingRunbook],
+    ["product checkpoint", productRunbook],
+  ]) {
+    assert.match(
+      runbook,
+      /private-gate-artifacts\.ps1/,
+      `${label} runbook must name the private-artifact protection helper`,
+    );
+  }
+  for (const operation of [
+    "protect-directory",
+    "verify-directory",
+    "protect-file",
+    "verify-file",
+  ]) {
+    assert.match(identityRunbook, new RegExp(`-Operation ${operation}`));
+    assert.match(preprocessingRunbook, new RegExp(`-Operation ${operation}`));
+  }
+  assert.match(identityRunbook, /"remoteHelperSetSha256"/);
+  assert.match(identityRunbook, /REMOTE_HELPER_SET_SHA256=<sha256>/);
+  assert.match(identityRunbook, /--remote-helper-set-sha256/);
+});
+
+test("checked private-server runbook pins system OpenSSH and protects its inputs", () => {
+  const runbook = readFileSync(
+    path.join(repoRoot, "docs", "runbooks", "yap-server-node-setup.md"),
+    "utf8",
+  );
+  assert.doesNotMatch(runbook, /Get-Command ssh\.exe/);
+  assert.match(runbook, /System32\\OpenSSH\\ssh\.exe/);
+  assert.match(runbook, /private-gate-artifacts\.ps1/);
+  assert.match(runbook, /-Operation protect-directory/);
+  assert.match(runbook, /-Operation protect-ssh-file/);
+  assert.match(runbook, /-Operation verify-ssh-file/);
+});
+
+test("private-artifact verification pins the system PowerShell host", () => {
+  const source = readFileSync(
+    path.join(repoRoot, "verification", "private-gate-artifacts.mjs"),
+    "utf8",
+  );
+  assert.match(source, /"System32",\s*"WindowsPowerShell",\s*"v1\.0",\s*"powershell\.exe"/);
+  assert.doesNotMatch(source, /where\.exe|pwsh\.exe/);
 });
 
 test("integrated gate accepts exact one-attempt receipts for both scopes", () => {
@@ -528,6 +1021,10 @@ test("connected gate records a real five-window AmberNet preflight", () => {
     path.join(repoRoot, "desktop", "tests", "wdio", "private-server-asr.gate.spec.js"),
     "utf8",
   );
+  assert.match(
+    source,
+    /expect\(await invoke\("wdio_build_git_sha"\)\)\.toBe\(checkedHead\)/,
+  );
   assert.match(source, /runLanguagePreflightExecution\(/);
   assert.match(source, /fetch\(`http:\/\/\$\{tunnelHost\}:\$\{tunnelPort\}\/v1\/lid\/preflight`/);
   assert.match(source, /expect\(result\.observations\)\.toHaveLength/);
@@ -553,18 +1050,403 @@ test("portable Python gate rejects project and uv.lock drift", () => {
   assert.doesNotMatch(source, /'--frozen'/);
 });
 
-test("integrated gate reserves one deterministic attempt and refuses a retry", () => {
+test("identity gate prequalifies the non-login connected uv executor", () => {
+  const runbook = readFileSync(
+    path.join(repoRoot, "docs", "runbooks", "integrated-identity-access-gate.md"),
+    "utf8",
+  );
+  assert.match(runbook, /non-login SSH shape/);
+  assert.match(
+    runbook,
+    /absolute `YAP_UV_EXECUTABLE` plus\s+its byte length, SHA-256/,
+  );
+  assert.match(runbook, /checked-uv-executor\.py` as `YAP_UV_BINARY`/);
+  assert.match(runbook, /seals that exact\s+in-memory image\s+against mutation/);
+
+  const helperRelativePath = "infra/yap-server-node/checked-uv-executor.py";
+  const helperPath = path.join(repoRoot, helperRelativePath);
+  const helper = readFileSync(
+    helperPath,
+    "utf8",
+  );
+  assert.match(helper, /YAP_UV_EXECUTABLE_SHA256/);
+  assert.match(helper, /YAP_UV_EXECUTABLE_SIZE_BYTES/);
+  assert.match(helper, /MAX_EXECUTABLE_BYTES/);
+  assert.match(helper, /source_stat\.st_size != expected_size_bytes/);
+  assert.match(helper, /remaining = expected_size_bytes/);
+  assert.match(helper, /os\.O_NOFOLLOW/);
+  assert.match(helper, /os\.memfd_create/);
+  assert.match(helper, /fcntl\.F_ADD_SEALS/);
+  assert.match(helper, /os\.execve\(memfd/);
+  const indexEntry = execFileSync(
+    "git",
+    ["-C", repoRoot, "ls-files", "--stage", "--", helperRelativePath],
+    { encoding: "utf8" },
+  ).trim();
+  assert.match(indexEntry, /^100755 [0-9a-f]{40} 0\t/);
+});
+
+test("identity gate prequalifies its fixed GB10 control parent", () => {
+  const runbook = readFileSync(
+    path.join(repoRoot, "docs", "runbooks", "integrated-identity-access-gate.md"),
+    "utf8",
+  );
+  const fixedControllerPolicy = runbook.match(
+    /The next\s+admitted GB10 receipt controller[\s\S]*?sticky-directory exception\./,
+  )?.[0];
+  assert.ok(fixedControllerPolicy);
+  assert.match(
+    fixedControllerPolicy,
+    /validate that every real directory\s+component/,
+  );
+  assert.match(
+    fixedControllerPolicy,
+    /fixed `\/srv\/yap-server\/private\/\.\.\.` chain/,
+  );
+  assert.match(
+    fixedControllerPolicy,
+    /owned by root or\s+the admitted remote account \(`admin`\)/,
+  );
+  assert.match(fixedControllerPolicy, /is not redirected/);
+  assert.match(fixedControllerPolicy, /has no\s+group\/world write access/);
+  assert.match(
+    fixedControllerPolicy,
+    /mode `0700` on the\s+receipt parent and per-head child and mode `0600` on the receipt/,
+  );
+  const genericHarnessPolicy = runbook.match(
+    /For this reusable cross-platform\s+harness,[\s\S]*?creates any file:/,
+  )?.[0];
+  assert.ok(genericHarnessPolicy);
+  assert.match(
+    genericHarnessPolicy,
+    /distinct from the stricter fixed GB10 receipt-controller path/,
+  );
+  assert.match(
+    genericHarnessPolicy,
+    /shared-writable\s+ancestor is accepted only when its sticky-bit and ownership protect the child/,
+  );
+  assert.match(runbook, /fixed GB10 controller parent/);
+  assert.match(runbook, /non-redirected directory[\s\S]*mode `0700`/);
+  assert.match(runbook, /planned per-head child must remain absent/);
+  assert.match(runbook, /no-owner GB10 preflight/);
+  assert.match(runbook, /repeat the ancestor and fixed-parent\s+validation immediately before/);
+  assert.match(runbook, /non-recursive direct-child creation/);
+  assert.match(runbook, /complete checked-head transient-unit\s+family/);
+  assert.match(runbook, /bounded-command log must use no-overwrite creation/);
+  assert.match(runbook, /protected\s+private-file policy on success and failure/);
+});
+
+test("identity gate prequalifies uv in the admitted mock-OIDC environment", () => {
+  const runbook = readFileSync(
+    path.join(repoRoot, "docs", "runbooks", "integrated-identity-access-gate.md"),
+    "utf8",
+  );
+  const consumedAdmission = runbook.match(
+    /Exact head `dece4265e052d775d2d11f1883cd8cc4b2b25191`[\s\S]*?Do not retry, complete, or relabel\s+this head\./,
+  )?.[0];
+  assert.ok(consumedAdmission);
+  assert.match(
+    consumedAdmission,
+    /failed before the locked `uv sync` command or owner flow because\s+non-interactive SSH did not put the reviewed absolute `uv` executable's parent\s+on `PATH`\./,
+  );
+  assert.match(
+    consumedAdmission,
+    /The executable remained available at its authenticated private path,\s+but portable PowerShell could not resolve the bare command name\./,
+  );
+  assert.match(
+    consumedAdmission,
+    /Readback\s+proved that the mode-`0700` per-head receipt directory existed, the receipt\s+remained absent, and no owner flow started\./,
+  );
+  assert.doesNotMatch(consumedAdmission, /\/home\//);
+
+  const executorPolicy = runbook.match(
+    /For the fixed GB10 mock-OIDC controller,[\s\S]*?A resolution\s+mismatch is a pre-admission failure\./,
+  )?.[0];
+  assert.ok(executorPolicy);
+  assert.match(
+    executorPolicy,
+    /For the fixed GB10 mock-OIDC controller, do not rely on a login shell to extend\s+`PATH`\./,
+  );
+  assert.match(
+    executorPolicy,
+    /Before reservation and again immediately before admitted use,\s+authenticate every real directory component from the filesystem anchor through\s+the selected absolute `uv` parent as canonical, non-redirected, owned by root\s+or `admin`, and not group\/world writable\./,
+  );
+  assert.match(
+    executorPolicy,
+    /Then authenticate the `uv` path as one\s+canonical, regular, single-link, `admin`-owned executable with no group\/world\s+write bit and with the reviewed SHA-256, size, and version\./,
+  );
+  assert.match(
+    executorPolicy,
+    /In the same\s+non-interactive SSH command environment used by the admitted controller, make\s+that exact executable resolvable inside the pinned portable PowerShell process\s+and prove that `Get-Command uv` returns the authenticated absolute path\./,
+  );
+  assert.match(
+    executorPolicy,
+    /The\s+no-owner preflight must exercise this exact controller invocation, not a login\s+shell or an environment assembled by a different diagnostic\./,
+  );
+});
+
+test("gate admission pins GitHub.com and the canonical repository", () => {
+  const previousHost = process.env.GH_HOST;
+  try {
+    process.env.GH_HOST = "example.invalid";
+    assert.deepEqual(
+      githubApiArguments(["repos/mcnatg1/yap"]),
+      [
+        "api",
+        "--hostname",
+        "github.com",
+        "-H",
+        "Accept: application/vnd.github+json",
+        "repos/mcnatg1/yap",
+      ],
+    );
+    assert.equal(GITHUB_ADMISSION_AUTHORITY_HOST, "github.com");
+    assert.equal(GITHUB_ADMISSION_REPOSITORY, "mcnatg1/yap");
+    assert.equal(GITHUB_ADMISSION_REPOSITORY_ID, 1278708785);
+    const source = readFileSync(
+      path.join(repoRoot, "verification", "github-gate-admission.mjs"),
+      "utf8",
+    );
+    assert.match(source, /GH_PROMPT_DISABLED:\s*"1"/);
+    assert.match(source, /dedicated nonempty GH_TOKEN/);
+    assert.doesNotMatch(source, /remote", "get-url"/);
+    const hostedSource = readFileSync(
+      path.join(repoRoot, "verification", "integrated-hosted-closure.mjs"),
+      "utf8",
+    );
+    assert.match(hostedSource, /GITHUB_ADMISSION_AUTHORITY_HOST/);
+    assert.match(hostedSource, /GITHUB_ADMISSION_REPOSITORY/);
+    assert.match(hostedSource, /"--repo"/);
+    assert.match(hostedSource, /GH_PROMPT_DISABLED:\s*"1"/);
+  } finally {
+    if (previousHost === undefined) delete process.env.GH_HOST;
+    else process.env.GH_HOST = previousHost;
+  }
+});
+
+test("integrated gate command cells never inherit GitHub credentials", () => {
+  assert.deepEqual(
+    integratedGateCommandEnvironment(checkedHead, {
+      PATH: "safe-path",
+      GH_TOKEN: "secret",
+      github_token: "secret",
+      GH_ENTERPRISE_TOKEN: "secret",
+      GITHUB_ENTERPRISE_TOKEN: "secret",
+    }),
+    {
+      PATH: "safe-path",
+      YAP_CHECKED_HEAD: checkedHead,
+    },
+  );
+});
+
+test("historical gates retain their local deterministic reservation boundary", () => {
+  const root = createCanonicalTemporaryDirectory("yap-legacy-gate-attempt-");
+  const authority =
+    createCanonicalTemporaryDirectory("yap-legacy-gate-authority-");
+  try {
+    for (const [gateId, gateManifestSha256] of [
+      [manifest.gateId, manifestSha256],
+      [
+        phase6Manifest.gateId,
+        integratedGateManifestSha256(phase6ManifestBytes),
+      ],
+    ]) {
+      const input = {
+        evidenceRoot: root,
+        gateId,
+        checkedHead,
+        manifestSha256: gateManifestSha256,
+        reservationAuthorityRoot: authority,
+      };
+      const first = reserveIntegratedGateAttemptDirectory(input);
+      assert.ok(first.runDirectory.startsWith(root));
+      assert.equal(first.statusAuthority, undefined);
+      assert.throws(() => reserveIntegratedGateAttemptDirectory(input));
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(authority, { recursive: true, force: true });
+  }
+});
+
+test("historical gate reservations retain their exact frozen schema", () => {
+  const reservation = {
+    schemaVersion: 1,
+    gateId: manifest.gateId,
+    checkedHead,
+    manifestSha256,
+    evidenceRoot: "C:\\private-evidence",
+    reservedAt: startedAt,
+  };
+  assert.doesNotThrow(
+    () => validateLegacyIntegratedGateReservationValue(reservation),
+  );
+  assert.throws(
+    () => validateLegacyIntegratedGateReservationValue({
+      ...reservation,
+      unexpected: true,
+    }),
+    /fields differ from the frozen contract/,
+  );
+});
+
+test("integrated gate reservation authority rejects same-root and cross-root retries", () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-attempt-");
+  const otherRoot = createCanonicalTemporaryDirectory("yap-gate-attempt-other-");
+  const statusClient = createGateStatusClient();
+  const previousUserProfile = process.env.USERPROFILE;
   try {
     const input = {
       evidenceRoot: root,
-      gateId: manifest.gateId,
+      gateId: identityManifest.gateId,
       checkedHead,
-      manifestSha256,
+      manifestSha256: integratedGateManifestSha256(identityManifestBytes),
+      statusClient,
     };
     const first = reserveIntegratedGateAttemptDirectory(input);
-    assert.ok(first.startsWith(root));
+    assert.ok(first.runDirectory.startsWith(root));
     assert.throws(() => reserveIntegratedGateAttemptDirectory(input));
+    rmSync(first.runDirectory, { recursive: true, force: true });
+    process.env.USERPROFILE = otherRoot;
+    assert.throws(() => reserveIntegratedGateAttemptDirectory({
+      ...input,
+      evidenceRoot: otherRoot,
+    }));
+  } finally {
+    if (previousUserProfile === undefined) delete process.env.USERPROFILE;
+    else process.env.USERPROFILE = previousUserProfile;
+    rmSync(root, { recursive: true, force: true });
+    rmSync(otherRoot, { recursive: true, force: true });
+  }
+});
+
+test("integrated gate admits only the oldest remote status in a reservation race", () => {
+  const root = createCanonicalTemporaryDirectory("yap-gate-attempt-race-");
+  try {
+    assert.throws(
+      () => reserveIntegratedGateAttemptDirectory({
+        evidenceRoot: root,
+        gateId: identityManifest.gateId,
+        checkedHead,
+        manifestSha256: integratedGateManifestSha256(identityManifestBytes),
+        statusClient: createGateStatusClient({ competingStatusWins: true }),
+      }),
+      /different GitHub gate admission won/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("identity admission returns no capability and stores only its protected digest", () => {
+  const root = createCanonicalTemporaryDirectory("yap-identity-admission-");
+  const repositoryHead = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  }).trim();
+  const privatePlanPath = path.join(root, "private-plan.json");
+  const runtimePreparation = Object.fromEntries(
+    ["cohere-vllm", "nemotron-nemo", "language-detection"].map((runtime, index) => {
+      const receiptFile = path.join(root, `${runtime}-preparation.json`);
+      const receiptBytes = Buffer.from(`${JSON.stringify({
+        schemaVersion: 1,
+        checkedHead: repositoryHead,
+        runtime,
+        dockerfileSha256: "d".repeat(64),
+        image: `yap-${runtime}:checked-head-${repositoryHead}`,
+        imageId: `sha256:${String(index + 1).repeat(64)}`,
+        architecture: "arm64",
+        baseDigest: `sha256:${"e".repeat(64)}`,
+      })}\n`);
+      writeExclusivePrivateFile(receiptFile, receiptBytes);
+      return [runtime, {
+        receiptFile,
+        receiptSha256: sha256(receiptBytes),
+      }];
+    }),
+  );
+  const privatePlanBytes = Buffer.from(`${JSON.stringify({
+    schemaVersion: 2,
+    checkedHead: repositoryHead,
+    mockOidc: {
+      receiptFile: path.join(root, "mock-oidc-owner-flow.json"),
+    },
+    targetClient: {
+      evidenceDirectory: path.join(root, "target-client"),
+      preparedAudioEvidenceFile: path.join(
+        root,
+        "target-client",
+        "local-stream-short-boundaries.json",
+      ),
+      preparedAudioSuiteSha256: "1".repeat(64),
+    },
+    gb10: {
+      lifecycleEvidenceFile: path.join(root, "resident-provider-lifecycle.json"),
+      runtimePreparation,
+    },
+    integrated: {
+      evidenceDirectory: path.join(root, "connected-server"),
+      remoteCleanupLogFile: path.join(root, "remote-cleanup.log"),
+      teardownEvidenceFile: path.join(root, "connected-server", "teardown.json"),
+      remoteHelperSetSha256: "2".repeat(64),
+    },
+  })}\n`);
+  writeExclusivePrivateFile(privatePlanPath, privatePlanBytes);
+  const statusClient = createGateStatusClient();
+  const rejectedStatusClient = createGateStatusClient();
+
+  try {
+    assert.throws(
+      () => admitIntegratedGateAttempt({
+        checkedHead: repositoryHead,
+        evidenceRoot: root,
+        manifestPath: identityManifestPath,
+        privatePlanPath,
+        statusClient: rejectedStatusClient,
+        verifyAdmissionPrerequisites() {
+          throw new Error("Windows optional-diagnostics prerequisite rejected");
+        },
+      }),
+      /Windows optional-diagnostics prerequisite rejected/,
+    );
+    assert.equal(
+      rejectedStatusClient.statuses.length,
+      0,
+      "a failed prerequisite must not reserve remote admission status",
+    );
+    const prerequisiteHeads = [];
+    const admitted = admitIntegratedGateAttempt({
+      checkedHead: repositoryHead,
+      evidenceRoot: root,
+      manifestPath: identityManifestPath,
+      privatePlanPath,
+      statusClient,
+      verifyAdmissionPrerequisites({ checkedHead: prerequisiteHead }) {
+        prerequisiteHeads.push(prerequisiteHead);
+        assert.equal(statusClient.statuses.length, 0);
+      },
+    });
+    assert.deepEqual(prerequisiteHeads, [repositoryHead]);
+    assert.deepEqual(Object.keys(admitted).sort(), [
+      "admissionPath",
+      "candidateReceiptPath",
+      "checkedHead",
+      "gateId",
+    ]);
+    assertPrivateFile(admitted.admissionPath);
+    const admission = JSON.parse(readFileSync(admitted.admissionPath, "utf8"));
+    const capabilityPath = path.join(admission.runDirectory, "attempt.capability");
+    const capability = readExactPrivateFile(capabilityPath, 32);
+    try {
+      assert.equal(sha256(capability), admission.attemptCapabilitySha256);
+    } finally {
+      capability.fill(0);
+    }
+    assert.equal("attemptToken" in admission, false);
+    assert.equal("attemptCapability" in admission, false);
+    assert.equal(JSON.stringify(admitted).includes(admission.attemptCapabilitySha256), false);
+    assert.equal(statusClient.statuses.length, 1);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -592,10 +1474,282 @@ test("integrated gate rejects a wrong runner runtime before consuming the attemp
   );
 });
 
+test("private gate artifacts use verified private directories and exclusive files", () => {
+  const root = createCanonicalTemporaryDirectory("yap-private-artifact-");
+  const capabilityPath = path.join(root, "attempt.capability");
+  const capability = Buffer.alloc(32, 0x5a);
+  try {
+    assert.equal(assertPrivateDirectory(root), root);
+    writeExclusivePrivateFile(capabilityPath, capability);
+    assert.equal(assertPrivateFile(capabilityPath), capabilityPath);
+    assert.deepEqual(readExactPrivateFile(capabilityPath, 32), capability);
+    assert.throws(
+      () => writeExclusivePrivateFile(capabilityPath, Buffer.alloc(32)),
+      /EEXIST|exist/i,
+    );
+    assert.throws(
+      () => readExactPrivateFile(capabilityPath, 31),
+      /exactly 31 bytes/,
+    );
+  } finally {
+    capability.fill(0);
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("completed command-log hashing reasserts the private-file boundary", () => {
+  const root = createCanonicalTemporaryDirectory("yap-private-command-log-");
+  const commandLog = path.join(root, "command.log");
+  try {
+    writeExclusivePrivateFile(commandLog, Buffer.from("bounded output\n"));
+    assert.equal(
+      integratedGateCommandLogSha256(commandLog, "Command log fixture"),
+      sha256("bounded output\n"),
+    );
+    if (process.platform === "win32") {
+      execFileSync(
+        path.join(process.env.SystemRoot, "System32", "icacls.exe"),
+        [commandLog, "/grant", "*S-1-5-32-545:F"],
+        { windowsHide: true, stdio: "ignore" },
+      );
+    } else {
+      chmodSync(commandLog, 0o644);
+    }
+    assert.throws(
+      () => integratedGateCommandLogSha256(commandLog, "Command log fixture"),
+      /private gate file|DACL|mode 600/i,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Windows atomic private-file producer publishes the validator DACL", {
+  skip: process.platform !== "win32",
+}, () => {
+  const root = createCanonicalTemporaryDirectory("yap-private-powershell-output-");
+  const destination = path.join(root, "receipt.json");
+  const modulePath = path.join(
+    repoRoot,
+    "verification",
+    "private-file-output.psm1",
+  );
+  const quotePowerShell = (value) => value.replaceAll("'", "''");
+  try {
+    execFileSync(
+      "pwsh.exe",
+      [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        `Import-Module '${quotePowerShell(modulePath)}' -Force; `
+          + `Write-NewPrivateFileAtomically `
+          + `-DestinationPath '${quotePowerShell(destination)}' `
+          + "-Content ([Text.Encoding]::UTF8.GetBytes('{\"passed\":true}'))",
+      ],
+      { windowsHide: true, stdio: "pipe" },
+    );
+    assert.equal(assertPrivateFile(destination), destination);
+    assert.equal(readFileSync(destination, "utf8"), '{"passed":true}');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Windows private artifact protection removes broad access rules", {
+  skip: process.platform !== "win32",
+}, () => {
+  const root = mkdtempSync(path.join(
+    realpathSync.native(os.tmpdir()),
+    "yap-private-artifact-dacl-",
+  ));
+  const privateFile = path.join(root, "private-evidence.json");
+  try {
+    execFileSync(
+      path.join(process.env.SystemRoot, "System32", "icacls.exe"),
+      [root, "/grant", "*S-1-5-32-545:(OI)(CI)F"],
+      { windowsHide: true, stdio: "ignore" },
+    );
+    writeFileSync(privateFile, "{}\n");
+    assert.equal(protectAndVerifyPrivateDirectory(root), root);
+    assert.equal(protectAndVerifyPrivateFile(privateFile), privateFile);
+    assert.equal(assertPrivateDirectory(root), root);
+    assert.equal(assertPrivateFile(privateFile), privateFile);
+    execFileSync(
+      path.join(process.env.SystemRoot, "System32", "icacls.exe"),
+      [privateFile, "/grant", "*S-1-5-32-545:F"],
+      { windowsHide: true, stdio: "ignore" },
+    );
+    assert.throws(
+      () => assertPrivateFile(privateFile),
+      /private gate file|DACL/i,
+    );
+    assert.equal(protectAndVerifyPrivateFile(privateFile), privateFile);
+    assert.equal(assertPrivateFile(privateFile), privateFile);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Windows private artifact protection avoids redundant owner rewrites", {
+  skip: process.platform !== "win32",
+}, () => {
+  const root = mkdtempSync(path.join(
+    path.dirname(repoRoot),
+    "yap-private-artifact-owner-",
+  ));
+  const privateFile = path.join(root, "private-evidence.json");
+  try {
+    writeFileSync(privateFile, "{}\n");
+    assert.equal(protectAndVerifyPrivateDirectory(root), root);
+    assert.equal(protectAndVerifyPrivateFile(privateFile), privateFile);
+    assert.equal(assertPrivateDirectory(root), root);
+    assert.equal(assertPrivateFile(privateFile), privateFile);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("integrated gate failure records retain only sanitized command termination evidence", () => {
+  const failure = new Error("synthetic retained descendant");
+  failure.code = "INTEGRATED_GATE_COMMAND_RETAINED_DESCENDANT";
+  failure.rootExitCode = 0;
+  failure.terminationEvidence = {
+    schemaVersion: 1,
+    containment: "windows-job-object",
+    rootProcessId: 42,
+    assignedBeforeResume: true,
+    terminationReason: "retained-descendant",
+    terminateRequested: true,
+    rootExited: true,
+    activeProcessCount: 0,
+    activeProcessZeroObserved: true,
+    cleanupProven: true,
+    privateSupervisorNonce: "must-not-persist",
+  };
+
+  const record = integratedGateFailureRecord({ checkedHead }, failure);
+
+  assert.equal(record.schemaVersion, 3);
+  assert.deepEqual(record.commandTermination, {
+    schemaVersion: 1,
+    targetExitCode: 0,
+    containment: "windows-job-object",
+    assignedBeforeResume: true,
+    terminationReason: "retained-descendant",
+    terminateRequested: true,
+    rootExited: true,
+    activeProcessCount: 0,
+    activeProcessZeroObserved: true,
+    cleanupProven: true,
+  });
+  assert.doesNotMatch(JSON.stringify(record), /must-not-persist/);
+  assert.equal(Object.hasOwn(record.commandTermination, "rootProcessId"), false);
+
+  failure.terminationEvidence.cleanupProven = "not-a-boolean";
+  assert.equal(
+    integratedGateFailureRecord({ checkedHead }, failure).commandTermination,
+    null,
+  );
+  failure.terminationEvidence = {
+    schemaVersion: 1,
+    containment: "windows-job-object",
+    rootProcessId: 42,
+    assignedBeforeResume: true,
+    terminationReason: "retained-descendant",
+    terminateRequested: true,
+    rootExited: true,
+    activeProcessCount: 0,
+    activeProcessZeroObserved: true,
+    cleanupProven: true,
+  };
+
+  const conflictingFailure = new Error("synthetic output overflow");
+  conflictingFailure.code = "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED";
+  conflictingFailure.terminationEvidence = {
+    ...failure.terminationEvidence,
+    cleanupProven: true,
+    terminationReason: "retained-descendant",
+  };
+  assert.equal(
+    integratedGateFailureRecord(
+      { checkedHead },
+      new AggregateError([conflictingFailure, failure]),
+    ).commandTermination,
+    null,
+  );
+
+  const timeoutFailure = new Error("synthetic command timeout");
+  timeoutFailure.code = "INTEGRATED_GATE_COMMAND_TIMEOUT";
+  timeoutFailure.terminationEvidence = {
+    ...failure.terminationEvidence,
+    terminationReason: "timeout",
+  };
+  assert.equal(
+    integratedGateFailureRecord(
+      { checkedHead },
+      timeoutFailure,
+    ).commandTermination.terminationReason,
+    "timeout",
+  );
+});
+
+test("integrated gate records proven cleanup for a clean nonzero command exit", {
+  skip: process.platform !== "win32",
+}, async () => {
+  const root = createCanonicalTemporaryDirectory("yap-gate-command-nonzero-");
+  const commandLogDirectory = path.join(root, "command-logs");
+  mkdirSync(commandLogDirectory);
+  protectAndVerifyPrivateDirectory(commandLogDirectory);
+  const cell = {
+    id: "bounded.command-nonzero",
+    executor: "command",
+    cwd: ".",
+    command: [process.execPath, "-e", "process.exit(23)"],
+  };
+  const admission = {
+    checkedHead,
+    runDirectory: root,
+    commandLogDirectory,
+  };
+  try {
+    await assert.rejects(
+      runCommandCell(cell, admission, { maximumLogBytes: 1_024 }),
+      (error) => {
+        assert.equal(error.code, "INTEGRATED_GATE_COMMAND_EXITED_NONZERO");
+        assert.equal(error.rootExitCode, 23);
+        assert.equal(error.terminationEvidence.terminationReason, "none");
+        assert.equal(error.terminationEvidence.cleanupProven, true);
+
+        const record = integratedGateFailureRecord(admission, error);
+        assert.equal(record.code, error.code);
+        assert.deepEqual(record.commandTermination, {
+          schemaVersion: 1,
+          targetExitCode: 23,
+          containment: "windows-job-object",
+          assignedBeforeResume: true,
+          terminationReason: "none",
+          terminateRequested: false,
+          rootExited: true,
+          activeProcessCount: 0,
+          activeProcessZeroObserved: true,
+          cleanupProven: true,
+        });
+        assert.equal(Object.hasOwn(record.commandTermination, "rootProcessId"), false);
+        return true;
+      },
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("integrated gate terminates a command whose output exceeds its bounded log", async () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-command-output-");
   const commandLogDirectory = path.join(root, "command-logs");
   mkdirSync(commandLogDirectory);
+  protectAndVerifyPrivateDirectory(commandLogDirectory);
   const maximumLogBytes = 1_024;
   const readyPath = path.join(root, "grandchild-ready");
   const escapedReadyPath = JSON.stringify(readyPath);
@@ -638,6 +1792,22 @@ test("integrated gate terminates a command whose output exceeds its bounded log"
         assert.equal(error.code, "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED");
         assert.equal(error.maximumBytes, maximumLogBytes);
         assert.ok(error.observedBytes > maximumLogBytes);
+        assert.deepEqual(error.terminationEvidence, {
+          schemaVersion: 1,
+          containment: "windows-job-object",
+          rootProcessId: error.terminationEvidence?.rootProcessId,
+          assignedBeforeResume: true,
+          terminationReason: "output-limit",
+          terminateRequested: true,
+          rootExited: true,
+          activeProcessCount: 0,
+          activeProcessZeroObserved: true,
+          cleanupProven: true,
+        });
+        assert.ok(
+          Number.isSafeInteger(error.terminationEvidence.rootProcessId)
+            && error.terminationEvidence.rootProcessId > 0,
+        );
         return true;
       },
     );
@@ -651,12 +1821,36 @@ test("integrated gate terminates a command whose output exceeds its bounded log"
       maximumLogBytes,
     );
     const failureRecord = integratedGateFailureRecord(admission, boundedFailure);
-    assert.equal(failureRecord.schemaVersion, 2);
+    assert.equal(failureRecord.schemaVersion, 3);
     assert.equal(
       failureRecord.code,
       "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED",
     );
     assert.match(failureRecord.message, /1024-byte command-log limit/);
+    assert.deepEqual(failureRecord.commandTermination, {
+      schemaVersion: 1,
+      targetExitCode: null,
+      containment: boundedFailure.terminationEvidence.containment,
+      assignedBeforeResume: boundedFailure.terminationEvidence.assignedBeforeResume,
+      terminationReason: boundedFailure.terminationEvidence.terminationReason,
+      terminateRequested: boundedFailure.terminationEvidence.terminateRequested,
+      rootExited: boundedFailure.terminationEvidence.rootExited,
+      activeProcessCount: boundedFailure.terminationEvidence.activeProcessCount,
+      activeProcessZeroObserved:
+        boundedFailure.terminationEvidence.activeProcessZeroObserved,
+      cleanupProven: boundedFailure.terminationEvidence.cleanupProven,
+    });
+    assert.deepEqual(
+      Object.keys(failureRecord).sort(),
+      [
+        "checkedHead",
+        "code",
+        "commandTermination",
+        "failedAt",
+        "message",
+        "schemaVersion",
+      ],
+    );
     const grandchildProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
     assert.ok(Number.isSafeInteger(grandchildProcessId) && grandchildProcessId > 0);
     assert.equal(
@@ -678,6 +1872,9 @@ test("command cells reject a redirected log destination before execution", async
   mkdirSync(runDirectory);
   mkdirSync(commandLogDirectory);
   mkdirSync(redirectedDirectory);
+  protectAndVerifyPrivateDirectory(runDirectory);
+  protectAndVerifyPrivateDirectory(commandLogDirectory);
+  protectAndVerifyPrivateDirectory(redirectedDirectory);
   try {
     await assert.rejects(
       runCommandCell(
@@ -717,6 +1914,8 @@ test("command cells reject a junction-swapped log directory before execution", a
   const markerPath = path.join(root, "command-ran");
   mkdirSync(runDirectory);
   mkdirSync(redirectedDirectory);
+  protectAndVerifyPrivateDirectory(runDirectory);
+  protectAndVerifyPrivateDirectory(redirectedDirectory);
   symlinkSync(
     redirectedDirectory,
     commandLogDirectory,
@@ -759,8 +1958,10 @@ test("integrated private evidence is derived from concrete checked-head artifact
   const integratedRoot = path.join(root, `${checkedHead}-integrated`);
   const preparedPath = path.join(targetRoot, "local-stream-short-boundaries.json");
   const gb10Path = path.join(root, `${checkedHead}-resident-provider-lifecycle.json`);
+  const mockOidcReceiptPath = path.join(root, `${checkedHead}-mock-oidc-owner-flow.json`);
   const remoteCleanupLogPath = path.join(root, `${checkedHead}-remote-cleanup.log`);
   const teardownPath = path.join(integratedRoot, "teardown.json");
+  const remoteHelperSetSha256 = "b".repeat(64);
   const suiteSha256 = "1".repeat(64);
   const runtimeImageIds = {
     "cohere-vllm": `sha256:${"a".repeat(64)}`,
@@ -788,8 +1989,9 @@ test("integrated private evidence is derived from concrete checked-head artifact
     }),
   );
   const plan = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     checkedHead,
+    mockOidc: { receiptFile: mockOidcReceiptPath },
     targetClient: {
       evidenceDirectory: targetRoot,
       preparedAudioEvidenceFile: preparedPath,
@@ -800,13 +2002,37 @@ test("integrated private evidence is derived from concrete checked-head artifact
       evidenceDirectory: integratedRoot,
       remoteCleanupLogFile: remoteCleanupLogPath,
       teardownEvidenceFile: teardownPath,
+      remoteHelperSetSha256,
     },
   };
+  protectPrivateFixtureTree(root);
   try {
+    const legacyPlan = {
+      ...plan,
+      schemaVersion: 1,
+      integrated: { ...plan.integrated },
+    };
+    delete legacyPlan.mockOidc;
+    delete legacyPlan.integrated.remoteHelperSetSha256;
+    validateIntegratedPrivateEvidencePlan(legacyPlan, {
+      expectedHead: checkedHead,
+      repositoryRoot: repoRoot,
+      requireDestinationsAbsent: true,
+    });
+    assert.throws(
+      () => validateIntegratedPrivateEvidencePlan(legacyPlan, {
+        expectedHead: checkedHead,
+        repositoryRoot: repoRoot,
+        requireDestinationsAbsent: true,
+        requireMockOidc: true,
+      }),
+      /requires a schemaVersion 2 mock OIDC receipt/,
+    );
     validateIntegratedPrivateEvidencePlan(plan, {
       expectedHead: checkedHead,
       repositoryRoot: repoRoot,
       requireDestinationsAbsent: true,
+      requireMockOidc: true,
     });
     mkdirSync(targetRoot);
     const logBytes = Buffer.from("bounded native profile passed\n");
@@ -868,6 +2094,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
       measurementBoundary: "desktop-prepared-audio-frame-to-final",
       adapterDrainTargetMs: 6_000,
       adapterDrainTimeoutMs: 12_000,
+      queueCapacityFrames: 1_024,
       logicalProcessorBudget: os.cpus().length,
       allCasesPassed: true,
       cases: durations.map((durationMs) => ({
@@ -880,6 +2107,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
         adapterStatus: "drained",
         droppedFrames: 0,
         processedAudioSamples: durationMs * 16,
+        queueHighWaterMark: 1,
         streamStatus: "completed",
         passed: true,
         languageDegraded: false,
@@ -1015,6 +2243,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
         `REMOTE_RUNTIME_COHERE_VLLM_PREPARATION_RECEIPT_SHA256=${runtimePreparation["cohere-vllm"].receiptSha256}`,
         `REMOTE_RUNTIME_LANGUAGE_DETECTION_IMAGE_ID=${runtimeImageIds["language-detection"]}`,
         `REMOTE_RUNTIME_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256=${runtimePreparation["language-detection"].receiptSha256}`,
+        `REMOTE_HELPER_SET_SHA256=${remoteHelperSetSha256}`,
         `REMOTE_PRIVATE_SERVER_READY=${checkedHead}`,
         "REMOTE_GATE_CLEANUP=PASS",
         "",
@@ -1047,7 +2276,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
     writeFileSync(
       teardownPath,
       `${JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: 2,
         checkedHead,
         remoteCleanupPassed: true,
         localForwardAbsent: true,
@@ -1058,16 +2287,127 @@ test("integrated private evidence is derived from concrete checked-head artifact
         remainingOwnedNetworks: 0,
         remoteCleanupLogSha256: sha256(remoteCleanupLog),
         tunnelProcessLedgerSha256: sha256(tunnelProcessLedger),
+        remoteHelperSetSha256,
         status: "passed",
       }, null, 2)}\n`,
     );
 
-    const evidence = validateIntegratedPrivateEvidence(plan, checkedHead);
-    assert.equal(evidence.size, 12);
+    const mockOidcReceipt = {
+      schemaVersion: 1,
+      receiptContract: "mock-oidc-owner-flow-v1",
+      checkedHead,
+      lockedImageDigest:
+        "sha256:f625692f5bf84939f3d0af4931f2c0f038dca84c4f1bac1171710d544181f97f",
+      validatorSources: {
+        oidcAccessTokensSha256: sha256(readFileSync(path.join(
+          repoRoot,
+          "server",
+          "src",
+          "yap_server",
+          "auth",
+          "oidc_access_tokens.py",
+        ))),
+        oidcMetadataSha256: sha256(readFileSync(path.join(
+          repoRoot,
+          "server",
+          "src",
+          "yap_server",
+          "auth",
+          "oidc_metadata.py",
+        ))),
+      },
+      ownerFlowSha256: sha256(readFileSync(path.join(
+        repoRoot,
+        "verification",
+        "mock-oidc-owner-flow.py",
+      ))),
+      teardown: {
+        childProcessesStopped: true,
+        containerAbsent: true,
+        networkAbsent: true,
+        loopbackPortReleased: true,
+        stateDirectoryRemoved: true,
+        cancellationHandlerRemoved: true,
+        remainingContainers: 0,
+        remainingNetworks: 0,
+        status: "passed",
+      },
+      status: "passed",
+    };
+    const mockOidcReceiptBytes = Buffer.from(
+      `${JSON.stringify(mockOidcReceipt, null, 2)}\n`,
+    );
+    writeFileSync(mockOidcReceiptPath, mockOidcReceiptBytes);
+    protectPrivateFixtureTree(root);
+
+    const evidence = validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot);
+    assert.equal(evidence.size, 13);
+    assert.equal(
+      evidence.get("server.mock-oidc-owner-flow"),
+      sha256(mockOidcReceiptBytes),
+    );
+    if (process.platform === "win32") {
+      execFileSync(
+        path.join(process.env.SystemRoot, "System32", "icacls.exe"),
+        [mockOidcReceiptPath, "/grant", "*S-1-5-32-545:F"],
+        { windowsHide: true, stdio: "ignore" },
+      );
+    } else {
+      chmodSync(mockOidcReceiptPath, 0o644);
+    }
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+      /private gate file|DACL|mode 600/i,
+    );
+    protectAndVerifyPrivateFile(mockOidcReceiptPath);
+    mockOidcReceipt.ownerFlowSha256 = "f".repeat(64);
+    writeFileSync(
+      mockOidcReceiptPath,
+      `${JSON.stringify(mockOidcReceipt, null, 2)}\n`,
+    );
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+      /source identities do not match/,
+    );
+    mockOidcReceipt.ownerFlowSha256 = sha256(readFileSync(path.join(
+      repoRoot,
+      "verification",
+      "mock-oidc-owner-flow.py",
+    )));
+    mockOidcReceipt.teardown.containerAbsent = false;
+    writeFileSync(
+      mockOidcReceiptPath,
+      `${JSON.stringify(mockOidcReceipt, null, 2)}\n`,
+    );
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+      /did not prove verified teardown/,
+    );
+    mockOidcReceipt.teardown.containerAbsent = true;
+    mockOidcReceipt.privatePath = "must-not-be-admitted";
+    writeFileSync(
+      mockOidcReceiptPath,
+      `${JSON.stringify(mockOidcReceipt, null, 2)}\n`,
+    );
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+      /fields differ from the frozen contract/,
+    );
+    delete mockOidcReceipt.privatePath;
+    truncateSync(mockOidcReceiptPath, 4_097);
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+      (error) => {
+        assert.equal(error.code, "INTEGRATED_GATE_ARTIFACT_LIMIT_EXCEEDED");
+        assert.equal(error.maximumBytes, 4_096);
+        return true;
+      },
+    );
+    writeFileSync(mockOidcReceiptPath, mockOidcReceiptBytes);
     const preparedFailurePath = `${preparedPath}.failure.json`;
     writeFileSync(preparedFailurePath, '{"status":"failed"}\n');
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       /cannot retain prepared-audio failure evidence/,
     );
     rmSync(preparedFailurePath);
@@ -1077,7 +2417,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
     delete vertical.languagePreflightExecution;
     writeFileSync(verticalPath, `${JSON.stringify(vertical, null, 2)}\n`);
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       /did not prove ASR and LID execution/,
     );
     vertical.languagePreflightExecution = lidExecution;
@@ -1092,7 +2432,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
       ]),
     );
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       /did not use the frozen prepared images/,
     );
     writeFileSync(remoteCleanupLogPath, remoteCleanupLog);
@@ -1101,7 +2441,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
     gb10.evidenceSha256 = sha256(JSON.stringify(stableValue(gb10)));
     writeFileSync(gb10Path, `${JSON.stringify(gb10, null, 2)}\n`);
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       /not bound to the frozen runtime preparation/,
     );
     gb10.runtimeImages["cohere-vllm"].imageId = runtimeImageIds["cohere-vllm"];
@@ -1128,7 +2468,7 @@ test("integrated private evidence is derived from concrete checked-head artifact
       INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes + 1,
     );
     assert.throws(
-      () => validateIntegratedPrivateEvidence(plan, checkedHead),
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
       (error) => {
         assert.equal(error.code, "INTEGRATED_GATE_ARTIFACT_LIMIT_EXCEEDED");
         assert.equal(
@@ -1141,7 +2481,9 @@ test("integrated private evidence is derived from concrete checked-head artifact
     writeFileSync(preparedPath, preparedBytes);
     prepared.cases[0].droppedFrames = 1;
     writeFileSync(preparedPath, `${JSON.stringify(prepared, null, 2)}\n`);
-    assert.throws(() => validateIntegratedPrivateEvidence(plan, checkedHead));
+    assert.throws(
+      () => validateIntegratedPrivateEvidence(plan, checkedHead, repoRoot),
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -1152,10 +2494,13 @@ test("connected teardown receipt derives cleanup state and refuses retained owne
   const logPath = path.join(root, "remote.log");
   const tunnelLedgerPath = path.join(root, "tunnel-process-ledger.json");
   const output = path.join(root, "teardown.json");
+  const remoteHelperSetSha256 = "c".repeat(64);
   try {
     writeFileSync(
       logPath,
-      `REMOTE_PRIVATE_SERVER_READY=${checkedHead}\nREMOTE_GATE_CLEANUP=PASS\n`,
+      `REMOTE_HELPER_SET_SHA256=${remoteHelperSetSha256}\n`
+        + `REMOTE_PRIVATE_SERVER_READY=${checkedHead}\n`
+        + "REMOTE_GATE_CLEANUP=PASS\n",
     );
     writeFileSync(
       tunnelLedgerPath,
@@ -1179,12 +2524,15 @@ test("connected teardown receipt derives cleanup state and refuses retained owne
         status: "passed",
       }, null, 2)}\n`,
     );
+    protectAndVerifyPrivateFile(logPath);
+    protectAndVerifyPrivateFile(tunnelLedgerPath);
     const receipt = await createConnectedServerTeardownReceipt({
       checkedHead,
       remoteCleanupLog: logPath,
       tunnelProcessLedger: tunnelLedgerPath,
       output,
       remoteServerProcessId: 123_455,
+      remoteHelperSetSha256,
       processProbe: () => false,
       portProbe: async () => false,
     });
@@ -1196,6 +2544,7 @@ test("connected teardown receipt derives cleanup state and refuses retained owne
         tunnelProcessLedger: tunnelLedgerPath,
         output: path.join(root, "retained.json"),
         remoteServerProcessId: 123_455,
+        remoteHelperSetSha256,
         processProbe: () => true,
         portProbe: async () => false,
       }),

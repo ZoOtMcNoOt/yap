@@ -3,7 +3,6 @@ import {
   existsSync,
   lstatSync,
   realpathSync,
-  writeFileSync,
 } from "node:fs";
 import net from "node:net";
 import path from "node:path";
@@ -15,6 +14,11 @@ import {
   readBoundedRegularFile,
   serializeBoundedJson,
 } from "./integrated-gate-artifact-bounds.mjs";
+import {
+  assertPrivateDirectory,
+  assertPrivateFile,
+  writeExclusivePrivateFile,
+} from "./private-gate-artifacts.mjs";
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const REPOSITORY_ROOT = path.resolve(
@@ -76,6 +80,7 @@ export async function createConnectedServerTeardownReceipt({
   tunnelProcessLedger,
   output,
   remoteServerProcessId,
+  remoteHelperSetSha256,
   processProbe = processExists,
   portProbe = portIsOpen,
 }) {
@@ -85,8 +90,13 @@ export async function createConnectedServerTeardownReceipt({
     Number.isSafeInteger(remoteServerProcessId) && remoteServerProcessId > 0,
     "The directly launched remote-server SSH process id is required.",
   );
+  requireCondition(
+    remoteHelperSetSha256 === undefined || /^[0-9a-f]{64}$/.test(remoteHelperSetSha256),
+    "Remote helper-set identity must be one lowercase SHA-256 when supplied.",
+  );
   const logCandidate = path.resolve(remoteCleanupLog);
   requireOutsideRepository(logCandidate, "Remote cleanup log");
+  assertPrivateFile(logCandidate);
   const logArtifact = readBoundedRegularFile(
     logCandidate,
     "Remote cleanup log",
@@ -96,6 +106,7 @@ export async function createConnectedServerTeardownReceipt({
   requireOutsideRepository(logPath, "Remote cleanup log");
   const tunnelLedgerCandidate = path.resolve(tunnelProcessLedger);
   requireOutsideRepository(tunnelLedgerCandidate, "Tunnel process ledger");
+  assertPrivateFile(tunnelLedgerCandidate);
   const tunnelLedgerArtifact = readBoundedJsonArtifact(
     tunnelLedgerCandidate,
     "Tunnel process ledger",
@@ -111,6 +122,7 @@ export async function createConnectedServerTeardownReceipt({
     outputParent.toLowerCase() === path.normalize(path.dirname(output)).toLowerCase(),
     "Teardown receipt parent must not redirect elsewhere.",
   );
+  assertPrivateDirectory(outputParent);
 
   const logBytes = logArtifact.bytes;
   const logText = logBytes.toString("utf8");
@@ -144,9 +156,19 @@ export async function createConnectedServerTeardownReceipt({
   const cleanupLines = logText
     .split(/\r?\n/)
     .filter((line) => line.startsWith("REMOTE_GATE_CLEANUP="));
+  const helperSetLines = logText
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith("REMOTE_HELPER_SET_SHA256="));
   requireCondition(
     cleanupLines.length === 1
       && cleanupLines[0] === "REMOTE_GATE_CLEANUP=PASS"
+      && (
+        remoteHelperSetSha256 === undefined
+        || (
+          helperSetLines.length === 1
+          && helperSetLines[0] === `REMOTE_HELPER_SET_SHA256=${remoteHelperSetSha256}`
+        )
+      )
       && !logText.includes("REMOTE_GATE_CLEANUP=FAIL"),
     "Remote cleanup log did not prove one exact passing teardown.",
   );
@@ -161,7 +183,7 @@ export async function createConnectedServerTeardownReceipt({
   requireCondition(!(await portProbe(18_765)), "The local SSH forward remains reachable.");
 
   const receipt = {
-    schemaVersion: 1,
+    schemaVersion: remoteHelperSetSha256 === undefined ? 1 : 2,
     checkedHead,
     remoteCleanupPassed: true,
     localForwardAbsent: true,
@@ -172,6 +194,7 @@ export async function createConnectedServerTeardownReceipt({
     remainingOwnedNetworks: 0,
     remoteCleanupLogSha256: sha256(logBytes),
     tunnelProcessLedgerSha256: sha256(tunnelLedgerBytes),
+    ...(remoteHelperSetSha256 === undefined ? {} : { remoteHelperSetSha256 }),
     status: "passed",
   };
   const receiptBytes = serializeBoundedJson(
@@ -179,10 +202,7 @@ export async function createConnectedServerTeardownReceipt({
     "Connected-server teardown receipt",
     INTEGRATED_GATE_BYTE_LIMITS.privateJsonEvidenceBytes,
   );
-  writeFileSync(output, receiptBytes, {
-    flag: "wx",
-    mode: 0o600,
-  });
+  writeExclusivePrivateFile(output, receiptBytes);
   return receipt;
 }
 
@@ -206,6 +226,7 @@ async function runCli() {
   const tunnelProcessLedger = values.get("tunnel-process-ledger");
   const output = values.get("output");
   const remoteServerProcessId = Number(values.get("remote-server-process-id"));
+  const remoteHelperSetSha256 = values.get("remote-helper-set-sha256");
   requireCondition(
     checkedHead
       && remoteCleanupLog
@@ -220,6 +241,7 @@ async function runCli() {
     tunnelProcessLedger,
     output,
     remoteServerProcessId,
+    ...(remoteHelperSetSha256 ? { remoteHelperSetSha256 } : {}),
   });
   process.stdout.write("CONNECTED_SERVER_TEARDOWN_RECEIPT=PASS\n");
 }

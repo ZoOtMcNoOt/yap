@@ -9,16 +9,15 @@ import tempfile
 import textwrap
 from types import SimpleNamespace
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 import yap_server.__main__ as server_main
-from yap_server.config import ServerSettings
+from yap_server.config import ServerSettings, ensure_private_application_bind
 from yap_server.jobs.runtime import (
     StorageRuntimeLease,
     _build_provider_worker_plans,
     _configured_model_pools,
     build_batch_runtime,
-    ensure_development_batch_bind,
 )
 from yap_server.jobs.contract_values import MAX_JOB_PCM_BYTES
 from yap_server.pools.batch_asr import WorkerContainmentError
@@ -92,15 +91,17 @@ class BatchRuntimeTests(unittest.TestCase):
             replacement = StorageRuntimeLease(storage)
             replacement.close()
 
-    def test_unauthenticated_batch_runtime_is_loopback_only(self) -> None:
-        ensure_development_batch_bind("127.0.0.1")
-        ensure_development_batch_bind("::1")
+    def test_private_application_runtime_is_loopback_only(self) -> None:
+        ensure_private_application_bind("127.0.0.1")
+        ensure_private_application_bind("::1")
         for host in ("localhost", "0.0.0.0", "192.168.50.1", "yap.internal"):
             with self.subTest(host=host):
-                with self.assertRaisesRegex(ValueError, "SSH tunnel"):
-                    ensure_development_batch_bind(host)
+                with self.assertRaisesRegex(ValueError, "secure edge"):
+                    ensure_private_application_bind(host)
 
-    def test_language_detection_cannot_start_without_the_verified_batch_runtime(self) -> None:
+    def test_language_detection_cannot_start_without_the_verified_batch_runtime(
+        self,
+    ) -> None:
         with self.assertRaisesRegex(ValueError, "requires the verified batch"):
             build_batch_runtime(
                 {
@@ -410,7 +411,9 @@ class BatchRuntimeTests(unittest.TestCase):
                 Path(__file__).resolve().parents[2],
             )
 
-    def test_transient_runtime_uses_the_inspected_checked_head_worker_image(self) -> None:
+    def test_transient_runtime_uses_the_inspected_checked_head_worker_image(
+        self,
+    ) -> None:
         checked_head = "a" * 40
         image_id = "sha256:" + "b" * 64
         environ = {
@@ -873,7 +876,9 @@ class ServerMainTests(unittest.TestCase):
         self.assertIn("fail-stopping the service process", completed.stderr)
         self.assertNotIn("sensitive worker detail", completed.stderr)
 
-    def test_verified_runtime_capabilities_are_served_with_the_job_service(self) -> None:
+    def test_verified_runtime_capabilities_are_served_with_the_job_service(
+        self,
+    ) -> None:
         runtime = _Runtime()
         settings = ServerSettings()
         with (
@@ -894,6 +899,7 @@ class ServerMainTests(unittest.TestCase):
 
         serve.assert_called_once_with(
             settings,
+            request_authenticator=ANY,
             job_service=runtime.service,
             lid_preflight_service=runtime.lid_preflight_service,
             asr_capabilities=runtime.asr_capabilities,
@@ -958,7 +964,7 @@ class ServerMainTests(unittest.TestCase):
             from yap_server.pools.batch_contract import WorkerContainmentError
 
 
-            def fail_during_build():
+            def fail_during_build(**_options):
                 started = threading.Event()
                 release = threading.Event()
                 executor = ThreadPoolExecutor(max_workers=1)

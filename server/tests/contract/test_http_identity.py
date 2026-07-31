@@ -178,10 +178,13 @@ class ContractTests(unittest.TestCase):
             path = contract["path"]
             method = contract["method"]
             operation = document["paths"][path][method]
+            expected_errors = set(contract["errors"])
+            if path != "/v1/health":
+                expected_errors.update({"401", "403", "503"})
             with self.subTest(path=path, method=method, link="responses"):
                 self.assertEqual(
                     set(operation["responses"]),
-                    set(contract["success"]) | set(contract["errors"]),
+                    set(contract["success"]) | expected_errors,
                 )
 
             expected_request = contract["request"]
@@ -217,7 +220,7 @@ class ContractTests(unittest.TestCase):
                         self.assertEqual(actual_schema, {"$ref": expected_schema})
                         contract_schema.resolve_reference(expected_schema, "openapi.json", documents)
 
-            for status in contract["errors"]:
+            for status in expected_errors:
                 with self.subTest(path=path, method=method, error=status):
                     response = operation["responses"][status]
                     if "$ref" in response:

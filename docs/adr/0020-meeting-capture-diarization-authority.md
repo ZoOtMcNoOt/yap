@@ -6,7 +6,18 @@
 **Supersedes diarization details in:** [ADR 0004](0004-background-diarization-okf-agents.md)
 **Server meeting baseline selected by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md)
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md), [ADR 0007](0007-forced-alignment-engine.md), [ADR 0009](0009-knowledge-worker-protocol.md), [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0016](0016-auth-identity-bridge.md), [ADR 0018](0018-three-repo-topology.md), and the [Local Audio Preprocessing Stack](../specs/local-audio-preprocessing-stack.md)
-**Implementation status:** Source-aware capture, immutable recording/evidence/result contracts, and the durable imported-job ledger are implemented. The gated Phase 5 path strictly admits already-canonical mono PCM16/16 kHz WAV input, extracts an immutable single-track PCM spool, provides durable loopback upload/reconnect, publishes verified server-authoritative results, and applies seven-day pending-source plus finite completed-result retention. General media conversion, diarization, named identity, system loopback, server reconciliation of speaker evidence, and purpose grants remain unimplemented.
+**Implementation status:** Source-aware capture, immutable
+recording/evidence/result contracts, and the durable imported-job ledger are
+implemented. Local dictation now reserves streaming recording and installs CPAL
+capture before Nemotron warmup completes, then drains accepted bounded pre-roll
+through one FIFO batched adapter; successful start completion still requires
+local ASR. The gated Phase 5 path strictly admits already-canonical mono
+PCM16/16 kHz WAV input, extracts an immutable single-track PCM spool, provides
+durable loopback upload/reconnect, publishes verified server-authoritative
+results, and applies seven-day pending-source plus finite completed-result
+retention. General media conversion, diarization, named identity, system
+loopback, server reconciliation of speaker evidence, and a supported
+recording-only product mode remain unimplemented.
 
 ## Context
 

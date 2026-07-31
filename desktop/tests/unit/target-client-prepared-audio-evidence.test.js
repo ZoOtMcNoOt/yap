@@ -27,6 +27,7 @@ function validEvidence() {
       languageDegraded: false,
       passed: true,
       processedAudioSamples: durationMs * 16,
+      queueHighWaterMark: 1,
       streamStatus: "completed",
       textSeen: durationMs >= 1_000,
       transcriptionUnavailable: false,
@@ -37,6 +38,7 @@ function validEvidence() {
     modelArtifactLockSha256: "c".repeat(64),
     planSha256: "d".repeat(64),
     qualificationProfile: "short-boundaries",
+    queueCapacityFrames: 1_024,
     schemaVersion: 2,
     suiteSha256: expected.suiteSha256,
   };
@@ -81,13 +83,26 @@ describe("target-client prepared-audio evidence", () => {
           index === 8 ? { ...candidate, adapterDrainMs: 6_001 } : candidate
         )),
       },
+      {
+        ...validEvidence(),
+        cases: validEvidence().cases.map((candidate, index) => (
+          index === 8 ? { ...candidate, queueHighWaterMark: 1_025 } : candidate
+        )),
+      },
+      {
+        ...validEvidence(),
+        cases: validEvidence().cases.map((candidate, index) => (
+          index === 0 ? { ...candidate, queueHighWaterMark: 0 } : candidate
+        )),
+      },
+      { ...validEvidence(), queueCapacityFrames: 2_048 },
     ];
     for (const candidate of cases) {
       expect(() => validateTargetClientPreparedAudioEvidence(candidate, expected)).toThrow();
     }
   });
 
-  it("keeps a completed post-target drain visible without calling it a product timeout", () => {
+  it("rejects a completed drain that misses the product target", () => {
     const evidence = validEvidence();
     evidence.cases[8] = {
       ...evidence.cases[8],
@@ -95,6 +110,8 @@ describe("target-client prepared-audio evidence", () => {
       adapterDrainTargetMet: false,
     };
 
-    expect(validateTargetClientPreparedAudioEvidence(evidence, expected).caseCount).toBe(9);
+    expect(() => validateTargetClientPreparedAudioEvidence(evidence, expected)).toThrow(
+      "did not meet the drain target",
+    );
   });
 });

@@ -81,8 +81,16 @@ async fn advance_terminal_lid_preflight_cancellation_once(
     let server_base_url = artifact.lid_server_base_url.as_deref().ok_or_else(|| {
         DrainStepError::permanent("terminal LID dispatch omitted its server origin")
     })?;
-    let client = connector
+    let unpinned_client = connector
         .batch_client_for_persisted_origin(server_base_url)
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?;
+    let (client, authority) = unpinned_client.pin_current_authority().await?;
+    ledger
+        .bind_remote_authority(
+            &artifact.job_id,
+            authority.account(),
+            authority.authentication(),
+        )
         .map_err(|error| DrainStepError::permanent(error.to_string()))?;
     match client.cancel_lid_preflight(request_id).await {
         Ok(()) => {}
@@ -153,9 +161,17 @@ async fn recover_cancelled_create_attempt_once(
         .ok_or_else(|| {
             DrainStepError::permanent("cancelled create cleanup omitted its persisted origin")
         })?;
-    let client = connector
+    let unpinned_client = connector
         .persisted_cleanup_client(origin)
         .map_err(DrainStepError::permanent)?;
+    let (client, authority) = unpinned_client.pin_current_authority().await?;
+    ledger
+        .bind_remote_authority(
+            &cancelled_attempt.job_id,
+            authority.account(),
+            authority.authentication(),
+        )
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?;
     let (request, projection) =
         recreate_server_job_for_cleanup(&client, &cancelled_attempt).await?;
     ledger
@@ -212,9 +228,17 @@ async fn recover_abandoned_create_attempt_once(
         .create_attempt_base_url
         .as_deref()
         .ok_or_else(|| DrainStepError::permanent("create cleanup omitted its persisted origin"))?;
-    let client = connector
+    let unpinned_client = connector
         .persisted_cleanup_client(origin)
         .map_err(DrainStepError::permanent)?;
+    let (client, authority) = unpinned_client.pin_current_authority().await?;
+    ledger
+        .bind_remote_authority(
+            &abandoned.job_id,
+            authority.account(),
+            authority.authentication(),
+        )
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?;
     let (request, projection) = recreate_server_job_for_cleanup(&client, &abandoned).await?;
     cancel_server_job(&client, &projection.job_id, &request).await?;
     ledger
@@ -276,13 +300,21 @@ async fn advance_cancellation_once_guarded(
         .into_iter()
         .find(|candidate| candidate.server_base_url.as_deref() == Some(client.base_url_identity()));
     if let Some(candidate) = candidate {
+        let (client, authority) = client.pin_current_authority().await?;
+        ledger
+            .bind_remote_authority(
+                &candidate.job_id,
+                authority.account(),
+                authority.authentication(),
+            )
+            .map_err(|error| DrainStepError::permanent(error.to_string()))?;
         let server_job_id = candidate
             .server_job_id
             .as_deref()
             .ok_or_else(|| "pending cancellation has no bound server job ID".to_string())?;
         let request = CreateRecordingJobRequest::decode_persisted(&candidate.create_request_json)?;
         guard.ensure_current()?;
-        cancel_server_job(client, server_job_id, &request).await?;
+        cancel_server_job(&client, server_job_id, &request).await?;
         remote::reset_unattached_spool(&candidate.job_id, remote_jobs_directory)
             .map_err(DrainStepError::permanent)?;
         guard.commit(|| {
@@ -301,9 +333,13 @@ async fn advance_cancellation_once_guarded(
     let Some(detached) = detached else {
         return Ok(false);
     };
+    let client = client.expect_persisted_authority(
+        &detached.remote_authority_binding,
+        &detached.remote_authentication_binding,
+    )?;
     let request = CreateRecordingJobRequest::decode_persisted(&detached.create_request_json)?;
     guard.ensure_current()?;
-    cancel_server_job(client, &detached.server_job_id, &request).await?;
+    cancel_server_job(&client, &detached.server_job_id, &request).await?;
     guard.commit(|| {
         ledger
             .acknowledge_detached_remote_cancellation(
@@ -313,6 +349,23 @@ async fn advance_cancellation_once_guarded(
             .map_err(|error| DrainStepError::permanent(error.to_string()))
     })?;
     Ok(true)
+}
+
+#[cfg(test)]
+pub(super) async fn advance_cancellation_once_guarded_for_test(
+    ledger: &JobLedger,
+    remote_jobs_directory: &Path,
+    client: &BatchApiClient,
+    updated_at_ms: u64,
+) -> DrainResult<bool> {
+    advance_cancellation_once_guarded(
+        ledger,
+        remote_jobs_directory,
+        client,
+        updated_at_ms,
+        &BatchCommitGuard::PersistedCleanup,
+    )
+    .await
 }
 
 async fn cancel_server_job(

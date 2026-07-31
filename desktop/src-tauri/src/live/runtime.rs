@@ -38,6 +38,7 @@ use asr_adapter::set_reaper_spawn_failure_for_test;
 #[cfg(test)]
 use asr_adapter::{
     AdapterDrainStatus, PendingAsrAdapter, SessionAsrAdapter, ASR_ADAPTER_DRAIN_TIMEOUT,
+    ASR_ADAPTER_MAX_BATCH_FRAMES,
 };
 #[cfg(test)]
 use capture_worker::*;
@@ -107,7 +108,14 @@ impl Drop for ModelMutationLease {
     fn drop(&mut self) {
         // A start requested during a long install must not run unexpectedly afterward.
         if self.cancel_pending_start_on_drop {
-            self.runtime.cancel_pending_start();
+            if let Err(error) = self.runtime.cancel_pending_start_and_clear_warmup() {
+                // Fail closed: keep the mutation fence raised if late warmup
+                // ownership cannot be retired before this lease releases.
+                crate::diagnostics::log(&format!(
+                    "live model mutation cleanup failed; runtime remains fenced: {error}"
+                ));
+                return;
+            }
         }
         self.runtime
             .model_mutation_active

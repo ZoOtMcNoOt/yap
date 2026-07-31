@@ -1,11 +1,31 @@
-# ADR 0016: Authentication and voice identity bridge (Entra ID + MSAL)
+# ADR 0016: Authentication and voice identity bridge (Entra policy over OIDC)
 
 **Date:** 2026-07-01
-**Status:** Accepted (roadmap - Phase 7); voice-profile behavior amended by [ADR 0020](0020-meeting-capture-diarization-authority.md)
+**Status:** Accepted (Phase 7 implementation active); voice-profile behavior amended by [ADR 0020](0020-meeting-capture-diarization-authority.md)
 **Builds on:** [ADR 0014](0014-server-tier-compute-topology.md) (server tier; auth gates the server connector)
 **Related to:** [ADR 0020](0020-meeting-capture-diarization-authority.md) (diarization authority, contact boundary, and profile-update rules), [ADR 0017](0017-knowledge-base-compiler.md) (authenticated identity drives KB permission compilation)
+**Enterprise handoff:** [Entra identity conformance handoff](../runbooks/entra-identity-conformance-handoff.md)
 
 > **2026-07-10 correction:** Yap API tokens and Microsoft Graph tokens are resource-specific and must not be interchanged. Yap identities are tenant-scoped `(tid, oid)` pairs, display names are presentation snapshots, and no model prediction may authorize its own biometric-profile update.
+
+> **2026-07-25 implementation-boundary amendment:** Phase 7 implements the
+> authenticated principal, Yap API validation, owner-enforced job/LID
+> operations, access revocation, purpose-control records, and redacted audit
+> contracts. Phase 8 implements voice enrollment, biometric profile storage,
+> matching, reconciliation, and named-speaker publication. Phase 9 implements
+> Postgres/pgvector knowledge persistence and compiled KB permissions. The
+> conceptual profile tables below remain requirements for those later owners;
+> they are not Phase 7 completion claims. Phase 7 uses a provider-neutral
+> identity-repository contract with a SQLite executable development adapter.
+> Production database topology and approval remain an explicit handoff.
+> The Windows client currently exposes one narrow Rust-owned native
+> access-token-provider interface and fails closed because no production
+> provider is installed. Fake-provider tests exercise acquisition, account
+> binding, expiry, sign-out, and connector fencing, but no MSAL.NET, WAM,
+> system-browser, or protected-cache adapter is shipped or approved.
+> Production adapter selection and real-provider conformance remain the
+> enterprise handoff. Pre-Phase-7 remote work remains bound only to the
+> development-loopback authority and is never claimed by the first signer.
 
 ## Context
 
@@ -14,7 +34,11 @@ The team profile (ADR 0014) introduces a server tier that processes audio and st
 1. **Who is the user?** — the server needs a verified identity to enforce per-user queuing, fairness, and permission gating.
 2. **Whose voice is this?** - the authoritative diarization service may match meeting evidence against explicitly enrolled employee profiles; those profiles must be linked to a stable tenant-scoped identity.
 
-**Microsoft Entra ID** (formerly Azure AD) is the assumed corporate identity provider for org deployments of Yap. Sign-in uses the **MSAL** (Microsoft Authentication Library) OAuth2 / OIDC flow, which is standard for corporate apps.
+**Microsoft Entra ID** (formerly Azure AD) is the assumed corporate identity
+provider for org deployments of Yap. The resource server implements
+provider-neutral OAuth2/OIDC discovery, JWKS ownership, and access-token
+validation with an Entra-specific tenant/audience/client/scope/role policy.
+The production native token-acquisition adapter has not been selected.
 
 **Critical distinction:** Entra ID stores identity metadata. It does **not** store Yap voice vectors. The app database is the bridge between the tenant-scoped Entra identity `(tid, oid)` and a separately enrolled, purpose-authorized, model-versioned voice profile. This separation keeps biometric data under the organization's direct control.
 
@@ -25,22 +49,27 @@ The team profile (ADR 0014) introduces a server tier that processes audio and st
 ```mermaid
 flowchart LR
     User["User\n(yap-desktop)"]
-    MSAL["MSAL OAuth2\n(Entra ID)"]
+    Provider["Approved native token provider\n(not yet selected)"]
     Token["Yap API access token\n(JWT, Entra-signed)"]
     Server["yap-server\ntoken validation"]
-    DB["Identity DB\n(tid, oid) → authorized profile"]
+    DB["Identity repository\n(tid, oid) → policy"]
 
-    User -->|"sign in"| MSAL
-    MSAL --> Token --> User
+    User -->|"sign in"| Provider
+    Provider --> Token --> User
     User -->|"Bearer token"| Server
     Server -->|"validate + lookup"| DB
 ```
 
-1. User clicks **Sign in** in `yap-desktop`.
-2. MSAL performs the OAuth2 Authorization Code + PKCE flow against the org's Entra ID tenant.
+This is the required production flow, not a claim that a production desktop
+adapter exists today:
+
+1. User clicks **Sign in** in `yap-desktop` after an approved native provider is installed.
+2. The approved provider performs OAuth2 Authorization Code + PKCE against the org's Entra ID tenant.
 3. The native client requests a Yap API scope, such as `api://<yap-server-app-id>/access_as_user`.
 4. `yap-desktop` presents that Yap API access token as a `Bearer` header on requests to `yap-server`.
-5. `yap-server` validates signature, issuer, tenant, audience, expiry, and the `tid` and `oid` claims against the configured Entra tenant policy.
+5. `yap-server` validates the fixed signing algorithm and key, issuer, tenant,
+   audience, expiry/not-before, delegated Yap scope, allowed client actor, and
+   the `tid` and `oid` claims against the configured Entra tenant policy.
 6. On first sign-in, `yap-server` upserts a principal keyed by `(tid, oid)`.
 7. Microsoft Graph data, when required, is fetched with a separate Graph-scoped token or by an authorized server integration. A Graph `User.Read` token is never accepted as a Yap API token.
 
@@ -56,7 +85,11 @@ flowchart LR
 
 ### Identity DB — the bridge
 
-The identity DB is the **only store that links text identity to voice biometric**. It lives inside `yap-server` and is never exported to Entra or any third party.
+The identity repository is the **only application authority that may link text
+identity to voice biometric**. Phase 7 stores principals, access revocation,
+purpose-control records, and audit events. Phase 8 adds the separately
+authorized biometric-profile implementation. Neither is exported to Entra or
+any third party.
 
 **Conceptual schema:**
 
@@ -64,7 +97,7 @@ The identity DB is the **only store that links text identity to voice biometric*
 CREATE TABLE principal_identity (
     tenant_id            TEXT NOT NULL,
     subject_id           TEXT NOT NULL,
-    display_name_snapshot TEXT NOT NULL,
+    display_name_snapshot TEXT,
     updated_at           TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (tenant_id, subject_id)
 );
@@ -121,7 +154,15 @@ CREATE TABLE speaker_profile (
 - Optional email, department, job-title, and Graph claims are fetched on demand or stored in separate purpose-bound records with their own retention. They are not copied into the base principal merely because Entra exposes them.
 - All server jobs, chunks, results, profiles, object keys, and audit events are namespaced by the token-derived tenant and owner. A client-provided owner identifier is never authoritative.
 
-The minimum sign-in record is `(tenant_id, subject_id, display_name_snapshot, updated_at)`. Optional Graph claims are not persisted by default. If an enabled feature needs a short-lived claim cache, its default TTL is 24 hours and its schema records the purpose and expiry. Authorization material compiled under ADR 0017 follows that ledger's separately reviewed lifecycle. Principal snapshots are reviewed on sign-in and removed through account-offboarding/deletion policy; they are not an indefinite directory mirror.
+The minimum sign-in record is `(tenant_id, subject_id, updated_at)`.
+`display_name_snapshot` is optional because a valid Yap API access token need
+not carry a display name. Optional Graph claims are not fetched or persisted by
+default. If an enabled feature later needs a short-lived claim cache, its
+default TTL is 24 hours and its schema records the purpose and expiry.
+Authorization material compiled under ADR 0017 follows that ledger's separately
+reviewed lifecycle. Principal snapshots are reviewed on sign-in and removed
+through account-offboarding/deletion policy; they are not an indefinite
+directory mirror.
 
 The purpose-grant row records the deployment-approved legal-basis code, any required special-category condition, and a reference to the supporting privacy assessment. Yap does not infer those values. Explicit enrollment remains a product requirement, but clicking its button is not itself proof that consent is a valid legal basis. In employment settings, the deployment privacy review must determine whether consent can be freely given and select an applicable lawful basis before identity matching is enabled.
 
@@ -178,7 +219,7 @@ This system is designed for **on-prem organization-controlled deployments only**
 |----------|-----------|
 | **No third-party biometric processing** | Audio and voice vectors remain inside the authorized organization-controlled deployment boundary. |
 | **Org controls the data** | Entra ID stores only text metadata; voice vectors are in the org's own database on the org's own hardware. |
-| **Auditability** | Postgres audit log (ADR 0017) records all identity and permission changes. |
+| **Auditability** | The identity repository records redacted identity and authorization changes; production audit export and retention require a separately approved sink. |
 | **Data residency** | All processing happens on the GB-class server node inside the org's physical perimeter. |
 
 **For HIPAA-covered orgs:** voice biometrics of patients or patient-adjacent staff may be PHI or de-identified PHI depending on context. A covered entity must conduct a HIPAA Privacy/Security risk assessment before deploying the voice enrollment feature for roles where conversations include patient information. Yap provides the technical controls (isolation, deletion, audit); the org provides the administrative safeguards and BAA if applicable.
@@ -189,7 +230,8 @@ This system is designed for **on-prem organization-controlled deployments only**
 
 ### Positive
 
-- **Single sign-on** — users sign in once with their corporate Entra credentials; no separate Yap account.
+- **Single sign-on target** — after an adapter is approved, users sign in with
+  corporate Entra credentials rather than a separate Yap account.
 - **Accurate speaker attribution** — identity DB links voice centroids to real names without sending biometrics to Entra or any cloud provider.
 - **Clean permission model** - `(tid, oid)` as the stable tenant-scoped key survives email changes and renames.
 - **Biometric isolation** — voice vectors are strictly org-local and never embedded in transcript content.
@@ -203,34 +245,86 @@ This system is designed for **on-prem organization-controlled deployments only**
 ### Neutral
 
 - Solo/local-first profile is unaffected; no auth required, no voice enrollment.
-- The Entra access token is scoped per session; token refresh is MSAL's responsibility.
+- The Entra access token is scoped per session; acquisition and refresh belong
+  to the future approved native provider, while Yap owns connector fencing and
+  resource-server validation.
 
 ## Implementation notes
 
-### MSAL integration (`yap-desktop`)
+### Native token-provider boundary (`yap-desktop`)
 
-Use an MSAL native/public-client Authorization Code + PKCE flow through the system browser. The exact Rust or native-client library is selected in the implementation spec; `msal-browser` popup code is not the architecture contract for a Tauri desktop app.
+`NativeAccessTokenProvider` is the only desktop authentication seam. It models
+silent acquisition, interactive sign-in, session status, and sign-out while
+the Rust connector owns request correlation, an active account/configuration
+binding independent of token-cache expiry, connector/session generations,
+current approved-origin fencing, and bearer injection. Settings publication
+first cancels and drains the previous authenticated session; persisted cleanup
+does not contact a retired or unapproved origin and requires the durable account
+hash plus a normalized tenant/client/API-scope configuration hash to match.
+Access tokens remain in zeroizing Rust-owned memory and are not renderer or
+ordinary app-data state.
 
-Request the Yap API scope for Yap calls. Request Microsoft Graph scopes only for separate Graph operations. Tokens and refresh material are stored through OS credential storage and are never exposed to ordinary frontend persistence.
+The production manager deliberately discovers no provider and returns an
+unavailable/fail-closed state. Only fake providers exist for focused tests.
+There is no shipped MSAL.NET/WAM helper, broker cache, system-browser adapter,
+or production credential-store integration. The
+[Entra identity conformance handoff](../runbooks/entra-identity-conformance-handoff.md)
+owns adapter selection, enterprise policy, packaging, legal/provenance review,
+and real-provider evidence.
 
 ### Token validation (`yap-server`)
 
-- Validate JWT signature against Entra JWKS (`https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys`).
-- Check `iss`, allowed `tid`, `aud` (the Yap server API application ID), `exp`, and other deployment-required claims.
+- Resolve bounded OIDC discovery and same-origin JWKS metadata through the
+  provider-neutral `OidcDiscoveryJwksProvider`; the Entra profile derives its
+  issuer from the approved tenant and does not accept a production issuer
+  override.
+- Validate JWT signatures with a fixed `RS256` allow-list and bounded key
+  caching, rotation retention, and unknown-`kid` refresh.
+- Check `iss`, allowed `tid`, `aud` (the Yap server API application ID), `exp`, `nbf`, delegated `scp`, allowed `azp`, and other deployment-required claims.
 - Extract `(tid, oid)` as the tenant-scoped principal key.
-- Middleware rejects unauthenticated requests to all server endpoints except `/health`.
+- Reject app-only, wrong-resource, Graph, ID, and unapproved-client tokens.
+- Middleware rejects unauthenticated requests to all server endpoints except the exact executable health route `/v1/health`.
 
 ### Phase 7 deliverables
 
-- [ ] Native/public-client MSAL sign-in flow in `yap-desktop` through the system browser
-- [ ] Token storage in OS keychain via Tauri
-- [ ] Token validation middleware in `yap-server`
-- [ ] Identity DB schema + migration (Postgres, ADR 0017)
-- [ ] Upsert-on-first-sign-in logic
-- [ ] Enrollment UI: "Enroll my voice" Settings panel with explicit opt-in and the approved notice
-- [ ] Versioned purpose-grant and profile records; absence of a profile row means not enrolled
-- [ ] "Delete my voice profile" action + audit log
-- [ ] KB permission gating wired to `(tid, oid)` (ADR 0017)
+- [x] Narrow native access-token-provider interface, fake-provider lifecycle
+      tests, Rust-owned bearer injection, and fail-closed no-provider behavior
+- [x] Provider-neutral OIDC discovery/JWKS owner plus Entra policy and token
+      validation middleware in `yap-server`
+- [x] Provider-neutral identity repository + SQLite development migration
+- [x] Upsert-on-first-sign-in logic
+- [x] Tenant-scoped job/LID/idempotency/artifact ownership with legacy-unowned quarantine
+- [x] Versioned purpose-control, access-revocation, and redacted audit records
+- [x] Authenticated private REST and live-WebSocket admission with revocation
+      rechecks; current development listeners remain separate on loopback REST
+      `18765` and live `18766`
+- [x] Pinned mock-OIDC harness and focused static/contract coverage
+- [x] Protected readiness probe, tenant-specific desktop authority, and
+      quarantine of ambiguous pre-repair authenticated bindings
+- [x] Exactly-three antagonistic review and same-three read-only closure
+- [ ] Exact-head full matrix, first-attempt hosted closure, focused PR, and
+      reviewed-green merge
+
+The IT-approved production native provider, protected cache, packaging, and
+real-provider conformance are enterprise handoffs rather than
+developer-controlled Phase 7 completion criteria. A production same-origin
+HTTPS/WSS edge or approved live-endpoint discovery contract remains a later
+transport/deployment decision, principally Phase 10.
+
+The current working tree has focused-green mock evidence: 8/8 focused harness
+tests, including fake-Docker lifecycle plus bounded loopback forwarding,
+overload, exact-readiness, and teardown regressions, and 38/38 focused
+workflow/integrated-gate contract tests. A Docker 29 ARM64 diagnostic proves
+the Linux internal-bridge proxy topology while preserving the internal
+network; it is not an exact-head owner-flow receipt. The complete matrix,
+admitted mock receipt, hosted first-attempt evidence, PR, and merge remain
+open. These checks do not prove a real enterprise tenant login,
+Conditional Access, MFA, WAM policy conformance, legal distribution review, or
+production storage and deployment approval.
+
+Phase 8 owns the enrollment UI, profile records, matching, and voice-profile
+deletion. Phase 9 owns KB permission compilation and its Postgres/pgvector
+persistence. Their absence is not relabeled as Phase 7 completion.
 
 ## Open questions
 

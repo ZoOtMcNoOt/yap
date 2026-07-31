@@ -15,6 +15,8 @@ from .routes import (
 class JobRequestMixin:
     def _dispatch_job_request(self, path: str) -> None:
         assert self._job_service is not None
+        assert self._principal is not None
+        jobs = self._job_service.for_principal(self._principal)
         try:
             if path == "/v1/jobs" and self.command == "POST":
                 idempotency_key = self._request_body.required_header(
@@ -25,7 +27,7 @@ class JobRequestMixin:
                 payload = self._request_body.read_json()
                 self._send_json(
                     HTTPStatus.ACCEPTED,
-                    self._job_service.create(
+                    jobs.create(
                         payload,
                         idempotency_key=idempotency_key,
                     ),
@@ -41,19 +43,25 @@ class JobRequestMixin:
                         "Chunk uploads require application/octet-stream.",
                     )
                 content_length = self._request_body.required_content_length()
-                plan = self._job_service.prepare_chunk_upload(
+                plan = jobs.prepare_chunk_upload(
                     chunk_match.group("job_id"),
                     track_id=chunk_match.group("track_id"),
                     sequence_start=int(chunk_match.group("sequence_start"), 10),
                     sequence_end=int(chunk_match.group("sequence_end"), 10),
-                    idempotency_key=self._request_body.required_header("Idempotency-Key"),
-                    content_sha256=self._request_body.required_header("X-Yap-Content-SHA256"),
+                    idempotency_key=self._request_body.required_header(
+                        "Idempotency-Key"
+                    ),
+                    content_sha256=self._request_body.required_header(
+                        "X-Yap-Content-SHA256"
+                    ),
                     audio_codec=self._request_body.required_header("X-Yap-Audio-Codec"),
-                    sample_rate_hz=self._request_body.integer_header("X-Yap-Sample-Rate-Hz"),
+                    sample_rate_hz=self._request_body.integer_header(
+                        "X-Yap-Sample-Rate-Hz"
+                    ),
                     channels=self._request_body.integer_header("X-Yap-Channels"),
                     content_length=content_length,
                 )
-                receipt = self._job_service.accept_chunk(
+                receipt = jobs.accept_chunk(
                     plan,
                     self._request_body.read_exact(content_length),
                 )
@@ -70,7 +78,7 @@ class JobRequestMixin:
                 payload = self._request_body.read_json()
                 self._send_json(
                     HTTPStatus.ACCEPTED,
-                    self._job_service.commit(commit_match.group("job_id"), payload),
+                    jobs.commit(commit_match.group("job_id"), payload),
                 )
                 return
 
@@ -78,7 +86,7 @@ class JobRequestMixin:
             if result_match is not None and self.command == "GET":
                 self._send_json(
                     HTTPStatus.OK,
-                    self._job_service.get_result(result_match.group("job_id")),
+                    jobs.get_result(result_match.group("job_id")),
                 )
                 return
 
@@ -86,7 +94,7 @@ class JobRequestMixin:
             if stages_match is not None and self.command == "GET":
                 self._send_json(
                     HTTPStatus.OK,
-                    self._job_service.get_stages(stages_match.group("job_id")),
+                    jobs.get_stages(stages_match.group("job_id")),
                 )
                 return
 
@@ -94,7 +102,7 @@ class JobRequestMixin:
             if retry_match is not None and self.command == "POST":
                 self._send_json(
                     HTTPStatus.ACCEPTED,
-                    self._job_service.retry_stage(
+                    jobs.retry_stage(
                         retry_match.group("job_id"),
                         retry_match.group("stage"),
                         self._request_body.read_json(),
@@ -106,13 +114,13 @@ class JobRequestMixin:
             if job_match is not None and self.command == "DELETE":
                 self._send_json(
                     HTTPStatus.ACCEPTED,
-                    self._job_service.cancel(job_match.group("job_id")),
+                    jobs.cancel(job_match.group("job_id")),
                 )
                 return
             if job_match is not None and self.command == "GET":
                 self._send_json(
                     HTTPStatus.OK,
-                    self._job_service.get(job_match.group("job_id")),
+                    jobs.get(job_match.group("job_id")),
                 )
                 return
         except JobServiceError as error:

@@ -55,6 +55,7 @@ class CohereVllmServerContractTests(unittest.TestCase):
             "type=bind,src=$YAP_COHERE_MODEL_DIR,dst=/models/asr,readonly", script
         )
         self.assertNotIn("nohup", script)
+        self.assertNotIn("\n  --rm \\\n", script)
         self.assertNotIn("0.0.0.0:", script)
         self.assertNotIn("--publish", script)
 

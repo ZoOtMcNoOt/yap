@@ -60,7 +60,10 @@ fn prepared_frame(sample: f32) -> PreparedFrame {
     }
 }
 
-mod adapters;
+mod asr_adapter_batching;
+mod asr_adapter_fixture;
+mod asr_adapter_shutdown;
+mod asr_adapter_startup_backpressure;
 mod capture_loop;
 mod capture_loss;
 mod capture_recording;
@@ -70,5 +73,6 @@ mod language_session_safety;
 mod lifecycle;
 mod local_stream_duration_evidence;
 mod resident_language_routing_resources;
+mod stream_retirement;
 mod telemetry;
 mod warmup_finalization;

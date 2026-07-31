@@ -43,7 +43,7 @@ Do not copy Meetily's local Whisper/Parakeet transcription router, old backend, 
 
 | Yap file | Current responsibility | Next boundary |
 |----------|------------------------|---------------|
-| `desktop/src-tauri/src/live/runtime.rs` | Nemotron-gated CPAL mic capture, track-aware coordinator input, bounded recording/local-ASR consumers, bounded evidence/transport ports, level, resampling, local ASR, and streaming recording. | Wire evidence and server-transport consumers only after their implementations exist. |
+| `desktop/src-tauri/src/live/runtime/local_start.rs` | Two-stage CPAL mic startup with recording-first ownership, bounded pending-ASR pre-roll, Nemotron-gated completion, and batched local-ASR catch-up. | Keep capture/recording ownership independent while wiring evidence and server-transport consumers only after their implementations exist. |
 | `desktop/src-tauri/src/live/devices.rs` | Input device listing/resolution. | Remain the device source for live and server capture. |
 | `desktop/src-tauri/src/live/stream.rs` | Nemotron stream chunk constants and recognizer wrapper. | Keep ASR-specific chunking here; move transport-neutral chunk metadata elsewhere. |
 | `desktop/src-tauri/src/live/recordings.rs` | Validates committed capture manifests, projects canonical history, and owns recovery/deletion of partial and committed artifacts. | Add server-job linkage without changing capture identity. |
@@ -54,14 +54,15 @@ Do not copy Meetily's local Whisper/Parakeet transcription router, old backend, 
 
 ## Verified Implementation Status
 
-Implemented and connected in the production microphone path after required Nemotron/local-ASR startup:
+Implemented and connected in the two-stage production microphone path, where
+streaming recording and CPAL capture start before Nemotron/local-ASR completion:
 
 - Track-aware prepared frames and one ordered recording input contract: `PreparedFrame`, atomic `RevisionTransition`, and exact `Gap`.
 - Callback-safe source positions, clock/configuration revisions, explicit loss gaps, and independent bounded recording and local-ASR consumers.
 - Bounded-memory streaming WAV persistence with no retained-PCM duration cap.
 - Immutable capture sidecar and commit publication, hash-validated catalog projection, and recover/delete handling for partial and committed recordings.
 
-The live-capture evidence and server-transport ports are implemented and independently bounded, but their production consumers are currently `None`. Phase 5 instead admits already-canonical mono PCM16/16 kHz WAV files and extracts their PCM through `jobs/remote.rs`; it does not decode or resample general imported media and does not wire live microphone transport. Production capture does not yet run recording-only: `start_local` must construct the Nemotron stream and local-ASR adapter before it opens CPAL capture.
+The live-capture evidence and server-transport ports are implemented and independently bounded, but their production consumers are currently `None`. Phase 5 instead admits already-canonical mono PCM16/16 kHz WAV files and extracts their PCM through `jobs/remote.rs`; it does not decode or resample general imported media and does not wire live microphone transport. Local startup now reserves recording and installs CPAL capture before Nemotron warmup completes. A bounded pending-ASR port preserves FIFO pre-roll and the batched adapter catches up after stream installation. This does not create a supported recording-only mode: a successful dictation start still requires the Nemotron stream and local-ASR adapter to complete.
 
 Deferred: live-capture upload/WSS, application authentication, persistent/external service deployment, system loopback, Opus transport, an anonymous-speaker/diarization model, long-recording and multi-worker capacity evidence, hosted production-release proof, and per-OS real-model/native hardware CI. The gated Phase 5 imported-file loopback batch path and its verified result projection exist.
 

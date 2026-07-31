@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "target": "x86_64-pc-windows-msvc",
   "generatedFrom": {
     "packageJsonSha256": "9c6ae23b9870e97a3315fc77889dd9ce8169a3a9ea199dc0f2a6220bf0fbc281",
     "pnpmLockSha256": "38e470ea1726b1aa0ad777e5967d8f91a7e7e342d5283c4bc82d2577a236d438",
-    "cargoTomlSha256": "274bb66d7f2a51bca1bb39213fe62f1d3506b194a36d04e83c52fb0aeecfd29c",
-    "cargoLockSha256": "c5dafb940adad4963f9fc4cecb0846dfbe4cc5f526b9165e5e9e9bb288cc5c8e",
+    "cargoTomlSha256": "384fb5b869f43af6f7510fd51080b9bcf1ecf32775bd238eae8b3644455ad0f8",
+    "cargoLockSha256": "debb1c972f1aeb502b7ca7bd18536b948f5268e264e4b7570835d79854733fec",
     "noticeExemptionsSha256": "776c6f501cb98b08029ec95e41284d224ec912c819a5f0a6155eedc2ed45b215"
   },
   "packages": {
@@ -1529,6 +1529,22 @@
         ]
       },
       {
+        "name": "async-tungstenite",
+        "version": "0.32.1",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "a281dd237dee566748976ae1b31e3a1b2a95b28ce66a823dc92e0c7e6110e9ae"
+          }
+        ]
+      },
+      {
         "name": "atomic-waker",
         "version": "1.1.2",
         "licenseExpression": "Apache-2.0 OR MIT",
@@ -2257,6 +2273,22 @@
         ]
       },
       {
+        "name": "data-encoding",
+        "version": "2.11.0",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "b68ad1a3367b825447089e1f8d6829b97f47a89eb78d2f4ebaef4672f5606186"
+          }
+        ]
+      },
+      {
         "name": "deranged",
         "version": "0.5.8",
         "licenseExpression": "MIT OR Apache-2.0",
@@ -2755,6 +2787,48 @@
       },
       {
         "name": "futures-core",
+        "version": "0.3.32",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+          }
+        ]
+      },
+      {
+        "name": "futures-io",
+        "version": "0.3.32",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+          }
+        ]
+      },
+      {
+        "name": "futures-sink",
         "version": "0.3.32",
         "licenseExpression": "MIT OR Apache-2.0",
         "licenseTerms": [
@@ -4196,6 +4270,27 @@
         ]
       },
       {
+        "name": "ppv-lite86",
+        "version": "0.2.21",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "0218327e7a480793ffdd4eb792379a9709e5c135c7ba267f709d6f6d4d70af0a"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "4cada0bd02ea3692eee6f16400d86c6508bbd3bafb2b65fed0419f36d4f83e8f"
+          }
+        ]
+      },
+      {
         "name": "precomputed-hash",
         "version": "0.1.1",
         "licenseExpression": "MIT",
@@ -4287,6 +4382,81 @@
           {
             "sourceFile": "LICENSE-MIT",
             "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+          }
+        ]
+      },
+      {
+        "name": "rand",
+        "version": "0.9.4",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "COPYRIGHT",
+            "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+          },
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+          }
+        ]
+      },
+      {
+        "name": "rand_chacha",
+        "version": "0.9.0",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "COPYRIGHT",
+            "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+          },
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+          }
+        ]
+      },
+      {
+        "name": "rand_core",
+        "version": "0.9.5",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "COPYRIGHT",
+            "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+          },
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
           }
         ]
       },
@@ -4435,6 +4605,22 @@
           {
             "sourceFile": "LICENSE-MIT",
             "sha256": "dd87e27dfbaa888cb77ea34592648a7743636b8dce07e49543bddda0fcfc73bc"
+          }
+        ]
+      },
+      {
+        "name": "reqwest-websocket",
+        "version": "0.6.0",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "d1ef714acc9b5f3e04a69aa46ff1c160d67f579063001aca9c43b7f572799f7b"
           }
         ]
       },
@@ -4978,6 +5164,27 @@
           {
             "sourceFile": "LICENSE-MIT",
             "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+          }
+        ]
+      },
+      {
+        "name": "sha1",
+        "version": "0.10.7",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "b4eb00df6e2a4d22518fcaa6a2b4646f249b3a3c9814509b22bd2091f1392ff1"
           }
         ]
       },
@@ -5820,6 +6027,22 @@
         ]
       },
       {
+        "name": "tokio-util",
+        "version": "0.7.18",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "253cd04c6714889df2d32f3f64d669179a1c95c76ac43c40882c52eb06bc3552"
+          }
+        ]
+      },
+      {
         "name": "toml",
         "version": "1.1.2+spec-1.1.0",
         "licenseExpression": "MIT OR Apache-2.0",
@@ -5984,6 +6207,22 @@
         ]
       },
       {
+        "name": "tracing-attributes",
+        "version": "0.1.31",
+        "licenseExpression": "MIT",
+        "licenseTerms": [
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE",
+            "sha256": "898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1"
+          }
+        ]
+      },
+      {
         "name": "tracing-core",
         "version": "0.1.36",
         "licenseExpression": "MIT",
@@ -6058,6 +6297,27 @@
           {
             "sourceFile": "LICENSE",
             "sha256": "c816a0749cdc6bf062a5111c159723de51b2bfac66a1dac2655abd9e6b1583eb"
+          }
+        ]
+      },
+      {
+        "name": "tungstenite",
+        "version": "0.28.0",
+        "licenseExpression": "MIT OR Apache-2.0",
+        "licenseTerms": [
+          "Apache-2.0",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "7fea0ee51a4ca5d5cea7464135fd55e8b09caf3a61da3d451ac8a22af95c033f"
           }
         ]
       },
@@ -7155,6 +7415,32 @@
           {
             "sourceFile": "LICENSE",
             "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2"
+          }
+        ]
+      },
+      {
+        "name": "zerocopy",
+        "version": "0.8.52",
+        "licenseExpression": "BSD-2-Clause OR Apache-2.0 OR MIT",
+        "licenseTerms": [
+          "Apache-2.0",
+          "BSD-2-Clause",
+          "MIT"
+        ],
+        "reviewDisposition": "mapped-to-shipped-license-family",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "9d185ac6703c4b0453974c0d85e9eee43e6941009296bb1f5eb0b54e2329e9f3"
+          },
+          {
+            "sourceFile": "LICENSE-BSD",
+            "sha256": "83c1763356e822adde0a2cae748d938a73fdc263849ccff6b27776dff213bd32"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "1a2f5c12ddc934d58956aa5dbdd3255fe55fd957633ab7d0d39e4f0daa73f7df"
           }
         ]
       },

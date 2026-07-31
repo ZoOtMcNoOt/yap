@@ -10,7 +10,7 @@ use crate::audio::coordinator::{
 };
 use crate::audio::frame::PreparedFrame;
 
-use super::super::stream::StreamMessage;
+use super::super::stream::{self, StreamMessage};
 use super::worker::join_worker;
 
 // The local queue can retain ten seconds of source audio during startup.
@@ -18,6 +18,13 @@ use super::worker::join_worker;
 // worker before treating shutdown as wedged.
 pub(super) const ASR_ADAPTER_DRAIN_TIMEOUT: Duration = Duration::from_secs(12);
 const ASR_ADAPTER_CANCEL_GRACE: Duration = Duration::from_millis(100);
+const ASR_ADAPTER_BATCH_WAIT: Duration = Duration::from_millis(1);
+const ASR_ADAPTER_SEND_RETRY: Duration = Duration::from_millis(10);
+// `stream::chunk_samples()` is the preferred transfer size. Whole frames are
+// never split, so an irregular frame may overshoot that target by one frame.
+// This independent frame-count cap also bounds batches made from empty or
+// unusually short frames.
+pub(super) const ASR_ADAPTER_MAX_BATCH_FRAMES: usize = 128;
 
 pub(super) struct SessionAsrAdapter {
     frames_tx: BoundedSink<PreparedFrame>,
@@ -283,25 +290,73 @@ fn run_session_asr_adapter_worker(
     session: u64,
     cancelled: Arc<AtomicBool>,
 ) {
-    while !cancelled.load(Ordering::Acquire) {
-        let frame = match frames_rx.recv_timeout(Duration::from_millis(50)) {
+    loop {
+        if cancelled.load(Ordering::Acquire) {
+            return;
+        }
+        let first_frame = match frames_rx.recv_timeout(Duration::from_millis(50)) {
             Ok(frame) => frame,
             Err(mpsc::RecvTimeoutError::Timeout) => continue,
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
         };
-        let mut message = StreamMessage::from_prepared(session, frame);
-        loop {
-            if cancelled.load(Ordering::Acquire) {
-                return;
-            }
-            match samples_tx.try_send(message) {
-                Ok(()) => break,
-                Err(mpsc::TrySendError::Full(returned)) => {
-                    message = returned;
-                    std::thread::sleep(Duration::from_millis(10));
+        let mut sample_count = first_frame.samples.len();
+        let mut frames = vec![first_frame];
+        let mut input_closed = false;
+
+        // Catch up after model warmup in recognizer-targeted transfers. The
+        // stream worker still consumes each PreparedFrame in source order,
+        // preserving language and source-time boundaries, while this bridge
+        // avoids one backpressure sleep for every ten-millisecond frame already
+        // queued.
+        while sample_count < stream::chunk_samples()
+            && frames.len() < ASR_ADAPTER_MAX_BATCH_FRAMES
+            && !cancelled.load(Ordering::Acquire)
+        {
+            match frames_rx.recv_timeout(ASR_ADAPTER_BATCH_WAIT) {
+                Ok(frame) => {
+                    sample_count = sample_count.saturating_add(frame.samples.len());
+                    frames.push(frame);
                 }
-                Err(mpsc::TrySendError::Disconnected(_)) => return,
+                Err(mpsc::RecvTimeoutError::Timeout) => break,
+                Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    input_closed = true;
+                    break;
+                }
             }
+        }
+        if cancelled.load(Ordering::Acquire) {
+            return;
+        }
+
+        if !send_stream_message(
+            &samples_tx,
+            StreamMessage::from_prepared_frames(session, frames),
+            &cancelled,
+        ) {
+            return;
+        }
+        if input_closed {
+            break;
+        }
+    }
+}
+
+fn send_stream_message(
+    samples_tx: &mpsc::SyncSender<StreamMessage>,
+    mut message: StreamMessage,
+    cancelled: &AtomicBool,
+) -> bool {
+    loop {
+        if cancelled.load(Ordering::Acquire) {
+            return false;
+        }
+        match samples_tx.try_send(message) {
+            Ok(()) => return true,
+            Err(mpsc::TrySendError::Full(returned)) => {
+                message = returned;
+                std::thread::sleep(ASR_ADAPTER_SEND_RETRY);
+            }
+            Err(mpsc::TrySendError::Disconnected(_)) => return false,
         }
     }
 }

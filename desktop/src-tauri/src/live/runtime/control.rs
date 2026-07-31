@@ -5,7 +5,7 @@ use super::{
     StartIntent,
 };
 
-const LIVE_MODEL_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
+const LIVE_MODEL_CLEANUP_TIMEOUT: Duration = Duration::from_secs(2);
 
 impl LiveRuntime {
     pub fn is_active(&self) -> bool {
@@ -24,8 +24,21 @@ impl LiveRuntime {
     }
 
     pub(crate) fn cancel_pending_start(&self) {
+        self.invalidate_pending_start();
+        // A normal stop invalidates only the waiting capture start. The shared
+        // warmup remains reusable; mutation, idle eviction, and shutdown own
+        // the explicit model-cancellation paths.
+        self.model_warmup.notify_waiters();
+    }
+
+    pub(super) fn cancel_pending_start_and_clear_warmup(&self) -> Result<(), String> {
+        self.invalidate_pending_start();
+        self.model_warmup
+            .clear_idle_with_timeout(LIVE_MODEL_CLEANUP_TIMEOUT)
+    }
+
+    fn invalidate_pending_start(&self) {
         self.start_generation.fetch_add(1, Ordering::AcqRel);
-        self.model_warmup.cancel_loading();
     }
 
     pub(crate) fn run_start_lifecycle<T>(
@@ -85,10 +98,11 @@ impl LiveRuntime {
             return Err(active_message.to_string());
         }
         self.cancel_pending_start();
-        lease.cancel_pending_start_on_drop = true;
         inner.retire_stream();
         drop(inner);
-        self.model_warmup.clear_idle()?;
+        self.model_warmup
+            .clear_idle_with_timeout(LIVE_MODEL_CLEANUP_TIMEOUT)?;
+        lease.cancel_pending_start_on_drop = true;
         Ok(lease)
     }
 
@@ -120,15 +134,16 @@ impl LiveRuntime {
                 inner.retire_stream();
                 drop(inner);
                 // Periodic lifecycle work must never wait for a native model
-                // loader. It requests cancellation and lets the loader retire
-                // its own value when it returns.
+                // loader or destructor. This cancels an active load or hands
+                // a ready bundle to the model-retirement worker.
                 let _ = self.model_warmup.request_idle_clear();
             }
         });
     }
 
     pub fn shutdown(&self) {
-        self.cancel_pending_start();
+        self.invalidate_pending_start();
+        self.model_warmup.cancel_loading();
         self.run_stop_lifecycle(|| {
             let mut inner = self.inner.lock().expect("live runtime poisoned");
             let (shutdown_errors, _) = inner.stop_capture();
@@ -137,10 +152,10 @@ impl LiveRuntime {
             drop(inner);
             if let Err(error) = self
                 .model_warmup
-                .clear_idle_for_shutdown(LIVE_MODEL_SHUTDOWN_TIMEOUT)
+                .clear_idle_with_timeout(LIVE_MODEL_CLEANUP_TIMEOUT)
             {
                 crate::diagnostics::log(&format!(
-                    "live model shutdown continued after bounded warmup cancellation: {error}"
+                    "live model shutdown continued after bounded model cleanup: {error}"
                 ));
             }
             let _ = self.finalize_recording();

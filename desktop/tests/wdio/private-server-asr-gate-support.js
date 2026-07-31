@@ -71,6 +71,16 @@ export function matchesVerifiedHistoryDialog(dialogs, name, expectedTranscript) 
   );
 }
 
+export function matchesEnabledLoopbackServerSettings(settings, expectedOrigin) {
+  return settings
+    && typeof settings === "object"
+    && Object.keys(settings).length === 4
+    && settings.schemaVersion === 2
+    && settings.enabled === true
+    && settings.baseUrl === expectedOrigin
+    && settings.authentication === null;
+}
+
 export function resolvePrivateServerAsrGateTimeout(value) {
   const timeoutMs = Number(value ?? defaultPrivateServerAsrGateTimeoutMs);
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 60_000 || timeoutMs > 7_200_000) {
@@ -79,4 +89,71 @@ export function resolvePrivateServerAsrGateTimeout(value) {
     );
   }
   return timeoutMs;
+}
+
+function childHasExited(child) {
+  return child.exitCode !== null || child.signalCode !== null;
+}
+
+function waitForChildExit(child, timeoutMs) {
+  if (childHasExited(child)) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (exited) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      child.removeListener("exit", handleExit);
+      resolve(exited);
+    };
+    const handleExit = () => finish(true);
+    const timeout = setTimeout(() => finish(childHasExited(child)), timeoutMs);
+    child.once("exit", handleExit);
+  });
+}
+
+export async function settleSshTunnelChild(child, {
+  gracefulTimeoutMs = 10_000,
+  forceTimeoutMs = 10_000,
+} = {}) {
+  if (
+    !Number.isSafeInteger(gracefulTimeoutMs)
+    || gracefulTimeoutMs <= 0
+    || !Number.isSafeInteger(forceTimeoutMs)
+    || forceTimeoutMs <= 0
+  ) {
+    throw new Error("SSH tunnel settlement bounds must be positive integers.");
+  }
+  if (childHasExited(child)) return { forceKillRequested: false };
+
+  try {
+    child.kill();
+  } catch (error) {
+    if (!childHasExited(child)) {
+      throw new Error("The gate-owned SSH forward rejected graceful termination.", {
+        cause: error,
+      });
+    }
+  }
+  if (await waitForChildExit(child, gracefulTimeoutMs)) {
+    return { forceKillRequested: false };
+  }
+
+  try {
+    child.kill("SIGKILL");
+  } catch (error) {
+    if (!childHasExited(child)) {
+      throw new Error("The gate-owned SSH forward rejected forced termination.", {
+        cause: error,
+      });
+    }
+  }
+  if (await waitForChildExit(child, forceTimeoutMs)) {
+    return { forceKillRequested: true };
+  }
+  const error = new Error(
+    "The gate-owned SSH forward did not settle after forced termination.",
+  );
+  error.code = "PRIVATE_SERVER_SSH_TUNNEL_CLEANUP_UNPROVEN";
+  throw error;
 }

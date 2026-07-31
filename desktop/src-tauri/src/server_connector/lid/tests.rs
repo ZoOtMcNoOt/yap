@@ -7,7 +7,7 @@ use std::{
 use crate::server_connector::{
     batch::{BatchApiClient, SourceVadInterval},
     client::bounded_client,
-    AsrCapabilityCatalog,
+    AsrCapabilityCatalog, AuthenticatedRequestDispatcher,
 };
 
 use super::{
@@ -159,10 +159,16 @@ fn native_client_uses_versioned_media_type_and_validates_success() {
         assert!(headers
             .to_ascii_lowercase()
             .contains("content-type: application/vnd.yap.lid-preflight.v1+octet-stream"));
+        assert!(headers
+            .to_ascii_lowercase()
+            .contains("authorization: bearer lid-token"));
         write_json_response(&mut stream, 200, "OK", &response_body);
     });
-    let client =
-        BatchApiClient::new(bounded_client().unwrap(), &format!("http://{address}")).unwrap();
+    let client = BatchApiClient::new_authorized(
+        AuthenticatedRequestDispatcher::fixed(bounded_client().unwrap(), "lid-token"),
+        &format!("http://{address}"),
+    )
+    .unwrap();
 
     let result = tauri::async_runtime::block_on(client.lid_preflight(&request)).unwrap();
     server.join().unwrap();

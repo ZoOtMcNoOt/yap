@@ -25,6 +25,7 @@ fn stale_batch_connection_lease_cannot_commit_after_configuration_changes() {
             schema_version: config::CURRENT_SCHEMA_VERSION,
             enabled: true,
             base_url: Some("http://127.0.0.1:18765".into()),
+            authentication: None,
         },
         |_| {},
     );
@@ -69,6 +70,7 @@ fn stale_asr_catalog_lease_cannot_overwrite_a_newer_origin_snapshot() {
             schema_version: config::CURRENT_SCHEMA_VERSION,
             enabled: true,
             base_url: Some(leased_origin.into()),
+            authentication: None,
         },
         |_| {},
     );
@@ -129,6 +131,7 @@ fn late_same_origin_catalog_response_cannot_overwrite_a_newer_response() {
             schema_version: config::CURRENT_SCHEMA_VERSION,
             enabled: true,
             base_url: Some(origin.into()),
+            authentication: None,
         },
         |_| {},
     );
@@ -196,6 +199,7 @@ fn asr_generation_lease_is_held_through_snapshot_and_durable_commit() {
             schema_version: config::CURRENT_SCHEMA_VERSION,
             enabled: true,
             base_url: Some(origin.into()),
+            authentication: None,
         },
         |_| {},
     );
@@ -440,6 +444,7 @@ fn ready_batch_connector(origin: &str) -> ServerConnector {
             schema_version: config::CURRENT_SCHEMA_VERSION,
             enabled: true,
             base_url: Some(origin.into()),
+            authentication: None,
         },
         |_| {},
     );

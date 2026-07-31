@@ -9,8 +9,14 @@ from urllib.parse import urlsplit
 from uuid import uuid4
 
 from yap_server.api.health import health
-from yap_server.config import ServerSettings
-from yap_server.config.settings import ensure_bind_is_allowed
+from yap_server.auth import (
+    AuthenticatedPrincipal,
+    AuthenticationDisabledAuthenticator,
+    AuthenticationFailure,
+    DevelopmentLoopbackAuthenticator,
+    RequestAuthenticator,
+)
+from yap_server.config import ServerSettings, ensure_private_application_bind
 from yap_server.jobs import RecordingJobService
 
 from .http_server import (
@@ -54,12 +60,15 @@ class _HealthRequestHandler(
         self,
         *args: Any,
         request_logger: logging.Logger,
+        request_authenticator: RequestAuthenticator,
         job_service: RecordingJobService | None,
         lid_preflight_service: LidPreflightServiceProtocol | None,
         asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
     ) -> None:
         self._request_logger = request_logger
+        self._request_authenticator = request_authenticator
+        self._principal: AuthenticatedPrincipal | None = None
         self._job_service = job_service
         self._lid_preflight_service = lid_preflight_service
         self._asr_capabilities = asr_capabilities
@@ -143,8 +152,16 @@ class _HealthRequestHandler(
         if path == "/v1/health":
             self._send_json(
                 HTTPStatus.OK,
-                health(batch_jobs=self._job_service is not None),
+                health(
+                    batch_jobs=self._job_service is not None,
+                    authentication_required=(
+                        self._request_authenticator.authentication_required
+                    ),
+                ),
             )
+            return
+
+        if not self._authenticate_request():
             return
 
         if path == "/v1/asr/capabilities":
@@ -183,20 +200,70 @@ class _HealthRequestHandler(
             message="This route is unavailable in the active runtime profile.",
         )
 
+    def _authenticate_request(self) -> bool:
+        authorization_values = self.headers.get_all("Authorization") or []
+        try:
+            if len(authorization_values) > 1:
+                raise AuthenticationFailure.invalid()
+            self._principal = self._request_authenticator.authenticate(
+                authorization_values[0] if authorization_values else None
+            )
+        except AuthenticationFailure as error:
+            headers = (
+                {"WWW-Authenticate": error.challenge}
+                if error.challenge is not None
+                else None
+            )
+            self._send_error(
+                error.status,
+                code=error.code,
+                message=error.message,
+                retryable=error.retryable,
+                headers=headers,
+            )
+            return False
+        return True
+
 
 def create_server(
     settings: ServerSettings,
     *,
     logger: logging.Logger | None = None,
+    request_authenticator: RequestAuthenticator | None = None,
     job_service: RecordingJobService | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
-    ensure_bind_is_allowed(settings.host)
+    ensure_private_application_bind(settings.host)
     request_logger = logger or _REQUEST_LOGGER
+    if request_authenticator is None:
+        if settings.authentication.required:
+            raise ValueError("authenticated team mode requires a request authenticator")
+        active_authenticator: RequestAuthenticator
+        if settings.authentication.development_enabled:
+            active_authenticator = DevelopmentLoopbackAuthenticator()
+        else:
+            active_authenticator = AuthenticationDisabledAuthenticator()
+    else:
+        active_authenticator = request_authenticator
+        if (
+            active_authenticator.authentication_required
+            != settings.authentication.authentication_required
+        ):
+            raise ValueError(
+                "request authenticator does not match the server authentication mode"
+            )
+        if (
+            settings.authentication.required
+            and not active_authenticator.principal_access_enforced
+        ):
+            raise ValueError(
+                "authenticated team mode requires principal access enforcement"
+            )
     handler = partial(
         _HealthRequestHandler,
         request_logger=request_logger,
+        request_authenticator=active_authenticator,
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
         asr_capabilities=asr_capabilities,
@@ -215,11 +282,13 @@ def serve(
     settings: ServerSettings,
     *,
     job_service: RecordingJobService | None = None,
+    request_authenticator: RequestAuthenticator | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
     with create_server(
         settings,
+        request_authenticator=request_authenticator,
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
         asr_capabilities=asr_capabilities,

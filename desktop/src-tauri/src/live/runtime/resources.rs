@@ -145,6 +145,14 @@ impl LiveRuntimeResources {
             .pending_asr
             .take()
             .ok_or_else(|| "Live pre-roll is unavailable.".to_string())?;
+        let pre_roll = pending.sink();
+        let outcome = pre_roll.outcome();
+        crate::diagnostics::log(&format!(
+            "live ASR pre-roll before_adapter_spawn session={session} observed_high_water={} observed_accepted={} observed_dropped={}",
+            pre_roll.high_water_mark(),
+            outcome.accepted_frames,
+            outcome.dropped_frames
+        ));
         self.asr_adapter = Some(pending.start(samples_tx, session));
         Ok(())
     }

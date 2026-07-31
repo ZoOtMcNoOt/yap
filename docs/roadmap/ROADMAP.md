@@ -88,14 +88,14 @@ SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
 and SGLang services, production multi-worker/mixed-load capacity promotion, production
 observability, and external deployment remain Phase 10.
 
-## Current gate: post-Phase-6 checkpoint
+## Delivered post-Phase-6 checkpoint
 
 The separate
-[codebase ownership and maintainability review](../plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md)
-reviews the complete Phase 1–6 executable system before Phase 7 starts. It uses
-exactly three completed antagonistic reviews, then applies the same ownership,
+[codebase ownership and maintainability review](../plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md)
+reviewed the complete Phase 1–6 executable system before Phase 7 started. It used
+exactly three completed antagonistic reviews, then applied the same ownership,
 comprehensibility, decomposition, maintainability, resource, provenance, and
-documentation standard as post-Phase-5 Checkpoint A. It adds no Phase 7 product
+documentation standard as post-Phase-5 Checkpoint A. It added no Phase 7 product
 functionality. Historical candidate
 `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
 `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence
@@ -105,18 +105,68 @@ atomic replacement repairs, fresh exact executable candidate
 31-child checkpoint matrix and independent receipt validation with exact
 teardown. Its private receipt SHA-256 is
 `6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`.
-First-attempt hosted CI, CodeQL, and stock-NSIS closure on the
-documentation-only descendant, final review, and merge remain pending.
+First-attempt hosted CI run `30206923702`, CodeQL run `30206922629`, and
+stock-NSIS run `30206941391` passed on documentation-only reviewed head
+`0bd11ae8dea34cd22029c6c09a9fd62a5951a363`. [PR
+#68](https://github.com/mcnatg1/yap/pull/68) merged as
+`15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
 Phase 7 follows the same cadence: independently merge the phase, run a separate
 post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that
 checkpoint merges.
 
+## Current phase: tenant-scoped identity and access
+
+The
+[tenant-scoped identity and job authorization plan](../plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
+implements the Phase 7 boundary. It keeps local/offline dictation independent,
+derives server principals from validated Yap API tokens, enforces owner-scoped
+job and LID operations, adds revocation/purpose-control/audit primitives, and
+uses a synthetic signed two-principal gate where IT-owned Entra registration is
+not yet available. Biometric profiles remain Phase 8; Postgres/pgvector
+knowledge permission compilation remains Phase 9.
+
+The active branch now has focused executable evidence for a provider-neutral
+OIDC verifier with Entra policy, fail-closed authentication, tenant-scoped
+resource ownership, role-gated and audited purpose grants, enforced purpose
+checks, and authenticated bounded private WebSocket admission. The native lower
+WebSocket handshake is qualified against the separate internal live port. The
+desktop exposes only a narrow in-process token-provider seam; no production
+adapter is selected or approved. There is no live ASR, product endpoint
+discovery, external same-origin WSS/TLS, or HTTP/3 edge.
+
+This is implementation progress, not phase completion. Exact head `d4adc832...`
+passed all four admitted private controllers and independent validation of all
+13 private children. Its sole complete matrix passed every Rust test, then
+failed closed because Visual Studio Build Tools retained its signed
+`VCTIP.EXE` diagnostic helper inside the owned Windows Job. The head is
+consumed. The current successor retains
+strict process containment for launched Yap server/desktop runtime checks,
+requires the documented Build Tools optional-diagnostics opt-out through a
+fail-closed registry read rooted through the Windows object manager, and moves
+native compile/link evidence outside the product Job to exact-head fresh
+GitHub-hosted Windows VMs. Connector and required WDIO runtime execution on
+those VMs remains inside a kill-on-close Job and must prove zero active
+processes. Every required hosted closure cell uses its absolute shell chain and
+captures its PowerShell and Git hosts, guard source, Git index, and
+index-independent tracked-content manifest with hashes, then verifies tracked
+state by replaying that admitted guard in memory after project execution.
+Hidden index state, linked tracked ancestors, Linux executable-bit drift,
+mutable workspace code, and a re-resolved `PATH` cannot satisfy the receipt.
+This reflects the observed signed
+`link.exe` → `VCTIP.EXE` behavior after `OptIn=0` and Microsoft's documented
+required-diagnostics exception; it does not weaken product process ownership.
+Exact application/runtime candidate `dc635916...` passed the one private
+candidate matrix. Its reviewed runner-only descendants do not change shipped
+product/runtime or candidate-manifest behavior, so only exact-head hosted
+native/PR closure and merge remain required. Real enterprise Entra policy
+conformance and an approved native adapter remain IT-authorized follow-ups.
+
 ## Accepted later phases
 
 | Phase | Boundary | Exit direction |
 | --- | --- | --- |
-| 7 | Identity and access | Entra/MSAL client bridge, Yap API audience/token validation, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants, authorization/revocation/audit behavior, and the authenticated owner seam consumed by later batch/live admission. |
+| 7 | Identity and access | Provider-neutral OIDC validation with Entra policy, a native token-provider seam whose production adapter requires separate approval, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, enforced purpose grants, authorization/revocation/audit behavior, and authenticated bounded private live admission without a live ASR or external edge claim. |
 | 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron eight-window/eight-global server baseline, a separately gated speaker-epoch extension for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/global/window pressure, ASR-plus-diarization fallback, and purpose-authorized server reconciliation/naming. |
 | 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and SGLang-backed compatible reasoning/tool-output models. |
 | 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus SGLang agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |

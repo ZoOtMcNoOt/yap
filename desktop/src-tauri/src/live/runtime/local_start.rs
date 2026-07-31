@@ -1,6 +1,7 @@
 //! Two-stage local start: establish durable capture before waiting for ASR warmup.
 
 use std::sync::{atomic::Ordering, Arc};
+use std::time::Instant;
 
 use tauri::Manager;
 
@@ -21,6 +22,7 @@ use super::{LiveRuntime, LiveStartFailure, StartIntent};
 
 pub(crate) struct LocalCaptureStart {
     pub(super) session: u64,
+    capture_start_requested: Instant,
 }
 
 impl LiveRuntime {
@@ -104,6 +106,7 @@ impl LiveRuntime {
             self.unwind_cancelled_uninstalled_start(&app, session);
             return Ok(None);
         }
+        let capture_start_requested = Instant::now();
         let capture = match CaptureAdapter::open(
             resolved.device,
             stream_config,
@@ -172,7 +175,10 @@ impl LiveRuntime {
             return Ok(None);
         };
         events::emit_session(&app, &view);
-        Ok(Some(LocalCaptureStart { session }))
+        Ok(Some(LocalCaptureStart {
+            session,
+            capture_start_requested,
+        }))
     }
 
     pub(crate) fn complete_local_start(
@@ -181,7 +187,10 @@ impl LiveRuntime {
         start: LocalCaptureStart,
         intent: StartIntent,
     ) -> Result<bool, LiveStartFailure> {
-        let session = start.session;
+        let LocalCaptureStart {
+            session,
+            capture_start_requested,
+        } = start;
         let reused = self.run_installed_capture_lifecycle(intent, || {
             let mut inner = self.inner.lock().expect("live runtime poisoned");
             if !inner
@@ -191,6 +200,7 @@ impl LiveRuntime {
             }
             if inner.reuse_stream(session)? {
                 inner.start_pending_asr_adapter(session)?;
+                log_asr_adapter_spawned(session, capture_start_requested);
                 return Ok(true);
             }
             Ok(false)
@@ -229,6 +239,7 @@ impl LiveRuntime {
                 );
             }
             inner.start_pending_asr_adapter(session)?;
+            log_asr_adapter_spawned(session, capture_start_requested);
             Ok(true)
         })
         .unwrap_or(Ok(false))
@@ -251,6 +262,13 @@ impl LiveRuntime {
         }
         events::emit_session(app, &view);
     }
+}
+
+fn log_asr_adapter_spawned(session: u64, capture_start_requested: Instant) {
+    crate::diagnostics::log(&format!(
+        "live ASR adapter spawned session={session} capture_start_request_to_adapter_spawn_ms={}",
+        capture_start_requested.elapsed().as_millis()
+    ));
 }
 
 fn discard_cancelled_recording(

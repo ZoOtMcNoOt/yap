@@ -15,6 +15,7 @@ const RECEIPT_SCOPES = Object.freeze({
   "hosted-closure": "hostedClosureCells",
 });
 const INTEGRATED_GATE_IDS = new Set([
+  "integrated-identity-access",
   "integrated-product-checkpoint",
   "integrated-preprocessing-language-routing",
 ]);
@@ -24,7 +25,7 @@ const MANIFEST_KEYS = new Set([
   "candidateCells",
   "hostedClosureCells",
 ]);
-const RECEIPT_KEYS = new Set([
+const RECEIPT_KEYS_V2 = new Set([
   "schemaVersion",
   "gateId",
   "scope",
@@ -36,6 +37,10 @@ const RECEIPT_KEYS = new Set([
   "startedAt",
   "finishedAt",
   "children",
+]);
+const RECEIPT_KEYS_V3 = new Set([
+  ...RECEIPT_KEYS_V2,
+  "admissionSha256",
 ]);
 const CHILD_KEYS = new Set([
   "id",
@@ -82,7 +87,7 @@ function validTimestamp(value) {
     && Number.isFinite(Date.parse(value));
 }
 
-function validateCell(cell, seen) {
+function validateCell(cell, seen, manifestSchemaVersion) {
   requireCondition(cell && typeof cell === "object" && !Array.isArray(cell),
     "Every gate cell must be an object.");
   requireCondition(CELL_ID.test(cell.id ?? ""), `Invalid gate cell id: ${String(cell.id)}.`);
@@ -90,7 +95,10 @@ function validateCell(cell, seen) {
   seen.add(cell.id);
 
   if (cell.executor === "command") {
-    requireExactKeys(cell, new Set(["id", "executor", "cwd", "command"]), `Cell ${cell.id}`);
+    const commandKeys = manifestSchemaVersion === 2
+      ? new Set(["id", "executor", "cwd", "command", "timeoutMs"])
+      : new Set(["id", "executor", "cwd", "command"]);
+    requireExactKeys(cell, commandKeys, `Cell ${cell.id}`);
     requireCondition(
       typeof cell.cwd === "string"
         && cell.cwd.length > 0
@@ -105,6 +113,14 @@ function validateCell(cell, seen) {
         && cell.command.every((part) => typeof part === "string" && part.length > 0),
       `Cell ${cell.id} has an invalid command.`,
     );
+    if (manifestSchemaVersion === 2) {
+      requireCondition(
+        Number.isSafeInteger(cell.timeoutMs)
+          && cell.timeoutMs >= 1_000
+          && cell.timeoutMs <= 7_200_000,
+        `Cell ${cell.id} has an invalid wall-clock timeout.`,
+      );
+    }
   } else if (cell.executor === "private-receipt") {
     requireExactKeys(cell, new Set(["id", "executor", "receiptContract"]), `Cell ${cell.id}`);
     requireCondition(
@@ -127,7 +143,10 @@ export function validateIntegratedGateManifest(manifest) {
   requireCondition(manifest && typeof manifest === "object" && !Array.isArray(manifest),
     "Integrated gate manifest must be an object.");
   requireExactKeys(manifest, MANIFEST_KEYS, "Integrated gate manifest");
-  requireCondition(manifest.schemaVersion === 1, "Integrated gate manifest schemaVersion must be 1.");
+  requireCondition(
+    manifest.schemaVersion === 1 || manifest.schemaVersion === 2,
+    "Integrated gate manifest schemaVersion must be 1 or 2.",
+  );
   requireCondition(
     INTEGRATED_GATE_IDS.has(manifest.gateId),
     "Integrated gate manifest has the wrong gate id.",
@@ -142,7 +161,7 @@ export function validateIntegratedGateManifest(manifest) {
   );
   const seen = new Set();
   for (const cell of [...manifest.candidateCells, ...manifest.hostedClosureCells]) {
-    validateCell(cell, seen);
+    validateCell(cell, seen, manifest.schemaVersion);
   }
   return manifest;
 }
@@ -162,13 +181,32 @@ export function validateIntegratedGateReceipt({
   expectedHead,
   expectedCandidateHead = expectedHead,
   expectedCandidateReceiptSha256 = null,
+  expectedAdmissionSha256 = null,
   expectedScope,
 }) {
   validateIntegratedGateManifest(manifest);
   requireCondition(receipt && typeof receipt === "object" && !Array.isArray(receipt),
     "Integrated gate receipt must be an object.");
-  requireExactKeys(receipt, RECEIPT_KEYS, "Integrated gate receipt");
-  requireCondition(receipt.schemaVersion === 2, "Integrated gate receipt schemaVersion must be 2.");
+  requireCondition(
+    receipt.schemaVersion === 2 || receipt.schemaVersion === 3,
+    "Integrated gate receipt schemaVersion must be 2 or 3.",
+  );
+  requireExactKeys(
+    receipt,
+    receipt.schemaVersion === 3 ? RECEIPT_KEYS_V3 : RECEIPT_KEYS_V2,
+    "Integrated gate receipt",
+  );
+  requireCondition(
+    manifest.gateId !== "integrated-identity-access" || receipt.schemaVersion === 3,
+    "Identity and access receipts must bind their admission.",
+  );
+  if (receipt.schemaVersion === 3) {
+    requireCondition(
+      SHA256.test(expectedAdmissionSha256 ?? "")
+        && receipt.admissionSha256 === expectedAdmissionSha256,
+      "Integrated gate receipt admission identity does not match.",
+    );
+  }
   requireCondition(receipt.gateId === manifest.gateId, "Integrated gate receipt has the wrong gate id.");
   requireCondition(RECEIPT_SCOPES[expectedScope], "Integrated gate receipt scope is unsupported.");
   requireCondition(receipt.scope === expectedScope, "Integrated gate receipt has the wrong scope.");
@@ -236,6 +274,7 @@ export function validateIntegratedGateReceipt({
     candidateHead: receipt.candidateHead,
     checkedHead: receipt.checkedHead,
     childCount: receipt.children.length,
+    admissionSha256: receipt.admissionSha256 ?? null,
     manifestSha256: receipt.manifestSha256,
     scope: receipt.scope,
   });
@@ -282,6 +321,7 @@ function runCli() {
   const expectedCandidateHead = values.get("candidate-head") ?? expectedHead;
   const expectedCandidateReceiptSha256 =
     values.get("candidate-receipt-sha256") ?? null;
+  const expectedAdmissionSha256 = values.get("admission-sha256") ?? null;
   const expectedScope = values.get("scope");
   requireCondition(receiptPath, "--receipt is required.");
   const receipt = readBoundedJsonArtifact(
@@ -296,6 +336,7 @@ function runCli() {
     expectedHead,
     expectedCandidateHead,
     expectedCandidateReceiptSha256,
+    expectedAdmissionSha256,
     expectedScope,
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

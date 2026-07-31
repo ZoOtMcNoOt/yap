@@ -78,7 +78,7 @@ test("NSIS uses stock Tauri behavior inside a disposable Windows boundary", asyn
   }
 });
 
-test("Windows release automation requires PowerShell 7.4 Core", async () => {
+test("tracked PowerShell automation declares its reviewed runtime boundary", async () => {
   const powerShellFiles = execFileSync(
     "git",
     ["ls-files", "--", "*.ps1", "*.psm1"],
@@ -92,13 +92,36 @@ test("Windows release automation requires PowerShell 7.4 Core", async () => {
     powerShellFiles.length > 0,
     "PowerShell runtime contract requires at least one tracked script or module",
   );
-  const runtimeRequirement = /^#requires -Version 7\.4\r?\n#requires -PSEdition Core\b/i;
+  const coreRuntimeRequirement =
+    /^#requires -Version 7\.4\r?\n#requires -PSEdition Core\b/i;
+  const inboxRuntimeFiles = new Set([
+    "verification/private-gate-artifacts.ps1",
+    "verification/read-windows-build-tools-optional-diagnostics-settings.ps1",
+  ]);
+  assert.deepEqual(
+    powerShellFiles.filter((relativePath) => inboxRuntimeFiles.has(relativePath)),
+    [...inboxRuntimeFiles].sort(),
+    "The reviewed inbox-runtime exception must stay explicit and exhaustive",
+  );
 
   for (const relativePath of powerShellFiles) {
     const source = await readRepoFile(relativePath);
+    if (inboxRuntimeFiles.has(relativePath)) {
+      assert.match(
+        source,
+        /^#requires -Version 5\.1\b/i,
+        `${relativePath} must remain compatible with its pinned inbox host`,
+      );
+      assert.doesNotMatch(
+        source,
+        /^#requires -PSEdition Core\b/im,
+        `${relativePath} must not reject its pinned Desktop-edition host`,
+      );
+      continue;
+    }
     assert.match(
       source,
-      runtimeRequirement,
+      coreRuntimeRequirement,
       `${relativePath} must fail fast outside PowerShell Core 7.4 or newer`,
     );
   }
@@ -164,6 +187,174 @@ test("Windows release automation requires PowerShell 7.4 Core", async () => {
   }
 
   const ciWorkflow = await readWorkflow(".github/workflows/ci.yml");
+  const expectedCheckedHeadExpression =
+    "${{ github.event.pull_request.head.sha || github.sha }}";
+  for (const jobName of ["rust", "native-wdio"]) {
+    const job = ciWorkflow.jobs?.[jobName];
+    assert.ok(job, `required ${jobName} CI job is missing`);
+    assert.equal(job["runs-on"], "windows-latest");
+    const checkout = job.steps.find((step) => (
+      typeof step.uses === "string" && step.uses.startsWith("actions/checkout@")
+    ));
+    assert.equal(
+      checkout?.with?.ref,
+      expectedCheckedHeadExpression,
+      `${jobName} must check out the exact reviewed head`,
+    );
+    assert.equal(
+      checkout?.with?.["persist-credentials"],
+      false,
+      `${jobName} product runtime checks must not retain checkout credentials`,
+    );
+    assert.equal(
+      job.env?.YAP_CHECKED_HEAD,
+      expectedCheckedHeadExpression,
+      `${jobName} must bind its build and runtime to the reviewed head`,
+    );
+    assert.equal(
+      job.env?.YAP_RUNNER_ENVIRONMENT,
+      undefined,
+      `${jobName} must not evaluate runner context before runner assignment`,
+    );
+    const boundary = job.steps.find(
+      (step) => step.name === "Verify exact GitHub-hosted checkout",
+    );
+    assert.ok(boundary, `${jobName} must verify its disposable runner boundary`);
+    assert.equal(boundary.id, "exact_head_checkout");
+    assert.equal(
+      boundary.shell,
+      "C:\\Windows\\System32\\cmd.exe /d /s /c "
+        + '""C:\\Program Files\\PowerShell\\7\\pwsh.exe" '
+        + '-NoLogo -NoProfile -NonInteractive -Command - < "{0}""',
+    );
+    assert.equal(boundary["working-directory"], "${{ github.workspace }}");
+    assert.match(
+      boundary.run,
+      /\.\/verification\/initialize-github-hosted-checkout-proof\.ps1/,
+    );
+    assert.match(boundary.run, /-GitCommandName git\.exe/);
+    assert.match(
+      boundary.run,
+      /-ExpectedPowerShellExecutable 'C:\\Program Files\\PowerShell\\7\\pwsh\.exe'/,
+    );
+    assert.match(boundary.run, /-OutputFile \$env:GITHUB_OUTPUT/);
+    assert.match(boundary.run, /-RunnerEnvironment '\$\{\{ runner\.environment \}\}'/);
+    assert.match(boundary.run, /-ExpectedRunnerOs Windows/);
+    assert.ok(
+      boundary.run.includes(`-ExpectedHead '${expectedCheckedHeadExpression}'`),
+      `${jobName} initial guard must bind the exact reviewed head`,
+    );
+
+    const finalBoundary = job.steps.find(
+      (step) => (
+        step.name === "Verify exact GitHub-hosted checkout remained unchanged"
+      ),
+    );
+    assert.ok(finalBoundary, `${jobName} must verify final tracked-source state`);
+    assert.equal(
+      finalBoundary.shell,
+      "C:\\Windows\\System32\\cmd.exe /d /s /c "
+        + '""C:\\Program Files\\PowerShell\\7\\pwsh.exe" '
+        + '-NoLogo -NoProfile -NonInteractive -Command - < "{0}""',
+    );
+    assert.equal(finalBoundary["working-directory"], "${{ github.workspace }}");
+    assert.doesNotMatch(
+      finalBoundary.run,
+      /\.\/verification\/(?:initialize|verify)-github-hosted-checkout/,
+    );
+    assert.doesNotMatch(finalBoundary.run, /\bGet-Command\b/);
+    assert.match(
+      finalBoundary.run,
+      /\$\{\{ steps\.exact_head_checkout\.outputs\.guard_source_base64 \}\}/,
+    );
+    assert.match(
+      finalBoundary.run,
+      /\$\{\{ steps\.exact_head_checkout\.outputs\.git_executable_base64 \}\}/,
+    );
+    assert.match(
+      finalBoundary.run,
+      /\$\{\{ steps\.exact_head_checkout\.outputs\.powershell_executable_base64 \}\}/,
+    );
+    assert.match(
+      finalBoundary.run,
+      /\$\{\{ steps\.exact_head_checkout\.outputs\.tracked_manifest_sha256 \}\}/,
+    );
+    assert.match(
+      finalBoundary.run,
+      /\$\{\{ steps\.exact_head_checkout\.outputs\.git_index_sha256 \}\}/,
+    );
+    assert.match(finalBoundary.run, /\[Environment\]::ProcessPath/);
+    assert.match(finalBoundary.run, /\[ScriptBlock\]::Create/);
+    assert.match(finalBoundary.run, /-VerificationStage Final/);
+    assert.match(
+      finalBoundary.run,
+      /-RunnerEnvironment '\$\{\{ runner\.environment \}\}'/,
+    );
+    assert.match(finalBoundary.run, /-ExpectedRunnerOs Windows/);
+    assert.ok(
+      finalBoundary.run.includes(`-ExpectedHead '${expectedCheckedHeadExpression}'`),
+      `${jobName} final guard must bind the exact reviewed head`,
+    );
+    assert.ok(
+      job.steps.indexOf(boundary) < job.steps.indexOf(finalBoundary),
+      `${jobName} checkout guards must enclose native execution`,
+    );
+  }
+
+  const rustSteps = ciWorkflow.jobs.rust.steps;
+  const serverConnectorStep = rustSteps.find(
+    (step) => step.name === "Run exact server connector integration",
+  );
+  assert.equal(
+    serverConnectorStep?.run,
+    "node ./verification/run-hosted-windows-runtime-check.mjs server-connector",
+  );
+  assert.equal(
+    serverConnectorStep?.env?.YAP_RUNNER_ENVIRONMENT,
+    "${{ runner.environment }}",
+  );
+  const authenticatedConnectorStep = rustSteps.find(
+    (step) => step.name === "Run exact authenticated connector integration",
+  );
+  assert.equal(
+    authenticatedConnectorStep?.run,
+    "node ./verification/run-hosted-windows-runtime-check.mjs authenticated-server-connector",
+  );
+  assert.equal(
+    authenticatedConnectorStep?.env?.YAP_RUNNER_ENVIRONMENT,
+    "${{ runner.environment }}",
+  );
+  assert.equal(
+    rustSteps.find(
+      (step) => step.name === "Verify exact Windows dependency boundary",
+    )?.run,
+    "./verification/test-windows-rust-dependency-boundary.ps1",
+  );
+  assert.equal(
+    rustSteps.find(
+      (step) => step.name === "Audit exact Windows Rust dependencies",
+    )?.run,
+    "./verification/audit-windows-rust-dependencies.ps1",
+  );
+  const nativeWdioSteps = ciWorkflow.jobs["native-wdio"].steps;
+  assert.equal(
+    nativeWdioSteps.find(
+      (step) => step.name === "Build the WDIO-enabled app once",
+    )?.run,
+    "pnpm test:desktop:build",
+  );
+  const requiredNativeWdioStep = nativeWdioSteps.find(
+    (step) => step.name === "Run required hardware-independent WDIO specs",
+  );
+  assert.match(
+    requiredNativeWdioStep?.run,
+    /^node \.\/verification\/run-hosted-windows-runtime-check\.mjs native-wdio$/,
+  );
+  assert.equal(
+    requiredNativeWdioStep?.env?.YAP_RUNNER_ENVIRONMENT,
+    "${{ runner.environment }}",
+  );
+
   const compatibilityJob = ciWorkflow.jobs?.frontend;
   assert.ok(compatibilityJob, "required frontend CI job is missing");
   assert.equal(compatibilityJob.env.POWERSHELL_74_VERSION, "7.4.17");

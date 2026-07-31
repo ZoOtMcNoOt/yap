@@ -1,13 +1,14 @@
 # Current Status
 
-**As of:** 2026-07-26
+**As of:** 2026-07-30
 
-**Current work:** Post-Phase-6 codebase ownership and maintainability review on
-`chore/codebase-maintainability-review`.
+**Current work:** Phase 7 tenant-scoped identity and access on
+`feat/phase7-identity-access`, based on reviewed Checkpoint B merge
+`15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
-**Merged product baseline:** Phase 6 merge
-`87c8654250cba8b9eafa5007bf719c52e4749cdf` from
-[PR #67](https://github.com/mcnatg1/yap/pull/67).
+**Merged product baseline:** Checkpoint B merge
+`15f9c8ac00211b9d2f28845d419258ae2c8de8e4` from
+[PR #68](https://github.com/mcnatg1/yap/pull/68).
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -29,8 +30,8 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
-| Checkpoint B | PR open; hosted closure pending | The [codebase ownership and maintainability review](plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md) adds no Phase 7 functionality. Historical candidate `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence but are not merge authority. After repairing Cargo color contamination and the same-process Windows atomic replacement race, fresh exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. Its private receipt SHA-256 is `6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`. First-attempt hosted CI, CodeQL, stock-NSIS closure on the documentation-only descendant, final review, and merge remain required. |
-| Phase 7: identity/access | Planned | Entra/MSAL, token-derived ownership, purpose grants, and authorization remain unimplemented. |
+| Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
+| Phase 7: identity/access | Active; hosted closure pending | The [tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governs the branch. Provider-neutral OIDC/Entra policy, tenant-scoped ownership, purpose authorization, protected readiness, authenticated bounded private WebSocket admission, and the native lower handshake execute under focused tests. The desktop still has no selected production token adapter. Exact application/runtime candidate `dc6359162fb16909d38f410cdb75c2729d83972f` passed its one complete private 25-cell matrix and independent receipt validation. Its hosted CI run exposed only runner-portability defects; all four CodeQL analyses passed and NSIS was not dispatched. The reviewed repairs through `c1d81fc085218cf91a4e370087bcc5927e5b1f70` change only hosted/gate tooling, its contracts, and documentation—not shipped client, server, native, model, runtime, or candidate-manifest behavior. Focused ACL, hosted-portability, and clean-tree contracts pass, and the same three independent lenses report no P0–P2 finding. The validated `dc635916...` candidate evidence therefore remains authoritative; runner-only closure does not rerun the private matrix. Exact-head hosted CI, CodeQL, stock-NSIS, and merge remain open. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -259,7 +260,7 @@ candidate is promoted by this dirty-head result.
   source-time intervals or a typed bounded error are durable advisory evidence;
   neither outcome truncates or replaces the complete source.
 - Desktop schema 9 owns normalization, VAD, LID-preflight, and user-confirmation
-  attempts. Server schema 5 owns ASR, alignment, and result-publication attempts.
+  attempts. Server schema 6 owns ASR, alignment, and result-publication attempts.
   Legacy state remains readable without manufacturing missing history.
 - The development server path binds to numeric loopback. The desktop reaches a
   private node through an explicitly managed SSH forward; Yap does not create
@@ -286,6 +287,25 @@ candidate is promoted by this dirty-head result.
 - Native shortcut and OS-drop work use fixed workers with bounded queues;
   interactive file selection and server-settings publication each admit one
   end-to-end owner rather than accumulating blocking work.
+- Server authentication is fail-closed by default. The generic OIDC verifier and
+  discovery/JWKS seam apply an Entra-specific tenant, audience, scope, client,
+  role, and claim policy in Entra mode; the fixed development principal requires
+  an explicit development-only loopback configuration.
+- Purpose-control is executable authorization, not just storage: the
+  `Yap.IdentityAdministrator` role gates grant/revoke and access-control changes,
+  and enrollment, matching, and adaptation require their configured active
+  grants. Allowed and denied decisions are redacted and audited. No voice profile
+  or embedding implementation is implied.
+- Entra mode starts a bounded, authenticated private WebSocket admission service
+  at `ws://127.0.0.1:18766/v1/live` by default, separate from the HTTP
+  application port, with exact `yap.live.v1` negotiation and token
+  expiry/revocation enforcement.
+  The native lower handshake is qualified against this boundary. The product
+  does not discover that separate endpoint or route audio/transcripts through it.
+- The desktop token path is a Rust-owned in-process provider interface with
+  zeroizing token handling, durable account pinning, and session invalidation.
+  It intentionally fails closed because no production native provider adapter
+  has been approved or installed.
 
 The complete owner and trust-boundary map is
 [executable ownership map](architecture/boundaries/EXECUTABLE-OWNERSHIP.md). The
@@ -295,13 +315,142 @@ ownership.
 
 ## What is not claimed
 
-- No WSS/live server transcription, general media conversion, production
-  authentication, external application endpoint, persistent supervised
-  multi-user service, or measured multi-worker capacity is shipped.
-- No Entra/MSAL token validation, tenant-derived owner, purpose grant, internal
-  DNS, enterprise certificate, ZPA policy, or production firewall rule exists.
-- Phase 7 owns authenticated tenant/user derivation. Persistent warm model
-  services, multi-worker and mixed live/batch capacity promotion, production
+- No live server ASR, product endpoint discovery, external same-origin WSS/TLS
+  application endpoint, HTTP/3 edge, general media conversion, persistent
+  supervised multi-user service, or measured multi-worker capacity is shipped.
+  Private WebSocket admission and a native lower handshake are not a live
+  transcription path or production edge.
+- The active Phase 7 branch does not prove a production native token adapter,
+  real tenant registration, Conditional Access, MFA, consent, enterprise sign-in
+  policy, production storage/audit, or distribution approval. No internal DNS,
+  enterprise certificate, ZPA policy, or production firewall rule exists.
+- Phase 7 candidates `134ec08002aeb1deca83547d511528b282966731`,
+  `7046d98d61fec90d4c639e92aff09ff8f6a2083a`,
+  `dae316ceab60fe395a1899290ca184148f0e9b27`,
+  `e6fcabd0f77a604092997839e45e6cada09304f9`,
+  `59267c46a60ab9bb77494fc03d5666c1d1471f98`, and
+  `2bd43b33638685ff2caccd7fdcf01c157a229c45` are consumed. The first four
+  exposed the historical Windows command-tree, PowerShell loader,
+  connected-readiness, and SSH teardown-status gaps. The fifth mock-OIDC
+  receipt inherited mode `0664` instead of the owner-only private boundary.
+  The sixth passed all 13 private children and every Rust test, but Cargo
+  exited while its Job remained nonzero beyond the former 250-millisecond
+  natural-drain allowance. The supervisor terminated the Job and consumed the
+  attempt. The private failure did not preserve a lingering PID, so no
+  particular test or process is blamed. Exact head
+  `2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was admitted but withdrawn
+  before GB10, connected-server, or complete-matrix execution
+  after pre-execution adversarial review rejected its gate boundary.
+  `a7df6bfa0511ddd1ca59d7e1389a6c17eb133ebe` and
+  `3f9a8b7195dad3afd8b66034349c0482caef0a4a` are also consumed as recorded in
+  the gate runbook; `30b18c8c4a26266210657d11cf66b1a5e0c2a893`,
+  `4dc572f120f7e284f7453dfd11bd817a2c034104`, and
+  `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` were rejected before admission.
+  Heads `c4df39f305f739d3eb2987f24ba8387e54627902`,
+  `7f047c6a1a2838f70908a7c0f5ee106fd84d5fb2`,
+  `c5d826ffb85a841e412e41155a3c6c82a2fbe3e4`, and
+  `dece4265e052d775d2d11f1883cd8cc4b2b25191` are later consumed admissions.
+  The first exposed a private mock-OIDC publication parser defect. The second
+  passed mock OIDC but its target-client child exposed redundant canonical
+  language-routing saves retiring the already warm live model. The third
+  fixed that runtime no-op, passed three-lens review and full prequalification,
+  then failed its first admitted controller before the mock-OIDC harness
+  started because the controller required the fixed private ancestor itself to
+  be mode `0700`. Readback proved that ancestor was a real, admin-owned,
+  non-group/world-writable `0755` directory; the receipt parent, per-head
+  child, receipt, container, and network were all absent.
+  The fourth corrected that ancestor rule, passed focused verification,
+  three-lens exact-head review, complete private prequalification, and
+  GitHub-backed admission, then failed its first admitted mock-OIDC controller
+  before the locked `uv sync` command or owner flow because non-interactive SSH
+  did not expose the reviewed absolute `uv` executable to portable PowerShell.
+  The per-head receipt directory existed, but the receipt remained absent and
+  no runtime owner started. The implementation boundary retains
+  assigned-before-resume, kill-on-close,
+  immediate explicit termination, Windows accounting-zero proof, frozen
+  command deadlines, protected private capability/DACL handling, no-config
+  OpenSSH, and authenticated remote helpers. Its Linux path replaces initial
+  `/proc/<pid>/environ` inference with isolated/no-site startup, a barrier,
+  retained pidfd, immutable PID/start-time binding, contained explicit control,
+  exact reaping, token-verified missing-result recovery, and immutable
+  container reconciliation. Provider launch now separates Docker create from
+  start, binds the create through an exclusive container-ID file, and publishes
+  a private recovery identity before the request. If interrupted creation cannot
+  be resolved to a token-owned immutable ID, cleanup fails and the recovery
+  identity remains; elapsed absence is not reported as proof. Final absence is
+  checked by immutable ID, so a renamed or relabeled container retains its
+  recovery records and fails closed. Recovery-record deletion failure is itself
+  an unclean launcher result, and normal gate teardown independently proves the
+  recovery record, partial record, and container-ID file absent before clearing
+  their path. The providers disable Docker auto-removal so normal-exit logs are
+  captured through the still-addressable immutable ID before explicit removal.
+  Head `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` preserved these lifecycle
+  repairs but failed connected prequalification because it rejected GB10's
+  canonical system `socat` package link. The consumed `dece426...` lineage
+  resolves the selected command to its absolute regular executable, retains
+  the canonical language-routing no-op, and accepts a safe receipt ancestor.
+  Focused tests, the real GB10 link/owner/mode proof, and its three-lens review
+  passed before its later private-controller failure. Exact head
+  `63600096cd8afe9f4435f6302c584f89dbdb5915` retained those repairs,
+  authenticated and resolved the absolute `uv` path, passed complete
+  prequalification, admission, all four private controllers, and independent
+  validation of all 13 private receipt children. Its one complete matrix then
+  failed in `frontend.release-contracts`: the installed
+  `@floating-ui/core@1.7.5` `LICENSE` was a Windows reparse point because the
+  private checkout's default pnpm hardlink shared a content-store inode with
+  another OneDrive-managed checkout. The repository lock, inventory, and MIT
+  notice hash were already exact, so the failure is preserved as
+  package-materialization evidence rather than misreported as license drift.
+  Exact head `d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` implemented that copied
+  materialization, passed review, prequalification, admission, all four private
+  controllers, and independent 13-child validation. Its one complete matrix
+  passed the frontend cells, formatting, strict Clippy, and every Rust test,
+  then failed closed because Visual Studio Build Tools retained `vctip.exe`
+  inside the owned Windows Job. A focused default-linker probe reproduced that
+  diagnostic helper beyond two minutes, so extending the natural drain is not
+  a fix.
+  Bundled Rust LLD does not correctly link this SQLite/AWS-LC native graph and
+  still invokes Microsoft native tooling. After the documented Build Tools
+  `OptIn` DWORD was set to `0`, a clean focused trace still observed signed
+  `VCTIP.EXE` launched by `link.exe` beyond the drain. Microsoft documents that
+  VSCEIP opt-out affects optional diagnostics, not required diagnostics. The
+  successor retained MSVC, requires a fail-closed 64-bit registry-API
+  proof whose helper is rooted in the kernel object-manager SystemRoot, and
+  runs native compile/link evidence outside the product Job on clean exact-head
+  GitHub-hosted Windows VMs. Actual connector and required WDIO runtime trees
+  stay inside kill-on-close Jobs, run without GitHub credentials, and must
+  prove active-process-zero; the cold runner first populates the locked Python
+  3.12 environment, and the running WDIO binary verifies its embedded reviewed
+  SHA. Exact head `944673071804d8178776efa1d1e13651c87df6fb`
+  passed three-lens review, prequalification, admission, all four private
+  controllers, independent 13-child validation, and its complete 25-cell
+  matrix. PR #69 opened, but GitHub rejected the first CI dispatch during
+  workflow parsing, before any job or runner started, because job-level `env`
+  referenced `runner.environment` before runner assignment. Preserve that
+  private evidence without relabeling it; the exact-head rule consumes the head
+  for merge authority. Workflow successor `cafbe307...` step-scoped the runner
+  binding and added a regression contract, then was consumed when fresh
+  target-client qualification exposed bounded pending-ASR saturation. Repair
+  `32cf528...` uses bounded FIFO batch catch-up and passed focused review plus
+  repeated-resource, prepared-audio, and physical-microphone/rendered-UI
+  qualification with zero drops. Documentation reconciliation is committed at
+  `e019036...`. Exact successor `dc635916...` passed the complete private
+  25-cell matrix and independent receipt validation; CodeQL passed, but hosted
+  CI run `30574652702` consumed it on the pre-install YAML import, Windows temp
+  owner, and equivalent 8.3/long-path assumptions. Reviewed repair
+  `558fed0...` passes focused contracts and all three review lenses.
+  Pre-admission exact descendant `c95cfe0...` exposed an unnecessary same-owner
+  rewrite under ordinary development-root ACLs before any attempt was
+  reserved. Repair `a823b28...` preserves owner correction on mismatch but
+  avoids that redundant privileged write; focused ACL, hosted-portability, and
+  clean-tree admission contracts pass with the same three review approvals.
+  The diff from validated application/runtime candidate `dc635916...` through
+  runner repair `c1d81fc...` is limited to hosted/gate tooling, its contracts,
+  and documentation. It changes no shipped client, server, native, model,
+  runtime, or candidate-manifest behavior. The one completed private matrix
+  therefore remains authoritative; only exact-head hosted CI, CodeQL,
+  stock-NSIS, PR closure, and merge remain open.
+  Persistent warm model services, multi-worker and mixed live/batch capacity promotion, production
   supervision/observability, and external deployment remain Phase 10 gates;
   they are not Phase 6 completion criteria.
 - Phase 6 has focused implementation slices on the current branch: a verified
@@ -508,19 +657,76 @@ base-digest identity, or runtime identity.
 
 The living [decision and evidence queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 preserves the detailed discussion register, open questions, later-phase owners,
-and reviewable sub-tasks. Phase 6 is merged. The active
-[codebase ownership and maintainability review](plans/active/2026-07-18-codebase-ownership-and-maintainability-review.md)
-is the Checkpoint B delivery authority. The concise
+and reviewable sub-tasks. Phase 6 and Checkpoint B are merged. The active
+[tenant-scoped identity and job authorization plan](plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
+is the Phase 7 delivery authority. The concise
 [integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Require first-attempt hosted closure on the documentation-only descendant of
-   validated executable candidate
-   `9dfa8a68b02cdf854d14fb046e51a166cd3da353`.
-2. Merge only the green checked head, then begin Phase 7 on a separate branch.
+1. Closed: the retained-pidfd implementation and documentation completed the
+   exact architecture, Linux-runtime, and assurance review lenses with every
+   P0–P2 finding resolved before commit.
+2. Closed as rejected prequalification evidence: committed/pushed head
+   `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` passed its unaffected focused
+   prechecks, then the connected launcher failed before provider startup because
+   it rejected GB10's stock `/usr/bin/socat -> /usr/bin/socat1` package link.
+3. Closed for the next freeze candidate: canonicalize the selected `socat`
+   command to its absolute regular executable, prove the real root-owned GB10
+   target plus all 14 focused proxy contracts, and obtain GO from the same three
+   review lenses with no P0–P2 finding.
+4. Closed as consumed admission evidence: `c4df39f...` exposed the private
+   mock-OIDC publisher parser, `7f047c6...` exposed redundant canonical
+   language-routing saves retiring the warm model, and `c5d826f...` fixed that
+   runtime no-op and passed all prequalification before its first admitted
+   controller over-constrained the fixed private ancestor mode. No mock-OIDC
+   harness or runtime owner started for the `c5d826f...` failure.
+   `dece426...` corrected that ancestry rule and passed review,
+   prequalification, and admission, but its first admitted mock-OIDC controller
+   failed before the locked `uv sync` command or owner flow because portable
+   PowerShell could not resolve the reviewed `uv` path under non-interactive
+   SSH. Its per-head directory existed, but its receipt remained absent.
+   `63600096...` retained those repairs and passed review, prequalification,
+   admission, every private child, and independent 13-child validation, but its
+   one complete matrix correctly rejected a reparse-tagged installed notice
+   produced by default pnpm hardlink materialization. Preserve it without retry.
+5. Closed as consumed admission evidence: `d4adc832...` used forced
+   non-optimistic copied package imports, passed every fresh private child, and
+   reached `native.tests` in its one complete matrix. Every Rust test passed,
+   but the owned Windows Job retained the Build Tools `vctip.exe` diagnostic
+   helper.
+   Preserve the head without retry or completion.
+6. The approved Microsoft Build Tools optional-diagnostics opt-out is applied
+   and read back on the admission workstation. Require that fail-closed 64-bit
+   registry proof before remote reservation and again in the candidate
+   manifest. Every required CI closure job now disables persisted checkout
+   credentials, explicitly checks out the reviewed head, and brackets project
+   execution with the shared hosted-runner head/state guard. Windows uses an
+   absolute no-space System32 bootstrap for the absolute PowerShell host; Linux
+   launches the absolute PowerShell host directly. Initial admission captures
+   that PowerShell host, the first resolved Git executable, exact guard source,
+   Git index, and index-independent tracked-content manifest with their hashes.
+   Final verification reuses the absolute shell chain, replays the admitted
+   guard bytes in memory, rejects hidden index state, linked tracked ancestors,
+   and Linux executable-bit drift, and reuses the admitted Git identity instead
+   of trusting post-project workspace files or `PATH`. Bind native
+   formatting, Clippy, tests, connector integrations, dependency checks, WDIO
+   build, and required native specs to the exact-head `rust` and `Native WDIO`
+   jobs on clean GitHub-hosted Windows VMs; keep `mock-oidc` on the declared
+   fresh Linux runner. Reject persistent/self-hosted or wrong-OS substitution.
+   Run the same three exact-tree review lenses, then freeze, package,
+   prequalify, and reserve one fresh admission.
+   The user explicitly authorized transient use of the existing GitHub CLI
+   credential because a separate least-privilege status token is unavailable;
+   do not print, persist, or pass it into command cells, and record the
+   broader-scope exception.
+7. Regenerate every private child and run the one-time applicable local/server/
+   target-client/private-server candidate matrix for that exact head.
+8. Update focused PR #69 only after the replacement candidate gate is green,
+   then merge only after first-valid-attempt hosted native CI, remaining CI,
+   CodeQL, and disposable-Windows stock-NSIS closure on that exact head.
 
 Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
-point. Checkpoint B reviews broadly but changes narrowly before that integrated
-decision: concrete blockers are fixed, while non-blocking optimization is
-recorded rather than allowed to delay the MVP.
+point. Phase 7 remains bounded to identity and access before that integrated
+decision; non-blocking optimization is recorded rather than allowed to delay
+the MVP.

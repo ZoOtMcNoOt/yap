@@ -9,6 +9,7 @@ import threading
 from typing import Callable, Mapping, Protocol, Sequence
 from uuid import uuid4
 
+from yap_server.auth import AuthenticatedPrincipal, PrincipalKey
 from yap_server.pools.batch_contract import (
     AsrRouteDecision,
     BatchReservation,
@@ -44,6 +45,12 @@ from .intake_contract import (
     validate_create_request as _validate_create_request,
 )
 from .job_store import DurableJobState, RecordingJobStore
+from .ownership import (
+    DEVELOPMENT_JOB_OWNER,
+    PrincipalRecordingJobs,
+    idempotency_owner_key,
+    principal_key,
+)
 from .processing_input import BatchInputPreparation
 from .stage_attempts import (
     StageAttemptCapacityError,
@@ -86,6 +93,7 @@ class RecordingJobService:
         now: Callable[[], str],
         cancellation_timeout_seconds: float = _CANCELLATION_ACK_TIMEOUT_SECONDS,
         startup_worker_cleanup_verified: bool = False,
+        development_principal: PrincipalKey | None = DEVELOPMENT_JOB_OWNER,
     ) -> None:
         if cancellation_timeout_seconds <= 0:
             raise ValueError("cancellation timeout must be positive")
@@ -97,6 +105,7 @@ class RecordingJobService:
         self._supported_languages = frozenset(supported_languages)
         self._now = now
         self._cancellation_timeout_seconds = cancellation_timeout_seconds
+        self._development_principal = development_principal
         self._store = RecordingJobStore(
             storage_root,
             supported_languages=supported_languages,
@@ -104,6 +113,7 @@ class RecordingJobService:
             startup_worker_cleanup_verified=startup_worker_cleanup_verified,
             route_resolver=processor.resolve_route,
             asr_catalog_revision=self._asr_catalog_revision,
+            legacy_owner=development_principal,
         )
         self._storage_root = self._store.root
         self._lock = threading.RLock()
@@ -145,12 +155,47 @@ class RecordingJobService:
             )
         self._pump_pending_processing()
 
+    def for_principal(
+        self,
+        principal: AuthenticatedPrincipal | PrincipalKey,
+    ) -> PrincipalRecordingJobs:
+        return PrincipalRecordingJobs(self, principal_key(principal))
+
+    def _operation_owner(self, owner: PrincipalKey | None) -> PrincipalKey:
+        if owner is not None:
+            return owner
+        if self._development_principal is None:
+            raise RuntimeError(
+                "authenticated job operations must use a principal-bound service"
+            )
+        return self._development_principal
+
+    def _require_job_owner_locked(
+        self,
+        job_id: str,
+        owner: PrincipalKey,
+    ) -> None:
+        if (
+            job_id not in self._state.jobs
+            and self._development_principal is not None
+            and owner == self._development_principal
+        ):
+            raise KeyError(job_id)
+        if self._state.owners.get(job_id) != owner:
+            raise JobServiceError(
+                404,
+                "JOB_NOT_FOUND",
+                "The recording job does not exist.",
+            )
+
     def create(
         self,
         request: Mapping[str, object],
         *,
         idempotency_key: str | None = None,
+        owner: PrincipalKey | None = None,
     ) -> dict[str, object]:
+        operation_owner = self._operation_owner(owner)
         try:
             _validate_create_request(
                 request,
@@ -194,11 +239,13 @@ class RecordingJobService:
                     "INVALID_JOB",
                     "Recording job retention or capture time is invalid.",
                 )
-            self._prune_expired_jobs_locked(
-                server_now
-            )
+            self._prune_expired_jobs_locked(server_now)
             if idempotency_key is not None:
-                existing_job_id = self._state.created_by_key.get(idempotency_key)
+                owner_key = idempotency_owner_key(
+                    operation_owner,
+                    idempotency_key,
+                )
+                existing_job_id = self._state.created_by_key.get(owner_key)
                 if existing_job_id is not None:
                     if self._state.requests[existing_job_id] != dict(request):
                         raise JobServiceError(
@@ -257,6 +304,7 @@ class RecordingJobService:
             job_root = self._storage_root / "jobs" / job_id
             (job_root / "chunks").mkdir(parents=True, exist_ok=False)
             self._state.jobs[job_id] = projection
+            self._state.owners[job_id] = operation_owner
             self._state.requests[job_id] = deepcopy(dict(request))
             self._state.asr_routing[job_id] = durable_routing
             self._state.stage_history_complete[job_id] = True
@@ -264,7 +312,9 @@ class RecordingJobService:
             self._state.projection_revisions[job_id] = 0
             self._state.create_keys[job_id] = idempotency_key
             if idempotency_key is not None:
-                self._state.created_by_key[idempotency_key] = job_id
+                self._state.created_by_key[
+                    idempotency_owner_key(operation_owner, idempotency_key)
+                ] = job_id
             try:
                 self._persist_job_locked(job_id)
             except Exception:
@@ -272,26 +322,32 @@ class RecordingJobService:
                 raise
         return deepcopy(projection)
 
-    def get(self, job_id: str) -> dict[str, object]:
+    def get(
+        self,
+        job_id: str,
+        *,
+        owner: PrincipalKey | None = None,
+    ) -> dict[str, object]:
+        operation_owner = self._operation_owner(owner)
         with self._lock:
+            self._require_job_owner_locked(job_id, operation_owner)
             return deepcopy(self._state.jobs[job_id])
 
-    def get_stages(self, job_id: str) -> dict[str, object]:
+    def get_stages(
+        self,
+        job_id: str,
+        *,
+        owner: PrincipalKey | None = None,
+    ) -> dict[str, object]:
+        operation_owner = self._operation_owner(owner)
         with self._lock:
-            if job_id not in self._state.jobs:
-                raise JobServiceError(
-                    404,
-                    "JOB_NOT_FOUND",
-                    "The recording job does not exist.",
-                )
+            self._require_job_owner_locked(job_id, operation_owner)
             return {
                 "schemaVersion": 1,
                 "jobId": job_id,
                 "projectionRevision": self._state.projection_revisions[job_id],
                 "historyComplete": self._state.stage_history_complete[job_id],
-                "stages": latest_stage_projection(
-                    self._state.stage_attempts[job_id]
-                ),
+                "stages": latest_stage_projection(self._state.stage_attempts[job_id]),
             }
 
     def retry_stage(
@@ -299,13 +355,20 @@ class RecordingJobService:
         job_id: str,
         stage: str,
         request: Mapping[str, object],
+        *,
+        owner: PrincipalKey | None = None,
     ) -> dict[str, object]:
-        if set(request) != {
-            "stage",
-            "attempt",
-            "projectionRevision",
-            "captureManifestSha256",
-        } or request.get("stage") != stage:
+        operation_owner = self._operation_owner(owner)
+        if (
+            set(request)
+            != {
+                "stage",
+                "attempt",
+                "projectionRevision",
+                "captureManifestSha256",
+            }
+            or request.get("stage") != stage
+        ):
             raise ValueError("stage retry fields differ from the contract")
         expected_attempt = request.get("attempt")
         expected_revision = request.get("projectionRevision")
@@ -322,20 +385,18 @@ class RecordingJobService:
         ):
             raise ValueError("stage retry identity is invalid")
 
-        callback: tuple[
-            str,
-            str,
-            Future[dict[str, object]],
-            threading.Event,
-        ] | None = None
+        callback: (
+            tuple[
+                str,
+                str,
+                Future[dict[str, object]],
+                threading.Event,
+            ]
+            | None
+        ) = None
         with self._lock:
             self._require_runtime_admission_open_locked()
-            if job_id not in self._state.jobs:
-                raise JobServiceError(
-                    404,
-                    "JOB_NOT_FOUND",
-                    "The recording job does not exist.",
-                )
+            self._require_job_owner_locked(job_id, operation_owner)
             job = self._state.jobs[job_id]
             if job_id in self._state.cancelled:
                 raise JobServiceError(
@@ -451,9 +512,7 @@ class RecordingJobService:
                 "jobId": job_id,
                 "projectionRevision": self._state.projection_revisions[job_id],
                 "historyComplete": self._state.stage_history_complete[job_id],
-                "stages": latest_stage_projection(
-                    self._state.stage_attempts[job_id]
-                ),
+                "stages": latest_stage_projection(self._state.stage_attempts[job_id]),
             }
         assert callback is not None
         self._attach_processing_callback(*callback)
@@ -472,9 +531,12 @@ class RecordingJobService:
         sample_rate_hz: int,
         channels: int,
         content_length: int,
+        owner: PrincipalKey | None = None,
     ) -> ChunkUploadPlan:
+        operation_owner = self._operation_owner(owner)
         with self._lock:
             self._require_runtime_admission_open_locked()
+            self._require_job_owner_locked(job_id, operation_owner)
             return self._uploads.prepare(
                 job_id,
                 track_id=track_id,
@@ -488,30 +550,39 @@ class RecordingJobService:
                 content_length=content_length,
             )
 
-
     def accept_chunk(
         self,
         plan: ChunkUploadPlan,
         body: bytes,
+        *,
+        owner: PrincipalKey | None = None,
     ) -> dict[str, object]:
+        operation_owner = self._operation_owner(owner)
         with self._lock:
             self._require_runtime_admission_open_locked()
+            self._require_job_owner_locked(plan.job_id, operation_owner)
             return self._uploads.accept(plan, body)
-
 
     def commit(
         self,
         job_id: str,
         request: Mapping[str, object],
+        *,
+        owner: PrincipalKey | None = None,
     ) -> dict[str, object]:
-        callback: tuple[
-            str,
-            str,
-            Future[dict[str, object]],
-            threading.Event,
-        ] | None = None
+        operation_owner = self._operation_owner(owner)
+        callback: (
+            tuple[
+                str,
+                str,
+                Future[dict[str, object]],
+                threading.Event,
+            ]
+            | None
+        ) = None
         with self._lock:
             self._require_runtime_admission_open_locked()
+            self._require_job_owner_locked(job_id, operation_owner)
             creation = self._state.requests[job_id]
             job = self._state.jobs[job_id]
             self._validate_commit_request(creation, request)
@@ -785,10 +856,9 @@ class RecordingJobService:
 
     def _recover_interrupted_stages_locked(self, now: datetime) -> None:
         for job_id, job in self._state.jobs.items():
-            if (
-                job.get("status") != "server_processing"
-                or self._job_retention_expired_locked(job_id, now)
-            ):
+            if job.get(
+                "status"
+            ) != "server_processing" or self._job_retention_expired_locked(job_id, now):
                 continue
             interrupted_at = self._now()
             recovered_running_stage = False
@@ -889,12 +959,15 @@ class RecordingJobService:
 
     def _pump_pending_processing_pass(self) -> None:
         while True:
-            callback: tuple[
-                str,
-                str,
-                Future[dict[str, object]],
-                threading.Event,
-            ] | None = None
+            callback: (
+                tuple[
+                    str,
+                    str,
+                    Future[dict[str, object]],
+                    threading.Event,
+                ]
+                | None
+            ) = None
             with self._lock:
                 if self._stopping:
                     return
@@ -993,11 +1066,18 @@ class RecordingJobService:
         )
         self._persist_job_locked(job_id)
 
-    def cancel(self, job_id: str) -> dict[str, object]:
+    def cancel(
+        self,
+        job_id: str,
+        *,
+        owner: PrincipalKey | None = None,
+    ) -> dict[str, object]:
+        operation_owner = self._operation_owner(owner)
         future: object | None = None
         completion_event: threading.Event | None = None
         with self._lock:
             self._require_runtime_admission_open_locked()
+            self._require_job_owner_locked(job_id, operation_owner)
             job = self._state.jobs[job_id]
             error = job.get("error")
             if (
@@ -1047,6 +1127,7 @@ class RecordingJobService:
             )
         with self._lock:
             self._require_runtime_admission_open_locked()
+            self._require_job_owner_locked(job_id, operation_owner)
             job = self._state.jobs[job_id]
             error = job.get("error")
             if (
@@ -1081,14 +1162,15 @@ class RecordingJobService:
         if completion_event is not None:
             completion_event.set()
 
-    def get_result(self, job_id: str) -> dict[str, object]:
+    def get_result(
+        self,
+        job_id: str,
+        *,
+        owner: PrincipalKey | None = None,
+    ) -> dict[str, object]:
+        operation_owner = self._operation_owner(owner)
         with self._lock:
-            if job_id not in self._state.jobs:
-                raise JobServiceError(
-                    404,
-                    "JOB_NOT_FOUND",
-                    "Recording job not found.",
-                )
+            self._require_job_owner_locked(job_id, operation_owner)
             if job_id not in self._state.results:
                 raise JobServiceError(
                     409,
@@ -1153,10 +1235,14 @@ class RecordingJobService:
     ) -> bool:
         metadata = _mapping(self._state.requests[job_id].get("metadata"), "metadata")
         retention = metadata.get("retentionExpiresAtUtc")
-        return retention is not None and _utc_timestamp(
-            retention,
-            "retentionExpiresAtUtc",
-        ) <= now
+        return (
+            retention is not None
+            and _utc_timestamp(
+                retention,
+                "retentionExpiresAtUtc",
+            )
+            <= now
+        )
 
     def _delete_job_locked(self, job_id: str) -> None:
         self._store.delete(self._state, job_id)
@@ -1219,10 +1305,7 @@ def _utterance_plan_source_for_route(
     creation: Mapping[str, object],
     route: AsrRouteDecision,
 ) -> UtterancePlanSource | None:
-    if (
-        route.execution_mode != "dynamicBatch"
-        and route.pool_id != "nemotron-batch"
-    ):
+    if route.execution_mode != "dynamicBatch" and route.pool_id != "nemotron-batch":
         return None
     preprocessing = creation.get("preprocessingEvidence")
     if preprocessing is None:

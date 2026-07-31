@@ -26,12 +26,27 @@ jobs:
         working-directory: desktop
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Verify PowerShell 7.4 Core
         shell: pwsh
         run: |
           if ($PSVersionTable.PSEdition -cne "Core" -or $PSVersionTable.PSVersion -lt [version]"7.4") {
             throw "CI requires PowerShell Core 7.4 or newer."
           }
+      - name: Verify exact GitHub-hosted checkout
+        id: exact_head_checkout
+        shell: 'C:\Windows\System32\cmd.exe /d /s /c ""C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo -NoProfile -NonInteractive -Command - < "{0}""'
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./verification/initialize-github-hosted-checkout-proof.ps1 `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Windows `
+            -GitCommandName git.exe `
+            -ExpectedPowerShellExecutable 'C:\Program Files\PowerShell\7\pwsh.exe' `
+            -OutputFile $env:GITHUB_OUTPUT
       - name: Install pinned PowerShell 7.4 runtime
         run: |
           $archive = Join-Path $env:RUNNER_TEMP "PowerShell-$env:POWERSHELL_74_VERSION-win-x64.zip"
@@ -114,6 +129,71 @@ jobs:
       - run: pnpm build
       - run: pnpm exec playwright install chromium
       - run: pnpm test:e2e
+      - name: Verify exact GitHub-hosted checkout remained unchanged
+        shell: 'C:\Windows\System32\cmd.exe /d /s /c ""C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo -NoProfile -NonInteractive -Command - < "{0}""'
+        working-directory: ${{ github.workspace }}
+        run: |
+          $GuardBytes = [Convert]::FromBase64String(
+            '${{ steps.exact_head_checkout.outputs.guard_source_base64 }}'
+          )
+          $ExpectedGuardSha256 = '${{ steps.exact_head_checkout.outputs.guard_sha256 }}'
+          if ($ExpectedGuardSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted exact-head guard identity is malformed.'
+          }
+          $GuardSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData($GuardBytes)
+          ).ToLowerInvariant()
+          if ($GuardSha256 -cne $ExpectedGuardSha256) {
+            throw 'The admitted exact-head guard source changed after initial verification.'
+          }
+          $Utf8 = [Text.UTF8Encoding]::new($false, $true)
+          $ExpectedPowerShellSha256 = '${{ steps.exact_head_checkout.outputs.powershell_sha256 }}'
+          if ($ExpectedPowerShellSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted PowerShell host identity is malformed.'
+          }
+          $PowerShellExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.powershell_executable_base64 }}'
+            )
+          )
+          $CurrentPowerShellExecutable = [IO.Path]::GetFullPath(
+            [Environment]::ProcessPath
+          )
+          if (-not [StringComparer]::OrdinalIgnoreCase.Equals(
+            [IO.Path]::GetFullPath($PowerShellExecutable),
+            $CurrentPowerShellExecutable
+          )) {
+            throw 'The final exact-head proof started in a substituted PowerShell host.'
+          }
+          $CurrentPowerShellSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData(
+              [IO.File]::ReadAllBytes($CurrentPowerShellExecutable)
+            )
+          ).ToLowerInvariant()
+          if ($CurrentPowerShellSha256 -cne $ExpectedPowerShellSha256) {
+            throw 'The admitted PowerShell host changed after initial verification.'
+          }
+          $GitExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.git_executable_base64 }}'
+            )
+          )
+          $RepositoryRoot = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.repository_root_base64 }}'
+            )
+          )
+          $GuardBlock = [ScriptBlock]::Create($Utf8.GetString($GuardBytes))
+          & $GuardBlock `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -VerificationStage Final `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Windows `
+            -GitExecutable $GitExecutable `
+            -ExpectedGitSha256 '${{ steps.exact_head_checkout.outputs.git_sha256 }}' `
+            -RepositoryRoot $RepositoryRoot `
+            -ExpectedTrackedManifestSha256 '${{ steps.exact_head_checkout.outputs.tracked_manifest_sha256 }}' `
+            -ExpectedGitIndexSha256 '${{ steps.exact_head_checkout.outputs.git_index_sha256 }}'
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: failure()
         with:
@@ -145,21 +225,50 @@ jobs:
   rust:
     runs-on: windows-latest
     timeout-minutes: 30
+    env:
+      YAP_CHECKED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     defaults:
       run:
         shell: pwsh
         working-directory: desktop/src-tauri
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Verify PowerShell 7.4 Core
         shell: pwsh
         run: |
           if ($PSVersionTable.PSEdition -cne "Core" -or $PSVersionTable.PSVersion -lt [version]"7.4") {
             throw "CI requires PowerShell Core 7.4 or newer."
           }
+      - name: Verify exact GitHub-hosted checkout
+        id: exact_head_checkout
+        shell: 'C:\Windows\System32\cmd.exe /d /s /c ""C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo -NoProfile -NonInteractive -Command - < "{0}""'
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./verification/initialize-github-hosted-checkout-proof.ps1 `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Windows `
+            -GitCommandName git.exe `
+            -ExpectedPowerShellExecutable 'C:\Program Files\PowerShell\7\pwsh.exe' `
+            -OutputFile $env:GITHUB_OUTPUT
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.21"
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Populate exact server dependencies for connector runtimes
+        working-directory: server
+        run: uv sync --locked --exact --python (Get-Command python.exe).Source --no-python-downloads
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
       - name: Restore Cargo dependency downloads
         id: cargo-cache
@@ -173,67 +282,87 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
-      - name: contract connector integration
+      - name: Run exact server connector integration
         working-directory: ${{ github.workspace }}
-        shell: pwsh
+        env:
+          YAP_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: node ./verification/run-hosted-windows-runtime-check.mjs server-connector
+      - name: Run exact authenticated connector integration
+        working-directory: ${{ github.workspace }}
+        env:
+          YAP_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: node ./verification/run-hosted-windows-runtime-check.mjs authenticated-server-connector
+      - name: Verify exact Windows dependency boundary
+        working-directory: ${{ github.workspace }}
+        run: ./verification/test-windows-rust-dependency-boundary.ps1
+      - name: Audit exact Windows Rust dependencies
+        working-directory: ${{ github.workspace }}
+        run: ./verification/audit-windows-rust-dependencies.ps1
+      - name: Verify exact GitHub-hosted checkout remained unchanged
+        shell: 'C:\Windows\System32\cmd.exe /d /s /c ""C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo -NoProfile -NonInteractive -Command - < "{0}""'
+        working-directory: ${{ github.workspace }}
         run: |
-          $env:PYTHONPATH = "$PWD\server\src"
-          $env:YAP_SERVER_HOST = "127.0.0.1"
-          $env:YAP_SERVER_PORT = "18765"
-          $server = Start-Process python -ArgumentList "-m", "yap_server" -PassThru -WindowStyle Hidden
-          try {
-            $ready = $false
-            for ($attempt = 0; $attempt -lt 20; $attempt++) {
-              try {
-                Invoke-RestMethod "http://127.0.0.1:18765/v1/health" | Out-Null
-                $ready = $true
-                break
-              } catch {
-                Start-Sleep -Milliseconds 500
-              }
-            }
-            if (-not $ready) { throw "Yap server health did not become ready" }
-            $env:YAP_TEST_SERVER_URL = "http://127.0.0.1:18765"
-            cargo test --locked --manifest-path .\desktop\src-tauri\Cargo.toml --test server_connector
-            if ($LASTEXITCODE -ne 0) { throw "server connector integration failed" }
-          } finally {
-            Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+          $GuardBytes = [Convert]::FromBase64String(
+            '${{ steps.exact_head_checkout.outputs.guard_source_base64 }}'
+          )
+          $ExpectedGuardSha256 = '${{ steps.exact_head_checkout.outputs.guard_sha256 }}'
+          if ($ExpectedGuardSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted exact-head guard identity is malformed.'
           }
-      - name: Verify Windows advisory boundary
-        run: |
-          $ErrorActionPreference = "Stop"
-          $windowsPackages = @(cargo tree --locked --offline --target x86_64-pc-windows-msvc --prefix none --format "{p}")
-          if ($LASTEXITCODE -ne 0) {
-            throw "Unable to inspect the locked Windows dependency graph."
+          $GuardSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData($GuardBytes)
+          ).ToLowerInvariant()
+          if ($GuardSha256 -cne $ExpectedGuardSha256) {
+            throw 'The admitted exact-head guard source changed after initial verification.'
           }
-          $windowsGlibPackages = @($windowsPackages | Where-Object { $_ -match '^glib v' })
-          if ($windowsGlibPackages.Count -ne 0) {
-            throw "glib became reachable on Windows; reevaluate GHSA-wrw7-89jp-8q8g: $($windowsGlibPackages -join ', ')"
+          $Utf8 = [Text.UTF8Encoding]::new($false, $true)
+          $ExpectedPowerShellSha256 = '${{ steps.exact_head_checkout.outputs.powershell_sha256 }}'
+          if ($ExpectedPowerShellSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted PowerShell host identity is malformed.'
           }
-      - name: cargo audit
-        run: |
-          $ErrorActionPreference = "Stop"
-          $archive = Join-Path $env:RUNNER_TEMP "cargo-audit-x86_64-pc-windows-msvc-v0.22.2.zip"
-          $url = "https://github.com/RustSec/rustsec/releases/download/cargo-audit/v0.22.2/cargo-audit-x86_64-pc-windows-msvc-v0.22.2.zip"
-          $extractRoot = Join-Path $env:RUNNER_TEMP "cargo-audit-0.22.2"
-          Invoke-WebRequest -Uri $url -OutFile $archive
-          $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actualSha256 -cne "0a7316540862c13d954f648917ceacca593747baed6eec180fafa590be2710ab") {
-            throw "Pinned cargo-audit archive hash mismatch."
+          $PowerShellExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.powershell_executable_base64 }}'
+            )
+          )
+          $CurrentPowerShellExecutable = [IO.Path]::GetFullPath(
+            [Environment]::ProcessPath
+          )
+          if (-not [StringComparer]::OrdinalIgnoreCase.Equals(
+            [IO.Path]::GetFullPath($PowerShellExecutable),
+            $CurrentPowerShellExecutable
+          )) {
+            throw 'The final exact-head proof started in a substituted PowerShell host.'
           }
-          Expand-Archive -LiteralPath $archive -DestinationPath $extractRoot -Force
-          $cargoAudit = Join-Path $extractRoot "cargo-audit-x86_64-pc-windows-msvc-v0.22.2\cargo-audit.exe"
-          if (-not (Test-Path -LiteralPath $cargoAudit -PathType Leaf)) {
-            throw "Pinned cargo-audit executable was not extracted."
+          $CurrentPowerShellSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData(
+              [IO.File]::ReadAllBytes($CurrentPowerShellExecutable)
+            )
+          ).ToLowerInvariant()
+          if ($CurrentPowerShellSha256 -cne $ExpectedPowerShellSha256) {
+            throw 'The admitted PowerShell host changed after initial verification.'
           }
-          $cargoAuditVersion = & $cargoAudit --version
-          if ($LASTEXITCODE -ne 0 -or $cargoAuditVersion -cne "cargo-audit 0.22.2") {
-            throw "Pinned cargo-audit executable has an unexpected version."
-          }
-          # Policy: cargo-audit warnings from Tauri's target-all desktop
-          # transitive crates are allowed for now. Vulnerabilities fail CI.
-          & $cargoAudit audit --target-os windows --target-arch x86_64
-          if ($LASTEXITCODE -ne 0) { throw "cargo-audit failed." }
+          $GitExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.git_executable_base64 }}'
+            )
+          )
+          $RepositoryRoot = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.repository_root_base64 }}'
+            )
+          )
+          $GuardBlock = [ScriptBlock]::Create($Utf8.GetString($GuardBytes))
+          & $GuardBlock `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -VerificationStage Final `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Windows `
+            -GitExecutable $GitExecutable `
+            -ExpectedGitSha256 '${{ steps.exact_head_checkout.outputs.git_sha256 }}' `
+            -RepositoryRoot $RepositoryRoot `
+            -ExpectedTrackedManifestSha256 '${{ steps.exact_head_checkout.outputs.tracked_manifest_sha256 }}' `
+            -ExpectedGitIndexSha256 '${{ steps.exact_head_checkout.outputs.git_index_sha256 }}'
       - name: Save Cargo dependency downloads from trusted main
         if: >-
           success() &&
@@ -255,18 +384,34 @@ jobs:
     env:
       RUST_TARGET: x86_64-pc-windows-msvc
       RUST_TOOLCHAIN: stable
+      YAP_CHECKED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     defaults:
       run:
         shell: pwsh
         working-directory: desktop
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Verify PowerShell 7.4 Core
         shell: pwsh
         run: |
           if ($PSVersionTable.PSEdition -cne "Core" -or $PSVersionTable.PSVersion -lt [version]"7.4") {
             throw "CI requires PowerShell Core 7.4 or newer."
           }
+      - name: Verify exact GitHub-hosted checkout
+        id: exact_head_checkout
+        shell: 'C:\Windows\System32\cmd.exe /d /s /c ""C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo -NoProfile -NonInteractive -Command - < "{0}""'
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./verification/initialize-github-hosted-checkout-proof.ps1 `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Windows `
+            -GitCommandName git.exe `
+            -ExpectedPowerShellExecutable 'C:\Program Files\PowerShell\7\pwsh.exe' `
+            -OutputFile $env:GITHUB_OUTPUT
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
         with:
           version: 11.7.0
@@ -304,15 +449,75 @@ jobs:
       - name: Build the WDIO-enabled app once
         run: pnpm test:desktop:build
       - name: Run required hardware-independent WDIO specs
-        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        env:
+          YAP_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: node ./verification/run-hosted-windows-runtime-check.mjs native-wdio
+      - name: Verify exact GitHub-hosted checkout remained unchanged
+        shell: 'C:\Windows\System32\cmd.exe /d /s /c ""C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo -NoProfile -NonInteractive -Command - < "{0}""'
+        working-directory: ${{ github.workspace }}
         run: |
-          New-Item -ItemType Directory -Force tests/results | Out-Null
-          & pnpm exec wdio run ./tests/wdio.required.conf.ts 2>&1 |
-            Tee-Object -FilePath tests/results/native-wdio-run.log
-          $wdioExitCode = $LASTEXITCODE
-          if ($wdioExitCode -ne 0) {
-            exit $wdioExitCode
+          $GuardBytes = [Convert]::FromBase64String(
+            '${{ steps.exact_head_checkout.outputs.guard_source_base64 }}'
+          )
+          $ExpectedGuardSha256 = '${{ steps.exact_head_checkout.outputs.guard_sha256 }}'
+          if ($ExpectedGuardSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted exact-head guard identity is malformed.'
           }
+          $GuardSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData($GuardBytes)
+          ).ToLowerInvariant()
+          if ($GuardSha256 -cne $ExpectedGuardSha256) {
+            throw 'The admitted exact-head guard source changed after initial verification.'
+          }
+          $Utf8 = [Text.UTF8Encoding]::new($false, $true)
+          $ExpectedPowerShellSha256 = '${{ steps.exact_head_checkout.outputs.powershell_sha256 }}'
+          if ($ExpectedPowerShellSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted PowerShell host identity is malformed.'
+          }
+          $PowerShellExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.powershell_executable_base64 }}'
+            )
+          )
+          $CurrentPowerShellExecutable = [IO.Path]::GetFullPath(
+            [Environment]::ProcessPath
+          )
+          if (-not [StringComparer]::OrdinalIgnoreCase.Equals(
+            [IO.Path]::GetFullPath($PowerShellExecutable),
+            $CurrentPowerShellExecutable
+          )) {
+            throw 'The final exact-head proof started in a substituted PowerShell host.'
+          }
+          $CurrentPowerShellSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData(
+              [IO.File]::ReadAllBytes($CurrentPowerShellExecutable)
+            )
+          ).ToLowerInvariant()
+          if ($CurrentPowerShellSha256 -cne $ExpectedPowerShellSha256) {
+            throw 'The admitted PowerShell host changed after initial verification.'
+          }
+          $GitExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.git_executable_base64 }}'
+            )
+          )
+          $RepositoryRoot = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.repository_root_base64 }}'
+            )
+          )
+          $GuardBlock = [ScriptBlock]::Create($Utf8.GetString($GuardBytes))
+          & $GuardBlock `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -VerificationStage Final `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Windows `
+            -GitExecutable $GitExecutable `
+            -ExpectedGitSha256 '${{ steps.exact_head_checkout.outputs.git_sha256 }}' `
+            -RepositoryRoot $RepositoryRoot `
+            -ExpectedTrackedManifestSha256 '${{ steps.exact_head_checkout.outputs.tracked_manifest_sha256 }}' `
+            -ExpectedGitIndexSha256 '${{ steps.exact_head_checkout.outputs.git_index_sha256 }}'
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: failure()
         with:
@@ -337,6 +542,21 @@ jobs:
             throw "CI requires PowerShell Core 7.4 or newer."
           }
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact GitHub-hosted checkout
+        id: exact_head_checkout
+        shell: 'C:\Windows\System32\cmd.exe /d /s /c ""C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo -NoProfile -NonInteractive -Command - < "{0}""'
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./verification/initialize-github-hosted-checkout-proof.ps1 `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Windows `
+            -GitCommandName git.exe `
+            -ExpectedPowerShellExecutable 'C:\Program Files\PowerShell\7\pwsh.exe' `
+            -OutputFile $env:GITHUB_OUTPUT
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
@@ -350,6 +570,225 @@ jobs:
         run: uv sync --locked --exact --extra evaluation --extra test --python (Get-Command python.exe).Source --no-python-downloads
       - name: Lint the Python server
         working-directory: server
-        run: uv run --locked ruff check .
+        run: uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py
       - name: Run the portable Python 3.12 server suite
         run: ./verification/test-portable-python-server.ps1
+      - name: Verify exact GitHub-hosted checkout remained unchanged
+        shell: 'C:\Windows\System32\cmd.exe /d /s /c ""C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo -NoProfile -NonInteractive -Command - < "{0}""'
+        working-directory: ${{ github.workspace }}
+        run: |
+          $GuardBytes = [Convert]::FromBase64String(
+            '${{ steps.exact_head_checkout.outputs.guard_source_base64 }}'
+          )
+          $ExpectedGuardSha256 = '${{ steps.exact_head_checkout.outputs.guard_sha256 }}'
+          if ($ExpectedGuardSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted exact-head guard identity is malformed.'
+          }
+          $GuardSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData($GuardBytes)
+          ).ToLowerInvariant()
+          if ($GuardSha256 -cne $ExpectedGuardSha256) {
+            throw 'The admitted exact-head guard source changed after initial verification.'
+          }
+          $Utf8 = [Text.UTF8Encoding]::new($false, $true)
+          $ExpectedPowerShellSha256 = '${{ steps.exact_head_checkout.outputs.powershell_sha256 }}'
+          if ($ExpectedPowerShellSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted PowerShell host identity is malformed.'
+          }
+          $PowerShellExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.powershell_executable_base64 }}'
+            )
+          )
+          $CurrentPowerShellExecutable = [IO.Path]::GetFullPath(
+            [Environment]::ProcessPath
+          )
+          if (-not [StringComparer]::OrdinalIgnoreCase.Equals(
+            [IO.Path]::GetFullPath($PowerShellExecutable),
+            $CurrentPowerShellExecutable
+          )) {
+            throw 'The final exact-head proof started in a substituted PowerShell host.'
+          }
+          $CurrentPowerShellSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData(
+              [IO.File]::ReadAllBytes($CurrentPowerShellExecutable)
+            )
+          ).ToLowerInvariant()
+          if ($CurrentPowerShellSha256 -cne $ExpectedPowerShellSha256) {
+            throw 'The admitted PowerShell host changed after initial verification.'
+          }
+          $GitExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.git_executable_base64 }}'
+            )
+          )
+          $RepositoryRoot = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.repository_root_base64 }}'
+            )
+          )
+          $GuardBlock = [ScriptBlock]::Create($Utf8.GetString($GuardBytes))
+          & $GuardBlock `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -VerificationStage Final `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Windows `
+            -GitExecutable $GitExecutable `
+            -ExpectedGitSha256 '${{ steps.exact_head_checkout.outputs.git_sha256 }}' `
+            -RepositoryRoot $RepositoryRoot `
+            -ExpectedTrackedManifestSha256 '${{ steps.exact_head_checkout.outputs.tracked_manifest_sha256 }}' `
+            -ExpectedGitIndexSha256 '${{ steps.exact_head_checkout.outputs.git_index_sha256 }}'
+
+  mock-oidc:
+    name: mock-oidc
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact GitHub-hosted checkout
+        id: exact_head_checkout
+        shell: /opt/microsoft/powershell/7/pwsh -NoLogo -NoProfile -NonInteractive -File {0}
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./verification/initialize-github-hosted-checkout-proof.ps1 `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Linux `
+            -GitCommandName git `
+            -ExpectedPowerShellExecutable '/opt/microsoft/powershell/7/pwsh' `
+            -OutputFile $env:GITHUB_OUTPUT
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Prove Linux executable-bit drift fails closed
+        working-directory: desktop
+        run: >-
+          node --test
+          --test-name-pattern "real Git executable-bit drift"
+          tests/scripts/release-contract/github-hosted-checkout.contract.mjs
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.21"
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - name: Verify Linux PowerShell and Docker
+        run: |
+          if (
+            $PSVersionTable.PSEdition -cne "Core" -or
+            $PSVersionTable.PSVersion -lt [version]"7.4"
+          ) {
+            throw "Mock OIDC CI requires PowerShell Core 7.4 or newer."
+          }
+          docker version
+          if ($LASTEXITCODE -ne 0) {
+            throw "Mock OIDC CI requires the hosted Docker service."
+          }
+      - name: Populate the exact mock OIDC dependency environment
+        working-directory: server
+        run: |
+          $UvIdentity = (& uv --version)
+          if ($LASTEXITCODE -ne 0 -or $UvIdentity -notmatch '^uv 0\.11\.21(?: |$)') {
+            throw "Mock OIDC CI requires uv 0.11.21."
+          }
+          $PythonIdentity = (& python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+          if ($LASTEXITCODE -ne 0 -or $PythonIdentity -cne "3.12") {
+            throw "Mock OIDC CI requires Python 3.12."
+          }
+          $PythonCommand = Get-Command python -CommandType Application |
+            Select-Object -First 1
+          $Python = $PythonCommand.Source
+          uv sync --locked --exact --python $Python --no-python-downloads
+          if ($LASTEXITCODE -ne 0) {
+            throw "Mock OIDC CI could not populate the locked server environment."
+          }
+      - name: Run required Linux owned-process lifecycle tests without skips
+        shell: bash
+        env:
+          PYTHONPATH: server
+          YAP_REQUIRE_LINUX_LIFECYCLE_TESTS: "1"
+        run: |
+          test -x /usr/bin/python3.12
+          test "$(/usr/bin/python3.12 -I -S -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')" = 3.12
+          uv run --project server --locked python -m unittest -v \
+            tests.infra.test_owned_process_group_behavior \
+            tests.infra.test_owned_process_supervisor \
+            tests.infra.test_resident_provider_lifecycle_gate \
+            tests.infra.test_private_container_loopback_proxy \
+            tests.infra.test_private_container_loopback_proxy_behavior
+      - name: Run the pinned mock OIDC owner flow
+        run: ./verification/test-mock-oidc-owner-flow.ps1
+      - name: Verify exact GitHub-hosted checkout remained unchanged
+        shell: /opt/microsoft/powershell/7/pwsh -NoLogo -NoProfile -NonInteractive -File {0}
+        working-directory: ${{ github.workspace }}
+        run: |
+          $GuardBytes = [Convert]::FromBase64String(
+            '${{ steps.exact_head_checkout.outputs.guard_source_base64 }}'
+          )
+          $ExpectedGuardSha256 = '${{ steps.exact_head_checkout.outputs.guard_sha256 }}'
+          if ($ExpectedGuardSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted exact-head guard identity is malformed.'
+          }
+          $GuardSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData($GuardBytes)
+          ).ToLowerInvariant()
+          if ($GuardSha256 -cne $ExpectedGuardSha256) {
+            throw 'The admitted exact-head guard source changed after initial verification.'
+          }
+          $Utf8 = [Text.UTF8Encoding]::new($false, $true)
+          $ExpectedPowerShellSha256 = '${{ steps.exact_head_checkout.outputs.powershell_sha256 }}'
+          if ($ExpectedPowerShellSha256 -cnotmatch '^[0-9a-f]{64}$') {
+            throw 'The admitted PowerShell host identity is malformed.'
+          }
+          $PowerShellExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.powershell_executable_base64 }}'
+            )
+          )
+          $CurrentPowerShellExecutable = [IO.Path]::GetFullPath(
+            [Environment]::ProcessPath
+          )
+          if (-not [StringComparer]::Ordinal.Equals(
+            [IO.Path]::GetFullPath($PowerShellExecutable),
+            $CurrentPowerShellExecutable
+          )) {
+            throw 'The final exact-head proof started in a substituted PowerShell host.'
+          }
+          $CurrentPowerShellSha256 = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData(
+              [IO.File]::ReadAllBytes($CurrentPowerShellExecutable)
+            )
+          ).ToLowerInvariant()
+          if ($CurrentPowerShellSha256 -cne $ExpectedPowerShellSha256) {
+            throw 'The admitted PowerShell host changed after initial verification.'
+          }
+          $GitExecutable = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.git_executable_base64 }}'
+            )
+          )
+          $RepositoryRoot = $Utf8.GetString(
+            [Convert]::FromBase64String(
+              '${{ steps.exact_head_checkout.outputs.repository_root_base64 }}'
+            )
+          )
+          $GuardBlock = [ScriptBlock]::Create($Utf8.GetString($GuardBytes))
+          & $GuardBlock `
+            -ExpectedHead '${{ github.event.pull_request.head.sha || github.sha }}' `
+            -VerificationStage Final `
+            -RunnerEnvironment '${{ runner.environment }}' `
+            -ExpectedRunnerOs Linux `
+            -GitExecutable $GitExecutable `
+            -ExpectedGitSha256 '${{ steps.exact_head_checkout.outputs.git_sha256 }}' `
+            -RepositoryRoot $RepositoryRoot `
+            -ExpectedTrackedManifestSha256 '${{ steps.exact_head_checkout.outputs.tracked_manifest_sha256 }}' `
+            -ExpectedGitIndexSha256 '${{ steps.exact_head_checkout.outputs.git_index_sha256 }}'

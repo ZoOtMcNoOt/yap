@@ -92,24 +92,28 @@ specific behind that seam.
 - The launcher rejects root and runs the container as the invoking model-owner
   UID/GID so private host model directories do not need broader permissions.
 - Docker publishes no provider-container port. Each foreground launcher owns a
-  `setsid`-isolated `socat` process group with a fixed 32-connection child and
-  backlog ceiling that forwards one numeric `127.0.0.1` port to the
-  container-private address. The unauthenticated Yap development service also
-  remains loopback-only. SSH tunneling is the current LAN-development boundary
-  until Phase 7 authentication and later enterprise network controls exist.
-  The proxy starts with a cleared environment and therefore does not inherit
-  either provider API key.
+  checked-supervisor-created, `os.setsid()`-isolated `socat` process group with
+  a fixed 32-connection child and backlog ceiling that forwards one numeric
+  `127.0.0.1` port to the container-private address. The unauthenticated Yap
+  development service also remains loopback-only. SSH tunneling is the current
+  LAN-development boundary until Phase 7 authentication and later enterprise
+  network controls exist. The proxy starts with a cleared environment and
+  therefore does not inherit either provider API key.
 - Each resident launcher also requires an existing internal Docker bridge whose
   owner and exact revision labels match the checked head. The checked lifecycle
   wrapper owns that temporary network and removes it before evidence
   publication; the provider containers have no external egress through it. The
-  launcher requires `socat`, `setsid`, `ss`, and `ps`, validates the exact
-  loopback listener, and terminates the complete proxy process group before
-  returning. The proxy publishes its process-group identity in a private
-  per-run file before `exec`-ing `socat`. The lifecycle owner validates the
-  run-token environment on every surviving member and applies bounded
-  TERM/KILL cleanup, so an abnormal launcher exit cannot orphan the nested
-  proxy group or transfer cleanup to an unrelated PID.
+  launcher requires GNU `readlink -f`, `socat`, `ss`, `ps`, and `timeout`. It
+  resolves the PATH-selected `socat` command to one canonical absolute regular
+  executable before container mutation, validates the exact loopback listener,
+  and terminates the complete proxy process group before returning. The checked
+  `/usr/bin/python3.12` supervisor creates the isolated session with
+  `os.setsid()`, retains a pidfd, binds PID plus start time, and holds the child
+  behind its release barrier. After the child is ready, the proxy publishes its
+  process-group identity in a private per-run file. The lifecycle owner
+  validates the run-token environment on every surviving member and applies
+  bounded TERM/KILL cleanup, so an abnormal launcher exit cannot orphan the
+  nested proxy group or transfer cleanup to an unrelated PID.
 - The vLLM worker rejects punctuation-off requests because the pinned Cohere
   decoder currently fixes the `<|pnc|>` control token.
 - HTTP request bodies and responses are bounded. Cancellation explicitly shuts

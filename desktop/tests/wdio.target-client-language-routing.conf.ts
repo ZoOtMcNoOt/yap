@@ -26,6 +26,12 @@ import {
 import { validateTargetClientNativeResourceEvidence } from "./wdio/target-client-native-resource-evidence.js";
 import { validateTargetClientPowerThermalEvidence } from "./wdio/target-client-power-thermal-evidence.js";
 import { validateTargetClientPreparedAudioEvidence } from "./wdio/target-client-prepared-audio-evidence.js";
+import {
+  assertPrivateDirectory,
+  assertPrivateFile,
+  protectAndVerifyPrivateDirectory,
+  writeExclusivePrivateFile,
+} from "../../verification/private-gate-artifacts.mjs";
 
 // Cohesion note: preflight and finalization intentionally share one captured
 // path/hash identity so the private evidence transaction cannot change owners.
@@ -223,6 +229,9 @@ function requireNativeResourceEvidence() {
   requireRealFile(contextPath, "Native resource context");
   requireRealFile(profilePath, "Native resource profile");
   requireRealFile(logPath, "Native resource log");
+  assertPrivateFile(contextPath);
+  assertPrivateFile(profilePath);
+  assertPrivateFile(logPath);
   const context = JSON.parse(readFileSync(contextPath, "utf8"));
   const profile = JSON.parse(readFileSync(profilePath, "utf8"));
   const processors = os.cpus();
@@ -252,6 +261,7 @@ function requirePreparedAudioEvidence() {
   requireOutsideRepository(preparedAudioEvidencePath, "Prepared-audio evidence");
   requireInsideEvidenceRoot(preparedAudioEvidencePath, "Prepared-audio evidence");
   requireRealFile(preparedAudioEvidencePath, "Prepared-audio evidence");
+  assertPrivateFile(preparedAudioEvidencePath);
   validateTargetClientPreparedAudioEvidence(
     JSON.parse(readFileSync(preparedAudioEvidencePath, "utf8")),
     {
@@ -268,18 +278,20 @@ function createPrivateRunDirectories() {
     if (existsSync(runRoot)) {
       throw new Error("The target-client rendered-UI evidence path must be new.");
     }
-    mkdirSync(runRoot);
+    mkdirSync(runRoot, { mode: 0o700 });
+    protectAndVerifyPrivateDirectory(runRoot);
     for (const directory of [appDataRoot, recordingRoot, webviewRoot, outputDirectory]) {
-      mkdirSync(directory);
+      mkdirSync(directory, { mode: 0o700 });
+      protectAndVerifyPrivateDirectory(directory);
     }
     writeFileSync(
       path.join(appDataRoot, "primary-language.json"),
       `${JSON.stringify({ schemaVersion: 1, languageBcp47: "en-US" }, null, 2)}\n`,
       { encoding: "utf8", flag: "wx" },
     );
-    writeFileSync(
+    writeExclusivePrivateFile(
       uiContextFile,
-      `${JSON.stringify({
+      Buffer.from(`${JSON.stringify({
         schemaVersion: 4,
         status: "started",
         activeCaptureMs,
@@ -298,19 +310,18 @@ function createPrivateRunDirectories() {
         stimulusSha256,
         stimulusDelivery,
         transcriptTextRecorded: false,
-      }, null, 2)}\n`,
-      { encoding: "utf8", flag: "wx" },
+      }, null, 2)}\n`),
     );
     if (validatedPowerThermalEvidence) {
-      writeFileSync(
+      writeExclusivePrivateFile(
         powerThermalSummaryFile,
-        `${JSON.stringify(validatedPowerThermalEvidence, null, 2)}\n`,
-        { encoding: "utf8", flag: "wx" },
+        Buffer.from(`${JSON.stringify(validatedPowerThermalEvidence, null, 2)}\n`),
       );
     }
   }
   for (const directory of [runRoot, appDataRoot, recordingRoot, webviewRoot, outputDirectory]) {
     requireRealDirectory(directory, "Target-client gate directory");
+    assertPrivateDirectory(directory);
   }
 }
 
@@ -335,6 +346,7 @@ requireStimulusIdentity();
 requireOutsideRepository(evidenceRoot, "Target-client evidence");
 requireOutsideRepository(modelsRoot, "Target-client models");
 requireRealDirectory(evidenceRoot, "Target-client evidence root");
+assertPrivateDirectory(evidenceRoot);
 requireRealDirectory(modelsRoot, "Target-client models root");
 requireReleaseBinary();
 requireNativeResourceEvidence();
@@ -426,6 +438,8 @@ export const config = {
     if (!existsSync(uiEvidenceFile)) {
       throw new Error("The target-client UI gate did not publish aggregate evidence.");
     }
+    assertPrivateFile(uiEvidenceFile);
+    assertPrivateFile(uiContextFile);
     const evidenceBytes = readFileSync(uiEvidenceFile);
     const evidence = JSON.parse(evidenceBytes.toString("utf8"));
     if (
@@ -507,5 +521,6 @@ export const config = {
       }, null, 2)}\n`,
       { encoding: "utf8" },
     );
+    assertPrivateFile(uiContextFile);
   },
 };

@@ -18,6 +18,10 @@ import {
   integratedGateCellDefinitionSha256,
   validateIntegratedGateReceipt,
 } from "./integrated-gate-receipt.mjs";
+import {
+  GITHUB_ADMISSION_AUTHORITY_HOST,
+  GITHUB_ADMISSION_REPOSITORY,
+} from "./github-gate-admission.mjs";
 
 const SHA40 = /^[0-9a-f]{40}$/;
 const RUNNER_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
@@ -49,16 +53,33 @@ function requireOutsideRepository(candidate, label) {
   );
 }
 
-function gh(args) {
+function gh(args, { requireExplicitToken = false } = {}) {
+  if (requireExplicitToken) {
+    requireCondition(
+      typeof process.env.GH_TOKEN === "string" && process.env.GH_TOKEN.length > 0,
+      "Identity hosted closure requires a dedicated nonempty GH_TOKEN.",
+    );
+  }
   const result = spawnSync("gh", args, {
     cwd: REPOSITORY_ROOT,
     encoding: "utf8",
+    env: {
+      ...process.env,
+      GH_HOST: GITHUB_ADMISSION_AUTHORITY_HOST,
+      GH_PROMPT_DISABLED: "1",
+    },
     maxBuffer: 50 * 1024 * 1024,
+    timeout: 30_000,
+    killSignal: "SIGKILL",
     windowsHide: true,
   });
+  if (result.error) {
+    throw new Error(`GitHub CLI failed: ${result.error.message}`);
+  }
+  const detail = String(result.stderr ?? result.stdout ?? "").trim();
   requireCondition(
     result.status === 0,
-    `GitHub CLI ${args.join(" ")} failed: ${(result.stderr || result.stdout).trim()}`,
+    `GitHub CLI ${args.join(" ")} failed${detail ? `: ${detail}` : "."}`,
   );
   return result.stdout;
 }
@@ -104,7 +125,7 @@ export function assertCandidateToHostedLineage(candidateHead, hostedHead) {
   return Object.freeze({ documentationOnly: true, changed });
 }
 
-function listWorkflowRuns(workflow, checkedHead) {
+function listWorkflowRuns(workflow, checkedHead, requireExplicitToken) {
   return JSON.parse(gh([
     "run",
     "list",
@@ -114,19 +135,23 @@ function listWorkflowRuns(workflow, checkedHead) {
     checkedHead,
     "--limit",
     "100",
+    "--repo",
+    `${GITHUB_ADMISSION_AUTHORITY_HOST}/${GITHUB_ADMISSION_REPOSITORY}`,
     "--json",
     "databaseId,headSha,workflowName,status,conclusion,attempt,createdAt,updatedAt,url",
-  ]));
+  ], { requireExplicitToken }));
 }
 
-function readRunJobs(databaseId) {
+function readRunJobs(databaseId, requireExplicitToken) {
   return JSON.parse(gh([
     "run",
     "view",
     String(databaseId),
+    "--repo",
+    `${GITHUB_ADMISSION_AUTHORITY_HOST}/${GITHUB_ADMISSION_REPOSITORY}`,
     "--json",
     "jobs",
-  ])).jobs;
+  ], { requireExplicitToken })).jobs;
 }
 
 export function selectHostedClosureEvidence({
@@ -214,6 +239,7 @@ export function buildHostedClosureReceipt({
   checkedHead,
   candidateHead,
   candidateReceiptSha256,
+  admissionSha256,
   selected,
 }) {
   requireCondition(
@@ -227,13 +253,16 @@ export function buildHostedClosureReceipt({
     .map(({ job }) => job.completedAt)
     .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
   return {
-    schemaVersion: 2,
+    schemaVersion: manifest.gateId === "integrated-identity-access" ? 3 : 2,
     gateId: manifest.gateId,
     scope: "hosted-closure",
     checkedHead,
     candidateHead,
     candidateReceiptSha256,
     manifestSha256,
+    ...(manifest.gateId === "integrated-identity-access"
+      ? { admissionSha256 }
+      : {}),
     status: "passed",
     startedAt,
     finishedAt,
@@ -252,9 +281,13 @@ export function buildHostedClosureReceipt({
 }
 
 export function collectHostedClosureEvidence(manifest, checkedHead) {
+  const requireExplicitToken = manifest.gateId === "integrated-identity-access";
   const workflows = [...new Set(manifest.hostedClosureCells.map(({ workflow }) => workflow))];
   const runsByWorkflow = new Map(
-    workflows.map((workflow) => [workflow, listWorkflowRuns(workflow, checkedHead)]),
+    workflows.map((workflow) => [
+      workflow,
+      listWorkflowRuns(workflow, checkedHead, requireExplicitToken),
+    ]),
   );
   const runIds = new Set();
   for (const runs of runsByWorkflow.values()) {
@@ -269,7 +302,10 @@ export function collectHostedClosureEvidence(manifest, checkedHead) {
       }
     }
   }
-  const jobsByRun = new Map([...runIds].map((runId) => [runId, readRunJobs(runId)]));
+  const jobsByRun = new Map([...runIds].map((runId) => [
+    runId,
+    readRunJobs(runId, requireExplicitToken),
+  ]));
   return selectHostedClosureEvidence({
     cells: manifest.hostedClosureCells,
     checkedHead,
@@ -290,6 +326,7 @@ export function writeHostedClosureReceipt({
   const { manifest, manifestSha256 } = completedCandidate;
   const candidateHead = completedCandidate.admission.checkedHead;
   const candidateReceiptSha256 = sha256(completedCandidate.candidateReceiptBytes);
+  const admissionSha256 = completedCandidate.candidateReceipt.admissionSha256 ?? null;
   const lineage = assertCandidateToHostedLineage(candidateHead, checkedHead);
 
   requireCondition(path.isAbsolute(output), "Hosted receipt path must be absolute.");
@@ -313,6 +350,7 @@ export function writeHostedClosureReceipt({
     checkedHead,
     candidateHead,
     candidateReceiptSha256,
+    admissionSha256,
     selected,
   });
   validateIntegratedGateReceipt({
@@ -322,6 +360,7 @@ export function writeHostedClosureReceipt({
     expectedHead: checkedHead,
     expectedCandidateHead: candidateHead,
     expectedCandidateReceiptSha256: candidateReceiptSha256,
+    expectedAdmissionSha256: admissionSha256,
     expectedScope: "hosted-closure",
   });
   writeFileSync(output, `${JSON.stringify(receipt, null, 2)}\n`, {

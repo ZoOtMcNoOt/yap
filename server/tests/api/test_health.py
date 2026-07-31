@@ -20,6 +20,22 @@ class HealthTests(unittest.TestCase):
             },
         )
 
+    def test_authentication_alone_does_not_advertise_job_handlers(self) -> None:
+        self.assertEqual(
+            health(authentication_required=True),
+            {
+                "service": "yap-server",
+                "status": "ok",
+                "apiVersion": "1",
+                "auth": "required",
+                "capabilities": {
+                    "batchJobs": False,
+                    "liveStreaming": False,
+                    "jobStatus": False,
+                },
+            },
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

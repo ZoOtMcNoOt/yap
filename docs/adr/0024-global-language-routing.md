@@ -284,6 +284,11 @@ source-time language evidence.
   source-audio retention. The detector-history and ASR-commit cursors share the
   same `Arc`-backed frames but advance independently: overlapping LID windows
   cannot discard future detector input, and detector history cannot replay ASR.
+- Local dictation startup is two-stage. Streaming recording and CPAL capture
+  install before Nemotron warmup completes; one bounded pending-ASR port retains
+  accepted source frames in FIFO order, and the batched adapter catches up after
+  stream installation. Saturation remains explicit, and successful start
+  completion still requires local ASR, so this is not a recording-only mode.
 - The LID component owns only bounded acoustic observations and a deterministic
   temporal decision policy. It cannot publish transcript text, mutate the saved
   primary locale, select among ASR providers, or own durable job/session state.

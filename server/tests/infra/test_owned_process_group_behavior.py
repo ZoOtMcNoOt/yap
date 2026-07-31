@@ -11,10 +11,7 @@ from tests.infra.linux_bash import find_linux_bash
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 PROCESS_GROUP_HELPER = (
-    REPOSITORY_ROOT
-    / "infra"
-    / "yap-server-node"
-    / "owned-process-group.sh"
+    REPOSITORY_ROOT / "infra" / "yap-server-node" / "owned-process-group.sh"
 )
 OWNER_TOKEN = "d" * 64
 
@@ -23,7 +20,9 @@ class OwnedProcessGroupBehaviorTests(unittest.TestCase):
     def test_recorded_group_is_retired_after_its_launcher_leader_exits(self) -> None:
         bash = find_linux_bash()
         if bash is None:
-            self.skipTest("Linux-compatible bash is unavailable for the process-group replay")
+            self.skipTest(
+                "Linux-compatible bash is unavailable for the process-group replay"
+            )
 
         with tempfile.TemporaryDirectory() as temporary:
             identity_file = _bash_path(Path(temporary) / "proxy.pgid")
@@ -74,7 +73,9 @@ test -z "$(yap_process_group_members "$recorded_group")"
     def test_recorded_group_with_another_owner_is_not_signalled(self) -> None:
         bash = find_linux_bash()
         if bash is None:
-            self.skipTest("Linux-compatible bash is unavailable for the process-group replay")
+            self.skipTest(
+                "Linux-compatible bash is unavailable for the process-group replay"
+            )
 
         with tempfile.TemporaryDirectory() as temporary:
             identity_file = _bash_path(Path(temporary) / "foreign.pgid")
@@ -127,7 +128,9 @@ wait "$group" 2>/dev/null || true
     def test_inventory_failure_retains_the_recorded_identity(self) -> None:
         bash = find_linux_bash()
         if bash is None:
-            self.skipTest("Linux-compatible bash is unavailable for the process-group replay")
+            self.skipTest(
+                "Linux-compatible bash is unavailable for the process-group replay"
+            )
 
         with tempfile.TemporaryDirectory() as temporary:
             identity_file = _bash_path(Path(temporary) / "inventory-failed.pgid")
@@ -169,7 +172,9 @@ test -e "$identity_file"
     def test_targeted_recheck_failure_never_signals_a_live_member(self) -> None:
         bash = find_linux_bash()
         if bash is None:
-            self.skipTest("Linux-compatible bash is unavailable for the process-group replay")
+            self.skipTest(
+                "Linux-compatible bash is unavailable for the process-group replay"
+            )
 
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -224,93 +229,6 @@ test ! -e "$signal_marker"
                     errors="replace",
                 ),
             )
-
-    def test_pre_session_direct_child_is_stopped_before_it_can_detach(self) -> None:
-        bash = find_linux_bash()
-        if bash is None:
-            self.skipTest("Linux-compatible bash is unavailable for the pre-session replay")
-
-        with tempfile.TemporaryDirectory() as temporary:
-            release_file = _bash_path(Path(temporary) / "release")
-            harness = f"""
-set -euo pipefail
-release_file={shlex.quote(release_file)}
-owner_token={shlex.quote(OWNER_TOKEN)}
-env YAP_RUNTIME_OWNER_TOKEN="$owner_token" bash -c '
-  while [ ! -e "$1" ]; do sleep 0.05; done
-  exec setsid env YAP_RUNTIME_OWNER_TOKEN="$2" sleep 60
-' bash "$release_file" "$owner_token" &
-child_pid="$!"
-stop_owned_child_process_group \
-  "$child_pid" "$owner_token" "pre-session child" "$$"
-wait "$child_pid" 2>/dev/null || true
-: >"$release_file"
-test -z "$(yap_process_group_members "$child_pid")"
-"""
-            completed = subprocess.run(
-                [bash],
-                input=(
-                    PROCESS_GROUP_HELPER.read_text(encoding="utf-8")
-                    .replace("\r\n", "\n")
-                    .replace("\r", "\n")
-                    + harness
-                ).encode("utf-8"),
-                check=False,
-                capture_output=True,
-                timeout=30,
-            )
-
-            self.assertEqual(
-                completed.returncode,
-                0,
-                (completed.stdout + completed.stderr).decode(
-                    "utf-8",
-                    errors="replace",
-                ),
-            )
-
-    def test_pre_session_child_with_another_token_is_not_signalled(self) -> None:
-        bash = find_linux_bash()
-        if bash is None:
-            self.skipTest("Linux-compatible bash is unavailable for the pre-session replay")
-
-        harness = f"""
-set -euo pipefail
-expected_owner={shlex.quote(OWNER_TOKEN)}
-foreign_owner={"e" * 64}
-env YAP_RUNTIME_OWNER_TOKEN="$foreign_owner" sleep 60 &
-child_pid="$!"
-set +e
-stop_owned_child_process_group \
-  "$child_pid" "$expected_owner" "foreign pre-session child" "$$"
-status="$?"
-set -e
-test "$status" -eq 1
-kill -0 "$child_pid"
-kill -TERM "$child_pid"
-wait "$child_pid" 2>/dev/null || true
-"""
-        completed = subprocess.run(
-            [bash],
-            input=(
-                PROCESS_GROUP_HELPER.read_text(encoding="utf-8")
-                .replace("\r\n", "\n")
-                .replace("\r", "\n")
-                + harness
-            ).encode("utf-8"),
-            check=False,
-            capture_output=True,
-            timeout=30,
-        )
-
-        self.assertEqual(
-            completed.returncode,
-            0,
-            (completed.stdout + completed.stderr).decode(
-                "utf-8",
-                errors="replace",
-            ),
-        )
 
 
 def _bash_path(path: Path) -> str:

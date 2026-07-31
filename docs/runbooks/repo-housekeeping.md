@@ -40,11 +40,11 @@ Keep the folder name `desktop/` while this is a staged monorepo. Rename the repo
 
 | Priority | Item | Current state | Next action |
 |----------|------|---------------|-------------|
-| P1 | Production remote server deployment remains deferred | The gated Phase 5 path connects durable loopback HTTP batch upload/drain, status, cancellation, result verification, and History projection to the isolated worker | Keep WSS/live, authentication, persistent service, external edge, and measured multi-worker capacity behind their explicit later gates |
+| P1 | Production remote server deployment remains deferred | The gated Phase 5 path connects durable loopback batch work; the active Phase 7 branch adds developer-owned authenticated REST ownership and private WebSocket admission without a production identity adapter or external edge | Keep live ASR, the client-facing same-origin WSS/TLS edge, persistent service supervision, and measured multi-worker capacity behind their explicit later gates |
 | P1 | CI parity clip is opt-in | Mock verbose JSON fixture protects timestamp contract in normal CI; real audio sidecar tests are ignored unless `YAP_PARITY_CLIP` is set | Add a licensed speech fixture later if real audio parity must run in CI |
 | P2 | ShadCN icon metadata now matches Phosphor | `components.json` declares Phosphor, and app imports Phosphor directly | Keep direct imports; do not add an icon adapter |
 | P2 | Active spec filenames use client/server names | Historical phase links were renamed to `local-live-fallback-sidecar.md`, `live-dictation-client-ux.md`, `server-tier-mvp.md`, and `local-llm-sidecar.md` | Leave ADR phase aliases intact unless an ADR is amended |
-| P2 | `server/` has a gated loopback reference runtime | Health contract, durable batch service, bounded router, immutable model/runtime lock, and one isolated transient worker passed the Phase 5 gate | Keep authenticated live service, persistent supervision, external networking, and measured multi-worker capacity behind their canonical gates |
+| P2 | `server/` has a gated loopback reference runtime | Health contract, durable batch service, bounded router, immutable model/runtime lock, and one isolated transient worker passed the Phase 5 gate; Phase 7 private authenticated WebSocket admission is focused-tested but not phase-gated | Keep live inference, persistent supervision, external networking, and measured multi-worker capacity behind their canonical gates |
 | P3 | Local checkout path is historical | `C:\dev\cohere-transcribe-local` differs from repo/product name | Local-only; rename outside Git when convenient |
 
 ## Audit commands

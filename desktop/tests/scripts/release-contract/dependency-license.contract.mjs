@@ -51,3 +51,37 @@ test("desktop runtime dependencies are exhaustively mapped from exact lockfiles"
     "SHIPPED_DEPENDENCY_NOTICES.json",
   );
 });
+
+test("authenticated WebSocket dependencies stay exact, minimal, and notice-bound", async () => {
+  const cargoManifest = await readRepoFile("desktop/src-tauri/Cargo.toml");
+  assert.match(
+    cargoManifest,
+    /^reqwest-websocket = \{ version = "=0\.6\.0", default-features = false \}$/m,
+  );
+  assert.match(
+    cargoManifest,
+    /^futures-util = \{ version = "0\.3\.32", default-features = false, features = \["sink"\] \}$/m,
+  );
+  assert.match(
+    cargoManifest,
+    /^tungstenite = \{ version = "=0\.28\.0", default-features = false, features = \["handshake"\] \}$/m,
+  );
+
+  const inventory = await verifyShippedDependencyInventory();
+  const expected = new Map([
+    ["async-tungstenite", ["0.32.1", "MIT"]],
+    ["data-encoding", ["2.11.0", "MIT"]],
+    ["reqwest-websocket", ["0.6.0", "MIT"]],
+    ["sha1", ["0.10.7", "MIT OR Apache-2.0"]],
+    ["tungstenite", ["0.28.0", "MIT OR Apache-2.0"]],
+  ]);
+  for (const [name, [version, licenseExpression]] of expected) {
+    const packageRecord = inventory.packages.rust.find(
+      (candidate) => candidate.name === name,
+    );
+    assert.ok(packageRecord, `${name} is absent from the shipped Rust inventory.`);
+    assert.equal(packageRecord.version, version);
+    assert.equal(packageRecord.licenseExpression, licenseExpression);
+    assert.ok(packageRecord.noticeDocuments.length > 0);
+  }
+});

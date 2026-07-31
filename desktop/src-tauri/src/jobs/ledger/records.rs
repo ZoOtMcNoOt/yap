@@ -260,15 +260,15 @@ pub(super) fn validate_opaque_identifier(
 }
 
 pub(super) fn validate_server_base_url(value: &str) -> Result<(), JobLedgerError> {
-    let normalized = crate::server_connector::batch::validate_development_batch_base_url(value)
-        .map_err(|_| {
+    let normalized =
+        crate::server_connector::batch::validate_batch_base_url(value).map_err(|_| {
             JobLedgerError::InvalidRecord(
-                "server base URL is outside the development transport contract",
+                "server base URL is outside the approved transport contract",
             )
         })?;
     if normalized != value {
         return Err(JobLedgerError::InvalidRecord(
-            "server base URL is outside the development transport contract",
+            "server base URL is outside the approved transport contract",
         ));
     }
     Ok(())

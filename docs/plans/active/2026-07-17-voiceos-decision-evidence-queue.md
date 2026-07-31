@@ -775,32 +775,43 @@ CodeQL, and stock-NSIS passed at first attempt on docs-only review head
 closure and adversarial read-back before PR #67 merged as
 `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 
-## Active post-Phase-6 checkpoint
+## Completed post-Phase-6 checkpoint
 
-The reviewed Phase 6 merge activates
-[codebase ownership and maintainability review](2026-07-18-codebase-ownership-and-maintainability-review.md).
-It has completed exactly three parallel antagonistic reviews and applies the same
+The
+[codebase ownership and maintainability review](../completed/2026-07-18-codebase-ownership-and-maintainability-review.md)
+completed exactly three parallel antagonistic reviews and applied the same
 ownership/decomposition/maintainability checkpoint used after Phase 5, on a
-separate refactor branch with no Phase 7 behavior. Historical candidates and
-the consumed first hosted head remain recorded in the detailed checkpoint plan
-but are not merge authority. After the narrow hosted-failure repairs and
-three-agent read-back, exact executable candidate
+separate refactor branch with no Phase 7 behavior. After the narrow
+hosted-failure repairs and three-agent read-back, exact executable candidate
 `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted
 31-child checkpoint matrix and independent receipt validation with exact
-teardown. First-attempt hosted CI, CodeQL, and stock-NSIS closure on the
-documentation-only descendant, final review, and merge remain before Phase 7
-starts. Phase 7 then uses the same phase -> adversarial checkpoint -> next-phase
-cadence.
+teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on reviewed
+documentation-only head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68
+merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
+
+The active
+[tenant-scoped identity and job authorization plan](2026-07-25-tenant-scoped-identity-and-job-authorization.md)
+now governs Phase 7. Phase 7 uses the same phase -> adversarial checkpoint ->
+next-phase cadence.
 
 ## Later-phase queue
 
 ### Phase 7 — Identity and ownership
 
-- Replace the fixed development owner with token-derived `(tid, oid)` identity.
-- Implement Entra/MSAL client flow, Yap API audience validation, secure token
-  storage, revocation, authorization, purpose grants, and audit events.
-- Prove identity reaches batch/live admission without making UI state or a model
-  the authorization authority.
+- The active branch replaces fixed ownership in the authenticated profile with
+  validated `(tid, oid)` principals, owner-scopes batch/LID access, and enforces
+  access revocation and purpose grants through one redacted audit owner.
+- Provider-neutral OIDC discovery/JWKS validation executes behind an Entra
+  policy adapter. A narrow native token-acquisition interface and bearer
+  injection boundary execute, but no enterprise-approved production
+  MSAL/WAM adapter or token cache is selected.
+- Authenticated REST and bounded private WebSocket admission are focused-tested.
+  The WebSocket listener has no live ASR, and the desktop does not infer the
+  private server's separate REST/live ports or claim a production same-origin
+  WSS edge.
+- The pinned mock-OIDC flow, final three-agent adversarial closure, exact
+  one-time Phase 7 gate, hosted checks, PR, and merge remain the current
+  delivery boundary.
 
 ### Phase 8 — Meeting evidence
 

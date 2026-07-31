@@ -12,6 +12,9 @@ const EXPECTED_DURATIONS_MS = Object.freeze([
   30_000,
 ]);
 const MEASUREMENT_BOUNDARY = "desktop-prepared-audio-frame-to-final";
+// This mirrors the frozen Rust queue contract so a capacity change invalidates
+// stale evidence instead of silently changing its interpretation.
+const EXPECTED_LOCAL_ASR_QUEUE_CAPACITY_FRAMES = 1_024;
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message);
@@ -48,6 +51,10 @@ export function validateTargetClientPreparedAudioEvidence(value, expected) {
     "Prepared-audio drain timing contract does not match.",
   );
   requireCondition(
+    value.queueCapacityFrames === EXPECTED_LOCAL_ASR_QUEUE_CAPACITY_FRAMES,
+    "Prepared-audio queue capacity does not match the frozen contract.",
+  );
+  requireCondition(
     Number.isSafeInteger(value.logicalProcessorBudget)
       && value.logicalProcessorBudget === expected.logicalProcessors,
     "Prepared-audio processor budget does not match the current target host.",
@@ -62,6 +69,10 @@ export function validateTargetClientPreparedAudioEvidence(value, expected) {
     const durationMs = EXPECTED_DURATIONS_MS[index];
     const expectedFrames = durationMs / 10;
     const expectedSamples = durationMs * 16;
+    const maximumObservableQueueDepth = Math.min(
+      expectedFrames,
+      value.queueCapacityFrames,
+    );
     requireCondition(
       candidate.durationMs === durationMs
         && candidate.durationSamples === expectedSamples
@@ -73,6 +84,12 @@ export function validateTargetClientPreparedAudioEvidence(value, expected) {
         && candidate.droppedFrames === 0
         && candidate.processedAudioSamples === expectedSamples,
       `Prepared-audio case ${durationMs} ms did not preserve every source frame.`,
+    );
+    requireCondition(
+      Number.isSafeInteger(candidate.queueHighWaterMark)
+        && candidate.queueHighWaterMark >= 1
+        && candidate.queueHighWaterMark <= maximumObservableQueueDepth,
+      `Prepared-audio case ${durationMs} ms has an invalid queue high-water mark.`,
     );
     requireCondition(
       candidate.streamStatus === "completed"
@@ -89,6 +106,10 @@ export function validateTargetClientPreparedAudioEvidence(value, expected) {
           candidate.adapterDrainMs <= value.adapterDrainTargetMs
         ),
       `Prepared-audio case ${durationMs} ms has inconsistent drain timing.`,
+    );
+    requireCondition(
+      candidate.adapterDrainTargetMet === true,
+      `Prepared-audio case ${durationMs} ms did not meet the drain target.`,
     );
     requireCondition(
       candidate.expectedText === (durationMs >= 1_000)

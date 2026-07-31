@@ -80,6 +80,24 @@ describe("dependency audit retry policy", () => {
     expect(waits).toEqual([10_000, 30_000]);
   });
 
+  it("retries pnpm's generic fetch failure before accepting a clean audit", async () => {
+    const results = [
+      auditResult(1, "[ERROR] fetch failed\n\nTypeError: fetch failed"),
+      auditResult(0),
+    ];
+    const waits = [];
+
+    const result = await auditDependencies({
+      runAudit: async () => results.shift(),
+      retryDelaysMs: [10_000],
+      sleep: async (delayMs) => waits.push(delayMs),
+      writeStatus: () => {},
+    });
+
+    expect(result).toEqual({ ok: true, attempts: 2, exitCode: 0 });
+    expect(waits).toEqual([10_000]);
+  });
+
   it("does not retry a vulnerability result or another non-transient failure", async () => {
     let attempts = 0;
     const waits = [];
@@ -88,6 +106,27 @@ describe("dependency audit retry policy", () => {
       runAudit: async () => {
         attempts += 1;
         return auditResult(1, "3 high severity vulnerabilities");
+      },
+      sleep: async (delayMs) => waits.push(delayMs),
+      writeStatus: () => {},
+    });
+
+    expect(result).toEqual({ ok: false, attempts: 1, exitCode: 1 });
+    expect(attempts).toBe(1);
+    expect(waits).toEqual([]);
+  });
+
+  it("does not retry a signaled audit even when its output contains a network failure", async () => {
+    let attempts = 0;
+    const waits = [];
+
+    const result = await auditDependencies({
+      runAudit: async () => {
+        attempts += 1;
+        return {
+          ...auditResult(1, "[ERROR] fetch failed"),
+          signal: "SIGTERM",
+        };
       },
       sleep: async (delayMs) => waits.push(delayMs),
       writeStatus: () => {},
@@ -124,12 +163,16 @@ describe("dependency audit retry policy", () => {
     "request failed with ETIMEDOUT",
     "request failed with EAI_AGAIN",
     "504 Gateway Timeout",
+    "[ERROR] fetch failed",
+    "TypeError: fetch failed",
   ])("recognizes a transient registry or network failure: %s", (output) => {
     expect(isTransientDependencyAuditFailure(output)).toBe(true);
   });
 
   it.each([
     "3 high severity vulnerabilities",
+    "3 high severity vulnerabilities\n[ERROR] fetch failed",
+    "2 vulnerabilities found\nSeverity: 2 high\n[ERROR] fetch failed",
     "SELF_SIGNED_CERT_IN_CHAIN",
     "ERR_PNPM_LOCKFILE_BREAKING_CHANGE",
     "503 high severity vulnerabilities",
@@ -173,7 +216,10 @@ describe("dependency audit retry policy", () => {
     let observed;
 
     const resultPromise = runPnpmDependencyAudit({
-      environment: { EXISTING_VALUE: "preserved" },
+      environment: {
+        EXISTING_VALUE: "preserved",
+        PNPM_CONFIG_FETCH_RETRIES: "9",
+      },
       platform: "linux",
       spawnProcess: (command, args, options) => {
         observed = { command, args, options };
@@ -190,6 +236,29 @@ describe("dependency audit retry policy", () => {
     expect(observed.options.env).toMatchObject({
       EXISTING_VALUE: "preserved",
       pnpm_config_fetch_retries: "0",
+    });
+    expect(observed.options.env).not.toHaveProperty("PNPM_CONFIG_FETCH_RETRIES");
+  });
+
+  it("preserves a child termination signal for fail-closed retry policy", async () => {
+    const child = new EventEmitter();
+    child.stdout = new EventEmitter();
+    child.stderr = new EventEmitter();
+
+    const resultPromise = runPnpmDependencyAudit({
+      platform: "linux",
+      spawnProcess: () => {
+        queueMicrotask(() => child.emit("close", null, "SIGTERM"));
+        return child;
+      },
+      stdout: { write: () => {} },
+      stderr: { write: () => {} },
+    });
+
+    await expect(resultPromise).resolves.toEqual({
+      exitCode: 1,
+      output: "\nProcess signal: SIGTERM",
+      signal: "SIGTERM",
     });
   });
 

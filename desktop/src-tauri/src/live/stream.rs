@@ -11,9 +11,9 @@ const SAMPLE_RATE: i32 = 16_000;
 const TAIL_SILENCE: Duration = Duration::from_millis(1500);
 
 pub(crate) enum StreamMessage {
-    Samples {
+    PreparedFrames {
         session: u64,
-        frame: PreparedFrame,
+        frames: Vec<PreparedFrame>,
     },
     Finish {
         session: u64,
@@ -22,21 +22,27 @@ pub(crate) enum StreamMessage {
 }
 
 impl StreamMessage {
-    pub(crate) fn from_prepared(session: u64, frame: PreparedFrame) -> Self {
-        Self::Samples { session, frame }
+    #[cfg(test)]
+    pub(crate) fn from_prepared_frame(session: u64, frame: PreparedFrame) -> Self {
+        Self::from_prepared_frames(session, vec![frame])
+    }
+
+    pub(crate) fn from_prepared_frames(session: u64, frames: Vec<PreparedFrame>) -> Self {
+        debug_assert!(!frames.is_empty(), "stream frame batches must not be empty");
+        Self::PreparedFrames { session, frames }
     }
 
     #[cfg(test)]
     fn session(&self) -> u64 {
         match self {
-            Self::Samples { session, .. } | Self::Finish { session, .. } => *session,
+            Self::PreparedFrames { session, .. } | Self::Finish { session, .. } => *session,
         }
     }
 
     #[cfg(test)]
-    fn samples(&self) -> &[f32] {
+    fn prepared_frames(&self) -> &[PreparedFrame] {
         match self {
-            Self::Samples { frame, .. } => &frame.samples,
+            Self::PreparedFrames { frames, .. } => frames,
             Self::Finish { .. } => &[],
         }
     }
@@ -44,7 +50,9 @@ impl StreamMessage {
     #[cfg(test)]
     fn start_ms(&self) -> Option<u64> {
         match self {
-            Self::Samples { frame, .. } => Some(frame.metadata.start_ms),
+            Self::PreparedFrames { frames, .. } => {
+                frames.first().map(|frame| frame.metadata.start_ms)
+            }
             Self::Finish { .. } => None,
         }
     }
@@ -333,10 +341,11 @@ mod tests {
             samples: Arc::from([0.25_f32, -0.25]),
         };
 
-        let message = StreamMessage::from_prepared(7, frame);
+        let message = StreamMessage::from_prepared_frame(7, frame);
 
         assert_eq!(message.session(), 7);
-        assert_eq!(message.samples(), &[0.25, -0.25]);
+        assert_eq!(message.prepared_frames().len(), 1);
+        assert_eq!(&*message.prepared_frames()[0].samples, &[0.25, -0.25]);
         assert_eq!(message.start_ms(), Some(10));
     }
 }

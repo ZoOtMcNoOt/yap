@@ -11,7 +11,7 @@ Keep three planes separate:
 | Plane | Purpose | Exposure |
 | --- | --- | --- |
 | Management | SSH, recovery, tunnels | Private Ethernet for demos; corporate LAN/VPN later |
-| App entrypoint | Current loopback HTTP batch; future `yap-server` WSS + HTTPS | SSH-forwarded loopback during Phase 5 development; one managed TLS endpoint later |
+| App entrypoint | Current loopback REST on `18765` plus auth-only private live WebSocket admission on `18766` | Separate loopback listeners today; one approved same-origin HTTPS/WSS edge with discovery later |
 | Model/runtime internals | Ollama, VNC, dashboard, model pools, databases | Loopback, container network, or SSH tunnel only |
 
 Default rule: a Yap application service is never exposed to the public internet.
@@ -167,8 +167,10 @@ is a development profile, not an enterprise deployment:
 - the application service still binds only to server loopback;
 - Windows reaches it only through an explicitly started SSH local forward;
 - the desktop remains configured with `http://127.0.0.1:18765`;
-- SSH access is the temporary transport authorization boundary; the service
-  does not yet derive a tenant or owner from an Entra token;
+- in the default `development_loopback` auth mode, SSH access remains the
+  temporary transport authorization boundary and the service uses only the
+  isolated development principal; the Phase 7 `entra` mode instead derives
+  tenant/owner from a validated Yap API token;
 - no GB10 application firewall rule, TLS listener, DNS record, ZPA segment, or
   persistent service is created; and
 - the merged Phase 5 reference worker remains a transient, non-root, networkless
@@ -178,6 +180,86 @@ is a development profile, not an enterprise deployment:
   key remains mandatory. Optional Nemotron jobs use the same shape on a
   different loopback port and API key. None is a persistent supervised
   production service.
+
+### Phase 7 application-authentication mode
+
+The executable Entra mode is an application boundary, not permission to invent
+or deploy enterprise identity configuration. IT must supply the approved
+single-tenant native-client and Yap API registrations, exposed delegated scope,
+assignment/consent policy, and test principals. Use only canonical identifiers
+from the
+[Entra identity conformance handoff](entra-identity-conformance-handoff.md):
+
+```powershell
+$env:YAP_AUTH_MODE = 'entra'
+$env:YAP_SERVER_HOST = '127.0.0.1'
+$env:YAP_SERVER_PORT = '18765'
+$env:YAP_SERVER_LIVE_PORT = '18766'
+$env:YAP_ENTRA_TENANT_ID = '<approved-tenant-uuid>'
+$env:YAP_ENTRA_AUDIENCE = '<approved-yap-api-app-uuid>'
+$env:YAP_ENTRA_ALLOWED_CLIENT_IDS = '<approved-desktop-client-uuid>'
+$env:YAP_ENTRA_REQUIRED_SCOPE = 'access_as_user'
+$env:YAP_IDENTITY_STORAGE_DIR = '<private-owner-restricted-identity-directory>'
+```
+
+The server owns provider-neutral OIDC discovery and JWKS retrieval, signature
+verification, bounded key refresh, and Entra-specific issuer, tenant, audience,
+client, scope, and role policy. Its identity repository enforces access state,
+purpose grants and revocation, and a redacted hash-chain audit. The desktop owns
+a narrow native access-token-provider interface, but the production build
+installs no provider and fails closed. No MSAL.NET/WAM helper, browser adapter,
+or production token cache is shipped; the handoff must select and qualify an
+approved adapter before real sign-in can be claimed.
+
+The desktop Settings entry uses the same approved tenant and desktop client IDs
+plus the full delegated scope, for example
+`api://<approved-yap-api-app-uuid>/access_as_user`. It never accepts a Graph
+scope as the Yap API scope. Remote HTTPS requires this public identity
+configuration; bearer tokens are never sent over private plaintext HTTP.
+Loopback HTTP remains available for the isolated development profile.
+
+In `entra` mode, protected REST routes and the private live listener admit the
+same authenticated principal and recheck revocation. The executable topology is
+still two loopback origins: REST on `18765` and live WebSocket admission on
+`18766`. The desktop boundary deliberately does not infer the live origin from
+the REST origin. No production same-origin HTTPS/WSS edge or discovery
+mechanism exists, so do not publish `18766` directly or treat this admission
+boundary as a promoted live-ASR service.
+
+Before any real-provider test, verify the identity directory is private,
+untracked, outside hosted artifacts, and covered by the approved encryption,
+backup, deletion, audit-retention, and administrator-access policy. The current
+SQLite adapter is for executable development/restart evidence; it is not the
+approved production database or audit sink.
+
+The mock-OIDC dependency is digest-pinned in
+[`verification/mock-oidc-provider.lock.json`](../../verification/mock-oidc-provider.lock.json),
+and its bounded owner-flow harness is
+[`verification/test-mock-oidc-owner-flow.ps1`](../../verification/test-mock-oidc-owner-flow.ps1).
+Focused executable fake-Docker lifecycle, workflow, and integrated-gate
+contracts are green. The dedicated hosted
+`mock-oidc` job is both the exact-head Docker closure and the required
+no-skip Linux owned-process lifecycle lane. The three-agent working-tree review
+found and drove repairs for `SIGPIPE`, ambient Python startup, bounded pidfd
+failure, missing-result group recovery, container-start interruption, and stale
+numeric log-follower ownership. Re-review added post-reap proof latching,
+zombie-environment recheck, bounded Docker probes, delayed daemon publication,
+and created/stopped container removal. Final re-review also rejected the old
+timed-absence heuristic for an interrupted Docker request. Retained-pidfd head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` implemented those repairs but was
+rejected before admission when connected prequalification exposed the stock
+GB10 `socat` package-link incompatibility. Reviewed and pushed implementation
+head `3bae8ae0306c1c96c3378ef2aa090c08f9bd2cad` canonicalizes that command before
+container mutation, separates create/start, uses an exclusive container-ID
+file, and retains a private pre-create recovery record whenever the daemon
+outcome cannot be resolved. Exact-tree re-review, all 14 focused proxy
+contracts, and the real root-owned GB10 target proof pass with no P0–P2 finding.
+Fresh final-head private-controller packaging/prequalification, the complete
+gate, first-attempt hosted closure, the focused PR, and merge remain open.
+This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
+revocation propagation, guest behavior, packaged enterprise policy, or
+production approval. Run those only in a separately authorized IT-provided
+environment.
 
 On the Linux node, use Python 3.12 and private mode-0700 job storage. Replace
 the angle-bracket paths only with a clean staged candidate and the already
@@ -291,10 +373,18 @@ network, or a network whose owner/revision labels do not match the candidate.
 The containers therefore have no registry or Internet egress. Docker 29 on the
 qualified GB10 did not make an `--internal` bridge's requested published port
 reachable, so the checked launchers intentionally publish no Docker ports.
-They require `socat` 1.8+, `setsid`, `ss`, and `ps`; each launcher starts one
-bounded process group that forwards only numeric IPv4 loopback to the fixed
-container-private address. The proxy process starts with a cleared environment
-and does not inherit the provider API key:
+They require the real system `/usr/bin/python3.12`, GNU `readlink -f`, `socat`
+1.8+, `ss`, `ps`, and `timeout`. Python starts with `-I -S`; output logs are
+exclusively created regular files, so user-site hooks and replaceable/FIFO
+output paths cannot run or block before supervision. The checked Python
+supervisor—not a shell `setsid` background job—forks each launcher, sampler,
+and proxy behind a release barrier, immediately opens a pidfd, binds PID plus
+start time, proves exec/token-owned group membership, and reaps with
+`waitid(P_PIDFD)`. Explicit stop, controller loss, launch deadline, exec
+failure, and pidfd-acquisition failure are bounded even before
+`/proc/<pid>/environ` exposes the exec-time token. The proxy group forwards only
+numeric IPv4 loopback to the fixed container-private address, starts with a
+cleared environment, and does not inherit the provider API key:
 
 ```bash
 inference_network="yap-private-inference-${checked_head:0:12}"
@@ -381,13 +471,22 @@ YAP_LANGUAGE_DETECTION_MODEL_DIR="$lid_model_dir" \
 YAP_LANGUAGE_DETECTION_WORKER_IMAGE="$lid_image" \
 YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT="$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT" \
 YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256="$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256" \
+YAP_UV_BINARY="/absolute/path/to/uv" \
 bash infra/yap-server-node/development-batch-server.sh
 ```
 
 Omit the five language-detection variables only when intentionally testing
 the explicit manual-review fallback. In that mode the server does not
 advertise `languagePreflight`, and the client must not advance as though a
-language preflight had succeeded.
+language preflight had succeeded. The launcher uses the server's locked Python
+3.12 `uv` project with network access disabled. Prepare that environment and
+its cache before launch; a missing locked dependency fails closed instead of
+falling back to ambient system packages. Because this is the explicit
+loopback-only development launcher, it also selects
+`YAP_SERVER_CONFIGURATION=development` and
+`YAP_AUTH_MODE=development_loopback` itself. It does not inherit an ambient
+release or Entra mode, and the fixed development principal cannot be selected
+by a client or used on a non-loopback application bind.
 
 Only a frozen qualification that intentionally exercises the provider-neutral
 Yap job boundary should use the complete invocation below. Create a matching
@@ -413,6 +512,7 @@ YAP_NEMOTRON_MODEL_DIR="$nemotron_model_dir" \
 YAP_NEMOTRON_MODEL_LOCK="$release_root/server/nemotron-nemo-serving.lock.json" \
 YAP_NEMOTRON_NEMO_ENDPOINT="http://127.0.0.1:18001" \
 YAP_NEMOTRON_NEMO_API_KEY="$YAP_NEMOTRON_NEMO_API_KEY" \
+YAP_UV_BINARY="/absolute/path/to/uv" \
 bash infra/yap-server-node/development-batch-server.sh
 ```
 
@@ -425,12 +525,27 @@ exactly numeric IPv4 loopback. The model containers use the invoking non-root
 UID/GID so mode-0700 private model directories remain readable without widening
 host permissions. Run every
 configured service and Yap in the foreground so `Ctrl+C`, SSH loss, and
-`SIGTERM` stop the container, its log follower, and the complete proxy process
-and must not be installed as persistent units before their separate frozen
-lifecycle/capacity gates and later production-supervision work. An external
-candidate capability lock is qualification input, not evidence that Nemotron is
-selected or advertised. After both foreground model containers are stopped,
-verify that neither private `*.pgid` identity remains. If a launcher was
+`SIGTERM` reconcile and stop/remove only a token-verified immutable container ID
+before retiring the complete proxy process. Docker create and start are
+separate; the launcher writes a private recovery record before create and
+supplies Docker an exclusive container-ID file. A create interrupted before its
+ID is resolved is an explicit cleanup failure, and the record remains under the
+private gate runtime directory; elapsed name absence is never proof. Every
+Docker probe and operation fits below the outer supervisor TERM deadline.
+Recovery records retire only after Docker proves the immutable container ID
+absent; a renamed or relabeled container is retained for explicit recovery.
+Deletion failure remains an unclean launcher result, and normal gate teardown
+independently proves the recovery record, partial publication, and container-ID
+file absent before clearing their path. Provider containers omit Docker
+auto-removal so normal-exit logs remain available to a bounded teardown command
+before explicit immutable-ID removal; no independently signalled numeric-PID log
+follower exists. These launchers must not be installed as persistent units
+before their separate frozen lifecycle/capacity gates and later
+production-supervision work. An external candidate capability lock is
+qualification input, not evidence that Nemotron is selected or advertised.
+After both foreground model containers are stopped,
+verify that no private `*.pgid`, `*.container-id`, or `*.container-recovery`
+identity remains. If a launcher was
 abnormally killed, first recover its container by the expected name, require
 the same run token, checked revision, and internal network, then stop only the
 returned immutable ID:
@@ -452,14 +567,20 @@ for provider_name in yap-cohere-vllm yap-nemotron-nemo; do
     echo "refusing to stop an unowned replacement provider" >&2
     exit 1
   fi
-  docker stop --time 10 "$provider_id"
+  docker rm --force "$provider_id"
 done
 ```
 
-Then source `infra/yap-server-node/owned-process-group.sh` and call
+Normal checked teardown uses the shared owned-process lifecycle helper, whose
+retained-pidfd supervisor owns TERM/KILL, exact reaping, and the zero-member
+postcondition. A missing or failed supervisor result falls back only after the
+direct supervisor is proved exited and reaped; recorded state plus the same
+`runtime_owner_token` must validate every surviving member before group
+cleanup. For manual recovery after controller loss or a prior crash, source
+`infra/yap-server-node/owned-process-group.sh` and call
 `stop_recorded_token_owned_process_group` with that provider's identity file,
-the same `runtime_owner_token`, and a descriptive label; it refuses to signal a
-group unless every surviving member still carries that token. Then
+the same token, and a descriptive label. A mismatched member is retained rather
+than signalled. Then
 remove the exact temporary network explicitly with
 its immutable ID after checking its name and run-token label:
 
@@ -679,21 +800,46 @@ result. Cancellation must remain cancelled across reconnect, and a user retry
 must create a new server job without changing the original source.
 
 For the one-time checked-head native gate, do not start the forward manually.
-The gate owns one explicit SSH alias, proves port 18765 is initially
+The gate owns one checked no-config SSH profile, proves port 18765 is initially
 unreachable, starts the forward, imports the locked CC-BY-4.0 fixture, drops
 the forward around that same durable client job, observes `Retrying`, restores
-the same alias/origin, and waits for the verified History result. Its evidence
-directory is a new private path outside the repository and contains only
-non-content metadata and hashes:
+the same destination/origin, and waits for the verified History result. Its
+evidence directory is a new private path outside the repository and contains
+only non-content metadata and hashes:
 
 ```powershell
 $CheckedHead = (git rev-parse HEAD).Trim()
 $EvidenceParent = Join-Path $env:LOCALAPPDATA 'Yap-private-gate-evidence'
 New-Item -ItemType Directory -Force -Path $EvidenceParent | Out-Null
+$PrivateArtifactHelper = (
+  Resolve-Path -LiteralPath '.\verification\private-gate-artifacts.ps1'
+).Path
+& $PrivateArtifactHelper `
+  -Operation protect-directory `
+  -LiteralPath $EvidenceParent | Out-Null
+
+$SshIdentity = (
+  Resolve-Path -LiteralPath (Join-Path $HOME '.ssh\dgx_spark_eth')
+).Path
+$SshKnownHosts = (
+  Resolve-Path -LiteralPath (Join-Path $HOME '.ssh\known_hosts')
+).Path
+foreach ($SshFile in @($SshIdentity, $SshKnownHosts)) {
+  & $PrivateArtifactHelper `
+    -Operation protect-ssh-file `
+    -LiteralPath $SshFile | Out-Null
+  & $PrivateArtifactHelper `
+    -Operation verify-ssh-file `
+    -LiteralPath $SshFile | Out-Null
+}
 
 $env:YAP_CHECKED_HEAD = $CheckedHead
 $env:YAP_PRIVATE_SERVER_ASR_GATE_BASE_URL = 'http://127.0.0.1:18765'
-$env:YAP_PRIVATE_SERVER_ASR_GATE_SSH_ALIAS = 'dgx-spark-eth'
+$env:YAP_PRIVATE_SERVER_SSH_DESTINATION = 'admin@192.168.50.1'
+$env:YAP_PRIVATE_SERVER_SSH_EXECUTABLE = Join-Path `
+  $env:SystemRoot 'System32\OpenSSH\ssh.exe'
+$env:YAP_PRIVATE_SERVER_SSH_IDENTITY_FILE = $SshIdentity
+$env:YAP_PRIVATE_SERVER_SSH_KNOWN_HOSTS_FILE = $SshKnownHosts
 $env:YAP_PRIVATE_SERVER_ASR_GATE_EVIDENCE_DIR = Join-Path $EvidenceParent $CheckedHead
 $env:YAP_PRIVATE_SERVER_ASR_GATE_TIMEOUT_MS = '2700000'
 
@@ -701,11 +847,18 @@ Set-Location desktop
 pnpm test:private-server-asr-gate
 ```
 
-Use `dgx-spark-lan` only for the separately authorized Wi-Fi rehearsal. The
-gate never resolves or substitutes aliases and refuses an alias containing
-shell syntax. It also refuses to run from a dirty/different head, with a
-pre-existing local listener/forward, or with an evidence destination that
-already exists.
+Use `dgx-spark-lan` only for the separately authorized manual Wi-Fi rehearsal;
+the admitted checked-head gate remains bound to the private-Ethernet address.
+The gate supplies `-F NUL`, the absolute key and known-hosts paths, strict host
+checking, and disabled ambient forwarding, agents, proxies, local commands,
+passwords, and keyboard-interactive authentication. It refuses a mutable SSH
+alias, a PATH-selected or non-system SSH executable, SSH material without the
+exact private DACL, a dirty/different head, a pre-existing local
+listener/forward, or an evidence destination that already exists.
+Private gate artifacts use explicit Owner Rights, SYSTEM, and Administrators
+rules. The SSH key and known-hosts database use the OpenSSH-compatible variant:
+the concrete current Windows identity, SYSTEM, and Administrators. Both
+variants disable inheritance and reject every other or inherited rule.
 
 After the rehearsal, stop the desktop, forward, and server process. Confirm no
 Yap listener or worker remains before treating cleanup as complete:
@@ -777,8 +930,8 @@ step fails. Treat any reported recovery failure as a console repair condition.
 
 | Owner | Responsibilities |
 | --- | --- |
-| Product | Configurable HTTPS origin (with loopback HTTP limited to the Phase 3 tunnel), capability and auth-required state gating, no embedded node IP, and fail-closed retry without automatic network failover |
-| IT | Internal DNS, ZPA app segment and policy, App Connector placement and redundancy, connector-to-server routing, TLS termination and certificates, firewall source ranges, and Entra policy |
+| Product | Current provider-neutral OIDC validation with Entra policy, purpose and owner authorization, authenticated private live admission, a narrow native token-provider boundary, no embedded node IP, and fail-closed retry without automatic network failover; later consume one approved same-origin HTTPS/WSS edge and discovery contract |
+| IT | Entra tenant/native/API registrations and policy, approved native token-provider adapter and conformance environment, internal DNS, the same-origin HTTPS/WSS edge and discovery design, ZPA app segment and policy, App Connector placement and redundancy, connector-to-server routing, TLS termination and certificates, firewall source ranges, production identity storage/audit, and deployment approval |
 
 Product configuration cannot substitute for approved network topology, and IT
 network reachability does not imply that upload, authentication, or inference
@@ -792,7 +945,10 @@ For corporate use, get these from IT before opening the app endpoint:
 - DHCP reservation or static IP for the server node, including wireless if the node is intended to live on Wi-Fi
 - Client CIDR or VPN CIDR allowed to reach the service
 - TLS certificate source, preferably corporate CA or approved internal ACME
-- Auth plan from ADR 0016, likely Entra/MSAL bearer tokens
+- Approved ADR 0016 Entra/OIDC registration and policy values, the native
+  token-provider adapter/conformance decision, and the same-origin HTTPS/WSS
+  edge/discovery design from the
+  [Entra identity conformance handoff](entra-identity-conformance-handoff.md)
 
 Then run with corporate CIDRs:
 
@@ -895,6 +1051,9 @@ the directory and allow-rule operations are repeatable.
 - Do not open `11000`, `11434`, `5909`, database ports, or model worker ports directly.
 - Do not bind the Phase 3 health service to `0.0.0.0`, `[::]`, the Wi-Fi address, or an
   overlay address.
+- Do not publish the current private live port `18766`, infer it from REST
+  `18765`, or represent the two loopback listeners as the missing production
+  same-origin HTTPS/WSS edge.
 - Do not expose the Phase 4 container worker or model directory as a network
   service.
 - Do not make the server node public-internet reachable.

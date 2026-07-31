@@ -10,7 +10,7 @@ from unittest.mock import patch
 from urllib.request import urlopen
 
 from yap_server.api.app import MAX_CONCURRENT_REQUEST_THREADS, create_server
-from yap_server.config import ServerSettings
+from yap_server.config import ServerAuthenticationSettings, ServerSettings
 from yap_server.jobs import RecordingJobService
 
 from .api_fixtures import (
@@ -18,6 +18,13 @@ from .api_fixtures import (
     _CapturingLogger,
     ControlledJobProcessor,
     meeting_import_job_request,
+)
+
+
+DEVELOPMENT_SETTINGS = ServerSettings(
+    host="127.0.0.1",
+    port=0,
+    authentication=ServerAuthenticationSettings(mode="development_loopback"),
 )
 
 
@@ -31,7 +38,7 @@ class BoundedBatchJobServerTests(unittest.TestCase):
                 now=lambda: "2026-07-14T21:00:00Z",
             )
             server = create_server(
-                ServerSettings(host="127.0.0.1", port=0),
+                DEVELOPMENT_SETTINGS,
                 logger=_CapturingLogger(),
                 job_service=service,
             )
@@ -82,7 +89,7 @@ class BoundedBatchJobServerTests(unittest.TestCase):
             service.cancel(created["jobId"])
             expired_root = root / "jobs" / created["jobId"]
             server = create_server(
-                ServerSettings(host="127.0.0.1", port=0),
+                DEVELOPMENT_SETTINGS,
                 logger=_CapturingLogger(),
                 job_service=service,
             )
@@ -107,7 +114,7 @@ class BoundedBatchJobServerTests(unittest.TestCase):
         maximum_threads = MAX_CONCURRENT_REQUEST_THREADS
         service = _BlockingStatusService(maximum_threads)
         server = create_server(
-            ServerSettings(host="127.0.0.1", port=0),
+            DEVELOPMENT_SETTINGS,
             logger=_CapturingLogger(),
             job_service=service,  # type: ignore[arg-type]
         )

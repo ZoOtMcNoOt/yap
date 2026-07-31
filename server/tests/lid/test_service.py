@@ -9,6 +9,7 @@ import time
 import unittest
 from unittest.mock import patch
 
+from yap_server.auth import PrincipalKey
 from yap_server.lid import service as lid_service_module
 from yap_server.lid.component_lock import load_lid_component_lock
 from yap_server.lid.errors import (
@@ -91,9 +92,7 @@ class _CancelledContainmentWorker(_Worker):
         self.started.set()
         assert cancellation is not None
         cancellation.set()
-        raise WorkerContainmentError(
-            "container cleanup failed after cancellation"
-        )
+        raise WorkerContainmentError("container cleanup failed after cancellation")
 
 
 class LidPreflightServiceTests(unittest.TestCase):
@@ -122,9 +121,7 @@ class LidPreflightServiceTests(unittest.TestCase):
 
             def invoke() -> None:
                 try:
-                    service.run_envelope(
-                        _envelope(self.lock, "job-service-cancel")
-                    )
+                    service.run_envelope(_envelope(self.lock, "job-service-cancel"))
                 except BaseException as error:
                     failures.append(error)
 
@@ -138,6 +135,36 @@ class LidPreflightServiceTests(unittest.TestCase):
             self.assertEqual(len(failures), 1)
             self.assertIn("cancel", str(failures[0]))
             self.assertEqual(list(root.iterdir()), [])
+
+    def test_cross_owner_cancellation_is_indistinguishable_from_unknown(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            worker = _Worker(block=True)
+            service = self._service(root, worker)
+            owner = PrincipalKey("tenant-a", "subject-a")
+            other = PrincipalKey("tenant-a", "subject-b")
+            failures: list[BaseException] = []
+
+            def invoke() -> None:
+                try:
+                    service.run_envelope(
+                        _envelope(self.lock, "job-owner-cancel"),
+                        owner=owner,
+                    )
+                except BaseException as error:
+                    failures.append(error)
+
+            thread = threading.Thread(target=invoke)
+            thread.start()
+            self.assertTrue(worker.started.wait(timeout=2))
+            self.assertFalse(service.cancel("job-owner-cancel", owner=other))
+            self.assertFalse(service.cancel("unknown-request", owner=owner))
+            self.assertTrue(service.cancel("job-owner-cancel", owner=owner))
+            thread.join(timeout=2)
+
+            self.assertFalse(thread.is_alive())
+            self.assertEqual(len(failures), 1)
+            self.assertIn("cancel", str(failures[0]))
 
     def test_accepted_cancellation_cannot_race_with_a_successful_result(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -248,14 +275,10 @@ class LidPreflightServiceTests(unittest.TestCase):
                 WorkerContainmentError,
                 "cleanup failed after cancellation",
             ):
-                service.run_envelope(
-                    _envelope(self.lock, "job-cancel-containment")
-                )
+                service.run_envelope(_envelope(self.lock, "job-cancel-containment"))
 
             self.assertTrue(service.fenced)
-            self.assertTrue(
-                (root / "lid-job-cancel-containment").is_dir()
-            )
+            self.assertTrue((root / "lid-job-cancel-containment").is_dir())
 
     def test_staging_cleanup_failure_fences_before_materialization_returns(
         self,

@@ -16,6 +16,12 @@ pub(super) struct EnabledAlternateLocales {
     pub(super) locales: Vec<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub(super) struct LoadedRoutingPreference {
+    pub(super) locales: Vec<String>,
+    pub(super) requires_rewrite: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct PersistedLiveLanguageRouting {
@@ -50,6 +56,10 @@ pub(super) fn load() -> Result<EnabledAlternateLocales, LiveLanguageRoutingError
     load_from_path(&preference_path())
 }
 
+pub(super) fn load_for_update() -> Result<LoadedRoutingPreference, LiveLanguageRoutingError> {
+    load_for_update_from_path(&preference_path())
+}
+
 pub(super) fn save(
     enabled_alternate_locales: Vec<String>,
 ) -> Result<EnabledAlternateLocales, LiveLanguageRoutingError> {
@@ -59,14 +69,22 @@ pub(super) fn save(
 pub(super) fn load_from_path(
     path: &Path,
 ) -> Result<EnabledAlternateLocales, LiveLanguageRoutingError> {
+    load_for_update_from_path(path).map(|loaded| EnabledAlternateLocales {
+        locales: loaded.locales,
+    })
+}
+
+pub(super) fn load_for_update_from_path(
+    path: &Path,
+) -> Result<LoadedRoutingPreference, LiveLanguageRoutingError> {
     let Some(parent) = path.parent() else {
-        return Ok(EnabledAlternateLocales::default());
+        return Ok(LoadedRoutingPreference::default());
     };
     match std::fs::metadata(parent) {
         Ok(metadata) if metadata.is_dir() => {}
         Ok(_) => return Err(LiveLanguageRoutingError::Access),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(EnabledAlternateLocales::default())
+            return Ok(LoadedRoutingPreference::default())
         }
         Err(_) => return Err(LiveLanguageRoutingError::Access),
     }
@@ -79,7 +97,7 @@ pub(super) fn save_to_path(
     enabled_alternate_locales: Vec<String>,
     path: &Path,
 ) -> Result<EnabledAlternateLocales, LiveLanguageRoutingError> {
-    let enabled_alternate_locales = validate_and_sort(enabled_alternate_locales, false)?;
+    let enabled_alternate_locales = normalize_selection(enabled_alternate_locales)?;
     let preference = PersistedLiveLanguageRouting {
         schema_version: CURRENT_SCHEMA_VERSION,
         catalog_revision: crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION.to_owned(),
@@ -109,30 +127,35 @@ pub(super) fn save_to_path(
 
 fn load_from_path_under_lock(
     path: &Path,
-) -> Result<EnabledAlternateLocales, LiveLanguageRoutingError> {
+) -> Result<LoadedRoutingPreference, LiveLanguageRoutingError> {
     let text = match crate::bounded_file::read_text(path, MAX_ROUTING_PREFERENCE_BYTES) {
         Ok(text) => text,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(EnabledAlternateLocales::default())
+            return Ok(LoadedRoutingPreference::default())
         }
         Err(_) => return Err(LiveLanguageRoutingError::Access),
     };
     let value: serde_json::Value = serde_json::from_str(&text)
         .map_err(|_| LiveLanguageRoutingError::InvalidStoredPreference)?;
     let schema_version = schema_version(&value)?;
-    let (catalog_revision, locales) = match schema_version {
+    let (catalog_revision, locales, requires_rewrite) = match schema_version {
         CURRENT_SCHEMA_VERSION => {
             let preference: PersistedLiveLanguageRouting = serde_json::from_value(value)
                 .map_err(|_| LiveLanguageRoutingError::InvalidStoredPreference)?;
             (
                 preference.catalog_revision,
                 preference.enabled_alternate_locales,
+                false,
             )
         }
         LEGACY_SCHEMA_VERSION => {
             let preference: LegacyRegionalLanguageRouting = serde_json::from_value(value)
                 .map_err(|_| LiveLanguageRoutingError::InvalidStoredPreference)?;
-            (preference.catalog_revision, preference.regional_locales)
+            (
+                preference.catalog_revision,
+                preference.regional_locales,
+                true,
+            )
         }
         version => {
             return Err(LiveLanguageRoutingError::IncompatibleSchema(u64::from(
@@ -143,9 +166,16 @@ fn load_from_path_under_lock(
     if catalog_revision != crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION {
         return Err(LiveLanguageRoutingError::StaleCatalog);
     }
-    Ok(EnabledAlternateLocales {
+    Ok(LoadedRoutingPreference {
         locales: validate_and_sort(locales, true)?,
+        requires_rewrite,
     })
+}
+
+pub(super) fn normalize_selection(
+    enabled_alternate_locales: Vec<String>,
+) -> Result<Vec<String>, LiveLanguageRoutingError> {
+    validate_and_sort(enabled_alternate_locales, false)
 }
 
 fn validate_and_sort(

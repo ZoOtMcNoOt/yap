@@ -2,6 +2,20 @@ use std::time::Duration;
 
 use tauri::{Emitter, Manager};
 
+mod identity;
+mod settings;
+
+pub(super) use identity::{
+    session_status as identity_session_status, sign_in as sign_in_to_server,
+    sign_out as sign_out_of_server,
+};
+#[cfg(test)]
+pub(super) use settings::{
+    finish_save as finish_settings_save,
+    requires_origin_confirmation as requires_server_origin_confirmation,
+};
+pub(super) use settings::{load as load_settings, save as save_settings};
+
 use super::{
     allow_insecure_private_server, capabilities, client, config, AsrCapabilityCatalog,
     ServerConnectionSnapshot, ServerConnector,
@@ -51,6 +65,14 @@ impl ServerConnector {
             config::origin_is_approved,
         )
         .await;
+        let result = resolve_health_authentication(
+            result,
+            &self.authenticated,
+            generation,
+            &base_url,
+            allow_insecure_private_server(),
+        )
+        .await;
         let retry_app = app.clone();
         self.accept_health_result_with(
             generation,
@@ -95,6 +117,75 @@ where
     client::check_health(client, base_url, allow_insecure_private).await
 }
 
+async fn resolve_health_authentication(
+    result: client::HealthCheckResult,
+    authenticated: &super::AuthenticatedRequestDispatcher,
+    generation: u64,
+    base_url: &str,
+    allow_insecure_private: bool,
+) -> client::HealthCheckResult {
+    if !matches!(
+        result,
+        client::HealthCheckResult::SignInRequired {
+            api_version: Some(_),
+            ..
+        }
+    ) {
+        return result;
+    }
+    let authenticated = match authenticated.bind_current_transport(generation, base_url) {
+        Ok(authenticated) => authenticated,
+        Err(_) => {
+            return client::HealthCheckResult::Offline {
+                api_version: None,
+                error_code: "SERVER_CONFIGURATION_CHANGED",
+                retryable: false,
+            };
+        }
+    };
+    let access =
+        client::verify_protected_access(&authenticated, base_url, allow_insecure_private).await;
+    project_authenticated_health(result, access)
+}
+
+fn project_authenticated_health(
+    result: client::HealthCheckResult,
+    access: client::ProtectedAccessResult,
+) -> client::HealthCheckResult {
+    match result {
+        client::HealthCheckResult::SignInRequired {
+            api_version: Some(api_version),
+            capabilities,
+        } => match access {
+            client::ProtectedAccessResult::Accepted => client::HealthCheckResult::Ready {
+                api_version,
+                capabilities,
+            },
+            client::ProtectedAccessResult::SignInRequired => {
+                client::HealthCheckResult::SignInRequired {
+                    api_version: Some(api_version),
+                    capabilities,
+                }
+            }
+            client::ProtectedAccessResult::AccessDenied => {
+                client::HealthCheckResult::AccessDenied {
+                    api_version: Some(api_version),
+                    capabilities,
+                }
+            }
+            client::ProtectedAccessResult::Unavailable {
+                error_code,
+                retryable,
+            } => client::HealthCheckResult::Offline {
+                api_version: Some(api_version),
+                error_code,
+                retryable,
+            },
+        },
+        result => result,
+    }
+}
+
 fn spawn_retry<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     generation: u64,
@@ -126,6 +217,14 @@ async fn run_scheduled_retry<R: tauri::Runtime>(
         &base_url,
         allow_insecure_private_server(),
         config::origin_is_approved,
+    )
+    .await;
+    let result = resolve_health_authentication(
+        result,
+        &connector.authenticated,
+        generation,
+        &base_url,
+        allow_insecure_private_server(),
     )
     .await;
     let retry_app = app.clone();
@@ -208,7 +307,7 @@ async fn fetch_current_asr_capabilities(
         return Err("ASR capability origin is not approved.".into());
     }
     let catalog = match capabilities::fetch_asr_capabilities(
-        &connector.client,
+        lease.authenticated(),
         lease.base_url(),
         allow_insecure_private_server(),
     )
@@ -248,108 +347,99 @@ pub(crate) fn last_known_asr_capabilities(
     }
 }
 
-pub(super) fn load_settings(
-    window: tauri::WebviewWindow,
-) -> Result<config::ServerSettings, String> {
-    crate::authorization::ensure_main(&window)?;
-    config::load().map_err(|error| error.to_string())
-}
-
-pub(super) async fn save_settings(
-    window: tauri::WebviewWindow,
-    app: tauri::AppHandle,
-    connector: tauri::State<'_, ServerConnector>,
-    settings: config::ServerSettings,
-) -> Result<config::ServerSettings, String> {
-    crate::authorization::ensure_main(&window)?;
-    let _save = connector.begin_settings_save()?;
-    let normalized = config::normalize_settings(&settings, allow_insecure_private_server())
-        .map_err(|error| error.to_string())?;
-    let current = config::load().map_err(|error| error.to_string())?;
-    let origin_is_approved = normalized
-        .base_url
-        .as_deref()
-        .is_some_and(|origin| config::origin_is_approved(origin).unwrap_or(false));
-    let approval_origin =
-        if requires_server_origin_confirmation(&current, &normalized, origin_is_approved) {
-            let origin = normalized
-                .base_url
-                .clone()
-                .expect("enabled normalized server settings have an origin");
-            if !confirm_server_origin(app.clone(), origin.clone()).await? {
-                return Err("Server connection change was cancelled.".into());
-            }
-            Some(origin)
-        } else {
-            None
-        };
-
-    let mut inner = connector.inner.lock().expect("server connector poisoned");
-    let generation = connector.invalidate_locked(&mut inner);
-
-    // Revoke the old lease before either durable setting changes or approval
-    // publication. If approval publication fails, the origin stays unauthorized.
-    let save_result = config::save(&normalized).and_then(|saved| {
-        if let Some(origin) = approval_origin.as_deref() {
-            config::approve_origin(origin)?;
-        }
-        Ok(saved)
-    });
-    let result = finish_settings_save_after_revocation(save_result);
-    let effective = result
-        .as_ref()
-        .ok()
-        .cloned()
-        .or_else(|| config::load().ok())
-        .unwrap_or(current);
-    inner.apply_server_settings(generation, effective.enabled, effective.base_url.clone());
-    emit_transition(&app, &inner.snapshot());
-    result
-}
-
-pub(super) fn requires_server_origin_confirmation(
-    current: &config::ServerSettings,
-    candidate: &config::ServerSettings,
-    origin_is_approved: bool,
-) -> bool {
-    candidate.enabled
-        && (!origin_is_approved
-            || !current.enabled
-            || current.base_url.as_deref() != candidate.base_url.as_deref())
-}
-
-async fn confirm_server_origin(app: tauri::AppHandle, origin: String) -> Result<bool, String> {
-    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
-
-    tauri::async_runtime::spawn_blocking(move || {
-        app.dialog()
-            .message(format!(
-                "Allow Yap to connect to this private server?\n\n{origin}\n\nOnly approve an address supplied by your trusted administrator."
-            ))
-            .title("Confirm private server")
-            .kind(MessageDialogKind::Warning)
-            .buttons(MessageDialogButtons::OkCancelCustom(
-                "Connect".into(),
-                "Cancel".into(),
-            ))
-            .blocking_show()
-    })
-    .await
-    .map_err(|error| format!("Could not show server confirmation: {error}"))
-}
-
 #[cfg(test)]
-pub(super) fn finish_settings_save(
-    connector: &ServerConnector,
-    result: Result<config::ServerSettings, config::ConfigError>,
-) -> Result<config::ServerSettings, String> {
-    let mut inner = connector.inner.lock().expect("server connector poisoned");
-    connector.invalidate_locked(&mut inner);
-    finish_settings_save_after_revocation(result)
-}
+mod authentication_projection_tests {
+    use super::project_authenticated_health;
+    use crate::server_connector::{
+        client::{HealthCheckResult, ProtectedAccessResult},
+        state::ServerCapabilities,
+    };
 
-fn finish_settings_save_after_revocation(
-    result: Result<config::ServerSettings, config::ConfigError>,
-) -> Result<config::ServerSettings, String> {
-    result.map_err(|error| error.to_string())
+    fn protected_health() -> HealthCheckResult {
+        HealthCheckResult::SignInRequired {
+            api_version: Some("1".to_owned()),
+            capabilities: ServerCapabilities {
+                batch_jobs: true,
+                live_streaming: false,
+                job_status: true,
+            },
+        }
+    }
+
+    #[test]
+    fn token_promotes_public_protected_health_to_ready() {
+        assert!(matches!(
+            project_authenticated_health(protected_health(), ProtectedAccessResult::Accepted),
+            HealthCheckResult::Ready {
+                api_version,
+                capabilities,
+            } if api_version == "1"
+                && capabilities.batch_jobs
+                && capabilities.job_status
+                && !capabilities.live_streaming
+        ));
+    }
+
+    #[test]
+    fn missing_token_keeps_public_protected_health_signed_out() {
+        assert!(matches!(
+            project_authenticated_health(
+                protected_health(),
+                ProtectedAccessResult::SignInRequired,
+            ),
+            HealthCheckResult::SignInRequired {
+                api_version: Some(api_version),
+                ..
+            } if api_version == "1"
+        ));
+    }
+
+    #[test]
+    fn token_does_not_promote_an_unauthorized_health_response() {
+        assert!(matches!(
+            project_authenticated_health(
+                HealthCheckResult::SignInRequired {
+                    api_version: None,
+                    capabilities: ServerCapabilities::default(),
+                },
+                ProtectedAccessResult::Accepted,
+            ),
+            HealthCheckResult::SignInRequired {
+                api_version: None,
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn denied_access_is_distinct_from_missing_sign_in() {
+        assert!(matches!(
+            project_authenticated_health(
+                protected_health(),
+                ProtectedAccessResult::AccessDenied,
+            ),
+            HealthCheckResult::AccessDenied {
+                api_version: Some(api_version),
+                ..
+            } if api_version == "1"
+        ));
+    }
+
+    #[test]
+    fn unavailable_admission_is_retryable_without_claiming_readiness() {
+        assert!(matches!(
+            project_authenticated_health(
+                protected_health(),
+                ProtectedAccessResult::Unavailable {
+                    error_code: "AUTHENTICATION_UNAVAILABLE",
+                    retryable: true,
+                },
+            ),
+            HealthCheckResult::Offline {
+                api_version: Some(api_version),
+                error_code: "AUTHENTICATION_UNAVAILABLE",
+                retryable: true,
+            } if api_version == "1"
+        ));
+    }
 }

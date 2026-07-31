@@ -131,7 +131,7 @@ fn locked_save_scavenges_only_matching_abandoned_unique_partials() {
 }
 
 #[test]
-fn cross_process_schema2_publisher_helper() {
+fn cross_process_future_schema_publisher_helper() {
     let Ok(path) = std::env::var(CROSS_PROCESS_CHILD_PATH) else {
         return;
     };
@@ -151,7 +151,7 @@ fn cross_process_schema2_publisher_helper() {
 }
 
 #[test]
-fn v1_writer_rechecks_schema_after_waiting_for_cross_process_lock() {
+fn current_writer_rechecks_future_schema_after_waiting_for_cross_process_lock() {
     let dir = temp_dir("cross-process-schema");
     let path = dir.join("server-settings.json");
     let ready = dir.join("child.ready");
@@ -161,7 +161,7 @@ fn v1_writer_rechecks_schema_after_waiting_for_cross_process_lock() {
     let mut child = std::process::Command::new(std::env::current_exe().unwrap())
         .args([
             "--exact",
-            "server_connector::config::tests::locking::cross_process_schema2_publisher_helper",
+            "server_connector::config::tests::locking::cross_process_future_schema_publisher_helper",
             "--nocapture",
         ])
         .env(CROSS_PROCESS_CHILD_PATH, &path)
@@ -174,7 +174,7 @@ fn v1_writer_rechecks_schema_after_waiting_for_cross_process_lock() {
     if !wait_for_path(&ready, Duration::from_secs(10)) {
         child.kill().ok();
         child.wait().ok();
-        panic!("schema2 child did not acquire the settings lock");
+        panic!("future-schema child did not acquire the settings lock");
     }
 
     let (attempted_tx, attempted_rx) = std::sync::mpsc::channel();
@@ -186,6 +186,7 @@ fn v1_writer_rechecks_schema_after_waiting_for_cross_process_lock() {
                 schema_version: CURRENT_SCHEMA_VERSION,
                 enabled: true,
                 base_url: Some("https://v1-writer.example".into()),
+                authentication: Some(test_microsoft_entra_settings()),
             },
             &writer_path,
             false,
@@ -204,13 +205,13 @@ fn v1_writer_rechecks_schema_after_waiting_for_cross_process_lock() {
     if attempted_rx.recv_timeout(Duration::from_secs(5)).is_err() {
         child.kill().ok();
         child.wait().ok();
-        panic!("v1 writer did not attempt the settings lock");
+        panic!("current writer did not attempt the settings lock");
     }
     assert!(
         acquired_rx
             .recv_timeout(Duration::from_millis(200))
             .is_err(),
-        "v1 writer acquired the lock while schema2 still held it"
+        "current writer acquired the lock while future schema still held it"
     );
     std::fs::write(&release, b"publish").unwrap();
 
@@ -224,7 +225,7 @@ fn v1_writer_rechecks_schema_after_waiting_for_cross_process_lock() {
     acquired_rx.recv_timeout(Duration::from_secs(5)).unwrap();
     assert!(matches!(
         writer.join().unwrap(),
-        Err(ConfigError::IncompatibleSchema(2))
+        Err(ConfigError::IncompatibleSchema(3))
     ));
     assert_eq!(
         std::fs::read_to_string(&path).unwrap(),

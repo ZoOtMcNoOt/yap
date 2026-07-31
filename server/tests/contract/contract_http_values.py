@@ -75,7 +75,7 @@ OPERATION_RUNTIME = {
         "Server-stage retry",
     ),
     ("/v1/live", "get"): (
-        "Contract only; capability remains false",
+        "Authenticated private transport implemented; live ASR inference remains false",
         "Live WebSocket transport",
     ),
 }

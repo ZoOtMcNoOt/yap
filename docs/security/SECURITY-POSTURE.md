@@ -4,7 +4,7 @@ This document describes implemented controls and explicit handoffs without
 publishing private security evidence. It is not a penetration-test report,
 certification, production authorization, or substitute for enterprise review.
 
-## Implemented Phase 1–5 controls
+## Implemented controls through the active Phase 7 branch
 
 ### Local data and filesystem
 
@@ -38,6 +38,11 @@ certification, production authorization, or substitute for enterprise review.
 - Installer-only custom containment has been retired. Stock Tauri NSIS behavior
   is tested in a disposable Windows environment; genuine runtime process safety
   remains in product/server code.
+- Private provider teardown treats recovery-artifact retirement as executable
+  proof: deletion failure propagates, and the outer lifecycle gate independently
+  verifies every recovery identity absent before forgetting its path.
+- Provider containers omit Docker auto-removal so bounded logs are captured
+  through a verified immutable ID before explicit removal.
 
 ### Network and protocol
 
@@ -58,8 +63,42 @@ certification, production authorization, or substitute for enterprise review.
 - Create/upload/commit/cancel/result behavior is idempotent or conflict-visible;
   server result identity/hashes/authority are reverified before native History
   publication.
-- Health advertises capability only when the runtime is ready. Unsupported live
-  transport remains unavailable rather than being presented as healthy.
+- Health advertises capability only when the runtime is ready. Private
+  WebSocket admission is not advertised as live ASR or production availability.
+- Authentication fails closed by default for every non-health operation. The
+  fixed development principal is permitted only by explicit development-only
+  loopback configuration.
+- The common OIDC verifier enforces fixed algorithms, issuer/audience/time/key
+  claims, bounded discovery/JWKS retrieval, and single-flight refresh. Entra
+  mode supplies the tenant, delegated-scope, allowed-client, role, claim,
+  canonical `tid`/`oid`, and token-type policy.
+- Server jobs, LID requests, idempotency, artifacts, revocation, purpose-control,
+  and audit events are scoped by the validated `(tid, oid)` principal.
+  Cross-owner and absent resources use the same non-disclosing response.
+- The `Yap.IdentityAdministrator` role gates same-tenant access and purpose
+  mutations. Enrollment, matching, and adaptation require their declared active
+  purpose-grant combinations; both allowed and denied decisions are redacted and
+  audited. No voice profile or embedding implementation is implied.
+- Entra mode starts an authenticated private WebSocket listener on numeric
+  loopback, port `18766` by default, separate from HTTP. Exact `yap.live.v1`
+  negotiation, connection/message/queue/replay bounds, token expiry, and access
+  revocation fail closed. The native lower actor uses the same token source and
+  session lease; sign-out or account/configuration change cancels handshake and
+  I/O.
+- The Windows desktop exposes a narrow in-process native token-provider
+  interface, but no production adapter is selected or approved. Rust keeps
+  tokens in zeroizing memory, marks bearer headers sensitive, and hashes both
+  the selected account identity and normalized tenant/client/API-scope
+  configuration before durable binding. Raw tokens and account IDs never enter
+  React, ordinary app-data configuration, the job ledger, or logs; the ledger
+  receives only the configuration digest, not copied tenant/client/scope
+  values. Missing provider support fails closed.
+- Durable remote work is immutably account-and-authentication-bound before
+  dispatch. Account/configuration switching, sign-out, and attempts to claim
+  ambiguous pre-Phase-7 authenticated work fail before another bearer can be
+  sent. Schema 14 quarantines older authenticated account-only bindings while
+  preserving paired `development-loopback` authority for unauthenticated local
+  work.
 
 ### UI and local control
 
@@ -83,6 +122,9 @@ certification, production authorization, or substitute for enterprise review.
   immutable digests as appropriate.
 - Directly adapted third-party source has a pinned upstream revision, verified
   license, local file hashes, notice, and an executable provenance contract.
+- The mock OIDC provider is pinned by version and immutable image digest.
+  Focused discovery/JWKS/signed-token owner-flow checks are green; hosted Docker
+  execution remains an open phase-gate item.
 - Release contracts bind cache use, build inputs, artifact hash, evidence, and
   immutable commit identity. The staged release workflow creates a draft only
   from the verified commit/artifact transaction.
@@ -91,11 +133,18 @@ certification, production authorization, or substitute for enterprise review.
 
 ## Known boundaries, not hidden controls
 
-The current loopback/SSH development profile does not provide:
+The current loopback/SSH development profile and focused Phase 7 evidence do
+not provide:
 
-- Entra/MSAL authentication or Yap API token validation;
-- tenant-derived `(tid, oid)` ownership, authorization, revocation, or purpose grants;
-- an external TLS endpoint, enterprise certificate, internal DNS, or app-owned WSS;
+- an approved production native token adapter, real enterprise tenant/app
+  registration, Conditional Access, MFA, consent, token-protection, guest, or
+  offboarding conformance;
+- production identity storage, encryption/keys, backup/deletion, audit
+  retention/export, production administrator-role assignment, or legal/privacy
+  approval;
+- live ASR over the private admission seam, product endpoint discovery, an
+  external same-origin WSS/TLS endpoint, HTTP/3, enterprise certificate, or
+  internal DNS;
 - an IT-approved firewall policy or ZPA application segment;
 - persistent production service supervision, backup/restore, disaster recovery,
   monitoring/SIEM integration, or measured multi-user capacity; or
@@ -104,6 +153,17 @@ The current loopback/SSH development profile does not provide:
 These are accepted Phase 7/10 and IT/security/network handoffs in the
 [roadmap](../roadmap/ROADMAP.md). Developer-owned infrastructure must not be
 described as satisfying them.
+
+Phase 7 retained-pidfd head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` resolved the P0–P2 findings from
+its three-agent exact-tree review, including fail-closed recovery for an
+interrupted Docker create with no immutable ID, but connected prequalification
+rejected it before admission because its executable guard refused the stock
+GB10 `socat` package link. The canonical-path successor passes focused local and
+real-host proof, and all three lenses returned GO with no P0–P2 finding. Fresh
+exact-head private-controller prequalification, the full phase gate, hosted PR
+closure, and merge are still open. Focused green evidence is not release or
+production authorization.
 
 ## Security review and disclosure handling
 

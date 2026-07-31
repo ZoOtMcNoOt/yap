@@ -16,6 +16,7 @@ pub enum ServerConnectorState {
     Ready,
     Offline,
     SignInRequired,
+    AccessDenied,
     Retrying,
     Disabled,
 }
@@ -26,8 +27,8 @@ mod tests {
 
     #[test]
     fn server_state_serializes_for_frontend() {
-        let value = serde_json::to_value(ServerConnectorState::SignInRequired).unwrap();
+        let value = serde_json::to_value(ServerConnectorState::AccessDenied).unwrap();
 
-        assert_eq!(value, "sign_in_required");
+        assert_eq!(value, "access_denied");
     }
 }

@@ -1,10 +1,13 @@
 use reqwest::StatusCode;
 
+use crate::server_connector::authorization::RequestAuthorizationError;
+
 #[derive(Debug)]
 pub(crate) enum LidPreflightError {
     InvalidRequest(&'static str),
     Encode(serde_json::Error),
     Transport(reqwest::Error),
+    Authorization(RequestAuthorizationError),
     ResponseTooLarge,
     MalformedResponse,
     Api {
@@ -22,6 +25,10 @@ impl LidPreflightError {
     pub(crate) fn is_retryable(&self) -> bool {
         match self {
             Self::Transport(_) => true,
+            Self::Authorization(RequestAuthorizationError::Unavailable) => true,
+            Self::Authorization(
+                RequestAuthorizationError::InvalidToken | RequestAuthorizationError::AccountChanged,
+            ) => false,
             Self::Api { retryable, .. } => *retryable,
             Self::InvalidRequest(_)
             | Self::Encode(_)
@@ -50,6 +57,12 @@ impl std::fmt::Display for LidPreflightError {
                 formatter.write_str("Language preflight timed out.")
             }
             Self::Transport(_) => formatter.write_str("Language preflight request failed."),
+            Self::Authorization(RequestAuthorizationError::AccountChanged) => {
+                formatter.write_str(
+                    "The server account or authentication configuration changed during language preflight.",
+                )
+            }
+            Self::Authorization(_) => formatter.write_str("Server sign-in is unavailable."),
             Self::ResponseTooLarge => {
                 formatter.write_str("Language preflight response is too large.")
             }

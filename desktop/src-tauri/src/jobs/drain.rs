@@ -24,7 +24,7 @@ use processing::{
     advance_processing_once_guarded,
 };
 #[cfg(test)]
-use recovery::advance_persisted_cancellation_once;
+use recovery::{advance_cancellation_once_guarded_for_test, advance_persisted_cancellation_once};
 #[cfg(test)]
 use scheduler::claim_preprocessing_for_catalog;
 #[cfg(test)]

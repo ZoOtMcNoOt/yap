@@ -3,6 +3,7 @@ from __future__ import annotations
 from http import HTTPStatus
 from typing import Any, Protocol
 
+from yap_server.auth import PrincipalKey
 from yap_server.jobs import JobServiceError
 from yap_server.lid.errors import (
     LidPreflightCancelled,
@@ -20,20 +21,28 @@ from .routes import LID_PREFLIGHT_CANCEL_PATH, LID_PREFLIGHT_PATH
 
 
 class LidPreflightServiceProtocol(Protocol):
-    def run_envelope(self, body: bytes) -> dict[str, Any]: ...
+    def run_envelope(
+        self,
+        body: bytes,
+        *,
+        owner: PrincipalKey,
+    ) -> dict[str, Any]: ...
 
-    def cancel(self, request_id: str) -> bool: ...
+    def cancel(self, request_id: str, *, owner: PrincipalKey) -> bool: ...
 
 
 class LidRequestMixin:
     def _dispatch_lid_request(self, path: str) -> None:
         assert self._lid_preflight_service is not None
+        assert self._principal is not None
+        owner = self._principal.key
         try:
             if path == LID_PREFLIGHT_PATH and self.command == "POST":
                 self._require_lid_media_type()
                 content_length = self._request_body.required_content_length()
                 result = self._lid_preflight_service.run_envelope(
-                    self._request_body.read_exact(content_length)
+                    self._request_body.read_exact(content_length),
+                    owner=owner,
                 )
                 self._send_json(HTTPStatus.OK, result)
                 return
@@ -41,7 +50,10 @@ class LidRequestMixin:
             cancel_match = LID_PREFLIGHT_CANCEL_PATH.fullmatch(path)
             if cancel_match is not None and self.command == "DELETE":
                 request_id = cancel_match.group("request_id")
-                if not self._lid_preflight_service.cancel(request_id):
+                if not self._lid_preflight_service.cancel(
+                    request_id,
+                    owner=owner,
+                ):
                     self._send_error(
                         HTTPStatus.NOT_FOUND,
                         code="LID_PREFLIGHT_NOT_FOUND",

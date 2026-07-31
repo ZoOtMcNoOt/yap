@@ -3,12 +3,19 @@ import os
 import signal
 
 from yap_server.api.app import serve
-from yap_server.config import ServerSettings
+from yap_server.auth import (
+    RequestAuthorizationRuntime,
+    build_request_authenticator,
+    build_request_authorization_runtime,
+)
+from yap_server.auth.signing_keys import SigningKeyUnavailable
+from yap_server.config import ServerSettings, ensure_private_application_bind
 from yap_server.jobs.runtime import (
     BatchRuntime,
     build_batch_runtime,
-    ensure_development_batch_bind,
 )
+from yap_server.jobs.ownership import DEVELOPMENT_JOB_OWNER
+from yap_server.live import PrivateLiveWebSocketServer, private_live_port_from_env
 from yap_server.pools.batch_contract import WorkerContainmentError
 from yap_server.pools.cleanup_deadline import run_cleanup_before_deadline
 
@@ -41,31 +48,80 @@ def _close_runtime_or_fail_stop(runtime: BatchRuntime) -> None:
         _fail_stop_worker_containment()
 
 
+def _close_owned_resources(
+    live_transport: PrivateLiveWebSocketServer | None,
+    runtime: BatchRuntime | None,
+    authorization_runtime: RequestAuthorizationRuntime | None,
+) -> BaseException | None:
+    cleanup_error: BaseException | None = None
+    if live_transport is not None:
+        try:
+            live_transport.close()
+        except BaseException as error:
+            cleanup_error = error
+    if runtime is not None:
+        _close_runtime_or_fail_stop(runtime)
+    if authorization_runtime is not None:
+        try:
+            authorization_runtime.close()
+        except BaseException as error:
+            if cleanup_error is None:
+                cleanup_error = error
+    return cleanup_error
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     signal.signal(signal.SIGTERM, _raise_keyboard_interrupt)
     if hasattr(signal, "SIGBREAK"):
         signal.signal(signal.SIGBREAK, _raise_keyboard_interrupt)
     runtime: BatchRuntime | None = None
+    authorization_runtime: RequestAuthorizationRuntime | None = None
+    live_transport: PrivateLiveWebSocketServer | None = None
     try:
         settings = ServerSettings.from_env()
-        runtime = build_batch_runtime()
-        if runtime is not None:
-            ensure_development_batch_bind(settings.host)
+        ensure_private_application_bind(settings.host)
+        token_authenticator = build_request_authenticator(settings.authentication)
+        authorization_runtime = build_request_authorization_runtime(
+            settings.authentication,
+            token_authenticator,
+        )
+        request_authenticator = authorization_runtime.authenticator
+        runtime = build_batch_runtime(
+            development_principal=(
+                DEVELOPMENT_JOB_OWNER
+                if settings.authentication.development_enabled
+                else None
+            )
+        )
+        if settings.authentication.required:
+            live_transport = PrivateLiveWebSocketServer(
+                request_authenticator,
+                port=private_live_port_from_env(),
+            ).start()
     except ValueError as error:
-        if runtime is not None:
-            _close_runtime_or_fail_stop(runtime)
+        cleanup_error = _close_owned_resources(
+            live_transport,
+            runtime,
+            authorization_runtime,
+        )
+        if cleanup_error is not None:
+            raise SystemExit("Yap private server startup cleanup failed.") from None
         raise SystemExit(str(error)) from None
     except WorkerContainmentError:
         _fail_stop_worker_containment()
-    except (OSError, RuntimeError):
-        if runtime is not None:
-            _close_runtime_or_fail_stop(runtime)
+    except (OSError, RuntimeError, SigningKeyUnavailable):
+        _close_owned_resources(
+            live_transport,
+            runtime,
+            authorization_runtime,
+        )
         raise SystemExit("Yap private server startup failed.") from None
 
     try:
         serve(
             settings,
+            request_authenticator=request_authenticator,
             job_service=runtime.service if runtime is not None else None,
             lid_preflight_service=(
                 runtime.lid_preflight_service if runtime is not None else None
@@ -79,8 +135,13 @@ def main() -> None:
     except OSError:
         raise SystemExit("Yap private server runtime became unavailable.") from None
     finally:
-        if runtime is not None:
-            _close_runtime_or_fail_stop(runtime)
+        cleanup_error = _close_owned_resources(
+            live_transport,
+            runtime,
+            authorization_runtime,
+        )
+        if cleanup_error is not None:
+            raise RuntimeError("Yap private server cleanup failed.") from cleanup_error
 
 
 if __name__ == "__main__":

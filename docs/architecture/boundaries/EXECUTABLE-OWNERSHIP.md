@@ -1,9 +1,16 @@
 # Executable Ownership and Trust Boundaries
 
 This map records the executable ownership baseline established by architecture
-checkpoint A and the executing Phase 6 branch. Paths are relative to the
-repository root; later implementation must update this map only after its
-behavior is executable and verified.
+checkpoints A/B and the active Phase 7 implementation. Focused identity,
+purpose-authorization, private-WebSocket, and native lower-handshake evidence is
+green. Retained-pidfd head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` was rejected before admission when
+connected prequalification exposed the stock GB10 `socat` package-link
+incompatibility. The canonical-path successor completed exact three-lens review
+after focused local and real-host proof. Fresh exact-head private
+prequalification/admission/evidence, the full phase gate, PR closure, and merge
+remain open. Paths are relative to the repository root; later implementation
+must update this map only after its behavior is executable and verified.
 
 ## Dependency direction
 
@@ -16,10 +23,22 @@ desktop/src components
 
 desktop jobs/drain
   -> desktop server_connector/batch
+  -> desktop server_connector/authorization
   -> loopback HTTP
+  -> server auth request adapter
   -> server api request adapters
   -> server jobs service
   -> job store/artifacts + bounded router/pool
+
+desktop settings/identity commands
+  -> desktop native token manager/provider interface
+  -> [no approved production provider adapter]
+
+desktop live authorization
+  -> bounded native WebSocket actor + session lease
+  -> separate private loopback WebSocket endpoint
+  -> server token/principal admission
+  -> bounded live protocol registry [no ASR consumer]
 ```
 
 Imports may point down this diagram. Durable owners must not import React,
@@ -192,7 +211,9 @@ owner's state but may not recreate its transition logic.
   `client_preflight_artifacts`, and owned artifact references. Schema 11 rewrites
   the former phase-derived implicit-English disposition to the functional
   `legacy_implicit_english_default` token while preserving child rows and
-  foreign-key integrity.
+  foreign-key integrity. Schemas 12–13 bind each remote job and detached
+  cancellation to versioned development or hashed native-provider account
+  authority and quarantine ambiguous older authenticated bindings.
 - **Transient state:** transaction-local rows and snapshots.
 - **Trust boundary:** database migrations, row decoding, monotonic status
   transitions, origin generation, and bounded retention.
@@ -210,19 +231,28 @@ owner's state but may not recreate its transition logic.
 - **Authoritative owner:** `server_connector/state.rs` for connection state and
   generations; `config/*` for validated persisted configuration; and
   `server_connector/capability_snapshot.rs` for the bounded last-known catalog
-  projection.
+  projection. `native_access_token_provider.rs` owns the in-process provider
+  interface, native sign-in state, and zeroizing token projection;
+  `authorization.rs` owns bearer injection, session invalidation, and durable
+  account pinning.
 - **Persisted state:** server configuration and approved origin, plus
   `asr-capabilities-snapshot.json`. Each is admitted through bounded no-follow
   regular-file I/O before schema validation. The capability file is an offline
   last-known projection, never current readiness or live server authority.
-- **Transient state:** in-flight health request, retry schedule, generation, and
-  latest capability snapshot.
-- **Trust boundary:** untrusted origin/configuration and bounded HTTP response.
+- **Transient state:** in-flight health request, retry schedule, generation,
+  latest capability snapshot, zeroizing access token, and hashed selected-account
+  binding.
+- **Trust boundary:** untrusted origin/configuration, bounded HTTP response, and
+  the narrow native provider return contract. No production provider
+  implementation is selected. Raw tokens and raw provider account IDs never
+  enter React or ordinary app-data persistence.
 - **Dependencies/events:** core policy -> health/batch clients -> connector
   state -> typed frontend events.
 - **Failure/recovery:** stale generation responses are discarded; typed offline
   reasons schedule bounded retry. Oversized, linked/reparse, or future-schema
-  configuration fails without replacing the existing entry.
+  configuration fails without replacing the existing entry. Missing/expired
+  identity, sign-out, reconfiguration, and account switching fail before
+  authenticated remote dispatch; local/offline behavior remains available.
 - **Publication serialization:** one settings-save lease spans normalization,
   origin confirmation, durable settings/approval publication, generation
   invalidation, and applied-state projection.
@@ -230,18 +260,54 @@ owner's state but may not recreate its transition logic.
   shutdown joins polling.
 - **Duplicate owner:** none; frontend hook projects snapshots.
 
+### 9a. Private authenticated live admission
+
+- **Entry point:** desktop
+  `server_connector/authorization/live_websocket.rs`; server
+  `server/live/websocket_server.py` and `server/live/protocol.py`.
+- **Authoritative owner:** the Rust WebSocket actor owns one authorized client
+  connection and its bounded command/event queues; the Python live server owns
+  loopback listener lifecycle, authenticated admission, connection limits,
+  replay state, and protocol sequencing.
+- **Persisted state:** none. The service uses the existing durable identity
+  repository for principal-access and revocation decisions.
+- **Transient state:** zeroizing bearer access, one `SessionLease`, bounded
+  message/queue state, up to eight admitted server connections, and the live
+  protocol registry.
+- **Trust boundary:** explicit approved origin, exact `yap.live.v1`
+  subprotocol, sensitive bearer injection, handshake status, message/frame
+  sizes, sequence/replay windows, token expiry, and access revocation.
+- **Dependencies/events:** the current server starts the authenticated live
+  listener at `127.0.0.1:18766` by default, separate from HTTP port `18765`.
+  Focused parity evidence qualifies the native lower handshake against the
+  two-port topology. Product endpoint discovery and wiring to that separate port
+  do not exist.
+- **Failure/recovery:** bad origin, missing/invalid authorization, wrong
+  subprotocol, overflow, replay, expiry, revocation, or account-generation
+  change fails closed and closes or rejects the connection without leaking
+  bearer/header content.
+- **Cancellation:** sign-out or configuration/account change invalidates the
+  shared session lease and cancels handshake plus actor I/O.
+- **Duplicate owner:** none. This is admission/transport only; no live ASR,
+  transcript publication, external same-origin WSS/TLS edge, or HTTP/3 carrier
+  exists.
+
 ### 10. Server create/upload/commit/status/result lifecycle
 
 - **Entry point:** `server/api/app.py` and `api/job_requests.py`.
 - **Authoritative owner:** `jobs/service.py` coordinates the transaction;
   `job_store.py`, `chunk_upload.py`, `completion.py`, and `artifacts.py` own
-  durable mechanisms.
-- **Persisted state:** private job JSON/state, chunk receipts/files, assembled
-  WAV, immutable result, idempotency key, cancellation, and retention metadata.
+  durable mechanisms. The request-authentication adapter supplies the immutable
+  principal; handlers never accept a client-supplied owner as authority.
+- **Persisted state:** principal-scoped private job JSON/state, chunk
+  receipts/files, assembled WAV, immutable result, idempotency key,
+  cancellation, and retention metadata.
 - **Transient state:** admitted HTTP request, router/pool work, and processing
   cancellation set.
-- **Trust boundary:** HTTP body/headers, manifest/chunk/result contracts,
-  filesystem identity, worker output, and retained private content.
+- **Trust boundary:** bearer authentication, HTTP body/headers,
+  manifest/chunk/result contracts, filesystem identity, worker output, and
+  retained private content. Absent and cross-owner resources share the same
+  non-disclosing projection.
 - **Dependencies/events:** request adapter -> service -> store/artifacts ->
   router/pool -> completion; status/result responses are bounded projections.
 - **Failure/recovery:** startup converts interrupted processing into an explicit
@@ -331,27 +397,52 @@ owner's state but may not recreate its transition logic.
   fixed shortcut/native-import dispatchers for process-lifetime event work; and
   `server/pools/container_runtime.py` plus `batch_asr_worker.py` for the
   transient reference worker. The two provider-specific foreground launchers
-  own normal resident-container and bounded loopback-proxy teardown; the
-  lifecycle gate owns their sequential qualification run, temporary internal
-  bridge, and abnormal-exit recovery.
-- **Persisted state:** each active proxy publishes its immutable process-group
-  identity into the gate's private runtime directory until verified teardown.
-  No handle survives successful cleanup; durable job/cancellation state drives
+  own normal resident-container teardown. The Phase 7 successor's
+  `owned-process-supervisor.py` owns initial launcher, sampler, and proxy child
+  identity, release, signalling, and exact reap; the lifecycle gate owns their
+  sequential qualification run, temporary internal bridge, and abnormal-exit
+  recovery.
+- **Persisted state:** each active supervised target publishes private
+  versioned PID/start-time/supervisor state and an authoritative cleanup result.
+  Each active proxy also publishes its immutable token-owned process-group
+  identity until verified teardown. Before Docker create, the launcher publishes
+  a private container recovery record; Docker writes its exclusive container-ID
+  file. Neither survives successful cleanup, while an unresolved create retains
+  the record and fails the gate. Durable job/cancellation state drives
   application restart behavior.
-- **Transient state:** task handles, child/container identity, proxy process
-  group and fixed child ceiling, timeouts, and cleanup guards. Shortcut/import
+- **Transient state:** retained pidfd, release/control/exec-status descriptors,
+  task handles, child/container identity, proxy process group and fixed child
+  ceiling, deadlines, and cleanup guards. Shortcut/import
   worker counts and queue capacities are fixed; they end with the desktop
   process rather than being dynamically multiplied.
 - **Trust boundary:** subprocess environment, image/revision identity, resource
   ceilings, filesystem mounts, and termination.
 - **Dependencies/events:** job pool invokes runtime; lifecycle errors become
   safe status/failure projections.
-- **Failure/recovery:** the recovery owner validates the per-run token on every
-  live process-group member before bounded TERM/KILL cleanup. The private
-  process-group identity lets it retire a proxy even after the launcher leader
-  dies; restart relies on durable job state rather than pretending a child
-  survived.
-- **Cancellation:** explicit terminate/kill fallback with bounded wait.
+- **Failure/recovery:** isolated/no-site system Python starts behind a release
+  barrier and keeps the exact child pidfd from fork through
+  `waitid(P_PIDFD)`, including the interval before exec-time token visibility.
+  Control writes contain `SIGPIPE`; setup and pidfd-acquisition failures are
+  bounded. After a missing or failed supervisor result, recovery first proves
+  and reaps the direct supervisor, then validates the per-run token on every
+  live process-group member before bounded TERM/KILL cleanup. Cleanup proof
+  remains latched after reap; an `EACCES` environment race is treated as exit
+  only after the same identity is causally gone or zombie. Proxy teardown
+  bounds every Docker probe/operation below the supervisor TERM deadline and
+  separates Docker create from start. It resolves fixed name, immutable
+  container ID, and token before stopping and force-removing that exact external
+  container. If an interrupted create cannot be resolved, timed absence is not
+  proof: cleanup fails and its private recovery identity remains. Recovery
+  retires only after direct immutable-ID absence; renamed, relabeled, or foreign
+  state is retained and refused. A failed recovery-artifact deletion remains an
+  unclean launcher result, and the outer lifecycle gate independently requires
+  the recovery record, partial publication, and container-ID file absent before
+  clearing their path. Provider containers omit Docker auto-removal so bounded
+  log capture precedes explicit immutable-ID removal. It has no stale numeric-PID
+  log follower. Restart relies on durable job state rather than pretending a
+  child survived.
+- **Cancellation:** explicit control-channel stop, retained-pidfd pending-child
+  kill, verified process-group TERM/KILL, and bounded exact reap.
 - **Duplicate owner:** installer-only containment was retired; real runtime
   process safety remains.
 
@@ -437,21 +528,44 @@ owner's state but may not recreate its transition logic.
 - **Cancellation:** reconfiguration/shutdown cancels polling.
 - **Duplicate owner:** none; UI labels do not infer readiness.
 
-### 18. Security, authentication, and enterprise networking handoffs
+### 18. Authentication, authorization, and enterprise networking handoffs
 
-- **Entry point:** current development profile uses explicit loopback and a
-  user-managed SSH forward.
-- **Authoritative owner:** current application only enforces loopback/origin and
-  contract controls. IT/security owns future enterprise infrastructure.
-- **Persisted state:** approved development origin; no production identity or
-  enterprise credential store exists.
-- **Transient state:** SSH tunnel is outside Yap process ownership.
-- **Trust boundary:** numeric loopback application endpoint; future TLS, DNS,
-  certificate, ZPA, firewall, tenant identity, and policy boundaries are absent.
-- **Dependencies/events:** connector observes availability; it does not create or
+- **Entry point:** desktop identity commands and request authorization;
+  `server/auth/*` token, repository, and purpose authorization; the current
+  development profile still uses explicit loopback and a user-managed SSH
+  forward.
+- **Authoritative owner:** the Rust native provider interface owns the token
+  acquisition contract but has no production implementation; Rust owns token
+  projection, account binding, session invalidation, and request injection. The
+  common server OIDC layer owns JWT/discovery verification, the Entra policy
+  owns tenant/audience/scope/client/role requirements, and the identity and
+  purpose-authorization services own principal access, grant enforcement, and
+  redacted audit records. IT/security owns provider approval, tenant policy, and
+  enterprise infrastructure.
+- **Persisted state:** approved origin, versioned hashed remote account plus
+  normalized tenant/client/API-scope configuration binding, and the SQLite
+  development identity repository. No token, raw provider account ID, tenant
+  ID, client ID, or API scope is stored in the renderer or job ledger.
+- **Transient state:** zeroizing access tokens and SSH tunnel state; the tunnel
+  remains outside Yap process ownership.
+- **Trust boundary:** provider-neutral fixed-algorithm OIDC validation, bounded
+  discovery/JWKS retrieval/cache, Entra tenant/audience/scope/client/role policy,
+  owner- and purpose-scoped authorization, numeric loopback, and the narrow
+  native provider contract. Default authentication fails closed; the fixed
+  development principal requires explicit development-only configuration. Real
+  provider registration/adapter approval, Conditional Access, MFA, consent,
+  external WSS/TLS, DNS, certificates, ZPA, firewall, production database/audit,
+  and deployment policy remain external.
+- **Dependencies/events:** validated identity -> immutable request principal ->
+  repository authorization -> owner-scoped job/LID/live admission. The
+  `Yap.IdentityAdministrator` role gates same-tenant grant/revoke and access
+  mutations; active grant combinations gate and audit enrollment, matching, and
+  adaptation seams. The connector observes availability; it does not create or
   silently fail over tunnels.
-- **Failure/recovery:** tunnel loss projects retrying and resumes against the
-  unchanged origin when connectivity returns.
+- **Failure/recovery:** invalid/expired/revoked access fails closed; account
+  switching cannot reuse another account's durable work; absent and cross-owner
+  lookup are non-disclosing. Tunnel loss projects retrying and resumes against
+  the unchanged origin when connectivity returns.
 - **Cancellation:** user/IT controls the tunnel; job cancellation remains a
   durable application action.
 - **Duplicate owner:** none; developer infrastructure is not a substitute for
@@ -478,6 +592,10 @@ owner's state but may not recreate its transition logic.
   validate the exact PR head. Production ASR, NeMo, and LID images exclude the
   `yap_server.evaluation` package; private qualification adds evaluation code or
   source material only through the explicit evaluation image/mount boundary.
+- **Identity-provider evidence:** a version-and-digest-pinned mock OIDC provider
+  and owner-flow harness exercise real discovery, JWKS, signed-token, ownership,
+  and revocation behavior. Focused local checks are green; hosted Docker
+  execution remains part of the open full phase gate.
 - **Checked-runtime boundary:** pre-admission preparation owns digest-pinned
   Dockerfile execution and emits a private receipt only after a second
   clean-head check. The frozen private plan owns each receipt hash. Admitted
@@ -507,6 +625,7 @@ owner's state but may not recreate its transition logic.
 | Server connector configuration | native connector config owner | connector state and settings UI |
 | Local model artifacts/settings | native STT model/settings owners | live runtime and setup UI |
 | Server job/chunk/result lifecycle | server store/service/artifact owners | HTTP status/result projections |
+| Server principal/access/purpose revisions | server identity repository | HTTP and private-live admission; purpose authorization |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

@@ -75,6 +75,22 @@ describe("language-control accessibility", () => {
     expect(html.match(/Choose a supported language\./g)).toHaveLength(1);
   });
 
+  it("can announce asynchronous settings status without turning it into an alert", () => {
+    const html = renderToStaticMarkup(
+      <SettingsRow
+        detail="Opening Microsoft sign-in."
+        label="Server sign-in"
+        liveStatus
+        value="Checking"
+      />,
+    );
+
+    expect(html).toContain('role="status"');
+    expect(html).toContain('aria-live="polite"');
+    expect(html).toContain('aria-atomic="true"');
+    expect(html).not.toContain('role="alert"');
+  });
+
   it("gives the primary picker an explicit label and connects invalid state to one error", () => {
     const html = renderToStaticMarkup(
       <PrimaryLanguageSetting

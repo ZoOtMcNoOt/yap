@@ -1,6 +1,6 @@
 # Spec: Server Tier MVP
 
-**Status:** Canonical Phase 3 boundary, isolated Phase 4 Cohere reference pool, and gated Phase 5 loopback durable batch path implemented; WSS/live, authentication, and persistent production deployment remain pending
+**Status:** Canonical Phase 3 boundary, isolated Phase 4 Cohere reference pool, and gated Phase 5 loopback durable batch path implemented. The active Phase 7 branch adds fail-closed REST ownership and bounded authenticated private WebSocket admission; live ASR, a published client-facing WSS edge, and persistent production deployment remain pending.
 **Scope:** Stand up the first server path while keeping this repo as the MVP monorepo.
 
 The server tier introduces `yap-server` on an org-owned GB-class server node.

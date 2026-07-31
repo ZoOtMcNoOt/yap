@@ -1,7 +1,78 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–6 system: provider
-catalog, fixed-language
+This document describes the merged executable Phase 1–6 system plus the active
+Phase 7 executable boundary. Phase 7 focused evidence now covers provider-neutral
+OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
+ownership, enforced purpose authorization, authenticated bounded private
+WebSocket admission, and the native lower handshake. The desktop exposes a
+narrow native token-provider seam but has no approved production adapter; the
+live boundary has no ASR route, endpoint discovery, or external secure edge.
+The replacement delivery gate now freezes command deadlines, keeps its
+one-attempt capability private, verifies exact Windows DACLs, pins system
+SSH/PowerShell hosts, and binds authenticated remote helpers through cleanup
+and teardown. The current lifecycle resolves GB10's stock `socat` package link
+to its absolute regular executable before container mutation. Exact head
+`c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` made equivalent canonical
+language-routing saves true runtime no-ops, then was consumed when its first
+admitted controller over-constrained the safe fixed receipt ancestor. Exact
+head `dece4265e052d775d2d11f1883cd8cc4b2b25191` retained the lifecycle and
+language-routing repairs, corrected the receipt ancestry, passed all three
+exact-tree review lenses, complete private prequalification, and admission,
+then was consumed before the locked `uv sync` command or owner flow because
+portable PowerShell could not resolve the reviewed absolute `uv` executable
+under the non-interactive SSH `PATH`. Its mode-`0700` per-head directory
+existed, but its receipt remained absent and no runtime owner started. Exact
+head `63600096cd8afe9f4435f6302c584f89dbdb5915` preserved that boundary,
+authenticated the complete absolute `uv` chain and executable, passed all
+three review lenses, complete prequalification, admission, and all 13 private
+receipt children, then was consumed when its one complete matrix rejected a
+reparse-tagged installed JavaScript notice. The repository lock, inventory,
+and MIT notice were exact; the private checkout's default pnpm hardlink shared
+the reparse-tagged content-store inode. Exact head
+`d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` corrected that materialization,
+passed all 13 private children, and reached native tests in its one complete
+matrix. Every Rust test passed, but the supported MSVC toolchain retained its
+`vctip.exe` helper inside the owned Windows Job and correctly consumed the
+head. The approved `OptIn=0` change did not prevent signed `VCTIP.EXE` from
+being launched by `link.exe`, consistent with Microsoft's required-diagnostics
+exception. The successor keeps strict Job containment for Yap runtime and
+ordinary candidate commands, resolves the optional-diagnostics reader through
+the kernel object-manager SystemRoot, and executes native compile/link evidence
+outside the product Job on the exact reviewed head in fresh GitHub-hosted
+Windows VMs before merge. Connector and required WDIO runtime trees on those
+VMs remain Job-contained and must prove zero active processes; the running WDIO
+binary also reports the reviewed build SHA. Exact head
+`944673071804d8178776efa1d1e13651c87df6fb` passed all three review lenses,
+prequalification, admission, all four private controllers, independent
+validation of all 13 private receipt children, and its complete 25-cell matrix.
+PR #69 opened on that head. GitHub rejected the first CI dispatch while parsing
+the workflow, before any job or runner started, because job-level `env`
+referenced `runner.environment` before runner assignment. That exact head is
+therefore consumed as merge authority without relabeling its private results.
+Workflow successor `cafbe307...` step-scopes the runner binding and adds the
+regression contract; it is preserved after fresh target-client qualification
+exposed bounded pending-ASR saturation during cold warmup. Exact repair
+`32cf528...` adds bounded FIFO batch catch-up, passed focused same-three review,
+and passed repeated-resource, nine-case prepared-audio, and physical-
+microphone/rendered-UI qualification with zero audio drops. Its first isolated
+scheduler-outlier attempt remains failed evidence. Documentation reconciliation
+is committed at `e019036...`. Exact successor `dc635916...` passed its complete
+private 25-cell matrix and independent receipt validation. CodeQL passed, while
+hosted CI run `30574652702` exposed only checkout-test dependency timing,
+GitHub Windows temp-owner mismatch, and equivalent 8.3/long-path spelling
+assumptions. Stock NSIS was not dispatched after that failure. Reviewed repair
+`558fed0...` makes those boundaries portable without changing product runtime,
+identity policy, or the enterprise ownership boundary. Pre-admission
+preparation of exact descendant `c95cfe0...` then exposed that writing an
+already-correct owner can require elevation under ordinary development-root
+ACLs. That head was never admitted. Repair `a823b28...` writes the owner only
+when the observed SID differs, while the exact post-write owner/DACL check
+remains fail-closed. The validated `dc635916...` application/runtime matrix
+remains authoritative because the reviewed descendant changes only
+hosted/gate tooling, its contracts, and documentation. Exact-head hosted
+closure and merge remain open.
+
+The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
 VAD, local language spans, verify-only AmberNet batch preflight, and
 provider-specific serving candidates. Exact executable candidate
@@ -31,8 +102,14 @@ flowchart LR
   UI --> Native["Tauri Rust owners"]
   Native --> Local["Local Nemotron fallback"]
   Native --> DB["SQLite and app-data artifacts"]
-  Native --> Loopback["Numeric loopback HTTP"]
+  Native --> Identity["Rust native token-provider seam\nno production adapter"]
+  Identity -. "future approved adapter" .-> Entra["Microsoft Entra ID\nIT-provided environment"]
+  Native --> Loopback["HTTP + optional sensitive bearer"]
   Loopback -. "explicit SSH forward" .-> Server["Private Yap server"]
+  Native --> LiveClient["Bounded native WebSocket client\nlower handshake qualified"]
+  LiveClient -. "separate private endpoint\nnot product-discovered" .-> Live["Authenticated private WS admission\n127.0.0.1:18766 · no ASR"]
+  Server --> Auth["Provider-neutral OIDC verifier + Entra policy\nidentity and purpose authorization"]
+  Live --> Auth
   Server --> Store["Private job store and artifacts"]
   Server --> Pool["Bounded provider admission pools"]
   Pool --> Reference["Transformers reference workers"]
@@ -138,6 +215,14 @@ artifact cleanup. Uploaded chunks are reopened as bounded regular files and
 must still match their declared exact extent and SHA before exclusive atomic
 WAV publication.
 
+`server/src/yap_server/live/*` separately owns authenticated WebSocket admission
+at numeric loopback port `18766` by default. It requires exact `yap.live.v1`
+negotiation, reuses the HTTP token/principal-access boundary, limits connections,
+messages, queues, and replay, and rechecks expiry and revocation. It is a
+transport and admission primitive only: no live ASR or transcript publication
+route consumes it, and the desktop product does not discover this separate
+internal endpoint.
+
 `pools/*` owns bounded admission and isolated GPU workers. The reference
 `BatchAsrPool` admits one running job plus two queued jobs. The current loopback
 adapter dispatches each batch request directly to that pool; no durable
@@ -193,6 +278,26 @@ sherpa-onnx. The Cohere
 vLLM adapter and a resident Nemotron NeMo adapter each now have bounded
 loopback/API-key transport, exact readiness identity, provider-neutral worker
 integration, checked image contracts, and launchers under focused tests. The
+current three-lens-reviewed Phase 7 lifecycle successor starts both
+launchers, their sampler, and the numeric-loopback proxy behind an explicit
+release barrier, retains a pidfd before release, and reaps the exact child.
+Before container mutation, the proxy canonicalizes the PATH-selected `socat`
+command and retains only its absolute regular executable target; this accepts
+the qualified GB10 package symlink without executing through a replaceable
+link. Provider launch separates Docker create and start, records the exclusive
+container ID, and publishes private recovery identity before creation. A
+signal-interrupted create is clean only after the token-owned immutable ID is
+captured and directly proven absent; otherwise the identity remains and the gate
+fails closed. Name or label replacement never substitutes for immutable-ID
+absence. The launcher propagates failure to retire any private recovery
+artifact, while normal gate teardown independently requires the recovery
+record, partial publication, and container-ID file all absent before it clears
+the proxy path. Docker auto-removal is disabled so a naturally exited provider
+remains addressable for bounded log capture before explicit immutable-ID
+removal.
+Recorded token-owned process-group identity remains the abnormal-exit recovery
+boundary; this focused repair is not complete-gate or provider-promotion
+evidence. The
 NeMo candidate retains one cache-aware scheduler owner and bounded independent
 job cancellation. Its transport uses a bounded reusable HTTP worker pool, while
 the distinct model admission boundary remains eight active requests so control-
@@ -334,7 +439,7 @@ Imported canonical PCM WAV preprocessing
 records identity normalization, then optionally runs the explicitly installed,
 hash-verified Silero artifact through the existing `sherpa-onnx` CPU runtime.
 It emits ordered source-sample/source-millisecond advisory intervals or a typed
-bounded error and always retains the complete source. Server schema 5 records
+bounded error and always retains the complete source. Server schema 6 records
 ASR, alignment, and result-publication attempts with restart/retry admission and
 bounded evidence; legacy rows remain readable without invented stage history.
 
@@ -496,12 +601,21 @@ passed on exact executable candidate
 provider-promotion comparisons have not run. Both
 candidate containers stay on an
 egress-blocked internal bridge with no Docker-published port; their launchers
-own bounded numeric-loopback proxy process groups and require separate private
-API keys. This does not implement
-the still-false live capability. Phase 6 does not claim authenticated ownership
-or a persistent supervised mixed-load production service. Phase 7 owns
-authenticated tenant/user identity. Phase 10 owns production supervision,
-capacity promotion, observability, and enterprise deployment.
+require separate private API keys. Their focused Phase 7 lifecycle successor
+places launcher, sampler, and proxy targets behind one retained-pidfd
+supervisor interface. Isolated/no-site system Python, exclusive regular-file
+outputs, contained control-pipe writes, bounded pidfd failure, and exact
+`waitid(P_PIDFD)` reaping protect initial ownership. Missing/failed results
+fall back only after the direct supervisor is reaped and every surviving group
+member verifies the run token. Proxy teardown reconciles the fixed container
+name, immutable ID, and token before stopping it; no independently signalled
+numeric-PID log follower remains. The active Phase 7 branch adds authenticated
+tenant/user identity to
+the existing REST/LID boundary and bounded private WebSocket admission on a
+separate internal port. The native lower handshake is qualified, but no live ASR
+route, endpoint discovery, external same-origin WSS/TLS edge, or persistent
+supervised mixed-load production service exists. Phase 10 owns production
+supervision, capacity promotion, observability, and enterprise deployment.
 
 Local and server language evidence now share the narrow version-1 16 kHz
 `LanguageSpan` wire contract without sharing a state owner. Local acoustic
@@ -524,6 +638,123 @@ never rewritten; restoring the server label appends another correction. History
 shows effective correction and remaining-review counts only after the complete
 chain verifies, and React renders the list in bounded pages rather than creating
 one DOM row per possible segment.
+
+## Authenticated identity and durable remote-account ownership
+
+The server's common OIDC layer owns strict fixed-algorithm JWT validation and
+bounded discovery/JWKS retrieval. Entra mode supplies the provider policy:
+tenant issuer, audience, delegated scope, allowed native-client actor, required
+claims, accepted roles, and canonical `(tid, oid)` identity. The default
+`disabled` authentication mode fails closed for every non-health operation;
+the fixed development principal is available only through an explicit
+development-only loopback configuration. The exact health route remains public.
+
+The identity repository owns principal upsert, a durable access-disabled latch
+with explicit administrative restore, revisioned purpose grants, and redacted
+append-only audit events. The `Yap.IdentityAdministrator` role gates purpose and
+access mutations within one tenant. Enrollment requires `enrollment`; matching
+requires `enrollment` plus `matching`; adaptation requires all three active
+grants. Allowed and denied decisions are audited. This is an executable
+authorization seam, not a voice-profile, embedding, or matching implementation.
+The SQLite adapter is development evidence, not the selected production
+database or audit sink.
+
+The Windows client keeps local/offline dictation independent of authentication.
+For server work, Rust owns a narrow in-process `NativeAccessTokenProvider`
+interface, zeroizing token cache, account-plus-authentication binding, bearer
+injection, and session invalidation. No production implementation is selected,
+so interactive sign-in and silent acquisition fail closed as unavailable. No
+token or raw provider account ID crosses into React or ordinary Yap persistence.
+Account/configuration switching, sign-out, or attempts to attach ambiguous
+earlier authenticated work fail before a different bearer can be sent. The
+active account/configuration binding survives token-cache expiry, while each
+protected dispatcher is fixed to one connector generation, approved origin,
+and authenticated-session generation. Settings transitions
+cancel and drain that session before settings or approval publication. Durable
+cleanup remains queued without opening a socket when its persisted origin is no
+longer the exact current approved origin or when its hashed account and
+normalized tenant/client/API-scope configuration do not both match. Identity
+lifecycle/status failure projects a fresh non-`Ready` connector snapshot after
+invalidation. Public health describes server configuration, while `Ready`
+additionally requires a bearer-authenticated protected-capability probe; 401,
+403, and retryable admission failure remain distinct states.
+
+Phase 7 carries the authenticated principal through HTTP middleware, job/LID
+service admission, and the separate private WebSocket admission service. The
+native WebSocket actor uses the same authorization source and session lease,
+requires exact `yap.live.v1`, bounds messages and queues, and terminates on
+session invalidation. Focused parity evidence qualifies the lower handshake
+against separate HTTP and private-live ports. Product endpoint discovery,
+external same-origin WSS/TLS, live ASR, owner-fair pool/router scheduling,
+durable multi-tenant queuing, and sustained mixed-user capacity remain absent.
+
+The pinned mock OIDC provider and owner-flow harness are focused-green. Hosted
+Docker execution of that pinned provider remains pending. Exact head
+`2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was withdrawn before GB10,
+connected-server, or complete-matrix execution after pre-execution review
+rejected its gate boundary. Retained-pidfd head
+`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` resolved the later three-agent
+exact-tree findings but was itself rejected before admission when connected
+prequalification exposed the GB10 `socat` package-link incompatibility. The
+canonical-path lineage passes focused local and real-host proof. Later exact
+head `c5d826f...` passed fresh private prequalification and admission but was
+consumed by an over-strict private-ancestor mode assertion. Exact head
+`dece426...` corrected that boundary, received GO from all three lenses, passed
+fresh private prequalification and admission, then was consumed when its first
+mock-OIDC controller could not resolve the reviewed `uv` executable under the
+non-interactive SSH environment. No locked `uv sync` command or owner flow
+started; the per-head directory existed and the receipt remained absent. The
+next controller retains the safe receipt ancestry, authenticates every real
+directory component and file in the absolute `uv` path, and proves that exact
+path resolves inside portable PowerShell under the admitted command environment
+before reservation. Exact head `63600096...` satisfied that boundary and passed
+all four admitted private controllers plus independent validation of all 13
+private receipt children. Its one complete matrix then correctly rejected a
+reparse-tagged installed JavaScript notice produced by default pnpm hardlink
+materialization. Exact head `d4adc832...` corrected that boundary and passed
+fresh review, prequalification, admission, all four private controllers, and
+independent validation of all 13 private receipt children. Its one complete
+matrix passed every Rust test, then failed because the owned Windows Job
+retained the Build Tools `vctip.exe` helper. The approved optional-diagnostics
+opt-out was applied and verified, but a clean link still launched signed
+`VCTIP.EXE` from `link.exe`. The next manifest verifies that local
+optional-diagnostics setting with a fail-closed 64-bit registry-API read whose
+helper path is rooted in the kernel object-manager SystemRoot. Native
+formatting, Clippy, compilation, tests, dependency checks, and the WDIO build
+move outside the product Job to exact-head clean GitHub-hosted Windows jobs
+whose VMs are decommissioned after execution. Actual connector and required
+WDIO runtime trees remain in kill-on-close Jobs, run without GitHub
+credentials, and must prove assigned-before-resume plus active-process-zero.
+The fresh runner is populated from the locked Python 3.12 environment before
+the connector's offline recheck, and the running WDIO binary must report the
+reviewed build SHA. Exact head `9446730...` passed review, prequalification,
+admission, all four private controllers, independent 13-child validation, and
+the complete 25-cell candidate matrix before PR #69 opened. Its first CI
+dispatch was rejected during workflow parsing, before job creation, because
+`runner.environment` was used at job-level `env`. The exact-head rule consumes
+that merge candidate while preserving its private evidence. The narrow
+step-scoped workflow successor `cafbe307...` passed focused review and is
+preserved after its fresh target-client controller exposed bounded pending-ASR
+saturation during cold warmup. Repair `32cf528...` keeps recording independent,
+adds bounded FIFO batch catch-up, and passed focused same-three review plus
+repeated-resource, nine-case prepared-audio, and physical-microphone/rendered-UI
+qualification with zero audio drops. Its first isolated scheduler-outlier
+attempt remains failed evidence. Documentation reconciliation is committed at
+`e019036...`. Exact successor `dc635916...` passed the complete private
+25-cell matrix and independent receipt validation; CodeQL passed, but hosted CI
+run `30574652702` consumed it on the pre-install YAML import, Windows temp
+owner, and equivalent 8.3/long-path assumptions. Reviewed repair `558fed0...`
+passes focused contracts and all three review lenses. Exact pre-admission
+descendant `c95cfe0...` was not consumed, but its private-input preparation
+exposed an unnecessary same-owner write that could require elevation. Repair
+`a823b28...` makes that write conditional on an exact owner-SID mismatch,
+retains the final exact owner/DACL verification, passes focused Windows and
+hosted-portability contracts, and has the same three review approvals. The
+reviewed diff through `c1d81fc...` changes no shipped client, server, native,
+model, runtime, or candidate-manifest behavior, so `dc635916...` remains the
+one complete application/runtime candidate. Exact-head hosted closure and
+merge remain open. Real IT-provided Entra and Conditional Access policy and an
+approved native adapter remain external conformance work.
 
 ## Accepted meeting direction, not current execution
 
@@ -555,13 +786,14 @@ jobs, admission, cancellation, immutable revisions, and publication.
 
 | Durable boundary | Recovery invariant |
 | --- | --- |
-| Desktop SQLite job ledger | Transactional migration and replay preserve one job identity and accepted remote progress. Schema 8 adds a singleton metadata write probe; schema 9 adds bounded client-stage attempts without fabricating history for legacy rows; schema 10 binds the immutable preflight artifact and persisted LID dispatch identity. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
+| Desktop SQLite job ledger | Transactional migration and replay preserve one job identity and accepted remote progress. Schema 8 adds a singleton metadata write probe; schema 9 adds bounded client-stage attempts without fabricating history for legacy rows; schema 10 binds the immutable preflight artifact and persisted LID dispatch identity; schema 11 renames the legacy language disposition; schemas 12–13 introduce versioned development or hashed native-provider account authority and quarantine ambiguous older authenticated bindings. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
 | Recording commit/sidecar/transcript | Only hash-valid, atomically published lineage becomes complete History truth. |
 | Remote result review | Native History derives fixed/dynamic/unknown-language and available/unavailable/legacy-timing summaries only from a verified immutable result, then projects them into the one existing transcript review surface. |
 | Prepared spool/chunks | Only verified Yap-owned paths are cleaned; external sources are preserved. |
 | Install identity | Bounded no-follow regular-file admission rejects linked, oversized, or invalid namespace state. |
 | Connector configuration | Bounded no-follow regular-file admission precedes schema validation; one save lease spans confirmation, publication, approval, generation change, and applied-state projection. |
-| Server job/chunk/result state | Schema 5 retains bounded ASR/alignment/result-publication attempts. Idempotency survives restart; interrupted processing and retry admission remain explicit without rewriting completed result authority. |
+| Server job/chunk/result state | Schema 6 retains bounded ASR/alignment/result-publication attempts. Idempotency survives restart; interrupted processing and retry admission remain explicit without rewriting completed result authority. |
+| Server identity repository | The provider-neutral repository owns principal, access-revocation, purpose-control, and redacted audit records. The SQLite adapter persists focused development/restart evidence; production topology, encryption, backup/deletion, retention/export, and administrative access remain external approvals. |
 | Deletion intent/quarantine | Destructive work revalidates identity and resumes without following replacement paths. |
 
 ## Trust boundaries and limits
@@ -577,9 +809,12 @@ jobs, admission, cancellation, immutable revisions, and publication.
   revalidation/leases where mutation requires it.
 - Logs and public errors describe stable codes/state without private audio or
   transcript content.
-- The application boundary is numeric loopback during development. External
-  networking, authentication, certificates, DNS, firewall policy, ZPA, and
-  enterprise deployment are not implied.
+- The HTTP application and private live-admission boundaries remain numeric
+  loopback during development. Entra mode implements application authentication
+  and owner authorization, but synthetic/mock tokens and a native provider
+  interface without a production adapter do not imply real tenant policy,
+  Conditional Access, MFA, certificates, DNS, firewall policy, ZPA, an external
+  WSS/TLS edge, or enterprise deployment.
 
 See the complete [ownership map](boundaries/EXECUTABLE-OWNERSHIP.md) and public
 [security posture](../security/SECURITY-POSTURE.md).
@@ -588,12 +823,32 @@ See the complete [ownership map](boundaries/EXECUTABLE-OWNERSHIP.md) and public
 
 The frontend uses Node 24 and pnpm 11.7.0. Native code uses Rust 1.96. The
 portable server supports Python 3.12 only. Windows automation requires
-PowerShell Core 7.4 or newer. Installer lifecycle tests run only in a
+PowerShell Core 7.4 or newer. No desktop identity-provider SDK or sidecar is a
+shipped runtime or build dependency. Installer lifecycle tests run only in a
 disposable Windows environment.
 
 Focused suites protect each extraction. Browser automation allocates an
 OS-selected loopback port, and native restart automation terminates only its
-exact isolated app process before bounded session cleanup. The full
-local/native/server/GB10 matrix runs once only after an exact phase/checkpoint
-implementation head is ready. Hosted CI and disposable installer automation
-then verify the final PR head before merge.
+exact isolated app process before bounded session cleanup. Phase 7 runs its
+local/server/target-client/private-server candidate matrix once after an exact
+head is ready. Every required CI closure job explicitly checks out that head
+without persisted credentials and verifies the checkout before and after
+project execution on its declared fresh hosted OS. Windows uses an absolute
+no-space System32 bootstrap to stream the runner's extensionless temporary
+script into the absolute PowerShell host; Linux starts that PowerShell host
+directly. The initial proof captures PowerShell, one
+deterministic Git application, the exact guard source, the Git index, and an
+index-independent tracked-content manifest with their hashes. The final proof
+reuses that absolute shell chain, verifies and executes the admitted guard bytes
+in memory, rejects hidden index flags and linked tracked ancestors, forces Linux
+executable-bit comparison, rehashes every tracked file, and reuses the admitted
+Git identity; it does not resolve a mutable workspace helper or post-project
+`PATH`. Native formatting, Clippy,
+compilation, tests, dependency checks, and build run normally on that exact
+reviewed head in required fresh GitHub-hosted Windows jobs. Connector and
+required WDIO runtime trees run there
+under the same kill-on-close Job supervisor used by candidate commands and
+must finish with zero active processes. Hosted CodeQL and disposable installer
+automation complete the closure before merge. The fresh VM is the lifecycle
+boundary for Microsoft build-tool helpers; it is not the product runtime
+cleanup mechanism.

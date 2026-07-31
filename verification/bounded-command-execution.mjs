@@ -1,72 +1,35 @@
-import { execFile, spawn, spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   closeSync,
   existsSync,
-  fstatSync,
   lstatSync,
-  openSync,
   realpathSync,
-  writeSync,
 } from "node:fs";
 import path from "node:path";
+import {
+  BoundedCommandOutputLimitError,
+  openVerifiedCommandLog,
+  writeAll,
+} from "./bounded-command-log.mjs";
+import {
+  cleanupUnprovenError,
+  preservePrimaryError,
+  windowsTerminationEvidence,
+} from "./windows-command-job-errors.mjs";
+import {
+  cleanupWindowsSupervisorFiles,
+  createWindowsSupervisorInvocation,
+} from "./windows-command-job-protocol.mjs";
+import {
+  startWindowsSupervisorTerminationWatchdog,
+} from "./windows-command-supervisor-watchdog.mjs";
+import {
+  interpretWindowsCommandResult,
+} from "./windows-command-result.mjs";
 
 function requireCondition(condition, message) {
   if (!condition) throw new Error(message);
-}
-
-function samePath(left, right) {
-  const normalizedLeft = path.normalize(left);
-  const normalizedRight = path.normalize(right);
-  return process.platform === "win32"
-    ? normalizedLeft.toLowerCase() === normalizedRight.toLowerCase()
-    : normalizedLeft === normalizedRight;
-}
-
-function openVerifiedCommandLog(logPath, expectedLogDirectory) {
-  requireCondition(
-    path.isAbsolute(logPath) && path.isAbsolute(expectedLogDirectory),
-    "Command log paths must be absolute.",
-  );
-  const normalizedDirectory = path.normalize(expectedLogDirectory);
-  const directoryMetadata = lstatSync(normalizedDirectory);
-  requireCondition(
-    directoryMetadata.isDirectory() && !directoryMetadata.isSymbolicLink(),
-    "Command log directory must be a real directory.",
-  );
-  const realDirectory = path.normalize(
-    realpathSync.native(normalizedDirectory),
-  );
-  requireCondition(
-    samePath(normalizedDirectory, realDirectory),
-    "Command log directory must not resolve through a redirected parent.",
-  );
-  const normalizedLogPath = path.normalize(logPath);
-  requireCondition(
-    samePath(path.dirname(normalizedLogPath), realDirectory),
-    "Command log escaped its verified private directory.",
-  );
-
-  const descriptor = openSync(normalizedLogPath, "wx", 0o600);
-  try {
-    const descriptorMetadata = fstatSync(descriptor);
-    const pathMetadata = lstatSync(normalizedLogPath);
-    const realLogPath = path.normalize(realpathSync.native(normalizedLogPath));
-    requireCondition(
-      descriptorMetadata.isFile()
-        && pathMetadata.isFile()
-        && !pathMetadata.isSymbolicLink()
-        && descriptorMetadata.dev === pathMetadata.dev
-        && descriptorMetadata.ino === pathMetadata.ino
-        && samePath(realLogPath, normalizedLogPath)
-        && samePath(path.dirname(realLogPath), realDirectory),
-      "Command log identity changed before execution.",
-    );
-    return descriptor;
-  } catch (error) {
-    closeSync(descriptor);
-    throw error;
-  }
 }
 
 function windowsCommandLine(command) {
@@ -112,51 +75,8 @@ function commandProcess(command, cwd) {
   };
 }
 
-export class BoundedCommandOutputLimitError extends Error {
-  constructor(label, maximumBytes, observedBytes) {
-    super(
-      `${label} exceeded its ${maximumBytes}-byte command-log limit `
-      + `(observed at least ${observedBytes} bytes); process-tree termination was requested.`,
-    );
-    this.name = "BoundedCommandOutputLimitError";
-    this.code = "INTEGRATED_GATE_COMMAND_OUTPUT_LIMIT_EXCEEDED";
-    this.maximumBytes = maximumBytes;
-    this.observedBytes = observedBytes;
-  }
-}
-
-function terminateWindowsProcessTree(rootProcessId) {
-  return new Promise((resolve, reject) => {
-    execFile(
-      "taskkill.exe",
-      ["/PID", String(rootProcessId), "/T", "/F"],
-      {
-        encoding: "utf8",
-        maxBuffer: 64 * 1024,
-        timeout: 10_000,
-        windowsHide: true,
-      },
-      (error, _stdout, stderr) => {
-        if (error) {
-          reject(new Error(
-            `Windows could not terminate process tree ${rootProcessId}: ${
-              (stderr || error.message || "unknown error").trim()
-            }`,
-            { cause: error },
-          ));
-          return;
-        }
-        resolve([rootProcessId]);
-      },
-    );
-  });
-}
-
 async function terminateProcessTree(child) {
   if (!Number.isSafeInteger(child.pid) || child.pid <= 0) return [];
-  if (process.platform === "win32") {
-    return terminateWindowsProcessTree(child.pid);
-  }
   try {
     process.kill(-child.pid, "SIGKILL");
   } catch {
@@ -169,20 +89,6 @@ async function terminateProcessTree(child) {
   return [child.pid];
 }
 
-function writeAll(descriptor, bytes) {
-  let offset = 0;
-  while (offset < bytes.length) {
-    const bytesWritten = writeSync(
-      descriptor,
-      bytes,
-      offset,
-      bytes.length - offset,
-    );
-    requireCondition(bytesWritten > 0, "Command log write made no progress.");
-    offset += bytesWritten;
-  }
-}
-
 export function executeBoundedCommand({
   command,
   cwd,
@@ -191,20 +97,35 @@ export function executeBoundedCommand({
   logPath,
   expectedLogDirectory,
   maximumLogBytes,
+  timeoutMs,
 }) {
   requireCondition(
     Number.isSafeInteger(maximumLogBytes) && maximumLogBytes > 0,
     "Command-log byte limit must be one positive safe integer.",
+  );
+  requireCondition(
+    Number.isSafeInteger(timeoutMs) && timeoutMs > 0,
+    "Command timeout must be one positive safe integer in milliseconds.",
   );
   const logDescriptor = openVerifiedCommandLog(
     logPath,
     expectedLogDirectory,
   );
   let invocation;
+  let windowsProtocol = null;
   try {
     invocation = commandProcess(command, cwd);
+    if (process.platform === "win32") {
+      windowsProtocol = createWindowsSupervisorInvocation(
+        invocation,
+        path.normalize(realpathSync.native(expectedLogDirectory)),
+        environment,
+      );
+      invocation = windowsProtocol.invocation;
+    }
   } catch (error) {
     closeSync(logDescriptor);
+    cleanupWindowsSupervisorFiles(windowsProtocol);
     throw error;
   }
 
@@ -213,19 +134,77 @@ export function executeBoundedCommand({
     let byteLength = 0;
     let terminalError = null;
     let terminationPromise = Promise.resolve();
+    let cancelWindowsWatchdog = () => {};
+    let commandTimeout = null;
     let settled = false;
     let child;
 
     const settle = (error, result) => {
       if (settled) return;
       settled = true;
+      if (commandTimeout !== null) clearTimeout(commandTimeout);
+      cancelWindowsWatchdog();
+      let finalError = error;
+      try {
+        cleanupWindowsSupervisorFiles(windowsProtocol);
+      } catch (cleanupError) {
+        if (finalError) {
+          finalError = preservePrimaryError(
+            finalError,
+            cleanupError,
+            finalError.terminationEvidence,
+          );
+        } else {
+          finalError = cleanupError;
+        }
+      }
       closeSync(logDescriptor);
-      if (error) reject(error);
+      if (finalError) reject(finalError);
       else resolve(result);
     };
     const requestTermination = (error) => {
       if (terminalError) return;
       terminalError = error;
+      if (process.platform === "win32") {
+        try {
+          child.stdin.end("T\n");
+        } catch {
+          // Missing proof is handled when the supervisor settles or times out.
+        }
+        cancelWindowsWatchdog = startWindowsSupervisorTerminationWatchdog({
+          supervisor: child,
+          onLateClose: () => {
+            try {
+              cleanupWindowsSupervisorFiles(windowsProtocol);
+            } catch {
+              // The promise already reported cleanup as unverified.
+            }
+          },
+          onUnproven: (watchdogFailure) => {
+            const terminationFailure = cleanupUnprovenError(
+              label,
+              watchdogFailure,
+            );
+            settle(preservePrimaryError(
+              terminalError,
+              terminationFailure,
+              {
+                schemaVersion: 1,
+                containment: "windows-job-object",
+                rootProcessId: null,
+                assignedBeforeResume: false,
+                terminationReason: "cleanup-unproven",
+                terminateRequested: true,
+                rootExited: false,
+                activeProcessCount: null,
+                activeProcessZeroObserved: false,
+                cleanupProven: false,
+              },
+            ));
+          },
+        });
+        return;
+      }
       terminationPromise = terminateProcessTree(child)
         .then((terminatedProcessIds) => {
           error.terminatedProcessIds = terminatedProcessIds;
@@ -285,17 +264,54 @@ export function executeBoundedCommand({
         cwd: invocation.cwd,
         detached: process.platform !== "win32",
         env: environment,
-        stdio: ["ignore", "pipe", "pipe"],
+        stdio: [process.platform === "win32" ? "pipe" : "ignore", "pipe", "pipe"],
         windowsHide: true,
       });
     } catch (error) {
       settle(error);
       return;
     }
+    child.stdin?.on("error", () => {
+      // A closed control pipe is reflected by missing or unproven status.
+    });
+    if (process.platform === "win32") {
+      try {
+        child.stdin.write(windowsProtocol.environmentPrelude);
+      } catch (error) {
+        requestTermination(error);
+      }
+    }
     child.stdout.on("data", capture);
     child.stderr.on("data", capture);
-    child.once("error", (error) => settleAfterTermination(error));
+    child.once("error", (error) => {
+      if (process.platform === "win32") requestTermination(error);
+      else settleAfterTermination(error);
+    });
     child.once("close", (exitCode, signal) => {
+      if (process.platform === "win32") {
+        if (settled) return;
+        const interpreted = interpretWindowsCommandResult({
+          exitCode,
+          label,
+          primaryError: terminalError,
+          protocol: windowsProtocol,
+          signal,
+        });
+        if (interpreted.error) {
+          settle(interpreted.error);
+          return;
+        }
+        settle(null, {
+          evidenceSha256: digest.digest("hex"),
+          exitCode: interpreted.status.targetExitCode,
+          signal: null,
+          terminationEvidence: windowsTerminationEvidence(
+            interpreted.status,
+            "none",
+          ),
+        });
+        return;
+      }
       if (terminalError) {
         settleAfterTermination(terminalError);
         return;
@@ -306,5 +322,22 @@ export function executeBoundedCommand({
         signal,
       });
     });
+    commandTimeout = setTimeout(() => {
+      requestTermination(new BoundedCommandTimeoutError(label, timeoutMs));
+    }, timeoutMs);
   });
 }
+
+export class BoundedCommandTimeoutError extends Error {
+  constructor(label, timeoutMs) {
+    super(
+      `${label} exceeded its ${timeoutMs}-millisecond wall-clock limit; `
+      + "process-tree termination was requested.",
+    );
+    this.name = "BoundedCommandTimeoutError";
+    this.code = "INTEGRATED_GATE_COMMAND_TIMEOUT";
+    this.timeoutMs = timeoutMs;
+  }
+}
+
+export { BoundedCommandOutputLimitError };

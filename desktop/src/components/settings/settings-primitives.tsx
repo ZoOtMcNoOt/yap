@@ -15,6 +15,7 @@ export function SettingsRow({
   error,
   errorId,
   label,
+  liveStatus = false,
   value,
 }: {
   action?: ReactNode;
@@ -23,14 +24,23 @@ export function SettingsRow({
   error?: string;
   errorId?: string;
   label: string;
+  liveStatus?: boolean;
   value: string;
 }) {
   return (
     <div className="grid grid-cols-1 gap-4 border-b py-5 first:pt-0 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_minmax(260px,360px)]">
       <div className="min-w-0 text-pretty">
         <div className="font-medium">{label}</div>
-        <div className="mt-1 break-words text-sm text-foreground/80">{value}</div>
-        {detail ? <div className="mt-1 break-words text-xs text-muted-foreground">{detail}</div> : null}
+        <div
+          aria-atomic={liveStatus || undefined}
+          aria-live={liveStatus ? "polite" : undefined}
+          role={liveStatus ? "status" : undefined}
+        >
+          <div className="mt-1 break-words text-sm text-foreground/80">{value}</div>
+          {detail
+            ? <div className="mt-1 break-words text-xs text-muted-foreground">{detail}</div>
+            : null}
+        </div>
         {error ? (
           <div
             aria-atomic="true"

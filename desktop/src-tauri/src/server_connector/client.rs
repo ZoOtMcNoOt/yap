@@ -2,8 +2,10 @@ use std::time::Duration;
 
 use reqwest::{Client, StatusCode};
 
+use super::authorization::{AuthenticatedDispatchError, RequestAuthorizationError};
 use super::config;
 use super::state::ServerCapabilities;
+use super::AuthenticatedRequestDispatcher;
 
 const MAX_HEALTH_BYTES: usize = 64 * 1024;
 const SUPPORTED_API_VERSION: &str = "1";
@@ -16,9 +18,25 @@ pub(crate) enum HealthCheckResult {
     },
     SignInRequired {
         api_version: Option<String>,
+        capabilities: ServerCapabilities,
+    },
+    AccessDenied {
+        api_version: Option<String>,
+        capabilities: ServerCapabilities,
     },
     Offline {
         api_version: Option<String>,
+        error_code: &'static str,
+        retryable: bool,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum ProtectedAccessResult {
+    Accepted,
+    SignInRequired,
+    AccessDenied,
+    Unavailable {
         error_code: &'static str,
         retryable: bool,
     },
@@ -63,7 +81,10 @@ pub(crate) async fn check_health(
 
     match response.status() {
         StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => {
-            return HealthCheckResult::SignInRequired { api_version: None };
+            return HealthCheckResult::SignInRequired {
+                api_version: None,
+                capabilities: ServerCapabilities::default(),
+            };
         }
         status if status.is_server_error() => return offline(None, "SERVER_ERROR", true),
         StatusCode::OK => {}
@@ -84,6 +105,88 @@ pub(crate) async fn check_health(
     };
 
     project_health(&body)
+}
+
+pub(super) async fn verify_protected_access(
+    authenticated: &AuthenticatedRequestDispatcher,
+    base_url: &str,
+    allow_insecure_private: bool,
+) -> ProtectedAccessResult {
+    let normalized = match config::validate_base_url(base_url, allow_insecure_private) {
+        Ok(normalized) => normalized,
+        Err(_) => {
+            return ProtectedAccessResult::Unavailable {
+                error_code: "INVALID_SERVER_URL",
+                retryable: false,
+            };
+        }
+    };
+    let mut url = match reqwest::Url::parse(&normalized) {
+        Ok(url) => url,
+        Err(_) => {
+            return ProtectedAccessResult::Unavailable {
+                error_code: "INVALID_SERVER_URL",
+                retryable: false,
+            };
+        }
+    };
+    url.set_path("/v1/asr/capabilities");
+    let response = match authenticated
+        .send(
+            authenticated
+                .get(url)
+                .header(reqwest::header::ACCEPT, "application/json"),
+        )
+        .await
+    {
+        Ok(response) => response,
+        Err(AuthenticatedDispatchError::Authorization(
+            RequestAuthorizationError::AccountChanged,
+        )) => {
+            return ProtectedAccessResult::AccessDenied;
+        }
+        Err(AuthenticatedDispatchError::Authorization(
+            RequestAuthorizationError::Unavailable | RequestAuthorizationError::InvalidToken,
+        )) => return ProtectedAccessResult::SignInRequired,
+        Err(AuthenticatedDispatchError::Transport(error)) if error.is_timeout() => {
+            return ProtectedAccessResult::Unavailable {
+                error_code: "REQUEST_TIMEOUT",
+                retryable: true,
+            };
+        }
+        Err(AuthenticatedDispatchError::Transport(_)) => {
+            return ProtectedAccessResult::Unavailable {
+                error_code: "CONNECTION_FAILED",
+                retryable: true,
+            };
+        }
+    };
+    let status = match response.status() {
+        Ok(status) => status,
+        Err(RequestAuthorizationError::AccountChanged) => {
+            return ProtectedAccessResult::AccessDenied
+        }
+        Err(RequestAuthorizationError::Unavailable | RequestAuthorizationError::InvalidToken) => {
+            return ProtectedAccessResult::SignInRequired
+        }
+    };
+    match status {
+        StatusCode::OK | StatusCode::NOT_IMPLEMENTED => ProtectedAccessResult::Accepted,
+        StatusCode::UNAUTHORIZED => ProtectedAccessResult::SignInRequired,
+        StatusCode::FORBIDDEN => ProtectedAccessResult::AccessDenied,
+        StatusCode::SERVICE_UNAVAILABLE => ProtectedAccessResult::Unavailable {
+            error_code: "AUTHENTICATION_UNAVAILABLE",
+            retryable: true,
+        },
+        status if status.is_server_error() => ProtectedAccessResult::Unavailable {
+            error_code: "SERVER_ERROR",
+            retryable: true,
+        },
+        _ => ProtectedAccessResult::Unavailable {
+            error_code: "UNEXPECTED_HTTP_STATUS",
+            retryable: true,
+        },
+    }
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -120,7 +223,10 @@ fn project_health(body: &[u8]) -> HealthCheckResult {
             api_version: envelope.api_version,
             capabilities,
         },
-        "required" => HealthCheckResult::SignInRequired { api_version },
+        "required" => HealthCheckResult::SignInRequired {
+            api_version,
+            capabilities,
+        },
         _ => offline(api_version, "MALFORMED_HEALTH_RESPONSE", true),
     }
 }
@@ -173,14 +279,20 @@ async fn read_bounded(mut response: reqwest::Response) -> Result<Vec<u8>, ReadHe
 mod tests {
     use std::io::{Read, Write};
     use std::net::{SocketAddr, TcpListener};
+    use std::sync::{Arc, Mutex};
     use std::thread::JoinHandle;
     use std::time::Duration;
 
-    use super::{bounded_client, check_health, HealthCheckResult};
+    use super::{
+        bounded_client, check_health, verify_protected_access, HealthCheckResult,
+        ProtectedAccessResult,
+    };
     use crate::server_connector::state::ServerCapabilities;
+    use crate::server_connector::AuthenticatedRequestDispatcher;
 
     struct Fixture {
         address: SocketAddr,
+        request: Arc<Mutex<Vec<u8>>>,
         worker: Option<JoinHandle<()>>,
     }
 
@@ -190,10 +302,16 @@ mod tests {
             let address = listener.local_addr().unwrap();
             let status = status.to_owned();
             let body = body.into();
+            let request = Arc::new(Mutex::new(Vec::new()));
+            let captured_request = Arc::clone(&request);
             let worker = std::thread::spawn(move || {
                 let (mut stream, _) = listener.accept().unwrap();
                 let mut request = [0_u8; 1024];
-                let _ = stream.read(&mut request);
+                let read = stream.read(&mut request).unwrap_or(0);
+                captured_request
+                    .lock()
+                    .unwrap()
+                    .extend_from_slice(&request[..read]);
                 if !delay.is_zero() {
                     std::thread::sleep(delay);
                 }
@@ -206,12 +324,17 @@ mod tests {
             });
             Self {
                 address,
+                request,
                 worker: Some(worker),
             }
         }
 
         fn base_url(&self) -> String {
             format!("http://{}", self.address)
+        }
+
+        fn request_text(&self) -> String {
+            String::from_utf8(self.request.lock().unwrap().clone()).unwrap()
         }
     }
 
@@ -226,6 +349,14 @@ mod tests {
     fn check(base_url: &str) -> HealthCheckResult {
         let client = bounded_client().unwrap();
         tauri::async_runtime::block_on(check_health(&client, base_url, false))
+    }
+
+    fn check_protected(base_url: &str) -> ProtectedAccessResult {
+        let authenticated = AuthenticatedRequestDispatcher::fixed(
+            bounded_client().unwrap(),
+            "protected-probe-token",
+        );
+        tauri::async_runtime::block_on(verify_protected_access(&authenticated, base_url, false))
     }
 
     fn healthy_body(api_version: &str, auth: &str, capabilities: &str) -> String {
@@ -364,7 +495,10 @@ mod tests {
             let fixture = Fixture::response(status, Vec::new(), Duration::ZERO);
             assert_eq!(
                 check(&fixture.base_url()),
-                HealthCheckResult::SignInRequired { api_version: None }
+                HealthCheckResult::SignInRequired {
+                    api_version: None,
+                    capabilities: ServerCapabilities::default(),
+                }
             );
         }
 
@@ -381,8 +515,55 @@ mod tests {
             check(&fixture.base_url()),
             HealthCheckResult::SignInRequired {
                 api_version: Some("1".to_owned()),
+                capabilities: ServerCapabilities {
+                    batch_jobs: true,
+                    live_streaming: true,
+                    job_status: true,
+                },
             }
         );
+    }
+
+    #[test]
+    fn protected_probe_requires_actual_principal_admission_and_sends_the_bearer() {
+        for (status, expected) in [
+            ("200 OK", ProtectedAccessResult::Accepted),
+            ("401 Unauthorized", ProtectedAccessResult::SignInRequired),
+            ("403 Forbidden", ProtectedAccessResult::AccessDenied),
+            (
+                "503 Service Unavailable",
+                ProtectedAccessResult::Unavailable {
+                    error_code: "AUTHENTICATION_UNAVAILABLE",
+                    retryable: true,
+                },
+            ),
+        ] {
+            let fixture = Fixture::response(status, Vec::new(), Duration::ZERO);
+
+            assert_eq!(check_protected(&fixture.base_url()), expected);
+            let request = fixture.request_text().to_ascii_lowercase();
+            assert!(request.starts_with("get /v1/asr/capabilities http/1.1\r\n"));
+            assert!(request.contains("authorization: bearer protected-probe-token\r\n"));
+        }
+    }
+
+    #[test]
+    fn python_authenticated_server_accepts_signed_bearer_when_provided() {
+        let (Ok(base_url), Ok(token)) = (
+            std::env::var("YAP_TEST_AUTH_SERVER_URL"),
+            std::env::var("YAP_TEST_AUTH_SERVER_TOKEN"),
+        ) else {
+            return;
+        };
+        let authenticated =
+            AuthenticatedRequestDispatcher::fixed(bounded_client().unwrap(), &token);
+        let result = tauri::async_runtime::block_on(verify_protected_access(
+            &authenticated,
+            &base_url,
+            false,
+        ));
+
+        assert_eq!(result, ProtectedAccessResult::Accepted);
     }
 
     #[test]

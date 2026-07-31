@@ -1,11 +1,14 @@
+import { EventEmitter } from "node:events";
 import { describe, expect, it } from "vitest";
 
 import {
   isValidInFlightRemotePipeline,
   matchCompletedRemoteHistoryEntry,
+  matchesEnabledLoopbackServerSettings,
   matchesVerifiedHistoryDialog,
   resolvePrivateServerAsrGateTimeout,
   sameWindowsPath,
+  settleSshTunnelChild,
 } from "../wdio/private-server-asr-gate-support.js";
 
 describe("private-server ASR gate support", () => {
@@ -15,6 +18,34 @@ describe("private-server ASR gate support", () => {
 
   it("treats Windows case and extended-length prefixes as the same path", () => {
     expect(sameWindowsPath("C:\\Private\\Evidence", "\\\\?\\c:\\private\\evidence\\")).toBe(true);
+  });
+
+  it("requires the current enabled loopback server-settings contract", () => {
+    const origin = "http://127.0.0.1:18765";
+    const settings = {
+      schemaVersion: 2,
+      enabled: true,
+      baseUrl: origin,
+      authentication: null,
+    };
+
+    expect(matchesEnabledLoopbackServerSettings(settings, origin)).toBe(true);
+    expect(matchesEnabledLoopbackServerSettings(
+      { ...settings, schemaVersion: 1 },
+      origin,
+    )).toBe(false);
+    expect(matchesEnabledLoopbackServerSettings(
+      { ...settings, authentication: { mode: "entra" } },
+      origin,
+    )).toBe(false);
+    expect(matchesEnabledLoopbackServerSettings(
+      { ...settings, unexpected: true },
+      origin,
+    )).toBe(false);
+    expect(matchesEnabledLoopbackServerSettings(
+      settings,
+      "http://127.0.0.1:18766",
+    )).toBe(false);
   });
 
   it("accepts every legitimate in-flight server pipeline projection", () => {
@@ -130,5 +161,61 @@ describe("private-server ASR gate support", () => {
       name,
       transcript,
     )).toBe(false);
+  });
+
+  it("settles SSH tunnel children gracefully before requesting force", async () => {
+    const child = new EventEmitter();
+    child.exitCode = null;
+    child.signalCode = null;
+    child.kill = (signal) => {
+      expect(signal).toBeUndefined();
+      queueMicrotask(() => {
+        child.exitCode = 0;
+        child.emit("exit", 0, null);
+      });
+      return true;
+    };
+
+    await expect(settleSshTunnelChild(child, {
+      gracefulTimeoutMs: 100,
+      forceTimeoutMs: 100,
+    })).resolves.toEqual({ forceKillRequested: false });
+  });
+
+  it("force-settles an SSH tunnel child that ignores graceful termination", async () => {
+    const child = new EventEmitter();
+    child.exitCode = null;
+    child.signalCode = null;
+    const signals = [];
+    child.kill = (signal) => {
+      signals.push(signal ?? "graceful");
+      if (signal === "SIGKILL") {
+        queueMicrotask(() => {
+          child.signalCode = "SIGKILL";
+          child.emit("exit", null, "SIGKILL");
+        });
+      }
+      return true;
+    };
+
+    await expect(settleSshTunnelChild(child, {
+      gracefulTimeoutMs: 5,
+      forceTimeoutMs: 100,
+    })).resolves.toEqual({ forceKillRequested: true });
+    expect(signals).toEqual(["graceful", "SIGKILL"]);
+  });
+
+  it("fails closed when forced SSH tunnel settlement cannot be proven", async () => {
+    const child = new EventEmitter();
+    child.exitCode = null;
+    child.signalCode = null;
+    child.kill = () => true;
+
+    await expect(settleSshTunnelChild(child, {
+      gracefulTimeoutMs: 5,
+      forceTimeoutMs: 5,
+    })).rejects.toMatchObject({
+      code: "PRIVATE_SERVER_SSH_TUNNEL_CLEANUP_UNPROVEN",
+    });
   });
 });

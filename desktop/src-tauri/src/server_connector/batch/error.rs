@@ -1,5 +1,6 @@
 use reqwest::StatusCode;
 
+use super::super::authorization::RequestAuthorizationError;
 use super::super::config::ConfigError;
 
 #[derive(Debug)]
@@ -8,6 +9,7 @@ pub(crate) enum BatchClientError {
     InvalidIdentifier,
     Encode(serde_json::Error),
     Transport(reqwest::Error),
+    Authorization(RequestAuthorizationError),
     ResponseTooLarge,
     MalformedResponse,
     InvalidPersistedRequest,
@@ -28,6 +30,12 @@ impl std::fmt::Display for BatchClientError {
                 formatter.write_str("Batch server request timed out.")
             }
             Self::Transport(_) => formatter.write_str("Batch server request failed."),
+            Self::Authorization(RequestAuthorizationError::AccountChanged) => {
+                formatter.write_str(
+                    "The server account or authentication configuration changed while remote work was active.",
+                )
+            }
+            Self::Authorization(_) => formatter.write_str("Server sign-in is unavailable."),
             Self::ResponseTooLarge => formatter.write_str("Batch server response is too large."),
             Self::MalformedResponse => {
                 formatter.write_str("Batch server returned an incompatible response.")
@@ -46,6 +54,10 @@ impl BatchClientError {
     pub(crate) fn is_retryable(&self) -> bool {
         match self {
             Self::Transport(_) => true,
+            Self::Authorization(RequestAuthorizationError::Unavailable) => true,
+            Self::Authorization(
+                RequestAuthorizationError::InvalidToken | RequestAuthorizationError::AccountChanged,
+            ) => false,
             Self::Api { retryable, .. } => *retryable,
             Self::InvalidOrigin(_)
             | Self::InvalidIdentifier
