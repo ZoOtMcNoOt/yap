@@ -35,16 +35,7 @@ class ResidentProviderLifecycleGateContractTests(unittest.TestCase):
     def test_control_empty_recovery_stops_owned_group_and_removes_records(
         self,
     ) -> None:
-        bash = shutil.which("bash")
-        if bash is None:
-            self.skipTest("bash is unavailable for the resident recovery replay")
-        if subprocess.run(
-            [bash, "-lc", 'test "$(uname -s)" = Linux'],
-            check=False,
-            capture_output=True,
-            timeout=5,
-        ).returncode != 0:
-            self.skipTest("Linux process groups are unavailable for the recovery replay")
+        bash = _linux_bash_or_skip(self, "recovery replay")
 
         function = _shell_function(
             GATE.read_text(encoding="utf-8"),
@@ -94,16 +85,7 @@ test ! -e {shlex.quote(result_file)}
     def test_control_empty_recovery_refuses_foreign_token_and_retains_records(
         self,
     ) -> None:
-        bash = shutil.which("bash")
-        if bash is None:
-            self.skipTest("bash is unavailable for the resident refusal replay")
-        if subprocess.run(
-            [bash, "-lc", 'test "$(uname -s)" = Linux'],
-            check=False,
-            capture_output=True,
-            timeout=5,
-        ).returncode != 0:
-            self.skipTest("Linux process groups are unavailable for the refusal replay")
+        bash = _linux_bash_or_skip(self, "refusal replay")
 
         function = _shell_function(
             GATE.read_text(encoding="utf-8"),
@@ -251,9 +233,7 @@ test "$active_container_name" = yap-test-provider
     def test_normal_provider_stop_requires_all_recovery_artifacts_absent(
         self,
     ) -> None:
-        bash = shutil.which("bash")
-        if bash is None:
-            self.skipTest("bash is unavailable for the recovery-retirement replay")
+        bash = _linux_bash_or_skip(self, "recovery-retirement replay")
 
         script = GATE.read_text(encoding="utf-8")
         absence_function = _shell_function(
@@ -781,6 +761,27 @@ test "$active_container_id" = "{original_id}"
                 errors="replace",
             ),
         )
+
+
+def _linux_bash_or_skip(test: unittest.TestCase, purpose: str) -> str:
+    """Resolve a Linux bash, or skip.
+
+    These replays drive Linux process groups and address the temporary
+    directory through _bash_path, which emits a /mnt/<drive> path. A Windows
+    host resolves bash but cannot reach that path, so the Linux check is what
+    makes the skip honest rather than a failure.
+    """
+    bash = shutil.which("bash")
+    if bash is None:
+        test.skipTest(f"bash is unavailable for the {purpose}")
+    if subprocess.run(
+        [bash, "-lc", 'test "$(uname -s)" = Linux'],
+        check=False,
+        capture_output=True,
+        timeout=5,
+    ).returncode != 0:
+        test.skipTest(f"Linux process groups are unavailable for the {purpose}")
+    return bash
 
 
 def _shell_function(script: str, name: str) -> str:
