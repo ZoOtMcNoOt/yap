@@ -96,11 +96,12 @@ try {
     if (-not $env:YAP_TEST_AUTH_SERVER_TOKEN) {
         throw 'The synthetic access token was unavailable.'
     }
-    Push-Location -LiteralPath $Repository
+    # ponytail: cargo from the crate dir so rustup reads rust-toolchain.toml.
+    # rustup resolves by cwd and ignores --manifest-path.
+    Push-Location -LiteralPath (Join-Path $Repository 'desktop\src-tauri')
     try {
         & cargo test `
             --locked `
-            --manifest-path '.\desktop\src-tauri\Cargo.toml' `
             'python_authenticated_server_accepts_signed_bearer' `
             --lib
         if ($LASTEXITCODE -ne 0) {

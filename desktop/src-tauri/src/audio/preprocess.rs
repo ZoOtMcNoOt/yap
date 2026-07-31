@@ -135,7 +135,68 @@ fn mix(current: f32, target: f32, blend: f32) -> f32 {
     current + (target - current) * blend
 }
 
+/// Windowed-sinc lowpass applied at the source rate before decimation. Picking
+/// every Nth sample folds everything above the output Nyquist back onto the
+/// speech band, and at the common 48 kHz capture rate the interpolation
+/// fraction below is always exactly zero, so decimation is otherwise unfiltered.
+struct DecimationLowpass {
+    taps: Vec<f32>,
+    history: Vec<f32>,
+    position: usize,
+}
+
+impl DecimationLowpass {
+    const TAPS: usize = 127;
+    /// Passband edge as a fraction of the output Nyquist. Leaves room for the
+    /// window's transition band to reach the stopband before the fold point.
+    const PASSBAND_RATIO: f64 = 0.85;
+
+    fn design(source_rate: u32, target_rate: u32) -> Option<Self> {
+        if source_rate <= target_rate {
+            return None;
+        }
+        let cutoff = (target_rate as f64 / 2.0) * Self::PASSBAND_RATIO / source_rate as f64;
+        let center = (Self::TAPS - 1) as f64 / 2.0;
+        let mut taps = Vec::with_capacity(Self::TAPS);
+        let mut gain = 0.0;
+        for index in 0..Self::TAPS {
+            let offset = index as f64 - center;
+            let sinc = if offset == 0.0 {
+                2.0 * cutoff
+            } else {
+                (std::f64::consts::TAU * cutoff * offset).sin() / (std::f64::consts::PI * offset)
+            };
+            let window = 0.54
+                - 0.46 * (std::f64::consts::TAU * index as f64 / (Self::TAPS - 1) as f64).cos();
+            let value = sinc * window;
+            gain += value;
+            taps.push(value);
+        }
+        Some(Self {
+            taps: taps.into_iter().map(|tap| (tap / gain) as f32).collect(),
+            history: vec![0.0; Self::TAPS],
+            position: 0,
+        })
+    }
+
+    fn filter(&mut self, input: &[f32]) -> Vec<f32> {
+        let span = self.history.len();
+        let mut output = Vec::with_capacity(input.len());
+        for sample in input {
+            self.history[self.position] = *sample;
+            self.position = (self.position + 1) % span;
+            let mut sum = 0.0;
+            for (offset, tap) in self.taps.iter().enumerate() {
+                sum += self.history[(self.position + offset) % span] * tap;
+            }
+            output.push(sum);
+        }
+        output
+    }
+}
+
 pub struct LinearResampler {
+    lowpass: Option<DecimationLowpass>,
     buffered: Vec<f32>,
     source_rate: u32,
     target_rate: u32,
@@ -144,10 +205,13 @@ pub struct LinearResampler {
 
 impl LinearResampler {
     pub fn new(source_rate: u32, target_rate: u32) -> Self {
+        let source_rate = source_rate.max(1);
+        let target_rate = target_rate.max(1);
         Self {
+            lowpass: DecimationLowpass::design(source_rate, target_rate),
             buffered: Vec::new(),
-            source_rate: source_rate.max(1),
-            target_rate: target_rate.max(1),
+            source_rate,
+            target_rate,
             cursor: 0.0,
         }
     }
@@ -159,7 +223,10 @@ impl LinearResampler {
         if self.source_rate == self.target_rate {
             return input.to_vec();
         }
-        self.buffered.extend_from_slice(input);
+        match self.lowpass.as_mut() {
+            Some(lowpass) => self.buffered.extend_from_slice(&lowpass.filter(input)),
+            None => self.buffered.extend_from_slice(input),
+        }
         let step = self.source_rate as f64 / self.target_rate as f64;
         let mut output = Vec::new();
         while self.cursor < self.buffered.len() as f64 {
@@ -194,8 +261,8 @@ mod tests {
         let pcm = crate::audio::preprocess::f32_to_i16_le_bytes(&resampled);
 
         assert_eq!(downmixed, vec![0.5, 0.5]);
-        assert_eq!(resampled, vec![0.5]);
-        assert_eq!(pcm, vec![0, 64]);
+        assert_eq!(resampled.len(), 1);
+        assert_eq!(pcm.len(), 2);
     }
 
     #[test]
@@ -211,10 +278,53 @@ mod tests {
         );
     }
 
+    fn tone(rate: u32, hz: f64, samples: usize) -> Vec<f32> {
+        (0..samples)
+            .map(|index| (std::f64::consts::TAU * hz * index as f64 / rate as f64).sin() as f32)
+            .collect()
+    }
+
+    fn peak(samples: &[f32]) -> f32 {
+        samples.iter().fold(0.0f32, |peak, s| peak.max(s.abs()))
+    }
+
+    /// Decimation without a lowpass folds everything above the output Nyquist
+    /// back onto the speech band. Capture is commonly 48 kHz, so this is the
+    /// production path, not an edge case.
+    #[test]
+    fn downsampling_rejects_content_above_the_output_nyquist() {
+        let source = tone(48_000, 12_000.0, 48_000);
+
+        let mut resampler = LinearResampler::new(48_000, 16_000);
+        let resampled = resampler.push(&source);
+
+        let settled = &resampled[resampled.len() / 2..];
+        assert!(
+            peak(settled) < 0.02,
+            "12 kHz survived decimation at {:.4}, aliasing onto 4 kHz",
+            peak(settled)
+        );
+    }
+
+    #[test]
+    fn downsampling_preserves_speech_band_content() {
+        let source = tone(48_000, 400.0, 48_000);
+
+        let mut resampler = LinearResampler::new(48_000, 16_000);
+        let resampled = resampler.push(&source);
+
+        let settled = &resampled[resampled.len() / 2..];
+        assert!(
+            peak(settled) > 0.95,
+            "400 Hz was attenuated to {:.4}",
+            peak(settled)
+        );
+    }
+
     #[test]
     fn linear_resample_can_downsample() {
         let mut resampler = LinearResampler::new(4, 2);
-        assert_eq!(resampler.push(&[0.0, 1.0, 0.0, -1.0]), vec![0.0, 0.0]);
+        assert_eq!(resampler.push(&[0.0, 1.0, 0.0, -1.0]).len(), 2);
     }
 
     #[test]

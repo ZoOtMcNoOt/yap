@@ -287,8 +287,6 @@ function Resolve-LockedMockOidcDockerImage {
             -Arguments @(
                 'image'
                 'inspect'
-                '--platform'
-                $DockerPlatform
                 '--format'
                 '{{.Id}}|{{.Os}}/{{.Architecture}}'
                 $StagedReference
@@ -330,8 +328,6 @@ function Resolve-LockedMockOidcDockerImage {
         -Arguments @(
             'image'
             'inspect'
-            '--platform'
-            $DockerPlatform
             '--format'
             '{{.Id}}|{{.Os}}/{{.Architecture}}'
             $ManifestReference
