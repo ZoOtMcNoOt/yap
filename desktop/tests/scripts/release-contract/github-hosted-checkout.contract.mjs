@@ -827,7 +827,10 @@ test(
         stage: "Final",
       });
       assert.notEqual(final.status, 0);
-      assert.match(final.stderr, /checkout is not unchanged/);
+      assert.match(
+        final.stderr,
+        /disposable Git index changed after exact-head admission/,
+      );
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
