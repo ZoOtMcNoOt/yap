@@ -329,9 +329,46 @@ mod tests {
         assert_eq!(samples(&bytes).len() as u64, evidence.output_sample_count);
     }
 
+    /// The aliasing check below is only meaningful while the fixture actually
+    /// carries an out-of-band tone and no 4 kHz content of its own. Neither
+    /// property is visible in the decoded output, so nothing else can notice if
+    /// the fixture is regenerated without them: the check would keep passing
+    /// while testing nothing. Pin the bytes so that has to be deliberate.
+    ///
+    /// Measured on the pinned file, decoded to mono f32 at its own 44.1 kHz over
+    /// a one-second settled window:
+    ///
+    /// ```text
+    ///   440 Hz: 0.029682     4 kHz: 0.000000    12 kHz: 0.029685
+    /// ```
+    ///
+    /// Equivalent content can be regenerated with the command below. It yields
+    /// the two properties the check needs — the tones at equal amplitude and no
+    /// 4 kHz — but at a different absolute level, so it is a replacement rather
+    /// than a reproduction. The check compares the fold against the speech tone
+    /// rather than an absolute floor, so the level does not matter; the hash
+    /// would still need repinning.
+    ///
+    /// ```text
+    /// ffmpeg -f lavfi -i "sine=frequency=440:sample_rate=44100:duration=2" \
+    ///        -f lavfi -i "sine=frequency=12000:sample_rate=44100:duration=2" \
+    ///        -filter_complex "[0][1]amix=inputs=2,pan=stereo|c0=c0|c1=c0" \
+    ///        -c:a libmp3lame tone-44k-stereo.mp3
+    /// ```
+    #[test]
+    fn the_aliasing_fixture_still_holds_the_tones_the_check_depends_on() {
+        let bytes = std::fs::read(fixture("tone-44k-stereo.mp3")).expect("read fixture");
+        let digest = crate::jobs::remote::artifact_io::sha256_bytes(&bytes);
+        assert_eq!(
+            digest, "ca25e3b53ab25cd7d6fb0c53fb01aee6270e28e2dfe343299e987838c490e1c3",
+            "the aliasing fixture changed; re-measure that it still carries 12 kHz and no \
+             4 kHz before repinning, or decoding_band_limits_before_it_resamples proves nothing"
+        );
+    }
+
     /// The fixture carries 440 Hz and 12 kHz. At 16 kHz the 12 kHz tone would
     /// fold onto 4 kHz without band limiting, so this is the decode path's
-    /// aliasing check.
+    /// aliasing check. Its premise is pinned by the test above.
     #[test]
     fn decoding_band_limits_before_it_resamples() {
         let (_evidence, bytes) = decode("tone-44k-stereo.mp3");
