@@ -1792,11 +1792,17 @@
           },
           "componentRevision": {
             "type": "string",
-            "const": "canonical-pcm16-normalization-v1"
+            "enum": [
+              "canonical-pcm16-normalization-v1",
+              "decoded-canonical-pcm16-normalization-v1"
+            ]
           },
           "method": {
             "type": "string",
-            "const": "canonical_pcm16_identity"
+            "enum": [
+              "canonical_pcm16_identity",
+              "decoded_to_canonical_pcm16"
+            ]
           },
           "inputSourceSha256": {
             "$ref": "#/components/schemas/Sha256"
@@ -1845,6 +1851,38 @@
           "sourceTimePreserved": {
             "type": "boolean",
             "const": true
+          },
+          "decodedFrom": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "codec",
+              "sampleRateHz",
+              "channels",
+              "frameCount"
+            ],
+            "properties": {
+              "codec": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "sampleRateHz": {
+                "type": "integer",
+                "minimum": 8000,
+                "maximum": 384000
+              },
+              "channels": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 8
+              },
+              "frameCount": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "description": "Present only when the admitted canonical source was decoded from a compressed import. Its absence asserts the source was already canonical."
           }
         },
         "x-yap-normalization-invariants": {
@@ -1942,7 +1980,10 @@
         "properties": {
           "schemaVersion": {
             "type": "integer",
-            "const": 1
+            "enum": [
+              1,
+              2
+            ]
           },
           "normalization": {
             "$ref": "#/components/schemas/NormalizationEvidence"

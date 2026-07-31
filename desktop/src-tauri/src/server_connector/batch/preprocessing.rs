@@ -8,6 +8,9 @@ use super::validation::valid_sha256;
 // source was produced by decoding a compressed import rather than copied from
 // an already-canonical file.
 pub(crate) const PREPROCESSING_EVIDENCE_SCHEMA_VERSION: u16 = 2;
+/// Evidence is persisted in the job ledger, so a job created by the previous
+/// build must stay drainable. The server accepts the same set.
+const SUPPORTED_PREPROCESSING_EVIDENCE_SCHEMA_VERSIONS: &[u16] = &[1, 2];
 const SAMPLE_RATE_HZ: u64 = 16_000;
 const SAMPLES_PER_MILLISECOND: u64 = SAMPLE_RATE_HZ / 1_000;
 const MAX_SOURCE_SAMPLES: u64 = SAMPLE_RATE_HZ * 4 * 60 * 60;
@@ -358,7 +361,7 @@ impl PreprocessingEvidence {
     }
 
     pub(crate) fn is_valid_for_output_samples(&self, output_sample_count: u64) -> bool {
-        self.schema_version == PREPROCESSING_EVIDENCE_SCHEMA_VERSION
+        SUPPORTED_PREPROCESSING_EVIDENCE_SCHEMA_VERSIONS.contains(&self.schema_version)
             && self.normalization.is_valid(output_sample_count)
             && self.vad.is_valid(self.normalization.source_sample_count)
             && serde_json::to_vec(self)

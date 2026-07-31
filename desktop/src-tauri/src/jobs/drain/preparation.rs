@@ -205,10 +205,9 @@ pub(super) fn prepare_client_preflight_for_resources(
             },
             || cancellation.ensure_active(),
         )?;
+        // `decoded` drops here, removing the plaintext copy on every path.
         drop(source);
-        if let Some(decoded) = decoded {
-            decoded.remove();
-        }
+        drop(decoded);
         let (artifact, preprocessing) = prepared.into_ledger_state();
         ensure_job_is_active(
             ledger,
@@ -439,10 +438,9 @@ fn prepare_next_queued_job_impl(
             },
         )?
         .into_ledger_state()?;
+        // `decoded` drops here, removing the plaintext copy on every path.
         drop(source);
-        if let Some(decoded) = decoded {
-            decoded.remove();
-        }
+        drop(decoded);
         ensure_job_is_active(
             ledger,
             &job_id,
