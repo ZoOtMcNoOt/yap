@@ -389,6 +389,25 @@ test("tracked PowerShell automation declares its reviewed runtime boundary", asy
     ["-NoProfile", "-NonInteractive", "-File", smokeScriptPath],
     { cwd: repoRoot, encoding: "utf8", timeout: 10_000 },
   );
+  // The refusal is a property of the legacy host, so it can only be observed
+  // where that host exists. Asserting `status !== 0` alone would pass on a
+  // machine that lacks the legacy interpreter, where spawn never starts a
+  // process and status is null, so an absent host would read as a proven
+  // refusal. This test's own source may not name that interpreter literally,
+  // which is why the executable is assembled from fragments above.
+  if (legacyResult.error?.code === "ENOENT") {
+    assert.equal(
+      process.platform === "win32",
+      false,
+      "Windows hosts must provide legacy Windows PowerShell for this boundary",
+    );
+    return;
+  }
+  assert.equal(
+    legacyResult.error,
+    undefined,
+    `legacy Windows PowerShell failed to launch: ${legacyResult.error?.message}`,
+  );
   assert.notEqual(
     legacyResult.status,
     0,
