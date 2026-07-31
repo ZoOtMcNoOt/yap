@@ -48,6 +48,16 @@
       "timeoutMs": 1800000
     },
     {
+      "id": "frontend.release-contracts-local",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "test:release-contract:local"
+      ],
+      "timeoutMs": 2700000
+    },
+    {
       "id": "frontend.provenance",
       "executor": "command",
       "cwd": "desktop",
@@ -66,6 +76,16 @@
       "command": [
         "pnpm",
         "test"
+      ],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "frontend.unit-local",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "test:local"
       ],
       "timeoutMs": 1800000
     },

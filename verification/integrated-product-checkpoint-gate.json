@@ -41,6 +41,15 @@
       ]
     },
     {
+      "id": "frontend.release-contracts-local",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "test:release-contract:local"
+      ]
+    },
+    {
       "id": "frontend.provenance",
       "executor": "command",
       "cwd": "desktop",
@@ -58,6 +67,15 @@
       "command": [
         "pnpm",
         "test"
+      ]
+    },
+    {
+      "id": "frontend.unit-local",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": [
+        "pnpm",
+        "test:local"
       ]
     },
     {

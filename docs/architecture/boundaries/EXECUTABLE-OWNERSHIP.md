@@ -1,7 +1,7 @@
 # Executable Ownership and Trust Boundaries
 
 This map records the executable ownership baseline established by architecture
-checkpoints A/B and the active Phase 7 implementation. Focused identity,
+checkpoints A/B and the merged Phase 7 implementation. Focused identity,
 purpose-authorization, private-WebSocket, and native lower-handshake evidence is
 green. Retained-pidfd head
 `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` was rejected before admission when

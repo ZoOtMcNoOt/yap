@@ -40,7 +40,7 @@ Keep the folder name `desktop/` while this is a staged monorepo. Rename the repo
 
 | Priority | Item | Current state | Next action |
 |----------|------|---------------|-------------|
-| P1 | Production remote server deployment remains deferred | The gated Phase 5 path connects durable loopback batch work; the active Phase 7 branch adds developer-owned authenticated REST ownership and private WebSocket admission without a production identity adapter or external edge | Keep live ASR, the client-facing same-origin WSS/TLS edge, persistent service supervision, and measured multi-worker capacity behind their explicit later gates |
+| P1 | Production remote server deployment remains deferred | The gated Phase 5 path connects durable loopback batch work; Phase 7 added developer-owned authenticated REST ownership and private WebSocket admission without a production identity adapter or external edge | Keep live ASR, the client-facing same-origin WSS/TLS edge, persistent service supervision, and measured multi-worker capacity behind their explicit later gates |
 | P1 | CI parity clip is opt-in | Mock verbose JSON fixture protects timestamp contract in normal CI; real audio sidecar tests are ignored unless `YAP_PARITY_CLIP` is set | Add a licensed speech fixture later if real audio parity must run in CI |
 | P2 | ShadCN icon metadata now matches Phosphor | `components.json` declares Phosphor, and app imports Phosphor directly | Keep direct imports; do not add an icon adapter |
 | P2 | Active spec filenames use client/server names | Historical phase links were renamed to `local-live-fallback-sidecar.md`, `live-dictation-client-ux.md`, `server-tier-mvp.md`, and `local-llm-sidecar.md` | Leave ADR phase aliases intact unless an ADR is amended |

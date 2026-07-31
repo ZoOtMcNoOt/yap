@@ -115,21 +115,22 @@ Phase 7 follows the same cadence: independently merge the phase, run a separate
 post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that
 checkpoint merges.
 
-## Current phase: tenant-scoped identity and access
+## Last merged phase: tenant-scoped identity and access (Phase 7)
 
 The
 [tenant-scoped identity and job authorization plan](../plans/active/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
-implements the Phase 7 boundary. It keeps local/offline dictation independent,
+implemented the Phase 7 boundary and merged as `66d314d7`. It keeps local/offline dictation independent,
 derives server principals from validated Yap API tokens, enforces owner-scoped
 job and LID operations, adds revocation/purpose-control/audit primitives, and
 uses a synthetic signed two-principal gate where IT-owned Entra registration is
 not yet available. Biometric profiles remain Phase 8; Postgres/pgvector
 knowledge permission compilation remains Phase 9.
 
-The active branch now has focused executable evidence for a provider-neutral
-OIDC verifier with Entra policy, fail-closed authentication, tenant-scoped
-resource ownership, role-gated and audited purpose grants, enforced purpose
-checks, and authenticated bounded private WebSocket admission. The native lower
+Merged Phase 7 has executable evidence for a provider-neutral OIDC verifier
+with Entra policy, fail-closed authentication, tenant-scoped resource
+ownership, and authenticated bounded private WebSocket admission. Role-gated
+purpose grants and purpose checks are implemented and unit-tested but no route
+or operator entry point calls them, so they do not enforce anything yet. The native lower
 WebSocket handshake is qualified against the separate internal live port. The
 desktop exposes only a narrow in-process token-provider seam; no production
 adapter is selected or approved. There is no live ASR, product endpoint
@@ -166,7 +167,7 @@ conformance and an approved native adapter remain IT-authorized follow-ups.
 
 | Phase | Boundary | Exit direction |
 | --- | --- | --- |
-| 7 | Identity and access | Provider-neutral OIDC validation with Entra policy, a native token-provider seam whose production adapter requires separate approval, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, enforced purpose grants, authorization/revocation/audit behavior, and authenticated bounded private live admission without a live ASR or external edge claim. |
+| 7 | Identity and access | Provider-neutral OIDC validation with Entra policy, a native token-provider seam whose production adapter requires separate approval, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants and authorization/revocation/audit records that are implemented but reachable only from tests, and authenticated bounded private live admission without a live ASR or external edge claim. |
 | 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron eight-window/eight-global server baseline, a separately gated speaker-epoch extension for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/global/window pressure, ASR-plus-diarization fallback, and purpose-authorized server reconciliation/naming. |
 | 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and SGLang-backed compatible reasoning/tool-output models. |
 | 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus SGLang agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |

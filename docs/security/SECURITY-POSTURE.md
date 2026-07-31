@@ -4,7 +4,7 @@ This document describes implemented controls and explicit handoffs without
 publishing private security evidence. It is not a penetration-test report,
 certification, production authorization, or substitute for enterprise review.
 
-## Implemented controls through the active Phase 7 branch
+## Implemented controls through merged Phase 7
 
 ### Local data and filesystem
 
