@@ -48,15 +48,25 @@ function createFixtureProfile() {
   };
 }
 
+// The fixture makes three private-artifact ACL calls, each of which spawns
+// Windows PowerShell. That costs about 600 ms per call on a developer
+// workstation and roughly ten times that on a hosted runner, which overruns
+// vitest's 10-second default. The hook is setup, not an assertion about speed.
+const FIXTURE_TIMEOUT_MS = 120_000;
+
 beforeAll(() => {
   fixture = createFixtureProfile();
-});
+}, FIXTURE_TIMEOUT_MS);
 
 afterAll(() => {
   rmSync(fixture.root, { recursive: true, force: true });
 });
 
-describe("checked private-server SSH profile", () => {
+// Every case here validates SSH material through the private-artifact gate,
+// which spawns Windows PowerShell per file checked. That is well inside
+// vitest's 5-second per-test default on a workstation and well outside it on a
+// hosted runner. The suite bound covers the cases and the fixture alike.
+describe("checked private-server SSH profile", { timeout: FIXTURE_TIMEOUT_MS }, () => {
   it("builds one frozen no-config control transport", () => {
     const profile = loadPrivateServerSshProfile(fixture.source);
     const invocation = privateServerControlSshInvocation(profile, ["bash", "/private/start.sh"]);
@@ -158,5 +168,5 @@ describe("checked private-server SSH profile", () => {
         YAP_PRIVATE_SERVER_SSH_IDENTITY_FILE: gatePolicyIdentity,
       })).toThrow(/DACL|unexpected access rule/i);
     }
-  }, 15_000);
+  });
 });
