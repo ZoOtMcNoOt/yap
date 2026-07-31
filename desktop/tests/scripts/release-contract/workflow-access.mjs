@@ -5,7 +5,9 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 const require = createRequire(import.meta.url);
-const { parse: parseYaml } = require("yaml");
+
+// Deferred so importers that never parse a workflow run without desktop dependencies installed.
+let parseYaml;
 
 export const repoRoot = path.resolve(import.meta.dirname, "..", "..", "..", "..");
 
@@ -14,6 +16,7 @@ export async function readRepoFile(relativePath) {
 }
 
 export async function readWorkflow(relativePath) {
+  parseYaml ??= require("yaml").parse;
   return parseYaml(await readRepoFile(relativePath));
 }
 

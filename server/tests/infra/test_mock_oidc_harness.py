@@ -24,6 +24,7 @@ LOOPBACK_PROXY = REPOSITORY / "verification" / "mock-oidc-loopback-proxy.py"
 EXACT_RUNTIME = REPOSITORY / "verification" / "exact-python-runtime.psm1"
 DOCKER_OWNER = REPOSITORY / "verification" / "mock-oidc-docker-owner.psm1"
 PRIVATE_FILE_OUTPUT = REPOSITORY / "verification" / "private-file-output.psm1"
+PRIVATE_GATE_ARTIFACTS = REPOSITORY / "verification" / "private-gate-artifacts.ps1"
 FAKE_DOCKER = Path(__file__).with_name("fake_mock_oidc_docker.ps1")
 EXPECTED_DIGEST = (
     "sha256:f625692f5bf84939f3d0af4931f2c0f038dca84c4f1bac1171710d544181f97f"
@@ -742,6 +743,18 @@ Write-Output 'FAKE_DOCKER_MALFORMED_TEARDOWN=PASS'
                         "#requires -PSEdition Core",
                         "Set-StrictMode -Version Latest",
                         "$ErrorActionPreference = 'Stop'",
+                        # ponytail: Windows temp dirs are Administrators-owned
+                        # with inherited ACEs. verify-directory never repairs,
+                        # so the caller must protect the parent first.
+                        "if ([OperatingSystem]::IsWindows()) {",
+                        (
+                            "    & "
+                            f"{self._powershell_literal(PRIVATE_GATE_ARTIFACTS)} "
+                            "-Operation protect-directory "
+                            f"-LiteralPath {self._powershell_literal(root)} "
+                            "| Out-Null"
+                        ),
+                        "}",
                         (
                             "Import-Module "
                             f"{self._powershell_literal(PRIVATE_FILE_OUTPUT)} "

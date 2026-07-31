@@ -115,11 +115,12 @@ try {
     $PreviousTestServerUrl = Get-Item Env:YAP_TEST_SERVER_URL -ErrorAction SilentlyContinue
     try {
         $env:YAP_TEST_SERVER_URL = 'http://127.0.0.1:18765'
-        Push-Location -LiteralPath $Repository
+        # ponytail: cargo from the crate dir so rustup reads rust-toolchain.toml.
+        # rustup resolves by cwd and ignores --manifest-path.
+        Push-Location -LiteralPath (Join-Path $Repository 'desktop\src-tauri')
         try {
             & cargo test `
                 --locked `
-                --manifest-path '.\desktop\src-tauri\Cargo.toml' `
                 --test server_connector
             if ($LASTEXITCODE -ne 0) {
                 throw "The server-connector integration failed with exit code $LASTEXITCODE."

@@ -77,12 +77,10 @@ if ($Group -ceq 'version' -and $Action -ceq '--format') {
 }
 
 if ($Group -ceq 'image' -and $Action -ceq 'inspect') {
-    $PlatformIndex = [Array]::IndexOf($Arguments, '--platform')
-    if (
-        $PlatformIndex -lt 0 -or
-        $PlatformIndex + 1 -ge $Arguments.Count -or
-        $Arguments[$PlatformIndex + 1] -cne 'linux/arm64'
-    ) {
+    # ponytail: image inspect must NOT pass --platform; it needs Docker API
+    # 1.49 and hosted runners ship 1.48. Platform is proved by the Os/Arch
+    # format field instead.
+    if ([Array]::IndexOf($Arguments, '--platform') -ge 0) {
         exit 2
     }
     $Reference = $Arguments[-1]
