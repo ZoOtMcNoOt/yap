@@ -156,10 +156,11 @@ mutable workspace code, and a re-resolved `PATH` cannot satisfy the receipt.
 This reflects the observed signed
 `link.exe` → `VCTIP.EXE` behavior after `OptIn=0` and Microsoft's documented
 required-diagnostics exception; it does not weaken product process ownership.
-Fresh exact-tree review, private admission/evidence, the one candidate matrix,
-first-attempt hosted native/PR closure, and merge remain required. Real
-enterprise Entra policy conformance and an approved native adapter remain
-IT-authorized follow-ups.
+Exact application/runtime candidate `dc635916...` passed the one private
+candidate matrix. Its reviewed runner-only descendants do not change shipped
+product/runtime or candidate-manifest behavior, so only exact-head hosted
+native/PR closure and merge remain required. Real enterprise Entra policy
+conformance and an approved native adapter remain IT-authorized follow-ups.
 
 ## Accepted later phases
 

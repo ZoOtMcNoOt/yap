@@ -60,11 +60,11 @@ without changing identity policy or implementing any enterprise-controlled
 input. Pre-admission descendant `c95cfe0...` then exposed a redundant
 same-owner write under ordinary development-root ACLs before any attempt was
 reserved. Repair `a823b28...` makes owner mutation conditional on an exact SID
-mismatch and retains exact read-back verification. Fresh exact-head
-package/prequalification/admission, the one-time replacement matrix, hosted
-evidence, focused PR, and merge remain open. Use the
-[integrated identity and access gate](integrated-identity-access-gate.md) only
-after those prerequisites are ready.
+mismatch and retains exact read-back verification. The descendant through
+`c1d81fc...` changes only hosted/gate tooling, its contracts, and
+documentation, so the validated `dc635916...` application/runtime matrix
+remains authoritative. Exact-head hosted evidence, focused PR closure, and
+merge remain open.
 
 This developer-owned closure does not authorize or attempt real-provider,
 enterprise-network, certificate, DNS, ZPA, firewall, policy, storage, audit, or

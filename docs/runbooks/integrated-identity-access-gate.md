@@ -266,8 +266,20 @@ hosted-portability, and clean-tree admission contracts pass; the same three
 review lenses report no P0–P2 finding. Preserve `dc635916...` as consumed
 hosted-failure evidence and its validated receipts separately as passing
 private evidence; do not retry, extend, or relabel that head or its receipts.
-Fresh exact-tree package/prequalification/admission, one complete replacement
-matrix, first-attempt hosted closure, PR #69 update, and merge remain open.
+
+Runner-only closure repairs use the manifest's existing candidate/hosted split.
+When the exact descendant diff is confined to hosted workflow or gate tooling,
+its focused contracts, and documentation—and review proves that no shipped
+client, server, native, model, runtime, or candidate-manifest behavior
+changed—the already-passed candidate matrix remains authoritative. Run only
+the affected exact-head hosted closure. Any product/runtime or candidate-cell
+behavior change still requires a fresh admission and candidate matrix.
+
+That narrow rule applies through `c1d81fc...`: the exact diff from
+`dc635916...` contains only hosted/gate tooling, its contracts, and
+documentation. Focused verification and the same three review lenses passed.
+No new private admission or replacement matrix is required. Exact-head hosted
+CI, CodeQL, stock-NSIS, PR #69 closure, and merge remain open.
 
 The authoritative manifest is
 [`verification/integrated-identity-access-gate.json`](../../verification/integrated-identity-access-gate.json).

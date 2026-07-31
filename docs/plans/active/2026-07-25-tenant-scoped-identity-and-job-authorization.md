@@ -209,9 +209,12 @@ SID differs from the current identity and retains the exact post-write
 owner/DACL verification. The three Windows ACL behaviors, all 16 applicable
 hosted-portability contracts, and the clean-tree admission fixture pass. The
 same three independent architecture, assurance, and runtime lenses report no
-P0–P2 finding. A fresh exact-tree package/prequalification/admission, one
-complete replacement matrix, and exact-head hosted closure remain required;
-none of `dc635916...`'s private evidence may be retried or relabeled.
+P0–P2 finding. The exact diff through `c1d81fc...` is confined to hosted/gate
+tooling, its contracts, and documentation; it changes no shipped client,
+server, native, model, runtime, or candidate-manifest behavior. The completed
+`dc635916...` application/runtime matrix remains authoritative without
+retrying or relabeling its receipts. Only exact-head hosted closure remains
+before merge.
 
 **Scope:** Add the authenticated principal and authorization boundary required
 for a multi-user private server without changing local/offline dictation,
@@ -513,10 +516,13 @@ scanning, capacity/SLO promotion, and deployment evidence.
       redundant same-owner write. Implement `a823b28...`, retain mismatch-owner
       correction plus exact read-back, pass focused ACL/hosted/admission
       contracts, and obtain the same three independent review approvals.
-- [ ] Freeze, push, package, prequalify, and admit the resulting exact
-      documentation successor.
-- [ ] Run the complete applicable local/server/target-client/private-server
-      replacement matrix exactly once for that admitted successor.
+- [x] Verify that the descendant diff through `c1d81fc...` is limited to
+      hosted/gate tooling, its contracts, and documentation, with no shipped
+      product/runtime or candidate-manifest change; retain `dc635916...` as the
+      one validated application/runtime candidate.
+- [x] Do not repeat private admission or the complete candidate matrix for this
+      runner-only repair. Preserve the already-validated private evidence
+      outside Git without relabeling it.
 - [ ] Update PR #69; require the five exact-head CI cells, CodeQL, and
       disposable-Windows stock-NSIS closure exactly once on the checked head,
       or record equivalent local evidence and explicitly disclose unavailable
