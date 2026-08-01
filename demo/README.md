@@ -66,9 +66,41 @@ the same reference CI uses; there is no second thing to keep current.
 the issuer is plain HTTP on loopback. That belongs to a demo and must not reach
 a deployment.
 
-Docker is required. The provider image has a `linux/arm64` manifest, so the
-natural home is the GB10 server node beside `yap-server`, with the desktop
-client reaching it over the existing forward.
+## Where it runs, and why there is no choice about it
+
+The provider runs on the GB10 node beside `yap-server`, and the laptop reaches
+it by adding one line to the SSH forward it already opens for the server:
+
+```powershell
+ssh -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 `
+  -N -T `
+  -L 127.0.0.1:18765:127.0.0.1:18765 `
+  -L 127.0.0.1:18790:127.0.0.1:18790 `
+  dgx-spark-eth
+```
+
+That is the same mechanism, the same command, and the same policy the product
+already uses to reach the server; see the
+[server node setup](../docs/runbooks/yap-server-node-setup.md). It opens no
+port on the GB10 and needs no firewall change.
+
+Three things force this shape rather than making it a preference:
+
+The `iss` claim has to match on both sides. The client asks
+`http://127.0.0.1:18790/yap-phase7` for a token and the server validates that
+the issuer is `http://127.0.0.1:18790/yap-phase7`. Only a forward makes one
+string true on two machines. Serving the provider on the node address instead
+would mint tokens the server then rejects, and the failure would look like a
+bug in the identity code rather than a URL mismatch.
+
+The connector is loopback-only by policy. The runbook says not to put the
+node address in application configuration, so the client could not be pointed
+at a routable provider even if the provider allowed it.
+
+Docker only exists on the GB10 here, and the image is `linux/arm64`.
+
+This also matches production in the way that matters: the issuer is a service
+reached over the network, not something living inside the client.
 
 ## Driving the desktop client
 
