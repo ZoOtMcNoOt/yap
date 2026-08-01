@@ -137,12 +137,36 @@ pub(super) struct NativeAccessTokenManager {
     clock: Arc<Clock>,
 }
 
+/// The WAM adapter is implemented but not approved. This gate is what keeps
+/// "implemented" from silently becoming "shipped": IT owns adapter selection,
+/// and the runbook is explicit that a production adapter must not be selected
+/// merely because one exists.
+fn opted_in_provider() -> Option<Arc<dyn NativeAccessTokenProvider>> {
+    if std::env::var("YAP_WAM_TOKEN_PROVIDER").as_deref() != Ok("1") {
+        return None;
+    }
+    #[cfg(windows)]
+    {
+        Some(Arc::new(
+            super::wam_access_token_provider::WamAccessTokenProvider::new(),
+        ))
+    }
+    #[cfg(not(windows))]
+    {
+        None
+    }
+}
+
 impl NativeAccessTokenManager {
     pub(super) fn discover() -> Arc<Self> {
         Arc::new(Self {
-            // Production remains fail-closed until an IT-approved in-process
-            // provider is selected and implemented at this boundary.
-            provider: None,
+            // Production remains fail-closed by default. ADR 0016's handoff
+            // requires the selected adapter to be recorded in a reviewed
+            // amendment before it ships, and says not to select one "solely to
+            // claim Entra support", so the WAM adapter is reachable only when
+            // an operator opts in explicitly. Absent that, this is `None` and
+            // behaves exactly as before.
+            provider: opted_in_provider(),
             settings_loader: Arc::new(super::config::load),
             state: Mutex::new(AccessTokenState::default()),
             lifecycle: Mutex::new(()),

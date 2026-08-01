@@ -10,6 +10,8 @@ mod desktop;
 pub(crate) mod lid;
 mod native_access_token_provider;
 mod state;
+#[cfg(windows)]
+mod wam_access_token_provider;
 
 pub(crate) use authorization::AuthenticatedRequestDispatcher;
 pub use authorization::{
