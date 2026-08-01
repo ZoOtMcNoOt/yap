@@ -142,6 +142,14 @@ pub(super) struct NativeAccessTokenManager {
 /// and the runbook is explicit that a production adapter must not be selected
 /// merely because one exists.
 fn opted_in_provider() -> Option<Arc<dyn NativeAccessTokenProvider>> {
+    // Checked first, and absent from release builds entirely, so a demo
+    // identity can never shadow the real broker in a shipped client.
+    #[cfg(debug_assertions)]
+    if let Some(demo) =
+        super::demo_access_token_provider::DemoAccessTokenProvider::from_environment()
+    {
+        return Some(Arc::new(demo));
+    }
     if std::env::var("YAP_WAM_TOKEN_PROVIDER").as_deref() != Ok("1") {
         return None;
     }
