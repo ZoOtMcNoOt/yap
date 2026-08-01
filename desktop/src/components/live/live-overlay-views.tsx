@@ -32,25 +32,72 @@ export function LiveOverlayContent({
   prefersReducedMotion: boolean;
   surface: OverlaySurface;
 }) {
-  if (surface === "collapsed") return <CollapsedOverlayView />;
-  if (surface === "expanded") {
-    return (
-      <ExpandedOverlayView
-        onOpenScratch={onOpenScratch}
-        onOpenTransform={onOpenTransform}
-        onStart={onStart}
-      />
-    );
-  }
-  if (surface === "success") return <SuccessOverlayView />;
+  // The overlay is the one surface where state changes carry the whole meaning:
+  // it is where dictation starts, stops, and fails. Every other surface here
+  // renders silently, so a screen reader user would otherwise have no signal
+  // that recording began or that it failed. One region for all surfaces, so the
+  // announcement survives the surface swap rather than unmounting with it.
   return (
-    <RecordingOverlayView
-      model={model}
-      onRetry={onRetry}
-      onStop={onStop}
-      prefersReducedMotion={prefersReducedMotion}
-    />
+    <>
+      <OverlayStatusAnnouncement model={model} surface={surface} />
+      {surface === "collapsed" ? (
+        <CollapsedOverlayView />
+      ) : surface === "expanded" ? (
+        <ExpandedOverlayView
+          onOpenScratch={onOpenScratch}
+          onOpenTransform={onOpenTransform}
+          onStart={onStart}
+        />
+      ) : surface === "success" ? (
+        <SuccessOverlayView />
+      ) : (
+        <RecordingOverlayView
+          model={model}
+          onRetry={onRetry}
+          onStop={onStop}
+          prefersReducedMotion={prefersReducedMotion}
+        />
+      )}
+    </>
   );
+}
+
+// Announces what the overlay is doing. Errors interrupt because they need a
+// response; everything else waits its turn so a burst of level updates cannot
+// talk over the user.
+function OverlayStatusAnnouncement({
+  model,
+  surface,
+}: {
+  model: OverlayModel;
+  surface: OverlaySurface;
+}) {
+  const failed = model.phase === "feedback";
+  const message = overlayStatusMessage(model, surface);
+  return (
+    <div
+      aria-atomic="true"
+      aria-live={failed ? "assertive" : "polite"}
+      className="sr-only"
+      data-testid="live-overlay-status"
+      role={failed ? "alert" : "status"}
+    >
+      {message}
+    </div>
+  );
+}
+
+export function overlayStatusMessage(model: OverlayModel, surface: OverlaySurface): string {
+  if (surface === "success") return "Dictation finished. Transcript inserted.";
+  if (model.phase === "feedback") {
+    return model.errorMessage
+      ? `Dictation failed. ${model.errorMessage}`
+      : "Dictation failed.";
+  }
+  if (model.phase === "initializing") return "Starting dictation.";
+  if (model.phase === "recording") return "Listening.";
+  if (model.phase === "processing") return "Transcribing.";
+  return "";
 }
 
 function CollapsedOverlayView() {
