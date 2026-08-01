@@ -226,6 +226,14 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     env:
+      # Full debug info is the default for dev and test, and on MSVC that is
+      # PDB generation for every crate in the graph. CI reads backtraces, not
+      # debuggers, and line tables keep panic locations intact. Set here rather
+      # than in Cargo.toml so local debugging is unaffected. This shortens the
+      # build instead of caching its output, which the cache policy forbids for
+      # good reason: restoring target/ means restoring executable code.
+      CARGO_PROFILE_DEV_DEBUG: line-tables-only
+      CARGO_PROFILE_TEST_DEBUG: line-tables-only
       YAP_CHECKED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     defaults:
       run:
