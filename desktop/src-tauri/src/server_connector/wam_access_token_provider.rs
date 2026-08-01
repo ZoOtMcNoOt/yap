@@ -14,10 +14,12 @@
 
 use windows::core::HSTRING;
 use windows::Security::Authentication::Web::Core::{
-    WebAuthenticationCoreManager, WebTokenRequest, WebTokenRequestStatus,
+    WebAuthenticationCoreManager, WebTokenRequest, WebTokenRequestResult, WebTokenRequestStatus,
 };
 use windows::Security::Credentials::WebAccountProvider;
+use windows::Win32::Foundation::HWND;
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
+use windows::Win32::System::WinRT::IWebAuthenticationCoreManagerInterop;
 
 use super::access_token_expiry::expiry_from_token;
 use super::config::MicrosoftEntraSettings;
@@ -61,14 +63,7 @@ impl NativeAccessTokenProvider for WamAccessTokenProvider {
     ) -> NativeProviderFuture<'a, NativeAccessTokenGrant> {
         let settings = settings.clone();
         Box::pin(async move {
-            let _ = parent_window_handle;
-            // Deliberately not implemented yet. Returning INTERACTION_REQUIRED
-            // is the honest answer: silent acquisition is wired, interactive
-            // sign-in is not, and the caller already treats this as "the user
-            // must act". Claiming UNAVAILABLE would instead read as "no
-            // provider", which is no longer true.
-            let _ = settings;
-            Err(NativeAccessTokenProviderError::INTERACTION_REQUIRED)
+            on_worker(move || sign_in_blocking(&settings, parent_window_handle)).await
         })
     }
 
@@ -154,6 +149,14 @@ fn acquire_silent_blocking(
         .and_then(|operation| operation.get())
         .map_err(|_| NativeAccessTokenProviderError::NETWORK)?;
 
+    grant_from_result(&result)
+}
+
+/// Walks a broker response into a grant. Shared so silent and interactive
+/// acquisition cannot drift in how they read a token or classify a failure.
+fn grant_from_result(
+    result: &WebTokenRequestResult,
+) -> Result<NativeAccessTokenGrant, NativeAccessTokenProviderError> {
     let status = result
         .ResponseStatus()
         .map_err(|_| NativeAccessTokenProviderError::UNAVAILABLE)?;
@@ -186,6 +189,53 @@ fn acquire_silent_blocking(
         expires_at_unix_seconds,
         account_id,
     })
+}
+
+/// Interactive sign-in through the broker.
+///
+/// A Win32 process has no UWP `CoreWindow`, so the broker dialog is parented to
+/// a window handle through `IWebAuthenticationCoreManagerInterop`. That handle
+/// is what keeps the prompt modal to the application instead of appearing
+/// behind it, which is the difference between a sign-in a user can complete and
+/// one they never see.
+fn sign_in_blocking(
+    settings: &MicrosoftEntraSettings,
+    parent_window_handle: Option<u64>,
+) -> Result<NativeAccessTokenGrant, NativeAccessTokenProviderError> {
+    ensure_apartment();
+    // Without a window to parent to, an interactive prompt would be orphaned.
+    // Saying interaction is required is truer than showing a dialog nobody can
+    // find.
+    let Some(handle) = parent_window_handle else {
+        return Err(NativeAccessTokenProviderError::INTERACTION_REQUIRED);
+    };
+    let provider = provider_for(settings)?;
+    let request = request_for(settings, &provider)?;
+
+    let interop: IWebAuthenticationCoreManagerInterop = windows::core::factory::<
+        WebAuthenticationCoreManager,
+        IWebAuthenticationCoreManagerInterop,
+    >()
+    .map_err(|_| NativeAccessTokenProviderError::UNAVAILABLE)?;
+
+    // SAFETY: the handle comes from the window this process owns, the request
+    // was built above and outlives the call, and the returned operation is a
+    // WinRT type identified by its own IID.
+    // The generic is the operation's own type and has to be named. windows
+    // does not re-export windows-future, and it is already in the graph, so
+    // declaring it adds a dependency edge without adding a package.
+    let result = unsafe {
+        interop
+            .RequestTokenForWindowAsync::<_, windows_future::IAsyncOperation<WebTokenRequestResult>>(
+                HWND(handle as *mut core::ffi::c_void),
+                &request,
+            )
+            .map_err(|_| NativeAccessTokenProviderError::UNAVAILABLE)?
+    }
+    .get()
+    .map_err(|_| NativeAccessTokenProviderError::NETWORK)?;
+
+    grant_from_result(&result)
 }
 
 fn session_status_blocking(
