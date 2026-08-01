@@ -48,21 +48,6 @@ pub(super) fn open_no_follow_read(_path: &Path) -> std::io::Result<File> {
         "secure no-follow chunk open is unsupported on this platform",
     ))
 }
-
-#[cfg(windows)]
-pub(super) fn metadata_is_link_or_reparse(metadata: &fs::Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt;
-
-    const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
-    metadata.file_type().is_symlink()
-        || metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
-}
-
-#[cfg(not(windows))]
-pub(super) fn metadata_is_link_or_reparse(metadata: &fs::Metadata) -> bool {
-    metadata.file_type().is_symlink()
-}
-
 pub(super) struct StagingDirectory {
     pub(super) path: PathBuf,
     published: bool,
@@ -169,3 +154,7 @@ pub(super) fn valid_sha256(value: &str) -> bool {
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
+
+// Re-exported so this module keeps one import path while the
+// implementation lives in exactly one place.
+pub(super) use crate::bounded_file::metadata_is_link_or_reparse;

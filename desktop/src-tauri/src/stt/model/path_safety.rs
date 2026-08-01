@@ -1,4 +1,4 @@
-use std::{fs::Metadata, path::Path};
+use std::path::Path;
 
 use crate::stt::error::SttError;
 
@@ -41,16 +41,6 @@ pub(crate) fn create_model_directory(path: &Path) -> Result<(), SttError> {
     }
 }
 
-#[cfg(windows)]
-pub(crate) fn metadata_is_link_or_reparse(metadata: &Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt;
-
-    const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
-    metadata.file_type().is_symlink()
-        || metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
-}
-
-#[cfg(not(windows))]
-pub(crate) fn metadata_is_link_or_reparse(metadata: &Metadata) -> bool {
-    metadata.file_type().is_symlink()
-}
+// Re-exported so this module keeps one import path while the
+// implementation lives in exactly one place.
+pub(crate) use crate::bounded_file::metadata_is_link_or_reparse;
