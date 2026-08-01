@@ -34,7 +34,7 @@
         },
         {
           "path": "desktop/src/components/live/live-overlay-views.tsx",
-          "sha256": "fcba59d0711f0babed467a4225d2970026e0aa0e32735c215c221dbd113ee295"
+          "sha256": "d77e299a4a4079e414cf1029dc0af7456a5d39087ed81773896ff771079ac172"
         },
         {
           "path": "desktop/src/components/live/live-waveform.tsx",
