@@ -101,7 +101,7 @@ fn open_no_follow(_path: &Path) -> io::Result<File> {
 }
 
 #[cfg(windows)]
-fn metadata_is_link_or_reparse(metadata: &Metadata) -> bool {
+pub(crate) fn metadata_is_link_or_reparse(metadata: &Metadata) -> bool {
     use std::os::windows::fs::MetadataExt;
 
     const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
@@ -110,7 +110,7 @@ fn metadata_is_link_or_reparse(metadata: &Metadata) -> bool {
 }
 
 #[cfg(not(windows))]
-fn metadata_is_link_or_reparse(metadata: &Metadata) -> bool {
+pub(crate) fn metadata_is_link_or_reparse(metadata: &Metadata) -> bool {
     metadata.file_type().is_symlink()
 }
 

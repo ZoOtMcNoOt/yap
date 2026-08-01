@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
+use std::os::windows::fs::OpenOptionsExt;
 use std::os::windows::io::AsRawHandle;
 use std::path::{Path, PathBuf};
 
@@ -127,11 +127,6 @@ pub(super) fn open_snapshot_for_native_read(path: &Path) -> Result<File, SttErro
         .open(path)
         .map_err(map_model_path_error)
 }
-
-pub(super) fn metadata_is_link_or_reparse(metadata: &std::fs::Metadata) -> bool {
-    metadata.file_type().is_symlink() || metadata.file_attributes() & 0x400 != 0
-}
-
 fn open_directory_no_reparse(path: &Path) -> std::io::Result<File> {
     OpenOptions::new()
         .read(true)
@@ -169,3 +164,7 @@ pub(super) fn map_model_path_error(error: std::io::Error) -> SttError {
         SttError::ModelCorrupt
     }
 }
+
+// Re-exported so this module keeps one import path while the
+// implementation lives in exactly one place.
+pub(super) use crate::bounded_file::metadata_is_link_or_reparse;
