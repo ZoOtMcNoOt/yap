@@ -34,7 +34,19 @@ test("showing a previously expanded hidden island always returns collapsed", asy
   await expectExactFrame(root, frames.collapsed);
 });
 
+// Windows only, and not for convenience. When collapsed the root and the island
+// occupy the same frame as the whole viewport, so the opening assertion that the
+// surface is still collapsed holds only while no pointer event has reached the
+// fresh document — which is why the helper parks the cursor before navigating
+// rather than after. Chromium's Linux headless shell synthesizes a mouseover at
+// the parked position on load and the island expands before the first
+// assertion; the Windows browser CI actually ships on does not. No cursor
+// position avoids it, because when collapsed the island is the viewport.
+// Every other case in this file runs everywhere.
 test("one visible island expands downward quickly without taking focus", async ({ page }) => {
+  // Inside the body on purpose: at file scope this form skips every test in the
+  // file, which silently disabled all eleven when first written here.
+  test.skip(process.platform !== "win32", "collapsed-at-load needs a browser that does not synthesize hover");
   await openOverlayPreview(page);
 
   const root = page.getByTestId("live-overlay-root");
