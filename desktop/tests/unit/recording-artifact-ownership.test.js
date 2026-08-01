@@ -25,7 +25,17 @@ describe("canonical saved-session artifact ownership", () => {
     };
   }
 
-  it("accepts one exact current-run bundle under the canonical isolated root", () => {
+  // The only case here that needs real files on disk. `assertOwnedSavedSession`
+  // builds candidate paths with `path.win32.join` and then stats them, which is
+  // correct for the Windows path authority it verifies and unusable anywhere
+  // else: on Linux it produces "\\home\\admin\\..." and nothing matches. Making
+  // the helper native for this would be worse than skipping, because
+  // `sameWindowsPath` lower-cases, so a POSIX run would accept case-differing
+  // paths the real contract rejects. The other four cases are pure string and
+  // ordering logic and run everywhere.
+  it.skipIf(process.platform !== "win32")(
+    "accepts one exact current-run bundle under the canonical isolated root",
+    () => {
     const { recordingRoot, saved } = fixture();
     const owned = assertOwnedSavedSession(saved, recordingRoot, {
       nowMs: 2_500,
@@ -40,7 +50,8 @@ describe("canonical saved-session artifact ownership", () => {
       "live-s-18c13f2a28c8be80-d018-2.txt",
       "live-s-18c13f2a28c8be80-d018-2.wav",
     ]);
-  });
+    },
+  );
 
   it("binds an unfinished transcript to its authoritative recovery artifact", () => {
     const isolation = privateIsolation("recoverable-recording");
