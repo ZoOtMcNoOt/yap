@@ -38,6 +38,17 @@ Then the control, which must print `OK`:
 Remove-Item Env:\REPRO_INJECT; cargo run
 ```
 
+## Result on our hardware, 2026-08-01
+
+```
+CONTROL   OK:       54037 -> 156421 ticks    exit 0
+INJECTED  DEADLOCK: frozen at 6627           exit 1
+```
+
+Reproduced. The control pumped 102,384 ticks in five seconds; the injected run
+froze and never recovered. Same binary, same session, same machine — the only
+difference is the two messages.
+
 | output | meaning |
 | --- | --- |
 | control `OK`, injected `DEADLOCK` | reproduced; we are affected |
@@ -45,7 +56,15 @@ Remove-Item Env:\REPRO_INJECT; cargo run
 | control `DEADLOCK` | the harness is invalid here; ignore the injected run |
 
 The control is the whole point. Without it a frozen loop cannot be told apart
-from a loop that never started.
+from a loop that never started — which is not hypothetical: over SSH the
+control itself reports a deadlock, because a tao event loop does not pump
+without a desktop.
+
+The watchdog runs in its own thread for a related reason. `SendMessageW` blocks
+until the target thread handles the message, so an injector that also watched
+would be blocked by the very deadlock it was meant to report. The first version
+did exactly that: it hung instead of reporting the hang, and had to be
+interrupted by hand.
 
 ## After the fix
 

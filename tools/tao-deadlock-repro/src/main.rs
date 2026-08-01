@@ -32,24 +32,32 @@ fn main() {
     let watch_ticks = Arc::clone(&ticks);
     let watch_done = Arc::clone(&done);
 
-    // Drives the interleaving, then watches for the loop to stop pumping.
+    // Two threads on purpose. SendMessageW is synchronous: it blocks until the
+    // target thread processes the message, so if the main thread deadlocks the
+    // injector blocks with it. A watchdog sharing that thread would never run,
+    // which is exactly what happened the first time — the harness hung instead
+    // of reporting the hang it had caused.
+    let injector_ticks = Arc::clone(&ticks);
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_millis(400));
         let inject = std::env::var("REPRO_INJECT").as_deref() == Ok("1");
-        for round in 0..(if inject {200u32} else {0}) {
+        for round in 0..(if inject { 200u32 } else { 0 }) {
             let hwnd = HWND(hwnd_bits as *mut core::ffi::c_void);
             unsafe {
-                // A key message: the handler takes KEY_EVENT_BUILDERS and holds
-                // it across process_message, which calls PeekMessageW.
                 let _ = PostMessageW(Some(hwnd), WM_KEYDOWN, WPARAM(0x41), LPARAM(0));
-                // A *sent* focus loss, which PeekMessageW will dispatch inline.
-                // This is what a session lock delivers.
                 let _ = SendMessageW(hwnd, WM_KILLFOCUS, None, None);
             }
             if round % 20 == 0 {
                 std::thread::sleep(std::time::Duration::from_millis(5));
             }
         }
+        let _ = injector_ticks.load(Ordering::Relaxed);
+    });
+
+    // Independent: touches no window handle, so nothing it does can block on
+    // the message loop it is judging.
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(3));
         let before = watch_ticks.load(Ordering::Relaxed);
         std::thread::sleep(std::time::Duration::from_secs(5));
         let after = watch_ticks.load(Ordering::Relaxed);
