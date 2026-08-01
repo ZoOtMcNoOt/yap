@@ -66,14 +66,62 @@ the same reference CI uses; there is no second thing to keep current.
 the issuer is plain HTTP on loopback. That belongs to a demo and must not reach
 a deployment.
 
-Docker is required. The provider image has a `linux/arm64` manifest, so the
-natural home is the GB10 server node beside `yap-server`, with the desktop
-client reaching it over the existing forward.
+## Where it runs, and why there is no choice about it
 
-## What this does not do yet
+The provider runs on the GB10 node beside `yap-server`, and the laptop reaches
+it by adding one line to the SSH forward it already opens for the server:
 
-The desktop client cannot use these tokens. Its provider seam now has a WAM
-adapter (#103) that talks to the Windows broker, which knows nothing about a
-synthetic issuer. Driving the client as Alice needs a demo adapter behind the
-same seam, compiled out of release builds. Until then this exercises the server
-and the API, which is where the identity boundary lives.
+```powershell
+ssh -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 `
+  -N -T `
+  -L 127.0.0.1:18765:127.0.0.1:18765 `
+  -L 127.0.0.1:18790:127.0.0.1:18790 `
+  dgx-spark-eth
+```
+
+That is the same mechanism, the same command, and the same policy the product
+already uses to reach the server; see the
+[server node setup](../docs/runbooks/yap-server-node-setup.md). It opens no
+port on the GB10 and needs no firewall change.
+
+Three things force this shape rather than making it a preference:
+
+The `iss` claim has to match on both sides. The client asks
+`http://127.0.0.1:18790/yap-phase7` for a token and the server validates that
+the issuer is `http://127.0.0.1:18790/yap-phase7`. Only a forward makes one
+string true on two machines. Serving the provider on the node address instead
+would mint tokens the server then rejects, and the failure would look like a
+bug in the identity code rather than a URL mismatch.
+
+The connector is loopback-only by policy. The runbook says not to put the
+node address in application configuration, so the client could not be pointed
+at a routable provider even if the provider allowed it.
+
+Docker only exists on the GB10 here, and the image is `linux/arm64`.
+
+This also matches production in the way that matters: the issuer is a service
+reached over the network, not something living inside the client.
+
+## Driving the desktop client
+
+A debug build can sign in as a demo user through the same provider seam the
+Windows broker uses:
+
+```
+YAP_DEMO_TOKEN_PROVIDER=alice          # or bob
+YAP_DEMO_IDENTITY_PROVIDER_URL=http://127.0.0.1:18790   # optional
+```
+
+Run the client with one of those set and it authenticates as that identity.
+Switch the variable to `bob` and the same client is a different user, against
+the same server, with different ownership — which is the thing worth demoing.
+
+The adapter is compiled out of release builds. It is behind
+`debug_assertions`, not an environment check, because a variable can be set on
+a binary someone already has, and this adapter trusts a synthetic issuer and
+carries a client secret published in this repository. Verified by putting a
+type error inside the module: a debug build fails, a release build does not
+compile it at all.
+
+It also refuses any issuer that is not loopback, so pointing it at a routable
+host does not silently make that host a token oracle for this client.

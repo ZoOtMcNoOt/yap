@@ -1,3 +1,4 @@
+mod access_token_expiry;
 mod authorization;
 pub(crate) mod batch;
 mod boundary;
@@ -8,6 +9,10 @@ pub mod config;
 mod core;
 mod desktop;
 pub(crate) mod lid;
+// Never in a shipped binary: it trusts a synthetic issuer and carries a
+// published client secret.
+#[cfg(debug_assertions)]
+mod demo_access_token_provider;
 mod native_access_token_provider;
 mod state;
 #[cfg(windows)]
