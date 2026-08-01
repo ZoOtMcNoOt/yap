@@ -1,5 +1,15 @@
 use super::*;
 
+// These tests linearize their races deliberately, with publication hooks and
+// release channels; nothing below depends on lucky timing. What they still
+// need is a wall-clock allowance for a worker thread to spin up and reach a
+// barrier, and on a loaded hosted runner two seconds was not it: both
+// two-second waits below timed out on a runner in run 30681612998 while the
+// same tests passed on the neighbouring run. Hosted runners are roughly ten
+// times slower than the workstation, so budgets here are sized for a cold
+// thread under load, not for the race itself, which the barriers make exact.
+const BARRIER_WAIT: std::time::Duration = std::time::Duration::from_secs(30);
+
 #[test]
 fn abort_racing_completion_is_rejected_instead_of_reported_complete() {
     let dir = tempfile_dir("abort-finalize-linearization");
@@ -20,7 +30,7 @@ fn abort_racing_completion_is_rejected_instead_of_reported_complete() {
                 release_rx
                     .take()
                     .unwrap()
-                    .recv_timeout(std::time::Duration::from_secs(2))
+                    .recv_timeout(BARRIER_WAIT)
                     .unwrap();
             }
         },
@@ -47,7 +57,7 @@ fn abort_racing_completion_is_rejected_instead_of_reported_complete() {
     let finalize_handle = Arc::clone(&handle);
     let finalize = std::thread::spawn(move || finalize_handle.finalize());
     publication_rx
-        .recv_timeout(std::time::Duration::from_secs(2))
+        .recv_timeout(BARRIER_WAIT)
         .expect("worker must reach complete-sidecar publication");
     let release = std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_millis(100));
@@ -78,7 +88,7 @@ fn accepted_abort_wins_before_completion_linearizes() {
     let worker_session = session.clone();
     let worker = std::thread::spawn(move || {
         release_rx
-            .recv_timeout(std::time::Duration::from_secs(2))
+            .recv_timeout(BARRIER_WAIT)
             .expect("worker release must arrive");
         drain_recording_worker(recording, worker_session, receiver, worker_sink)
     });
@@ -96,7 +106,7 @@ fn accepted_abort_wins_before_completion_linearizes() {
 
     let abort_handle = Arc::clone(&handle);
     let abort = std::thread::spawn(move || abort_handle.abort("accepted adapter failure"));
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+    let deadline = std::time::Instant::now() + BARRIER_WAIT;
     loop {
         if sink.outcome().error.as_deref() == Some("accepted adapter failure") {
             break;
@@ -193,7 +203,7 @@ fn sink_completion_rejects_late_degradation_after_linearization() {
                 release_rx
                     .take()
                     .unwrap()
-                    .recv_timeout(std::time::Duration::from_secs(2))
+                    .recv_timeout(BARRIER_WAIT)
                     .unwrap();
             }
         },
@@ -220,7 +230,7 @@ fn sink_completion_rejects_late_degradation_after_linearization() {
     let finalize_handle = Arc::clone(&handle);
     let finalize = std::thread::spawn(move || finalize_handle.finalize());
     publication_rx
-        .recv_timeout(std::time::Duration::from_secs(2))
+        .recv_timeout(BARRIER_WAIT)
         .expect("worker must linearize completion before publication");
     sink.degrade("late recording sink failure");
     let late_degradation = sink.outcome().error;
