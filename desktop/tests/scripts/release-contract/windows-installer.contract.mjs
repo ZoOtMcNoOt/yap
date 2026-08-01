@@ -387,7 +387,7 @@ test("tracked PowerShell automation declares its reviewed runtime boundary", asy
   const legacyResult = spawnSync(
     legacyWindowsPowerShell,
     ["-NoProfile", "-NonInteractive", "-File", smokeScriptPath],
-    { cwd: repoRoot, encoding: "utf8", timeout: 10_000 },
+    { cwd: repoRoot, encoding: "utf8", timeout: 120_000 },
   );
   // The refusal is a property of the legacy host, so it can only be observed
   // where that host exists. Asserting `status !== 0` alone would pass on a
@@ -403,6 +403,11 @@ test("tracked PowerShell automation declares its reviewed runtime boundary", asy
     );
     return;
   }
+  // A hosted runner is roughly ten times slower than the workstation, so the
+  // budget here is for a cold interpreter under load, not for the refusal
+  // itself, which is immediate: the script fails its `#requires` before doing
+  // any work. A timeout still fails rather than passing quietly, because a
+  // spawn that never completed proves nothing about the refusal.
   assert.equal(
     legacyResult.error,
     undefined,
