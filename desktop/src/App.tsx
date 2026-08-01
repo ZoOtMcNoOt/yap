@@ -331,6 +331,7 @@ export default function App() {
         historyCount={history.length}
         onOpenDetails={() => openWorkspace("details")}
         onOpenHelp={() => openWorkspace("help")}
+        serverState={settings.serverState}
         status={status}
         title={workspace.title}
       />

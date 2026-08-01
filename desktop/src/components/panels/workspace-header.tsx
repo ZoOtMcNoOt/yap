@@ -1,8 +1,10 @@
 import { GearSix as Settings2 } from "@phosphor-icons/react/GearSix";
 
 import { PrivacyStatus } from "@/components/app/privacy-status";
+import { ServerRouteStatus } from "@/components/app/server-route-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { ServerConnectionState } from "@/lib/setup-model";
 
 export function WorkspaceHeader({
   auth,
@@ -10,6 +12,7 @@ export function WorkspaceHeader({
   historyCount,
   onOpenDetails,
   onOpenHelp,
+  serverState,
   status,
   title,
 }: {
@@ -18,6 +21,7 @@ export function WorkspaceHeader({
   historyCount: number;
   onOpenDetails: () => void;
   onOpenHelp: () => void;
+  serverState: ServerConnectionState;
   status: string;
   title: string;
 }) {
@@ -31,6 +35,7 @@ export function WorkspaceHeader({
       </div>
 
       <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <ServerRouteStatus onSignIn={onOpenDetails} state={serverState} />
         <PrivacyStatus auth={auth} status={status} />
         {historyCount ? (
           <Badge className="rounded-full px-3 py-1.5 text-sm font-semibold tabular-nums" variant="secondary">
