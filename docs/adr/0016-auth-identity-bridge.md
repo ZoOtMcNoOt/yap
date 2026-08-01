@@ -264,13 +264,37 @@ hash plus a normalized tenant/client/API-scope configuration hash to match.
 Access tokens remain in zeroizing Rust-owned memory and are not renderer or
 ordinary app-data state.
 
-The production manager deliberately discovers no provider and returns an
-unavailable/fail-closed state. Only fake providers exist for focused tests.
-There is no shipped MSAL.NET/WAM helper, broker cache, system-browser adapter,
-or production credential-store integration. The
+The production manager discovers no provider by default and returns an
+unavailable/fail-closed state.
+
+A WAM adapter now exists behind that interface and is **not selected**. It
+performs silent acquisition and interactive sign-in through
+`WebAuthenticationCoreManager`, parenting the broker dialog with
+`IWebAuthenticationCoreManagerInterop` because a Win32 process has no
+CoreWindow. It is reachable only under `YAP_WAM_TOKEN_PROVIDER=1`; without that
+variable `discover()` still yields no provider, so default behaviour is
+unchanged. It has never run against a real tenant.
+
+Existing but unselected is deliberate. The
 [Entra identity conformance handoff](../runbooks/entra-identity-conformance-handoff.md)
-owns adapter selection, enterprise policy, packaging, legal/provenance review,
-and real-provider evidence.
+requires the adapter comparison to happen once an approved environment is
+available, and says to record a selection "only after the evidence exists".
+Writing that amendment now would be the thing the same runbook forbids —
+selecting an adapter to claim Entra support. This paragraph records what is
+built; it does not record a decision.
+
+There is no system-browser adapter and no production credential-store
+integration. A credential store is what WAM removes the need for: Windows holds
+the refresh token, so a signed-in session can survive restart without this
+process owning durable secrets.
+
+A demo adapter also exists behind the same interface for exercising the
+identity boundary without a tenant. It is compiled out of release builds
+through `debug_assertions` rather than gated by configuration, because it
+trusts a synthetic loopback issuer and carries a published client secret.
+
+The handoff still owns adapter selection, enterprise policy, packaging,
+legal/provenance review, and real-provider evidence.
 
 ### Token validation (`yap-server`)
 
