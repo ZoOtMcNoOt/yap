@@ -120,3 +120,42 @@ test("every relative link in docs resolves", () => {
     `Broken relative links:\n  ${offenders.join("\n  ")}`,
   );
 });
+
+// The narrow half of a problem that has no general solution.
+//
+// The checks above are structural: they know about dead branches, plan status,
+// and links. They cannot know that a prose claim about shipped code stopped
+// being true — which is exactly what happened to ADR 0016, whose statement that
+// "there is no shipped MSAL.NET/WAM helper" survived two pull requests that
+// shipped one. This suite was green throughout.
+//
+// Verifying prose in general needs a human. Verifying one claim of the form
+// "no adapter exists" against whether an adapter file exists does not, and that
+// is the claim that actually went wrong. One check, not a register: a register
+// of hand-written claim-to-predicate pairs would rot the same way the prose
+// did.
+test("ADR 0016 does not deny an adapter that exists", () => {
+  const adr = readFileSync(path.join(repoRoot, "docs/adr/0016-auth-identity-bridge.md"), "utf8");
+  const providerDir = path.join(
+    repoRoot,
+    "desktop/src-tauri/src/server_connector",
+  );
+  const adapters = readdirSync(providerDir).filter(
+    (name) => name.endsWith("_access_token_provider.rs") && !name.startsWith("native_"),
+  );
+  const deniesAny = /There is no shipped MSAL\.NET\/WAM helper/.test(adr);
+  assert.equal(
+    deniesAny && adapters.length > 0,
+    false,
+    `ADR 0016 denies a shipped adapter while these exist: ${adapters.join(", ")}`,
+  );
+  // The converse matters too: if every adapter is removed, the ADR should stop
+  // describing one rather than quietly overclaiming in the other direction.
+  if (adapters.length === 0) {
+    assert.equal(
+      /A WAM adapter now exists/.test(adr),
+      false,
+      "ADR 0016 describes a WAM adapter but none is present in the tree.",
+    );
+  }
+});
