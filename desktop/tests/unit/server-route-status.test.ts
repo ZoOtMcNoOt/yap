@@ -27,7 +27,8 @@ const ALL_STATES: ServerConnectionState[] = [
 describe("server route status", () => {
   // Anything that is not a working server connection means the recording stays
   // local. Saying so is more useful than naming the failure, and it is the
-  // "private on this device" vs "org server" distinction PRODUCT.md asks for.
+  // local-vs-server distinction PRODUCT.md asks for. The wording avoids
+  // "Private on this device", which app.spec forbids on the Transcribe surface.
   it("treats every non-working connection as the local route", () => {
     expect(serverRoute("not_set")).toBe("local");
     expect(serverRoute("offline")).toBe("local");

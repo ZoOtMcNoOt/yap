@@ -10,7 +10,11 @@ import type { ServerConnectionState } from "@/lib/setup-model";
 
 export type ServerRoute = "local" | "server" | "sign-in" | "blocked" | "checking";
 
-// Which route the next recording actually takes. Everything that is not a
+// Which route the next recording actually takes. The local label deliberately
+// avoids the phrase "Private on this device": the Transcribe surface is about
+// the organization server queue, and app.spec asserts that phrase never
+// appears there, so a header badge carrying it would contradict the surface.
+// Everything that is not a
 // working server connection is the local route, because that is what the user
 // gets, and saying so is more useful than naming the failure.
 export function serverRoute(state: ServerConnectionState): ServerRoute {
@@ -42,7 +46,7 @@ export function serverRouteLabel(route: ServerRoute): string {
     case "checking":
       return "Connecting";
     case "local":
-      return "Private on this device";
+      return "On this device";
   }
 }
 
