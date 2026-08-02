@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "componentId": "ecapa-voxlingua107-lid",
+  "replaces": "ambernet-1.12.0-int8-qdq-acoustic-lid",
+  "reason": "NGC ToU 5(e)/(h) forbid derivative works and distribution of AmberNet absent a Product Agreement, and none is specified. Apache-2.0 end to end makes this artifact bundleable in the installer.",
+  "modelSource": "speechbrain/lang-id-voxlingua107-ecapa",
+  "modelRevision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+  "license": "Apache-2.0",
+  "builder": "server/tools/lid-ecapa/build_ecapa_lid_artifacts.py",
+  "builtOn": "2026-08-02",
+  "artifacts": {
+    "ecapa-voxlingua107-lid-fp32.onnx": {
+      "sha256": "e8f835df12fa611b06354b4202b5251566db71cc0b2d75bd16b7d707bacb0fe6",
+      "bytes": 715159,
+      "note": "graph serialization is not bit-reproducible across exporter runs; the weight sidecar below is"
+    },
+    "ecapa-voxlingua107-lid-fp32.onnx.data": {
+      "sha256": "367a5f411ccbb408f68a25a7c5096fe61702e207b46fb3482741373462d00c43",
+      "bytes": 85196800
+    },
+    "ecapa-voxlingua107-lid-int8-qdq.onnx": {
+      "sha256": "0ac32d3bc1fa3acff10b72fc8023eed4b50b2891a9b6ab116e60ee8c15106d5e",
+      "bytes": 22355498
+    },
+    "ecapa-voxlingua107-labels.json": {
+      "sha256": "a439baeb330745512b2db9465d1b23905783e052ca07d5b74932af0dea7f3fcf",
+      "bytes": 2002
+    },
+    "ecapa-voxlingua107-parity-fixture.json": {
+      "sha256": "c5799c8f5e3e75f1d9e0e26b6794d48562f3885cd1e2d6556a78ab53bd223bd6",
+      "bytes": 2990
+    }
+  },
+  "parityMaxAbsDrift": 3.0517578125e-05,
+  "int8LatencyMsFor7s4ClipCpu": 49.4,
+  "observed": {
+    "correct": [
+      "ar (1.00)",
+      "de (1.00)",
+      "en (0.98)",
+      "fr (1.00)",
+      "en-librispeech (1.00)"
+    ],
+    "confused": [
+      "es -> gl at 0.86 fp32 / 0.94 int8 on the single available Spanish clip, identical in both precisions"
+    ],
+    "gate": "the per-locale comparison against AmberNet on the 28 supported languages must run before the route flips; the es/gl confusion is the first datapoint it must weigh"
+  },
+  "clientIntegrationRemaining": [
+    "mask logits to the 28 supported locales before argmax -- the observed es->gl confusion vanishes because gl is not a route Yap offers, and 79 confusion targets disappear with it",
+    "Rust fbank frontend replacing nemo-fixed-3s-v1, asserted against ecapa-voxlingua107-parity-fixture.json",
+    "artifact swap in stt/ambernet_language_detector.rs session pins and MODEL_FILE",
+    "label-map revision pin replacing rawNewlineLabelOrderSha256",
+    "LOCAL_LANGUAGE_ROUTING_REVISION bump",
+    "server D-08 five-region import-suggestion route swap",
+    "per-locale accuracy comparison on all 28 supported languages"
+  ]
+}
