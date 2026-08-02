@@ -91,12 +91,12 @@ export function SystemSettingsSection({
                 ? "Not installed"
                 : "Checking";
   const lidDetail = lidReady && vadReady
-    ? "Offline switching is an opt-in Preview for explicitly selected alternate locales. It can delay initial live text while gathering a 3-second language window, and AmberNet may miss or misclassify natural switches; ambiguous audio stays on the primary language."
+    ? "Offline switching is an opt-in Preview for explicitly selected alternate locales. It can delay initial live text while gathering a 3-second language window, and the language detector may miss or misclassify natural switches; ambiguous audio stays on the primary language."
     : lidReady
       ? "The classifier is installed, but automatic switching also requires the Speech detection model below."
       : languageDetector.view?.status === "corrupted"
         ? "The language detector failed size or hash verification. Repair it before automatic switching can run."
-        : "Optional AmberNet language detector: import the verified 29 MiB ONNX file explicitly. Yap never downloads it during startup or capture.";
+        : "Optional language detector: import the verified detector model file explicitly. Yap never downloads it during startup or capture.";
 
   return (
     <SettingsGroup>

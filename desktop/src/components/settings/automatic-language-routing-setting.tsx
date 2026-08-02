@@ -32,7 +32,7 @@ function routingDetail(control: LiveLanguageRoutingControl, liveActive: boolean)
       return "Available language support changed. Review and save these choices again.";
     case null:
       return status.automaticLanguages.length
-        ? "Preview: initial live text can wait for a 3-second language window, and AmberNet may miss or misclassify natural switches. Only explicitly selected locales receive automatic audio; ambiguous audio stays on your primary language."
+        ? "Preview: initial live text can wait for a 3-second language window, and the language detector may miss or misclassify natural switches. Only explicitly selected locales receive automatic audio; ambiguous audio stays on your primary language."
         : "No automatic alternate is available for the current primary language.";
   }
 }
