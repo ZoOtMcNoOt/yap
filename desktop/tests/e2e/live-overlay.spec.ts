@@ -215,6 +215,37 @@ test("reduced motion keeps every native-frame projection complete", async ({ pag
   await expectSameFrame(root, island);
 });
 
+// The suite already asserts the waveform holds still under reduced motion. On
+// its own that is the wrong half: a waveform that froze everywhere would pass
+// it, and freezing in silence is exactly what this overlay used to do. Upstream
+// drives the bars from wall-clock time so they breathe with no audio at all, and
+// hands over to a rotating spinner a second into transcription.
+test("the waveform breathes with no audio and transcription reaches the spinner", async ({ page }) => {
+  // Through the query rather than an event: the preview reads the query while
+  // mounting, so there is no window between paint and the listener being
+  // attached for a dispatched state to fall into.
+  await openOverlayPreview(page, "&activeCaptureMode=pushToTalk&level=0&status=speaking");
+
+  const waveform = page.getByTestId("live-waveform");
+  await expect(waveform).toBeVisible();
+
+  const samples: string[] = [];
+  for (let index = 0; index < 3; index += 1) {
+    samples.push(JSON.stringify(await waveformBarHeights(waveform)));
+    await page.waitForTimeout(220);
+  }
+  expect(new Set(samples).size, `bars never moved at level 0: ${samples[0]}`).toBeGreaterThan(1);
+
+  await setLiveView(page, { activeCaptureMode: "toggle", level: 0, status: "saving" });
+  const spinner = page.getByTestId("live-processing-spinner");
+  await expect(spinner).toBeVisible({ timeout: 5_000 });
+  const firstRotation = await spinner.evaluate((node) => getComputedStyle(node).transform);
+  expect(firstRotation).not.toBe("none");
+  await expect
+    .poll(() => spinner.evaluate((node) => getComputedStyle(node).transform))
+    .not.toBe(firstRotation);
+});
+
 test("live state transitions keep the reused window equal to visible content", async ({ page }) => {
   await openOverlayPreview(page);
 
