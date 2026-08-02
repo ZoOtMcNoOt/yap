@@ -3,12 +3,17 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 type Frame = { height: number; width: number };
 
 const previewUrl = "/?window=live-overlay&preview=live-overlay";
+// FreeFlow's pill geometry (see overlay_window.rs::frame). The recording pill
+// has two widths because only hands-free recording shows a stop badge, and the
+// failure pill is sized from its message -- "Mic denied" lands on the 180pt
+// clamp floor.
 const frames = {
-  collapsed: { height: 40, width: 104 },
+  collapsed: { height: 38, width: 92 },
   expanded: { height: 96, width: 180 },
-  feedback: { height: 40, width: 252 },
-  recording: { height: 40, width: 112 },
-  success: { height: 40, width: 168 },
+  feedback: { height: 38, width: 180 },
+  recording: { height: 38, width: 92 },
+  recordingHandsFree: { height: 38, width: 150 },
+  success: { height: 38, width: 94 },
 } satisfies Record<string, Frame>;
 
 test.describe.configure({ timeout: 45_000 });
@@ -237,12 +242,15 @@ test("live state transitions keep the reused window equal to visible content", a
     status: "speaking",
   });
   await expect(root).toHaveAttribute("data-overlay-surface", "recording");
+  await expectExactFrame(root, frames.recordingHandsFree);
   await expect(page.getByRole("button", { name: "Finish recording" })).toBeVisible();
   await expectControlsInside(island, [
     page.getByTestId("live-waveform"),
     page.getByRole("button", { name: "Finish recording" }),
   ]);
 
+  // Upstream locks the recording width through transcription rather than
+  // snapping the pill narrow the moment the stop badge disappears.
   await setLiveView(page, {
     activeCaptureMode: "toggle",
     captureMode: "pushToTalk",
@@ -250,7 +258,7 @@ test("live state transitions keep the reused window equal to visible content", a
     status: "saving",
   });
   await expect(root).toHaveAttribute("data-overlay-surface", "processing");
-  await expectExactFrame(root, frames.recording);
+  await expectExactFrame(root, frames.recordingHandsFree);
   await expectSameFrame(root, island);
 
   await setLiveView(page, {
@@ -301,7 +309,7 @@ test("rapid hover and state reversals settle to the latest exact surface", async
   ]);
 
   await expect(root).toHaveAttribute("data-overlay-surface", "recording");
-  await expectExactFrame(root, frames.recording);
+  await expectExactFrame(root, frames.recordingHandsFree);
   await expectSameFrame(root, island);
   await expect(page.getByRole("button", { name: "Finish recording" })).toBeVisible();
 });
@@ -391,9 +399,13 @@ async function expectControlsInside(container: Locator, controls: Locator[]) {
   }
 }
 
+// The rendered height, not the styled one. The bars are a fixed 22px box scaled
+// on the Y axis, so `getComputedStyle(bar).height` reports 22 forever and would
+// hold still through any amount of animation -- this assertion proved nothing
+// until it started reading the box the user actually sees.
 async function waveformBarHeights(waveform: Locator) {
   return waveform.locator("span").evaluateAll((bars) =>
-    bars.map((bar) => Number.parseFloat(window.getComputedStyle(bar).height)));
+    bars.map((bar) => Math.round(bar.getBoundingClientRect().height * 100) / 100));
 }
 
 async function waitForAnimationFrames(page: Page, count: number) {

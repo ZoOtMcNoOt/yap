@@ -27,7 +27,9 @@ export function useLiveOverlayPresentation(view: LiveOverlayView) {
   const hasCopyableFinal = model.hasFinalText;
   const surface = overlaySurface(model, expanded, successVisible && hasCopyableFinal);
   const hiddenIdle = view.visibility === "hidden" && model.phase === "idle";
-  const rootFrameStyle: CSSProperties | undefined = native ? undefined : previewOverlayFrame(surface);
+  const rootFrameStyle: CSSProperties | undefined = native
+    ? undefined
+    : previewOverlayFrame(surface, model);
 
   const clearSuccessTimer = useCallback(() => {
     if (successTimerRef.current === undefined) return;

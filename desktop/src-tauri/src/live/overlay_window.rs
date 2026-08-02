@@ -5,7 +5,9 @@ use tauri::Manager;
 #[cfg(target_os = "windows")]
 use windows::core::Free;
 #[cfg(target_os = "windows")]
-use windows::Win32::Graphics::Gdi::{CreateRoundRectRgn, SetWindowRgn, HRGN};
+use windows::Win32::Graphics::Gdi::{
+    CombineRgn, CreateRectRgn, CreateRoundRectRgn, SetWindowRgn, HRGN, RGN_ERROR, RGN_OR,
+};
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{
     GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, SWP_FRAMECHANGED,
@@ -16,14 +18,29 @@ pub(crate) const WINDOW_LABEL: &str = crate::authorization::LIVE_OVERLAY_WINDOW_
 
 static IDLE_COLLAPSED_ACTIVE: AtomicBool = AtomicBool::new(true);
 
-const COMPACT_HEIGHT: f64 = 40.0;
-const COLLAPSED_WIDTH: f64 = 104.0;
+// Ported from FreeFlow's RecordingOverlayManager (Sources/RecordingOverlay.swift,
+// MIT, revision 7427ca9). Upstream does not carry a width table: it carries rules,
+// and every constant below is one of theirs. macOS has a menu bar to hide behind,
+// so upstream picks between a compact strip the height of that bar and a 38pt
+// drop-down pill; Windows has no menu bar, so the pill is the only form that
+// applies and `notchOverlap` is zero throughout.
+const PILL_HEIGHT: f64 = 38.0;
+// `defaultWidth` — the bare pill, wide enough for the waveform and nothing else.
+const DEFAULT_WIDTH: f64 = 92.0;
+// `toggleWidth` — only while recording in toggle mode, where a stop badge appears.
+const TOGGLE_WIDTH: f64 = 150.0;
+// "Saved" through upstream's own text-pill arithmetic: 5 chars * 6.8 + 60 chrome.
+const SUCCESS_WIDTH: f64 = 94.0;
+// `maxToastMessageLength` — longer errors are ellipsised rather than widening.
+const MAX_MESSAGE_CHARS: usize = 90;
+// Yap-only surface: the idle island's action row. Upstream dismisses when idle,
+// so there is nothing to copy here beyond the 180pt it already shares with
+// upstream's command-mode pill.
 const EXPANDED_WIDTH: f64 = 180.0;
 const EXPANDED_HEIGHT: f64 = 96.0;
-const ACTIVE_WIDTH: f64 = 112.0;
-const SUCCESS_WIDTH: f64 = 168.0;
-const FEEDBACK_WIDTH: f64 = 252.0;
-const CORNER_RADIUS: f64 = 14.0;
+// `screenHasNotch ? 18 : 12`, and Windows never has a notch. Applied to the
+// bottom two corners only — see `create_visible_region`.
+const CORNER_RADIUS: f64 = 12.0;
 const TOP_BEZEL_OFFSET: f64 = 0.0;
 
 pub(crate) fn ensure_active(app: &tauri::AppHandle) -> Result<(), String> {
@@ -76,19 +93,60 @@ pub(crate) fn recover(app: &tauri::AppHandle) {
     }
 }
 
-pub(crate) fn frame(surface: &str) -> Result<(f64, f64), String> {
+/// Upstream `overlayWidth`, transcribed. The two inputs it reads off its own
+/// state — the trigger mode and the pending error message — are inputs Rust
+/// already holds, so the webview still never gets a say in native bounds.
+pub(crate) fn frame(
+    surface: &str,
+    trigger_mode: crate::live::state::LiveCaptureMode,
+    message_chars: usize,
+) -> Result<(f64, f64), String> {
+    let toggle = trigger_mode == crate::live::state::LiveCaptureMode::Toggle;
     match surface {
-        "collapsed" => Ok((COLLAPSED_WIDTH, COMPACT_HEIGHT)),
+        "collapsed" | "initializing" => Ok((DEFAULT_WIDTH, PILL_HEIGHT)),
         "expanded" => Ok((EXPANDED_WIDTH, EXPANDED_HEIGHT)),
-        "recording" | "processing" | "initializing" => Ok((ACTIVE_WIDTH, COMPACT_HEIGHT)),
-        "success" => Ok((SUCCESS_WIDTH, COMPACT_HEIGHT)),
-        "feedback" => Ok((FEEDBACK_WIDTH, COMPACT_HEIGHT)),
+        // Upstream widens only once recording has actually started in toggle
+        // mode, then locks that width through transcription via
+        // `lockedOverlayWidth` so the pill cannot snap narrow mid-job. Reading
+        // the trigger mode reproduces the lock without holding the state:
+        // whatever made recording wide keeps processing wide.
+        "recording" | "processing" => Ok((
+            if toggle { TOGGLE_WIDTH } else { DEFAULT_WIDTH },
+            PILL_HEIGHT,
+        )),
+        "success" => Ok((SUCCESS_WIDTH, PILL_HEIGHT)),
+        "feedback" => Ok((feedback_width(message_chars), PILL_HEIGHT)),
         _ => Err("Unsupported live overlay surface.".into()),
     }
 }
 
+/// Upstream sizes an error toast to its message so a four-word failure does not
+/// get the same pill as a paragraph: ~6.8pt per character plus 60pt of icon and
+/// padding, clamped so short messages stay readable and long ones do not stretch
+/// across the display. A bare failure marker with no message keeps the 92pt pill.
+fn feedback_width(message_chars: usize) -> f64 {
+    if message_chars == 0 {
+        return DEFAULT_WIDTH;
+    }
+    (message_chars.min(MAX_MESSAGE_CHARS) as f64 * 6.8 + 60.0).clamp(180.0, 420.0)
+}
+
+fn active_trigger_mode(
+    view: &crate::live::state::LiveSessionView,
+) -> crate::live::state::LiveCaptureMode {
+    view.active_capture_mode.unwrap_or(view.capture_mode)
+}
+
+fn message_chars(view: &crate::live::state::LiveSessionView) -> usize {
+    view.error
+        .as_deref()
+        .map(|message| message.chars().count())
+        .unwrap_or(0)
+}
+
 pub(crate) fn ensure_surface(app: &tauri::AppHandle, surface: &str) -> Result<(), String> {
-    let (width, height) = frame(surface)?;
+    let view = app.state::<crate::live::LiveSessionState>().snapshot();
+    let (width, height) = frame(surface, active_trigger_mode(&view), message_chars(&view))?;
     if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
         ensure_dimensions(&window, width, height)?;
         position(app, &window, width)?;
@@ -151,7 +209,7 @@ pub(crate) fn follow_cursor_if_idle(app: &tauri::AppHandle) {
     {
         return;
     }
-    let _ = position_on_monitor(&window, &target_monitor, COLLAPSED_WIDTH);
+    let _ = position_on_monitor(&window, &target_monitor, DEFAULT_WIDTH);
 }
 
 fn ensure_dimensions(window: &tauri::WebviewWindow, width: f64, height: f64) -> Result<(), String> {
@@ -260,6 +318,12 @@ fn apply_visible_region(
     Ok(())
 }
 
+/// Upstream clips its panel with `UnevenRoundedRectangle(bottomLeadingRadius:
+/// bottomTrailingRadius:)` — the bottom two corners only. The top edge is flush
+/// with the top of the display, so square top corners are what make the strip
+/// read as part of the bezel instead of as a pill floating under it. GDI has no
+/// uneven round-rect, so square the top back in by OR-ing a rectangle over the
+/// corner band.
 #[cfg(target_os = "windows")]
 fn create_visible_region(
     window_width: f64,
@@ -268,19 +332,32 @@ fn create_visible_region(
 ) -> Result<HRGN, String> {
     let physical_width = (window_width * scale).round().max(1.0) as i32;
     let physical_height = (window_height * scale).round().max(1.0) as i32;
-    let corner_diameter = (CORNER_RADIUS * 2.0 * scale).round().max(1.0) as i32;
-    let region = unsafe {
+    let corner_radius = (CORNER_RADIUS * scale).round().max(1.0) as i32;
+    let mut region = unsafe {
         CreateRoundRectRgn(
             0,
             0,
             physical_width,
             physical_height,
-            corner_diameter,
-            corner_diameter,
+            corner_radius * 2,
+            corner_radius * 2,
         )
     };
     if region.is_invalid() {
         return Err("Failed to create live overlay interaction region.".into());
+    }
+
+    let mut top_band =
+        unsafe { CreateRectRgn(0, 0, physical_width, corner_radius.min(physical_height)) };
+    if top_band.is_invalid() {
+        unsafe { region.free() };
+        return Err("Failed to create live overlay interaction region.".into());
+    }
+    let combined = unsafe { CombineRgn(Some(region), Some(region), Some(top_band), RGN_OR) };
+    unsafe { top_band.free() };
+    if combined == RGN_ERROR {
+        unsafe { region.free() };
+        return Err("Failed to square the live overlay top corners.".into());
     }
     Ok(region)
 }
@@ -326,36 +403,62 @@ fn make_system_window(_window: &tauri::WebviewWindow) -> Result<(), String> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn frame_matches_visible_surface_contract() {
-        assert_eq!(frame("collapsed"), Ok((104.0, 40.0)));
-        assert_eq!(frame("expanded"), Ok((180.0, 96.0)));
-        for surface in ["recording", "processing", "initializing"] {
-            assert_eq!(frame(surface), Ok((112.0, 40.0)));
-        }
-        assert_eq!(frame("success"), Ok((168.0, 40.0)));
-        assert_eq!(frame("feedback"), Ok((252.0, 40.0)));
-    }
+    use crate::live::state::LiveCaptureMode::{PushToTalk, Toggle};
 
     #[test]
-    fn feedback_width_is_static() {
-        assert_eq!(frame("feedback"), Ok((252.0, 40.0)));
+    fn frame_matches_visible_surface_contract() {
+        assert_eq!(frame("collapsed", PushToTalk, 0), Ok((92.0, 38.0)));
+        assert_eq!(frame("expanded", PushToTalk, 0), Ok((180.0, 96.0)));
+        assert_eq!(frame("initializing", PushToTalk, 0), Ok((92.0, 38.0)));
+        assert_eq!(frame("success", PushToTalk, 0), Ok((94.0, 38.0)));
+    }
+
+    // Upstream widens only for the stop badge, and only once recording has
+    // started: arming in toggle mode is still the bare pill.
+    #[test]
+    fn only_toggle_mode_recording_and_its_transcription_widen_the_pill() {
+        assert_eq!(frame("recording", PushToTalk, 0), Ok((92.0, 38.0)));
+        assert_eq!(frame("processing", PushToTalk, 0), Ok((92.0, 38.0)));
+        assert_eq!(frame("recording", Toggle, 0), Ok((150.0, 38.0)));
+        assert_eq!(frame("processing", Toggle, 0), Ok((150.0, 38.0)));
+        assert_eq!(frame("initializing", Toggle, 0), Ok((92.0, 38.0)));
+    }
+
+    // The width carries the message length, so the arithmetic and both clamp
+    // ends are the contract — including that a bare failure marker stays narrow.
+    #[test]
+    fn feedback_width_tracks_the_message_within_upstream_clamps() {
+        assert_eq!(frame("feedback", PushToTalk, 0), Ok((92.0, 38.0)));
+        assert_eq!(frame("feedback", PushToTalk, 1), Ok((180.0, 38.0)));
+        assert_eq!(frame("feedback", PushToTalk, 40), Ok((332.0, 38.0)));
+        assert_eq!(frame("feedback", PushToTalk, 90), Ok((420.0, 38.0)));
+    }
+
+    // Upstream truncates at 90 characters before the pill is ever sized, so a
+    // longer message can never ask for a wider window than a 90-character one.
+    #[test]
+    fn an_oversized_message_cannot_stretch_the_window_past_the_clamp() {
+        assert_eq!(
+            frame("feedback", PushToTalk, 100_000),
+            frame("feedback", PushToTalk, MAX_MESSAGE_CHARS)
+        );
+        assert_eq!(frame("feedback", PushToTalk, 100_000), Ok((420.0, 38.0)));
     }
 
     #[test]
     fn unknown_surface_cannot_allocate_an_arbitrary_native_window() {
         assert_eq!(
-            frame("sensor"),
+            frame("sensor", PushToTalk, 0),
             Err("Unsupported live overlay surface.".into())
         );
     }
 
     #[test]
     fn top_center_position_handles_negative_multi_monitor_origins_and_dpi() {
-        let collapsed = position_for_monitor_metrics(-1920.0, 0.0, 1920.0, 1.5, 104.0);
-        let expanded = position_for_monitor_metrics(-1920.0, 0.0, 1920.0, 1.5, 180.0);
+        let collapsed = position_for_monitor_metrics(-1920.0, 0.0, 1920.0, 1.5, DEFAULT_WIDTH);
+        let expanded = position_for_monitor_metrics(-1920.0, 0.0, 1920.0, 1.5, EXPANDED_WIDTH);
 
-        assert_eq!(collapsed, (-692.0, 0.0));
+        assert_eq!(collapsed, (-686.0, 0.0));
         assert_eq!(expanded, (-730.0, 0.0));
         assert_eq!(collapsed.1, expanded.1);
     }
@@ -363,20 +466,40 @@ mod tests {
     #[test]
     fn top_center_position_uses_target_monitor_logical_width_at_two_x_dpi() {
         assert_eq!(
-            position_for_monitor_metrics(1920.0, 0.0, 3840.0, 2.0, 104.0),
-            (1868.0, 0.0)
+            position_for_monitor_metrics(1920.0, 0.0, 3840.0, 2.0, DEFAULT_WIDTH),
+            (1874.0, 0.0)
         );
     }
 
+    // The whole point of the port's silhouette: square at the top so it reads as
+    // bezel, rounded at the bottom. A four-corner region would pass an
+    // "excludes rounded corners" assertion just as happily, so both ends are
+    // asserted here.
     #[cfg(target_os = "windows")]
     #[test]
-    fn visible_region_excludes_rounded_transparent_corners() {
+    fn visible_region_squares_the_top_corners_and_rounds_only_the_bottom() {
         use windows::Win32::Graphics::Gdi::PtInRegion;
 
-        let mut region = create_visible_region(104.0, 40.0, 1.0).unwrap();
-        assert!(unsafe { PtInRegion(region, 52, 20) }.as_bool());
-        assert!(!unsafe { PtInRegion(region, 0, 0) }.as_bool());
-        assert!(!unsafe { PtInRegion(region, 103, 39) }.as_bool());
+        let mut region = create_visible_region(DEFAULT_WIDTH, PILL_HEIGHT, 1.0).unwrap();
+        assert!(unsafe { PtInRegion(region, 46, 19) }.as_bool());
+        assert!(unsafe { PtInRegion(region, 0, 0) }.as_bool());
+        assert!(unsafe { PtInRegion(region, 91, 0) }.as_bool());
+        assert!(!unsafe { PtInRegion(region, 0, 37) }.as_bool());
+        assert!(!unsafe { PtInRegion(region, 91, 37) }.as_bool());
+        unsafe { region.free() };
+    }
+
+    // A fractional-scale display rounds the radius independently of the frame,
+    // so the squared band and the arc have to keep agreeing at 1.5x too.
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn squared_top_survives_fractional_display_scaling() {
+        use windows::Win32::Graphics::Gdi::PtInRegion;
+
+        let mut region = create_visible_region(DEFAULT_WIDTH, PILL_HEIGHT, 1.5).unwrap();
+        assert!(unsafe { PtInRegion(region, 0, 0) }.as_bool());
+        assert!(unsafe { PtInRegion(region, 137, 0) }.as_bool());
+        assert!(!unsafe { PtInRegion(region, 0, 56) }.as_bool());
         unsafe { region.free() };
     }
 }

@@ -37,6 +37,8 @@ test("provenance gate requires exact scoped review evidence and current local ha
     freeFlowZachLatta.files.map(({ path }) => path).sort(),
     [
       "desktop/src-tauri/src/audio/preprocess.rs",
+      "desktop/src-tauri/src/live/overlay_window.rs",
+      "desktop/src/components/live/live-overlay-state.ts",
       "desktop/src/components/live/live-overlay-views.tsx",
       "desktop/src/components/live/live-overlay.tsx",
       "desktop/src/components/live/live-waveform.tsx",
@@ -48,6 +50,43 @@ test("provenance gate requires exact scoped review evidence and current local ha
     assert.match(file.sha256, /^[0-9a-f]{64}$/);
     assert.equal(typeof file.path, "string");
   }
+
+  // The overlay is a port of upstream's design, not merely a file that borrows
+  // from it, so the manifest says so -- and every file that says so names the
+  // upstream file it came from.
+  assert.equal(
+    freeFlowZachLatta.revision.evidence.reviewScope,
+    "upstream revision, license attribution, and ported design of the recorded upstream files",
+  );
+  assert.deepEqual(
+    freeFlowZachLatta.files
+      .filter(({ derivedFrom }) => derivedFrom !== undefined)
+      .map(({ path, derivedFrom }) => `${path} <- ${derivedFrom}`)
+      .sort(),
+    [
+      "desktop/src-tauri/src/audio/preprocess.rs <- Sources/LiveAudioLevelNormalizer.swift",
+      "desktop/src-tauri/src/live/overlay_window.rs <- Sources/RecordingOverlay.swift",
+      "desktop/src/components/live/live-overlay-state.ts <- Sources/RecordingOverlay.swift",
+      "desktop/src/components/live/live-overlay-views.tsx <- Sources/RecordingOverlay.swift",
+      "desktop/src/components/live/live-overlay.tsx <- Sources/RecordingOverlay.swift",
+      "desktop/src/components/live/live-waveform.tsx <- Sources/RecordingOverlay.swift",
+    ],
+  );
+
+  // The wider scope is the kind of claim that is easy to write and impossible to
+  // notice going stale, so both ways of making it hollow have to fail.
+  const unnamedPort = structuredClone(freeFlowZachLatta);
+  unnamedPort.files = unnamedPort.files.map(({ path, sha256 }) => ({ path, sha256 }));
+  assert.throws(
+    () => assertReviewedRevision(unnamedPort),
+    /claims a ported design without naming a single ported file/,
+  );
+  const danglingPort = structuredClone(freeFlowZachLatta);
+  danglingPort.files[0].derivedFrom = "Sources/NotRecorded.swift";
+  assert.throws(
+    () => assertReviewedRevision(danglingPort),
+    /derives .* from an upstream file it does not record/,
+  );
   assert.match(notice, /^## FreeFlow \(zachlatta\/freeflow\)$/m);
   assert.match(notice, /^MIT License$/m);
   assert.equal(
@@ -78,6 +117,12 @@ test("provenance gate requires exact scoped review evidence and current local ha
     path: "Sources/Fixture.swift",
     sha256: createHash("sha256").update(upstreamBytes).digest("hex"),
   }];
+  // The fixture swaps in one synthetic upstream file, so the ported files have
+  // to point at that one -- a fixture that fails its own cross-reference would
+  // be testing the network path and the manifest rule at the same time.
+  fixtureSource.files = fixtureSource.files.map((file) => (
+    file.derivedFrom === undefined ? file : { ...file, derivedFrom: "Sources/Fixture.swift" }
+  ));
   const requested = [];
   const fetchImpl = async (url) => {
     requested.push(String(url));

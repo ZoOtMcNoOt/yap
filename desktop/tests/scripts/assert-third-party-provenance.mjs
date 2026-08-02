@@ -6,6 +6,17 @@ import { pathToFileURL } from "node:url";
 const defaultRepoRoot = path.resolve(import.meta.dirname, "..", "..", "..");
 const MAX_UPSTREAM_EVIDENCE_BYTES = 1024 * 1024;
 
+// A closed set, because the point of pinning the scope is that a manifest
+// cannot quietly promise more review than happened. PORTED_REVIEW_SCOPE is the
+// wider claim, and it has to be earned: a source may only make it while naming,
+// per file, which upstream file that file was ported from.
+const PORTED_REVIEW_SCOPE =
+  "upstream revision, license attribution, and ported design of the recorded upstream files";
+const REVIEW_SCOPES = new Set([
+  "upstream revision and license attribution",
+  PORTED_REVIEW_SCOPE,
+]);
+
 export async function verifyProvenance({
   fetchImpl = globalThis.fetch,
   repoRoot = defaultRepoRoot,
@@ -78,7 +89,7 @@ export function assertReviewedRevision(source) {
     `Reviewed source ${source.id} has no reviewed LICENSE SHA-256.`,
   );
   assert(
-    evidence.reviewScope === "upstream revision and license attribution",
+    REVIEW_SCOPES.has(evidence.reviewScope),
     `Reviewed source ${source.id} overstates or omits its review scope.`,
   );
   assert(
@@ -103,6 +114,24 @@ export function assertReviewedRevision(source) {
     upstreamPaths.add(file.path);
     assert(/^[0-9a-f]{64}$/.test(file.sha256), `Reviewed source ${source.id} has an invalid upstream SHA-256.`);
   }
+
+  // A ported file names the upstream file it was ported from, and that name has
+  // to be one this source already pins a hash for -- otherwise the claim points
+  // at nothing and drifts silently when upstream moves.
+  const ported = (Array.isArray(source.files) ? source.files : [])
+    .filter((file) => file.derivedFrom !== undefined);
+  for (const file of ported) {
+    assert(
+      typeof file.derivedFrom === "string" && upstreamPaths.has(file.derivedFrom),
+      `Reviewed source ${source.id} derives ${file.path} from an upstream file it does not record.`,
+    );
+  }
+  // The wider scope with nothing ported would be a claim about work that left no
+  // trace -- the failure mode this whole manifest exists to prevent.
+  assert(
+    evidence.reviewScope !== PORTED_REVIEW_SCOPE || ported.length > 0,
+    `Reviewed source ${source.id} claims a ported design without naming a single ported file.`,
+  );
 }
 
 export async function verifyReviewedSourceUpstream(source, {
