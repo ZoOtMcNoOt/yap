@@ -21,24 +21,22 @@ explanations. What stands between here and that, component by component:
 | AmberNet LID int8 | 28.2 MB | NGC ToU §5(e)/(h): no derivatives, no distribution absent a Product Agreement; none is specified for the model | **Do not bundle. Replace** (§2). |
 | PowerShell 7.4, WebView2 | — | already handled by installer/runtime | no change |
 
-The surprise is the third row. The 28 MB AmberNet question consumed this
-week's licence attention while the **650 MB primary local ASR** ships from a
-Hugging Face re-export repository that declares no licence at all, and this
-repository records dataset licences in detail but not the model's. Nemotron
-models are NVIDIA-published; whether the applicable terms are an open model
-licence or NGC-ToU-shaped decides whether the installer may carry the model or
-must fetch it on first run with terms acceptance. That determination is the
-single blocking item for the "everything in the installer" goal and needs the
-same treatment AmberNet got: read the governing document for the exact
-artifact lineage, record it in `model-artifacts.lock.json`, and have the owner
-sign it.
+The surprise was the third row — and it resolved the same day. The re-export
+repository declares no licence, but the upstream is
+`nvidia/nemotron-3.5-asr-streaming-0.6b`, published under **OpenMDW-1.1**:
+"deal in the Model Materials without restriction", commercial use included,
+with one condition — the distribution must carry the licence text and the
+origin notices. Bundling is therefore permitted. Two cautions for the
+implementation: record the full lineage (NVIDIA upstream → sherpa-onnx int8
+re-export) in `model-artifacts.lock.json` and carry the OpenMDW text in
+`THIRD_PARTY_NOTICES.md`; and do not confuse this model with its near-name
+sibling `nemotron-speech-streaming-en-0.6b`, which sits under the more
+conditional NVIDIA Open Model License. The owner should eyeball
+<https://openmdw.ai/license/1-1/> once before the first bundling release.
 
-Installer arithmetic if all three model rows clear: 213.6 MB (today's NSIS)
-+ 114.3 + 0.6 + 650.6 + ~25 (replacement LID) ≈ **1.0 GB**, eliminating every
-first-run download. If Nemotron cannot be redistributed, the honest UX is one
-explicit "download speech model (650 MB)" step on first run, hash-verified
-against the existing pins — the plumbing for which (`stt/model.rs`,
-hash-verified HF fetch) already exists and is what runs today.
+Installer arithmetic with every row now clear: 213.6 MB (today's NSIS)
++ 114.3 + 0.6 + 650.6 + 22.4 (the built ECAPA LID) ≈ **1.0 GB**, eliminating
+every first-run download.
 
 ## 2. The AmberNet replacement
 
@@ -139,8 +137,9 @@ Risk register, ranked by how likely each is to bite:
 
 ## Sequencing recommendation
 
-1. Nemotron licence determination (blocks §1's goal; smallest effort,
-   largest UX consequence either way).
-2. ECAPA export + comparison (unblocks bundling LID; independent of Phase 8).
+1. ~~Nemotron licence determination~~ — resolved above: OpenMDW-1.1,
+   bundleable with notices.
+2. Installer bundling implementation (all components now clear), plus the
+   ECAPA per-locale comparison before the LID route flips.
 3. Phase 8 step 1 — freeze the messy-meeting manifest — then the Tiron
    runtime lock, per ADR 0027's own sequence.
