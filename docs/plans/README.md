@@ -12,7 +12,6 @@ their execution window closes.
 
 Current work:
 
-- [Local-first server discovery and optional authentication](active/2026-08-02-local-first-server-discovery-and-optional-auth.md)
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
 
 Queued work (activate only in roadmap order):
@@ -21,6 +20,7 @@ Queued work (activate only in roadmap order):
 
 Recently completed:
 
+- [Local-first server discovery and optional authentication](completed/2026-08-02-local-first-server-discovery-and-optional-auth.md)
 - [Tenant-scoped identity and job authorization](completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 - [Executable ownership and maintainability review](completed/2026-07-15-executable-ownership-and-maintainability-review.md)
 - [Audio preprocessing and language routing](completed/2026-07-16-audio-preprocessing-and-language-routing.md)

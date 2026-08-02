@@ -30,12 +30,12 @@ complexity.
 ## Current position
 
 - Phases 1–7, Architecture Checkpoints A/B, and the post-Phase-7 adversarial
-  checkpoint are merged and closed. Current `main` is
-  `39463ffd87485f148440b65606cb6dbefa3a8153`.
-- The narrow `feat/local-first-server-discovery` branch is active to keep
-  on-device setup independent from optional server/auth state and make the
-  existing fixed-loopback offer insensitive to desktop/server launch order.
-  It does not authorize Phase 8 or enterprise identity infrastructure.
+  checkpoint are merged and closed. The parent `main` baseline for this focused
+  closure is `39463ffd87485f148440b65606cb6dbefa3a8153`.
+- The narrow local-first server-discovery closure keeps on-device setup
+  independent from optional server/auth state and makes the existing
+  fixed-loopback offer insensitive to desktop/server launch order. It does not
+  authorize Phase 8 or enterprise identity infrastructure.
 - Phase 8 meeting evidence remains the next queued roadmap phase after this
   focused closure.
 - Historical Checkpoint B candidate

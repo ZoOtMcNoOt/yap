@@ -2,14 +2,14 @@
 
 **As of:** 2026-08-02
 
-**Current work:** the focused
-[local-first server discovery and optional authentication plan](plans/active/2026-08-02-local-first-server-discovery-and-optional-auth.md)
-is active on `feat/local-first-server-discovery`. Phase 7 merged as `66d314d7`,
+**Most recent closure:** the focused
+[local-first server discovery and optional authentication plan](plans/completed/2026-08-02-local-first-server-discovery-and-optional-auth.md)
+is implemented as a focused post-Phase-7 closure. Phase 7 merged as `66d314d7`,
 its adversarial checkpoint closed at `ef6d977`, and the checkpoint's remaining
 findings closed at `1a6f06e` and `589197e`. Phase 8 remains next in roadmap
-order and is not being implemented on this branch.
+order and is not part of this closure.
 
-**Merged product baseline:** `main` at
+**Parent merged baseline for this closure:** `main` at
 `39463ffd87485f148440b65606cb6dbefa3a8153` through
 [PR #139](https://github.com/mcnatg1/yap/pull/139).
 
@@ -35,6 +35,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
 | Phase 7: identity/access | Merged and gated | The [tenant-scoped identity and job authorization plan](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governed the branch. [PR #69](https://github.com/mcnatg1/yap/pull/69) merged as `66d314d7`. Provider-neutral OIDC/Entra token validation, tenant-scoped `(tid, oid)` ownership across jobs, results, REST and WSS, protected readiness, authenticated bounded private WebSocket admission, and the qualified native lower handshake execute. Two things carried by the branch do NOT execute as product behaviour and are gates rather than capabilities: the purpose-grant and revocation layer is reachable only from tests, since no HTTP route or operator entry point calls `RequestAuthorizationRuntime.purpose_authorization`, so `access_disabled` can be set only by editing `identity.sqlite` by hand; and the desktop production token manager discovers no provider by default. A WAM adapter exists only behind explicit opt-in and is not approved or selected. In release/default builds, explicit `YAP_AUTH_MODE=development_loopback` is the only end-to-end mode that does not require an IT-provided identity environment; the debug-only demo provider is test/demo evidence, not production SSO. Real Entra policy conformance remains an IT-owned handoff. |
+| Post-Phase-7 local-first closure | Implemented and locally gated | On-device setup and recovery no longer await optional server/auth refresh. The fixed numeric-loopback offer retries safely after launch, requires explicit connection approval, never scans the LAN, and stops after configuration or durable dismissal. Server and sign-in controls remain optional and progressively disclosed; no production SSO provider or enterprise configuration is invented. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 

@@ -1,7 +1,8 @@
 # Local-First Server Discovery and Optional Authentication
 
-**Status:** Active on `feat/local-first-server-discovery` from merged baseline
-`39463ffd87485f148440b65606cb6dbefa3a8153`.
+**Status:** Completed implementation and local verification from merged
+baseline `39463ffd87485f148440b65606cb6dbefa3a8153`. Hosted exact-head evidence
+on [PR #140](https://github.com/mcnatg1/yap/pull/140) remains merge authority.
 
 ## Outcome
 
@@ -39,11 +40,14 @@ without an explicit user action.
 - Focused browser behavior proves delayed loopback discovery, explicit connect
   consent, durable dismissal, local readiness despite server-refresh failure,
   and optional server/SSO settings.
-- Focused TypeScript/unit tests cover the changed desktop behavior. The native
-  fixed-loopback probe interface is unchanged and retains its existing Rust
-  contract coverage.
-- Run the applicable desktop branch gate once after review; do not rerun
-  unrelated private-runtime or server-model matrices for this client-only
-  change.
-- Reconcile current status, architecture, ADR implementation status, and the
-  executable ownership map with the checked behavior before a focused PR.
+- The one-time applicable desktop gate passed on the implementation candidate:
+  dependency policy audit, 71 release/document contracts, 397 frontend unit
+  tests across 59 files, production frontend build, and 40 Playwright tests.
+- The native fixed-loopback probe interface is unchanged and retains its
+  existing Rust contract coverage. Unrelated private-runtime and server-model
+  matrices were correctly excluded from this client-only change.
+- Independent race/lifecycle, local-first UX, and documentation-truth reviews
+  were resolved before the focused pull request.
+- Current status, architecture, ADR implementation status, ownership, roadmap,
+  authentication, and server runbook claims were reconciled to checked
+  behavior. Hosted checks on the exact reviewed head remain merge authority.
