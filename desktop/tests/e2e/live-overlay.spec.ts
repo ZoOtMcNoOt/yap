@@ -58,7 +58,11 @@ test("one visible island expands downward quickly without taking focus", async (
   const island = page.getByTestId("live-overlay-island");
   await expect(root).toHaveAttribute("data-overlay-surface", "collapsed");
   await expectExactFrame(root, frames.collapsed);
-  await expectSameFrame(root, island);
+  // Not `expectSameFrame` any more: at rest the island is tucked into the bezel,
+  // so there is no visible island for the window to coincide with. The window
+  // still holds the collapsed frame it will reveal into, which is what the
+  // assertion above covers.
+  await expectRetracted(root, island);
   await expect(page.getByLabel("Yap dictation island")).toBeVisible();
 
   const focusedBefore = await focusedElement(page);
@@ -456,6 +460,18 @@ async function expectExactFrame(locator: Locator, frame: Frame) {
 // once it has arrived. Polled rather than sampled: the property under test is
 // where it settles, and pinning the animation's duration into the assertion
 // would make the test fail the next time the curve is tuned.
+// Clear of its own frame, not merely nudged: an island that reported itself
+// retracted while still painting over the desktop would fail the user.
+async function expectRetracted(root: Locator, island: Locator) {
+  await expect
+    .poll(async () => {
+      const [rootBox, islandBox] = await Promise.all([root.boundingBox(), island.boundingBox()]);
+      if (!rootBox || !islandBox) return 1;
+      return Math.round(islandBox.y - rootBox.y) + Math.round(islandBox.height);
+    }, { timeout: 5_000 })
+    .toBeLessThanOrEqual(0);
+}
+
 async function expectSameFrame(left: Locator, right: Locator) {
   await expect
     .poll(async () => {
