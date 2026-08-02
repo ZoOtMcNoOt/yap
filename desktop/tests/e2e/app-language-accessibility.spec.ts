@@ -8,7 +8,9 @@ import {
 test("primary-language picker supports labeled keyboard selection and focus return", async ({ page }) => {
   await installQueuedServerBridge(page, "not_set");
   await page.goto("/");
-  await page.getByRole("button", { name: "Open settings" }).click();
+  // Through the sidebar, which is now the only settings entry point: the
+  // header carried a second gear opening the same surface.
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
 
   const settings = page.getByRole("dialog", { name: "Settings" });
   const picker = settings.getByRole("combobox", { name: "Primary language" });
@@ -45,7 +47,9 @@ test("language settings remain visible without horizontal clipping in a narrow w
   await page.setViewportSize({ height: 760, width: 390 });
   await installQueuedServerBridge(page, "not_set");
   await page.goto("/");
-  await page.getByRole("button", { name: "Open settings" }).click();
+  // Through the sidebar, which is now the only settings entry point: the
+  // header carried a second gear opening the same surface.
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
 
   const settings = page.getByRole("dialog", { name: "Settings" });
   const picker = settings.getByRole("combobox", { name: "Primary language" });
@@ -79,5 +83,8 @@ test("main workspace reflows at a 200-percent-equivalent viewport", async ({ pag
   expect(sidebarBox).not.toBeNull();
   expect(sidebarBox!.width).toBeLessThanOrEqual(52);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
-  await expect(page.getByRole("button", { name: "Open settings" })).toBeVisible();
+  // Settings has to survive the narrow viewport, and now that the header gear
+  // is gone the sidebar rail is the only way in -- so this asserts the rail's
+  // own entry rather than a duplicate that no longer exists.
+  await expect(page.getByRole("button", { name: "Settings", exact: true })).toBeVisible();
 });

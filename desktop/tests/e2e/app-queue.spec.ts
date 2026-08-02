@@ -21,7 +21,7 @@ for (const scenario of [
     await expect(page.getByText("Transcribing", { exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => localStorage.getItem("yap.recordingQueue.v1"))).toBeNull();
 
-    await page.getByRole("button", { name: "Open settings" }).click();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
     const settings = page.getByRole("dialog", { name: "Settings" });
     await settings.getByRole("button", { name: "System", exact: true }).click();
     await expect(settings.getByText("Local fallback", { exact: true }).locator("..")).toContainText("Ready");

@@ -9,7 +9,9 @@ import {
 test("shortcut settings delegate physical recording to native commands and expose per-action reset", async ({ page }) => {
   await installQueuedServerBridge(page, "not_set");
   await page.goto("/");
-  await page.getByRole("button", { name: "Open settings" }).click();
+  // Through the sidebar, which is now the only settings entry point: the
+  // header carried a second gear opening the same surface.
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
 
   const settings = page.getByRole("dialog", { name: "Settings" });
   const dictationRow = settings.getByText("Dictation shortcut", { exact: true }).locator("xpath=../..");
