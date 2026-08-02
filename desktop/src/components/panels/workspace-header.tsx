@@ -1,5 +1,3 @@
-import { GearSix as Settings2 } from "@phosphor-icons/react/GearSix";
-
 import { PrivacyStatus } from "@/components/app/privacy-status";
 import { ServerRouteStatus } from "@/components/app/server-route-status";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +32,13 @@ export function WorkspaceHeader({
         ) : null}
       </div>
 
+      {/*
+        No settings gear here. The sidebar already carries one, permanently, and
+        two identical gears opening the same surface is the kind of duplication
+        that reads as two different things. `onOpenDetails` stays because
+        ServerRouteStatus uses it for sign-in -- that is a contextual jump to fix
+        a specific blocked state, not a second front door.
+      */}
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <ServerRouteStatus onSignIn={onOpenDetails} state={serverState} />
         <PrivacyStatus auth={auth} status={status} />
@@ -50,9 +55,6 @@ export function WorkspaceHeader({
           variant="link"
         >
           Help
-        </Button>
-        <Button aria-label="Open settings" onClick={onOpenDetails} size="icon-sm" type="button" variant="outline">
-          <Settings2 />
         </Button>
       </div>
     </header>

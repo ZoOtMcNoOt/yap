@@ -13,7 +13,7 @@ test("browser preview keeps its startup status and auth labels", async ({ page }
   await page.goto("/");
 
   await expect(page.getByText("Preview", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Open settings" }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "About", exact: true }).click();
   await expect(page.getByText("Tauri bridge", { exact: true })).toBeVisible();
 });
