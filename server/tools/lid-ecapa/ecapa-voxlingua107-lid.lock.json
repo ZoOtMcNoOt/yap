@@ -34,11 +34,20 @@
   "parityMaxAbsDrift": 3.0517578125e-05,
   "int8LatencyMsFor7s4ClipCpu": 49.4,
   "observed": {
-    "correct": ["ar (1.00)", "de (1.00)", "en (0.98)", "fr (1.00)", "en-librispeech (1.00)"],
-    "confused": ["es -> gl at 0.86 fp32 / 0.94 int8 on the single available Spanish clip, identical in both precisions"],
+    "correct": [
+      "ar (1.00)",
+      "de (1.00)",
+      "en (0.98)",
+      "fr (1.00)",
+      "en-librispeech (1.00)"
+    ],
+    "confused": [
+      "es -> gl at 0.86 fp32 / 0.94 int8 on the single available Spanish clip, identical in both precisions"
+    ],
     "gate": "the per-locale comparison against AmberNet on the 28 supported languages must run before the route flips; the es/gl confusion is the first datapoint it must weigh"
   },
   "clientIntegrationRemaining": [
+    "mask logits to the 28 supported locales before argmax -- the observed es->gl confusion vanishes because gl is not a route Yap offers, and 79 confusion targets disappear with it",
     "Rust fbank frontend replacing nemo-fixed-3s-v1, asserted against ecapa-voxlingua107-parity-fixture.json",
     "artifact swap in stt/ambernet_language_detector.rs session pins and MODEL_FILE",
     "label-map revision pin replacing rawNewlineLabelOrderSha256",
