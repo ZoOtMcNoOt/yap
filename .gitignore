@@ -62,3 +62,4 @@ Thumbs.db
 .worktrees/
 
 .superpowers/sdd/
+desktop/src-tauri/resources/bundled-models/
