@@ -121,6 +121,47 @@ mod tests {
         assert_eq!(dir, data_root.join("com.mcnatg1.yap"));
     }
 
+    // `app_data_dir()` is what production resolves with -- the instance lease,
+    // the recordings directory, the settings file, the log directory, 23 call
+    // sites. Every other test here exercises `app_data_dir_from`, which is a
+    // test-injection seam that consults `APPDATA` where production does not.
+    // Nothing asserted the production function itself, so the two were free to
+    // drift and the drift would have been invisible.
+    #[test]
+    fn production_resolution_ignores_appdata_and_takes_only_the_explicit_override() {
+        let known_folder = std::env::temp_dir().join("yap-known-folder");
+        let appdata = std::env::temp_dir().join("yap-appdata-env");
+        let override_dir = std::env::temp_dir().join("yap-explicit-override");
+
+        // The seam honours APPDATA; production does not, and pins to the
+        // OS known folder instead. Asserted together so the pair cannot
+        // silently converge or diverge further without this failing.
+        assert_eq!(
+            app_data_dir_from_root(
+                |key| (key == "APPDATA").then(|| appdata.display().to_string()),
+                Some(known_folder.clone()),
+            ),
+            known_folder.join(PRODUCTION_IDENTIFIER),
+        );
+        assert_eq!(
+            app_data_dir_from(|key| (key == "APPDATA").then(|| appdata.display().to_string())),
+            appdata.join(PRODUCTION_IDENTIFIER),
+        );
+
+        // The one input production does honour.
+        assert_eq!(
+            app_data_dir_from_root(
+                |key| match key {
+                    "YAP_APP_DATA_DIR" => Some(override_dir.display().to_string()),
+                    "APPDATA" => Some(appdata.display().to_string()),
+                    _ => None,
+                },
+                Some(known_folder),
+            ),
+            override_dir,
+        );
+    }
+
     #[test]
     fn app_data_dir_keeps_production_data_namespace() {
         let local = std::env::temp_dir().join("yap-local-data");

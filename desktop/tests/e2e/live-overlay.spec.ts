@@ -58,7 +58,11 @@ test("one visible island expands downward quickly without taking focus", async (
   const island = page.getByTestId("live-overlay-island");
   await expect(root).toHaveAttribute("data-overlay-surface", "collapsed");
   await expectExactFrame(root, frames.collapsed);
-  await expectSameFrame(root, island);
+  // Not `expectSameFrame` any more: at rest the island is tucked into the bezel,
+  // so there is no visible island for the window to coincide with. The window
+  // still holds the collapsed frame it will reveal into, which is what the
+  // assertion above covers.
+  await expectRetracted(root, island);
   await expect(page.getByLabel("Yap dictation island")).toBeVisible();
 
   const focusedBefore = await focusedElement(page);
@@ -254,6 +258,42 @@ test("the waveform breathes with no audio and transcription reaches the spinner"
     .not.toBe(firstRotation);
 });
 
+// The island hides in the bezel instead of sitting on top of the screen all
+// day. Asserted on the rendered offset rather than on a class or an attribute,
+// because "it is out of sight" is the property -- an island that reported
+// itself retracted while still painting over the desktop would pass either of
+// those and fail the user.
+test("the island hides in the bezel and comes back for the pointer or for dictation", async ({ page }) => {
+  await openOverlayPreview(page);
+  const root = page.getByTestId("live-overlay-root");
+  const island = page.getByTestId("live-overlay-island");
+  // After navigation the cursor sits at 0,0, which is inside the island.
+  await moveOutsideIsland(page);
+
+  const offset = async () => {
+    const [rootBox, islandBox] = await Promise.all([root.boundingBox(), island.boundingBox()]);
+    return Math.round((islandBox?.y ?? 0) - (rootBox?.y ?? 0));
+  };
+  const height = async () => Math.round((await island.boundingBox())?.height ?? 0);
+
+  // Fully clear of its own frame, not merely nudged.
+  await expect.poll(offset).toBeLessThanOrEqual(-(await height()));
+  await expect(island).toHaveAttribute("data-overlay-revealed", "false");
+
+  await page.mouse.move(46, 6);
+  await expect(island).toHaveAttribute("data-overlay-revealed", "true");
+  await expect.poll(offset).toBe(0);
+
+  await moveOutsideIsland(page);
+  await expect(island).toHaveAttribute("data-overlay-revealed", "false");
+  await expect.poll(offset).toBeLessThanOrEqual(-(await height()));
+
+  // Dictation holds it out with the pointer nowhere near it.
+  await setLiveView(page, { activeCaptureMode: "toggle", level: 0.7, status: "speaking" });
+  await expect(island).toHaveAttribute("data-overlay-revealed", "true");
+  await expect.poll(offset).toBe(0);
+});
+
 test("live state transitions keep the reused window equal to visible content", async ({ page }) => {
   await openOverlayPreview(page);
 
@@ -415,14 +455,36 @@ async function expectExactFrame(locator: Locator, frame: Frame) {
   expect(box?.height).toBeCloseTo(frame.height, 1);
 }
 
+// The island slides out of the bezel on a 180 ms curve and `boundingBox()`
+// includes that transform, so the window and the painted island coincide only
+// once it has arrived. Polled rather than sampled: the property under test is
+// where it settles, and pinning the animation's duration into the assertion
+// would make the test fail the next time the curve is tuned.
+// Clear of its own frame, not merely nudged: an island that reported itself
+// retracted while still painting over the desktop would fail the user.
+async function expectRetracted(root: Locator, island: Locator) {
+  await expect
+    .poll(async () => {
+      const [rootBox, islandBox] = await Promise.all([root.boundingBox(), island.boundingBox()]);
+      if (!rootBox || !islandBox) return 1;
+      return Math.round(islandBox.y - rootBox.y) + Math.round(islandBox.height);
+    }, { timeout: 5_000 })
+    .toBeLessThanOrEqual(0);
+}
+
 async function expectSameFrame(left: Locator, right: Locator) {
-  const [leftBox, rightBox] = await Promise.all([left.boundingBox(), right.boundingBox()]);
-  expect(leftBox).not.toBeNull();
-  expect(rightBox).not.toBeNull();
-  expect(rightBox?.x).toBeCloseTo(leftBox?.x ?? 0, 1);
-  expect(rightBox?.y).toBeCloseTo(leftBox?.y ?? 0, 1);
-  expect(rightBox?.width).toBeCloseTo(leftBox?.width ?? 0, 1);
-  expect(rightBox?.height).toBeCloseTo(leftBox?.height ?? 0, 1);
+  await expect
+    .poll(async () => {
+      const [leftBox, rightBox] = await Promise.all([left.boundingBox(), right.boundingBox()]);
+      if (!leftBox || !rightBox) return "missing";
+      return [
+        Math.round(rightBox.x - leftBox.x),
+        Math.round(rightBox.y - leftBox.y),
+        Math.round(rightBox.width - leftBox.width),
+        Math.round(rightBox.height - leftBox.height),
+      ].join(",");
+    }, { timeout: 5_000 })
+    .toBe("0,0,0,0");
 }
 
 async function expectControlsInside(container: Locator, controls: Locator[]) {

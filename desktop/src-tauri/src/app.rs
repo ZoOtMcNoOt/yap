@@ -82,10 +82,21 @@ fn start_owned_background_work(
         jobs::start_remote_job_drain(app, lifecycle)?;
         let overlay_app = app.clone();
         let mut recovery_ticks = 0_u8;
+        // 40 ms because this poll now drives the bezel reveal, and a reveal is
+        // a direct response to the pointer: at 125 ms the pill visibly lags the
+        // hand. The other two passes stay on their original cadence by counting
+        // ticks rather than by running more often.
+        let mut activation_ticks = 0_u8;
         lifecycle.spawn_periodic(
             "live-overlay-monitor",
-            std::time::Duration::from_millis(125),
+            std::time::Duration::from_millis(40),
             move || {
+                live::overlay_window::sync_reveal(&overlay_app);
+                activation_ticks = activation_ticks.saturating_add(1);
+                if activation_ticks < 3 {
+                    return;
+                }
+                activation_ticks = 0;
                 consume_existing_instance_activation_request(&overlay_app);
                 live::overlay_window::follow_cursor_if_idle(&overlay_app);
                 recovery_ticks = recovery_ticks.saturating_add(1);
