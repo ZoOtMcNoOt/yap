@@ -4,8 +4,9 @@ import type { Page } from "@playwright/test";
 export async function installQueuedServerBridge(
   page: Page,
   serverState: "not_set" | "offline",
+  options: { primaryLanguageUnconfirmed?: boolean } = {},
 ) {
-  await page.addInitScript((state) => {
+  await page.addInitScript(({ state, primaryLanguageUnconfirmed }) => {
     Object.defineProperty(globalThis, "isTauri", { value: true });
     const calls: string[] = [];
     const languageCalls: Array<{ args: unknown; command: string }> = [];
@@ -62,16 +63,29 @@ export async function installQueuedServerBridge(
       }],
       schemaVersion: 1,
     };
-    let primaryLanguageStatus = {
-      capabilityCatalog: languageCatalog,
-      confirmedLanguageAvailable: true,
-      confirmedLanguageBcp47: "en-US",
-      lastKnownCapabilities: null,
-      preferenceIssue: null,
-      requiresConfirmation: false,
-      schemaVersion: 1,
-      suggestedLanguageBcp47: null,
-    };
+    // Unconfirmed-and-serverless is the true first run: no catalog, so the
+    // only path to a confirmed language is the local dictation catalog.
+    let primaryLanguageStatus = primaryLanguageUnconfirmed
+      ? {
+          capabilityCatalog: null,
+          confirmedLanguageAvailable: null,
+          confirmedLanguageBcp47: null,
+          lastKnownCapabilities: null,
+          preferenceIssue: null,
+          requiresConfirmation: true,
+          schemaVersion: 1,
+          suggestedLanguageBcp47: "en-US",
+        }
+      : {
+          capabilityCatalog: languageCatalog,
+          confirmedLanguageAvailable: true,
+          confirmedLanguageBcp47: "en-US",
+          lastKnownCapabilities: null,
+          preferenceIssue: null,
+          requiresConfirmation: false,
+          schemaVersion: 1,
+          suggestedLanguageBcp47: null,
+        };
     const liveLanguageRoutingStatus = {
       catalogRevision: "local-language-catalog-v1",
       enabledLocales: ["en-US"],
@@ -135,8 +149,12 @@ export async function installQueuedServerBridge(
             primaryLanguageStatus = {
               ...primaryLanguageStatus,
               confirmedLanguageBcp47: languageBcp47 ?? primaryLanguageStatus.confirmedLanguageBcp47,
+              requiresConfirmation: false,
             };
             return primaryLanguageStatus;
+          }
+          if (command === "local_dictation_languages") {
+            return ["en-US", "en-GB", "de-DE", "fr-FR", "es-ES"];
           }
           if (command === "live_language_routing_status") return liveLanguageRoutingStatus;
           if (command === "server_connection_status" || command === "refresh_server_connection") {
@@ -184,7 +202,7 @@ export async function installQueuedServerBridge(
         },
       },
     });
-  }, serverState);
+  }, { primaryLanguageUnconfirmed: options.primaryLanguageUnconfirmed ?? false, state: serverState });
 }
 
 export async function shortcutCalls(page: Page) {

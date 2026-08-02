@@ -25,6 +25,7 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         setup::setup_status,
         crate::language_preferences::desktop::primary_language_status,
         crate::language_preferences::desktop::confirm_primary_language,
+        crate::language_preferences::desktop::local_dictation_languages,
         crate::language_preferences::live_routing::desktop::live_language_routing_status,
         crate::language_preferences::live_routing::desktop::set_live_language_routing,
         history::history_catalog,

@@ -33,10 +33,14 @@ pub(super) fn project_status(
         && preference_issue != Some(PrimaryLanguagePreferenceIssue::IncompatibleSchema))
     .then(|| {
         let locale = os_locale?;
-        capability_catalog
-            .as_ref()?
-            .supports_fixed_batch(locale)
-            .then(|| locale.to_owned())
+        // The server catalog when there is one; the local dictation catalog
+        // always. A first run with no server still deserves its OS locale
+        // preselected — local live routing is what will enforce it anyway.
+        let supported = capability_catalog
+            .as_ref()
+            .is_some_and(|catalog| catalog.supports_fixed_batch(locale))
+            || crate::language::live_catalog::supports_local_asr_language(locale);
+        supported.then(|| locale.to_owned())
     })
     .flatten();
     let confirmed_language_available = confirmed_language_bcp47.as_deref().and_then(|locale| {
@@ -77,6 +81,19 @@ pub(super) fn canonical_os_locale(raw: Option<&str>) -> Option<String> {
     }
     let canonical = canonical.join("-");
     crate::language::valid_bcp47(&canonical).then_some(canonical)
+}
+
+/// Validation for the serverless path: the local dictation catalog is the
+/// authority, exactly as live routing will enforce again at start.
+pub(super) fn validate_local_confirmation(
+    language_bcp47: &str,
+) -> Result<(), super::persistence::PrimaryLanguageError> {
+    if !crate::language::valid_bcp47(language_bcp47)
+        || !crate::language::live_catalog::supports_local_asr_language(language_bcp47)
+    {
+        return Err(super::persistence::PrimaryLanguageError::UnsupportedLocale);
+    }
+    Ok(())
 }
 
 pub(super) fn validate_confirmation(

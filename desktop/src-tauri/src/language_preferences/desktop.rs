@@ -2,8 +2,8 @@ use crate::language::RecordingLanguageDecision;
 use crate::server_connector::{AsrCapabilityCatalog, ServerConnector};
 
 use super::model::{
-    canonical_os_locale, project_status, validate_confirmation, PrimaryLanguagePreferenceIssue,
-    PrimaryLanguageStatus,
+    canonical_os_locale, project_status, validate_confirmation, validate_local_confirmation,
+    PrimaryLanguagePreferenceIssue, PrimaryLanguageStatus,
 };
 use super::persistence::{self, PrimaryLanguageError};
 
@@ -60,6 +60,20 @@ pub(crate) async fn primary_language_status(
     )
 }
 
+/// Local dictation's own language catalog, for surfaces that must work before
+/// any server exists. This is the list live routing enforces at start, so a
+/// language confirmed from it is a language dictation will actually accept.
+#[tauri::command]
+pub(crate) async fn local_dictation_languages(
+    window: tauri::WebviewWindow,
+) -> Result<Vec<String>, String> {
+    crate::authorization::ensure_main(&window)?;
+    Ok(crate::language::live_catalog::supported_local_asr_locales()
+        .iter()
+        .map(|locale| (*locale).to_owned())
+        .collect())
+}
+
 #[tauri::command]
 pub(crate) async fn confirm_primary_language(
     window: tauri::WebviewWindow,
@@ -67,10 +81,35 @@ pub(crate) async fn confirm_primary_language(
     connector: tauri::State<'_, ServerConnector>,
     live_runtime: tauri::State<'_, crate::live::runtime::LiveRuntime>,
     language_bcp47: String,
-    catalog_revision: String,
+    catalog_revision: Option<String>,
 ) -> Result<PrimaryLanguageStatus, String> {
     crate::authorization::ensure_main(&window)?;
     let _live_mutation = live_runtime.begin_primary_language_mutation()?;
+
+    // No catalog revision means no server catalog exists to confirm against —
+    // a first run before any server. Local dictation carries its own locale
+    // list, enforced again at live start, so confirming against it promises
+    // nothing the runtime will not honor. The server-catalog path below stays
+    // exactly as strict as it was: a caller who has a catalog must name its
+    // revision and match it.
+    let Some(catalog_revision) = catalog_revision else {
+        {
+            let _mutation = persistence::lock_mutation().map_err(preference_error_message)?;
+            validate_local_confirmation(&language_bcp47).map_err(preference_error_message)?;
+            persistence::save(&language_bcp47).map_err(preference_error_message)?;
+        }
+        let catalog =
+            crate::server_connector::current_asr_capabilities(&app, connector.inner()).await?;
+        let last_known = last_known_only_when_offline(catalog.is_none(), || {
+            crate::server_connector::last_known_asr_capabilities()
+        })?;
+        return status_from(
+            persistence::load(),
+            sys_locale::get_locale().as_deref(),
+            catalog,
+            last_known,
+        );
+    };
     let committed = crate::server_connector::with_current_asr_capabilities(
         &app,
         connector.inner(),

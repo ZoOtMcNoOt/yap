@@ -110,6 +110,17 @@ async function installPlaybackBridge(
             status: "idle",
             visibility: "enabled",
           };
+          if (command === "primary_language_status") return {
+            capabilityCatalog: null,
+            confirmedLanguageAvailable: null,
+            confirmedLanguageBcp47: "en-US",
+            lastKnownCapabilities: null,
+            preferenceIssue: null,
+            requiresConfirmation: false,
+            schemaVersion: 1,
+            suggestedLanguageBcp47: null,
+          };
+          if (command === "local_dictation_languages") return ["en-US"];
           if (command === "list_input_devices") return [];
           if (command === "list_local_compute_targets") return [{ id: "auto", label: "Auto", selected: true }];
           if (command === "history_catalog") return { maintenanceWarnings: [], sessions: [] };

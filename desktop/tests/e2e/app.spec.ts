@@ -1,3 +1,4 @@
+import { installQueuedServerBridge, languageCalls } from "./app-server-bridge";
 import { expect, test } from "@playwright/test";
 
 
@@ -48,6 +49,36 @@ test("Settings and Help remain one mutually exclusive modal surface", async ({ p
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Help" })).toHaveCount(0);
   await expect(page.getByRole("dialog")).toHaveCount(1);
+});
+
+// The first version of the welcome card had a button that opened Settings and
+// a gate that never cleared without a server. This drives the whole flow the
+// way a person does: pick, confirm, card yields — and asserts both that the
+// LOCAL confirmation path was taken (catalogRevision null: there is no server
+// catalog to name) and that Settings never opened.
+test("first run confirms a dictation language in place and never opens Settings", async ({ page }) => {
+  await installQueuedServerBridge(page, "not_set", { primaryLanguageUnconfirmed: true });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Transcribe", exact: true }).click();
+
+  await expect(page.getByTestId("first-run-welcome")).toBeVisible();
+  // The OS-locale suggestion arrives preselected from the local catalog.
+  await expect(page.getByTestId("first-run-language")).toContainText("English");
+
+  await page.getByRole("button", { name: "Confirm", exact: true }).click();
+
+  // The card yields to the ordinary import hero without navigation.
+  await expect(page.getByTestId("first-run-welcome")).toHaveCount(0);
+  await expect(page.getByText("Drop recordings here")).toBeVisible();
+
+  const confirmations = await languageCalls(page);
+  expect(confirmations).toHaveLength(1);
+  expect(confirmations[0]).toMatchObject({
+    args: { catalogRevision: null, languageBcp47: "en-US" },
+    command: "confirm_primary_language",
+  });
+
+  await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
 });
 
 test("Transcribe and Help describe the organization server queue", async ({ page }) => {

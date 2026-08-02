@@ -59,7 +59,11 @@ fn last_known_catalog_explains_offline_state_without_authorizing_a_choice() {
     let status = project_status(None, Some("en-US"), None, Some(last_known.clone()), None);
 
     assert_eq!(status.capability_catalog, None);
-    assert_eq!(status.suggested_language_bcp47, None);
+    // The last-known SERVER catalog still authorizes nothing — but the local
+    // dictation catalog now suggests the OS locale on a serverless first run,
+    // because live routing itself will accept it. Import remains gated on the
+    // live server catalog exactly as before.
+    assert_eq!(status.suggested_language_bcp47.as_deref(), Some("en-US"));
     assert_eq!(status.confirmed_language_available, None);
     assert_eq!(status.last_known_capabilities, Some(last_known));
     assert!(status.requires_confirmation);
@@ -254,4 +258,28 @@ fn primary_language_mutations_are_serialized_through_their_durable_commit() {
         .recv_timeout(std::time::Duration::from_secs(1))
         .unwrap();
     contender.join().unwrap();
+}
+
+#[test]
+fn local_confirmation_accepts_exactly_what_live_routing_will_accept() {
+    use super::model::validate_local_confirmation;
+
+    assert!(validate_local_confirmation("en-US").is_ok());
+    assert!(validate_local_confirmation("de-DE").is_ok());
+    // Not in the local dictation catalog; nearby variants are not guessed.
+    assert!(validate_local_confirmation("en-CA").is_err());
+    // Not a language tag at all.
+    assert!(validate_local_confirmation("../../etc/passwd").is_err());
+    assert!(validate_local_confirmation("").is_err());
+}
+
+#[test]
+fn serverless_first_run_suggests_the_os_locale_from_the_local_catalog() {
+    let status = project_status(None, Some("de-DE"), None, None, None);
+    assert_eq!(status.suggested_language_bcp47.as_deref(), Some("de-DE"));
+    assert!(status.requires_confirmation);
+
+    // A locale outside the local catalog still suggests nothing.
+    let status = project_status(None, Some("en-CA"), None, None, None);
+    assert_eq!(status.suggested_language_bcp47, None);
 }
