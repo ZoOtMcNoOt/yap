@@ -12,6 +12,7 @@ import "./release-contract/cache.contract.mjs";
 import "./release-contract/dependency-license.contract.mjs";
 import "./release-contract/documentation-truth.contract.mjs";
 import "./release-contract/test-population.contract.mjs";
+import "./release-contract/tracked-blob-size.contract.mjs";
 import "./release-contract/model-provenance.contract.mjs";
 import "./release-contract/provenance.contract.mjs";
 import "./release-contract/release-contract-coverage.contract.mjs";
