@@ -30,8 +30,10 @@ export function LiveOverlay({
     hiddenIdle,
     model,
     openIdleIsland,
+    revealed,
     rootFrameStyle,
     scheduleIdleCollapse,
+    setPreviewPointerWithin,
     surface,
   } = useLiveOverlayPresentation(view);
 
@@ -75,13 +77,16 @@ export function LiveOverlay({
         openIdleIsland();
       }}
       onPointerEnter={() => {
+        setPreviewPointerWithin(true);
         if (model.phase === "idle") openIdleIsland();
       }}
       onMouseLeave={(event) => {
+        setPreviewPointerWithin(false);
         scheduleIdleCollapseWithoutFocus(event.currentTarget);
       }}
       onPointerOut={(event) => {
         if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+        setPreviewPointerWithin(false);
         scheduleIdleCollapseWithoutFocus(event.currentTarget);
       }}
       style={rootFrameStyle}
@@ -97,12 +102,26 @@ export function LiveOverlay({
         than stair-stepped along the region boundary.
       */}
       <div
-        className="pointer-events-auto h-full w-full text-white"
+        className="pointer-events-auto h-full w-full text-white motion-reduce:transition-none"
+        data-overlay-revealed={revealed ? "true" : "false"}
         data-testid="live-overlay-island"
         style={{
           backgroundColor: "black",
           borderRadius: "0 0 12px 12px",
           overflow: "hidden",
+          // Upstream animates its panel down out of the menu bar on a 0.18s
+          // curve with a little overshoot -- `CAMediaTimingFunction(0.34, 1.56,
+          // 0.64, 1.0)`, transcribed here. The overshoot is most of why it
+          // reads as native rather than as a div appearing.
+          //
+          // The pill moves, not the window. A Tauri window repositioned from a
+          // Rust timer arrives in discrete jumps; a transform inside a
+          // transparent window is composited by WebView2 and is actually
+          // smooth. The window stays a fixed strip at the top edge and ignores
+          // the cursor while the pill is tucked away.
+          transform: revealed ? "translateY(0)" : "translateY(-101%)",
+          transition: "transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+          willChange: "transform",
         }}
       >
         <div className="h-full w-full" ref={contentRef}>

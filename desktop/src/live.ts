@@ -158,6 +158,16 @@ export async function listenLiveLevel(onUpdate: (view: LiveLevelView) => void): 
   return listen<LiveLevelView>("live-level", (event) => onUpdate(event.payload));
 }
 
+/// Whether the pill should be out of the bezel. Rust owns this because a
+/// retracted overlay ignores cursor events, so the webview cannot see the
+/// pointer arrive.
+export async function listenLiveOverlayReveal(
+  onReveal: (revealed: boolean) => void,
+): Promise<UnlistenFn> {
+  if (!isTauri()) return () => undefined;
+  return listen<boolean>("live-overlay-reveal", (event) => onReveal(event.payload));
+}
+
 export async function listenLiveSessionSaved(
   onSaved: (session: SavedLiveSession) => void,
 ): Promise<UnlistenFn> {

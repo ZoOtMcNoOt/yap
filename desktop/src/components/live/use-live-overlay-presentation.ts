@@ -9,6 +9,7 @@ import {
   successVisibleMs,
 } from "@/components/live/live-overlay-state";
 import { createNativeSurfaceSync } from "@/components/live/native-surface-sync";
+import { listenLiveOverlayReveal } from "@/live";
 import type { LiveOverlayView } from "@/lib/live-session";
 
 const setNativeOverlaySurface = createNativeSurfaceSync(async ({ surface }) => {
@@ -27,6 +28,16 @@ export function useLiveOverlayPresentation(view: LiveOverlayView) {
   const hasCopyableFinal = model.hasFinalText;
   const surface = overlaySurface(model, expanded, successVisible && hasCopyableFinal);
   const hiddenIdle = view.visibility === "hidden" && model.phase === "idle";
+  // Out of the bezel or hidden in it. Rust drives this from a cursor poll --
+  // see `overlay_window::sync_reveal` -- because a retracted overlay ignores
+  // cursor events and cannot notice the pointer itself. The browser preview has
+  // no Rust and nothing ignoring the cursor, so it drives the same state from
+  // real DOM hover. Pinning the preview open instead would have made the
+  // retracted state the one thing the suite could never see.
+  const [cursorRevealed, setCursorRevealed] = useState(false);
+  // Anything that is not a resting idle island holds it out regardless: the
+  // user is dictating, transcribing, or being shown a failure.
+  const revealed = cursorRevealed || model.phase !== "idle" || successVisible;
   const rootFrameStyle: CSSProperties | undefined = native
     ? undefined
     : previewOverlayFrame(surface, model);
@@ -42,6 +53,13 @@ export function useLiveOverlayPresentation(view: LiveOverlayView) {
     window.clearTimeout(collapseTimerRef.current);
     collapseTimerRef.current = undefined;
   }, []);
+
+  // No-op under Tauri: Rust owns the reveal there, and honouring DOM hover as
+  // well would fight it every poll.
+  const setPreviewPointerWithin = useCallback((within: boolean) => {
+    if (native) return;
+    setCursorRevealed(within);
+  }, [native]);
 
   const openIdleIsland = useCallback(() => {
     cancelCollapse();
@@ -90,6 +108,23 @@ export function useLiveOverlayPresentation(view: LiveOverlayView) {
   }, [hiddenIdle, surface]);
 
   useEffect(() => {
+    if (!native) return;
+    let stop: (() => void) | undefined;
+    let cancelled = false;
+    void listenLiveOverlayReveal(setCursorRevealed).then((unlisten) => {
+      if (cancelled) {
+        unlisten();
+        return;
+      }
+      stop = unlisten;
+    });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, [native]);
+
+  useEffect(() => {
     return () => {
       cancelCollapse();
       clearSuccessTimer();
@@ -101,7 +136,9 @@ export function useLiveOverlayPresentation(view: LiveOverlayView) {
     model,
     native,
     openIdleIsland,
+    revealed,
     rootFrameStyle,
+    setPreviewPointerWithin,
     scheduleIdleCollapse,
     surface,
   };

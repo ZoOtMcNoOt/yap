@@ -200,6 +200,109 @@ pub(crate) fn ensure_surface_for(
     Ok(())
 }
 
+// Upstream shows its panel only while dictating and animates it down out of the
+// menu bar, so at rest the screen is clean. Yap's island has no menu bar to hide
+// in, so it hides in the bezel: the window stays a fixed transparent strip at the
+// top edge and the pill inside it translates out of view. Reaching for where the
+// pill would be brings it back.
+//
+// Hysteresis, not a single rectangle: the pill reveals when the cursor is inside
+// its own footprint and retracts only once the cursor leaves that footprint
+// grown by this margin. One rectangle would flicker on the boundary.
+const REVEAL_RETRACT_MARGIN: f64 = 28.0;
+// A retracted pill occupies no pixels, so the zone it reveals from has to be
+// tall enough to aim at. Throwing the pointer at the top edge is the gesture.
+const REVEAL_ZONE_HEIGHT: f64 = 12.0;
+
+static OVERLAY_REVEALED: AtomicBool = AtomicBool::new(false);
+
+/// Pure so the geometry is testable without a display. Coordinates are logical
+/// and relative to the monitor's own origin.
+fn cursor_reveals_pill(
+    cursor_x: f64,
+    cursor_y: f64,
+    pill_left: f64,
+    pill_width: f64,
+    pill_height: f64,
+    already_revealed: bool,
+) -> bool {
+    let margin = if already_revealed {
+        REVEAL_RETRACT_MARGIN
+    } else {
+        0.0
+    };
+    // While retracted the pill draws nothing, so aim at the strip it would
+    // occupy; the zone is never shorter than that strip.
+    let zone_height = if already_revealed {
+        pill_height
+    } else {
+        pill_height.max(REVEAL_ZONE_HEIGHT)
+    };
+    cursor_x >= pill_left - margin
+        && cursor_x <= pill_left + pill_width + margin
+        && cursor_y >= -margin
+        && cursor_y <= zone_height + margin
+}
+
+/// Drives the reveal from the one place that can see the cursor while the
+/// overlay is ignoring it. Emits only on change so the webview is not woken
+/// every poll.
+pub(crate) fn sync_reveal(app: &tauri::AppHandle) {
+    let view = app.state::<crate::live::LiveSessionState>().snapshot();
+    if view.visibility != crate::live::state::LiveOverlayVisibility::Enabled {
+        return;
+    }
+    let Some(window) = app.get_webview_window(WINDOW_LABEL) else {
+        return;
+    };
+    let was_revealed = OVERLAY_REVEALED.load(Ordering::Acquire);
+
+    // Anything that is not a resting idle island holds the pill out: the user is
+    // dictating, transcribing, or being told something failed.
+    let revealed = view.status != crate::live::state::LiveSessionStatus::Idle
+        || view.error.is_some()
+        || cursor_reveals_the_pill_now(app, &window, was_revealed);
+
+    if revealed == was_revealed {
+        return;
+    }
+    OVERLAY_REVEALED.store(revealed, Ordering::Release);
+    // A retracted strip must not eat clicks meant for the desktop beneath it.
+    let _ = window.set_ignore_cursor_events(!revealed);
+    crate::live::events::emit_overlay_reveal(app, revealed);
+}
+
+fn cursor_reveals_the_pill_now(
+    app: &tauri::AppHandle,
+    window: &tauri::WebviewWindow,
+    already_revealed: bool,
+) -> bool {
+    let Ok(cursor) = app.cursor_position() else {
+        return false;
+    };
+    let Ok(Some(monitor)) = app.monitor_from_point(cursor.x, cursor.y) else {
+        return false;
+    };
+    let scale = monitor.scale_factor();
+    let Ok(size) = window.inner_size() else {
+        return false;
+    };
+    let size = size.to_logical::<f64>(scale);
+    let (pill_left, _) = position_for_monitor(&monitor, size.width);
+    // Everything monitor-relative, so a display at a negative origin reads the
+    // same as the primary one.
+    let monitor_left = f64::from(monitor.position().x) / scale;
+    let monitor_top = f64::from(monitor.position().y) / scale;
+    cursor_reveals_pill(
+        cursor.x / scale - monitor_left,
+        cursor.y / scale - monitor_top,
+        pill_left - monitor_left,
+        size.width,
+        size.height,
+        already_revealed,
+    )
+}
+
 pub(crate) fn follow_cursor_if_idle(app: &tauri::AppHandle) {
     if !IDLE_COLLAPSED_ACTIVE.load(Ordering::Acquire) {
         return;
@@ -455,6 +558,50 @@ mod tests {
             frame("feedback", PushToTalk, MAX_MESSAGE_CHARS)
         );
         assert_eq!(frame("feedback", PushToTalk, 100_000), Ok((420.0, 38.0)));
+    }
+
+    // Aiming at the top edge where the pill would be is the whole gesture, so
+    // the zone has to be reachable while the pill is drawing nothing at all.
+    #[test]
+    fn a_retracted_pill_reveals_from_the_strip_it_would_occupy() {
+        let left = 914.0;
+        let reveals =
+            |x: f64, y: f64| cursor_reveals_pill(x, y, left, DEFAULT_WIDTH, PILL_HEIGHT, false);
+
+        assert!(reveals(left + 40.0, 0.0));
+        assert!(reveals(left + 40.0, 11.0));
+        // Off to the side of where the pill lives, at the same height.
+        assert!(!reveals(left - 40.0, 4.0));
+        assert!(!reveals(left + DEFAULT_WIDTH + 40.0, 4.0));
+        // Below the strip: the rest of the screen stays the user's.
+        assert!(!reveals(left + 40.0, 200.0));
+    }
+
+    // Without hysteresis the pill would strobe while the cursor rests on the
+    // boundary, which is the difference between polished and broken.
+    #[test]
+    fn a_revealed_pill_holds_until_the_cursor_clears_it_by_a_margin() {
+        let left = 914.0;
+        let reveals = |x: f64, y: f64, already: bool| {
+            cursor_reveals_pill(x, y, left, DEFAULT_WIDTH, PILL_HEIGHT, already)
+        };
+
+        // Just outside the pill: retracted stays retracted, revealed stays revealed.
+        let just_outside = left + DEFAULT_WIDTH + 10.0;
+        assert!(!reveals(just_outside, 10.0, false));
+        assert!(reveals(just_outside, 10.0, true));
+
+        // Past the margin it lets go, sideways or downwards.
+        assert!(!reveals(
+            left + DEFAULT_WIDTH + REVEAL_RETRACT_MARGIN + 1.0,
+            10.0,
+            true
+        ));
+        assert!(!reveals(
+            left + 40.0,
+            PILL_HEIGHT + REVEAL_RETRACT_MARGIN + 1.0,
+            true
+        ));
     }
 
     #[test]

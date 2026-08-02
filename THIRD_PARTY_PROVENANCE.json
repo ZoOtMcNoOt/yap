@@ -35,7 +35,7 @@
         },
         {
           "path": "desktop/src-tauri/src/live/overlay_window.rs",
-          "sha256": "8441ff31e644a080bda56a4eed0db49791b43a49724757b59f0ca912e32f489b",
+          "sha256": "a8916d4773c8466830418aaae05078d5fa6534d72dba776fe91a3bd0078d7744",
           "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {
@@ -50,7 +50,7 @@
         },
         {
           "path": "desktop/src/components/live/live-overlay.tsx",
-          "sha256": "ca50ae534dbf6d7ec72aa1146737099957f544fc8fdab9c63ae1931965a7f5dd",
+          "sha256": "bb17ca56489eca9456661182acb43aa9f09255aa621f0f891cd9d92fab4398ab",
           "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {
@@ -60,7 +60,7 @@
         },
         {
           "path": "desktop/src/components/live/use-live-overlay-presentation.ts",
-          "sha256": "c5c1c726558fc9aaf24449e59f567238e493f66e9217ef23b2b56c19e04c2671"
+          "sha256": "7e34c41f563ab46dbc017acbea1554a588e08d17b5f6a599baf098027ae3783d"
         },
         {
           "path": "desktop/src/components/live/use-prefers-reduced-motion.ts",
