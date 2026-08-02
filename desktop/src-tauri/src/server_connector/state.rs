@@ -5,6 +5,12 @@ use crate::runtime::state::ServerConnectorState;
 use super::client::HealthCheckResult;
 
 const RETRY_SECONDS: [u64; 6] = [1, 2, 4, 8, 15, 30];
+// How long a Ready belief may stand before it is re-verified. Ready used to be
+// terminal: nothing ever probed again, so a dead server or dropped SSH forward
+// stayed "Connected" until a human refreshed. The re-check rides the existing
+// retry plumbing; `started_ready` keeps the surface at Ready while the probe is
+// in flight, and a failed re-check falls into the ordinary Retrying backoff.
+const READY_RECHECK_SECONDS: u64 = 30;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -227,8 +233,11 @@ impl ConnectorInner {
                 self.snapshot.api_version = Some(api_version);
                 self.snapshot.capabilities = capabilities;
                 self.retry_attempt = 0;
-                self.retry_allowed = false;
-                None
+                // Connected is a claim about now, not about launch time: keep
+                // re-verifying it. SignInRequired and AccessDenied stay
+                // terminal below because only a human can change them.
+                self.retry_allowed = true;
+                Some(ready_recheck_delay(jitter))
             }
             HealthCheckResult::SignInRequired {
                 api_version,
@@ -287,8 +296,13 @@ impl ConnectorInner {
         }
         self.retry_pending = true;
         self.retry_token = self.retry_token.wrapping_add(1);
-        self.snapshot.state = ServerConnectorState::Retrying;
-        self.snapshot.retry_at_ms = Some(retry_at_ms);
+        // A Ready keepalive is not a degradation: the surface stays Ready and
+        // no retry countdown is published. Only a genuinely lost connection
+        // shows Retrying.
+        if self.snapshot.state != ServerConnectorState::Ready {
+            self.snapshot.state = ServerConnectorState::Retrying;
+            self.snapshot.retry_at_ms = Some(retry_at_ms);
+        }
         true
     }
 
@@ -320,10 +334,18 @@ impl ConnectorInner {
         self.retry_pending = false;
         self.retry_allowed = false;
         self.snapshot.retry_at_ms = None;
-        self.snapshot.state = ServerConnectorState::Connecting;
+        // A keepalive re-check fired from Ready keeps the Ready surface, the
+        // same way an explicit refresh from Ready does. Flashing Connecting
+        // every thirty seconds would turn re-verification into flicker, and
+        // started_ready is what routes a transient failure into Retrying
+        // rather than hard Offline.
+        let started_ready = self.snapshot.state == ServerConnectorState::Ready;
+        if !started_ready {
+            self.snapshot.state = ServerConnectorState::Connecting;
+        }
         self.in_flight = Some(InFlightRequest {
             generation,
-            started_ready: false,
+            started_ready,
         });
         true
     }
@@ -334,6 +356,15 @@ where
     Jitter: FnOnce(Duration) -> Duration,
 {
     let base = Duration::from_secs(RETRY_SECONDS[attempt.min(RETRY_SECONDS.len() - 1)]);
+    let maximum_jitter = base / 5;
+    base.saturating_add(jitter(base).min(maximum_jitter))
+}
+
+fn ready_recheck_delay<Jitter>(jitter: Jitter) -> Duration
+where
+    Jitter: FnOnce(Duration) -> Duration,
+{
+    let base = Duration::from_secs(READY_RECHECK_SECONDS);
     let maximum_jitter = base / 5;
     base.saturating_add(jitter(base).min(maximum_jitter))
 }
@@ -469,6 +500,97 @@ mod tests {
         let retry_token = inner.retry_token();
         assert!(inner.begin_scheduled_retry(1, retry_token));
         assert_eq!(inner.snapshot().state, ServerConnectorState::Connecting);
+    }
+
+    // Ready used to be terminal: the connector verified the server once and
+    // then believed itself connected for the rest of the process, through dead
+    // tunnels and stopped servers alike. Connected is a claim about now.
+    #[test]
+    fn ready_schedules_its_own_recheck_without_degrading_the_surface() {
+        let mut inner = ConnectorInner::default();
+        enabled(&mut inner, 1);
+        assert!(inner.begin_health_request(1, 10));
+        let transition = inner
+            .finish_health_request(
+                1,
+                HealthCheckResult::Ready {
+                    api_version: "1".to_owned(),
+                    capabilities: ServerCapabilities::default(),
+                },
+                20,
+                zero_jitter,
+            )
+            .unwrap();
+
+        // A re-check is scheduled...
+        assert_eq!(transition.retry_after, Some(Duration::from_secs(30)));
+        assert!(inner.arm_retry(1, 30_020));
+        // ...but the surface never stops being Ready and no countdown is
+        // published: a keepalive is not a degradation.
+        assert_eq!(inner.snapshot().state, ServerConnectorState::Ready);
+        assert_eq!(inner.snapshot().retry_at_ms, None);
+
+        let retry_token = inner.retry_token();
+        assert!(inner.begin_scheduled_retry(1, retry_token));
+        assert_eq!(inner.snapshot().state, ServerConnectorState::Ready);
+    }
+
+    #[test]
+    fn a_ready_server_that_vanishes_is_noticed_and_recovered_without_a_human() {
+        let mut inner = ConnectorInner::default();
+        enabled(&mut inner, 1);
+        assert!(inner.begin_health_request(1, 10));
+        inner
+            .finish_health_request(
+                1,
+                HealthCheckResult::Ready {
+                    api_version: "1".to_owned(),
+                    capabilities: ServerCapabilities::default(),
+                },
+                20,
+                zero_jitter,
+            )
+            .unwrap();
+        assert!(inner.arm_retry(1, 30_020));
+        let retry_token = inner.retry_token();
+        assert!(inner.begin_scheduled_retry(1, retry_token));
+
+        // The tunnel dropped between checks: the keepalive notices and the
+        // ordinary Retrying backoff takes over.
+        let transition = inner
+            .finish_health_request(
+                1,
+                HealthCheckResult::Offline {
+                    api_version: None,
+                    error_code: "CONNECTION_FAILED",
+                    retryable: true,
+                },
+                30_040,
+                zero_jitter,
+            )
+            .unwrap();
+        assert_eq!(inner.snapshot().state, ServerConnectorState::Retrying);
+        assert_eq!(transition.retry_after, Some(Duration::from_secs(1)));
+        assert!(inner.arm_retry(1, 31_040));
+        assert_eq!(inner.snapshot().retry_at_ms, Some(31_040));
+
+        // The tunnel came back: the same loop restores Ready and the next
+        // keepalive is already scheduled.
+        let retry_token = inner.retry_token();
+        assert!(inner.begin_scheduled_retry(1, retry_token));
+        let transition = inner
+            .finish_health_request(
+                1,
+                HealthCheckResult::Ready {
+                    api_version: "1".to_owned(),
+                    capabilities: ServerCapabilities::default(),
+                },
+                31_060,
+                zero_jitter,
+            )
+            .unwrap();
+        assert_eq!(inner.snapshot().state, ServerConnectorState::Ready);
+        assert_eq!(transition.retry_after, Some(Duration::from_secs(30)));
     }
 
     #[test]
