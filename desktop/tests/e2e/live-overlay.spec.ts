@@ -79,14 +79,17 @@ test("one visible island expands downward quickly without taking focus", async (
     page.getByRole("button", { name: "Open scratch" }),
     page.getByRole("button", { name: "Open transform" }),
   ]);
-  // TEMPORARY (this commit only): forcing a mismatch so windows-latest emits a
-  // -actual.png for the FreeFlow port's baseline. The committed baseline still
-  // shows the pre-port island and passed anyway -- measured at 3.63% against
-  // the 4% budget, i.e. a complete restyle cleared it by about 64 pixels.
-  // The next commit restores a tolerance chosen from what this run reports.
+  // 1% rather than the 4% this carried before the port. Measured, not guessed:
+  // porting the panel to FreeFlow -- 38pt header, 11pt text, white instead of
+  // fuchsia, square top corners -- moved 344 of 17,280 pixels, 1.99%. At 4% a
+  // restyle that complete passed unnoticed and left this baseline showing an
+  // island that no longer existed. 1% keeps roughly a 170-pixel allowance for
+  // antialiasing while still failing on a change of that size.
+  // If a runner-image font change ever makes this flaky, raise it from an
+  // observed noise ratio rather than back to a round number.
   await expect(root).toHaveScreenshot("live-overlay-hover.png", {
     animations: "disabled",
-    maxDiffPixelRatio: 0,
+    maxDiffPixelRatio: 0.01,
   });
 });
 
