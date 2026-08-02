@@ -41,6 +41,16 @@ const EXPANDED_HEIGHT: f64 = 96.0;
 // `screenHasNotch ? 18 : 12`, and Windows never has a notch. Applied to the
 // bottom two corners only — see `create_visible_region`.
 const CORNER_RADIUS: f64 = 12.0;
+// The window region is a 1-bit clip: GDI regions have no antialiasing, so a
+// region cut along the same curve the CSS paints slices the smooth edge with a
+// stair-stepped one and the corners read as gritty. Rounding the *region* less
+// than the pill keeps every painted pixel strictly inside it, so what you see
+// is the webview's antialiased curve and nothing clips it.
+//
+// The cost is a sliver of transparent corner — between the two radii — that
+// still accepts clicks. Two triangles a few pixels on a side, against corners
+// that otherwise look chewed.
+const REGION_CORNER_SLACK: f64 = 4.0;
 const TOP_BEZEL_OFFSET: f64 = 0.0;
 
 pub(crate) fn ensure_active(app: &tauri::AppHandle) -> Result<(), String> {
@@ -447,7 +457,12 @@ fn create_visible_region(
 ) -> Result<HRGN, String> {
     let physical_width = (window_width * scale).round().max(1.0) as i32;
     let physical_height = (window_height * scale).round().max(1.0) as i32;
-    let corner_radius = (CORNER_RADIUS * scale).round().max(1.0) as i32;
+    // Deliberately squarer than the pill by `REGION_CORNER_SLACK` -- a smaller
+    // radius is a larger area -- so the 1-bit region encloses every pixel the
+    // webview paints and never clips its antialiased curve.
+    let corner_radius = ((CORNER_RADIUS - REGION_CORNER_SLACK) * scale)
+        .round()
+        .max(1.0) as i32;
     let mut region = unsafe {
         CreateRoundRectRgn(
             0,
@@ -645,6 +660,25 @@ mod tests {
         assert!(unsafe { PtInRegion(region, 91, 0) }.as_bool());
         assert!(!unsafe { PtInRegion(region, 0, 37) }.as_bool());
         assert!(!unsafe { PtInRegion(region, 91, 37) }.as_bool());
+        unsafe { region.free() };
+    }
+
+    // The grit: a GDI region is 1-bit, so a region cut along the same curve the
+    // webview paints slices its antialiased edge with a stair-stepped one. The
+    // region has to enclose the painted curve, fringe included, and only then
+    // start excluding.
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn the_region_encloses_the_painted_curve_instead_of_cutting_across_it() {
+        use windows::Win32::Graphics::Gdi::PtInRegion;
+
+        let mut region = create_visible_region(DEFAULT_WIDTH, PILL_HEIGHT, 1.0).unwrap();
+        // (3,35) sits just outside the pill's own 12pt curve -- it is antialiasing
+        // fringe, and the old same-radius region clipped exactly here.
+        assert!(unsafe { PtInRegion(region, 3, 35) }.as_bool());
+        // Far enough into the corner to be plainly nothing, and still excluded,
+        // so the click-through property survives the slack.
+        assert!(!unsafe { PtInRegion(region, 0, 36) }.as_bool());
         unsafe { region.free() };
     }
 

@@ -35,7 +35,7 @@
         },
         {
           "path": "desktop/src-tauri/src/live/overlay_window.rs",
-          "sha256": "a8916d4773c8466830418aaae05078d5fa6534d72dba776fe91a3bd0078d7744",
+          "sha256": "d4eed3913ef9f26bee26a9d936a6615d960454dc5bf1002b571ff77722e56331",
           "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {
