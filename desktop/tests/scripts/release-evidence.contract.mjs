@@ -8,7 +8,6 @@
 // times slower than the workstation, so they run locally before push instead.
 // release-contract-coverage.contract.mjs proves every contract file belongs to
 // exactly one of the two sets.
-import "./release-contract/bundled-model-pins.contract.mjs";
 import "./release-contract/cache.contract.mjs";
 import "./release-contract/dependency-license.contract.mjs";
 import "./release-contract/documentation-truth.contract.mjs";

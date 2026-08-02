@@ -11,8 +11,5 @@
 /binaries/*
 !/binaries/.gitkeep
 
-# Staged local resources, kept out of the tree. The rule predates ADR 0019 and
-# originally held crispasr copies; that runtime is retired and YAP_CRISPASR_BIN
-# is read by nothing, so the rule is kept only because no build step is proven
-# not to stage here.
+# Generated local resources and model experiments are never tracked.
 /resources/
