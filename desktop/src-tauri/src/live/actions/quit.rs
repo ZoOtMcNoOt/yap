@@ -341,7 +341,10 @@ fn ask_to_acknowledge_quit_failure(app: &tauri::AppHandle) {
             // Taken here rather than before the spawn, so a thread that never
             // starts cannot consume a failure it will not show. If two tray
             // clicks race, one takes it and the other finds nothing to present.
-            let Some(error) = dialog_app.state::<QuitCoordinator>().begin_acknowledgement() else {
+            let Some(error) = dialog_app
+                .state::<QuitCoordinator>()
+                .begin_acknowledgement()
+            else {
                 return;
             };
             // Drop-guarded so a panicking presenter cannot park the app in

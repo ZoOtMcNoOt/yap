@@ -161,7 +161,10 @@ fn acknowledging_a_failed_shutdown_lets_quit_be_attempted_again() {
     quit.finish(Err("save failed".into()));
     assert_eq!(quit.claim(), QuitClaim::Blocked("save failed".to_string()));
 
-    assert_eq!(quit.begin_acknowledgement(), Some("save failed".to_string()));
+    assert_eq!(
+        quit.begin_acknowledgement(),
+        Some("save failed".to_string())
+    );
     assert!(quit.finish_acknowledgement());
 
     // A fresh shutdown, not an authorized exit: the next quit re-runs
@@ -181,7 +184,10 @@ fn a_failure_being_acknowledged_coalesces_further_quits_instead_of_stacking_them
     quit.begin_finalizing(|| Ok(()), || Ok(())).unwrap();
     quit.finish(Err("save failed".into()));
 
-    assert_eq!(quit.begin_acknowledgement(), Some("save failed".to_string()));
+    assert_eq!(
+        quit.begin_acknowledgement(),
+        Some("save failed".to_string())
+    );
     assert_eq!(quit.claim(), QuitClaim::Coalesced);
     assert_eq!(quit.claim(), QuitClaim::Coalesced);
     // A second presenter cannot take a failure the first one is already holding.
@@ -229,7 +235,10 @@ fn a_dropped_acknowledgement_returns_the_app_to_ready() {
     quit.begin_finalizing(|| Ok(()), || Ok(())).unwrap();
     quit.finish(Err("save failed".into()));
 
-    assert_eq!(quit.begin_acknowledgement(), Some("save failed".to_string()));
+    assert_eq!(
+        quit.begin_acknowledgement(),
+        Some("save failed".to_string())
+    );
     assert!(quit.finish_acknowledgement());
     // Idempotent: the guard's drop after an explicit dismissal is a no-op.
     assert!(!quit.finish_acknowledgement());
