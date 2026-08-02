@@ -345,7 +345,6 @@ export default function App() {
           languageOptions={importLanguageOptions}
           onLanguageChange={setRecordingLanguageOptionId}
           onOpenHelp={() => openWorkspace("help")}
-          onOpenLanguageSettings={showDetails}
           onPickFiles={() => void pickFiles()}
           selectedLanguageOptionId={recordingLanguageOptionId}
         />

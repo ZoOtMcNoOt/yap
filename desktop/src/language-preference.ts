@@ -124,10 +124,18 @@ export function primaryLanguageStatus(): Promise<PrimaryLanguageStatus> {
 
 export function confirmPrimaryLanguage(
   languageBcp47: string,
-  catalogRevision: string,
+  catalogRevision: string | null,
 ): Promise<PrimaryLanguageStatus> {
+  // No catalog revision means no server catalog exists: the command validates
+  // against the local dictation catalog instead — the same list live routing
+  // enforces at start.
   return invoke<PrimaryLanguageStatus>("confirm_primary_language", {
     languageBcp47,
     catalogRevision,
   });
+}
+
+/// The locales local dictation accepts with no server at all.
+export function localDictationLanguages(): Promise<string[]> {
+  return invoke<string[]>("local_dictation_languages");
 }

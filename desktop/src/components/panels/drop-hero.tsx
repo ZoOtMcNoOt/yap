@@ -1,4 +1,4 @@
-import { type DragEvent } from "react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { CloudArrowUp as UploadCloud } from "@phosphor-icons/react/CloudArrowUp";
 
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,11 @@ import {
 } from "@/components/ui/select";
 import {
   fixedBatchQualityLabel,
+  localDictationLanguages,
   type RecordingImportLanguageOption,
 } from "@/language-preference";
+import { usePrimaryLanguage } from "@/hooks/use-primary-language";
+import { isTauri } from "@tauri-apps/api/core";
 import { formatLanguageTag } from "@/lib/language-display";
 import { acceptedFormats } from "@/lib/media-file";
 import { cn } from "@/lib/utils";
@@ -25,7 +28,6 @@ export function DropHero({
   onDragOver,
   onDrop,
   onOpenHelp,
-  onOpenLanguageSettings,
   onLanguageChange,
   onPickFiles,
   languageOptions,
@@ -36,7 +38,6 @@ export function DropHero({
   onDragOver: (event: DragEvent<HTMLElement>) => void;
   onDrop: (event: DragEvent<HTMLElement>) => void;
   onOpenHelp?: () => void;
-  onOpenLanguageSettings: () => void;
   onLanguageChange: (optionId: string) => void;
   onPickFiles: () => void;
   languageOptions: RecordingImportLanguageOption[];
@@ -45,6 +46,45 @@ export function DropHero({
   const languageReady = languageOptions.some(
     (option) => option.id === selectedLanguageOptionId,
   );
+  // The welcome gates on the DICTATION requirement — a confirmed primary
+  // language — not on the server-derived import options. The first version of
+  // this card keyed off the import gate, which never clears without a server,
+  // so serverless the welcome could never be completed. That was the whole
+  // complaint.
+  const primary = usePrimaryLanguage();
+  const [localLanguages, setLocalLanguages] = useState<string[]>([]);
+  const [choice, setChoice] = useState("");
+  // Only an explicit "confirmed" status dismisses the welcome. Null, undefined
+  // (a harness that answers nothing), and requiresConfirmation all mean the
+  // user has not finished step one — and none of them may crash the surface.
+  const needsFirstRun = isTauri()
+    ? primary.status?.requiresConfirmation !== false
+    : true;
+
+  useEffect(() => {
+    if (!isTauri()) return;
+    void primary.load().catch(() => undefined);
+    localDictationLanguages().then(setLocalLanguages).catch(() => undefined);
+    // Load once on mount; the confirm result updates status directly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // The server catalog's fixed-batch locales when one exists, the local
+  // dictation catalog always; deduplicated, suggestion first.
+  const firstRunLanguages = useMemo(() => {
+    const fromServer = (primary.status?.capabilityCatalog ? languageOptions : [])
+      .flatMap((option) => (option.mode === "fixed" ? [option.languageBcp47] : []));
+    const merged = [...new Set([...localLanguages, ...fromServer])];
+    const suggested = primary.status?.suggestedLanguageBcp47;
+    if (suggested && merged.includes(suggested)) {
+      return [suggested, ...merged.filter((language) => language !== suggested)];
+    }
+    return merged;
+  }, [languageOptions, localLanguages, primary.status]);
+
+  const suggestion = primary.status?.suggestedLanguageBcp47 ?? "";
+  const selectedFirstRunLanguage = choice || suggestion;
+
   return (
     <section
       className={cn(
@@ -55,7 +95,7 @@ export function DropHero({
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
-      {!languageReady ? (
+      {needsFirstRun ? (
         <div
           className="flex min-h-[168px] flex-col items-center justify-center gap-5 px-6 py-8 text-center"
           data-testid="first-run-welcome"
@@ -71,8 +111,33 @@ export function DropHero({
               <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold">1</span>
               <span className="flex flex-wrap items-center gap-2">
                 Choose the language you speak.
-                <Button onClick={onOpenLanguageSettings} size="sm" type="button">
-                  Set my language
+                <Select
+                  disabled={!firstRunLanguages.length || primary.pending}
+                  onValueChange={setChoice}
+                  value={selectedFirstRunLanguage || undefined}
+                >
+                  <SelectTrigger aria-label="Dictation language" className="min-w-[180px]" data-testid="first-run-language">
+                    <SelectValue placeholder="Choose language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {firstRunLanguages.map((language) => (
+                        <SelectItem key={language} value={language}>
+                          {formatLanguageTag(language)}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <Button
+                  disabled={!selectedFirstRunLanguage || primary.pending}
+                  onClick={() => {
+                    void primary.confirm(selectedFirstRunLanguage).catch(() => undefined);
+                  }}
+                  size="sm"
+                  type="button"
+                >
+                  {primary.pending ? "Saving…" : "Confirm"}
                 </Button>
               </span>
             </li>
@@ -84,9 +149,13 @@ export function DropHero({
               </span>
             </li>
           </ol>
-          <p className="max-w-md text-xs leading-5 text-muted-foreground">
-            On a team? Connect to your organization's server any time from Settings in the sidebar.
-          </p>
+          {primary.error ? (
+            <p className="max-w-md text-xs leading-5 text-destructive" role="alert">{primary.error}</p>
+          ) : (
+            <p className="max-w-md text-xs leading-5 text-muted-foreground">
+              On a team? Connect to your organization's server any time from Settings in the sidebar.
+            </p>
+          )}
         </div>
       ) : (
       <div className="flex min-h-[168px] flex-col items-center justify-center gap-4 px-6 py-8 text-center">

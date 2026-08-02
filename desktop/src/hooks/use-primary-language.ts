@@ -31,9 +31,13 @@ export function usePrimaryLanguage() {
   }, []);
 
   const confirm = useCallback(async (languageBcp47: string) => {
-    const catalogRevision = status?.capabilityCatalog?.catalogRevision;
-    if (!isTauri() || !catalogRevision) {
-      throw new Error("Current ASR language capabilities are unavailable.");
+    // With a server catalog present its revision is named and matched; without
+    // one, the command confirms against the local dictation catalog. Both are
+    // real confirmations — the second is what makes a serverless first run
+    // possible at all.
+    const catalogRevision = status?.capabilityCatalog?.catalogRevision ?? null;
+    if (!isTauri()) {
+      throw new Error("Language confirmation requires the desktop app.");
     }
     const generation = ++requestGeneration.current;
     setPending(true);
