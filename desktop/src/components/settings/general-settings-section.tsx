@@ -4,7 +4,7 @@ import { useId } from "react";
 import { ShortcutRecorder } from "@/components/settings/shortcut-recorder";
 import { PrimaryLanguageSetting } from "@/components/settings/primary-language-setting";
 import { AutomaticLanguageRoutingSetting } from "@/components/settings/automatic-language-routing-setting";
-import { SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
+import { AdvancedSettings, SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -86,10 +86,6 @@ export function GeneralSettingsSection({
         pending={primaryLanguagePending}
         status={primaryLanguageStatus}
       />
-      <AutomaticLanguageRoutingSetting
-        control={liveLanguageRouting}
-        liveActive={liveActive}
-      />
       <SettingsRow
         detail={liveActive ? "Stop live first." : "Hold for push-to-talk or double-tap for hands-free."}
         label="Dictation shortcut"
@@ -101,22 +97,6 @@ export function GeneralSettingsSection({
           onReset={onResetLiveHotkey}
         />
       </SettingsRow>
-      <SettingsRow
-        detail={liveActive ? "Stop live first." : "Copies the last transcript after a deliberate shortcut chord."}
-        label="Paste-last shortcut"
-        value={liveView.pasteHotkey || "Off"}
-      >
-        <ShortcutRecorder
-          disabled={liveBusy || liveActive}
-          onRecord={onSetLivePasteHotkey}
-          onReset={onResetLivePasteHotkey}
-        />
-      </SettingsRow>
-      <SettingsRow
-        detail="Moves keyboard focus into the always-on-top overlay without starting or stopping dictation."
-        label="Overlay controls shortcut"
-        value={liveView.overlayFocusHotkey || "Unavailable"}
-      />
       <SettingsRow
         action={(
           <Button
@@ -200,6 +180,28 @@ export function GeneralSettingsSection({
           </Button>
         </div>
       </SettingsRow>
+      <AdvancedSettings>
+        <AutomaticLanguageRoutingSetting
+          control={liveLanguageRouting}
+          liveActive={liveActive}
+        />
+        <SettingsRow
+          detail={liveActive ? "Stop live first." : "Copies the last transcript after a deliberate shortcut chord."}
+          label="Paste-last shortcut"
+          value={liveView.pasteHotkey || "Off"}
+        >
+          <ShortcutRecorder
+            disabled={liveBusy || liveActive}
+            onRecord={onSetLivePasteHotkey}
+            onReset={onResetLivePasteHotkey}
+          />
+        </SettingsRow>
+        <SettingsRow
+          detail="Moves keyboard focus into the always-on-top overlay without starting or stopping dictation."
+          label="Overlay controls shortcut"
+          value={liveView.overlayFocusHotkey || "Unavailable"}
+        />
+      </AdvancedSettings>
     </SettingsGroup>
   );
 }

@@ -1,4 +1,36 @@
+import { CaretDown } from "@phosphor-icons/react/CaretDown";
 import type { ReactNode } from "react";
+
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
+// Progressive disclosure for a settings section: the rows a new user needs
+// stay in view, everything expert-only collapses behind one Advanced toggle.
+// defaultOpen exists so a lifecycle that needs attention (broken model,
+// pending install) is never hidden behind a closed disclosure.
+export function AdvancedSettings({
+  children,
+  defaultOpen = false,
+}: {
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <Collapsible defaultOpen={defaultOpen}>
+      <CollapsibleTrigger
+        className="group flex w-full items-center gap-2 pt-5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        type="button"
+      >
+        <CaretDown className="size-4 transition-transform group-data-[state=open]:rotate-180" />
+        Advanced
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-2">{children}</CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 export function SettingsGroup({ children }: { children: ReactNode }) {
   return (

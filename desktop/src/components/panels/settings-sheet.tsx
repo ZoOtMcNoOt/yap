@@ -220,6 +220,7 @@ export function SettingsSheet({
 
                 {section === "system" ? (
                   <SystemSettingsSection
+                    advancedDefaultOpen={Boolean(fallbackStatus && fallbackStatus !== "ready")}
                     busy={busy}
                     fallbackLifecycle={fallbackLifecycle}
                     fallbackLocked={liveActive}
