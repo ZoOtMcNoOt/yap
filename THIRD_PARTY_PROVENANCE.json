@@ -55,7 +55,7 @@
         },
         {
           "path": "desktop/src/components/live/live-waveform.tsx",
-          "sha256": "f10f4de5828a1219af9e2845f4791304806267e801f448e6989885076624ed56",
+          "sha256": "8d657227c1b4326260b7090e3527805f2180793edefd4cf58b6722ebd858a8d1",
           "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {

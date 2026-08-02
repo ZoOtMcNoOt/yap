@@ -99,9 +99,15 @@ export function ServerRouteStatus({
         </Button>
       ) : (
         <Badge
-          className="rounded-full px-3 py-1.5 text-sm font-semibold"
+          className={
+            // Working privately on this device is Yap's identity, so the local
+            // route wears the brand tint rather than the neutral chip.
+            route === "local"
+              ? "rounded-full border-primary/20 bg-[var(--primary-soft)] px-3 py-1.5 text-sm font-semibold text-primary"
+              : "rounded-full px-3 py-1.5 text-sm font-semibold"
+          }
           data-testid="server-route-status"
-          variant={route === "blocked" ? "destructive" : "secondary"}
+          variant={route === "blocked" ? "destructive" : route === "local" ? "outline" : "secondary"}
         >
           {route === "checking" ? (
             <Skeleton className="h-4 w-20 rounded-full" />
