@@ -302,14 +302,86 @@ impl<T> BoundedSink<T> {
             ) {
                 Ok(_) => {
                     #[cfg(debug_assertions)]
-                    crate::diagnostics::log(&format!(
-                        "audio sink {:?} queue high-water mark={queued}",
-                        self.kind
-                    ));
+                    self.log_high_water_escalation(queued);
                     break;
                 }
                 Err(observed) => current = observed,
             }
         }
+    }
+
+    /// Report the queue climbing, without narrating every single frame of it.
+    ///
+    /// Only doublings are written, so a queue reaching 1024 produces about
+    /// eleven lines instead of a thousand and the shape of the climb is still
+    /// legible. The exact peak is never lost -- `high_water_mark()` returns it
+    /// on demand and the release-evidence path reads it from there.
+    #[cfg(debug_assertions)]
+    fn log_high_water_escalation(&self, queued: usize) {
+        let mut reported = self.state.logged_high_water_mark.load(Ordering::Acquire);
+        loop {
+            if !worth_reporting(queued, reported) {
+                return;
+            }
+            match self.state.logged_high_water_mark.compare_exchange_weak(
+                reported,
+                queued,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => {
+                    crate::diagnostics::log(&format!(
+                        "audio sink {:?} queue high-water mark={queued}",
+                        self.kind
+                    ));
+                    return;
+                }
+                Err(observed) => reported = observed,
+            }
+        }
+    }
+}
+
+/// A new peak is worth a log line only once it has doubled the last reported
+/// one. Pulled out of the reporting path so the volume it produces can be
+/// asserted rather than assumed.
+#[cfg(debug_assertions)]
+fn worth_reporting(queued: usize, reported: usize) -> bool {
+    queued >= reported.saturating_mul(2).max(1)
+}
+
+#[cfg(all(test, debug_assertions))]
+mod high_water_reporting_tests {
+    use super::worth_reporting;
+
+    // The queue used to write a line per frame it grew by, so a climb to 1024
+    // wrote 1024 lines and the log became 99% one message across three 2 MB
+    // generations. Everything else aged out before it could be read.
+    #[test]
+    fn a_queue_climbing_to_full_reports_a_handful_of_times_not_a_thousand() {
+        let mut reported = 0;
+        let mut lines = 0;
+        for queued in 1..=1024 {
+            if worth_reporting(queued, reported) {
+                reported = queued;
+                lines += 1;
+            }
+        }
+        assert_eq!(reported, 1024, "the final peak must still be reported");
+        assert!(
+            lines <= 12,
+            "a climb to 1024 wrote {lines} lines; the point is that it stops flooding"
+        );
+    }
+
+    // Bounded above, but not silent: the first frame and every doubling still
+    // get through, so the shape of the climb survives.
+    #[test]
+    fn the_first_peak_and_every_doubling_still_report() {
+        assert!(worth_reporting(1, 0));
+        assert!(worth_reporting(2, 1));
+        assert!(worth_reporting(64, 32));
+        assert!(!worth_reporting(63, 32));
+        assert!(!worth_reporting(33, 32));
     }
 }
