@@ -490,8 +490,13 @@ fn create_region_with_corner_radius(
         return Err("Failed to create live overlay interaction region.".into());
     }
 
+    // Height from CORNER_RADIUS rather than this region's own radius: the band
+    // only squares the top off, so covering more of an already-square edge costs
+    // nothing, while deriving it from a smaller radius would make the clip's
+    // band shorter than the pill's and cut the top corners it is meant to keep.
+    let band_height = (CORNER_RADIUS * scale).round().max(1.0) as i32;
     let mut top_band =
-        unsafe { CreateRectRgn(0, 0, physical_width, corner_radius.min(physical_height)) };
+        unsafe { CreateRectRgn(0, 0, physical_width, band_height.min(physical_height)) };
     if top_band.is_invalid() {
         unsafe { region.free() };
         return Err("Failed to create live overlay interaction region.".into());
