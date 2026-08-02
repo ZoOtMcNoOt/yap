@@ -37,12 +37,22 @@ _SERVER_VENV_PYTHON = _REPO_ROOT / "server" / ".venv" / "bin" / "python"
 
 
 def _reexec_under_server_venv_if_needed() -> None:
+    # Unconditional when the venv exists. Probing for individual imports was
+    # wrong the first time: the system interpreter happened to have jwt, so the
+    # probe passed and the process then died importing websockets — a module
+    # the probe never mentioned. The venv is the environment the server is
+    # developed against; if it is there, run in it.
+    if _SERVER_VENV_PYTHON.exists():
+        # Compare sys.prefix, not executables: uv symlinks .venv/bin/python to
+        # the system interpreter, so resolved executable paths look identical
+        # from both sides and the exec never fires.
+        if Path(sys.prefix).resolve() != _SERVER_VENV_PYTHON.parent.parent.resolve():
+            os.execv(str(_SERVER_VENV_PYTHON), [str(_SERVER_VENV_PYTHON), *sys.argv])
+        return
     try:
         import jwt  # noqa: F401
-        import cryptography  # noqa: F401
+        import websockets  # noqa: F401
     except ModuleNotFoundError:
-        if _SERVER_VENV_PYTHON.exists() and Path(sys.executable) != _SERVER_VENV_PYTHON:
-            os.execv(str(_SERVER_VENV_PYTHON), [str(_SERVER_VENV_PYTHON), *sys.argv])
         raise SystemExit(
             "The server dependencies are missing. Run `uv sync` in server/ first."
         )
@@ -64,6 +74,7 @@ from yap_server.config import (  # noqa: E402
     ServerSettings,
 )
 from yap_server.jobs import RecordingJobService  # noqa: E402
+from yap_server.live import PrivateLiveWebSocketServer  # noqa: E402
 from yap_server.pools.batch_contract import AsrRouteDecision  # noqa: E402
 
 
@@ -146,6 +157,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=18765)
     parser.add_argument(
+        "--live-port",
+        type=int,
+        default=18766,
+        help="the private live WebSocket transport (same default as production)",
+    )
+    parser.add_argument(
         "--state-root",
         type=Path,
         default=Path.home() / ".yap-demo-server",
@@ -215,16 +232,27 @@ def main() -> None:
         development_principal=None,
     )
     server = create_server(settings, request_authenticator=authenticator, job_service=service)
+    # The live transport is a separate loopback listener, exactly as in
+    # production and in verification/authenticated-connector-server.py. The
+    # client does not discover this port; it connects to an approved origin, so
+    # a laptop reaches it by adding one more line to the SSH forward.
+    live_server = PrivateLiveWebSocketServer(authenticator, port=arguments.live_port)
 
     print(f"Demo yap-server on http://127.0.0.1:{arguments.port}")
+    print(f"  live     ws://127.0.0.1:{arguments.live_port}")
     print(f"  issuer   {issuer}")
     print(f"  state    {state_root}")
     print(f"  asr      none attached — jobs fail processing with a message saying so")
+    live_started = False
     try:
+        live_server.start()
+        live_started = True
         server.serve_forever(poll_interval=0.1)
     except KeyboardInterrupt:
         pass
     finally:
+        if live_started:
+            live_server.close()
         server.server_close()
         repository.close()
 
