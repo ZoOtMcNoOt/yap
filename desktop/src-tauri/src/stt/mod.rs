@@ -16,6 +16,7 @@ pub(crate) fn log_stt_timed(phase: &str, elapsed: Duration, detail: &str) {
 }
 
 pub mod ambernet_language_detector;
+pub(crate) mod bundled_models;
 pub mod dispatch;
 pub mod error;
 pub mod fallback_model;

@@ -301,6 +301,17 @@ pub(crate) fn run() {
         .manage(acoustic_language_detector_install_state)
         .manage(desktop_lifecycle)
         .setup(move |app| {
+            // Import installer-bundled models before anything can want them.
+            // Off the setup thread: the Nemotron copy is ~650 MB, and a first
+            // launch must not stare at a frozen window while it lands. The
+            // download flow stays available behind this, so a build without
+            // bundled resources is byte-for-byte today's behavior.
+            if let Ok(resource_dir) = app.path().resource_dir() {
+                let models_root = crate::stt::model::models_dir();
+                tauri::async_runtime::spawn_blocking(move || {
+                    crate::stt::bundled_models::import_all(&resource_dir, &models_root);
+                });
+            }
             live::shortcut_runtime::install(app, live_shortcuts)?;
             jobs::commands::install_native_import_dispatcher(app)?;
             tray::install(app.handle())?;
