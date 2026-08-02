@@ -130,11 +130,14 @@ export function useSettingsControl({
   const refresh = useCallback(async () => {
     if (!isTauri()) return;
 
+    // The organization server is optional. Its refresh owns its own connection
+    // state and must never prevent the on-device engine, model, language, or
+    // microphone setup from loading.
+    void refreshPortsRef.current.refreshServerState().catch(() => null);
     try {
       const [setup, view] = await Promise.all([
         invoke<SetupStatus>("setup_status"),
         fallbackModelStatus(),
-        refreshPortsRef.current.refreshServerState(),
       ]);
       applySetupStatus(setup);
       applyFallbackModelView(view, {

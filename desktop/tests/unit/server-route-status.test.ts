@@ -41,6 +41,9 @@ describe("server route status", () => {
     expect(serverRoute("access_denied")).toBe("blocked");
     expect(serverRoute("connecting")).toBe("checking");
     expect(serverRoute("retrying")).toBe("checking");
+    expect(serverRouteLabel("sign-in")).toBe("Server sign-in");
+    expect(serverRouteAnnouncement("sign-in")).toContain("does not require");
+    expect(serverRouteAnnouncement("blocked")).toContain("setup remains independent");
   });
 
   // A missing case would fall through to undefined and render an empty badge,

@@ -789,16 +789,17 @@ teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on reviewed
 documentation-only head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68
 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
-The active
+The completed
 [tenant-scoped identity and job authorization plan](../completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
-now governs Phase 7. Phase 7 uses the same phase -> adversarial checkpoint ->
-next-phase cadence.
+governed Phase 7. Phase 7 and its adversarial checkpoint are closed. The focused
+local-first discovery branch is a narrow closure before Phase 8; it does not
+reopen identity scope or authorize enterprise SSO infrastructure.
 
 ## Later-phase queue
 
-### Phase 7 — Identity and ownership
+### Phase 7 — Identity and ownership (merged and checkpoint-closed)
 
-- The active branch replaces fixed ownership in the authenticated profile with
+- The merged implementation replaces fixed ownership in the authenticated profile with
   validated `(tid, oid)` principals, owner-scopes batch/LID access, and enforces
   access revocation and purpose grants through one redacted audit owner.
 - Provider-neutral OIDC discovery/JWKS validation executes behind an Entra
@@ -809,9 +810,10 @@ next-phase cadence.
   The WebSocket listener has no live ASR, and the desktop does not infer the
   private server's separate REST/live ports or claim a production same-origin
   WSS edge.
-- The pinned mock-OIDC flow, final three-agent adversarial closure, exact
-  one-time Phase 7 gate, hosted checks, PR, and merge remain the current
-  delivery boundary.
+- Exact application/runtime candidate `dc635916...` passed the private Phase 7
+  matrix. PR #69 merged as `66d314d7`; its final hosted head is not relabeled as
+  an all-green rollup. The separate adversarial checkpoint and concrete
+  follow-ups are closed.
 
 ### Phase 8 — Meeting evidence
 

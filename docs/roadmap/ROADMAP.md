@@ -111,9 +111,9 @@ stock-NSIS run `30206941391` passed on documentation-only reviewed head
 #68](https://github.com/mcnatg1/yap/pull/68) merged as
 `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 
-Phase 7 follows the same cadence: independently merge the phase, run a separate
-post-phase adversarial/refactor checkpoint, and begin Phase 8 only after that
-checkpoint merges.
+Phase 7 followed the same cadence: the phase merged, then its separate
+post-phase adversarial/refactor checkpoint and concrete follow-ups closed.
+Phase 8 remains next after the focused local-first discovery closure.
 
 ## Last merged phase: tenant-scoped identity and access (Phase 7)
 
@@ -133,35 +133,17 @@ purpose grants and purpose checks are implemented and unit-tested but no route
 or operator entry point calls them, so they do not enforce anything yet. The native lower
 WebSocket handshake is qualified against the separate internal live port. The
 desktop exposes only a narrow in-process token-provider seam; no production
-adapter is selected or approved. There is no live ASR, product endpoint
-discovery, external same-origin WSS/TLS, or HTTP/3 edge.
+adapter is selected or approved. The desktop can offer only the verified fixed
+numeric-loopback HTTP health origin; there is no managed LAN/enterprise or
+live-endpoint discovery, live ASR, external same-origin WSS/TLS, or HTTP/3 edge.
 
-This is implementation progress, not phase completion. Exact head `d4adc832...`
-passed all four admitted private controllers and independent validation of all
-13 private children. Its sole complete matrix passed every Rust test, then
-failed closed because Visual Studio Build Tools retained its signed
-`VCTIP.EXE` diagnostic helper inside the owned Windows Job. The head is
-consumed. The current successor retains
-strict process containment for launched Yap server/desktop runtime checks,
-requires the documented Build Tools optional-diagnostics opt-out through a
-fail-closed registry read rooted through the Windows object manager, and moves
-native compile/link evidence outside the product Job to exact-head fresh
-GitHub-hosted Windows VMs. Connector and required WDIO runtime execution on
-those VMs remains inside a kill-on-close Job and must prove zero active
-processes. Every required hosted closure cell uses its absolute shell chain and
-captures its PowerShell and Git hosts, guard source, Git index, and
-index-independent tracked-content manifest with hashes, then verifies tracked
-state by replaying that admitted guard in memory after project execution.
-Hidden index state, linked tracked ancestors, Linux executable-bit drift,
-mutable workspace code, and a re-resolved `PATH` cannot satisfy the receipt.
-This reflects the observed signed
-`link.exe` → `VCTIP.EXE` behavior after `OptIn=0` and Microsoft's documented
-required-diagnostics exception; it does not weaken product process ownership.
-Exact application/runtime candidate `dc635916...` passed the one private
-candidate matrix. Its reviewed runner-only descendants do not change shipped
-product/runtime or candidate-manifest behavior, so only exact-head hosted
-native/PR closure and merge remain required. Real enterprise Entra policy
-conformance and an approved native adapter remain IT-authorized follow-ups.
+Phase 7 is complete at the repository level. Exact application/runtime
+candidate `dc635916...` passed its private 25-cell matrix and independent receipt
+validation. PR #69 merged as `66d314d7`, although its final hosted head did not
+have an all-green rollup and is not relabeled here. The separate adversarial
+checkpoint closed at `ef6d977`, with concrete follow-ups at `1a6f06e` and
+`589197e`. Real enterprise Entra policy conformance and an approved production
+native provider remain IT-authorized follow-ups rather than Phase 8 work.
 
 ## Accepted later phases
 

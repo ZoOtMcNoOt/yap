@@ -12,6 +12,7 @@ their execution window closes.
 
 Current work:
 
+- [Local-first server discovery and optional authentication](active/2026-08-02-local-first-server-discovery-and-optional-auth.md)
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
 
 Queued work (activate only in roadmap order):

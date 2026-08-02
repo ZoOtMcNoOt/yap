@@ -212,10 +212,11 @@ The server owns provider-neutral OIDC discovery and JWKS retrieval, signature
 verification, bounded key refresh, and Entra-specific issuer, tenant, audience,
 client, scope, and role policy. Its identity repository enforces access state,
 purpose grants and revocation, and a redacted hash-chain audit. The desktop owns
-a narrow native access-token-provider interface, but the production build
-installs no provider and fails closed. No MSAL.NET/WAM helper, browser adapter,
-or production token cache is shipped; the handoff must select and qualify an
-approved adapter before real sign-in can be claimed.
+a narrow native access-token-provider interface and an inbox WAM adapter behind
+explicit opt-in, but release/default operation selects no production provider
+and fails closed. No MSAL.NET, system-browser adapter, or separately managed
+production token cache is shipped; the handoff must select and qualify an
+approved provider before real sign-in can be claimed.
 
 The desktop Settings entry uses the same approved tenant and desktop client IDs
 plus the full delegated scope, for example
@@ -228,8 +229,9 @@ In `entra` mode, protected REST routes and the private live listener admit the
 same authenticated principal and recheck revocation. The executable topology is
 still two loopback origins: REST on `18765` and live WebSocket admission on
 `18766`. The desktop boundary deliberately does not infer the live origin from
-the REST origin. No production same-origin HTTPS/WSS edge or discovery
-mechanism exists, so do not publish `18766` directly or treat this admission
+the REST origin. The fixed-loopback HTTP health offer is not live discovery; no
+production same-origin HTTPS/WSS edge or managed/live discovery mechanism
+exists, so do not publish `18766` directly or treat this admission
 boundary as a promoted live-ASR service.
 
 Before any real-provider test, verify the identity directory is private,

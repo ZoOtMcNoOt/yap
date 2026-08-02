@@ -68,7 +68,7 @@ private storage, immutable model lock, verified model directory, and pool
 initialize successfully do batch/status become true. In those historical
 profiles, a WebSocket runtime, authentication, token validation, diarization,
 persistent supervision, and an external application listener are not present.
-The current Phase 7 branch adds authenticated private live admission on a
+The merged Phase 7 baseline adds authenticated private live admission on a
 separate loopback listener; it does not alter the Phase 3/5 table above or
 create a production application edge.
 
@@ -316,7 +316,7 @@ TLS endpoint, firewall opening, DNS, ZPA publication, service unit, automatic
 alias failover, authenticated owner, or WSS/live transport. See the
 [server-node runbook](../docs/runbooks/yap-server-node-setup.md#loopback-batch-development-profile).
 Use its two foreground launchers rather than reconstructing either environment
-ad hoc. The current Phase 7 identity and live-admission boundary is described
+ad hoc. The merged Phase 7 identity and live-admission boundary is described
 separately below.
 
 This path passed the one-time Phase 5 local/native/server/GB10 gate on exact PR
@@ -325,7 +325,7 @@ head `4771d9be60562fa009ccecbcd3c7111b699883a5` and merged as
 profile, not an authenticated, externally published, persistent production
 service.
 
-## Phase 6 verified ASR catalog (active development)
+## Phase 6 verified ASR catalog (merged baseline)
 
 An active batch runtime now verifies `asr-capabilities.lock.json` only after its
 immutable model artifacts pass their existing size and SHA-256 checks. It then
@@ -364,28 +364,28 @@ routes and private live WebSocket admission use the same authenticated
 principal, and the live boundary rechecks revocation.
 
 The desktop has a narrow native access-token-provider interface with fake
-providers for focused tests. Production installs no provider and fails closed;
-no MSAL.NET/WAM helper, browser adapter, or protected production token cache is
-shipped. The approved adapter, tenant enrollment, and real-provider conformance
-remain IT handoff inputs.
+providers for focused tests and an inbox WAM adapter behind explicit opt-in.
+Release/default operation selects no production provider and fails closed; no
+MSAL.NET, system-browser adapter, or separately managed protected production
+token cache is shipped. The approved provider, tenant enrollment, and
+real-provider conformance remain IT handoff inputs.
 
 The executable private topology still uses separate loopback listeners: REST on
 `127.0.0.1:18765` and the auth-only live listener on `127.0.0.1:18766`. The
-desktop does not infer or discover the live origin from the REST origin. No
-production same-origin HTTPS/WSS edge or discovery mechanism exists, and this
+desktop does not infer or discover the live origin from the REST origin. The
+fixed-loopback HTTP health offer is not live discovery; no production
+same-origin HTTPS/WSS edge or managed/live discovery mechanism exists, and this
 admission boundary does not promote a server live-ASR provider.
 
 The mock issuer image is digest-pinned in
 [`verification/mock-oidc-provider.lock.json`](../verification/mock-oidc-provider.lock.json),
 and
 [`verification/test-mock-oidc-owner-flow.ps1`](../verification/test-mock-oidc-owner-flow.ps1)
-owns the bounded Docker owner flow and public-safe receipt. Current focused
-evidence is 7/7 focused harness tests, including two executable fake-Docker
-lifecycle regressions, and 38/38 workflow/integrated-gate contracts. Docker was
-unavailable for the actual flow locally; the dedicated
-hosted `mock-oidc` job is the executable Docker closure. No exact Phase 7 head
-is frozen, and final three-agent review, the complete gate, first-attempt hosted
-closure, the focused PR, and merge remain open.
+owns the bounded Docker owner flow and public-safe receipt. Exact
+application/runtime candidate `dc635916...` passed the private Phase 7 matrix;
+PR #69 merged as `66d314d7`, and the separate adversarial checkpoint plus
+concrete follow-ups are closed. Its final hosted head is not relabeled as an
+all-green rollup, and none of this evidence proves real-tenant conformance.
 
 See the
 [Entra identity conformance handoff](../docs/runbooks/entra-identity-conformance-handoff.md)

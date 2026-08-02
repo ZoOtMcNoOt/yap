@@ -1,15 +1,17 @@
 # Current Status
 
-**As of:** 2026-07-30
+**As of:** 2026-08-02
 
-**Current work:** none authorized. Phase 7 merged as `66d314d7`, its
-adversarial checkpoint closed at `ef6d977`, and the checkpoint's remaining
-findings closed at `1a6f06e` and `589197e`. Phase 8 is next in roadmap order
-and is not yet authorized on a branch.
+**Current work:** the focused
+[local-first server discovery and optional authentication plan](plans/active/2026-08-02-local-first-server-discovery-and-optional-auth.md)
+is active on `feat/local-first-server-discovery`. Phase 7 merged as `66d314d7`,
+its adversarial checkpoint closed at `ef6d977`, and the checkpoint's remaining
+findings closed at `1a6f06e` and `589197e`. Phase 8 remains next in roadmap
+order and is not being implemented on this branch.
 
-**Merged product baseline:** Checkpoint B merge
-`15f9c8ac00211b9d2f28845d419258ae2c8de8e4` from
-[PR #68](https://github.com/mcnatg1/yap/pull/68).
+**Merged product baseline:** `main` at
+`39463ffd87485f148440b65606cb6dbefa3a8153` through
+[PR #139](https://github.com/mcnatg1/yap/pull/139).
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -26,13 +28,13 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 0: architecture reset | Merged | Thin desktop + private server direction and staged monorepo are accepted. |
 | Phase 1: desktop foundation | Merged | Tray-owned app, capture/timeline/recording durability, native history/playback admission, and imported-job projection seams execute. |
 | Phase 2: local fallback | Merged | Explicit Nemotron INT8 model lifecycle and in-process local live transcription execute; the runtime never silently downloads models. |
-| Phase 3: server boundary | Merged and gated | Machine contracts, loopback health/capabilities, connector state/retry, durable desktop job ledger, canonical app-data migration, stock NSIS, and disposable-Windows lifecycle proof exist. |
+| Phase 3: server boundary | Merged and gated | Machine contracts, loopback health/capabilities, connector state/retry, a fixed-loopback discovery offer that never connects without consent, durable desktop job ledger, canonical app-data migration, stock NSIS, and disposable-Windows lifecycle proof exist. General LAN/enterprise endpoint discovery does not. |
 | Phase 4: private ASR node | Merged and gated | A bounded router/pool and transient isolated Cohere worker ran on GB10 using the pinned Python 3.12 / NVIDIA PyTorch 26.06 stack. This is reference-worker proof, not a production service. |
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
 | Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
-| Phase 7: identity/access | Merged and gated | The [tenant-scoped identity and job authorization plan](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governed the branch. [PR #69](https://github.com/mcnatg1/yap/pull/69) merged as `66d314d7`. Provider-neutral OIDC/Entra token validation, tenant-scoped `(tid, oid)` ownership across jobs, results, REST and WSS, protected readiness, authenticated bounded private WebSocket admission, and the qualified native lower handshake execute. Two things carried by the branch do NOT execute as product behaviour and are gates rather than capabilities: the purpose-grant and revocation layer is reachable only from tests, since no HTTP route or operator entry point calls `RequestAuthorizationRuntime.purpose_authorization`, so `access_disabled` can be set only by editing `identity.sqlite` by hand; and the desktop production token adapter is `provider: None` and fails closed, so only `YAP_AUTH_MODE=development_loopback` works end to end. Real Entra policy conformance remains an IT-owned handoff. |
+| Phase 7: identity/access | Merged and gated | The [tenant-scoped identity and job authorization plan](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governed the branch. [PR #69](https://github.com/mcnatg1/yap/pull/69) merged as `66d314d7`. Provider-neutral OIDC/Entra token validation, tenant-scoped `(tid, oid)` ownership across jobs, results, REST and WSS, protected readiness, authenticated bounded private WebSocket admission, and the qualified native lower handshake execute. Two things carried by the branch do NOT execute as product behaviour and are gates rather than capabilities: the purpose-grant and revocation layer is reachable only from tests, since no HTTP route or operator entry point calls `RequestAuthorizationRuntime.purpose_authorization`, so `access_disabled` can be set only by editing `identity.sqlite` by hand; and the desktop production token manager discovers no provider by default. A WAM adapter exists only behind explicit opt-in and is not approved or selected. In release/default builds, explicit `YAP_AUTH_MODE=development_loopback` is the only end-to-end mode that does not require an IT-provided identity environment; the debug-only demo provider is test/demo evidence, not production SSO. Real Entra policy conformance remains an IT-owned handoff. |
 | Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
@@ -265,11 +267,14 @@ candidate is promoted by this dirty-head result.
   Legacy state remains readable without manufacturing missing history.
 - The development server path binds to numeric loopback. The desktop reaches a
   private node through an explicitly managed SSH forward; Yap does not create
-  or silently fail over that tunnel.
+  or silently fail over that tunnel. The desktop may repeatedly probe only the
+  fixed `http://127.0.0.1:18765/v1/health` origin while no origin is configured,
+  then offer the verified server without connecting or persisting anything.
+  On-device setup and dictation do not wait for that probe or its auth state.
 - The private server validates bounded create/upload/commit requests, persists
   job/chunk/result state, and publishes an immutable result. The merged baseline
-  remains the bounded raw PyTorch/Transformers Cohere reference worker. On the
-  active branch, Cohere defaults to a digest-pinned vLLM candidate behind the
+  remains the bounded raw PyTorch/Transformers Cohere reference worker. The
+  merged Phase 6 implementation defaults Cohere to a digest-pinned vLLM candidate behind the
   same worker contract and a required loopback/API-key boundary; its composed
   candidate-safety lifecycle with resident NeMo passed at exact GB10 candidate
   `a92f338546a2f8bbaded96b04f8987f0ac475c88`. Locked Nemotron Transformers routes
@@ -311,8 +316,9 @@ candidate is promoted by this dirty-head result.
   does not discover that separate endpoint or route audio/transcripts through it.
 - The desktop token path is a Rust-owned in-process provider interface with
   zeroizing token handling, durable account pinning, and session invalidation.
-  It intentionally fails closed because no production native provider adapter
-  has been approved or installed.
+  It intentionally fails closed by default because no production native
+  provider adapter has been approved or selected. The existing WAM adapter is
+  explicit opt-in evidence, not shipped SSO readiness.
 
 The complete owner and trust-boundary map is
 [executable ownership map](architecture/boundaries/EXECUTABLE-OWNERSHIP.md). The
@@ -322,7 +328,8 @@ ownership.
 
 ## What is not claimed
 
-- No live server ASR, product endpoint discovery, external same-origin WSS/TLS
+- No live server ASR, managed LAN/enterprise or live-endpoint discovery,
+  external same-origin WSS/TLS
   application endpoint, HTTP/3 edge, general media conversion, persistent
   supervised multi-user service, or measured multi-worker capacity is shipped.
   Private WebSocket admission and a native lower handshake are not a live
@@ -455,12 +462,14 @@ ownership.
   runner repair `c1d81fc...` is limited to hosted/gate tooling, its contracts,
   and documentation. It changes no shipped client, server, native, model,
   runtime, or candidate-manifest behavior. The one completed private matrix
-  therefore remains authoritative; only exact-head hosted CI, CodeQL,
-  stock-NSIS, PR closure, and merge remain open.
+  therefore remains authoritative for the merged Phase 7 runtime. PR #69 later
+  merged without an all-green final hosted rollup; the separate adversarial
+  checkpoint and its concrete follow-ups are now closed, without retroactively
+  relabeling that hosted result.
   Persistent warm model services, multi-worker and mixed live/batch capacity promotion, production
   supervision/observability, and external deployment remain Phase 10 gates;
   they are not Phase 6 completion criteria.
-- Phase 6 has focused implementation slices on the current branch: a verified
+- The merged Phase 6 implementation includes focused slices: a verified
   runtime may publish a bounded, fingerprinted ASR catalog through a separate
   endpoint and native projection; an origin-bound last-known snapshot explains
   offline state without becoming availability; a versioned Rust-owned primary
@@ -545,7 +554,7 @@ all passed on that exact head. It merged through PR #59 as
 `a80934d844a068110e7f86b30b6e29d35146db57`. The complete public-safe record is
 [executable ownership review verification](evidence/executable-ownership-review/VERIFICATION.md).
 
-## Phase 6 current checked-head evidence and hosted requirement
+## Phase 6 merged checked-head evidence
 
 Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88`
 passed the one-attempt integrated Phase 6 gate on 2026-07-25. The frozen
@@ -664,76 +673,25 @@ base-digest identity, or runtime identity.
 
 The living [decision and evidence queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 preserves the detailed discussion register, open questions, later-phase owners,
-and reviewable sub-tasks. Phase 6 and Checkpoint B are merged. The active
-[tenant-scoped identity and job authorization plan](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
-is the Phase 7 delivery authority. The concise
+and reviewable sub-tasks. Phases 1–7, Checkpoints A/B, and the post-Phase-7
+adversarial checkpoint are merged and closed. The concise
 [integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Closed: the retained-pidfd implementation and documentation completed the
-   exact architecture, Linux-runtime, and assurance review lenses with every
-   P0–P2 finding resolved before commit.
-2. Closed as rejected prequalification evidence: committed/pushed head
-   `9defb4a2202b5743f161dafb40f8fb2bc41b8fde` passed its unaffected focused
-   prechecks, then the connected launcher failed before provider startup because
-   it rejected GB10's stock `/usr/bin/socat -> /usr/bin/socat1` package link.
-3. Closed for the next freeze candidate: canonicalize the selected `socat`
-   command to its absolute regular executable, prove the real root-owned GB10
-   target plus all 14 focused proxy contracts, and obtain GO from the same three
-   review lenses with no P0–P2 finding.
-4. Closed as consumed admission evidence: `c4df39f...` exposed the private
-   mock-OIDC publisher parser, `7f047c6...` exposed redundant canonical
-   language-routing saves retiring the warm model, and `c5d826f...` fixed that
-   runtime no-op and passed all prequalification before its first admitted
-   controller over-constrained the fixed private ancestor mode. No mock-OIDC
-   harness or runtime owner started for the `c5d826f...` failure.
-   `dece426...` corrected that ancestry rule and passed review,
-   prequalification, and admission, but its first admitted mock-OIDC controller
-   failed before the locked `uv sync` command or owner flow because portable
-   PowerShell could not resolve the reviewed `uv` path under non-interactive
-   SSH. Its per-head directory existed, but its receipt remained absent.
-   `63600096...` retained those repairs and passed review, prequalification,
-   admission, every private child, and independent 13-child validation, but its
-   one complete matrix correctly rejected a reparse-tagged installed notice
-   produced by default pnpm hardlink materialization. Preserve it without retry.
-5. Closed as consumed admission evidence: `d4adc832...` used forced
-   non-optimistic copied package imports, passed every fresh private child, and
-   reached `native.tests` in its one complete matrix. Every Rust test passed,
-   but the owned Windows Job retained the Build Tools `vctip.exe` diagnostic
-   helper.
-   Preserve the head without retry or completion.
-6. The approved Microsoft Build Tools optional-diagnostics opt-out is applied
-   and read back on the admission workstation. Require that fail-closed 64-bit
-   registry proof before remote reservation and again in the candidate
-   manifest. Every required CI closure job now disables persisted checkout
-   credentials, explicitly checks out the reviewed head, and brackets project
-   execution with the shared hosted-runner head/state guard. Windows uses an
-   absolute no-space System32 bootstrap for the absolute PowerShell host; Linux
-   launches the absolute PowerShell host directly. Initial admission captures
-   that PowerShell host, the first resolved Git executable, exact guard source,
-   Git index, and index-independent tracked-content manifest with their hashes.
-   Final verification reuses the absolute shell chain, replays the admitted
-   guard bytes in memory, rejects hidden index state, linked tracked ancestors,
-   and Linux executable-bit drift, and reuses the admitted Git identity instead
-   of trusting post-project workspace files or `PATH`. Bind native
-   formatting, Clippy, tests, connector integrations, dependency checks, WDIO
-   build, and required native specs to the exact-head `rust` and `Native WDIO`
-   jobs on clean GitHub-hosted Windows VMs; keep `mock-oidc` on the declared
-   fresh Linux runner. Reject persistent/self-hosted or wrong-OS substitution.
-   Run the same three exact-tree review lenses, then freeze, package,
-   prequalify, and reserve one fresh admission.
-   The user explicitly authorized transient use of the existing GitHub CLI
-   credential because a separate least-privilege status token is unavailable;
-   do not print, persist, or pass it into command cells, and record the
-   broader-scope exception.
-7. Regenerate every private child and run the one-time applicable local/server/
-   target-client/private-server candidate matrix for that exact head.
-8. Update focused PR #69 only after the replacement candidate gate is green,
-   then merge only after first-valid-attempt hosted native CI, remaining CI,
-   CodeQL, and disposable-Windows stock-NSIS closure on that exact head.
-
-Broad Cohere-versus-Tiron comparison remains the Phase 8 model/meeting decision
-point. Phase 7 remains bounded to identity and access before that integrated
-decision; non-blocking optimization is recorded rather than allowed to delay
-the MVP.
+1. Close the focused local-first discovery branch: keep local setup independent
+   of server/auth failure, repeatedly probe only the fixed loopback health
+   origin, preserve explicit origin consent, and keep enterprise sign-in
+   optional.
+2. Run only the applicable desktop/client branch gate once, review the exact
+   diff, open a focused PR, and require green checks on its checked head. This
+   client-only closure does not rerun private provider/model matrices.
+3. Activate the queued
+   [joint speaker-attributed meeting transcription plan](plans/queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
+   as Phase 8 on a separate branch, beginning with its frozen corpus and
+   provenance gate.
+4. Continue Phases 9–10 in documented order and keep the full security scan at
+   the Phase 10 enterprise gate.
+5. Leave Entra registration, production SSO/provider approval, Conditional
+   Access, DNS, certificates, ZPA, firewall, and deployment policy as explicit
+   IT/security handoffs rather than developer-invented infrastructure.

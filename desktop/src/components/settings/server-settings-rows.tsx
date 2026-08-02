@@ -11,9 +11,9 @@ export function ServerSettingsRows({
   return (
     <>
       <SettingsRow
-        detail={server.notice || "HTTPS required outside approved private development."}
+        detail={server.notice || "Optional organization connection. On-device dictation can be set up and used when this is empty, disabled, offline, or awaiting sign-in."}
         error={server.error}
-        label="Server"
+        label="Organization server"
         liveStatus
         value={server.pending ? "Checking" : server.enabled ? "Enabled" : "Disabled"}
       >
@@ -57,8 +57,8 @@ export function ServerSettingsRows({
         </div>
       </SettingsRow>
       <SettingsRow
-        detail="Uses Microsoft Entra through Windows Web Account Manager. Tokens stay outside the Yap renderer and settings files."
-        label="Server sign-in"
+        detail="Optional. Enterprise SSO requires organization-provided Entra registration and an approved native sign-in provider; local dictation never requires these values."
+        label="Organization sign-in"
         liveStatus
         value={server.identity.signedIn
           ? "Signed in"

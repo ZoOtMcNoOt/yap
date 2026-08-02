@@ -24,30 +24,33 @@ application logs.
 
 ## Current executable baseline
 
-The current Phase 7 working tree implements only the application-owned side of
-this handoff:
+The merged Phase 7 baseline implements only the application-owned side of this
+handoff:
 
 - `yap-server` uses a provider-neutral OIDC discovery/JWKS owner with bounded
   metadata, same-origin key discovery, rotation retention, and a fixed
   algorithm allow-list. The Entra profile adds the tenant, issuer, audience,
   delegated-scope, client, role, and `(tid, oid)` policy.
 - The desktop exposes one narrow Rust-owned native access-token-provider
-  interface. Production deliberately installs no provider and fails closed;
-  only fake-provider tests exist. No MSAL.NET/WAM helper, broker cache,
-  system-browser adapter, or production credential integration is shipped.
+  interface. An inbox WAM adapter exists behind explicit
+  `YAP_WAM_TOKEN_PROVIDER=1` opt-in, but no production provider is approved or
+  selected and release/default operation fails closed. No MSAL.NET,
+  system-browser adapter, or separately managed production credential cache is
+  shipped.
 - The SQLite development identity repository enforces access revocation and
   versioned purpose authorization and appends redacted, hash-chained audit
   events. It is not a production database or approved audit sink.
 - Authenticated private live admission is executable and rechecks principal
   access without retaining a token. The current private runtime uses separate
   loopback listeners: REST on `127.0.0.1:18765` and WebSocket live admission on
-  `127.0.0.1:18766`. No production same-origin HTTPS/WSS edge or endpoint
-  discovery contract exists.
+  `127.0.0.1:18766`. Fixed-loopback HTTP health discovery exists, but no
+  production same-origin HTTPS/WSS edge or managed/live endpoint discovery
+  contract exists.
 - The mock provider is pinned by version and manifest digest in
   [`verification/mock-oidc-provider.lock.json`](../../verification/mock-oidc-provider.lock.json).
   Focused executable fake-Docker lifecycle, workflow, and integrated-gate
-  contracts are green. The Docker-backed exact-head flow still belongs to the
-  reviewed `ubuntu-latest` `mock-oidc` hosted closure.
+  contracts retain their recorded evidence. They do not prove a real tenant or
+  approved native sign-in provider.
 
 Exact application-boundary head
 `dc6359162fb16909d38f410cdb75c2729d83972f` passed its complete private
@@ -63,8 +66,9 @@ reserved. Repair `a823b28...` makes owner mutation conditional on an exact SID
 mismatch and retains exact read-back verification. The descendant through
 `c1d81fc...` changes only hosted/gate tooling, its contracts, and
 documentation, so the validated `dc635916...` application/runtime matrix
-remains authoritative. Exact-head hosted evidence, focused PR closure, and
-merge remain open.
+remains authoritative. Phase 7 later merged as `66d314d7`; its adversarial
+checkpoint and concrete follow-ups are closed, without relabeling PR #69's
+final hosted head as all-green.
 
 This developer-owned closure does not authorize or attempt real-provider,
 enterprise-network, certificate, DNS, ZPA, firewall, policy, storage, audit, or

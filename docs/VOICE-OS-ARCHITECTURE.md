@@ -85,7 +85,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | Knowledge base | Future Google OKF Markdown with local SQLite retrieval | Future `yap-knowledge` Git + deterministic compiler + Postgres permissions/relationships + pgvector baseline; optional Neo4j challenger (Phase 9, ADR 0017/0022) |
 | Network | None required for live fallback; server required for official recordings | LAN/VPN to the GB-class server node; future HTTP/3 secure edge with HTTP/2 or HTTP/1.1 fallback |
 
-The **client shell** (`yap-desktop`) is identical in both profiles. Mic capture, track-aware preparation, explicit gaps, bounded sink fan-out, streaming recording, hotkey, overlay UI, local Nemotron fallback, durable imported-job ownership, and connector health/capability/retry state are implemented. The merged Phase 5 path adds strict admission and extraction of already-canonical mono PCM16/16 kHz WAV input, durable loopback HTTP batch upload/drain, cancellation, verified result publication, and History projection; its one-time complete local/native/server/GB10 gate and hosted exact-head checks passed before merge. Phase 7 added provider-neutral OIDC verification with Entra policy, token-derived owner isolation, purpose authorization that is implemented but wired to no caller, authenticated bounded private WebSocket admission on a separate internal port, and a qualified native lower handshake without changing local/offline ownership. The desktop has a narrow native token-provider seam but no approved production adapter. General media decoding/resampling, Opus, live server ASR, product endpoint discovery, external same-origin WSS/TLS/HTTP3, real enterprise identity-policy conformance, persistent service deployment, and external application networking remain deferred. Server unavailability queues or blocks larger recordings instead of silently producing official-looking transcripts from the fallback.
+The **client shell** (`yap-desktop`) is identical in both profiles. Mic capture, track-aware preparation, explicit gaps, bounded sink fan-out, streaming recording, hotkey, overlay UI, local Nemotron fallback, durable imported-job ownership, and connector health/capability/retry state are implemented. The merged Phase 5 path adds strict admission and extraction of already-canonical mono PCM16/16 kHz WAV input, durable loopback HTTP batch upload/drain, cancellation, verified result publication, and History projection; its one-time complete local/native/server/GB10 gate and hosted exact-head checks passed before merge. Phase 7 added provider-neutral OIDC verification with Entra policy, token-derived owner isolation, purpose authorization that is implemented but wired to no caller, authenticated bounded private WebSocket admission on a separate internal port, and a qualified native lower handshake without changing local/offline ownership. The desktop has a narrow native token-provider seam but no approved production adapter. A local-first discovery helper repeatedly probes only the fixed numeric-loopback health origin while no origin is configured, offers a verified server without connecting, and leaves local setup independent of server and auth failures. General media decoding/resampling, Opus, live server ASR, managed LAN/enterprise or live-endpoint discovery, external same-origin WSS/TLS/HTTP3, real enterprise identity-policy conformance, persistent service deployment, and external application networking remain deferred. Server unavailability queues or blocks larger recordings instead of silently producing official-looking transcripts from the fallback.
 
 The on-prem GB-class server node is **org-owned hardware on an org-controlled LAN** — not a public cloud service. The current profile is DGX Spark GB10; a future GB300-class node should be a capacity/profile change, not a product architecture change. This is consistent with the "no cloud STT" principle for regulated/clinical orgs.
 
@@ -189,9 +189,9 @@ health/capability/retry state and, in the Phase 5 development profile, durable
 batch create/upload/commit/status/result/cancel through an explicitly approved
 loopback origin. That gated path connects the Phase 4 router/pool and isolated
 Cohere worker without exposing an application port: Windows reaches server
-loopback only through a manually selected SSH forward. WSS/live, application
-authentication, persistent supervision, and the managed enterprise edge remain
-deferred. The accepted performance topology is provider-specific: Cohere batch
+loopback only through a manually selected SSH forward. Fixed-loopback discovery
+and authenticated REST/private-WebSocket admission exist; live ASR, persistent
+supervision, and the managed enterprise edge remain deferred. The accepted performance topology is provider-specific: Cohere batch
 uses a digest-pinned vLLM candidate, Nemotron keeps a Transformers correctness
 reference and evaluates NeMo for server streaming, SGLang serves later
 agent/LLM workloads, and Rust remains the orchestration target. The vLLM
@@ -696,7 +696,7 @@ Scoped profiles, mutex groups, and state rules: **[ADR 0006](adr/0006-silero-age
 
 ## Runtime orchestration (summary)
 
-**Target state-machine limits** — full decision in [ADR 0006](adr/0006-silero-agents-state-machine.md). The implemented Rust domain owners enforce the local Nemotron lifecycle, project connector health/capabilities/retries, and retain durable imported-job plus normalization/VAD stage attempts. The server owns durable ASR/alignment/result-publication attempts and verified result publication. Imported-file Silero executes; authenticated private WebSocket admission and the native lower handshake exist, while live Silero, live server ASR, product endpoint discovery, the external WSS edge, LLM scheduling, and promoted NeMo/SGLang serving are not wired. The Cohere vLLM and resident NeMo candidates remain behind the existing bounded batch contract:
+**Target state-machine limits** — full decision in [ADR 0006](adr/0006-silero-agents-state-machine.md). The implemented Rust domain owners enforce the local Nemotron lifecycle, project connector health/capabilities/retries, and retain durable imported-job plus normalization/VAD stage attempts. The server owns durable ASR/alignment/result-publication attempts and verified result publication. Imported-file Silero executes; fixed-loopback server discovery, authenticated private WebSocket admission, and the native lower handshake exist, while live Silero, live server ASR, managed LAN/enterprise and live-endpoint discovery, the external WSS edge, LLM scheduling, and promoted NeMo/SGLang serving are not wired. The Cohere vLLM and resident NeMo candidates remain behind the existing bounded batch contract:
 
 | Rule | Limit |
 |------|--------|
@@ -847,7 +847,7 @@ Cohere vLLM candidate, and an implemented resident Nemotron NeMo candidate. Thei
 model-neutral candidate-safety lifecycle passed at exact candidate
 `a92f338546a2f8bbaded96b04f8987f0ac475c88`; neither has been promoted as a
 persistent production service. General media conversion,
-live ASR, product endpoint discovery, approved production token acquisition,
+live ASR, managed LAN/enterprise and live-endpoint discovery, approved production token acquisition,
 persistent supervision, production mixed-load capacity, databases, secure
 transport edge, and the `yap-knowledge` repository below are deferred.
 
@@ -855,7 +855,7 @@ transport edge, and the `yap-knowledge` repository below are deferred.
 yap-desktop (Tauri) — thin client shell
   ├─ Track-aware capture       VAD hints + source manifests + explicit gaps
   ├─ sherpa recognizer         Offline fallback only (Nemotron INT8)
-  └─ Server connector          health/config/retry + loopback batch + qualified private-WS lower seam; [deferred] endpoint discovery/external edge
+  └─ Server connector          health/config/retry + consent-gated fixed-loopback discovery + loopback batch + qualified private-WS lower seam; [deferred] managed discovery/external edge
 
 yap-server (GB-class server node, org LAN/VPN)
   ├─ Private WS admission       [current] authenticated/bounded on separate loopback port; no live ASR
@@ -947,14 +947,13 @@ Solo/local fallback and team/server mode share concepts, but the server path is 
 
 **Capture persistence rule:** current `live-s-...` sessions use one canonical recording contract (`PreparedFrame`, atomic `RevisionTransition`, and exact `Gap`) and are complete only after immutable sidecar/commit publication. Partial artifacts are recoverable/deletable. Pre-release timestamp-era recordings remain untouched and unindexed; no migration adapter or alternate fixture path is planned.
 
-**After the gated Phase 5 batch path:** Phase 7 now implements authenticated
+**After the gated Phase 5 batch path:** Phase 7 implements authenticated
 identity, auth-derived server ownership, unwired purpose authorization,
 bounded private WebSocket admission, and the qualified native lower handshake.
-It does not implement live ASR, endpoint discovery, or an external WSS/TLS edge.
-The bounded pre-roll repair has focused target-client evidence, but final
-documentation-inclusive exact-tree review, private prequalification/admission,
-the one-time replacement candidate matrix, hosted native/PR closure, and merge
-remain pending.
+Its adversarial checkpoint is closed. Later desktop work added a consent-gated
+fixed-loopback health offer without selecting a production auth provider or
+changing local/offline ownership. It does not implement live ASR, managed
+LAN/enterprise or live-endpoint discovery, or an external WSS/TLS edge.
 Phase 10 owns the service-integrated production router,
 authenticated external batch and WSS/live transport, persistent supervised
 model services, warm/multi-worker and mixed live/batch capacity promotion,
@@ -977,19 +976,14 @@ privacy review and ADR.
 
 **Build specs:** [Client state machine](specs/client-state-machine.md) · [Model download UX](specs/model-download-ux.md) · [Local audio preprocessing](specs/local-audio-preprocessing-stack.md) · [Local live fallback](specs/local-live-fallback-sidecar.md) · [Local LLM sidecar](specs/local-llm-sidecar.md) · [Live dictation client](specs/live-dictation-client-ux.md) · [Server tier MVP](specs/server-tier-mvp.md) · [Source-aware diarization](specs/source-aware-diarization.md) · [Testing](specs/testing-strategy.md).
 
-**Next execution order:** Phase 6 and Checkpoint B are merged. Documentation
-reconciliation for the focused-qualified `32cf528...` repair is committed at
-`e019036...`. Obtain final closure from the same three exact-tree reviewers and
-freeze the resulting fresh Phase 7 successor. Run fresh private package,
-prequalification, and admission checks, then consume its complete replacement
-candidate matrix exactly once. Update PR #69 and require first-valid-attempt
-hosted native CI, remaining CI, CodeQL, and stock-NSIS closure before merging
-only the green checked head. Then run the separate post-Phase-7 architecture
-checkpoint before Phase 8 and continue Phases 8–10 on separate branches in
-documented order. Live ASR, product endpoint discovery, external same-origin
-WSS/TLS, real enterprise identity-policy conformance, diarization, and the
-HTTP/3 edge remain gated by their canonical phases. ADR 0021 does not authorize
-UDP exposure from the loopback application boundary.
+**Next execution order:** Phase 7 and its adversarial checkpoint are merged and
+closed. Complete the focused local-first discovery/optional-auth closure without
+pulling in enterprise identity infrastructure, then activate the queued Phase 8
+meeting-evidence plan on its own branch. Continue Phases 9–10 in documented
+order. Live ASR, managed LAN/enterprise and live-endpoint discovery, external
+same-origin WSS/TLS, real enterprise identity-policy conformance, diarization,
+and the HTTP/3 edge remain gated by their canonical phases. ADR 0021 does not
+authorize UDP exposure from the loopback application boundary.
 
 ---
 
@@ -1055,7 +1049,9 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
   complete gate and hosted exact-head checks passed)
 - [x] Authenticated bounded private WebSocket admission and qualified native
   lower handshake
-- [ ] Live ASR, product endpoint discovery, external same-origin WSS/TLS, and
+- [x] Consent-gated fixed-loopback health discovery that never scans the LAN,
+  creates a tunnel, persists an origin, or blocks on-device setup
+- [ ] Live ASR, managed LAN/enterprise or live-endpoint discovery, external same-origin WSS/TLS, and
   production application edge
 
 **Preprocessing and language/timing evidence (Phase 6)**

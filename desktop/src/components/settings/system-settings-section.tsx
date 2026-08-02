@@ -19,7 +19,6 @@ import {
 import type { LocalComputeTargetView } from "@/lib/setup-model";
 
 export function SystemSettingsSection({
-  advancedDefaultOpen = false,
   busy,
   fallbackLifecycle,
   fallbackLocked,
@@ -31,7 +30,6 @@ export function SystemSettingsSection({
   sileroVad,
   languageDetector,
 }: {
-  advancedDefaultOpen?: boolean;
   busy: boolean;
   fallbackLifecycle: FallbackLifecycleProjection;
   fallbackLocked: boolean;
@@ -100,47 +98,17 @@ export function SystemSettingsSection({
         ? "The language detector failed size or hash verification. Repair it before automatic switching can run."
         : "Optional language detector: import the verified detector model file explicitly. Yap never downloads it during startup or capture.";
 
-  // A lifecycle that needs attention must never hide behind a closed
-  // disclosure: broken models are exactly what the user opened Settings for.
+  // Optional auxiliary models that need attention must not hide behind a
+  // closed disclosure. The primary on-device model is outside Advanced.
   const advancedNeedsAttention =
-    advancedDefaultOpen ||
     languageDetector.view?.status === "corrupted" ||
     sileroVad.view?.status === "corrupted";
 
   return (
     <SettingsGroup>
-      <ServerSettingsRows server={server} />
-      <AdvancedSettings defaultOpen={advancedNeedsAttention}>
       <SettingsRow
-        detail={liveActive ? "Stop live before changing compute." : "Local live uses the CPU runtime. Server owns GPU routing."}
-        label="Compute"
-        value={selectedComputeTarget?.label ?? "Auto"}
-      >
-        <Label className="sr-only" id={computeLabelId}>
-          Compute
-        </Label>
-        <Select
-          disabled={busy || fallbackLocked}
-          onValueChange={onSetLocalComputeTarget}
-          value={selectedComputeTarget?.id ?? "auto"}
-        >
-          <SelectTrigger aria-labelledby={computeLabelId} className="w-full max-w-[360px]">
-            <SelectValue placeholder="Auto" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {localComputeTargets.map((target) => (
-                <SelectItem key={target.id} value={target.id}>
-                  {target.label}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </SettingsRow>
-      <SettingsRow
-        detail={fallbackLifecycle.detail}
-        label="Local fallback"
+        detail={`${fallbackLifecycle.detail ?? ""} Local dictation does not require a server or account.`.trim()}
+        label="On-device dictation"
         value={fallbackLifecycle.value}
       >
         <div className="flex flex-wrap justify-end gap-2">
@@ -166,52 +134,63 @@ export function SystemSettingsSection({
           ))}
         </div>
       </SettingsRow>
-      <SettingsRow
-        detail={liveActive ? "Stop live before changing language support." : lidDetail}
-        label="Automatic language switching"
-        value={lidValue}
-      >
-        <div className="flex flex-wrap justify-end gap-2">
-          {lidImporting ? (
-            <Button
-              onClick={() => void languageDetector.cancelInstall()}
-              type="button"
-              variant="secondary"
-            >
-              Cancel
-            </Button>
-          ) : languageDetector.view?.status === "ready" ? (
-            <>
+      <AdvancedSettings defaultOpen={advancedNeedsAttention}>
+        <ServerSettingsRows server={server} />
+        <SettingsRow
+          detail={
+            liveActive
+              ? "Stop live before changing compute."
+              : "On-device live dictation uses the CPU runtime. Organization servers own GPU routing."
+          }
+          label="Compute"
+          value={selectedComputeTarget?.label ?? "Auto"}
+        >
+          <Label className="sr-only" id={computeLabelId}>
+            Compute
+          </Label>
+          <Select
+            disabled={busy || fallbackLocked}
+            onValueChange={onSetLocalComputeTarget}
+            value={selectedComputeTarget?.id ?? "auto"}
+          >
+            <SelectTrigger aria-labelledby={computeLabelId} className="w-full max-w-[360px]">
+              <SelectValue placeholder="Auto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {localComputeTargets.map((target) => (
+                  <SelectItem key={target.id} value={target.id}>
+                    {target.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </SettingsRow>
+        <SettingsRow
+          detail={liveActive ? "Stop live before changing language support." : lidDetail}
+          label="Automatic language switching"
+          value={lidValue}
+        >
+          <div className="flex flex-wrap justify-end gap-2">
+            {lidImporting ? (
               <Button
-                disabled={liveActive || languageDetector.action !== null}
-                onClick={() => void languageDetector.verify()}
+                onClick={() => void languageDetector.cancelInstall()}
                 type="button"
                 variant="secondary"
               >
-                Verify
+                Cancel
               </Button>
-              <Button
-                disabled={liveActive || languageDetector.action !== null}
-                onClick={() => void languageDetector.remove()}
-                type="button"
-                variant="secondary"
-              >
-                Remove
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                disabled={
-                  liveActive || languageDetector.action !== null ||
-                    languageDetector.view === null
-                }
-                onClick={() => void languageDetector.importModel()}
-                type="button"
-              >
-                {languageDetector.view?.status === "corrupted" ? "Re-import" : "Import"}
-              </Button>
-              {languageDetector.view?.status === "corrupted" ? (
+            ) : languageDetector.view?.status === "ready" ? (
+              <>
+                <Button
+                  disabled={liveActive || languageDetector.action !== null}
+                  onClick={() => void languageDetector.verify()}
+                  type="button"
+                  variant="secondary"
+                >
+                  Verify
+                </Button>
                 <Button
                   disabled={liveActive || languageDetector.action !== null}
                   onClick={() => void languageDetector.remove()}
@@ -220,46 +199,53 @@ export function SystemSettingsSection({
                 >
                   Remove
                 </Button>
-              ) : null}
-            </>
-          )}
-        </div>
-      </SettingsRow>
-      <SettingsRow detail={vadDetail} label="Speech detection" value={vadValue}>
-        <div className="flex flex-wrap justify-end gap-2">
-          {vadInstalling ? (
-            <Button onClick={() => void sileroVad.cancelInstall()} type="button" variant="secondary">
-              Cancel
-            </Button>
-          ) : sileroVad.view?.status === "ready" ? (
-            <>
+              </>
+            ) : (
+              <>
+                <Button
+                  disabled={
+                    liveActive || languageDetector.action !== null ||
+                      languageDetector.view === null
+                  }
+                  onClick={() => void languageDetector.importModel()}
+                  type="button"
+                >
+                  {languageDetector.view?.status === "corrupted" ? "Re-import" : "Import"}
+                </Button>
+                {languageDetector.view?.status === "corrupted" ? (
+                  <Button
+                    disabled={liveActive || languageDetector.action !== null}
+                    onClick={() => void languageDetector.remove()}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </>
+            )}
+          </div>
+        </SettingsRow>
+        <SettingsRow detail={vadDetail} label="Speech detection" value={vadValue}>
+          <div className="flex flex-wrap justify-end gap-2">
+            {vadInstalling ? (
               <Button
-                disabled={liveActive || sileroVad.action !== null}
-                onClick={() => void sileroVad.verify()}
+                onClick={() => void sileroVad.cancelInstall()}
                 type="button"
                 variant="secondary"
               >
-                Verify
+                Cancel
               </Button>
-              <Button
-                disabled={liveActive || sileroVad.action !== null}
-                onClick={() => void sileroVad.remove()}
-                type="button"
-                variant="secondary"
-              >
-                Remove
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                disabled={liveActive || sileroVad.action !== null || sileroVad.view === null}
-                onClick={() => void sileroVad.install()}
-                type="button"
-              >
-                {sileroVad.view?.status === "corrupted" ? "Repair" : "Install"}
-              </Button>
-              {sileroVad.view?.status === "corrupted" ? (
+            ) : sileroVad.view?.status === "ready" ? (
+              <>
+                <Button
+                  disabled={liveActive || sileroVad.action !== null}
+                  onClick={() => void sileroVad.verify()}
+                  type="button"
+                  variant="secondary"
+                >
+                  Verify
+                </Button>
                 <Button
                   disabled={liveActive || sileroVad.action !== null}
                   onClick={() => void sileroVad.remove()}
@@ -268,11 +254,30 @@ export function SystemSettingsSection({
                 >
                   Remove
                 </Button>
-              ) : null}
-            </>
-          )}
-        </div>
-      </SettingsRow>
+              </>
+            ) : (
+              <>
+                <Button
+                  disabled={liveActive || sileroVad.action !== null || sileroVad.view === null}
+                  onClick={() => void sileroVad.install()}
+                  type="button"
+                >
+                  {sileroVad.view?.status === "corrupted" ? "Repair" : "Install"}
+                </Button>
+                {sileroVad.view?.status === "corrupted" ? (
+                  <Button
+                    disabled={liveActive || sileroVad.action !== null}
+                    onClick={() => void sileroVad.remove()}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </>
+            )}
+          </div>
+        </SettingsRow>
       </AdvancedSettings>
     </SettingsGroup>
   );

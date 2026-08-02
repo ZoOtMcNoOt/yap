@@ -301,8 +301,9 @@ durable access disable/restore, purpose enforcement, redacted audit behavior,
 cross-owner isolation, restart behavior, protected readiness, and desktop
 connector fencing. Authenticated private WebSocket admission shares the REST
 principal policy and rechecks revocation. The executable private topology still
-uses separate loopback listeners—REST `18765` and live `18766`; no production
-same-origin HTTPS/WSS edge or discovery mechanism exists. The private GB10 and
+uses separate loopback listeners—REST `18765` and live `18766`; fixed-loopback
+HTTP health discovery exists, but no production same-origin HTTPS/WSS edge or
+managed/live discovery mechanism exists. The private GB10 and
 connected-server receipts continue to qualify the physical ASR lifecycle
 through the development access mode.
 
@@ -312,10 +313,11 @@ DNS, ZPA policy, and production identity-store operations remain explicit IT
 inputs. Do not substitute developer-created infrastructure or claim that this
 gate proves those controls.
 
-The desktop currently has a narrow native access-token-provider interface but
-production installs no provider and fails closed. No MSAL.NET/WAM helper or
-protected production cache is shipped. Adapter selection, tenant enrollment,
-and real-provider evidence are governed by the
+The desktop has a narrow native access-token-provider interface and an inbox
+WAM adapter behind explicit opt-in, but release/default operation selects no
+production provider and fails closed. No MSAL.NET, system-browser adapter, or
+separately managed production cache is shipped. Provider selection, tenant
+enrollment, and real-provider evidence are governed by the
 [Entra identity conformance handoff](entra-identity-conformance-handoff.md).
 
 Private audio, transcript text, host paths, raw metrics, process ledgers,
@@ -557,8 +559,8 @@ zero-owner checks pass; otherwise it is a consumed failure.
 Start from the exact clean reviewed candidate. Push that exact candidate branch
 without opening the pull request so GitHub can address the commit. A dedicated
 `GH_TOKEN` limited to commit-status read/write remains the preferred admission
-credential. For the current Phase 7 successor only, the user explicitly
-authorized transient use of the existing authenticated GitHub CLI credential
+credential. For the recorded Phase 7 successor admission only, the user
+explicitly authorized transient use of the existing authenticated GitHub CLI credential
 because a separate status token is unavailable. Resolve it without printing,
 inject it only into the admission process, never persist it, and record that
 broader-scope exception in the private admission record. The runner must still
@@ -839,7 +841,7 @@ public-safe evidence; any other change requires a new candidate gate.
 
 Candidate completion has already consumed and deleted the raw attempt
 capability. For hosted closure, a separate credential limited to commit-status
-read and Actions read remains preferred. Under the explicit current-successor
+read and Actions read remains preferred. Under the explicit recorded-admission
 exception above, the existing authenticated GitHub CLI credential may instead
 be resolved and injected transiently; never print or persist it, and record the
 broader scope. Hosted collection pins `github.com/mcnatg1/yap`; it does not use

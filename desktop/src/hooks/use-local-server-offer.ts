@@ -13,6 +13,10 @@ import {
 // Dismissal is per-origin and durable: declining an offer once must not turn
 // into a nag on every launch. The settings sheet remains the way back in.
 const DISMISSED_KEY = "yap.localServerOffer.dismissed.v1";
+// A tunnel or local server often comes up after the desktop. Retry one bounded
+// loopback-only health probe at a time so discovery does not depend on launch
+// order and can never turn into LAN scanning.
+const DISCOVERY_RETRY_MS = 3_000;
 
 export function useLocalServerOffer({ serverState }: { serverState: ServerConnectionState }) {
   const [offer, setOffer] = useState<LocalServerOffer | null>(null);
@@ -28,20 +32,82 @@ export function useLocalServerOffer({ serverState }: { serverState: ServerConnec
       setOffer(null);
       return;
     }
+    // This versioned key can only contain the one fixed origin this hook
+    // offers. A durable decline is terminal until the user configures the
+    // server manually (or a future discovery origin deliberately bumps it).
+    if (localStorage.getItem(DISMISSED_KEY)) {
+      setOffer(null);
+      return;
+    }
     let cancelled = false;
-    void probeLocalServer()
-      .then((found) => {
-        if (cancelled || !found) return;
-        if (localStorage.getItem(DISMISSED_KEY) === found.baseUrl) return;
+    let retryTimer: number | undefined;
+    let probing = false;
+
+    const scheduleRetry = () => {
+      if (cancelled || retryTimer !== undefined) return;
+      retryTimer = window.setTimeout(() => {
+        retryTimer = undefined;
+        void runProbe();
+      }, DISCOVERY_RETRY_MS);
+    };
+
+    const runProbe = async () => {
+      if (cancelled || probing) return;
+      probing = true;
+      try {
+        // `disabled` alone is ambiguous: it can mean the untouched local-only
+        // default or an intentionally retained but disabled server URL. Avoid
+        // polling forever when an origin is already configured.
+        const current = await serverSettings();
+        if (cancelled) return;
+        if (current.baseUrl) {
+          cancelled = true;
+          setOffer(null);
+          return;
+        }
+        const found = await probeLocalServer();
+        if (cancelled) return;
+        if (!found) {
+          scheduleRetry();
+          return;
+        }
+        // A durable decline ends discovery for this fixed origin. The user can
+        // still configure it manually in Advanced settings.
+        if (localStorage.getItem(DISMISSED_KEY) === found.baseUrl) {
+          cancelled = true;
+          return;
+        }
+        // A verified offer is the terminal discovery result for this mount.
+        // Do not keep polling behind a visible or subsequently dismissed offer.
+        cancelled = true;
         setOffer(found);
-      })
-      .catch(() => {
-        // Discovery is best-effort: an unreachable probe is simply no offer.
-      });
+      } catch {
+        // Discovery is best-effort: an unreachable probe stays local and
+        // retries later without surfacing an application error.
+        scheduleRetry();
+      } finally {
+        probing = false;
+      }
+    };
+
+    const retryNow = () => {
+      if (retryTimer !== undefined) {
+        window.clearTimeout(retryTimer);
+        retryTimer = undefined;
+      }
+      void runProbe();
+    };
+
+    void runProbe();
+    window.addEventListener("focus", retryNow);
+    window.addEventListener("online", retryNow);
     return () => {
       cancelled = true;
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+      window.removeEventListener("focus", retryNow);
+      window.removeEventListener("online", retryNow);
     };
-  }, [unconfigured]);
+  }, [serverState, unconfigured]);
 
   const connect = useCallback(async () => {
     if (!offer || busy) return;

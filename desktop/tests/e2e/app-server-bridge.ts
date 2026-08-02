@@ -3,17 +3,41 @@ import type { Page } from "@playwright/test";
 
 export async function installQueuedServerBridge(
   page: Page,
-  serverState: "not_set" | "offline",
-  options: { localServerOffer?: boolean; primaryLanguageUnconfirmed?: boolean } = {},
+  serverState: "disabled" | "not_set" | "offline",
+  options: {
+    configuredServerUrl?: string;
+    fallbackVerifyFails?: boolean;
+    localModelStatus?: "missing" | "ready";
+    localServerOffer?: boolean;
+    primaryLanguageUnconfirmed?: boolean;
+    serverRefreshNeverSettles?: boolean;
+  } = {},
 ) {
-  await page.addInitScript(({ state, localServerOffer, primaryLanguageUnconfirmed }) => {
+  await page.addInitScript(({
+    configuredServerUrl,
+    fallbackVerifyFails,
+    localModelStatus,
+    state,
+    localServerOffer,
+    primaryLanguageUnconfirmed,
+    serverRefreshNeverSettles,
+  }) => {
     Object.defineProperty(globalThis, "isTauri", { value: true });
     const calls: string[] = [];
     const languageCalls: Array<{ args: unknown; command: string }> = [];
     const serverCalls: Array<{ args: unknown; command: string }> = [];
     const shortcutCalls: Array<{ args: unknown; command: string }> = [];
+    let localServerAvailable = localServerOffer;
     Object.assign(globalThis, {
-      __queuedServerBoundaryTest: { calls, languageCalls, serverCalls, shortcutCalls },
+      __queuedServerBoundaryTest: {
+        calls,
+        languageCalls,
+        serverCalls,
+        setLocalServerAvailable: (available: boolean) => {
+          localServerAvailable = available;
+        },
+        shortcutCalls,
+      },
     });
     let callbackId = 0;
     let serverSnapshot = {
@@ -26,7 +50,7 @@ export async function installQueuedServerBridge(
     };
     let serverSettingsState = {
       authentication: null,
-      baseUrl: state === "offline" ? "https://server.example" : null,
+      baseUrl: configuredServerUrl ?? (state === "offline" ? "https://server.example" : null),
       enabled: state === "offline",
       schemaVersion: 2,
     };
@@ -141,19 +165,22 @@ export async function installQueuedServerBridge(
           }
           if (command === "setup_status") return {
             engineBinaryStatus: "ready",
-            engineReady: true,
-            engineStatus: "Ready",
+            engineReady: localModelStatus === "ready",
+            engineStatus: localModelStatus === "ready" ? "Ready" : "Setup",
             fallbackEnabled: true,
             model: "test",
-            modelInstalled: true,
+            modelInstalled: localModelStatus === "ready",
             root: "C:\\Yap",
           };
           if (command === "fallback_model_status") return {
             id: "nemotron-3.5-asr-streaming-0.6b-1120ms-int8",
             label: "Nemotron",
             modelsDir: "C:\\Yap\\models",
-            status: "ready",
+            status: localModelStatus,
           };
+          if (command === "fallback_model_verify" && fallbackVerifyFails) {
+            throw new Error("simulated local verification failure");
+          }
           if (command === "primary_language_status") return primaryLanguageStatus;
           if (command === "confirm_primary_language") {
             languageCalls.push({ args, command });
@@ -170,11 +197,14 @@ export async function installQueuedServerBridge(
             return ["en-US", "en-GB", "de-DE", "fr-FR", "es-ES"];
           }
           if (command === "live_language_routing_status") return liveLanguageRoutingStatus;
+          if (command === "refresh_server_connection" && serverRefreshNeverSettles) {
+            return new Promise(() => undefined);
+          }
           if (command === "server_connection_status" || command === "refresh_server_connection") {
             return serverSnapshot;
           }
           if (command === "probe_local_server") {
-            return localServerOffer && serverSettingsState.baseUrl === null
+            return localServerAvailable && serverSettingsState.baseUrl === null
               ? { authRequired: false, baseUrl: "http://127.0.0.1:18765" }
               : null;
           }
@@ -234,8 +264,12 @@ export async function installQueuedServerBridge(
       },
     });
   }, {
+    configuredServerUrl: options.configuredServerUrl,
+    fallbackVerifyFails: options.fallbackVerifyFails ?? false,
+    localModelStatus: options.localModelStatus ?? "ready",
     localServerOffer: options.localServerOffer ?? false,
     primaryLanguageUnconfirmed: options.primaryLanguageUnconfirmed ?? false,
+    serverRefreshNeverSettles: options.serverRefreshNeverSettles ?? false,
     state: serverState,
   });
 }

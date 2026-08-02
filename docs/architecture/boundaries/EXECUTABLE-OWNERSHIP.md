@@ -240,19 +240,23 @@ owner's state but may not recreate its transition logic.
   regular-file I/O before schema validation. The capability file is an offline
   last-known projection, never current readiness or live server authority.
 - **Transient state:** in-flight health request, retry schedule, generation,
-  latest capability snapshot, zeroizing access token, and hashed selected-account
-  binding.
+  latest capability snapshot, one frontend-owned fixed-loopback discovery
+  timer/probe, zeroizing access token, and hashed selected-account binding.
 - **Trust boundary:** untrusted origin/configuration, bounded HTTP response, and
   the narrow native provider return contract. No production provider
   implementation is selected. Raw tokens and raw provider account IDs never
   enter React or ordinary app-data persistence.
 - **Dependencies/events:** core policy -> health/batch clients -> connector
-  state -> typed frontend events.
+  state -> typed frontend events. While no origin is configured, the frontend
+  may ask the native command to probe only `http://127.0.0.1:18765`; a verified
+  Yap health response becomes an offer, never an automatic connection. Saving
+  still crosses the ordinary origin-confirmation interface.
 - **Failure/recovery:** stale generation responses are discarded; typed offline
   reasons schedule bounded retry. Oversized, linked/reparse, or future-schema
   configuration fails without replacing the existing entry. Missing/expired
   identity, sign-out, reconfiguration, and account switching fail before
-  authenticated remote dispatch; local/offline behavior remains available.
+  authenticated remote dispatch; optional server refresh/probe failures cannot
+  fail on-device setup, and local/offline behavior remains available.
 - **Publication serialization:** one settings-save lease spans normalization,
   origin confirmation, durable settings/approval publication, generation
   invalidation, and applied-state projection.
@@ -280,7 +284,8 @@ owner's state but may not recreate its transition logic.
 - **Dependencies/events:** the current server starts the authenticated live
   listener at `127.0.0.1:18766` by default, separate from HTTP port `18765`.
   Focused parity evidence qualifies the native lower handshake against the
-  two-port topology. Product endpoint discovery and wiring to that separate port
+  two-port topology. The fixed-loopback offer discovers only the HTTP health
+  origin; managed/live endpoint discovery and wiring to the separate live port
   do not exist.
 - **Failure/recovery:** bad origin, missing/invalid authorization, wrong
   subprotocol, overflow, replay, expiry, revocation, or account-generation
@@ -397,7 +402,7 @@ owner's state but may not recreate its transition logic.
   fixed shortcut/native-import dispatchers for process-lifetime event work; and
   `server/pools/container_runtime.py` plus `batch_asr_worker.py` for the
   transient reference worker. The two provider-specific foreground launchers
-  own normal resident-container teardown. The Phase 7 successor's
+  own normal resident-container teardown. The integrated identity/access gate's
   `owned-process-supervisor.py` owns initial launcher, sampler, and proxy child
   identity, release, signalling, and exact reap; the lifecycle gate owns their
   sequential qualification run, temporary internal bridge, and abnormal-exit
