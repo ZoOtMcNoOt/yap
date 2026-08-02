@@ -24,10 +24,10 @@ for (const scenario of [
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     const settings = page.getByRole("dialog", { name: "Settings" });
     await settings.getByRole("button", { name: "System", exact: true }).click();
-    // Model lifecycles are Advanced settings: absent until disclosed.
-    await expect(settings.getByText("Local fallback", { exact: true })).toHaveCount(0);
-    await settings.getByRole("button", { name: "Advanced", exact: true }).click();
-    await expect(settings.getByText("Local fallback", { exact: true }).locator("..")).toContainText("Ready");
+    // On-device readiness stays visible even though imported meetings remain
+    // queued for their organization-owned server route.
+    await expect(settings.getByText("On-device dictation", { exact: true }).locator(".."))
+      .toContainText("Ready");
 
     const calls = await page.evaluate(() =>
       (globalThis as unknown as { __queuedServerBoundaryTest: { calls: string[] } })

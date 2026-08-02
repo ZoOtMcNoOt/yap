@@ -29,9 +29,15 @@ complexity.
 
 ## Current position
 
-- Phases 1–6 and Architecture Checkpoint A are merged at baseline
-  `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
-- Checkpoint B is active on `chore/codebase-maintainability-review`.
+- Phases 1–7, Architecture Checkpoints A/B, and the post-Phase-7 adversarial
+  checkpoint are merged and closed. The parent `main` baseline for this focused
+  closure is `39463ffd87485f148440b65606cb6dbefa3a8153`.
+- The narrow local-first server-discovery closure keeps on-device setup
+  independent from optional server/auth state and makes the existing
+  fixed-loopback offer insensitive to desktop/server launch order. It does not
+  authorize Phase 8 or enterprise identity infrastructure.
+- Phase 8 meeting evidence remains the next queued roadmap phase after this
+  focused closure.
 - Historical Checkpoint B candidate
   `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
   `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence

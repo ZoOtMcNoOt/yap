@@ -1,7 +1,7 @@
 # ADR 0016: Authentication and voice identity bridge (Entra policy over OIDC)
 
 **Date:** 2026-07-01
-**Status:** Accepted (Phase 7 implementation active); voice-profile behavior amended by [ADR 0020](0020-meeting-capture-diarization-authority.md)
+**Status:** Accepted (Phase 7 merged and adversarial checkpoint closed); voice-profile behavior amended by [ADR 0020](0020-meeting-capture-diarization-authority.md)
 **Builds on:** [ADR 0014](0014-server-tier-compute-topology.md) (server tier; auth gates the server connector)
 **Related to:** [ADR 0020](0020-meeting-capture-diarization-authority.md) (diarization authority, contact boundary, and profile-update rules), [ADR 0017](0017-knowledge-base-compiler.md) (authenticated identity drives KB permission compilation)
 **Enterprise handoff:** [Entra identity conformance handoff](../runbooks/entra-identity-conformance-handoff.md)
@@ -18,12 +18,13 @@
 > they are not Phase 7 completion claims. Phase 7 uses a provider-neutral
 > identity-repository contract with a SQLite executable development adapter.
 > Production database topology and approval remain an explicit handoff.
-> The Windows client currently exposes one narrow Rust-owned native
-> access-token-provider interface and fails closed because no production
-> provider is installed. Fake-provider tests exercise acquisition, account
-> binding, expiry, sign-out, and connector fencing, but no MSAL.NET, WAM,
-> system-browser, or protected-cache adapter is shipped or approved.
-> Production adapter selection and real-provider conformance remain the
+> The Windows client exposes one narrow Rust-owned native access-token-provider
+> interface. A WAM adapter is compiled behind explicit
+> `YAP_WAM_TOKEN_PROVIDER=1` opt-in, but it is neither approved nor selected by
+> default; release/default operation therefore fails closed. Fake-provider tests
+> exercise acquisition, account binding, expiry, sign-out, and connector
+> fencing. No MSAL.NET, system-browser, or separately managed protected-cache
+> adapter is shipped. Production provider selection and real-provider conformance remain the
 > enterprise handoff. Pre-Phase-7 remote work remains bound only to the
 > development-loopback authority and is never claimed by the first signer.
 
@@ -267,6 +268,12 @@ ordinary app-data state.
 The production manager discovers no provider by default and returns an
 unavailable/fail-closed state.
 
+Provider availability is not a desktop-startup dependency. On-device engine,
+model, language, microphone, and live-dictation setup load independently from
+server health and token acquisition. A missing, offline, denied, or
+sign-in-required organization server can affect only server-owned routes; it
+cannot turn ready local dictation into a failed setup state.
+
 A WAM adapter now exists behind that interface and is **not selected**. It
 performs silent acquisition and interactive sign-in through
 `WebAuthenticationCoreManager`, parenting the broker dialog with
@@ -326,8 +333,10 @@ legal/provenance review, and real-provider evidence.
 - [x] Protected readiness probe, tenant-specific desktop authority, and
       quarantine of ambiguous pre-repair authenticated bindings
 - [x] Exactly-three antagonistic review and same-three read-only closure
-- [ ] Exact-head full matrix, first-attempt hosted closure, focused PR, and
-      reviewed-green merge
+- [x] Complete private exact-candidate matrix with documented reuse only for
+      later runner/tooling-only changes
+- [x] Focused PR merge followed by the separate adversarial checkpoint and
+      explicit closure of its concrete findings
 
 The IT-approved production native provider, protected cache, packaging, and
 real-provider conformance are enterprise handoffs rather than
@@ -335,16 +344,16 @@ developer-controlled Phase 7 completion criteria. A production same-origin
 HTTPS/WSS edge or approved live-endpoint discovery contract remains a later
 transport/deployment decision, principally Phase 10.
 
-The current working tree has focused-green mock evidence: 8/8 focused harness
-tests, including fake-Docker lifecycle plus bounded loopback forwarding,
-overload, exact-readiness, and teardown regressions, and 38/38 focused
-workflow/integrated-gate contract tests. A Docker 29 ARM64 diagnostic proves
-the Linux internal-bridge proxy topology while preserving the internal
-network; it is not an exact-head owner-flow receipt. The complete matrix,
-admitted mock receipt, hosted first-attempt evidence, PR, and merge remain
-open. These checks do not prove a real enterprise tenant login,
-Conditional Access, MFA, WAM policy conformance, legal distribution review, or
-production storage and deployment approval.
+Phase 7 merged through PR #69 as `66d314d7` after the private matrix bound to
+exact application/runtime candidate `dc635916...`. PR #69's final hosted head
+did not have an all-green hosted rollup, so it is not represented here as a
+green-exact-head merge. The separate post-Phase-7 adversarial checkpoint closed
+at `ef6d977`; concrete follow-up findings closed at `1a6f06e` and `589197e`,
+and the phase plan/status reconciliation closed at `af76491`. Those later
+checked repairs do not retroactively relabel PR #69's hosted result. None of
+this evidence proves a real enterprise tenant login, Conditional Access, MFA,
+WAM policy conformance, legal distribution review, or production storage and
+deployment approval.
 
 Phase 8 owns the enrollment UI, profile records, matching, and voice-profile
 deletion. Phase 9 owns KB permission compilation and its Postgres/pgvector

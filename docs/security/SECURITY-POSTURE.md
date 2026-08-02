@@ -142,9 +142,9 @@ not provide:
 - production identity storage, encryption/keys, backup/deletion, audit
   retention/export, production administrator-role assignment, or legal/privacy
   approval;
-- live ASR over the private admission seam, product endpoint discovery, an
-  external same-origin WSS/TLS endpoint, HTTP/3, enterprise certificate, or
-  internal DNS;
+- live ASR over the private admission seam, managed LAN/enterprise or
+  live-endpoint discovery, an external same-origin WSS/TLS endpoint, HTTP/3,
+  enterprise certificate, or internal DNS;
 - an IT-approved firewall policy or ZPA application segment;
 - persistent production service supervision, backup/restore, disaster recovery,
   monitoring/SIEM integration, or measured multi-user capacity; or
@@ -154,16 +154,12 @@ These are accepted Phase 7/10 and IT/security/network handoffs in the
 [roadmap](../roadmap/ROADMAP.md). Developer-owned infrastructure must not be
 described as satisfying them.
 
-Phase 7 retained-pidfd head
-`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` resolved the P0–P2 findings from
-its three-agent exact-tree review, including fail-closed recovery for an
-interrupted Docker create with no immutable ID, but connected prequalification
-rejected it before admission because its executable guard refused the stock
-GB10 `socat` package link. The canonical-path successor passes focused local and
-real-host proof, and all three lenses returned GO with no P0–P2 finding. Fresh
-exact-head private-controller prequalification, the full phase gate, hosted PR
-closure, and merge are still open. Focused green evidence is not release or
-production authorization.
+Phase 7 merged as `66d314d7` after exact application/runtime candidate
+`dc635916...` passed its private 25-cell matrix and independent receipt
+validation. PR #69's final hosted head did not have an all-green rollup and is
+not relabeled here. The separate adversarial checkpoint and concrete follow-ups
+are closed. None of that is real-tenant, production-SSO, network, or deployment
+authorization.
 
 ## Security review and disclosure handling
 

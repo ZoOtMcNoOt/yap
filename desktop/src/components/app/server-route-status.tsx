@@ -40,9 +40,9 @@ export function serverRouteLabel(route: ServerRoute): string {
     case "server":
       return "Org server";
     case "sign-in":
-      return "Sign in";
+      return "Server sign-in";
     case "blocked":
-      return "Access denied";
+      return "Server access denied";
     case "checking":
       return "Connecting";
     case "local":
@@ -57,9 +57,9 @@ export function serverRouteAnnouncement(route: ServerRoute): string {
     case "server":
       return "Connected to the org server.";
     case "sign-in":
-      return "Sign in required to use the org server.";
+      return "On-device dictation does not require the organization server. Sign in to use server features.";
     case "blocked":
-      return "Org server access denied.";
+      return "Organization server access is denied. On-device setup remains independent of server access.";
     case "checking":
       return "Connecting to the org server.";
     case "local":

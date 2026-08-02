@@ -1,76 +1,20 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–7 system. Phase 7 evidence
-covers provider-neutral OIDC verification with Entra policy, fail-closed
-authentication, tenant-scoped ownership, authenticated bounded private
-WebSocket admission, and the native lower handshake. Purpose authorization is
-implemented but unwired: nothing calls it, so it does not enforce. The desktop exposes a
-narrow native token-provider seam but has no approved production adapter; the
-live boundary has no ASR route, endpoint discovery, or external secure edge.
-The replacement delivery gate now freezes command deadlines, keeps its
-one-attempt capability private, verifies exact Windows DACLs, pins system
-SSH/PowerShell hosts, and binds authenticated remote helpers through cleanup
-and teardown. The current lifecycle resolves GB10's stock `socat` package link
-to its absolute regular executable before container mutation. Exact head
-`c5d826ffb85a841e412e41155a3c6c82a2fbe3e4` made equivalent canonical
-language-routing saves true runtime no-ops, then was consumed when its first
-admitted controller over-constrained the safe fixed receipt ancestor. Exact
-head `dece4265e052d775d2d11f1883cd8cc4b2b25191` retained the lifecycle and
-language-routing repairs, corrected the receipt ancestry, passed all three
-exact-tree review lenses, complete private prequalification, and admission,
-then was consumed before the locked `uv sync` command or owner flow because
-portable PowerShell could not resolve the reviewed absolute `uv` executable
-under the non-interactive SSH `PATH`. Its mode-`0700` per-head directory
-existed, but its receipt remained absent and no runtime owner started. Exact
-head `63600096cd8afe9f4435f6302c584f89dbdb5915` preserved that boundary,
-authenticated the complete absolute `uv` chain and executable, passed all
-three review lenses, complete prequalification, admission, and all 13 private
-receipt children, then was consumed when its one complete matrix rejected a
-reparse-tagged installed JavaScript notice. The repository lock, inventory,
-and MIT notice were exact; the private checkout's default pnpm hardlink shared
-the reparse-tagged content-store inode. Exact head
-`d4adc832da90ef5a65ca8e6a9d702d833e55dbe8` corrected that materialization,
-passed all 13 private children, and reached native tests in its one complete
-matrix. Every Rust test passed, but the supported MSVC toolchain retained its
-`vctip.exe` helper inside the owned Windows Job and correctly consumed the
-head. The approved `OptIn=0` change did not prevent signed `VCTIP.EXE` from
-being launched by `link.exe`, consistent with Microsoft's required-diagnostics
-exception. The successor keeps strict Job containment for Yap runtime and
-ordinary candidate commands, resolves the optional-diagnostics reader through
-the kernel object-manager SystemRoot, and executes native compile/link evidence
-outside the product Job on the exact reviewed head in fresh GitHub-hosted
-Windows VMs before merge. Connector and required WDIO runtime trees on those
-VMs remain Job-contained and must prove zero active processes; the running WDIO
-binary also reports the reviewed build SHA. Exact head
-`944673071804d8178776efa1d1e13651c87df6fb` passed all three review lenses,
-prequalification, admission, all four private controllers, independent
-validation of all 13 private receipt children, and its complete 25-cell matrix.
-PR #69 opened on that head. GitHub rejected the first CI dispatch while parsing
-the workflow, before any job or runner started, because job-level `env`
-referenced `runner.environment` before runner assignment. That exact head is
-therefore consumed as merge authority without relabeling its private results.
-Workflow successor `cafbe307...` step-scopes the runner binding and adds the
-regression contract; it is preserved after fresh target-client qualification
-exposed bounded pending-ASR saturation during cold warmup. Exact repair
-`32cf528...` adds bounded FIFO batch catch-up, passed focused same-three review,
-and passed repeated-resource, nine-case prepared-audio, and physical-
-microphone/rendered-UI qualification with zero audio drops. Its first isolated
-scheduler-outlier attempt remains failed evidence. Documentation reconciliation
-is committed at `e019036...`. Exact successor `dc635916...` passed its complete
-private 25-cell matrix and independent receipt validation. CodeQL passed, while
-hosted CI run `30574652702` exposed only checkout-test dependency timing,
-GitHub Windows temp-owner mismatch, and equivalent 8.3/long-path spelling
-assumptions. Stock NSIS was not dispatched after that failure. Reviewed repair
-`558fed0...` makes those boundaries portable without changing product runtime,
-identity policy, or the enterprise ownership boundary. Pre-admission
-preparation of exact descendant `c95cfe0...` then exposed that writing an
-already-correct owner can require elevation under ordinary development-root
-ACLs. That head was never admitted. Repair `a823b28...` writes the owner only
-when the observed SID differs, while the exact post-write owner/DACL check
-remains fail-closed. The validated `dc635916...` application/runtime matrix
-remains authoritative because the reviewed descendant changes only
-hosted/gate tooling, its contracts, and documentation. Exact-head hosted
-closure and merge remain open.
+This document describes the merged executable Phase 1–7 system plus the focused
+local-first discovery work in progress. Phase 7 implements provider-neutral
+OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
+ownership, authenticated bounded private WebSocket admission, and the native
+lower handshake. Purpose authorization is implemented but unwired: nothing
+calls it, so it does not enforce. The desktop exposes a narrow native
+token-provider seam and an explicit opt-in WAM adapter, but no production
+provider is approved or selected. The desktop can repeatedly probe and offer
+only the fixed numeric-loopback HTTP health origin without saving it or routing
+recording audio; managed LAN/enterprise discovery, live-endpoint discovery,
+live server ASR, and the external secure edge remain absent. Phase 7 merged as
+`66d314d7`, and its separate adversarial checkpoint and concrete follow-ups are
+closed. Exact application/runtime candidate `dc635916...` retains its recorded
+private 25-cell evidence; PR #69's final hosted head is not retroactively
+described as an all-green hosted rollup.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -688,12 +632,14 @@ service admission, and the separate private WebSocket admission service. The
 native WebSocket actor uses the same authorization source and session lease,
 requires exact `yap.live.v1`, bounds messages and queues, and terminates on
 session invalidation. Focused parity evidence qualifies the lower handshake
-against separate HTTP and private-live ports. Product endpoint discovery,
+against separate HTTP and private-live ports. The fixed-loopback offer discovers
+only the HTTP health origin. Managed LAN/enterprise and live-endpoint discovery,
 external same-origin WSS/TLS, live ASR, owner-fair pool/router scheduling,
 durable multi-tenant queuing, and sustained mixed-user capacity remain absent.
 
-The pinned mock OIDC provider and owner-flow harness are focused-green. Hosted
-Docker execution of that pinned provider remains pending. Exact head
+The following is retained as historical delivery evidence rather than current
+backlog. The pinned mock OIDC provider and owner-flow harness were focused-green.
+Exact head
 `2f8b127fe20ec3cb1d62879532f20e3e220c4ca6` was withdrawn before GB10,
 connected-server, or complete-matrix execution after pre-execution review
 rejected its gate boundary. Retained-pidfd head
@@ -708,8 +654,8 @@ fresh private prequalification and admission, then was consumed when its first
 mock-OIDC controller could not resolve the reviewed `uv` executable under the
 non-interactive SSH environment. No locked `uv sync` command or owner flow
 started; the per-head directory existed and the receipt remained absent. The
-next controller retains the safe receipt ancestry, authenticates every real
-directory component and file in the absolute `uv` path, and proves that exact
+subsequent controller retained the safe receipt ancestry, authenticated every real
+directory component and file in the absolute `uv` path, and proved that exact
 path resolves inside portable PowerShell under the admitted command environment
 before reservation. Exact head `63600096...` satisfied that boundary and passed
 all four admitted private controllers plus independent validation of all 13
@@ -721,7 +667,7 @@ independent validation of all 13 private receipt children. Its one complete
 matrix passed every Rust test, then failed because the owned Windows Job
 retained the Build Tools `vctip.exe` helper. The approved optional-diagnostics
 opt-out was applied and verified, but a clean link still launched signed
-`VCTIP.EXE` from `link.exe`. The next manifest verifies that local
+`VCTIP.EXE` from `link.exe`. The subsequent manifest verified that local
 optional-diagnostics setting with a fail-closed 64-bit registry-API read whose
 helper path is rooted in the kernel object-manager SystemRoot. Native
 formatting, Clippy, compilation, tests, dependency checks, and the WDIO build
@@ -756,9 +702,11 @@ retains the final exact owner/DACL verification, passes focused Windows and
 hosted-portability contracts, and has the same three review approvals. The
 reviewed diff through `c1d81fc...` changes no shipped client, server, native,
 model, runtime, or candidate-manifest behavior, so `dc635916...` remains the
-one complete application/runtime candidate. Exact-head hosted closure and
-merge remain open. Real IT-provided Entra and Conditional Access policy and an
-approved native adapter remain external conformance work.
+one complete application/runtime candidate. Phase 7 later merged as `66d314d7`,
+and its adversarial checkpoint plus concrete follow-ups are closed; PR #69's
+final hosted head is not represented as an all-green rollup. Real IT-provided
+Entra and Conditional Access policy and an approved native adapter remain
+external conformance work.
 
 ## Accepted meeting direction, not current execution
 
@@ -827,15 +775,16 @@ See the complete [ownership map](boundaries/EXECUTABLE-OWNERSHIP.md) and public
 
 The frontend uses Node 24 and pnpm 11.7.0. Native code uses Rust 1.96. The
 portable server supports Python 3.12 only. Windows automation requires
-PowerShell Core 7.4 or newer. No desktop identity-provider SDK or sidecar is a
-shipped runtime or build dependency. Installer lifecycle tests run only in a
+PowerShell Core 7.4 or newer. No third-party desktop identity-provider SDK or
+sidecar is a shipped runtime or build dependency; the inbox WAM adapter remains
+explicit opt-in and unselected. Installer lifecycle tests run only in a
 disposable Windows environment.
 
 Focused suites protect each extraction. Browser automation allocates an
 OS-selected loopback port, and native restart automation terminates only its
-exact isolated app process before bounded session cleanup. Phase 7 runs its
-local/server/target-client/private-server candidate matrix once after an exact
-head is ready. Every required CI closure job explicitly checks out that head
+exact isolated app process before bounded session cleanup. Phase 7 ran its
+local/server/target-client/private-server candidate matrix once after its exact
+head was ready. Every required CI closure job explicitly checks out its head
 without persisted credentials and verifies the checkout before and after
 project execution on its declared fresh hosted OS. Windows uses an absolute
 no-space System32 bootstrap to stream the runner's extensionless temporary

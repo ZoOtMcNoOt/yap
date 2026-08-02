@@ -28,10 +28,12 @@ export function LocalServerOfferBanner({
       <AlertDescription>
         <p>
           <span className="font-medium text-foreground">
-            A Yap server is running on this computer.
+            A Yap server is available through this computer&apos;s local connection.
           </span>{" "}
-          Connect to route transcription through it{offer.authRequired ? "; it will ask you to sign in" : ""}.
-          Nothing connects until you approve.
+          Connect to save it for supported recordings
+          {offer.authRequired ? "; organization sign-in is required for server features" : ""}.
+          No recording audio is routed to it until you approve. On-device dictation can be set up
+          and used without it.
         </p>
         {error ? <p className="text-destructive">{error}</p> : null}
         <div className="mt-2 flex gap-2">
