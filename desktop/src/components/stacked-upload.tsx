@@ -29,7 +29,6 @@ import type { FixedBatchLanguageOption } from "@/language-preference";
 import {
   isRecordingActive,
   isRecordingCancellable,
-  queuedServerMessage,
   type RecordingJobStatus,
   type RecordingJobView,
 } from "@/lib/recording-job";
@@ -230,21 +229,17 @@ function UploadCard({
   const canRemove = item.status === "failed" || isCancellable;
   const removeLabel = isActive && isCancellable ? "Cancel recording" : "Remove file";
   const language = recordingLanguageSummary(item.languageDecision);
-  const detail = item.status === "complete"
+  // One element per fact: the badge is the sole status element while a job is
+  // in flight; once it settles, the description carries the outcome and the
+  // badge disappears so finished rows read quietly.
+  const settledLabel = item.status === "complete"
       ? "Saved"
       : item.status === "partial"
         ? "Partial"
       : item.status === "cancelled"
         ? "Cancelled"
-      : isActive
-        ? meta.label
-        : item.status === "accepted"
-          ? "Ready"
-          : item.status === "queued_server"
-            ? queuedServerMessage
-          : item.status.startsWith("blocked_")
-            ? "Waiting"
-          : "Needs attention";
+      : null;
+  const description = [settledLabel, language].filter(Boolean).join(" · ");
 
   return (
     <li className="list-none">
@@ -263,19 +258,19 @@ function UploadCard({
 
         <AttachmentContent>
           <AttachmentTitle>{item.name}</AttachmentTitle>
-          <AttachmentDescription>
-            {language ? `${detail} · ${language}` : detail}
-          </AttachmentDescription>
+          {description ? <AttachmentDescription>{description}</AttachmentDescription> : null}
         </AttachmentContent>
 
         <AttachmentActions className="gap-2">
-          <Badge variant={meta.variant}>
-            <Icon
-              className={cn(isActive && "animate-spin motion-reduce:animate-none")}
-              data-icon="inline-start"
-            />
-            {meta.label}
-          </Badge>
+          {settledLabel ? null : (
+            <Badge variant={meta.variant}>
+              <Icon
+                className={cn(isActive && "animate-spin motion-reduce:animate-none")}
+                data-icon="inline-start"
+              />
+              {meta.label}
+            </Badge>
+          )}
 
           {item.outputPath ? (
             <Tooltip>

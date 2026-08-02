@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { TranscriptResultSummaryBadges } from "@/components/transcript-result-summary";
+import { TranscriptResultSummaryLine } from "@/components/transcript-result-summary";
 import { HistoryEntryPreview } from "@/components/panels/history-entry-preview";
 import {
   isTranscriptResultSummary,
@@ -61,7 +61,7 @@ describe("transcript result summary", () => {
       languageStatus: "dynamic" as const,
       timingStatus: "unavailable" as const,
     };
-    const badges = renderToStaticMarkup(<TranscriptResultSummaryBadges summary={summary} />);
+    const line = renderToStaticMarkup(<TranscriptResultSummaryLine summary={summary} />);
     const history = renderToStaticMarkup(
       <HistoryEntryPreview
         entry={{
@@ -74,10 +74,8 @@ describe("transcript result summary", () => {
       />,
     );
 
-    expect(badges).toContain('role="group"');
-    expect(badges).toContain('aria-label="Transcript result details"');
-    expect(badges).toContain("Language: automatic per segment");
-    expect(badges).toContain("Word timing unavailable");
+    expect(line).toContain('aria-label="Transcript result details"');
+    expect(line).toContain("Language: automatic per segment · Word timing unavailable");
     expect(history).toContain("Language: automatic per segment");
     expect(history).toContain("Word timing unavailable");
   });
