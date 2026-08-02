@@ -123,7 +123,12 @@ pub(super) fn finalize_live_runtime_with_mode(
         });
     }
     match effects.save {
-        Ok(Some(saved)) => live::events::emit_saved(&app, &saved),
+        Ok(Some(saved)) => {
+            live::events::emit_saved(&app, &saved);
+            // The first saved dictation ends the first-run island hold: the
+            // user has found dictation, so the island may start tucking away.
+            live::overlay_window::end_first_run_hold(&app);
+        }
         Ok(None) => {}
         Err(error) => {
             crate::diagnostics::log(&format!("live save failed: {error}"));

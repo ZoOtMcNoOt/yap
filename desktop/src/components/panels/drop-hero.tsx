@@ -55,6 +55,40 @@ export function DropHero({
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
+      {!languageReady ? (
+        <div
+          className="flex min-h-[168px] flex-col items-center justify-center gap-5 px-6 py-8 text-center"
+          data-testid="first-run-welcome"
+        >
+          <div className="max-w-md">
+            <h2 className="text-lg font-semibold tracking-tight">Two steps to your first dictation</h2>
+            <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+              Yap types what you say, on this machine, into any app.
+            </p>
+          </div>
+          <ol className="flex max-w-md flex-col gap-3 text-left text-sm leading-6">
+            <li className="flex items-start gap-3">
+              <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold">1</span>
+              <span className="flex flex-wrap items-center gap-2">
+                Choose the language you speak.
+                <Button onClick={onOpenLanguageSettings} size="sm" type="button">
+                  Set my language
+                </Button>
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold">2</span>
+              <span>
+                Start talking — press <kbd className="rounded border px-1.5 py-0.5 text-xs font-semibold">Ctrl+Shift+Space</kbd>{" "}
+                or click the Yap island at the top of your screen.
+              </span>
+            </li>
+          </ol>
+          <p className="max-w-md text-xs leading-5 text-muted-foreground">
+            On a team? Connect to your organization's server any time from Settings in the sidebar.
+          </p>
+        </div>
+      ) : (
       <div className="flex min-h-[168px] flex-col items-center justify-center gap-4 px-6 py-8 text-center">
         <div className="flex size-12 items-center justify-center rounded-full bg-secondary">
           <UploadCloud className="text-primary" />
@@ -86,11 +120,6 @@ export function DropHero({
               </SelectGroup>
             </SelectContent>
           </Select>
-          {!languageReady ? (
-            <Button onClick={onOpenLanguageSettings} size="sm" type="button" variant="outline">
-              Set primary language
-            </Button>
-          ) : null}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Button disabled={!languageReady} onClick={onPickFiles} type="button">
@@ -114,6 +143,7 @@ export function DropHero({
           ) : null}
         </div>
       </div>
+      )}
     </section>
   );
 }
