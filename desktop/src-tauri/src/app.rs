@@ -191,13 +191,42 @@ fn show_startup_error_dialog(message: &str) {
 }
 
 pub(crate) fn run() {
+    // Every branch below announces itself. A second launch that starts a rival
+    // process instead of raising the running window has been reported and is
+    // not reproducible on demand, and each link in the handoff fails
+    // differently: the lease not being exclusive, the request never being
+    // written, or the running instance never consuming it. Naming the branch
+    // and the directory it resolved turns the next occurrence into evidence
+    // rather than another report.
+    let app_data_directory = paths::app_data_dir();
+
     // This guard remains in this stack frame until Tauri's blocking event loop returns.
-    let _instance_lease = match acquire_instance_lease_at(&paths::app_data_dir()) {
-        Ok(lease) => lease,
+    let _instance_lease = match acquire_instance_lease_at(&app_data_directory) {
+        Ok(lease) => {
+            crate::diagnostics::log(&format!(
+                "single instance: took the lease in {}",
+                app_data_directory.display()
+            ));
+            lease
+        }
         Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+            crate::diagnostics::log(&format!(
+                "single instance: lease in {} is held, asking the running Yap to show itself",
+                app_data_directory.display()
+            ));
             match request_existing_instance_activation_or_acquire_lease() {
-                Ok(InstanceActivationHandoff::Acknowledged) => std::process::exit(0),
-                Ok(InstanceActivationHandoff::Acquired(lease)) => lease,
+                Ok(InstanceActivationHandoff::Acknowledged) => {
+                    crate::diagnostics::log(
+                        "single instance: the running Yap took the request, this launch is exiting",
+                    );
+                    std::process::exit(0)
+                }
+                Ok(InstanceActivationHandoff::Acquired(lease)) => {
+                    crate::diagnostics::log(
+                        "single instance: the previous Yap released its lease mid-handoff, this launch is taking over",
+                    );
+                    lease
+                }
                 Err(handoff_error) => {
                     stop_for_instance_lease_error(&std::io::Error::new(
                         handoff_error.kind(),

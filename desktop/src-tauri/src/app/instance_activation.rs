@@ -603,6 +603,10 @@ pub(super) fn consume_existing_instance_activation_request_at(
 
 pub(super) fn consume_existing_instance_activation_request(app: &tauri::AppHandle) {
     let result = consume_existing_instance_activation_request_at(&paths::app_data_dir(), || {
+        // The other half of the trace in `run()`. Between the two, a second
+        // launch that goes wrong says which side stopped: the launcher never
+        // reported the lease as held, or it did and this never fired.
+        crate::diagnostics::log("single instance: a second launch asked this Yap to show itself");
         live::actions::show_main_window(app);
     });
     report_activation_request_result(

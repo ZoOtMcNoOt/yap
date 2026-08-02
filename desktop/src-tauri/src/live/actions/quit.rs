@@ -17,7 +17,17 @@ enum QuitState {
     Ready,
     PublishingShutdown,
     Finalizing,
+    /// A shutdown failed and the user has not been told yet. `claim()` refuses
+    /// to start another one from here, which is the property that stops a
+    /// second Quit from silently succeeding and losing an unsaved recording.
     Failed(String),
+    /// The failure is on screen, waiting for the user to dismiss it. Distinct
+    /// from `Failed` so that a run of tray clicks coalesces onto the dialog
+    /// already asking, rather than stacking dialogs or starting a shutdown
+    /// behind one. Carries no text: the presenter holds the message it is
+    /// showing, and losing it here costs nothing because the next quit re-runs
+    /// shutdown and produces its own.
+    AwaitingAcknowledgement,
     ExitAuthorized,
 }
 
@@ -60,10 +70,48 @@ impl QuitCoordinator {
                 *state = QuitState::PublishingShutdown;
                 QuitClaim::BeginShutdown
             }
-            QuitState::PublishingShutdown | QuitState::Finalizing => QuitClaim::Coalesced,
+            QuitState::PublishingShutdown
+            | QuitState::Finalizing
+            | QuitState::AwaitingAcknowledgement => QuitClaim::Coalesced,
             QuitState::Failed(error) => QuitClaim::Blocked(error.clone()),
             QuitState::ExitAuthorized => QuitClaim::ExitAuthorized,
         }
+    }
+
+    /// Take the pending failure in order to show it. Returns `None` when there
+    /// is nothing to acknowledge, or when another presenter already holds it.
+    ///
+    /// `Failed` is the state `claim()` calls *unacknowledged*, and until now
+    /// nothing in the crate said what acknowledging one was. Every route back
+    /// to `Ready` came from `PublishingShutdown`, so the first failed shutdown
+    /// blocked Quit for the rest of the process while the quit path re-created
+    /// the island on each attempt.
+    pub(super) fn begin_acknowledgement(&self) -> Option<String> {
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let QuitState::Failed(error) = &*state else {
+            return None;
+        };
+        let error = error.clone();
+        *state = QuitState::AwaitingAcknowledgement;
+        Some(error)
+    }
+
+    /// The user dismissed the failure. Quit becomes attemptable again -- not
+    /// authorized: the next claim runs the whole shutdown from the start,
+    /// including another attempt to save whatever failed to save.
+    pub(super) fn finish_acknowledgement(&self) -> bool {
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if !matches!(*state, QuitState::AwaitingAcknowledgement) {
+            return false;
+        }
+        *state = QuitState::Ready;
+        true
     }
 
     pub(super) fn begin_finalizing(
@@ -165,7 +213,13 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
             crate::diagnostics::log(&format!(
                 "quit remains blocked by an unacknowledged shutdown failure: {error}"
             ));
-            present_quit_failure(app, None);
+            // Deliberately not `present_quit_failure` any more. Re-showing the
+            // window and re-creating the island on every blocked click is the
+            // "island I cannot get rid of" symptom, and it never explained
+            // itself: the message goes into `LiveSessionView.error`, which the
+            // next start or stop clears, and the only surface that renders it
+            // is a detail line inside Settings.
+            ask_to_acknowledge_quit_failure(app);
             return;
         }
         QuitClaim::ExitAuthorized => {
@@ -219,6 +273,10 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
                         "quit deferred because shutdown could not complete: {detail}"
                     ));
                     present_quit_failure(&worker_app, Some(&error));
+                    // Ask on the first failure too. Otherwise the user's only
+                    // signal is that Quit did nothing, and they learn why only
+                    // by clicking it a second time.
+                    ask_to_acknowledge_quit_failure(&worker_app);
                 }
             }
         })
@@ -269,6 +327,69 @@ fn finalize_live_before_quit(app: &tauri::AppHandle) -> Result<(), String> {
     outcome.save_error.map_or(Ok(()), Err)
 }
 
+/// Show the pending shutdown failure and wait for the user to dismiss it.
+///
+/// Off the calling thread on purpose: the blocked path runs on the tray menu
+/// handler, and a modal that pumps its own message loop there is the shape of
+/// the tao session-lock freeze in #92. The two existing confirmation dialogs in
+/// this crate move the same way.
+fn ask_to_acknowledge_quit_failure(app: &tauri::AppHandle) {
+    let dialog_app = app.clone();
+    if let Err(spawn_error) = std::thread::Builder::new()
+        .name("live-quit-acknowledge".into())
+        .spawn(move || {
+            // Taken here rather than before the spawn, so a thread that never
+            // starts cannot consume a failure it will not show. If two tray
+            // clicks race, one takes it and the other finds nothing to present.
+            let Some(error) = dialog_app
+                .state::<QuitCoordinator>()
+                .begin_acknowledgement()
+            else {
+                return;
+            };
+            // Drop-guarded so a panicking presenter cannot park the app in
+            // AwaitingAcknowledgement -- that would be this same defect again,
+            // one state along.
+            let release = AcknowledgementRelease(dialog_app.clone());
+            if confirm_quit_failure(&dialog_app, &error) {
+                drop(release);
+                quit_from_app(&dialog_app);
+            }
+        })
+    {
+        crate::diagnostics::log(&format!(
+            "quit acknowledgement dialog could not start: {spawn_error}"
+        ));
+        // The failure is untouched and still blocks quit, which is right:
+        // nothing was shown, so nothing was acknowledged.
+        present_quit_failure(app, None);
+    }
+}
+
+struct AcknowledgementRelease(tauri::AppHandle);
+
+impl Drop for AcknowledgementRelease {
+    fn drop(&mut self) {
+        self.0.state::<QuitCoordinator>().finish_acknowledgement();
+    }
+}
+
+fn confirm_quit_failure(app: &tauri::AppHandle, error: &str) -> bool {
+    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+
+    app.dialog()
+        .message(format!(
+            "Yap stayed open because shutdown could not finish safely.\n\n{error}\n\nQuitting again runs shutdown from the start, including another attempt to save the current recording."
+        ))
+        .title("Yap could not quit")
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "Try Quitting Again".into(),
+            "Keep Yap Open".into(),
+        ))
+        .blocking_show()
+}
+
 fn present_quit_failure(app: &tauri::AppHandle, failure: Option<&QuitRunError>) {
     let message = match failure {
         Some(QuitRunError::Finalization(_)) => {
@@ -283,8 +404,11 @@ fn present_quit_failure(app: &tauri::AppHandle, failure: Option<&QuitRunError>) 
         view.error = Some(append_error(view.error.take(), message));
     });
     show_main_window(app);
-    if let Err(error) = live::overlay_window::ensure_active(app) {
-        crate::diagnostics::log(&format!("quit failure overlay show failed: {error}"));
-    }
+    // No `ensure_active` here. Forcing the island to its active surface is what
+    // made a failed quit look like an island that reappears on its own, and it
+    // forced the *recording* surface onto a session that is idle-with-an-error,
+    // so the native frame briefly disagreed with the pill being drawn. Emitting
+    // is enough: the overlay reads the error off this view and picks its own
+    // surface, and the periodic recovery pass restores it if it is missing.
     live::events::emit_session(app, &view);
 }
