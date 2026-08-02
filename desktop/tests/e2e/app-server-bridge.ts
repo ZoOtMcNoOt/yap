@@ -4,24 +4,31 @@ import type { Page } from "@playwright/test";
 export async function installQueuedServerBridge(
   page: Page,
   serverState: "not_set" | "offline",
-  options: { primaryLanguageUnconfirmed?: boolean } = {},
+  options: { localServerOffer?: boolean; primaryLanguageUnconfirmed?: boolean } = {},
 ) {
-  await page.addInitScript(({ state, primaryLanguageUnconfirmed }) => {
+  await page.addInitScript(({ state, localServerOffer, primaryLanguageUnconfirmed }) => {
     Object.defineProperty(globalThis, "isTauri", { value: true });
     const calls: string[] = [];
     const languageCalls: Array<{ args: unknown; command: string }> = [];
+    const serverCalls: Array<{ args: unknown; command: string }> = [];
     const shortcutCalls: Array<{ args: unknown; command: string }> = [];
     Object.assign(globalThis, {
-      __queuedServerBoundaryTest: { calls, languageCalls, shortcutCalls },
+      __queuedServerBoundaryTest: { calls, languageCalls, serverCalls, shortcutCalls },
     });
     let callbackId = 0;
-    const serverSnapshot = {
-      apiVersion: null,
+    let serverSnapshot = {
+      apiVersion: null as string | null,
       capabilities: { batchJobs: false, jobStatus: false, liveStreaming: false },
       checkedAtMs: state === "offline" ? 1 : null,
       errorCode: state === "offline" ? "CONNECTION_FAILED" : null,
       retryAtMs: null,
-      state,
+      state: state as string,
+    };
+    let serverSettingsState = {
+      authentication: null,
+      baseUrl: state === "offline" ? "https://server.example" : null,
+      enabled: state === "offline",
+      schemaVersion: 2,
     };
     const queuedJob = {
       id: `durable-${state}-job`,
@@ -160,12 +167,30 @@ export async function installQueuedServerBridge(
           if (command === "server_connection_status" || command === "refresh_server_connection") {
             return serverSnapshot;
           }
-          if (command === "server_settings") return {
-            authentication: null,
-            baseUrl: state === "offline" ? "https://server.example" : null,
-            enabled: state === "offline",
-            schemaVersion: 2,
-          };
+          if (command === "probe_local_server") {
+            return localServerOffer && serverSettingsState.baseUrl === null
+              ? { authRequired: false, baseUrl: "http://127.0.0.1:18765" }
+              : null;
+          }
+          if (command === "server_settings") return serverSettingsState;
+          if (command === "set_server_settings") {
+            serverCalls.push({ args, command });
+            const settings = (args as { settings?: typeof serverSettingsState } | undefined)
+              ?.settings;
+            if (settings) serverSettingsState = settings;
+            // The real save approves the origin and the next health check
+            // reports Ready; collapse that to the settled snapshot here.
+            if (serverSettingsState.enabled && serverSettingsState.baseUrl) {
+              serverSnapshot = {
+                ...serverSnapshot,
+                capabilities: { batchJobs: true, jobStatus: true, liveStreaming: false },
+                checkedAtMs: 1,
+                errorCode: null,
+                state: "ready",
+              };
+            }
+            return serverSettingsState;
+          }
           if (command === "server_identity_status") {
             return { configured: false, signedIn: false };
           }
@@ -202,7 +227,21 @@ export async function installQueuedServerBridge(
         },
       },
     });
-  }, { primaryLanguageUnconfirmed: options.primaryLanguageUnconfirmed ?? false, state: serverState });
+  }, {
+    localServerOffer: options.localServerOffer ?? false,
+    primaryLanguageUnconfirmed: options.primaryLanguageUnconfirmed ?? false,
+    state: serverState,
+  });
+}
+
+export async function serverCalls(page: Page) {
+  return page.evaluate(() =>
+    (globalThis as unknown as {
+      __queuedServerBoundaryTest: {
+        serverCalls: Array<{ args: unknown; command: string }>;
+      };
+    }).__queuedServerBoundaryTest.serverCalls,
+  );
 }
 
 export async function shortcutCalls(page: Page) {

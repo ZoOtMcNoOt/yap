@@ -67,6 +67,13 @@ pub(crate) async fn server_asr_capabilities(
 }
 
 #[tauri::command]
+pub(crate) async fn probe_local_server(
+    window: tauri::WebviewWindow,
+) -> Result<Option<desktop::LocalServerOffer>, String> {
+    desktop::probe_local_server(window).await
+}
+
+#[tauri::command]
 pub(crate) fn server_settings(
     window: tauri::WebviewWindow,
 ) -> Result<config::ServerSettings, String> {

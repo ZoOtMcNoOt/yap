@@ -114,6 +114,15 @@ export async function listenServerConnection(
   return listen<ServerConnectionSnapshot>("server-connection", (event) => onUpdate(event.payload));
 }
 
+export type LocalServerOffer = {
+  baseUrl: string;
+  authRequired: boolean;
+};
+
+export function probeLocalServer(): Promise<LocalServerOffer | null> {
+  return invoke<LocalServerOffer | null>("probe_local_server");
+}
+
 export function serverSettings(): Promise<ServerSettings> {
   return invoke<ServerSettings>("server_settings");
 }
