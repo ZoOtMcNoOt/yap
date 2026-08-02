@@ -238,6 +238,53 @@ async fn run_scheduled_retry<R: tauri::Runtime>(
     );
 }
 
+/// The only address discovery ever probes. Loopback keeps this from being
+/// network scanning, and /v1/health is the server's one unauthenticated route,
+/// so the probe sends no credentials and reads nothing private.
+pub(super) const LOCAL_SERVER_PROBE_URL: &str = "http://127.0.0.1:18765";
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalServerOffer {
+    pub base_url: String,
+    pub auth_required: bool,
+}
+
+/// Discovery is read-only: it reports that a yap-server answers on loopback
+/// and nothing else. Connecting still goes through set_server_settings, whose
+/// origin-approval dialog is the consent point — nothing is written here.
+pub(super) async fn probe_local_server(
+    window: tauri::WebviewWindow,
+) -> Result<Option<LocalServerOffer>, String> {
+    crate::authorization::ensure_main(&window)?;
+    let settings = config::load().map_err(|error| error.to_string())?;
+    if settings.base_url.is_some() {
+        return Ok(None);
+    }
+    let client = client::bounded_client().map_err(|error| error.to_string())?;
+    let result = client::check_health(&client, LOCAL_SERVER_PROBE_URL, false).await;
+    Ok(local_server_offer(result))
+}
+
+fn local_server_offer(result: client::HealthCheckResult) -> Option<LocalServerOffer> {
+    // A raw HTTP 401/403 also projects to SignInRequired, but with
+    // api_version: None — that could be any local service squatting on the
+    // port. A genuine yap-server never gates /v1/health, so only body-verified
+    // results (which always carry the api version) count as a discovery.
+    let auth_required = match result {
+        client::HealthCheckResult::Ready { .. } => false,
+        client::HealthCheckResult::SignInRequired {
+            api_version: Some(_),
+            ..
+        } => true,
+        _ => return None,
+    };
+    Some(LocalServerOffer {
+        base_url: LOCAL_SERVER_PROBE_URL.to_owned(),
+        auth_required,
+    })
+}
+
 pub(super) fn connection_status(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
@@ -344,6 +391,63 @@ pub(crate) fn last_known_asr_capabilities(
             crate::diagnostics::log("last-known ASR capability snapshot is unavailable");
             Ok(None)
         }
+    }
+}
+
+#[cfg(test)]
+mod local_server_offer_tests {
+    use super::{local_server_offer, LOCAL_SERVER_PROBE_URL};
+    use crate::server_connector::{client::HealthCheckResult, state::ServerCapabilities};
+
+    #[test]
+    fn open_local_server_is_offered_without_sign_in() {
+        let offer = local_server_offer(HealthCheckResult::Ready {
+            api_version: "1".to_owned(),
+            capabilities: ServerCapabilities::default(),
+        })
+        .expect("a verified open server is an offer");
+        assert_eq!(offer.base_url, LOCAL_SERVER_PROBE_URL);
+        assert!(!offer.auth_required);
+    }
+
+    #[test]
+    fn verified_protected_server_is_offered_with_sign_in() {
+        let offer = local_server_offer(HealthCheckResult::SignInRequired {
+            api_version: Some("1".to_owned()),
+            capabilities: ServerCapabilities::default(),
+        })
+        .expect("a verified protected server is an offer");
+        assert!(offer.auth_required);
+    }
+
+    #[test]
+    fn a_raw_401_from_an_unknown_local_service_is_not_a_discovery() {
+        assert_eq!(
+            local_server_offer(HealthCheckResult::SignInRequired {
+                api_version: None,
+                capabilities: ServerCapabilities::default(),
+            }),
+            None,
+        );
+    }
+
+    #[test]
+    fn an_unreachable_or_foreign_port_is_not_a_discovery() {
+        assert_eq!(
+            local_server_offer(HealthCheckResult::Offline {
+                api_version: None,
+                error_code: "CONNECTION_FAILED",
+                retryable: true,
+            }),
+            None,
+        );
+        assert_eq!(
+            local_server_offer(HealthCheckResult::AccessDenied {
+                api_version: Some("1".to_owned()),
+                capabilities: ServerCapabilities::default(),
+            }),
+            None,
+        );
     }
 }
 

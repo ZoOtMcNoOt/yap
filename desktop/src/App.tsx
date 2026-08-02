@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AppChrome } from "@/components/app/app-chrome";
 import { AppOverlays } from "@/components/app/app-overlays";
 import { AppSidebar } from "@/components/app/app-sidebar";
+import { LocalServerOfferBanner } from "@/components/app/local-server-offer-banner";
 import { DropHero } from "@/components/panels/drop-hero";
 import { HistoryPanel } from "@/components/panels/history-panel";
 import { PolishPanel } from "@/components/panels/polish-panel";
@@ -17,6 +18,7 @@ import { useRecordingJobs } from "@/hooks/use-imported-recording-queue";
 import { useHistoryCatalogSync } from "@/hooks/use-history-catalog-sync";
 import { useRecordingSelection } from "@/hooks/use-recording-selection";
 import { useRecordingDrop } from "@/hooks/use-recording-drop";
+import { useLocalServerOffer } from "@/hooks/use-local-server-offer";
 import { useSettingsControl } from "@/hooks/use-settings-control";
 import { useTranscriptFileActions } from "@/hooks/use-transcript-file-actions";
 import { useTranscriptPreview } from "@/hooks/use-transcript-preview";
@@ -136,6 +138,7 @@ export default function App() {
   const settings = useSettingsControl({
     onStatusChange: setStatus,
   });
+  const localServer = useLocalServerOffer({ serverState: settings.serverState });
   const languageCatalog = settings.language.status?.capabilityCatalog;
   const languageOptions = useMemo(
     () => fixedBatchLanguageOptions(languageCatalog),
@@ -334,6 +337,14 @@ export default function App() {
         serverState={settings.serverState}
         status={status}
         title={workspace.title}
+      />
+
+      <LocalServerOfferBanner
+        busy={localServer.busy}
+        error={localServer.error}
+        offer={localServer.offer}
+        onConnect={() => void localServer.connect()}
+        onDismiss={localServer.dismiss}
       />
 
       {workspaceView === "transcribe" ? (
