@@ -72,7 +72,19 @@ Evidence, in the order it was found:
   carries SpeechBrain/Torch in Phase 8 regardless, so the one-off export
   environment for the LID conversion is infrastructure Phase 8 needs anyway.
 
-Work items (bounded, in order): export script (torch + speechbrain, run once,
+**Executed the same day** (`server/tools/lid-ecapa/`): the export ran, cold,
+from the in-repo recipe. Torch/ONNX parity 3.1e-05; int8 QDQ artifact
+22.4 MB (smaller than AmberNet's 28.2) at 49 ms per 7.4 s clip on CPU;
+weight sidecar bit-reproducible across export runs. Scored on the five
+NVIDIA test clips plus the LibriSpeech fixture: ar/de/en/fr and
+LibriSpeech-en all correct at >= 0.98 in both precisions; **Spanish resolved
+to Galician (0.86 fp32 / 0.94 int8) on the single es clip** — identical in
+both precisions, so it is the model, not the quantisation, and it is the
+first concrete datapoint the per-locale gate must weigh. Hashes and observed
+results are pinned in `ecapa-voxlingua107-lid.lock.json`; a golden parity
+fixture for the future Rust fbank frontend is committed beside it.
+
+Remaining work items (bounded, in order): export script (torch + speechbrain, run once,
 lineage recorded like AmberNet's `export_classifier_onnx.py`), int8 QDQ
 quantisation, frontend spec for ECAPA's fbank input (replacing
 `nemo-fixed-3s-v1`), label-map pin, artifact/lock/provenance swap, and an

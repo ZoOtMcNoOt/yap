@@ -1,0 +1,6 @@
+# Build outputs and caches: artifacts are recorded by hash in the lock, not
+# committed. The labels and parity-fixture JSONs are committed deliberately.
+*.onnx
+*.onnx.data
+sb-cache/
+wavs/
