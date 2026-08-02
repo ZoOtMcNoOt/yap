@@ -65,6 +65,11 @@ pub(super) struct BoundedSinkState<T> {
     pub(super) queued_frames: AtomicUsize,
     pub(super) published_frames: AtomicUsize,
     pub(super) high_water_mark: AtomicUsize,
+    /// The mark the diagnostics log last reported. Every new peak used to write
+    /// a line, so a queue climbing to 1024 wrote 1024 of them and the log became
+    /// 99% one message with three 2 MB generations of it -- everything else was
+    /// evicted before anyone could read it.
+    pub(super) logged_high_water_mark: AtomicUsize,
     pub(super) closed: AtomicBool,
     pub(super) close_count: AtomicUsize,
     pub(super) completion: Mutex<SinkCompletionGate>,
@@ -104,6 +109,7 @@ pub fn bounded_sink<T>(kind: SinkKind, capacity: usize) -> (BoundedSink<T>, Boun
         queued_frames: AtomicUsize::new(0),
         published_frames: AtomicUsize::new(0),
         high_water_mark: AtomicUsize::new(0),
+        logged_high_water_mark: AtomicUsize::new(0),
         closed: AtomicBool::new(false),
         close_count: AtomicUsize::new(0),
         completion: Mutex::new(SinkCompletionGate::default()),
