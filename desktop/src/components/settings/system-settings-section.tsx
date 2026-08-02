@@ -1,6 +1,6 @@
 import { useId } from "react";
 
-import { SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
+import { AdvancedSettings, SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
 import { ServerSettingsRows } from "@/components/settings/server-settings-rows";
 import type { FallbackLifecycleActionId, FallbackLifecycleProjection } from "@/components/settings/settings-lifecycle";
 import type { ServerSettingsDraftController } from "@/components/settings/use-server-settings-draft";
@@ -19,6 +19,7 @@ import {
 import type { LocalComputeTargetView } from "@/lib/setup-model";
 
 export function SystemSettingsSection({
+  advancedDefaultOpen = false,
   busy,
   fallbackLifecycle,
   fallbackLocked,
@@ -30,6 +31,7 @@ export function SystemSettingsSection({
   sileroVad,
   languageDetector,
 }: {
+  advancedDefaultOpen?: boolean;
   busy: boolean;
   fallbackLifecycle: FallbackLifecycleProjection;
   fallbackLocked: boolean;
@@ -98,9 +100,17 @@ export function SystemSettingsSection({
         ? "The language detector failed size or hash verification. Repair it before automatic switching can run."
         : "Optional language detector: import the verified detector model file explicitly. Yap never downloads it during startup or capture.";
 
+  // A lifecycle that needs attention must never hide behind a closed
+  // disclosure: broken models are exactly what the user opened Settings for.
+  const advancedNeedsAttention =
+    advancedDefaultOpen ||
+    languageDetector.view?.status === "corrupted" ||
+    sileroVad.view?.status === "corrupted";
+
   return (
     <SettingsGroup>
       <ServerSettingsRows server={server} />
+      <AdvancedSettings defaultOpen={advancedNeedsAttention}>
       <SettingsRow
         detail={liveActive ? "Stop live before changing compute." : "Local live uses the CPU runtime. Server owns GPU routing."}
         label="Compute"
@@ -263,6 +273,7 @@ export function SystemSettingsSection({
           )}
         </div>
       </SettingsRow>
+      </AdvancedSettings>
     </SettingsGroup>
   );
 }

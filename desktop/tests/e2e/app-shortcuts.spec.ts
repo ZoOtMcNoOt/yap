@@ -15,8 +15,12 @@ test("shortcut settings delegate physical recording to native commands and expos
 
   const settings = page.getByRole("dialog", { name: "Settings" });
   const dictationRow = settings.getByText("Dictation shortcut", { exact: true }).locator("xpath=../..");
-  const pasteRow = settings.getByText("Paste-last shortcut", { exact: true }).locator("xpath=../..");
   await expect(dictationRow).toContainText("Ctrl+Shift+Space");
+
+  // The paste shortcut is an Advanced setting: absent until disclosed.
+  await expect(settings.getByText("Paste-last shortcut", { exact: true })).toHaveCount(0);
+  await settings.getByRole("button", { name: "Advanced", exact: true }).click();
+  const pasteRow = settings.getByText("Paste-last shortcut", { exact: true }).locator("xpath=../..");
   await expect(pasteRow).toContainText("Ctrl+Shift+Alt+V");
   await expect(dictationRow.getByRole("textbox")).toHaveCount(0);
   await expect(pasteRow.getByRole("textbox")).toHaveCount(0);
