@@ -146,7 +146,19 @@ fn message_chars(view: &crate::live::state::LiveSessionView) -> usize {
 
 pub(crate) fn ensure_surface(app: &tauri::AppHandle, surface: &str) -> Result<(), String> {
     let view = app.state::<crate::live::LiveSessionState>().snapshot();
-    let (width, height) = frame(surface, active_trigger_mode(&view), message_chars(&view))?;
+    ensure_surface_for(app, surface, &view)
+}
+
+/// For callers that have already read the session state and decided against it.
+/// The failure pill is sized from the error message, so a caller that validates
+/// the surface against one snapshot and lets this read a second can paint a
+/// 92pt window around a 180pt error toast until the next sync corrects it.
+pub(crate) fn ensure_surface_for(
+    app: &tauri::AppHandle,
+    surface: &str,
+    view: &crate::live::state::LiveSessionView,
+) -> Result<(), String> {
+    let (width, height) = frame(surface, active_trigger_mode(view), message_chars(view))?;
     if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
         ensure_dimensions(&window, width, height)?;
         position(app, &window, width)?;

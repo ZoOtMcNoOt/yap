@@ -88,7 +88,7 @@ pub(super) fn set_live_overlay_surface(
     if !live_overlay_surface_matches_state(&snapshot, &surface) {
         return Err("Live overlay surface does not match native session state.".into());
     }
-    live::overlay_window::ensure_surface(&app, &surface)
+    live::overlay_window::ensure_surface_for(&app, &surface, &snapshot)
 }
 
 fn live_overlay_surface_matches_state(view: &live::state::LiveSessionView, surface: &str) -> bool {
