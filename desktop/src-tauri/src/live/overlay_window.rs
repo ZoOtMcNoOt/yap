@@ -455,14 +455,27 @@ fn create_visible_region(
     window_height: f64,
     scale: f64,
 ) -> Result<HRGN, String> {
-    let physical_width = (window_width * scale).round().max(1.0) as i32;
-    let physical_height = (window_height * scale).round().max(1.0) as i32;
     // Deliberately squarer than the pill by `REGION_CORNER_SLACK` -- a smaller
     // radius is a larger area -- so the 1-bit region encloses every pixel the
     // webview paints and never clips its antialiased curve.
-    let corner_radius = ((CORNER_RADIUS - REGION_CORNER_SLACK) * scale)
-        .round()
-        .max(1.0) as i32;
+    create_region_with_corner_radius(
+        window_width,
+        window_height,
+        scale,
+        CORNER_RADIUS - REGION_CORNER_SLACK,
+    )
+}
+
+#[cfg(target_os = "windows")]
+fn create_region_with_corner_radius(
+    window_width: f64,
+    window_height: f64,
+    scale: f64,
+    corner_radius_points: f64,
+) -> Result<HRGN, String> {
+    let physical_width = (window_width * scale).round().max(1.0) as i32;
+    let physical_height = (window_height * scale).round().max(1.0) as i32;
+    let corner_radius = (corner_radius_points * scale).round().max(1.0) as i32;
     let mut region = unsafe {
         CreateRoundRectRgn(
             0,
@@ -664,26 +677,45 @@ mod tests {
     }
 
     // The grit: a GDI region is 1-bit, so a region cut along the same curve the
-    // webview paints slices its antialiased edge with a stair-stepped one. The
-    // region has to enclose the painted curve, fringe included, and only then
-    // start excluding.
+    // webview paints slices its antialiased edge with a stair-stepped one.
+    //
+    // Asserted by comparing the two regions pixel by pixel rather than against
+    // hand-computed points -- GDI rasterises its arcs slightly tighter than a
+    // circle, so a coordinate derived from the radius is a statement about
+    // GDI's algorithm and not about the property.
     #[cfg(target_os = "windows")]
     #[test]
     fn the_region_encloses_the_painted_curve_instead_of_cutting_across_it() {
         use windows::Win32::Graphics::Gdi::PtInRegion;
 
-        let mut region = create_visible_region(DEFAULT_WIDTH, PILL_HEIGHT, 1.0).unwrap();
-        // (3,35) sits just outside the pill's own 12pt curve -- it is antialiasing
-        // fringe, and the old same-radius region clipped exactly here.
-        assert!(unsafe { PtInRegion(region, 3, 35) }.as_bool());
-        // Far enough into the corner to be plainly nothing, and still excluded,
-        // so the click-through property survives the slack.
-        assert!(!unsafe { PtInRegion(region, 0, 36) }.as_bool());
-        unsafe { region.free() };
+        let mut painted =
+            create_region_with_corner_radius(DEFAULT_WIDTH, PILL_HEIGHT, 1.0, CORNER_RADIUS)
+                .unwrap();
+        let mut clip = create_visible_region(DEFAULT_WIDTH, PILL_HEIGHT, 1.0).unwrap();
+
+        let mut slack_pixels = 0;
+        for y in 0..PILL_HEIGHT as i32 {
+            for x in 0..DEFAULT_WIDTH as i32 {
+                let is_painted = unsafe { PtInRegion(painted, x, y) }.as_bool();
+                let is_kept = unsafe { PtInRegion(clip, x, y) }.as_bool();
+                assert!(
+                    !is_painted || is_kept,
+                    "the clip cuts away a pixel the pill paints at {x},{y}"
+                );
+                if is_kept && !is_painted {
+                    slack_pixels += 1;
+                }
+            }
+        }
+        assert!(
+            slack_pixels > 0,
+            "the clip is no larger than the painted shape, so it still cuts across the curve"
+        );
+
+        unsafe { painted.free() };
+        unsafe { clip.free() };
     }
 
-    // A fractional-scale display rounds the radius independently of the frame,
-    // so the squared band and the arc have to keep agreeing at 1.5x too.
     #[cfg(target_os = "windows")]
     #[test]
     fn squared_top_survives_fractional_display_scaling() {
