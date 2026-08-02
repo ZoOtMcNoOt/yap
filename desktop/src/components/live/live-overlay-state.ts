@@ -14,16 +14,16 @@ export type OverlayModel = {
 export const collapseGraceMs = 200;
 export const successVisibleMs = 2_500;
 
-// Browser preview only. Rust is the sole owner of production native-window bounds.
-const previewSurfaceFrames: Record<OverlaySurface, { height: number; width: number }> = {
-  collapsed: { height: 40, width: 104 },
-  expanded: { height: 96, width: 180 },
-  feedback: { height: 40, width: 252 },
-  initializing: { height: 40, width: 112 },
-  processing: { height: 40, width: 112 },
-  recording: { height: 40, width: 112 },
-  success: { height: 40, width: 168 },
-};
+// Browser preview only. Rust is the sole owner of production native-window
+// bounds; these mirror `overlay_window.rs::frame`, which is the port of
+// FreeFlow's `overlayWidth` and holds the reasoning behind every number.
+// A table cannot express the two rules that depend on the model, so this is a
+// function of the same inputs Rust reads off its own state.
+const pillHeight = 38;
+const defaultWidth = 92;
+const toggleWidth = 150;
+const successWidth = 94;
+const expandedFrame = { height: 96, width: 180 };
 
 export function modelFromLiveView(view: LiveOverlayView): OverlayModel {
   const triggerMode = triggerModeFromCaptureMode(view.activeCaptureMode ?? view.captureMode);
@@ -69,8 +69,32 @@ export function overlaySurface(model: OverlayModel, expanded: boolean, successVi
   return expanded ? "expanded" : "collapsed";
 }
 
-export function previewOverlayFrame(surface: OverlaySurface) {
-  return previewSurfaceFrames[surface];
+export function previewOverlayFrame(surface: OverlaySurface, model: OverlayModel) {
+  if (surface === "expanded") return expandedFrame;
+  return { height: pillHeight, width: previewOverlayWidth(surface, model) };
+}
+
+function previewOverlayWidth(surface: OverlaySurface, model: OverlayModel) {
+  switch (surface) {
+    case "success":
+      return successWidth;
+    case "feedback":
+      return feedbackWidth(model.errorMessage ?? "");
+    case "recording":
+    case "processing":
+      return model.recordingTriggerMode === "toggle" ? toggleWidth : defaultWidth;
+    default:
+      return defaultWidth;
+  }
+}
+
+// Upstream truncates at 90 characters before sizing, then allows ~6.8pt per
+// character plus 60pt of chrome, clamped so a short failure stays readable and
+// a long one cannot stretch across the display.
+function feedbackWidth(message: string) {
+  const characters = Math.min([...message].length, 90);
+  if (characters === 0) return defaultWidth;
+  return Math.min(420, Math.max(180, characters * 6.8 + 60));
 }
 
 function triggerModeFromCaptureMode(captureMode: LiveCaptureMode): "hold" | "toggle" {

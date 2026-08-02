@@ -38,7 +38,7 @@ const MINIMUM_TESTS_PER_SPEC = Object.freeze({
   "app-shortcuts.spec.ts": 1,
   "app.spec.ts": 5,
   "history-recoverable-actions.spec.ts": 1,
-  "live-overlay.spec.ts": 11,
+  "live-overlay.spec.ts": 12,
   "playback-authorization.spec.ts": 4,
 });
 

@@ -376,8 +376,11 @@ describe("Yap live overlay hardware capture", () => {
           root: { height: root.height, width: root.width },
         };
       }, expectedSurface);
-      expect(compact.root.width).toBe(copiedToClipboard ? 252 : 104);
-      expect(compact.root.height).toBe(40);
+      // The failure pill is sized from its message, and the clipboard fallback
+      // is long enough to land on upstream's 420pt clamp rather than on its own
+      // arithmetic (59 characters would ask for 461).
+      expect(compact.root.width).toBe(copiedToClipboard ? 420 : 92);
+      expect(compact.root.height).toBe(38);
       expect(compact.island).toEqual(compact.root);
       expect(await browser.tauri.execute(() =>
         globalThis.__yapLiveSessionEventListeners.saved.length)).toBe(0);

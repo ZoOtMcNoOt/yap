@@ -136,8 +136,11 @@ MIT OR Apache-2.0. Package versions are frozen in
 
 ## FreeFlow (zachlatta/freeflow)
 
-Portions of the live dictation overlay and audio level normalization are adapted
-from FreeFlow:
+The live dictation overlay is a port of FreeFlow's recording overlay: its
+geometry, palette, waveform behaviour and per-state pill widths are transcribed
+from `Sources/RecordingOverlay.swift`. Audio level normalization is adapted from
+`Sources/LiveAudioLevelNormalizer.swift`. `THIRD_PARTY_PROVENANCE.json` records,
+per file, which upstream file it was ported from.
 
 - Repository: https://github.com/zachlatta/freeflow
 - Copyright (c) 2026 Zach Latta

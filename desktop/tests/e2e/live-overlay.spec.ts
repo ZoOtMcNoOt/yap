@@ -3,12 +3,17 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 type Frame = { height: number; width: number };
 
 const previewUrl = "/?window=live-overlay&preview=live-overlay";
+// FreeFlow's pill geometry (see overlay_window.rs::frame). The recording pill
+// has two widths because only hands-free recording shows a stop badge, and the
+// failure pill is sized from its message -- "Mic denied" lands on the 180pt
+// clamp floor.
 const frames = {
-  collapsed: { height: 40, width: 104 },
+  collapsed: { height: 38, width: 92 },
   expanded: { height: 96, width: 180 },
-  feedback: { height: 40, width: 252 },
-  recording: { height: 40, width: 112 },
-  success: { height: 40, width: 168 },
+  feedback: { height: 38, width: 180 },
+  recording: { height: 38, width: 92 },
+  recordingHandsFree: { height: 38, width: 150 },
+  success: { height: 38, width: 94 },
 } satisfies Record<string, Frame>;
 
 test.describe.configure({ timeout: 45_000 });
@@ -74,9 +79,17 @@ test("one visible island expands downward quickly without taking focus", async (
     page.getByRole("button", { name: "Open scratch" }),
     page.getByRole("button", { name: "Open transform" }),
   ]);
+  // 1% rather than the 4% this carried before the port. Measured, not guessed:
+  // porting the panel to FreeFlow -- 38pt header, 11pt text, white instead of
+  // fuchsia, square top corners -- moved 344 of 17,280 pixels, 1.99%. At 4% a
+  // restyle that complete passed unnoticed and left this baseline showing an
+  // island that no longer existed. 1% keeps roughly a 170-pixel allowance for
+  // antialiasing while still failing on a change of that size.
+  // If a runner-image font change ever makes this flaky, raise it from an
+  // observed noise ratio rather than back to a round number.
   await expect(root).toHaveScreenshot("live-overlay-hover.png", {
     animations: "disabled",
-    maxDiffPixelRatio: 0.04,
+    maxDiffPixelRatio: 0.01,
   });
 });
 
@@ -210,6 +223,37 @@ test("reduced motion keeps every native-frame projection complete", async ({ pag
   await expectSameFrame(root, island);
 });
 
+// The suite already asserts the waveform holds still under reduced motion. On
+// its own that is the wrong half: a waveform that froze everywhere would pass
+// it, and freezing in silence is exactly what this overlay used to do. Upstream
+// drives the bars from wall-clock time so they breathe with no audio at all, and
+// hands over to a rotating spinner a second into transcription.
+test("the waveform breathes with no audio and transcription reaches the spinner", async ({ page }) => {
+  // Through the query rather than an event: the preview reads the query while
+  // mounting, so there is no window between paint and the listener being
+  // attached for a dispatched state to fall into.
+  await openOverlayPreview(page, "&activeCaptureMode=pushToTalk&level=0&status=speaking");
+
+  const waveform = page.getByTestId("live-waveform");
+  await expect(waveform).toBeVisible();
+
+  const samples: string[] = [];
+  for (let index = 0; index < 3; index += 1) {
+    samples.push(JSON.stringify(await waveformBarHeights(waveform)));
+    await page.waitForTimeout(220);
+  }
+  expect(new Set(samples).size, `bars never moved at level 0: ${samples[0]}`).toBeGreaterThan(1);
+
+  await setLiveView(page, { activeCaptureMode: "toggle", level: 0, status: "saving" });
+  const spinner = page.getByTestId("live-processing-spinner");
+  await expect(spinner).toBeVisible({ timeout: 5_000 });
+  const firstRotation = await spinner.evaluate((node) => getComputedStyle(node).transform);
+  expect(firstRotation).not.toBe("none");
+  await expect
+    .poll(() => spinner.evaluate((node) => getComputedStyle(node).transform))
+    .not.toBe(firstRotation);
+});
+
 test("live state transitions keep the reused window equal to visible content", async ({ page }) => {
   await openOverlayPreview(page);
 
@@ -237,12 +281,15 @@ test("live state transitions keep the reused window equal to visible content", a
     status: "speaking",
   });
   await expect(root).toHaveAttribute("data-overlay-surface", "recording");
+  await expectExactFrame(root, frames.recordingHandsFree);
   await expect(page.getByRole("button", { name: "Finish recording" })).toBeVisible();
   await expectControlsInside(island, [
     page.getByTestId("live-waveform"),
     page.getByRole("button", { name: "Finish recording" }),
   ]);
 
+  // Upstream locks the recording width through transcription rather than
+  // snapping the pill narrow the moment the stop badge disappears.
   await setLiveView(page, {
     activeCaptureMode: "toggle",
     captureMode: "pushToTalk",
@@ -250,7 +297,7 @@ test("live state transitions keep the reused window equal to visible content", a
     status: "saving",
   });
   await expect(root).toHaveAttribute("data-overlay-surface", "processing");
-  await expectExactFrame(root, frames.recording);
+  await expectExactFrame(root, frames.recordingHandsFree);
   await expectSameFrame(root, island);
 
   await setLiveView(page, {
@@ -301,7 +348,7 @@ test("rapid hover and state reversals settle to the latest exact surface", async
   ]);
 
   await expect(root).toHaveAttribute("data-overlay-surface", "recording");
-  await expectExactFrame(root, frames.recording);
+  await expectExactFrame(root, frames.recordingHandsFree);
   await expectSameFrame(root, island);
   await expect(page.getByRole("button", { name: "Finish recording" })).toBeVisible();
 });
@@ -391,9 +438,13 @@ async function expectControlsInside(container: Locator, controls: Locator[]) {
   }
 }
 
+// The rendered height, not the styled one. The bars are a fixed 22px box scaled
+// on the Y axis, so `getComputedStyle(bar).height` reports 22 forever and would
+// hold still through any amount of animation -- this assertion proved nothing
+// until it started reading the box the user actually sees.
 async function waveformBarHeights(waveform: Locator) {
   return waveform.locator("span").evaluateAll((bars) =>
-    bars.map((bar) => Number.parseFloat(window.getComputedStyle(bar).height)));
+    bars.map((bar) => Math.round(bar.getBoundingClientRect().height * 100) / 100));
 }
 
 async function waitForAnimationFrames(page: Page, count: number) {

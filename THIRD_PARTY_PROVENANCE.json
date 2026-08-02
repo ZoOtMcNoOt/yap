@@ -11,7 +11,7 @@
           "commitUrl": "https://github.com/zachlatta/freeflow/commit/7427ca982c19746770f5357ced16e993f2eb27fd",
           "licensePath": "LICENSE",
           "licenseSha256": "121e01b10b43ece3c10ce3eaf5db22915326aad843c3a271a834660096467add",
-          "reviewScope": "upstream revision and license attribution",
+          "reviewScope": "upstream revision, license attribution, and ported design of the recorded upstream files",
           "localFileEvidence": "integrity-only",
           "upstreamFiles": [
             {
@@ -29,28 +29,42 @@
       "notice": "THIRD_PARTY_NOTICES.md",
       "files": [
         {
-          "path": "desktop/src/components/live/live-overlay.tsx",
-          "sha256": "c4aeb9cc238e1cc8bf22a5b3e8b2972c419f00821f0cfdd0b3ca8ebfde999572"
+          "path": "desktop/src-tauri/src/audio/preprocess.rs",
+          "sha256": "a818fff040dd2631eac29230867f5bab3ca458179cfd50fd1b0d4af3e22b313a",
+          "derivedFrom": "Sources/LiveAudioLevelNormalizer.swift"
+        },
+        {
+          "path": "desktop/src-tauri/src/live/overlay_window.rs",
+          "sha256": "8441ff31e644a080bda56a4eed0db49791b43a49724757b59f0ca912e32f489b",
+          "derivedFrom": "Sources/RecordingOverlay.swift"
+        },
+        {
+          "path": "desktop/src/components/live/live-overlay-state.ts",
+          "sha256": "b288d23e036b7ba79e529080c2307296a4a97a80ab02de6e752352c07165fa86",
+          "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {
           "path": "desktop/src/components/live/live-overlay-views.tsx",
-          "sha256": "d77e299a4a4079e414cf1029dc0af7456a5d39087ed81773896ff771079ac172"
+          "sha256": "cedd5f4994537fca650951654ef20452d967be4fd1cf8f8953d900b196538dc8",
+          "derivedFrom": "Sources/RecordingOverlay.swift"
+        },
+        {
+          "path": "desktop/src/components/live/live-overlay.tsx",
+          "sha256": "ca50ae534dbf6d7ec72aa1146737099957f544fc8fdab9c63ae1931965a7f5dd",
+          "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {
           "path": "desktop/src/components/live/live-waveform.tsx",
-          "sha256": "ac6b27dfdf2f2fad42c7715cea9daf47728d720c5f99d5b21ee2eb07d49d4ba2"
+          "sha256": "f10f4de5828a1219af9e2845f4791304806267e801f448e6989885076624ed56",
+          "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {
           "path": "desktop/src/components/live/use-live-overlay-presentation.ts",
-          "sha256": "51bc18728fb6c0ec08742973d0f6045ac19157c0092d2caf39c6e2019e3d774d"
+          "sha256": "c5c1c726558fc9aaf24449e59f567238e493f66e9217ef23b2b56c19e04c2671"
         },
         {
           "path": "desktop/src/components/live/use-prefers-reduced-motion.ts",
           "sha256": "2a4642e03c91fde270ce5344550c82bab1096cc72acc3843fccddb2974b0839d"
-        },
-        {
-          "path": "desktop/src-tauri/src/audio/preprocess.rs",
-          "sha256": "a818fff040dd2631eac29230867f5bab3ca458179cfd50fd1b0d4af3e22b313a"
         }
       ]
     },

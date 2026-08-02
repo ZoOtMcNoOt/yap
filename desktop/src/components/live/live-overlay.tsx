@@ -29,7 +29,6 @@ export function LiveOverlay({
   const {
     hiddenIdle,
     model,
-    native,
     openIdleIsland,
     rootFrameStyle,
     scheduleIdleCollapse,
@@ -88,12 +87,21 @@ export function LiveOverlay({
       style={rootFrameStyle}
       tabIndex={model.phase === "idle" ? 0 : -1}
     >
+      {/*
+        Upstream clips with `UnevenRoundedRectangle(bottomLeadingRadius: 12,
+        bottomTrailingRadius: 12)`: square at the top because the strip is flush
+        with the top of the display and is meant to read as part of the bezel,
+        rounded at the bottom because that is the edge that hangs into the
+        desktop. On Windows the native window region does the same clip for hit
+        testing; painting it here as well is what keeps the curve smooth rather
+        than stair-stepped along the region boundary.
+      */}
       <div
         className="pointer-events-auto h-full w-full text-white"
         data-testid="live-overlay-island"
         style={{
           backgroundColor: "black",
-          borderRadius: native ? undefined : 14,
+          borderRadius: "0 0 12px 12px",
           overflow: "hidden",
         }}
       >
