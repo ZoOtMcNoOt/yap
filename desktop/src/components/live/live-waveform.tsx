@@ -124,7 +124,10 @@ export function LiveWaveform({
     >
       {waveformMultipliers.map((multiplier, index) => (
         <span
-          className="live-waveform-bar w-[3px] rounded-full bg-white"
+          // The one sanctioned deviation from the exact FreeFlow port: the
+          // bars wear Yap's accent so the most-seen pixel in the product is
+          // recognizably ours. Geometry and motion stay upstream's.
+          className="live-waveform-bar w-[3px] rounded-full bg-[var(--accent)]"
           data-live-waveform-bar
           key={index}
           style={{
