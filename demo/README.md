@@ -32,8 +32,22 @@ who shows you what a non-administrator actually sees.
 ./demo/run-demo-identity-provider.py stop
 ```
 
-`serve` prints the environment for the server. Start `yap-server` with it and
-the server will accept these tokens and nothing else.
+`serve` prints the authentication settings. It is deliberately **not** an
+environment block: `ServerAuthenticationSettings.from_environment` rejects both
+`YAP_OIDC_ISSUER` and `YAP_MOCK_OIDC_ISSUER` with "test-only and cannot enter
+server configuration", so no environment makes a stock `yap-server` trust a
+loopback issuer. That guard is the point -- a server that could be pointed at
+an arbitrary issuer by an environment variable is a server anyone with
+environment access can hand themselves tokens for.
+
+A host that wants to serve these tokens constructs `ServerAuthenticationSettings`
+directly, the way `verification/authenticated-connector-server.py` does.
+
+This README previously said to start `yap-server` with the printed block. That
+was wrong twice over: five of the seven variables were names nothing reads, and
+the two that were real are refused by the guard above. It went unnoticed because
+the verification below calls the authenticator directly and never starts a
+server from an environment -- so the block was never executed by anything.
 
 Call the API directly with a minted token:
 
