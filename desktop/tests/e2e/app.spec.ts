@@ -56,20 +56,28 @@ test("Settings and Help remain one mutually exclusive modal surface", async ({ p
 // way a person does: pick, confirm, card yields — and asserts both that the
 // LOCAL confirmation path was taken (catalogRevision null: there is no server
 // catalog to name) and that Settings never opened.
-test("first run confirms a dictation language in place and never opens Settings", async ({ page }) => {
+test("first run takes over the window, proves a dictation, and never opens Settings", async ({ page }) => {
   await installQueuedServerBridge(page, "not_set", { primaryLanguageUnconfirmed: true });
   await page.goto("/");
-  await page.getByRole("button", { name: "Transcribe", exact: true }).click();
 
-  await expect(page.getByTestId("first-run-welcome")).toBeVisible();
+  const takeover = page.getByTestId("first-run-welcome");
+  await expect(takeover).toBeVisible();
   // The OS-locale suggestion arrives preselected from the local catalog.
   await expect(page.getByTestId("first-run-language")).toContainText("English");
 
-  await page.getByRole("button", { name: "Confirm", exact: true }).click();
+  await takeover.getByRole("button", { name: "Confirm", exact: true }).click();
 
-  // The card yields to the ordinary import hero without navigation.
-  await expect(page.getByTestId("first-run-welcome")).toHaveCount(0);
-  await expect(page.getByText("Drop recordings here")).toBeVisible();
+  // Phase two: the practice field is the mic proof — dictation types into the
+  // focused field, so text arriving in the box IS the successful dictation.
+  const practice = page.getByTestId("first-run-practice");
+  await expect(practice).toBeVisible();
+  await practice.fill("Yap is running entirely on this computer.");
+
+  // Phase three celebrates with the privacy line and shoves toward real apps.
+  await expect(page.getByText("Nothing left this computer.")).toBeVisible();
+  await takeover.getByRole("button", { name: "Start using Yap", exact: true }).click();
+  await expect(takeover).toHaveCount(0);
+  await expect(page.getByText("Welcome back")).toBeVisible();
 
   const confirmations = await languageCalls(page);
   expect(confirmations).toHaveLength(1);
@@ -87,11 +95,10 @@ test("Transcribe and Help describe the organization server queue", async ({ page
 
   await expect(page.getByText("Add recordings to your organization's transcription queue."))
     .toBeVisible();
-  // The preview has no language configured, which is exactly a first run: the
-  // hero yields to the two-step welcome, and the queue badge belongs to the
-  // post-setup import surface it describes.
-  await expect(page.getByTestId("first-run-welcome")).toBeVisible();
-  await expect(page.getByText("Two steps to your first dictation")).toBeVisible();
+  // The browser preview cannot complete a first run, so the takeover stays
+  // out of it and the ordinary import hero shows directly.
+  await expect(page.getByTestId("first-run-welcome")).toHaveCount(0);
+  await expect(page.getByText("Drop recordings here")).toBeVisible();
   await expect(page.getByText("Private on this device", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Drop files to run", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Choose files above to add them to the organization server queue.", { exact: true }))

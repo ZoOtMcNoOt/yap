@@ -6,6 +6,7 @@ import { AppChrome } from "@/components/app/app-chrome";
 import { AppOverlays } from "@/components/app/app-overlays";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { LocalServerOfferBanner } from "@/components/app/local-server-offer-banner";
+import { FirstRunTakeover } from "@/components/onboarding/first-run-takeover";
 import { DropHero } from "@/components/panels/drop-hero";
 import { HistoryPanel } from "@/components/panels/history-panel";
 import { PolishPanel } from "@/components/panels/polish-panel";
@@ -403,6 +404,10 @@ export default function App() {
         settings={settings}
         status={status}
         transcriptText={transcriptText}
+      />
+      <FirstRunTakeover
+        hotkey={settings.live.view.hotkey || "Ctrl+Shift+Space"}
+        languageOptions={importLanguageOptions}
       />
     </SidebarProvider>
   );
