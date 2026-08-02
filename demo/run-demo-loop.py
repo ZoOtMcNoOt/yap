@@ -14,6 +14,8 @@ What it proves over plain HTTP against the shipping request path:
   3. An unauthenticated caller gets 401 for the same URL.
   4. alice still sees her own job afterwards — the refusals above were not
      the job quietly vanishing.
+  5. The live WebSocket transport admits alice's token during the upgrade
+     handshake and refuses the same handshake without one.
 
 Transcription itself is reported as whatever the server says; against
 run-demo-server.py that is a processing failure naming the absent ASR runtime.
@@ -244,10 +246,56 @@ def main() -> None:
         f"status {status}",
     )
 
+    print("\nlive transport (ws://127.0.0.1:18766/v1/live):")
+    _check_live_handshakes(alice)
+
     if _FAILURES:
         print(f"\n{len(_FAILURES)} FAILED: {', '.join(_FAILURES)}")
         raise SystemExit(1)
     print("\nAll ownership and authentication assertions held.")
+
+
+def _live_handshake_status(token: str | None) -> int | str:
+    """Speak just enough RFC 6455 to learn how the upgrade was answered.
+
+    stdlib-only on purpose — the loop driver must not need the server venv.
+    101 means admitted; anything else is the handshake refusal status.
+    """
+    import base64
+    import os
+    import socket
+
+    key = base64.b64encode(os.urandom(16)).decode()
+    lines = [
+        "GET /v1/live HTTP/1.1",
+        "Host: 127.0.0.1:18766",
+        "Upgrade: websocket",
+        "Connection: Upgrade",
+        f"Sec-WebSocket-Key: {key}",
+        "Sec-WebSocket-Version: 13",
+        "Sec-WebSocket-Protocol: yap.live.v1",
+    ]
+    if token is not None:
+        lines.append(f"Authorization: Bearer {token}")
+    request = ("\r\n".join(lines) + "\r\n\r\n").encode()
+    try:
+        with socket.create_connection(("127.0.0.1", 18766), timeout=10) as connection:
+            connection.sendall(request)
+            connection.settimeout(10)
+            response = connection.recv(4096)
+    except OSError as error:
+        return f"transport error: {error}"
+    try:
+        return int(response.split(b" ", 2)[1])
+    except (IndexError, ValueError):
+        return f"unparseable response: {response[:60]!r}"
+
+
+def _check_live_handshakes(alice_token: str) -> None:
+    admitted = _live_handshake_status(alice_token)
+    _check("alice's token is admitted at the upgrade", admitted == 101, str(admitted))
+    refused = _live_handshake_status(None)
+    _check("the same handshake without a token is refused", refused == 401, str(refused))
 
 
 if __name__ == "__main__":
