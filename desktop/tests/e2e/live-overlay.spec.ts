@@ -79,9 +79,14 @@ test("one visible island expands downward quickly without taking focus", async (
     page.getByRole("button", { name: "Open scratch" }),
     page.getByRole("button", { name: "Open transform" }),
   ]);
+  // TEMPORARY (this commit only): forcing a mismatch so windows-latest emits a
+  // -actual.png for the FreeFlow port's baseline. The committed baseline still
+  // shows the pre-port island and passed anyway -- measured at 3.63% against
+  // the 4% budget, i.e. a complete restyle cleared it by about 64 pixels.
+  // The next commit restores a tolerance chosen from what this run reports.
   await expect(root).toHaveScreenshot("live-overlay-hover.png", {
     animations: "disabled",
-    maxDiffPixelRatio: 0.04,
+    maxDiffPixelRatio: 0,
   });
 });
 
