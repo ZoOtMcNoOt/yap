@@ -147,3 +147,91 @@ fn finalization_rollback_failure_is_reported_as_unsafe_shutdown() {
         ))
     );
 }
+
+// The acknowledgement the `Failed` state was always named for. `claim()` blocks
+// on an *unacknowledged* failure; nothing in the crate ever said what
+// acknowledging was, so the first failed shutdown wedged Quit for the rest of
+// the process and every later click resurrected the island instead.
+#[test]
+fn acknowledging_a_failed_shutdown_lets_quit_be_attempted_again() {
+    let quit = QuitCoordinator::new();
+
+    assert_eq!(quit.claim(), QuitClaim::BeginShutdown);
+    quit.begin_finalizing(|| Ok(()), || Ok(())).unwrap();
+    quit.finish(Err("save failed".into()));
+    assert_eq!(quit.claim(), QuitClaim::Blocked("save failed".to_string()));
+
+    assert_eq!(quit.begin_acknowledgement(), Some("save failed".to_string()));
+    assert!(quit.finish_acknowledgement());
+
+    // A fresh shutdown, not an authorized exit: the next quit re-runs
+    // finalization and so re-attempts the save it failed to complete.
+    assert_eq!(quit.claim(), QuitClaim::BeginShutdown);
+    assert!(!quit.exit_authorized());
+}
+
+// While the failure is on screen the app is neither blocked nor free to start a
+// second shutdown behind the dialog. A run of tray clicks must coalesce onto
+// the one already asking.
+#[test]
+fn a_failure_being_acknowledged_coalesces_further_quits_instead_of_stacking_them() {
+    let quit = QuitCoordinator::new();
+
+    assert_eq!(quit.claim(), QuitClaim::BeginShutdown);
+    quit.begin_finalizing(|| Ok(()), || Ok(())).unwrap();
+    quit.finish(Err("save failed".into()));
+
+    assert_eq!(quit.begin_acknowledgement(), Some("save failed".to_string()));
+    assert_eq!(quit.claim(), QuitClaim::Coalesced);
+    assert_eq!(quit.claim(), QuitClaim::Coalesced);
+    // A second presenter cannot take a failure the first one is already holding.
+    assert_eq!(quit.begin_acknowledgement(), None);
+    assert!(!quit.exit_authorized());
+}
+
+// Acknowledging is not a way to reach the exit, and it is not a way to reset a
+// shutdown that is still running.
+#[test]
+fn acknowledgement_cannot_authorize_an_exit_or_reset_a_live_shutdown() {
+    let authorized = QuitCoordinator::new();
+    assert_eq!(authorized.claim(), QuitClaim::BeginShutdown);
+    authorized.begin_finalizing(|| Ok(()), || Ok(())).unwrap();
+    authorized.finish(Ok(()));
+    assert_eq!(authorized.begin_acknowledgement(), None);
+    assert!(!authorized.finish_acknowledgement());
+    assert_eq!(authorized.claim(), QuitClaim::ExitAuthorized);
+
+    let publishing = QuitCoordinator::new();
+    assert_eq!(publishing.claim(), QuitClaim::BeginShutdown);
+    assert_eq!(publishing.begin_acknowledgement(), None);
+    assert!(!publishing.finish_acknowledgement());
+    assert_eq!(publishing.claim(), QuitClaim::Coalesced);
+
+    let finalizing = QuitCoordinator::new();
+    assert_eq!(finalizing.claim(), QuitClaim::BeginShutdown);
+    finalizing.begin_finalizing(|| Ok(()), || Ok(())).unwrap();
+    assert_eq!(finalizing.begin_acknowledgement(), None);
+    assert!(!finalizing.finish_acknowledgement());
+    assert_eq!(finalizing.claim(), QuitClaim::Coalesced);
+
+    let ready = QuitCoordinator::new();
+    assert_eq!(ready.begin_acknowledgement(), None);
+    assert!(!ready.finish_acknowledgement());
+    assert_eq!(ready.claim(), QuitClaim::BeginShutdown);
+}
+
+// A presenter that dies without dismissing must not leave the app parked in a
+// state with no exit -- that is the same defect in a new place.
+#[test]
+fn a_dropped_acknowledgement_returns_the_app_to_ready() {
+    let quit = QuitCoordinator::new();
+    assert_eq!(quit.claim(), QuitClaim::BeginShutdown);
+    quit.begin_finalizing(|| Ok(()), || Ok(())).unwrap();
+    quit.finish(Err("save failed".into()));
+
+    assert_eq!(quit.begin_acknowledgement(), Some("save failed".to_string()));
+    assert!(quit.finish_acknowledgement());
+    // Idempotent: the guard's drop after an explicit dismissal is a no-op.
+    assert!(!quit.finish_acknowledgement());
+    assert_eq!(quit.claim(), QuitClaim::BeginShutdown);
+}
