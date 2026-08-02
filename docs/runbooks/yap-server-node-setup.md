@@ -2,6 +2,12 @@
 
 Yap's team profile treats an NVIDIA GB-class server node as a private server tier, not a public service. The desktop stays thin: local Nemotron INT8 is the live/offline fallback. Phase 3 provides health reachability and durable queued-job ownership. Phase 4 adds one transient, server-internal Cohere batch reference worker. The gated Phase 5 path sends imported recordings through the durable loopback batch contract. Phase 6 adds bounded Cohere vLLM and Nemotron NeMo resident candidates behind the same job/result authority; exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed their lifecycle boundary inside the complete Phase 6 matrix. Neither candidate is promoted. This remains a development profile, not a public or persistent production service.
 
+**Start here:** `./infra/yap-server-node/yap-server-setup.sh` walks every
+software precondition on the node, converges what is safe to converge (venv,
+directories), and prints the remaining human steps with this machine's actual
+values filled in. `--check` reports without changing anything. It never fakes
+a green — the launch scripts' own validation remains the authority.
+
 The first supported node profile is DGX Spark GB10. A later GB300-class node should keep the same server contract and change only host-specific config: NIC names, CIDRs, GPU/runtime sizing, and deployment capacity.
 
 ## Security Shape
