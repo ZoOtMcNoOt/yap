@@ -133,6 +133,12 @@ export async function installQueuedServerBridge(
           if (command === "history_catalog") {
             return { maintenanceWarnings: [], sessions: [] };
           }
+          // Unanswered, the startup hidden-history reconciliation reads
+          // migratedOutputPaths off undefined, throws, and every capture wears
+          // a "cleanup could not be completed" toast that no real app shows.
+          if (command === "history_migrate_hidden_paths") {
+            return { migratedOutputPaths: [] };
+          }
           if (command === "setup_status") return {
             engineBinaryStatus: "ready",
             engineReady: true,
