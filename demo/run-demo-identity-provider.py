@@ -203,13 +203,21 @@ def server_environment(port: int) -> str:
     issuer = f"http://127.0.0.1:{port}/{ISSUER_ID}"
     return "\n".join(
         [
-            "YAP_AUTH_MODE=entra",
-            f"YAP_OIDC_ISSUER={issuer}",
-            f"YAP_OIDC_AUDIENCE={AUDIENCE}",
-            f"YAP_OIDC_ALLOWED_TENANT_IDS={TENANT_ID}",
-            f"YAP_OIDC_ALLOWED_CLIENT_IDS={CLIENT_ID}",
-            "YAP_OIDC_REQUIRED_SCOPES=access_as_user",
-            "YAP_OIDC_ALLOW_INSECURE_LOOPBACK=1",
+            # Not an environment block for `yap-server`. It cannot be one:
+            # `ServerAuthenticationSettings.from_environment` rejects both
+            # YAP_OIDC_ISSUER and YAP_MOCK_OIDC_ISSUER outright -- "test-only
+            # and cannot enter server configuration" -- so no environment makes
+            # a stock server trust a loopback issuer. That guard is deliberate.
+            #
+            # These are the settings values, named as the server names them, for
+            # a host that constructs ServerAuthenticationSettings directly the
+            # way verification/authenticated-connector-server.py does.
+            "mode=entra",
+            f"issuer={issuer}",
+            f"audience={AUDIENCE}",
+            f"tenant_id={TENANT_ID}",
+            f"allowed_client_ids={CLIENT_ID}",
+            "required_scope=access_as_user",
         ]
     )
 
@@ -238,7 +246,7 @@ def main() -> None:
         print(f"  alice  {ALICE_ID}  roles: {ADMIN_ROLE}")
         print(f"  bob    {BOB_ID}  roles: none")
         print()
-        print("Point the server at it with:")
+        print("Settings for a host that builds ServerAuthenticationSettings directly:")
         print(server_environment(arguments.port))
         print()
         print(f"Mint a token:  {Path(__file__).name} token --identity alice")
