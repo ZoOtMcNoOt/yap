@@ -100,10 +100,10 @@ describe("Yap live overlay window", () => {
     expect(overlay.visible).toBe(true);
     expect(overlay.focused).toBe(false);
     expect(overlay.closable).toBe(false);
-    expect(logicalInner.width).toBeCloseTo(104, 1);
-    expect(logicalInner.height).toBeCloseTo(40, 1);
-    expect(logicalOuter.width).toBeCloseTo(104, 1);
-    expect(logicalOuter.height).toBeCloseTo(40, 1);
+    expect(logicalInner.width).toBeCloseTo(92, 1);
+    expect(logicalInner.height).toBeCloseTo(38, 1);
+    expect(logicalOuter.width).toBeCloseTo(92, 1);
+    expect(logicalOuter.height).toBeCloseTo(38, 1);
     expect(listRecordingArtifacts(recordingRoot)).toEqual([]);
   });
 
@@ -262,12 +262,12 @@ describe("Yap live overlay window", () => {
     await browser.tauri.switchWindow("main");
     await browser.waitUntil(async () => browser.tauri.execute(async ({ core }, scale) => {
       const inner = await core.invoke("plugin:window|inner_size", { label: "live-overlay" });
-      return Math.abs(inner.width / scale - 104) <= 0.5
-        && Math.abs(inner.height / scale - 40) <= 0.5;
+      return Math.abs(inner.width / scale - 92) <= 0.5
+        && Math.abs(inner.height / scale - 38) <= 0.5;
     }, scaleFactor), {
       interval: 25,
       timeout: 5_000,
-      timeoutMsg: "collapsed native bounds did not converge to 104 by 40",
+      timeoutMsg: "collapsed native bounds did not converge to 92 by 38",
     });
     expect(await browser.tauri.execute(({ core }) =>
       core.invoke("plugin:window|is_focused", { label: "live-overlay" }))).toBe(false);
