@@ -87,6 +87,10 @@ test("first run takes over the window, proves a dictation, and never opens Setti
   });
 
   await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
+  // The bridge answers the hidden-history reconciliation, so the startup
+  // cleanup warning must never haunt the surface again.
+  await expect(page.getByText("Hidden transcript cleanup could not be completed."))
+    .toHaveCount(0);
 });
 
 test("Transcribe and Help describe the organization server queue", async ({ page }) => {
