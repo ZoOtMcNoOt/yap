@@ -26,11 +26,26 @@ who shows you what a non-administrator actually sees.
 ## Running it
 
 ```bash
-./demo/run-demo-identity-provider.py serve            # start, prints server env
-./demo/run-demo-identity-provider.py token --identity alice
-./demo/run-demo-identity-provider.py token --identity bob
+./demo/run-demo-identity-provider.py serve   # the issuer (Docker, loopback)
+./demo/run-demo-server.py                    # a yap-server that trusts it (stays up)
+./demo/run-demo-loop.py                      # the proof: two users, real audio, exits nonzero on any violation
 ./demo/run-demo-identity-provider.py stop
 ```
+
+`run-demo-server.py` re-execs itself under `server/.venv` (run `uv sync` in
+`server/` once). The loop driver is stdlib-only Python.
+
+The loop submits the LibriSpeech fixture WAV as alice through the shipping
+request path — creation, hash-checked chunk upload, commit — then asserts that
+bob cannot GET, poll, or delete her job (the server answers 404, not 403: an
+unowned job does not exist for you), that an anonymous caller gets 401, and
+that alice still sees her job afterwards. Mint ad-hoc tokens with
+`token --identity alice|bob` if you want to poke the API yourself.
+
+Transcription: `run-demo-server.py` attaches no ASR runtime, and says so — the
+job's processing stage fails with a message naming the script. Attaching real
+transcription is the yap-server-node runbook's provisioning step, not the
+demo's.
 
 `serve` prints the authentication settings. It is deliberately **not** an
 environment block: `ServerAuthenticationSettings.from_environment` rejects both
