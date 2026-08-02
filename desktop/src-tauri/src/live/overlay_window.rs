@@ -225,6 +225,32 @@ const REVEAL_RETRACT_MARGIN: f64 = 28.0;
 const REVEAL_ZONE_HEIGHT: f64 = 12.0;
 
 static OVERLAY_REVEALED: AtomicBool = AtomicBool::new(false);
+// A brand-new install holds the island out instead of tucking it away. The
+// bezel reveal made the resting island invisible, which is right for someone
+// who knows it exists and a dead end for someone who does not — there is no
+// other surface that teaches where dictation lives. "New" is derived, not
+// stored: no saved live session exists yet. The first successful dictation
+// clears it (see `end_first_run_hold`), and from then on the island earns its
+// keep by getting out of the way.
+static FIRST_RUN_HOLD: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn begin_first_run_hold_if_never_dictated() {
+    let has_dictated = crate::live::recordings::list_history_sources()
+        .map(|catalog| !catalog.saved.sessions.is_empty() || !catalog.recoverable.is_empty())
+        // A read failure must not pin the island out forever on a machine
+        // that has plainly been dictating; only a clean "nothing saved"
+        // engages the hold.
+        .unwrap_or(true);
+    FIRST_RUN_HOLD.store(!has_dictated, Ordering::Release);
+}
+
+pub(crate) fn end_first_run_hold(app: &tauri::AppHandle) {
+    if FIRST_RUN_HOLD.swap(false, Ordering::AcqRel) {
+        // Re-derive promptly so the island tucks away without waiting for the
+        // cursor to wander near it.
+        sync_reveal(app);
+    }
+}
 
 /// Pure so the geometry is testable without a display. Coordinates are logical
 /// and relative to the monitor's own origin.
@@ -267,10 +293,13 @@ pub(crate) fn sync_reveal(app: &tauri::AppHandle) {
     };
     let was_revealed = OVERLAY_REVEALED.load(Ordering::Acquire);
 
-    // Anything that is not a resting idle island holds the pill out: the user is
-    // dictating, transcribing, or being told something failed.
+    // Anything that is not a resting idle island holds the pill out: the user
+    // is dictating, transcribing, being told something failed — or has never
+    // dictated at all, in which case the island is the only thing teaching
+    // them it exists.
     let revealed = view.status != crate::live::state::LiveSessionStatus::Idle
         || view.error.is_some()
+        || FIRST_RUN_HOLD.load(Ordering::Acquire)
         || cursor_reveals_the_pill_now(app, &window, was_revealed);
 
     if revealed == was_revealed {

@@ -56,7 +56,11 @@ test("Transcribe and Help describe the organization server queue", async ({ page
 
   await expect(page.getByText("Add recordings to your organization's transcription queue."))
     .toBeVisible();
-  await expect(page.getByText("Organization server queue", { exact: true })).toBeVisible();
+  // The preview has no language configured, which is exactly a first run: the
+  // hero yields to the two-step welcome, and the queue badge belongs to the
+  // post-setup import surface it describes.
+  await expect(page.getByTestId("first-run-welcome")).toBeVisible();
+  await expect(page.getByText("Two steps to your first dictation")).toBeVisible();
   await expect(page.getByText("Private on this device", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Drop files to run", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Choose files above to add them to the organization server queue.", { exact: true }))

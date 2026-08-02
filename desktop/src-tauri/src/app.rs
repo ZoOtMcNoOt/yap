@@ -316,6 +316,10 @@ pub(crate) fn run() {
             jobs::commands::install_native_import_dispatcher(app)?;
             tray::install(app.handle())?;
             let lifecycle = app.state::<runtime::DesktopLifecycle>();
+            // Derive the first-run island hold before the reveal poll starts,
+            // so a brand-new install shows the island instead of hiding the
+            // only surface that teaches where dictation lives.
+            live::overlay_window::begin_first_run_hold_if_never_dictated();
             start_owned_background_work(app.handle(), lifecycle.inner(), live_runtime_for_monitor)?;
             let startup_live = app.state::<live::LiveSessionState>().snapshot();
             if startup_live.visibility == live::state::LiveOverlayVisibility::Enabled {
