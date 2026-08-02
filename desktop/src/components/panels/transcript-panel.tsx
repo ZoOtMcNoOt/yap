@@ -1,13 +1,12 @@
 import { Copy } from "@phosphor-icons/react/Copy";
 import { FileText } from "@phosphor-icons/react/FileText";
-import { FolderOpen } from "@phosphor-icons/react/FolderOpen";
 import { Question as HelpCircle } from "@phosphor-icons/react/Question";
 import { ArrowCounterClockwise as RotateCcw } from "@phosphor-icons/react/ArrowCounterClockwise";
 import { useEffect, type ReactNode } from "react";
 
 import { RecordingPlayer } from "@/components/playback/recording-player";
 import { recordingActivityLabel } from "@/components/playback/recording-status";
-import { TranscriptResultSummaryBadges } from "@/components/transcript-result-summary";
+import { TranscriptResultSummaryLine } from "@/components/transcript-result-summary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,7 +118,7 @@ export function TranscriptPanel({
                     ? "Waiting in queue"
                     : "Select a file or finish a transcription to preview text here."}
           </CardDescription>
-          <TranscriptResultSummaryBadges className="mt-2" summary={item?.resultSummary} />
+          <TranscriptResultSummaryLine className="mt-2" summary={item?.resultSummary} />
         </div>
         {output ? (
           <CardAction className="col-span-full col-start-1 row-span-1 row-start-2 w-full justify-self-stretch sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:w-auto sm:justify-self-end">
@@ -145,16 +144,6 @@ export function TranscriptPanel({
               >
                 <FileText data-icon="inline-start" />
                 Open
-              </Button>
-              <Button
-                aria-label={`Reveal transcript for ${item.name}`}
-                onClick={() => onReveal(output)}
-                size="sm"
-                type="button"
-                variant="ghost"
-              >
-                <FolderOpen data-icon="inline-start" />
-                Reveal
               </Button>
             </ButtonGroup>
           </CardAction>

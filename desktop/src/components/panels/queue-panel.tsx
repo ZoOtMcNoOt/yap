@@ -67,13 +67,9 @@ export function QueuePanel({
             </Badge>
           </CardTitle>
           <CardDescription>
-            {queue.length ? (
-              <>
-                <span className="tabular-nums">{queue.length}</span> recording{queue.length === 1 ? "" : "s"} waiting for the organization server.
-              </>
-            ) : (
-              "Choose files above to add them to the organization server queue."
-            )}
+            {queue.length
+              ? "Waiting for the organization server."
+              : "Choose files above to add them to the organization server queue."}
           </CardDescription>
         </div>
         <CardAction className="col-span-full col-start-1 row-span-1 row-start-2 w-full justify-self-stretch sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:w-auto sm:justify-self-end">
