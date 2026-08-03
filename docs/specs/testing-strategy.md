@@ -96,7 +96,7 @@ merge.
 
 ### Maintainability checkpoint boundary
 
-The gated post-Phase-8 candidate uses the behavior-named
+The post-Phase-8 repair and its replacement candidate use the behavior-named
 [meeting-transcription maintainability checkpoint](../runbooks/meeting-transcription-maintainability-checkpoint.md)
 and its `meeting-transcription-maintainability-checkpoint` manifest. The older
 [integrated product checkpoint gate](../runbooks/integrated-product-checkpoint-gate.md)

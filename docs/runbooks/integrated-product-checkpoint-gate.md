@@ -2,8 +2,8 @@
 
 This is the historical Checkpoint B whole-product gate. Its identity is
 `integrated-product-checkpoint`; it is retained only to validate its original
-evidence and must not be used for the gated meeting-transcription
-maintainability candidate. That checkpoint has its own
+evidence and must not be used for the meeting-transcription maintainability
+repair or its replacement candidate. That checkpoint has its own
 [behavior-named runbook](meeting-transcription-maintainability-checkpoint.md)
 and manifest. This gate is not a continuation, rerun, or relabeling of the
 completed Phase 6 preprocessing and language-routing gate.

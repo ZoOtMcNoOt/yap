@@ -39,9 +39,10 @@ complexity.
   authorize enterprise identity infrastructure.
 - The separate meeting-transcription ownership and maintainability candidate
   passed its one complete applicable matrix, independent receipt validation,
-  and required CI and CodeQL jobs. Phase 9 begins only after final docs-only
-  exact-head hosted closure, including disposable-Windows NSIS, and PR #143
-  merge.
+  and required CI and CodeQL jobs. Its documentation successor exposed
+  high-severity `GHSA-mwp4-54f8-5fhr`; the patched development-tool lockfile
+  requires a fresh candidate gate. Phase 9 begins only after that exact-head
+  gate, hosted closure including disposable-Windows NSIS, and PR #143 merge.
 - Historical Checkpoint B candidate
   `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
   `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence
@@ -274,7 +275,7 @@ The following work is not required to close Phase 6:
 | Phase 7 — merged | Authenticated identity/access seam, token-derived ownership, purpose grants, authorization/revocation, and multi-owner contract behavior. Use synthetic/mock identity for developer-owned validation until IT provides an approved Entra environment. | Merged as `66d314d7`; real enterprise conformance remains an IT handoff. |
 | Post-Phase-7 checkpoint — merged | Review the new identity boundary and affected earlier owners. Fix blockers; defer optional polish. | Closed at `ef6d977` with recorded follow-ups. |
 | Phase 8 — merged Preview | Pinned Tiron meeting baseline plus model-independent speaker/result contracts, exact checked-image startup, native publication, and History projection. | PR #142 merged as `4201c5e7`; the route remains explicitly enabled and unpromoted. |
-| Post-Phase-8 checkpoint — candidate gated | Reconcile executable ownership, durable result decoding, native detail loading, lifecycle races, evaluation/runtime separation, and current documentation without changing model qualification. | Exact candidate `fb0985e...` passed its one complete matrix, independent receipt validation, and required CI and CodeQL jobs; final docs-only exact-head hosted closure, including disposable-Windows NSIS, and PR #143 merge remain. |
+| Post-Phase-8 checkpoint — late dependency repair | Reconcile executable ownership, durable result decoding, native detail loading, lifecycle races, evaluation/runtime separation, and current documentation without changing model qualification. | Exact candidate `fb0985e...` passed, but its docs successor exposed `GHSA-mwp4-54f8-5fhr`; the patched lockfile needs a fresh exact-head candidate gate, hosted closure including disposable-Windows NSIS, and PR #143 merge. |
 | Phase 9 | Governed terminology, OKF compilation, permission-safe retrieval, agents/RAG/MCP, and evidence-selected SGLang model. | Permission-isolated integrated workflows, phase gate, PR, and merge. |
 | Post-Phase-9 checkpoint | Review knowledge, tool, model, and permission boundaries. | Checkpoint gate, PR, and merge. |
 | Phase 10 | Production supervision, mixed-user capacity, observability, release governance, full maintainability audit, private full security scan, deployment evidence, and explicit IT/security/network handoffs. | Final exact-head matrix, hosted checks, reviewed PR, and merge; external enterprise conformance remains a named handoff when unavailable. |

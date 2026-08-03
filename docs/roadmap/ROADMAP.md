@@ -116,9 +116,10 @@ post-phase adversarial/refactor checkpoint and concrete follow-ups closed.
 Phase 8 Preview then merged through PR #142. Its separate meeting-transcription
 ownership and maintainability candidate has passed its exact-image lifecycle,
 single complete matrix, independent receipt validation, and required CI and
-CodeQL jobs. Final documentation-only exact-head hosted closure, including
-disposable-Windows NSIS, and PR #143 merge are the active delivery boundary
-before Phase 9.
+CodeQL jobs. Its documentation successor exposed high-severity
+`GHSA-mwp4-54f8-5fhr`; the patched development-tool lockfile requires a fresh
+exact-head candidate gate, hosted closure including disposable-Windows NSIS,
+and PR #143 merge before Phase 9.
 
 ## Last merged phase: meeting evidence Preview (Phase 8)
 
@@ -184,9 +185,9 @@ committed default catalog or production-promote it. Independent accuracy,
 capacity, lifecycle, and privacy evidence remains required for promotion.
 The separate
 [meeting-transcription ownership and maintainability review](../plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-has a gated executable candidate and must merge through its final docs-only
-exact-head hosted closure, including disposable-Windows NSIS, before Phase 9
-begins.
+must qualify its patched lockfile on a fresh exact-head candidate and complete
+hosted closure, including disposable-Windows NSIS, before PR #143 merges and
+Phase 9 begins.
 
 ## Enterprise handoffs
 

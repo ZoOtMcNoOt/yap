@@ -264,8 +264,10 @@ outcome cannot be resolved. Exact-tree re-review, all 14 focused proxy
 contracts, and the real root-owned GB10 target proof pass with no P0–P2 finding.
 Exact candidate `fb0985e7c08cf0a0e69752afbe61e372cbfe76db` passed fresh
 private-controller packaging/prequalification, the complete checkpoint gate,
-and required CI and CodeQL jobs. PR #143's final documentation-only exact-head
-hosted closure, including disposable-Windows NSIS, and merge remain open.
+and required CI and CodeQL jobs. Its documentation successor failed hosted
+frontend dependency audit; patched development-only `ip-address` 10.3.1 changes
+the lockfile and requires a fresh exact-head candidate gate, hosted closure
+including disposable-Windows NSIS, and PR #143 merge.
 This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
 revocation propagation, guest behavior, packaged enterprise policy, or
 production approval. Run those only in a separately authorized IT-provided

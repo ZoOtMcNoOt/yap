@@ -9,6 +9,7 @@ overrides:
   brace-expansion@1: 1.1.18
   brace-expansion@2: 2.1.4
   fast-xml-parser@5: 5.10.1
+  ip-address: 10.3.1
   postcss: 8.5.23
   serialize-javascript: ^7.0.3
   undici@6: 6.28.0
@@ -2407,8 +2408,8 @@ packages:
       '@types/node':
         optional: true
 
-  ip-address@10.2.0:
-    resolution: {integrity: sha512-/+S6j4E9AHvW9SWMSEY9Xfy66O5PWvVEJ08O0y5JGyEKQpojb0K0GKpz/v5HJ/G0vi3D2sjGK78119oXZeE0qA==}
+  ip-address@10.3.1:
+    resolution: {integrity: sha512-1e9d3kb97NHJTIJDZW9rKqW2h6+dFa50Dy0fpPSMQp2ADje5gvKsXmdiK6dwY5t76TaTt5+P5N1Y/LoToIxP6g==}
     engines: {node: '>= 12'}
 
   is-arrayish@0.2.1:
@@ -5939,7 +5940,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 26.1.2
 
-  ip-address@10.2.0: {}
+  ip-address@10.3.1: {}
 
   is-arrayish@0.2.1: {}
 
@@ -6657,7 +6658,7 @@ snapshots:
 
   socks@2.8.9:
     dependencies:
-      ip-address: 10.2.0
+      ip-address: 10.3.1
       smart-buffer: 4.2.0
 
   sonner@2.0.7(react-dom@19.2.8(react@19.2.8))(react@19.2.8):

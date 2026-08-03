@@ -41,6 +41,13 @@ releases `6.28.0` and `7.29.0`. Those releases resolve
 Both advisories appeared during the August 3 checkpoint closure; neither is
 ignored.
 
+WebdriverIO's Puppeteer proxy chain resolves `ip-address` only through desktop
+development dependencies. The workspace nevertheless pins it to exact patched
+release `10.3.1`, which resolves high-severity
+`GHSA-mwp4-54f8-5fhr` without an advisory exception. The registry published the
+advisory during the August 3 checkpoint closure after the executable candidate's
+audit had passed; the first documentation-successor frontend audit exposed it.
+
 ## Current Rust Policy
 
 CI runs `cargo audit` for the Windows desktop target:

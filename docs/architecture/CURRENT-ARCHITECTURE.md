@@ -1,8 +1,8 @@
 # Current Architecture
 
 This document describes the merged executable Phase 1–8 Preview system plus the
-gated meeting-transcription ownership and maintainability candidate awaiting
-final documentation-only PR closure. Phase 7
+meeting-transcription ownership and maintainability repair awaiting a fresh
+exact-head candidate gate after a late development-tool security pin. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -25,8 +25,10 @@ production-promoted provider. Exact maintainability candidate
 `fb0985e7c08cf0a0e69752afbe61e372cbfe76db` completed focused checks, final
 antagonistic review, its single exact-head 18-child matrix, independent receipt
 validation, and the required CI and CodeQL jobs. Only the final
-documentation-only exact-head hosted closure, including disposable-Windows
-NSIS, and PR #143 merge remain open.
+documentation-only successor `e22368fc...` failed hosted frontend audit on
+`GHSA-mwp4-54f8-5fhr`. Patched `ip-address` 10.3.1 is development-only, but its
+lockfile change requires a fresh exact-head candidate gate, hosted closure
+including disposable-Windows NSIS, and PR #143 merge.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -886,9 +888,10 @@ reviewed head in required fresh GitHub-hosted Windows jobs. Connector and
 required WDIO runtime trees run there
 under the same kill-on-close Job supervisor used by candidate commands and
 must finish with zero active processes. Hosted CodeQL and disposable installer
-automation completed Phase 8 closure before merge. The maintainability
-candidate has completed its single applicable matrix and final antagonistic
-review; only its documentation-only exact-head hosted closure, including
-disposable-Windows NSIS, and PR #143 merge remain. The fresh VM is the lifecycle
-boundary for Microsoft build-tool helpers; it is not the product runtime cleanup
-mechanism.
+automation completed Phase 8 closure before merge. The last maintainability
+candidate completed its single applicable matrix and final antagonistic review,
+but its documentation-only successor exposed a new high-severity development-
+tool advisory. The patched lockfile receives a fresh exact-head candidate gate
+and hosted closure, including disposable-Windows NSIS, before PR #143 merges.
+The fresh VM is the lifecycle boundary for Microsoft build-tool helpers; it is
+not the product runtime cleanup mechanism.
