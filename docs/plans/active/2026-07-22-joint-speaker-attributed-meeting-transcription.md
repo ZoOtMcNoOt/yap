@@ -2,7 +2,8 @@
 
 **Date:** 2026-07-22
 
-**Status:** Active on `feat/joint-meeting-transcription`
+**Status:** Active on `feat/joint-meeting-transcription`; Preview gate passed,
+reviewed PR and merge pending
 
 **Decision authority:**
 [ADR 0020](../../adr/0020-meeting-capture-diarization-authority.md) and
@@ -17,15 +18,22 @@ checked Tiron image. Focused Python and Rust tests compose the existing
 authenticated job route, three-hour admission, separate hash-bound transcript
 and anonymous-speaker revisions, native publication, and History projection.
 Exact application/runtime head
-`6d90a7225a45f181efcb90bb796b1ba97f645eba` then passed one supported-launcher
+`1c69b61cf2902c9cfda50c6158168890974f969f` passed one supported-launcher
 development-loopback roundtrip from licensed client import through the real HTTP
 route and pinned upstream Tiron harness to a separately hash-bound speaker
-result and speaker-attributed History UI. Its protected receipt remains outside
-Git. This is an executable candidate path, not production promotion or complete
-Phase 8 Preview qualification. The executing contract now conservatively makes
-an exactly-eight-label upstream aggregate terminal `partial`, binds one
-meeting-global saturation record to the complete source, and states that
-fallback reprocessing was recommended but not run.
+result and speaker-attributed History UI. It also passed the one admitted
+local/native/server/GB10 Preview matrix, including the exact immutable image
+`sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`
+and a real two-window GB10 run. Reviewed descendant
+`9ff06d7d3f66faea92276000d58fa9b94154682b` changes only test/gate mechanics;
+it does not change the shipped product, runtime, or image. The protected
+aggregate receipt remains outside Git and has SHA-256
+`9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`.
+This qualifies the disabled-by-default Preview baseline, not production
+promotion. The executing contract conservatively makes an exactly-eight-label
+upstream aggregate terminal `partial`, binds one meeting-global saturation
+record to the complete source, and states that fallback reprocessing was
+recommended but not run.
 
 ## Outcome
 
@@ -62,10 +70,11 @@ overlap and long multi-participant meetings.
 This branch closes the smallest honest Phase 8 product layer: an explicitly
 enabled, meeting-only Preview candidate that is absent from the committed
 default catalog. It does not production-promote Tiron. The remaining Preview
-closure work is limited to stabilizing the typed global-cap behavior, closing
-the adversarial review, proving the supported roundtrip again on the exact
-candidate, running the frozen Phase 8 local/native/server/GB10 matrix once,
-reconciling docs, and merging a green checked head.
+closure work is now limited to the focused reviewed PR, exact-head hosted
+checks, merge, and the separately required post-phase maintainability
+checkpoint. The typed global-cap behavior, three-lens adversarial review,
+supported exact-candidate roundtrip, one admitted Phase 8
+local/native/server/GB10 matrix, and execution-truth reconciliation are closed.
 
 The private holdout, public-score reproduction, larger-roster speaker epochs,
 exact window-cap localization, automatic fallback execution, and broad
@@ -87,7 +96,7 @@ blockers to merging the disabled-by-default Preview baseline.
   exposure-known comparator evidence for Tiron.
 - [ ] Freeze a separate private, independently adjudicated messy-meeting
   holdout before hypotheses are visible.
-- [ ] Store only public-safe manifests, source identities, licenses, hashes,
+- [x] Store only public-safe manifests, source identities, licenses, hashes,
   aggregate thresholds, and transcript-free receipts in Git. Keep audio,
   references, hypotheses, review records, and raw output in the private cache.
 
@@ -211,17 +220,27 @@ The required suite contains:
 
 - [x] Use focused unit, contract, worker, integration, and selected real-model
   checks while implementation changes.
-- [ ] Freeze the exact Preview candidate only after code, locks, docs, and
+- [x] Freeze the exact Preview candidate only after code, locks, docs, and
   private evidence paths are ready; promotion-corpus thresholds remain
   deferred promotion work.
-- [ ] Run the complete applicable local/native/server/GB10 Phase 8 matrix once
+- [x] Run the complete applicable local/native/server/GB10 Phase 8 matrix once
   on that exact candidate.
-- [ ] Reconcile ADR implementation scores and architecture/status claims only
+- [x] Reconcile ADR implementation scores and architecture/status claims only
   from executable evidence.
 - [ ] Open one focused Phase 8 PR and merge only after checked-head hosted CI is
   green, or disclose equivalent local evidence if a hosted check is unavailable.
 - [ ] After merge, run the required separate multi-lens antagonist/refactor
   checkpoint before Phase 9 begins.
+
+The frozen implementation candidate is
+`1c69b61cf2902c9cfda50c6158168890974f969f`. Its runtime-preparation,
+supported native roundtrip, and GB10 two-window receipt hashes are respectively
+`957b4b402320eab70b4dbd474467ec6f58322fc5fc3f2eb9edc2b51021a74abd`,
+`cfa0e8e6348437805d1719406656bb6d8e1a09164e2295f1ec913554c231fcab`,
+and `fddc9c8f63a7cdf1f11ec04ad6f9bfd24f2f11fe0f6e33965fc2cc8b6072eaa4`.
+The protected aggregate receipt binds those artifacts, the exact image, the
+passed lane counts, and runner-only descendant `9ff06d7d...`; no raw audio,
+transcript, private path, or command log is committed.
 
 ## Required review lenses
 

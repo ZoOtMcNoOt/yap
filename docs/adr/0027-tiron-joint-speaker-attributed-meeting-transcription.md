@@ -9,16 +9,21 @@ acceptance contract is executable. A thin offline worker and digest-pinned ARM64
 image pass focused GB10 short/two-window smokes. An explicit candidate runtime
 configuration now joins the verified upstream worker to the Phase 7-owned job
 route, separate immutable transcript and anonymous-speaker revisions,
-owner-scoped API retrieval, and native publication. Exact application/runtime
-head `6d90a7225a45f181efcb90bb796b1ba97f645eba` passed the supported launcher,
-real loopback HTTP/native publication, companion-hash verification, and
-speaker-attributed History rendering path with protected evidence outside Git.
-The current contract also publishes a terminal `partial` result when the
-upstream aggregate exposes exactly eight global speaker labels. The private
-holdout, meeting-score reproduction, larger-roster reconciler, complete Phase
-8 Preview gate, and production promotion remain open; the first three are
-promotion work rather than blockers to merging the disabled-by-default Preview
-baseline.
+  owner-scoped API retrieval, and native publication. Exact application/runtime
+  head `1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported launcher,
+  real loopback HTTP/native publication, companion-hash verification,
+  speaker-attributed History rendering, and the one admitted
+  local/native/server/GB10 Preview matrix against immutable ARM64 image
+  `sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`.
+  Protected aggregate receipt SHA-256
+  `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`
+  binds the subordinate evidence and reviewed test/gate-only descendant
+  `9ff06d7d...` outside Git. The current contract also publishes a terminal
+  `partial` result when the upstream aggregate exposes exactly eight global
+  speaker labels. Reviewed hosted closure and merge remain open. The private
+  holdout, meeting-score reproduction, larger-roster reconciler, automatic
+  fallback, and production promotion remain later promotion work rather than
+  blockers to merging the disabled-by-default Preview baseline.
 
 ## Context
 
@@ -323,7 +328,7 @@ networking, and enterprise deployment handoffs.
 ### Negative
 
 - Tiron is a very new release with limited adoption and no independent Yap
-  reproduction yet.
+  quality reproduction yet; the executing runtime path itself is reproduced.
 - Two-pass decoding and ECAPA linking add latency, memory, dependency, and
   lifecycle work beyond a plain Whisper invocation.
 - Published quality evidence is currently English-only, while Yap requires
@@ -384,6 +389,14 @@ replace the model behind the stable contract.
    matrix once on the exact candidate.
 4. Merge only a reviewed green exact head, then perform the separate
    post-phase maintainability checkpoint before Phase 9 begins.
+
+Steps 1–3 are complete on application/runtime candidate
+`1c69b61cf2902c9cfda50c6158168890974f969f`. The exact two-window GB10 run used
+the immutable image above with networking disabled, a read-only filesystem,
+non-root execution, bounded worker resources, and zero retained containers.
+Three independent adversarial lenses approved the candidate, and a focused
+native follow-up approved runner-only descendant `9ff06d7d...`. The aggregate
+private receipt hash above contains no transcript or audio. Step 4 remains open.
 
 ### Deferred production promotion
 

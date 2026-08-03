@@ -730,6 +730,19 @@ speaker labels. The profile is explicit Preview, absent from the committed
 default catalog, and not production-promoted. The local anonymous-speaker path
 and ASR-plus-diarization fallback remain separate.
 
+Exact application/runtime candidate
+`1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported-launcher
+client/HTTP/Tiron/native/History roundtrip and the one admitted
+local/native/server/GB10 Preview matrix. The GB10 lane ran immutable image
+`sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`
+offline, read-only, non-root, and left zero containers. Protected aggregate
+receipt SHA-256
+`9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`
+binds the exact preparation, native-roundtrip, and two-window receipts plus the
+passed lane counts. Reviewed descendant `9ff06d7d...` changes only test/gate
+mechanics and leaves the application/runtime/image candidate unchanged. This is
+Preview qualification, not default enablement or production promotion.
+
 Tiron's model capacity is eight window-local speaker slots per 30-second
 decode, and the pinned reference harness separately caps the published global
 meeting roster at eight. Neither limit is an attendee count. Yap retains ADR
@@ -746,8 +759,9 @@ window. Window evidence, larger-roster speaker epochs, and automatic fallback
 remain production-promotion work; Yap will not fork private upstream pipeline
 internals to manufacture them.
 
-The Phase 8 Preview gate proves the pinned route, source/result boundaries,
-lifecycle, supported launcher, and client projection on one exact candidate.
+The passed Phase 8 Preview gate proves the pinned route, source/result
+boundaries, lifecycle, supported launcher, and client projection on one exact
+application/runtime candidate.
 The later promotion gate will score AMI/ICSI/NOTSOFAR public comparators
 separately from an independently adjudicated private messy-meeting holdout and
 qualify accuracy, overlap, locale, capacity pressure, long-session stability,

@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-08-02
+**As of:** 2026-08-03
 
 **Most recent closure:** [PR #141](https://github.com/mcnatg1/yap/pull/141)
 removed installer-bundled model weights while preserving explicit verified
@@ -16,10 +16,17 @@ executable validators. A focused offline Tiron worker now executes on GB10;
 the explicitly configured candidate is contract-composed across the authenticated
 job route, separate hash-bound transcript/speaker revisions, owner-scoped
 retrieval, native publication, and History projection. Exact application/runtime
-head `6d90a7225a45f181efcb90bb796b1ba97f645eba` passed one real
+head `1c69b61cf2902c9cfda50c6158168890974f969f` passed one real
 supported-launcher client/HTTP/Tiron/native/History roundtrip with a verified
-speaker companion and protected evidence outside Git. It is not the default or
-a production-promoted route. The current Phase 8 branch additionally marks an
+speaker companion and the one admitted local/native/server/GB10 Preview
+matrix. The exact immutable ARM64 image is
+`sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`;
+the protected aggregate receipt remains outside Git and has SHA-256
+`9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`.
+Reviewed descendant `9ff06d7d3f66faea92276000d58fa9b94154682b`
+changes only test/gate mechanics and leaves that runtime/image evidence
+unchanged. It is not the default or a production-promoted route. The current
+Phase 8 branch additionally marks an
 exactly-eight-label upstream aggregate `partial`, binds that meeting-global
 signal to the complete source, and tells History that fallback reprocessing was
 not run.
@@ -47,7 +54,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
 | Phase 7: identity/access | Merged and gated | The [tenant-scoped identity and job authorization plan](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governed the branch. [PR #69](https://github.com/mcnatg1/yap/pull/69) merged as `66d314d7`. Provider-neutral OIDC/Entra token validation, tenant-scoped `(tid, oid)` ownership across jobs, results, REST and WSS, protected readiness, authenticated bounded private WebSocket admission, and the qualified native lower handshake execute. Two things carried by the branch do NOT execute as product behaviour and are gates rather than capabilities: the purpose-grant and revocation layer is reachable only from tests, since no HTTP route or operator entry point calls `RequestAuthorizationRuntime.purpose_authorization`, so `access_disabled` can be set only by editing `identity.sqlite` by hand; and the desktop production token manager discovers no provider by default. A WAM adapter exists only behind explicit opt-in and is not approved or selected. In release/default builds, explicit `YAP_AUTH_MODE=development_loopback` is the only end-to-end mode that does not require an IT-provided identity environment; the debug-only demo provider is test/demo evidence, not production SSO. Real Entra policy conformance remains an IT-owned handoff. |
 | Post-Phase-7 local-first closure | Implemented and locally gated | On-device setup and recovery no longer await optional server/auth refresh. The fixed numeric-loopback offer retries safely after launch, requires explicit connection approval, never scans the LAN, and stops after configuration or durable dismissal. Server and sign-in controls remain optional and progressively disclosed; no production SSO provider or enterprise configuration is invented. |
-| Phase 8: meeting evidence | Active; Preview closure pending exact gate | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects the pinned upstream Tiron whole-meeting runtime as an explicitly enabled server Preview baseline; it remains absent from the committed default catalog and unpromoted. Exact model/runtime/ECAPA/container/dependency identities and the messy-meeting policy have executable validators. A digest-pinned ARM64 image and thin source-bound worker passed focused offline GB10 short and two-window smokes. The authenticated job route, three-hour admission, restart-safe hash-bound transcript/speaker revisions, owner-scoped retrieval, native publication, and History projection execute. Exact head `6d90a7225a45f181efcb90bb796b1ba97f645eba` passed the supported-launcher client/HTTP/Tiron/native/History roundtrip. The current branch conservatively publishes `partial` when the public upstream aggregate exposes exactly eight global labels and says fallback was recommended but not run. Phase 8 Preview closure still requires current exact-head roundtrip evidence, the one complete local/native/server/GB10 gate, reviewed PR, and merge. Private-holdout scoring, exact window-cap evidence, speaker epochs, automatic fallback, broad capacity/quality evidence, and production promotion are deferred promotion work. |
+| Phase 8: meeting evidence | Active; Preview gate passed, PR/merge pending | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects the pinned upstream Tiron whole-meeting runtime as an explicitly enabled server Preview baseline; it remains absent from the committed default catalog and unpromoted. Exact model/runtime/ECAPA/container/dependency identities and the messy-meeting policy have executable validators. The authenticated job route, three-hour admission, restart-safe hash-bound transcript/speaker revisions, owner-scoped retrieval, native publication, and History projection execute. Exact application/runtime head `1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported-launcher client/HTTP/Tiron/native/History roundtrip and the one admitted local/native/server/GB10 matrix against immutable image `sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`. Protected aggregate receipt SHA-256 `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154` binds the subordinate evidence and test/gate-only descendant `9ff06d7d...`. The current branch conservatively publishes `partial` when the public upstream aggregate exposes exactly eight global labels and says fallback was recommended but not run. Phase 8 Preview closure now requires only the focused reviewed PR, green hosted exact head, merge, and separate post-phase maintainability checkpoint. Private-holdout scoring, exact window-cap evidence, speaker epochs, automatic fallback, broad capacity/quality evidence, and production promotion are deferred promotion work. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Replacement admissions `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3`,
