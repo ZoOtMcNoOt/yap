@@ -35,17 +35,13 @@ describe("imported recording queue surface", () => {
       <TooltipProvider>
         <QueuePanel
           {...legacyExecutionProps}
-          legacyDiscardAllowed={false}
           languageOptions={[]}
           onClear={vi.fn()}
           onConfirmLanguage={vi.fn()}
-          onDiscardLegacyQueue={vi.fn()}
           onRemove={vi.fn()}
           onReveal={vi.fn()}
-          onRetryMigration={vi.fn()}
           onSelect={vi.fn()}
           queue={[item]}
-          migrationPending={false}
         />
       </TooltipProvider>,
     );
@@ -58,7 +54,9 @@ describe("imported recording queue surface", () => {
     expect(source("../../src/App.tsx")).not.toMatch(/startTranscribe|transcribeItems|runQueue/);
     expect(source("../../src/App.tsx")).toContain("useRecordingJobs");
     expect(source("../../src/hooks/use-imported-recording-queue.ts"))
-      .not.toMatch(/queued_local_fallback|local_transcribing/);
+      .not.toMatch(/queued_local_fallback|local_transcribing|migration|legacyDiscard/);
+    expect(source("../../src/components/panels/queue-panel.tsx"))
+      .not.toMatch(/migration|Discard old queue|Restoring queued recordings/);
   });
 
   it("keeps cancellation reachable while a remote job is active", () => {
@@ -76,15 +74,11 @@ describe("imported recording queue surface", () => {
     const html = renderToStaticMarkup(
       <TooltipProvider>
         <QueuePanel
-          legacyDiscardAllowed={false}
           languageOptions={[]}
-          migrationPending={false}
           onClear={vi.fn()}
           onConfirmLanguage={vi.fn()}
-          onDiscardLegacyQueue={vi.fn()}
           onRemove={vi.fn()}
           onReveal={vi.fn()}
-          onRetryMigration={vi.fn()}
           onSelect={vi.fn()}
           queue={[item]}
         />
@@ -93,34 +87,6 @@ describe("imported recording queue surface", () => {
 
     expect(html).toContain('aria-label="Cancel recording"');
     expect(html).not.toMatch(/aria-label="Cancel recording"[^>]*disabled/);
-  });
-
-  it("offers confirmed legacy discard only when a migration failure allows it", () => {
-    const renderFailure = (legacyDiscardAllowed: boolean) => renderToStaticMarkup(
-      <TooltipProvider>
-        <QueuePanel
-          legacyDiscardAllowed={legacyDiscardAllowed}
-          languageOptions={[]}
-          migrationError="Queued recording migration needs attention"
-          migrationPending={false}
-          onClear={vi.fn()}
-          onConfirmLanguage={vi.fn()}
-          onDiscardLegacyQueue={vi.fn()}
-          onRemove={vi.fn()}
-          onReveal={vi.fn()}
-          onRetryMigration={vi.fn()}
-          onSelect={vi.fn()}
-          queue={[]}
-        />
-      </TooltipProvider>,
-    );
-
-    expect(renderFailure(false)).not.toContain("Discard old queue");
-    expect(renderFailure(true)).toContain("Discard old queue");
-
-    const panelSource = source("../../src/components/panels/queue-panel.tsx");
-    expect(panelSource).toContain("Discard the old queue?");
-    expect(panelSource).toContain("onClick={onDiscardLegacyQueue}");
   });
 
   it("renders a bounded language suggestion with current catalog choices", () => {
@@ -153,14 +119,10 @@ describe("imported recording queue surface", () => {
             { languageBcp47: "en-US", qualityTier: "transcriptionReady" },
             { languageBcp47: "fr-FR", qualityTier: "broadCoverage" },
           ]}
-          legacyDiscardAllowed={false}
-          migrationPending={false}
           onClear={vi.fn()}
           onConfirmLanguage={vi.fn()}
-          onDiscardLegacyQueue={vi.fn()}
           onRemove={vi.fn()}
           onReveal={vi.fn()}
-          onRetryMigration={vi.fn()}
           onSelect={vi.fn()}
           queue={[item]}
         />
@@ -198,14 +160,10 @@ describe("imported recording queue surface", () => {
             { languageBcp47: "pt-BR", qualityTier: "broadCoverage" },
             { languageBcp47: "pt-PT", qualityTier: "broadCoverage" },
           ]}
-          legacyDiscardAllowed={false}
-          migrationPending={false}
           onClear={vi.fn()}
           onConfirmLanguage={vi.fn()}
-          onDiscardLegacyQueue={vi.fn()}
           onRemove={vi.fn()}
           onReveal={vi.fn()}
-          onRetryMigration={vi.fn()}
           onSelect={vi.fn()}
           queue={[item]}
         />
@@ -214,15 +172,5 @@ describe("imported recording queue surface", () => {
 
     expect(html).toContain("maps to more than one available locale");
     expect(html).not.toContain("ambiguous_locale");
-  });
-
-  it("wires the guarded discard owner from the recording jobs hook into the queue panel", () => {
-    const appSource = source("../../src/App.tsx");
-    expect(appSource).toContain("discardLegacyQueue,");
-    expect(appSource).toContain("legacyDiscardAllowed,");
-    expect(appSource).toContain("legacyDiscardAllowed={legacyDiscardAllowed}");
-    expect(appSource).toContain(
-      'onDiscardLegacyQueue={() => reportRecordingAction(discardLegacyQueue, "Could not discard old queue")}',
-    );
   });
 });

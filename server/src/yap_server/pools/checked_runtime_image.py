@@ -8,7 +8,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from yap_server.bounded_file import read_regular_file
 
@@ -19,6 +19,7 @@ class CheckedRuntimeImageError(RuntimeError):
 
 CommandRunner = Callable[..., subprocess.CompletedProcess[str]]
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
+SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 BASE_DIGEST_LABEL = "com.mcnatg1.yap.base-platform-digest"
 REVISION_LABEL = "org.opencontainers.image.revision"
@@ -374,11 +375,74 @@ def verify_prepared_checked_image(
     return inspected
 
 
+def resolve_receipt_bound_runtime_image(
+    environ: Mapping[str, str],
+    *,
+    runtime: str,
+    image_environment_variable: str,
+    checked_head_environment_variable: str,
+    receipt_environment_variable: str,
+    receipt_sha256_environment_variable: str,
+    docker_binary: str,
+    repository_root: Path,
+    expected_base_digest: str,
+) -> str:
+    """Resolve one prepared image by its clean head, lock, and frozen receipt."""
+
+    image = environ.get(image_environment_variable, "").strip()
+    checked_head = environ.get(checked_head_environment_variable, "").strip()
+    if not image or SHA40.fullmatch(checked_head) is None:
+        raise ValueError(
+            f"{image_environment_variable} and a full "
+            f"{checked_head_environment_variable} are required"
+        )
+    receipt = environ.get(receipt_environment_variable, "").strip()
+    receipt_sha256 = environ.get(receipt_sha256_environment_variable, "").strip()
+    if not receipt or SHA256_HEX.fullmatch(receipt_sha256) is None:
+        raise ValueError(f"{runtime} preparation receipt and SHA-256 are required")
+
+    def run_command(
+        command: list[str],
+        **kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        actual = list(command)
+        if actual and actual[0] == "docker":
+            actual[0] = docker_binary
+        return subprocess.run(actual, **kwargs)  # type: ignore[arg-type]
+
+    try:
+        contract = runtime_image_contract(
+            repository_root,
+            runtime,
+            checked_head,
+        )
+        if contract.base_digest != expected_base_digest:
+            raise CheckedRuntimeImageError(
+                f"{runtime} image base platform digest differs from its lock"
+            )
+        assert_clean_checked_head(
+            repository_root,
+            checked_head,
+            runner=run_command,
+        )
+        inspected = verify_prepared_checked_image(
+            contract,
+            receipt_path=Path(receipt),
+            receipt_sha256=receipt_sha256,
+            runner=run_command,
+        )
+    except (CheckedRuntimeImageError, OSError) as error:
+        raise ValueError(str(error)) from None
+    image_id = inspected["imageId"]
+    if image != image_id:
+        raise ValueError(
+            f"{runtime} worker image must be the receipt-bound immutable image ID"
+        )
+    return image_id
+
+
 def _run_cli(arguments: list[str]) -> int:
-    if (
-        len(arguments) == 3
-        and arguments[0] in {"prepare", "verify"}
-    ):
+    if len(arguments) == 3 and arguments[0] in {"prepare", "verify"}:
         operation, runtime, checked_head = arguments
         receipt_path = None
         receipt_sha256 = None

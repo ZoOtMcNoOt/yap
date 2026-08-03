@@ -188,9 +188,9 @@ whether text appeared; a blank result at those sub-word boundaries is allowed.
 The one-second, 1.12-second, two-second, five-second, ten-second, and 30-second
 cases must produce text. This is the integrated MVP's quick-correction
 availability boundary, not word-error-rate or phoneme-alignment evidence.
-Timestamped reference scoring belongs to the Phase 8 selected-model quality
-gate; it must not be manufactured from a truncated clip without an exact
-reference.
+Timestamped reference scoring belongs to a separate selected-model promotion
+gate; the merged Phase 8 meeting Preview does not supply it, and it must not be
+manufactured from a truncated clip without an exact reference.
 
 ## 3. Physical microphone and rendered UI
 

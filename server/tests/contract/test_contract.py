@@ -207,24 +207,20 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(job_request["properties"]["tracks"]["maxItems"], 1)
         self.assertEqual(job_request["properties"]["chunks"]["maxItems"], 4096)
         self.assertEqual(
-            schemas["CaptureManifestReference"]["properties"]["schemaVersion"][
-                "enum"
-            ],
-            [1, 2],
+            schemas["CaptureManifestReference"]["properties"]["schemaVersion"]["const"],
+            2,
         )
         self.assertEqual(
             job_request["properties"]["preprocessingEvidence"]["$ref"],
             "#/components/schemas/PreprocessingEvidence",
         )
-        self.assertEqual(len(job_request["oneOf"]), 2)
+        self.assertNotIn("oneOf", job_request)
+        self.assertIn("preprocessingEvidence", job_request["required"])
+        self.assertIn("asrCatalogRevision", job_request["required"])
         self.assertEqual(
-            job_request["oneOf"][0]["properties"]["languageDecision"]["properties"][
-                "mode"
-            ]["const"],
-            "fixed",
+            schemas["PreprocessingEvidence"]["properties"]["schemaVersion"]["const"],
+            2,
         )
-        self.assertIn("preprocessingEvidence", job_request["oneOf"][1]["required"])
-        self.assertIn("asrCatalogRevision", job_request["oneOf"][1]["required"])
         self.assertEqual(
             job_request["properties"]["asrCatalogRevision"]["pattern"],
             "^[0-9a-f]{64}$",

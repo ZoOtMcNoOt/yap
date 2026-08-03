@@ -1,6 +1,10 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 
 import type { TranscriptHistoryEntry } from "@/history-model";
+import {
+  isSpeakerTranscriptTurn,
+  type SpeakerTranscriptTurn,
+} from "@/lib/speaker-transcript";
 import type { SavedTranscriptSession } from "@/native-history";
 
 export type HistoryOrigin = "live" | "remote";
@@ -18,6 +22,12 @@ export type NativeHistoryIdentity = {
   origin: HistoryOrigin;
   outputPath: string;
   sessionId: string;
+};
+
+export type PublishedSpeakerTranscript = {
+  sessionId: string;
+  sourceResultSha256: string;
+  turns: SpeakerTranscriptTurn[];
 };
 
 export type LanguageLabelReviewSegment = {
@@ -40,10 +50,6 @@ export type LanguageLabelReview = {
   sourceResultSha256: string;
 };
 
-type HiddenHistoryMigration = {
-  migratedOutputPaths: string[];
-};
-
 export function nativeHistoryIdentity(
   entry: TranscriptHistoryEntry,
 ): NativeHistoryIdentity | undefined {
@@ -60,6 +66,32 @@ export function nativeHistoryIdentity(
 export async function loadNativeHistoryCatalog(): Promise<NativeHistoryCatalog> {
   if (!isTauri()) return { maintenanceWarnings: [], sessions: [] };
   return invoke<NativeHistoryCatalog>("history_catalog");
+}
+
+export async function loadHistorySpeakerTranscript(
+  identity: NativeHistoryIdentity,
+): Promise<PublishedSpeakerTranscript> {
+  if (!isTauri()) throw new Error("Speaker transcripts are available only in the desktop app.");
+  if (
+    identity.origin !== "remote"
+    || !/^[a-z0-9_-]{1,128}$/i.test(identity.sessionId)
+    || !identity.outputPath
+  ) {
+    throw new Error("Remote transcript identity is unavailable.");
+  }
+  const detail = await invoke<PublishedSpeakerTranscript>("history_speaker_transcript", {
+    identity,
+  });
+  if (
+    detail.sessionId !== identity.sessionId
+    || !/^[a-f0-9]{64}$/.test(detail.sourceResultSha256)
+    || !Array.isArray(detail.turns)
+    || detail.turns.length > 100_000
+    || !detail.turns.every(isSpeakerTranscriptTurn)
+  ) {
+    throw new Error("The native speaker transcript response is invalid.");
+  }
+  return detail;
 }
 
 export async function hideNativeHistoryEntry(entry: TranscriptHistoryEntry) {
@@ -99,11 +131,4 @@ export async function saveLanguageLabelCorrection(
     replacementLanguageBcp47,
     segmentIndex,
   });
-}
-
-export async function migrateHiddenNativeHistory(
-  outputPaths: string[],
-): Promise<HiddenHistoryMigration> {
-  if (!isTauri()) return { migratedOutputPaths: [] };
-  return invoke<HiddenHistoryMigration>("history_migrate_hidden_paths", { outputPaths });
 }

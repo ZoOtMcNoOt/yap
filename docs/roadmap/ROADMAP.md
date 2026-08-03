@@ -46,8 +46,8 @@ identity, diarization, knowledge, or enterprise boundaries forward:
 - a digest-pinned Cohere vLLM 26.06 serving candidate behind the same worker
   contract, with measured GB10 lifecycle, latency, throughput, memory,
   cancellation, teardown, and concurrent-load safety evidence; representative
-  output quality, rollback, and provider promotion remain separate Phase 8
-  decisions rather than exact-output assumptions;
+  output quality, rollback, and provider promotion remain separate later
+  evidence rather than exact-output assumptions;
 - a separate Nemotron NeMo server-streaming candidate with its own correctness,
   streaming, lifecycle, concurrency, and resource gate; and
 - fail-closed word timing, initially behind an English Cohere evidence gate.
@@ -113,9 +113,22 @@ stock-NSIS run `30206941391` passed on documentation-only reviewed head
 
 Phase 7 followed the same cadence: the phase merged, then its separate
 post-phase adversarial/refactor checkpoint and concrete follow-ups closed.
-Phase 8 remains next after the focused local-first discovery closure.
+Phase 8 Preview then merged through PR #142. Its separate meeting-transcription
+ownership and maintainability checkpoint is the active delivery boundary.
 
-## Last merged phase: tenant-scoped identity and access (Phase 7)
+## Last merged phase: meeting evidence Preview (Phase 8)
+
+The
+[joint speaker-attributed meeting transcription plan](../plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
+implemented the explicit meeting-only Tiron Preview and merged through
+[PR #142](https://github.com/mcnatg1/yap/pull/142) as `4201c5e7`. The route
+publishes source-bound transcript and anonymous-speaker revisions through the
+existing owner-scoped result authority and projects them into native History.
+It is not the default route and is not production-promoted. Independent quality,
+capacity, fallback, larger-roster, identity, and promotion evidence remains
+open under ADRs 0020 and 0027.
+
+## Prior merged phase: tenant-scoped identity and access (Phase 7)
 
 The
 [tenant-scoped identity and job authorization plan](../plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
@@ -123,8 +136,9 @@ implemented the Phase 7 boundary and merged as `66d314d7`. It keeps local/offlin
 derives server principals from validated Yap API tokens, enforces owner-scoped
 job and LID operations, adds revocation/purpose-control/audit primitives, and
 uses a synthetic signed two-principal gate where IT-owned Entra registration is
-not yet available. Biometric profiles remain Phase 8; Postgres/pgvector
-knowledge permission compilation remains Phase 9.
+not yet available. Purpose-authorized speaker reconciliation and naming remain
+unpromoted later work; Postgres/pgvector knowledge permission compilation
+remains Phase 9.
 
 Merged Phase 7 has executable evidence for a provider-neutral OIDC verifier
 with Entra policy, fail-closed authentication, tenant-scoped resource
@@ -157,13 +171,16 @@ native provider remain IT-authorized follow-ups rather than Phase 8 work.
 Accepted ADRs remain requirements even when no premature implementation exists.
 Do not treat an unchecked historical plan box as current backlog.
 
-Phase 8 follows
+The merged Phase 8 Preview follows
 [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
-and the active
-[joint speaker-attributed meeting transcription plan](../plans/active/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
+and the completed
+[joint speaker-attributed meeting transcription plan](../plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
 Selecting and explicitly enabling the Preview baseline does not place it in the
 committed default catalog or production-promote it. Independent accuracy,
 capacity, lifecycle, and privacy evidence remains required for promotion.
+The separate
+[meeting-transcription ownership and maintainability review](../plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+must close before Phase 9 begins.
 
 ## Enterprise handoffs
 

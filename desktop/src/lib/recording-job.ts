@@ -1,6 +1,5 @@
 import type { RecordingLanguageDecision } from "@/lib/recording-language";
 import type { TranscriptResultSummary } from "@/lib/transcript-result-summary";
-import type { SpeakerTranscriptTurn } from "@/lib/speaker-transcript";
 
 export const queuedServerMessage =
   "Queued for your organization's transcription server. It will start when Yap connects.";
@@ -64,7 +63,6 @@ export type RecordingJobView = {
   languageDecision?: RecordingLanguageDecision;
   languageReview?: RecordingLanguageReview;
   resultSummary?: TranscriptResultSummary;
-  speakerTurns?: SpeakerTranscriptTurn[];
 };
 
 const activeRecordingStatuses = new Set<RecordingJobStatus>([

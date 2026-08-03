@@ -28,6 +28,10 @@ import {
   validateIntegratedPrivateEvidencePlan,
 } from "./integrated-private-evidence.mjs";
 import {
+  validateMeetingTranscriptionCheckpointEvidence,
+  validateMeetingTranscriptionCheckpointPlan,
+} from "./meeting-transcription-checkpoint-evidence.mjs";
+import {
   INTEGRATED_GATE_BYTE_LIMITS,
   readBoundedJsonArtifact,
   serializeBoundedJson,
@@ -68,7 +72,15 @@ const IDENTITY_ACCESS_MANIFEST_PATH = path.join(
   RUNNER_DIRECTORY,
   "integrated-identity-access-gate.json",
 );
+const MEETING_TRANSCRIPTION_CHECKPOINT_MANIFEST_PATH = path.join(
+  RUNNER_DIRECTORY,
+  "meeting-transcription-maintainability-checkpoint.json",
+);
 const CANONICAL_MANIFEST_CONTRACTS = Object.freeze([
+  Object.freeze({
+    path: MEETING_TRANSCRIPTION_CHECKPOINT_MANIFEST_PATH,
+    gateId: "meeting-transcription-maintainability-checkpoint",
+  }),
   Object.freeze({
     path: IDENTITY_ACCESS_MANIFEST_PATH,
     gateId: "integrated-identity-access",
@@ -86,6 +98,7 @@ const INTEGRATED_GATE_IDS = new Set([
   "integrated-identity-access",
   "integrated-product-checkpoint",
   "integrated-preprocessing-language-routing",
+  "meeting-transcription-maintainability-checkpoint",
 ]);
 const LEGACY_ADMISSION_AUTHORITY_ROOT = path.join(
   os.homedir(),
@@ -418,9 +431,13 @@ export function validateLegacyIntegratedGateReservationValue(reservation) {
   return reservation;
 }
 
-function assertLegacyIntegratedGateReservation(admission, runDirectory) {
+function assertLegacyIntegratedGateReservation(
+  admission,
+  runDirectory,
+  authorityRoot = canonicalLegacyAdmissionAuthorityRoot(),
+) {
   const reservationPath = legacyIntegratedGateReservationPath({
-    authorityRoot: canonicalLegacyAdmissionAuthorityRoot(),
+    authorityRoot,
     gateId: admission.gateId,
     checkedHead: admission.checkedHead,
     manifestSha256: admission.manifestSha256,
@@ -653,14 +670,21 @@ function loadFrozenInputs({
     INTEGRATED_GATE_BYTE_LIMITS.privatePlanBytes,
   );
   requireOutsideRepository(privatePlanFile.path, "Private evidence plan");
+  const meetingCheckpoint = selectedManifest.manifest.gateId
+    === "meeting-transcription-maintainability-checkpoint";
   const requireMockOidc = selectedManifest.manifest.candidateCells.some(
     ({ id }) => id === "server.mock-oidc-owner-flow",
   );
-  const privatePlan = validateIntegratedPrivateEvidencePlan(privatePlanFile.value, {
-    expectedHead,
-    repositoryRoot: REPOSITORY_ROOT,
-    requireMockOidc,
-  });
+  const privatePlan = meetingCheckpoint
+    ? validateMeetingTranscriptionCheckpointPlan(privatePlanFile.value, {
+      expectedHead,
+      repositoryRoot: REPOSITORY_ROOT,
+    })
+    : validateIntegratedPrivateEvidencePlan(privatePlanFile.value, {
+      expectedHead,
+      repositoryRoot: REPOSITORY_ROOT,
+      requireMockOidc,
+    });
   return {
     manifest: selectedManifest.manifest,
     manifestFile: selectedManifest.manifestFile,
@@ -668,6 +692,25 @@ function loadFrozenInputs({
     privatePlan,
     privatePlanFile,
   };
+}
+
+export function validatePrivateEvidenceForGate(
+  gateId,
+  privatePlan,
+  checkedHead,
+  repositoryRoot = REPOSITORY_ROOT,
+) {
+  return gateId === "meeting-transcription-maintainability-checkpoint"
+    ? validateMeetingTranscriptionCheckpointEvidence(
+      privatePlan,
+      checkedHead,
+      repositoryRoot,
+    )
+    : validateIntegratedPrivateEvidence(
+      privatePlan,
+      checkedHead,
+      repositoryRoot,
+    );
 }
 
 export function admitIntegratedGateAttempt({
@@ -687,14 +730,22 @@ export function admitIntegratedGateAttempt({
     privatePlanPath,
     expectedHead: checkedHead,
   });
-  validateIntegratedPrivateEvidencePlan(frozen.privatePlan, {
-    expectedHead: checkedHead,
-    repositoryRoot: REPOSITORY_ROOT,
-    requireDestinationsAbsent: true,
-    requireMockOidc: frozen.manifest.candidateCells.some(
-      ({ id }) => id === "server.mock-oidc-owner-flow",
-    ),
-  });
+  if (frozen.manifest.gateId === "meeting-transcription-maintainability-checkpoint") {
+    validateMeetingTranscriptionCheckpointPlan(frozen.privatePlan, {
+      expectedHead: checkedHead,
+      repositoryRoot: REPOSITORY_ROOT,
+      requireDestinationsAbsent: true,
+    });
+  } else {
+    validateIntegratedPrivateEvidencePlan(frozen.privatePlan, {
+      expectedHead: checkedHead,
+      repositoryRoot: REPOSITORY_ROOT,
+      requireDestinationsAbsent: true,
+      requireMockOidc: frozen.manifest.candidateCells.some(
+        ({ id }) => id === "server.mock-oidc-owner-flow",
+      ),
+    });
+  }
   if (frozen.manifest.gateId === "integrated-identity-access") {
     verifyAdmissionPrerequisites({
       checkedHead,
@@ -1058,10 +1109,10 @@ export async function completeIntegratedGateAttempt({
       }
     }
     assertExactCleanGitHead(admission.checkedHead);
-    const privateEvidence = validateIntegratedPrivateEvidence(
+    const privateEvidence = validatePrivateEvidenceForGate(
+      frozen.manifest.gateId,
       frozen.privatePlan,
       admission.checkedHead,
-      REPOSITORY_ROOT,
     );
     await assertNoRetainedLocalOwners();
     assertExactCleanGitHead(admission.checkedHead);
@@ -1139,7 +1190,10 @@ export async function completeIntegratedGateAttempt({
   }
 }
 
-export function validateCompletedIntegratedGateAttempt(admissionPath) {
+export function validateCompletedIntegratedGateAttempt(
+  admissionPath,
+  { legacyReservationAuthorityRoot } = {},
+) {
   const admissionFile = readExactPrivateJson(
     admissionPath,
     "Gate admission",
@@ -1155,7 +1209,19 @@ export function validateCompletedIntegratedGateAttempt(admissionPath) {
   if (admission.gateId === "integrated-identity-access") {
     assertIntegratedGateReservation(admission, admittedPaths.runDirectory);
   } else {
-    assertLegacyIntegratedGateReservation(admission, admittedPaths.runDirectory);
+    const authorityRoot = legacyReservationAuthorityRoot === undefined
+      ? canonicalLegacyAdmissionAuthorityRoot()
+      : normalizedRealPath(
+        path.resolve(legacyReservationAuthorityRoot),
+        "Legacy admission reservation authority",
+        "directory",
+      );
+    requireOutsideRepository(authorityRoot, "Legacy admission reservation authority");
+    assertLegacyIntegratedGateReservation(
+      admission,
+      admittedPaths.runDirectory,
+      authorityRoot,
+    );
   }
   const running = readExactPrivateJson(
     path.join(admittedPaths.runDirectory, "running.json"),
@@ -1197,10 +1263,10 @@ export function validateCompletedIntegratedGateAttempt(admissionPath) {
       : null,
     expectedScope: "candidate",
   });
-  const privateEvidence = validateIntegratedPrivateEvidence(
+  const privateEvidence = validatePrivateEvidenceForGate(
+    frozen.manifest.gateId,
     frozen.privatePlan,
     admission.checkedHead,
-    REPOSITORY_ROOT,
   );
   for (const [index, cell] of frozen.manifest.candidateCells.entries()) {
     const child = receiptFile.value.children[index];

@@ -13,7 +13,7 @@ import stat
 from typing import Mapping
 
 from yap_server.bounded_file import read_regular_file
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     read_json_object_with_identity,
 )
 from yap_server.evaluation.provider_runtime_observations import (
@@ -306,8 +306,7 @@ def _validate_child_evidence(
     if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
         raise ValueError("provider evidence root must be an absolute real directory")
     discovered = {
-        path.relative_to(resolved).as_posix()
-        for path in resolved.glob("*/*.json")
+        path.relative_to(resolved).as_posix() for path in resolved.glob("*/*.json")
     }
     if discovered != set(_CHILD_REQUIREMENTS):
         raise ValueError("resident provider child evidence set differs from the gate")
@@ -402,8 +401,7 @@ def _validate_child(
             != list(requirement.duration_samples)
             or value.get("exactMaximumIncluded")
             is not requirement.exact_maximum_included
-            or value.get("completedRequestCount")
-            != requirement.completed_request_count
+            or value.get("completedRequestCount") != requirement.completed_request_count
         ):
             raise ValueError("resident provider duration evidence is invalid")
     else:
@@ -413,8 +411,7 @@ def _validate_child(
             value.get("selectedConcurrencies")
             != list(requirement.selected_concurrencies)
             or value.get("repeatCount") != requirement.repeat_count
-            or value.get("completedRequestCount")
-            != requirement.completed_request_count
+            or value.get("completedRequestCount") != requirement.completed_request_count
         ):
             raise ValueError("resident provider standard load evidence is incomplete")
         if (
@@ -422,9 +419,10 @@ def _validate_child(
             and value.get("qualificationScope") != requirement.qualification_scope
         ):
             raise ValueError("resident provider load scope is invalid")
-        if requirement.kind == "resource-load" and value.get(
-            "qualificationScope"
-        ) != "resource-lifecycle":
+        if (
+            requirement.kind == "resource-load"
+            and value.get("qualificationScope") != "resource-lifecycle"
+        ):
             raise ValueError("resident provider resource load scope is invalid")
         if requirement.kind == "resource" and (
             value.get("hardwareProfile") != "dgx-spark-gb10"
@@ -462,7 +460,9 @@ def _firewall_method(payload: bytes) -> str:
     try:
         first_line = payload.splitlines()[0].decode("ascii")
     except (IndexError, UnicodeDecodeError) as error:
-        raise RuntimeError("firewall evidence has an invalid observation method") from error
+        raise RuntimeError(
+            "firewall evidence has an invalid observation method"
+        ) from error
     if not first_line.startswith("tool="):
         raise RuntimeError("firewall evidence has an invalid observation method")
     method = first_line.removeprefix("tool=")
@@ -473,7 +473,9 @@ def _firewall_method(payload: bytes) -> str:
 
 def _validate_new_output(path: Path) -> None:
     if not path.is_absolute() or path.is_symlink():
-        raise ValueError("resident provider lifecycle output must be an absolute new file")
+        raise ValueError(
+            "resident provider lifecycle output must be an absolute new file"
+        )
     parent = path.parent.resolve(strict=True)
     metadata = parent.lstat()
     if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
@@ -517,15 +519,13 @@ def main(argv: list[str] | None = None) -> int:
         checked_head=arguments.checked_head,
         vllm_image_id=arguments.vllm_image_id,
         nemo_image_id=arguments.nemo_image_id,
-        vllm_preparation_receipt_sha256=(
-            arguments.vllm_preparation_receipt_sha256
-        ),
-        nemo_preparation_receipt_sha256=(
-            arguments.nemo_preparation_receipt_sha256
-        ),
+        vllm_preparation_receipt_sha256=(arguments.vllm_preparation_receipt_sha256),
+        nemo_preparation_receipt_sha256=(arguments.nemo_preparation_receipt_sha256),
         output_path=arguments.output,
     )
-    print(json.dumps(evidence, ensure_ascii=True, separators=(",", ":"), sort_keys=True))
+    print(
+        json.dumps(evidence, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
+    )
     return 0
 
 

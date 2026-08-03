@@ -147,6 +147,32 @@ describe("language-control accessibility", () => {
     expect(html.match(/Automatic choices need review\./g)).toHaveLength(1);
   });
 
+  it("describes an incompatible automatic-language setting without guessing its origin", () => {
+    const control = {
+      error: "",
+      load: vi.fn(),
+      pending: false,
+      reset: vi.fn(),
+      status: {
+        catalogRevision: "local-language-catalog-v1",
+        enabledLocales: ["en-US"],
+        preferenceIssue: "incompatibleSchema",
+        primaryLanguageBcp47: "en-US",
+        automaticLanguages: [],
+        schemaVersion: 2,
+      },
+      update: vi.fn(),
+    } as unknown as LiveLanguageRoutingControl;
+
+    const html = renderToStaticMarkup(
+      <AutomaticLanguageRoutingSetting control={control} liveActive={false} />,
+    );
+
+    expect(html).toContain("uses an incompatible format");
+    expect(html).toContain("preserved unchanged");
+    expect(html).not.toContain("newer Yap version");
+  });
+
   it("disables picker and drop-target transitions for reduced-motion users", () => {
     expect(source("../../src/components/ui/select.tsx"))
       .toContain("motion-reduce:animate-none motion-reduce:transition-none");

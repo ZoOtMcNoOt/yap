@@ -10,17 +10,13 @@ from typing import Callable, Mapping, Protocol, Sequence
 from uuid import uuid4
 
 from yap_server.auth import AuthenticatedPrincipal, PrincipalKey
-from yap_server.meeting_transcription.contract import (
-    MAX_MEETING_PCM_BYTES,
-    MEETING_TRANSCRIPTION_POOL_ID,
-)
-from yap_server.meeting_transcription.result_revisions import MeetingResultAuthority
 from yap_server.pools.batch_contract import (
     AsrRouteDecision,
     BatchReservation,
     DurableAsrRouting,
     PoolBackpressure,
     validate_asr_catalog_revision,
+    validate_asr_route_id,
 )
 from yap_server.pools.utterance_plan import (
     UtterancePlanSource,
@@ -36,6 +32,7 @@ from .chunk_upload import ChunkUploadCoordinator, ChunkUploadPlan
 from .completion import JobCompletionCoordinator
 from .contract_values import (
     MAX_CLIENT_CLOCK_SKEW as _MAX_CLIENT_CLOCK_SKEW,
+    MAX_JOB_PCM_BYTES,
     MAX_STORED_JOBS as _DEFAULT_MAX_STORED_JOBS,
     TERMINAL_STATUSES as _TERMINAL_STATUSES,
     identifier as _identifier,
@@ -57,6 +54,7 @@ from .ownership import (
     principal_key,
 )
 from .processing_input import BatchInputPreparation
+from .result_bundle import ResultBundleAdapterRegistry
 from .stage_attempts import (
     StageAttemptCapacityError,
     finish_stage,
@@ -99,7 +97,8 @@ class RecordingJobService:
         cancellation_timeout_seconds: float = _CANCELLATION_ACK_TIMEOUT_SECONDS,
         startup_worker_cleanup_verified: bool = False,
         development_principal: PrincipalKey | None = DEVELOPMENT_JOB_OWNER,
-        meeting_result_authority: MeetingResultAuthority | None = None,
+        result_bundle_adapters: ResultBundleAdapterRegistry | None = None,
+        route_pcm_byte_limits: Mapping[str, int] | None = None,
     ) -> None:
         if cancellation_timeout_seconds <= 0:
             raise ValueError("cancellation timeout must be positive")
@@ -112,15 +111,22 @@ class RecordingJobService:
         self._now = now
         self._cancellation_timeout_seconds = cancellation_timeout_seconds
         self._development_principal = development_principal
+        self._route_pcm_byte_limits = dict(route_pcm_byte_limits or {})
+        for pool_id, maximum_bytes in self._route_pcm_byte_limits.items():
+            validate_asr_route_id(pool_id, "route PCM limit pool ID")
+            if (
+                not isinstance(maximum_bytes, int)
+                or isinstance(maximum_bytes, bool)
+                or not 1 <= maximum_bytes <= MAX_JOB_PCM_BYTES
+            ):
+                raise ValueError("route PCM byte limit is invalid")
+        adapters = result_bundle_adapters or ResultBundleAdapterRegistry()
         self._store = RecordingJobStore(
             storage_root,
             supported_languages=supported_languages,
             now=now,
             startup_worker_cleanup_verified=startup_worker_cleanup_verified,
-            route_resolver=processor.resolve_route,
-            asr_catalog_revision=self._asr_catalog_revision,
-            legacy_owner=development_principal,
-            meeting_result_authority=meeting_result_authority,
+            result_bundle_adapters=adapters,
         )
         self._storage_root = self._store.root
         self._lock = threading.RLock()
@@ -146,7 +152,7 @@ class RecordingJobService:
             completion_events=self._completion_events,
             lock=self._lock,
             now=self._now,
-            meeting_result_authority=meeting_result_authority,
+            result_bundle_adapters=adapters,
         )
         with self._lock:
             startup_now = _utc_timestamp(self._now(), "server clock")
@@ -292,7 +298,11 @@ class RecordingJobService:
                 raise RuntimeError(
                     "resolved ASR route mode differs from the admitted language decision"
                 )
-            _require_route_audio_within_boundary(request, route)
+            _require_route_audio_within_boundary(
+                request,
+                route,
+                self._route_pcm_byte_limits,
+            )
             durable_routing = DurableAsrRouting(
                 route=route,
                 asr_catalog_revision=self._asr_catalog_revision,
@@ -745,14 +755,15 @@ class RecordingJobService:
             self._supported_languages,
             require_supported_language=False,
         )
-        expected_output_pcm_sha256: str | None = None
-        preprocessing = creation.get("preprocessingEvidence")
-        if preprocessing is not None:
-            normalization = _mapping(
-                _mapping(preprocessing, "preprocessingEvidence").get("normalization"),
-                "preprocessingEvidence.normalization",
-            )
-            expected_output_pcm_sha256 = str(normalization["outputPcmSha256"])
+        preprocessing = _mapping(
+            creation.get("preprocessingEvidence"),
+            "preprocessingEvidence",
+        )
+        normalization = _mapping(
+            preprocessing.get("normalization"),
+            "preprocessingEvidence.normalization",
+        )
+        expected_output_pcm_sha256 = str(normalization["outputPcmSha256"])
         durable_routing = self._state.asr_routing[job_id]
         if durable_routing is None:
             raise RuntimeError("active job is missing frozen ASR routing")
@@ -787,19 +798,15 @@ class RecordingJobService:
         routing = self._state.asr_routing[job_id]
         if routing is None:
             raise RuntimeError("active job is missing frozen ASR routing")
-        preprocessing = creation.get("preprocessingEvidence")
-        if preprocessing is None:
-            capture_manifest = _mapping(
-                creation.get("captureManifest"),
-                "captureManifest",
-            )
-            input_fingerprint = str(capture_manifest["sha256"])
-        else:
-            normalization = _mapping(
-                _mapping(preprocessing, "preprocessingEvidence").get("normalization"),
-                "preprocessingEvidence.normalization",
-            )
-            input_fingerprint = str(normalization["outputPcmSha256"])
+        preprocessing = _mapping(
+            creation.get("preprocessingEvidence"),
+            "preprocessingEvidence",
+        )
+        normalization = _mapping(
+            preprocessing.get("normalization"),
+            "preprocessingEvidence.normalization",
+        )
+        input_fingerprint = str(normalization["outputPcmSha256"])
         utterance_plan_source = _utterance_plan_source_for_route(
             creation,
             routing.route,
@@ -1288,8 +1295,10 @@ class RecordingJobService:
 def _require_route_audio_within_boundary(
     request: Mapping[str, object],
     route: AsrRouteDecision,
+    route_pcm_byte_limits: Mapping[str, int],
 ) -> None:
-    if route.pool_id != MEETING_TRANSCRIPTION_POOL_ID:
+    maximum_bytes = route_pcm_byte_limits.get(route.pool_id)
+    if maximum_bytes is None:
         return
     chunks = request.get("chunks")
     if not isinstance(chunks, list):
@@ -1304,11 +1313,11 @@ def _require_route_audio_within_boundary(
         if not isinstance(byte_length, int) or isinstance(byte_length, bool):
             raise ValueError("job creation PCM length is invalid")
         total_bytes += byte_length
-    if total_bytes > MAX_MEETING_PCM_BYTES:
+    if total_bytes > maximum_bytes:
         raise JobServiceError(
             400,
             "INVALID_JOB",
-            "Meeting audio exceeds the three-hour candidate boundary.",
+            "Audio exceeds the selected server route's duration boundary.",
         )
 
 
@@ -1368,11 +1377,6 @@ def _utterance_plan_source_for_route(
 ) -> UtterancePlanSource | None:
     if route.execution_mode != "dynamicBatch" and route.pool_id != "nemotron-batch":
         return None
-    preprocessing = creation.get("preprocessingEvidence")
-    if preprocessing is None:
-        raise ValueError(
-            "bounded Nemotron or dynamic processing requires preprocessing evidence"
-        )
     chunks = creation.get("chunks")
     if not isinstance(chunks, list):
         raise ValueError("job creation chunks are invalid")
@@ -1392,6 +1396,6 @@ def _utterance_plan_source_for_route(
             raise ValueError("job creation PCM length is invalid")
         input_bytes += byte_length
     return _build_utterance_plan_source(
-        preprocessing,
+        creation.get("preprocessingEvidence"),
         input_sample_count=input_bytes // 2,
     )

@@ -114,8 +114,7 @@ pub(crate) struct TranscriptResultRevision {
     pub language_segments: Option<Vec<LanguageSegment>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language_span_evidence: Option<ServerLanguageSpanEvidence>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub alignment: Option<AlignmentOutcome>,
+    pub alignment: AlignmentOutcome,
     pub aligned_words: Vec<AlignedWord>,
     pub model_provenance: Vec<ModelRevision>,
 }
@@ -395,9 +394,7 @@ impl TranscriptResultRevision {
     }
 
     pub(crate) fn alignment_is_valid(&self, maximum_end_ms: u64) -> bool {
-        let Some(alignment) = self.alignment.as_ref() else {
-            return self.aligned_words.is_empty();
-        };
+        let alignment = &self.alignment;
         match alignment.status {
             AlignmentStatus::Unavailable => {
                 alignment.reason.is_some()

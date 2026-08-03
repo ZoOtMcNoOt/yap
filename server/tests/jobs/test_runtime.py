@@ -20,6 +20,7 @@ from yap_server.jobs.runtime import (
     build_batch_runtime,
 )
 from yap_server.jobs.contract_values import MAX_JOB_PCM_BYTES
+from yap_server.meeting_transcription.contract import MEETING_TRANSCRIPTION_POOL_ID
 from yap_server.pools.batch_asr import WorkerContainmentError
 from yap_server.pools.provider_worker_factory import (
     AsrWorkerPlan,
@@ -393,11 +394,15 @@ class BatchRuntimeTests(unittest.TestCase):
 
                 service.begin_runtime_shutdown.assert_called_once_with()
                 self.assertIs(service_type.call_args.kwargs["processor"], pool)
-                self.assertEqual(
-                    service_type.call_args.kwargs[
-                        "meeting_result_authority"
-                    ].provenance.model.identifier,
-                    "Trelis/tiron",
+                self.assertIsNone(
+                    service_type.call_args.kwargs["result_bundle_adapters"].for_route(
+                        SimpleNamespace(pool_id="cohere-batch")
+                    )
+                )
+                self.assertIsNotNone(
+                    service_type.call_args.kwargs["result_bundle_adapters"].for_route(
+                        SimpleNamespace(pool_id=MEETING_TRANSCRIPTION_POOL_ID)
+                    )
                 )
                 pool.shutdown.assert_called_once_with()
                 self.assertTrue(storage_lease.retained)

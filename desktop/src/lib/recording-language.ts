@@ -4,8 +4,7 @@ export type RecordingLanguageDisposition =
   | "primary"
   | "manualOverride"
   | "detectedSuggestionConfirmed"
-  | "explicitDynamic"
-  | "legacyImplicitEnglishDefault";
+  | "explicitDynamic";
 
 export type RecordingLanguageDecision = {
   mode: RecordingLanguageMode;

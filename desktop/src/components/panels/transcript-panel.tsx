@@ -2,7 +2,7 @@ import { Copy } from "@phosphor-icons/react/Copy";
 import { FileText } from "@phosphor-icons/react/FileText";
 import { Question as HelpCircle } from "@phosphor-icons/react/Question";
 import { ArrowCounterClockwise as RotateCcw } from "@phosphor-icons/react/ArrowCounterClockwise";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { RecordingPlayer } from "@/components/playback/recording-player";
 import { recordingActivityLabel } from "@/components/playback/recording-status";
@@ -31,6 +31,10 @@ import {
   type RecordingJobView,
 } from "@/lib/recording-job";
 import { projectTranscriptText } from "@/lib/transcript-text";
+import {
+  speakerTranscriptPage,
+  type SpeakerTranscriptDetailState,
+} from "@/lib/speaker-transcript";
 import { cn } from "@/lib/utils";
 
 export function TranscriptPanel({
@@ -44,6 +48,7 @@ export function TranscriptPanel({
   onRetry,
   onReveal,
   running,
+  speakerTranscript,
   text,
   variant = "panel",
 }: {
@@ -57,6 +62,7 @@ export function TranscriptPanel({
   onRetry: (id: string) => void;
   onReveal: (path: string) => void;
   running: boolean;
+  speakerTranscript?: SpeakerTranscriptDetailState;
   text?: string;
   variant?: "panel" | "modal";
 }) {
@@ -64,8 +70,18 @@ export function TranscriptPanel({
   const isDone = isRecordingFinished(item?.status);
   const isRunning = item ? isRecordingActive(item.status) : false;
   const isError = item?.status === "failed";
-  const speakerTurns = item?.speakerTurns;
+  const [speakerPageIndex, setSpeakerPageIndex] = useState(0);
+  const hasSeparateSpeakerTranscript = speakerTranscript?.status !== undefined
+    && speakerTranscript.status !== "unavailable";
+  const speakerTurns = speakerTranscript?.status === "ready" ? speakerTranscript.turns : undefined;
+  const speakerPage = speakerTurns?.length
+    ? speakerTranscriptPage(speakerTurns, speakerPageIndex)
+    : undefined;
   const transcriptText = projectTranscriptText(text);
+
+  useEffect(() => {
+    setSpeakerPageIndex(0);
+  }, [item?.id, speakerTranscript?.status === "ready" ? speakerTranscript.sourceResultSha256 : undefined]);
 
   useEffect(() => {
     if (!isDone || !item?.outputPath) return;
@@ -107,7 +123,7 @@ export function TranscriptPanel({
                       <Kbd>Shift</Kbd>
                       <Kbd>C</Kbd>
                     </KbdGroup>{" "}
-                    to copy
+                    to copy{hasSeparateSpeakerTranscript ? " plain text" : ""}
                   </span>
                 </>
               )
@@ -128,23 +144,23 @@ export function TranscriptPanel({
               className="w-full sm:w-auto [&>[data-slot=button]]:flex-1 sm:[&>[data-slot=button]]:flex-none"
             >
               <Button
-                aria-label={`Copy transcript for ${item.name}`}
+                aria-label={`${hasSeparateSpeakerTranscript ? "Copy plain-text transcript" : "Copy transcript"} for ${item.name}`}
                 onClick={() => void onCopy(item)}
                 size="sm"
                 type="button"
               >
                 <Copy data-icon="inline-start" />
-                Copy
+                {hasSeparateSpeakerTranscript ? "Copy text" : "Copy"}
               </Button>
               <Button
-                aria-label={`Open transcript for ${item.name}`}
+                aria-label={`${hasSeparateSpeakerTranscript ? "Open plain-text transcript" : "Open transcript"} for ${item.name}`}
                 onClick={() => onOpen(output)}
                 size="sm"
                 type="button"
                 variant="secondary"
               >
                 <FileText data-icon="inline-start" />
-                Open
+                {hasSeparateSpeakerTranscript ? "Open text" : "Open"}
               </Button>
             </ButtonGroup>
           </CardAction>
@@ -163,12 +179,24 @@ export function TranscriptPanel({
                 <AlertDescription>{item.error}</AlertDescription>
               </Alert>
             ) : null}
+            {speakerTranscript?.status === "error" ? (
+              <Alert className="mb-5">
+                <HelpCircle />
+                <AlertDescription>{speakerTranscript.message}</AlertDescription>
+              </Alert>
+            ) : null}
             {isDone ? (
               transcriptText.state === "ready" ? (
-                speakerTurns?.length ? (
+                speakerTranscript?.status === "loading" ? (
+                  <div className="flex flex-col gap-3" data-testid="speaker-transcript-loading">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </div>
+                ) : speakerPage ? (
                   <div className="space-y-5" data-testid="speaker-attributed-transcript">
-                    {speakerTurns.map((turn) => (
-                      <section key={`${turn.startMs}-${turn.endMs}-${turn.speakerId}`}>
+                    {speakerPage.turns.map((turn) => (
+                      <section key={turn.turnId}>
                         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                           {turn.speakerId.replace("speaker-", "Speaker ")}
                           {" · "}
@@ -181,6 +209,36 @@ export function TranscriptPanel({
                         </p>
                       </section>
                     ))}
+                    {speakerPage.pageCount > 1 ? (
+                      <div
+                        className="flex flex-wrap items-center justify-between gap-3 border-t pt-4"
+                        data-testid="speaker-transcript-pagination"
+                      >
+                        <p className="text-xs text-muted-foreground">
+                          Turns {speakerPage.start + 1}–{speakerPage.end} of {speakerTurns?.length}
+                        </p>
+                        <ButtonGroup aria-label="Speaker transcript pages">
+                          <Button
+                            disabled={speakerPage.index === 0}
+                            onClick={() => setSpeakerPageIndex((index) => Math.max(0, index - 1))}
+                            size="sm"
+                            type="button"
+                            variant="secondary"
+                          >
+                            Previous
+                          </Button>
+                          <Button
+                            disabled={speakerPage.index + 1 >= speakerPage.pageCount}
+                            onClick={() => setSpeakerPageIndex((index) => index + 1)}
+                            size="sm"
+                            type="button"
+                            variant="secondary"
+                          >
+                            Next
+                          </Button>
+                        </ButtonGroup>
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <pre className="whitespace-pre-wrap break-words text-[15px] leading-7 text-foreground">

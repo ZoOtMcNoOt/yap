@@ -11,11 +11,10 @@ describe("recording job action ownership", () => {
     expect(appSource).toContain('import { fireAndReport } from "@/lib/fire-and-report"');
     expect(appSource).not.toContain("onClear={clearQueue}");
     expect(appSource).not.toContain("onRemove={removeItem}");
-    expect(appSource).not.toContain("onDiscardLegacyQueue={discardLegacyQueue}");
     expect(appSource).not.toContain("onRetry={(id) => void retryItem(id)}");
     expect(appSource).toContain("Could not clear queue");
     expect(appSource).toContain("Could not remove recording");
-    expect(appSource).toContain("Could not discard old queue");
     expect(appSource).toContain("Could not retry recording");
+    expect(appSource).not.toMatch(/discardLegacyQueue|Could not discard old queue/);
   });
 });

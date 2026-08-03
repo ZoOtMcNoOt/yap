@@ -7,17 +7,17 @@ import math
 from pathlib import Path
 from typing import Mapping
 
-from yap_server.evaluation.artifact_identity import (
+from yap_server.artifact_identity import (
     artifact_identities,
     portable_artifact_path,
     require_artifact_paths,
 )
-from yap_server.evaluation.evaluation_receipt_fields import (
+from yap_server.json_contract import (
     exact_object,
     https_uri,
     sha256,
 )
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     read_json_object_with_identity,
 )
 
@@ -254,7 +254,10 @@ def _private_cache(value: object) -> None:
     cache = exact_object(
         value, {"environment", "repositoryFallback"}, "meeting private cache"
     )
-    if cache["environment"] != "YAP_EVAL_CACHE" or cache["repositoryFallback"] is not False:
+    if (
+        cache["environment"] != "YAP_EVAL_CACHE"
+        or cache["repositoryFallback"] is not False
+    ):
         raise ValueError("meeting evidence must use the private cache without fallback")
 
 
@@ -284,7 +287,9 @@ def _public_comparator(value: object) -> PublicComparator:
         "exposureStatus": "known-exposed",
     }
     if any(public[key] != expected_value for key, expected_value in expected.items()):
-        raise ValueError("public comparator identity or exposure differs from the contract")
+        raise ValueError(
+            "public comparator identity or exposure differs from the contract"
+        )
     https_uri(public["source"], "public comparator source")
     license_value = exact_object(
         public["license"],
@@ -304,9 +309,7 @@ def _public_comparator(value: object) -> PublicComparator:
     meetings = _exact_text_array(
         public["meetingIds"], _MEETING_IDS, "public comparator meetings"
     )
-    artifacts = artifact_identities(
-        public["artifacts"], "public comparator artifacts"
-    )
+    artifacts = artifact_identities(public["artifacts"], "public comparator artifacts")
     require_artifact_paths(artifacts, _PUBLIC_ARTIFACT_PATHS, "public comparator")
     artifact_by_path = {artifact.path: artifact for artifact in artifacts}
     if artifact_by_path["data/ami-00000-of-00001.parquet"].sha256 != (

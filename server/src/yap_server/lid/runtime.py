@@ -6,16 +6,12 @@ import os
 from pathlib import Path
 import re
 import stat
-import subprocess
 from typing import Mapping
 
 from yap_server.config.runtime_environment import CHECKED_HEAD_ENV, DOCKER_BINARY_ENV
 from yap_server.language_tags import canonical_bcp47
 from yap_server.pools.checked_runtime_image import (
-    CheckedRuntimeImageError,
-    assert_clean_checked_head,
-    runtime_image_contract,
-    verify_prepared_checked_image,
+    resolve_receipt_bound_runtime_image,
 )
 
 from .component_lock import (
@@ -51,7 +47,6 @@ LANGUAGE_DETECTION_PREPARATION_RECEIPT_ENV = (
 LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256_ENV = (
     "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256"
 )
-_GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -97,9 +92,10 @@ def build_language_detection_runtime(
     verify_lid_model_artifacts(lock, model_dir)
 
     catalog_revision = asr_capabilities.get("catalogRevision")
-    if not isinstance(catalog_revision, str) or _SHA256.fullmatch(
-        catalog_revision
-    ) is None:
+    if (
+        not isinstance(catalog_revision, str)
+        or _SHA256.fullmatch(catalog_revision) is None
+    ):
         raise ValueError("verified ASR catalog revision is invalid for LID")
     enabled_locales = fixed_locales_from_asr_catalog(asr_capabilities)
     timeout_seconds = _bounded_timeout_seconds(
@@ -175,64 +171,19 @@ def resolve_language_detection_worker_image(
     docker_binary: str,
     repository_root: Path,
 ) -> str:
-    image = environ.get(LANGUAGE_DETECTION_WORKER_IMAGE_ENV, "").strip()
-    checked_head = environ.get(CHECKED_HEAD_ENV, "").strip()
-    if not image or _GIT_SHA.fullmatch(checked_head) is None:
-        raise ValueError(
-            f"{LANGUAGE_DETECTION_WORKER_IMAGE_ENV} and a full "
-            f"{CHECKED_HEAD_ENV} are required"
-        )
-    receipt = environ.get(
-        LANGUAGE_DETECTION_PREPARATION_RECEIPT_ENV,
-        "",
-    ).strip()
-    receipt_sha256 = environ.get(
-        LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256_ENV,
-        "",
-    ).strip()
-    if not receipt or _SHA256.fullmatch(receipt_sha256) is None:
-        raise ValueError(
-            "language-detection preparation receipt and SHA-256 are required"
-        )
-
-    def run_command(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        actual = list(command)
-        if actual and actual[0] == "docker":
-            actual[0] = docker_binary
-        return subprocess.run(actual, **kwargs)  # type: ignore[arg-type]
-
-    try:
-        contract = runtime_image_contract(
-            repository_root,
-            "language-detection",
-            checked_head,
-        )
-        if contract.base_digest != lock.runtime.platform_digest:
-            raise CheckedRuntimeImageError(
-                "LID image base platform digest differs from its lock"
-            )
-        assert_clean_checked_head(
-            repository_root,
-            checked_head,
-            runner=run_command,
-        )
-        inspected = verify_prepared_checked_image(
-            contract,
-            receipt_path=Path(receipt),
-            receipt_sha256=receipt_sha256,
-            runner=run_command,
-        )
-    except (CheckedRuntimeImageError, OSError) as error:
-        raise ValueError(str(error)) from None
-    image_id = inspected["imageId"]
-    if image != image_id:
-        raise ValueError(
-            "LID worker image must be the receipt-bound immutable image ID"
-        )
-    return image_id
+    return resolve_receipt_bound_runtime_image(
+        environ,
+        runtime="language-detection",
+        image_environment_variable=LANGUAGE_DETECTION_WORKER_IMAGE_ENV,
+        checked_head_environment_variable=CHECKED_HEAD_ENV,
+        receipt_environment_variable=LANGUAGE_DETECTION_PREPARATION_RECEIPT_ENV,
+        receipt_sha256_environment_variable=(
+            LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256_ENV
+        ),
+        docker_binary=docker_binary,
+        repository_root=repository_root,
+        expected_base_digest=lock.runtime.platform_digest,
+    )
 
 
 def fixed_locales_from_asr_catalog(

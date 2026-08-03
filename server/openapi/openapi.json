@@ -1563,7 +1563,7 @@
         "properties": {
           "schemaVersion": {
             "type": "integer",
-            "minimum": 1
+            "const": 1
           },
           "sessionId": {
             "$ref": "#/components/schemas/OpaqueIdentifier"
@@ -1668,10 +1668,7 @@
         "properties": {
           "schemaVersion": {
             "type": "integer",
-            "enum": [
-              1,
-              2
-            ]
+            "const": 2
           },
           "sessionId": {
             "$ref": "#/components/schemas/OpaqueIdentifier"
@@ -2027,10 +2024,7 @@
         "properties": {
           "schemaVersion": {
             "type": "integer",
-            "enum": [
-              1,
-              2
-            ]
+            "const": 2
           },
           "normalization": {
             "$ref": "#/components/schemas/NormalizationEvidence"
@@ -4091,7 +4085,7 @@
       "CreateRecordingJobRequest": {
         "type": "object",
         "additionalProperties": false,
-        "description": "The fixed-language batch intake accepts one imported meeting track with a non-null finite UTC retention expiry. Legacy capture-manifest schema 1 forbids preprocessingEvidence and asrCatalogRevision. Schema 2 requires bounded preprocessingEvidence plus the exact verified ASR catalog revision used for admission. languageDecision is immutable and MUST exactly match localeHintBcp47 and the sole preferredLanguagesBcp47 entry. metadata, captureManifest, and every chunk replay key MUST name one session; replay keys MUST be unique and contiguous from zero; and the accepted manifest reference and chunk declaration become immutable. Dynamic mode is rejected until advertised by the capability catalog. An imported physical-source hint is valid only as user_declared provenance. Identity ownership is server-derived from the validated principal in Entra mode; privacyPolicyVersion unconfigured cannot authorize a team upload once policy gating ships.",
+        "description": "The batch intake accepts one imported meeting track with a non-null finite UTC retention expiry. Capture-manifest schema 2 requires bounded preprocessingEvidence plus the exact verified ASR catalog revision used for admission. languageDecision is immutable and MUST exactly match localeHintBcp47 and the sole preferredLanguagesBcp47 entry in fixed mode. metadata, captureManifest, and every chunk replay key MUST name one session; replay keys MUST be unique and contiguous from zero; and the accepted manifest reference and chunk declaration become immutable. Dynamic mode is rejected until advertised by the capability catalog. An imported physical-source hint is valid only as user_declared provenance. Identity ownership is server-derived from the validated principal in Entra mode; privacyPolicyVersion unconfigured cannot authorize a team upload once policy gating ships.",
         "x-yap-source-identity-invariants": {
           "singleSessionIdentity": {
             "rule": "all_equal",
@@ -4160,82 +4154,9 @@
           }
         },
         "x-yap-preprocessing-invariants": {
-          "legacyFixedLanguageUpload": "captureManifest.schemaVersion == 1, languageDecision.mode == fixed, and preprocessingEvidence and asrCatalogRevision are absent",
-          "clientPreprocessedUpload": "captureManifest.schemaVersion == 2 and preprocessingEvidence and asrCatalogRevision are present",
+          "clientPreprocessedUpload": "captureManifest.schemaVersion == 2 and preprocessingEvidence.schemaVersion == 2 and asrCatalogRevision are required",
           "sourceAudioAuthority": "VAD intervals are advisory and chunks preserve all source PCM"
         },
-        "oneOf": [
-          {
-            "properties": {
-              "captureManifest": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/CaptureManifestReference"
-                  },
-                  {
-                    "properties": {
-                      "schemaVersion": {
-                        "const": 1
-                      }
-                    }
-                  }
-                ]
-              },
-              "languageDecision": {
-                "type": "object",
-                "required": [
-                  "mode"
-                ],
-                "properties": {
-                  "mode": {
-                    "const": "fixed"
-                  }
-                }
-              }
-            },
-            "allOf": [
-              {
-                "not": {
-                  "required": [
-                    "preprocessingEvidence"
-                  ]
-                }
-              },
-              {
-                "not": {
-                  "required": [
-                    "asrCatalogRevision"
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "required": [
-              "preprocessingEvidence",
-              "asrCatalogRevision"
-            ],
-            "properties": {
-              "captureManifest": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/CaptureManifestReference"
-                  },
-                  {
-                    "properties": {
-                      "schemaVersion": {
-                        "const": 2
-                      }
-                    }
-                  }
-                ]
-              },
-              "preprocessingEvidence": {
-                "$ref": "#/components/schemas/PreprocessingEvidence"
-              }
-            }
-          }
-        ],
         "allOf": [
           {
             "if": {
@@ -4340,9 +4261,11 @@
           "displayName",
           "metadata",
           "languageDecision",
+          "asrCatalogRevision",
           "tracks",
           "route",
           "captureManifest",
+          "preprocessingEvidence",
           "chunks"
         ],
         "properties": {
@@ -4378,7 +4301,7 @@
           "asrCatalogRevision": {
             "type": "string",
             "pattern": "^[0-9a-f]{64}$",
-            "description": "Exact verified ASR capability catalog revision used to admit a schema-2 job."
+            "description": "Exact verified ASR capability catalog revision used to admit the job."
           },
           "tracks": {
             "type": "array",

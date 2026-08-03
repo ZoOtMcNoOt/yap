@@ -10,7 +10,7 @@ import re
 import stat
 from typing import Mapping
 
-from yap_server.evaluation.evaluation_receipt_fields import (
+from yap_server.json_contract import (
     bounded_identifiers as _bounded_identifiers,
     exact_object as _object,
     https_uri as _https_uri,
@@ -21,7 +21,7 @@ from yap_server.evaluation.evaluation_receipt_fields import (
     sha256 as _sha256,
     utc as _utc,
 )
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     read_bounded_regular_file,
     read_json_object_with_identity,
 )
@@ -155,9 +155,7 @@ _TIMING_KINDS = frozenset({"none", "manual", "forcedAligned", "mixed"})
 _ADJUDICATION_STATES = frozenset(
     {"upstream", "unreviewed", "doubleReviewed", "adjudicated"}
 )
-_RIGHTS_DECISIONS = frozenset(
-    {"approved", "hold", "excluded", "permissionRequired"}
-)
+_RIGHTS_DECISIONS = frozenset({"approved", "hold", "excluded", "permissionRequired"})
 _RIGHTS_CAPABILITIES = frozenset(
     {"allowed", "forbidden", "unknown", "permissionRequired"}
 )
@@ -514,12 +512,8 @@ def _validate_corpus_manifest(
             "corpus reference",
         )
         reference_sha256 = _sha256(reference["sha256"], "reference SHA-256")
-        reference_tier = _enum(
-            reference["tier"], _REFERENCE_TIERS, "reference tier"
-        )
-        reference_revision = _identifier(
-            reference["revision"], "reference revision"
-        )
+        reference_tier = _enum(reference["tier"], _REFERENCE_TIERS, "reference tier")
+        reference_revision = _identifier(reference["revision"], "reference revision")
         language_bcp47 = canonical_bcp47(
             reference["languageBcp47"],
             "reference languageBcp47",
@@ -562,9 +556,7 @@ def _validate_corpus_manifest(
                     "silence scoring requires zero speakers and und language"
                 )
             if critical_token_set_sha256 is not None:
-                raise ValueError(
-                    "silence scoring cannot use a critical-token policy"
-                )
+                raise ValueError("silence scoring cannot use a critical-token policy")
             if "nonSpeech" not in condition_labels:
                 raise ValueError("silence scoring requires the nonSpeech condition")
         elif speaker_count == 0:
@@ -1024,11 +1016,7 @@ def _private_file(
     field: str,
 ) -> Path:
     _drive, path_without_drive = os.path.splitdrive(str(path))
-    if (
-        not path.is_absolute()
-        or path.is_symlink()
-        or ":" in path_without_drive
-    ):
+    if not path.is_absolute() or path.is_symlink() or ":" in path_without_drive:
         raise ValueError(f"{field} must be an absolute real file")
     resolved = path.resolve(strict=True)
     if cache_root not in resolved.parents:
@@ -1188,9 +1176,7 @@ def _require_trusted_promotion(
         tuple[str, str, str],
         tuple[_TrustedCaseExposure, datetime | None],
     ],
-    trusted_reference_reviews: dict[
-        str, tuple[str, TranscriptReferenceReviewReceipt]
-    ],
+    trusted_reference_reviews: dict[str, tuple[str, TranscriptReferenceReviewReceipt]],
     case_id: str,
     corpus_id: str,
     corpus_release: str,
@@ -1255,18 +1241,13 @@ def _require_trusted_promotion(
             or trusted_recorded_at != recorded_at
         ):
             if trusted.evaluation_policy_sha256 != evaluation_policy_sha256:
-                raise ValueError(
-                    "evaluation policy differs from the trusted registry"
-                )
+                raise ValueError("evaluation policy differs from the trusted registry")
             raise ValueError(
                 "independent promotion evidence does not match the trusted registry"
             )
-        if (
-            status == "created_after_model_freeze"
-            and (
-                trusted_recorded_at is None
-                or trusted_recorded_at <= trusted_models[identity][1]
-            )
+        if status == "created_after_model_freeze" and (
+            trusted_recorded_at is None
+            or trusted_recorded_at <= trusted_models[identity][1]
         ):
             raise ValueError(
                 "trusted post-freeze evidence requires a later original recording"
@@ -1395,8 +1376,7 @@ def _validate_derivation(
         allow_empty=True,
     )
     sources = tuple(
-        _sha256(source, "derivation source audio SHA-256")
-        for source in raw_sources
+        _sha256(source, "derivation source audio SHA-256") for source in raw_sources
     )
     if tuple(sorted(set(sources))) != sources:
         raise ValueError(

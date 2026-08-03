@@ -9,9 +9,7 @@ import {
   cancelRecordingJob,
   confirmRecordingJobLanguage,
   pickRecordingImports,
-  discardLegacyRecordingQueue,
   dismissRecordingJob,
-  migrateLegacyRecordingQueue,
   recordingJobsSnapshot,
   retryRecordingJob,
 } from "@/recording-queue";
@@ -20,20 +18,8 @@ import {
   startRecordingJobsLifecycle,
 } from "@/recording-jobs-refresh";
 
-type MigrationState = "pending" | "ready" | "failed";
-
-function migrationBlockedError() {
-  return new Error("Legacy recording queue migration must finish before jobs can change.");
-}
-
 export function useRecordingJobs(onClear: () => void) {
   const [queue, setQueue] = useState<RecordingJobView[]>([]);
-  const [migrationState, setMigrationState] = useState<MigrationState>("pending");
-  const [migrationError, setMigrationError] = useState<string>();
-  const [legacyDiscardAllowed, setLegacyDiscardAllowed] = useState(false);
-  const [startupAttempt, setStartupAttempt] = useState(0);
-  const migrationStateRef = useRef<MigrationState>("pending");
-  const legacyDiscardAllowedRef = useRef(false);
   const refreshCoordinatorRef = useRef<ReturnType<
     typeof createRecordingJobsRefreshCoordinator<RecordingJobView[]>
   > | undefined>(undefined);
@@ -47,35 +33,11 @@ export function useRecordingJobs(onClear: () => void) {
   const onClearRef = useRef(onClear);
   onClearRef.current = onClear;
 
-  const updateMigrationState = useCallback((
-    state: MigrationState,
-    error?: string,
-    allowLegacyDiscard = false,
-  ) => {
-    migrationStateRef.current = state;
-    legacyDiscardAllowedRef.current = allowLegacyDiscard;
-    setMigrationState(state);
-    setMigrationError(error);
-    setLegacyDiscardAllowed(allowLegacyDiscard);
-  }, []);
-
   useEffect(() => {
-    updateMigrationState("pending");
     const lifecycle = startRecordingJobsLifecycle({
-      failed(error, phase) {
-        const legacyMigrationFailed = phase === "migrate";
-        const message = legacyMigrationFailed
-          ? error.message
-          : `Recording jobs could not start: ${error.message}`;
-        updateMigrationState("failed", message, legacyMigrationFailed);
-        toast.error(legacyMigrationFailed
-          ? "The old browser queue was kept. Discard it only when you are ready to re-add recordings through the native picker."
-          : "Recording jobs could not start. Retry to continue.");
+      failed(error) {
+        toast.error(`Recording jobs could not start: ${error.message}`);
       },
-      migrate: async () => {
-        if (isTauri()) await migrateLegacyRecordingQueue();
-      },
-      ready: () => updateMigrationState("ready"),
       refresh,
       refreshFailed: (error) => {
         toast.error(`Recording jobs could not be refreshed: ${error.message}`);
@@ -85,30 +47,15 @@ export function useRecordingJobs(onClear: () => void) {
         : Promise.resolve(() => {}),
     });
     return lifecycle.dispose;
-  }, [refresh, startupAttempt, updateMigrationState]);
-
-  const ensureMigrationReady = useCallback(() => {
-    if (migrationStateRef.current !== "ready") throw migrationBlockedError();
-  }, []);
-
-  const discardLegacyQueue = useCallback(() => {
-    if (!legacyDiscardAllowedRef.current) {
-      throw new Error("Legacy queue discard is unavailable for this startup failure.");
-    }
-    discardLegacyRecordingQueue();
-    updateMigrationState("pending");
-    setStartupAttempt((attempt) => attempt + 1);
-  }, [updateMigrationState]);
+  }, [refresh]);
 
   const addRecordings = useCallback(async (choice: RecordingImportLanguageChoice) => {
-    ensureMigrationReady();
     const created = await pickRecordingImports(choice);
     await refresh();
     return created[created.length - 1]?.id;
-  }, [ensureMigrationReady, refresh]);
+  }, [refresh]);
 
   const removeItem = useCallback(async (id: string) => {
-    ensureMigrationReady();
     const item = queue.find((entry) => entry.id === id);
     if (!item) return;
     if (item.status === "failed") {
@@ -119,26 +66,23 @@ export function useRecordingJobs(onClear: () => void) {
       return;
     }
     await refresh();
-  }, [ensureMigrationReady, queue, refresh]);
+  }, [queue, refresh]);
 
   const retryItem = useCallback(async (id: string) => {
-    ensureMigrationReady();
     await retryRecordingJob(id);
     await refresh();
-  }, [ensureMigrationReady, refresh]);
+  }, [refresh]);
 
   const confirmLanguage = useCallback(async (
     id: string,
     languageBcp47: string,
     catalogRevision: string,
   ) => {
-    ensureMigrationReady();
     await confirmRecordingJobLanguage(id, languageBcp47, catalogRevision);
     await refresh();
-  }, [ensureMigrationReady, refresh]);
+  }, [refresh]);
 
   const clearQueue = useCallback(async () => {
-    ensureMigrationReady();
     for (const item of queue) {
       if (item.status === "failed") {
         await dismissRecordingJob(item.id);
@@ -148,20 +92,15 @@ export function useRecordingJobs(onClear: () => void) {
     }
     await refresh();
     onClearRef.current();
-  }, [ensureMigrationReady, queue, refresh]);
+  }, [queue, refresh]);
 
   return {
     addRecordings,
     clearQueue,
     confirmLanguage,
-    discardLegacyQueue,
-    legacyDiscardAllowed,
-    migrationError,
-    migrationState,
     queue,
     refresh,
     removeItem,
     retryItem,
-    retryMigration: () => setStartupAttempt((attempt) => attempt + 1),
   };
 }

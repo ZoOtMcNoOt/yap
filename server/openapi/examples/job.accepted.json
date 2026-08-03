@@ -7,7 +7,7 @@
   "status": "accepted",
   "route": "server_batch",
   "captureManifest": {
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "sessionId": "s-01JABCDEF",
     "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "byteLength": 4096

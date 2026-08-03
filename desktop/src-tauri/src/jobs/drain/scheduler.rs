@@ -1,4 +1,8 @@
-use std::time::{Duration, SystemTime};
+use std::{
+    path::Path,
+    sync::Mutex,
+    time::{Duration, SystemTime},
+};
 
 use tauri::{Emitter, Manager};
 
@@ -13,7 +17,7 @@ use super::{
     processing::advance_processing_with_lease,
     recovery::advance_persisted_cancellation_once,
     upload::advance_upload_with_lease,
-    RemoteJobDrain,
+    DrainStepError, RemoteJobDrain,
 };
 
 const CATALOG_RETRY_DELAY_MS: u64 = 30_000;
@@ -68,6 +72,48 @@ pub(super) fn claim_preprocessing_for_catalog(
             .defer_for_catalog_capability(&candidate.job_id, retry_at_ms, now_ms)
             .map(|_| false)
     }
+}
+
+pub(super) enum LocalSavingRecovery {
+    Idle,
+    Finalized,
+    Failed {
+        job_id: String,
+        error: DrainStepError,
+    },
+}
+
+pub(super) fn finalize_next_locally_published_saving_result(
+    ledger: &JobLedger,
+    remote_jobs_directory: &Path,
+    mutation_gate: &Mutex<()>,
+    now_ms: u64,
+) -> Result<LocalSavingRecovery, JobLedgerError> {
+    let candidates = ledger.list_recoverable_jobs()?;
+    for candidate in candidates.into_iter().filter(|job| {
+        job.status == RecordingJobStatus::Saving
+            && job
+                .next_attempt_at_ms
+                .is_none_or(|retry_at| retry_at <= now_ms)
+    }) {
+        match super::processing::finalize_published_saving_result(
+            ledger,
+            remote_jobs_directory,
+            mutation_gate,
+            &candidate.job_id,
+            now_ms,
+        ) {
+            Ok(true) => return Ok(LocalSavingRecovery::Finalized),
+            Ok(false) => continue,
+            Err(error) => {
+                return Ok(LocalSavingRecovery::Failed {
+                    job_id: candidate.job_id,
+                    error,
+                });
+            }
+        }
+    }
+    Ok(LocalSavingRecovery::Idle)
 }
 
 pub(crate) fn start(
@@ -150,6 +196,42 @@ async fn run(app: tauri::AppHandle) {
         let connector = app.state::<ServerConnector>();
         let now = now_ms();
         let drain = app.state::<RemoteJobDrain>();
+        match finalize_next_locally_published_saving_result(
+            drain.resources.ledger(),
+            drain.resources.remote_jobs_directory(),
+            drain.resources.mutation(),
+            now,
+        ) {
+            Ok(LocalSavingRecovery::Finalized) => {
+                emit_jobs_changed(&app);
+                continue;
+            }
+            Ok(LocalSavingRecovery::Idle) => {}
+            Ok(LocalSavingRecovery::Failed { job_id, error }) => {
+                crate::diagnostics::log(&format!("local result recovery will not commit: {error}"));
+                if let Err(persist_error) = drain.schedule_remote_retry_for_job(
+                    &job_id,
+                    &[RecordingJobStatus::Saving],
+                    &error,
+                    now,
+                ) {
+                    crate::diagnostics::log(&format!(
+                        "local result recovery retry state could not be persisted; backing off: {persist_error}"
+                    ));
+                    durable_state_circuit.trip();
+                }
+                emit_jobs_changed(&app);
+                continue;
+            }
+            Err(error) => {
+                crate::diagnostics::log(&format!(
+                    "local result recovery state is unavailable; backing off: {error}"
+                ));
+                durable_state_circuit.trip();
+                tokio::time::sleep(DURABLE_STATE_ERROR_BACKOFF).await;
+                continue;
+            }
+        }
         match advance_persisted_cancellation_once(
             drain.resources.ledger(),
             drain.resources.remote_jobs_directory(),
@@ -528,6 +610,7 @@ async fn run(app: tauri::AppHandle) {
                 drain.resources.remote_jobs_directory(),
                 &connector,
                 &lease,
+                drain.resources.mutation(),
                 processing_job_id,
                 now,
             )

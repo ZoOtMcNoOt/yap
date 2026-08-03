@@ -128,8 +128,9 @@ pub async fn read_text_preview(
 }
 
 pub(super) fn read_text_file_at(path: String) -> Result<String, String> {
-    read_text_file_at_from_dir(path.clone(), &crate::live::recordings::recordings_dir())
-        .or_else(|_| crate::jobs::read_published_remote_transcript(std::path::Path::new(&path)))
+    read_text_file_at_from_dir(path.clone(), &crate::live::recordings::recordings_dir()).or_else(
+        |_| crate::jobs::read_published_remote_transcript_text(std::path::Path::new(&path)),
+    )
 }
 
 pub(super) fn read_text_file_at_from_dir(
@@ -151,7 +152,8 @@ pub(super) fn read_text_preview_at(path: String, max_chars: usize) -> Result<Str
     ) {
         Ok(preview) => Ok(preview),
         Err(_) => {
-            let text = crate::jobs::read_published_remote_transcript(std::path::Path::new(&path))?;
+            let text =
+                crate::jobs::read_published_remote_transcript_text(std::path::Path::new(&path))?;
             Ok(text.chars().take(max_chars.clamp(1, 4_000)).collect())
         }
     }

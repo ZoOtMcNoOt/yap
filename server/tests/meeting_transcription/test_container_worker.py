@@ -23,18 +23,18 @@ CHECKED_HEAD = "a" * 40
 IMAGE_ID = "sha256:" + "b" * 64
 
 
-def _write_wav(path: Path) -> str:
+def _write_wav(path: Path, *, frames: int = 16_000) -> str:
     with wave.open(str(path), "wb") as output:
         output.setnchannels(1)
         output.setsampwidth(2)
         output.setframerate(16_000)
-        output.writeframes(b"\0\0" * 16_000)
+        output.writeframes(b"\0\0" * frames)
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _job(root: Path) -> MeetingTranscriptionJob:
+def _job(root: Path, *, frames: int = 16_000) -> MeetingTranscriptionJob:
     input_path = root / "meeting.wav"
-    input_sha256 = _write_wav(input_path)
+    input_sha256 = _write_wav(input_path, frames=frames)
     return MeetingTranscriptionJob(
         job_id="meeting-1",
         input_path=input_path,
@@ -43,7 +43,7 @@ def _job(root: Path) -> MeetingTranscriptionJob:
         capture_manifest_sha256="c" * 64,
         language="en",
         max_speakers=8,
-        frame_count=16_000,
+        frame_count=frames,
     )
 
 
@@ -61,9 +61,9 @@ def _result(job: MeetingTranscriptionJob) -> dict[str, object]:
         },
         "audio": {
             "sha256": job.input_sha256,
-            "durationMs": 1_000,
+            "durationMs": job.duration_ms,
             "sampleRateHz": 16_000,
-            "frameCount": 16_000,
+            "frameCount": job.frame_count,
         },
         "meeting": {
             "language": "en",
@@ -182,6 +182,30 @@ class ContainerMeetingTranscriptionWorkerTests(unittest.TestCase):
                 result,
             )
             self.assertEqual(list(root.glob(".meeting-result.json.*.tmp")), [])
+
+    def test_accepts_silence_snapped_window_count_at_container_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            job = _job(root, frames=58 * 16_000)
+            payload = _result(job)
+            payload["meeting"]["numWindows"] = 3  # type: ignore[index]
+
+            def runner(
+                *args: object, **kwargs: object
+            ) -> subprocess.CompletedProcess[str]:
+                del args, kwargs
+                return subprocess.CompletedProcess(
+                    args=["docker"],
+                    returncode=0,
+                    stdout=json.dumps(payload) + "\n",
+                    stderr="",
+                )
+
+            worker = self._worker(root, runner=runner)
+
+            result = worker.run(job)
+
+            self.assertEqual(result["meeting"]["numWindows"], 3)  # type: ignore[index]
 
     def test_rejects_forged_runtime_or_source_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

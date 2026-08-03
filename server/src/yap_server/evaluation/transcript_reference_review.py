@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-from yap_server.evaluation.evaluation_receipt_fields import (
+from yap_server.json_contract import (
     bounded_identifiers,
     enum_value,
     exact_object,
@@ -25,7 +25,7 @@ from yap_server.evaluation.human_reference_adjudication import (
     ReviewedRights,
     validate_human_reference_adjudication,
 )
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     decode_json_object_with_identity,
     read_bounded_regular_file,
 )
@@ -211,9 +211,7 @@ def validate_transcript_reference_review_receipt(
     )
     audio_codec = identifier(coverage["audioCodec"], "review audio codec")
     reference_tier = identifier(coverage["referenceTier"], "reference tier")
-    reference_revision = identifier(
-        coverage["referenceRevision"], "reference revision"
-    )
+    reference_revision = identifier(coverage["referenceRevision"], "reference revision")
     speaker_count = nonnegative_int(coverage["speakerCount"], "speaker count")
     if speaker_count > 64:
         raise ValueError("speaker count exceeds the review bound")
@@ -242,9 +240,7 @@ def validate_transcript_reference_review_receipt(
         raise ValueError(
             "source language code must be a lowercase BCP 47 primary subtag"
         )
-    language_bcp47 = canonical_bcp47(
-        selection["languageBcp47"], "review languageBcp47"
-    )
+    language_bcp47 = canonical_bcp47(selection["languageBcp47"], "review languageBcp47")
     if language_bcp47.split("-", 1)[0] != source_language:
         raise ValueError("review locale does not match the source language marker")
     recorded_at_value = selection["recordedAtUtc"]
@@ -284,9 +280,7 @@ def validate_transcript_reference_review_receipt(
     upstream_reference_sha256 = sha256(
         source["upstreamReferenceSha256"], "upstream reference SHA-256"
     )
-    legal_notice_sha256 = sha256(
-        source["legalNoticeSha256"], "legal notice SHA-256"
-    )
+    legal_notice_sha256 = sha256(source["legalNoticeSha256"], "legal notice SHA-256")
     source_identity_receipt_sha256 = sha256(
         source["sourceIdentityReceiptSha256"],
         "source identity receipt SHA-256",
@@ -311,9 +305,7 @@ def validate_transcript_reference_review_receipt(
         },
         "review preparation",
     )
-    recipe_revision = identifier(
-        preparation["recipeRevision"], "trim recipe revision"
-    )
+    recipe_revision = identifier(preparation["recipeRevision"], "trim recipe revision")
     decoded_audio_sha256 = sha256(
         preparation["decodedAudioSha256"], "decoded source SHA-256"
     )
@@ -329,12 +321,8 @@ def validate_transcript_reference_review_receipt(
         raise ValueError("review audio must be canonical mono PCM at 16 kHz")
     if trim_duration_samples != duration_samples:
         raise ValueError("review coverage and preprocessing durations differ")
-    audio_sha256 = sha256(
-        preparation["trimmedAudioSha256"], "trimmed audio SHA-256"
-    )
-    decoded_pcm_sha256 = sha256(
-        preparation["finalPcmSha256"], "final PCM SHA-256"
-    )
+    audio_sha256 = sha256(preparation["trimmedAudioSha256"], "trimmed audio SHA-256")
+    decoded_pcm_sha256 = sha256(preparation["finalPcmSha256"], "final PCM SHA-256")
     preprocessing_receipt_sha256 = sha256(
         preparation["preprocessingReceiptSha256"],
         "preprocessing receipt SHA-256",

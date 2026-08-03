@@ -125,12 +125,24 @@ impl RecordingJobs {
         now_ms: u64,
         notify: impl FnOnce(),
     ) -> Result<RecordingJobView, JobCommandError> {
+        self.cancel_after_acquiring_mutation(media, job_id, now_ms, || {}, notify)
+    }
+
+    fn cancel_after_acquiring_mutation(
+        &self,
+        media: &MediaOwner,
+        job_id: &str,
+        now_ms: u64,
+        after_acquiring_mutation: impl FnOnce(),
+        notify: impl FnOnce(),
+    ) -> Result<RecordingJobView, JobCommandError> {
         let mutation = self.mutation().lock().map_err(|_| {
             command_error(
                 "JOB_STATE_UNAVAILABLE",
                 "Recording job state is unavailable.",
             )
         })?;
+        after_acquiring_mutation();
         let record = self.ledger().request_cancellation(job_id, now_ms)?;
         self.resources.cancel_preprocessing(job_id);
         self.release_playback(job_id, media);
@@ -140,6 +152,17 @@ impl RecordingJobs {
         drop(mutation);
         notify();
         Ok(view)
+    }
+
+    #[cfg(test)]
+    pub(in crate::jobs) fn cancel_with_mutation_observer_for_test(
+        &self,
+        media: &MediaOwner,
+        job_id: &str,
+        now_ms: u64,
+        after_acquiring_mutation: impl FnOnce(),
+    ) -> Result<RecordingJobView, JobCommandError> {
+        self.cancel_after_acquiring_mutation(media, job_id, now_ms, after_acquiring_mutation, || {})
     }
 
     pub(super) fn retry(

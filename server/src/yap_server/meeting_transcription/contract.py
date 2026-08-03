@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import math
+import re
+
+from yap_server.pools.batch_contract import AsrRouteDecision
 
 
 MEETING_TRANSCRIPTION_PROVIDER_ID = "tiron"
@@ -11,6 +14,9 @@ MAX_MEETING_DURATION_SECONDS = 3 * 60 * 60
 MAX_MEETING_FRAME_COUNT = MEETING_SAMPLE_RATE_HZ * MAX_MEETING_DURATION_SECONDS
 MAX_MEETING_PCM_BYTES = MAX_MEETING_FRAME_COUNT * MEETING_PCM_BYTES_PER_SAMPLE
 MAX_MEETING_SPEAKERS = 8
+MAX_MEETING_SEGMENT_COUNT = 100_000
+
+_MEETING_SPEAKER_ID = re.compile(r"^SPEAKER_0[0-7]$")
 
 # The pinned upstream chunker targets 30-second windows and may snap a
 # non-final boundary up to three seconds earlier to end on silence. It also
@@ -33,3 +39,36 @@ def maximum_upstream_window_count(source_duration_seconds: float) -> int:
             / minimum_advance
         ),
     )
+
+
+def is_meeting_speaker_id(value: object) -> bool:
+    return isinstance(value, str) and _MEETING_SPEAKER_ID.fullmatch(value) is not None
+
+
+def validate_meeting_transcription_route(
+    route: AsrRouteDecision,
+    *,
+    model_revision: str,
+    has_utterance_plan: bool,
+) -> None:
+    validate_meeting_transcription_route_identity(
+        route,
+        has_utterance_plan=has_utterance_plan,
+    )
+    if route.model_revision != model_revision:
+        raise ValueError("meeting transcription received a different ASR route")
+
+
+def validate_meeting_transcription_route_identity(
+    route: AsrRouteDecision,
+    *,
+    has_utterance_plan: bool,
+) -> None:
+    if (
+        route.provider_id != MEETING_TRANSCRIPTION_PROVIDER_ID
+        or route.pool_id != MEETING_TRANSCRIPTION_POOL_ID
+        or route.execution_mode != "fixedBatch"
+        or route.provider_language == "auto"
+        or has_utterance_plan
+    ):
+        raise ValueError("meeting transcription received a different ASR route")

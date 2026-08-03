@@ -23,7 +23,6 @@ from .service_fixtures import (
     _ControlledProcessor,
     _Processor,
     _create_request,
-    _request_with_preprocessing_evidence,
 )
 
 
@@ -185,7 +184,7 @@ class RecordingJobProcessingTests(unittest.TestCase):
                 supported_languages=("und",),
                 now=lambda: "2026-07-17T21:03:00Z",
             )
-            request = _request_with_preprocessing_evidence()
+            request = _create_request()
             request["languageDecision"] = {
                 "mode": "dynamic",
                 "languageBcp47": None,

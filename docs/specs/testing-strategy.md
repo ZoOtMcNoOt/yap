@@ -94,23 +94,25 @@ complete current CodeQL language matrix, and disposable-Windows NSIS closure
 form the separate PR receipt that revalidates source-to-docs lineage before
 merge.
 
-### Product checkpoint boundary
+### Maintainability checkpoint boundary
 
-Post-phase maintainability checkpoints use the behavior-named
-[integrated product checkpoint gate](../runbooks/integrated-product-checkpoint-gate.md).
-Its manifest is distinct from the frozen Phase 6 gate, so a checkpoint receipt
-cannot be presented as a continuation or rerun of the phase-specific admission.
-Both retain exact head, manifest, child-definition, single-attempt, and private
-evidence bounds.
+The active post-Phase-8 checkpoint uses the behavior-named
+[meeting-transcription maintainability checkpoint](../runbooks/meeting-transcription-maintainability-checkpoint.md)
+and its `meeting-transcription-maintainability-checkpoint` manifest. The older
+[integrated product checkpoint gate](../runbooks/integrated-product-checkpoint-gate.md)
+is the historical Checkpoint B contract and must not be used for this candidate.
+Each manifest is distinct from the frozen Phase 6 gate, so no checkpoint receipt
+can be presented as a continuation or rerun of a phase-specific admission. The
+active gate retains exact head, manifest, child-definition, single-attempt, and
+private-evidence bounds.
 
-The gate must use license-clear public fixtures to prove contract shape, the
-currently advertised `en-US` regression, language decisions, source
-preservation, restart/cancel/retry behavior, alignment failure semantics,
-resource ceilings, and clean teardown. It does not run an exhaustive Cohere
-quality campaign or promote either resident provider candidate. Aggregate
-candidate research cannot promote a locale, provider, or alignment capability
-by itself. Private recordings, raw benchmark output, host paths, and scan
-evidence remain outside Git and hosted artifacts.
+The active gate uses a license-clear public meeting fixture to prove the current
+Tiron result, anonymous-speaker History, active-cancellation, and teardown
+lifecycle through the product boundary. It does not rerun the separate model
+quality/capacity campaign or promote any provider candidate. Aggregate candidate
+research cannot promote a locale, provider, or alignment capability by itself.
+Private recordings, raw benchmark output, host paths, and scan evidence remain
+outside Git and hosted artifacts.
 
 The local-language resource harness has two distinct development-host modes.
 Its accelerated mode measures throughput, model load, incremental memory, and

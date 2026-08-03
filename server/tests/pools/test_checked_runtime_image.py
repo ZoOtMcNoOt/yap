@@ -5,13 +5,16 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from yap_server.pools.checked_runtime_image import (
     CheckedRuntimeImageError,
     external_base_references,
     prepare_checked_runtime_image,
     preparation_receipt,
+    resolve_receipt_bound_runtime_image,
     runtime_image_contract,
     verify_prepared_checked_image,
     verify_local_checked_image,
@@ -23,6 +26,95 @@ CHECKED_HEAD = "a" * 40
 
 
 class CheckedRuntimeImageTests(unittest.TestCase):
+    def test_runtime_startup_resolves_one_receipt_bound_immutable_image(self) -> None:
+        image_id = f"sha256:{'b' * 64}"
+        receipt_path = str(REPOSITORY_ROOT / "private-preparation.json")
+        environ = {
+            "YAP_TEST_IMAGE": image_id,
+            "YAP_CHECKED_HEAD": CHECKED_HEAD,
+            "YAP_TEST_RECEIPT": receipt_path,
+            "YAP_TEST_RECEIPT_SHA256": "c" * 64,
+        }
+        contract = SimpleNamespace(base_digest=f"sha256:{'d' * 64}")
+        with (
+            patch(
+                "yap_server.pools.checked_runtime_image.runtime_image_contract",
+                return_value=contract,
+            ) as runtime_contract,
+            patch(
+                "yap_server.pools.checked_runtime_image.assert_clean_checked_head"
+            ) as clean_head,
+            patch(
+                "yap_server.pools.checked_runtime_image.verify_prepared_checked_image",
+                return_value={"imageId": image_id},
+            ) as verify_image,
+            patch(
+                "yap_server.pools.checked_runtime_image.subprocess.run",
+                return_value=subprocess.CompletedProcess([], 0),
+            ) as run,
+        ):
+            resolved = resolve_receipt_bound_runtime_image(
+                environ,
+                runtime="language-detection",
+                image_environment_variable="YAP_TEST_IMAGE",
+                checked_head_environment_variable="YAP_CHECKED_HEAD",
+                receipt_environment_variable="YAP_TEST_RECEIPT",
+                receipt_sha256_environment_variable="YAP_TEST_RECEIPT_SHA256",
+                docker_binary="docker-test",
+                repository_root=REPOSITORY_ROOT,
+                expected_base_digest=contract.base_digest,
+            )
+            runner = verify_image.call_args.kwargs["runner"]
+            runner(["docker", "image", "inspect", "candidate"], check=True)
+
+        self.assertEqual(resolved, image_id)
+        runtime_contract.assert_called_once_with(
+            REPOSITORY_ROOT,
+            "language-detection",
+            CHECKED_HEAD,
+        )
+        clean_head.assert_called_once()
+        self.assertEqual(
+            verify_image.call_args.kwargs["receipt_path"],
+            Path(receipt_path),
+        )
+        run.assert_called_once_with(
+            ["docker-test", "image", "inspect", "candidate"],
+            check=True,
+        )
+
+    def test_runtime_startup_rejects_an_image_outside_its_receipt(self) -> None:
+        environ = {
+            "YAP_TEST_IMAGE": "yap-test:mutable",
+            "YAP_CHECKED_HEAD": CHECKED_HEAD,
+            "YAP_TEST_RECEIPT": str(REPOSITORY_ROOT / "private-preparation.json"),
+            "YAP_TEST_RECEIPT_SHA256": "c" * 64,
+        }
+        contract = SimpleNamespace(base_digest=f"sha256:{'d' * 64}")
+        with (
+            patch(
+                "yap_server.pools.checked_runtime_image.runtime_image_contract",
+                return_value=contract,
+            ),
+            patch("yap_server.pools.checked_runtime_image.assert_clean_checked_head"),
+            patch(
+                "yap_server.pools.checked_runtime_image.verify_prepared_checked_image",
+                return_value={"imageId": f"sha256:{'b' * 64}"},
+            ),
+            self.assertRaisesRegex(ValueError, "receipt-bound immutable image ID"),
+        ):
+            resolve_receipt_bound_runtime_image(
+                environ,
+                runtime="meeting-transcription",
+                image_environment_variable="YAP_TEST_IMAGE",
+                checked_head_environment_variable="YAP_CHECKED_HEAD",
+                receipt_environment_variable="YAP_TEST_RECEIPT",
+                receipt_sha256_environment_variable="YAP_TEST_RECEIPT_SHA256",
+                docker_binary="docker",
+                repository_root=REPOSITORY_ROOT,
+                expected_base_digest=contract.base_digest,
+            )
+
     def test_every_external_base_is_digest_pinned(self) -> None:
         for runtime in (
             "cohere-vllm",
@@ -45,7 +137,9 @@ class CheckedRuntimeImageTests(unittest.TestCase):
                 dockerfile,
             )
 
-    def test_missing_prepared_image_fails_without_build_or_network_fallback(self) -> None:
+    def test_missing_prepared_image_fails_without_build_or_network_fallback(
+        self,
+    ) -> None:
         contract = runtime_image_contract(
             REPOSITORY_ROOT,
             "nemotron-nemo",

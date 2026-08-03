@@ -180,7 +180,7 @@ is a development profile, not an enterprise deployment:
 - no GB10 application firewall rule, TLS listener, DNS record, ZPA segment, or
   persistent service is created; and
 - the merged Phase 5 reference worker remains a transient, non-root, networkless
-  comparison path; on the active Phase 6 branch, Cohere uses a separately
+  comparison path; merged Phase 6 Cohere uses a separately
   checked vLLM container with no Docker-published port or external egress. A
   bounded launcher-owned proxy exposes only server loopback and the private API
   key remains mandatory. Optional Nemotron jobs use the same shape on a
@@ -705,8 +705,9 @@ resource cell, cancellation/recovery, slot and PCM admission, and exact
 teardown. These `request-lifecycle` cells record lexical variance without
 turning repeated-output determinism into a Phase 6 promotion requirement. It
 does not run the plan's `vllm-long-waves` or `vllm-mixed-eight` cells. Those cells remain
-available for a provider-promotion comparison, including the Phase 8 Cohere-
-versus-Tiron decision, but they are not candidate-safety prerequisites.
+available for a later provider-promotion comparison. The merged Phase 8 Tiron
+meeting Preview did not settle a broad Cohere-versus-Tiron decision, and these
+cells are not candidate-safety prerequisites.
 
 The first checked-head attempt at
 `e7d322fc07c6e1a39e69c2eec4d45e2c94d79e3a` stopped before NeMo after the

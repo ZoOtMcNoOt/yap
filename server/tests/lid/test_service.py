@@ -68,6 +68,9 @@ class _Worker:
             ],
         }
 
+    def close(self) -> None:
+        self.block = False
+
 
 class _ContainmentWorker(_Worker):
     def run(

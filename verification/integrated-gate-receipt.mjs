@@ -18,6 +18,7 @@ const INTEGRATED_GATE_IDS = new Set([
   "integrated-identity-access",
   "integrated-product-checkpoint",
   "integrated-preprocessing-language-routing",
+  "meeting-transcription-maintainability-checkpoint",
 ]);
 const MANIFEST_KEYS = new Set([
   "schemaVersion",

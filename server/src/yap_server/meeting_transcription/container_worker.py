@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
-import math
 from pathlib import Path
 import re
 import subprocess
@@ -11,7 +10,7 @@ import threading
 from typing import Callable, Mapping
 from uuid import uuid4
 
-from yap_server.evaluation.meeting_runtime_provenance import (
+from yap_server.meeting_transcription.runtime_provenance import (
     MeetingRuntimeProvenance,
     load_meeting_runtime_provenance,
 )
@@ -35,15 +34,20 @@ from yap_server.pools.container_runtime import (
 )
 from yap_server.transcript_text import canonical_transcript
 
-from .contract import MAX_MEETING_FRAME_COUNT
+from .contract import (
+    MAX_MEETING_FRAME_COUNT,
+    MAX_MEETING_SEGMENT_COUNT,
+    MAX_MEETING_SPEAKERS,
+    MEETING_SAMPLE_RATE_HZ,
+    is_meeting_speaker_id,
+    maximum_upstream_window_count,
+)
 
 
 _IMAGE = re.compile(r"^(?:sha256:[0-9a-f]{64}|.+@sha256:[0-9a-f]{64})$")
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _LANGUAGE = re.compile(r"^[A-Za-z][A-Za-z-]{0,34}$")
-_SPEAKER = re.compile(r"^SPEAKER_0[0-7]$")
-_MAX_SEGMENTS = 100_000
 _MEMORY_LIMIT = "48g"
 _CPU_LIMIT = "8"
 
@@ -72,7 +76,7 @@ class MeetingTranscriptionJob:
         if (
             not isinstance(self.max_speakers, int)
             or isinstance(self.max_speakers, bool)
-            or not 1 <= self.max_speakers <= 8
+            or not 1 <= self.max_speakers <= MAX_MEETING_SPEAKERS
         ):
             raise ValueError("meeting max speakers must be between one and eight")
         if (
@@ -84,7 +88,7 @@ class MeetingTranscriptionJob:
 
     @property
     def duration_ms(self) -> int:
-        return max(1, round(self.frame_count * 1_000 / 16_000))
+        return max(1, round(self.frame_count * 1_000 / MEETING_SAMPLE_RATE_HZ))
 
 
 class ContainerMeetingTranscriptionWorker:
@@ -354,7 +358,7 @@ def validate_meeting_worker_result(
     if audio != {
         "sha256": job.input_sha256,
         "durationMs": job.duration_ms,
-        "sampleRateHz": 16_000,
+        "sampleRateHz": MEETING_SAMPLE_RATE_HZ,
         "frameCount": job.frame_count,
     }:
         raise ValueError("meeting worker audio identity is invalid")
@@ -376,14 +380,14 @@ def validate_meeting_worker_result(
         not isinstance(speakers, list)
         or len(speakers) > job.max_speakers
         or speakers != sorted(set(speakers))
-        or any(
-            not isinstance(item, str) or _SPEAKER.fullmatch(item) is None
-            for item in speakers
-        )
+        or any(not is_meeting_speaker_id(item) for item in speakers)
     ):
         raise ValueError("meeting worker speakers are invalid")
     raw_segments = meeting["segments"]
-    if not isinstance(raw_segments, list) or len(raw_segments) > _MAX_SEGMENTS:
+    if (
+        not isinstance(raw_segments, list)
+        or len(raw_segments) > MAX_MEETING_SEGMENT_COUNT
+    ):
         raise ValueError("meeting worker segments exceed the bounded contract")
     observed_speakers: set[str] = set()
     transcript_bytes = 0
@@ -420,7 +424,9 @@ def validate_meeting_worker_result(
             raise ValueError("meeting worker transcript exceeds the byte bound")
     if observed_speakers != set(speakers):
         raise ValueError("meeting worker speaker inventory differs from its segments")
-    maximum_windows = math.ceil((job.frame_count / 16_000 + 0.75) / 30)
+    maximum_windows = maximum_upstream_window_count(
+        job.frame_count / MEETING_SAMPLE_RATE_HZ
+    )
     num_windows = meeting["numWindows"]
     if (
         not isinstance(num_windows, int)

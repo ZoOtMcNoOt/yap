@@ -25,7 +25,7 @@ function routingDetail(control: LiveLanguageRoutingControl, liveActive: boolean)
   }
   switch (status.preferenceIssue) {
     case "incompatibleSchema":
-      return "A newer Yap version wrote this setting. It was preserved unchanged.";
+      return "The saved automatic-language setting uses an incompatible format. It was preserved unchanged.";
     case "invalidStoredPreference":
       return "The saved choices are invalid. Turn off alternates, then choose again.";
     case "staleCatalog":

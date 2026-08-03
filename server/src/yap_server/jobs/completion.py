@@ -11,13 +11,6 @@ from yap_server.alignment_contract import (
     unavailable_alignment,
     validate_alignment_payload,
 )
-from yap_server.meeting_transcription.contract import MEETING_TRANSCRIPTION_POOL_ID
-from yap_server.meeting_transcription.result_revisions import (
-    MeetingResultAuthority,
-    MeetingResultContext,
-    build_meeting_result_revisions,
-    published_result_fingerprint,
-)
 from yap_server.pools.batch_contract import (
     ProviderCapacityUnavailable,
     WorkerContainmentError,
@@ -32,6 +25,12 @@ from .contract_values import (
 )
 from .job_store import DurableJobState, RecordingJobStore
 from .processing_input import BatchInputIntegrityError, BatchInputStorageError
+from .result_bundle import (
+    ResultBundleAdapter,
+    ResultBundleAdapterRegistry,
+    ResultRevisionBundle,
+    result_bundle_fingerprint,
+)
 from .result_contract import capture_duration_ms, validate_result_revision
 from .stage_attempts import canonical_json_sha256, finish_stage, start_stage
 
@@ -52,7 +51,7 @@ class JobCompletionCoordinator:
         completion_events: dict[str, threading.Event],
         lock: threading.RLock,
         now: Callable[[], str],
-        meeting_result_authority: MeetingResultAuthority | None = None,
+        result_bundle_adapters: ResultBundleAdapterRegistry | None = None,
     ) -> None:
         self._storage_root = storage_root
         self._state = state
@@ -61,7 +60,9 @@ class JobCompletionCoordinator:
         self._completion_events = completion_events
         self._lock = lock
         self._now = now
-        self._meeting_result_authority = meeting_result_authority
+        self._result_bundle_adapters = (
+            result_bundle_adapters or ResultBundleAdapterRegistry()
+        )
 
     def finish_safely(
         self,
@@ -84,7 +85,10 @@ class JobCompletionCoordinator:
                     job = self._state.jobs.get(job_id)
                     if job is None or job.get("status") in {"complete", "partial"}:
                         return
-                    if job_id not in self._state.cancelled and job.get("status") != "failed":
+                    if (
+                        job_id not in self._state.cancelled
+                        and job.get("status") != "failed"
+                    ):
                         failed_at = self._now()
                         job["status"] = "failed"
                         job["updatedAtUtc"] = failed_at
@@ -150,12 +154,7 @@ class JobCompletionCoordinator:
             )
             return
         try:
-            (
-                result,
-                speaker_result,
-                created_at,
-                asr_output_sha256,
-            ) = self._result_from_worker(
+            bundle = self._result_from_worker(
                 job_id,
                 language_bcp47,
                 payload,
@@ -169,16 +168,12 @@ class JobCompletionCoordinator:
                 message="The private ASR worker returned an invalid result.",
             )
             return
-        if result is None:
+        if bundle is None:
             return
-        if not self._record_publication_intent(
-            job_id,
-            result,
-            speaker_result,
-            created_at,
-            asr_output_sha256,
-        ):
+        if not self._record_publication_intent(job_id, bundle):
             return
+        result = bundle.transcript_result
+        speaker_result = bundle.speaker_result
         result_path = self._storage_root / "jobs" / job_id / "result-revision.json"
         speaker_result_path = (
             self._storage_root / "jobs" / job_id / "speaker-result-revision.json"
@@ -200,7 +195,7 @@ class JobCompletionCoordinator:
         with self._lock:
             if job_id in self._state.cancelled:
                 self._discard_future(job_id, future)
-                self._cancel_running_stages(job_id, created_at)
+                self._cancel_running_stages(job_id, bundle.created_at_utc)
                 self._store.purge_private_audio(self._state, job_id)
                 return
             self._state.results[job_id] = result
@@ -208,22 +203,20 @@ class JobCompletionCoordinator:
                 self._state.speaker_results[job_id] = speaker_result
             job = self._state.jobs[job_id]
             job["status"] = result["status"]
-            job["updatedAtUtc"] = created_at
+            job["updatedAtUtc"] = bundle.created_at_utc
             self._finish_running_stage(
                 job_id,
                 "result_publication",
                 state="succeeded",
                 retryable=False,
                 reason=None,
-                completed_at_utc=created_at,
+                completed_at_utc=bundle.created_at_utc,
                 output_fingerprint_sha256=canonical_json_sha256(
-                    published_result_fingerprint(result, speaker_result)
+                    result_bundle_fingerprint(result, speaker_result)
                 ),
                 evidence={
                     "resultRevision": 1,
-                    "speakerResultRevision": (
-                        None if speaker_result is None else 1
-                    ),
+                    "speakerResultRevision": (None if speaker_result is None else 1),
                     "status": result["status"],
                 },
             )
@@ -236,27 +229,21 @@ class JobCompletionCoordinator:
         language_bcp47: str,
         payload: object,
         future: object,
-    ) -> tuple[
-        dict[str, object] | None,
-        dict[str, object] | None,
-        str,
-        str,
-    ]:
+    ) -> ResultRevisionBundle | None:
         worker_payload = mapping(payload, "worker result")
         with self._lock:
             routing = self._state.asr_routing[job_id]
             if routing is None:
                 raise RuntimeError("active worker result has no frozen ASR route")
-            meeting_result = routing.route.pool_id == MEETING_TRANSCRIPTION_POOL_ID
-        if meeting_result:
-            return self._meeting_result_from_worker(
+            adapter = self._result_bundle_adapters.for_route(routing.route)
+        if adapter is not None:
+            return self._adapted_result_from_worker(
                 job_id,
                 language_bcp47,
                 worker_payload,
                 future,
+                adapter,
             )
-        if "meeting" in worker_payload:
-            raise ValueError("standard ASR route returned a joint meeting result")
         transcript = mapping(worker_payload.get("transcript"), "worker transcript")
         model = mapping(worker_payload.get("model"), "worker model")
         transcript_text = canonical_transcript(
@@ -292,12 +279,7 @@ class JobCompletionCoordinator:
                 self._discard_future(job_id, future)
                 self._cancel_running_stages(job_id, created_at)
                 self._store.purge_private_audio(self._state, job_id)
-                return (
-                    None,
-                    None,
-                    created_at,
-                    canonical_json_sha256({"cancelled": True}),
-                )
+                return None
             job = self._state.jobs[job_id]
             creation = self._state.requests[job_id]
             maximum_end_ms = capture_duration_ms(creation)
@@ -331,7 +313,9 @@ class JobCompletionCoordinator:
                     or has_language_span_evidence
                 )
             ):
-                raise ValueError("worker language evidence differs from its frozen route")
+                raise ValueError(
+                    "worker language evidence differs from its frozen route"
+                )
             capture_manifest = mapping(job["captureManifest"], "captureManifest")
             result: dict[str, object] = {
                 "sessionId": job["sessionId"],
@@ -378,90 +362,65 @@ class JobCompletionCoordinator:
                 ),
             }
         )
-        return result, None, created_at, asr_output_sha256
+        return ResultRevisionBundle(
+            transcript_result=result,
+            speaker_result=None,
+            created_at_utc=created_at,
+            worker_output_sha256=asr_output_sha256,
+            result_shape=(
+                "dynamic_language_spans_v1" if dynamic_result else "raw_transcript_v1"
+            ),
+        )
 
-    def _meeting_result_from_worker(
+    def _adapted_result_from_worker(
         self,
         job_id: str,
         language_bcp47: str,
         worker_payload: Mapping[str, object],
         future: object,
-    ) -> tuple[
-        dict[str, object] | None,
-        dict[str, object] | None,
-        str,
-        str,
-    ]:
-        payload = mapping(worker_payload, "meeting worker result")
+        adapter: ResultBundleAdapter,
+    ) -> ResultRevisionBundle | None:
         created_at = self._now()
         with self._lock:
             if job_id in self._state.cancelled:
                 self._discard_future(job_id, future)
                 self._cancel_running_stages(job_id, created_at)
                 self._store.purge_private_audio(self._state, job_id)
-                return (
-                    None,
-                    None,
-                    created_at,
-                    canonical_json_sha256({"cancelled": True}),
-                )
+                return None
             routing = self._state.asr_routing[job_id]
-            authority = self._meeting_result_authority
-            if routing is None or authority is None:
-                raise ValueError("meeting result authority is unavailable")
-            route = routing.route
-            if (
-                route.provider_id != "tiron"
-                or route.pool_id != MEETING_TRANSCRIPTION_POOL_ID
-                or route.execution_mode != "fixedBatch"
-                or route.model_revision != authority.provenance.model.revision
-                or language_bcp47 == "und"
-                or route.provider_language == "auto"
-            ):
-                raise ValueError("meeting result route differs from its authority")
+            if routing is None:
+                raise ValueError("adapted result has no frozen ASR route")
             job = self._state.jobs[job_id]
             creation = self._state.requests[job_id]
             maximum_end_ms = capture_duration_ms(creation)
-            context = MeetingResultContext.from_job(
+            bundle = adapter.build_result_bundle(
+                worker_payload,
                 projection=job,
                 creation=creation,
+                route=routing.route,
                 created_at_utc=created_at,
                 language_bcp47=language_bcp47,
-                provider_language=route.provider_language,
                 maximum_end_ms=maximum_end_ms,
             )
-            result, speaker_result = build_meeting_result_revisions(
-                payload,
-                context=context,
-                authority=authority,
-            )
+            bundle.validate_companion_policy(adapter.requires_speaker_result)
             validate_result_revision(
-                result,
+                bundle.transcript_result,
                 job,
                 maximum_end_ms=maximum_end_ms,
             )
-        return (
-            result,
-            speaker_result,
-            created_at,
-            canonical_json_sha256(
-                {
-                    "captureManifestSha256": context.capture_manifest_sha256,
-                    "model": payload.get("model"),
-                    "audio": payload.get("audio"),
-                    "meeting": payload.get("meeting"),
-                }
-            ),
-        )
+            if bundle.created_at_utc != created_at:
+                raise ValueError("adapted result changed the publication time")
+        return bundle
 
     def _record_publication_intent(
         self,
         job_id: str,
-        result: dict[str, object],
-        speaker_result: dict[str, object] | None,
-        created_at: str,
-        asr_output_sha256: str,
+        bundle: ResultRevisionBundle,
     ) -> bool:
+        result = bundle.transcript_result
+        speaker_result = bundle.speaker_result
+        created_at = bundle.created_at_utc
+        asr_output_sha256 = bundle.worker_output_sha256
         with self._lock:
             if job_id in self._state.cancelled:
                 self._cancel_running_stages(job_id, created_at)
@@ -481,15 +440,7 @@ class JobCompletionCoordinator:
                     completed_at_utc=created_at,
                     output_fingerprint_sha256=asr_output_sha256,
                     evidence={
-                        "resultShape": (
-                            "joint_speaker_transcript_v1"
-                            if speaker_result is not None
-                            else (
-                                "dynamic_language_spans_v1"
-                                if "languageSpanEvidence" in result
-                                else "raw_transcript_v1"
-                            )
-                        ),
+                        "resultShape": bundle.result_shape,
                         "executionMode": routing.route.execution_mode,
                     },
                 )

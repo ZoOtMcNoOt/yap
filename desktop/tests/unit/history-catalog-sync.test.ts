@@ -95,7 +95,7 @@ describe("native history catalog synchronization", () => {
         resultSummary: {
           languageBcp47: "en-US",
           languageStatus: "fixed",
-          timingStatus: "legacyUnknown",
+          timingStatus: "unavailable",
         },
         sessionId: "remote",
         sourcePath: "C:/Yap/source.wav",
@@ -107,7 +107,7 @@ describe("native history catalog synchronization", () => {
     expect(entries[1].resultSummary).toEqual({
       languageBcp47: "en-US",
       languageStatus: "fixed",
-      timingStatus: "legacyUnknown",
+      timingStatus: "unavailable",
     });
   });
 
@@ -207,13 +207,13 @@ describe("native history catalog synchronization", () => {
     expect(visible?.[0].recoveryState).toBeUndefined();
   });
 
-  it("migrates native browser projections while preserving unrelated legacy rows", async () => {
+  it("reconciles native projections while preserving unrelated browser-owned entries", async () => {
     const storage = memoryStorage();
-    const legacy: TranscriptHistoryEntry = {
+    const browserEntry: TranscriptHistoryEntry = {
       createdAt: "2026-07-10T00:00:00.000Z",
-      name: "Legacy import",
-      outputPath: "C:/Legacy/import.txt",
-      sourcePath: "C:/Legacy/import.wav",
+      name: "Browser import",
+      outputPath: "C:/Browser/import.txt",
+      sourcePath: "C:/Browser/import.wav",
     };
     const oldNativeProjection: TranscriptHistoryEntry = {
       captureCommitPath: "C:/Yap/live-old.commit.json",
@@ -223,7 +223,7 @@ describe("native history catalog synchronization", () => {
       sessionId: "old",
       sourcePath: "C:/Yap/live-old.wav",
     };
-    writeTranscriptHistory([oldNativeProjection, legacy], storage);
+    writeTranscriptHistory([oldNativeProjection, browserEntry], storage);
     const harness = createStore(storage);
     const prepared = await prepareHistoryCatalogReconciliation(
       harness.store.captureNativeHistoryReconciliation,
@@ -232,13 +232,13 @@ describe("native history catalog synchronization", () => {
 
     expect(prepared.apply(prepared.entries, "sync failed")).toEqual([
       expect.objectContaining({ name: "live-old" }),
-      legacy,
+      browserEntry,
     ]);
-    expect(harness.current().map((entry) => entry.name)).toEqual(["live-old", "Legacy import"]);
-    expect(readTranscriptHistory(storage)).toEqual([legacy]);
+    expect(harness.current().map((entry) => entry.name)).toEqual(["live-old", "Browser import"]);
+    expect(readTranscriptHistory(storage)).toEqual([browserEntry]);
   });
 
-  it("does not expose a hidden native save as a notification candidate", async () => {
+  it("does not let an obsolete browser tombstone hide a current native catalog entry", async () => {
     const storage = memoryStorage();
     const hidden = liveSession("hidden");
     writeHiddenTranscriptHistory([hidden.outputPath], storage);
@@ -249,29 +249,30 @@ describe("native history catalog synchronization", () => {
     );
 
     const visibleEntries = prepared.apply(prepared.entries, "sync failed");
-    expect(visibleEntries).toEqual([]);
+    expect(visibleEntries).toEqual([
+      expect.objectContaining({ origin: "live", sessionId: "hidden" }),
+    ]);
     expect(selectSavedHistoryCatalogEntry(
       visibleEntries ?? [],
       new Set(),
       true,
       historyCatalogEntryKey(prepared.entries[0]),
-    )).toBeUndefined();
-    expect(harness.current()).toEqual([]);
+    )).toEqual(expect.objectContaining({ sessionId: "hidden" }));
+    expect(harness.current()).toHaveLength(1);
   });
 
-  it("leaves native visibility to the catalog after migration is confirmed", async () => {
+  it("uses the native catalog as visibility authority immediately", async () => {
     const storage = memoryStorage();
     const native = liveSession("native");
-    const legacy: TranscriptHistoryEntry = {
+    const browserEntry: TranscriptHistoryEntry = {
       createdAt: "2026-07-10T00:00:00.000Z",
-      name: "Legacy",
+      name: "Browser entry",
       outputPath: native.outputPath,
-      sourcePath: "C:/Legacy/source.wav",
+      sourcePath: "C:/Browser/source.wav",
     };
-    writeTranscriptHistory([legacy], storage);
+    writeTranscriptHistory([browserEntry], storage);
     writeHiddenTranscriptHistory([native.outputPath], storage);
     const harness = createStore(storage);
-    harness.store.confirmNativeVisibilityAuthority();
     const prepared = await prepareHistoryCatalogReconciliation(
       harness.store.captureNativeHistoryReconciliation,
       async () => catalog([native]),
@@ -295,7 +296,7 @@ describe("native history catalog synchronization", () => {
     expect(harness.current()).toHaveLength(1);
   });
 
-  it("does not publish a native projection when legacy migration persistence fails", async () => {
+  it("does not publish a native projection when browser-history persistence fails", async () => {
     const storage: HistoryStorage = {
       getItem: () => null,
       setItem: () => {

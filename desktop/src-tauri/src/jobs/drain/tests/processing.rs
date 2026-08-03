@@ -1,4 +1,5 @@
 use super::*;
+use sha2::{Digest, Sha256};
 
 #[test]
 fn exact_processing_target_does_not_fall_through_to_a_neighbor_after_cancellation() {
@@ -45,6 +46,409 @@ fn exact_processing_target_does_not_fall_through_to_a_neighbor_after_cancellatio
 
     drop(ledger);
     fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn cancelling_a_recovered_saving_job_removes_its_uncommitted_result() {
+    let root = temp_dir("cancel-recovered-saving-result");
+    let remote_jobs = root.join("remote-jobs");
+    let ledger = JobLedger::open_in_memory().unwrap();
+    let request = commit_remote_job_for_result_tests(
+        &ledger,
+        &root,
+        &remote_jobs,
+        "job-cancel-recovered-saving",
+    );
+    let result = complete_result_for(&request);
+
+    ledger
+        .begin_remote_result_saving("job-cancel-recovered-saving", 1_720_000_000_500)
+        .unwrap();
+    let output = crate::jobs::remote::publish_remote_result(
+        "job-cancel-recovered-saving",
+        &remote_jobs,
+        &result,
+        None,
+    )
+    .unwrap();
+    assert!(output.is_file());
+
+    let cancelled = ledger
+        .request_cancellation("job-cancel-recovered-saving", 1_720_000_000_600)
+        .unwrap();
+    assert_eq!(cancelled.status, RecordingJobStatus::Cancelled);
+    crate::jobs::remote::reset_unattached_spool("job-cancel-recovered-saving", &remote_jobs)
+        .unwrap();
+
+    assert!(!remote_jobs.join("job-cancel-recovered-saving").exists());
+    assert!(ledger
+        .finalize_remote_result(
+            "job-cancel-recovered-saving",
+            &output,
+            1_722_592_000_000,
+            1_720_000_000_700,
+            RecordingJobStatus::Complete,
+        )
+        .is_err());
+    assert_eq!(
+        ledger
+            .get_job("job-cancel-recovered-saving")
+            .unwrap()
+            .unwrap()
+            .status,
+        RecordingJobStatus::Cancelled
+    );
+
+    drop(ledger);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn offline_restart_finalizes_a_published_saving_result_despite_other_pending_work() {
+    let root = temp_dir("restart-published-saving-result");
+    let database = root.join("jobs.sqlite3");
+    let remote_jobs = root.join("remote-jobs");
+    let ledger = JobLedger::open(&database).unwrap();
+    commit_remote_job_for_result_tests(&ledger, &root, &remote_jobs, "job-a-unpublished-saving");
+    ledger
+        .begin_remote_result_saving("job-a-unpublished-saving", 1_720_000_000_450)
+        .unwrap();
+    let request = commit_remote_job_for_result_tests(
+        &ledger,
+        &root,
+        &remote_jobs,
+        "job-restart-published-saving",
+    );
+    let result = complete_result_for(&request);
+
+    ledger
+        .begin_remote_result_saving("job-restart-published-saving", 1_720_000_000_500)
+        .unwrap();
+    let first_output = crate::jobs::remote::publish_remote_result(
+        "job-restart-published-saving",
+        &remote_jobs,
+        &result,
+        None,
+    )
+    .unwrap();
+    commit_remote_job_for_result_tests(
+        &ledger,
+        &root,
+        &remote_jobs,
+        "job-unreachable-persisted-cancellation",
+    );
+    let cancellation = ledger
+        .request_cancellation("job-unreachable-persisted-cancellation", 1_720_000_000_550)
+        .unwrap();
+    assert_eq!(cancellation.status, RecordingJobStatus::Cancelled);
+    drop(ledger);
+
+    let reopened = JobLedger::open(&database).unwrap();
+    let saving = reopened
+        .get_job("job-restart-published-saving")
+        .unwrap()
+        .unwrap();
+    assert_eq!(saving.status, RecordingJobStatus::Saving);
+    assert_eq!(saving.output_path, None);
+
+    let publication_gate = Mutex::new(());
+    assert!(matches!(
+        finalize_next_locally_published_saving_result(
+            &reopened,
+            &remote_jobs,
+            &publication_gate,
+            1_720_000_000_600,
+        )
+        .unwrap(),
+        LocalSavingRecovery::Finalized
+    ));
+    let pending_cancellation = reopened
+        .get_prepared_remote_job("job-unreachable-persisted-cancellation")
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        pending_cancellation.server_cancellation_acknowledged_at_ms,
+        None
+    );
+    assert_eq!(
+        reopened
+            .get_job("job-a-unpublished-saving")
+            .unwrap()
+            .unwrap()
+            .status,
+        RecordingJobStatus::Saving
+    );
+    let result_directories = fs::read_dir(remote_jobs.join("job-restart-published-saving"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            entry.file_type().is_ok_and(|kind| kind.is_dir())
+                && entry
+                    .file_name()
+                    .to_str()
+                    .is_some_and(|name| name.starts_with("result-"))
+        })
+        .count();
+    assert_eq!(result_directories, 1);
+
+    let complete = reopened.get_job("job-restart-published-saving").unwrap();
+    let complete = complete.unwrap();
+    assert_eq!(complete.status, RecordingJobStatus::Complete);
+    assert_eq!(
+        complete.output_path.as_deref(),
+        Some(first_output.as_path())
+    );
+    let published =
+        crate::jobs::remote::read_published_remote_result_bundle(&first_output, &remote_jobs)
+            .unwrap();
+    assert_eq!(published.result, result);
+
+    drop(reopened);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn published_result_and_cancellation_share_one_deterministic_mutation_boundary() {
+    assert_published_result_wins_when_it_holds_the_mutation_boundary();
+    assert_cancellation_wins_when_it_holds_the_mutation_boundary();
+}
+
+fn assert_published_result_wins_when_it_holds_the_mutation_boundary() {
+    let root = temp_dir("published-result-wins-cancel-race");
+    let job_id = "job-published-result-wins";
+    let (resources, output) = published_saving_resources(&root, job_id);
+    let jobs = Arc::new(RecordingJobs::from_resources_for_test(
+        Arc::clone(&resources),
+        &root,
+    ));
+    let (recovery_locked_tx, recovery_locked_rx) = mpsc::channel();
+    let (release_recovery_tx, release_recovery_rx) = mpsc::channel();
+    let recovery_resources = Arc::clone(&resources);
+    let recovery = thread::spawn(move || {
+        finalize_published_saving_result_with_mutation_observer_for_test(
+            recovery_resources.ledger(),
+            recovery_resources.remote_jobs_directory(),
+            recovery_resources.mutation(),
+            job_id,
+            1_720_000_000_600,
+            || {
+                recovery_locked_tx.send(()).unwrap();
+                release_recovery_rx.recv().unwrap();
+            },
+        )
+    });
+    recovery_locked_rx.recv().unwrap();
+
+    let (cancel_started_tx, cancel_started_rx) = mpsc::channel();
+    let (cancel_done_tx, cancel_done_rx) = mpsc::channel();
+    let cancel_jobs = Arc::clone(&jobs);
+    let cancel = thread::spawn(move || {
+        cancel_started_tx.send(()).unwrap();
+        let result = cancel_jobs.cancel_with_mutation_observer_for_test(
+            &MediaOwner::new(),
+            job_id,
+            1_720_000_000_700,
+            || {},
+        );
+        cancel_done_tx.send(()).unwrap();
+        result
+    });
+    cancel_started_rx.recv().unwrap();
+    assert!(matches!(
+        cancel_done_rx.recv_timeout(Duration::from_millis(100)),
+        Err(mpsc::RecvTimeoutError::Timeout)
+    ));
+
+    release_recovery_tx.send(()).unwrap();
+    assert!(recovery.join().unwrap().unwrap());
+    assert!(cancel.join().unwrap().is_err());
+    let complete = resources.ledger().get_job(job_id).unwrap().unwrap();
+    assert_eq!(complete.status, RecordingJobStatus::Complete);
+    assert_eq!(complete.output_path.as_deref(), Some(output.as_path()));
+    assert!(output.is_file());
+
+    drop(jobs);
+    drop(resources);
+    fs::remove_dir_all(root).unwrap();
+}
+
+fn assert_cancellation_wins_when_it_holds_the_mutation_boundary() {
+    let root = temp_dir("cancellation-wins-published-result-race");
+    let job_id = "job-cancellation-wins";
+    let (resources, _) = published_saving_resources(&root, job_id);
+    let jobs = Arc::new(RecordingJobs::from_resources_for_test(
+        Arc::clone(&resources),
+        &root,
+    ));
+    let (cancel_locked_tx, cancel_locked_rx) = mpsc::channel();
+    let (release_cancel_tx, release_cancel_rx) = mpsc::channel();
+    let cancel_jobs = Arc::clone(&jobs);
+    let cancel = thread::spawn(move || {
+        cancel_jobs.cancel_with_mutation_observer_for_test(
+            &MediaOwner::new(),
+            job_id,
+            1_720_000_000_600,
+            || {
+                cancel_locked_tx.send(()).unwrap();
+                release_cancel_rx.recv().unwrap();
+            },
+        )
+    });
+    cancel_locked_rx.recv().unwrap();
+
+    let (recovery_started_tx, recovery_started_rx) = mpsc::channel();
+    let (recovery_done_tx, recovery_done_rx) = mpsc::channel();
+    let recovery_resources = Arc::clone(&resources);
+    let recovery = thread::spawn(move || {
+        recovery_started_tx.send(()).unwrap();
+        let result = finalize_published_saving_result_with_mutation_observer_for_test(
+            recovery_resources.ledger(),
+            recovery_resources.remote_jobs_directory(),
+            recovery_resources.mutation(),
+            job_id,
+            1_720_000_000_700,
+            || {},
+        );
+        recovery_done_tx.send(()).unwrap();
+        result
+    });
+    recovery_started_rx.recv().unwrap();
+    assert!(matches!(
+        recovery_done_rx.recv_timeout(Duration::from_millis(100)),
+        Err(mpsc::RecvTimeoutError::Timeout)
+    ));
+
+    release_cancel_tx.send(()).unwrap();
+    assert_eq!(
+        cancel.join().unwrap().unwrap().status,
+        RecordingJobStatus::Cancelled
+    );
+    assert!(!recovery.join().unwrap().unwrap());
+    let cancelled = resources.ledger().get_job(job_id).unwrap().unwrap();
+    assert_eq!(cancelled.status, RecordingJobStatus::Cancelled);
+    assert!(!resources.remote_jobs_directory().join(job_id).exists());
+
+    drop(jobs);
+    drop(resources);
+    fs::remove_dir_all(root).unwrap();
+}
+
+fn published_saving_resources(
+    root: &Path,
+    job_id: &str,
+) -> (Arc<RecordingJobResources>, std::path::PathBuf) {
+    let remote_jobs = root.join("remote-jobs");
+    let resources = Arc::new(RecordingJobResources::from_storage(
+        JobLedger::open_in_memory().unwrap(),
+        root.join("owned-live-recordings"),
+        remote_jobs.clone(),
+        root.join("recording-native-selection-registry.json"),
+    ));
+    let request =
+        commit_remote_job_for_result_tests(resources.ledger(), root, &remote_jobs, job_id);
+    resources
+        .ledger()
+        .begin_remote_result_saving(job_id, 1_720_000_000_500)
+        .unwrap();
+    let output = crate::jobs::remote::publish_remote_result(
+        job_id,
+        &remote_jobs,
+        &complete_result_for(&request),
+        None,
+    )
+    .unwrap();
+    (resources, output)
+}
+
+fn commit_remote_job_for_result_tests(
+    ledger: &JobLedger,
+    root: &Path,
+    remote_jobs: &Path,
+    job_id: &str,
+) -> CreateRecordingJobRequest {
+    let source = root.join(format!("{job_id}.wav"));
+    let owned_live = root.join("live-recordings");
+    fs::create_dir_all(&owned_live).unwrap();
+    write_pcm_wav(&source, &[0_u8; 320]);
+    ledger.insert_job(&queued_job(job_id, source)).unwrap();
+    let owner = OwnerNamespace::local("i-result-lifecycle-test").unwrap();
+    prepare_next_queued_job(
+        ledger,
+        &owned_live,
+        remote_jobs,
+        &owner,
+        1_720_000_000_100,
+        UNIX_EPOCH + Duration::from_secs(1_720_000_000),
+    )
+    .unwrap();
+    let prepared = ledger.get_prepared_remote_job(job_id).unwrap().unwrap();
+    let request =
+        CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json).unwrap();
+    let base_url = "http://127.0.0.1:43117";
+    ledger
+        .begin_remote_create_attempt(job_id, base_url, 1_720_000_000_200)
+        .unwrap();
+    ledger
+        .record_server_job_id(
+            job_id,
+            &format!(
+                "job-{}",
+                Sha256::digest(job_id.as_bytes())[..16]
+                    .iter()
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect::<String>()
+            ),
+            base_url,
+            1_720_000_000_200,
+        )
+        .unwrap();
+    for chunk in &request.chunks {
+        ledger
+            .acknowledge_remote_chunk(
+                job_id,
+                &chunk.replay_key.track_id,
+                chunk.replay_key.sequence_start,
+                chunk.replay_key.sequence_end,
+                &chunk.content_identity.sha256,
+                1_720_000_000_300,
+            )
+            .unwrap();
+    }
+    ledger
+        .mark_remote_job_committed(job_id, 1_720_000_000_400)
+        .unwrap();
+    request
+}
+
+fn complete_result_for(request: &CreateRecordingJobRequest) -> TranscriptResultRevision {
+    TranscriptResultRevision {
+        session_id: request.metadata.session_id.as_str().to_owned(),
+        revision: 1,
+        authority: "server_authoritative".into(),
+        created_at_utc: "2026-07-14T21:00:02Z".into(),
+        capture_manifest_sha256: request.capture_manifest.sha256.clone(),
+        previous_result_sha256: None,
+        status: "complete".into(),
+        language: Some(LanguageDecision {
+            language_bcp47: "en-US".into(),
+            confidence: Some(0.98),
+        }),
+        transcript: "Recovered private result.".into(),
+        speaker_result_sha256: None,
+        language_segments: None,
+        language_span_evidence: None,
+        alignment: AlignmentOutcome {
+            status: AlignmentStatus::Unavailable,
+            reason: Some(AlignmentUnavailableReason::ProviderUnsupported),
+            component_revision: "joint-segment-timing-v1".into(),
+        },
+        aligned_words: Vec::new(),
+        model_provenance: vec![ModelRevision {
+            model_id: "CohereLabs/cohere-transcribe-03-2026".into(),
+            revision: "b1eacc2686a3d08ceaae5f24a88b1d519620bc09".into(),
+            calibration_revision: "asr-not-applicable".into(),
+        }],
+    }
 }
 
 #[test]
@@ -295,12 +699,12 @@ fn partial_server_result_is_published_before_the_ledger_becomes_partial() {
     )));
     drop(requests);
     let jobs = crate::jobs::commands::RecordingJobs::from_ledger(ledger, &root);
-    let catalog = jobs.completed_remote_transcripts().unwrap();
+    let catalog = jobs.published_remote_transcript_catalog().unwrap();
     assert_eq!(catalog.sessions.len(), 1);
     assert_eq!(
         catalog.sessions[0].warning.as_deref(),
         Some(
-            "Speaker attribution may be incomplete because the server reached its eight-speaker limit; fallback reprocessing was not run."
+            "Speaker attribution may be incomplete because the server reached its eight-speaker limit; fallback reprocessing was recommended but not run."
         )
     );
     drop(jobs);

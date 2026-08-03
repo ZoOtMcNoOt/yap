@@ -11,8 +11,9 @@ use crate::{
         RecordingLanguageDecision,
     },
     server_connector::batch::{
-        LanguageDecision, LanguageSegment, LanguageSegmentReason, LanguageSegmentStatus,
-        ModelRevision, ServerLanguageSpanEvidence, TranscriptResultRevision, MAX_VAD_INTERVALS,
+        AlignmentOutcome, AlignmentStatus, AlignmentUnavailableReason, LanguageDecision,
+        LanguageSegment, LanguageSegmentReason, LanguageSegmentStatus, ModelRevision,
+        ServerLanguageSpanEvidence, TranscriptResultRevision, MAX_VAD_INTERVALS,
     },
 };
 
@@ -23,7 +24,7 @@ use super::preprocessing::{
 };
 use super::{
     prepare_imported_pcm_wav, prepare_imported_pcm_wav_with_cancellation, publish_remote_result,
-    read_prepared_chunk, read_published_remote_transcript, reset_unattached_spool,
+    read_prepared_chunk, read_published_remote_result_bundle, reset_unattached_spool,
     validate_pcm_data_bytes, validate_published_result_contract, ImportedPcmWavPreparation,
 };
 
@@ -702,7 +703,11 @@ fn published_remote_transcript_is_reopened_only_through_its_result_revision() {
         speaker_result_sha256: None,
         language_segments: None,
         language_span_evidence: None,
-        alignment: None,
+        alignment: AlignmentOutcome {
+            status: AlignmentStatus::Unavailable,
+            reason: Some(AlignmentUnavailableReason::RuntimeFailed),
+            component_revision: "cohere-attention-alignment-candidate-v1".into(),
+        },
         aligned_words: Vec::new(),
         model_provenance: vec![ModelRevision {
             model_id: "CohereLabs/cohere-transcribe-03-2026".into(),
@@ -712,7 +717,7 @@ fn published_remote_transcript_is_reopened_only_through_its_result_revision() {
     };
 
     let output = publish_remote_result(job_id, &spool, &result, None).unwrap();
-    let reopened = read_published_remote_transcript(&output, &spool).unwrap();
+    let reopened = read_published_remote_result_bundle(&output, &spool).unwrap();
     assert_eq!(reopened.text, "Private result.\n");
     assert_eq!(reopened.result, result);
 
@@ -732,8 +737,8 @@ fn published_remote_transcript_is_reopened_only_through_its_result_revision() {
     assert!(validate_published_result_contract(&offset_timestamp, 1).is_err());
 
     fs::write(&output, "tampered\n").unwrap();
-    assert!(read_published_remote_transcript(&output, &spool).is_err());
-    assert!(read_published_remote_transcript(
+    assert!(read_published_remote_result_bundle(&output, &spool).is_err());
+    assert!(read_published_remote_result_bundle(
         &spool
             .join(job_id)
             .join("result-00000000000000000001/../transcript.txt"),
@@ -802,7 +807,11 @@ fn dynamic_result_requires_ordered_lossless_detected_or_unknown_segments() {
                 decision_evidence: None,
             }],
         }),
-        alignment: None,
+        alignment: AlignmentOutcome {
+            status: AlignmentStatus::Unavailable,
+            reason: Some(AlignmentUnavailableReason::RuntimeFailed),
+            component_revision: "cohere-attention-alignment-candidate-v1".into(),
+        },
         aligned_words: Vec::new(),
         model_provenance: vec![ModelRevision {
             model_id: "nvidia/nemotron-3.5-asr-streaming-0.6b".into(),
@@ -868,7 +877,7 @@ fn aligned_result_requires_exact_raw_words_and_source_bounded_intervals() {
     assert!(validate_published_result_contract(&result, 1).is_ok());
 
     let mut joint_segment_timing = result.clone();
-    let joint_alignment = joint_segment_timing.alignment.as_mut().unwrap();
+    let joint_alignment = &mut joint_segment_timing.alignment;
     joint_alignment.status = crate::server_connector::batch::AlignmentStatus::Unavailable;
     joint_alignment.reason =
         Some(crate::server_connector::batch::AlignmentUnavailableReason::ProviderUnsupported);
@@ -886,9 +895,9 @@ fn aligned_result_requires_exact_raw_words_and_source_bounded_intervals() {
     invented_confidence.aligned_words[0].confidence = Some(0.9);
     assert!(validate_published_result_contract(&invented_confidence, 1).is_err());
     let mut unavailable_with_words = result;
-    unavailable_with_words.alignment.as_mut().unwrap().status =
+    unavailable_with_words.alignment.status =
         crate::server_connector::batch::AlignmentStatus::Unavailable;
-    unavailable_with_words.alignment.as_mut().unwrap().reason =
+    unavailable_with_words.alignment.reason =
         Some(crate::server_connector::batch::AlignmentUnavailableReason::RuntimeFailed);
     assert!(validate_published_result_contract(&unavailable_with_words, 1).is_err());
 }

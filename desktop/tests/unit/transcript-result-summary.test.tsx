@@ -27,16 +27,21 @@ describe("transcript result summary", () => {
     })).toBe(false);
   });
 
-  it("uses explicit labels for unknown language segments and legacy timing", () => {
+  it("uses explicit labels for unknown language segments and unavailable timing", () => {
     expect(transcriptResultSummaryLabels({
       languageBcp47: "und",
       languageStatus: "unknownSegments",
-      timingStatus: "legacyUnknown",
+      timingStatus: "unavailable",
     })).toEqual({
       corrections: undefined,
       language: "Language: some segments need review",
-      timing: "Word timing not recorded",
+      timing: "Word timing unavailable",
     });
+    expect(isTranscriptResultSummary({
+      languageBcp47: "und",
+      languageStatus: "unknownSegments",
+      timingStatus: "legacyUnknown",
+    })).toBe(false);
   });
 
   it("exposes correction and pending-review counts as non-color text", () => {

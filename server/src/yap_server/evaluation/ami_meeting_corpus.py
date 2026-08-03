@@ -20,7 +20,7 @@ from yap_server.evaluation.ami_word_timeline import (
     count_cross_speaker_overlap_words,
     parse_ami_word_timeline,
 )
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     read_bounded_regular_file,
 )
 from yap_server.pools.pcm_audio import PcmAudio, decode_pcm16_wav
@@ -97,13 +97,13 @@ def load_ami_condition_audio(
     try:
         audio = decode_pcm16_wav(
             encoded,
-            max_audio_seconds=(
-                lock.audio.frame_count + lock.audio.sample_rate_hz - 1
-            )
+            max_audio_seconds=(lock.audio.frame_count + lock.audio.sample_rate_hz - 1)
             // lock.audio.sample_rate_hz,
         )
     except ValueError as error:
-        raise ValueError(f"AMI {condition_id} audio violates the PCM contract") from error
+        raise ValueError(
+            f"AMI {condition_id} audio violates the PCM contract"
+        ) from error
     if (
         audio.sample_rate != lock.audio.sample_rate_hz
         or audio.frame_count != lock.audio.frame_count

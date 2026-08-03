@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 2,
+  "gateId": "meeting-transcription-maintainability-checkpoint",
+  "candidateCells": [
+    {
+      "id": "frontend.node-runtime",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["node", "./tests/scripts/assert-node24.mjs"],
+      "timeoutMs": 120000
+    },
+    {
+      "id": "frontend.dependencies",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["corepack", "pnpm@11.7.0", "install", "--frozen-lockfile"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "frontend.dependency-audit",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["pnpm", "audit:dependencies"],
+      "timeoutMs": 900000
+    },
+    {
+      "id": "frontend.release-contracts",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["pnpm", "test:release-contract"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "frontend.release-contracts-local",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["pnpm", "test:release-contract:local"],
+      "timeoutMs": 2700000
+    },
+    {
+      "id": "frontend.provenance",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["node", "./tests/scripts/assert-third-party-provenance.mjs", "--require-reviewed", "--verify-upstream"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "frontend.unit",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["pnpm", "test"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "frontend.production-build",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["pnpm", "build"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "frontend.chromium-runtime",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["pnpm", "exec", "playwright", "install", "chromium"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "frontend.browser-workflows",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["pnpm", "test:e2e"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "windows.build-tools-optional-diagnostics-disabled",
+      "executor": "command",
+      "cwd": ".",
+      "command": ["node", "verification/verify-windows-build-tools-optional-diagnostics-opt-out.mjs"],
+      "timeoutMs": 30000
+    },
+    {
+      "id": "native.format",
+      "executor": "command",
+      "cwd": "desktop/src-tauri",
+      "command": ["cargo", "fmt", "--all", "--check"],
+      "timeoutMs": 900000
+    },
+    {
+      "id": "native.clippy",
+      "executor": "command",
+      "cwd": "desktop/src-tauri",
+      "command": ["cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings"],
+      "timeoutMs": 3600000
+    },
+    {
+      "id": "native.tests",
+      "executor": "command",
+      "cwd": "desktop/src-tauri",
+      "command": ["cargo", "test", "--locked"],
+      "timeoutMs": 3600000
+    },
+    {
+      "id": "native.server-connectors",
+      "executor": "command",
+      "cwd": ".",
+      "command": ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "./verification/test-server-connector.ps1"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "native.authenticated-server-connector",
+      "executor": "command",
+      "cwd": ".",
+      "command": ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "./verification/test-authenticated-server-connector.ps1"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "native.windows-dependency-boundary",
+      "executor": "command",
+      "cwd": ".",
+      "command": ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "./verification/test-windows-rust-dependency-boundary.ps1"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "native.dependency-audit",
+      "executor": "command",
+      "cwd": ".",
+      "command": ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "./verification/audit-windows-rust-dependencies.ps1"],
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "desktop.wdio-build",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["pnpm", "test:desktop:build"],
+      "timeoutMs": 3600000
+    },
+    {
+      "id": "desktop.required-wdio",
+      "executor": "command",
+      "cwd": "desktop",
+      "command": ["pnpm", "exec", "wdio", "run", "./tests/wdio.required.conf.ts"],
+      "timeoutMs": 3600000
+    },
+    {
+      "id": "server.python-3.12",
+      "executor": "command",
+      "cwd": ".",
+      "command": ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "./verification/test-portable-python-server.ps1"],
+      "timeoutMs": 3600000
+    },
+    {
+      "id": "server.lint",
+      "executor": "command",
+      "cwd": "server",
+      "command": ["uv", "run", "--locked", "ruff", "check", ".", "../infra/yap-server-node/owned-process-supervisor.py"],
+      "timeoutMs": 900000
+    },
+    {
+      "id": "gb10.tiron-checked-image",
+      "executor": "private-receipt",
+      "receiptContract": "meeting-transcription-checked-image-v1"
+    },
+    {
+      "id": "gb10.tiron-runtime-boundary",
+      "executor": "private-receipt",
+      "receiptContract": "meeting-transcription-runtime-boundary-v1"
+    },
+    {
+      "id": "integrated.meeting-result-history",
+      "executor": "private-receipt",
+      "receiptContract": "meeting-transcription-result-history-v1"
+    },
+    {
+      "id": "integrated.meeting-cancellation",
+      "executor": "private-receipt",
+      "receiptContract": "meeting-transcription-cancellation-v1"
+    },
+    {
+      "id": "integrated.teardown",
+      "executor": "private-receipt",
+      "receiptContract": "meeting-transcription-zero-retained-owners-v1"
+    }
+  ],
+  "hostedClosureCells": [
+    {"id": "hosted.ci.frontend", "executor": "github-check", "workflow": "CI", "job": "frontend"},
+    {"id": "hosted.ci.rust", "executor": "github-check", "workflow": "CI", "job": "rust"},
+    {"id": "hosted.ci.native-wdio", "executor": "github-check", "workflow": "CI", "job": "Native WDIO smoke (required, no hardware)"},
+    {"id": "hosted.ci.server", "executor": "github-check", "workflow": "CI", "job": "server"},
+    {"id": "hosted.ci.mock-oidc", "executor": "github-check", "workflow": "CI", "job": "mock-oidc"},
+    {"id": "hosted.codeql.rust", "executor": "github-check", "workflow": "CodeQL", "job": "Analyze (rust)"},
+    {"id": "hosted.codeql.actions", "executor": "github-check", "workflow": "CodeQL", "job": "Analyze (actions)"},
+    {"id": "hosted.codeql.javascript-typescript", "executor": "github-check", "workflow": "CodeQL", "job": "Analyze (javascript-typescript)"},
+    {"id": "hosted.codeql.python", "executor": "github-check", "workflow": "CodeQL", "job": "Analyze (python)"},
+    {"id": "hosted.nsis.disposable-windows", "executor": "github-check", "workflow": "NSIS Bundle Smoke", "job": "nsis-bundle-smoke"}
+  ]
+}

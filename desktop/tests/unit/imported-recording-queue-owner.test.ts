@@ -38,23 +38,11 @@ describe("Rust recording job ownership", () => {
     expect(bridgeSource).not.toMatch(/setItem|createInitialPipelineState|queuedServerMessage/);
   });
 
-  it("subscribes before migration and blocks mutation while migration is unresolved", () => {
+  it("subscribes before the initial snapshot without a browser migration gate", () => {
     expect(refreshSource.indexOf("await subscribe"))
-      .toBeLessThan(refreshSource.indexOf("await migrate"));
-    expect(hookSource).toContain("migrationStateRef.current !== \"ready\"");
-    expect(hookSource).toContain("retryMigration: () => setStartupAttempt");
-  });
-
-  it("allows legacy discard only for a migration-phase startup failure", () => {
-    expect(hookSource).toContain('phase === "migrate"');
-    expect(hookSource).toContain("legacyDiscardAllowedRef.current");
-    expect(hookSource).toContain("discardLegacyRecordingQueue()");
-    expect(hookSource).toContain("discardLegacyQueue");
-    const discardOwner = hookSource.slice(
-      hookSource.indexOf("const discardLegacyQueue"),
-      hookSource.indexOf("const addRecordings"),
-    );
-    expect(discardOwner).toContain("setStartupAttempt");
+      .toBeLessThan(refreshSource.indexOf('phase = "refresh"'));
+    expect(hookSource).not.toMatch(/migration|legacyDiscard|localStorage/);
+    expect(bridgeSource).not.toMatch(/legacyRecordingQueue|localStorage/);
   });
 
   it("routes native picker create, remove, retry, and clear through Rust commands", () => {
@@ -89,19 +77,16 @@ describe("Rust recording job ownership", () => {
     expect(applied).toEqual([["before-commit"], ["after-commit"]]);
   });
 
-  it("publishes ready only after subscription, migration, and a stable snapshot", async () => {
+  it("settles startup only after subscription and a stable snapshot", async () => {
     const stale = deferred<string[]>();
     const stable = deferred<string[]>();
     const load = vi.fn()
       .mockImplementationOnce(() => stale.promise)
       .mockImplementationOnce(() => stable.promise);
     const coordinator = createRecordingJobsRefreshCoordinator(load, vi.fn());
-    const ready = vi.fn();
     let publishEvent!: () => void;
     const lifecycle = startRecordingJobsLifecycle({
       failed: vi.fn(),
-      migrate: vi.fn().mockResolvedValue(undefined),
-      ready,
       refresh: coordinator.refresh,
       refreshFailed: vi.fn(),
       subscribe: vi.fn(async (handler) => {
@@ -109,27 +94,28 @@ describe("Rust recording job ownership", () => {
         return vi.fn();
       }),
     });
+    let settled = false;
+    void lifecycle.settled.then(() => {
+      settled = true;
+    });
 
     await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(1));
     publishEvent();
     stale.resolve(["before-event"]);
     await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(2));
-    expect(ready).not.toHaveBeenCalled();
+    expect(settled).toBe(false);
     stable.resolve(["after-event"]);
     await lifecycle.settled;
 
-    expect(ready).toHaveBeenCalledTimes(1);
+    expect(settled).toBe(true);
   });
 
-  it("fails startup without migrating when listener registration rejects", async () => {
-    const migrate = vi.fn();
-    const ready = vi.fn();
+  it("fails startup without loading a snapshot when listener registration rejects", async () => {
     const failed = vi.fn();
+    const refresh = vi.fn();
     const lifecycle = startRecordingJobsLifecycle({
       failed,
-      migrate,
-      ready,
-      refresh: vi.fn(),
+      refresh,
       refreshFailed: vi.fn(),
       subscribe: vi.fn().mockRejectedValue(new Error("listener unavailable")),
     });
@@ -140,31 +126,13 @@ describe("Rust recording job ownership", () => {
       expect.objectContaining({ message: "listener unavailable" }),
       "subscribe",
     );
-    expect(migrate).not.toHaveBeenCalled();
-    expect(ready).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
   });
 
-  it("attributes migration and snapshot startup failures to their lifecycle phases", async () => {
-    const migrationFailed = vi.fn();
-    const migrationLifecycle = startRecordingJobsLifecycle({
-      failed: migrationFailed,
-      migrate: vi.fn().mockRejectedValue(new Error("legacy JSON is malformed")),
-      ready: vi.fn(),
-      refresh: vi.fn(),
-      refreshFailed: vi.fn(),
-      subscribe: vi.fn().mockResolvedValue(vi.fn()),
-    });
-    await migrationLifecycle.settled;
-    expect(migrationFailed).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "legacy JSON is malformed" }),
-      "migrate",
-    );
-
+  it("attributes an initial snapshot failure to the refresh phase", async () => {
     const snapshotFailed = vi.fn();
     const snapshotLifecycle = startRecordingJobsLifecycle({
       failed: snapshotFailed,
-      migrate: vi.fn().mockResolvedValue(undefined),
-      ready: vi.fn(),
       refresh: vi.fn().mockRejectedValue(new Error("snapshot unavailable")),
       refreshFailed: vi.fn(),
       subscribe: vi.fn().mockResolvedValue(vi.fn()),
@@ -179,12 +147,10 @@ describe("Rust recording job ownership", () => {
   it("unlistens a listener that resolves after lifecycle disposal", async () => {
     const listener = deferred<() => void>();
     const unlisten = vi.fn();
-    const migrate = vi.fn();
+    const refresh = vi.fn();
     const lifecycle = startRecordingJobsLifecycle({
       failed: vi.fn(),
-      migrate,
-      ready: vi.fn(),
-      refresh: vi.fn(),
+      refresh,
       refreshFailed: vi.fn(),
       subscribe: vi.fn(() => listener.promise),
     });
@@ -194,6 +160,6 @@ describe("Rust recording job ownership", () => {
     await lifecycle.settled;
 
     expect(unlisten).toHaveBeenCalledTimes(1);
-    expect(migrate).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

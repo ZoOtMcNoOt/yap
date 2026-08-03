@@ -29,20 +29,22 @@ complexity.
 
 ## Current position
 
-- Phases 1–7, Architecture Checkpoints A/B, and the post-Phase-7 adversarial
-  checkpoint are merged and closed. The parent `main` baseline for this focused
-  closure is `39463ffd87485f148440b65606cb6dbefa3a8153`.
+- Phases 1–8, Architecture Checkpoints A/B, and the post-Phase-7 adversarial
+  checkpoint are merged and closed. Phase 8 merged the explicit Tiron meeting
+  Preview through PR #142 as `4201c5e7`; it did not production-promote Tiron or
+  replace the provider-specific dictation candidates.
 - The narrow local-first server-discovery closure keeps on-device setup
   independent from optional server/auth state and makes the existing
   fixed-loopback offer insensitive to desktop/server launch order. It does not
-  authorize Phase 8 or enterprise identity infrastructure.
-- Phase 8 meeting evidence remains the next queued roadmap phase after this
-  focused closure.
+  authorize enterprise identity infrastructure.
+- The separate meeting-transcription ownership and maintainability checkpoint
+  is active. Phase 9 begins only after that checkpoint passes its one complete
+  applicable matrix, exact-head hosted review, and merge.
 - Historical Checkpoint B candidate
   `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
   `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence
   but are not merge authority. After the Cargo color and same-process Windows
-  atomic replacement repairs, fresh exact executable candidate
+  atomic replacement repairs, exact executable candidate
   `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted
   31-child local/native/server/release/private-runtime matrix with exact
   teardown. Its independently validated receipt binds that exact head and
@@ -50,8 +52,9 @@ complexity.
   `2641f613a2a8dfbf0d2e1c7989b37c3af7e85aab732c3ae20381b52c1d144ac2`;
   the private receipt SHA-256 is
   `6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`.
-  First-attempt hosted CI, CodeQL, and stock-NSIS closure on the
-  documentation-only descendant, final review, and merge remain.
+  First-attempt hosted CI, CodeQL, and stock-NSIS then passed on reviewed head
+  `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as
+  `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 - Exact executable candidate
   `a92f338546a2f8bbaded96b04f8987f0ac475c88`
   passed the frozen one-attempt 30-child Phase 6 matrix. Manifest SHA-256
@@ -80,8 +83,9 @@ complexity.
   ARM64 image ID, checked-head revision, base digest, and runtime identity by
   inspection, then launch and record that receipt-bound ID. They cannot build,
   pull, reconnect, or substitute an image.
-- Tiron is a Phase 8 replacement candidate. Phase 6 will not run a broad Cohere
-  quality, locale, long-duration, percentile, or rollback campaign.
+- Phase 8 later merged a narrow Tiron meeting Preview. It did not replace the
+  Phase 6 providers; broad quality, locale, long-duration, percentile, rollback,
+  or production-promotion campaigns remain separate later evidence.
 - The full Codex Security scan remains deferred to the private Phase 10 gate.
 
 ## Phase 6 completion definition
@@ -251,8 +255,8 @@ The following work is not required to close Phase 6:
 
 - broad Cohere quality, locale, long-duration, percentile, capacity, or rollback
   qualification;
-- deciding whether Tiron replaces meeting-only Cohere work, broader batch work,
-  or neither;
+- deciding whether later evidence justifies promoting Tiron, replacing a
+  broader batch provider, or retaining only the narrow meeting Preview;
 - representative low-end battery and thermal certification for enabling the
   local language-switching Preview by default;
 - production quantization selection, sustained mixed-user capacity, or service
@@ -264,11 +268,11 @@ The following work is not required to close Phase 6:
 
 | Order | Deliverable | Validation before moving on |
 | --- | --- | --- |
-| Checkpoint B | Broad read-only inspection with exactly three independent antagonistic reviewers; narrow fixes for concrete correctness, ownership, resource, privacy, security, naming, or comprehensibility blockers. Record non-blocking optimization instead of turning the checkpoint into an open-ended rewrite. | Focused checks, one exact checkpoint matrix, reviewed PR, merge. |
-| Phase 7 | Authenticated identity/access seam, token-derived ownership, purpose grants, authorization/revocation, and multi-owner contract behavior. Use synthetic/mock identity for developer-owned validation until IT provides an approved Entra environment. | Integrated authenticated client/server workflow plus phase gate, PR, and merge. |
-| Post-Phase-7 checkpoint | Review the new identity boundary and affected earlier owners. Fix blockers; defer optional polish. | Checkpoint gate, PR, and merge. |
-| Phase 8 | Implement the pinned Tiron meeting baseline and model-independent speaker/result contracts. Compare Tiron with only the still-relevant fallback/provider routes on frozen meeting and long-batch controls. | This is the model/meeting architecture decision point: keep, replace, or narrow providers from observed end-to-end evidence. |
-| Post-Phase-8 checkpoint | Reconcile the architecture with the measured model decision and remove obsolete implementation paths. | Checkpoint gate, PR, and merge. |
+| Checkpoint B — merged | Broad read-only inspection with exactly three independent antagonistic reviewers; narrow fixes for concrete correctness, ownership, resource, privacy, security, naming, or comprehensibility blockers. Record non-blocking optimization instead of turning the checkpoint into an open-ended rewrite. | Passed its exact checkpoint matrix and merged through PR #68. |
+| Phase 7 — merged | Authenticated identity/access seam, token-derived ownership, purpose grants, authorization/revocation, and multi-owner contract behavior. Use synthetic/mock identity for developer-owned validation until IT provides an approved Entra environment. | Merged as `66d314d7`; real enterprise conformance remains an IT handoff. |
+| Post-Phase-7 checkpoint — merged | Review the new identity boundary and affected earlier owners. Fix blockers; defer optional polish. | Closed at `ef6d977` with recorded follow-ups. |
+| Phase 8 — merged Preview | Pinned Tiron meeting baseline plus model-independent speaker/result contracts, exact checked-image startup, native publication, and History projection. | PR #142 merged as `4201c5e7`; the route remains explicitly enabled and unpromoted. |
+| Post-Phase-8 checkpoint — active | Reconcile executable ownership, durable result decoding, native detail loading, lifecycle races, evaluation/runtime separation, and current documentation without changing model qualification. | One complete applicable checkpoint matrix, reviewed exact-head hosted checks, PR, and merge. |
 | Phase 9 | Governed terminology, OKF compilation, permission-safe retrieval, agents/RAG/MCP, and evidence-selected SGLang model. | Permission-isolated integrated workflows, phase gate, PR, and merge. |
 | Post-Phase-9 checkpoint | Review knowledge, tool, model, and permission boundaries. | Checkpoint gate, PR, and merge. |
 | Phase 10 | Production supervision, mixed-user capacity, observability, release governance, full maintainability audit, private full security scan, deployment evidence, and explicit IT/security/network handoffs. | Final exact-head matrix, hosted checks, reviewed PR, and merge; external enterprise conformance remains a named handoff when unavailable. |

@@ -8,6 +8,7 @@ import { TranscriptReviewDialog } from "@/components/transcript-review-dialog";
 import type { useSettingsControl } from "@/hooks/use-settings-control";
 import type { TranscriptHistoryEntry } from "@/history-model";
 import type { RecordingJobView } from "@/lib/recording-job";
+import type { SpeakerTranscriptDetailState } from "@/lib/speaker-transcript";
 import type { FixedBatchLanguageOption } from "@/language-preference";
 import type { RailAction } from "@/lib/workspace";
 
@@ -34,6 +35,7 @@ type AppOverlaysProps = {
   selectedHistoryItem?: RecordingJobView;
   selectedHistoryEntry?: TranscriptHistoryEntry;
   settings: ReturnType<typeof useSettingsControl>;
+  speakerTranscript: SpeakerTranscriptDetailState;
   status: string;
   transcriptText: Record<string, string>;
 };
@@ -59,6 +61,7 @@ export function AppOverlays({
   selectedHistoryItem,
   selectedHistoryEntry,
   settings,
+  speakerTranscript,
   status,
   transcriptText,
 }: AppOverlaysProps) {
@@ -130,6 +133,7 @@ export function AppOverlays({
         onReveal={(path) => void revealPath(path)}
         open={historyReviewOpen}
         running={false}
+        speakerTranscript={speakerTranscript}
         text={selectedHistoryItem?.outputPath ? transcriptText[selectedHistoryItem.outputPath] : undefined}
       />
       <TranscriptPreviewDialog

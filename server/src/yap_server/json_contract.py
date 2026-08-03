@@ -1,4 +1,4 @@
-"""Strict scalar and object fields shared by private evaluation receipts."""
+"""Strict scalar and object fields shared by frozen JSON contracts."""
 
 from __future__ import annotations
 

@@ -5,9 +5,7 @@ use super::{
         project_status, LiveLanguageConfiguration, LiveLanguageRoutingPreferenceIssue,
         LiveLanguageRoutingStatus,
     },
-    persistence::{
-        self, EnabledAlternateLocales, LiveLanguageRoutingError, LoadedRoutingPreference,
-    },
+    persistence::{self, EnabledAlternateLocales, LiveLanguageRoutingError},
 };
 
 struct RoutingPreferenceUpdate {
@@ -86,10 +84,8 @@ fn plan_routing_preference_update(
         &enabled_alternate_locales,
     )
     .map_err(|_| routing_error_message(LiveLanguageRoutingError::InvalidSelection))?;
-    let requires_write = routing_preference_requires_write(
-        persistence::load_for_update(),
-        &enabled_alternate_locales,
-    )?;
+    let requires_write =
+        routing_preference_requires_write(persistence::load(), &enabled_alternate_locales)?;
     Ok(RoutingPreferenceUpdate {
         primary_language_bcp47,
         enabled_alternate_locales,
@@ -98,11 +94,11 @@ fn plan_routing_preference_update(
 }
 
 pub(super) fn routing_preference_requires_write(
-    loaded: Result<LoadedRoutingPreference, LiveLanguageRoutingError>,
+    loaded: Result<EnabledAlternateLocales, LiveLanguageRoutingError>,
     requested_locales: &[String],
 ) -> Result<bool, String> {
     match loaded {
-        Ok(loaded) => Ok(loaded.requires_rewrite || loaded.locales.as_slice() != requested_locales),
+        Ok(loaded) => Ok(loaded.locales.as_slice() != requested_locales),
         Err(
             LiveLanguageRoutingError::InvalidStoredPreference
             | LiveLanguageRoutingError::StaleCatalog,
@@ -184,7 +180,7 @@ fn routing_error_message(error: LiveLanguageRoutingError) -> String {
             "Automatic-language settings need explicit recovery.".into()
         }
         LiveLanguageRoutingError::IncompatibleSchema(_) => {
-            "Automatic-language settings were written by a newer Yap version.".into()
+            "Automatic-language settings use an unsupported Yap schema.".into()
         }
         LiveLanguageRoutingError::StaleCatalog => {
             "Local language support changed. Review and save the automatic alternates again.".into()

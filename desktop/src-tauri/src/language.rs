@@ -32,8 +32,6 @@ pub enum RecordingLanguageDisposition {
     ManualOverride,
     DetectedSuggestionConfirmed,
     ExplicitDynamic,
-    #[serde(rename = "legacyImplicitEnglishDefault", alias = "legacyPhase5Default")]
-    LegacyImplicitEnglishDefault,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
@@ -88,11 +86,6 @@ impl RecordingLanguageDecision {
                 | RecordingLanguageDisposition::DetectedSuggestionConfirmed,
             ) => valid_bcp47(language),
             (
-                RecordingLanguageMode::Fixed,
-                Some("en-US"),
-                RecordingLanguageDisposition::LegacyImplicitEnglishDefault,
-            ) => true,
-            (
                 RecordingLanguageMode::Dynamic,
                 None,
                 RecordingLanguageDisposition::ExplicitDynamic,
@@ -127,20 +120,6 @@ impl RecordingLanguageDecision {
             language_bcp47: None,
             disposition: RecordingLanguageDisposition::ExplicitDynamic,
         }
-    }
-
-    pub(crate) fn legacy_implicit_english_default() -> Self {
-        Self {
-            mode: RecordingLanguageMode::Fixed,
-            language_bcp47: Some("en-US".into()),
-            disposition: RecordingLanguageDisposition::LegacyImplicitEnglishDefault,
-        }
-    }
-
-    pub(crate) fn is_legacy_implicit_english_default(&self) -> bool {
-        self.mode == RecordingLanguageMode::Fixed
-            && self.language_bcp47.as_deref() == Some("en-US")
-            && self.disposition == RecordingLanguageDisposition::LegacyImplicitEnglishDefault
     }
 }
 

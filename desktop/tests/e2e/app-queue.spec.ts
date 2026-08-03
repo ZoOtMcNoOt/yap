@@ -19,7 +19,6 @@ for (const scenario of [
       "Queued for your organization's transcription server. It will start when Yap connects.",
     })).toBeVisible();
     await expect(page.getByText("Transcribing", { exact: true })).toHaveCount(0);
-    expect(await page.evaluate(() => localStorage.getItem("yap.recordingQueue.v1"))).toBeNull();
 
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     const settings = page.getByRole("dialog", { name: "Settings" });

@@ -75,9 +75,7 @@ def valid_worker_result(lock: ModelPoolLock) -> dict[str, object]:
             "language": "en",
             "punctuation": True,
         },
-        "alignment": unavailable_alignment(
-            AlignmentUnavailableReason.RUNTIME_FAILED
-        ),
+        "alignment": unavailable_alignment(AlignmentUnavailableReason.RUNTIME_FAILED),
         "runtime": {
             "device": "cuda",
             "pythonVersion": "3.12.9",
@@ -101,6 +99,9 @@ class BlockingWorker:
         self.started.set()
         self.release.wait(timeout=5)
         return {"schemaVersion": 1, "jobId": job.job_id}
+
+    def close(self) -> None:
+        self.release.set()
 
 
 class ClosableWorker:
@@ -155,6 +156,9 @@ class CancellationAwareWorker:
         self.stopped.set()
         raise WorkerExecutionError("isolated ASR worker was cancelled")
 
+    def close(self) -> None:
+        pass
+
 
 class ContainmentFailureWorker:
     def run(
@@ -165,3 +169,6 @@ class ContainmentFailureWorker:
         raise WorkerContainmentError(
             f"container cleanup could not be verified for {job.job_id}"
         )
+
+    def close(self) -> None:
+        pass

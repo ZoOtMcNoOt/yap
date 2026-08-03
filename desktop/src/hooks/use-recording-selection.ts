@@ -68,6 +68,9 @@ export function useRecordingSelection({
     [...queue].reverse().find((item) => isRecordingFinished(item.status)) ??
     (history[0] ? historyJob(history[0]) : undefined) ??
     queue[0];
+  const displayedHistoryEntry = selectedItem?.outputPath
+    ? history.find((entry) => entry.outputPath === selectedItem.outputPath)
+    : undefined;
 
   useEffect(() => {
     if (selectedHistoryOutput) return;
@@ -124,6 +127,7 @@ export function useRecordingSelection({
   return {
     clearHistorySelectionIf,
     closeHistoryReview,
+    displayedHistoryEntry,
     historyJob,
     reviewMorphOrigin,
     selectHistoryEntry,

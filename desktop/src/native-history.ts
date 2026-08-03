@@ -8,7 +8,6 @@ import {
   type TranscriptHistoryEntry,
 } from "@/history-model";
 import type { TranscriptResultSummary } from "@/lib/transcript-result-summary";
-import type { SpeakerTranscriptTurn } from "@/lib/speaker-transcript";
 
 export type SavedTranscriptSession = {
   captureCommitPath?: string | null;
@@ -21,7 +20,7 @@ export type SavedTranscriptSession = {
   warning?: string | null;
   recoveryState?: "recoverable" | "recovered" | null;
   resultSummary?: TranscriptResultSummary | null;
-  speakerTurns?: SpeakerTranscriptTurn[] | null;
+  speakerTranscriptAvailable?: boolean;
 };
 
 export type SavedLiveSessionActionIdentity = {
@@ -127,14 +126,14 @@ export function reconcileNativeTranscriptHistoryEntries(
   const visibleNative = nativeEntries.filter(
     (entry) => !hidden.has(transcriptPathIdentity(entry.outputPath)),
   );
-  const legacyEntries = legacyTranscriptHistoryEntries(current, nativeEntries);
+  const browserEntries = browserTranscriptHistoryEntries(current, nativeEntries);
   return normalizeTranscriptHistory([
     ...visibleNative,
-    ...legacyEntries,
+    ...browserEntries,
   ]);
 }
 
-export function legacyTranscriptHistoryEntries(
+export function browserTranscriptHistoryEntries(
   current: TranscriptHistoryEntry[],
   nativeEntries: TranscriptHistoryEntry[],
 ) {
@@ -243,6 +242,6 @@ export function savedSessionToTranscriptHistoryEntry(session: SavedTranscriptSes
     warning: session.warning ?? undefined,
     recoveryState: session.recoveryState ?? undefined,
     resultSummary: session.resultSummary ?? undefined,
-    speakerTurns: session.speakerTurns ?? undefined,
+    speakerTranscriptAvailable: session.speakerTranscriptAvailable || undefined,
   });
 }

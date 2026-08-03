@@ -45,6 +45,22 @@ def _test_pool(
 
 
 class BatchAsrPoolTests(unittest.TestCase):
+    def test_pool_rejects_a_worker_without_explicit_cleanup(self) -> None:
+        class IncompleteWorker:
+            def run(
+                self,
+                job: BatchAsrJob,
+                _cancellation: threading.Event,
+            ) -> dict[str, object]:
+                return {"schemaVersion": 1, "jobId": job.job_id}
+
+        with self.assertRaisesRegex(TypeError, "run.*close"):
+            _test_pool(  # type: ignore[arg-type]
+                IncompleteWorker(),
+                max_workers=1,
+                max_queued=0,
+            )
+
     def test_eight_lane_plan_slot_and_pcm_capacity_edges_refund_exactly(self) -> None:
         pool = BatchAsrPool(
             BlockingWorker(),
@@ -285,7 +301,9 @@ class BatchAsrPoolTests(unittest.TestCase):
 
         self.assertTrue(worker.closed.is_set())
 
-    def test_pool_shutdown_does_not_wait_forever_after_containment_failure(self) -> None:
+    def test_pool_shutdown_does_not_wait_forever_after_containment_failure(
+        self,
+    ) -> None:
         worker = CloseContainmentFailureWorker()
         pool = _test_pool(worker, max_workers=1, max_queued=0)
         future = pool.submit(

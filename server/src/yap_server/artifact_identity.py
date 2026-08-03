@@ -1,4 +1,4 @@
-"""Small strict artifact identities shared by evaluation source locks."""
+"""Small strict artifact identities shared by frozen source locks."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 import re
 
-from yap_server.evaluation.evaluation_receipt_fields import (
+from yap_server.json_contract import (
     exact_object,
     positive_int,
     sha256,

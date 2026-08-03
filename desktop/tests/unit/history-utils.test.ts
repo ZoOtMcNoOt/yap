@@ -40,7 +40,7 @@ describe("history job projection", () => {
     expect(job.playbackPath).toBeUndefined();
   });
 
-  it("preserves verified remote result details and remote ownership", () => {
+  it("preserves the lightweight remote result summary and ownership", () => {
     const job = historyEntryToRecordingJob(savedSessionToTranscriptHistoryEntry({
       createdAtMs: Date.UTC(2026, 6, 18),
       name: "Global meeting",
@@ -52,12 +52,7 @@ describe("history job projection", () => {
         timingStatus: "unavailable",
       },
       sessionId: "remote-1",
-      speakerTurns: [{
-        speakerId: "speaker-1",
-        startMs: 0,
-        endMs: 1_500,
-        text: "Hello from the meeting.",
-      }],
+      speakerTranscriptAvailable: true,
       sourcePath: "C:\\Yap\\source.wav",
     }));
 
@@ -71,12 +66,7 @@ describe("history job projection", () => {
       languageStatus: "unknownSegments",
       timingStatus: "unavailable",
     });
-    expect(job.speakerTurns).toEqual([{
-      speakerId: "speaker-1",
-      startMs: 0,
-      endMs: 1_500,
-      text: "Hello from the meeting.",
-    }]);
+    expect(job).not.toHaveProperty("speakerTurns");
   });
 
   it("does not trust foreign history source paths for playback", () => {

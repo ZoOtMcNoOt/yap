@@ -13,7 +13,10 @@ class RecordingJobFixtureTests(unittest.TestCase):
         request = service_recording_job_request(session_id="session-under-test")
 
         self.assertEqual(request["metadata"]["sessionId"], "session-under-test")
+        self.assertEqual(request["captureManifest"]["schemaVersion"], 2)
         self.assertEqual(request["captureManifest"]["sessionId"], "session-under-test")
+        self.assertEqual(request["preprocessingEvidence"]["schemaVersion"], 2)
+        self.assertIn("asrCatalogRevision", request)
         self.assertEqual(
             request["chunks"][0]["replayKey"]["sessionId"],
             "session-under-test",

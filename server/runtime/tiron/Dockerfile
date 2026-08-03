@@ -5,6 +5,8 @@ ARG TORCHAUDIO_REVISION=34c52a67e8941bbd8e6adaca0eb0b9eabec11d78
 FROM ${BASE_IMAGE} AS application-source
 
 COPY src/yap_server /tmp/yap-application-source/yap_server
+RUN rm -rf /tmp/yap-application-source/yap_server/evaluation \
+    && test ! -e /tmp/yap-application-source/yap_server/evaluation
 
 FROM ${BASE_IMAGE} AS torchaudio-wheel-builder
 ARG TORCHAUDIO_REVISION
@@ -36,7 +38,7 @@ RUN git -C /tmp/tiron-source fetch --depth 1 \
     && test "$(git -C /tmp/tiron-source rev-parse HEAD)" = "${TIRON_REVISION}" \
     && rm -rf /tmp/tiron-source/.git \
     && PYTHONPATH=/tmp/yap-application-source python3 -c \
-      'from pathlib import Path; from yap_server.evaluation.meeting_runtime_provenance import load_meeting_runtime_provenance, verify_repository_source_directory; p = load_meeting_runtime_provenance(Path("/tmp/meeting-runtime.lock.json")); verify_repository_source_directory(p.harness, Path("/tmp/tiron-source"))'
+      'from pathlib import Path; from yap_server.meeting_transcription.runtime_provenance import load_meeting_runtime_provenance, verify_repository_source_directory; p = load_meeting_runtime_provenance(Path("/tmp/meeting-runtime.lock.json")); verify_repository_source_directory(p.harness, Path("/tmp/tiron-source"))'
 
 FROM ${BASE_IMAGE}
 ARG TIRON_REVISION
@@ -106,6 +108,9 @@ COPY runtime/cohere-vllm/licenses/TORCHAUDIO-BSD-2-Clause.txt \
 COPY --from=tiron-source /tmp/tiron-source/LICENSE \
   /opt/yap-server/licenses/TIRON-APACHE-2.0.txt
 COPY --from=application-source /tmp/yap-application-source/yap_server /opt/yap-server/yap_server
+
+# Request-time inference carries the runtime contract, not developer evaluation tools.
+RUN test ! -e /opt/yap-server/yap_server/evaluation
 
 RUN test "${#YAP_CHECKED_HEAD}" -eq 40 \
     && case "${YAP_CHECKED_HEAD}" in *[!0-9a-f]*) exit 1 ;; esac \

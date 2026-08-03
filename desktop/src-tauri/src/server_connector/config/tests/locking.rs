@@ -18,7 +18,7 @@ fn load_waits_for_the_settings_lock_before_opening_the_destination() {
     let path = dir.join("server-settings.json");
     std::fs::write(
         &path,
-        r#"{"schemaVersion":1,"enabled":false,"baseUrl":null}"#,
+        r#"{"schemaVersion":2,"enabled":false,"baseUrl":null}"#,
     )
     .unwrap();
     let lock = acquire_settings_lock(&path).unwrap();

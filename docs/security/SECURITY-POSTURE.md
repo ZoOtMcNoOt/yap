@@ -94,11 +94,11 @@ certification, production authorization, or substitute for enterprise review.
   receives only the configuration digest, not copied tenant/client/scope
   values. Missing provider support fails closed.
 - Durable remote work is immutably account-and-authentication-bound before
-  dispatch. Account/configuration switching, sign-out, and attempts to claim
-  ambiguous pre-Phase-7 authenticated work fail before another bearer can be
-  sent. Schema 14 quarantines older authenticated account-only bindings while
-  preserving paired `development-loopback` authority for unauthenticated local
-  work.
+  dispatch. Account/configuration switching and sign-out fail before another
+  bearer can be sent. The desktop opens only the current Yap-owned ledger
+  identity (`YAPJ`, schema 1) or an empty database that it can initialize with
+  that baseline. Older, foreign, and non-empty unowned databases fail closed;
+  the application does not claim, migrate, or rewrite them.
 
 ### UI and local control
 

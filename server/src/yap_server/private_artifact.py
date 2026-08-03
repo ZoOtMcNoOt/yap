@@ -1,4 +1,4 @@
-"""Bounded same-open reads for private evaluation trust artifacts."""
+"""Bounded same-open reads for private trust artifacts."""
 
 from __future__ import annotations
 

@@ -16,7 +16,6 @@ import {
   listenLiveSessionSaved,
   liveOverlayStatus,
   recoverLiveSession,
-  resolveOwnedLiveTranscriptPaths,
   startLiveOverlaySession,
   stopLiveOverlaySession,
 } from "@/live";
@@ -27,23 +26,6 @@ describe("live native bridge", () => {
     tauri.isTauri.mockReset();
     tauri.isTauri.mockReturnValue(true);
     tauri.listen.mockReset();
-  });
-
-  it("asks Rust to resolve hidden transcript paths", async () => {
-    const resolutions = [{ canonicalPath: null, missing: true, requestedPath: "live-1.txt" }];
-    tauri.invoke.mockResolvedValue(resolutions);
-
-    await expect(resolveOwnedLiveTranscriptPaths(["live-1.txt"])).resolves.toEqual(resolutions);
-    expect(tauri.invoke).toHaveBeenCalledWith("resolve_owned_live_transcript_paths", {
-      outputPaths: ["live-1.txt"],
-    });
-  });
-
-  it("does not invoke native commands in the browser preview", async () => {
-    tauri.isTauri.mockReturnValue(false);
-
-    await expect(resolveOwnedLiveTranscriptPaths(["live-1.txt"])).resolves.toEqual([]);
-    expect(tauri.invoke).not.toHaveBeenCalled();
   });
 
   it("binds history mutations to the expected native artifact identity", async () => {

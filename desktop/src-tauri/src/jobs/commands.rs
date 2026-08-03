@@ -52,21 +52,20 @@ pub struct JobCommandError {
 
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CompletedRemoteTranscriptCatalog {
-    pub sessions: Vec<CompletedRemoteTranscript>,
+pub struct PublishedRemoteTranscriptCatalog {
+    pub sessions: Vec<PublishedRemoteTranscriptSummary>,
     pub maintenance_warnings: Vec<String>,
 }
 
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CompletedRemoteTranscript {
+pub struct PublishedRemoteTranscriptSummary {
     pub session_id: String,
     pub name: String,
     pub source_path: String,
     pub output_path: String,
     pub created_at_ms: u64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub speaker_turns: Option<Vec<CompletedSpeakerTranscriptTurn>>,
+    pub speaker_transcript_available: bool,
     pub(crate) result_summary: TranscriptResultSummary,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub warning: Option<String>,
@@ -74,7 +73,16 @@ pub struct CompletedRemoteTranscript {
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CompletedSpeakerTranscriptTurn {
+pub struct PublishedSpeakerTranscript {
+    pub session_id: String,
+    pub source_result_sha256: String,
+    pub turns: Vec<PublishedSpeakerTranscriptTurn>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PublishedSpeakerTranscriptTurn {
+    pub turn_id: String,
     pub speaker_id: String,
     pub start_ms: u64,
     pub end_ms: u64,
@@ -96,7 +104,6 @@ pub(crate) enum TranscriptLanguageStatus {
 pub(crate) enum TranscriptTimingStatus {
     Available,
     Unavailable,
-    LegacyUnknown,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
@@ -143,6 +150,95 @@ pub(crate) fn recording_jobs_snapshot(
 ) -> Result<Vec<RecordingJobView>, JobCommandError> {
     ensure_main(&window)?;
     jobs.snapshot(&media, now_ms()?)
+}
+
+#[cfg(feature = "wdio")]
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct WdioRemoteJobLifecycle {
+    client_job_id: String,
+    server_job_id: String,
+    remote_status: String,
+    asr_stage_state: Option<String>,
+    cancellation_acknowledged_at_ms: Option<u64>,
+}
+
+#[cfg(feature = "wdio")]
+#[tauri::command]
+pub(crate) async fn wdio_recording_job_remote_lifecycle(
+    window: tauri::WebviewWindow,
+    jobs: tauri::State<'_, RecordingJobs>,
+    connector: tauri::State<'_, crate::server_connector::ServerConnector>,
+    job_id: String,
+) -> Result<WdioRemoteJobLifecycle, JobCommandError> {
+    ensure_main(&window)?;
+    let prepared = jobs
+        .ledger()
+        .get_prepared_remote_job(&job_id)?
+        .ok_or_else(|| command_error("JOB_NOT_FOUND", "Remote recording job was not found."))?;
+    let server_job_id = prepared.server_job_id.clone().ok_or_else(|| {
+        command_error(
+            "REMOTE_JOB_NOT_BOUND",
+            "Remote recording job has not been bound to the server.",
+        )
+    })?;
+    let server_base_url = prepared.server_base_url.as_deref().ok_or_else(|| {
+        command_error(
+            "REMOTE_JOB_NOT_BOUND",
+            "Remote recording job has not been bound to the server.",
+        )
+    })?;
+    let client = connector
+        .persisted_cleanup_client(server_base_url)
+        .map_err(|message| command_error("SERVER_CONNECTION_UNAVAILABLE", message))?;
+    let request = crate::server_connector::batch::CreateRecordingJobRequest::decode_persisted(
+        &prepared.create_request_json,
+    )
+    .map_err(|error| command_error("REMOTE_JOB_INCOMPATIBLE", error.to_string()))?;
+    let remote = client
+        .status(&server_job_id)
+        .await
+        .map_err(|error| command_error("REMOTE_STATUS_UNAVAILABLE", error.to_string()))?;
+    super::drain::validate_job_projection(
+        &remote,
+        &request,
+        Some(&server_job_id),
+        &[
+            "server_processing",
+            "complete",
+            "partial",
+            "failed",
+            "cancelled",
+        ],
+    )
+    .map_err(|error| command_error("REMOTE_STATUS_INCOMPATIBLE", error))?;
+    let stages = client
+        .stages(&server_job_id)
+        .await
+        .map_err(|error| command_error("REMOTE_STAGES_UNAVAILABLE", error.to_string()))?;
+    let asr_stage_state = stages
+        .stages
+        .iter()
+        .find(|stage| stage.stage == crate::server_connector::batch::ServerStageName::Asr)
+        .map(|stage| match stage.state {
+            crate::server_connector::batch::ServerStageState::Running => "running",
+            crate::server_connector::batch::ServerStageState::Succeeded => "succeeded",
+            crate::server_connector::batch::ServerStageState::Unavailable => "unavailable",
+            crate::server_connector::batch::ServerStageState::Failed => "failed",
+            crate::server_connector::batch::ServerStageState::Cancelled => "cancelled",
+        })
+        .map(str::to_owned);
+    let cancellation_acknowledged_at_ms = jobs
+        .ledger()
+        .get_prepared_remote_job(&job_id)?
+        .and_then(|current| current.server_cancellation_acknowledged_at_ms);
+    Ok(WdioRemoteJobLifecycle {
+        client_job_id: job_id,
+        server_job_id,
+        remote_status: remote.status,
+        asr_stage_state,
+        cancellation_acknowledged_at_ms,
+    })
 }
 
 #[tauri::command]

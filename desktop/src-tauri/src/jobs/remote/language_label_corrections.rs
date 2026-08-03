@@ -3,7 +3,7 @@ use super::{
         metadata_is_link_or_reparse, next_staging_nonce, sha256_bytes, valid_sha256,
         write_new_synced,
     },
-    result::{read_bounded_regular_artifact, read_published_remote_transcript},
+    result::{read_bounded_regular_artifact, read_published_remote_result_bundle},
 };
 use crate::{language::valid_bcp47, server_connector::batch::LanguageSegmentStatus};
 use serde::{Deserialize, Serialize};
@@ -212,7 +212,7 @@ fn append_language_label_correction_at(
         ));
     }
 
-    let verified = read_published_remote_transcript(transcript_path, spool_root)
+    let verified = read_published_remote_result_bundle(transcript_path, spool_root)
         .map_err(LanguageLabelCorrectionError::InvalidArtifacts)?;
     if verified.result_sha256 != loaded.review.source_result_sha256 {
         return Err(LanguageLabelCorrectionError::Conflict(
@@ -241,7 +241,7 @@ fn load_correction_chain(
     transcript_path: &Path,
     spool_root: &Path,
 ) -> Result<LoadedCorrectionChain, LanguageLabelCorrectionError> {
-    let verified = read_published_remote_transcript(transcript_path, spool_root)
+    let verified = read_published_remote_result_bundle(transcript_path, spool_root)
         .map_err(LanguageLabelCorrectionError::InvalidArtifacts)?;
     let segments = verified
         .result
@@ -599,8 +599,9 @@ mod tests {
             LanguageSpan, LanguageSpanBoundaryAuthority, LanguageSpanDisposition,
         },
         server_connector::batch::{
-            LanguageDecision, LanguageSegment, LanguageSegmentReason, ModelRevision,
-            ServerLanguageSpanEvidence, TranscriptResultRevision,
+            AlignmentOutcome, AlignmentStatus, AlignmentUnavailableReason, LanguageDecision,
+            LanguageSegment, LanguageSegmentReason, ModelRevision, ServerLanguageSpanEvidence,
+            TranscriptResultRevision,
         },
     };
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -675,7 +676,11 @@ mod tests {
                     decision_evidence: None,
                 }],
             }),
-            alignment: None,
+            alignment: AlignmentOutcome {
+                status: AlignmentStatus::Unavailable,
+                reason: Some(AlignmentUnavailableReason::RuntimeFailed),
+                component_revision: "cohere-attention-alignment-candidate-v1".into(),
+            },
             aligned_words: Vec::new(),
             model_provenance: vec![ModelRevision {
                 model_id: "nvidia/nemotron-3.5-asr-streaming-0.6b".into(),
