@@ -11,8 +11,8 @@ merged the Phase 8 Tiron meeting-transcription Preview as
 **Current checkpoint baseline:** `main` at
 `4201c5e7f1674dc0b15e76241bc308c49a5719bb`. The functionally named
 [meeting-transcription ownership and maintainability review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-is active on `refactor/meeting-transcription-maintainability`. It does not add
-Phase 9 behavior or requalify the model. Focused implementation and three-lens
+is the active checkpoint. It does not add Phase 9 behavior or requalify the
+model. Focused implementation and three-lens
 review now keep durable meeting-result decoding independent from the active
 worker profile, enforce current schemas and result-companion policy, remove
 evaluation code from the request-time Tiron image, serialize publication with
@@ -159,12 +159,13 @@ unrelated daemon errors or malformed/missing aggregates. `09b8b717...` then
 passed its Windows target-client, GB10 resident-provider, and connected
 desktop/private-server channels with exact teardown, but its complete matrix
 failed immediately when the live registry audit reported two newly published
-high-severity frontend transitive advisories. The compatible PostCSS finding
-is pinned to its patched 8.5.18 release. The `brace-expansion` finding remains
-confined to development-only WDIO/glob paths whose older `minimatch` consumers
-cannot accept the breaking 5.0.8 fix; one exact documented exception and
-removal condition now replace any broad suppression. The next admission must
-keep the controller lid open and supervise the long GB10 lifecycle
+high-severity frontend transitive advisories. At that time, PostCSS was pinned
+to patched release 8.5.18 and `brace-expansion` remained under one documented
+development-tool exception. Compatible `brace-expansion` backports are now
+available: the current branch pins exact releases 1.1.18 and 2.1.4 and removes
+that exception and its exception-only reachability code. PostCSS is now pinned
+to 8.5.23 for the later `GHSA-fxqj-rqcc-2cmp` residual fix. The next admission
+must keep the controller lid open and supervise the long GB10 lifecycle
 independently of SSH.
 
 Replacement candidate `72c089f42c1358f4f0b86c793af39a8e762d6137`

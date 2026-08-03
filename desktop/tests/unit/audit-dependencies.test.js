@@ -11,10 +11,7 @@ import {
   dependencyAuditRetryDelaysMs,
   dependencyAuditInvocation,
   isTransientDependencyAuditFailure,
-  productionAuditExceptionPackagesFromWhy,
-  productionDependencyWhyInvocation,
   runPnpmDependencyAudit,
-  verifyProductionAuditExceptionBoundary,
 } from "../scripts/audit-dependencies.mjs";
 
 const desktopRoot = path.resolve(
@@ -28,15 +25,17 @@ function auditResult(exitCode, output = "") {
 }
 
 describe("dependency audit retry policy", () => {
-  it("keeps the documented advisory exception exact and narrow", () => {
+  it("keeps patched transitive overrides exact without advisory exceptions", () => {
     const workspace = parseYaml(
       readFileSync(path.join(desktopRoot, "pnpm-workspace.yaml"), "utf8"),
     );
 
-    expect(workspace.auditConfig).toEqual({
-      ignoreGhsas: ["GHSA-mh99-v99m-4gvg"],
+    expect(workspace.auditConfig).toBeUndefined();
+    expect(workspace.overrides).toMatchObject({
+      "brace-expansion@1": "1.1.18",
+      "brace-expansion@2": "2.1.4",
+      postcss: "8.5.23",
     });
-    expect(workspace.overrides.postcss).toBe("8.5.18");
   });
 
   it("passes a clean first attempt without waiting", async () => {
@@ -189,24 +188,6 @@ describe("dependency audit retry policy", () => {
       command: "pnpm",
       args: ["audit", "--audit-level", "high"],
     });
-    expect(
-      productionDependencyWhyInvocation(
-        "win32",
-        "C:\\Windows\\System32\\cmd.exe",
-      ),
-    ).toEqual({
-      command: "C:\\Windows\\System32\\cmd.exe",
-      args: [
-        "/d",
-        "/s",
-        "/c",
-        "pnpm why --prod brace-expansion --json",
-      ],
-    });
-    expect(productionDependencyWhyInvocation("linux")).toEqual({
-      command: "pnpm",
-      args: ["why", "--prod", "brace-expansion", "--json"],
-    });
   });
 
   it("disables nested fetch retries in the spawned pnpm audit", async () => {
@@ -262,82 +243,4 @@ describe("dependency audit retry policy", () => {
     });
   });
 
-  it("reports the ignored package when pnpm why finds a production path", () => {
-    expect(
-      productionAuditExceptionPackagesFromWhy([
-        {
-          name: "application",
-          dependents: [{ name: "brace-expansion", version: "2.1.2" }],
-        },
-      ]),
-    ).toEqual(["brace-expansion"]);
-  });
-
-  it("does not treat a development-only ignored package as production reachable", () => {
-    expect(productionAuditExceptionPackagesFromWhy([])).toEqual([]);
-  });
-
-  it("fails closed if the production pnpm why query cannot be verified", async () => {
-    const statuses = [];
-
-    await expect(
-      verifyProductionAuditExceptionBoundary({
-        runProductionWhy: async () => ({
-          exitCode: 1,
-          output: "pnpm why failed",
-        }),
-        writeStatus: (status) => statuses.push(status),
-      }),
-    ).resolves.toEqual({ ok: false, exitCode: 1 });
-    expect(statuses).toEqual([
-      "DEPENDENCY_AUDIT_PRODUCTION_BOUNDARY=FAIL reason=production-why-failed",
-    ]);
-  });
-
-  it("fails when an ignored package becomes production reachable", async () => {
-    const statuses = [];
-
-    await expect(
-      verifyProductionAuditExceptionBoundary({
-        runProductionWhy: async () => ({
-          exitCode: 0,
-          output: JSON.stringify([
-            {
-              name: "application",
-              dependents: [{ name: "brace-expansion", version: "2.1.2" }],
-            },
-          ]),
-        }),
-        writeStatus: (status) => statuses.push(status),
-      }),
-    ).resolves.toEqual({
-      ok: false,
-      exitCode: 1,
-      productionExceptions: ["brace-expansion"],
-    });
-    expect(statuses).toEqual([
-      "DEPENDENCY_AUDIT_PRODUCTION_BOUNDARY=FAIL reason=ignored-package-production-reachable packages=brace-expansion",
-    ]);
-  });
-
-  it("passes when ignored packages remain absent from production", async () => {
-    const statuses = [];
-
-    await expect(
-      verifyProductionAuditExceptionBoundary({
-        runProductionWhy: async () => ({
-          exitCode: 0,
-          output: "[]",
-        }),
-        writeStatus: (status) => statuses.push(status),
-      }),
-    ).resolves.toEqual({
-      ok: true,
-      exitCode: 0,
-      productionExceptions: [],
-    });
-    expect(statuses).toEqual([
-      "DEPENDENCY_AUDIT_PRODUCTION_BOUNDARY=PASS",
-    ]);
-  });
 });
