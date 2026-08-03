@@ -211,6 +211,18 @@ namespace Yap.Verification
             uint informationLength,
             IntPtr returnLength);
 
+        [DllImport(
+            "kernel32.dll",
+            EntryPoint = "QueryInformationJobObject",
+            SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool QueryInformationJobObjectProcessIds(
+            IntPtr job,
+            int informationClass,
+            IntPtr information,
+            uint informationLength,
+            IntPtr returnLength);
+
         [DllImport("kernel32.dll")]
         private static extern void DeleteProcThreadAttributeList(IntPtr attributeList);
 

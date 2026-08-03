@@ -52,12 +52,15 @@ export function supervisorFailureError(label, cause, status) {
 }
 
 export function retainedDescendantError(label, status) {
+  const retainedProcessSummary = status.retainedProcessNames.join(", ");
   const error = new Error(
-    `${label} exited while retaining descendant processes; the owned Job was terminated.`,
+    `${label} exited while retaining descendant processes `
+      + `(${retainedProcessSummary}); the owned Job was terminated.`,
   );
   error.name = "BoundedCommandRetainedDescendantError";
   error.code = "INTEGRATED_GATE_COMMAND_RETAINED_DESCENDANT";
   error.rootExitCode = status.targetExitCode;
+  error.retainedProcessNames = [...status.retainedProcessNames];
   error.terminationEvidence = windowsTerminationEvidence(
     status,
     "retained-descendant",

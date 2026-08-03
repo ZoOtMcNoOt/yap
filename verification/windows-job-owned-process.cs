@@ -4,6 +4,7 @@ namespace Yap.Verification
     using System.ComponentModel;
     using System.Diagnostics;
     using System.Runtime.InteropServices;
+    using System.Text;
 
     public static partial class WindowsCommandJobSupervisor
     {
@@ -121,6 +122,101 @@ namespace Yap.Verification
                 throw LastWin32("QueryInformationJobObject failed.");
             }
             return accounting.ActiveProcesses;
+        }
+
+        private static string[] QueryActiveProcessNames(IntPtr job)
+        {
+            const int maximumProcessCount = 128;
+            try
+            {
+                uint activeProcessCount = QueryActiveProcessCount(job);
+                int capacity = checked((int)Math.Min(
+                    Math.Max(activeProcessCount + 8u, 16u),
+                    (uint)maximumProcessCount));
+                for (int attempt = 0; attempt < 4; attempt += 1)
+                {
+                    int bufferBytes = checked(8 + capacity * IntPtr.Size);
+                    IntPtr buffer = Marshal.AllocHGlobal(bufferBytes);
+                    try
+                    {
+                        for (int offset = 0; offset < bufferBytes; offset += 1)
+                            Marshal.WriteByte(buffer, offset, 0);
+                        if (QueryInformationJobObjectProcessIds(
+                            job,
+                            JobObjectBasicProcessIdListClass,
+                            buffer,
+                            (uint)bufferBytes,
+                            IntPtr.Zero))
+                        {
+                            uint processCount = unchecked((uint)Marshal.ReadInt32(buffer, 4));
+                            if (processCount == 0)
+                                return new[] { "unavailable" };
+                            int boundedCount = checked((int)Math.Min(
+                                processCount,
+                                (uint)capacity));
+                            string[] names = new string[boundedCount];
+                            for (int index = 0; index < boundedCount; index += 1)
+                            {
+                                long processId = Marshal.ReadIntPtr(
+                                    buffer,
+                                    checked(8 + index * IntPtr.Size)).ToInt64();
+                                names[index] = QuerySafeProcessName(processId);
+                            }
+                            Array.Sort(names, StringComparer.Ordinal);
+                            return names;
+                        }
+
+                        uint assignedProcessCount = unchecked(
+                            (uint)Marshal.ReadInt32(buffer, 0));
+                        if (capacity >= maximumProcessCount)
+                            break;
+                        capacity = checked((int)Math.Min(
+                            Math.Max(assignedProcessCount + 8u, (uint)capacity * 2u),
+                            (uint)maximumProcessCount));
+                    }
+                    finally
+                    {
+                        Marshal.FreeHGlobal(buffer);
+                    }
+                }
+            }
+            catch
+            {
+                // Diagnostics must never prevent the owned Job from being terminated.
+            }
+            return new[] { "unavailable" };
+        }
+
+        private static string QuerySafeProcessName(long processId)
+        {
+            if (processId <= 0 || processId > int.MaxValue)
+                return "unavailable";
+            try
+            {
+                using (Process process = Process.GetProcessById((int)processId))
+                {
+                    string name = process.ProcessName.ToLowerInvariant();
+                    if (name.Length == 0 || name.Length > 128)
+                        return "unavailable";
+                    StringBuilder safe = new StringBuilder(name.Length);
+                    foreach (char value in name)
+                    {
+                        safe.Append(
+                            value >= 'a' && value <= 'z'
+                                || value >= '0' && value <= '9'
+                                || value == '.'
+                                || value == '_'
+                                || value == '-'
+                                ? value
+                                : '_');
+                    }
+                    return safe.ToString();
+                }
+            }
+            catch
+            {
+                return "unavailable";
+            }
         }
 
         private static bool CleanupFailedLaunch(

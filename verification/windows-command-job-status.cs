@@ -24,11 +24,12 @@ namespace Yap.Verification
             bool activeProcessZeroObserved,
             bool cleanupProven,
             bool retainedDescendantDetected,
+            string[] retainedProcessNames,
             long elapsedMilliseconds,
             int? nativeErrorCode)
         {
             string json = "{\n"
-                + "  \"schemaVersion\": 1,\n"
+                + "  \"schemaVersion\": 2,\n"
                 + "  \"containment\": \"windows-job-object\",\n"
                 + "  \"supervisorIdentitySha256\": \"" + supervisorIdentitySha256 + "\",\n"
                 + "  \"environmentSha256\": \"" + environmentSha256 + "\",\n"
@@ -47,6 +48,8 @@ namespace Yap.Verification
                 + "  \"cleanupProven\": " + JsonBoolean(cleanupProven) + ",\n"
                 + "  \"retainedDescendantDetected\": "
                     + JsonBoolean(retainedDescendantDetected) + ",\n"
+                + "  \"retainedProcessNames\": "
+                    + JsonStringArray(retainedProcessNames) + ",\n"
                 + "  \"elapsedMilliseconds\": " + elapsedMilliseconds + ",\n"
                 + "  \"nativeErrorCode\": "
                     + (nativeErrorCode.HasValue ? nativeErrorCode.Value.ToString() : "null") + "\n"
@@ -63,6 +66,18 @@ namespace Yap.Verification
         }
 
         private static string JsonBoolean(bool value) => value ? "true" : "false";
+
+        private static string JsonStringArray(string[] values)
+        {
+            StringBuilder builder = new StringBuilder("[");
+            for (int index = 0; index < values.Length; index += 1)
+            {
+                if (index > 0)
+                    builder.Append(',');
+                builder.Append('"').Append(values[index]).Append('"');
+            }
+            return builder.Append(']').ToString();
+        }
 
         private static void ReleaseLaunchHandles(
             ref IntPtr standardInput,

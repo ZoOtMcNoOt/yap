@@ -168,6 +168,10 @@ test("bounded Windows commands reject and clean retained descendants", {
         assert.equal(error.terminationEvidence.activeProcessZeroObserved, true);
         assert.equal(error.terminationEvidence.activeProcessCount, 0);
         assert.equal(error.terminationEvidence.cleanupProven, true);
+        assert.ok(
+          error.retainedProcessNames.includes("pwsh"),
+          "retained-descendant evidence must identify the owned process image",
+        );
         return true;
       },
     );
