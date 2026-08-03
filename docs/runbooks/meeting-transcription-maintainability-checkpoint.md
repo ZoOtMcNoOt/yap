@@ -30,6 +30,23 @@ private-server SSH profile, and a private gate root outside Git. The GB10 needs
 the exact Tiron and ECAPA snapshots named by
 `server/meeting-transcription-runtime.lock.json`.
 
+Before admission, qualify the canonical Windows native build mode. NASM must be
+on `PATH`, and `AWS_LC_SYS_NO_ASM` must be absent rather than set to `1`. If this
+checkout's Cargo target cache has ever been built with the no-assembly override,
+clean only the generated AWS-LC package before returning to the canonical mode:
+
+```powershell
+Remove-Item Env:AWS_LC_SYS_NO_ASM -ErrorAction SilentlyContinue
+Push-Location .\desktop\src-tauri
+cargo clean -p aws-lc-sys
+Pop-Location
+```
+
+Then run `pnpm test:desktop:build` from `desktop` as a focused pre-admission
+smoke. Do not admit the candidate until that build passes. This prevents stale
+archives from two incompatible AWS-LC build modes from being combined by the
+Windows linker during the product lifecycle.
+
 The checkpoint changes `server/runtime/tiron/Dockerfile`, so the Phase 8 image
 is historical evidence only. Prepare and verify a new image from the candidate:
 

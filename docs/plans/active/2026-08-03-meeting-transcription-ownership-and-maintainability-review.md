@@ -62,6 +62,13 @@ separate private messy-meeting model-acceptance corpus.
   tests while resolving findings.
 - [x] Complete the required architecture/native/server adversarial review and
   resolve every P0-P2 finding.
+- [ ] On the replacement candidate, pass the canonical MSVC plus NASM desktop
+  build preflight with `AWS_LC_SYS_NO_ASM` absent before creating an admission.
+  Admitted head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11` was consumed before
+  WDIO or audio submission when stale generated AWS-LC archives from a prior
+  no-assembly build contaminated the native link. Its exact remote server
+  startup and cleanup passed, but that admission is failed historical evidence
+  and cannot be retried or relabeled.
 - [ ] Freeze code and documentation, then run the complete applicable
   checkpoint matrix exactly once on one candidate.
 - [ ] Prepare and inspect the request-time-only Tiron image for that exact head,

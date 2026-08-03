@@ -58,6 +58,18 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Active; focused checks and final P0-P2 review green, full gate pending | The [active ownership review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Its [behavior-named gate](runbooks/meeting-transcription-maintainability-checkpoint.md) adds exact-image desktop-to-GB10 speaker-result/History and active-cancellation lifecycle proof without re-running model-quality or provider-capacity qualification. Final architecture, native/race, server/evidence, and documentation-truth reviews found no remaining P0-P2 issues after remediation. It changes no Phase 8 model, quality, capacity, or promotion decision. Because the request-time Dockerfile changed, the old Phase 8 image is historical evidence only; the checkpoint must prepare and qualify one new immutable exact-head image. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
+Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
+is failed historical evidence and cannot be retried or relabeled. Its exact
+remote Tiron server reached readiness and cleanup removed its owned runtime, but
+the Windows product lifecycle failed before WDIO or audio submission because
+stale generated AWS-LC archives from an earlier `AWS_LC_SYS_NO_ASM=1` build were
+combined with the canonical NASM build mode. No product evidence directory was
+created. The build-cache fault is not a shipped application, dependency-lock,
+or GLib defect. The replacement candidate must clear that override, clean only
+the generated AWS-LC package when changing modes, pass the focused native build
+smoke before admission, and use a new protected private plan and exact-head
+runtime receipt.
+
 Replacement admissions `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3`,
 `6b4eda32ca3853c90b40db607248fab5af23048e`,
 `550d9152771a8220dece90ecdb001217f2f36f4e`, and
