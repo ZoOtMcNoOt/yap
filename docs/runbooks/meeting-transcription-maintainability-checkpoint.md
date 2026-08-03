@@ -119,6 +119,14 @@ directory exclusively when the product run starts; the lifecycle controller
 creates the two log files exclusively. Pre-creating any of those destinations
 must fail closed and consumes that admission.
 
+For each cleanup log, the lifecycle controller must open the absent canonical
+path exactly once with `FileMode.CreateNew`, `FileAccess.Write`, and
+`FileShare.Read`; apply and verify its private ACL while that handle remains
+open; and retain the same handle through SSH stream copy, flush, and disposal.
+A `Test-Path`/create/reopen sequence is not exclusive and is forbidden. If
+either stream cannot be created or protected, dispose any stream already
+opened and stop before launching SSH.
+
 ## Run the private product lifecycle
 
 Launch `infra/yap-server-node/development-batch-server.sh` through the reviewed

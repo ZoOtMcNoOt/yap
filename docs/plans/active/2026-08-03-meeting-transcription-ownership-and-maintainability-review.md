@@ -91,6 +91,21 @@ separate private messy-meeting model-acceptance corpus.
   cancellation, or teardown receipt. That admission is failed historical
   evidence. The runbook now requires every product destination to remain absent
   until its exclusive producer creates it.
+  Replacement `06a66435880f19812eecafaec65e6cb9f201b646` then passed the
+  exact-image product lifecycle, including History speaker projection, active
+  cancellation, and independent teardown. Its complete matrix stopped at cell
+  11 because Windows PowerShell 5.1 could not protect a 273-character command
+  log. No candidate receipt was published. The repaired ACL helper uses
+  extended-length I/O paths, and its regression holds the production log
+  descriptor open through protection and identity verification.
+  Candidate `b9ef6ff4d7c727aabb5f40a9c781ae6ebd06ca32` passed build,
+  exact-image preparation, server preflight, and admission, but its product
+  evidence was invalidated when adversarial review found that the private
+  controller created and reopened cleanup logs non-exclusively. The run was
+  stopped before inference and cleaned to zero owners; it contains only gate
+  context, with no vertical, cancellation, or teardown receipt. The controller
+  now retains one `CreateNew` stream per log from ACL protection through SSH
+  copy and disposal, and that admission remains historical only.
 - [ ] Freeze code and documentation, then run the complete applicable
   checkpoint matrix exactly once on one candidate.
 - [ ] Prepare and inspect the request-time-only Tiron image for that exact head,
