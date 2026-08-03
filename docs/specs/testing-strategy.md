@@ -96,17 +96,17 @@ merge.
 
 ### Maintainability checkpoint boundary
 
-The active post-Phase-8 checkpoint uses the behavior-named
+The gated post-Phase-8 candidate uses the behavior-named
 [meeting-transcription maintainability checkpoint](../runbooks/meeting-transcription-maintainability-checkpoint.md)
 and its `meeting-transcription-maintainability-checkpoint` manifest. The older
 [integrated product checkpoint gate](../runbooks/integrated-product-checkpoint-gate.md)
 is the historical Checkpoint B contract and must not be used for this candidate.
 Each manifest is distinct from the frozen Phase 6 gate, so no checkpoint receipt
 can be presented as a continuation or rerun of a phase-specific admission. The
-active gate retains exact head, manifest, child-definition, single-attempt, and
+gate retains exact head, manifest, child-definition, single-attempt, and
 private-evidence bounds.
 
-The active gate uses a license-clear public meeting fixture to prove the current
+The gate uses a license-clear public meeting fixture to prove the current
 Tiron result, anonymous-speaker History, active-cancellation, and teardown
 lifecycle through the product boundary. It does not rerun the separate model
 quality/capacity campaign or promote any provider candidate. Aggregate candidate

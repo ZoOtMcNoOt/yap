@@ -7,7 +7,8 @@
 [PR #142](https://github.com/mcnatg1/yap/pull/142) merged as
 `4201c5e7f1674dc0b15e76241bc308c49a5719bb`. The separate
 [meeting-transcription ownership and maintainability review](../active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-is active before Phase 9.
+has a gated executable candidate; final docs-only exact-head closure and PR
+#143 merge remain before Phase 9.
 
 **Decision authority:**
 [ADR 0020](../../adr/0020-meeting-capture-diarization-authority.md) and
@@ -74,8 +75,8 @@ overlap and long multi-participant meetings.
 The merged branch closes the smallest honest Phase 8 product layer: an explicitly
 enabled, meeting-only Preview candidate that is absent from the committed
 default catalog. It does not production-promote Tiron. The remaining Preview
-promotion work is separate from the active post-phase maintainability
-checkpoint. The typed global-cap behavior, three-lens adversarial review,
+promotion work is separate from the gated post-phase maintainability
+candidate. The typed global-cap behavior, three-lens adversarial review,
 supported exact-candidate roundtrip, one admitted Phase 8
 local/native/server/GB10 matrix, and execution-truth reconciliation are closed.
 

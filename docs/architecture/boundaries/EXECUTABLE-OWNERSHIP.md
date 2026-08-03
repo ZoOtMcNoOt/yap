@@ -1,12 +1,15 @@
 # Executable Ownership and Trust Boundaries
 
 This map records the executable ownership baseline through the merged Phase 8
-Preview and the active meeting-transcription maintainability checkpoint. Phase
+Preview and the gated meeting-transcription maintainability candidate. Phase
 8 reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks
 and merged through PR #142 as
-`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. The checkpoint's focused
-implementation checks are green; final adversarial re-review, its one
-exact-head full matrix, PR, and merge remain open. Paths are relative to the
+`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Exact checkpoint candidate
+`fb0985e7c08cf0a0e69752afbe61e372cbfe76db` passed multi-lens review, its
+real lifecycle, one complete 18-child matrix, receipt validation, and required
+CI and CodeQL jobs. Final documentation-only exact-head hosted closure,
+including disposable-Windows NSIS, and PR #143 merge
+remain open. Paths are relative to the
 repository root; later
 implementation must update this map only after its behavior is executable and
 verified.

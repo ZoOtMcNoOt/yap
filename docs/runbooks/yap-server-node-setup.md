@@ -262,8 +262,10 @@ container mutation, separates create/start, uses an exclusive container-ID
 file, and retains a private pre-create recovery record whenever the daemon
 outcome cannot be resolved. Exact-tree re-review, all 14 focused proxy
 contracts, and the real root-owned GB10 target proof pass with no P0–P2 finding.
-Fresh final-head private-controller packaging/prequalification, the complete
-gate, first-attempt hosted closure, the focused PR, and merge remain open.
+Exact candidate `fb0985e7c08cf0a0e69752afbe61e372cbfe76db` passed fresh
+private-controller packaging/prequalification, the complete checkpoint gate,
+and required CI and CodeQL jobs. PR #143's final documentation-only exact-head
+hosted closure, including disposable-Windows NSIS, and merge remain open.
 This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
 revocation propagation, guest behavior, packaged enterprise policy, or
 production approval. Run those only in a separately authorized IT-provided

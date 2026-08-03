@@ -8,17 +8,22 @@ CodeQL check for [PR #142](https://github.com/mcnatg1/yap/pull/142), which
 merged the Phase 8 Tiron meeting-transcription Preview as
 `4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
 
-**Current checkpoint baseline:** `main` at
-`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. The functionally named
+**Current checkpoint candidate:** exact executable head
+`fb0985e7c08cf0a0e69752afbe61e372cbfe76db` passed the canonical native
+build, receipt-bound request-time image and server preflight, real
+desktop-to-GB10 History and cancellation lifecycle with independent teardown,
+its single complete 18-child checkpoint matrix, independent candidate-receipt
+validation, and all required CI and CodeQL jobs. The functionally named
 [meeting-transcription ownership and maintainability review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-is the active checkpoint. It does not add Phase 9 behavior or requalify the
-model. Focused implementation and three-lens
-review now keep durable meeting-result decoding independent from the active
+has completed implementation and candidate gating without adding Phase 9
+behavior or requalifying the model. Final documentation-only exact-head hosted
+closure, including disposable-Windows NSIS, and merge through PR #143 remain
+open. Focused implementation and
+multi-lens review keep durable meeting-result decoding independent from the active
 worker profile, enforce current schemas and result-companion policy, remove
 evaluation code from the request-time Tiron image, serialize publication with
 cancellation, bound History detail work, and defer full speaker-companion
-verification until the exact result is selected. The complete checkpoint
-matrix, focused PR, hosted exact-head checks, and merge remain open.
+verification until the exact result is selected.
 
 The merged Phase 8 qualification remains bound to application/runtime head
 `1c69b61cf2902c9cfda50c6158168890974f969f`, immutable ARM64 image
@@ -55,7 +60,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 7: identity/access | Merged and gated | The [tenant-scoped identity and job authorization plan](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governed the branch. [PR #69](https://github.com/mcnatg1/yap/pull/69) merged as `66d314d7`. Provider-neutral OIDC/Entra token validation, tenant-scoped `(tid, oid)` ownership across jobs, results, REST and WSS, protected readiness, authenticated bounded private WebSocket admission, and the qualified native lower handshake execute. Two things carried by the branch do NOT execute as product behaviour and are gates rather than capabilities: the purpose-grant and revocation layer is reachable only from tests, since no HTTP route or operator entry point calls `RequestAuthorizationRuntime.purpose_authorization`, so `access_disabled` can be set only by editing `identity.sqlite` by hand; and the desktop production token manager discovers no provider by default. A WAM adapter exists only behind explicit opt-in and is not approved or selected. In release/default builds, explicit `YAP_AUTH_MODE=development_loopback` is the only end-to-end mode that does not require an IT-provided identity environment; the debug-only demo provider is test/demo evidence, not production SSO. Real Entra policy conformance remains an IT-owned handoff. |
 | Post-Phase-7 local-first closure | Implemented and locally gated | On-device setup and recovery no longer await optional server/auth refresh. The fixed numeric-loopback offer retries safely after launch, requires explicit connection approval, never scans the LAN, and stops after configuration or durable dismissal. Server and sign-in controls remain optional and progressively disclosed; no production SSO provider or enterprise configuration is invented. |
 | Phase 8: meeting evidence | Merged and Preview-gated | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects the pinned upstream Tiron whole-meeting runtime as an explicitly enabled server Preview baseline; it remains absent from the committed default catalog and unpromoted. Exact model/runtime/ECAPA/container/dependency identities and the messy-meeting policy have executable validators. The authenticated job route, three-hour admission, restart-safe hash-bound transcript/speaker revisions, owner-scoped retrieval, native publication, and History projection execute. Exact application/runtime head `1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported-launcher client/HTTP/Tiron/native/History roundtrip and the one admitted local/native/server/GB10 matrix against immutable image `sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`. Protected aggregate receipt SHA-256 `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154` binds the subordinate evidence and test/gate-only descendant `9ff06d7d...`. Reviewed head `ec4e4ab...` passed hosted checks and PR #142 merged as `4201c5e7...`. The route publishes `partial` when the public upstream aggregate exposes exactly eight global labels and says fallback was recommended but not run. Private-holdout scoring, exact window-cap evidence, speaker epochs, automatic fallback, broad capacity/quality evidence, and production promotion remain deferred promotion work. |
-| Meeting-transcription maintainability checkpoint | Active; focused implementation checks green, replacement gate pending | The [active ownership review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Its [behavior-named gate](runbooks/meeting-transcription-maintainability-checkpoint.md) adds exact-image desktop-to-GB10 speaker-result/History and active-cancellation lifecycle proof without re-running model-quality or provider-capacity qualification. Architecture, native/race, server/evidence, and documentation-truth review findings have been remediated; later gate-infrastructure review also corrected Windows extended-length ACL handling and required one retained exclusive stream per private cleanup log. A cold-link failure then exposed that this checkpoint had regressed the already accepted compiler boundary by putting native toolchain work back inside the product Job. The corrected manifest keeps the strict runtime Job unchanged and restores native compile/test/WDIO evidence to exact-head disposable hosted Windows. It changes no Phase 8 model, quality, capacity, or promotion decision. Because the request-time Dockerfile changed, the old Phase 8 image is historical evidence only; the checkpoint must prepare and qualify one new immutable exact-head image. |
+| Meeting-transcription maintainability checkpoint | Candidate gated; final documentation-only closure and merge pending | The [ownership review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Exact candidate `fb0985e7c08cf0a0e69752afbe61e372cbfe76db` passed the canonical native build, receipt-bound exact-image server preflight, real desktop-to-GB10 History and active-cancellation lifecycle with independent teardown, its single complete 18-child checkpoint matrix, independent receipt validation, and all required CI and CodeQL jobs including native WDIO. The [behavior-named gate](runbooks/meeting-transcription-maintainability-checkpoint.md) did not re-run or change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. PR #143's documentation-only descendant still requires exact-head hosted closure, including disposable-Windows NSIS, before merge. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
@@ -186,6 +191,16 @@ native-WDIO run then reached the application smoke and exposed one stale test
 fixture that still wrote retired server-settings schema 1. The application
 correctly rejected it. The fixture now writes the current schema-2 shape; no
 compatibility reader or migration was added.
+
+Replacement candidate `fb0985e7c08cf0a0e69752afbe61e372cbfe76db`
+passed the canonical native build, fresh exact-image preparation and server
+preflight, real desktop-to-GB10 History and active-cancellation lifecycle with
+independent teardown, its one complete 18-child checkpoint matrix, and
+independent candidate-receipt validation. The same exact head passed all
+required hosted CI and CodeQL jobs, including the corrected native-WDIO smoke.
+This is maintainability and lifecycle evidence, not a new Tiron quality,
+capacity, or production-promotion claim. Private evidence stays outside Git and
+hosted artifacts.
 
 Replacement candidate `72c089f42c1358f4f0b86c793af39a8e762d6137`
 passed its complete Windows target-client channel and all 18 sequential GB10
@@ -801,16 +816,18 @@ base-digest identity, or runtime identity.
 The living [decision and evidence queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 preserves the detailed discussion register, open questions, later-phase owners,
 and reviewable sub-tasks. Phases 1–8, Checkpoints A/B, and the post-Phase-7
-adversarial checkpoint are merged and closed; the separate post-Phase-8
-maintainability checkpoint is active. The concise
+adversarial checkpoint are merged and closed. The post-Phase-8 maintainability
+candidate is gated; only its documentation-only exact-head hosted closure and
+PR #143 merge remain before Phase 9. The concise
 [integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Freeze the active
+1. Merge the gated
    [meeting-transcription ownership and maintainability review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md),
-   run its complete applicable checkpoint matrix exactly once, and merge only
-   a reviewed hosted-green exact head.
+   only after PR #143's final documentation-only reviewed head passes hosted
+   closure, including disposable-Windows NSIS; do not repeat the passed
+   executable candidate matrix.
 2. Keep the merged Phase 8 Tiron route explicitly enabled, absent from the
    default catalog, and unpromoted. Training/redistribution approval, the
    independent private holdout, exact window-cap evidence, speaker epochs,

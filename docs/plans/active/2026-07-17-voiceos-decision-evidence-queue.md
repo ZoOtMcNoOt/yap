@@ -804,7 +804,8 @@ The completed
 governed Phase 7. Phase 7 and its adversarial checkpoint are closed. The focused
 local-first discovery closure also merged before Phase 8 and did not reopen
 identity scope or authorize enterprise SSO infrastructure. Phase 8 Preview has
-since merged; its separate maintainability checkpoint is active.
+since merged; its separate maintainability candidate is gated, with final
+documentation-only exact-head closure and PR #143 merge pending before Phase 9.
 
 ## Later-phase queue
 

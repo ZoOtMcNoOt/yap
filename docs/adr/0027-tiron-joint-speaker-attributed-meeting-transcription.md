@@ -23,8 +23,9 @@ route, separate immutable transcript and anonymous-speaker revisions,
   speaker labels. Reviewed head
   `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks and
   PR #142 merged as `4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
-  The separate post-phase ownership and maintainability checkpoint remains
-  active. The private holdout, meeting-score reproduction, larger-roster
+  The separate post-phase ownership and maintainability candidate is gated;
+  final documentation-only exact-head closure and PR #143 merge remain. The
+  private holdout, meeting-score reproduction, larger-roster
   reconciler, automatic fallback, and production promotion remain later
   promotion work rather than blockers to the merged disabled-by-default
   Preview baseline.
@@ -403,7 +404,10 @@ native follow-up approved runner-only descendant `9ff06d7d...`. The aggregate
 private receipt hash above contains no transcript or audio. The reviewed exact
 head passed hosted checks and merged through PR #142. Step 4's separate
 [meeting-transcription ownership and maintainability review](../plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-is active before Phase 9.
+has a passed exact executable candidate, single complete checkpoint matrix,
+independently validated receipt, and required CI and CodeQL jobs. Final
+documentation-only exact-head hosted closure, including disposable-Windows
+NSIS, and PR #143 merge remain before Phase 9.
 
 ### Deferred production promotion
 

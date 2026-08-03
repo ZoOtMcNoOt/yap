@@ -1,7 +1,8 @@
 # Current Architecture
 
 This document describes the merged executable Phase 1–8 Preview system plus the
-active meeting-transcription ownership and maintainability checkpoint. Phase 7
+gated meeting-transcription ownership and maintainability candidate awaiting
+final documentation-only PR closure. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -20,9 +21,12 @@ described as an all-green hosted rollup. Phase 8 reviewed head
 merged through PR #142 as
 `4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Its Tiron route remains an
 explicitly enabled Preview absent from the default catalog, not a
-production-promoted provider. The checkpoint's focused implementation checks
-are green; final adversarial re-review, its one exact-head full matrix, PR, and
-merge remain open.
+production-promoted provider. Exact maintainability candidate
+`fb0985e7c08cf0a0e69752afbe61e372cbfe76db` completed focused checks, final
+antagonistic review, its single exact-head 18-child matrix, independent receipt
+validation, and the required CI and CodeQL jobs. Only the final
+documentation-only exact-head hosted closure, including disposable-Windows
+NSIS, and PR #143 merge remain open.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -767,11 +771,13 @@ Reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks
 and PR #142 merged as `4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
 The separate maintainability checkpoint changes result/runtime ownership,
 request-time image contents, and bounded client projection. It does not change
-the checked model or relabel the historical Phase 8 Preview evidence. Because
-the Tiron Dockerfile now excludes evaluation-only code before the final copy,
-the checkpoint must build, inspect, and qualify one new immutable exact-head
-image; the Phase 8 image remains historical evidence only. Its local candidate
-matrix follows the established Phase 7 compiler boundary above: the strict
+the checked model or relabel the historical Phase 8 Preview evidence. Exact
+candidate `fb0985e7c08cf0a0e69752afbe61e372cbfe76db` built, inspected, and
+qualified one new receipt-bound immutable image, passed its real History and
+cancellation lifecycle with teardown, single complete 18-child matrix,
+independent receipt validation, and required CI and CodeQL jobs. The Phase 8 image
+remains historical evidence only. The checkpoint follows the established
+Phase 7 compiler boundary above: the strict
 product Job contains only actual application/runtime trees, while native
 formatting, compilation, tests, connector/dependency checks, and the WDIO build
 are exact-head hosted evidence on disposable Windows. A cold checkpoint attempt
@@ -880,7 +886,9 @@ reviewed head in required fresh GitHub-hosted Windows jobs. Connector and
 required WDIO runtime trees run there
 under the same kill-on-close Job supervisor used by candidate commands and
 must finish with zero active processes. Hosted CodeQL and disposable installer
-automation completed Phase 8 closure before merge. The active maintainability
-checkpoint still requires its one complete applicable matrix and green reviewed
-exact head. The fresh VM is the lifecycle boundary for Microsoft build-tool
-helpers; it is not the product runtime cleanup mechanism.
+automation completed Phase 8 closure before merge. The maintainability
+candidate has completed its single applicable matrix and final antagonistic
+review; only its documentation-only exact-head hosted closure, including
+disposable-Windows NSIS, and PR #143 merge remain. The fresh VM is the lifecycle
+boundary for Microsoft build-tool helpers; it is not the product runtime cleanup
+mechanism.

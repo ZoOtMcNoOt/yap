@@ -1,7 +1,10 @@
 # Meeting transcription ownership and maintainability review
 
-**Status:** Active on `refactor/meeting-transcription-maintainability` from the
-Phase 8 merge `4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
+**Status:** Implementation and candidate gate complete on
+`refactor/meeting-transcription-maintainability` from the Phase 8 merge
+`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. PR #143's final
+documentation-only exact-head hosted closure, including disposable-Windows
+NSIS, and merge remain open.
 
 ## Outcome
 
@@ -62,7 +65,7 @@ separate private messy-meeting model-acceptance corpus.
   tests while resolving findings.
 - [x] Complete the required architecture/native/server adversarial review and
   resolve every P0-P2 finding.
-- [ ] On the replacement candidate, pass the canonical MSVC plus NASM desktop
+- [x] On the replacement candidate, pass the canonical MSVC plus NASM desktop
   build preflight with `AWS_LC_SYS_NO_ASM` absent before creating an admission.
   Admitted head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11` was consumed before
   WDIO or audio submission when stale generated AWS-LC archives from a prior
@@ -122,15 +125,25 @@ separate private messy-meeting model-acceptance corpus.
   compilation, tests, connector/dependency checks, and the WDIO build execute
   in the existing exact-head hosted Rust and native-WDIO jobs. The failed
   admission and its private evidence remain historical only.
-- [ ] Freeze code and documentation, then run the complete applicable
+  Replacement candidate `fb0985e7c08cf0a0e69752afbe61e372cbfe76db`
+  passed the canonical native build, exact-image server preflight, real
+  desktop-to-GB10 History and cancellation lifecycle with independent teardown,
+  its single complete 18-child checkpoint matrix, and independent candidate-
+  receipt validation. The same exact head passed all required CI and
+  CodeQL jobs, including native WDIO. Private evidence remains outside Git and
+  hosted artifacts.
+- [x] Freeze code and documentation, then run the complete applicable
   checkpoint matrix exactly once on one candidate.
-- [ ] Prepare and inspect the request-time-only Tiron image for that exact head,
+- [x] Prepare and inspect the request-time-only Tiron image for that exact head,
   then use the receipt-bound immutable image in the GB10 lifecycle lane.
-- [ ] Record the candidate and private receipt identity without committing
+- [x] Record the candidate and private receipt identity without committing
   sensitive evidence.
 - [ ] Open one focused PR and merge only after hosted checks are green on the
   reviewed exact head. If a hosted check is unavailable, disclose the missing
-  check and equivalent local evidence instead of inventing a pass.
+  check and equivalent local evidence instead of inventing a pass. PR #143 is
+  open and the executable candidate is green; its documentation-only descendant
+  must pass exact-head hosted closure, including disposable-Windows NSIS, before
+  merge.
 - [ ] Begin Phase 9 only after this checkpoint merges.
 
 The full Codex Security plugin scan remains intentionally deferred to the Phase
