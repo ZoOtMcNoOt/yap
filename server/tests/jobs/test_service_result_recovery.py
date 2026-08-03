@@ -229,6 +229,54 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             self.assertFalse(persisted["stageHistoryComplete"])
             self.assertIsNone(persisted["asrRouting"])
 
+    def test_restart_rejects_speaker_companions_that_disagree_with_artifact_or_route(
+        self,
+    ) -> None:
+        cases = {
+            "undeclared artifact": (False, True, "aggregate is incomplete"),
+            "declared missing artifact": (True, False, "aggregate is incomplete"),
+            "declared artifact on standard route": (True, True, "frozen route"),
+        }
+        for label, (declared, artifact, message) in cases.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                service = RecordingJobService(
+                    root,
+                    processor=_Processor(),
+                    supported_languages=("en",),
+                    now=lambda: "2026-07-14T21:21:30Z",
+                )
+                created = service.create(_create_request())
+                job_root = root / "jobs" / created["jobId"]
+                result = _published_result(created)
+                if declared:
+                    result["speakerResultSha256"] = "d" * 64
+                (job_root / "result-revision.json").write_text(
+                    json.dumps(result, separators=(",", ":")) + "\n",
+                    encoding="utf-8",
+                )
+                if artifact:
+                    (job_root / "speaker-result-revision.json").write_text(
+                        "{}\n",
+                        encoding="utf-8",
+                    )
+                state_path = job_root / "state.json"
+                state = json.loads(state_path.read_text(encoding="utf-8"))
+                state["projection"]["status"] = "server_processing"
+                state_path.write_text(
+                    json.dumps(state, separators=(",", ":")) + "\n",
+                    encoding="utf-8",
+                )
+
+                with self.assertRaisesRegex(ValueError, message):
+                    RecordingJobService(
+                        root,
+                        processor=_Processor(),
+                        supported_languages=("en",),
+                        now=lambda: "2026-07-14T21:21:31Z",
+                        startup_worker_cleanup_verified=True,
+                    )
+
     def test_restart_discards_an_orphan_result_for_a_cancelled_job(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

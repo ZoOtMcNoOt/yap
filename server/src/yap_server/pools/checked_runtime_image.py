@@ -40,6 +40,7 @@ _RUNTIMES = {
     "cohere-vllm": ("runtime/cohere-vllm/Dockerfile", "yap-cohere-vllm"),
     "nemotron-nemo": ("runtime/nemotron-nemo/Dockerfile", "yap-nemotron-nemo"),
     "language-detection": ("runtime/lid/Dockerfile", "yap-lid"),
+    "meeting-transcription": ("runtime/tiron/Dockerfile", "yap-tiron"),
     "reference-batch-asr": ("runtime/asr/Dockerfile", "yap-gb10-asr"),
 }
 

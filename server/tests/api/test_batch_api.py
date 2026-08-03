@@ -172,6 +172,11 @@ class BatchJobApiTests(BatchJobApiTestCase):
             result["transcript"],
             "\n".join(self.logger.messages),
         )
+        speaker_status, _, speaker_result = self._request(
+            f"/v1/jobs/{job_id}/speaker-result"
+        )
+        self.assertEqual(speaker_status, 409)
+        self.assertEqual(speaker_result["code"], "SPEAKER_RESULT_NOT_READY")
 
         job_root = Path(self.temporary.name) / "jobs" / job_id
         self.assertTrue((job_root / "input.wav").is_file())

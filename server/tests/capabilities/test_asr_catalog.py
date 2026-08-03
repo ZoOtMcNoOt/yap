@@ -88,10 +88,7 @@ class AsrCapabilityCatalogTests(unittest.TestCase):
             catalog,
             json.loads(
                 (
-                    SERVER_ROOT
-                    / "openapi"
-                    / "examples"
-                    / "asr-capabilities.ok.json"
+                    SERVER_ROOT / "openapi" / "examples" / "asr-capabilities.ok.json"
                 ).read_text(encoding="utf-8")
             ),
         )
@@ -172,6 +169,30 @@ class AsrCapabilityCatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(
             ValueError,
             r"promotionEvidenceRevision must be a full immutable commit",
+        ):
+            _load_catalog(capability_lock, model_lock)
+
+    def test_preview_may_explicitly_have_no_promotion_evidence(self) -> None:
+        model_lock = load_model_pool_lock(SERVER_ROOT / "model-pools.lock.json")
+        capability_lock = _valid_capability_lock()
+        capability = _first_capability(capability_lock)
+        capability["qualityTier"] = "preview"
+        capability["promotionEvidenceRevision"] = None
+
+        catalog = _load_catalog(capability_lock, model_lock)
+
+        self.assertIsNone(
+            catalog["providers"][0]["capabilities"][0]["promotionEvidenceRevision"]
+        )
+
+    def test_transcription_ready_requires_promotion_evidence(self) -> None:
+        model_lock = load_model_pool_lock(SERVER_ROOT / "model-pools.lock.json")
+        capability_lock = _valid_capability_lock()
+        _first_capability(capability_lock)["promotionEvidenceRevision"] = None
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"promotionEvidenceRevision must be a non-empty string",
         ):
             _load_catalog(capability_lock, model_lock)
 
@@ -407,8 +428,7 @@ class AsrCapabilityCatalogTests(unittest.TestCase):
                     pool_id=pool_id,
                     model_id="m" * 256,
                     model_license="l" * 128,
-                    model_source=source_prefix
-                    + ("s" * (2048 - len(source_prefix))),
+                    model_source=source_prefix + ("s" * (2048 - len(source_prefix))),
                 )
             )
 

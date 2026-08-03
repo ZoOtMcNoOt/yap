@@ -6,7 +6,10 @@ mod visibility;
 use std::collections::HashSet;
 
 use crate::jobs::{
-    commands::{emit_jobs_changed, JobCommandError, RecordingJobs, TranscriptResultSummary},
+    commands::{
+        emit_jobs_changed, CompletedSpeakerTranscriptTurn, JobCommandError, RecordingJobs,
+        TranscriptResultSummary,
+    },
     LanguageLabelReview,
 };
 use catalog::{
@@ -39,6 +42,8 @@ pub(crate) struct HistoryCatalogSession {
     recovery_state: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     result_summary: Option<TranscriptResultSummary>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    speaker_turns: Option<Vec<CompletedSpeakerTranscriptTurn>>,
     session_id: String,
     source_path: String,
     warning: Option<String>,

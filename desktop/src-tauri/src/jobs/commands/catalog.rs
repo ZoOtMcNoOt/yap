@@ -1,12 +1,14 @@
 use super::super::remote;
 use super::{
-    CompletedRemoteTranscript, CompletedRemoteTranscriptCatalog, JobCommandError, RecordingJobs,
-    TranscriptLanguageStatus, TranscriptResultSummary, TranscriptTimingStatus,
+    CompletedRemoteTranscript, CompletedRemoteTranscriptCatalog, CompletedSpeakerTranscriptTurn,
+    JobCommandError, RecordingJobs, TranscriptLanguageStatus, TranscriptResultSummary,
+    TranscriptTimingStatus,
 };
 use crate::{
     jobs::{LanguageLabelReview, RecordingJobStatus, RecordingRoute},
     server_connector::batch::{
-        AlignmentStatus, CreateRecordingJobRequest, TranscriptResultRevision,
+        AlignmentStatus, AnonymousSpeakerAttribution, CreateRecordingJobRequest,
+        TranscriptResultRevision,
     },
 };
 
@@ -76,6 +78,47 @@ impl RecordingJobs {
                 {
                     return Err(());
                 }
+                let speaker_turns = if let Some(speaker_result) = verified.speaker_result.as_ref() {
+                    let source_duration_ms = request
+                        .chunks
+                        .iter()
+                        .try_fold(0_u64, |total, chunk| {
+                            total.checked_add(u64::from(chunk.duration_ms))
+                        })
+                        .ok_or(())?;
+                    let source_track_ids = request
+                        .tracks
+                        .iter()
+                        .map(|track| track.track_id.clone())
+                        .collect::<Vec<_>>();
+                    if !speaker_result.is_valid_for(
+                        &verified.result,
+                        source_duration_ms,
+                        &source_track_ids,
+                    ) {
+                        return Err(());
+                    }
+                    Some(
+                        speaker_result
+                            .speaker_turns
+                            .iter()
+                            .map(|turn| {
+                                let AnonymousSpeakerAttribution::SessionSpeaker {
+                                    session_speaker_id,
+                                } = &turn.attribution;
+                                CompletedSpeakerTranscriptTurn {
+                                    speaker_id: session_speaker_id.clone(),
+                                    start_ms: turn.start_ms,
+                                    end_ms: turn.end_ms,
+                                    text: turn.text.clone(),
+                                    overlap_group_id: turn.overlap_group_id.clone(),
+                                }
+                            })
+                            .collect(),
+                    )
+                } else {
+                    None
+                };
                 let language_review = (verified
                     .result
                     .language
@@ -93,6 +136,7 @@ impl RecordingJobs {
                     source_path: source_path.display().to_string(),
                     output_path: output_path.display().to_string(),
                     created_at_ms: record.updated_at_ms,
+                    speaker_turns,
                     result_summary,
                     warning: (record.status == RecordingJobStatus::Partial)
                         .then(|| "Server transcript completed with deferred work.".into()),

@@ -5,7 +5,10 @@ use super::{
     },
     spool::prepare_spool_root,
 };
-use crate::server_connector::batch::{TranscriptResultRevision, MAX_TRANSCRIPT_RESULT_BYTES};
+use crate::server_connector::batch::{
+    SpeakerResultRevision, TranscriptResultRevision, MAX_SPEAKER_RESULT_BYTES,
+    MAX_TRANSCRIPT_RESULT_BYTES,
+};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -18,6 +21,7 @@ pub(in crate::jobs) fn publish_remote_result(
     job_id: &str,
     spool_root: &Path,
     result: &TranscriptResultRevision,
+    speaker_result: Option<&SpeakerResultRevision>,
 ) -> Result<PathBuf, String> {
     validate_identifier(job_id, 128, "job ID")?;
     validate_published_result_contract(result, 1)?;
@@ -33,6 +37,27 @@ pub(in crate::jobs) fn publish_remote_result(
     if encoded_result.len() > MAX_TRANSCRIPT_RESULT_BYTES {
         return Err("server result revision is too large to publish".into());
     }
+    if result.requires_speaker_result() != speaker_result.is_some() {
+        return Err("server result aggregate is incomplete".into());
+    }
+    let encoded_speaker_result = speaker_result
+        .map(serde_json::to_vec)
+        .transpose()
+        .map_err(|error| format!("failed to encode server speaker result: {error}"))?;
+    if encoded_speaker_result
+        .as_ref()
+        .is_some_and(|encoded| encoded.len() > MAX_SPEAKER_RESULT_BYTES)
+    {
+        return Err("server speaker result revision is too large to publish".into());
+    }
+    if let (Some(expected), Some(encoded)) = (
+        result.speaker_result_sha256.as_deref(),
+        encoded_speaker_result.as_deref(),
+    ) {
+        if sha256_bytes(encoded) != expected {
+            return Err("server result speaker companion identity differs".into());
+        }
+    }
     let mut transcript = result.transcript.as_bytes().to_vec();
     if !transcript.ends_with(b"\n") {
         transcript.push(b'\n');
@@ -44,7 +69,12 @@ pub(in crate::jobs) fn publish_remote_result(
     let directory_name = format!("result-{:020}", result.revision);
     let destination = job_root.join(&directory_name);
     if destination.exists() {
-        verify_published_remote_result(&destination, &encoded_result, &transcript)?;
+        verify_published_remote_result(
+            &destination,
+            &encoded_result,
+            &transcript,
+            encoded_speaker_result.as_deref(),
+        )?;
         return Ok(destination.join("transcript.txt"));
     }
 
@@ -56,10 +86,18 @@ pub(in crate::jobs) fn publish_remote_result(
     let mut staging = StagingDirectory::create(staging_path)?;
     write_new_synced(&staging.path.join("result.json"), &encoded_result)?;
     write_new_synced(&staging.path.join("transcript.txt"), &transcript)?;
+    if let Some(encoded) = encoded_speaker_result.as_ref() {
+        write_new_synced(&staging.path.join("speaker-result.json"), encoded)?;
+    }
     match staging.publish(&destination) {
         Ok(()) => {}
         Err(_error) if destination.exists() => {
-            verify_published_remote_result(&destination, &encoded_result, &transcript)?;
+            verify_published_remote_result(
+                &destination,
+                &encoded_result,
+                &transcript,
+                encoded_speaker_result.as_deref(),
+            )?;
             return Ok(destination.join("transcript.txt"));
         }
         Err(error) => return Err(error),
@@ -69,6 +107,7 @@ pub(in crate::jobs) fn publish_remote_result(
 
 pub(in crate::jobs) struct VerifiedRemoteTranscript {
     pub(in crate::jobs) result: TranscriptResultRevision,
+    pub(in crate::jobs) speaker_result: Option<SpeakerResultRevision>,
     pub(in crate::jobs) result_directory: PathBuf,
     pub(in crate::jobs) result_sha256: String,
     pub(in crate::jobs) text: String,
@@ -134,15 +173,53 @@ pub(in crate::jobs) fn read_published_remote_transcript(
     let result: TranscriptResultRevision = serde_json::from_slice(&result_bytes)
         .map_err(|_| "remote result revision is incompatible".to_string())?;
     validate_published_result_contract(&result, revision)?;
+    let speaker_path = destination.join("speaker-result.json");
+    let speaker_bytes = if speaker_path.exists() {
+        Some(read_bounded_regular_artifact(
+            &speaker_path,
+            MAX_SPEAKER_RESULT_BYTES,
+            "remote speaker result revision",
+        )?)
+    } else {
+        None
+    };
+    if result.requires_speaker_result() != speaker_bytes.is_some() {
+        return Err("published remote result aggregate is incomplete".into());
+    }
+    let speaker_result = if let Some(encoded) = speaker_bytes.as_ref() {
+        let observed_speaker_sha256 = sha256_bytes(encoded);
+        if result.speaker_result_sha256.as_deref() != Some(observed_speaker_sha256.as_str()) {
+            return Err("remote speaker result companion identity differs".into());
+        }
+        let speaker: SpeakerResultRevision = serde_json::from_slice(encoded)
+            .map_err(|_| "remote speaker result revision is incompatible".to_string())?;
+        let source_track_ids = speaker
+            .speaker_turns
+            .first()
+            .map(|turn| turn.supporting_track_ids.clone())
+            .unwrap_or_default();
+        if !speaker.is_valid_for(&result, MAX_RECORDING_DURATION_MS, &source_track_ids) {
+            return Err("remote speaker result revision is incompatible".into());
+        }
+        Some(speaker)
+    } else {
+        None
+    };
     let mut expected_transcript = result.transcript.as_bytes().to_vec();
     if !expected_transcript.ends_with(b"\n") {
         expected_transcript.push(b'\n');
     }
-    verify_published_remote_result(&destination, &result_bytes, &expected_transcript)?;
+    verify_published_remote_result(
+        &destination,
+        &result_bytes,
+        &expected_transcript,
+        speaker_bytes.as_deref(),
+    )?;
     let text = String::from_utf8(expected_transcript)
         .map_err(|_| "remote transcript is not valid UTF-8".to_string())?;
     Ok(VerifiedRemoteTranscript {
         result,
+        speaker_result,
         result_directory: destination,
         result_sha256: sha256_bytes(&result_bytes),
         text,
@@ -223,6 +300,10 @@ pub(super) fn validate_published_result_contract(
             .previous_result_sha256
             .as_deref()
             .is_some_and(|value| !valid_sha256(value))
+        || result
+            .speaker_result_sha256
+            .as_deref()
+            .is_some_and(|value| !valid_sha256(value))
         || result.status != "complete"
         || !language_valid
         || !result.transcript_is_canonical()
@@ -239,6 +320,7 @@ fn verify_published_remote_result(
     destination: &Path,
     expected_result: &[u8],
     expected_transcript: &[u8],
+    expected_speaker_result: Option<&[u8]>,
 ) -> Result<(), String> {
     let metadata = fs::symlink_metadata(destination)
         .map_err(|error| format!("failed to inspect published result directory: {error}"))?;
@@ -254,7 +336,12 @@ fn verify_published_remote_result(
         })
         .collect::<Result<Vec<_>, _>>()?;
     names.sort();
-    if names != ["result.json", "transcript.txt"] {
+    let expected_names = if expected_speaker_result.is_some() {
+        vec!["result.json", "speaker-result.json", "transcript.txt"]
+    } else {
+        vec!["result.json", "transcript.txt"]
+    };
+    if names != expected_names {
         return Err("published result directory has unexpected contents".into());
     }
     for (name, expected) in [
@@ -276,6 +363,16 @@ fn verify_published_remote_result(
             .map_err(|error| format!("failed to read published result artifact: {error}"))?;
         if actual != expected {
             return Err("published result artifact conflicts with its immutable content".into());
+        }
+    }
+    if let Some(expected) = expected_speaker_result {
+        let actual = read_bounded_regular_artifact(
+            &destination.join("speaker-result.json"),
+            MAX_SPEAKER_RESULT_BYTES,
+            "published speaker result artifact",
+        )?;
+        if actual != expected {
+            return Err("published speaker result conflicts with its immutable content".into());
         }
     }
     Ok(())

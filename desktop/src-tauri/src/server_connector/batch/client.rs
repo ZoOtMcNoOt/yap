@@ -8,8 +8,8 @@ use super::{
     validation::valid_path_segment,
     ApiError, BatchClientError, CaptureChunkReference, ChunkUploadReceipt,
     CommitRecordingJobRequest, CreateRecordingJobRequest, RecordingJob, RetryServerStageRequest,
-    ServerStageName, ServerStageProjectionEnvelope, TranscriptResultRevision,
-    MAX_TRANSCRIPT_RESULT_BYTES,
+    ServerStageName, ServerStageProjectionEnvelope, SpeakerResultRevision,
+    TranscriptResultRevision, MAX_SPEAKER_RESULT_BYTES, MAX_TRANSCRIPT_RESULT_BYTES,
 };
 use crate::server_connector::authorization::{
     AuthenticatedDispatchError, AuthenticatedRequestDispatcher, AuthenticatedResponse,
@@ -198,6 +198,20 @@ impl BatchApiClient {
             )
             .await?;
         decode_response(response, &[StatusCode::OK], MAX_TRANSCRIPT_RESULT_BYTES).await
+    }
+
+    pub(crate) async fn speaker_result(
+        &self,
+        job_id: &str,
+    ) -> Result<SpeakerResultRevision, BatchClientError> {
+        let response = self
+            .send(
+                self.authenticated
+                    .get(self.endpoint(&["jobs", job_id, "speaker-result"])?)
+                    .header(reqwest::header::ACCEPT, "application/json"),
+            )
+            .await?;
+        decode_response(response, &[StatusCode::OK], MAX_SPEAKER_RESULT_BYTES).await
     }
 
     pub(crate) async fn stages(

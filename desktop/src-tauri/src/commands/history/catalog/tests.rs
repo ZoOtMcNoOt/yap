@@ -2,8 +2,9 @@ use std::collections::HashSet;
 
 use crate::{
     jobs::commands::{
-        CompletedRemoteTranscript, CompletedRemoteTranscriptCatalog, TranscriptLanguageStatus,
-        TranscriptResultSummary, TranscriptTimingStatus,
+        CompletedRemoteTranscript, CompletedRemoteTranscriptCatalog,
+        CompletedSpeakerTranscriptTurn, TranscriptLanguageStatus, TranscriptResultSummary,
+        TranscriptTimingStatus,
     },
     live::recordings::{RecoverableLiveSession, SavedLiveSession, SavedLiveSessionCatalog},
 };
@@ -51,6 +52,13 @@ fn catalog_combines_native_sources_with_explicit_provenance() {
                 source_path: "source.wav".into(),
                 output_path: "remote.txt".into(),
                 created_at_ms: 10,
+                speaker_turns: Some(vec![CompletedSpeakerTranscriptTurn {
+                    speaker_id: "speaker-1".into(),
+                    start_ms: 0,
+                    end_ms: 10,
+                    text: "Remote words.".into(),
+                    overlap_group_id: None,
+                }]),
                 result_summary: fixed_result_summary(),
                 warning: None,
             }],
@@ -66,6 +74,9 @@ fn catalog_combines_native_sources_with_explicit_provenance() {
     );
     assert_eq!(catalog.sessions[1].created_at_ms, 20);
     assert_eq!(catalog.sessions[2].origin, HistoryOrigin::Remote);
+    let speaker_turns = catalog.sessions[2].speaker_turns.as_ref().unwrap();
+    assert_eq!(speaker_turns[0].speaker_id, "speaker-1");
+    assert_eq!(speaker_turns[0].text, "Remote words.");
     assert_eq!(
         catalog.maintenance_warnings,
         ["shared warning", "remote warning"]
@@ -81,6 +92,7 @@ fn catalog_is_bounded_to_the_newest_native_sessions() {
             source_path: format!("source-{index}.wav"),
             output_path: format!("remote-{index}.txt"),
             created_at_ms: index as u64,
+            speaker_turns: None,
             result_summary: fixed_result_summary(),
             warning: None,
         })
@@ -114,6 +126,7 @@ fn catalog_applies_native_visibility_before_the_history_window() {
             source_path: format!("source-{index}.wav"),
             output_path: format!("remote-{index}.txt"),
             created_at_ms: index as u64,
+            speaker_turns: None,
             result_summary: fixed_result_summary(),
             warning: None,
         })
@@ -160,6 +173,7 @@ fn native_visibility_requires_the_exact_current_catalog_identity() {
                 source_path: "source.wav".into(),
                 output_path: "remote.txt".into(),
                 created_at_ms: 1,
+                speaker_turns: None,
                 result_summary: fixed_result_summary(),
                 warning: None,
             }],
@@ -195,6 +209,7 @@ fn hidden_path_migration_admits_only_current_native_catalog_paths() {
                 source_path: r"C:\Yap\source.wav".into(),
                 output_path: r"C:\Yap\remote.txt".into(),
                 created_at_ms: 1,
+                speaker_turns: None,
                 result_summary: fixed_result_summary(),
                 warning: None,
             }],
@@ -231,6 +246,7 @@ fn hidden_path_migration_preserves_newest_first_client_order() {
                     source_path: "newest.wav".into(),
                     output_path: "newest.txt".into(),
                     created_at_ms: 2,
+                    speaker_turns: None,
                     result_summary: fixed_result_summary(),
                     warning: None,
                 },
@@ -240,6 +256,7 @@ fn hidden_path_migration_preserves_newest_first_client_order() {
                     source_path: "older.wav".into(),
                     output_path: "older.txt".into(),
                     created_at_ms: 1,
+                    speaker_turns: None,
                     result_summary: fixed_result_summary(),
                     warning: None,
                 },

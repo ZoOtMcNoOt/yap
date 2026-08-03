@@ -31,7 +31,9 @@ was independently validated outside Git. PR #67 merged as
 `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 The representative provider-promotion corpus and frozen Phase 8 comparisons
 remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
-baseline, but no Tiron worker or meeting scorer executes yet. The tables below
+baseline. Its locked offline image and thin source-bounded worker pass focused
+GB10 short/two-window smokes, but no meeting scorer result, authenticated server
+route, product result revision, or full Phase 8 gate exists. The tables below
 distinguish executable checked coverage from future phase-gate requirements and
 from the separate hosted PR closure.
 

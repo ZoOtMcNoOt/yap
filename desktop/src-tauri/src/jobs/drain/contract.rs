@@ -1,7 +1,8 @@
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 use crate::server_connector::batch::{
-    ApiError, CreateRecordingJobRequest, RecordingJob, TranscriptResultRevision,
+    ApiError, CreateRecordingJobRequest, RecordingJob, SpeakerResultRevision,
+    TranscriptResultRevision,
 };
 
 pub(super) fn validate_job_projection(
@@ -106,6 +107,32 @@ pub(super) fn validate_result_revision(
         || !provenance_valid
     {
         return Err("server result revision conflicts with the prepared recording".into());
+    }
+    Ok(())
+}
+
+pub(super) fn validate_speaker_result_revision(
+    speaker_result: &SpeakerResultRevision,
+    transcript_result: &TranscriptResultRevision,
+    request: &CreateRecordingJobRequest,
+) -> Result<(), String> {
+    if !transcript_result.requires_speaker_result() {
+        return Err("server transcript does not declare a speaker result".into());
+    }
+    let source_duration_ms = request
+        .chunks
+        .iter()
+        .try_fold(0_u64, |total, chunk| {
+            total.checked_add(u64::from(chunk.duration_ms))
+        })
+        .ok_or_else(|| "prepared recording duration overflowed".to_string())?;
+    let source_track_ids = request
+        .tracks
+        .iter()
+        .map(|track| track.track_id.clone())
+        .collect::<Vec<_>>();
+    if !speaker_result.is_valid_for(transcript_result, source_duration_ms, &source_track_ids) {
+        return Err("server speaker result conflicts with the prepared recording".into());
     }
     Ok(())
 }

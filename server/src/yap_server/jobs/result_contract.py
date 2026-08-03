@@ -20,6 +20,7 @@ from .contract_values import (
     mapping,
     text,
     utc_timestamp,
+    valid_sha256,
 )
 
 
@@ -129,6 +130,8 @@ def validate_result_revision(
         result_fields.add("languageSpanEvidence")
     if "alignment" in result:
         result_fields.add("alignment")
+    if "speakerResultSha256" in result:
+        result_fields.add("speakerResultSha256")
     exact_keys(
         result,
         result_fields,
@@ -146,6 +149,10 @@ def validate_result_revision(
     ):
         raise ValueError("result revision identity or content is invalid")
     utc_timestamp(result.get("createdAtUtc"), "result createdAtUtc")
+    if "speakerResultSha256" in result and not valid_sha256(
+        result.get("speakerResultSha256")
+    ):
+        raise ValueError("result speaker companion identity is invalid")
 
     if "alignment" not in result:
         if result.get("alignedWords") != []:
@@ -191,10 +198,14 @@ def validate_result_revision(
             expected_model_id=model.get("modelId"),
             expected_model_revision=model.get("revision"),
         )
-        if maximum_end_ms is not None and max(
-            1,
-            round(evidence["sourceEndSample"] * 1_000 / 16_000),
-        ) != maximum_end_ms:
+        if (
+            maximum_end_ms is not None
+            and max(
+                1,
+                round(evidence["sourceEndSample"] * 1_000 / 16_000),
+            )
+            != maximum_end_ms
+        ):
             raise ValueError("result language span evidence differs from capture time")
         _validate_language_segments(
             result.get("languageSegments"),
@@ -202,7 +213,9 @@ def validate_result_revision(
             evidence["spans"],
         )
     elif "languageSegments" in result or "languageSpanEvidence" in result:
-        raise ValueError("fixed-language result cannot contain dynamic language evidence")
+        raise ValueError(
+            "fixed-language result cannot contain dynamic language evidence"
+        )
 
 
 def capture_duration_ms(creation: Mapping[str, object]) -> int:

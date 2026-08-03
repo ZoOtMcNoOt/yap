@@ -7,6 +7,7 @@ from .routes import (
     COMMIT_PATH,
     JOB_PATH,
     RESULT_PATH,
+    SPEAKER_RESULT_PATH,
     STAGES_PATH,
     STAGE_RETRY_PATH,
 )
@@ -87,6 +88,16 @@ class JobRequestMixin:
                 self._send_json(
                     HTTPStatus.OK,
                     jobs.get_result(result_match.group("job_id")),
+                )
+                return
+
+            speaker_result_match = SPEAKER_RESULT_PATH.fullmatch(path)
+            if speaker_result_match is not None and self.command == "GET":
+                self._send_json(
+                    HTTPStatus.OK,
+                    jobs.get_speaker_result(
+                        speaker_result_match.group("job_id")
+                    ),
                 )
                 return
 

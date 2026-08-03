@@ -26,8 +26,9 @@ export function historyEntryToRecordingJob(
       postprocessing: incomplete ? "error" : "done",
     },
     resultSummary: entry.resultSummary,
+    speakerTurns: entry.speakerTurns,
     route: remote ? "serverBatch" : "localFallback",
-    sessionMode: "dictation",
+    sessionMode: remote ? "meeting" : "dictation",
     sessionOrigin: remote ? "importedFile" : "liveCapture",
     status: incomplete ? "partial" : "complete",
   };

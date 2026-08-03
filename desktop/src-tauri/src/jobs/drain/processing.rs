@@ -12,7 +12,10 @@ use crate::{
 };
 
 use super::{
-    contract::{result_retention_expiry_ms, validate_job_projection, validate_result_revision},
+    contract::{
+        result_retention_expiry_ms, validate_job_projection, validate_result_revision,
+        validate_speaker_result_revision,
+    },
     upload::validate_durable_upload_state,
     BatchCommitGuard, DrainResult, DrainStepError,
 };
@@ -185,13 +188,25 @@ async fn advance_processing_job_once_guarded(
     guard.ensure_current()?;
     let result = client.result(server_job_id).await?;
     validate_result_revision(&result, &request)?;
+    let speaker_result = if result.requires_speaker_result() {
+        guard.ensure_current()?;
+        let speaker_result = client.speaker_result(server_job_id).await?;
+        validate_speaker_result_revision(&speaker_result, &result, &request)?;
+        Some(speaker_result)
+    } else {
+        None
+    };
     guard.commit(|| {
         ledger
             .begin_remote_result_saving(&candidate.job_id, updated_at_ms)
             .map_err(|error| DrainStepError::permanent(error.to_string()))
     })?;
-    let output_path =
-        remote::publish_remote_result(&candidate.job_id, remote_jobs_directory, &result)?;
+    let output_path = remote::publish_remote_result(
+        &candidate.job_id,
+        remote_jobs_directory,
+        &result,
+        speaker_result.as_ref(),
+    )?;
     guard.commit(|| {
         ledger
             .complete_remote_result(

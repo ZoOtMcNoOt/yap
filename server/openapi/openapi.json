@@ -616,6 +616,53 @@
         }
       }
     },
+    "/v1/jobs/{jobId}/speaker-result": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Read the immutable speaker result",
+        "description": "An explicitly configured joint meeting candidate publishes a separate immutable SpeakerResultRevision rooted in the same capture-manifest hash as its transcript result. Raw provider speaker-token labels are never exposed.",
+        "operationId": "getJobSpeakerResult",
+        "x-yap-runtime-status": "Implemented for explicitly configured joint meeting candidate routes",
+        "x-yap-runtime-owner": "Speaker result retrieval",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JobId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The immutable speaker result revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeakerResultRevision"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      }
+    },
     "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}": {
       "put": {
         "tags": [
@@ -2134,6 +2181,84 @@
           }
         }
       },
+      "JointAnonymousSpeakerAttribution": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Anonymous speaker identity emitted by the current Tiron meeting candidate. Named identities are outside this candidate contract.",
+        "required": [
+          "kind",
+          "sessionSpeakerId"
+        ],
+        "properties": {
+          "kind": {
+            "const": "session_speaker"
+          },
+          "sessionSpeakerId": {
+            "type": "string",
+            "pattern": "^speaker-[1-8]$"
+          }
+        }
+      },
+      "JointSpeakerTranscriptTurn": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "End-exclusive anonymous speaker turn whose canonical text participates in exact transcript reconstruction.",
+        "required": [
+          "turnId",
+          "startMs",
+          "endMs",
+          "text",
+          "attribution",
+          "confidence",
+          "supportingTrackIds",
+          "overlapGroupId"
+        ],
+        "properties": {
+          "turnId": {
+            "$ref": "#/components/schemas/OpaqueIdentifier"
+          },
+          "startMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "endMs": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "attribution": {
+            "$ref": "#/components/schemas/JointAnonymousSpeakerAttribution"
+          },
+          "confidence": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "supportingTrackIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/TrackId"
+            }
+          },
+          "overlapGroupId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        }
+      },
       "AlignedWord": {
         "type": "object",
         "additionalProperties": false,
@@ -2234,7 +2359,8 @@
             "type": "string",
             "enum": [
               "cohere-attention-en-v1",
-              "cohere-attention-alignment-candidate-v1"
+              "cohere-attention-alignment-candidate-v1",
+              "joint-segment-timing-v1"
             ]
           }
         },
@@ -2725,6 +2851,10 @@
           "transcript": {
             "type": "string"
           },
+          "speakerResultSha256": {
+            "$ref": "#/components/schemas/Sha256",
+            "description": "Present only when this transcript is explicitly bound to a separate immutable speaker-result companion."
+          },
           "languageSegments": {
             "type": "array",
             "minItems": 1,
@@ -2760,7 +2890,7 @@
       "SpeakerResultRevision": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Immutable speaker result revision. Named attribution is valid only with server_authoritative authority or a later user correction rooted in that evidence.",
+        "description": "Immutable anonymous speaker-result companion emitted by the current Tiron meeting candidate and hash-bound from its transcript result.",
         "required": [
           "sessionId",
           "revision",
@@ -2770,6 +2900,7 @@
           "previousResultSha256",
           "status",
           "language",
+          "runtimeLockSha256",
           "speakerTurns",
           "alignment",
           "alignedWords",
@@ -2815,10 +2946,14 @@
               }
             ]
           },
+          "runtimeLockSha256": {
+            "$ref": "#/components/schemas/Sha256",
+            "description": "Exact whole-meeting runtime lock used for this joint result."
+          },
           "speakerTurns": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SpeakerTurn"
+              "$ref": "#/components/schemas/JointSpeakerTranscriptTurn"
             }
           },
           "alignedWords": {
@@ -2890,6 +3025,25 @@
                 }
               }
             }
+          },
+          {
+            "if": {
+              "required": [
+                "qualityTier"
+              ],
+              "properties": {
+                "qualityTier": {
+                  "const": "preview"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "promotionEvidenceRevision": {
+                  "type": "string"
+                }
+              }
+            }
           }
         ],
         "properties": {
@@ -2920,7 +3074,11 @@
             "type": "boolean"
           },
           "promotionEvidenceRevision": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Exact promotion-evidence commit, or null only while the capability is explicitly preview quality.",
             "pattern": "^[0-9a-f]{40}$"
           }
         }

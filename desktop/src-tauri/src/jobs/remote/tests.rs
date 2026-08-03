@@ -699,6 +699,7 @@ fn published_remote_transcript_is_reopened_only_through_its_result_revision() {
             confidence: Some(0.98),
         }),
         transcript: "Private result.".into(),
+        speaker_result_sha256: None,
         language_segments: None,
         language_span_evidence: None,
         alignment: None,
@@ -710,7 +711,7 @@ fn published_remote_transcript_is_reopened_only_through_its_result_revision() {
         }],
     };
 
-    let output = publish_remote_result(job_id, &spool, &result).unwrap();
+    let output = publish_remote_result(job_id, &spool, &result, None).unwrap();
     let reopened = read_published_remote_transcript(&output, &spool).unwrap();
     assert_eq!(reopened.text, "Private result.\n");
     assert_eq!(reopened.result, result);
@@ -725,7 +726,7 @@ fn published_remote_transcript_is_reopened_only_through_its_result_revision() {
     let mut empty = result.clone();
     empty.transcript = " \n\t".into();
     assert!(validate_published_result_contract(&empty, 1).is_err());
-    assert!(publish_remote_result(job_id, &spool, &empty).is_err());
+    assert!(publish_remote_result(job_id, &spool, &empty, None).is_err());
     let mut offset_timestamp = result.clone();
     offset_timestamp.created_at_utc = "2026-07-14T16:00:02-05:00".into();
     assert!(validate_published_result_contract(&offset_timestamp, 1).is_err());
@@ -759,6 +760,7 @@ fn dynamic_result_requires_ordered_lossless_detected_or_unknown_segments() {
             confidence: None,
         }),
         transcript: "hello bonjour".into(),
+        speaker_result_sha256: None,
         language_segments: Some(vec![
             LanguageSegment {
                 index: 0,
@@ -864,6 +866,15 @@ fn aligned_result_requires_exact_raw_words_and_source_bounded_intervals() {
     });
     let result: TranscriptResultRevision = serde_json::from_value(value).unwrap();
     assert!(validate_published_result_contract(&result, 1).is_ok());
+
+    let mut joint_segment_timing = result.clone();
+    let joint_alignment = joint_segment_timing.alignment.as_mut().unwrap();
+    joint_alignment.status = crate::server_connector::batch::AlignmentStatus::Unavailable;
+    joint_alignment.reason =
+        Some(crate::server_connector::batch::AlignmentUnavailableReason::ProviderUnsupported);
+    joint_alignment.component_revision = "joint-segment-timing-v1".into();
+    joint_segment_timing.aligned_words.clear();
+    assert!(validate_published_result_contract(&joint_segment_timing, 1).is_ok());
 
     let mut text_drift = result.clone();
     text_drift.aligned_words[1].text = "world".into();

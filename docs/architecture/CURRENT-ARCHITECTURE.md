@@ -708,13 +708,27 @@ final hosted head is not represented as an all-green rollup. Real IT-provided
 Entra and Conditional Access policy and an approved native adapter remain
 external conformance work.
 
-## Accepted meeting direction, not current execution
+## Active meeting-runtime development, not a production route
 
 [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
 selects pinned `Trelis/tiron` as the Phase 8 server development baseline for
-joint speaker-attributed meeting transcription. No Tiron worker, ECAPA lock,
-speaker-attributed scorer, or production result path executes today. The local
-anonymous-speaker path and ASR-plus-diarization fallback remain separate.
+joint speaker-attributed meeting transcription. The exact current model,
+upstream runtime harness, ECAPA checkpoint, NVIDIA/Python overlay, scorer, and
+acceptance identities are locked. A thin isolated worker now verifies those
+local artifacts and validates source-bounded upstream results. Focused GB10
+smokes passed one short input and one two-window input with networking disabled.
+When both locked model roots are configured explicitly, startup verifies them
+and the private preparation receipt for the checked Tiron image before composing
+the worker into the authenticated Python batch router. This explicit profile is
+meeting-only and rejects more than three hours before allocating job storage.
+The route publishes the anonymous-speaker revision first and the transcript
+revision last as the aggregate commit marker; the transcript carries the exact
+companion hash and every speaker turn carries reconstructable text.
+restart validation rejects incomplete aggregates. The owner-scoped API and
+Rust native connector validate and publish both artifacts without exposing raw
+Tiron speaker labels. No promotion result, larger-roster reconciler, default
+route, or production service exists. The local anonymous-speaker path and
+ASR-plus-diarization fallback remain separate.
 
 Tiron's model capacity is eight window-local speaker slots per 30-second
 decode, and the pinned reference harness separately caps the published global
@@ -731,8 +745,11 @@ The frozen Phase 8 gate will score AMI/ICSI/NOTSOFAR public comparators
 separately from an independently adjudicated private messy-meeting holdout.
 Accuracy, overlap, locale, capacity pressure, long-session stability,
 c1/c2/c4/c8 isolation, cancellation, and teardown all remain promotion gates.
-The model emits evidence only; Rust continues to own source validation, durable
-jobs, admission, cancellation, immutable revisions, and publication.
+The model emits evidence only. The Python server owns server-side source
+validation, durable jobs, admission, cancellation, containment, and immutable
+authoritative revisions. Rust independently binds those revisions to the
+persisted capture request, publishes the local aggregate, and projects its
+anonymous turns into History.
 
 ## Persistence and recovery
 

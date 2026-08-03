@@ -114,7 +114,7 @@ evidence that must be pinned before a real promotion.
 | Nemotron 3.5 ASR v1 | FLEURS, Common Voice, MLS | `known_training` and `known_evaluation` from NVIDIA's model card; exact sample overlap is not disclosed | Comparator/regression only |
 | Nemotron 3.5 ASR v1 | Other pre-existing public corpora | `unknown` unless NVIDIA or a corpus owner supplies split-level evidence | Comparator/regression only |
 | Cohere Transcribe 03-2026 locked revision | Every pre-existing public corpus | `unknown`; Cohere's disclosed aggregate data description does not identify enough sources | Comparator/regression only |
-| Tiron revision `aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc` | AMI, ICSI, and NOTSOFAR-1 | `known_evaluation`; the publisher reports and may have selected behavior against these corpora | Comparator/regression and upstream reproduction only |
+| Tiron execution revision `90bc0a4d198cd5cf6679b0e478375ba3a0040575` (supersedes the pre-execution July 21 pin) | AMI, ICSI, and NOTSOFAR-1 | `known_evaluation`; the publisher reports and may have selected behavior against these corpora | Comparator/regression and upstream reproduction only |
 | Any frozen candidate | Sealed Yap Reality Set recorded afterward | `created_after_model_freeze`, provided chain of custody proves the date and no later tuning uses it | Independent promotion holdout until retired |
 
 The first viable public-source contribution to that Reality Set is the

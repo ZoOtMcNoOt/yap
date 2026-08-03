@@ -10,6 +10,11 @@ from typing import Callable, Mapping, Protocol, Sequence
 from uuid import uuid4
 
 from yap_server.auth import AuthenticatedPrincipal, PrincipalKey
+from yap_server.meeting_transcription.contract import (
+    MAX_MEETING_PCM_BYTES,
+    MEETING_TRANSCRIPTION_POOL_ID,
+)
+from yap_server.meeting_transcription.result_revisions import MeetingResultAuthority
 from yap_server.pools.batch_contract import (
     AsrRouteDecision,
     BatchReservation,
@@ -94,6 +99,7 @@ class RecordingJobService:
         cancellation_timeout_seconds: float = _CANCELLATION_ACK_TIMEOUT_SECONDS,
         startup_worker_cleanup_verified: bool = False,
         development_principal: PrincipalKey | None = DEVELOPMENT_JOB_OWNER,
+        meeting_result_authority: MeetingResultAuthority | None = None,
     ) -> None:
         if cancellation_timeout_seconds <= 0:
             raise ValueError("cancellation timeout must be positive")
@@ -114,6 +120,7 @@ class RecordingJobService:
             route_resolver=processor.resolve_route,
             asr_catalog_revision=self._asr_catalog_revision,
             legacy_owner=development_principal,
+            meeting_result_authority=meeting_result_authority,
         )
         self._storage_root = self._store.root
         self._lock = threading.RLock()
@@ -139,6 +146,7 @@ class RecordingJobService:
             completion_events=self._completion_events,
             lock=self._lock,
             now=self._now,
+            meeting_result_authority=meeting_result_authority,
         )
         with self._lock:
             startup_now = _utc_timestamp(self._now(), "server clock")
@@ -284,6 +292,7 @@ class RecordingJobService:
                 raise RuntimeError(
                     "resolved ASR route mode differs from the admitted language decision"
                 )
+            _require_route_audio_within_boundary(request, route)
             durable_routing = DurableAsrRouting(
                 route=route,
                 asr_catalog_revision=self._asr_catalog_revision,
@@ -751,6 +760,10 @@ class RecordingJobService:
             creation,
             durable_routing.route,
         )
+        capture_manifest = _mapping(
+            creation.get("captureManifest"),
+            "captureManifest",
+        )
         return BatchInputPreparation(
             job_id=job_id,
             job_root=job_root,
@@ -758,6 +771,7 @@ class RecordingJobService:
             language=language_bcp47,
             language_bcp47=language_bcp47,
             route=durable_routing.route,
+            capture_manifest_sha256=str(capture_manifest["sha256"]),
             expected_output_pcm_sha256=expected_output_pcm_sha256,
             utterance_plan_source=utterance_plan_source,
         )
@@ -1180,6 +1194,24 @@ class RecordingJobService:
                 )
             return deepcopy(self._state.results[job_id])
 
+    def get_speaker_result(
+        self,
+        job_id: str,
+        *,
+        owner: PrincipalKey | None = None,
+    ) -> dict[str, object]:
+        operation_owner = self._operation_owner(owner)
+        with self._lock:
+            self._require_job_owner_locked(job_id, operation_owner)
+            if job_id not in self._state.speaker_results:
+                raise JobServiceError(
+                    409,
+                    "SPEAKER_RESULT_NOT_READY",
+                    "The immutable speaker result is not available yet.",
+                    retryable=self._state.jobs[job_id].get("status") != "failed",
+                )
+            return deepcopy(self._state.speaker_results[job_id])
+
     def _purge_private_audio_locked(self, job_id: str) -> None:
         self._store.purge_private_audio(self._state, job_id)
 
@@ -1249,6 +1281,33 @@ class RecordingJobService:
 
     def _persist_job_locked(self, job_id: str) -> None:
         self._store.persist(self._state, job_id)
+
+
+def _require_route_audio_within_boundary(
+    request: Mapping[str, object],
+    route: AsrRouteDecision,
+) -> None:
+    if route.pool_id != MEETING_TRANSCRIPTION_POOL_ID:
+        return
+    chunks = request.get("chunks")
+    if not isinstance(chunks, list):
+        raise ValueError("job creation chunks are invalid")
+    total_bytes = 0
+    for raw_chunk in chunks:
+        content = _mapping(
+            _mapping(raw_chunk, "chunk").get("contentIdentity"),
+            "contentIdentity",
+        )
+        byte_length = content.get("byteLength")
+        if not isinstance(byte_length, int) or isinstance(byte_length, bool):
+            raise ValueError("job creation PCM length is invalid")
+        total_bytes += byte_length
+    if total_bytes > MAX_MEETING_PCM_BYTES:
+        raise JobServiceError(
+            400,
+            "INVALID_JOB",
+            "Meeting audio exceeds the three-hour candidate boundary.",
+        )
 
 
 def _build_utterance_plan_source(

@@ -821,16 +821,16 @@ reopen identity scope or authorize enterprise SSO infrastructure.
   metrics before selecting diarization components.
 - Implement joint multi-speaker ASR as the selected server development baseline
   rather than assuming that diarization plus single-speaker ASR is always the
-  best overlap path. `Trelis/tiron` is accepted at model revision
-  `aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc` with public Apache-2.0 metadata
-  and a 3,087,229,512-byte weight artifact whose LFS SHA-256 is
-  `921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e`;
-  its reference harness is queued at
-  `5b3766ac64ff3a8d98443e0a850d1ce569952520`. This source inspection is not
-  production-promotion evidence: training/adaptation lineage is undisclosed, published
-  quality evidence is English-only and self-reported, resource/concurrency
-  evidence is absent, and the harness has unpinned runtime/model dependencies
-  plus oversized linking surfaces that must not be copied into Yap unchanged.
+  best overlap path. The Phase 8 execution set is `Trelis/tiron` revision
+  `90bc0a4d198cd5cf6679b0e478375ba3a0040575`, 3,087,229,512-byte weight
+  SHA-256 `2e9f644c5eb633d3c387975cf38677d3ffe1a7b98830a735867865ec1bd519b5`,
+  and `TrelisResearch/tiron` runtime revision
+  `d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c`. The earlier July 21 intake set
+  is explicitly superseded, not mixed. A locked ARM64/Python 3.12 runtime and
+  thin offline worker now execute without porting the harness pipeline. This is
+  feasibility, not production-promotion evidence: training/adaptation lineage
+  is undisclosed, published quality evidence is English-only and self-reported,
+  and representative quality/concurrency/lifecycle evidence remains absent.
 - Freeze the messy-meeting manifest and thresholds before model output, then
   score public AMI/ICSI/NOTSOFAR comparators separately from an independently
   adjudicated private holdout. Distinguish more-than-15-attendee sessions with

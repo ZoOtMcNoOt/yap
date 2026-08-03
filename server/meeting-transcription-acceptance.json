@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "runtimeLockPath": "server/meeting-transcription-runtime.lock.json",
+  "runtimeLockSha256": "a5eeedf04339d3d2e53cdc1ed3e695102494a6f3fd9cb7718f2b2f0c6b5cbdd6",
+  "privateCache": {
+    "environment": "YAP_EVAL_CACHE",
+    "repositoryFallback": false
+  },
+  "evidenceClasses": [
+    "public-comparator",
+    "independent-holdout",
+    "constructed-controls"
+  ],
+  "evidence": {
+    "publicComparator": {
+      "id": "tiron-published-meeting-comparator",
+      "repository": "Trelis/tiron-eval-meetings",
+      "revision": "500809d7e9ae643d3cc945f6c91e7ed0693456bd",
+      "source": "https://huggingface.co/datasets/Trelis/tiron-eval-meetings",
+      "license": {
+        "spdx": "CC-BY-4.0",
+        "declarationArtifact": "README.md",
+        "declarationSha256": "11bc8decf6e73272e935727d64b3640187c0265242289eb9c31f97aa94648b0c"
+      },
+      "promotionEligible": false,
+      "exposureStatus": "known-exposed",
+      "meetingIds": [
+        "ES2004a",
+        "IS1009a",
+        "TS3003a",
+        "EN2002a",
+        "Bmr013",
+        "Bmr018",
+        "Bro021",
+        "MTG_32040",
+        "MTG_32063",
+        "MTG_32072",
+        "MTG_32074",
+        "MTG_32092",
+        "MTG_32179",
+        "MTG_32185",
+        "MTG_32256",
+        "MTG_32257",
+        "MTG_32322"
+      ],
+      "artifacts": [
+        {"path": ".gitattributes", "size": 2504, "sha256": "9e75dd981de037ec3769f24f790e126bc5a160b6871f510214e68dc70649aeeb"},
+        {"path": "README.md", "size": 2504, "sha256": "11bc8decf6e73272e935727d64b3640187c0265242289eb9c31f97aa94648b0c"},
+        {"path": "data/ami-00000-of-00001.parquet", "size": 177253134, "sha256": "96422895472636f39f308010f70f814e23ca11639b4dc9474d87a663f4514531"},
+        {"path": "data/icsi-00000-of-00001.parquet", "size": 318840568, "sha256": "7046881fe6cf0cadfb624e72e30dfe273e1cad7496ccac6e2059bcba040b7f68"},
+        {"path": "data/notsofar-00000-of-00001.parquet", "size": 115680888, "sha256": "d5610e89871f7e10632e09aaaa9eb73b01c832f32c9596ff333c438f657ed3ca"}
+      ]
+    },
+    "independentHoldout": {
+      "purpose": "independentPromotion",
+      "manifestSchemaVersion": 2,
+      "manifestRelativePath": "meeting-transcription/private/corpus-manifest.json",
+      "trustedReviewRegistryRelativePath": "meeting-transcription/private/review-registry.json",
+      "cacheEnvironment": "YAP_EVAL_CACHE",
+      "repositoryFallback": false,
+      "sealedBeforeHypotheses": true,
+      "independentPromotionRequired": true,
+      "allowedModelExposureStatuses": [
+        "contractually_excluded",
+        "created_after_model_freeze"
+      ],
+      "minimumNaturalMeetingCount": 6,
+      "minimumNaturalDurationSeconds": 7200,
+      "reviewPolicy": "two-independent-listeners-plus-independent-adjudicator"
+    },
+    "constructedControls": {
+      "promotionEligible": false,
+      "purpose": "supplemental",
+      "manifestSchemaVersion": 2,
+      "manifestRelativePath": "meeting-transcription/private/constructed-controls.json",
+      "cacheEnvironment": "YAP_EVAL_CACHE",
+      "repositoryFallback": false
+    }
+  },
+  "scorers": [
+    {
+      "id": "tiron-published-cpwer",
+      "role": "public-comparator-reproduction",
+      "implementation": "TrelisResearch/tiron/eval/scoring.py",
+      "revision": "d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c",
+      "sha256": "88dd4cbb67019c04fd79cba04072661084c1cb06cddfef60e86cb4b763cbd965",
+      "dependencies": {
+        "jiwer": {"version": "4.0.0", "sha256": "7efaf0bd336b095d99ddef9dd67e1ee829d75d58aa2a81d9639870b01d6d95ea"},
+        "whisper-normalizer": {"version": "0.1.14", "sha256": "93119c1425c6225df4ef33d071cde2f61706cab4f72bb5b4fe47c9f7cdce8747"}
+      }
+    },
+    {
+      "id": "meeteval-0.4.3",
+      "role": "independent-meeting-word-error",
+      "repository": "fgnt/meeteval",
+      "revision": "badcd3c7cf82f98d2ac1f292801fbe6e9093ee2f",
+      "artifactSha256": "02d3a359f375d39c67dfb8fe1c061e7dac19d6fc1fb89ee72d793a5813dafeb2",
+      "license": {
+        "spdx": "MIT",
+        "sha256": "5515c2bdda551fa20d771e99ab31deebbb4f9626bef6f6c25f26125c964fd34c"
+      }
+    },
+    {
+      "id": "pyannote-metrics-4.1",
+      "role": "independent-diarization-error",
+      "repository": "pyannote/pyannote-metrics",
+      "revision": "5b197b13ba39ac9baad37da66659da196090053c",
+      "artifactSha256": "34a54b7671f61709c1865d0484843e5b46ea3c4e4e5260ab065e5b3156c733d3",
+      "license": {
+        "spdx": "MIT",
+        "sha256": "657c7e17d7360a3e885dc0b4d05a54bc7233222648ea4f6d347a0e516c4e9bdd"
+      }
+    }
+  ],
+  "scoring": {
+    "publicCpwerScorer": "tiron-published-cpwer",
+    "acceptanceCpwerScorer": "meeteval-0.4.3",
+    "diarizationScorer": "pyannote-metrics-4.1",
+    "normalization": "tiron-english-spoken-v1-for-published-comparator-and-locale-declared-v1-for-acceptance",
+    "diarizationCollarSeconds": 0.0,
+    "scoreOverlap": true,
+    "speakerMapping": "optimal-permutation",
+    "timestampResolutionSeconds": 0.02,
+    "notsofarUnknownPolicy": "mask-overlapping-hypothesis-words",
+    "amiIcsiExcludedSpanPolicy": "drop-overlapping-reference-and-hypothesis-segments",
+    "metrics": [
+      "cpwer",
+      "tcpwer",
+      "overlap-word-deletion",
+      "overlap-word-recall",
+      "der",
+      "jer",
+      "speaker-count-error",
+      "timestamp-error",
+      "speaker-merge-error",
+      "speaker-split-error",
+      "speaker-fragmentation"
+    ]
+  },
+  "pressureAxes": {
+    "acoustic": ["close-talk", "far-field", "room-reverb", "echo", "clipping", "agc", "noise", "silence"],
+    "speech": ["mumbling", "reduced-speech", "false-starts", "interruptions", "sub-1.6-second-turns", "short-turns", "long-monologues"],
+    "overlap": ["no-overlap", "brief-two-speaker", "sustained-two-speaker", "three-or-more-speakers"],
+    "attendance-roster": ["16-attendees-up-to-8-talkers", "32-attendees-up-to-8-talkers", "64-attendees-up-to-8-talkers"],
+    "speaking-roster": ["1-talker", "2-talkers", "4-talkers", "8-talkers", "9-talkers", "16-talkers", "32-talkers", "late-arrival", "long-gap-return"],
+    "window-roster": ["1-through-8-in-30-seconds", "more-than-8-in-30-seconds"],
+    "transport": ["clean-source", "fixed-codec", "fixed-sample-rate", "fixed-jitter", "fixed-drop", "explicit-gap"],
+    "duration": ["correction-sized", "15-minutes", "30-minutes", "two-hours", "supported-maximum", "four-hour-synthetic-control"],
+    "language": ["every-advertised-locale", "fixed-language-meeting", "code-switching-separate-score"]
+  },
+  "promotion": {
+    "requireEveryMandatorySlice": true,
+    "forbidMacroCompensation": true,
+    "publicReproductionTolerancePercentagePoints": 1.5,
+    "maximumPrivatePooledCpwerPercent": 35.0,
+    "maximumMandatorySliceCpwerPercent": 45.0,
+    "minimumOverlapCpwerImprovementPercent": 5.0,
+    "maximumDerPercent": 35.0,
+    "maximumJerPercent": 45.0,
+    "maximumSpeakerCountAbsoluteError": 1,
+    "maximumTimestampP95Seconds": 1.5,
+    "maximumWarmSingleRequestRealtimeFactor": 0.1,
+    "maximumConcurrentEightP95RealtimeFactor": 0.5,
+    "maximumWorkerMemoryBytes": 17179869184,
+    "maximumCancellationSeconds": 2.0,
+    "requireCrossRequestIsolation": true,
+    "requireExactTeardown": true,
+    "requireFallbackComparison": true,
+    "allowedOutcomes": ["general-promotion", "narrow-route-promotion", "unadvertised-baseline"]
+  }
+}

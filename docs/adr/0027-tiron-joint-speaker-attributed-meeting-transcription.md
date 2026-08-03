@@ -3,7 +3,15 @@
 **Date:** 2026-07-22
 **Status:** Accepted (canonical Phase 8 server baseline; production promotion pending)
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0020](0020-meeting-capture-diarization-authority.md), and [ADR 0025](0025-provider-specific-asr-serving.md)
-**Implementation status:** Decision and immutable upstream source identities are documented. No Tiron worker, dependency lock, meeting scorer, production result path, or GB10 qualification evidence exists in Yap yet.
+**Implementation status:** The current upstream model, runtime harness, ECAPA,
+container, and Python dependency identities are locked, and the frozen
+acceptance contract is executable. A thin offline worker and digest-pinned ARM64
+image pass focused GB10 short/two-window smokes. An explicit candidate runtime
+configuration now joins the verified upstream worker to the Phase 7-owned job
+route, separate immutable transcript and anonymous-speaker revisions,
+owner-scoped API retrieval, and native publication. The private holdout,
+meeting-score reproduction, larger-roster reconciler, complete Phase 8 gate,
+and production promotion remain open.
 
 ## Context
 
@@ -67,20 +75,32 @@ The selection is deliberately narrow:
 - It is not advertised or made authoritative until the frozen Phase 8 gate
   passes.
 
-Rust remains the orchestration and validation owner. Tiron is an isolated,
-provider-specific Python worker behind Yap's model-independent meeting-result
-contract.
+Yap remains the orchestration and validation owner across two explicit layers:
+the Python private server owns route admission, durable server jobs, worker
+containment, cancellation, and authoritative result publication; the Rust
+native client owns capture-request binding, local durable publication, and
+History projection. Tiron is an isolated, provider-specific Python worker
+behind their shared model-independent meeting-result contract.
 
 ### 2. Pin upstream identity before integration
 
-The initial source lock is:
+The Phase 8 execution lock is:
 
 | Artifact | Immutable identity |
 | --- | --- |
-| Model | `Trelis/tiron` revision `aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc` |
-| Weight | 3,087,229,512 bytes; SHA-256 `921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e` |
-| Reference harness | `TrelisResearch/tiron` revision `5b3766ac64ff3a8d98443e0a850d1ce569952520` |
-| Public metadata | Apache-2.0 for the model repository and harness |
+| Model | `Trelis/tiron` revision `90bc0a4d198cd5cf6679b0e478375ba3a0040575` |
+| Weight | 3,087,229,512 bytes; SHA-256 `2e9f644c5eb633d3c387975cf38677d3ffe1a7b98830a735867865ec1bd519b5` |
+| Runtime harness | `TrelisResearch/tiron` revision `d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c` |
+| Public comparator dataset | `Trelis/tiron-eval-meetings` revision `500809d7e9ae643d3cc945f6c91e7ed0693456bd` |
+| Public metadata | Apache-2.0 for the model repository and runtime harness; CC-BY-4.0 for the public comparator dataset |
+
+The earlier pre-execution proposal recorded model revision
+`aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc`, weight SHA-256
+`921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e`,
+and harness revision `5b3766ac64ff3a8d98443e0a850d1ce569952520`.
+They are superseded before worker execution by the current upstream release,
+which includes the published evaluation sources. Yap does not mix artifacts
+across those source sets.
 
 Phase 8 must create a complete runtime lock before executing the worker. It
 must pin and review the model, harness, ECAPA checkpoint, Torch, Transformers,
@@ -89,11 +109,24 @@ applicable license. Runtime network downloads are forbidden. Python 3.12 and
 DGX Spark GB10 are the initial qualification environment unless a later ADR
 changes the checked NVIDIA worker baseline.
 
-Upstream code may be wrapped or selectively adapted with provenance and
-attribution. Yap will not paste the reference harness's large pipeline modules
-into its Rust or server domains unchanged. The Phase 8 implementation should
-keep decoding, linking, scoring, and Yap orchestration as separately testable
-owners.
+The pinned upstream harness is the Tiron runtime dependency for whole-meeting
+inference. It owns the released 30-second windowing, constrained decoding,
+staggered second pass, ECAPA speaker linking, and JSON/SRT/VTT rendering
+behavior. Loading the model through Transformers alone is supported only for a
+single window and is not Yap's meeting route.
+
+Yap must not port or rewrite that pipeline. A thin provider wrapper supplies
+verified local artifacts, disables runtime downloads, isolates requests,
+enforces admission/cancellation/resource bounds, preserves canonical source
+time, and validates the returned meeting result before publication. An
+upstream runtime patch requires a measured defect, a focused regression test,
+and explicit provenance; speculative forks are not part of Phase 8.
+
+The executing Phase 8 candidate is meeting-only and admits at most three hours
+of mono 16 kHz PCM per request. The older general batch contract's four-hour
+ceiling does not expand this runtime-specific limit. Startup accepts only the
+exact ARM64 image ID bound to a private preparation receipt for the checked Git
+head and runtime lock.
 
 ### 3. Preserve source time and publish only validated revisions
 
@@ -105,9 +138,12 @@ becomes the audio source of truth. Initial behavior follows the released model:
 3. run the released staggered second pass unless measured evidence rejects it;
 4. link window-local slots into anonymous session speakers;
 5. return segments, source timestamps, window-local speaker evidence,
-   language, and degradation diagnostics to Rust; and
-6. let Rust validate bounds, ordering, overlap, capture-manifest identity,
-   model provenance, and result revision before publication.
+   language, and degradation diagnostics to the Python server;
+6. let the Python server validate bounds, ordering, overlap,
+   capture-manifest identity, model provenance, and the authoritative result
+   revisions before publishing them; and
+7. let Rust independently bind the retrieved aggregate to its persisted capture
+   request before local publication and History projection.
 
 Model segment timestamps are not silently promoted to word-level alignment.
 Words receive source-time intervals only through a separately validated timing
@@ -134,9 +170,11 @@ model's 30-second source windows, groups them into bounded activity epochs at
 recorded source-time boundaries, links at most eight anonymous voices inside
 each epoch, and cross-references only high-confidence ECAPA evidence across
 epochs. Overlap-derived cannot-link evidence prevents incompatible epoch
-identities from being merged. Rust owns the resulting 32-target/64-ceiling
-session roster; an ambiguous cross-epoch match remains a separate anonymous or
-`Unknown` identity instead of being forced. Known attendance can become a
+identities from being merged. The Python server owns the resulting
+32-target/64-ceiling authoritative session roster; Rust independently validates
+and projects the published roster locally. An ambiguous cross-epoch match
+remains a separate anonymous or `Unknown` identity instead of being forced.
+Known attendance can become a
 purpose-authorized naming suggestion later, but it is never acoustic evidence.
 Epoch duration, silence-boundary, overlap-guard, candidate-pruning, and
 confidence policies are deterministic, bounded, and frozen before hypotheses
@@ -263,9 +301,9 @@ networking, and enterprise deployment handoffs.
   degraded-result cases that the product and scorer must expose.
 - Supporting larger speaking rosters requires a separately qualified
   cross-epoch reconciliation layer; chunking alone is not the solution.
-- The reference harness is not a production service and requires substantial
-  decomposition, dependency locking, concurrency control, and cancellation
-  hardening.
+- The runtime harness is not a production service. Yap still needs an isolated
+  dependency lock, bounded admission, cancellation, source-time/result
+  validation, and lifecycle control around it.
 
 ### Neutral
 
@@ -305,8 +343,8 @@ replace the model behind the stable contract.
 
 1. Freeze the messy-meeting manifest, rights/provenance ledger, scorer versions,
    thresholds, and private holdout before model output is revealed.
-2. Lock the complete Tiron/ECAPA/Python 3.12 runtime and reproduce the pinned
-   eight-window/eight-global public-comparator behavior on GB10.
+2. Build and isolate the pinned Tiron/ECAPA/Python 3.12 runtime dependency and
+   reproduce its eight-window/eight-global public-comparator behavior on GB10.
 3. Implement a bounded provider-specific worker with cancellation, teardown,
    capacity diagnostics, and no runtime downloads.
 4. Add the Rust adapter and validated immutable meeting-result revision path.

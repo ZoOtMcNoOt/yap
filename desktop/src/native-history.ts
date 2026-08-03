@@ -8,6 +8,7 @@ import {
   type TranscriptHistoryEntry,
 } from "@/history-model";
 import type { TranscriptResultSummary } from "@/lib/transcript-result-summary";
+import type { SpeakerTranscriptTurn } from "@/lib/speaker-transcript";
 
 export type SavedTranscriptSession = {
   captureCommitPath?: string | null;
@@ -20,6 +21,7 @@ export type SavedTranscriptSession = {
   warning?: string | null;
   recoveryState?: "recoverable" | "recovered" | null;
   resultSummary?: TranscriptResultSummary | null;
+  speakerTurns?: SpeakerTranscriptTurn[] | null;
 };
 
 export type SavedLiveSessionActionIdentity = {
@@ -241,5 +243,6 @@ export function savedSessionToTranscriptHistoryEntry(session: SavedTranscriptSes
     warning: session.warning ?? undefined,
     recoveryState: session.recoveryState ?? undefined,
     resultSummary: session.resultSummary ?? undefined,
+    speakerTurns: session.speakerTurns ?? undefined,
   });
 }

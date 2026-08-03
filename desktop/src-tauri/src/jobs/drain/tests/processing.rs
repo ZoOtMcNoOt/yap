@@ -89,7 +89,8 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
         "createdAtUtc": "2026-07-14T21:00:00Z",
         "updatedAtUtc": "2026-07-14T21:00:02Z"
     });
-    let result = serde_json::json!({
+    let runtime_lock = "d".repeat(64);
+    let mut result = serde_json::json!({
         "sessionId": request.metadata.session_id.as_str(),
         "revision": 1,
         "authority": "server_authoritative",
@@ -102,13 +103,66 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
             "confidence": null
         },
         "transcript": "Phase five is connected.",
+        "alignment": {
+            "status": "unavailable",
+            "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
+            "componentRevision": "joint-segment-timing-v1"
+        },
         "alignedWords": [],
         "modelProvenance": [{
-            "modelId": "CohereLabs/cohere-transcribe-03-2026",
-            "revision": "b1eacc2686a3d08ceaae5f24a88b1d519620bc09",
-            "calibrationRevision": "asr-not-applicable"
+            "modelId": "Trelis/tiron",
+            "revision": "90bc0a4d198cd5cf6679b0e478375ba3a0040575",
+            "calibrationRevision": runtime_lock
         }]
     });
+    let speaker_result = serde_json::json!({
+        "sessionId": request.metadata.session_id.as_str(),
+        "revision": 1,
+        "authority": "server_authoritative",
+        "createdAtUtc": "2026-07-14T21:00:02Z",
+        "captureManifestSha256": request.capture_manifest.sha256,
+        "previousResultSha256": null,
+        "status": "complete",
+        "language": {"languageBcp47": "en-US", "confidence": null},
+        "runtimeLockSha256": runtime_lock,
+        "speakerTurns": [{
+            "turnId": "turn-000001",
+            "startMs": 0,
+            "endMs": 10,
+            "text": "Phase five is connected.",
+            "attribution": {"kind": "session_speaker", "sessionSpeakerId": "speaker-1"},
+            "confidence": null,
+            "supportingTrackIds": ["track-1"],
+            "overlapGroupId": null
+        }],
+        "alignment": {
+            "status": "unavailable",
+            "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
+            "componentRevision": "joint-segment-timing-v1"
+        },
+        "alignedWords": [],
+        "modelProvenance": [
+            {
+                "modelId": "Trelis/tiron",
+                "revision": "90bc0a4d198cd5cf6679b0e478375ba3a0040575",
+                "calibrationRevision": runtime_lock
+            },
+            {
+                "modelId": "TrelisResearch/tiron",
+                "revision": "d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c",
+                "calibrationRevision": runtime_lock
+            },
+            {
+                "modelId": "speechbrain/spkrec-ecapa-voxceleb",
+                "revision": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286",
+                "calibrationRevision": runtime_lock
+            }
+        ]
+    });
+    let decoded_speaker_result: crate::server_connector::batch::SpeakerResultRevision =
+        serde_json::from_value(speaker_result.clone()).unwrap();
+    result["speakerResultSha256"] =
+        serde_json::json!(decoded_speaker_result.content_sha256().unwrap());
     let valid_result: crate::server_connector::batch::TranscriptResultRevision =
         serde_json::from_value(result.clone()).unwrap();
     let mut aligned_value = result.clone();
@@ -142,7 +196,11 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
     let mut offset_timestamp = valid_result;
     offset_timestamp.created_at_utc = "2026-07-14T16:00:02-05:00".into();
     assert!(validate_result_revision(&offset_timestamp, &request).is_err());
-    let (base_url, observed, server) = start_json_server(vec![(200, projection), (200, result)]);
+    let (base_url, observed, server) = start_json_server(vec![
+        (200, projection),
+        (200, result),
+        (200, speaker_result.clone()),
+    ]);
     ledger
         .begin_remote_create_attempt("job-drain-result", &base_url, 1_720_000_000_200)
         .unwrap();
@@ -203,10 +261,18 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
         persisted["captureManifestSha256"],
         request.capture_manifest.sha256
     );
+    let persisted_speaker: serde_json::Value = serde_json::from_slice(
+        &fs::read(output.parent().unwrap().join("speaker-result.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(persisted_speaker, speaker_result);
     let requests = observed.lock().unwrap();
-    assert_eq!(requests.len(), 2);
+    assert_eq!(requests.len(), 3);
     assert!(requests[0].starts_with(&format!("GET /v1/jobs/{server_job_id} HTTP/1.1")));
     assert!(requests[1].starts_with(&format!("GET /v1/jobs/{server_job_id}/result HTTP/1.1")));
+    assert!(requests[2].starts_with(&format!(
+        "GET /v1/jobs/{server_job_id}/speaker-result HTTP/1.1"
+    )));
     drop(requests);
     drop(ledger);
     fs::remove_dir_all(root).unwrap();

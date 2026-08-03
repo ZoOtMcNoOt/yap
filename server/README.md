@@ -353,6 +353,32 @@ behavior and does not expand this server catalog. Additional server locales,
 timing guarantees, and serving candidates remain unavailable until their exact
 runtime artifacts and promotion evidence pass.
 
+## Tiron whole-meeting candidate
+
+The Phase 8 candidate uses the pinned upstream `TrelisResearch/tiron` harness,
+not a standalone Transformers decode. The harness retains ownership of
+30-second chunking, constrained decoding, the default staggered second pass,
+and ECAPA cross-window speaker linking. Yap owns verified artifact paths,
+offline container execution, bounded admission and cancellation, authenticated
+job ownership, source identity, result validation, and publication.
+
+The foreground development launcher selects this profile only when the Tiron
+settings are explicit. Set `YAP_TIRON_MODEL_DIR`, `YAP_TIRON_ECAPA_DIR`, and
+`YAP_TIRON_WORKER_IMAGE` together. The runtime lock defaults to
+`meeting-transcription-runtime.lock.json`, and the preview catalog defaults to
+`tiron-candidate-asr-capabilities.lock.json`. Do not set `YAP_ASR_MODEL_DIR`,
+`YAP_ASR_MODEL_LOCK`, or either Nemotron model setting in the same process; the
+launcher and runtime reject that ambiguous composition. The committed default
+catalog remains Cohere-only, so exercising this candidate does not promote or
+advertise Tiron in ordinary startup.
+
+The candidate publishes two owner-scoped immutable artifacts: the existing
+transcript result and a companion anonymous-speaker result. The server writes
+the speaker result first and the transcript last as the aggregate commit
+marker. Restart recovery rejects incomplete aggregates. The native client
+validates both against the original capture request before atomically
+publishing them under the existing remote-result directory.
+
 ## Phase 7 identity and private live admission
 
 The current server implements provider-neutral OIDC discovery and JWKS

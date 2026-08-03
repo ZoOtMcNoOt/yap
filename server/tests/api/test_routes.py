@@ -80,6 +80,7 @@ class HealthRoutingTests(HealthServerTestCase):
             ("PUT", "/v1/jobs/job-01/chunks/mic/0-15"),
             ("POST", "/v1/jobs/job-01/commit"),
             ("GET", "/v1/jobs/job-01/stages"),
+            ("GET", "/v1/jobs/job-01/speaker-result"),
             ("POST", "/v1/jobs/job-01/stages/asr/retry"),
             ("GET", "/v1/live"),
         )

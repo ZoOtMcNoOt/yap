@@ -279,7 +279,18 @@ class ContractTests(unittest.TestCase):
             [
                 "cohere-attention-en-v1",
                 "cohere-attention-alignment-candidate-v1",
+                "joint-segment-timing-v1",
             ],
+        )
+        speaker_result = schemas["SpeakerResultRevision"]
+        self.assertIn("runtimeLockSha256", speaker_result["required"])
+        self.assertEqual(
+            speaker_result["properties"]["runtimeLockSha256"]["$ref"],
+            "#/components/schemas/Sha256",
+        )
+        self.assertEqual(
+            schemas["JointSpeakerTranscriptTurn"]["properties"]["overlapGroupId"],
+            schemas["SpeakerTurn"]["properties"]["overlapGroupId"],
         )
         self.assertIn(
             "ALIGNMENT_PROVIDER_UNSUPPORTED",

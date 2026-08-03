@@ -52,11 +52,18 @@ describe("history job projection", () => {
         timingStatus: "unavailable",
       },
       sessionId: "remote-1",
+      speakerTurns: [{
+        speakerId: "speaker-1",
+        startMs: 0,
+        endMs: 1_500,
+        text: "Hello from the meeting.",
+      }],
       sourcePath: "C:\\Yap\\source.wav",
     }));
 
     expect(job.route).toBe("serverBatch");
     expect(job.sessionOrigin).toBe("importedFile");
+    expect(job.sessionMode).toBe("meeting");
     expect(job.pipeline.preprocessing).toBe("done");
     expect(job.pipeline.alignment).toBe("skipped");
     expect(job.resultSummary).toEqual({
@@ -64,6 +71,12 @@ describe("history job projection", () => {
       languageStatus: "unknownSegments",
       timingStatus: "unavailable",
     });
+    expect(job.speakerTurns).toEqual([{
+      speakerId: "speaker-1",
+      startMs: 0,
+      endMs: 1_500,
+      text: "Hello from the meeting.",
+    }]);
   });
 
   it("does not trust foreign history source paths for playback", () => {

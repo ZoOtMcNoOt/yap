@@ -6,9 +6,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SERVER_LAUNCH = (
-    REPO_ROOT / "infra" / "yap-server-node" / "development-batch-server.sh"
-)
+SERVER_LAUNCH = REPO_ROOT / "infra" / "yap-server-node" / "development-batch-server.sh"
 
 
 class DevelopmentBatchServerContractTests(unittest.TestCase):
@@ -23,7 +21,7 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
         self.assertIn('git -C "$repo_root" rev-parse --is-inside-work-tree', script)
         self.assertIn('git -C "$repo_root" rev-parse HEAD', script)
         self.assertIn("status --porcelain=v1 --untracked-files=normal", script)
-        self.assertIn('YAP_UV_BINARY:=uv', script)
+        self.assertIn("YAP_UV_BINARY:=uv", script)
         self.assertIn('command -v "$YAP_UV_BINARY"', script)
         for locked_runtime_argument in (
             '--project "$repo_root/server"',
@@ -73,9 +71,7 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
             script,
         )
         self.assertIn('YAP_ASR_MODEL_DIR="$YAP_ASR_MODEL_DIR"', script)
-        self.assertIn(
-            'YAP_BATCH_JOB_STORAGE_DIR="$YAP_BATCH_JOB_STORAGE_DIR"', script
-        )
+        self.assertIn('YAP_BATCH_JOB_STORAGE_DIR="$YAP_BATCH_JOB_STORAGE_DIR"', script)
         for language_detection_setting in (
             'YAP_LANGUAGE_DETECTION_ENABLED="$YAP_LANGUAGE_DETECTION_ENABLED"',
             'YAP_LANGUAGE_DETECTION_COMPONENT_LOCK="$YAP_LANGUAGE_DETECTION_COMPONENT_LOCK"',
@@ -87,7 +83,7 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
             'YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256="$YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256"',
         ):
             self.assertIn(language_detection_setting, script)
-        self.assertIn('storage_mode="$(stat -Lc \'%a\'', script)
+        self.assertIn("storage_mode=\"$(stat -Lc '%a'", script)
         self.assertIn('if [ "$storage_mode" != "700" ]', script)
         for forbidden in (
             "0.0.0.0",
@@ -124,12 +120,12 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
             "candidate capability locks must remain outside the repository",
             script,
         )
-        self.assertIn('YAP_LANGUAGE_DETECTION_ENABLED:=0', script)
-        self.assertIn('YAP_LANGUAGE_DETECTION_MODEL_DIR:?', script)
-        self.assertIn('YAP_LANGUAGE_DETECTION_WORKER_IMAGE:?', script)
-        self.assertIn('YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT:?', script)
+        self.assertIn("YAP_LANGUAGE_DETECTION_ENABLED:=0", script)
+        self.assertIn("YAP_LANGUAGE_DETECTION_MODEL_DIR:?", script)
+        self.assertIn("YAP_LANGUAGE_DETECTION_WORKER_IMAGE:?", script)
+        self.assertIn("YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT:?", script)
         self.assertIn(
-            'YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256:?',
+            "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256:?",
             script,
         )
         self.assertIn(
@@ -138,6 +134,33 @@ class DevelopmentBatchServerContractTests(unittest.TestCase):
         )
         self.assertNotIn("nvcr.io/nvidia/pytorch", script)
         self.assertNotIn("YAP_ASR_WORKER_IMAGE:?", script)
+
+    def test_launch_supports_one_explicit_tiron_meeting_profile(self) -> None:
+        script = SERVER_LAUNCH.read_text(encoding="utf-8")
+
+        for required in (
+            "YAP_TIRON_MODEL_DIR:?",
+            "YAP_TIRON_ECAPA_DIR:?",
+            "YAP_TIRON_WORKER_IMAGE:?",
+            "YAP_TIRON_PREPARATION_RECEIPT:?",
+            "YAP_TIRON_PREPARATION_RECEIPT_SHA256:?",
+            "server/meeting-transcription-runtime.lock.json",
+            "server/tiron-candidate-asr-capabilities.lock.json",
+        ):
+            self.assertIn(required, script)
+        for exported in (
+            'YAP_TIRON_MODEL_DIR="$YAP_TIRON_MODEL_DIR"',
+            'YAP_TIRON_ECAPA_DIR="$YAP_TIRON_ECAPA_DIR"',
+            'YAP_TIRON_RUNTIME_LOCK="$YAP_TIRON_RUNTIME_LOCK"',
+            'YAP_TIRON_WORKER_IMAGE="$YAP_TIRON_WORKER_IMAGE"',
+            'YAP_TIRON_PREPARATION_RECEIPT="$YAP_TIRON_PREPARATION_RECEIPT"',
+            'YAP_TIRON_PREPARATION_RECEIPT_SHA256="$YAP_TIRON_PREPARATION_RECEIPT_SHA256"',
+        ):
+            self.assertIn(exported, script)
+        self.assertIn(
+            "Tiron meeting transcription cannot be mixed with standard model pools",
+            script,
+        )
 
     @unittest.skipUnless(os.name == "posix", "the launcher targets Linux")
     def test_launch_syncs_clean_uv_environment_and_execs_python(self) -> None:

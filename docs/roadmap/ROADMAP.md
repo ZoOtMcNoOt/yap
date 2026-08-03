@@ -159,8 +159,8 @@ Do not treat an unchecked historical plan box as current backlog.
 
 Phase 8 follows
 [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
-and the queued
-[joint speaker-attributed meeting transcription plan](../plans/queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
+and the active
+[joint speaker-attributed meeting transcription plan](../plans/active/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
 Selecting the development baseline does not advertise or production-promote
 the route before its independent accuracy, capacity, lifecycle, and privacy
 evidence exists.

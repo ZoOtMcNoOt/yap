@@ -31,6 +31,9 @@ from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION
 from tests.model_pools.batch_asr_fixtures import test_lock as _test_lock
 
 
+SERVER_ROOT = Path(__file__).resolve().parents[2]
+
+
 class _Runtime:
     def __init__(self) -> None:
         self.service = object()
@@ -227,7 +230,7 @@ class BatchRuntimeTests(unittest.TestCase):
             ):
                 build_batch_runtime(
                     {"YAP_BATCH_ASR_ENABLED": "1"},
-                    server_root=Path.cwd(),
+                    server_root=SERVER_ROOT,
                 )
 
         service_type.assert_not_called()
@@ -301,7 +304,7 @@ class BatchRuntimeTests(unittest.TestCase):
                 ):
                     build_batch_runtime(
                         {"YAP_BATCH_ASR_ENABLED": "1"},
-                        server_root=Path.cwd(),
+                        server_root=SERVER_ROOT,
                     )
 
                 first_worker.close.assert_called_once_with()
@@ -385,11 +388,17 @@ class BatchRuntimeTests(unittest.TestCase):
                 ):
                     build_batch_runtime(
                         {"YAP_BATCH_ASR_ENABLED": "1"},
-                        server_root=Path.cwd(),
+                        server_root=SERVER_ROOT,
                     )
 
                 service.begin_runtime_shutdown.assert_called_once_with()
                 self.assertIs(service_type.call_args.kwargs["processor"], pool)
+                self.assertEqual(
+                    service_type.call_args.kwargs[
+                        "meeting_result_authority"
+                    ].provenance.model.identifier,
+                    "Trelis/tiron",
+                )
                 pool.shutdown.assert_called_once_with()
                 self.assertTrue(storage_lease.retained)
                 self.assertEqual(storage_lease.close_calls, 0)

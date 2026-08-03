@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
-from typing import Any, Iterable
+from typing import Any, Iterable, Protocol
 from urllib.parse import urlsplit
 
 from yap_server.bounded_file import read_regular_text
@@ -15,10 +15,19 @@ from yap_server.pools.model_lock import ModelPoolLock, verify_model_artifacts
 _MAX_CAPABILITY_LOCK_BYTES = 256 * 1024
 _MAX_SERIALIZED_CATALOG_BYTES = 256 * 1024
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
-_EXECUTION_MODES = frozenset(
-    {"dynamicBatch", "fixedBatch", "localLive", "serverLive"}
-)
+_EXECUTION_MODES = frozenset({"dynamicBatch", "fixedBatch", "localLive", "serverLive"})
 _QUALITY_TIERS = frozenset({"broadCoverage", "preview", "transcriptionReady"})
+
+
+class AsrCapabilityModelIdentity(Protocol):
+    """Model identity fields required to bind a capability catalog."""
+
+    pool_id: str
+    model_id: str
+    model_revision: str
+    model_license: str
+    model_source: str
+    supported_languages: tuple[str, ...]
 
 
 def _mapping(value: Any, field: str) -> dict[str, Any]:
@@ -68,6 +77,17 @@ def _revision(value: Any, field: str) -> str:
     return revision
 
 
+def _promotion_evidence_revision(
+    value: Any,
+    *,
+    quality_tier: str,
+    field: str,
+) -> str | None:
+    if value is None and quality_tier == "preview":
+        return None
+    return _revision(value, field)
+
+
 def _http_url(value: Any, field: str) -> str:
     source = _bounded_ascii_string(value, field, 2048)
     try:
@@ -106,7 +126,7 @@ def _bounded_array(value: Any, field: str, maximum: int) -> list[Any]:
 
 def load_asr_capability_catalog(
     path: Path,
-    model_locks: Iterable[ModelPoolLock],
+    model_locks: Iterable[AsrCapabilityModelIdentity],
 ) -> dict[str, object]:
     """Load one bounded catalog and join it to immutable model-pool identity."""
 
@@ -255,9 +275,10 @@ def load_asr_capability_catalog(
                         capability.get("wordAlignment"),
                         f"{capability_field}.wordAlignment",
                     ),
-                    "promotionEvidenceRevision": _revision(
+                    "promotionEvidenceRevision": _promotion_evidence_revision(
                         capability.get("promotionEvidenceRevision"),
-                        f"{capability_field}.promotionEvidenceRevision",
+                        quality_tier=quality_tier,
+                        field=f"{capability_field}.promotionEvidenceRevision",
                     ),
                 }
             )
