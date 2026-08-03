@@ -166,6 +166,12 @@ finding. The current policy is documented in
 [`dependency-audit-policy.md`](dependency-audit-policy.md). This admission is
 still failed historical evidence and may not be resumed or relabeled.
 
+During the later post-Phase-8 maintainability closure, the live registry added
+`GHSA-8xcm-r25x-g524` and `GHSA-4cwx-7wf7-3272` after an earlier candidate had
+already audited clean. The current workspace pins the compatible Undici 6.x
+and 7.x lines to exact releases 6.28.0 and 7.29.0. No advisory exception was
+added, and the consumed candidate remains failed historical evidence.
+
 Exact executable candidate
 `20e4a18f380915f69e699f84c25bc2fdb178bf36` was admitted once, then the
 GB10 controller failed closed before provider startup. The controller had

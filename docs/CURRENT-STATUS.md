@@ -168,6 +168,25 @@ to 8.5.23 for the later `GHSA-fxqj-rqcc-2cmp` residual fix. The next admission
 must keep the controller lid open and supervise the long GB10 lifecycle
 independently of SSH.
 
+Candidate `7a071b0a962a9762cf22711c2b2cf21584b3c809` later passed its
+exact-image product lifecycle and complete private candidate matrix, but its
+hosted frontend audit and native-WDIO documentation-truth jobs failed. Head
+`3f684c57697151daa07bd803f4b1881120e2bfd8` removed the obsolete advisory
+exception, updated the compatible `brace-expansion` and PostCSS pins, and fixed
+the detached-hosted-checkout wording without weakening the documentation
+contract. It passed the canonical native build, exact-image product lifecycle,
+real tunneled transcription and cancellation, and independent teardown. Its
+single complete-matrix attempt then stopped at `frontend.dependency-audit`
+when the registry began reporting newly published Undici advisories
+`GHSA-8xcm-r25x-g524` and `GHSA-4cwx-7wf7-3272`; no later matrix cell ran. That
+admission is failed historical evidence and cannot be resumed or relabeled.
+The current branch pins WebdriverIO's compatible Undici lines to exact releases
+6.28.0 and 7.29.0, and the focused registry audit is clean. The same hosted
+native-WDIO run then reached the application smoke and exposed one stale test
+fixture that still wrote retired server-settings schema 1. The application
+correctly rejected it. The fixture now writes the current schema-2 shape; no
+compatibility reader or migration was added.
+
 Replacement candidate `72c089f42c1358f4f0b86c793af39a8e762d6137`
 passed its complete Windows target-client channel and all 18 sequential GB10
 resident-provider children with exact teardown. Its connected server then

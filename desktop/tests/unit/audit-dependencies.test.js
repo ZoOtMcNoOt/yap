@@ -35,6 +35,8 @@ describe("dependency audit retry policy", () => {
       "brace-expansion@1": "1.1.18",
       "brace-expansion@2": "2.1.4",
       postcss: "8.5.23",
+      "undici@6": "6.28.0",
+      "undici@7": "7.29.0",
     });
   });
 

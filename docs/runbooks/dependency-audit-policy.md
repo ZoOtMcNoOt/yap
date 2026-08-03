@@ -35,6 +35,12 @@ PostCSS is pinned to exact release `8.5.23`. It contains compatible fixes for
 the earlier `GHSA-r28c-9q8g-f849` finding and the August 3 residual
 `GHSA-fxqj-rqcc-2cmp` finding. Neither advisory is ignored.
 
+WebdriverIO's two transitive Undici major lines are pinned to exact compatible
+releases `6.28.0` and `7.29.0`. Those releases resolve
+`GHSA-8xcm-r25x-g524` on both lines and `GHSA-4cwx-7wf7-3272` on the 7.x line.
+Both advisories appeared during the August 3 checkpoint closure; neither is
+ignored.
+
 ## Current Rust Policy
 
 CI runs `cargo audit` for the Windows desktop target:
