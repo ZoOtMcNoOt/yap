@@ -27,7 +27,6 @@ pub const DOWNLOAD_URL: &str =
     "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx";
 
 const MODEL_DIRECTORY: &str = "silero-vad/sha256-9e2449e1087496d8";
-pub(crate) const BUNDLED_MODEL_DIR: &str = MODEL_DIRECTORY;
 const MODEL_FILE: &str = "silero_vad.onnx";
 
 pub(crate) const ARTIFACTS: &[Artifact] = &[Artifact {

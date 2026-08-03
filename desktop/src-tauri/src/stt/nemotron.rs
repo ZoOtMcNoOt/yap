@@ -18,13 +18,9 @@ pub const CHUNK_MS: u64 = 1120;
 pub const INFERENCE_THREADS: i32 = 2;
 
 const MODEL_DIR: &str = "nemotron-3.5-asr-streaming-0.6b-1120ms-int8";
-// The bundled-models import mirrors this layout inside installer resources.
-pub(crate) const BUNDLED_MODEL_DIR: &str = MODEL_DIR;
 const REPO: &str = "csukuangfj2/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-1120ms-int8-2026-06-11";
 const REVISION: &str = "d2f58fb3c1ae44829133de74c1b5aa6e3e6dda04";
 const FALLBACK_MODEL_LABEL: &str = "Nemotron local fallback";
-
-pub(crate) const BUNDLED_ARTIFACTS: &[Artifact] = ARTIFACTS;
 
 const ARTIFACTS: &[Artifact] = &[
     Artifact {

@@ -10,6 +10,7 @@ This spec improves setup/settings UX for the local Nemotron fallback without add
 Yap should make local model ownership obvious:
 
 - Runtime never silently downloads model files.
+- Installers carry no model weights; setup and settings own explicit, verified acquisition into application data.
 - Setup and settings expose explicit install, cancel, verify, remove, disable, and open-folder actions.
 - The UI uses short labels; docs and tooltips carry detail.
 - Corrupt or partial installs fail closed.

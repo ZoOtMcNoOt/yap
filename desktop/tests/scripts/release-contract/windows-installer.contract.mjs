@@ -41,7 +41,9 @@ test("NSIS uses stock Tauri behavior inside a disposable Windows boundary", asyn
   assert.doesNotMatch(migrationPlatform, /MOVEFILE_REPLACE_EXISTING/);
   assert.match(app, /MessageBoxW/);
   assert.match(app, /Yap-startup-migration-error/);
+  assert.doesNotMatch(app, /bundled_models|installer-bundled models/);
   assert.doesNotMatch(JSON.stringify(config), /installerHooks|nsis-hooks\.nsh/);
+  assert.doesNotMatch(JSON.stringify(config.bundle.resources ?? {}), /bundled-models/);
   assert.match(smoke, /GITHUB_ACTIONS/);
   assert.match(smoke, /RUNNER_ENVIRONMENT/);
   assert.match(smoke, /github-hosted/);
@@ -66,8 +68,12 @@ test("NSIS uses stock Tauri behavior inside a disposable Windows boundary", asyn
   assert.doesNotMatch(smoke, /DELETEAPPDATA|RMDir|Remove-Item|YAP_APP_DATA_DIR/);
   for (const retiredPath of [
     "desktop/src-tauri/nsis-hooks.nsh",
+    "desktop/src-tauri/tauri.bundled-models.conf.json",
     "desktop/src-tauri/tauri.test.conf.json",
+    "desktop/src-tauri/src/stt/bundled_models.rs",
     "desktop/tests/scripts/build-nsis-test.ps1",
+    "desktop/tests/scripts/fetch-bundled-models.mjs",
+    "desktop/tests/scripts/release-contract/bundled-model-pins.contract.mjs",
     "desktop/tests/scripts/nsis-smoke-helpers.psm1",
     "desktop/tests/scripts/nsis-smoke-helpers.test.ps1",
     "desktop/tests/scripts/smoke-nsis-local.ps1",
