@@ -375,6 +375,33 @@ lid_image="$(
 )"
 ```
 
+To exercise the Phase 8 whole-meeting candidate, prepare the checked Tiron
+image and retain both locked model repositories outside Git. Preparation
+fetches the exact upstream harness revision into the image; request-time
+execution is offline and mounts the verified Tiron and ECAPA directories
+read-only:
+
+```bash
+tiron_model_dir='/path/to/private/Trelis-tiron-90bc0a4d'
+tiron_ecapa_dir='/path/to/private/spkrec-ecapa-0f99f2d0'
+export YAP_TIRON_PREPARATION_RECEIPT="$preparation_root/tiron-$checked_head.json"
+
+PYTHONPATH="$release_root/server/src" \
+  python3.12 -m yap_server.pools.checked_runtime_image \
+    prepare meeting-transcription "$checked_head" \
+    >"$YAP_TIRON_PREPARATION_RECEIPT"
+export YAP_TIRON_PREPARATION_RECEIPT_SHA256="$(
+  sha256sum "$YAP_TIRON_PREPARATION_RECEIPT" | awk '{print $1}'
+)"
+tiron_image="$(
+  PYTHONPATH="$release_root/server/src" \
+    python3.12 -m yap_server.pools.checked_runtime_image \
+      verify-prepared meeting-transcription "$checked_head" \
+      "$YAP_TIRON_PREPARATION_RECEIPT" \
+      "$YAP_TIRON_PREPARATION_RECEIPT_SHA256"
+)"
+```
+
 Create one checked, temporary internal bridge for the foreground model
 containers. The launchers reject the default Docker bridge, a non-internal
 network, or a network whose owner/revision labels do not match the candidate.
@@ -425,7 +452,8 @@ terminal. Securely copy the **same**
 network is created because the launchers compare it to the network label.
 Re-establish each preparation-receipt path and frozen hash in the terminal that
 needs it, then rerun the corresponding `verify-prepared` command above to
-recover `vllm_image`, `nemo_image`, or `lid_image`. Those immutable IDs must
+recover `vllm_image`, `nemo_image`, `lid_image`, or `tiron_image`. Those
+immutable IDs must
 come from the same receipt bytes in every shell. Do not persist either API key
 in a shell file. Set one private printable-ASCII Cohere API key in both the
 Cohere and Yap foreground shells without writing it to a file or command
@@ -495,6 +523,30 @@ loopback-only development launcher, it also selects
 `YAP_AUTH_MODE=development_loopback` itself. It does not inherit an ambient
 release or Entra mode, and the fixed development principal cannot be selected
 by a client or used on a non-loopback application bind.
+
+For the Tiron meeting candidate, do not launch Cohere or set any standard model
+pool variables. The same foreground server launcher selects the candidate from
+the explicit model roots and checked image, uses the committed preview catalog,
+and otherwise retains the same loopback, clean-head, private-storage, locked
+Python 3.12, and development-auth boundaries:
+
+```bash
+cd "$release_root"
+YAP_CHECKED_HEAD="$checked_head" \
+YAP_BATCH_JOB_STORAGE_DIR="$storage_dir" \
+YAP_TIRON_MODEL_DIR="$tiron_model_dir" \
+YAP_TIRON_ECAPA_DIR="$tiron_ecapa_dir" \
+YAP_TIRON_WORKER_IMAGE="$tiron_image" \
+YAP_TIRON_PREPARATION_RECEIPT="$YAP_TIRON_PREPARATION_RECEIPT" \
+YAP_TIRON_PREPARATION_RECEIPT_SHA256="$YAP_TIRON_PREPARATION_RECEIPT_SHA256" \
+YAP_UV_BINARY="/absolute/path/to/uv" \
+bash infra/yap-server-node/development-batch-server.sh
+```
+
+This is an explicitly selected, meeting-only candidate route with a three-hour
+input boundary. It does not change the default
+Cohere catalog, satisfy the private messy-meeting gate, or establish a
+persistent production service.
 
 Only a frozen qualification that intentionally exercises the provider-neutral
 Yap job boundary should use the complete invocation below. Create a matching

@@ -31,8 +31,8 @@ use super::{
     advance_processing_job_once_guarded_for_test, advance_processing_once,
     advance_processing_once_guarded, advance_upload_job_once_guarded_for_test, advance_upload_once,
     advance_upload_once_guarded, attach_prepared_remote_job_or_cleanup,
-    claim_preprocessing_for_catalog, prepare_next_queued_job, remote_retry_plan,
-    validate_result_revision, BatchCommitGuard, DrainStepError, RemoteJobDrain,
+    claim_preprocessing_for_catalog, prepare_next_queued_job, remote_retry_plan, BatchCommitGuard,
+    DrainStepError, RemoteJobDrain,
 };
 
 #[path = "tests/support.rs"]

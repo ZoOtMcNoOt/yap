@@ -10,6 +10,13 @@ import stat
 from typing import Callable, Mapping, Sequence
 
 from yap_server.auth import PrincipalKey
+from yap_server.meeting_transcription.contract import MEETING_TRANSCRIPTION_POOL_ID
+from yap_server.meeting_transcription.result_revisions import (
+    MeetingResultAuthority,
+    MeetingResultContext,
+    published_result_fingerprint,
+    validate_speaker_result_revision,
+)
 from yap_server.pools.batch_contract import (
     AsrRouteResolver,
     DurableAsrRouting,
@@ -17,7 +24,6 @@ from yap_server.pools.batch_contract import (
 )
 
 from .artifacts import (
-    MAX_STATE_BYTES,
     publish_json,
     read_json_file,
     read_regular_file,
@@ -66,6 +72,7 @@ class DurableJobState:
     jobs: dict[str, dict[str, object]] = field(default_factory=dict)
     requests: dict[str, dict[str, object]] = field(default_factory=dict)
     results: dict[str, dict[str, object]] = field(default_factory=dict)
+    speaker_results: dict[str, dict[str, object]] = field(default_factory=dict)
     receipts: dict[tuple[object, ...], dict[str, object]] = field(default_factory=dict)
     cancelled: set[str] = field(default_factory=set)
     owners: dict[str, PrincipalKey] = field(default_factory=dict)
@@ -115,6 +122,7 @@ class RecordingJobStore:
         route_resolver: AsrRouteResolver,
         asr_catalog_revision: str,
         legacy_owner: PrincipalKey | None = DEVELOPMENT_JOB_OWNER,
+        meeting_result_authority: MeetingResultAuthority | None = None,
     ) -> None:
         self.root = storage_root.resolve()
         self.root.mkdir(parents=True, exist_ok=True)
@@ -123,6 +131,7 @@ class RecordingJobStore:
         self._startup_worker_cleanup_verified = startup_worker_cleanup_verified
         self._route_resolver = route_resolver
         self._legacy_owner = legacy_owner
+        self._meeting_result_authority = meeting_result_authority
         validate_asr_catalog_revision(asr_catalog_revision)
         self._asr_catalog_revision = asr_catalog_revision
 
@@ -362,6 +371,7 @@ class RecordingJobStore:
             if stored_receipt_key[0] == job_id:
                 state.receipts.pop(stored_receipt_key, None)
         state.results.pop(job_id, None)
+        state.speaker_results.pop(job_id, None)
         self.persist(state, job_id)
         for entry in chunks_root.iterdir():
             unlink_private_regular_file(entry, "private recording chunk")
@@ -372,6 +382,7 @@ class RecordingJobStore:
             "utterance-plan.json",
             "worker-result.json",
             "result-revision.json",
+            "speaker-result-revision.json",
         ):
             unlink_private_regular_file(job_root / name, "private recording artifact")
 
@@ -388,6 +399,7 @@ class RecordingJobStore:
         state.jobs.pop(job_id, None)
         state.requests.pop(job_id, None)
         state.results.pop(job_id, None)
+        state.speaker_results.pop(job_id, None)
         state.cancelled.discard(job_id)
         state.asr_routing.pop(job_id, None)
         state.stage_history_complete.pop(job_id, None)
@@ -744,11 +756,32 @@ class RecordingJobStore:
         status: object,
     ) -> object:
         result_path = job_root / "result-revision.json"
+        speaker_result_path = job_root / "speaker-result-revision.json"
+        routing = state.asr_routing[job_id]
+        is_meeting_result = (
+            routing is not None
+            and routing.route.pool_id == MEETING_TRANSCRIPTION_POOL_ID
+        )
         if not result_path.exists():
+            if speaker_result_path.exists():
+                if is_meeting_result and status in {
+                    "server_processing",
+                    "failed",
+                    "cancelled",
+                }:
+                    unlink_private_regular_file(
+                        speaker_result_path,
+                        "uncommitted speaker result",
+                    )
+                else:
+                    raise ValueError("job has an unexpected speaker result")
             return status
         if status in {"cancelled", "failed"}:
-            read_regular_file(result_path, MAX_STATE_BYTES)
-            result_path.unlink()
+            unlink_private_regular_file(result_path, "private transcript result")
+            unlink_private_regular_file(
+                speaker_result_path,
+                "private speaker result",
+            )
             return status
         if status not in {"server_processing", "complete", "partial"}:
             raise ValueError("non-processing job has an unexpected result")
@@ -758,11 +791,50 @@ class RecordingJobStore:
             projection,
             maximum_end_ms=capture_duration_ms(state.requests[job_id]),
         )
+        declares_speaker_result = "speakerResultSha256" in result
+        has_speaker_result = speaker_result_path.exists()
+        if declares_speaker_result != has_speaker_result:
+            raise ValueError("persisted joint result aggregate is incomplete")
+        if declares_speaker_result != is_meeting_result:
+            raise ValueError("persisted speaker result differs from the frozen route")
         if status in {"complete", "partial"} and result.get("status") != status:
             raise ValueError("persisted result status differs")
+        speaker_result: dict[str, object] | None = None
+        if is_meeting_result:
+            authority = self._meeting_result_authority
+            if authority is None or routing is None:
+                raise ValueError("meeting result authority is unavailable")
+            if (
+                routing.route.provider_id != "tiron"
+                or routing.route.execution_mode != "fixedBatch"
+                or routing.route.model_revision != authority.provenance.model.revision
+            ):
+                raise ValueError("meeting result route differs from its authority")
+            language = mapping(result.get("language"), "meeting result language")
+            speaker_result = dict(read_json_file(speaker_result_path))
+            context = MeetingResultContext.from_job(
+                projection=projection,
+                creation=state.requests[job_id],
+                created_at_utc=str(result.get("createdAtUtc")),
+                language_bcp47=str(language.get("languageBcp47")),
+                provider_language=routing.route.provider_language,
+                maximum_end_ms=capture_duration_ms(state.requests[job_id]),
+            )
+            validate_speaker_result_revision(
+                speaker_result,
+                transcript_result=result,
+                context=context,
+                authority=authority,
+            )
+            state.speaker_results[job_id] = speaker_result
         state.results[job_id] = result
         if status == "server_processing":
-            self._reconcile_published_result_stage(state, job_id, result)
+            self._reconcile_published_result_stage(
+                state,
+                job_id,
+                result,
+                speaker_result,
+            )
             projection["status"] = result["status"]
             projection["updatedAtUtc"] = result["createdAtUtc"]
             projection.pop("error", None)
@@ -775,6 +847,7 @@ class RecordingJobStore:
         state: DurableJobState,
         job_id: str,
         result: Mapping[str, object],
+        speaker_result: Mapping[str, object] | None,
     ) -> None:
         running = next(
             (
@@ -794,6 +867,14 @@ class RecordingJobStore:
             state="succeeded",
             completed_at_utc=str(result["createdAtUtc"]),
             retryable=False,
-            output_fingerprint_sha256=canonical_json_sha256(result),
-            evidence={"resultRevision": result["revision"], "status": result["status"]},
+            output_fingerprint_sha256=canonical_json_sha256(
+                published_result_fingerprint(result, speaker_result)
+            ),
+            evidence={
+                "resultRevision": result["revision"],
+                "speakerResultRevision": (
+                    None if speaker_result is None else speaker_result["revision"]
+                ),
+                "status": result["status"],
+            },
         )

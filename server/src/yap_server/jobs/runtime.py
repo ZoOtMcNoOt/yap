@@ -9,7 +9,10 @@ import stat
 from typing import Mapping, Sequence
 
 from yap_server.auth import PrincipalKey
-from yap_server.capabilities import load_verified_asr_capability_catalog
+from yap_server.capabilities import (
+    load_asr_capability_catalog,
+    load_verified_asr_capability_catalog,
+)
 from yap_server.config.runtime_environment import (
     ASR_MODEL_DIR_ENV,
     ASR_MODEL_LOCK_ENV,
@@ -28,6 +31,14 @@ from yap_server.lid.runtime import (
     publish_language_detection_capabilities,
 )
 from yap_server.lid.service import LidPreflightService
+from yap_server.meeting_transcription.runtime import (
+    MeetingTranscriptionRuntimeConfiguration,
+    load_meeting_transcription_runtime_configuration,
+)
+from yap_server.meeting_transcription.contract import MAX_MEETING_PCM_BYTES
+from yap_server.meeting_transcription.result_revisions import (
+    load_meeting_result_authority,
+)
 from yap_server.pools.batch_asr import BatchAsrPool, ProviderBatchWorkerRegistry
 from yap_server.pools.batch_contract import (
     BatchWorker,
@@ -39,6 +50,7 @@ from yap_server.pools.model_lock import ModelPoolLock, load_model_pool_lock
 from yap_server.pools.provider_worker_factory import (
     AsrWorkerPlan,
     build_asr_worker_plan,
+    build_meeting_transcription_worker_plan,
 )
 from .contract_values import MAX_JOB_PCM_BYTES
 
@@ -177,13 +189,39 @@ def build_batch_runtime(
         if server_root is not None
         else Path(__file__).resolve().parents[3]
     )
-    capability_lock_path = Path(
-        source.get(
-            "YAP_ASR_CAPABILITY_LOCK",
-            str(root / "asr-capabilities.lock.json"),
-        )
+    meeting_result_authority = load_meeting_result_authority(
+        root / "meeting-transcription-runtime.lock.json"
     )
-    configured_pools = _configured_model_pools(source, root)
+    meeting_configuration = load_meeting_transcription_runtime_configuration(
+        source,
+        root,
+    )
+    if (
+        meeting_configuration is not None
+        and meeting_configuration.authority != meeting_result_authority
+    ):
+        raise ValueError(
+            "configured meeting runtime differs from the canonical result authority"
+        )
+    configured_pools = (
+        _configured_model_pools(source, root)
+        if meeting_configuration is None
+        or _standard_model_pool_configuration_present(source)
+        else ()
+    )
+    if meeting_configuration is not None and configured_pools:
+        raise ValueError(
+            "the candidate meeting runtime cannot share a process with standard "
+            "ASR providers until explicit provider selection exists"
+        )
+    default_capability_lock = root / (
+        "tiron-candidate-asr-capabilities.lock.json"
+        if meeting_configuration is not None
+        else "asr-capabilities.lock.json"
+    )
+    capability_lock_path = Path(
+        source.get("YAP_ASR_CAPABILITY_LOCK", "").strip() or default_capability_lock
+    )
     storage_dir = _private_storage_directory(source, BATCH_JOB_STORAGE_DIR_ENV)
     storage_namespace = (
         "storage-" + hashlib.sha256(os.fsencode(storage_dir)).hexdigest()[:24]
@@ -192,10 +230,16 @@ def build_batch_runtime(
         source.get(ASR_WORKER_TIMEOUT_SECONDS_ENV, "1800"),
         ASR_WORKER_TIMEOUT_SECONDS_ENV,
     )
-    asr_capabilities = load_verified_asr_capability_catalog(
-        capability_lock_path,
-        configured_pools,
-    )
+    if meeting_configuration is None:
+        asr_capabilities = load_verified_asr_capability_catalog(
+            capability_lock_path,
+            configured_pools,
+        )
+    else:
+        asr_capabilities = load_asr_capability_catalog(
+            capability_lock_path,
+            (meeting_configuration.capability_identity,),
+        )
     route_resolver = BatchCatalogRouter(asr_capabilities)
     catalog_revision = asr_capabilities.get("catalogRevision")
     if not isinstance(catalog_revision, str):
@@ -207,14 +251,16 @@ def build_batch_runtime(
     language_detection_runtime: LanguageDetectionRuntime | None = None
     unowned_workers: list[BatchWorker] = []
     try:
-        worker_plans = _build_provider_worker_plans(
+        worker_plans = _build_runtime_worker_plans(
             source,
             asr_capabilities=asr_capabilities,
             configured_pools=configured_pools,
+            meeting_configuration=meeting_configuration,
             run_as_uid=run_as_uid,
             run_as_gid=run_as_gid,
             storage_namespace=storage_namespace,
             timeout_seconds=timeout_seconds,
+            repository_root=root.parent,
         )
         unowned_workers.extend(plan.worker for plan in worker_plans.values())
         startup_cleanup_verified = bool(worker_plans) and all(
@@ -248,6 +294,7 @@ def build_batch_runtime(
             now=_utc_now,
             startup_worker_cleanup_verified=startup_cleanup_verified,
             development_principal=development_principal,
+            meeting_result_authority=meeting_result_authority,
         )
         language_detection_runtime = build_language_detection_runtime(
             source,
@@ -304,6 +351,49 @@ def build_batch_runtime(
                 "batch runtime startup cleanup could not release storage ownership"
             ) from cleanup_error
         raise
+
+
+def _build_runtime_worker_plans(
+    source: Mapping[str, str],
+    *,
+    asr_capabilities: Mapping[str, object],
+    configured_pools: Sequence[tuple[ModelPoolLock, Path]],
+    meeting_configuration: MeetingTranscriptionRuntimeConfiguration | None,
+    run_as_uid: int,
+    run_as_gid: int,
+    storage_namespace: str,
+    timeout_seconds: float,
+    repository_root: Path,
+) -> dict[str, AsrWorkerPlan]:
+    if meeting_configuration is None:
+        return _build_provider_worker_plans(
+            source,
+            asr_capabilities=asr_capabilities,
+            configured_pools=configured_pools,
+            run_as_uid=run_as_uid,
+            run_as_gid=run_as_gid,
+            storage_namespace=storage_namespace,
+            timeout_seconds=timeout_seconds,
+        )
+    provider_id = _provider_id_for_pool(
+        asr_capabilities,
+        meeting_configuration.capability_identity.pool_id,
+    )
+    return {
+        provider_id: build_meeting_transcription_worker_plan(
+            source,
+            model_dir=meeting_configuration.model_dir,
+            speaker_encoder_dir=meeting_configuration.speaker_encoder_dir,
+            runtime_lock_path=meeting_configuration.runtime_lock_path,
+            authority=meeting_configuration.authority,
+            repository_root=repository_root,
+            max_inflight_pcm_bytes=MAX_MEETING_PCM_BYTES,
+            run_as_uid=run_as_uid,
+            run_as_gid=run_as_gid,
+            storage_namespace=storage_namespace,
+            timeout_seconds=timeout_seconds,
+        )
+    }
 
 
 def _build_provider_worker_plans(
@@ -418,6 +508,20 @@ def _configured_model_pools(
     if len(pool_ids) != len(set(pool_ids)):
         raise ValueError("configured ASR model pool IDs must be unique")
     return tuple(configured)
+
+
+def _standard_model_pool_configuration_present(
+    source: Mapping[str, str],
+) -> bool:
+    return any(
+        source.get(name, "").strip()
+        for name in (
+            ASR_MODEL_DIR_ENV,
+            ASR_MODEL_LOCK_ENV,
+            NEMOTRON_MODEL_DIR_ENV,
+            NEMOTRON_MODEL_LOCK_ENV,
+        )
+    )
 
 
 def _required_existing_directory(

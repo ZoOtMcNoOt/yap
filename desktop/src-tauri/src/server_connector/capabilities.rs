@@ -48,7 +48,7 @@ pub struct AsrCapability {
     pub language_suggestion: bool,
     pub segment_language_tags: bool,
     pub word_alignment: bool,
-    pub promotion_evidence_revision: String,
+    pub promotion_evidence_revision: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -268,9 +268,17 @@ impl AsrCapabilityCatalog {
             }
             let mut locale_modes = HashSet::new();
             for capability in &provider.capabilities {
+                let promotion_evidence_is_valid = match (
+                    capability.quality_tier,
+                    capability.promotion_evidence_revision.as_deref(),
+                ) {
+                    (AsrQualityTier::Preview, None) => true,
+                    (_, Some(revision)) => lower_hex(revision, 40),
+                    (_, None) => false,
+                };
                 if !valid_bcp47(&capability.language_bcp47)
                     || !provider_language_code(&capability.provider_language_code)
-                    || !lower_hex(&capability.promotion_evidence_revision, 40)
+                    || !promotion_evidence_is_valid
                     || (capability.mode == AsrExecutionMode::DynamicBatch
                         && !capability.segment_language_tags)
                     || !locale_modes.insert((capability.language_bcp47.as_str(), capability.mode))
@@ -409,7 +417,7 @@ mod tests {
 
     use super::{
         fetch_asr_capabilities, provider_language_code, AsrCapabilityCatalog, AsrCatalogError,
-        LID_PREFLIGHT_MEDIA_TYPE, MAX_CATALOG_BYTES,
+        AsrQualityTier, LID_PREFLIGHT_MEDIA_TYPE, MAX_CATALOG_BYTES,
     };
     use crate::server_connector::client::bounded_client;
 
@@ -452,6 +460,25 @@ mod tests {
         assert_eq!(catalog.providers.len(), 1);
         assert_eq!(catalog.providers[0].capabilities.len(), 1);
         assert_eq!(catalog.providers[0].capabilities[0].language_bcp47, "en-US");
+    }
+
+    #[test]
+    fn preview_catalog_may_omit_promotion_evidence_but_ready_catalog_may_not() {
+        let mut catalog: AsrCapabilityCatalog = serde_json::from_slice(REPOSITORY_EXAMPLE).unwrap();
+        let capability = &mut catalog.providers[0].capabilities[0];
+        capability.quality_tier = AsrQualityTier::Preview;
+        capability.promotion_evidence_revision = None;
+        catalog.catalog_revision = catalog.computed_revision().unwrap();
+        let preview = serde_json::to_vec(&catalog).unwrap();
+        assert!(AsrCapabilityCatalog::parse_bounded(&preview).is_ok());
+
+        catalog.providers[0].capabilities[0].quality_tier = AsrQualityTier::TranscriptionReady;
+        catalog.catalog_revision = catalog.computed_revision().unwrap();
+        let ready = serde_json::to_vec(&catalog).unwrap();
+        assert_eq!(
+            AsrCapabilityCatalog::parse_bounded(&ready),
+            Err(AsrCatalogError::Malformed)
+        );
     }
 
     #[test]

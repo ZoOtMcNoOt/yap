@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use super::validation::valid_path_segment;
 use crate::language::{
@@ -15,6 +16,8 @@ const MAX_SERVER_STAGE_ATTEMPTS: u64 = 64;
 const MAX_SERVER_STAGE_REASON_CHARS: usize = 512;
 const MAX_TRANSCRIPT_BYTES: usize = 1024 * 1024;
 pub(crate) const MAX_TRANSCRIPT_RESULT_BYTES: usize = 4 * 1024 * 1024;
+pub(crate) const MAX_SPEAKER_RESULT_BYTES: usize = 4 * 1024 * 1024;
+const MAX_SPEAKER_TURNS: usize = 100_000;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -106,6 +109,8 @@ pub(crate) struct TranscriptResultRevision {
     pub language: Option<LanguageDecision>,
     pub transcript: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub speaker_result_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language_segments: Option<Vec<LanguageSegment>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language_span_evidence: Option<ServerLanguageSpanEvidence>,
@@ -113,6 +118,72 @@ pub(crate) struct TranscriptResultRevision {
     pub alignment: Option<AlignmentOutcome>,
     pub aligned_words: Vec<AlignedWord>,
     pub model_provenance: Vec<ModelRevision>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct SpeakerResultRevision {
+    pub session_id: String,
+    pub revision: u64,
+    pub authority: String,
+    pub created_at_utc: String,
+    pub capture_manifest_sha256: String,
+    pub previous_result_sha256: Option<String>,
+    pub status: String,
+    pub language: LanguageDecision,
+    pub runtime_lock_sha256: String,
+    pub speaker_turns: Vec<SpeakerTurn>,
+    pub speaker_capacity_degradation: SpeakerCapacityDegradation,
+    pub alignment: AlignmentOutcome,
+    pub aligned_words: Vec<AlignedWord>,
+    pub model_provenance: Vec<ModelRevision>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub(crate) enum SpeakerCapacityDegradation {
+    None(()),
+    Reached(SpeakerCapacityReached),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct SpeakerCapacityReached {
+    pub code: String,
+    pub fallback_disposition: String,
+    pub scope: SpeakerCapacityScope,
+    pub start_sample: u64,
+    pub end_sample: u64,
+    pub observed_speaker_count: u8,
+    pub speaker_limit: u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum SpeakerCapacityScope {
+    Meeting,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct SpeakerTurn {
+    pub turn_id: String,
+    pub start_ms: u64,
+    pub end_ms: u64,
+    pub text: String,
+    pub attribution: AnonymousSpeakerAttribution,
+    pub confidence: Option<f64>,
+    pub supporting_track_ids: Vec<String>,
+    pub overlap_group_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(crate) enum AnonymousSpeakerAttribution {
+    SessionSpeaker {
+        #[serde(rename = "sessionSpeakerId")]
+        session_speaker_id: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -217,6 +288,10 @@ pub(crate) enum LanguageSegmentReason {
 }
 
 impl TranscriptResultRevision {
+    pub(crate) fn requires_speaker_result(&self) -> bool {
+        self.speaker_result_sha256.is_some()
+    }
+
     pub(crate) fn transcript_is_canonical(&self) -> bool {
         self.transcript.len() <= MAX_TRANSCRIPT_BYTES
             && !self.transcript.contains('\0')
@@ -328,7 +403,9 @@ impl TranscriptResultRevision {
                 alignment.reason.is_some()
                     && matches!(
                         alignment.component_revision.as_str(),
-                        "cohere-attention-en-v1" | "cohere-attention-alignment-candidate-v1"
+                        "cohere-attention-en-v1"
+                            | "cohere-attention-alignment-candidate-v1"
+                            | "joint-segment-timing-v1"
                     )
                     && self.aligned_words.is_empty()
             }
@@ -363,6 +440,165 @@ impl TranscriptResultRevision {
             }
         }
     }
+}
+
+impl SpeakerResultRevision {
+    pub(crate) fn content_sha256(&self) -> Option<String> {
+        let encoded = serde_json::to_vec(self).ok()?;
+        let digest = Sha256::digest(encoded);
+        Some(digest.iter().map(|byte| format!("{byte:02x}")).collect())
+    }
+
+    pub(crate) fn speaker_capacity_reached(&self) -> bool {
+        matches!(
+            &self.speaker_capacity_degradation,
+            SpeakerCapacityDegradation::Reached(_)
+        )
+    }
+
+    pub(crate) fn is_valid_for(
+        &self,
+        transcript: &TranscriptResultRevision,
+        source_duration_ms: u64,
+        expected_source_end_sample: Option<u64>,
+        source_track_ids: &[String],
+    ) -> bool {
+        if self.session_id != transcript.session_id
+            || self.revision != transcript.revision
+            || self.authority != transcript.authority
+            || self.created_at_utc != transcript.created_at_utc
+            || self.capture_manifest_sha256 != transcript.capture_manifest_sha256
+            || self.previous_result_sha256 != transcript.previous_result_sha256
+            || self.status != transcript.status
+            || transcript.language.as_ref() != Some(&self.language)
+            || transcript.speaker_result_sha256.as_deref() != self.content_sha256().as_deref()
+            || !super::validation::valid_sha256(&self.runtime_lock_sha256)
+            || self.alignment.status != AlignmentStatus::Unavailable
+            || self.alignment.reason != Some(AlignmentUnavailableReason::ProviderUnsupported)
+            || self.alignment.component_revision != "joint-segment-timing-v1"
+            || !self.aligned_words.is_empty()
+            || self.speaker_turns.len() > MAX_SPEAKER_TURNS
+            || self.model_provenance.len() != 3
+            || self.model_provenance.first() != transcript.model_provenance.first()
+            || self.model_provenance.iter().any(|model| {
+                model.model_id.is_empty()
+                    || model.model_id.len() > 256
+                    || model.revision.len() != 40
+                    || !model
+                        .revision
+                        .bytes()
+                        .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+                    || model.calibration_revision != self.runtime_lock_sha256
+            })
+            || !self.speaker_capacity_degradation.is_valid_for(
+                &self.status,
+                source_duration_ms,
+                expected_source_end_sample,
+            )
+        {
+            return false;
+        }
+
+        let mut previous_start_ms = 0_u64;
+        let mut intervals = Vec::with_capacity(self.speaker_turns.len());
+        let mut rendered_text = Vec::with_capacity(self.speaker_turns.len());
+        let mut observed_speakers = BTreeSet::new();
+        for (index, turn) in self.speaker_turns.iter().enumerate() {
+            let expected_turn_id = format!("turn-{:06}", index + 1);
+            let AnonymousSpeakerAttribution::SessionSpeaker { session_speaker_id } =
+                &turn.attribution;
+            let speaker_id_is_canonical = (1..=8)
+                .any(|speaker_number| session_speaker_id == &format!("speaker-{speaker_number}"));
+            if turn.turn_id != expected_turn_id
+                || (index > 0 && turn.start_ms < previous_start_ms)
+                || turn.end_ms <= turn.start_ms
+                || turn.end_ms > source_duration_ms
+                || !canonical_nonempty_transcript_text(&turn.text)
+                || turn.confidence.is_some()
+                || turn.supporting_track_ids != source_track_ids
+                || !speaker_id_is_canonical
+            {
+                return false;
+            }
+            previous_start_ms = turn.start_ms;
+            observed_speakers.insert(session_speaker_id.as_str());
+            intervals.push((turn.start_ms, turn.end_ms));
+            rendered_text.push(turn.text.as_str());
+        }
+        self.speaker_capacity_reached() == (observed_speakers.len() == 8)
+            && rendered_text.join(" ") == transcript.transcript
+            && expected_overlap_groups(&intervals)
+                == self
+                    .speaker_turns
+                    .iter()
+                    .map(|turn| turn.overlap_group_id.clone())
+                    .collect::<Vec<_>>()
+    }
+}
+
+impl SpeakerCapacityDegradation {
+    fn is_valid_for(
+        &self,
+        status: &str,
+        source_duration_ms: u64,
+        expected_source_end_sample: Option<u64>,
+    ) -> bool {
+        let Self::Reached(degradation) = self else {
+            return status == "complete";
+        };
+        if status != "partial"
+            || degradation.code != "SPEAKER_CAPACITY_REACHED"
+            || degradation.fallback_disposition != "not_run_recommended"
+            || degradation.scope != SpeakerCapacityScope::Meeting
+            || degradation.start_sample != 0
+            || degradation.observed_speaker_count != 8
+            || degradation.speaker_limit != 8
+        {
+            return false;
+        }
+        let Some(maximum_source_end) = source_duration_ms
+            .checked_mul(16)
+            .and_then(|value| value.checked_add(15))
+        else {
+            return false;
+        };
+        degradation.end_sample > 0
+            && degradation.end_sample <= maximum_source_end
+            && expected_source_end_sample.is_none_or(|expected| degradation.end_sample == expected)
+    }
+}
+
+fn canonical_nonempty_transcript_text(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= MAX_TRANSCRIPT_BYTES
+        && !value.contains('\0')
+        && !value.starts_with(' ')
+        && !value.ends_with(' ')
+        && !value.contains("  ")
+        && !value
+            .chars()
+            .any(|character| character.is_whitespace() && character != ' ')
+}
+
+fn expected_overlap_groups(intervals: &[(u64, u64)]) -> Vec<Option<String>> {
+    let mut groups = vec![None; intervals.len()];
+    let mut group_number = 0_usize;
+    let mut start = 0_usize;
+    while start < intervals.len() {
+        let mut end = start + 1;
+        let mut maximum_end = intervals[start].1;
+        while end < intervals.len() && intervals[end].0 < maximum_end {
+            maximum_end = maximum_end.max(intervals[end].1);
+            end += 1;
+        }
+        if end - start > 1 {
+            group_number += 1;
+            let group_id = format!("overlap-{group_number:06}");
+            groups[start..end].fill(Some(group_id));
+        }
+        start = end;
+    }
+    groups
 }
 
 impl ServerLanguageSpanEvidence {

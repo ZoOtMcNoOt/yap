@@ -305,7 +305,10 @@ export async function sampleWdioProcessTree() {
   const appPid = await resolveWdioAppPid();
   const script = `
 $ErrorActionPreference = "Stop"
-$all = @(Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId)
+$all = @(
+  Get-CimInstance -ClassName Win32_Process -Property ProcessId, ParentProcessId |
+    Select-Object ProcessId, ParentProcessId
+)
 $ids = @([uint32]${appPid})
 do {
   $children = @($all | Where-Object {
@@ -324,7 +327,7 @@ $processes = @(Get-Process -Id ($ids | Sort-Object -Unique) -ErrorAction Silentl
   const { stdout } = await execFileAsync(
     "pwsh.exe",
     ["-NoProfile", "-NonInteractive", "-Command", script],
-    { timeout: 15_000, windowsHide: true },
+    { timeout: 30_000, windowsHide: true },
   );
   return JSON.parse(stdout.trim());
 }

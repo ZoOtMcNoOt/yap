@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "providers": [
+    {
+      "providerId": "tiron",
+      "poolId": "tiron-meeting",
+      "capabilities": [
+        {
+          "languageBcp47": "en-US",
+          "providerLanguageCode": "en",
+          "mode": "fixedBatch",
+          "qualityTier": "preview",
+          "languageSuggestion": false,
+          "segmentLanguageTags": false,
+          "wordAlignment": false,
+          "promotionEvidenceRevision": null
+        }
+      ]
+    }
+  ]
+}

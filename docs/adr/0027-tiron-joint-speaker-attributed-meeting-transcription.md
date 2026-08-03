@@ -3,7 +3,27 @@
 **Date:** 2026-07-22
 **Status:** Accepted (canonical Phase 8 server baseline; production promotion pending)
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0020](0020-meeting-capture-diarization-authority.md), and [ADR 0025](0025-provider-specific-asr-serving.md)
-**Implementation status:** Decision and immutable upstream source identities are documented. No Tiron worker, dependency lock, meeting scorer, production result path, or GB10 qualification evidence exists in Yap yet.
+**Implementation status:** The current upstream model, runtime harness, ECAPA,
+container, and Python dependency identities are locked, and the frozen
+acceptance contract is executable. A thin offline worker and digest-pinned ARM64
+image pass focused GB10 short/two-window smokes. An explicit candidate runtime
+configuration now joins the verified upstream worker to the Phase 7-owned job
+route, separate immutable transcript and anonymous-speaker revisions,
+  owner-scoped API retrieval, and native publication. Exact application/runtime
+  head `1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported launcher,
+  real loopback HTTP/native publication, companion-hash verification,
+  speaker-attributed History rendering, and the one admitted
+  local/native/server/GB10 Preview matrix against immutable ARM64 image
+  `sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`.
+  Protected aggregate receipt SHA-256
+  `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`
+  binds the subordinate evidence and reviewed test/gate-only descendant
+  `9ff06d7d...` outside Git. The current contract also publishes a terminal
+  `partial` result when the upstream aggregate exposes exactly eight global
+  speaker labels. Reviewed hosted closure and merge remain open. The private
+  holdout, meeting-score reproduction, larger-roster reconciler, automatic
+  fallback, and production promotion remain later promotion work rather than
+  blockers to merging the disabled-by-default Preview baseline.
 
 ## Context
 
@@ -64,23 +84,37 @@ The selection is deliberately narrow:
   by assumption.
 - It does not own durable job identity, capture history, user corrections,
   authentication, admission, cancellation, or result publication.
-- It is not advertised or made authoritative until the frozen Phase 8 gate
-  passes.
+- It is not present in the committed default catalog and is never selected
+  implicitly. When an operator explicitly enables the Preview profile, Yap's
+  validated immutable revisions are authoritative for that candidate job;
+  this does not constitute production promotion.
 
-Rust remains the orchestration and validation owner. Tiron is an isolated,
-provider-specific Python worker behind Yap's model-independent meeting-result
-contract.
+Yap remains the orchestration and validation owner across two explicit layers:
+the Python private server owns route admission, durable server jobs, worker
+containment, cancellation, and authoritative result publication; the Rust
+native client owns capture-request binding, local durable publication, and
+History projection. Tiron is an isolated, provider-specific Python worker
+behind their shared model-independent meeting-result contract.
 
 ### 2. Pin upstream identity before integration
 
-The initial source lock is:
+The Phase 8 execution lock is:
 
 | Artifact | Immutable identity |
 | --- | --- |
-| Model | `Trelis/tiron` revision `aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc` |
-| Weight | 3,087,229,512 bytes; SHA-256 `921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e` |
-| Reference harness | `TrelisResearch/tiron` revision `5b3766ac64ff3a8d98443e0a850d1ce569952520` |
-| Public metadata | Apache-2.0 for the model repository and harness |
+| Model | `Trelis/tiron` revision `90bc0a4d198cd5cf6679b0e478375ba3a0040575` |
+| Weight | 3,087,229,512 bytes; SHA-256 `2e9f644c5eb633d3c387975cf38677d3ffe1a7b98830a735867865ec1bd519b5` |
+| Runtime harness | `TrelisResearch/tiron` revision `d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c` |
+| Public comparator dataset | `Trelis/tiron-eval-meetings` revision `500809d7e9ae643d3cc945f6c91e7ed0693456bd` |
+| Public metadata | Apache-2.0 for the model repository and runtime harness; CC-BY-4.0 for the public comparator dataset |
+
+The earlier pre-execution proposal recorded model revision
+`aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc`, weight SHA-256
+`921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e`,
+and harness revision `5b3766ac64ff3a8d98443e0a850d1ce569952520`.
+They are superseded before worker execution by the current upstream release,
+which includes the published evaluation sources. Yap does not mix artifacts
+across those source sets.
 
 Phase 8 must create a complete runtime lock before executing the worker. It
 must pin and review the model, harness, ECAPA checkpoint, Torch, Transformers,
@@ -89,25 +123,44 @@ applicable license. Runtime network downloads are forbidden. Python 3.12 and
 DGX Spark GB10 are the initial qualification environment unless a later ADR
 changes the checked NVIDIA worker baseline.
 
-Upstream code may be wrapped or selectively adapted with provenance and
-attribution. Yap will not paste the reference harness's large pipeline modules
-into its Rust or server domains unchanged. The Phase 8 implementation should
-keep decoding, linking, scoring, and Yap orchestration as separately testable
-owners.
+The pinned upstream harness is the Tiron runtime dependency for whole-meeting
+inference. It owns the released 30-second windowing, constrained decoding,
+staggered second pass, ECAPA speaker linking, and JSON/SRT/VTT rendering
+behavior. Loading the model through Transformers alone is supported only for a
+single window and is not Yap's meeting route.
+
+Yap must not port or rewrite that pipeline. A thin provider wrapper supplies
+verified local artifacts, disables runtime downloads, isolates requests,
+enforces admission/cancellation/resource bounds, preserves canonical source
+time, and validates the returned meeting result before publication. An
+upstream runtime patch requires a measured defect, a focused regression test,
+and explicit provenance; speculative forks are not part of Phase 8.
+
+The executing Phase 8 candidate is meeting-only and admits at most three hours
+of mono 16 kHz PCM per request. The older general batch contract's four-hour
+ceiling does not expand this runtime-specific limit. Startup accepts only the
+exact ARM64 image ID bound to a private preparation receipt for the checked Git
+head and runtime lock.
 
 ### 3. Preserve source time and publish only validated revisions
 
 The worker receives bounded views over the retained canonical source; it never
 becomes the audio source of truth. Initial behavior follows the released model:
 
-1. derive fixed 30-second windows with exact source offsets and explicit gaps;
+1. preserve the canonical source timeline while the upstream harness derives
+   its fixed 30-second windows;
 2. use grammar-constrained decoding for speaker/timestamp token validity;
 3. run the released staggered second pass unless measured evidence rejects it;
-4. link window-local slots into anonymous session speakers;
-5. return segments, source timestamps, window-local speaker evidence,
-   language, and degradation diagnostics to Rust; and
-6. let Rust validate bounds, ordering, overlap, capture-manifest identity,
-   model provenance, and result revision before publication.
+4. let the upstream harness link its window-local slots into meeting-global
+   anonymous labels;
+5. return the upstream public aggregate of segments, source timestamps,
+   meeting-global speaker labels, language, and diagnostics to the Python
+   server;
+6. let the Python server validate bounds, ordering, overlap,
+   capture-manifest identity, model provenance, and the authoritative result
+   revisions before publishing them; and
+7. let Rust independently bind the retrieved aggregate to its persisted capture
+   request before local publication and History projection.
 
 Model segment timestamps are not silently promoted to word-level alignment.
 Words receive source-time intervals only through a separately validated timing
@@ -122,6 +175,24 @@ speaker identities for the complete meeting. Phase 8 first reproduces that
 pinned eight-window/eight-global baseline without silently raising a constant
 or relabeling the result as a larger-roster proof.
 
+The pinned public `TironEngine.transcribe()` boundary discards per-window
+assignments and request-scoped embeddings before returning its aggregate. Yap
+therefore cannot honestly reconstruct the exact window or source region that
+caused saturation. The current Preview takes the conservative observable
+action: when the aggregate exposes exactly eight distinct global speaker
+labels, the transcript and speaker companion are terminal `partial`, and the
+companion carries one source-bound, meeting-scoped
+`SPEAKER_CAPACITY_REACHED` record. That record says fallback reprocessing is
+recommended and was not run. It intentionally cannot distinguish exactly
+eight real talkers from a larger roster collapsed by the upstream cap.
+
+Yap will not copy, monkey-patch, or fork private upstream pipeline internals to
+manufacture missing evidence. A future larger-roster route must either compose
+source-time epochs around the public whole-meeting API or consume an accepted
+upstream evidence API. That work, exact window-cap localization, and automatic
+fallback reprocessing are production-promotion work beyond the current Preview
+baseline.
+
 A meeting may contain 15, 32, or more attendees while only a subset ever
 speaks. Attendance metadata does not consume a model speaker slot and must not
 cause Yap to invent speech or anonymous identities. Conversely, a meeting with
@@ -134,9 +205,11 @@ model's 30-second source windows, groups them into bounded activity epochs at
 recorded source-time boundaries, links at most eight anonymous voices inside
 each epoch, and cross-references only high-confidence ECAPA evidence across
 epochs. Overlap-derived cannot-link evidence prevents incompatible epoch
-identities from being merged. Rust owns the resulting 32-target/64-ceiling
-session roster; an ambiguous cross-epoch match remains a separate anonymous or
-`Unknown` identity instead of being forced. Known attendance can become a
+identities from being merged. The Python server owns the resulting
+32-target/64-ceiling authoritative session roster; Rust independently validates
+and projects the published roster locally. An ambiguous cross-epoch match
+remains a separate anonymous or `Unknown` identity instead of being forced.
+Known attendance can become a
 purpose-authorized naming suggestion later, but it is never acoustic evidence.
 Epoch duration, silence-boundary, overlap-guard, candidate-pruning, and
 confidence policies are deterministic, bounded, and frozen before hypotheses
@@ -148,7 +221,7 @@ beat the ASR-plus-diarization fallback, more-than-eight-talker meetings remain a
 typed unsupported/degraded route. No epoch boundary can recover a ninth talker
 that the model failed to represent inside one 30-second window.
 
-Phase 8 must explicitly test and report:
+Production promotion must explicitly test and report:
 
 - more-than-15-attendee meetings in which no more than eight people speak, with
   no identities invented from the attendee list;
@@ -161,11 +234,12 @@ Phase 8 must explicitly test and report:
 The pinned harness, the speaker-epoch extension, and the ASR-plus-diarization
 fallback are scored separately from byte-identical source audio. Staggered
 windows provide useful cross-evidence but do not prove that an over-capacity
-region was decoded completely. Reaching or plausibly exceeding either the
-window cap or the selected route's global cap produces a typed
-degraded/partial region and preserves source audio for fallback or
-reprocessing. Yap must not merge, drop, or invent a speaker merely to stay
-under a cap.
+region was decoded completely. The current route truthfully reports only the
+observable meeting-global saturation described above. Exact window-cap
+localization remains unavailable at the public runtime boundary. Yap must not
+merge, drop, or invent a speaker merely to stay under a cap, and no document
+may claim fallback ran when the published disposition is
+`not_run_recommended`.
 
 ### 5. Promote against a frozen messy-meeting acceptance suite
 
@@ -254,7 +328,7 @@ networking, and enterprise deployment handoffs.
 ### Negative
 
 - Tiron is a very new release with limited adoption and no independent Yap
-  reproduction yet.
+  quality reproduction yet; the executing runtime path itself is reproduced.
 - Two-pass decoding and ECAPA linking add latency, memory, dependency, and
   lifecycle work beyond a plain Whisper invocation.
 - Published quality evidence is currently English-only, while Yap requires
@@ -263,9 +337,9 @@ networking, and enterprise deployment handoffs.
   degraded-result cases that the product and scorer must expose.
 - Supporting larger speaking rosters requires a separately qualified
   cross-epoch reconciliation layer; chunking alone is not the solution.
-- The reference harness is not a production service and requires substantial
-  decomposition, dependency locking, concurrency control, and cancellation
-  hardening.
+- The runtime harness is not a production service. Yap still needs an isolated
+  dependency lock, bounded admission, cancellation, source-time/result
+  validation, and lifecycle control around it.
 
 ### Neutral
 
@@ -303,23 +377,39 @@ replace the model behind the stable contract.
 
 ## Implementation sequence
 
-1. Freeze the messy-meeting manifest, rights/provenance ledger, scorer versions,
-   thresholds, and private holdout before model output is revealed.
-2. Lock the complete Tiron/ECAPA/Python 3.12 runtime and reproduce the pinned
-   eight-window/eight-global public-comparator behavior on GB10.
-3. Implement a bounded provider-specific worker with cancellation, teardown,
-   capacity diagnostics, and no runtime downloads.
-4. Add the Rust adapter and validated immutable meeting-result revision path.
-5. Implement the speaker-epoch reconciler behind an independent switch, then
-   compare the pinned baseline, extension, and fallback on byte-identical
-   messy-meeting evidence.
-6. Reuse a bounded frozen single-speaker/long-batch control to compare Tiron
-   with the current Cohere batch route, then record an explicit meeting-only,
-   broader-replacement, or no-replacement decision.
-7. Run focused contract/runtime work while developing, then the complete
-   frozen Phase 8 matrix once.
-8. Perform the required post-phase adversarial/refactor checkpoint before
-   Phase 9 begins.
+### Phase 8 Preview closure
+
+1. Build and isolate the pinned Tiron/ECAPA/Python 3.12 runtime dependency with
+   no runtime downloads.
+2. Implement the bounded provider worker, Rust adapter, immutable meeting
+   revisions, restart/cancellation behavior, and source-bound meeting-global
+   saturation signal through the existing authenticated job boundary.
+3. Prove one supported-launcher client/HTTP/Tiron/native/History roundtrip,
+   close adversarial findings, and run the complete frozen Phase 8 Preview
+   matrix once on the exact candidate.
+4. Merge only a reviewed green exact head, then perform the separate
+   post-phase maintainability checkpoint before Phase 9 begins.
+
+Steps 1–3 are complete on application/runtime candidate
+`1c69b61cf2902c9cfda50c6158168890974f969f`. The exact two-window GB10 run used
+the immutable image above with networking disabled, a read-only filesystem,
+non-root execution, bounded worker resources, and zero retained containers.
+Three independent adversarial lenses approved the candidate, and a focused
+native follow-up approved runner-only descendant `9ff06d7d...`. The aggregate
+private receipt hash above contains no transcript or audio. Step 4 remains open.
+
+### Deferred production promotion
+
+1. Freeze and seal the private holdout, reproduce public comparators, and run
+   the scorer without mixing exposed and independent evidence.
+2. Obtain exact per-window evidence from an accepted upstream boundary or
+   qualify source-time epochs around the public whole-meeting API; compare that
+   route and the ASR-plus-diarization fallback on byte-identical input.
+3. Qualify accuracy, larger rosters, resource bounds, concurrency, long-session
+   behavior, fallback execution, and advertised locale/duration claims.
+4. Record an explicit meeting-only, broader-replacement, or rejection decision
+   before changing the committed default catalog or calling the route
+   production-promoted.
 
 ## References
 

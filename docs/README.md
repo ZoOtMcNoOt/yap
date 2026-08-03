@@ -63,10 +63,11 @@ availability.
 
 - [Tenant-scoped identity and job authorization](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
+- [Joint speaker-attributed meeting transcription](plans/active/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
 
 ### Queued
 
-- [Joint speaker-attributed meeting transcription](plans/queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
+None currently.
 
 ### Completed implementation records
 

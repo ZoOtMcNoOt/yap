@@ -16,8 +16,9 @@ pub(crate) use request::{
     CreateRecordingJobRequest, RetryServerStageRequest, ServerReplayKey, UploadTrack,
 };
 pub(crate) use response::{
-    AlignmentStatus, ApiError, ChunkUploadReceipt, LanguageSegmentStatus, RecordingJob,
-    ServerStageName, ServerStageProjectionEnvelope, ServerStageState, TranscriptResultRevision,
+    AlignmentStatus, AnonymousSpeakerAttribution, ApiError, ChunkUploadReceipt,
+    LanguageSegmentStatus, RecordingJob, ServerStageName, ServerStageProjectionEnvelope,
+    ServerStageState, SpeakerResultRevision, TranscriptResultRevision, MAX_SPEAKER_RESULT_BYTES,
     MAX_TRANSCRIPT_RESULT_BYTES,
 };
 #[cfg(test)]

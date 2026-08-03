@@ -1,6 +1,6 @@
 # Spec: Testing strategy
 
-**Status:** Living verification contract (updated 2026-07-25); future phase gates activate only when their fixtures exist
+**Status:** Living verification contract (updated 2026-08-03); future phase gates activate only when their fixtures exist
 **Scope:** Cross-cutting tests for the desktop runtime, track-aware audio contracts, local fallback, source-aware diarization, server contracts, and native UI.
 
 This is the shared reference the phase specs point to for their acceptance tests.
@@ -29,11 +29,18 @@ Hosted CI, CodeQL, and stock-NSIS passed at first attempt on final reviewed
 head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; its private closure receipt
 was independently validated outside Git. PR #67 merged as
 `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
-The representative provider-promotion corpus and frozen Phase 8 comparisons
-remain open. ADR 0027 selects Tiron as the future Phase 8 server meeting
-baseline, but no Tiron worker or meeting scorer executes yet. The tables below
-distinguish executable checked coverage from future phase-gate requirements and
-from the separate hosted PR closure.
+The representative provider-promotion corpus and frozen Phase 8 scored
+comparisons remain open. ADR 0027 selects Tiron as the Phase 8 server meeting
+Preview baseline. Exact application/runtime candidate
+`1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported authenticated
+job/native/History route and the one admitted local/native/server/GB10 Preview
+matrix against immutable ARM64 image
+`sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`.
+Protected aggregate receipt SHA-256
+`9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`
+remains outside Git. No private-holdout meeting score or production-promotion
+result exists. The tables below distinguish this executable Preview coverage
+from future promotion requirements and the separate hosted PR closure.
 
 ---
 

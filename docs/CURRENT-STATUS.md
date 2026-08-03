@@ -1,17 +1,36 @@
 # Current Status
 
-**As of:** 2026-08-02
+**As of:** 2026-08-03
 
-**Most recent closure:** the focused
-[local-first server discovery and optional authentication plan](plans/completed/2026-08-02-local-first-server-discovery-and-optional-auth.md)
-is implemented as a focused post-Phase-7 closure. Phase 7 merged as `66d314d7`,
-its adversarial checkpoint closed at `ef6d977`, and the checkpoint's remaining
-findings closed at `1a6f06e` and `589197e`. Phase 8 remains next in roadmap
-order and is not part of this closure.
+**Most recent closure:** [PR #141](https://github.com/mcnatg1/yap/pull/141)
+removed installer-bundled model weights while preserving explicit verified
+model acquisition into canonical app data. It merged as
+`cb4ddd1320f40c1b8b1a63ce42c468ca69bd8ae5` after exact-head hosted checks.
 
-**Parent merged baseline for this closure:** `main` at
-`39463ffd87485f148440b65606cb6dbefa3a8153` through
-[PR #139](https://github.com/mcnatg1/yap/pull/139).
+**Current Phase 8 baseline:** `main` at
+`cb4ddd1320f40c1b8b1a63ce42c468ca69bd8ae5`. The
+[joint speaker-attributed meeting transcription plan](plans/active/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
+is active in [PR #142](https://github.com/mcnatg1/yap/pull/142). Exact current
+upstream runtime
+and model identities plus the frozen messy-meeting acceptance contract have
+executable validators. A focused offline Tiron worker now executes on GB10;
+the explicitly configured candidate is contract-composed across the authenticated
+job route, separate hash-bound transcript/speaker revisions, owner-scoped
+retrieval, native publication, and History projection. Exact application/runtime
+head `1c69b61cf2902c9cfda50c6158168890974f969f` passed one real
+supported-launcher client/HTTP/Tiron/native/History roundtrip with a verified
+speaker companion and the one admitted local/native/server/GB10 Preview
+matrix. The exact immutable ARM64 image is
+`sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`;
+the protected aggregate receipt remains outside Git and has SHA-256
+`9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`.
+Reviewed descendant `9ff06d7d3f66faea92276000d58fa9b94154682b`
+changes only test/gate mechanics and leaves that runtime/image evidence
+unchanged. It is not the default or a production-promoted route. The current
+Phase 8 branch additionally marks an
+exactly-eight-label upstream aggregate `partial`, binds that meeting-global
+signal to the complete source, and tells History that fallback reprocessing was
+not run.
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -36,7 +55,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
 | Phase 7: identity/access | Merged and gated | The [tenant-scoped identity and job authorization plan](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governed the branch. [PR #69](https://github.com/mcnatg1/yap/pull/69) merged as `66d314d7`. Provider-neutral OIDC/Entra token validation, tenant-scoped `(tid, oid)` ownership across jobs, results, REST and WSS, protected readiness, authenticated bounded private WebSocket admission, and the qualified native lower handshake execute. Two things carried by the branch do NOT execute as product behaviour and are gates rather than capabilities: the purpose-grant and revocation layer is reachable only from tests, since no HTTP route or operator entry point calls `RequestAuthorizationRuntime.purpose_authorization`, so `access_disabled` can be set only by editing `identity.sqlite` by hand; and the desktop production token manager discovers no provider by default. A WAM adapter exists only behind explicit opt-in and is not approved or selected. In release/default builds, explicit `YAP_AUTH_MODE=development_loopback` is the only end-to-end mode that does not require an IT-provided identity environment; the debug-only demo provider is test/demo evidence, not production SSO. Real Entra policy conformance remains an IT-owned handoff. |
 | Post-Phase-7 local-first closure | Implemented and locally gated | On-device setup and recovery no longer await optional server/auth refresh. The fixed numeric-loopback offer retries safely after launch, requires explicit connection approval, never scans the LAN, and stops after configuration or durable dismissal. Server and sign-in controls remain optional and progressively disclosed; no production SSO provider or enterprise configuration is invented. |
-| Phase 8: meeting evidence | Accepted direction; not implemented | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron's eight-window/eight-global route as the server development baseline, queues a separately gated speaker-epoch extension for larger speaking rosters, and retains local anonymous evidence plus an ASR-plus-diarization fallback. No Tiron worker, reconciler, scorer, messy-meeting promotion result, or production speaker result path exists. |
+| Phase 8: meeting evidence | Active; Preview gate passed, PR/merge pending | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects the pinned upstream Tiron whole-meeting runtime as an explicitly enabled server Preview baseline; it remains absent from the committed default catalog and unpromoted. Exact model/runtime/ECAPA/container/dependency identities and the messy-meeting policy have executable validators. The authenticated job route, three-hour admission, restart-safe hash-bound transcript/speaker revisions, owner-scoped retrieval, native publication, and History projection execute. Exact application/runtime head `1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported-launcher client/HTTP/Tiron/native/History roundtrip and the one admitted local/native/server/GB10 matrix against immutable image `sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`. Protected aggregate receipt SHA-256 `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154` binds the subordinate evidence and test/gate-only descendant `9ff06d7d...`. The current branch conservatively publishes `partial` when the public upstream aggregate exposes exactly eight global labels and says fallback was recommended but not run. Phase 8 Preview closure now requires only the focused reviewed PR, green hosted exact head, merge, and separate post-phase maintainability checkpoint. Private-holdout scoring, exact window-cap evidence, speaker epochs, automatic fallback, broad capacity/quality evidence, and production promotion are deferred promotion work. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Replacement admissions `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3`,
@@ -324,8 +343,9 @@ candidate is promoted by this dirty-head result.
 The complete owner and trust-boundary map is
 [executable ownership map](architecture/boundaries/EXECUTABLE-OWNERSHIP.md). The
 focused Phase 6 ownership deltas are recorded in ADRs 0024–0026 and the
-completed Phase 6 plan. ADR 0027 records a future Phase 8 decision only; it is not executing
-ownership.
+completed Phase 6 plan. ADR 0027 now executes a candidate meeting-result path;
+the model remains evidence while the authenticated job ledger and native
+publication boundaries retain ownership.
 
 ## What is not claimed
 
@@ -522,10 +542,11 @@ ownership.
   tensor batching changed a Cohere transcript and its parity-preserving profile
   serialized model execution without a demonstrated throughput gain. Server
   live remains false.
-- Phase 8 Tiron/local speaker inference, the frozen messy-meeting gate, speaker
-  result publication, and reconciliation remain deferred; selecting the server
-  development baseline is not implementation or production promotion. Phase 9
-  knowledge/agent behavior also remains deferred.
+- Phase 8 production promotion, the frozen messy-meeting result, and
+  larger-roster reconciliation remain open. The explicitly configured Tiron
+  candidate and anonymous speaker-result publication now execute, but that is
+  not complete qualification or a default advertised route. Phase 9
+  knowledge/agent behavior remains deferred.
 - Private security scans, scan identifiers, host paths, and detailed private
   findings are not repository or PR material.
 
@@ -680,19 +701,19 @@ adversarial checkpoint are merged and closed. The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Close the focused local-first discovery branch: keep local setup independent
-   of server/auth failure, repeatedly probe only the fixed loopback health
-   origin, preserve explicit origin consent, and keep enterprise sign-in
-   optional.
-2. Run only the applicable desktop/client branch gate once, review the exact
-   diff, open a focused PR, and require green checks on its checked head. This
-   client-only closure does not rerun private provider/model matrices.
-3. Activate the queued
-   [joint speaker-attributed meeting transcription plan](plans/queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
-   as Phase 8 on a separate branch, beginning with its frozen corpus and
-   provenance gate.
-4. Continue Phases 9–10 in documented order and keep the full security scan at
+1. Complete the remaining first-slice Phase 8 evidence in the
+   [joint speaker-attributed meeting transcription plan](plans/active/2026-07-22-joint-speaker-attributed-meeting-transcription.md):
+   resolve training/redistribution boundaries and seal the private holdout. The
+   runtime/scorer/public-comparator contracts and initial thresholds are already
+   frozen; focused offline worker smokes are feasibility evidence only.
+2. Complete the remaining result-contract pressure and focused review of the
+   now-executing authenticated candidate path; keep model output behind
+   Yap-owned job, ownership, source-time, cancellation, and revision authority.
+3. Freeze and run the complete Phase 8 local/native/server/GB10 matrix once,
+   perform the required multi-lens review, and merge only a green checked head.
+4. Run the separate post-Phase-8 antagonist/refactor checkpoint before Phase 9.
+5. Continue Phases 9–10 in documented order and keep the full security scan at
    the Phase 10 enterprise gate.
-5. Leave Entra registration, production SSO/provider approval, Conditional
+6. Leave Entra registration, production SSO/provider approval, Conditional
    Access, DNS, certificates, ZPA, firewall, and deployment policy as explicit
    IT/security handoffs rather than developer-invented infrastructure.

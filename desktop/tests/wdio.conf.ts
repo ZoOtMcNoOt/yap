@@ -52,6 +52,7 @@ export const config = {
   outputDir: path.join(testsRoot, "results", "wdio"),
   reporters: ["spec"],
   runner: "local",
+  exclude: [path.join(testsRoot, "wdio", "private-server-asr.gate.spec.js")],
   services: [
     [
       "@wdio/tauri-service",

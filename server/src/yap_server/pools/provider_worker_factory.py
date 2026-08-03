@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import subprocess
 from typing import Mapping
 
 from yap_server.config.runtime_environment import (
@@ -16,13 +17,29 @@ from yap_server.config.runtime_environment import (
     NEMOTRON_NEMO_API_KEY_ENV,
     NEMOTRON_NEMO_ENDPOINT_ENV,
     NEMOTRON_WORKER_IMAGE_ENV,
+    TIRON_PREPARATION_RECEIPT_ENV,
+    TIRON_PREPARATION_RECEIPT_SHA256_ENV,
+    TIRON_WORKER_IMAGE_ENV,
 )
+from yap_server.meeting_transcription.batch_worker import (
+    MeetingTranscriptionBatchWorker,
+)
+from yap_server.meeting_transcription.container_worker import (
+    ContainerMeetingTranscriptionWorker,
+)
+from yap_server.meeting_transcription.result_revisions import MeetingResultAuthority
 from yap_server.pools.batch_asr import (
     ContainerBatchAsrWorker,
     inspect_worker_image,
     reconcile_owned_containers,
 )
 from yap_server.pools.batch_contract import BatchWorker
+from yap_server.pools.checked_runtime_image import (
+    CheckedRuntimeImageError,
+    assert_clean_checked_head,
+    runtime_image_contract,
+    verify_prepared_checked_image,
+)
 from yap_server.pools.cohere_vllm_worker import CohereVllmBatchWorker
 from yap_server.pools.model_lock import (
     ModelPoolLock,
@@ -34,6 +51,7 @@ from yap_server.pools.vllm_transcription_client import VllmTranscriptionClient
 
 
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
+_SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 _COHERE_POOL = "cohere-batch"
 _NEMOTRON_POOL = "nemotron-batch"
 _VLLM_RUNTIME = "vllm"
@@ -41,6 +59,7 @@ _TRANSFORMERS_REFERENCE_RUNTIME = "transformers-reference"
 _NEMO_REFERENCE_RUNTIME = "nemo-reference"
 _NEMO_RESIDENT_RUNTIME = "nemo-resident"
 _RETIRED_GLOBAL_RUNTIME_ENV = "YAP_ASR_ENGINE"
+_IMAGE_RUNTIME_LABEL = "com.mcnatg1.yap.runtime"
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,6 +148,122 @@ def build_asr_worker_plan(
     )
 
 
+def build_meeting_transcription_worker_plan(
+    source: Mapping[str, str],
+    *,
+    model_dir: Path,
+    speaker_encoder_dir: Path,
+    runtime_lock_path: Path,
+    authority: MeetingResultAuthority,
+    repository_root: Path,
+    max_inflight_pcm_bytes: int,
+    run_as_uid: int,
+    run_as_gid: int,
+    storage_namespace: str,
+    timeout_seconds: float,
+) -> AsrWorkerPlan:
+    """Build the bounded whole-meeting worker from its checked image."""
+
+    docker_binary = source.get(DOCKER_BINARY_ENV, "docker")
+    worker_image = resolve_prepared_meeting_transcription_image(
+        source,
+        docker_binary=docker_binary,
+        repository_root=repository_root,
+        expected_base_digest=authority.provenance.base_runtime.digest,
+    )
+    checked_head = source[CHECKED_HEAD_ENV].strip()
+    reconcile_owned_containers(
+        docker_binary,
+        storage_namespace=storage_namespace,
+    )
+    container_worker = ContainerMeetingTranscriptionWorker(
+        image=worker_image,
+        model_dir=model_dir,
+        speaker_encoder_dir=speaker_encoder_dir,
+        runtime_lock_path=runtime_lock_path,
+        run_as_uid=run_as_uid,
+        run_as_gid=run_as_gid,
+        checked_head=checked_head,
+        storage_namespace=storage_namespace,
+        docker_binary=docker_binary,
+        timeout_seconds=timeout_seconds,
+    )
+    worker = MeetingTranscriptionBatchWorker(
+        worker=container_worker,
+        authority=authority,
+    )
+    return AsrWorkerPlan(
+        worker=worker,
+        max_workers=1,
+        max_queued=2,
+        max_inflight_pcm_bytes=max_inflight_pcm_bytes,
+        startup_cleanup_verified=True,
+    )
+
+
+def resolve_prepared_meeting_transcription_image(
+    source: Mapping[str, str],
+    *,
+    docker_binary: str,
+    repository_root: Path,
+    expected_base_digest: str,
+) -> str:
+    """Resolve the exact receipt-bound Tiron image prepared for this Git head."""
+
+    image = source.get(TIRON_WORKER_IMAGE_ENV, "").strip()
+    checked_head = source.get(CHECKED_HEAD_ENV, "").strip()
+    receipt = source.get(TIRON_PREPARATION_RECEIPT_ENV, "").strip()
+    receipt_sha256 = source.get(
+        TIRON_PREPARATION_RECEIPT_SHA256_ENV,
+        "",
+    ).strip()
+    if not image or _GIT_SHA.fullmatch(checked_head) is None:
+        raise ValueError(
+            f"{TIRON_WORKER_IMAGE_ENV} and a full {CHECKED_HEAD_ENV} are required"
+        )
+    if not receipt or _SHA256_HEX.fullmatch(receipt_sha256) is None:
+        raise ValueError("Tiron preparation receipt and SHA-256 are required")
+
+    def run_command(
+        command: list[str],
+        **kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        actual = list(command)
+        if actual and actual[0] == "docker":
+            actual[0] = docker_binary
+        return subprocess.run(actual, **kwargs)  # type: ignore[arg-type]
+
+    try:
+        contract = runtime_image_contract(
+            repository_root,
+            "meeting-transcription",
+            checked_head,
+        )
+        if contract.base_digest != expected_base_digest:
+            raise CheckedRuntimeImageError(
+                "Tiron image base platform digest differs from its runtime lock"
+            )
+        assert_clean_checked_head(
+            repository_root,
+            checked_head,
+            runner=run_command,
+        )
+        inspected = verify_prepared_checked_image(
+            contract,
+            receipt_path=Path(receipt),
+            receipt_sha256=receipt_sha256,
+            runner=run_command,
+        )
+    except (CheckedRuntimeImageError, OSError) as error:
+        raise ValueError(str(error)) from None
+    image_id = inspected["imageId"]
+    if image != image_id:
+        raise ValueError(
+            "Tiron worker image must be the receipt-bound immutable image ID"
+        )
+    return image_id
+
+
 def _build_cohere_vllm_plan(
     source: Mapping[str, str],
     *,
@@ -182,14 +317,10 @@ def _build_nemotron_nemo_plan(
 ) -> AsrWorkerPlan:
     endpoint = source.get(NEMOTRON_NEMO_ENDPOINT_ENV, "").strip()
     if not endpoint:
-        raise ValueError(
-            f"{NEMOTRON_NEMO_ENDPOINT_ENV} is required for resident NeMo"
-        )
+        raise ValueError(f"{NEMOTRON_NEMO_ENDPOINT_ENV} is required for resident NeMo")
     api_key = source.get(NEMOTRON_NEMO_API_KEY_ENV, "")
     if not api_key:
-        raise ValueError(
-            f"{NEMOTRON_NEMO_API_KEY_ENV} is required for resident NeMo"
-        )
+        raise ValueError(f"{NEMOTRON_NEMO_API_KEY_ENV} is required for resident NeMo")
     verify_model_artifacts(lock, model_dir)
     client = NemotronNemoClient(
         endpoint=endpoint,
@@ -261,13 +392,12 @@ def resolve_checked_worker_image(
     *,
     docker_binary: str,
     image_env: str = ASR_WORKER_IMAGE_ENV,
+    expected_runtime_label: str | None = None,
 ) -> str:
     image = environ.get(image_env, "").strip()
     checked_head = environ.get(CHECKED_HEAD_ENV, "").strip()
     if not image or _GIT_SHA.fullmatch(checked_head) is None:
-        raise ValueError(
-            f"{image_env} and a full {CHECKED_HEAD_ENV} are required"
-        )
+        raise ValueError(f"{image_env} and a full {CHECKED_HEAD_ENV} are required")
     try:
         inspected = inspect_worker_image(
             image,
@@ -278,7 +408,16 @@ def resolve_checked_worker_image(
         raise ValueError(str(error)) from None
     image_id = inspected.get("id")
     if not isinstance(image_id, str):
-        raise ValueError("checked-head worker image inspection omitted its immutable ID")
+        raise ValueError(
+            "checked-head worker image inspection omitted its immutable ID"
+        )
+    if expected_runtime_label is not None:
+        labels = inspected.get("labels")
+        if (
+            not isinstance(labels, dict)
+            or labels.get(_IMAGE_RUNTIME_LABEL) != expected_runtime_label
+        ):
+            raise ValueError("checked-head worker image has the wrong runtime label")
     return image_id
 
 

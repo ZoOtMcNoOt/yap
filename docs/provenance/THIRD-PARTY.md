@@ -26,25 +26,27 @@ reviewed behavior donor. It must never be conflated with the MIT
 the 2026-07-12 audit did not authorize or incorporate donor code. See the
 [Freeflow/Meetily reuse audit](../research/2026-07-12-freeflow-meetily-reuse-audit.md).
 
-## Queued Phase 8 source
+## Active Phase 8 meeting runtime
 
-ADR 0027 selects `Trelis/tiron` as a future server development baseline; no
-Tiron code, model, or dependency is incorporated or shipped today. The source
-inspection records model revision
-`aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc`, the 3,087,229,512-byte weight
-artifact SHA-256
-`921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e`, and
-reference-harness revision `5b3766ac64ff3a8d98443e0a850d1ce569952520`.
-Both public repositories declare Apache-2.0 metadata.
+ADR 0027 selects `Trelis/tiron` as the server development baseline. Phase 8
+locks model revision `90bc0a4d198cd5cf6679b0e478375ba3a0040575`,
+the 3,087,229,512-byte weight SHA-256
+`2e9f644c5eb633d3c387975cf38677d3ffe1a7b98830a735867865ec1bd519b5`,
+upstream whole-meeting runtime revision
+`d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c`, and ECAPA revision
+`0f99f2d0ebe89ac095bcc5903c4dd8f72b367286`. The pre-execution July 21
+model/weight/harness identities remain recorded in the machine lock only as an
+explicitly superseded set and are not mixed with this runtime.
 
-That metadata is an intake fact, not a complete shipping review. Before Phase
-8 execution, Yap must pin and review the full model/adaptation lineage, ECAPA
-artifact, Torch, Transformers, SpeechBrain, audio dependencies, transitive
-native libraries, notices, and redistribution/deployment terms. The reference
-harness's unpinned dependencies and implicit model fetches are not accepted
-runtime behavior. Any selectively adapted source must be added to the
-machine-readable provenance manifest with exact upstream/local hashes and
-license text before merge.
+The upstream runtime and model repositories declare Apache-2.0, and the public
+comparator declares CC-BY-4.0. Exact source, package, image, license-declaration,
+and compatibility-patch identities are recorded in
+`server/meeting-transcription-runtime.lock.json` and the runtime notices. The
+worker forbids downloads and applies one measured, hash-bound patch so
+SpeechBrain uses the verified local ECAPA directory rather than repeating its
+Hub identifier. Complete model training/adaptation lineage and redistribution
+approval remain open promotion requirements; technical access does not invent
+that approval.
 
 ## Dependency and runtime provenance
 

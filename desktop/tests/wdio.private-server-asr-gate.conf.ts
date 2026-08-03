@@ -185,6 +185,7 @@ process.env.YAP_PRIVATE_SERVER_ASR_GATE_TIMEOUT_MS = String(timeoutMs);
 export const config = {
   ...baseConfig,
   bail: 1,
+  exclude: [],
   mochaOpts: {
     ...baseConfig.mochaOpts,
     forbidOnly: true,

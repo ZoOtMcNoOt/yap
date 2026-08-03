@@ -98,6 +98,16 @@ development baseline whose production promotion is evidence-gated. Nothing
 found today weakens the ADR; several of its pins are now independently
 verified; the risk register below is what Phase 8 must burn down.**
 
+**Phase 8 execution update:** the July 21 intake identities below were
+superseded before execution by model revision
+`90bc0a4d198cd5cf6679b0e478375ba3a0040575`, weight SHA-256
+`2e9f644c5eb633d3c387975cf38677d3ffe1a7b98830a735867865ec1bd519b5`,
+and runtime revision `d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c`.
+The complete runtime/ECAPA/dependency lock and acceptance contract now execute.
+A focused offline GB10 image/worker smoke has passed; quality, concurrency,
+long-session, and promotion evidence remain open. The table below is preserved
+as the original intake snapshot, not current runtime authority.
+
 Verified today against upstream (none of this previously had independent
 confirmation):
 
@@ -141,5 +151,5 @@ Risk register, ranked by how likely each is to bite:
    bundleable with notices.
 2. Installer bundling implementation (all components now clear), plus the
    ECAPA per-locale comparison before the LID route flips.
-3. Phase 8 step 1 — freeze the messy-meeting manifest — then the Tiron
-   runtime lock, per ADR 0027's own sequence.
+3. Complete the sealed private messy-meeting holdout, then run the locked Tiron
+   runtime through the remaining Phase 8 integration and evidence sequence.

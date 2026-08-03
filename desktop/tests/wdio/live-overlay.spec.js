@@ -89,21 +89,16 @@ describe("Yap live overlay window", () => {
         visible: await core.invoke("plugin:window|is_visible", { label }),
       };
     });
-    const logicalInner = {
-      height: overlay.inner.height / scaleFactor,
-      width: overlay.inner.width / scaleFactor,
-    };
-    const logicalOuter = {
-      height: overlay.outer.height / scaleFactor,
-      width: overlay.outer.width / scaleFactor,
-    };
     expect(overlay.visible).toBe(true);
     expect(overlay.focused).toBe(false);
     expect(overlay.closable).toBe(false);
-    expect(logicalInner.width).toBeCloseTo(92, 1);
-    expect(logicalInner.height).toBeCloseTo(38, 1);
-    expect(logicalOuter.width).toBeCloseTo(92, 1);
-    expect(logicalOuter.height).toBeCloseTo(38, 1);
+    // Windows rounds logical dimensions to whole physical pixels. Compare the
+    // exact rounded physical size so fractional DPI scales (for example 125%)
+    // do not turn a correct 38px logical height into a false 38.4px failure.
+    expect(overlay.inner.width).toBe(Math.round(92 * scaleFactor));
+    expect(overlay.inner.height).toBe(Math.round(38 * scaleFactor));
+    expect(overlay.outer.width).toBe(Math.round(92 * scaleFactor));
+    expect(overlay.outer.height).toBe(Math.round(38 * scaleFactor));
     expect(listRecordingArtifacts(recordingRoot)).toEqual([]);
   });
 

@@ -1,0 +1,4 @@
+[env]
+# Keep the native test harness responsive on high-core developer machines.
+# This affects Rust tests only; app and inference thread budgets remain unchanged.
+RUST_TEST_THREADS = { value = "4", force = false }

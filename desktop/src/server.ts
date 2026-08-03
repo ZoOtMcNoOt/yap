@@ -47,7 +47,7 @@ export type AsrCapability = {
   languageSuggestion: boolean;
   segmentLanguageTags: boolean;
   wordAlignment: boolean;
-  promotionEvidenceRevision: string;
+  promotionEvidenceRevision: string | null;
 };
 
 export type AsrProviderCapabilities = {

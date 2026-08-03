@@ -295,7 +295,8 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
     ledger
         .begin_remote_result_saving("job-completed-catalog", 1_720_000_000_500)
         .unwrap();
-    let result = crate::server_connector::batch::TranscriptResultRevision {
+    let runtime_lock_sha256 = "d".repeat(64);
+    let mut result = crate::server_connector::batch::TranscriptResultRevision {
         session_id: request.metadata.session_id.to_string(),
         revision: 1,
         authority: "server_authoritative".into(),
@@ -308,24 +309,89 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
             confidence: Some(0.98),
         }),
         transcript: "Catalog result.".into(),
+        speaker_result_sha256: None,
         language_segments: None,
         language_span_evidence: None,
-        alignment: None,
+        alignment: Some(
+            serde_json::from_value(serde_json::json!({
+                "status": "unavailable",
+                "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
+                "componentRevision": "joint-segment-timing-v1"
+            }))
+            .unwrap(),
+        ),
         aligned_words: Vec::new(),
         model_provenance: vec![crate::server_connector::batch::ModelRevision {
-            model_id: "CohereLabs/cohere-transcribe-03-2026".into(),
-            revision: "b1eacc2686a3d08ceaae5f24a88b1d519620bc09".into(),
-            calibration_revision: "asr-not-applicable".into(),
+            model_id: "Trelis/tiron".into(),
+            revision: "90bc0a4d198cd5cf6679b0e478375ba3a0040575".into(),
+            calibration_revision: runtime_lock_sha256.clone(),
         }],
     };
-    let output =
-        remote::publish_remote_result("job-completed-catalog", &remote_jobs, &result).unwrap();
+    let speaker_result: crate::server_connector::batch::SpeakerResultRevision =
+        serde_json::from_value(serde_json::json!({
+            "sessionId": request.metadata.session_id.as_str(),
+            "revision": 1,
+            "authority": "server_authoritative",
+            "createdAtUtc": "2026-07-14T21:00:02Z",
+            "captureManifestSha256": request.capture_manifest.sha256,
+            "previousResultSha256": null,
+            "status": "complete",
+            "language": {"languageBcp47": "en-US", "confidence": 0.98},
+            "runtimeLockSha256": runtime_lock_sha256,
+            "speakerTurns": [{
+                "turnId": "turn-000001",
+                "startMs": 0,
+                "endMs": 10,
+                "text": "Catalog result.",
+                "attribution": {
+                    "kind": "session_speaker",
+                    "sessionSpeakerId": "speaker-1"
+                },
+                "confidence": null,
+                "supportingTrackIds": [request.tracks[0].track_id],
+                "overlapGroupId": null
+            }],
+            "speakerCapacityDegradation": null,
+            "alignment": {
+                "status": "unavailable",
+                "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
+                "componentRevision": "joint-segment-timing-v1"
+            },
+            "alignedWords": [],
+            "modelProvenance": [
+                {
+                    "modelId": "Trelis/tiron",
+                    "revision": "90bc0a4d198cd5cf6679b0e478375ba3a0040575",
+                    "calibrationRevision": runtime_lock_sha256
+                },
+                {
+                    "modelId": "TrelisResearch/tiron",
+                    "revision": "d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c",
+                    "calibrationRevision": runtime_lock_sha256
+                },
+                {
+                    "modelId": "speechbrain/spkrec-ecapa-voxceleb",
+                    "revision": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286",
+                    "calibrationRevision": runtime_lock_sha256
+                }
+            ]
+        }))
+        .unwrap();
+    result.speaker_result_sha256 = speaker_result.content_sha256();
+    let output = remote::publish_remote_result(
+        "job-completed-catalog",
+        &remote_jobs,
+        &result,
+        Some(&speaker_result),
+    )
+    .unwrap();
     ledger
-        .complete_remote_result(
+        .finalize_remote_result(
             "job-completed-catalog",
             &output,
             1_722_592_000_000,
             1_720_000_000_600,
+            RecordingJobStatus::Complete,
         )
         .unwrap();
     let jobs = RecordingJobs::from_ledger(ledger, &dir);
@@ -341,12 +407,84 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         super::super::TranscriptResultSummary {
             language_bcp47: "en-US".into(),
             language_status: super::super::TranscriptLanguageStatus::Fixed,
-            timing_status: super::super::TranscriptTimingStatus::LegacyUnknown,
+            timing_status: super::super::TranscriptTimingStatus::Unavailable,
             active_language_correction_count: None,
             language_review_required_count: None,
         }
     );
     assert!(catalog.maintenance_warnings.is_empty());
+    let speaker_turns = catalog.sessions[0].speaker_turns.as_ref().unwrap();
+    assert_eq!(speaker_turns.len(), 1);
+    assert_eq!(speaker_turns[0].speaker_id, "speaker-1");
+    assert_eq!(speaker_turns[0].text, "Catalog result.");
+
+    let status_corruption = rusqlite::Connection::open(&database).unwrap();
+    status_corruption
+        .execute(
+            "UPDATE recording_jobs SET status = 'partial' WHERE job_id = 'job-completed-catalog'",
+            [],
+        )
+        .unwrap();
+    drop(status_corruption);
+    let mismatched_status = jobs.completed_remote_transcripts().unwrap();
+    assert!(mismatched_status.sessions.is_empty());
+    assert_eq!(mismatched_status.maintenance_warnings.len(), 1);
+    let restored_status = rusqlite::Connection::open(&database).unwrap();
+    restored_status
+        .execute(
+            "UPDATE recording_jobs SET status = 'complete' WHERE job_id = 'job-completed-catalog'",
+            [],
+        )
+        .unwrap();
+    drop(restored_status);
+
+    let result_directory = output.parent().unwrap();
+    let canonical_speaker_bytes = serde_json::to_vec(&speaker_result).unwrap();
+    let mut changed_speaker_bytes = canonical_speaker_bytes.clone();
+    changed_speaker_bytes.push(b'\n');
+    fs::write(
+        result_directory.join("speaker-result.json"),
+        &changed_speaker_bytes,
+    )
+    .unwrap();
+    assert!(remote::read_published_remote_transcript(&output, &remote_jobs).is_err());
+    fs::write(
+        result_directory.join("speaker-result.json"),
+        &canonical_speaker_bytes,
+    )
+    .unwrap();
+
+    let mut forged_speaker_value = serde_json::to_value(&speaker_result).unwrap();
+    forged_speaker_value["speakerTurns"][0]["supportingTrackIds"] =
+        serde_json::json!(["other-track"]);
+    let forged_speaker: crate::server_connector::batch::SpeakerResultRevision =
+        serde_json::from_value(forged_speaker_value).unwrap();
+    let mut forged_result = result.clone();
+    forged_result.speaker_result_sha256 = forged_speaker.content_sha256();
+    fs::write(
+        result_directory.join("result.json"),
+        serde_json::to_vec(&forged_result).unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        result_directory.join("speaker-result.json"),
+        serde_json::to_vec(&forged_speaker).unwrap(),
+    )
+    .unwrap();
+    let request_mismatch = jobs.completed_remote_transcripts().unwrap();
+    assert!(request_mismatch.sessions.is_empty());
+    assert_eq!(request_mismatch.maintenance_warnings.len(), 1);
+
+    fs::write(
+        result_directory.join("result.json"),
+        serde_json::to_vec(&result).unwrap(),
+    )
+    .unwrap();
+    fs::write(
+        result_directory.join("speaker-result.json"),
+        serde_json::to_vec(&speaker_result).unwrap(),
+    )
+    .unwrap();
 
     fs::write(&output, "tampered\n").unwrap();
     let rejected = jobs.completed_remote_transcripts().unwrap();

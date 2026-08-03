@@ -17,6 +17,7 @@ HTTP_OPERATIONS = {
     ("/v1/jobs", "post"): "createJob",
     ("/v1/jobs/{jobId}", "get"): "getJob",
     ("/v1/jobs/{jobId}/result", "get"): "getJobResult",
+    ("/v1/jobs/{jobId}/speaker-result", "get"): "getJobSpeakerResult",
     ("/v1/jobs/{jobId}", "delete"): "cancelJob",
     (
         "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}",
@@ -58,6 +59,10 @@ OPERATION_RUNTIME = {
         "Implemented in the loopback batch runtime",
         "Transcript result retrieval",
     ),
+    ("/v1/jobs/{jobId}/speaker-result", "get"): (
+        "Implemented for explicitly configured joint meeting candidate routes",
+        "Speaker result retrieval",
+    ),
     (
         "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}",
         "put",
@@ -90,6 +95,7 @@ RUNTIME_PATH_EXAMPLES = {
     "/v1/jobs": "/v1/jobs",
     "/v1/jobs/{jobId}": "/v1/jobs/job-01",
     "/v1/jobs/{jobId}/result": "/v1/jobs/job-01/result",
+    "/v1/jobs/{jobId}/speaker-result": "/v1/jobs/job-01/speaker-result",
     CHUNK_PATH: "/v1/jobs/job-01/chunks/mic/0-15",
     "/v1/jobs/{jobId}/commit": "/v1/jobs/job-01/commit",
     "/v1/jobs/{jobId}/stages": "/v1/jobs/job-01/stages",
@@ -179,6 +185,13 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "method": "get",
         "request": None,
         "success": {"200": "#/components/schemas/TranscriptResultRevision"},
+        "errors": ["404", "409", "501"],
+    },
+    {
+        "path": "/v1/jobs/{jobId}/speaker-result",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/SpeakerResultRevision"},
         "errors": ["404", "409", "501"],
     },
     {

@@ -28,6 +28,7 @@ class CheckedRuntimeImageTests(unittest.TestCase):
             "cohere-vllm",
             "nemotron-nemo",
             "language-detection",
+            "meeting-transcription",
             "reference-batch-asr",
         ):
             contract = runtime_image_contract(REPOSITORY_ROOT, runtime, CHECKED_HEAD)

@@ -64,6 +64,7 @@ export function TranscriptPanel({
   const isDone = isRecordingFinished(item?.status);
   const isRunning = item ? isRecordingActive(item.status) : false;
   const isError = item?.status === "failed";
+  const speakerTurns = item?.speakerTurns;
   const transcriptText = projectTranscriptText(text);
 
   useEffect(() => {
@@ -164,9 +165,28 @@ export function TranscriptPanel({
             ) : null}
             {isDone ? (
               transcriptText.state === "ready" ? (
-                <pre className="whitespace-pre-wrap break-words text-[15px] leading-7 text-foreground">
-                  {transcriptText.text}
-                </pre>
+                speakerTurns?.length ? (
+                  <div className="space-y-5" data-testid="speaker-attributed-transcript">
+                    {speakerTurns.map((turn) => (
+                      <section key={`${turn.startMs}-${turn.endMs}-${turn.speakerId}`}>
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {turn.speakerId.replace("speaker-", "Speaker ")}
+                          {" · "}
+                          {formatElapsed(Math.floor(turn.startMs / 1000))}
+                          {"–"}
+                          {formatElapsed(Math.ceil(turn.endMs / 1000))}
+                        </p>
+                        <p className="whitespace-pre-wrap break-words text-[15px] leading-7 text-foreground">
+                          {turn.text}
+                        </p>
+                      </section>
+                    ))}
+                  </div>
+                ) : (
+                  <pre className="whitespace-pre-wrap break-words text-[15px] leading-7 text-foreground">
+                    {transcriptText.text}
+                  </pre>
+                )
               ) : transcriptText.state === "empty" ? (
                 <p className="text-[15px] leading-7 text-muted-foreground">{transcriptText.text}</p>
               ) : (

@@ -147,6 +147,8 @@ class BatchAsrJob:
     language: str
     input_sha256: str
     route: AsrRouteDecision
+    capture_manifest_sha256: str | None = None
+    source_frame_count: int | None = None
     punctuation: bool = True
     utterance_plan_path: Path | None = None
     utterance_plan_sha256: str | None = None
@@ -157,6 +159,19 @@ class BatchAsrJob:
         canonical_bcp47(self.language, "language")
         if not _SHA256.fullmatch(self.input_sha256):
             raise ValueError("input_sha256 must be a lowercase SHA-256 digest")
+        if (self.capture_manifest_sha256 is None) != (
+            self.source_frame_count is None
+        ):
+            raise ValueError(
+                "capture manifest identity and source frame count must be supplied together"
+            )
+        if self.capture_manifest_sha256 is not None and (
+            _SHA256.fullmatch(self.capture_manifest_sha256) is None
+            or not isinstance(self.source_frame_count, int)
+            or isinstance(self.source_frame_count, bool)
+            or self.source_frame_count < 1
+        ):
+            raise ValueError("batch source identity is invalid")
         if (self.utterance_plan_path is None) != (self.utterance_plan_sha256 is None):
             raise ValueError("utterance plan path and identity must be supplied together")
         if (

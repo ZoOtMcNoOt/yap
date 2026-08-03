@@ -2,6 +2,10 @@ import {
   isTranscriptResultSummary,
   type TranscriptResultSummary,
 } from "@/lib/transcript-result-summary";
+import {
+  isSpeakerTranscriptTurn,
+  type SpeakerTranscriptTurn,
+} from "@/lib/speaker-transcript";
 
 export type TranscriptHistoryEntry = {
   captureCommitPath?: string;
@@ -14,6 +18,7 @@ export type TranscriptHistoryEntry = {
   warning?: string;
   recoveryState?: "recoverable" | "recovered";
   resultSummary?: TranscriptResultSummary;
+  speakerTurns?: SpeakerTranscriptTurn[];
 };
 
 export const maxTranscriptHistoryEntries = 500;
@@ -31,7 +36,10 @@ function isHistoryEntry(value: unknown): value is TranscriptHistoryEntry {
     (entry.warning === undefined || typeof entry.warning === "string") &&
     (entry.captureCommitPath === undefined || typeof entry.captureCommitPath === "string") &&
     (entry.recoveryState === undefined || entry.recoveryState === "recoverable" || entry.recoveryState === "recovered") &&
-    (entry.resultSummary === undefined || isTranscriptResultSummary(entry.resultSummary))
+    (entry.resultSummary === undefined || isTranscriptResultSummary(entry.resultSummary)) &&
+    (entry.speakerTurns === undefined || (
+      Array.isArray(entry.speakerTurns) && entry.speakerTurns.every(isSpeakerTranscriptTurn)
+    ))
   );
 }
 

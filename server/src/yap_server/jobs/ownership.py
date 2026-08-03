@@ -100,6 +100,9 @@ class PrincipalRecordingJobs:
     def get_result(self, job_id: str) -> dict[str, object]:
         return self.service.get_result(job_id, owner=self.owner)
 
+    def get_speaker_result(self, job_id: str) -> dict[str, object]:
+        return self.service.get_speaker_result(job_id, owner=self.owner)
+
 
 def principal_key(
     principal: AuthenticatedPrincipal | PrincipalKey,

@@ -633,6 +633,7 @@ mod tests {
                 confidence: None,
             }),
             transcript: "hello bonjour".into(),
+            speaker_result_sha256: None,
             language_segments: Some(vec![
                 LanguageSegment {
                     index: 0,
@@ -682,7 +683,8 @@ mod tests {
                 calibration_revision: "asr-not-applicable".into(),
             }],
         };
-        let transcript_path = super::super::publish_remote_result(job_id, &spool, &result).unwrap();
+        let transcript_path =
+            super::super::publish_remote_result(job_id, &spool, &result, None).unwrap();
         (spool, transcript_path)
     }
 

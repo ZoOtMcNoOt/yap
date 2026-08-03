@@ -5,18 +5,24 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "$script_dir/../.." && pwd)"
 
 : "${YAP_CHECKED_HEAD:?Set YAP_CHECKED_HEAD to the exact 40-character candidate SHA}"
-: "${YAP_ASR_MODEL_DIR:?Set YAP_ASR_MODEL_DIR to the verified private model directory}"
 : "${YAP_BATCH_JOB_STORAGE_DIR:?Set YAP_BATCH_JOB_STORAGE_DIR to a private job directory}"
-: "${YAP_COHERE_VLLM_API_KEY:?Set the private vLLM API key without writing it to the repository}"
-: "${YAP_COHERE_VLLM_ENDPOINT:=http://127.0.0.1:18000}"
-: "${YAP_ASR_MODEL_LOCK:=$repo_root/server/cohere-vllm-serving.lock.json}"
-: "${YAP_ASR_CAPABILITY_LOCK:=$repo_root/server/asr-capabilities.lock.json}"
+: "${YAP_ASR_MODEL_DIR:=}"
+: "${YAP_ASR_MODEL_LOCK:=}"
+: "${YAP_ASR_CAPABILITY_LOCK:=}"
+: "${YAP_COHERE_VLLM_ENDPOINT:=}"
+: "${YAP_COHERE_VLLM_API_KEY:=}"
 : "${YAP_ASR_WORKER_TIMEOUT_SECONDS:=1800}"
 : "${YAP_NEMOTRON_MODEL_DIR:=}"
 : "${YAP_NEMOTRON_MODEL_LOCK:=}"
-: "${YAP_NEMOTRON_ASR_RUNTIME:=nemo-resident}"
-: "${YAP_NEMOTRON_NEMO_ENDPOINT:=http://127.0.0.1:18001}"
+: "${YAP_NEMOTRON_ASR_RUNTIME:=}"
+: "${YAP_NEMOTRON_NEMO_ENDPOINT:=}"
 : "${YAP_NEMOTRON_NEMO_API_KEY:=}"
+: "${YAP_TIRON_MODEL_DIR:=}"
+: "${YAP_TIRON_ECAPA_DIR:=}"
+: "${YAP_TIRON_RUNTIME_LOCK:=}"
+: "${YAP_TIRON_WORKER_IMAGE:=}"
+: "${YAP_TIRON_PREPARATION_RECEIPT:=}"
+: "${YAP_TIRON_PREPARATION_RECEIPT_SHA256:=}"
 : "${YAP_LANGUAGE_DETECTION_ENABLED:=0}"
 : "${YAP_LANGUAGE_DETECTION_COMPONENT_LOCK:=$repo_root/server/lid-component.lock.json}"
 : "${YAP_LANGUAGE_DETECTION_MODEL_DIR:=}"
@@ -26,6 +32,40 @@ repo_root="$(cd -- "$script_dir/../.." && pwd)"
 : "${YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT:=}"
 : "${YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256:=}"
 : "${YAP_UV_BINARY:=uv}"
+
+meeting_runtime=0
+if [ -n "$YAP_TIRON_MODEL_DIR" ] \
+  || [ -n "$YAP_TIRON_ECAPA_DIR" ] \
+  || [ -n "$YAP_TIRON_RUNTIME_LOCK" ] \
+  || [ -n "$YAP_TIRON_WORKER_IMAGE" ] \
+  || [ -n "$YAP_TIRON_PREPARATION_RECEIPT" ] \
+  || [ -n "$YAP_TIRON_PREPARATION_RECEIPT_SHA256" ]; then
+  meeting_runtime=1
+  : "${YAP_TIRON_MODEL_DIR:?Set the verified private Tiron model directory}"
+  : "${YAP_TIRON_ECAPA_DIR:?Set the verified private ECAPA model directory}"
+  : "${YAP_TIRON_WORKER_IMAGE:?Set the checked Tiron runtime image}"
+  : "${YAP_TIRON_PREPARATION_RECEIPT:?Set the private Tiron preparation receipt}"
+  : "${YAP_TIRON_PREPARATION_RECEIPT_SHA256:?Set its frozen SHA-256}"
+  : "${YAP_TIRON_RUNTIME_LOCK:=$repo_root/server/meeting-transcription-runtime.lock.json}"
+  : "${YAP_ASR_CAPABILITY_LOCK:=$repo_root/server/tiron-candidate-asr-capabilities.lock.json}"
+  if [ -n "$YAP_ASR_MODEL_DIR" ] \
+    || [ -n "$YAP_ASR_MODEL_LOCK" ] \
+    || [ -n "$YAP_NEMOTRON_MODEL_DIR" ] \
+    || [ -n "$YAP_NEMOTRON_MODEL_LOCK" ]; then
+    echo "Tiron meeting transcription cannot be mixed with standard model pools" >&2
+    exit 2
+  fi
+  YAP_COHERE_ASR_RUNTIME=
+else
+  : "${YAP_ASR_MODEL_DIR:?Set YAP_ASR_MODEL_DIR to the verified private model directory}"
+  : "${YAP_COHERE_VLLM_API_KEY:?Set the private vLLM API key without writing it to the repository}"
+  : "${YAP_COHERE_VLLM_ENDPOINT:=http://127.0.0.1:18000}"
+  : "${YAP_ASR_MODEL_LOCK:=$repo_root/server/cohere-vllm-serving.lock.json}"
+  : "${YAP_ASR_CAPABILITY_LOCK:=$repo_root/server/asr-capabilities.lock.json}"
+  : "${YAP_NEMOTRON_ASR_RUNTIME:=nemo-resident}"
+  : "${YAP_NEMOTRON_NEMO_ENDPOINT:=http://127.0.0.1:18001}"
+  YAP_COHERE_ASR_RUNTIME=vllm
+fi
 
 if [[ ! "$YAP_CHECKED_HEAD" =~ ^[0-9a-f]{40}$ ]]; then
   echo "YAP_CHECKED_HEAD must be a full lowercase Git SHA" >&2
@@ -52,13 +92,32 @@ if [ -n "$worktree_status" ]; then
   exit 2
 fi
 
-if [ ! -d "$YAP_ASR_MODEL_DIR" ]; then
-  echo "YAP_ASR_MODEL_DIR must be an existing directory" >&2
-  exit 2
-fi
-if [ ! -f "$YAP_ASR_MODEL_LOCK" ]; then
-  echo "YAP_ASR_MODEL_LOCK must be an existing file" >&2
-  exit 2
+if [ "$meeting_runtime" = "1" ]; then
+  if [ ! -d "$YAP_TIRON_MODEL_DIR" ]; then
+    echo "YAP_TIRON_MODEL_DIR must be an existing directory" >&2
+    exit 2
+  fi
+  if [ ! -d "$YAP_TIRON_ECAPA_DIR" ]; then
+    echo "YAP_TIRON_ECAPA_DIR must be an existing directory" >&2
+    exit 2
+  fi
+  if [ ! -f "$YAP_TIRON_RUNTIME_LOCK" ]; then
+    echo "YAP_TIRON_RUNTIME_LOCK must be an existing file" >&2
+    exit 2
+  fi
+  if [ ! -f "$YAP_TIRON_PREPARATION_RECEIPT" ]; then
+    echo "YAP_TIRON_PREPARATION_RECEIPT must be an existing file" >&2
+    exit 2
+  fi
+else
+  if [ ! -d "$YAP_ASR_MODEL_DIR" ]; then
+    echo "YAP_ASR_MODEL_DIR must be an existing directory" >&2
+    exit 2
+  fi
+  if [ ! -f "$YAP_ASR_MODEL_LOCK" ]; then
+    echo "YAP_ASR_MODEL_LOCK must be an existing file" >&2
+    exit 2
+  fi
 fi
 if [ ! -f "$YAP_ASR_CAPABILITY_LOCK" ]; then
   echo "YAP_ASR_CAPABILITY_LOCK must be an existing file" >&2
@@ -170,7 +229,7 @@ exec env \
   YAP_SERVER_PORT=18765 \
   YAP_BATCH_ASR_ENABLED=1 \
   YAP_CHECKED_HEAD="$YAP_CHECKED_HEAD" \
-  YAP_COHERE_ASR_RUNTIME=vllm \
+  YAP_COHERE_ASR_RUNTIME="$YAP_COHERE_ASR_RUNTIME" \
   YAP_COHERE_VLLM_ENDPOINT="$YAP_COHERE_VLLM_ENDPOINT" \
   YAP_COHERE_VLLM_API_KEY="$YAP_COHERE_VLLM_API_KEY" \
   YAP_NEMOTRON_MODEL_DIR="$YAP_NEMOTRON_MODEL_DIR" \
@@ -178,6 +237,12 @@ exec env \
   YAP_NEMOTRON_ASR_RUNTIME="$YAP_NEMOTRON_ASR_RUNTIME" \
   YAP_NEMOTRON_NEMO_ENDPOINT="$YAP_NEMOTRON_NEMO_ENDPOINT" \
   YAP_NEMOTRON_NEMO_API_KEY="$YAP_NEMOTRON_NEMO_API_KEY" \
+  YAP_TIRON_MODEL_DIR="$YAP_TIRON_MODEL_DIR" \
+  YAP_TIRON_ECAPA_DIR="$YAP_TIRON_ECAPA_DIR" \
+  YAP_TIRON_RUNTIME_LOCK="$YAP_TIRON_RUNTIME_LOCK" \
+  YAP_TIRON_WORKER_IMAGE="$YAP_TIRON_WORKER_IMAGE" \
+  YAP_TIRON_PREPARATION_RECEIPT="$YAP_TIRON_PREPARATION_RECEIPT" \
+  YAP_TIRON_PREPARATION_RECEIPT_SHA256="$YAP_TIRON_PREPARATION_RECEIPT_SHA256" \
   YAP_ASR_MODEL_LOCK="$YAP_ASR_MODEL_LOCK" \
   YAP_ASR_CAPABILITY_LOCK="$YAP_ASR_CAPABILITY_LOCK" \
   YAP_ASR_MODEL_DIR="$YAP_ASR_MODEL_DIR" \

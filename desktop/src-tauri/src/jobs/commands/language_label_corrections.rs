@@ -72,6 +72,7 @@ mod tests {
                 confidence: None,
             }),
             transcript: "hello bonjour".into(),
+            speaker_result_sha256: None,
             language_segments: Some(vec![
                 LanguageSegment {
                     index: 0,
@@ -139,7 +140,7 @@ mod tests {
         let job_id = "job-correction-race";
         std::fs::create_dir_all(spool.join(job_id)).unwrap();
         let transcript_path =
-            remote::publish_remote_result(job_id, &spool, &dynamic_result()).unwrap();
+            remote::publish_remote_result(job_id, &spool, &dynamic_result(), None).unwrap();
         let transcript_path = transcript_path.display().to_string();
         let barrier = Arc::new(Barrier::new(3));
         let attempts = [(0, "de-DE"), (1, "fr-FR")]

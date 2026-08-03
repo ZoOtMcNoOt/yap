@@ -212,12 +212,13 @@ impl JobLedger {
         updated.try_into()
     }
 
-    pub fn complete_remote_result(
+    pub fn finalize_remote_result(
         &self,
         job_id: &str,
         output_path: &Path,
         result_expires_at_ms: u64,
         updated_at_ms: u64,
+        terminal_status: RecordingJobStatus,
     ) -> Result<RecordingJobRecord, JobLedgerError> {
         let output_path = path_text(output_path, "output_path")?;
         let result_expires_at_ms = sqlite_integer(result_expires_at_ms, "result_expires_at_ms")?;
@@ -227,12 +228,20 @@ impl JobLedger {
                 "remote result retention must end after completion",
             ));
         }
+        if !matches!(
+            terminal_status,
+            RecordingJobStatus::Complete | RecordingJobStatus::Partial
+        ) {
+            return Err(JobLedgerError::InvalidRecord(
+                "remote result terminal status must be complete or partial",
+            ));
+        }
         let mut connection = self.lock()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
         let current: RecordingJobRecord = query_job(&transaction, job_id)?
             .ok_or_else(|| JobLedgerError::NotFound(job_id.into()))?
             .try_into()?;
-        if current.status == RecordingJobStatus::Complete {
+        if current.status == terminal_status {
             if current.output_path.as_deref() == Some(Path::new(&output_path))
                 && current.expires_at_ms == Some(result_expires_at_ms as u64)
             {
@@ -245,7 +254,7 @@ impl JobLedger {
         if current.status != RecordingJobStatus::Saving {
             return Err(JobLedgerError::InvalidTransition {
                 from: current.status,
-                to: RecordingJobStatus::Complete,
+                to: terminal_status,
             });
         }
         let has_server_job: bool = transaction.query_row(
@@ -259,10 +268,10 @@ impl JobLedger {
             ));
         }
         transaction.execute(
-            "UPDATE recording_jobs SET status = 'complete', output_path = ?1, error_code = NULL, error_message = NULL, updated_at_ms = ?2, expires_at_ms = ?3 WHERE job_id = ?4 AND status = 'saving'",
-            params![output_path, updated_at_ms, result_expires_at_ms, job_id],
+            "UPDATE recording_jobs SET status = ?1, output_path = ?2, error_code = NULL, error_message = NULL, updated_at_ms = ?3, expires_at_ms = ?4 WHERE job_id = ?5 AND status = 'saving'",
+            params![terminal_status.as_db(), output_path, updated_at_ms, result_expires_at_ms, job_id],
         )?;
-        let updated = query_job(&transaction, job_id)?.expect("completed remote job exists");
+        let updated = query_job(&transaction, job_id)?.expect("terminal remote job exists");
         prune_terminal_history(&transaction, Some(job_id))?;
         transaction.commit()?;
         updated.try_into()

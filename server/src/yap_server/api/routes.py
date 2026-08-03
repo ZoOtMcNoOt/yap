@@ -8,6 +8,9 @@ LID_PREFLIGHT_CANCEL_PATH = re.compile(
 )
 JOB_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})$")
 RESULT_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/result$")
+SPEAKER_RESULT_PATH = re.compile(
+    rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/speaker-result$"
+)
 CHUNK_PATH = re.compile(
     rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/chunks/"
     rf"(?P<track_id>{_PATH_ID})/(?P<sequence_start>[0-9]+)-"
@@ -37,6 +40,8 @@ def allowed_methods(path: str) -> frozenset[str] | None:
     if JOB_PATH.fullmatch(path):
         return frozenset({"DELETE", "GET"})
     if RESULT_PATH.fullmatch(path):
+        return frozenset({"GET"})
+    if SPEAKER_RESULT_PATH.fullmatch(path):
         return frozenset({"GET"})
     if CHUNK_PATH.fullmatch(path):
         return frozenset({"PUT"})

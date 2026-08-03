@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "runtimeAuthority": "upstream-tiron-harness",
+  "model": {
+    "id": "Trelis/tiron",
+    "revision": "90bc0a4d198cd5cf6679b0e478375ba3a0040575",
+    "source": "https://huggingface.co/Trelis/tiron",
+    "license": {
+      "spdx": "Apache-2.0",
+      "declarationArtifact": "README.md",
+      "declarationSha256": "80a327fa681ea70489a61361525eb628a6c9b5c98be5692e4fde57ed871a1e48"
+    },
+    "artifacts": [
+      {"path": ".gitattributes", "size": 1575, "sha256": "e28a6f5fb9a08cd2c6ffd3001377011c4037f653bfbeaac5571c8d0cab45c124"},
+      {"path": "README.md", "size": 11099, "sha256": "80a327fa681ea70489a61361525eb628a6c9b5c98be5692e4fde57ed871a1e48"},
+      {"path": "added_tokens.json", "size": 34848, "sha256": "afa701f33dd29968663014ee8a16960063e1daae9dfcd7ecfe963b13723d2d66"},
+      {"path": "config.json", "size": 1206, "sha256": "4e7aeafac3ecc20d27d0dea69e90429cf8bc673679e47bbc550ab5e42d4acb6c"},
+      {"path": "generation_config.json", "size": 3013, "sha256": "00e284e68905b7236d64db8b55ecb30586697bc0cf8c9dd2e553cfdf659d00c3"},
+      {"path": "merges.txt", "size": 493869, "sha256": "2df2990a395e35e8dfbc7511e08c12d56018d8d04691e0133e5d63b21e154dc6"},
+      {"path": "model.safetensors", "size": 3087229512, "sha256": "2e9f644c5eb633d3c387975cf38677d3ffe1a7b98830a735867865ec1bd519b5"},
+      {"path": "normalizer.json", "size": 52666, "sha256": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd"},
+      {"path": "preprocessor_config.json", "size": 340, "sha256": "7ccc62c6f2765af1f3b46c00c9b5894426835a05021c8b9c01eecb6dfb542711"},
+      {"path": "special_tokens_map.json", "size": 1792, "sha256": "f6599189e0308c32d426fde23e5e55c04d3385f400bb85ec208bd1ef6813d498"},
+      {"path": "tiron_benchmark.png", "size": 114753, "sha256": "5f88001412056d71700473c137968bd12774909ebb9afb3f3a6e6777e40d3dc4"},
+      {"path": "tokenizer.json", "size": 3932149, "sha256": "883c03c37cea0e024aa169fdd71fdc02516610a2b18a5f039e0cbd8868a9cd62"},
+      {"path": "tokenizer_config.json", "size": 282912, "sha256": "a6db9ff5338179908348b534f8a1990cfb46246ccf3c578ae4428eae75da8487"},
+      {"path": "vocab.json", "size": 1036558, "sha256": "e2aa043ef015641d363d8288e7c241c85e36a5c761fb303598e0710233344387"}
+    ]
+  },
+  "harness": {
+    "id": "TrelisResearch/tiron",
+    "revision": "d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c",
+    "source": "https://github.com/TrelisResearch/tiron",
+    "install": "verified-pinned-source-runtime",
+    "license": {
+      "spdx": "Apache-2.0",
+      "source": "https://raw.githubusercontent.com/TrelisResearch/tiron/d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c/LICENSE",
+      "size": 11386,
+      "sha256": "a2b0a1e07f59d67612f486b5bc40e0b33ac468d20f3a9c59e577ff3570706dd8"
+    },
+    "artifacts": [
+      {"path": ".gitignore", "size": 86, "sha256": "2e93bdea52ae289cb1b3fe0042a3934428a1b04f563bf979655c10fdb315b21c"},
+      {"path": "docs/benchmark.png", "size": 114753, "sha256": "5f88001412056d71700473c137968bd12774909ebb9afb3f3a6e6777e40d3dc4"},
+      {"path": "eval/README.md", "size": 2568, "sha256": "086b15ec11f11c216b5764d56c16162ff71b0b3cc37f3511d706398f758d3c64"},
+      {"path": "eval/run_eval.py", "size": 5898, "sha256": "441b2ea4290e502e62d0d2064a23bd6d9be0b70d6efebc6f8e50fe1165ab50e9"},
+      {"path": "eval/scoring.py", "size": 15363, "sha256": "88dd4cbb67019c04fd79cba04072661084c1cb06cddfef60e86cb4b763cbd965"},
+      {"path": "LICENSE", "size": 11386, "sha256": "a2b0a1e07f59d67612f486b5bc40e0b33ac468d20f3a9c59e577ff3570706dd8"},
+      {"path": "pyproject.toml", "size": 582, "sha256": "a280a45b7d33d8c88ab501b81bffdc5a9d1077ed3fd4d908a9c9f4fc066d7bcc"},
+      {"path": "README.md", "size": 4422, "sha256": "99ba5d36b6db1cb14fe5d812d5667b25227a906c24d9f6bdea5e4ba7b956c544"},
+      {"path": "tests/test_chunking.py", "size": 1631, "sha256": "01d64ffb8585f33593b6efbb2f7147b8fc7b353457c848f6cfc780c91a1dd396"},
+      {"path": "tests/test_constraints.py", "size": 6221, "sha256": "9078200c284f100c86f98ba1a8471edf355a7a6e1054d58b5d4f0fc62cf3aea0"},
+      {"path": "tests/test_decode.py", "size": 1935, "sha256": "0688958ff7f85cc39a4e7230f4bfdc7acf5b4e26761025d209d6f879bde5dd2d"},
+      {"path": "tests/test_linking.py", "size": 3872, "sha256": "db752d7a1185e0999f15b27420870950a3197c70ee399fbfd26bc4b5ad783a33"},
+      {"path": "tiron/__init__.py", "size": 479, "sha256": "2b825211d295924b0300d5c4f416354096cf15b9c5b997fdd7877b94af84147e"},
+      {"path": "tiron/cli.py", "size": 2185, "sha256": "1a39119e5fd891045e75e5f5ed39c92d7d1ce76dca37fb521a2e066ec7b725ea"},
+      {"path": "tiron/config.py", "size": 1676, "sha256": "8010d6c2108d2bdbbe103e8c832b3fd7529942cb4f347aad7dfeda2127bf8a9f"},
+      {"path": "tiron/constraints.py", "size": 20984, "sha256": "9674bcd011e75a00a21de0392db15a2b16dffa374b8781fcec8cda5836289334"},
+      {"path": "tiron/decode.py", "size": 5787, "sha256": "b07993371a57297fda4a72028b500a7f202b82f9e978cf0a4573b53ba87926c0"},
+      {"path": "tiron/engine.py", "size": 20827, "sha256": "aea9684b5057972856a85c56aa49f769592fdcae9263678676d730d0fccb9632"},
+      {"path": "tiron/formats.py", "size": 2232, "sha256": "55a0183633fb9bd03df47b4b8dab46503b7aaf73a482350524a0f35abf52fa12"},
+      {"path": "tiron/pipeline.py", "size": 79054, "sha256": "0ec09dbb3fd7bf6fe5df1cf4215df77d7b5eab29439d53d3b1cd451ad33666e6"}
+    ],
+    "compatibilityPatches": [
+      {
+        "id": "local-ecapa-artifact-path",
+        "script": "server/runtime/tiron/compatibility/patch_local_ecapa_source.py",
+        "scriptSha256": "593d056eeac251a5bbbdef18198f4be57309f78103f2498c78a2690e99f2a5fa",
+        "target": "tiron/engine.py",
+        "upstreamSha256": "aea9684b5057972856a85c56aa49f769592fdcae9263678676d730d0fccb9632",
+        "patchedSha256": "b75b3cad7fe978534e75475f10e7d387ff7c2b9c5b0622aa22373c0b3c010aad",
+        "reason": "SpeechBrain otherwise repeats the Hub identifier from hyperparams.yaml and attempts a network fetch instead of loading the verified local ECAPA snapshot."
+      }
+    ]
+  },
+  "speakerEncoder": {
+    "id": "speechbrain/spkrec-ecapa-voxceleb",
+    "revision": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286",
+    "source": "https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb",
+    "use": "anonymous-cross-window-speaker-embedding",
+    "license": {
+      "spdx": "Apache-2.0",
+      "declarationArtifact": "README.md",
+      "declarationSha256": "00f58c3cbd7a7510de9374080da0e82a4c4e8f4df567f7338fe6efe108be705a"
+    },
+    "artifacts": [
+      {"path": ".gitattributes", "size": 858, "sha256": "bb9fec3ce9791904de25ddf190a3cee1ffd9f937884db166676f2cc0287a6bef"},
+      {"path": "README.md", "size": 5377, "sha256": "00f58c3cbd7a7510de9374080da0e82a4c4e8f4df567f7338fe6efe108be705a"},
+      {"path": "classifier.ckpt", "size": 5534328, "sha256": "fd9e3634fe68bd0a427c95e354c0c677374f62b3f434e45b78599950d860d535"},
+      {"path": "config.json", "size": 51, "sha256": "15ff7afad09adec0936c31493a7397c13f855914f4579a8393fe82649778a664"},
+      {"path": "embedding_model.ckpt", "size": 83316686, "sha256": "0575cb64845e6b9a10db9bcb74d5ac32b326b8dc90352671d345e2ee3d0126a2"},
+      {"path": "example1.wav", "size": 104390, "sha256": "bf2dde5cb516939ff619d62fc07d4f4bec5b5d521aee3d07ae51828c9d93be0b"},
+      {"path": "example2.flac", "size": 39589, "sha256": "0bf6c0ab8a2a9e8cbf89486c33aab80b608a5033d72214436e0557e085484bc9"},
+      {"path": "hyperparams.yaml", "size": 1919, "sha256": "6f78854fa04ba59e761437b76a2575d3aba5e5016de3e9b69f0c9a5077fb1a41"},
+      {"path": "label_encoder.txt", "size": 128619, "sha256": "e13c3a167bb4112685670ee896d20e2b565af16b3a4ceeaa8689fa4d22adb8b9"},
+      {"path": "mean_var_norm_emb.ckpt", "size": 1921, "sha256": "cd70225b05b37be64fc5a95e24395d804231d43f74b2e1e5a513db7b69b34c33"}
+    ]
+  },
+  "baseRuntime": {
+    "image": "nvcr.io/nvidia/pytorch",
+    "sourceTag": "26.06-py3",
+    "source": "https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch/tags",
+    "platform": "linux/arm64",
+    "digest": "sha256:dcae8df08ef61b019b8eb109113428cba4ef0e37484c6e722406150dd5ada759",
+    "pythonVersion": "3.12.3",
+    "torchVersion": "2.13.0a0+8145d630e8.nv26.06",
+    "cudaVersion": "13.3.0",
+    "torchCudaVersion": "13.3",
+    "basePackages": {
+      "fsspec": "2026.4.0",
+      "huggingface-hub": "1.18.0",
+      "numpy": "2.1.0",
+      "packaging": "26.0",
+      "PyYAML": "6.0.1",
+      "requests": "2.34.2",
+      "safetensors": "0.8.0",
+      "scipy": "1.17.1",
+      "tqdm": "4.68.2",
+      "torchvision": "0.27.0a0+499ca510.nv26.6.54250401"
+    },
+    "requirementsLock": "server/runtime/tiron/requirements.lock",
+    "requirementsLockSha256": "2c7a57149eebfb4b574a4a9714b45103d1026eb86e47a5b251eace4518b3b4ab",
+    "sourceBuilds": [
+      {
+        "id": "torchaudio",
+        "version": "2.11.0+34c52a6",
+        "repository": "pytorch/audio",
+        "revision": "34c52a67e8941bbd8e6adaca0eb0b9eabec11d78",
+        "source": "https://github.com/pytorch/audio",
+        "buildFlags": ["BUILD_RNNT=0", "BUILD_SOX=0", "USE_CUDA=0"],
+        "outputIdentity": "bound-by-checked-container-image",
+        "license": {
+          "spdx": "BSD-2-Clause",
+          "source": "https://raw.githubusercontent.com/pytorch/audio/34c52a67e8941bbd8e6adaca0eb0b9eabec11d78/LICENSE",
+          "size": 1338,
+          "sha256": "93a58861a858cc108e6b6b833e08e76e8b2a66339e4a8007c8a5a8c1ff9c40d6"
+        }
+      }
+    ]
+  },
+  "execution": {
+    "networkDownloadsAllowed": false,
+    "modelDirectoryEnvironment": "YAP_TIRON_MODEL_DIR",
+    "speakerEncoderDirectoryEnvironment": "YAP_TIRON_ECAPA_DIR",
+    "offlineEnvironment": ["DO_NOT_TRACK", "HF_HUB_DISABLE_TELEMETRY", "HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE"],
+    "productionDefault": false,
+    "requiresAcceptanceSeal": true
+  },
+  "supersedes": {
+    "modelRevision": "aed145c7d6cc5cbd381a0e87b6d0089bcc76a1fc",
+    "modelWeightSha256": "921e078a8e89000ccb467c5f9bce8a46c9e484c52b63e3ddddaa571c34306a2e",
+    "harnessRevision": "5b3766ac64ff3a8d98443e0a850d1ce569952520",
+    "reason": "The upstream 2026-07-23 checkpoint and matching harness evaluation sources supersede the pre-execution 2026-07-21 identities."
+  }
+}

@@ -10,10 +10,10 @@ use crate::audio::session::{SessionId, SessionMetadata, SessionMode, SessionOrig
 use crate::language::RecordingLanguageDecision;
 
 use super::{
-    validate_batch_base_url, AlignmentUnavailableReason, ApiError, BatchApiClient,
-    BatchClientError, CaptureChunkReference, CaptureManifestReference, ContentIdentity,
-    CreateRecordingJobRequest, PreprocessingEvidence, ServerReplayKey,
-    ServerStageProjectionEnvelope, UploadTrack,
+    validate_batch_base_url, AlignmentUnavailableReason, AnonymousSpeakerAttribution, ApiError,
+    BatchApiClient, BatchClientError, CaptureChunkReference, CaptureManifestReference,
+    ContentIdentity, CreateRecordingJobRequest, PreprocessingEvidence, ServerReplayKey,
+    ServerStageProjectionEnvelope, SpeakerResultRevision, TranscriptResultRevision, UploadTrack,
 };
 use crate::server_connector::{client::bounded_client, AuthenticatedRequestDispatcher};
 
@@ -29,6 +29,193 @@ fn alignment_unavailable_reason_preserves_provider_and_language_limits() {
             .unwrap(),
         AlignmentUnavailableReason::LanguageUnsupported,
     );
+}
+
+#[test]
+fn joint_speaker_result_is_capture_bound_and_rejects_named_or_forged_turns() {
+    let runtime_lock = "d".repeat(64);
+    let mut transcript_value = serde_json::json!({
+        "sessionId": "session-1",
+        "revision": 1,
+        "authority": "server_authoritative",
+        "createdAtUtc": "2026-08-03T03:00:00Z",
+        "captureManifestSha256": "a".repeat(64),
+        "previousResultSha256": null,
+        "status": "complete",
+        "language": {"languageBcp47": "en-US", "confidence": null},
+        "transcript": "hello overlapping reply",
+        "alignment": {
+            "status": "unavailable",
+            "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
+            "componentRevision": "joint-segment-timing-v1"
+        },
+        "alignedWords": [],
+        "modelProvenance": [{
+            "modelId": "Trelis/tiron",
+            "revision": "90bc0a4d198cd5cf6679b0e478375ba3a0040575",
+            "calibrationRevision": runtime_lock
+        }]
+    });
+    let speaker_value = serde_json::json!({
+        "sessionId": "session-1",
+        "revision": 1,
+        "authority": "server_authoritative",
+        "createdAtUtc": "2026-08-03T03:00:00Z",
+        "captureManifestSha256": "a".repeat(64),
+        "previousResultSha256": null,
+        "status": "complete",
+        "language": {"languageBcp47": "en-US", "confidence": null},
+        "runtimeLockSha256": runtime_lock,
+        "speakerTurns": [
+            {
+                "turnId": "turn-000001",
+                "startMs": 0,
+                "endMs": 1000,
+                "text": "hello",
+                "attribution": {"kind": "session_speaker", "sessionSpeakerId": "speaker-1"},
+                "confidence": null,
+                "supportingTrackIds": ["track-1"],
+                "overlapGroupId": "overlap-000001"
+            },
+            {
+                "turnId": "turn-000002",
+                "startMs": 500,
+                "endMs": 1500,
+                "text": "overlapping reply",
+                "attribution": {"kind": "session_speaker", "sessionSpeakerId": "speaker-2"},
+                "confidence": null,
+                "supportingTrackIds": ["track-1"],
+                "overlapGroupId": "overlap-000001"
+            }
+        ],
+        "speakerCapacityDegradation": null,
+        "alignment": {
+            "status": "unavailable",
+            "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
+            "componentRevision": "joint-segment-timing-v1"
+        },
+        "alignedWords": [],
+        "modelProvenance": [
+            {
+                "modelId": "Trelis/tiron",
+                "revision": "90bc0a4d198cd5cf6679b0e478375ba3a0040575",
+                "calibrationRevision": runtime_lock
+            },
+            {
+                "modelId": "TrelisResearch/tiron",
+                "revision": "d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c",
+                "calibrationRevision": runtime_lock
+            },
+            {
+                "modelId": "speechbrain/spkrec-ecapa-voxceleb",
+                "revision": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286",
+                "calibrationRevision": runtime_lock
+            }
+        ]
+    });
+    let speaker: SpeakerResultRevision = serde_json::from_value(speaker_value.clone()).unwrap();
+    transcript_value["speakerResultSha256"] = serde_json::json!(speaker.content_sha256().unwrap());
+    let transcript: TranscriptResultRevision = serde_json::from_value(transcript_value).unwrap();
+
+    assert!(transcript.requires_speaker_result());
+    assert!(speaker.is_valid_for(&transcript, 2_000, Some(32_000), &["track-1".into()]));
+
+    let mut forged_overlap = speaker.clone();
+    forged_overlap.speaker_turns[1].overlap_group_id = None;
+    assert!(!forged_overlap.is_valid_for(&transcript, 2_000, Some(32_000), &["track-1".into()]));
+
+    let mut forged_text = speaker.clone();
+    forged_text.speaker_turns[0].text = "different".into();
+    assert!(!forged_text.is_valid_for(&transcript, 2_000, Some(32_000), &["track-1".into()]));
+
+    let mut noncanonical_speaker = speaker.clone();
+    let AnonymousSpeakerAttribution::SessionSpeaker { session_speaker_id } =
+        &mut noncanonical_speaker.speaker_turns[0].attribution;
+    *session_speaker_id = "speaker-01".into();
+    assert!(!noncanonical_speaker.is_valid_for(
+        &transcript,
+        2_000,
+        Some(32_000),
+        &["track-1".into()]
+    ));
+
+    let mut partial_speaker_value = speaker_value.clone();
+    partial_speaker_value["status"] = serde_json::json!("partial");
+    partial_speaker_value["speakerCapacityDegradation"] = serde_json::json!({
+        "code": "SPEAKER_CAPACITY_REACHED",
+        "fallbackDisposition": "not_run_recommended",
+        "scope": "meeting",
+        "startSample": 0,
+        "endSample": 32000,
+        "observedSpeakerCount": 8,
+        "speakerLimit": 8
+    });
+    let extra_turns = partial_speaker_value["speakerTurns"]
+        .as_array_mut()
+        .expect("speaker turns are an array");
+    for (offset, text) in ["three", "four", "five", "six", "seven", "eight"]
+        .into_iter()
+        .enumerate()
+    {
+        let speaker_number = offset + 3;
+        let start_ms = 1_500 + offset as u64 * 80;
+        extra_turns.push(serde_json::json!({
+            "turnId": format!("turn-{speaker_number:06}"),
+            "startMs": start_ms,
+            "endMs": start_ms + 80,
+            "text": text,
+            "attribution": {
+                "kind": "session_speaker",
+                "sessionSpeakerId": format!("speaker-{speaker_number}")
+            },
+            "confidence": null,
+            "supportingTrackIds": ["track-1"],
+            "overlapGroupId": null
+        }));
+    }
+    let partial_speaker: SpeakerResultRevision =
+        serde_json::from_value(partial_speaker_value).unwrap();
+    let mut partial_transcript_value = serde_json::to_value(&transcript).unwrap();
+    partial_transcript_value["status"] = serde_json::json!("partial");
+    partial_transcript_value["transcript"] =
+        serde_json::json!("hello overlapping reply three four five six seven eight");
+    partial_transcript_value["speakerResultSha256"] =
+        serde_json::json!(partial_speaker.content_sha256().unwrap());
+    let partial_transcript: TranscriptResultRevision =
+        serde_json::from_value(partial_transcript_value).unwrap();
+    assert!(partial_speaker.is_valid_for(
+        &partial_transcript,
+        2_000,
+        Some(32_000),
+        &["track-1".into()]
+    ));
+
+    let mut spurious_degradation = partial_speaker.clone();
+    spurious_degradation.speaker_turns.truncate(2);
+    let mut spurious_transcript = partial_transcript.clone();
+    spurious_transcript.transcript = "hello overlapping reply".into();
+    spurious_transcript.speaker_result_sha256 = spurious_degradation.content_sha256();
+    assert!(!spurious_degradation.is_valid_for(
+        &spurious_transcript,
+        2_000,
+        Some(32_000),
+        &["track-1".into()]
+    ));
+
+    let mut missing_degradation = partial_speaker.clone();
+    missing_degradation.speaker_capacity_degradation =
+        super::response::SpeakerCapacityDegradation::None(());
+    assert!(!missing_degradation.is_valid_for(
+        &partial_transcript,
+        2_000,
+        Some(32_000),
+        &["track-1".into()]
+    ));
+
+    let mut named = speaker_value;
+    named["speakerTurns"][0]["attribution"] =
+        serde_json::json!({"kind": "named", "displayName": "Someone"});
+    assert!(serde_json::from_value::<SpeakerResultRevision>(named).is_err());
 }
 
 #[test]

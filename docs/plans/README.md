@@ -13,10 +13,9 @@ their execution window closes.
 Current work:
 
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
+- [Joint speaker-attributed meeting transcription](active/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
 
-Queued work (activate only in roadmap order):
-
-- [Joint speaker-attributed meeting transcription](queued/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
+Queued work (activate only in roadmap order): none.
 
 Recently completed:
 

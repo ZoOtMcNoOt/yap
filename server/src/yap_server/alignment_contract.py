@@ -11,6 +11,7 @@ ALIGNMENT_COMPONENT_REVISION = "cohere-attention-en-v1"
 COHERE_ATTENTION_ALIGNMENT_CANDIDATE_REVISION = (
     "cohere-attention-alignment-candidate-v1"
 )
+JOINT_SEGMENT_TIMING_REVISION = "joint-segment-timing-v1"
 MAX_ALIGNMENT_WORDS = 16_384
 MAX_ALIGNMENT_WORD_TEXT_BYTES = 512
 
@@ -126,6 +127,7 @@ def validate_alignment_payload(
     if component_revision not in {
         ALIGNMENT_COMPONENT_REVISION,
         COHERE_ATTENTION_ALIGNMENT_CANDIDATE_REVISION,
+        JOINT_SEGMENT_TIMING_REVISION,
     }:
         raise ValueError("alignment component revision is invalid")
     if status == "unavailable":

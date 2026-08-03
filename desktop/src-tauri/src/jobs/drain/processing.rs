@@ -12,7 +12,10 @@ use crate::{
 };
 
 use super::{
-    contract::{result_retention_expiry_ms, validate_job_projection, validate_result_revision},
+    contract::{
+        result_retention_expiry_ms, validate_job_projection, validate_result_revision,
+        validate_speaker_result_revision,
+    },
     upload::validate_durable_upload_state,
     BatchCommitGuard, DrainResult, DrainStepError,
 };
@@ -163,7 +166,13 @@ async fn advance_processing_job_once_guarded(
         &projection,
         &request,
         Some(server_job_id),
-        &["server_processing", "complete", "failed", "cancelled"],
+        &[
+            "server_processing",
+            "complete",
+            "partial",
+            "failed",
+            "cancelled",
+        ],
     )?;
     guard.ensure_current()?;
     if projection.status == "server_processing" {
@@ -175,7 +184,7 @@ async fn advance_processing_job_once_guarded(
         })?;
         return Err(DrainStepError::terminal_server(error));
     }
-    if projection.status != "complete" {
+    if !matches!(projection.status.as_str(), "complete" | "partial") {
         return Err(DrainStepError::permanent(format!(
             "server job entered terminal status {} before publishing a result",
             projection.status
@@ -185,20 +194,43 @@ async fn advance_processing_job_once_guarded(
     guard.ensure_current()?;
     let result = client.result(server_job_id).await?;
     validate_result_revision(&result, &request)?;
+    if result.status != projection.status {
+        return Err(DrainStepError::permanent(
+            "server result status differs from its terminal job projection",
+        ));
+    }
+    let speaker_result = if result.requires_speaker_result() {
+        guard.ensure_current()?;
+        let speaker_result = client.speaker_result(server_job_id).await?;
+        validate_speaker_result_revision(&speaker_result, &result, &request)?;
+        Some(speaker_result)
+    } else {
+        None
+    };
     guard.commit(|| {
         ledger
             .begin_remote_result_saving(&candidate.job_id, updated_at_ms)
             .map_err(|error| DrainStepError::permanent(error.to_string()))
     })?;
-    let output_path =
-        remote::publish_remote_result(&candidate.job_id, remote_jobs_directory, &result)?;
+    let output_path = remote::publish_remote_result(
+        &candidate.job_id,
+        remote_jobs_directory,
+        &result,
+        speaker_result.as_ref(),
+    )?;
     guard.commit(|| {
+        let terminal_status = match result.status.as_str() {
+            "complete" => RecordingJobStatus::Complete,
+            "partial" => RecordingJobStatus::Partial,
+            _ => unreachable!("validated result status is terminal"),
+        };
         ledger
-            .complete_remote_result(
+            .finalize_remote_result(
                 &candidate.job_id,
                 &output_path,
                 result_expires_at_ms,
                 updated_at_ms,
+                terminal_status,
             )
             .map_err(|error| DrainStepError::permanent(error.to_string()))
     })?;

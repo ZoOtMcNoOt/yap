@@ -3,13 +3,20 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 import threading
-from typing import Callable
+from typing import Callable, Mapping
 
 from yap_server.alignment_contract import (
     COHERE_ATTENTION_ALIGNMENT_CANDIDATE_REVISION,
     AlignmentUnavailableReason,
     unavailable_alignment,
     validate_alignment_payload,
+)
+from yap_server.meeting_transcription.contract import MEETING_TRANSCRIPTION_POOL_ID
+from yap_server.meeting_transcription.result_revisions import (
+    MeetingResultAuthority,
+    MeetingResultContext,
+    build_meeting_result_revisions,
+    published_result_fingerprint,
 )
 from yap_server.pools.batch_contract import (
     ProviderCapacityUnavailable,
@@ -45,6 +52,7 @@ class JobCompletionCoordinator:
         completion_events: dict[str, threading.Event],
         lock: threading.RLock,
         now: Callable[[], str],
+        meeting_result_authority: MeetingResultAuthority | None = None,
     ) -> None:
         self._storage_root = storage_root
         self._state = state
@@ -53,6 +61,7 @@ class JobCompletionCoordinator:
         self._completion_events = completion_events
         self._lock = lock
         self._now = now
+        self._meeting_result_authority = meeting_result_authority
 
     def finish_safely(
         self,
@@ -141,7 +150,12 @@ class JobCompletionCoordinator:
             )
             return
         try:
-            result, created_at, asr_output_sha256 = self._result_from_worker(
+            (
+                result,
+                speaker_result,
+                created_at,
+                asr_output_sha256,
+            ) = self._result_from_worker(
                 job_id,
                 language_bcp47,
                 payload,
@@ -160,14 +174,20 @@ class JobCompletionCoordinator:
         if not self._record_publication_intent(
             job_id,
             result,
+            speaker_result,
             created_at,
             asr_output_sha256,
         ):
             return
         result_path = self._storage_root / "jobs" / job_id / "result-revision.json"
+        speaker_result_path = (
+            self._storage_root / "jobs" / job_id / "speaker-result-revision.json"
+        )
         try:
+            if speaker_result is not None:
+                publish_json(speaker_result_path, speaker_result)
             publish_json(result_path, result)
-        except OSError:
+        except (OSError, ValueError):
             self._mark_failed_unless_cancelled(
                 job_id,
                 future,
@@ -184,8 +204,10 @@ class JobCompletionCoordinator:
                 self._store.purge_private_audio(self._state, job_id)
                 return
             self._state.results[job_id] = result
+            if speaker_result is not None:
+                self._state.speaker_results[job_id] = speaker_result
             job = self._state.jobs[job_id]
-            job["status"] = "complete"
+            job["status"] = result["status"]
             job["updatedAtUtc"] = created_at
             self._finish_running_stage(
                 job_id,
@@ -194,8 +216,16 @@ class JobCompletionCoordinator:
                 retryable=False,
                 reason=None,
                 completed_at_utc=created_at,
-                output_fingerprint_sha256=canonical_json_sha256(result),
-                evidence={"resultRevision": 1, "status": result["status"]},
+                output_fingerprint_sha256=canonical_json_sha256(
+                    published_result_fingerprint(result, speaker_result)
+                ),
+                evidence={
+                    "resultRevision": 1,
+                    "speakerResultRevision": (
+                        None if speaker_result is None else 1
+                    ),
+                    "status": result["status"],
+                },
             )
             self._discard_future(job_id, future)
             self._store.persist(self._state, job_id)
@@ -206,8 +236,27 @@ class JobCompletionCoordinator:
         language_bcp47: str,
         payload: object,
         future: object,
-    ) -> tuple[dict[str, object] | None, str, str]:
+    ) -> tuple[
+        dict[str, object] | None,
+        dict[str, object] | None,
+        str,
+        str,
+    ]:
         worker_payload = mapping(payload, "worker result")
+        with self._lock:
+            routing = self._state.asr_routing[job_id]
+            if routing is None:
+                raise RuntimeError("active worker result has no frozen ASR route")
+            meeting_result = routing.route.pool_id == MEETING_TRANSCRIPTION_POOL_ID
+        if meeting_result:
+            return self._meeting_result_from_worker(
+                job_id,
+                language_bcp47,
+                worker_payload,
+                future,
+            )
+        if "meeting" in worker_payload:
+            raise ValueError("standard ASR route returned a joint meeting result")
         transcript = mapping(worker_payload.get("transcript"), "worker transcript")
         model = mapping(worker_payload.get("model"), "worker model")
         transcript_text = canonical_transcript(
@@ -243,7 +292,12 @@ class JobCompletionCoordinator:
                 self._discard_future(job_id, future)
                 self._cancel_running_stages(job_id, created_at)
                 self._store.purge_private_audio(self._state, job_id)
-                return None, created_at, canonical_json_sha256({"cancelled": True})
+                return (
+                    None,
+                    None,
+                    created_at,
+                    canonical_json_sha256({"cancelled": True}),
+                )
             job = self._state.jobs[job_id]
             creation = self._state.requests[job_id]
             maximum_end_ms = capture_duration_ms(creation)
@@ -324,12 +378,87 @@ class JobCompletionCoordinator:
                 ),
             }
         )
-        return result, created_at, asr_output_sha256
+        return result, None, created_at, asr_output_sha256
+
+    def _meeting_result_from_worker(
+        self,
+        job_id: str,
+        language_bcp47: str,
+        worker_payload: Mapping[str, object],
+        future: object,
+    ) -> tuple[
+        dict[str, object] | None,
+        dict[str, object] | None,
+        str,
+        str,
+    ]:
+        payload = mapping(worker_payload, "meeting worker result")
+        created_at = self._now()
+        with self._lock:
+            if job_id in self._state.cancelled:
+                self._discard_future(job_id, future)
+                self._cancel_running_stages(job_id, created_at)
+                self._store.purge_private_audio(self._state, job_id)
+                return (
+                    None,
+                    None,
+                    created_at,
+                    canonical_json_sha256({"cancelled": True}),
+                )
+            routing = self._state.asr_routing[job_id]
+            authority = self._meeting_result_authority
+            if routing is None or authority is None:
+                raise ValueError("meeting result authority is unavailable")
+            route = routing.route
+            if (
+                route.provider_id != "tiron"
+                or route.pool_id != MEETING_TRANSCRIPTION_POOL_ID
+                or route.execution_mode != "fixedBatch"
+                or route.model_revision != authority.provenance.model.revision
+                or language_bcp47 == "und"
+                or route.provider_language == "auto"
+            ):
+                raise ValueError("meeting result route differs from its authority")
+            job = self._state.jobs[job_id]
+            creation = self._state.requests[job_id]
+            maximum_end_ms = capture_duration_ms(creation)
+            context = MeetingResultContext.from_job(
+                projection=job,
+                creation=creation,
+                created_at_utc=created_at,
+                language_bcp47=language_bcp47,
+                provider_language=route.provider_language,
+                maximum_end_ms=maximum_end_ms,
+            )
+            result, speaker_result = build_meeting_result_revisions(
+                payload,
+                context=context,
+                authority=authority,
+            )
+            validate_result_revision(
+                result,
+                job,
+                maximum_end_ms=maximum_end_ms,
+            )
+        return (
+            result,
+            speaker_result,
+            created_at,
+            canonical_json_sha256(
+                {
+                    "captureManifestSha256": context.capture_manifest_sha256,
+                    "model": payload.get("model"),
+                    "audio": payload.get("audio"),
+                    "meeting": payload.get("meeting"),
+                }
+            ),
+        )
 
     def _record_publication_intent(
         self,
         job_id: str,
         result: dict[str, object],
+        speaker_result: dict[str, object] | None,
         created_at: str,
         asr_output_sha256: str,
     ) -> bool:
@@ -353,9 +482,13 @@ class JobCompletionCoordinator:
                     output_fingerprint_sha256=asr_output_sha256,
                     evidence={
                         "resultShape": (
-                            "dynamic_language_spans_v1"
-                            if "languageSpanEvidence" in result
-                            else "raw_transcript_v1"
+                            "joint_speaker_transcript_v1"
+                            if speaker_result is not None
+                            else (
+                                "dynamic_language_spans_v1"
+                                if "languageSpanEvidence" in result
+                                else "raw_transcript_v1"
+                            )
                         ),
                         "executionMode": routing.route.execution_mode,
                     },
@@ -421,6 +554,11 @@ class JobCompletionCoordinator:
                         "asrOutputSha256": asr_output_sha256,
                         "captureManifest": capture_manifest,
                         "alignmentSha256": alignment_fingerprint,
+                        "speakerResultSha256": (
+                            None
+                            if speaker_result is None
+                            else canonical_json_sha256(speaker_result)
+                        ),
                         "resultSchemaVersion": 1,
                     }
                 )

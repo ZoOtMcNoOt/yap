@@ -31,6 +31,7 @@ class BatchInputPreparation:
     language: str
     language_bcp47: str
     route: AsrRouteDecision
+    capture_manifest_sha256: str
     expected_output_pcm_sha256: str | None
     utterance_plan_source: UtterancePlanSource | None
 
@@ -97,6 +98,8 @@ class BatchInputPreparation:
             language=self.language,
             input_sha256=input_sha256,
             route=self.route,
+            capture_manifest_sha256=self.capture_manifest_sha256,
+            source_frame_count=self.pcm_byte_length // 2,
             utterance_plan_path=utterance_plan_path,
             utterance_plan_sha256=utterance_plan_sha256,
         )

@@ -708,13 +708,40 @@ final hosted head is not represented as an all-green rollup. Real IT-provided
 Entra and Conditional Access policy and an approved native adapter remain
 external conformance work.
 
-## Accepted meeting direction, not current execution
+## Active meeting-runtime development, not a production route
 
 [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
 selects pinned `Trelis/tiron` as the Phase 8 server development baseline for
-joint speaker-attributed meeting transcription. No Tiron worker, ECAPA lock,
-speaker-attributed scorer, or production result path executes today. The local
-anonymous-speaker path and ASR-plus-diarization fallback remain separate.
+joint speaker-attributed meeting transcription. The exact current model,
+upstream runtime harness, ECAPA checkpoint, NVIDIA/Python overlay, scorer, and
+acceptance identities are locked. A thin isolated worker now verifies those
+local artifacts and validates source-bounded upstream results. Focused GB10
+smokes passed one short input and one two-window input with networking disabled.
+When both locked model roots are configured explicitly, startup verifies them
+and the private preparation receipt for the checked Tiron image before composing
+the worker into the authenticated Python batch router. This explicit profile is
+meeting-only and rejects more than three hours before allocating job storage.
+The route publishes the anonymous-speaker revision first and the transcript
+revision last as the aggregate commit marker; the transcript carries the exact
+companion hash and every speaker turn carries reconstructable text. Restart
+validation rejects incomplete aggregates. The owner-scoped API and Rust native
+connector validate and publish both artifacts without exposing raw Tiron
+speaker labels. The profile is explicit Preview, absent from the committed
+default catalog, and not production-promoted. The local anonymous-speaker path
+and ASR-plus-diarization fallback remain separate.
+
+Exact application/runtime candidate
+`1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported-launcher
+client/HTTP/Tiron/native/History roundtrip and the one admitted
+local/native/server/GB10 Preview matrix. The GB10 lane ran immutable image
+`sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`
+offline, read-only, non-root, and left zero containers. Protected aggregate
+receipt SHA-256
+`9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`
+binds the exact preparation, native-roundtrip, and two-window receipts plus the
+passed lane counts. Reviewed descendant `9ff06d7d...` changes only test/gate
+mechanics and leaves the application/runtime/image candidate unchanged. This is
+Preview qualification, not default enablement or production promotion.
 
 Tiron's model capacity is eight window-local speaker slots per 30-second
 decode, and the pinned reference harness separately caps the published global
@@ -722,17 +749,27 @@ meeting roster at eight. Neither limit is an attendee count. Yap retains ADR
 0020's dynamic 32-speaker target and 64-speaker safety ceiling, but reaching it
 requires the separately gated ADR 0027 speaker-epoch reconciler or the
 ASR-plus-diarization fallback; ordinary chunking does not lift the released
-global cap. Phase 8 must distinguish more-than-15-attendee sessions with a
-small active subset from nine/sixteen/thirty-two-talker sessions, and must
-explicitly degrade/reprocess a window that reaches or plausibly exceeds eight
-distinct talkers.
+global cap. The public whole-meeting API discards per-window assignments and
+embeddings. The current Preview therefore reports only what it can observe:
+an aggregate with exactly eight global speaker labels is terminal `partial`
+and carries one source-bound, meeting-scoped saturation record stating that
+fallback was recommended but not run. It cannot distinguish exactly eight
+real talkers from a larger collapsed roster or identify an exact saturated
+window. Window evidence, larger-roster speaker epochs, and automatic fallback
+remain production-promotion work; Yap will not fork private upstream pipeline
+internals to manufacture them.
 
-The frozen Phase 8 gate will score AMI/ICSI/NOTSOFAR public comparators
-separately from an independently adjudicated private messy-meeting holdout.
-Accuracy, overlap, locale, capacity pressure, long-session stability,
-c1/c2/c4/c8 isolation, cancellation, and teardown all remain promotion gates.
-The model emits evidence only; Rust continues to own source validation, durable
-jobs, admission, cancellation, immutable revisions, and publication.
+The passed Phase 8 Preview gate proves the pinned route, source/result
+boundaries, lifecycle, supported launcher, and client projection on one exact
+application/runtime candidate.
+The later promotion gate will score AMI/ICSI/NOTSOFAR public comparators
+separately from an independently adjudicated private messy-meeting holdout and
+qualify accuracy, overlap, locale, capacity pressure, long-session stability,
+c1/c2/c4/c8 isolation, cancellation, and teardown. The model emits evidence
+only. The Python server owns server-side source validation, durable jobs,
+admission, cancellation, containment, and immutable authoritative revisions.
+Rust independently binds those revisions to the persisted capture request,
+publishes the local aggregate, and projects its anonymous turns into History.
 
 ## Persistence and recovery
 

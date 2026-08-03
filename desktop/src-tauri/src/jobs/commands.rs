@@ -65,9 +65,22 @@ pub struct CompletedRemoteTranscript {
     pub source_path: String,
     pub output_path: String,
     pub created_at_ms: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speaker_turns: Option<Vec<CompletedSpeakerTranscriptTurn>>,
     pub(crate) result_summary: TranscriptResultSummary,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub warning: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompletedSpeakerTranscriptTurn {
+    pub speaker_id: String,
+    pub start_ms: u64,
+    pub end_ms: u64,
+    pub text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub overlap_group_id: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
