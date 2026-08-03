@@ -86,6 +86,19 @@ The replacement driver now requires the expected
 the production native command within one minute; the native language-safety
 state machine remains unchanged.
 
+Candidate checkpoint head `bbbd93f8cc05c1f6cbb2c39d119f6aec4cce3d30`
+passed the canonical desktop build, exact Tiron image preparation, server-only
+lifecycle preflight, and admission. It then failed before WDIO or audio
+submission because the operator pre-created the planned lifecycle evidence
+directory. WDIO correctly rejected that existing destination instead of
+reusing it. The remote controller recorded one cleanup pass, and direct
+post-stop inspection observed no retained local or remote owner; however, the
+empty lifecycle directory contains no gate context and no vertical,
+cancellation, or independent teardown receipt. The admission is failed
+historical evidence and cannot be retried or relabeled. The runbook now states
+that every planned product destination remains absent until its exclusive
+producer creates it.
+
 Replacement admissions `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3`,
 `6b4eda32ca3853c90b40db607248fab5af23048e`,
 `550d9152771a8220dece90ecdb001217f2f36f4e`, and

@@ -113,6 +113,12 @@ node .\verification\integrated-gate-runner.mjs begin `
   --private-plan <new-private-plan.json>
 ```
 
+After admission, keep the planned lifecycle directory, remote cleanup log, and
+teardown file absent. The WDIO configuration creates and protects the lifecycle
+directory exclusively when the product run starts; the lifecycle controller
+creates the two log files exclusively. Pre-creating any of those destinations
+must fail closed and consumes that admission.
+
 ## Run the private product lifecycle
 
 Launch `infra/yap-server-node/development-batch-server.sh` through the reviewed

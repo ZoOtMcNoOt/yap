@@ -81,6 +81,16 @@ separate private messy-meeting model-acceptance corpus.
   evidence rather than a passed product-teardown receipt. That admission is
   also failed historical evidence. The repaired driver bounds and validates
   this confirmation before either meeting path can wait on inference.
+  Candidate `bbbd93f8cc05c1f6cbb2c39d119f6aec4cce3d30` passed the
+  canonical build, exact image preparation, server-only lifecycle preflight,
+  and admission, then failed before WDIO or audio submission because the
+  operator pre-created the planned lifecycle directory. WDIO correctly rejected
+  the existing destination instead of reusing it. Remote cleanup reported one
+  exact pass and direct inspection found no retained local or remote owner, but
+  the empty lifecycle directory contains no gate context and no vertical,
+  cancellation, or teardown receipt. That admission is failed historical
+  evidence. The runbook now requires every product destination to remain absent
+  until its exclusive producer creates it.
 - [ ] Freeze code and documentation, then run the complete applicable
   checkpoint matrix exactly once on one candidate.
 - [ ] Prepare and inspect the request-time-only Tiron image for that exact head,
