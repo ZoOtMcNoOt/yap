@@ -71,6 +71,11 @@ fn failed_asr_retry_reuses_the_bound_job_and_exact_uploaded_capture() {
         "status": "complete",
         "language": {"languageBcp47": "en-US", "confidence": null},
         "transcript": "The retained capture was retried once.",
+        "alignment": {
+            "status": "unavailable",
+            "reason": "ALIGNMENT_RUNTIME_FAILED",
+            "componentRevision": "cohere-attention-alignment-candidate-v1"
+        },
         "alignedWords": [],
         "modelProvenance": [{
             "modelId": "CohereLabs/cohere-transcribe-03-2026",

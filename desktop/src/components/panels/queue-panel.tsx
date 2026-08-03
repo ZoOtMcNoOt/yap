@@ -1,8 +1,6 @@
 import { Trash as Trash2 } from "@phosphor-icons/react/Trash";
-import { WarningCircle } from "@phosphor-icons/react/WarningCircle";
 
 import { StackedUpload } from "@/components/stacked-upload";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,32 +26,22 @@ import type { RecordingJobView } from "@/lib/recording-job";
 import type { FixedBatchLanguageOption } from "@/language-preference";
 
 export function QueuePanel({
-  legacyDiscardAllowed,
   onClear,
-  onDiscardLegacyQueue,
   onConfirmLanguage,
   onRemove,
   onReveal,
-  onRetryMigration,
   onSelect,
   queue,
   languageOptions,
-  migrationError,
-  migrationPending,
   selectedId,
 }: {
-  legacyDiscardAllowed: boolean;
   onClear: () => void | Promise<void>;
-  onDiscardLegacyQueue: () => void;
   onConfirmLanguage: (jobId: string, languageBcp47: string) => Promise<void>;
   onRemove: (id: string) => void | Promise<void>;
   onReveal: (path: string) => void;
-  onRetryMigration: () => void | Promise<unknown>;
   onSelect: (id: string) => void;
   queue: RecordingJobView[];
   languageOptions: FixedBatchLanguageOption[];
-  migrationError?: string;
-  migrationPending: boolean;
   selectedId?: string;
 }) {
   return (
@@ -101,47 +89,6 @@ export function QueuePanel({
         </CardAction>
       </CardHeader>
       <CardContent className="p-4 sm:p-5">
-        {migrationError ? (
-          <Alert className="mb-4" variant="destructive">
-            <WarningCircle />
-            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              <span>{migrationError}</span>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button onClick={() => void onRetryMigration()} size="sm" type="button" variant="outline">
-                  Retry restore
-                </Button>
-                {legacyDiscardAllowed ? (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" type="button" variant="destructive">
-                        Discard old queue
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Discard the old queue?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This permanently removes the legacy queue data Yap could not restore. Audio files and current native recording jobs stay untouched. This cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Keep old queue</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20"
-                          onClick={onDiscardLegacyQueue}
-                        >
-                          Discard old queue
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                ) : null}
-              </div>
-            </AlertDescription>
-          </Alert>
-        ) : migrationPending ? (
-          <p className="mb-4 text-sm text-muted-foreground">Restoring queued recordings…</p>
-        ) : null}
         <StackedUpload
           items={queue}
           languageOptions={languageOptions}

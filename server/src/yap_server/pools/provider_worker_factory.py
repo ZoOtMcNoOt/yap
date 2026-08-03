@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import re
-import subprocess
 from typing import Mapping
 
 from yap_server.config.runtime_environment import (
@@ -35,10 +34,7 @@ from yap_server.pools.batch_asr import (
 )
 from yap_server.pools.batch_contract import BatchWorker
 from yap_server.pools.checked_runtime_image import (
-    CheckedRuntimeImageError,
-    assert_clean_checked_head,
-    runtime_image_contract,
-    verify_prepared_checked_image,
+    resolve_receipt_bound_runtime_image,
 )
 from yap_server.pools.cohere_vllm_worker import CohereVllmBatchWorker
 from yap_server.pools.model_lock import (
@@ -51,7 +47,6 @@ from yap_server.pools.vllm_transcription_client import VllmTranscriptionClient
 
 
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
-_SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 _COHERE_POOL = "cohere-batch"
 _NEMOTRON_POOL = "nemotron-batch"
 _VLLM_RUNTIME = "vllm"
@@ -59,7 +54,6 @@ _TRANSFORMERS_REFERENCE_RUNTIME = "transformers-reference"
 _NEMO_REFERENCE_RUNTIME = "nemo-reference"
 _NEMO_RESIDENT_RUNTIME = "nemo-resident"
 _RETIRED_GLOBAL_RUNTIME_ENV = "YAP_ASR_ENGINE"
-_IMAGE_RUNTIME_LABEL = "com.mcnatg1.yap.runtime"
 
 
 @dataclass(frozen=True, slots=True)
@@ -210,58 +204,17 @@ def resolve_prepared_meeting_transcription_image(
 ) -> str:
     """Resolve the exact receipt-bound Tiron image prepared for this Git head."""
 
-    image = source.get(TIRON_WORKER_IMAGE_ENV, "").strip()
-    checked_head = source.get(CHECKED_HEAD_ENV, "").strip()
-    receipt = source.get(TIRON_PREPARATION_RECEIPT_ENV, "").strip()
-    receipt_sha256 = source.get(
-        TIRON_PREPARATION_RECEIPT_SHA256_ENV,
-        "",
-    ).strip()
-    if not image or _GIT_SHA.fullmatch(checked_head) is None:
-        raise ValueError(
-            f"{TIRON_WORKER_IMAGE_ENV} and a full {CHECKED_HEAD_ENV} are required"
-        )
-    if not receipt or _SHA256_HEX.fullmatch(receipt_sha256) is None:
-        raise ValueError("Tiron preparation receipt and SHA-256 are required")
-
-    def run_command(
-        command: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        actual = list(command)
-        if actual and actual[0] == "docker":
-            actual[0] = docker_binary
-        return subprocess.run(actual, **kwargs)  # type: ignore[arg-type]
-
-    try:
-        contract = runtime_image_contract(
-            repository_root,
-            "meeting-transcription",
-            checked_head,
-        )
-        if contract.base_digest != expected_base_digest:
-            raise CheckedRuntimeImageError(
-                "Tiron image base platform digest differs from its runtime lock"
-            )
-        assert_clean_checked_head(
-            repository_root,
-            checked_head,
-            runner=run_command,
-        )
-        inspected = verify_prepared_checked_image(
-            contract,
-            receipt_path=Path(receipt),
-            receipt_sha256=receipt_sha256,
-            runner=run_command,
-        )
-    except (CheckedRuntimeImageError, OSError) as error:
-        raise ValueError(str(error)) from None
-    image_id = inspected["imageId"]
-    if image != image_id:
-        raise ValueError(
-            "Tiron worker image must be the receipt-bound immutable image ID"
-        )
-    return image_id
+    return resolve_receipt_bound_runtime_image(
+        source,
+        runtime="meeting-transcription",
+        image_environment_variable=TIRON_WORKER_IMAGE_ENV,
+        checked_head_environment_variable=CHECKED_HEAD_ENV,
+        receipt_environment_variable=TIRON_PREPARATION_RECEIPT_ENV,
+        receipt_sha256_environment_variable=TIRON_PREPARATION_RECEIPT_SHA256_ENV,
+        docker_binary=docker_binary,
+        repository_root=repository_root,
+        expected_base_digest=expected_base_digest,
+    )
 
 
 def _build_cohere_vllm_plan(
@@ -392,7 +345,6 @@ def resolve_checked_worker_image(
     *,
     docker_binary: str,
     image_env: str = ASR_WORKER_IMAGE_ENV,
-    expected_runtime_label: str | None = None,
 ) -> str:
     image = environ.get(image_env, "").strip()
     checked_head = environ.get(CHECKED_HEAD_ENV, "").strip()
@@ -411,13 +363,6 @@ def resolve_checked_worker_image(
         raise ValueError(
             "checked-head worker image inspection omitted its immutable ID"
         )
-    if expected_runtime_label is not None:
-        labels = inspected.get("labels")
-        if (
-            not isinstance(labels, dict)
-            or labels.get(_IMAGE_RUNTIME_LABEL) != expected_runtime_label
-        ):
-            raise ValueError("checked-head worker image has the wrong runtime label")
     return image_id
 
 

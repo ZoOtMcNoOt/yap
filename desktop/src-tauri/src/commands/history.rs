@@ -3,19 +3,17 @@
 mod catalog;
 mod visibility;
 
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Mutex};
+use tauri::Manager;
 
 use crate::jobs::{
     commands::{
-        emit_jobs_changed, CompletedSpeakerTranscriptTurn, JobCommandError, RecordingJobs,
+        emit_jobs_changed, JobCommandError, PublishedSpeakerTranscript, RecordingJobs,
         TranscriptResultSummary,
     },
     LanguageLabelReview,
 };
-use catalog::{
-    collect_history_catalog, project_history_catalog, resolve_current_native_identity,
-    select_hidden_path_migration,
-};
+use catalog::{collect_history_catalog, project_history_catalog, resolve_current_native_identity};
 use visibility::HistoryVisibility;
 
 const RECOVERY_WINDOW_MS: u64 = 24 * 60 * 60 * 1_000;
@@ -42,8 +40,7 @@ pub(crate) struct HistoryCatalogSession {
     recovery_state: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     result_summary: Option<TranscriptResultSummary>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    speaker_turns: Option<Vec<CompletedSpeakerTranscriptTurn>>,
+    speaker_transcript_available: bool,
     session_id: String,
     source_path: String,
     warning: Option<String>,
@@ -74,19 +71,55 @@ pub(crate) struct HistoryCatalog {
     sessions: Vec<HistoryCatalogSession>,
 }
 
-#[derive(Debug, PartialEq, Eq, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct HiddenHistoryMigration {
-    migrated_output_paths: Vec<String>,
+#[derive(Default)]
+struct SpeakerDetailLoadState {
+    current_identity: Option<NativeHistoryIdentity>,
+    generation: u64,
+}
+
+#[derive(Default)]
+struct SpeakerDetailLoadCoordinator {
+    state: Mutex<SpeakerDetailLoadState>,
+}
+
+impl SpeakerDetailLoadCoordinator {
+    fn begin(&self, identity: &NativeHistoryIdentity) -> Result<u64, JobCommandError> {
+        let mut state = self.state.lock().map_err(|_| {
+            speaker_transcript_load_error("Speaker transcript load coordination is unavailable.")
+        })?;
+        if state.current_identity.as_ref() == Some(identity) {
+            return Ok(state.generation);
+        }
+        state.generation = state.generation.checked_add(1).ok_or_else(|| {
+            speaker_transcript_load_error("Speaker transcript request capacity was exhausted.")
+        })?;
+        state.current_identity = Some(identity.clone());
+        Ok(state.generation)
+    }
+
+    fn is_current(&self, generation: u64) -> Result<bool, JobCommandError> {
+        self.state
+            .lock()
+            .map(|state| state.generation == generation)
+            .map_err(|_| {
+                speaker_transcript_load_error(
+                    "Speaker transcript load coordination is unavailable.",
+                )
+            })
+    }
 }
 
 pub(crate) struct HistoryCatalogOwner {
+    speaker_detail_gate: tokio::sync::Semaphore,
+    speaker_detail_loads: SpeakerDetailLoadCoordinator,
     visibility: HistoryVisibility,
 }
 
 impl HistoryCatalogOwner {
     pub(crate) fn open_default() -> Self {
         Self {
+            speaker_detail_gate: tokio::sync::Semaphore::new(1),
+            speaker_detail_loads: SpeakerDetailLoadCoordinator::default(),
             visibility: HistoryVisibility::open_default(),
         }
     }
@@ -119,6 +152,41 @@ pub(crate) fn history_catalog(
 }
 
 #[tauri::command]
+pub(crate) async fn history_speaker_transcript(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    owner: tauri::State<'_, HistoryCatalogOwner>,
+    identity: NativeHistoryIdentity,
+) -> Result<PublishedSpeakerTranscript, JobCommandError> {
+    ensure_history_authorized(&window)?;
+    if !valid_native_identity(&identity) || identity.origin != HistoryOrigin::Remote {
+        return Err(stale_history_identity_error());
+    }
+    let generation = owner.speaker_detail_loads.begin(&identity)?;
+    let _permit =
+        owner.speaker_detail_gate.acquire().await.map_err(|_| {
+            speaker_transcript_load_error("Speaker transcript loading is unavailable.")
+        })?;
+    if !owner.speaker_detail_loads.is_current(generation)? {
+        return Err(stale_history_identity_error());
+    }
+    let worker_app = app.clone();
+    let detail = tauri::async_runtime::spawn_blocking(move || {
+        let jobs = worker_app.state::<RecordingJobs>();
+        jobs.published_speaker_transcript(&identity.session_id, &identity.output_path)?
+            .ok_or_else(stale_history_identity_error)
+    })
+    .await
+    .map_err(|_| {
+        speaker_transcript_load_error("The speaker transcript worker stopped unexpectedly.")
+    })??;
+    if !owner.speaker_detail_loads.is_current(generation)? {
+        return Err(stale_history_identity_error());
+    }
+    Ok(detail)
+}
+
+#[tauri::command]
 pub(crate) fn history_hide_native(
     window: tauri::WebviewWindow,
     jobs: tauri::State<'_, RecordingJobs>,
@@ -136,41 +204,6 @@ pub(crate) fn history_hide_native(
     owner
         .remember_hidden(std::slice::from_ref(&current))
         .map_err(history_visibility_error)
-}
-
-#[tauri::command]
-pub(crate) fn history_migrate_hidden_paths(
-    window: tauri::WebviewWindow,
-    jobs: tauri::State<'_, RecordingJobs>,
-    owner: tauri::State<'_, HistoryCatalogOwner>,
-    output_paths: Vec<String>,
-) -> Result<HiddenHistoryMigration, JobCommandError> {
-    ensure_history_authorized(&window)?;
-    if output_paths.len() > MAX_HISTORY_SESSIONS {
-        return Err(JobCommandError {
-            code: "HISTORY_MIGRATION_TOO_LARGE".into(),
-            message: format!(
-                "Hidden history migration accepts at most {MAX_HISTORY_SESSIONS} paths."
-            ),
-        });
-    }
-    if output_paths.is_empty() {
-        owner
-            .remember_hidden(&[])
-            .map_err(history_visibility_error)?;
-        return Ok(HiddenHistoryMigration {
-            migrated_output_paths: Vec::new(),
-        });
-    }
-
-    let raw = load_raw_history_catalog(&jobs)?;
-    let (identities, migrated_output_paths) = select_hidden_path_migration(&raw, output_paths);
-    owner
-        .remember_hidden(&identities)
-        .map_err(history_visibility_error)?;
-    Ok(HiddenHistoryMigration {
-        migrated_output_paths,
-    })
 }
 
 #[tauri::command]
@@ -213,7 +246,7 @@ fn resolve_remote_history_identity(
     if !valid_native_identity(identity) || identity.origin != HistoryOrigin::Remote {
         return Err(stale_history_identity_error());
     }
-    let remote = jobs.completed_remote_transcripts()?;
+    let remote = jobs.published_remote_transcript_catalog()?;
     remote
         .sessions
         .into_iter()
@@ -254,6 +287,13 @@ fn stale_history_identity_error() -> JobCommandError {
     }
 }
 
+fn speaker_transcript_load_error(message: &str) -> JobCommandError {
+    JobCommandError {
+        code: "SPEAKER_TRANSCRIPT_LOAD_FAILED".into(),
+        message: message.into(),
+    }
+}
+
 fn history_visibility_error(message: String) -> JobCommandError {
     JobCommandError {
         code: "HISTORY_VISIBILITY_ERROR".into(),
@@ -263,7 +303,7 @@ fn history_visibility_error(message: String) -> JobCommandError {
 
 fn load_raw_history_catalog(jobs: &RecordingJobs) -> Result<HistoryCatalog, JobCommandError> {
     let live = crate::live::recordings::list_history_sources().map_err(history_error)?;
-    let remote = jobs.completed_remote_transcripts()?;
+    let remote = jobs.published_remote_transcript_catalog()?;
     Ok(collect_history_catalog(
         live.saved,
         live.recoverable,
@@ -275,5 +315,45 @@ fn history_error(message: String) -> JobCommandError {
     JobCommandError {
         code: "HISTORY_CATALOG_ERROR".into(),
         message,
+    }
+}
+
+#[cfg(test)]
+mod speaker_detail_load_tests {
+    use super::*;
+
+    fn remote_identity(session_id: &str, output_path: &str) -> NativeHistoryIdentity {
+        NativeHistoryIdentity {
+            origin: HistoryOrigin::Remote,
+            session_id: session_id.into(),
+            output_path: output_path.into(),
+        }
+    }
+
+    #[test]
+    fn identical_speaker_detail_readers_remain_current() {
+        let coordinator = SpeakerDetailLoadCoordinator::default();
+        let identity = remote_identity("s-shared", "C:\\history\\shared\\transcript.txt");
+
+        let first = coordinator.begin(&identity).unwrap();
+        let second = coordinator.begin(&identity).unwrap();
+
+        assert_eq!(first, second);
+        assert!(coordinator.is_current(first).unwrap());
+        assert!(coordinator.is_current(second).unwrap());
+    }
+
+    #[test]
+    fn different_speaker_detail_identity_invalidates_older_readers() {
+        let coordinator = SpeakerDetailLoadCoordinator::default();
+        let first_identity = remote_identity("s-first", "C:\\history\\first\\transcript.txt");
+        let second_identity = remote_identity("s-second", "C:\\history\\second\\transcript.txt");
+
+        let first = coordinator.begin(&first_identity).unwrap();
+        let second = coordinator.begin(&second_identity).unwrap();
+
+        assert_ne!(first, second);
+        assert!(!coordinator.is_current(first).unwrap());
+        assert!(coordinator.is_current(second).unwrap());
     }
 }

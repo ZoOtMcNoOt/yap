@@ -180,7 +180,7 @@ is a development profile, not an enterprise deployment:
 - no GB10 application firewall rule, TLS listener, DNS record, ZPA segment, or
   persistent service is created; and
 - the merged Phase 5 reference worker remains a transient, non-root, networkless
-  comparison path; on the active Phase 6 branch, Cohere uses a separately
+  comparison path; merged Phase 6 Cohere uses a separately
   checked vLLM container with no Docker-published port or external egress. A
   bounded launcher-owned proxy exposes only server loopback and the private API
   key remains mandatory. Optional Nemotron jobs use the same shape on a
@@ -262,8 +262,12 @@ container mutation, separates create/start, uses an exclusive container-ID
 file, and retains a private pre-create recovery record whenever the daemon
 outcome cannot be resolved. Exact-tree re-review, all 14 focused proxy
 contracts, and the real root-owned GB10 target proof pass with no P0–P2 finding.
-Fresh final-head private-controller packaging/prequalification, the complete
-gate, first-attempt hosted closure, the focused PR, and merge remain open.
+Historical candidate `fb0985e7...` passed before its documentation successor
+failed hosted frontend dependency audit. Patched development-only `ip-address`
+10.3.1 candidate `393710999b53a4bd1b00639e30c0fec88b152530` passed fresh
+private-controller packaging/prequalification, the complete checkpoint gate,
+receipt validation, and required CI and CodeQL jobs. Final documentation-only
+hosted closure including disposable-Windows NSIS and PR #143 merge remain.
 This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
 revocation propagation, guest behavior, packaged enterprise policy, or
 production approval. Run those only in a separately authorized IT-provided
@@ -705,8 +709,9 @@ resource cell, cancellation/recovery, slot and PCM admission, and exact
 teardown. These `request-lifecycle` cells record lexical variance without
 turning repeated-output determinism into a Phase 6 promotion requirement. It
 does not run the plan's `vllm-long-waves` or `vllm-mixed-eight` cells. Those cells remain
-available for a provider-promotion comparison, including the Phase 8 Cohere-
-versus-Tiron decision, but they are not candidate-safety prerequisites.
+available for a later provider-promotion comparison. The merged Phase 8 Tiron
+meeting Preview did not settle a broad Cohere-versus-Tiron decision, and these
+cells are not candidate-safety prerequisites.
 
 The first checked-head attempt at
 `e7d322fc07c6e1a39e69c2eec4d45e2c94d79e3a` stopped before NeMo after the

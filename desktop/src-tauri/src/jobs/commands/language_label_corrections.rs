@@ -51,8 +51,9 @@ mod tests {
             LanguageSpan, LanguageSpanBoundaryAuthority, LanguageSpanDisposition,
         },
         server_connector::batch::{
-            LanguageDecision, LanguageSegment, LanguageSegmentReason, LanguageSegmentStatus,
-            ModelRevision, ServerLanguageSpanEvidence, TranscriptResultRevision,
+            AlignmentOutcome, AlignmentStatus, AlignmentUnavailableReason, LanguageDecision,
+            LanguageSegment, LanguageSegmentReason, LanguageSegmentStatus, ModelRevision,
+            ServerLanguageSpanEvidence, TranscriptResultRevision,
         },
     };
     use std::sync::{Arc, Barrier};
@@ -114,7 +115,11 @@ mod tests {
                     decision_evidence: None,
                 }],
             }),
-            alignment: None,
+            alignment: AlignmentOutcome {
+                status: AlignmentStatus::Unavailable,
+                reason: Some(AlignmentUnavailableReason::RuntimeFailed),
+                component_revision: "cohere-attention-alignment-candidate-v1".into(),
+            },
             aligned_words: Vec::new(),
             model_provenance: vec![ModelRevision {
                 model_id: "nvidia/nemotron-3.5-asr-streaming-0.6b".into(),

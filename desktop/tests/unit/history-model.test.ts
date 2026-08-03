@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  filterLegacyHiddenTranscriptHistory,
+  filterHiddenBrowserTranscriptHistory,
   filterHiddenTranscriptHistory,
   hideTranscriptHistory,
   normalizeHiddenTranscriptHistory,
@@ -70,21 +70,21 @@ describe("transcript history model", () => {
       .toEqual([visible]);
   });
 
-  it("keeps native catalog rows outside the legacy compatibility tombstones", () => {
-    const legacy = {
+  it("applies browser tombstones without hiding native catalog rows", () => {
+    const browserEntry = {
       createdAt: "2026-01-03T00:00:00.000Z",
-      name: "legacy",
+      name: "browser",
       outputPath: "same.txt",
-      sourcePath: "legacy.wav",
+      sourcePath: "browser.wav",
     };
     const native = {
-      ...legacy,
+      ...browserEntry,
       name: "native",
       origin: "remote" as const,
       sessionId: "remote-1",
     };
 
-    expect(filterLegacyHiddenTranscriptHistory([legacy, native], ["same.txt"]))
+    expect(filterHiddenBrowserTranscriptHistory([browserEntry, native], ["same.txt"]))
       .toEqual([native]);
   });
 });

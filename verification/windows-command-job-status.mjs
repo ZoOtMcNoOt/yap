@@ -62,6 +62,7 @@ function validateStatusShape(status, protocol) {
     "nativeErrorCode",
     "outcome",
     "retainedDescendantDetected",
+    "retainedProcessNames",
     "rootExited",
     "rootProcessId",
     "schemaVersion",
@@ -77,7 +78,7 @@ function validateStatusShape(status, protocol) {
     "Windows command Job supervisor status fields differed from its contract.",
   );
   requireCondition(
-    status.schemaVersion === 1
+    status.schemaVersion === 2
       && status.containment === "windows-job-object"
       && status.supervisorIdentitySha256 === protocol.supervisorIdentitySha256
       && status.environmentSha256 === protocol.environmentSha256
@@ -108,6 +109,15 @@ function validateStatusShape(status, protocol) {
       && typeof status.activeProcessZeroObserved === "boolean"
       && typeof status.cleanupProven === "boolean"
       && typeof status.retainedDescendantDetected === "boolean"
+      && Array.isArray(status.retainedProcessNames)
+      && status.retainedProcessNames.length <= 128
+      && status.retainedProcessNames.every(
+        (name) => typeof name === "string" && /^[a-z0-9._-]{1,128}$/.test(name),
+      )
+      && (
+        status.retainedDescendantDetected
+        || status.retainedProcessNames.length === 0
+      )
       && Number.isSafeInteger(status.elapsedMilliseconds)
       && status.elapsedMilliseconds >= 0
       && (
@@ -160,7 +170,8 @@ function validateOutcome(status) {
     requireCondition(
       status.cleanupProven
         && status.terminationRequested
-        && status.retainedDescendantDetected,
+        && status.retainedDescendantDetected
+        && status.retainedProcessNames.length > 0,
       "A retained-descendant result had contradictory Job evidence.",
     );
   }

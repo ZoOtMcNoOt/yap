@@ -19,7 +19,7 @@ use self::records::{path_text, ValidatedChunk, ValidatedJob};
 use self::retention::prune_terminal_history;
 use self::row_mapping::{query_job, raw_job_from_row, RawChunk};
 use crate::jobs::{
-    migrations, JobChunkRecord, JobLedgerError, NewJobChunk, NewRecordingJob, RecordingJobRecord,
+    schema, JobChunkRecord, JobLedgerError, NewJobChunk, NewRecordingJob, RecordingJobRecord,
 };
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 use std::{
@@ -42,7 +42,7 @@ impl JobLedger {
     }
 
     pub fn open(path: impl AsRef<Path>) -> Result<Self, JobLedgerError> {
-        let mut connection = migrations::open_file(path.as_ref())?;
+        let mut connection = schema::open_file(path.as_ref())?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
         prune_terminal_history(&transaction, None)?;
         transaction.commit()?;
@@ -53,7 +53,7 @@ impl JobLedger {
 
     #[cfg(test)]
     pub(super) fn open_in_memory() -> Result<Self, JobLedgerError> {
-        let mut connection = migrations::open_in_memory()?;
+        let mut connection = schema::open_in_memory()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
         prune_terminal_history(&transaction, None)?;
         transaction.commit()?;

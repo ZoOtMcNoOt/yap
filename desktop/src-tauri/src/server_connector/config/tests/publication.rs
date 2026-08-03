@@ -13,7 +13,7 @@ fn save_replaces_a_stale_partial_and_persists_only_the_public_schema() {
     let partial = dir.join("server-settings.json.part");
     std::fs::write(
         &path,
-        r#"{"schemaVersion":1,"enabled":false,"baseUrl":null}"#,
+        r#"{"schemaVersion":2,"enabled":false,"baseUrl":null}"#,
     )
     .unwrap();
     std::fs::write(&partial, "stale-secret").unwrap();

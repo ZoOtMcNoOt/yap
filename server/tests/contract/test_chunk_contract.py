@@ -20,6 +20,7 @@ class ContractTests(unittest.TestCase):
         )
         self.assertNotIn("sha256", replay_key["properties"])
         self.assertNotIn("sequenceStart", content_identity["properties"])
+        self.assertEqual(replay_key["properties"]["schemaVersion"]["const"], 1)
         self.assertEqual(
             content_identity["properties"]["sha256"]["pattern"], "^[0-9a-f]{64}$"
         )

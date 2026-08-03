@@ -16,7 +16,7 @@ from yap_server.evaluation.duration_tracks import (
     build_duration_track_collection,
     load_duration_track,
 )
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     read_json_object_with_identity,
 )
 from yap_server.evaluation.runtime_plan import (
@@ -121,7 +121,9 @@ class ProviderLoadCaseDurationTracks:
 
         indexed = self.suite.indexed_tracks_for(self.duration_samples)
         if set(indexed) != set(self.duration_samples):
-            raise ValueError("provider duration tracks differ from the selected load case")
+            raise ValueError(
+                "provider duration tracks differ from the selected load case"
+            )
         return indexed
 
     def public_identity(self) -> dict[str, object]:
@@ -283,9 +285,7 @@ def build_provider_duration_suite(
             "schemaVersion": 1,
             "planSha256": snapshot.sha256,
             "providerSystemIds": list(_PROVIDER_SYSTEM_IDS),
-            "rejectionBoundarySamples": list(
-                selection.rejection_boundary_samples
-            ),
+            "rejectionBoundarySamples": list(selection.rejection_boundary_samples),
             "cases": [
                 {
                     "caseId": requirement.case_id,
@@ -349,7 +349,10 @@ def load_provider_duration_suite(
     if collection_root.parent != runtime_track_root:
         raise ValueError("provider duration suite escaped the runtime-track root")
     requested_suite = suite_path.resolve(strict=True)
-    if requested_suite.parent != collection_root or requested_suite.name != _MANIFEST_NAME:
+    if (
+        requested_suite.parent != collection_root
+        or requested_suite.name != _MANIFEST_NAME
+    ):
         raise ValueError("provider duration suite path is invalid")
     suite, suite_sha256 = read_json_object_with_identity(
         requested_suite,
@@ -390,7 +393,9 @@ def load_provider_duration_suite(
             "requiredBy",
             "trackManifestSha256",
         }:
-            raise ValueError("provider duration suite case fields differ from the contract")
+            raise ValueError(
+                "provider duration suite case fields differ from the contract"
+            )
         expected_manifest_sha256 = raw_case["trackManifestSha256"]
         if (
             raw_case["caseId"] != requirement.case_id
@@ -399,7 +404,9 @@ def load_provider_duration_suite(
             or not isinstance(expected_manifest_sha256, str)
             or _SHA256.fullmatch(expected_manifest_sha256) is None
         ):
-            raise ValueError("provider duration suite case differs from the runtime plan")
+            raise ValueError(
+                "provider duration suite case differs from the runtime plan"
+            )
         expected_entries.add(requirement.case_id)
         track_root = _real_private_directory(
             collection_root / requirement.case_id,
@@ -424,7 +431,9 @@ def load_provider_duration_suite(
         if requirement.duration_samples in required_durations:
             loaded = load_duration_track(manifest_path)
             if loaded.manifest != manifest:
-                raise ValueError("provider duration track changed while it was admitted")
+                raise ValueError(
+                    "provider duration track changed while it was admitted"
+                )
             loaded_tracks.append((requirement.duration_samples, loaded))
 
     if {entry.name for entry in collection_root.iterdir()} != expected_entries:
@@ -453,9 +462,7 @@ def load_provider_load_case_tracks(
     if load_case.system_id not in _PROVIDER_SYSTEM_IDS:
         raise ValueError("runtime load case is not a resident provider scenario")
     durations = tuple(
-        item.duration_samples
-        for item in load_case.mix
-        for _index in range(item.count)
+        item.duration_samples for item in load_case.mix for _index in range(item.count)
     )
     unique_durations = tuple(dict.fromkeys(durations))
     suite = load_provider_duration_suite(
@@ -476,9 +483,7 @@ def _require_boundary_identifiers(plan: Mapping[str, object]) -> None:
     if not isinstance(boundaries, list):
         raise ValueError("runtime plan omitted the batch maximum boundaries")
     identifiers = {
-        boundary.get("id")
-        for boundary in boundaries
-        if isinstance(boundary, Mapping)
+        boundary.get("id") for boundary in boundaries if isinstance(boundary, Mapping)
     }
     if _EXACT_MAXIMUM_BOUNDARY_ID not in identifiers:
         raise ValueError("runtime plan omitted the exact batch maximum boundary")
@@ -504,14 +509,18 @@ def _validated_batch_boundaries(plan: Mapping[str, object]) -> tuple[int, int]:
         or exact.get("values") != [expected_exact]
         or exact.get("expected") != "complete"
     ):
-        raise ValueError("exact batch maximum boundary differs from the runtime contract")
+        raise ValueError(
+            "exact batch maximum boundary differs from the runtime contract"
+        )
     if (
         rejection.get("systemId") != "all-batch-adapters"
         or rejection.get("unit") != "audioSamples"
         or rejection.get("values") != [expected_exact + 1]
         or rejection.get("expected") != "reject-before-inference"
     ):
-        raise ValueError("batch maximum rejection boundary differs from the runtime contract")
+        raise ValueError(
+            "batch maximum rejection boundary differs from the runtime contract"
+        )
     return expected_exact, expected_exact + 1
 
 

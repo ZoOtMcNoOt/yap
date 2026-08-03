@@ -25,9 +25,7 @@ from tests.asr_route_fixtures import TEST_ASR_CATALOG_REVISION, test_asr_route
 
 from .service_fixtures import (
     _ControlledProcessor,
-    _Processor,
     _create_request,
-    _request_with_preprocessing_evidence,
 )
 
 
@@ -53,6 +51,9 @@ class _ControlledWorker:
             "model": {"id": "private-asr", "revision": "revision-1"},
             "transcript": {"text": "Durably admitted transcript."},
         }
+
+    def close(self) -> None:
+        self.release.set()
 
 
 class _LateResultAfterContainmentFailureWorker:
@@ -539,7 +540,7 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
                 supported_languages=("en",),
                 now=lambda: "2026-07-14T21:32:30Z",
             )
-            request = _request_with_preprocessing_evidence()
+            request = _create_request()
             request["preprocessingEvidence"]["normalization"]["outputPcmSha256"] = (
                 "c" * 64
             )
@@ -641,89 +642,5 @@ class RecordingJobCommitAdmissionTests(unittest.TestCase):
                 )
             finally:
                 resumed_worker.release.set()
-                resumed_service.begin_runtime_shutdown()
-                resumed_pool.shutdown()
-
-    def test_legacy_processing_without_a_route_is_quarantined(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            first_worker = _ControlledWorker()
-            first_pool = BatchAsrPool(
-                first_worker,
-                route_resolver=test_asr_route,
-                asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
-                max_workers=1,
-                max_queued=0,
-            )
-            first_service = RecordingJobService(
-                root,
-                processor=first_pool,
-                supported_languages=("en",),
-                now=lambda: "2026-07-14T21:35:00Z",
-            )
-            request, created = _create_and_upload(first_service)
-            first_service.commit(created["jobId"], _commit_request(request))
-            self.assertTrue(first_worker.started.wait(timeout=2))
-            first_service.begin_runtime_shutdown()
-            first_pool.shutdown()
-
-            state_path = root / "jobs" / created["jobId"] / "state.json"
-            legacy = json.loads(state_path.read_text(encoding="utf-8"))
-            legacy["schemaVersion"] = 3
-            del legacy["owner"]
-            del legacy["asrRouting"]
-            del legacy["stageHistoryComplete"]
-            del legacy["stageAttempts"]
-            del legacy["projectionRevision"]
-            state_path.write_text(json.dumps(legacy), encoding="utf-8")
-
-            resumed_worker = _ControlledWorker()
-            resumed_pool = BatchAsrPool(
-                resumed_worker,
-                route_resolver=test_asr_route,
-                asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
-                max_workers=1,
-                max_queued=0,
-            )
-            with self.assertRaisesRegex(ValueError, "verified startup cleanup"):
-                RecordingJobService(
-                    root,
-                    processor=resumed_pool,
-                    supported_languages=("en",),
-                    now=lambda: "2026-07-14T21:35:30Z",
-                )
-            resumed_service = RecordingJobService(
-                root,
-                processor=resumed_pool,
-                supported_languages=("en",),
-                now=lambda: "2026-07-14T21:36:00Z",
-                startup_worker_cleanup_verified=True,
-            )
-            try:
-                quarantined = resumed_service.get(created["jobId"])
-                self.assertEqual(quarantined["status"], "failed")
-                self.assertEqual(
-                    quarantined["error"]["code"],
-                    "ASR_ROUTE_UNRECOVERABLE",
-                )
-                self.assertFalse(resumed_worker.started.is_set())
-                migrated = json.loads(state_path.read_text(encoding="utf-8"))
-                self.assertEqual(migrated["schemaVersion"], 6)
-                self.assertFalse(migrated["stageHistoryComplete"])
-                self.assertIsNone(migrated["asrRouting"])
-                self.assertFalse(
-                    (root / "jobs" / created["jobId"] / "input.wav").exists()
-                )
-                second_restart = RecordingJobService(
-                    root,
-                    processor=_Processor(),
-                    supported_languages=("en",),
-                    now=lambda: "2026-07-14T21:37:00Z",
-                )
-                self.assertEqual(
-                    second_restart.get(created["jobId"])["error"]["code"],
-                    "ASR_ROUTE_UNRECOVERABLE",
-                )
-            finally:
                 resumed_service.begin_runtime_shutdown()
                 resumed_pool.shutdown()

@@ -121,6 +121,7 @@ def validate_result_revision(
         "status",
         "language",
         "transcript",
+        "alignment",
         "alignedWords",
         "modelProvenance",
     }
@@ -128,8 +129,6 @@ def validate_result_revision(
         result_fields.add("languageSegments")
     if "languageSpanEvidence" in result:
         result_fields.add("languageSpanEvidence")
-    if "alignment" in result:
-        result_fields.add("alignment")
     if "speakerResultSha256" in result:
         result_fields.add("speakerResultSha256")
     exact_keys(
@@ -156,19 +155,15 @@ def validate_result_revision(
     if result.get("status") == "partial" and "speakerResultSha256" not in result:
         raise ValueError("partial result omitted its speaker companion identity")
 
-    if "alignment" not in result:
-        if result.get("alignedWords") != []:
-            raise ValueError("legacy result contains untyped alignment")
-    else:
-        alignment = mapping(result.get("alignment"), "result alignment")
-        validate_alignment_payload(
-            {
-                **alignment,
-                "alignedWords": result.get("alignedWords"),
-            },
-            transcript=transcript,
-            maximum_end_ms=maximum_end_ms,
-        )
+    alignment = mapping(result.get("alignment"), "result alignment")
+    validate_alignment_payload(
+        {
+            **alignment,
+            "alignedWords": result.get("alignedWords"),
+        },
+        transcript=transcript,
+        maximum_end_ms=maximum_end_ms,
+    )
 
     language = mapping(result.get("language"), "result language")
     exact_keys(language, {"languageBcp47", "confidence"}, "result language")

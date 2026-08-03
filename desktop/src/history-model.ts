@@ -2,10 +2,6 @@ import {
   isTranscriptResultSummary,
   type TranscriptResultSummary,
 } from "@/lib/transcript-result-summary";
-import {
-  isSpeakerTranscriptTurn,
-  type SpeakerTranscriptTurn,
-} from "@/lib/speaker-transcript";
 
 export type TranscriptHistoryEntry = {
   captureCommitPath?: string;
@@ -18,7 +14,7 @@ export type TranscriptHistoryEntry = {
   warning?: string;
   recoveryState?: "recoverable" | "recovered";
   resultSummary?: TranscriptResultSummary;
-  speakerTurns?: SpeakerTranscriptTurn[];
+  speakerTranscriptAvailable?: boolean;
 };
 
 export const maxTranscriptHistoryEntries = 500;
@@ -37,9 +33,8 @@ function isHistoryEntry(value: unknown): value is TranscriptHistoryEntry {
     (entry.captureCommitPath === undefined || typeof entry.captureCommitPath === "string") &&
     (entry.recoveryState === undefined || entry.recoveryState === "recoverable" || entry.recoveryState === "recovered") &&
     (entry.resultSummary === undefined || isTranscriptResultSummary(entry.resultSummary)) &&
-    (entry.speakerTurns === undefined || (
-      Array.isArray(entry.speakerTurns) && entry.speakerTurns.every(isSpeakerTranscriptTurn)
-    ))
+    (entry.speakerTranscriptAvailable === undefined ||
+      typeof entry.speakerTranscriptAvailable === "boolean")
   );
 }
 
@@ -105,7 +100,7 @@ export function filterHiddenTranscriptHistory(entries: TranscriptHistoryEntry[],
   return entries.filter((entry) => !hidden.has(transcriptPathIdentity(entry.outputPath)));
 }
 
-export function filterLegacyHiddenTranscriptHistory(
+export function filterHiddenBrowserTranscriptHistory(
   entries: TranscriptHistoryEntry[],
   outputPaths: string[],
 ) {

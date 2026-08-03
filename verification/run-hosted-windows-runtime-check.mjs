@@ -185,8 +185,9 @@ function requireHostedWindowsBoundary(platform, environment) {
 
 // The child's log is private evidence and is destroyed before this throws, so
 // a bare failure message is unfalsifiable — it has cost several investigations.
-// Every field below is an integer, a boolean, or a fixed enum, so none of it
-// can carry a path, a transcript, or a token.
+// Every field below is an integer, a boolean, or a fixed enum. Retained-process
+// errors add only basenames constrained by the supervisor status parser; neither
+// path can carry a filesystem path, command line, transcript, or token.
 function containmentSummary(result) {
   const evidence = result?.terminationEvidence ?? {};
   return [

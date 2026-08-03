@@ -24,8 +24,12 @@ class ProviderBatchWorkerRegistry:
             raise ValueError("provider worker registry size is invalid")
         for provider_id, worker in copied.items():
             validate_asr_route_id(provider_id, "provider worker key")
-            if not callable(getattr(worker, "run", None)):
-                raise ValueError("registered provider workers must implement run")
+            if not callable(getattr(worker, "run", None)) or not callable(
+                getattr(worker, "close", None)
+            ):
+                raise ValueError(
+                    "registered provider workers must implement run and close"
+                )
         self._workers = MappingProxyType(copied)
         self._closed = threading.Event()
 
@@ -55,11 +59,8 @@ class ProviderBatchWorkerRegistry:
             if identity in closed_workers:
                 continue
             closed_workers.add(identity)
-            close_worker = getattr(worker, "close", None)
-            if not callable(close_worker):
-                continue
             try:
-                close_worker()
+                worker.close()
             except BaseException as error:
                 if first_error is None:
                     first_error = error

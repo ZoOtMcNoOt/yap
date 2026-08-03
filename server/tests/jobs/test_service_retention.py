@@ -23,7 +23,7 @@ from .service_fixtures import (
 
 
 class RecordingJobRetentionTests(unittest.TestCase):
-    def test_legacy_tombstone_cleanup_has_a_global_entry_budget_and_finishes(
+    def test_tombstone_cleanup_has_a_global_entry_budget_and_finishes(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -33,7 +33,7 @@ class RecordingJobRetentionTests(unittest.TestCase):
             chunks = tombstone / "chunks"
             chunks.mkdir(parents=True)
             for index in range(17):
-                (chunks / f"legacy-{index:04d}.pcm").write_bytes(b"x")
+                (chunks / f"entry-{index:04d}.pcm").write_bytes(b"x")
             (tombstone / "state.json").write_text("{}", encoding="utf-8")
             state = DurableJobState(
                 pending_deletions={tombstone.name: None},
@@ -148,7 +148,7 @@ class RecordingJobRetentionTests(unittest.TestCase):
             job_root = root / "jobs" / created["jobId"]
             chunks = job_root / "chunks"
             for index in range(4096):
-                (chunks / f"legacy-{index:08d}.pcm").touch()
+                (chunks / f"entry-{index:08d}.pcm").touch()
             clock["now"] = "2026-07-16T00:00:00Z"
 
             with (
@@ -169,7 +169,7 @@ class RecordingJobRetentionTests(unittest.TestCase):
                     break
             self.assertEqual(list((root / "jobs").glob(".deleting-*")), [])
 
-    def test_startup_does_not_eagerly_purge_expired_cancelled_legacy_chunks(
+    def test_startup_does_not_eagerly_purge_expired_cancelled_chunk_debt(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -187,7 +187,7 @@ class RecordingJobRetentionTests(unittest.TestCase):
             original.cancel(created["jobId"])
             chunks = root / "jobs" / created["jobId"] / "chunks"
             for index in range(257):
-                (chunks / f"legacy-{index:08d}.pcm").touch()
+                (chunks / f"entry-{index:08d}.pcm").touch()
             clock["now"] = "2026-07-16T00:00:00Z"
 
             with (
@@ -344,19 +344,17 @@ class RecordingJobRetentionTests(unittest.TestCase):
             self.assertEqual(restarted_processor.jobs, [])
             for job_id in remaining:
                 self.assertEqual(restarted.get(job_id)["status"], "server_processing")
-                state = (jobs_root / job_id / "state.json").read_text(
-                    encoding="utf-8"
-                )
+                state = (jobs_root / job_id / "state.json").read_text(encoding="utf-8")
                 self.assertEqual(state.count('"state":"running"'), 1)
                 self.assertNotIn("SERVER_RESTARTED", state)
 
-    def test_startup_uses_one_bounded_legacy_debt_pass(self) -> None:
+    def test_startup_uses_one_bounded_deletion_debt_pass(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             tombstone = root / "jobs" / f".deleting-job-{3:032x}"
             tombstone.mkdir(parents=True)
             for index in range(20):
-                (tombstone / f"legacy-{index:04d}.bin").touch()
+                (tombstone / f"entry-{index:04d}.bin").touch()
 
             with (
                 patch(
@@ -414,7 +412,9 @@ class RecordingJobRetentionTests(unittest.TestCase):
             with self.assertRaises(KeyError):
                 service.get(expired["jobId"])
 
-    def test_idle_maintenance_prunes_expired_terminal_jobs_without_new_intake(self) -> None:
+    def test_idle_maintenance_prunes_expired_terminal_jobs_without_new_intake(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             clock = {"now": "2026-07-14T21:15:00Z"}
@@ -436,7 +436,9 @@ class RecordingJobRetentionTests(unittest.TestCase):
             with self.assertRaises(KeyError):
                 service.get(expired["jobId"])
 
-    def test_idle_maintenance_cancels_and_removes_expired_uncommitted_audio(self) -> None:
+    def test_idle_maintenance_cancels_and_removes_expired_uncommitted_audio(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             clock = {"now": "2026-07-14T21:15:00Z"}
@@ -700,6 +702,4 @@ def _job_store(root: Path) -> RecordingJobStore:
         supported_languages=("en",),
         now=lambda: "2026-07-14T21:15:00Z",
         startup_worker_cleanup_verified=True,
-        route_resolver=test_asr_route,
-        asr_catalog_revision=TEST_ASR_CATALOG_REVISION,
     )

@@ -57,7 +57,7 @@ test("Windows Job status rejects completed cleanup without assignment or account
     supervisorIdentitySha256,
   };
   const status = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     containment: "windows-job-object",
     environmentSha256,
     supervisorIdentitySha256,
@@ -73,6 +73,7 @@ test("Windows Job status rejects completed cleanup without assignment or account
     activeProcessZeroObserved: true,
     cleanupProven: true,
     retainedDescendantDetected: false,
+    retainedProcessNames: [],
     elapsedMilliseconds: 10,
     nativeErrorCode: null,
   };
@@ -96,6 +97,7 @@ test("Windows Job status rejects completed cleanup without assignment or account
     status.terminationRequested = true;
     status.activeProcessZeroObserved = true;
     status.retainedDescendantDetected = true;
+    status.retainedProcessNames = ["pwsh"];
     status.nativeErrorCode = 5;
     writeFileSync(statusPath, `${JSON.stringify(status)}\n`, { flag: "wx" });
     const interpreted = interpretWindowsCommandResult({
@@ -129,7 +131,7 @@ test("Windows Job status accepts proven pre-assignment supervisor cleanup", () =
     supervisorIdentitySha256: "a".repeat(64),
   };
   const status = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     containment: "windows-job-object",
     environmentSha256: protocol.environmentSha256,
     supervisorIdentitySha256: protocol.supervisorIdentitySha256,
@@ -145,6 +147,7 @@ test("Windows Job status accepts proven pre-assignment supervisor cleanup", () =
     activeProcessZeroObserved: false,
     cleanupProven: true,
     retainedDescendantDetected: false,
+    retainedProcessNames: [],
     elapsedMilliseconds: 10,
     nativeErrorCode: 5,
   };
@@ -176,7 +179,7 @@ test("retained-descendant status remains authoritative over a racing timeout", (
     supervisorIdentitySha256: "a".repeat(64),
   };
   const status = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     containment: "windows-job-object",
     environmentSha256: protocol.environmentSha256,
     supervisorIdentitySha256: protocol.supervisorIdentitySha256,
@@ -192,6 +195,7 @@ test("retained-descendant status remains authoritative over a racing timeout", (
     activeProcessZeroObserved: true,
     cleanupProven: true,
     retainedDescendantDetected: true,
+    retainedProcessNames: ["pwsh"],
     elapsedMilliseconds: 5_010,
     nativeErrorCode: null,
   };
@@ -215,6 +219,8 @@ test("retained-descendant status remains authoritative over a racing timeout", (
       interpreted.error.terminationEvidence.terminationReason,
       "retained-descendant",
     );
+    assert.deepEqual(interpreted.error.retainedProcessNames, ["pwsh"]);
+    assert.match(interpreted.error.message, /\(pwsh\)/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

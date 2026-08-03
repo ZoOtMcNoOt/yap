@@ -2,9 +2,10 @@ use std::{
     fs::{self, File},
     io::{Read, Write},
     net::TcpListener,
+    path::Path,
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc, Mutex,
+        mpsc, Arc, Mutex,
     },
     thread,
     time::{Duration, UNIX_EPOCH},
@@ -13,13 +14,17 @@ use std::{
 use crate::{
     audio::session::OwnerNamespace,
     jobs::{
-        JobLedger, NewClientPreflightArtifact, NewRecordingJob, RecordingJobResources,
-        RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin, SourceOwnership,
+        commands::RecordingJobs, JobLedger, NewClientPreflightArtifact, NewRecordingJob,
+        RecordingJobResources, RecordingJobStatus, RecordingRoute, SessionMode, SessionOrigin,
+        SourceOwnership,
     },
+    media_protocol::MediaOwner,
     server_connector::{
         batch::{
-            ApiError, BatchApiClient, CreateRecordingJobRequest, NormalizationEvidence,
-            PreprocessingEvidence, SourceVadInterval, VadComponentEvidence, VadEvidence,
+            AlignmentOutcome, AlignmentStatus, AlignmentUnavailableReason, ApiError,
+            BatchApiClient, CreateRecordingJobRequest, LanguageDecision, ModelRevision,
+            NormalizationEvidence, PreprocessingEvidence, SourceVadInterval,
+            TranscriptResultRevision, VadComponentEvidence, VadEvidence,
         },
         config::ServerSettings,
         AuthenticatedRequestDispatcher, ServerConnector, ServerConnectorBoundary,
@@ -31,8 +36,9 @@ use super::{
     advance_processing_job_once_guarded_for_test, advance_processing_once,
     advance_processing_once_guarded, advance_upload_job_once_guarded_for_test, advance_upload_once,
     advance_upload_once_guarded, attach_prepared_remote_job_or_cleanup,
-    claim_preprocessing_for_catalog, prepare_next_queued_job, remote_retry_plan, BatchCommitGuard,
-    DrainStepError, RemoteJobDrain,
+    claim_preprocessing_for_catalog, finalize_next_locally_published_saving_result,
+    finalize_published_saving_result_with_mutation_observer_for_test, prepare_next_queued_job,
+    remote_retry_plan, BatchCommitGuard, DrainStepError, LocalSavingRecovery, RemoteJobDrain,
 };
 
 #[path = "tests/support.rs"]

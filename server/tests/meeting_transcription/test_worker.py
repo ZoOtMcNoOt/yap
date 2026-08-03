@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import wave
 
-from yap_server.evaluation.meeting_runtime_provenance import (
+from yap_server.meeting_transcription.runtime_provenance import (
     load_meeting_runtime_provenance,
 )
 from yap_server.meeting_transcription.worker import (

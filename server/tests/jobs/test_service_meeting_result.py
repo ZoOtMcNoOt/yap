@@ -2,18 +2,23 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
 import tempfile
 import unittest
 
 from yap_server.auth import PrincipalKey
 from yap_server.jobs import JobServiceError, RecordingJobService
+from yap_server.jobs.result_bundle import ResultBundleAdapterRegistry
 from yap_server.meeting_transcription.contract import (
     MAX_MEETING_PCM_BYTES,
     MEETING_TRANSCRIPTION_POOL_ID,
 )
 from yap_server.meeting_transcription.result_revisions import (
     load_meeting_result_authority,
+)
+from yap_server.meeting_transcription.result_bundle_adapter import (
+    MeetingResultBundleAdapter,
 )
 from yap_server.pools.batch_contract import AsrRouteDecision
 
@@ -23,6 +28,12 @@ from .service_fixtures import _ControlledProcessor, _create_request
 SERVER_ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_LOCK = SERVER_ROOT / "meeting-transcription-runtime.lock.json"
 AUTHORITY = load_meeting_result_authority(RUNTIME_LOCK)
+RESULT_BUNDLE_ADAPTERS = ResultBundleAdapterRegistry(
+    {MEETING_TRANSCRIPTION_POOL_ID: MeetingResultBundleAdapter(AUTHORITY)}
+)
+ROUTE_PCM_BYTE_LIMITS = {
+    MEETING_TRANSCRIPTION_POOL_ID: MAX_MEETING_PCM_BYTES,
+}
 ALICE = PrincipalKey(
     tenant_id="11111111-1111-4111-8111-111111111111",
     subject_id="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
@@ -84,6 +95,11 @@ def _request_with_pcm_bytes(total_bytes: int, *, session_id: str) -> dict[str, o
         remaining -= byte_length
         index += 1
     request["chunks"] = chunks
+    sample_count = total_bytes // 2
+    normalization = request["preprocessingEvidence"]["normalization"]
+    normalization["sourceSampleCount"] = sample_count
+    normalization["outputSampleCount"] = sample_count
+    request["preprocessingEvidence"]["vad"]["sourceSampleCount"] = sample_count
     return request
 
 
@@ -99,7 +115,8 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                 processor=processor,
                 supported_languages=("en-US",),
                 now=lambda: "2026-08-03T03:00:00Z",
-                meeting_result_authority=AUTHORITY,
+                result_bundle_adapters=RESULT_BUNDLE_ADAPTERS,
+                route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
                 development_principal=None,
             )
             alice = service.for_principal(ALICE)
@@ -209,10 +226,13 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
 
             restarted = RecordingJobService(
                 root,
-                processor=_MeetingProcessor(),
+                # Historical result decoding is independent of the currently
+                # selected worker profile.
+                processor=_ControlledProcessor(),
                 supported_languages=("en-US",),
                 now=lambda: "2026-08-03T03:00:01Z",
-                meeting_result_authority=AUTHORITY,
+                result_bundle_adapters=RESULT_BUNDLE_ADAPTERS,
+                route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
                 development_principal=None,
             )
             restarted_alice = restarted.for_principal(ALICE)
@@ -221,6 +241,76 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                 restarted_alice.get_speaker_result(created["jobId"]),
                 speaker,
             )
+
+            next_authority = replace(
+                AUTHORITY,
+                provenance=replace(
+                    AUTHORITY.provenance,
+                    model=replace(
+                        AUTHORITY.provenance.model,
+                        revision="f" * 40,
+                    ),
+                ),
+                runtime_lock_sha256="e" * 64,
+            )
+            next_adapters = ResultBundleAdapterRegistry(
+                {
+                    MEETING_TRANSCRIPTION_POOL_ID: MeetingResultBundleAdapter(
+                        next_authority
+                    )
+                }
+            )
+            restarted_after_model_update = RecordingJobService(
+                root,
+                processor=_ControlledProcessor(),
+                supported_languages=("en-US",),
+                now=lambda: "2026-08-03T03:00:01Z",
+                result_bundle_adapters=next_adapters,
+                route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
+                development_principal=None,
+            ).for_principal(ALICE)
+            self.assertEqual(
+                restarted_after_model_update.get_result(created["jobId"]),
+                transcript,
+            )
+            self.assertEqual(
+                restarted_after_model_update.get_speaker_result(created["jobId"]),
+                speaker,
+            )
+
+            state_path = job_root / "state.json"
+            state_bytes = state_path.read_bytes()
+            persisted = json.loads(state_bytes)
+            persisted["asrRouting"]["route"]["providerLanguage"] = "fr"
+            state_path.write_text(json.dumps(persisted), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "route language"):
+                RecordingJobService(
+                    root,
+                    processor=_ControlledProcessor(),
+                    supported_languages=("en-US",),
+                    now=lambda: "2026-08-03T03:00:01Z",
+                    result_bundle_adapters=RESULT_BUNDLE_ADAPTERS,
+                    route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
+                    development_principal=None,
+                )
+            state_path.write_bytes(state_bytes)
+
+            persisted = json.loads(state_bytes)
+            persisted["creation"]["metadata"]["localeHintBcp47"] = "en-GB"
+            persisted["creation"]["metadata"]["preferredLanguagesBcp47"] = ["en-GB"]
+            persisted["creation"]["languageDecision"]["languageBcp47"] = "en-GB"
+            state_path.write_text(json.dumps(persisted), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "frozen job"):
+                RecordingJobService(
+                    root,
+                    processor=_ControlledProcessor(),
+                    supported_languages=("en-US",),
+                    now=lambda: "2026-08-03T03:00:01Z",
+                    result_bundle_adapters=RESULT_BUNDLE_ADAPTERS,
+                    route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
+                    development_principal=None,
+                )
+            state_path.write_bytes(state_bytes)
 
             speaker_result_path = job_root / "speaker-result-revision.json"
             speaker_result_bytes = speaker_result_path.read_bytes()
@@ -231,7 +321,8 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                     processor=_MeetingProcessor(),
                     supported_languages=("en-US",),
                     now=lambda: "2026-08-03T03:00:02Z",
-                    meeting_result_authority=AUTHORITY,
+                    result_bundle_adapters=RESULT_BUNDLE_ADAPTERS,
+                    route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
                     development_principal=None,
                 )
             speaker_result_path.write_bytes(speaker_result_bytes)
@@ -254,11 +345,14 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                 processor=_MeetingProcessor(),
                 supported_languages=("en-US",),
                 now=lambda: "2026-08-03T03:00:03Z",
-                meeting_result_authority=AUTHORITY,
+                result_bundle_adapters=RESULT_BUNDLE_ADAPTERS,
+                route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
                 development_principal=None,
                 startup_worker_cleanup_verified=True,
             ).for_principal(ALICE)
-            self.assertEqual(cancelled_restart.get(created["jobId"])["status"], "cancelled")
+            self.assertEqual(
+                cancelled_restart.get(created["jobId"])["status"], "cancelled"
+            )
             with self.assertRaises(JobServiceError) as unavailable_result:
                 cancelled_restart.get_result(created["jobId"])
             self.assertFalse(unavailable_result.exception.retryable)
@@ -276,7 +370,8 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                         processor=_MeetingProcessor(),
                         supported_languages=("en-US",),
                         now=lambda: "2026-08-03T03:10:00Z",
-                        meeting_result_authority=AUTHORITY,
+                        result_bundle_adapters=RESULT_BUNDLE_ADAPTERS,
+                        route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
                         development_principal=None,
                     )
                     created = service.for_principal(ALICE).create(_create_request())
@@ -308,7 +403,8 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                         processor=_MeetingProcessor(),
                         supported_languages=("en-US",),
                         now=lambda: "2026-08-03T03:10:01Z",
-                        meeting_result_authority=AUTHORITY,
+                        result_bundle_adapters=RESULT_BUNDLE_ADAPTERS,
+                        route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
                         development_principal=None,
                     )
 
@@ -327,7 +423,8 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                 processor=_MeetingProcessor(),
                 supported_languages=("en-US",),
                 now=lambda: "2026-08-03T03:20:00Z",
-                meeting_result_authority=AUTHORITY,
+                result_bundle_adapters=RESULT_BUNDLE_ADAPTERS,
+                route_pcm_byte_limits=ROUTE_PCM_BYTE_LIMITS,
                 development_principal=None,
             ).for_principal(ALICE)
 

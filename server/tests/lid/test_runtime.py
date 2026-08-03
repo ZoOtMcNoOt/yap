@@ -74,9 +74,7 @@ class LidRuntimeTests(unittest.TestCase):
                 "YAP_LANGUAGE_DETECTION_ENABLED": "1",
                 "YAP_LANGUAGE_DETECTION_MODEL_DIR": str(model),
                 "YAP_LANGUAGE_DETECTION_WORKER_IMAGE": IMAGE_ID,
-                "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT": (
-                    PREPARATION_RECEIPT
-                ),
+                "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT": (PREPARATION_RECEIPT),
                 "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256": (
                     PREPARATION_RECEIPT_SHA256
                 ),
@@ -88,12 +86,9 @@ class LidRuntimeTests(unittest.TestCase):
                     "yap_server.lid.runtime.verify_lid_model_artifacts"
                 ) as verify_model,
                 patch(
-                    "yap_server.lid.runtime.assert_clean_checked_head",
-                ) as assert_clean,
-                patch(
-                    "yap_server.lid.runtime.verify_prepared_checked_image",
-                    return_value={"imageId": IMAGE_ID},
-                ) as verify_prepared,
+                    "yap_server.lid.runtime.resolve_receipt_bound_runtime_image",
+                    return_value=IMAGE_ID,
+                ) as resolve_image,
                 patch(
                     "yap_server.lid.runtime.reconcile_lid_containers",
                     side_effect=reconcile_containers,
@@ -159,15 +154,20 @@ class LidRuntimeTests(unittest.TestCase):
             )
             self.assertNotIn("languagePreflight", _catalog())
             verify_model.assert_called_once_with(self.lock, model.resolve())
-            assert_clean.assert_called_once()
-            verify_prepared.assert_called_once()
-            self.assertEqual(
-                verify_prepared.call_args.kwargs["receipt_path"],
-                Path(PREPARATION_RECEIPT),
-            )
-            self.assertEqual(
-                verify_prepared.call_args.kwargs["receipt_sha256"],
-                PREPARATION_RECEIPT_SHA256,
+            resolve_image.assert_called_once_with(
+                environ,
+                runtime="language-detection",
+                image_environment_variable="YAP_LANGUAGE_DETECTION_WORKER_IMAGE",
+                checked_head_environment_variable="YAP_CHECKED_HEAD",
+                receipt_environment_variable=(
+                    "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT"
+                ),
+                receipt_sha256_environment_variable=(
+                    "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256"
+                ),
+                docker_binary="docker-test",
+                repository_root=REPO_ROOT,
+                expected_base_digest=self.lock.runtime.platform_digest,
             )
             reconcile_containers.assert_called_once_with(
                 "docker-test",
@@ -176,16 +176,10 @@ class LidRuntimeTests(unittest.TestCase):
             reconcile_requests.assert_called_once()
             self.assertEqual(reconcile_requests.call_args.args, (work_root,))
             self.assertTrue(
-                reconcile_requests.call_args.kwargs[
-                    "retire_container_identities"
-                ]
+                reconcile_requests.call_args.kwargs["retire_container_identities"]
             )
             self.assertTrue(
-                callable(
-                    reconcile_requests.call_args.kwargs[
-                        "verify_container_absent"
-                    ]
-                )
+                callable(reconcile_requests.call_args.kwargs["verify_container_absent"])
             )
             verify_recovery_container.assert_called_once_with(
                 "docker-test",
@@ -219,13 +213,10 @@ class LidRuntimeTests(unittest.TestCase):
                 PREPARATION_RECEIPT_SHA256
             ),
         }
-        with (
-            patch("yap_server.lid.runtime.assert_clean_checked_head"),
-            patch(
-                "yap_server.lid.runtime.verify_prepared_checked_image",
-                return_value={"imageId": IMAGE_ID},
-            ),
-        ):
+        with patch(
+            "yap_server.lid.runtime.resolve_receipt_bound_runtime_image",
+            return_value=IMAGE_ID,
+        ) as resolve_image:
             self.assertEqual(
                 resolve_language_detection_worker_image(
                     environ,
@@ -235,23 +226,19 @@ class LidRuntimeTests(unittest.TestCase):
                 ),
                 IMAGE_ID,
             )
-
-        substituted = dict(environ)
-        substituted["YAP_LANGUAGE_DETECTION_WORKER_IMAGE"] = "yap-lid:test"
-        with (
-            patch("yap_server.lid.runtime.assert_clean_checked_head"),
-            patch(
-                "yap_server.lid.runtime.verify_prepared_checked_image",
-                return_value={"imageId": IMAGE_ID},
+        resolve_image.assert_called_once_with(
+            environ,
+            runtime="language-detection",
+            image_environment_variable="YAP_LANGUAGE_DETECTION_WORKER_IMAGE",
+            checked_head_environment_variable="YAP_CHECKED_HEAD",
+            receipt_environment_variable=("YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT"),
+            receipt_sha256_environment_variable=(
+                "YAP_LANGUAGE_DETECTION_PREPARATION_RECEIPT_SHA256"
             ),
-            self.assertRaisesRegex(ValueError, "receipt-bound immutable image ID"),
-        ):
-            resolve_language_detection_worker_image(
-                substituted,
-                lock=self.lock,
-                docker_binary="docker-test",
-                repository_root=REPO_ROOT,
-            )
+            docker_binary="docker-test",
+            repository_root=REPO_ROOT,
+            expected_base_digest=self.lock.runtime.platform_digest,
+        )
 
     def test_catalog_contributes_only_unique_fixed_locale_destinations(self) -> None:
         self.assertEqual(

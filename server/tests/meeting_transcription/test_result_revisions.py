@@ -5,7 +5,7 @@ import hashlib
 from pathlib import Path
 import unittest
 
-from yap_server.evaluation.meeting_runtime_provenance import (
+from yap_server.meeting_transcription.runtime_provenance import (
     load_meeting_runtime_provenance,
 )
 from yap_server.meeting_transcription.result_revisions import (
@@ -193,8 +193,8 @@ class MeetingResultRevisionTests(unittest.TestCase):
         missing_degradation["speakerCapacityDegradation"] = None
         matching_complete_transcript = deepcopy(transcript)
         matching_complete_transcript["status"] = "complete"
-        matching_complete_transcript["speakerResultSha256"] = (
-            speaker_result_sha256(missing_degradation)
+        matching_complete_transcript["speakerResultSha256"] = speaker_result_sha256(
+            missing_degradation
         )
         with self.assertRaisesRegex(ValueError, "differs from the roster"):
             validate_speaker_result_revision(
@@ -216,8 +216,8 @@ class MeetingResultRevisionTests(unittest.TestCase):
         )
         matching_partial_transcript = deepcopy(complete_transcript)
         matching_partial_transcript["status"] = "partial"
-        matching_partial_transcript["speakerResultSha256"] = (
-            speaker_result_sha256(spurious_degradation)
+        matching_partial_transcript["speakerResultSha256"] = speaker_result_sha256(
+            spurious_degradation
         )
         with self.assertRaisesRegex(ValueError, "differs from the roster"):
             validate_speaker_result_revision(

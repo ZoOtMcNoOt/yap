@@ -1,9 +1,10 @@
-use std::path::Path;
+use std::{path::Path, sync::Mutex};
 
 use crate::{
     jobs::{remote, JobLedger, RecordingJobStatus, REMOTE_STAGE_RETRY_REQUESTED},
     server_connector::{
         batch::{
+            validate_speaker_result_for_recording, validate_transcript_result_for_recording,
             BatchApiClient, CreateRecordingJobRequest, RetryServerStageRequest, ServerStageName,
             ServerStageProjectionEnvelope, ServerStageState,
         },
@@ -12,10 +13,7 @@ use crate::{
 };
 
 use super::{
-    contract::{
-        result_retention_expiry_ms, validate_job_projection, validate_result_revision,
-        validate_speaker_result_revision,
-    },
+    contract::{result_retention_expiry_ms, validate_job_projection},
     upload::validate_durable_upload_state,
     BatchCommitGuard, DrainResult, DrainStepError,
 };
@@ -27,12 +25,14 @@ pub(super) async fn advance_processing_once(
     client: &BatchApiClient,
     updated_at_ms: u64,
 ) -> DrainResult<bool> {
+    let publication_gate = Mutex::new(());
     advance_processing_once_guarded(
         ledger,
         remote_jobs_directory,
         client,
         updated_at_ms,
         &BatchCommitGuard::Unchecked,
+        &publication_gate,
     )
     .await
 }
@@ -42,6 +42,7 @@ pub(super) async fn advance_processing_with_lease(
     remote_jobs_directory: &Path,
     connector: &ServerConnector,
     lease: &BatchConnectionLease,
+    publication_gate: &Mutex<()>,
     job_id: &str,
     updated_at_ms: u64,
 ) -> DrainResult<bool> {
@@ -52,8 +53,113 @@ pub(super) async fn advance_processing_with_lease(
         Some(job_id),
         updated_at_ms,
         &BatchCommitGuard::Lease { connector, lease },
+        publication_gate,
     )
     .await
+}
+
+pub(super) fn finalize_published_saving_result(
+    ledger: &JobLedger,
+    remote_jobs_directory: &Path,
+    publication_gate: &Mutex<()>,
+    job_id: &str,
+    updated_at_ms: u64,
+) -> DrainResult<bool> {
+    finalize_published_saving_result_after_acquiring_mutation(
+        ledger,
+        remote_jobs_directory,
+        publication_gate,
+        job_id,
+        updated_at_ms,
+        || {},
+    )
+}
+
+#[cfg(test)]
+pub(super) fn finalize_published_saving_result_with_mutation_observer_for_test(
+    ledger: &JobLedger,
+    remote_jobs_directory: &Path,
+    publication_gate: &Mutex<()>,
+    job_id: &str,
+    updated_at_ms: u64,
+    after_acquiring_mutation: impl FnOnce(),
+) -> DrainResult<bool> {
+    finalize_published_saving_result_after_acquiring_mutation(
+        ledger,
+        remote_jobs_directory,
+        publication_gate,
+        job_id,
+        updated_at_ms,
+        after_acquiring_mutation,
+    )
+}
+
+fn finalize_published_saving_result_after_acquiring_mutation(
+    ledger: &JobLedger,
+    remote_jobs_directory: &Path,
+    publication_gate: &Mutex<()>,
+    job_id: &str,
+    updated_at_ms: u64,
+    after_acquiring_mutation: impl FnOnce(),
+) -> DrainResult<bool> {
+    let _publication = publication_gate
+        .lock()
+        .map_err(|_| DrainStepError::permanent("recording job mutation gate is unavailable"))?;
+    after_acquiring_mutation();
+    let Some(candidate) = ledger
+        .get_job(job_id)
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?
+    else {
+        return Ok(false);
+    };
+    if candidate.status != RecordingJobStatus::Saving {
+        return Ok(false);
+    }
+    let prepared = ledger
+        .get_prepared_remote_job(job_id)
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?
+        .ok_or_else(|| DrainStepError::permanent("saving job has no durable remote state"))?;
+    let request = CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json)?;
+    let chunks = ledger
+        .list_chunks(job_id)
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?;
+    validate_durable_upload_state(&candidate, &prepared, &request, &chunks)?;
+    let Some(published) =
+        remote::discover_published_remote_result_bundle(job_id, remote_jobs_directory)?
+    else {
+        return Ok(false);
+    };
+    validate_transcript_result_for_recording(&published.result, &request)?;
+    let speaker_result = published.load_speaker_result()?;
+    if published.result.requires_speaker_result() {
+        validate_speaker_result_for_recording(
+            speaker_result.as_ref().ok_or_else(|| {
+                DrainStepError::permanent("published result omitted its speaker companion")
+            })?,
+            &published.result,
+            &request,
+        )?;
+    } else if speaker_result.is_some() {
+        return Err(DrainStepError::permanent(
+            "published result has an unexpected speaker companion",
+        ));
+    }
+    let terminal_status = match published.result.status.as_str() {
+        "complete" => RecordingJobStatus::Complete,
+        "partial" => RecordingJobStatus::Partial,
+        _ => unreachable!("validated published result status is terminal"),
+    };
+    let output_path = published.result_directory.join("transcript.txt");
+    ledger
+        .finalize_remote_result(
+            job_id,
+            &output_path,
+            result_retention_expiry_ms(&request)?,
+            updated_at_ms,
+            terminal_status,
+        )
+        .map_err(|error| DrainStepError::permanent(error.to_string()))?;
+    Ok(true)
 }
 
 #[cfg(test)]
@@ -63,6 +169,7 @@ pub(super) async fn advance_processing_once_guarded(
     client: &BatchApiClient,
     updated_at_ms: u64,
     guard: &BatchCommitGuard<'_>,
+    publication_gate: &Mutex<()>,
 ) -> DrainResult<bool> {
     advance_processing_job_once_guarded(
         ledger,
@@ -71,6 +178,7 @@ pub(super) async fn advance_processing_once_guarded(
         None,
         updated_at_ms,
         guard,
+        publication_gate,
     )
     .await
 }
@@ -84,6 +192,7 @@ pub(super) async fn advance_processing_job_once_guarded_for_test(
     updated_at_ms: u64,
     guard: &BatchCommitGuard<'_>,
 ) -> DrainResult<bool> {
+    let publication_gate = Mutex::new(());
     advance_processing_job_once_guarded(
         ledger,
         remote_jobs_directory,
@@ -91,6 +200,7 @@ pub(super) async fn advance_processing_job_once_guarded_for_test(
         Some(job_id),
         updated_at_ms,
         guard,
+        &publication_gate,
     )
     .await
 }
@@ -102,6 +212,7 @@ async fn advance_processing_job_once_guarded(
     exact_job_id: Option<&str>,
     updated_at_ms: u64,
     guard: &BatchCommitGuard<'_>,
+    publication_gate: &Mutex<()>,
 ) -> DrainResult<bool> {
     let candidate = ledger
         .list_recoverable_jobs()
@@ -193,7 +304,7 @@ async fn advance_processing_job_once_guarded(
 
     guard.ensure_current()?;
     let result = client.result(server_job_id).await?;
-    validate_result_revision(&result, &request)?;
+    validate_transcript_result_for_recording(&result, &request)?;
     if result.status != projection.status {
         return Err(DrainStepError::permanent(
             "server result status differs from its terminal job projection",
@@ -202,23 +313,24 @@ async fn advance_processing_job_once_guarded(
     let speaker_result = if result.requires_speaker_result() {
         guard.ensure_current()?;
         let speaker_result = client.speaker_result(server_job_id).await?;
-        validate_speaker_result_revision(&speaker_result, &result, &request)?;
+        validate_speaker_result_for_recording(&speaker_result, &result, &request)?;
         Some(speaker_result)
     } else {
         None
     };
     guard.commit(|| {
+        let _publication = publication_gate
+            .lock()
+            .map_err(|_| DrainStepError::permanent("recording job mutation gate is unavailable"))?;
         ledger
             .begin_remote_result_saving(&candidate.job_id, updated_at_ms)
-            .map_err(|error| DrainStepError::permanent(error.to_string()))
-    })?;
-    let output_path = remote::publish_remote_result(
-        &candidate.job_id,
-        remote_jobs_directory,
-        &result,
-        speaker_result.as_ref(),
-    )?;
-    guard.commit(|| {
+            .map_err(|error| DrainStepError::permanent(error.to_string()))?;
+        let output_path = remote::publish_remote_result(
+            &candidate.job_id,
+            remote_jobs_directory,
+            &result,
+            speaker_result.as_ref(),
+        )?;
         let terminal_status = match result.status.as_str() {
             "complete" => RecordingJobStatus::Complete,
             "partial" => RecordingJobStatus::Partial,

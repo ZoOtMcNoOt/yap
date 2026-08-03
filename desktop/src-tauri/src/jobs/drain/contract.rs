@@ -1,11 +1,8 @@
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
-use crate::server_connector::batch::{
-    ApiError, CreateRecordingJobRequest, RecordingJob, SpeakerResultRevision,
-    TranscriptResultRevision,
-};
+use crate::server_connector::batch::{ApiError, CreateRecordingJobRequest, RecordingJob};
 
-pub(super) fn validate_job_projection(
+pub(in crate::jobs) fn validate_job_projection(
     projection: &RecordingJob,
     request: &CreateRecordingJobRequest,
     expected_job_id: Option<&str>,
@@ -43,113 +40,6 @@ fn valid_server_job_error(error: &ApiError) -> bool {
     error.is_valid()
 }
 
-pub(super) fn validate_result_revision(
-    result: &TranscriptResultRevision,
-    request: &CreateRecordingJobRequest,
-) -> Result<(), String> {
-    let expected_language = request
-        .metadata
-        .preferred_languages_bcp47
-        .first()
-        .ok_or_else(|| "prepared recording has no preferred result language".to_string())?;
-    let language = result
-        .language
-        .as_ref()
-        .ok_or_else(|| "server result omitted its language decision".to_string())?;
-    let timestamp_valid = result.created_at_utc.ends_with('Z')
-        && result.created_at_utc.len() <= 64
-        && OffsetDateTime::parse(&result.created_at_utc, &Rfc3339).is_ok();
-    let language_valid = language.language_bcp47 == *expected_language
-        && language.language_bcp47.len() <= 35
-        && language
-            .language_bcp47
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
-        && language
-            .confidence
-            .is_none_or(|confidence| (0.0..=1.0).contains(&confidence));
-    let provenance_valid = !result.model_provenance.is_empty()
-        && result.model_provenance.len() <= 8
-        && result.model_provenance.iter().all(|model| {
-            [
-                model.model_id.as_str(),
-                model.revision.as_str(),
-                model.calibration_revision.as_str(),
-            ]
-            .iter()
-            .all(|value| !value.is_empty() && value.len() <= 256)
-        });
-    let source_duration_ms = request
-        .chunks
-        .iter()
-        .try_fold(0_u64, |total, chunk| {
-            total.checked_add(u64::from(chunk.duration_ms))
-        })
-        .ok_or_else(|| "prepared recording duration overflowed".to_string())?;
-    let source_end_sample = request
-        .chunks
-        .iter()
-        .try_fold(0_u64, |total, chunk| {
-            total.checked_add(chunk.content_identity.byte_length / 2)
-        })
-        .ok_or_else(|| "prepared recording sample count overflowed".to_string())?;
-    if result.session_id != request.metadata.session_id.as_str()
-        || result.revision != 1
-        || result.authority != "server_authoritative"
-        || !timestamp_valid
-        || result.capture_manifest_sha256 != request.capture_manifest.sha256
-        || result.previous_result_sha256.is_some()
-        || !matches!(result.status.as_str(), "complete" | "partial")
-        || (result.status == "partial" && !result.requires_speaker_result())
-        || !language_valid
-        || !result.transcript_is_canonical()
-        || !result.language_evidence_is_valid(Some(source_end_sample), source_duration_ms)
-        || !result.alignment_is_valid(source_duration_ms)
-        || !provenance_valid
-    {
-        return Err("server result revision conflicts with the prepared recording".into());
-    }
-    Ok(())
-}
-
-pub(super) fn validate_speaker_result_revision(
-    speaker_result: &SpeakerResultRevision,
-    transcript_result: &TranscriptResultRevision,
-    request: &CreateRecordingJobRequest,
-) -> Result<(), String> {
-    if !transcript_result.requires_speaker_result() {
-        return Err("server transcript does not declare a speaker result".into());
-    }
-    let source_duration_ms = request
-        .chunks
-        .iter()
-        .try_fold(0_u64, |total, chunk| {
-            total.checked_add(u64::from(chunk.duration_ms))
-        })
-        .ok_or_else(|| "prepared recording duration overflowed".to_string())?;
-    let source_end_sample = request
-        .chunks
-        .iter()
-        .try_fold(0_u64, |total, chunk| {
-            total.checked_add(chunk.content_identity.byte_length / 2)
-        })
-        .ok_or_else(|| "prepared recording sample count overflowed".to_string())?;
-    let source_track_ids = request
-        .tracks
-        .iter()
-        .map(|track| track.track_id.clone())
-        .collect::<Vec<_>>();
-    if !speaker_result.is_valid_for(
-        transcript_result,
-        source_duration_ms,
-        Some(source_end_sample),
-        &source_track_ids,
-    ) {
-        return Err("server speaker result conflicts with the prepared recording".into());
-    }
-    Ok(())
-}
-
 pub(super) fn result_retention_expiry_ms(
     request: &CreateRecordingJobRequest,
 ) -> Result<u64, String> {
@@ -164,4 +54,60 @@ pub(super) fn result_retention_expiry_ms(
     let milliseconds = parsed.unix_timestamp_nanos().div_euclid(1_000_000);
     u64::try_from(milliseconds)
         .map_err(|_| "prepared meeting result retention expiry is out of range".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::jobs::RecordingLanguageDecision;
+
+    #[test]
+    fn remote_lifecycle_status_rejects_a_mismatched_server_job_identity() {
+        let request = CreateRecordingJobRequest::for_test_single_chunk(
+            "meeting.wav",
+            "session-remote-lifecycle",
+            "track-1",
+            &"a".repeat(64),
+            2,
+            &"b".repeat(64),
+            320,
+            RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+            &"c".repeat(64),
+        );
+        let projection: RecordingJob = serde_json::from_value(serde_json::json!({
+            "jobId": format!("job-{}", "d".repeat(32)),
+            "sessionId": request.metadata.session_id.as_str(),
+            "displayName": request.display_name,
+            "sessionMode": "meeting",
+            "sessionOrigin": "imported_file",
+            "status": "server_processing",
+            "route": "server_batch",
+            "captureManifest": {
+                "schemaVersion": request.capture_manifest.schema_version,
+                "sessionId": request.capture_manifest.session_id,
+                "sha256": request.capture_manifest.sha256,
+                "byteLength": request.capture_manifest.byte_length,
+            },
+            "progressPercent": 50.0,
+            "progressMessage": "Running meeting transcription.",
+            "error": null,
+            "createdAtUtc": "2026-08-03T12:00:00Z",
+            "updatedAtUtc": "2026-08-03T12:00:01Z",
+        }))
+        .unwrap();
+
+        assert!(validate_job_projection(
+            &projection,
+            &request,
+            Some(&format!("job-{}", "e".repeat(32))),
+            &[
+                "server_processing",
+                "complete",
+                "partial",
+                "failed",
+                "cancelled"
+            ],
+        )
+        .is_err());
+    }
 }

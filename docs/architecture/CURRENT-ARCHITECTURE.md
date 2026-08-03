@@ -1,7 +1,9 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–7 system plus the focused
-local-first discovery work in progress. Phase 7 implements provider-neutral
+This document describes the merged executable Phase 1–8 Preview system plus the
+meeting-transcription ownership and maintainability repair awaiting a fresh
+exact-head candidate gate after a late development-tool security pin. Phase 7
+implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
 lower handshake. Purpose authorization is implemented but unwired: nothing
@@ -14,7 +16,20 @@ live server ASR, and the external secure edge remain absent. Phase 7 merged as
 `66d314d7`, and its separate adversarial checkpoint and concrete follow-ups are
 closed. Exact application/runtime candidate `dc635916...` retains its recorded
 private 25-cell evidence; PR #69's final hosted head is not retroactively
-described as an all-green hosted rollup.
+described as an all-green hosted rollup. Phase 8 reviewed head
+`ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks and
+merged through PR #142 as
+`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Its Tiron route remains an
+explicitly enabled Preview absent from the default catalog, not a
+production-promoted provider. Historical maintainability candidate `fb0985e7...`
+passed before documentation-only successor `e22368fc...` exposed
+`GHSA-mwp4-54f8-5fhr`. Patched development-only `ip-address` 10.3.1 candidate
+`393710999b53a4bd1b00639e30c0fec88b152530` completed focused checks, final
+antagonistic review, the canonical native build, receipt-bound image preflight,
+real History/cancellation lifecycle with teardown, its single exact-head
+18-child matrix, independent receipt validation, and the required CI and CodeQL
+jobs. Final documentation-only hosted closure including disposable-Windows NSIS
+and PR #143 merge remain.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -59,6 +74,7 @@ flowchart LR
   Pool --> Reference["Transformers reference workers"]
   Pool --> Cohere["Cohere vLLM candidate"]
   Pool --> NeMo["Nemotron NeMo candidate"]
+  Pool --> Tiron["Tiron meeting Preview"]
 ```
 
 The SSH forward is a development access boundary managed outside Yap. It is
@@ -193,6 +209,12 @@ reference worker. Its successful 908-case GB10 run is descriptive regression
 evidence and does not own runtime routing, model promotion, capacity, or product
 result publication.
 
+Request-time ASR, NeMo, LID, and Tiron images exclude the evaluation package.
+The Tiron build prunes it before application source is copied into the final
+image, so immutable lower layers do not retain evaluator code. Private
+qualification supplies evaluation code and source material only through its
+explicit external boundary.
+
 Independent-promotion loading additionally uses a private, out-of-band-digest-
 pinned registry. It binds the complete frozen candidate/exposure set and one
 case-level human-reference receipt, authorizes the required listener,
@@ -322,8 +344,9 @@ Phase 6 standard short/long loads use a separate `request-lifecycle` scope.
 They require every result to retain its job, input-audio, model, and output-path
 identity, require non-empty output for the speech fixture, and require provider
 idle read-back at the planned concurrency. They report lexical variance without
-requiring deterministic wording from repeated audio. Provider-behavior remains
-a later model-promotion boundary, including the Phase 8 Tiron comparison.
+requiring deterministic wording from repeated audio. Provider behavior remains
+a later model-promotion boundary. The merged Phase 8 Tiron meeting Preview is a
+separate route and does not settle broad provider replacement.
 
 The NeMo fixed/automatic qualification follows the same separation. Both paths
 must publish valid job/audio/model/language results; automatic output must also
@@ -367,8 +390,8 @@ drop batch retains bounded native-selection
 proof before its non-runnable `accepted` rows can commit. Active playback is
 projected before an unlocked row becomes `preflighting`; restart snapshot
 recovery may consume the retained proof but never recreate it from a ledger path,
-while a concurrent cancellation cannot restore authority. An already-locked
-Phase 5 row retains the compatibility transition to `queued_server`. Background
+while a concurrent cancellation cannot restore authority. A locked current
+row may transition to `queued_server` only through the owned drain. Background
 preflight rechecks the selection registry, creates one immutable Yap-owned
 normalization/VAD capture, and freezes a short configured decision or a confirmed
 long-recording suggestion before promoting those exact bytes to remote upload.
@@ -376,16 +399,20 @@ Catalog validation, upload, result polling, retry, and failure paths retain one
 exact job ID instead of rescanning a neighbor. React projects those native/server
 owners.
 
-Schema 9 adds desktop-authoritative bounded attempts for normalization, VAD,
-LID preflight, and user confirmation; schema 10 binds the immutable client
-preflight artifact and any in-flight LID request identity to the same job.
+The desktop ledger now installs one current Yap-owned schema identified by
+SQLite application ID `YAPJ` and schema version 1. It includes bounded
+normalization, VAD, LID-preflight, and user-confirmation attempts; immutable
+client-preflight artifacts; and in-flight LID request identity on the same job.
+A non-empty database without that exact ownership identity, or any other schema
+identity, is rejected without rewriting it. There is no historical migration
+or legacy language-disposition path.
 Imported canonical PCM WAV preprocessing
 records identity normalization, then optionally runs the explicitly installed,
 hash-verified Silero artifact through the existing `sherpa-onnx` CPU runtime.
 It emits ordered source-sample/source-millisecond advisory intervals or a typed
 bounded error and always retains the complete source. Server schema 6 records
 ASR, alignment, and result-publication attempts with restart/retry admission and
-bounded evidence; legacy rows remain readable without invented stage history.
+bounded evidence; older server schemas are rejected rather than upgraded.
 
 Native selection is intentionally scoped to the canonical path, matching the
 existing replace-in-place behavior. Each access reopens no-follow and takes a
@@ -602,8 +629,9 @@ tenant, enrollment requires `enrollment`, matching requires `enrollment` plus
 decisions are audited. None of it runs in the product: no HTTP route, CLI, or
 operator entry point invokes `IdentityAuthorizationService`, and enrollment,
 matching, and adaptation do not exist to be checked. Treat this as a designed
-and tested seam awaiting its Phase 8 caller, not an executable authorization
-boundary, and not a voice-profile, embedding, or matching implementation.
+and tested seam awaiting a separately reviewed purpose-authorized speaker
+reconciliation/naming workflow, not an executable authorization boundary, and
+not a voice-profile, embedding, or matching implementation.
 The SQLite adapter is development evidence, not the selected production
 database or audit sink.
 
@@ -708,7 +736,7 @@ final hosted head is not represented as an all-green rollup. Real IT-provided
 Entra and Conditional Access policy and an approved native adapter remain
 external conformance work.
 
-## Active meeting-runtime development, not a production route
+## Merged meeting-runtime Preview, not a production route
 
 [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
 selects pinned `Trelis/tiron` as the Phase 8 server development baseline for
@@ -742,6 +770,23 @@ binds the exact preparation, native-roundtrip, and two-window receipts plus the
 passed lane counts. Reviewed descendant `9ff06d7d...` changes only test/gate
 mechanics and leaves the application/runtime/image candidate unchanged. This is
 Preview qualification, not default enablement or production promotion.
+Reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks
+and PR #142 merged as `4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
+The separate maintainability checkpoint changes result/runtime ownership,
+request-time image contents, and bounded client projection. It does not change
+the checked model or relabel the historical Phase 8 Preview evidence. Patched
+exact candidate `393710999b53a4bd1b00639e30c0fec88b152530` built, inspected, and
+qualified one new receipt-bound immutable image, passed its real History and
+cancellation lifecycle with teardown, single complete 18-child matrix,
+independent receipt validation, and required CI and CodeQL jobs. The Phase 8 image
+remains historical evidence only. The checkpoint follows the established
+Phase 7 compiler boundary above: the strict
+product Job contains only actual application/runtime trees, while native
+formatting, compilation, tests, connector/dependency checks, and the WDIO build
+are exact-head hosted evidence on disposable Windows. A cold checkpoint attempt
+that retained signed Visual Studio `vctip.exe` after all 1,198 Rust tests exposed
+and corrected a manifest regression; it did not justify a longer product drain
+or a compiler-specific runtime exception.
 
 Tiron's model capacity is eight window-local speaker slots per 30-second
 decode, and the pinned reference harness separately caps the published global
@@ -770,14 +815,19 @@ only. The Python server owns server-side source validation, durable jobs,
 admission, cancellation, containment, and immutable authoritative revisions.
 Rust independently binds those revisions to the persisted capture request,
 publishes the local aggregate, and projects its anonymous turns into History.
+Catalog refresh validates the result, transcript, source binding, directory
+shape, and bounded speaker-file metadata without hashing every speaker file.
+Selecting one exact result serializes a latest-wins native detail read and then
+performs the full speaker hash, parse, canonical-content, and source-binding
+verification before rendering bounded pages with canonical turn IDs.
 
 ## Persistence and recovery
 
 | Durable boundary | Recovery invariant |
 | --- | --- |
-| Desktop SQLite job ledger | Transactional migration and replay preserve one job identity and accepted remote progress. Schema 8 adds a singleton metadata write probe; schema 9 adds bounded client-stage attempts without fabricating history for legacy rows; schema 10 binds the immutable preflight artifact and persisted LID dispatch identity; schema 11 renames the legacy language disposition; schemas 12–13 introduce versioned development or hashed native-provider account authority and quarantine ambiguous older authenticated bindings. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
+| Desktop SQLite job ledger | One current Yap-owned baseline (`application_id = YAPJ`, schema 1) contains the write probe, bounded client-stage attempts, immutable preflight and LID-dispatch identity, functional language dispositions, and version-2 development or hashed native-provider account authority. Fresh install is allowed only for an empty unowned database; every other identity fails closed without migration or rewriting. Replay preserves one job identity and accepted remote progress. After a mutation failure, an in-memory circuit blocks preprocessing and remote dispatch until the probe commits. |
 | Recording commit/sidecar/transcript | Only hash-valid, atomically published lineage becomes complete History truth. |
-| Remote result review | Native History derives fixed/dynamic/unknown-language and available/unavailable/legacy-timing summaries only from a verified immutable result, then projects them into the one existing transcript review surface. |
+| Remote result review | Native History derives fixed/dynamic/unknown-language and available/unavailable timing summaries only from a verified current-schema immutable result, then projects them into the one existing transcript review surface. Speaker-file content is fully verified only for the exact selected result. |
 | Prepared spool/chunks | Only verified Yap-owned paths are cleaned; external sources are preserved. |
 | Install identity | Bounded no-follow regular-file admission rejects linked, oversized, or invalid namespace state. |
 | Connector configuration | Bounded no-follow regular-file admission precedes schema validation; one save lease spans confirmation, publication, approval, generation change, and applied-state projection. |
@@ -839,6 +889,11 @@ reviewed head in required fresh GitHub-hosted Windows jobs. Connector and
 required WDIO runtime trees run there
 under the same kill-on-close Job supervisor used by candidate commands and
 must finish with zero active processes. Hosted CodeQL and disposable installer
-automation complete the closure before merge. The fresh VM is the lifecycle
-boundary for Microsoft build-tool helpers; it is not the product runtime
-cleanup mechanism.
+automation completed Phase 8 closure before merge. Historical documentation-only
+successor `e22368fc...` exposed a new high-severity development-tool advisory.
+Patched candidate `393710999...` then completed its single applicable matrix,
+receipt validation, final antagonistic review, and required CI and CodeQL jobs.
+Its final documentation-only successor still requires hosted closure, including
+disposable-Windows NSIS, before PR #143 merges.
+The fresh VM is the lifecycle boundary for Microsoft build-tool helpers; it is
+not the product runtime cleanup mechanism.

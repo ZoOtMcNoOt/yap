@@ -157,13 +157,20 @@ Candidate `09b8b71746c8eb1f504cf34d1af0639bba625859` passed its Windows
 target-client, GB10 resident-provider, and connected desktop/private-server
 channels with exact teardown. Its sole complete-matrix attempt then failed at
 `frontend.dependency-audit` after the registry began reporting
-`GHSA-r28c-9q8g-f849` and `GHSA-mh99-v99m-4gvg`. PostCSS is now pinned to the
-compatible patched 8.5.18 release. The brace-expansion advisory remains
-development-tool-only and is governed by the exact exception and removal
-condition in
-[`dependency-audit-policy.md`](dependency-audit-policy.md); the product
-dependency audit remains clean. This admission is also failed historical
-evidence and may not be resumed or relabeled.
+`GHSA-r28c-9q8g-f849` and `GHSA-mh99-v99m-4gvg`. At that time, PostCSS was
+pinned to compatible patched release 8.5.18 and the development-only
+`brace-expansion` graph required a documented exception. Compatible backports
+now let the current branch pin exact `brace-expansion` releases 1.1.18 and
+2.1.4, remove that exception, and pin PostCSS 8.5.23 for the later residual
+finding. The current policy is documented in
+[`dependency-audit-policy.md`](dependency-audit-policy.md). This admission is
+still failed historical evidence and may not be resumed or relabeled.
+
+During the later post-Phase-8 maintainability closure, the live registry added
+`GHSA-8xcm-r25x-g524` and `GHSA-4cwx-7wf7-3272` after an earlier candidate had
+already audited clean. The current workspace pins the compatible Undici 6.x
+and 7.x lines to exact releases 6.28.0 and 7.29.0. No advisory exception was
+added, and the consumed candidate remains failed historical evidence.
 
 Exact executable candidate
 `20e4a18f380915f69e699f84c25bc2fdb178bf36` was admitted once, then the

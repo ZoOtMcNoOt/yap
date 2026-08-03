@@ -164,33 +164,37 @@ class MeetingTranscriptionRuntimeConfigurationTests(unittest.TestCase):
         self.assertEqual((plan.max_workers, plan.max_queued), (1, 2))
 
     def test_candidate_worker_rejects_an_image_outside_its_receipt(self) -> None:
-        contract = SimpleNamespace(base_digest="sha256:" + "c" * 64)
-        with (
-            patch(
-                "yap_server.pools.provider_worker_factory.runtime_image_contract",
-                return_value=contract,
-            ),
-            patch("yap_server.pools.provider_worker_factory.assert_clean_checked_head"),
-            patch(
-                "yap_server.pools.provider_worker_factory."
-                "verify_prepared_checked_image",
-                return_value={"imageId": "sha256:" + "d" * 64},
-            ),
-        ):
+        environ = {
+            "YAP_TIRON_WORKER_IMAGE": "sha256:" + "b" * 64,
+            "YAP_CHECKED_HEAD": "a" * 40,
+            "YAP_TIRON_PREPARATION_RECEIPT": str(Path.cwd() / "tiron-receipt.json"),
+            "YAP_TIRON_PREPARATION_RECEIPT_SHA256": "e" * 64,
+        }
+        with patch(
+            "yap_server.pools.provider_worker_factory."
+            "resolve_receipt_bound_runtime_image",
+            side_effect=ValueError("receipt-bound immutable image ID"),
+        ) as resolve_image:
             with self.assertRaisesRegex(ValueError, "receipt-bound immutable image ID"):
                 resolve_prepared_meeting_transcription_image(
-                    {
-                        "YAP_TIRON_WORKER_IMAGE": "sha256:" + "b" * 64,
-                        "YAP_CHECKED_HEAD": "a" * 40,
-                        "YAP_TIRON_PREPARATION_RECEIPT": str(
-                            Path.cwd() / "tiron-receipt.json"
-                        ),
-                        "YAP_TIRON_PREPARATION_RECEIPT_SHA256": "e" * 64,
-                    },
+                    environ,
                     docker_binary="docker",
                     repository_root=Path("repository"),
                     expected_base_digest="sha256:" + "c" * 64,
                 )
+        resolve_image.assert_called_once_with(
+            environ,
+            runtime="meeting-transcription",
+            image_environment_variable="YAP_TIRON_WORKER_IMAGE",
+            checked_head_environment_variable="YAP_CHECKED_HEAD",
+            receipt_environment_variable="YAP_TIRON_PREPARATION_RECEIPT",
+            receipt_sha256_environment_variable=(
+                "YAP_TIRON_PREPARATION_RECEIPT_SHA256"
+            ),
+            docker_binary="docker",
+            repository_root=Path("repository"),
+            expected_base_digest="sha256:" + "c" * 64,
+        )
 
     def test_batch_runtime_composes_the_candidate_without_a_default_model_pool(
         self,
@@ -306,9 +310,17 @@ class MeetingTranscriptionRuntimeConfigurationTests(unittest.TestCase):
             build_plan.call_args.kwargs["repository_root"],
             SERVER_ROOT.parent,
         )
+        result_adapter = service_type.call_args.kwargs[
+            "result_bundle_adapters"
+        ].for_route(SimpleNamespace(pool_id=MEETING_TRANSCRIPTION_POOL_ID))
+        self.assertIsNotNone(result_adapter)
         self.assertIs(
-            service_type.call_args.kwargs["meeting_result_authority"],
+            result_adapter.authority,
             authority,
+        )
+        self.assertEqual(
+            service_type.call_args.kwargs["route_pcm_byte_limits"],
+            {MEETING_TRANSCRIPTION_POOL_ID: MAX_MEETING_PCM_BYTES},
         )
 
 

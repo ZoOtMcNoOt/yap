@@ -1,8 +1,12 @@
 # Integrated product checkpoint gate
 
-Use this gate for the current whole-product checkpoint. Its identity is
-`integrated-product-checkpoint`; it is not a continuation, rerun, or relabeling
-of the completed Phase 6 preprocessing and language-routing gate.
+This is the historical Checkpoint B whole-product gate. Its identity is
+`integrated-product-checkpoint`; it is retained only to validate its original
+evidence and must not be used for the meeting-transcription maintainability
+repair or its replacement candidate. That checkpoint has its own
+[behavior-named runbook](meeting-transcription-maintainability-checkpoint.md)
+and manifest. This gate is not a continuation, rerun, or relabeling of the
+completed Phase 6 preprocessing and language-routing gate.
 
 The authoritative manifest is
 [`verification/integrated-product-checkpoint-gate.json`](../../verification/integrated-product-checkpoint-gate.json).

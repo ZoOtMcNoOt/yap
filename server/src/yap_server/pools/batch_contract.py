@@ -159,9 +159,7 @@ class BatchAsrJob:
         canonical_bcp47(self.language, "language")
         if not _SHA256.fullmatch(self.input_sha256):
             raise ValueError("input_sha256 must be a lowercase SHA-256 digest")
-        if (self.capture_manifest_sha256 is None) != (
-            self.source_frame_count is None
-        ):
+        if (self.capture_manifest_sha256 is None) != (self.source_frame_count is None):
             raise ValueError(
                 "capture manifest identity and source frame count must be supplied together"
             )
@@ -173,7 +171,9 @@ class BatchAsrJob:
         ):
             raise ValueError("batch source identity is invalid")
         if (self.utterance_plan_path is None) != (self.utterance_plan_sha256 is None):
-            raise ValueError("utterance plan path and identity must be supplied together")
+            raise ValueError(
+                "utterance plan path and identity must be supplied together"
+            )
         if (
             self.utterance_plan_sha256 is not None
             and _SHA256.fullmatch(self.utterance_plan_sha256) is None
@@ -184,14 +184,7 @@ class BatchAsrJob:
         if self.route.execution_mode == "fixedBatch":
             if self.language == "und":
                 raise ValueError("fixed batch jobs cannot use the und language tag")
-            provider_language = self.route.provider_language
-            route_matches_job = (
-                provider_language == self.language
-                if "-" in provider_language
-                else provider_language == self.language.split("-", 1)[0]
-            )
-            if not route_matches_job:
-                raise ValueError("fixed batch route language must match the job language")
+            validate_fixed_batch_route_language(self.route, self.language)
         elif (
             self.language != "und"
             or self.route.provider_language != "auto"
@@ -209,9 +202,26 @@ class BatchWorker(Protocol):
         cancellation: threading.Event,
     ) -> dict[str, object]: ...
 
+    def close(self) -> None: ...
+
 
 BatchJobFactory: TypeAlias = Callable[[threading.Event], BatchAsrJob]
 AsrRouteResolver: TypeAlias = Callable[[str], AsrRouteDecision]
+
+
+def validate_fixed_batch_route_language(
+    route: AsrRouteDecision,
+    language_bcp47: str,
+) -> None:
+    language = canonical_bcp47(language_bcp47, "fixed batch language")
+    provider_language = route.provider_language
+    route_matches_language = (
+        provider_language == language
+        if "-" in provider_language
+        else provider_language == language.split("-", 1)[0]
+    )
+    if route.execution_mode != "fixedBatch" or not route_matches_language:
+        raise ValueError("fixed batch route language must match the selected language")
 
 
 class BatchReservation(Protocol):

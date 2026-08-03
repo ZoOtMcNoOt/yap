@@ -6,7 +6,7 @@ from typing import Protocol
 from yap_server.pools.batch_contract import BatchAsrJob
 
 from .container_worker import MeetingTranscriptionJob
-from .contract import MEETING_TRANSCRIPTION_POOL_ID
+from .contract import MAX_MEETING_SPEAKERS, validate_meeting_transcription_route
 from .result_revisions import MeetingResultAuthority
 
 
@@ -38,15 +38,11 @@ class MeetingTranscriptionBatchWorker:
         cancellation: threading.Event,
     ) -> dict[str, object]:
         route = job.route
-        if (
-            route.provider_id != "tiron"
-            or route.pool_id != MEETING_TRANSCRIPTION_POOL_ID
-            or route.execution_mode != "fixedBatch"
-            or route.model_revision != self._authority.provenance.model.revision
-            or route.provider_language == "auto"
-            or job.utterance_plan_path is not None
-        ):
-            raise ValueError("meeting transcription received a different ASR route")
+        validate_meeting_transcription_route(
+            route,
+            model_revision=self._authority.provenance.model.revision,
+            has_utterance_plan=job.utterance_plan_path is not None,
+        )
         if job.capture_manifest_sha256 is None or job.source_frame_count is None:
             raise ValueError("meeting transcription requires immutable source identity")
         return self._worker.run(
@@ -57,7 +53,7 @@ class MeetingTranscriptionBatchWorker:
                 input_sha256=job.input_sha256,
                 capture_manifest_sha256=job.capture_manifest_sha256,
                 language=route.provider_language,
-                max_speakers=8,
+                max_speakers=MAX_MEETING_SPEAKERS,
                 frame_count=job.source_frame_count,
             ),
             cancellation,

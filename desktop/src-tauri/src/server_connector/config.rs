@@ -15,7 +15,6 @@ pub(crate) use persistence::{
 };
 
 pub const CURRENT_SCHEMA_VERSION: u16 = 2;
-const LEGACY_SCHEMA_VERSION: u16 = 1;
 const ORIGIN_APPROVAL_SCHEMA_VERSION: u16 = 1;
 const MAX_SERVER_URL_BYTES: usize = 2048;
 const MAX_IDENTITY_VALUE_BYTES: usize = 1024;
@@ -285,13 +284,10 @@ fn decode_persisted_settings(
         Err(_) => return Ok(ServerSettings::default()),
     };
     ensure_schema_compatible(&value)?;
-    let mut settings = match serde_json::from_value::<ServerSettings>(value) {
+    let settings = match serde_json::from_value::<ServerSettings>(value) {
         Ok(settings) => settings,
         Err(_) => return Ok(ServerSettings::default()),
     };
-    if settings.schema_version == LEGACY_SCHEMA_VERSION {
-        settings.schema_version = CURRENT_SCHEMA_VERSION;
-    }
     normalize_settings(&settings, allow_insecure_private)
 }
 
@@ -311,9 +307,7 @@ fn ensure_schema_compatible(value: &serde_json::Value) -> Result<(), ConfigError
         .get("schemaVersion")
         .and_then(serde_json::Value::as_u64)
     {
-        if version != u64::from(CURRENT_SCHEMA_VERSION)
-            && version != u64::from(LEGACY_SCHEMA_VERSION)
-        {
+        if version != u64::from(CURRENT_SCHEMA_VERSION) {
             return Err(ConfigError::IncompatibleSchema(version));
         }
     }

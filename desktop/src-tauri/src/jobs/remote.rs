@@ -22,7 +22,10 @@ pub(super) use preparation::{
     prepare_imported_pcm_wav_with_cancellation, ImportedClientPreflightPreparation,
     ImportedLidPreparation, ImportedPcmWavPreparation,
 };
-pub(super) use result::{publish_remote_result, read_published_remote_transcript};
+pub(super) use result::{
+    discover_published_remote_result_bundle, publish_remote_result,
+    read_published_remote_result_bundle, PublishedRemoteResultBundle,
+};
 pub(super) use spool::reset_unattached_spool;
 
 #[cfg(test)]

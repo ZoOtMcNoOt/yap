@@ -67,7 +67,7 @@ fn settings_link_is_rejected_without_reading_its_target() {
     let dir = temp_dir("settings-link-load");
     let outside = dir.join("outside-settings.json");
     let path = dir.join("server-settings.json");
-    let target = r#"{"schemaVersion":1,"enabled":false,"baseUrl":null}"#;
+    let target = r#"{"schemaVersion":2,"enabled":false,"baseUrl":null}"#;
     std::fs::write(&outside, target).unwrap();
     if let Err(error) = create_file_symlink(&outside, &path) {
         if test_symlink_is_unavailable(&error) {
@@ -89,7 +89,7 @@ fn save_does_not_replace_a_settings_link_or_modify_its_target() {
     let dir = temp_dir("settings-link-save");
     let outside = dir.join("outside-settings.json");
     let path = dir.join("server-settings.json");
-    let target = r#"{"schemaVersion":1,"enabled":false,"baseUrl":null}"#;
+    let target = r#"{"schemaVersion":2,"enabled":false,"baseUrl":null}"#;
     std::fs::write(&outside, target).unwrap();
     if let Err(error) = create_file_symlink(&outside, &path) {
         if test_symlink_is_unavailable(&error) {

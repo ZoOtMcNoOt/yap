@@ -83,10 +83,6 @@ pub(crate) struct UploadTrack {
 pub(crate) struct CreateRecordingJobRequest {
     pub display_name: String,
     pub metadata: crate::audio::session::SessionMetadata,
-    #[serde(
-        default = "legacy_implicit_english_language_decision",
-        skip_serializing_if = "RecordingLanguageDecision::is_legacy_implicit_english_default"
-    )]
     pub language_decision: RecordingLanguageDecision,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub asr_catalog_revision: Option<String>,
@@ -96,6 +92,13 @@ pub(crate) struct CreateRecordingJobRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preprocessing_evidence: Option<PreprocessingEvidence>,
     pub chunks: Vec<CaptureChunkReference>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PreparedRecordingBounds {
+    pub duration_ms: u64,
+    pub end_sample: u64,
+    pub track_ids: Vec<String>,
 }
 
 impl CreateRecordingJobRequest {
@@ -125,6 +128,32 @@ impl CreateRecordingJobRequest {
         Ok(format!("create-{hex}"))
     }
 
+    pub(crate) fn recording_bounds(&self) -> Result<PreparedRecordingBounds, String> {
+        let duration_ms = self
+            .chunks
+            .iter()
+            .try_fold(0_u64, |total, chunk| {
+                total.checked_add(u64::from(chunk.duration_ms))
+            })
+            .ok_or_else(|| "prepared recording duration overflowed".to_string())?;
+        let end_sample = self
+            .chunks
+            .iter()
+            .try_fold(0_u64, |total, chunk| {
+                total.checked_add(chunk.content_identity.byte_length / 2)
+            })
+            .ok_or_else(|| "prepared recording sample count overflowed".to_string())?;
+        Ok(PreparedRecordingBounds {
+            duration_ms,
+            end_sample,
+            track_ids: self
+                .tracks
+                .iter()
+                .map(|track| track.track_id.clone())
+                .collect(),
+        })
+    }
+
     fn is_valid_current_slice(&self) -> bool {
         use crate::audio::session::{SessionMode, SessionOrigin};
 
@@ -142,17 +171,12 @@ impl CreateRecordingJobRequest {
             return false;
         }
         let session_id = self.metadata.session_id.as_str();
-        let manifest_contract_is_valid = match self.capture_manifest.schema_version {
-            1 => self.preprocessing_evidence.is_none() && self.asr_catalog_revision.is_none(),
-            2 => {
-                self.preprocessing_evidence.is_some()
-                    && self
-                        .asr_catalog_revision
-                        .as_deref()
-                        .is_some_and(valid_sha256)
-            }
-            _ => false,
-        };
+        let manifest_contract_is_valid = self.capture_manifest.schema_version == 2
+            && self.preprocessing_evidence.is_some()
+            && self
+                .asr_catalog_revision
+                .as_deref()
+                .is_some_and(valid_sha256);
         if self.capture_manifest.session_id != session_id
             || !valid_sha256(&self.capture_manifest.sha256)
             || !(1..=MAX_CREATE_REQUEST_BYTES as u64).contains(&self.capture_manifest.byte_length)
@@ -236,10 +260,6 @@ impl CreateRecordingJobRequest {
         self.metadata.locale_hint_bcp47.as_deref() == Some(language)
             && self.metadata.preferred_languages_bcp47.as_slice() == [language]
     }
-}
-
-fn legacy_implicit_english_language_decision() -> RecordingLanguageDecision {
-    RecordingLanguageDecision::legacy_implicit_english_default()
 }
 
 fn valid_private_retention(metadata: &crate::audio::session::SessionMetadata) -> bool {

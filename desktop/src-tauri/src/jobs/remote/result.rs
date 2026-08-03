@@ -69,12 +69,13 @@ pub(in crate::jobs) fn publish_remote_result(
     let directory_name = format!("result-{:020}", result.revision);
     let destination = job_root.join(&directory_name);
     if destination.exists() {
-        verify_published_remote_result(
+        verify_published_result_directory(
             &destination,
             &encoded_result,
             &transcript,
-            encoded_speaker_result.as_deref(),
+            encoded_speaker_result.is_some(),
         )?;
+        verify_published_speaker_bytes(&destination, encoded_speaker_result.as_deref())?;
         return Ok(destination.join("transcript.txt"));
     }
 
@@ -92,12 +93,13 @@ pub(in crate::jobs) fn publish_remote_result(
     match staging.publish(&destination) {
         Ok(()) => {}
         Err(_error) if destination.exists() => {
-            verify_published_remote_result(
+            verify_published_result_directory(
                 &destination,
                 &encoded_result,
                 &transcript,
-                encoded_speaker_result.as_deref(),
+                encoded_speaker_result.is_some(),
             )?;
+            verify_published_speaker_bytes(&destination, encoded_speaker_result.as_deref())?;
             return Ok(destination.join("transcript.txt"));
         }
         Err(error) => return Err(error),
@@ -105,18 +107,47 @@ pub(in crate::jobs) fn publish_remote_result(
     Ok(destination.join("transcript.txt"))
 }
 
-pub(in crate::jobs) struct VerifiedRemoteTranscript {
+pub(in crate::jobs) struct PublishedRemoteResultBundle {
     pub(in crate::jobs) result: TranscriptResultRevision,
-    pub(in crate::jobs) speaker_result: Option<SpeakerResultRevision>,
     pub(in crate::jobs) result_directory: PathBuf,
     pub(in crate::jobs) result_sha256: String,
     pub(in crate::jobs) text: String,
+    speaker_result_path: Option<PathBuf>,
 }
 
-pub(in crate::jobs) fn read_published_remote_transcript(
+impl PublishedRemoteResultBundle {
+    pub(in crate::jobs) fn load_speaker_result(
+        &self,
+    ) -> Result<Option<SpeakerResultRevision>, String> {
+        let Some(path) = self.speaker_result_path.as_ref() else {
+            return Ok(None);
+        };
+        let bytes = read_bounded_regular_artifact(
+            path,
+            MAX_SPEAKER_RESULT_BYTES,
+            "remote speaker result revision",
+        )?;
+        let expected_sha256 = self
+            .result
+            .speaker_result_sha256
+            .as_deref()
+            .ok_or_else(|| "remote result omitted its speaker companion identity".to_string())?;
+        if sha256_bytes(&bytes) != expected_sha256 {
+            return Err("remote speaker result companion identity differs".into());
+        }
+        let speaker_result: SpeakerResultRevision = serde_json::from_slice(&bytes)
+            .map_err(|_| "remote speaker result revision is incompatible".to_string())?;
+        if speaker_result.content_sha256().as_deref() != Some(expected_sha256) {
+            return Err("remote speaker result revision is not canonical".into());
+        }
+        Ok(Some(speaker_result))
+    }
+}
+
+pub(in crate::jobs) fn read_published_remote_result_bundle(
     transcript_path: &Path,
     spool_root: &Path,
-) -> Result<VerifiedRemoteTranscript, String> {
+) -> Result<PublishedRemoteResultBundle, String> {
     let relative = transcript_path
         .strip_prefix(spool_root)
         .map_err(|_| "remote transcript is outside Yap's private job directory".to_string())?;
@@ -174,56 +205,77 @@ pub(in crate::jobs) fn read_published_remote_transcript(
         .map_err(|_| "remote result revision is incompatible".to_string())?;
     validate_published_result_contract(&result, revision)?;
     let speaker_path = destination.join("speaker-result.json");
-    let speaker_bytes = if speaker_path.exists() {
-        Some(read_bounded_regular_artifact(
-            &speaker_path,
-            MAX_SPEAKER_RESULT_BYTES,
-            "remote speaker result revision",
-        )?)
-    } else {
-        None
-    };
-    if result.requires_speaker_result() != speaker_bytes.is_some() {
+    let speaker_result_path = speaker_path.exists().then_some(speaker_path);
+    if result.requires_speaker_result() != speaker_result_path.is_some() {
         return Err("published remote result aggregate is incomplete".into());
     }
-    let speaker_result = if let Some(encoded) = speaker_bytes.as_ref() {
-        let observed_speaker_sha256 = sha256_bytes(encoded);
-        if result.speaker_result_sha256.as_deref() != Some(observed_speaker_sha256.as_str()) {
-            return Err("remote speaker result companion identity differs".into());
-        }
-        let speaker: SpeakerResultRevision = serde_json::from_slice(encoded)
-            .map_err(|_| "remote speaker result revision is incompatible".to_string())?;
-        let source_track_ids = speaker
-            .speaker_turns
-            .first()
-            .map(|turn| turn.supporting_track_ids.clone())
-            .unwrap_or_default();
-        if !speaker.is_valid_for(&result, MAX_RECORDING_DURATION_MS, None, &source_track_ids) {
-            return Err("remote speaker result revision is incompatible".into());
-        }
-        Some(speaker)
-    } else {
-        None
-    };
     let mut expected_transcript = result.transcript.as_bytes().to_vec();
     if !expected_transcript.ends_with(b"\n") {
         expected_transcript.push(b'\n');
     }
-    verify_published_remote_result(
+    verify_published_result_directory(
         &destination,
         &result_bytes,
         &expected_transcript,
-        speaker_bytes.as_deref(),
+        speaker_result_path.is_some(),
     )?;
+    if let Some(path) = speaker_result_path.as_ref() {
+        bounded_regular_artifact_metadata(
+            path,
+            MAX_SPEAKER_RESULT_BYTES,
+            "remote speaker result revision",
+        )?;
+    }
     let text = String::from_utf8(expected_transcript)
         .map_err(|_| "remote transcript is not valid UTF-8".to_string())?;
-    Ok(VerifiedRemoteTranscript {
+    Ok(PublishedRemoteResultBundle {
         result,
-        speaker_result,
         result_directory: destination,
         result_sha256: sha256_bytes(&result_bytes),
+        speaker_result_path,
         text,
     })
+}
+
+pub(in crate::jobs) fn discover_published_remote_result_bundle(
+    job_id: &str,
+    spool_root: &Path,
+) -> Result<Option<PublishedRemoteResultBundle>, String> {
+    validate_identifier(job_id, 128, "job ID")?;
+    let job_root = spool_root.join(job_id);
+    let job_metadata = match fs::symlink_metadata(&job_root) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(format!("failed to inspect prepared job directory: {error}")),
+    };
+    if !job_metadata.is_dir() || metadata_is_link_or_reparse(&job_metadata) {
+        return Err("prepared job directory is not a safe owned directory".into());
+    }
+    let mut transcript_paths = Vec::new();
+    for entry in fs::read_dir(&job_root)
+        .map_err(|error| format!("failed to inspect prepared job contents: {error}"))?
+    {
+        let entry =
+            entry.map_err(|error| format!("failed to inspect prepared job entry: {error}"))?;
+        let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
+            continue;
+        };
+        if !name.starts_with("result-") {
+            continue;
+        }
+        let revision = name.strip_prefix("result-").unwrap_or_default();
+        if revision.len() != 20 || !revision.bytes().all(|byte| byte.is_ascii_digit()) {
+            return Err("published remote result directory has an invalid revision".into());
+        }
+        transcript_paths.push(entry.path().join("transcript.txt"));
+    }
+    match transcript_paths.as_slice() {
+        [] => Ok(None),
+        [transcript_path] => {
+            read_published_remote_result_bundle(transcript_path, spool_root).map(Some)
+        }
+        _ => Err("saving job has more than one published result revision".into()),
+    }
 }
 
 fn normal_path_component<'a>(component: &'a std::path::Component<'a>) -> Option<&'a str> {
@@ -238,14 +290,7 @@ pub(super) fn read_bounded_regular_artifact(
     maximum_bytes: usize,
     label: &str,
 ) -> Result<Vec<u8>, String> {
-    let metadata = fs::symlink_metadata(path)
-        .map_err(|error| format!("failed to inspect {label}: {error}"))?;
-    if !metadata.is_file()
-        || metadata_is_link_or_reparse(&metadata)
-        || metadata.len() > maximum_bytes as u64
-    {
-        return Err(format!("{label} is not a bounded regular Yap artifact"));
-    }
+    let metadata = bounded_regular_artifact_metadata(path, maximum_bytes, label)?;
     let mut file =
         open_no_follow_read(path).map_err(|error| format!("failed to open {label}: {error}"))?;
     let opened = file
@@ -260,6 +305,23 @@ pub(super) fn read_bounded_regular_artifact(
         return Err(format!("{label} changed while it was read"));
     }
     Ok(bytes)
+}
+
+fn bounded_regular_artifact_metadata(
+    path: &Path,
+    maximum_bytes: usize,
+    label: &str,
+) -> Result<fs::Metadata, String> {
+    let metadata = fs::symlink_metadata(path)
+        .map_err(|error| format!("failed to inspect {label}: {error}"))?;
+    if !metadata.is_file()
+        || metadata_is_link_or_reparse(&metadata)
+        || metadata.len() == 0
+        || metadata.len() > maximum_bytes as u64
+    {
+        return Err(format!("{label} is not a bounded regular Yap artifact"));
+    }
+    Ok(metadata)
 }
 
 pub(super) fn validate_published_result_contract(
@@ -317,11 +379,11 @@ pub(super) fn validate_published_result_contract(
     Ok(())
 }
 
-fn verify_published_remote_result(
+fn verify_published_result_directory(
     destination: &Path,
     expected_result: &[u8],
     expected_transcript: &[u8],
-    expected_speaker_result: Option<&[u8]>,
+    has_speaker_result: bool,
 ) -> Result<(), String> {
     let metadata = fs::symlink_metadata(destination)
         .map_err(|error| format!("failed to inspect published result directory: {error}"))?;
@@ -337,7 +399,7 @@ fn verify_published_remote_result(
         })
         .collect::<Result<Vec<_>, _>>()?;
     names.sort();
-    let expected_names = if expected_speaker_result.is_some() {
+    let expected_names = if has_speaker_result {
         vec!["result.json", "speaker-result.json", "transcript.txt"]
     } else {
         vec!["result.json", "transcript.txt"]
@@ -366,6 +428,13 @@ fn verify_published_remote_result(
             return Err("published result artifact conflicts with its immutable content".into());
         }
     }
+    Ok(())
+}
+
+fn verify_published_speaker_bytes(
+    destination: &Path,
+    expected_speaker_result: Option<&[u8]>,
+) -> Result<(), String> {
     if let Some(expected) = expected_speaker_result {
         let actual = read_bounded_regular_artifact(
             &destination.join("speaker-result.json"),

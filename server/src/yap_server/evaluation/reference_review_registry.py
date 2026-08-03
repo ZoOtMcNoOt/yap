@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Iterable, Mapping, Sequence
 
-from yap_server.evaluation.evaluation_receipt_fields import (
+from yap_server.json_contract import (
     bounded_identifiers,
     enum_value,
     exact_object,
@@ -14,7 +14,7 @@ from yap_server.evaluation.evaluation_receipt_fields import (
     utc,
 )
 from yap_server.evaluation.human_reference_adjudication import ReviewedListener
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     decode_json_object_with_identity,
 )
 from yap_server.evaluation.transcript_reference_review import (
@@ -250,9 +250,7 @@ def _verify_reference_review_support(
 
     observed: set[tuple[str, str | None]] = set()
     artifact_bodies: dict[tuple[str, str | None], tuple[bytes, str]] = {}
-    for artifact_value in _nonempty_array(
-        value, "trusted reference review artifacts"
-    ):
+    for artifact_value in _nonempty_array(value, "trusted reference review artifacts"):
         artifact = exact_object(
             artifact_value,
             {"kind", "participantId", "artifactPath", "artifactSha256"},
@@ -517,9 +515,7 @@ def _validate_locale_basis_artifact(
         locale_basis["schemaVersion"] != 1
         or locale_basis["caseId"] != case_id
         or locale_basis["reviewerId"] != receipt.locale_reviewer_id
-        or canonical_bcp47(
-            locale_basis["languageBcp47"], "locale-basis languageBcp47"
-        )
+        or canonical_bcp47(locale_basis["languageBcp47"], "locale-basis languageBcp47")
         != receipt.language_bcp47
         or locale_basis["basisKind"] != receipt.locale_basis_kind
     ):

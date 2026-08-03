@@ -17,7 +17,6 @@ import type { NativeHistoryReconciliation } from "@/hooks/use-transcript-history
 
 const historySyncWarning = "Transcript history could not be synced.";
 const historySubscriptionWarning = "Transcript history updates could not be monitored. Restart Yap if new transcripts do not appear.";
-const hiddenHistoryCleanupWarning = "Hidden transcript cleanup could not be completed.";
 
 type HistoryCatalogEventSubscriptions = {
   listenLiveSaved: (
@@ -36,7 +35,7 @@ export function projectNativeHistoryCatalog(catalog: NativeHistoryCatalog) {
 }
 
 export function historyCatalogEntryKey(entry: TranscriptHistoryEntry) {
-  return `${entry.origin ?? "legacy"}\0${entry.sessionId ?? ""}\0${entry.outputPath}`;
+  return `${entry.origin ?? "browser"}\0${entry.sessionId ?? ""}\0${entry.outputPath}`;
 }
 
 export function selectSavedHistoryCatalogEntry(
@@ -101,23 +100,19 @@ export async function prepareHistoryCatalogReconciliation(
 type HistoryCatalogSyncPorts = {
   captureNativeHistoryReconciliation: () => NativeHistoryReconciliation;
   onSaved: (entry: TranscriptHistoryEntry) => void;
-  reconcileHiddenHistory: () => Promise<void>;
 };
 
 export function useHistoryCatalogSync({
   captureNativeHistoryReconciliation,
   onSaved,
-  reconcileHiddenHistory,
 }: HistoryCatalogSyncPorts) {
   const portsRef = useRef({
     captureNativeHistoryReconciliation,
     onSaved,
-    reconcileHiddenHistory,
   });
   portsRef.current = {
     captureNativeHistoryReconciliation,
     onSaved,
-    reconcileHiddenHistory,
   };
 
   useEffect(() => {
@@ -201,12 +196,6 @@ export function useHistoryCatalogSync({
       if (subscriptions.failures.length) {
         toast.warning(historySubscriptionWarning);
       }
-      try {
-        await portsRef.current.reconcileHiddenHistory();
-      } catch {
-        if (active) toast.warning(hiddenHistoryCleanupWarning);
-      }
-      if (!active) return;
       startupReady = true;
       await coordinator.refresh();
     })().catch(reportRefreshFailure);

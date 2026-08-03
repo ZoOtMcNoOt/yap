@@ -72,6 +72,10 @@ class BatchAsrPool:
         max_queued: int = 2,
         max_inflight_pcm_bytes: int = 2**63 - 1,
     ) -> None:
+        if not callable(getattr(worker, "run", None)) or not callable(
+            getattr(worker, "close", None)
+        ):
+            raise TypeError("batch worker must implement callable run() and close()")
         if (
             max_workers < 1
             or max_queued < 0
@@ -269,7 +273,6 @@ class BatchAsrPool:
             self._slots.release()
 
     def shutdown(self) -> None:
-        close_worker = getattr(self._worker, "close", None)
         containment_error: WorkerContainmentError | None = None
         try:
             with self._lock:
@@ -280,8 +283,7 @@ class BatchAsrPool:
                     if job_id not in self._futures:
                         cancellation = self._cancellations[job_id]
                         self._release_unstarted_locked(job_id, cancellation)
-            if callable(close_worker):
-                close_worker()
+            self._worker.close()
         except WorkerContainmentError as error:
             containment_error = error
             with self._lock:

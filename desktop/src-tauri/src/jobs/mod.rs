@@ -2,10 +2,10 @@ pub mod commands;
 mod drain;
 mod language_preflight;
 mod ledger;
-mod migrations;
 mod model;
 mod remote;
 mod resources;
+mod schema;
 
 pub use ledger::JobLedger;
 pub(crate) use ledger::{LidPreflightDispatchFailure, LidPreflightDispatchStart};
@@ -37,14 +37,16 @@ fn remote_jobs_directory() -> std::path::PathBuf {
     crate::paths::app_data_dir().join("remote-jobs")
 }
 
-pub(crate) fn read_published_remote_transcript(path: &std::path::Path) -> Result<String, String> {
-    remote::read_published_remote_transcript(path, &remote_jobs_directory())
-        .map(|verified| verified.text)
+pub(crate) fn read_published_remote_transcript_text(
+    path: &std::path::Path,
+) -> Result<String, String> {
+    remote::read_published_remote_result_bundle(path, &remote_jobs_directory())
+        .map(|bundle| bundle.text)
 }
 
 pub(crate) fn authorize_published_remote_transcript(
     path: &std::path::Path,
 ) -> Result<std::path::PathBuf, String> {
-    remote::read_published_remote_transcript(path, &remote_jobs_directory())?;
+    remote::read_published_remote_result_bundle(path, &remote_jobs_directory())?;
     Ok(path.to_path_buf())
 }

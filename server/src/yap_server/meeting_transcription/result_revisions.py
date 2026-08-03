@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
+import re
 from typing import Mapping
 
 from yap_server.alignment_contract import (
@@ -11,7 +12,7 @@ from yap_server.alignment_contract import (
     AlignmentUnavailableReason,
     unavailable_alignment,
 )
-from yap_server.evaluation.meeting_runtime_provenance import (
+from yap_server.meeting_transcription.runtime_provenance import (
     MeetingRuntimeProvenance,
     load_meeting_runtime_provenance,
 )
@@ -25,10 +26,17 @@ from yap_server.jobs.contract_values import (
 )
 from yap_server.transcript_text import canonical_transcript
 
-_MAX_SPEAKER_TURNS = 100_000
-_SPEAKER_CAPACITY_LIMIT = 8
+from .contract import (
+    MAX_MEETING_SEGMENT_COUNT,
+    MAX_MEETING_SPEAKERS,
+    MEETING_SAMPLE_RATE_HZ,
+)
+
+_SPEAKER_CAPACITY_LIMIT = MAX_MEETING_SPEAKERS
 _SPEAKER_CAPACITY_CODE = "SPEAKER_CAPACITY_REACHED"
 _SPEAKER_CAPACITY_FALLBACK = "not_run_recommended"
+_GIT_REVISION = re.compile(r"^[0-9a-f]{40}$")
+_MAX_MODEL_PROVENANCE_CHARS = 256
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,7 +139,9 @@ class MeetingResultContext:
         source_frame_count = 0
         for raw_chunk in chunks:
             content_identity = mapping(
-                mapping(raw_chunk, "meeting result source chunk").get("contentIdentity"),
+                mapping(raw_chunk, "meeting result source chunk").get(
+                    "contentIdentity"
+                ),
                 "meeting result source content identity",
             )
             byte_length = content_identity.get("byteLength")
@@ -230,7 +240,10 @@ def build_meeting_result_revisions(
     )
 
     raw_segments = meeting.get("segments")
-    if not isinstance(raw_segments, list) or len(raw_segments) > _MAX_SPEAKER_TURNS:
+    if (
+        not isinstance(raw_segments, list)
+        or len(raw_segments) > MAX_MEETING_SEGMENT_COUNT
+    ):
         raise ValueError("meeting worker segments are invalid")
     segments = [mapping(value, "meeting worker segment") for value in raw_segments]
     segment_texts = [
@@ -299,6 +312,50 @@ def validate_speaker_result_revision(
     context: MeetingResultContext,
     authority: MeetingResultAuthority,
 ) -> None:
+    _validate_speaker_result_revision(
+        value,
+        transcript_result=transcript_result,
+        context=context,
+        expected_runtime_lock_sha256=authority.runtime_lock_sha256,
+        expected_model_provenance=_model_provenance(
+            authority.provenance,
+            authority.runtime_lock_sha256,
+        ),
+    )
+
+
+def validate_persisted_speaker_result_revision(
+    value: Mapping[str, object],
+    *,
+    transcript_result: Mapping[str, object],
+    context: MeetingResultContext,
+    route_model_revision: str,
+) -> None:
+    """Validate an immutable result against its frozen job, not today's lock."""
+
+    runtime_lock_sha256 = value.get("runtimeLockSha256")
+    model_provenance = _persisted_model_provenance(
+        value.get("modelProvenance"),
+        runtime_lock_sha256=runtime_lock_sha256,
+        route_model_revision=route_model_revision,
+    )
+    _validate_speaker_result_revision(
+        value,
+        transcript_result=transcript_result,
+        context=context,
+        expected_runtime_lock_sha256=runtime_lock_sha256,
+        expected_model_provenance=model_provenance,
+    )
+
+
+def _validate_speaker_result_revision(
+    value: Mapping[str, object],
+    *,
+    transcript_result: Mapping[str, object],
+    context: MeetingResultContext,
+    expected_runtime_lock_sha256: str,
+    expected_model_provenance: list[dict[str, str]],
+) -> None:
     exact_keys(
         value,
         {
@@ -328,8 +385,8 @@ def validate_speaker_result_revision(
     ):
         raise ValueError("speaker result revision identity is invalid")
     if (
-        not valid_sha256(authority.runtime_lock_sha256)
-        or value.get("runtimeLockSha256") != authority.runtime_lock_sha256
+        not valid_sha256(expected_runtime_lock_sha256)
+        or value.get("runtimeLockSha256") != expected_runtime_lock_sha256
         or transcript_result.get("speakerResultSha256") != speaker_result_sha256(value)
         or transcript_result.get("status") != observed_status
     ):
@@ -349,7 +406,7 @@ def validate_speaker_result_revision(
         raise ValueError("speaker result language is invalid")
 
     turns = value.get("speakerTurns")
-    if not isinstance(turns, list) or len(turns) > _MAX_SPEAKER_TURNS:
+    if not isinstance(turns, list) or len(turns) > MAX_MEETING_SEGMENT_COUNT:
         raise ValueError("speaker result turns are invalid")
     intervals: list[tuple[int, int]] = []
     observed_speakers: set[str] = set()
@@ -430,10 +487,11 @@ def validate_speaker_result_revision(
         or value.get("alignedWords") != []
     ):
         raise ValueError("speaker result alignment is invalid")
-    if value.get("modelProvenance") != _model_provenance(
-        authority.provenance,
-        authority.runtime_lock_sha256,
-    ) or transcript_result.get("modelProvenance") != [value["modelProvenance"][0]]:
+    if value.get(
+        "modelProvenance"
+    ) != expected_model_provenance or transcript_result.get("modelProvenance") != [
+        expected_model_provenance[0]
+    ]:
         raise ValueError("speaker result model provenance is invalid")
 
 
@@ -448,18 +506,6 @@ def speaker_result_sha256(value: Mapping[str, object]) -> str:
     except (TypeError, ValueError, UnicodeEncodeError) as error:
         raise ValueError("speaker result cannot be encoded canonically") from error
     return hashlib.sha256(encoded).hexdigest()
-
-
-def published_result_fingerprint(
-    transcript_result: Mapping[str, object],
-    speaker_result: Mapping[str, object] | None,
-) -> dict[str, object] | Mapping[str, object]:
-    if speaker_result is None:
-        return transcript_result
-    return {
-        "transcriptResult": transcript_result,
-        "speakerResult": speaker_result,
-    }
 
 
 def _revision_identity(
@@ -559,6 +605,52 @@ def _model_provenance(
     ]
 
 
+def _persisted_model_provenance(
+    value: object,
+    *,
+    runtime_lock_sha256: object,
+    route_model_revision: str,
+) -> list[dict[str, str]]:
+    if not valid_sha256(runtime_lock_sha256):
+        raise ValueError("persisted meeting runtime lock identity is invalid")
+    if not isinstance(value, list) or len(value) != 3:
+        raise ValueError("persisted meeting model provenance is invalid")
+    parsed: list[dict[str, str]] = []
+    for raw_component in value:
+        component = mapping(raw_component, "persisted meeting model provenance")
+        exact_keys(
+            component,
+            {"modelId", "revision", "calibrationRevision"},
+            "persisted meeting model provenance",
+        )
+        model_id = component.get("modelId")
+        revision = component.get("revision")
+        calibration_revision = component.get("calibrationRevision")
+        if (
+            not isinstance(model_id, str)
+            or not model_id
+            or len(model_id) > _MAX_MODEL_PROVENANCE_CHARS
+            or not isinstance(revision, str)
+            or _GIT_REVISION.fullmatch(revision) is None
+            or calibration_revision != runtime_lock_sha256
+        ):
+            raise ValueError("persisted meeting model provenance is invalid")
+        parsed.append(
+            {
+                "modelId": model_id,
+                "revision": revision,
+                "calibrationRevision": str(runtime_lock_sha256),
+            }
+        )
+    if parsed[0]["revision"] != route_model_revision or len(
+        {component["modelId"] for component in parsed}
+    ) != len(parsed):
+        raise ValueError(
+            "persisted meeting model provenance differs from the frozen route"
+        )
+    return parsed
+
+
 def _speaker_turns(
     segments: list[Mapping[str, object]],
     segment_texts: list[str],
@@ -607,7 +699,7 @@ def _canonical_segment_text(value: object, index: int) -> str:
 def _sample_to_ms(value: object) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or value < 0:
         raise ValueError("meeting segment source sample is invalid")
-    return round(value * 1_000 / 16_000)
+    return round(value * 1_000 / MEETING_SAMPLE_RATE_HZ)
 
 
 def _overlap_group_ids(

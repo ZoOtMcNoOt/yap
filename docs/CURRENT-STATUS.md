@@ -2,35 +2,43 @@
 
 **As of:** 2026-08-03
 
-**Most recent closure:** [PR #141](https://github.com/mcnatg1/yap/pull/141)
-removed installer-bundled model weights while preserving explicit verified
-model acquisition into canonical app data. It merged as
-`cb4ddd1320f40c1b8b1a63ce42c468ca69bd8ae5` after exact-head hosted checks.
+**Most recent closure:** reviewed head
+`ec4e4ab46234c35555136a75da530c6d73a042d8` passed every hosted CI and
+CodeQL check for [PR #142](https://github.com/mcnatg1/yap/pull/142), which
+merged the Phase 8 Tiron meeting-transcription Preview as
+`4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
 
-**Current Phase 8 baseline:** `main` at
-`cb4ddd1320f40c1b8b1a63ce42c468ca69bd8ae5`. The
-[joint speaker-attributed meeting transcription plan](plans/active/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
-is active in [PR #142](https://github.com/mcnatg1/yap/pull/142). Exact current
-upstream runtime
-and model identities plus the frozen messy-meeting acceptance contract have
-executable validators. A focused offline Tiron worker now executes on GB10;
-the explicitly configured candidate is contract-composed across the authenticated
-job route, separate hash-bound transcript/speaker revisions, owner-scoped
-retrieval, native publication, and History projection. Exact application/runtime
-head `1c69b61cf2902c9cfda50c6158168890974f969f` passed one real
-supported-launcher client/HTTP/Tiron/native/History roundtrip with a verified
-speaker companion and the one admitted local/native/server/GB10 Preview
-matrix. The exact immutable ARM64 image is
-`sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`;
-the protected aggregate receipt remains outside Git and has SHA-256
+**Last gated checkpoint candidate:** exact patched head
+`393710999b53a4bd1b00639e30c0fec88b152530` passed the canonical native
+build, receipt-bound request-time image and server preflight, real
+desktop-to-GB10 History and cancellation lifecycle with independent teardown,
+its single complete 18-child checkpoint matrix, independent candidate-receipt
+validation, and all required CI and CodeQL jobs. Historical documentation-only
+successor `e22368fcf90410228c6be8da3d69cd177e0b106c` exposed high-severity
+`GHSA-mwp4-54f8-5fhr` in the development-only WDIO/Puppeteer chain and did not
+close; exact `ip-address` 10.3.1 now patches that advisory without an exception.
+The functionally named
+[meeting-transcription ownership and maintainability review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+has completed its product implementation without adding Phase 9 behavior or
+requalifying the model. Only final documentation-only exact-head hosted closure,
+including disposable-Windows NSIS, and merge through PR #143 remain open.
+Focused implementation and
+multi-lens review keep durable meeting-result decoding independent from the active
+worker profile, enforce current schemas and result-companion policy, remove
+evaluation code from the request-time Tiron image, serialize publication with
+cancellation, bound History detail work, and defer full speaker-companion
+verification until the exact result is selected.
+
+The merged Phase 8 qualification remains bound to application/runtime head
+`1c69b61cf2902c9cfda50c6158168890974f969f`, immutable ARM64 image
+`sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`,
+and protected aggregate receipt SHA-256
 `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`.
-Reviewed descendant `9ff06d7d3f66faea92276000d58fa9b94154682b`
-changes only test/gate mechanics and leaves that runtime/image evidence
-unchanged. It is not the default or a production-promoted route. The current
-Phase 8 branch additionally marks an
-exactly-eight-label upstream aggregate `partial`, binds that meeting-global
-signal to the complete source, and tells History that fallback reprocessing was
-not run.
+That evidence proves the explicitly enabled, absent-from-default-catalog
+Preview route, not production promotion. The result contract makes an exactly
+eight-label upstream aggregate `partial`, binds the meeting-global signal to
+the complete source, and says fallback reprocessing was recommended but not
+run.
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -51,12 +59,91 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 4: private ASR node | Merged and gated | A bounded router/pool and transient isolated Cohere worker ran on GB10 using the pinned Python 3.12 / NVIDIA PyTorch 26.06 stack. This is reference-worker proof, not a production service. |
 | Phase 5: remote STT | Merged and gated | Canonical WAV admission, immutable desktop spool, durable create/upload/commit/status/result/cancel, isolated private batch inference, verified native result publication, reconnect recovery, and History projection execute through the loopback development contract. |
 | Checkpoint A | Merged and gated | Implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time local/native/server/GB10 matrix. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS before merge `a80934d844a068110e7f86b30b6e29d35146db57`. |
-| Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 owns Tiron/provider promotion; Phases 7 and 10 own authentication and persistent supervised mixed-load production. |
+| Phase 6: preprocessing | Merged and gated | [ADR 0024](adr/0024-global-language-routing.md), [ADR 0025](adr/0025-provider-specific-asr-serving.md), [ADR 0026](adr/0026-ambernet-batch-language-preflight.md), and the [completed plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md) govern local language spans, guarded batch preflight, language/routing/timing, and provider-specific ASR serving. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the one-time 30-child local/native/server/private-runtime matrix with exact teardown. Hosted CI, CodeQL, and stock NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Private audio, transcripts, raw metrics, paths, logs, and process ledgers remain outside Git. The selector still exposes only gated Cohere `en-US`; `wordAlignment` remains false; the local automatic route remains explicit default-off Preview because its frozen natural-switch target failed; and neither resident provider is promoted. Phase 8 later added a distinct Tiron meeting Preview without promoting or replacing these providers; persistent supervised mixed-load production remains Phase 10. |
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
 | Phase 7: identity/access | Merged and gated | The [tenant-scoped identity and job authorization plan](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governed the branch. [PR #69](https://github.com/mcnatg1/yap/pull/69) merged as `66d314d7`. Provider-neutral OIDC/Entra token validation, tenant-scoped `(tid, oid)` ownership across jobs, results, REST and WSS, protected readiness, authenticated bounded private WebSocket admission, and the qualified native lower handshake execute. Two things carried by the branch do NOT execute as product behaviour and are gates rather than capabilities: the purpose-grant and revocation layer is reachable only from tests, since no HTTP route or operator entry point calls `RequestAuthorizationRuntime.purpose_authorization`, so `access_disabled` can be set only by editing `identity.sqlite` by hand; and the desktop production token manager discovers no provider by default. A WAM adapter exists only behind explicit opt-in and is not approved or selected. In release/default builds, explicit `YAP_AUTH_MODE=development_loopback` is the only end-to-end mode that does not require an IT-provided identity environment; the debug-only demo provider is test/demo evidence, not production SSO. Real Entra policy conformance remains an IT-owned handoff. |
 | Post-Phase-7 local-first closure | Implemented and locally gated | On-device setup and recovery no longer await optional server/auth refresh. The fixed numeric-loopback offer retries safely after launch, requires explicit connection approval, never scans the LAN, and stops after configuration or durable dismissal. Server and sign-in controls remain optional and progressively disclosed; no production SSO provider or enterprise configuration is invented. |
-| Phase 8: meeting evidence | Active; Preview gate passed, PR/merge pending | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects the pinned upstream Tiron whole-meeting runtime as an explicitly enabled server Preview baseline; it remains absent from the committed default catalog and unpromoted. Exact model/runtime/ECAPA/container/dependency identities and the messy-meeting policy have executable validators. The authenticated job route, three-hour admission, restart-safe hash-bound transcript/speaker revisions, owner-scoped retrieval, native publication, and History projection execute. Exact application/runtime head `1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported-launcher client/HTTP/Tiron/native/History roundtrip and the one admitted local/native/server/GB10 matrix against immutable image `sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`. Protected aggregate receipt SHA-256 `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154` binds the subordinate evidence and test/gate-only descendant `9ff06d7d...`. The current branch conservatively publishes `partial` when the public upstream aggregate exposes exactly eight global labels and says fallback was recommended but not run. Phase 8 Preview closure now requires only the focused reviewed PR, green hosted exact head, merge, and separate post-phase maintainability checkpoint. Private-holdout scoring, exact window-cap evidence, speaker epochs, automatic fallback, broad capacity/quality evidence, and production promotion are deferred promotion work. |
+| Phase 8: meeting evidence | Merged and Preview-gated | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects the pinned upstream Tiron whole-meeting runtime as an explicitly enabled server Preview baseline; it remains absent from the committed default catalog and unpromoted. Exact model/runtime/ECAPA/container/dependency identities and the messy-meeting policy have executable validators. The authenticated job route, three-hour admission, restart-safe hash-bound transcript/speaker revisions, owner-scoped retrieval, native publication, and History projection execute. Exact application/runtime head `1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported-launcher client/HTTP/Tiron/native/History roundtrip and the one admitted local/native/server/GB10 matrix against immutable image `sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`. Protected aggregate receipt SHA-256 `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154` binds the subordinate evidence and test/gate-only descendant `9ff06d7d...`. Reviewed head `ec4e4ab...` passed hosted checks and PR #142 merged as `4201c5e7...`. The route publishes `partial` when the public upstream aggregate exposes exactly eight global labels and says fallback was recommended but not run. Private-holdout scoring, exact window-cap evidence, speaker epochs, automatic fallback, broad capacity/quality evidence, and production promotion remain deferred promotion work. |
+| Meeting-transcription maintainability checkpoint | Candidate gated; final hosted closure pending | The [ownership review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. Final documentation-only hosted closure including disposable-Windows NSIS and PR #143 merge remain. This does not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
+
+Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
+is failed historical evidence and cannot be retried or relabeled. Its exact
+remote Tiron server reached readiness and cleanup removed its owned runtime, but
+the Windows product lifecycle failed before WDIO or audio submission because
+stale generated AWS-LC archives from an earlier `AWS_LC_SYS_NO_ASM=1` build were
+combined with the canonical NASM build mode. No product evidence directory was
+created. The build-cache fault is not a shipped application, dependency-lock,
+or GLib defect. The replacement candidate must clear that override, clean only
+the generated AWS-LC package when changing modes, pass the focused native build
+smoke before admission, and use a new protected private plan and exact-head
+runtime receipt.
+
+Replacement checkpoint head `d944670841945bed3b5c22ac9a435b3800e72118`
+passed the canonical desktop build and exact remote server preflight. Its
+product lifecycle then stopped before upload: the 65-second fixed-language
+fixture correctly reached ADR 0026's explicit manual-review state because the
+meeting-only server profile does not advertise AmberNet, while the new WDIO
+driver omitted the required user confirmation. No meeting vertical or
+cancellation receipt was published. The remote controller reported cleanup
+success, and direct post-stop inspection observed no retained local
+listener/application or remote listener/container/process, but no independent
+product-teardown receipt was published. The admission is failed historical
+evidence and cannot be retried or relabeled.
+The replacement driver now requires the expected
+`server_preflight_unavailable` review and confirms the selected language through
+the production native command within one minute; the native language-safety
+state machine remains unchanged.
+
+Candidate checkpoint head `bbbd93f8cc05c1f6cbb2c39d119f6aec4cce3d30`
+passed the canonical desktop build, exact Tiron image preparation, server-only
+lifecycle preflight, and admission. It then failed before WDIO or audio
+submission because the operator pre-created the planned lifecycle evidence
+directory. WDIO correctly rejected that existing destination instead of
+reusing it. The remote controller recorded one cleanup pass, and direct
+post-stop inspection observed no retained local or remote owner; however, the
+empty lifecycle directory contains no gate context and no vertical,
+cancellation, or independent teardown receipt. The admission is failed
+historical evidence and cannot be retried or relabeled. The runbook now states
+that every planned product destination remains absent until its exclusive
+producer creates it.
+
+Replacement head `06a66435880f19812eecafaec65e6cb9f201b646`
+passed the canonical build and exact-image product lifecycle: the real Tiron
+result and speaker revision opened from History, active cancellation published
+nothing, and independent teardown proved zero retained owners. Its complete
+matrix then stopped at command cell 11 before native tests because Windows
+PowerShell 5.1 could not apply the private DACL to a 273-character zero-byte
+command-log path. No candidate receipt was published. The runner now routes ACL
+I/O through Windows extended-length paths while preserving canonical receipt
+paths; an open-descriptor regression covers the exact production seam.
+
+The next clean head `b9ef6ff4d7c727aabb5f40a9c781ae6ebd06ca32`
+passed its canonical build, exact Tiron image preparation, server preflight,
+and admission. Its product evidence is intentionally invalid: adversarial
+review found that the private operator controller used check-then-create and
+reopened its cleanup logs instead of retaining exclusively created handles.
+The run was stopped before inference; remote cleanup passed and direct
+inspection found zero local or remote owners, but only a gate context exists—no
+vertical, cancellation, or independent teardown receipt. That admission is
+historical evidence and cannot qualify a candidate. The corrected controller
+uses one `CreateNew` stream per log from ACL protection through final disposal,
+and the runbook now makes that invariant explicit.
+
+Candidate head `6d52be5bcf2f7a0f2f9607f80f3d8c1ec6121e5a`
+passed its exact-image product lifecycle and all five private receipts. Its
+candidate matrix then passed frontend and Windows prerequisite checks, native
+formatting and Clippy, and all 1,198 Rust tests before the strict product Job
+reported one retained descendant after the cold MSVC link. Focused cold-link
+reproduction identified the signed Visual Studio `vctip.exe` helper and no Rust
+test leak; extending the drain, disabling optional diagnostics, and disabling
+test debug information did not stop that resident helper. The admission remains
+failed historical evidence. The meeting checkpoint now follows the existing
+Phase 7 boundary: its local candidate owns frontend/server/private lifecycle
+evidence and the Windows prerequisite, while native formatting, Clippy,
+compilation, tests, connector/dependency checks, and WDIO build evidence execute
+in the clean exact-head hosted Rust and native-WDIO jobs. Runtime connector and
+application trees remain strictly contained, with no compiler exception.
 
 Replacement admissions `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3`,
 `6b4eda32ca3853c90b40db607248fab5af23048e`,
@@ -81,13 +168,58 @@ unrelated daemon errors or malformed/missing aggregates. `09b8b717...` then
 passed its Windows target-client, GB10 resident-provider, and connected
 desktop/private-server channels with exact teardown, but its complete matrix
 failed immediately when the live registry audit reported two newly published
-high-severity frontend transitive advisories. The compatible PostCSS finding
-is pinned to its patched 8.5.18 release. The `brace-expansion` finding remains
-confined to development-only WDIO/glob paths whose older `minimatch` consumers
-cannot accept the breaking 5.0.8 fix; one exact documented exception and
-removal condition now replace any broad suppression. The next admission must
-keep the controller lid open and supervise the long GB10 lifecycle
+high-severity frontend transitive advisories. At that time, PostCSS was pinned
+to patched release 8.5.18 and `brace-expansion` remained under one documented
+development-tool exception. Compatible `brace-expansion` backports are now
+available: the current branch pins exact releases 1.1.18 and 2.1.4 and removes
+that exception and its exception-only reachability code. PostCSS is now pinned
+to 8.5.23 for the later `GHSA-fxqj-rqcc-2cmp` residual fix. The next admission
+must keep the controller lid open and supervise the long GB10 lifecycle
 independently of SSH.
+
+Candidate `7a071b0a962a9762cf22711c2b2cf21584b3c809` later passed its
+exact-image product lifecycle and complete private candidate matrix, but its
+hosted frontend audit and native-WDIO documentation-truth jobs failed. Head
+`3f684c57697151daa07bd803f4b1881120e2bfd8` removed the obsolete advisory
+exception, updated the compatible `brace-expansion` and PostCSS pins, and fixed
+the detached-hosted-checkout wording without weakening the documentation
+contract. It passed the canonical native build, exact-image product lifecycle,
+real tunneled transcription and cancellation, and independent teardown. Its
+single complete-matrix attempt then stopped at `frontend.dependency-audit`
+when the registry began reporting newly published Undici advisories
+`GHSA-8xcm-r25x-g524` and `GHSA-4cwx-7wf7-3272`; no later matrix cell ran. That
+admission is failed historical evidence and cannot be resumed or relabeled.
+The current branch pins WebdriverIO's compatible Undici lines to exact releases
+6.28.0 and 7.29.0, and the focused registry audit is clean. The same hosted
+native-WDIO run then reached the application smoke and exposed one stale test
+fixture that still wrote retired server-settings schema 1. The application
+correctly rejected it. The fixture now writes the current schema-2 shape; no
+compatibility reader or migration was added.
+
+Replacement candidate `fb0985e7c08cf0a0e69752afbe61e372cbfe76db`
+passed the canonical native build, fresh exact-image preparation and server
+preflight, real desktop-to-GB10 History and active-cancellation lifecycle with
+independent teardown, its one complete 18-child checkpoint matrix, and
+independent candidate-receipt validation. The same exact head passed all
+required hosted CI and CodeQL jobs, including the corrected native-WDIO smoke.
+This is maintainability and lifecycle evidence, not a new Tiron quality,
+capacity, or production-promotion claim. Private evidence stays outside Git and
+hosted artifacts.
+
+Documentation-only successor `e22368fcf90410228c6be8da3d69cd177e0b106c`
+passed CodeQL, but its first hosted frontend audit failed on newly visible
+high-severity `GHSA-mwp4-54f8-5fhr`; the remaining CI and NSIS work was canceled
+because that head could not merge. The patched `ip-address` 10.3.1 override is
+development-only, but its lockfile change invalidates the documentation-only
+lineage. It received a fresh candidate gate rather than an exception.
+
+Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` passed the
+canonical native build, exact-image preparation and server preflight, real
+desktop-to-GB10 History and active-cancellation lifecycle with independent
+teardown, its one complete 18-child checkpoint matrix, and independent
+candidate-receipt validation. The same exact head passed every required hosted
+CI and CodeQL job. Only the reviewed documentation-only successor's hosted
+closure, including disposable-Windows NSIS, and PR #143 merge remain.
 
 Replacement candidate `72c089f42c1358f4f0b86c793af39a8e762d6137`
 passed its complete Windows target-client channel and all 18 sequential GB10
@@ -119,8 +251,9 @@ complete: prepared audio owns speech and transcription evidence, while the
 unattended 30-second UI smoke owns capture lifecycle, responsiveness,
 save/delete, production quit, and teardown.
 Longer manual physical-device and real-time local soaks remain available for
-default-on or Phase 10 release qualification. Broad server-provider duration
-and output-behavior comparison belongs to the Phase 8 Tiron decision.
+default-on or Phase 10 release qualification. Phase 8 merged only the narrow
+Tiron meeting Preview; broad server-provider duration, output-behavior, and
+promotion comparison remains separate later evidence.
 
 Focused Phase 6 provider-duration evidence now reaches the exact four-hour
 transport ceiling through both Cohere vLLM and resident NeMo with bounded result
@@ -221,8 +354,9 @@ and 6,475,702,272 bytes peak memory. Its mixed long-window evidence selected
 both 30 seconds and 15 minutes. The final read-back found no provider container,
 network, runtime process, or listener on ports 18000/18001 and unchanged
 listener, firewall-observation, and service-unit snapshots. This is a
-candidate-safety result only; both replaceable providers remain unpromoted and
-Phase 8 retains the broad Cohere-versus-Tiron quality decision.
+candidate-safety result only; both replaceable providers remain unpromoted.
+Phase 8's distinct Tiron meeting Preview does not settle a broad
+Cohere-versus-Tiron quality or replacement decision.
 
 Focused resource controls now complete four consecutive c8/400-request repeats
 per resident provider. vLLM processed the warm repeats at about 321-322 audio-
@@ -267,7 +401,7 @@ candidate is promoted by this dirty-head result.
   requires the explicitly confirmed primary locale, validates the exact
   32-locale out-of-box allowlist, applies it to stream creation/reset, and fails
   unsupported locales visibly. A preference change retires stale idle warm
-  state. On the active Phase 6 branch, automatic routing is optional and uses
+  state. In merged Phase 6 behavior, automatic routing is optional and uses
   the explicitly imported AmberNet/Silero component only across user-selected
   Nemotron locales. The control is default-off and visibly labeled Preview;
   availability is not a locale-specific quality claim. Three consistent
@@ -277,14 +411,18 @@ candidate is promoted by this dirty-head result.
 - Imported Phase 5 jobs admit only already-canonical mono PCM16/16 kHz WAV at
   this boundary, prepare immutable Yap-owned artifacts, and persist progress in
   native SQLite.
-- On the active Phase 6 branch, imported canonical WAV jobs record deterministic
+- In merged Phase 6 behavior, imported canonical WAV jobs record deterministic
   identity normalization and optionally run the explicitly installed, exact-
   hash Silero model through the existing CPU `sherpa-onnx` runtime. Ordered
   source-time intervals or a typed bounded error are durable advisory evidence;
   neither outcome truncates or replaces the complete source.
-- Desktop schema 9 owns normalization, VAD, LID-preflight, and user-confirmation
-  attempts. Server schema 6 owns ASR, alignment, and result-publication attempts.
-  Legacy state remains readable without manufacturing missing history.
+- The desktop ledger installs one current Yap-owned SQLite baseline
+  (`application_id = YAPJ`, schema 1) containing normalization, VAD,
+  LID-preflight, user-confirmation, write-probe, preflight-artifact, and current
+  remote-authority state. A non-empty unowned database or any other schema
+  identity fails closed without migration or rewriting. Server schema 6 owns
+  ASR, alignment, and result-publication attempts and likewise rejects older
+  persisted contracts.
 - The development server path binds to numeric loopback. The desktop reaches a
   private node through an explicitly managed SSH forward; Yap does not create
   or silently fail over that tunnel. The desktop may repeatedly probe only the
@@ -506,8 +644,9 @@ publication boundaries retain ownership.
   durable writes recover. React only projects native preference/catalog truth.
   The shipped catalog still honestly exposes only the gated Cohere `en-US`
   fixed-batch route. The visible per-job selector presents that exact catalog;
-  it does not manufacture an alternate while provider replacement remains an
-  evidence-gated Phase 8 question.
+  it does not manufacture an alternate. The merged Tiron meeting Preview does
+  not replace the batch route, and any later replacement needs an independent
+  promotion gate.
   Normalization, advisory VAD, and the optional explicitly imported AmberNet
   acoustic-LID path now execute with durable attempts/evidence. The local path
   retains one Nemotron ASR, one warm runtime owner, bounded exact-once language
@@ -542,8 +681,8 @@ publication boundaries retain ownership.
   tensor batching changed a Cohere transcript and its parity-preserving profile
   serialized model execution without a demonstrated throughput gain. Server
   live remains false.
-- Phase 8 production promotion, the frozen messy-meeting result, and
-  larger-roster reconciliation remain open. The explicitly configured Tiron
+- Tiron production promotion, exact frozen messy-meeting scoring, and
+  larger-roster reconciliation remain open later evidence. The explicitly configured Tiron
   candidate and anonymous speaker-result publication now execute, but that is
   not complete qualification or a default advertised route. Phase 9
   knowledge/agent behavior remains deferred.
@@ -695,25 +834,28 @@ base-digest identity, or runtime identity.
 
 The living [decision and evidence queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 preserves the detailed discussion register, open questions, later-phase owners,
-and reviewable sub-tasks. Phases 1–7, Checkpoints A/B, and the post-Phase-7
-adversarial checkpoint are merged and closed. The concise
+and reviewable sub-tasks. Phases 1–8, Checkpoints A/B, and the post-Phase-7
+adversarial checkpoint are merged and closed. Patched post-Phase-8
+maintainability candidate `393710999...` passed its fresh exact-head gate and
+required CI/CodeQL after the late development-tool security pin. Final
+documentation-only hosted closure and PR #143 merge remain before Phase 9.
+The concise
 [integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Complete the remaining first-slice Phase 8 evidence in the
-   [joint speaker-attributed meeting transcription plan](plans/active/2026-07-22-joint-speaker-attributed-meeting-transcription.md):
-   resolve training/redistribution boundaries and seal the private holdout. The
-   runtime/scorer/public-comparator contracts and initial thresholds are already
-   frozen; focused offline worker smokes are feasibility evidence only.
-2. Complete the remaining result-contract pressure and focused review of the
-   now-executing authenticated candidate path; keep model output behind
-   Yap-owned job, ownership, source-time, cancellation, and revision authority.
-3. Freeze and run the complete Phase 8 local/native/server/GB10 matrix once,
-   perform the required multi-lens review, and merge only a green checked head.
-4. Run the separate post-Phase-8 antagonist/refactor checkpoint before Phase 9.
-5. Continue Phases 9–10 in documented order and keep the full security scan at
+1. Complete final documentation-only hosted closure and merge the repaired
+   [meeting-transcription ownership and maintainability review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md),
+   only after exact-head CI, CodeQL, and disposable-Windows NSIS pass; its fresh
+   candidate matrix and receipt validation already passed on `393710999...`.
+2. Keep the merged Phase 8 Tiron route explicitly enabled, absent from the
+   default catalog, and unpromoted. Training/redistribution approval, the
+   independent private holdout, exact window-cap evidence, speaker epochs,
+   fallback execution, and broad quality/capacity evidence remain later
+   promotion work recorded in the
+   [completed delivery plan](plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
+3. Continue Phases 9–10 in documented order and keep the full security scan at
    the Phase 10 enterprise gate.
-6. Leave Entra registration, production SSO/provider approval, Conditional
+4. Leave Entra registration, production SSO/provider approval, Conditional
    Access, DNS, certificates, ZPA, firewall, and deployment policy as explicit
    IT/security handoffs rather than developer-invented infrastructure.

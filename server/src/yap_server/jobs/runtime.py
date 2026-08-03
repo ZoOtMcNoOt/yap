@@ -24,6 +24,7 @@ from yap_server.config.runtime_environment import (
 )
 from yap_server.jobs.service import RecordingJobService
 from yap_server.jobs.ownership import DEVELOPMENT_JOB_OWNER
+from yap_server.jobs.result_bundle import ResultBundleAdapterRegistry
 from yap_server.lid.runtime import (
     LANGUAGE_DETECTION_ENABLED_ENV,
     LanguageDetectionRuntime,
@@ -35,9 +36,15 @@ from yap_server.meeting_transcription.runtime import (
     MeetingTranscriptionRuntimeConfiguration,
     load_meeting_transcription_runtime_configuration,
 )
-from yap_server.meeting_transcription.contract import MAX_MEETING_PCM_BYTES
+from yap_server.meeting_transcription.contract import (
+    MAX_MEETING_PCM_BYTES,
+    MEETING_TRANSCRIPTION_POOL_ID,
+)
 from yap_server.meeting_transcription.result_revisions import (
     load_meeting_result_authority,
+)
+from yap_server.meeting_transcription.result_bundle_adapter import (
+    MeetingResultBundleAdapter,
 )
 from yap_server.pools.batch_asr import BatchAsrPool, ProviderBatchWorkerRegistry
 from yap_server.pools.batch_contract import (
@@ -203,6 +210,16 @@ def build_batch_runtime(
         raise ValueError(
             "configured meeting runtime differs from the canonical result authority"
         )
+    # Durable result decoding follows the frozen route, not the worker profile
+    # selected for this process. Completed meeting jobs must remain readable
+    # when the operator returns to the standard ASR profile.
+    result_bundle_adapters = ResultBundleAdapterRegistry(
+        {
+            MEETING_TRANSCRIPTION_POOL_ID: MeetingResultBundleAdapter(
+                meeting_result_authority
+            )
+        }
+    )
     configured_pools = (
         _configured_model_pools(source, root)
         if meeting_configuration is None
@@ -294,7 +311,16 @@ def build_batch_runtime(
             now=_utc_now,
             startup_worker_cleanup_verified=startup_cleanup_verified,
             development_principal=development_principal,
-            meeting_result_authority=meeting_result_authority,
+            result_bundle_adapters=result_bundle_adapters,
+            route_pcm_byte_limits=(
+                {
+                    meeting_configuration.capability_identity.pool_id: (
+                        MAX_MEETING_PCM_BYTES
+                    )
+                }
+                if meeting_configuration is not None
+                else None
+            ),
         )
         language_detection_runtime = build_language_detection_runtime(
             source,
@@ -441,11 +467,8 @@ def _close_unowned_workers(workers: Sequence[BatchWorker]) -> None:
         if identity in closed:
             continue
         closed.add(identity)
-        close_worker = getattr(worker, "close", None)
-        if not callable(close_worker):
-            continue
         try:
-            close_worker()
+            worker.close()
         except BaseException as error:
             if first_error is None:
                 first_error = error

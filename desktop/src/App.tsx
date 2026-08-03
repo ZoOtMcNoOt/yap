@@ -17,6 +17,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useHistoryActions } from "@/hooks/use-history-actions";
 import { useRecordingJobs } from "@/hooks/use-imported-recording-queue";
 import { useHistoryCatalogSync } from "@/hooks/use-history-catalog-sync";
+import { useHistorySpeakerTranscript } from "@/hooks/use-history-speaker-transcript";
 import { useRecordingSelection } from "@/hooks/use-recording-selection";
 import { useRecordingDrop } from "@/hooks/use-recording-drop";
 import { useLocalServerOffer } from "@/hooks/use-local-server-offer";
@@ -57,14 +58,9 @@ export default function App() {
     addRecordings: pickImportedRecordings,
     clearQueue,
     confirmLanguage,
-    discardLegacyQueue,
-    legacyDiscardAllowed,
-    migrationError,
-    migrationState,
     queue,
     removeItem,
     retryItem,
-    retryMigration,
   } = useRecordingJobs(clearTranscriptText);
   const {
     copyTranscript,
@@ -76,13 +72,13 @@ export default function App() {
     captureNativeHistoryReconciliation,
     forgetHistoryEntry,
     history,
-    reconcileHiddenHistory,
     recordVisibleHistoryEntries,
     rememberHiddenHistoryEntry,
   } = useTranscriptHistory();
   const {
     clearHistorySelectionIf,
     closeHistoryReview,
+    displayedHistoryEntry,
     historyJob,
     reviewMorphOrigin,
     selectHistoryEntry,
@@ -93,6 +89,7 @@ export default function App() {
     selectedId,
     selectedItem,
   } = useRecordingSelection({ history, queue });
+  const speakerTranscript = useHistorySpeakerTranscript(displayedHistoryEntry);
   const {
     activeRail,
     closeDetails,
@@ -126,7 +123,6 @@ export default function App() {
   useHistoryCatalogSync({
     captureNativeHistoryReconciliation,
     onSaved: onNativeTranscriptSaved,
-    reconcileHiddenHistory,
   });
   const historyActions = useHistoryActions({
     clearHistorySelectionIf,
@@ -200,12 +196,6 @@ export default function App() {
   }, [settings.setupPromptRequest, showDetails]);
 
   useEffect(() => {
-    if (!isTauri()) return;
-    if (migrationError) setStatus(migrationError);
-    else if (migrationState === "pending") setStatus("Restoring queued recordings");
-  }, [migrationError, migrationState]);
-
-  useEffect(() => {
     if (selectedItem?.outputPath && !Object.prototype.hasOwnProperty.call(transcriptText, selectedItem.outputPath)) {
       void loadTranscriptText(selectedItem.outputPath).catch(() => toast.error("Preview unavailable"));
     }
@@ -250,18 +240,13 @@ export default function App() {
     <>
       {showQueue ? (
         <QueuePanel
-          legacyDiscardAllowed={legacyDiscardAllowed}
           onClear={() => reportRecordingAction(clearQueue, "Could not clear queue")}
-          onDiscardLegacyQueue={() => reportRecordingAction(discardLegacyQueue, "Could not discard old queue")}
           onConfirmLanguage={confirmQueuedLanguage}
           onRemove={(id) => reportRecordingAction(() => removeItem(id), "Could not remove recording")}
           onReveal={(path) => void revealPath(path)}
-          onRetryMigration={retryMigration}
           onSelect={selectQueueItem}
           queue={queue}
           languageOptions={languageOptions}
-          migrationError={migrationError}
-          migrationPending={migrationState === "pending"}
           selectedId={selectedId}
         />
       ) : null}
@@ -310,6 +295,7 @@ export default function App() {
         onRetry={(id) => reportRecordingAction(() => retryItem(id), "Could not retry recording")}
         onReveal={(path) => void revealPath(path)}
         running={false}
+        speakerTranscript={speakerTranscript}
         text={selectedItem?.outputPath ? transcriptText[selectedItem.outputPath] : undefined}
       />
     </div>
@@ -401,6 +387,7 @@ export default function App() {
         reviewMorphOrigin={reviewMorphOrigin}
         selectedHistoryItem={selectedHistoryItem}
         selectedHistoryEntry={selectedHistoryEntry}
+        speakerTranscript={speakerTranscript}
         settings={settings}
         status={status}
         transcriptText={transcriptText}

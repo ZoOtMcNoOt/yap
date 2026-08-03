@@ -268,6 +268,11 @@ test("hosted Windows runtime wrapper rejects and cleans a non-listening retained
         assert.equal(error.terminationEvidence.activeProcessZeroObserved, true);
         assert.equal(error.terminationEvidence.activeProcessCount, 0);
         assert.equal(error.terminationEvidence.cleanupProven, true);
+        assert.ok(error.retainedProcessNames.includes("pwsh"));
+        assert.doesNotMatch(
+          error.message,
+          /[A-Za-z]:\\|command|token|stdout|stderr|transcript/i,
+        );
         return true;
       },
     );

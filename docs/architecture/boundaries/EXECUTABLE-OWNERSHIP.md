@@ -1,16 +1,21 @@
 # Executable Ownership and Trust Boundaries
 
-This map records the executable ownership baseline established by architecture
-checkpoints A/B and the merged Phase 7 implementation. Focused identity,
-purpose-authorization, private-WebSocket, and native lower-handshake evidence is
-green. Retained-pidfd head
-`9defb4a2202b5743f161dafb40f8fb2bc41b8fde` was rejected before admission when
-connected prequalification exposed the stock GB10 `socat` package-link
-incompatibility. The canonical-path successor completed exact three-lens review
-after focused local and real-host proof. Fresh exact-head private
-prequalification/admission/evidence, the full phase gate, PR closure, and merge
-remain open. Paths are relative to the repository root; later implementation
-must update this map only after its behavior is executable and verified.
+This map records the executable ownership baseline through the merged Phase 8
+Preview and the exact-head-gated meeting-transcription maintainability repair.
+Phase
+8 reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks
+and merged through PR #142 as
+`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Historical candidate `fb0985e7...`
+passed before documentation-only successor `e22368fc...` exposed
+`GHSA-mwp4-54f8-5fhr`. Patched development-only `ip-address` 10.3.1 candidate
+`393710999b53a4bd1b00639e30c0fec88b152530` passed multi-lens review, the
+canonical native build, receipt-bound image preflight, real lifecycle, one
+complete 18-child matrix, receipt validation, and required CI and CodeQL jobs.
+Final documentation-only hosted closure including disposable-Windows NSIS and
+PR #143 merge remain open. Paths are relative to the
+repository root; later
+implementation must update this map only after its behavior is executable and
+verified.
 
 ## Dependency direction
 
@@ -205,22 +210,21 @@ owner's state but may not recreate its transition logic.
 
 - **Entry point:** `jobs/commands/*` and `jobs/drain/*`.
 - **Authoritative owner:** `jobs/ledger.rs` plus `jobs/ledger/*` submodules.
-- **Persisted state:** SQLite schema/migrations, job status, retry/cancellation,
+- **Persisted state:** one current Yap-owned SQLite baseline, job status, retry/cancellation,
   remote origin/identity/progress, retention, immutable per-job language
   decision and catalog binding, stage-attempt history,
-  `client_preflight_artifacts`, and owned artifact references. Schema 11 rewrites
-  the former phase-derived implicit-English disposition to the functional
-  `legacy_implicit_english_default` token while preserving child rows and
-  foreign-key integrity. Schemas 12–13 bind each remote job and detached
-  cancellation to versioned development or hashed native-provider account
-  authority and quarantine ambiguous older authenticated bindings.
+  `client_preflight_artifacts`, owned artifact references, the singleton write
+  probe, and version-2 development or hashed native-provider account authority.
+  SQLite application ID `YAPJ` plus schema version 1 identify the database.
+  Installation claims only an empty unowned database; historical schemas and
+  obsolete language dispositions fail closed without migration or rewriting.
 - **Transient state:** transaction-local rows and snapshots.
-- **Trust boundary:** database migrations, row decoding, monotonic status
+- **Trust boundary:** database ownership/schema identity, row decoding, monotonic status
   transitions, origin generation, and bounded retention.
 - **Dependencies/events:** model records/status -> ledger mapping -> command and
   drain projections.
-- **Failure/recovery:** migrations are transactional; restart rehydrates remote
-  work without duplicating jobs or accepted bytes.
+- **Failure/recovery:** current-schema installation is transactional; restart
+  rehydrates remote work without duplicating jobs or accepted bytes.
 - **Cancellation:** cancellation is persisted before transport work.
 - **Duplicate owner:** none; renderer queue state is not durable authority.
 
@@ -302,9 +306,13 @@ owner's state but may not recreate its transition logic.
 - **Entry point:** `server/api/app.py` and `api/job_requests.py`.
 - **Authoritative owner:** `jobs/service.py` coordinates the transaction;
   `job_store.py`, `chunk_upload.py`, `completion.py`, and `artifacts.py` own
-  durable mechanisms. The request-authentication adapter supplies the immutable
-  principal; handlers never accept a client-supplied owner as authority.
-- **Persisted state:** principal-scoped private job JSON/state, chunk
+  durable mechanisms. `jobs/result_bundle.py` owns generic result aggregate
+  publication policy; functional adapters decode provider-specific companions.
+  Adapter registration is independent from the worker profile that admits new
+  work, so a restart can reopen already-durable results after profile changes.
+  The request-authentication adapter supplies the immutable principal; handlers
+  never accept a client-supplied owner as authority.
+- **Persisted state:** current-schema principal-scoped private job JSON/state, chunk
   receipts/files, assembled WAV, immutable result, idempotency key,
   cancellation, and retention metadata.
 - **Transient state:** admitted HTTP request, router/pool work, and processing
@@ -317,7 +325,9 @@ owner's state but may not recreate its transition logic.
   router/pool -> completion; status/result responses are bounded projections.
 - **Failure/recovery:** startup converts interrupted processing into an explicit
   retryable terminal state, reconciles atomic results, and never invents
-  success; create/upload/commit are idempotent. Chunk assembly reopens each
+  success; create/upload/commit are idempotent. Result-companion policy is
+  validated before publication and the same registered adapter reopens it after
+  restart. Chunk assembly reopens each
   regular file through a bounded descriptor and verifies its declared exact
   length and SHA before exclusive atomic WAV publication. Every mutating
   service entry point linearizes against runtime shutdown, the pool rejects and
@@ -374,7 +384,10 @@ owner's state but may not recreate its transition logic.
   `stt/ambernet_language_detector*`, and `stt/silero_vad.rs`; server
   `pools/model_lock.py`, `model_assets.py`, neutral `pools/pcm_audio.py`,
   provider-specific engines/adapters, `batch_asr_worker.py` for the executable
-  worker protocol, and `batch_pool.py` for admission and lifecycle.
+  worker protocol, and `batch_pool.py` for admission and lifecycle. The Tiron
+  harness owns its third-party whole-meeting decode; Yap's meeting adapter owns
+  source/result validation, while generic durable-result decoding remains
+  independent from whether the Tiron worker profile is currently enabled.
 - **Persisted state:** verified local model artifacts/settings and immutable
   server runtime/model lock.
 - **Transient state:** explicit import/download operation, load guard, warm
@@ -386,8 +399,9 @@ owner's state but may not recreate its transition logic.
   server pool and completion contract.
 - **Failure/recovery:** approved downloads and import-only artifacts publish
   atomically after exact hash/size verification; load re-verifies artifacts;
-  worker failures become typed job failure/retry state. A later provider startup
-  failure closes every worker already created before ownership transfers.
+  worker failures become typed job failure/retry state. Batch and LID workers
+  have mandatory close boundaries; a later provider startup failure closes
+  every worker already created before ownership transfers.
 - **Cancellation:** operation generation cancels downloads/loads; server runtime
   force-cleans the isolated worker.
 - **Duplicate owner:** none. The NGC image is a build base, not a second runtime
@@ -478,20 +492,32 @@ owner's state but may not recreate its transition logic.
 
 - **Entry point:** live finalization or verified remote result publication.
 - **Authoritative owner:** native transcript revision/catalog modules and
-  `commands/history/*`; remote result verification lives in `jobs/remote/result.rs`.
+  `commands/history/*`; remote result verification lives in
+  `jobs/remote/result.rs`. The catalog validates bounded directory/result/text
+  identity plus speaker-file metadata. Selection of an exact result triggers
+  the bounded full speaker hash, parse, canonical-content, and source-binding
+  verification.
 - **Persisted state:** immutable transcript/revision files, commit/result
   metadata, hash-chained language-label correction revisions, and native
   hidden/deletion state where applicable.
-- **Transient state:** frontend preview, selection, search, and polish draft.
+- **Transient state:** frontend preview, selection, search, and polish draft;
+  one serialized latest-wins native speaker-detail read and a bounded page of
+  canonical turn IDs.
 - **Trust boundary:** text/result size, revision identity/hash, catalog path,
   source replacement, and renderer file actions.
 - **Dependencies/events:** publication -> native catalog -> frontend history
   reconciliation.
 - **Failure/recovery:** corrupt highest revision does not silently fall back to a
-  different truth; catalog maintenance warns and preserves recoverable data.
-- **Cancellation:** aborts preview/polish projection; published native mutation
-  uses explicit action owners.
-- **Duplicate owner:** `localStorage` is compatibility/presentation only.
+  different truth; catalog maintenance warns and preserves recoverable data. A
+  crash after immutable result publication leaves durable `Saving` state;
+  restart validates and finalizes the complete locally published bundle before
+  acquiring any server lease, while cancellation removes the unattached owned
+  spool and prevents a later terminal commit.
+- **Cancellation:** aborts preview/polish projection. Result publication and
+  cancellation share the native mutation gate, so cancellation either wins
+  before publication or observes the completed terminal record afterward.
+- **Duplicate owner:** `localStorage` owns browser-created presentation entries
+  only; native catalog identity and result authority never originate there.
 
 ### 16. Configuration and environment variables
 
@@ -594,9 +620,10 @@ owner's state but may not recreate its transition logic.
   neither the public manifest nor an individual model exposure can self-authorize
   promotion.
 - **Dependencies/events:** focused suites feed the final matrix; hosted workflows
-  validate the exact PR head. Production ASR, NeMo, and LID images exclude the
-  `yap_server.evaluation` package; private qualification adds evaluation code or
-  source material only through the explicit evaluation image/mount boundary.
+  validate the exact PR head. Request-time ASR, NeMo, LID, and Tiron images
+  exclude the `yap_server.evaluation` package before application source enters
+  the final image; private qualification adds evaluation code or source material
+  only through the explicit evaluation image/mount boundary.
 - **Identity-provider evidence:** a version-and-digest-pinned mock OIDC provider
   and owner-flow harness exercise real discovery, JWKS, signed-token, ownership,
   and revocation behavior. Focused local checks are green; hosted Docker

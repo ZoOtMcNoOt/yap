@@ -14,10 +14,6 @@ DEVELOPMENT_JOB_OWNER = PrincipalKey(
     tenant_id="development-loopback",
     subject_id="local-server",
 )
-LEGACY_UNOWNED_JOB_OWNER = PrincipalKey(
-    tenant_id="legacy-unowned",
-    subject_id="quarantined",
-)
 
 
 def idempotency_owner_key(

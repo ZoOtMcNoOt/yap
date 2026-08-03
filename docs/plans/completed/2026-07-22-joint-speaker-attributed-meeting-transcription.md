@@ -2,8 +2,16 @@
 
 **Date:** 2026-07-22
 
-**Status:** Active on `feat/joint-meeting-transcription`; Preview gate passed,
-reviewed PR and merge pending
+**Status:** Completed Preview delivery. Reviewed head
+`ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks and
+[PR #142](https://github.com/mcnatg1/yap/pull/142) merged as
+`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. The separate
+[meeting-transcription ownership and maintainability review](../active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+has patched exact-head candidate `393710999...` with passed lifecycle, single
+complete matrix, receipt validation, and required CI/CodeQL after its previous
+documentation successor exposed a late development-tool advisory. Final
+documentation-only hosted closure including disposable-Windows NSIS and PR #143
+merge remain before Phase 9.
 
 **Decision authority:**
 [ADR 0020](../../adr/0020-meeting-capture-diarization-authority.md) and
@@ -67,12 +75,11 @@ overlap and long multi-participant meetings.
 
 ## Delivery boundary
 
-This branch closes the smallest honest Phase 8 product layer: an explicitly
+The merged branch closes the smallest honest Phase 8 product layer: an explicitly
 enabled, meeting-only Preview candidate that is absent from the committed
 default catalog. It does not production-promote Tiron. The remaining Preview
-closure work is now limited to the focused reviewed PR, exact-head hosted
-checks, merge, and the separately required post-phase maintainability
-checkpoint. The typed global-cap behavior, three-lens adversarial review,
+promotion work is separate from the gated post-phase maintainability
+candidate. The typed global-cap behavior, three-lens adversarial review,
 supported exact-candidate roundtrip, one admitted Phase 8
 local/native/server/GB10 matrix, and execution-truth reconciliation are closed.
 
@@ -227,10 +234,12 @@ The required suite contains:
   on that exact candidate.
 - [x] Reconcile ADR implementation scores and architecture/status claims only
   from executable evidence.
-- [ ] Open one focused Phase 8 PR and merge only after checked-head hosted CI is
-  green, or disclose equivalent local evidence if a hosted check is unavailable.
-- [ ] After merge, run the required separate multi-lens antagonist/refactor
-  checkpoint before Phase 9 begins.
+- [x] Open one focused Phase 8 PR and merge only after checked-head hosted CI is
+  green. Reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8`
+  passed hosted CI and CodeQL before PR #142 merged as `4201c5e7...`.
+- [x] After merge, activate the required separate
+  [multi-lens ownership and maintainability checkpoint](../active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+  before Phase 9 begins.
 
 The frozen implementation candidate is
 `1c69b61cf2902c9cfda50c6158168890974f969f`. Its runtime-preparation,

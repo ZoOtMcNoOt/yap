@@ -9,19 +9,19 @@ import re
 import stat
 from typing import Mapping
 
-from yap_server.evaluation.artifact_identity import (
+from yap_server.artifact_identity import (
     ArtifactIdentity,
     artifact_identities,
     portable_artifact_path,
     require_artifact_paths,
 )
-from yap_server.evaluation.evaluation_receipt_fields import (
+from yap_server.json_contract import (
     exact_object,
     https_uri,
     positive_int,
     sha256,
 )
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     read_bounded_regular_file,
     read_json_object_with_identity,
 )

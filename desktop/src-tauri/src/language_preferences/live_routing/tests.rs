@@ -4,8 +4,8 @@ use super::{
     desktop::routing_preference_requires_write,
     model::{project_status, LiveLanguageRoutingPreferenceIssue, CURRENT_SCHEMA_VERSION},
     persistence::{
-        load_for_update_from_path, load_from_path, normalize_selection, save_to_path,
-        LiveLanguageRoutingError, LoadedRoutingPreference, MAX_ROUTING_PREFERENCE_BYTES,
+        load_from_path, normalize_selection, save_to_path, EnabledAlternateLocales,
+        LiveLanguageRoutingError, MAX_ROUTING_PREFERENCE_BYTES,
     },
 };
 
@@ -83,32 +83,25 @@ fn duplicate_language_family_and_unsupported_locales_are_rejected() {
 }
 
 #[test]
-fn legacy_regional_choices_migrate_without_enabling_other_model_languages() {
-    let dir = temp_dir("legacy");
+fn obsolete_routing_schema_is_rejected_without_rewriting_it() {
+    let dir = temp_dir("obsolete-schema");
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("live-language-routing.json");
-    std::fs::write(
-        &path,
-        format!(
-            "{{\"schemaVersion\":1,\"catalogRevision\":{:?},\"regionalLocales\":[\"fr-CA\"]}}",
-            crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION
-        ),
-    )
-    .unwrap();
-
-    let loaded_for_update = load_for_update_from_path(&path).unwrap();
-    assert_eq!(loaded_for_update.locales, ["fr-CA"]);
-    assert!(loaded_for_update.requires_rewrite);
-    let loaded = load_from_path(&path).unwrap();
-    save_to_path(loaded.locales, &path).unwrap();
-    assert!(!load_for_update_from_path(&path).unwrap().requires_rewrite);
-    let migrated: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
-    assert_eq!(migrated["schemaVersion"], CURRENT_SCHEMA_VERSION);
-    assert_eq!(
-        migrated["enabledAlternateLocales"],
-        serde_json::json!(["fr-CA"])
+    let obsolete = format!(
+        "{{\"schemaVersion\":1,\"catalogRevision\":{:?},\"regionalLocales\":[\"fr-CA\"]}}",
+        crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION
     );
+    std::fs::write(&path, &obsolete).unwrap();
+
+    assert_eq!(
+        load_from_path(&path),
+        Err(LiveLanguageRoutingError::IncompatibleSchema(1))
+    );
+    assert_eq!(
+        save_to_path(vec!["fr-CA".into()], &path),
+        Err(LiveLanguageRoutingError::IncompatibleSchema(1))
+    );
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), obsolete);
 
     std::fs::remove_dir_all(dir).unwrap();
 }
@@ -116,23 +109,17 @@ fn legacy_regional_choices_migrate_without_enabling_other_model_languages() {
 #[test]
 fn canonical_equivalent_selection_does_not_require_a_runtime_mutation() {
     let requested = normalize_selection(vec!["ja-JP".into(), "fr-CA".into()]).unwrap();
-    let loaded = LoadedRoutingPreference {
+    let loaded = EnabledAlternateLocales {
         locales: vec!["fr-CA".into(), "ja-JP".into()],
-        requires_rewrite: false,
     };
 
     assert!(!routing_preference_requires_write(Ok(loaded), &requested).unwrap());
 }
 
 #[test]
-fn recoverable_or_legacy_preferences_still_require_a_canonical_write() {
+fn recoverable_preferences_require_a_canonical_write() {
     let requested = vec!["fr-CA".to_string()];
-    let legacy = LoadedRoutingPreference {
-        locales: requested.clone(),
-        requires_rewrite: true,
-    };
 
-    assert!(routing_preference_requires_write(Ok(legacy), &requested).unwrap());
     assert!(routing_preference_requires_write(
         Err(LiveLanguageRoutingError::InvalidStoredPreference),
         &requested,
@@ -155,7 +142,7 @@ fn incompatible_routing_preferences_are_not_treated_as_recoverable_noops() {
 
     assert_eq!(
         error,
-        "Automatic-language settings were written by a newer Yap version."
+        "Automatic-language settings use an unsupported Yap schema."
     );
 }
 

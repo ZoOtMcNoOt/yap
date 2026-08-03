@@ -1,7 +1,7 @@
 import { formatLanguageTag } from "@/lib/language-display";
 
 export type TranscriptLanguageStatus = "fixed" | "dynamic" | "unknownSegments";
-export type TranscriptTimingStatus = "available" | "unavailable" | "legacyUnknown";
+export type TranscriptTimingStatus = "available" | "unavailable";
 
 export type TranscriptResultSummary = {
   activeLanguageCorrectionCount?: number;
@@ -40,9 +40,7 @@ export function isTranscriptResultSummary(value: unknown): value is TranscriptRe
       return false;
     }
   }
-  return summary.timingStatus === "available" ||
-    summary.timingStatus === "unavailable" ||
-    summary.timingStatus === "legacyUnknown";
+  return summary.timingStatus === "available" || summary.timingStatus === "unavailable";
 }
 
 export function transcriptResultSummaryLabels(summary: TranscriptResultSummary) {
@@ -53,9 +51,7 @@ export function transcriptResultSummaryLabels(summary: TranscriptResultSummary) 
       : "Language: some segments need review";
   const timing = summary.timingStatus === "available"
     ? "Word timing available"
-    : summary.timingStatus === "unavailable"
-      ? "Word timing unavailable"
-      : "Word timing not recorded";
+    : "Word timing unavailable";
   const correctionDetails = [];
   if (summary.languageReviewRequiredCount) {
     correctionDetails.push(

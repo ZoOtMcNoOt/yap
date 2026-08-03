@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   chmodSync,
+  closeSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -33,6 +34,8 @@ import {
   parseIntegratedGateRunnerInvocation,
   runCommandCell,
   reserveIntegratedGateAttemptDirectory,
+  validateCompletedIntegratedGateAttempt,
+  validatePrivateEvidenceForGate,
   validateLegacyIntegratedGateReservationValue,
   verifyIdentityAccessAdmissionPrerequisites,
 } from "../../../../verification/integrated-gate-runner.mjs";
@@ -54,6 +57,10 @@ import {
   validateIntegratedPrivateEvidencePlan,
 } from "../../../../verification/integrated-private-evidence.mjs";
 import {
+  validateMeetingTranscriptionCheckpointEvidence,
+  validateMeetingTranscriptionCheckpointPlan,
+} from "../../../../verification/meeting-transcription-checkpoint-evidence.mjs";
+import {
   createConnectedServerTeardownReceipt,
 } from "../../../../verification/write-connected-server-teardown-receipt.mjs";
 import {
@@ -70,6 +77,9 @@ import {
   readExactPrivateFile,
   writeExclusivePrivateFile,
 } from "../../../../verification/private-gate-artifacts.mjs";
+import {
+  openVerifiedCommandLog,
+} from "../../../../verification/bounded-command-log.mjs";
 
 const contractRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(contractRoot, "..", "..", "..", "..");
@@ -98,6 +108,15 @@ const phase6ManifestPath = path.join(
 const phase6ManifestBytes = readFileSync(phase6ManifestPath);
 const phase6Manifest = validateIntegratedGateManifest(
   JSON.parse(phase6ManifestBytes.toString("utf8")),
+);
+const meetingCheckpointManifestPath = path.join(
+  repoRoot,
+  "verification",
+  "meeting-transcription-maintainability-checkpoint.json",
+);
+const meetingCheckpointManifestBytes = readFileSync(meetingCheckpointManifestPath);
+const meetingCheckpointManifest = validateIntegratedGateManifest(
+  JSON.parse(meetingCheckpointManifestBytes.toString("utf8")),
 );
 const checkedHead = "a".repeat(40);
 const startedAt = "2026-07-23T12:00:00.000Z";
@@ -242,6 +261,26 @@ const identityCandidateIds = [
   "integrated.authoritative-history-result",
   "integrated.teardown",
 ];
+const meetingCheckpointCandidateIds = [
+  "frontend.node-runtime",
+  "frontend.dependencies",
+  "frontend.dependency-audit",
+  "frontend.release-contracts",
+  "frontend.release-contracts-local",
+  "frontend.provenance",
+  "frontend.unit",
+  "frontend.production-build",
+  "frontend.chromium-runtime",
+  "frontend.browser-workflows",
+  "windows.build-tools-optional-diagnostics-disabled",
+  "server.python-3.12",
+  "server.lint",
+  "gb10.tiron-checked-image",
+  "gb10.tiron-runtime-boundary",
+  "integrated.meeting-result-history",
+  "integrated.meeting-cancellation",
+  "integrated.teardown",
+];
 const phase6CandidateIds = [
   "frontend.node-runtime",
   "frontend.dependencies",
@@ -286,6 +325,18 @@ const hostedClosureIds = [
   "hosted.nsis.disposable-windows",
 ];
 const identityHostedClosureIds = [
+  "hosted.ci.frontend",
+  "hosted.ci.rust",
+  "hosted.ci.native-wdio",
+  "hosted.ci.server",
+  "hosted.ci.mock-oidc",
+  "hosted.codeql.rust",
+  "hosted.codeql.actions",
+  "hosted.codeql.javascript-typescript",
+  "hosted.codeql.python",
+  "hosted.nsis.disposable-windows",
+];
+const meetingCheckpointHostedClosureIds = [
   "hosted.ci.frontend",
   "hosted.ci.rust",
   "hosted.ci.native-wdio",
@@ -490,6 +541,47 @@ test("identity and access gate keeps native toolchain work on disposable hosted 
   );
 });
 
+test("meeting-transcription checkpoint keeps native toolchain work on disposable hosted Windows", () => {
+  assert.deepEqual(
+    meetingCheckpointManifest.candidateCells.map(({ id }) => id),
+    meetingCheckpointCandidateIds,
+  );
+  assert.deepEqual(
+    meetingCheckpointManifest.hostedClosureCells.map(({ id }) => id),
+    meetingCheckpointHostedClosureIds,
+  );
+  const candidateIds = new Set(meetingCheckpointCandidateIds);
+  for (const nativeId of [
+    "native.format",
+    "native.clippy",
+    "native.tests",
+    "native.server-connectors",
+    "native.authenticated-server-connector",
+    "native.windows-dependency-boundary",
+    "native.dependency-audit",
+    "desktop.wdio-build",
+    "desktop.required-wdio",
+  ]) {
+    assert.equal(
+      candidateIds.has(nativeId),
+      false,
+      `${nativeId} must execute only through the hosted Windows closure`,
+    );
+  }
+  assert.ok(
+    candidateIds.has("windows.build-tools-optional-diagnostics-disabled"),
+    "the local Windows optional-diagnostics prerequisite must remain in the candidate gate",
+  );
+  assert.ok(
+    meetingCheckpointHostedClosureIds.includes("hosted.ci.rust"),
+    "the hosted closure must retain exact Rust and connector evidence",
+  );
+  assert.ok(
+    meetingCheckpointHostedClosureIds.includes("hosted.ci.native-wdio"),
+    "the hosted closure must retain exact native UI evidence",
+  );
+});
+
 test("identity admission delegates to the bounded optional-diagnostics verifier", () => {
   const calls = [];
   const environment = {
@@ -663,10 +755,436 @@ test("historical Phase 6 gate identity and bytes remain frozen", () => {
   );
 });
 
+test("meeting-transcription checkpoint excludes obsolete provider qualification", () => {
+  assert.equal(
+    meetingCheckpointManifest.gateId,
+    "meeting-transcription-maintainability-checkpoint",
+  );
+  const privateCells = meetingCheckpointManifest.candidateCells
+    .filter(({ executor }) => executor === "private-receipt")
+    .map(({ id }) => id);
+  assert.deepEqual(privateCells, [
+    "gb10.tiron-checked-image",
+    "gb10.tiron-runtime-boundary",
+    "integrated.meeting-result-history",
+    "integrated.meeting-cancellation",
+    "integrated.teardown",
+  ]);
+  assert.equal(
+    meetingCheckpointManifest.candidateCells.some(({ id }) => (
+      id.includes("provider-duration") || id.includes("provider-resource")
+    )),
+    false,
+  );
+  assert.deepEqual(
+    meetingCheckpointManifest.hostedClosureCells.map(({ id }) => id),
+    identityHostedClosureIds,
+  );
+});
+
+test("meeting-transcription checkpoint plan binds a new exact-head Tiron lifecycle", () => {
+  const root = createCanonicalTemporaryDirectory("yap-meeting-checkpoint-plan-");
+  try {
+    const runtimeLock = JSON.parse(readFileSync(
+      path.join(repoRoot, "server", "meeting-transcription-runtime.lock.json"),
+      "utf8",
+    ));
+    const receiptPath = path.join(root, "tiron-preparation.json");
+    const receiptBytes = Buffer.from(`${JSON.stringify({
+      schemaVersion: 1,
+      checkedHead,
+      runtime: "meeting-transcription",
+      dockerfileSha256: sha256(readFileSync(
+        path.join(repoRoot, "server", "runtime", "tiron", "Dockerfile"),
+      )),
+      image: `yap-tiron:checked-head-${checkedHead}`,
+      imageId: `sha256:${"b".repeat(64)}`,
+      architecture: "arm64",
+      baseDigest: runtimeLock.baseRuntime.digest,
+    }, null, 2)}\n`);
+    writeExclusivePrivateFile(receiptPath, receiptBytes);
+    const evidenceDirectory = path.join(root, "lifecycle-evidence");
+    const plan = {
+      schemaVersion: 1,
+      gateId: "meeting-transcription-maintainability-checkpoint",
+      checkedHead,
+      tironPreparation: {
+        receiptFile: receiptPath,
+        receiptSha256: sha256(receiptBytes),
+      },
+      productLifecycle: {
+        evidenceDirectory,
+        remoteCleanupLogFile: path.join(root, "remote-cleanup.log"),
+        teardownEvidenceFile: path.join(evidenceDirectory, "teardown.json"),
+      },
+    };
+
+    assert.doesNotThrow(() => validateMeetingTranscriptionCheckpointPlan(plan, {
+      expectedHead: checkedHead,
+      repositoryRoot: repoRoot,
+      requireDestinationsAbsent: true,
+    }));
+    assert.throws(
+      () => validateMeetingTranscriptionCheckpointPlan({
+        ...plan,
+        checkedHead: "c".repeat(40),
+      }, {
+        expectedHead: checkedHead,
+        repositoryRoot: repoRoot,
+      }),
+      /identity is invalid/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("meeting-transcription evidence binds result, cancellation, image, and teardown", () => {
+  const root = createCanonicalTemporaryDirectory("yap-meeting-checkpoint-evidence-");
+  try {
+    const runtimeLockBytes = readFileSync(
+      path.join(repoRoot, "server", "meeting-transcription-runtime.lock.json"),
+    );
+    const runtimeLock = JSON.parse(runtimeLockBytes.toString("utf8"));
+    const imageId = `sha256:${"b".repeat(64)}`;
+    const receiptPath = path.join(root, "tiron-preparation.json");
+    const receiptBytes = Buffer.from(`${JSON.stringify({
+      schemaVersion: 1,
+      checkedHead,
+      runtime: "meeting-transcription",
+      dockerfileSha256: sha256(readFileSync(
+        path.join(repoRoot, "server", "runtime", "tiron", "Dockerfile"),
+      )),
+      image: `yap-tiron:checked-head-${checkedHead}`,
+      imageId,
+      architecture: "arm64",
+      baseDigest: runtimeLock.baseRuntime.digest,
+    }, null, 2)}\n`);
+    writeExclusivePrivateFile(receiptPath, receiptBytes);
+    const receiptSha256 = sha256(receiptBytes);
+    const evidenceDirectory = path.join(root, "lifecycle-evidence");
+    const remoteCleanupLogFile = path.join(root, "remote-cleanup.log");
+    const teardownEvidenceFile = path.join(evidenceDirectory, "teardown.json");
+    const plan = {
+      schemaVersion: 1,
+      gateId: "meeting-transcription-maintainability-checkpoint",
+      checkedHead,
+      tironPreparation: { receiptFile: receiptPath, receiptSha256 },
+      productLifecycle: {
+        evidenceDirectory,
+        remoteCleanupLogFile,
+        teardownEvidenceFile,
+      },
+    };
+    const privatePlanPath = path.join(root, "private-plan.json");
+    const privatePlanBytes = Buffer.from(`${JSON.stringify(plan, null, 2)}\n`);
+    writeExclusivePrivateFile(privatePlanPath, privatePlanBytes);
+    validateMeetingTranscriptionCheckpointPlan(plan, {
+      expectedHead: checkedHead,
+      repositoryRoot: repoRoot,
+      requireDestinationsAbsent: true,
+    });
+    mkdirSync(evidenceDirectory);
+    protectAndVerifyPrivateDirectory(evidenceDirectory);
+    const fixtureSha256 = "c".repeat(64);
+    const resultArtifactSha256 = "d".repeat(64);
+    writeExclusivePrivateFile(
+      path.join(evidenceDirectory, "gate-context.json"),
+      Buffer.from(`${JSON.stringify({
+        schemaVersion: 2,
+        checkedHead,
+        profile: "meeting-transcription",
+        fixtureLicense: "CC-BY-4.0",
+        fixtureSha256,
+        fixtureDurationMs: 65_000,
+        serverOrigin: "http://127.0.0.1:18765",
+        runtimeImageId: imageId,
+        preparationReceiptSha256: receiptSha256,
+        status: "started",
+      }, null, 2)}\n`),
+    );
+    const verticalPath = path.join(
+      evidenceDirectory,
+      "meeting-transcription-vertical.json",
+    );
+    const vertical = {
+      schemaVersion: 1,
+      checkedHead,
+      profile: "meeting-transcription",
+      fixtureSha256,
+      fixtureDurationMs: 65_000,
+      clientJobId: `job-${"1".repeat(24)}`,
+      clientRoute: "serverBatch",
+      serverOrigin: "http://127.0.0.1:18765",
+      sessionId: "s-meeting-checkpoint",
+      resultRevision: 1,
+      resultAuthority: "server_authoritative",
+      resultStatus: "complete",
+      resultArtifactSha256,
+      transcriptBytes: 120,
+      modelId: runtimeLock.model.id,
+      modelRevision: runtimeLock.model.revision,
+      speakerResultRevision: 1,
+      speakerResultArtifactSha256: "e".repeat(64),
+      speakerResultSourceSha256: resultArtifactSha256,
+      speakerTurnCount: 3,
+      speakerCount: 2,
+      runtimeLockSha256: sha256(runtimeLockBytes),
+      completedJobRetiredFromRecoverableQueue: true,
+      historyOpenedVerifiedResult: true,
+      historyLoadedSpeakerTranscript: true,
+      historyRenderedSpeakerTranscript: true,
+      status: "passed",
+    };
+    writeExclusivePrivateFile(
+      verticalPath,
+      Buffer.from(`${JSON.stringify(vertical, null, 2)}\n`),
+    );
+    const cancellationPath = path.join(
+      evidenceDirectory,
+      "meeting-cancellation.json",
+    );
+    const cancellationBytes = Buffer.from(`${JSON.stringify({
+        schemaVersion: 1,
+        checkedHead,
+        profile: "meeting-transcription",
+        fixtureSha256,
+        clientJobId: `job-${"2".repeat(24)}`,
+        clientRoute: "serverBatch",
+        serverJobId: `job-${"3".repeat(32)}`,
+        observedRemoteServerProcessing: true,
+        observedAsrRunning: true,
+        cancelReturnedStatus: "cancelled",
+        remoteCancellationAcknowledgedAtMs: 1_775_000_000_000,
+        remoteCancelled: true,
+        asrStageCancelled: true,
+        historyNotPublished: true,
+        status: "passed",
+      }, null, 2)}\n`);
+    writeExclusivePrivateFile(cancellationPath, cancellationBytes);
+    const tunnelLedgerBytes = Buffer.from(`${JSON.stringify({
+      schemaVersion: 1,
+      checkedHead,
+      startedProcessCount: 2,
+      exitedProcessCount: 2,
+      processes: [
+        {
+          pid: 123_451,
+          startedAt: "2026-08-03T10:00:00.000Z",
+          exitedAt: "2026-08-03T10:10:00.000Z",
+        },
+        {
+          pid: 123_452,
+          startedAt: "2026-08-03T10:11:00.000Z",
+          exitedAt: "2026-08-03T10:20:00.000Z",
+        },
+      ],
+      status: "passed",
+    }, null, 2)}\n`);
+    writeExclusivePrivateFile(
+      path.join(evidenceDirectory, "tunnel-process-ledger.json"),
+      tunnelLedgerBytes,
+    );
+    const cleanupLogBytes = Buffer.from(
+      `REMOTE_RUNTIME_TIRON_IMAGE_ID=${imageId}\n`
+        + `REMOTE_RUNTIME_TIRON_PREPARATION_RECEIPT_SHA256=${receiptSha256}\n`
+        + `REMOTE_PRIVATE_SERVER_READY=${checkedHead}\n`
+        + "REMOTE_GATE_CLEANUP=PASS\n",
+    );
+    writeExclusivePrivateFile(remoteCleanupLogFile, cleanupLogBytes);
+    writeExclusivePrivateFile(
+      teardownEvidenceFile,
+      Buffer.from(`${JSON.stringify({
+        schemaVersion: 1,
+        checkedHead,
+        remoteCleanupPassed: true,
+        localForwardAbsent: true,
+        remainingOwnedProcesses: 0,
+        ownedProcessCount: 3,
+        remainingOwnedContainers: 0,
+        remainingOwnedListeners: 0,
+        remainingOwnedNetworks: 0,
+        remoteCleanupLogSha256: sha256(cleanupLogBytes),
+        tunnelProcessLedgerSha256: sha256(tunnelLedgerBytes),
+        status: "passed",
+      }, null, 2)}\n`),
+    );
+
+    const evidence = validatePrivateEvidenceForGate(
+      meetingCheckpointManifest.gateId,
+      plan,
+      checkedHead,
+      repoRoot,
+    );
+    assert.deepEqual([...evidence.keys()], [
+      "gb10.tiron-checked-image",
+      "gb10.tiron-runtime-boundary",
+      "integrated.meeting-result-history",
+      "integrated.meeting-cancellation",
+      "integrated.teardown",
+    ]);
+
+    const manifestSha256 = integratedGateManifestSha256(
+      meetingCheckpointManifestBytes,
+    );
+    const reservationAuthorityRoot = path.join(root, "reservation-authority");
+    mkdirSync(reservationAuthorityRoot);
+    protectAndVerifyPrivateDirectory(reservationAuthorityRoot);
+    const reservation = reserveIntegratedGateAttemptDirectory({
+      evidenceRoot: root,
+      gateId: meetingCheckpointManifest.gateId,
+      checkedHead,
+      manifestSha256,
+      reservationAuthorityRoot,
+    });
+    const commandLogDirectory = path.join(
+      reservation.runDirectory,
+      "command-logs",
+    );
+    mkdirSync(commandLogDirectory);
+    protectAndVerifyPrivateDirectory(commandLogDirectory);
+    const admissionPath = path.join(reservation.runDirectory, "admission.json");
+    const candidateReceiptPath = path.join(
+      reservation.runDirectory,
+      "candidate-receipt.json",
+    );
+    const admission = {
+      schemaVersion: 2,
+      gateId: meetingCheckpointManifest.gateId,
+      checkedHead,
+      manifestPath: meetingCheckpointManifestPath,
+      manifestSha256,
+      privatePlanPath,
+      privatePlanSha256: sha256(privatePlanBytes),
+      attempt: 1,
+      attemptCapabilitySha256: "f".repeat(64),
+      admittedAt: reservation.reservedAt,
+      runDirectory: reservation.runDirectory,
+      commandLogDirectory,
+      candidateReceiptPath,
+    };
+    const completedAt = new Date(
+      Date.parse(reservation.reservedAt) + 60_000,
+    ).toISOString();
+    writeExclusivePrivateFile(
+      admissionPath,
+      Buffer.from(`${JSON.stringify(admission, null, 2)}\n`),
+    );
+    writeExclusivePrivateFile(
+      path.join(reservation.runDirectory, "running.json"),
+      Buffer.from(`${JSON.stringify({
+        schemaVersion: 1,
+        checkedHead,
+        startedAt: reservation.reservedAt,
+      }, null, 2)}\n`),
+    );
+    const candidateEvidence = new Map(evidence);
+    for (const cell of meetingCheckpointManifest.candidateCells) {
+      if (cell.executor !== "command") continue;
+      const logPath = path.join(commandLogDirectory, `${cell.id}.log`);
+      writeExclusivePrivateFile(logPath, Buffer.from(`${cell.id}: passed\n`));
+      candidateEvidence.set(
+        cell.id,
+        integratedGateCommandLogSha256(logPath, `Command log ${cell.id}`),
+      );
+    }
+    const candidateReceipt = {
+      schemaVersion: 2,
+      gateId: meetingCheckpointManifest.gateId,
+      scope: "candidate",
+      checkedHead,
+      candidateHead: checkedHead,
+      candidateReceiptSha256: null,
+      manifestSha256,
+      status: "passed",
+      startedAt: reservation.reservedAt,
+      finishedAt: completedAt,
+      children: meetingCheckpointManifest.candidateCells.map((cell) => ({
+        id: cell.id,
+        executor: cell.executor,
+        checkedHead,
+        definitionSha256: integratedGateCellDefinitionSha256(cell),
+        evidenceSha256: candidateEvidence.get(cell.id),
+        attempt: 1,
+        status: "passed",
+        startedAt: reservation.reservedAt,
+        finishedAt: completedAt,
+      })),
+    };
+    writeExclusivePrivateFile(
+      candidateReceiptPath,
+      Buffer.from(`${JSON.stringify(candidateReceipt, null, 2)}\n`),
+    );
+    assert.equal(
+      validateCompletedIntegratedGateAttempt(admissionPath, {
+        legacyReservationAuthorityRoot: reservationAuthorityRoot,
+      }).candidateReceipt.gateId,
+      meetingCheckpointManifest.gateId,
+    );
+
+    const cancellationWithWrongServerJob = JSON.parse(
+      cancellationBytes.toString("utf8"),
+    );
+    cancellationWithWrongServerJob.serverJobId = `job-${"f".repeat(32)}`;
+    writeFileSync(
+      cancellationPath,
+      `${JSON.stringify(cancellationWithWrongServerJob, null, 2)}\n`,
+    );
+    assert.throws(
+      () => validateCompletedIntegratedGateAttempt(admissionPath, {
+        legacyReservationAuthorityRoot: reservationAuthorityRoot,
+      }),
+      /Candidate child integrated\.meeting-cancellation no longer matches its admitted evidence/,
+    );
+    writeFileSync(cancellationPath, cancellationBytes);
+
+    const tunnelLedgerPath = path.join(
+      evidenceDirectory,
+      "tunnel-process-ledger.json",
+    );
+    const tunnelLedgerWithExtraField = JSON.parse(tunnelLedgerBytes.toString("utf8"));
+    tunnelLedgerWithExtraField.unexpected = true;
+    writeFileSync(
+      tunnelLedgerPath,
+      `${JSON.stringify(tunnelLedgerWithExtraField, null, 2)}\n`,
+    );
+    assert.throws(
+      () => validateMeetingTranscriptionCheckpointEvidence(plan, checkedHead, repoRoot),
+      /tunnel process ledger fields differ from the current contract/,
+    );
+    writeFileSync(tunnelLedgerPath, tunnelLedgerBytes);
+
+    const teardownBytes = readFileSync(teardownEvidenceFile);
+    const wrongTeardownSchema = JSON.parse(teardownBytes.toString("utf8"));
+    wrongTeardownSchema.schemaVersion = 2;
+    writeFileSync(
+      teardownEvidenceFile,
+      `${JSON.stringify(wrongTeardownSchema, null, 2)}\n`,
+    );
+    assert.throws(
+      () => validateMeetingTranscriptionCheckpointEvidence(plan, checkedHead, repoRoot),
+      /did not prove zero retained owners/,
+    );
+    writeFileSync(teardownEvidenceFile, teardownBytes);
+
+    vertical.speakerResultSourceSha256 = "f".repeat(64);
+    writeFileSync(verticalPath, `${JSON.stringify(vertical, null, 2)}\n`);
+    assert.throws(
+      () => validateMeetingTranscriptionCheckpointEvidence(plan, checkedHead, repoRoot),
+      /did not prove the result and History lifecycle/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("runner manifest selection preserves each canonical gate identity and child set", () => {
   const identitySelection = loadIntegratedGateManifestSelection(identityManifestPath);
   const productSelection = loadIntegratedGateManifestSelection(manifestPath);
   const phase6Selection = loadIntegratedGateManifestSelection(phase6ManifestPath);
+  const meetingCheckpointSelection = loadIntegratedGateManifestSelection(
+    meetingCheckpointManifestPath,
+  );
 
   assert.equal(identitySelection.manifest.gateId, "integrated-identity-access");
   assert.deepEqual(
@@ -694,6 +1212,14 @@ test("runner manifest selection preserves each canonical gate identity and child
   assert.equal(
     phase6Selection.manifestSha256,
     "46832f4605a92262917c0afbdeef9608270f9c56cd25a553ab6c6a5e5f7fdb52",
+  );
+  assert.equal(
+    meetingCheckpointSelection.manifest.gateId,
+    "meeting-transcription-maintainability-checkpoint",
+  );
+  assert.equal(
+    meetingCheckpointSelection.manifestSha256,
+    integratedGateManifestSha256(meetingCheckpointManifestBytes),
   );
 });
 
@@ -876,6 +1402,11 @@ test("integrated gate runbooks select their exact manifest for begin and complet
       manifestArgument:
         ".\\verification\\integrated-preprocessing-language-routing-gate.json",
     },
+    {
+      runbook: "meeting-transcription-maintainability-checkpoint.md",
+      manifestArgument:
+        ".\\verification\\meeting-transcription-maintainability-checkpoint.json",
+    },
   ];
   for (const contract of contracts) {
     const runbook = readFileSync(
@@ -1036,6 +1567,33 @@ test("connected gate records a real five-window AmberNet preflight", () => {
   assert.match(source, /expect\(result\.observations\)\.toHaveLength/);
   assert.match(source, /languagePreflightExecution,/);
   assert.match(source, /schemaVersion: 3,/);
+});
+
+test("meeting gate performs the required fixed-language manual confirmation", () => {
+  const spec = readFileSync(
+    path.join(repoRoot, "desktop", "tests", "wdio", "private-server-asr.gate.spec.js"),
+    "utf8",
+  );
+  const support = readFileSync(
+    path.join(
+      repoRoot,
+      "desktop",
+      "tests",
+      "wdio",
+      "private-server-asr-gate-support.js",
+    ),
+    "utf8",
+  );
+  assert.match(spec, /timeout: 60_000/);
+  assert.match(spec, /catch \(error\) \{\s+terminalFailure = error;\s+return true;/);
+  assert.match(spec, /invoke\("recording_job_confirm_language", confirmationRequest\)/);
+  assert.equal(
+    [...spec.matchAll(/await confirmMeetingImportLanguage\(/g)].length,
+    2,
+    "both the completion and active-cancellation meeting jobs must confirm language",
+  );
+  assert.match(support, /review\.reason !== "server_preflight_unavailable"/);
+  assert.match(support, /job\.languageDecision\.languageBcp47 !== languageBcp47/);
 });
 
 test("target-client runbook carries prepared-audio identity into the UI gate", () => {
@@ -1499,6 +2057,40 @@ test("private gate artifacts use verified private directories and exclusive file
     );
   } finally {
     capability.fill(0);
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Windows private artifact protection supports long command-log paths", {
+  skip: process.platform !== "win32",
+}, () => {
+  const root = createCanonicalTemporaryDirectory("yap-private-long-path-");
+  let commandLogDirectory = root;
+  while (commandLogDirectory.length < 220) {
+    commandLogDirectory = path.join(
+      commandLogDirectory,
+      "long-command-log-parent",
+    );
+  }
+  const commandLog = path.join(
+    commandLogDirectory,
+    "windows.build-tools-optional-diagnostics-disabled.log",
+  );
+  try {
+    mkdirSync(commandLogDirectory, { recursive: true });
+    assert.ok(commandLogDirectory.length < 260);
+    assert.ok(commandLog.length > 260);
+    assert.equal(
+      protectAndVerifyPrivateDirectory(commandLogDirectory),
+      commandLogDirectory,
+    );
+    const descriptor = openVerifiedCommandLog(
+      commandLog,
+      commandLogDirectory,
+    );
+    closeSync(descriptor);
+    assert.equal(assertPrivateFile(commandLog), commandLog);
+  } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });

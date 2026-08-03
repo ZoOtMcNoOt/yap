@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from concurrent.futures import Future
 import hashlib
-import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -190,70 +189,6 @@ class RecordingJobStageRetryEdgeTests(unittest.TestCase):
             self.assertEqual(retried["stages"][0]["attempt"], 2)
             processor.future.set_result(_worker_payload("Retry completed safely."))
             self.assertEqual(service.get(job_id)["status"], "complete")
-
-    def test_migrated_incomplete_history_retains_new_retryable_attempt_input(
-        self,
-    ) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            initial_processor = _ControlledProcessor()
-            service, request, job_id = _uploaded_service(root, initial_processor)
-            state_path = root / "jobs" / job_id / "state.json"
-            legacy = json.loads(state_path.read_text(encoding="utf-8"))
-            legacy["schemaVersion"] = 4
-            del legacy["owner"]
-            del legacy["stageHistoryComplete"]
-            del legacy["stageAttempts"]
-            del legacy["projectionRevision"]
-            state_path.write_text(
-                json.dumps(legacy, separators=(",", ":")) + "\n",
-                encoding="utf-8",
-            )
-
-            migrated_processor = _ControlledProcessor()
-            migrated = RecordingJobService(
-                root,
-                processor=migrated_processor,
-                supported_languages=("en",),
-                now=lambda: "2026-07-14T21:32:00Z",
-            )
-            self.assertFalse(migrated.get_stages(job_id)["historyComplete"])
-            migrated.commit(
-                job_id,
-                {"captureManifest": request["captureManifest"], "chunkCount": 1},
-            )
-            migrated_processor.future.set_exception(RuntimeError("retryable failure"))
-            self.assertEqual(migrated.get(job_id)["status"], "failed")
-
-            retry_processor = _ControlledProcessor()
-            restarted = RecordingJobService(
-                root,
-                processor=retry_processor,
-                supported_languages=("en",),
-                now=lambda: "2026-07-14T21:33:00Z",
-            )
-            failed_stages = restarted.get_stages(job_id)
-            self.assertFalse(failed_stages["historyComplete"])
-            chunks = list((root / "jobs" / job_id / "chunks").iterdir())
-            self.assertEqual(len(chunks), 1)
-            retried = restarted.retry_stage(
-                job_id,
-                "asr",
-                {
-                    "stage": "asr",
-                    "attempt": 1,
-                    "projectionRevision": failed_stages["projectionRevision"],
-                    "captureManifestSha256": request["captureManifest"]["sha256"],
-                },
-            )
-            self.assertEqual(
-                (retried["stages"][0]["attempt"], retried["stages"][0]["state"]),
-                (2, "running"),
-            )
-            retry_processor.future.set_result(
-                _worker_payload("Migrated retry succeeded.")
-            )
-            self.assertEqual(restarted.get(job_id)["status"], "complete")
 
     def test_attempt_65_is_rejected_before_reserving_or_mutating_history(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

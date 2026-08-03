@@ -20,12 +20,6 @@ export type SavedLiveSession = {
   recoveryState?: "recoverable" | "recovered" | null;
 };
 
-export type OwnedLiveTranscriptPathResolution = {
-  requestedPath: string;
-  canonicalPath?: string | null;
-  missing: boolean;
-};
-
 export type LiveLevelView = {
   level?: number | null;
 };
@@ -125,15 +119,6 @@ export function deleteSavedLiveSession(
     expectedCaptureCommitPath,
     expectedOutputPath,
     sessionId,
-  });
-}
-
-export function resolveOwnedLiveTranscriptPaths(
-  outputPaths: string[],
-): Promise<OwnedLiveTranscriptPathResolution[]> {
-  if (!isTauri()) return Promise.resolve([]);
-  return invoke<OwnedLiveTranscriptPathResolution[]>("resolve_owned_live_transcript_paths", {
-    outputPaths,
   });
 }
 

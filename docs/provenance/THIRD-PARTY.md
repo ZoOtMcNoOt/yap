@@ -26,7 +26,7 @@ reviewed behavior donor. It must never be conflated with the MIT
 the 2026-07-12 audit did not authorize or incorporate donor code. See the
 [Freeflow/Meetily reuse audit](../research/2026-07-12-freeflow-meetily-reuse-audit.md).
 
-## Active Phase 8 meeting runtime
+## Phase 8 meeting runtime
 
 ADR 0027 selects `Trelis/tiron` as the server development baseline. Phase 8
 locks model revision `90bc0a4d198cd5cf6679b0e478375ba3a0040575`,

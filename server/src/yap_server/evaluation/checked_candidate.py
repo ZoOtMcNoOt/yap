@@ -9,7 +9,7 @@ import stat
 import subprocess
 from typing import Callable, Mapping, Sequence
 
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     read_bounded_regular_file,
 )
 from yap_server.evaluation.provider_runtime_observations import (

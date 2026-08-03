@@ -1,4 +1,109 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
+
+export function readCanonicalPcm16Mono16KhzWav(filePath) {
+  const bytes = readFileSync(filePath);
+  if (
+    bytes.length < 44
+    || bytes.toString("ascii", 0, 4) !== "RIFF"
+    || bytes.toString("ascii", 8, 12) !== "WAVE"
+  ) {
+    throw new Error("The ASR gate fixture is not a RIFF/WAVE file.");
+  }
+  let format;
+  let pcm;
+  for (let offset = 12; offset + 8 <= bytes.length;) {
+    const id = bytes.toString("ascii", offset, offset + 4);
+    const length = bytes.readUInt32LE(offset + 4);
+    const start = offset + 8;
+    const end = start + length;
+    if (end > bytes.length) {
+      throw new Error("The ASR gate fixture has a truncated WAV chunk.");
+    }
+    if (id === "fmt ") format = bytes.subarray(start, end);
+    if (id === "data") pcm = bytes.subarray(start, end);
+    offset = end + (length % 2);
+  }
+  if (
+    !format
+    || format.length < 16
+    || format.readUInt16LE(0) !== 1
+    || format.readUInt16LE(2) !== 1
+    || format.readUInt32LE(4) !== 16_000
+    || format.readUInt16LE(12) !== 2
+    || format.readUInt16LE(14) !== 16
+    || !pcm
+    || pcm.length < 2
+    || pcm.length % 2 !== 0
+  ) {
+    throw new Error("The ASR gate fixture must be mono signed-PCM16 at 16 kHz.");
+  }
+  return pcm;
+}
+
+export function repeatedPcm(source, byteLength) {
+  const output = Buffer.alloc(byteLength);
+  for (let offset = 0; offset < output.length;) {
+    const copied = Math.min(source.length, output.length - offset);
+    source.copy(output, offset, 0, copied);
+    offset += copied;
+  }
+  return output;
+}
+
+export function canonicalPcm16Mono16KhzWav(pcm) {
+  if (!Buffer.isBuffer(pcm) || pcm.length < 2 || pcm.length % 2 !== 0) {
+    throw new Error("Canonical ASR gate PCM must contain whole signed-16 samples.");
+  }
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0, "ascii");
+  header.writeUInt32LE(pcm.length + 36, 4);
+  header.write("WAVEfmt ", 8, "ascii");
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(16_000, 24);
+  header.writeUInt32LE(32_000, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write("data", 36, "ascii");
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]);
+}
+
+export function meetingCheckpointFixture(sourcePcm, durationSeconds = 65) {
+  if (!Number.isInteger(durationSeconds) || durationSeconds < 60 || durationSeconds > 120) {
+    throw new Error("Meeting checkpoint duration must stay between 60 and 120 seconds.");
+  }
+  const silence = Buffer.alloc(16_000 * 2);
+  const pattern = Buffer.concat([sourcePcm, silence]);
+  return canonicalPcm16Mono16KhzWav(
+    repeatedPcm(pattern, durationSeconds * 16_000 * 2),
+  );
+}
+
+export function meetingLanguageConfirmationRequest(job, languageBcp47) {
+  const review = job?.languageReview;
+  if (!review) return undefined;
+  if (
+    job.status !== "preflighting"
+    || job.route !== "serverBatch"
+    || job.languageDecision?.mode !== "fixed"
+    || job.languageDecision.languageBcp47 !== languageBcp47
+    || review.kind !== "manual"
+    || review.reason !== "server_preflight_unavailable"
+    || !/^[0-9a-f]{64}$/.test(review.catalogRevision)
+  ) {
+    throw new Error(
+      "The meeting import did not expose the expected manual fixed-language review.",
+    );
+  }
+  return {
+    jobId: job.id,
+    languageBcp47,
+    catalogRevision: review.catalogRevision,
+  };
+}
 
 const defaultPrivateServerAsrGateTimeoutMs = 2_700_000;
 const inFlightRemotePipelineStages = new Map([
@@ -40,7 +145,7 @@ export function isValidInFlightRemotePipeline(job) {
     && job.pipeline.postprocessing === "notStarted";
 }
 
-export function matchCompletedRemoteHistoryEntry(jobIdentity, catalog) {
+export function matchPublishedRemoteHistoryEntry(jobIdentity, catalog) {
   if (
     jobIdentity?.route !== "serverBatch"
     || !/^job-[0-9a-f]{24}$/.test(jobIdentity.id)

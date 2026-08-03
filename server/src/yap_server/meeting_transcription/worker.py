@@ -12,7 +12,7 @@ import re
 import sys
 from typing import Mapping, Protocol
 
-from yap_server.evaluation.meeting_runtime_provenance import (
+from yap_server.meeting_transcription.runtime_provenance import (
     MeetingRuntimeProvenance,
     load_meeting_runtime_provenance,
     verify_repository_source_directory,
@@ -21,12 +21,17 @@ from yap_server.limits import MAX_TRANSCRIPT_BYTES, MAX_WORKER_RESULT_BYTES
 from yap_server.pools import pcm_audio
 from yap_server.pools.batch_contract import validate_batch_job_id
 
-from .contract import MAX_MEETING_DURATION_SECONDS, maximum_upstream_window_count
+from .contract import (
+    MAX_MEETING_DURATION_SECONDS,
+    MAX_MEETING_SEGMENT_COUNT,
+    MAX_MEETING_SPEAKERS,
+    is_meeting_speaker_id,
+    maximum_upstream_window_count,
+)
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _LANGUAGE = re.compile(r"^[A-Za-z][A-Za-z-]{0,34}$")
-_SPEAKER = re.compile(r"^SPEAKER_0[0-7]$")
 _UPSTREAM_RESULT_KEYS = {
     "duration",
     "language",
@@ -37,7 +42,6 @@ _UPSTREAM_RESULT_KEYS = {
     "two_pass",
 }
 _UPSTREAM_SEGMENT_KEYS = {"speaker", "start", "end", "text"}
-_MAX_SEGMENTS = 100_000
 _MAX_DIAGNOSTIC_BYTES = 64 * 1024
 
 
@@ -73,7 +77,7 @@ class MeetingWorkerRequest:
         if (
             not isinstance(self.max_speakers, int)
             or isinstance(self.max_speakers, bool)
-            or not 1 <= self.max_speakers <= 8
+            or not 1 <= self.max_speakers <= MAX_MEETING_SPEAKERS
         ):
             raise ValueError("meeting max speakers must be between one and eight")
 
@@ -143,17 +147,17 @@ def _validated_meeting_result(
     raw_speakers = result["speakers"]
     if (
         not isinstance(raw_speakers, list)
-        or len(raw_speakers) > 8
-        or any(
-            not isinstance(item, str) or _SPEAKER.fullmatch(item) is None
-            for item in raw_speakers
-        )
+        or len(raw_speakers) > MAX_MEETING_SPEAKERS
+        or any(not is_meeting_speaker_id(item) for item in raw_speakers)
         or raw_speakers != sorted(set(raw_speakers))
     ):
         raise ValueError("Tiron speakers are invalid")
 
     raw_segments = result["segments"]
-    if not isinstance(raw_segments, list) or len(raw_segments) > _MAX_SEGMENTS:
+    if (
+        not isinstance(raw_segments, list)
+        or len(raw_segments) > MAX_MEETING_SEGMENT_COUNT
+    ):
         raise ValueError("Tiron segments exceed the bounded contract")
     segments: list[dict[str, object]] = []
     transcript_bytes = 0
@@ -167,7 +171,7 @@ def _validated_meeting_result(
         )
         speaker = segment["speaker"]
         text = segment["text"]
-        if not isinstance(speaker, str) or _SPEAKER.fullmatch(speaker) is None:
+        if not is_meeting_speaker_id(speaker):
             raise ValueError("Tiron segment speaker is invalid")
         if not isinstance(text, str) or not text.strip():
             raise ValueError("Tiron segment text is invalid")

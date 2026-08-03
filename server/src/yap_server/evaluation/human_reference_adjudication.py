@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from yap_server.evaluation.evaluation_receipt_fields import (
+from yap_server.json_contract import (
     bounded_identifiers,
     enum_value,
     exact_object,
@@ -18,18 +18,14 @@ from yap_server.language_tags import canonical_bcp47
 
 
 DISPOSITIONS = frozenset({"pass", "hold", "exclude"})
-_RIGHTS_DECISIONS = frozenset(
-    {"approved", "hold", "excluded", "permissionRequired"}
-)
+_RIGHTS_DECISIONS = frozenset({"approved", "hold", "excluded", "permissionRequired"})
 _RIGHTS_CAPABILITIES = frozenset(
     {"allowed", "forbidden", "unknown", "permissionRequired"}
 )
 _INDEPENDENT_EXPOSURES = frozenset(
     {"contractually_excluded", "created_after_model_freeze"}
 )
-_LOCALE_BASIS_KINDS = frozenset(
-    {"sourceLanguageMarker", "humanLocaleAdjudication"}
-)
+_LOCALE_BASIS_KINDS = frozenset({"sourceLanguageMarker", "humanLocaleAdjudication"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,9 +179,12 @@ def _validate_reviews(
             raise ValueError("transcript reviewers received different assignments")
         if sha256(review["audioSha256"], "review audio SHA-256") != audio_sha256:
             raise ValueError("transcript reviewers received different audio")
-        if sha256(
-            review["upstreamReferenceSha256"], "review upstream reference SHA-256"
-        ) != upstream_reference_sha256:
+        if (
+            sha256(
+                review["upstreamReferenceSha256"], "review upstream reference SHA-256"
+            )
+            != upstream_reference_sha256
+        ):
             raise ValueError(
                 "transcript reviewers received different upstream references"
             )
@@ -274,20 +273,18 @@ def _validate_adjudication(
     final_reference_sha256 = sha256(
         adjudication["finalReferenceSha256"], "final reference SHA-256"
     )
-    changed_listener_result = (
-        any(review_decision != decision for review_decision in review_decisions)
-        or reviewed_reference_sha256s != {final_reference_sha256}
-    )
+    changed_listener_result = any(
+        review_decision != decision for review_decision in review_decisions
+    ) or reviewed_reference_sha256s != {final_reference_sha256}
     if changed_listener_result:
         if not override_reason_codes:
-            raise ValueError(
-                "adjudication must explain a changed listener result"
-            )
+            raise ValueError("adjudication must explain a changed listener result")
     elif override_reason_codes:
         raise ValueError("adjudication cannot claim an unused override")
-    if canonical_bcp47(
-        adjudication["languageBcp47"], "adjudicated languageBcp47"
-    ) != language_bcp47:
+    if (
+        canonical_bcp47(adjudication["languageBcp47"], "adjudicated languageBcp47")
+        != language_bcp47
+    ):
         raise ValueError("adjudicated locale differs from the selected locale")
     locale_reviewer_id = identifier(
         adjudication["localeReviewerId"], "locale reviewer ID"
@@ -304,9 +301,7 @@ def _validate_adjudication(
     known_defect_codes = bounded_identifiers(
         adjudication["knownDefectCodes"], "known defect codes"
     )
-    completed_at = utc(
-        adjudication["completedAtUtc"], "adjudication completion time"
-    )
+    completed_at = utc(adjudication["completedAtUtc"], "adjudication completion time")
     if completed_at < max(review_completion):
         raise ValueError("adjudication predates an independent review")
     adjudication_receipt_sha256 = sha256(

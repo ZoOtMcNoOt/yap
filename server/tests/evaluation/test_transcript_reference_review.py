@@ -8,8 +8,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from yap_server.evaluation import private_evaluation_artifact
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server import private_artifact
+from yap_server.private_artifact import (
     read_bounded_regular_file,
 )
 from yap_server.evaluation.transcript_reference_review import (
@@ -33,7 +33,7 @@ class TranscriptReferenceReviewTests(unittest.TestCase):
             artifact.write_bytes(b"{}")
 
             with patch.object(
-                private_evaluation_artifact,
+                private_artifact,
                 "_opened_file_path",
                 return_value=outside / "review.json",
             ):
@@ -50,9 +50,7 @@ class TranscriptReferenceReviewTests(unittest.TestCase):
 
         self.assertEqual(validated.case_id, "europarl-es-001")
         self.assertEqual(validated.language_bcp47, "es-ES")
-        self.assertEqual(
-            validated.audio_sha256, _hash("europarl-es-001:trimmed-wav")
-        )
+        self.assertEqual(validated.audio_sha256, _hash("europarl-es-001:trimmed-wav"))
         self.assertEqual(
             validated.decoded_pcm_sha256, _hash("europarl-es-001:final-pcm")
         )
@@ -133,9 +131,9 @@ class TranscriptReferenceReviewTests(unittest.TestCase):
         duplicate["modelExposure"][1]["modelId"] = duplicate["modelExposure"][0][
             "modelId"
         ]
-        duplicate["modelExposure"][1]["modelRevision"] = duplicate["modelExposure"][
-            0
-        ]["modelRevision"]
+        duplicate["modelExposure"][1]["modelRevision"] = duplicate["modelExposure"][0][
+            "modelRevision"
+        ]
         with self.assertRaisesRegex(ValueError, "model exposure.*unique"):
             validate_transcript_reference_review_receipt(duplicate)
 

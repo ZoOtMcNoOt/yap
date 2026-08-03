@@ -2,9 +2,8 @@ use std::collections::HashSet;
 
 use crate::{
     jobs::commands::{
-        CompletedRemoteTranscript, CompletedRemoteTranscriptCatalog,
-        CompletedSpeakerTranscriptTurn, TranscriptLanguageStatus, TranscriptResultSummary,
-        TranscriptTimingStatus,
+        PublishedRemoteTranscriptCatalog, PublishedRemoteTranscriptSummary,
+        TranscriptLanguageStatus, TranscriptResultSummary, TranscriptTimingStatus,
     },
     live::recordings::{RecoverableLiveSession, SavedLiveSession, SavedLiveSessionCatalog},
 };
@@ -15,7 +14,7 @@ fn fixed_result_summary() -> TranscriptResultSummary {
     TranscriptResultSummary {
         language_bcp47: "en-US".into(),
         language_status: TranscriptLanguageStatus::Fixed,
-        timing_status: TranscriptTimingStatus::LegacyUnknown,
+        timing_status: TranscriptTimingStatus::Unavailable,
         active_language_correction_count: None,
         language_review_required_count: None,
     }
@@ -45,20 +44,14 @@ fn catalog_combines_native_sources_with_explicit_provenance() {
             reason: "Interrupted".into(),
             expires_at_ms: RECOVERY_WINDOW_MS + 20,
         }],
-        CompletedRemoteTranscriptCatalog {
-            sessions: vec![CompletedRemoteTranscript {
+        PublishedRemoteTranscriptCatalog {
+            sessions: vec![PublishedRemoteTranscriptSummary {
                 session_id: "remote-1".into(),
                 name: "Remote".into(),
                 source_path: "source.wav".into(),
                 output_path: "remote.txt".into(),
                 created_at_ms: 10,
-                speaker_turns: Some(vec![CompletedSpeakerTranscriptTurn {
-                    speaker_id: "speaker-1".into(),
-                    start_ms: 0,
-                    end_ms: 10,
-                    text: "Remote words.".into(),
-                    overlap_group_id: None,
-                }]),
+                speaker_transcript_available: true,
                 result_summary: fixed_result_summary(),
                 warning: None,
             }],
@@ -74,9 +67,10 @@ fn catalog_combines_native_sources_with_explicit_provenance() {
     );
     assert_eq!(catalog.sessions[1].created_at_ms, 20);
     assert_eq!(catalog.sessions[2].origin, HistoryOrigin::Remote);
-    let speaker_turns = catalog.sessions[2].speaker_turns.as_ref().unwrap();
-    assert_eq!(speaker_turns[0].speaker_id, "speaker-1");
-    assert_eq!(speaker_turns[0].text, "Remote words.");
+    assert!(catalog.sessions[2].speaker_transcript_available);
+    let encoded = serde_json::to_value(&catalog).unwrap();
+    assert_eq!(encoded["sessions"][2]["speakerTranscriptAvailable"], true);
+    assert!(encoded["sessions"][2].get("speakerTurns").is_none());
     assert_eq!(
         catalog.maintenance_warnings,
         ["shared warning", "remote warning"]
@@ -86,13 +80,13 @@ fn catalog_combines_native_sources_with_explicit_provenance() {
 #[test]
 fn catalog_is_bounded_to_the_newest_native_sessions() {
     let remote_sessions = (0..=MAX_HISTORY_SESSIONS)
-        .map(|index| CompletedRemoteTranscript {
+        .map(|index| PublishedRemoteTranscriptSummary {
             session_id: format!("remote-{index}"),
             name: format!("Remote {index}"),
             source_path: format!("source-{index}.wav"),
             output_path: format!("remote-{index}.txt"),
             created_at_ms: index as u64,
-            speaker_turns: None,
+            speaker_transcript_available: false,
             result_summary: fixed_result_summary(),
             warning: None,
         })
@@ -103,7 +97,7 @@ fn catalog_is_bounded_to_the_newest_native_sessions() {
             maintenance_warnings: Vec::new(),
         },
         Vec::new(),
-        CompletedRemoteTranscriptCatalog {
+        PublishedRemoteTranscriptCatalog {
             sessions: remote_sessions,
             maintenance_warnings: Vec::new(),
         },
@@ -120,13 +114,13 @@ fn catalog_is_bounded_to_the_newest_native_sessions() {
 #[test]
 fn catalog_applies_native_visibility_before_the_history_window() {
     let remote_sessions = (0..=MAX_HISTORY_SESSIONS)
-        .map(|index| CompletedRemoteTranscript {
+        .map(|index| PublishedRemoteTranscriptSummary {
             session_id: format!("remote-{index}"),
             name: format!("Remote {index}"),
             source_path: format!("source-{index}.wav"),
             output_path: format!("remote-{index}.txt"),
             created_at_ms: index as u64,
-            speaker_turns: None,
+            speaker_transcript_available: false,
             result_summary: fixed_result_summary(),
             warning: None,
         })
@@ -137,7 +131,7 @@ fn catalog_applies_native_visibility_before_the_history_window() {
             maintenance_warnings: Vec::new(),
         },
         Vec::new(),
-        CompletedRemoteTranscriptCatalog {
+        PublishedRemoteTranscriptCatalog {
             sessions: remote_sessions,
             maintenance_warnings: Vec::new(),
         },
@@ -166,14 +160,14 @@ fn native_visibility_requires_the_exact_current_catalog_identity() {
             maintenance_warnings: Vec::new(),
         },
         Vec::new(),
-        CompletedRemoteTranscriptCatalog {
-            sessions: vec![CompletedRemoteTranscript {
+        PublishedRemoteTranscriptCatalog {
+            sessions: vec![PublishedRemoteTranscriptSummary {
                 session_id: "remote-1".into(),
                 name: "Remote".into(),
                 source_path: "source.wav".into(),
                 output_path: "remote.txt".into(),
                 created_at_ms: 1,
-                speaker_turns: None,
+                speaker_transcript_available: false,
                 result_summary: fixed_result_summary(),
                 warning: None,
             }],
@@ -195,90 +189,6 @@ fn native_visibility_requires_the_exact_current_catalog_identity() {
 }
 
 #[test]
-fn hidden_path_migration_admits_only_current_native_catalog_paths() {
-    let raw = collect_history_catalog(
-        SavedLiveSessionCatalog {
-            sessions: Vec::new(),
-            maintenance_warnings: Vec::new(),
-        },
-        Vec::new(),
-        CompletedRemoteTranscriptCatalog {
-            sessions: vec![CompletedRemoteTranscript {
-                session_id: "remote-1".into(),
-                name: "Remote".into(),
-                source_path: r"C:\Yap\source.wav".into(),
-                output_path: r"C:\Yap\remote.txt".into(),
-                created_at_ms: 1,
-                speaker_turns: None,
-                result_summary: fixed_result_summary(),
-                warning: None,
-            }],
-            maintenance_warnings: Vec::new(),
-        },
-    );
-
-    let (identities, migrated) = select_hidden_path_migration(
-        &raw,
-        vec![
-            "c:/yap/./remote.txt".into(),
-            r"C:\YAP\remote.txt".into(),
-            r"C:\Other\external.txt".into(),
-        ],
-    );
-
-    assert_eq!(identities, vec![raw.sessions[0].identity()]);
-    assert_eq!(migrated, ["c:/yap/./remote.txt"]);
-}
-
-#[test]
-fn hidden_path_migration_preserves_newest_first_client_order() {
-    let raw = collect_history_catalog(
-        SavedLiveSessionCatalog {
-            sessions: Vec::new(),
-            maintenance_warnings: Vec::new(),
-        },
-        Vec::new(),
-        CompletedRemoteTranscriptCatalog {
-            sessions: vec![
-                CompletedRemoteTranscript {
-                    session_id: "newest".into(),
-                    name: "Newest".into(),
-                    source_path: "newest.wav".into(),
-                    output_path: "newest.txt".into(),
-                    created_at_ms: 2,
-                    speaker_turns: None,
-                    result_summary: fixed_result_summary(),
-                    warning: None,
-                },
-                CompletedRemoteTranscript {
-                    session_id: "older".into(),
-                    name: "Older".into(),
-                    source_path: "older.wav".into(),
-                    output_path: "older.txt".into(),
-                    created_at_ms: 1,
-                    speaker_turns: None,
-                    result_summary: fixed_result_summary(),
-                    warning: None,
-                },
-            ],
-            maintenance_warnings: Vec::new(),
-        },
-    );
-
-    let (identities, migrated) =
-        select_hidden_path_migration(&raw, vec!["newest.txt".into(), "older.txt".into()]);
-
-    assert_eq!(
-        identities
-            .iter()
-            .map(|identity| identity.session_id.as_str())
-            .collect::<Vec<_>>(),
-        ["newest", "older"]
-    );
-    assert_eq!(migrated, ["newest.txt", "older.txt"]);
-}
-
-#[test]
 fn catalog_keeps_an_orphaned_recoverable_row_visible_by_name() {
     let catalog = build_history_catalog(
         SavedLiveSessionCatalog {
@@ -293,7 +203,7 @@ fn catalog_keeps_an_orphaned_recoverable_row_visible_by_name() {
             reason: "Interrupted".into(),
             expires_at_ms: RECOVERY_WINDOW_MS,
         }],
-        CompletedRemoteTranscriptCatalog {
+        PublishedRemoteTranscriptCatalog {
             sessions: Vec::new(),
             maintenance_warnings: Vec::new(),
         },

@@ -122,20 +122,21 @@ fn malformed_json_recovers_disabled_defaults() {
 }
 
 #[test]
-fn legacy_settings_migrate_without_inventing_identity_configuration() {
-    let dir = temp_dir("legacy-migration");
+fn obsolete_settings_schema_is_rejected_without_rewriting_it() {
+    let dir = temp_dir("obsolete-schema");
     let path = dir.join("server-settings.json");
-    std::fs::write(
-        &path,
-        r#"{"schemaVersion":1,"enabled":true,"baseUrl":"http://127.0.0.1:18765"}"#,
-    )
-    .unwrap();
+    let obsolete = br#"{"schemaVersion":1,"enabled":true,"baseUrl":"http://127.0.0.1:18765"}"#;
+    std::fs::write(&path, obsolete).unwrap();
 
-    let migrated = load_from_path(&path, false).unwrap();
-    assert_eq!(migrated.schema_version, CURRENT_SCHEMA_VERSION);
-    assert!(migrated.enabled);
-    assert_eq!(migrated.base_url.as_deref(), Some("http://127.0.0.1:18765"));
-    assert_eq!(migrated.authentication, None);
+    assert!(matches!(
+        load_from_path(&path, false),
+        Err(ConfigError::IncompatibleSchema(1))
+    ));
+    assert!(matches!(
+        save_to_path(&ServerSettings::default(), &path, false),
+        Err(ConfigError::IncompatibleSchema(1))
+    ));
+    assert_eq!(std::fs::read(&path).unwrap(), obsolete);
 
     std::fs::remove_dir_all(dir).ok();
 }

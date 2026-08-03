@@ -75,11 +75,6 @@ impl JobLedger {
         decision
             .validate()
             .map_err(|_| JobLedgerError::InvalidRecord("confirmed language decision is invalid"))?;
-        if decision.is_legacy_implicit_english_default() {
-            return Err(JobLedgerError::InvalidRecord(
-                "legacy defaults cannot be recorded as user confirmation",
-            ));
-        }
         let output_fingerprint_sha256 = sha256_hex(
             &serde_json::to_vec(decision)
                 .map_err(|_| JobLedgerError::InvalidRecord("language decision is not JSON"))?,

@@ -17,7 +17,6 @@ async function installPlaybackBridge(
     status: 200,
   }));
   await page.addInitScript(({ mediaDuration, paths, restoreDelayMs }) => {
-    localStorage.removeItem("yap.recordingQueue.v1");
     Object.defineProperty(globalThis, "isTauri", { value: true });
 
     const currentTimes = new WeakMap<HTMLMediaElement, number>();
@@ -237,7 +236,6 @@ test("native ledger projection uses only pre-authorized playback", async ({ page
   await page.getByRole("button", { name: "Transcribe", exact: true }).click();
 
   await expect(page.getByRole("button", { name: /^Select large-/ })).toHaveCount(20);
-  expect(await page.evaluate(() => localStorage.getItem("yap.recordingQueue.v1"))).toBeNull();
   expect(await page.evaluate(() =>
     (globalThis as unknown as { __playbackTest: { restoreCalls: number } })
       .__playbackTest.restoreCalls)).toBe(0);

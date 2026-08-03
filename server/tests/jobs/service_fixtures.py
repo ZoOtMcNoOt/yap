@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from concurrent.futures import Future
-from copy import deepcopy
-import hashlib
 import threading
 
 from yap_server.pools.batch_asr import (
@@ -72,6 +70,9 @@ class _ActiveCancellationWorker:
         self.stopped.set()
         raise WorkerExecutionError("isolated ASR worker was cancelled")
 
+    def close(self) -> None:
+        pass
+
 
 class _UnverifiedCleanupWorker:
     def __init__(self) -> None:
@@ -86,6 +87,9 @@ class _UnverifiedCleanupWorker:
         if not cancellation.wait(timeout=5):
             raise AssertionError(f"active job {job.job_id} was not cancelled")
         raise WorkerContainmentError("owned container cleanup could not be verified")
+
+    def close(self) -> None:
+        pass
 
 
 class _DelayedCancellationWorker:
@@ -107,54 +111,8 @@ class _DelayedCancellationWorker:
             raise AssertionError(f"active job {job.job_id} cleanup was not released")
         raise WorkerExecutionError("isolated ASR worker was cancelled")
 
-
-def _request_with_preprocessing_evidence() -> dict[str, object]:
-    request = deepcopy(_create_request())
-    request["captureManifest"]["schemaVersion"] = 2
-    request["asrCatalogRevision"] = "c" * 64
-    request["preprocessingEvidence"] = {
-        "schemaVersion": 1,
-        "normalization": {
-            "status": "complete",
-            "componentId": "yap-imported-audio-normalizer",
-            "componentRevision": "canonical-pcm16-normalization-v1",
-            "method": "canonical_pcm16_identity",
-            "inputSourceSha256": "b" * 64,
-            "sourcePcmSha256": hashlib.sha256(bytes(320)).hexdigest(),
-            "outputPcmSha256": hashlib.sha256(bytes(320)).hexdigest(),
-            "audioCodec": "pcm_s16le",
-            "sampleRateHz": 16000,
-            "channels": 1,
-            "sourceSampleCount": 160,
-            "outputSampleCount": 160,
-            "paddingSamples": 0,
-            "gainAppliedMilliDb": 0,
-            "samplesModified": 0,
-            "sourceTimePreserved": True,
-        },
-        "vad": {
-            "status": "complete",
-            "component": {
-                "id": "sherpa-onnx-silero-vad",
-                "revision": "sherpa-onnx-1.13.4",
-                "modelId": "k2-fsa/silero_vad.onnx",
-                "modelRevision": "github-release-asset-271935959",
-                "artifactSha256": (
-                    "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
-                ),
-            },
-            "sourceSampleCount": 160,
-            "intervals": [
-                {
-                    "startSample": 0,
-                    "endSampleExclusive": 160,
-                    "startMs": 0,
-                    "endMs": 10,
-                }
-            ],
-        },
-    }
-    return request
+    def close(self) -> None:
+        self.release_cleanup.set()
 
 
 def _published_result(job: dict[str, object]) -> dict[str, object]:
@@ -168,6 +126,11 @@ def _published_result(job: dict[str, object]) -> dict[str, object]:
         "status": "complete",
         "language": {"languageBcp47": "en", "confidence": None},
         "transcript": "Crash-safe private transcript.",
+        "alignment": {
+            "status": "unavailable",
+            "reason": "ALIGNMENT_RUNTIME_FAILED",
+            "componentRevision": "cohere-attention-alignment-candidate-v1",
+        },
         "alignedWords": [],
         "modelProvenance": [
             {

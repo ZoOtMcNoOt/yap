@@ -15,8 +15,11 @@ local ASR. The gated Phase 5 path strictly admits already-canonical mono
 PCM16/16 kHz WAV input, extracts an immutable single-track PCM spool, provides
 durable loopback upload/reconnect, publishes verified server-authoritative
 results, and applies seven-day pending-source plus finite completed-result
-retention. General media conversion, diarization, named identity, system
-loopback, server reconciliation of speaker evidence, and a supported
+retention. The merged Phase 8 Tiron Preview publishes immutable anonymous
+speaker-attributed result revisions and projects their source-bound speaker
+companion through History. General media conversion, a client-local anonymous
+baseline, named identity, system loopback, cross-window speaker-epoch
+reconciliation beyond the upstream eight-label aggregate, and a supported
 recording-only product mode remain unimplemented.
 
 ## Context

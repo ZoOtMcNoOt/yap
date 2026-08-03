@@ -6,13 +6,13 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 import re
 
-from yap_server.evaluation.evaluation_receipt_fields import (
+from yap_server.json_contract import (
     exact_object as _object,
     https_uri as _https,
     positive_int as _positive_int,
     sha256 as _sha256,
 )
-from yap_server.evaluation.private_evaluation_artifact import (
+from yap_server.private_artifact import (
     read_json_object_with_identity,
 )
 from yap_server.language_tags import canonical_bcp47
@@ -188,9 +188,7 @@ def _meeting_identity(value: object) -> AmiMeetingIdentity:
         corpus_id=_text(corpus["id"], "AMI corpus ID", 64),
         release=_matching_text(corpus["release"], _RELEASE, "AMI release"),
         meeting_id=_text(corpus["meetingId"], "AMI meeting ID", 32),
-        language_bcp47=canonical_bcp47(
-            corpus["languageBcp47"], "AMI languageBcp47"
-        ),
+        language_bcp47=canonical_bcp47(corpus["languageBcp47"], "AMI languageBcp47"),
         scenario_split=_text(corpus["scenarioSplit"], "AMI scenario split", 64),
         asr_split=_text(corpus["asrSplit"], "AMI ASR split", 64),
         source=_https(corpus["source"], "AMI corpus source"),
@@ -218,7 +216,9 @@ def _usage_policy(purpose_value: object, limitations_value: object) -> AmiUsageP
         purpose["promotionEligible"] is not False
         or purpose["exposureStatus"] != "unknown"
     ):
-        raise ValueError("AMI comparator must remain non-promotional with unknown exposure")
+        raise ValueError(
+            "AMI comparator must remain non-promotional with unknown exposure"
+        )
     limitations = tuple(
         _text(item, "AMI limitation", 96)
         for item in _array(limitations_value, "AMI limitations")
@@ -276,7 +276,10 @@ def _annotation_archive_lock(
         "https://groups.inf.ed.ac.uk/ami/AMICorpusAnnotations/"
         f"ami_public_manual_{release}.zip"
     )
-    if artifact.cache_path != expected_path or artifact.download_source != expected_source:
+    if (
+        artifact.cache_path != expected_path
+        or artifact.download_source != expected_source
+    ):
         raise ValueError("AMI annotation artifact differs from the exact release")
 
     transcript = _object(
@@ -332,9 +335,7 @@ def _audio_set_lock(value: object, *, release: str) -> AmiAudioSetLock:
     result = AmiAudioSetLock(
         sample_rate_hz=_positive_int(audio["sampleRateHz"], "AMI sample rate"),
         channel_count=_positive_int(audio["channelCount"], "AMI channel count"),
-        sample_width_bytes=_positive_int(
-            audio["sampleWidthBytes"], "AMI sample width"
-        ),
+        sample_width_bytes=_positive_int(audio["sampleWidthBytes"], "AMI sample width"),
         frame_count=_bounded_positive_int(
             audio["frameCount"],
             "AMI frame count",
@@ -355,9 +356,10 @@ def _audio_set_lock(value: object, *, release: str) -> AmiAudioSetLock:
         ("close-mix", "mixed-close-talking-headsets"),
         ("far-field-array1-channel1", "single-distant-array-channel"),
     )
-    if tuple(
-        (item.identifier, item.capture) for item in result.conditions
-    ) != expected_conditions:
+    if (
+        tuple((item.identifier, item.capture) for item in result.conditions)
+        != expected_conditions
+    ):
         raise ValueError("AMI audio conditions differ from the comparator contract")
     _validate_audio_artifact_paths(result.conditions, release=release)
     return result

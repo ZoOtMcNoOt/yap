@@ -601,11 +601,12 @@ corrupt VAD state never triggers an implicit network download.
 - [x] Bound retention and delete only Yap-owned derived artifacts; never delete
       an admitted external source because a stage failed or was cancelled.
 
-Desktop schema 9 owns bounded attempt history for normalization, VAD, LID
-preflight, and user confirmation. Server schema 5 owns ASR, alignment, and
-result-publication attempts. Both authorities retain fingerprints, component
-revisions, retryability, evidence hashes, terminal outcomes, and bounded history;
-legacy rows remain readable without claiming history they never recorded.
+At the Phase 6 gate, desktop schema 9 owned bounded attempt history for
+normalization, VAD, LID preflight, and user confirmation, while server schema 5
+owned ASR, alignment, and result-publication attempts. That evidence remains
+historical. The later meeting-transcription maintainability checkpoint replaced
+the desktop migration chain with one current Yap-owned baseline and removed
+legacy-row decoding; server persistence is now current schema 6 only.
 
 ### 5. Add the isolated AmberNet batch preflight
 
@@ -1737,8 +1738,11 @@ configuration now uses `YAP_BATCH_ASR_ENABLED`, `YAP_ASR_*`,
 `YAP_BATCH_JOB_STORAGE_DIR`, `YAP_CHECKED_HEAD`, and `YAP_DOCKER_BINARY`, with
 the keys centralized in `config/runtime_environment.py`. The remaining
 executable paths and callable names now describe their runtime function. New
-serialization uses `legacyImplicitEnglishDefault`; `legacyPhase5Default` and
-`legacy_phase5_default` remain backward-readable wire/persistence tokens only.
+serialization used `legacyImplicitEnglishDefault`, while
+`legacyPhase5Default` and `legacy_phase5_default` remained readable. The later
+meeting-transcription maintainability checkpoint removed all three obsolete
+wire/persistence dispositions and the historical desktop migration chain; this
+paragraph records past gate evidence rather than current behavior.
 The reusable checked-head tools are named `gb10-asr-runtime-gate`,
 `isolated_runtime_evidence`, and `private-server-asr-gate`; the OpenAPI records
 functional runtime status/ownership instead of phase-numbered extension keys.

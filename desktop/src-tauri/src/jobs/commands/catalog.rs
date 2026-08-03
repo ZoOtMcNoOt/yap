@@ -1,16 +1,23 @@
 use super::super::remote;
 use super::{
-    CompletedRemoteTranscript, CompletedRemoteTranscriptCatalog, CompletedSpeakerTranscriptTurn,
-    JobCommandError, RecordingJobs, TranscriptLanguageStatus, TranscriptResultSummary,
-    TranscriptTimingStatus,
+    JobCommandError, PublishedRemoteTranscriptCatalog, PublishedRemoteTranscriptSummary,
+    PublishedSpeakerTranscript, PublishedSpeakerTranscriptTurn, RecordingJobs,
+    TranscriptLanguageStatus, TranscriptResultSummary, TranscriptTimingStatus,
 };
 use crate::{
-    jobs::{LanguageLabelReview, RecordingJobStatus, RecordingRoute},
+    jobs::{LanguageLabelReview, RecordingJobRecord, RecordingJobStatus, RecordingRoute},
     server_connector::batch::{
+        validate_speaker_result_for_recording, validate_transcript_result_for_recording,
         AlignmentStatus, AnonymousSpeakerAttribution, CreateRecordingJobRequest,
         TranscriptResultRevision,
     },
 };
+
+struct SourceBoundPublishedResult {
+    bundle: remote::PublishedRemoteResultBundle,
+    request: CreateRecordingJobRequest,
+    source_path: String,
+}
 
 fn summarize_result(
     result: &TranscriptResultRevision,
@@ -27,10 +34,9 @@ fn summarize_result(
     } else {
         TranscriptLanguageStatus::Fixed
     };
-    let timing_status = match result.alignment.as_ref().map(|outcome| outcome.status) {
-        Some(AlignmentStatus::Available) => TranscriptTimingStatus::Available,
-        Some(AlignmentStatus::Unavailable) => TranscriptTimingStatus::Unavailable,
-        None => TranscriptTimingStatus::LegacyUnknown,
+    let timing_status = match result.alignment.status {
+        AlignmentStatus::Available => TranscriptTimingStatus::Available,
+        AlignmentStatus::Unavailable => TranscriptTimingStatus::Unavailable,
     };
     Ok(TranscriptResultSummary {
         language_bcp47: language.language_bcp47.clone(),
@@ -43,9 +49,9 @@ fn summarize_result(
 }
 
 impl RecordingJobs {
-    pub(crate) fn completed_remote_transcripts(
+    pub(crate) fn published_remote_transcript_catalog(
         &self,
-    ) -> Result<CompletedRemoteTranscriptCatalog, JobCommandError> {
+    ) -> Result<PublishedRemoteTranscriptCatalog, JobCommandError> {
         let mut sessions = Vec::new();
         let mut omitted_invalid_result = false;
         for record in self.ledger().list_jobs()?.into_iter().filter(|record| {
@@ -55,84 +61,10 @@ impl RecordingJobs {
             ) && record.route == Some(RecordingRoute::ServerBatch)
         }) {
             let verified = (|| {
+                let published = self.load_source_bound_published_result(&record)?;
                 let output_path = record.output_path.as_deref().ok_or(())?;
-                let source_path = record.source_path.as_deref().ok_or(())?;
-                let prepared = self
-                    .ledger()
-                    .get_prepared_remote_job(&record.job_id)
-                    .map_err(|_| ())?
-                    .ok_or(())?;
-                let request =
-                    CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json)
-                        .map_err(|_| ())?;
-                let verified = remote::read_published_remote_transcript(
-                    output_path,
-                    self.remote_jobs_directory(),
-                )
-                .map_err(|_| ())?;
-                if verified.result.session_id != request.metadata.session_id.as_str()
-                    || verified.result.capture_manifest_sha256 != request.capture_manifest.sha256
-                    || verified.result.status != record.status.as_db()
-                    || prepared.capture_manifest_sha256 != request.capture_manifest.sha256
-                    || record.capture_manifest_sha256.as_deref()
-                        != Some(request.capture_manifest.sha256.as_str())
-                {
-                    return Err(());
-                }
-                let speaker_capacity_reached = verified
-                    .speaker_result
-                    .as_ref()
-                    .is_some_and(|speaker_result| speaker_result.speaker_capacity_reached());
-                let speaker_turns = if let Some(speaker_result) = verified.speaker_result.as_ref() {
-                    let source_duration_ms = request
-                        .chunks
-                        .iter()
-                        .try_fold(0_u64, |total, chunk| {
-                            total.checked_add(u64::from(chunk.duration_ms))
-                        })
-                        .ok_or(())?;
-                    let source_track_ids = request
-                        .tracks
-                        .iter()
-                        .map(|track| track.track_id.clone())
-                        .collect::<Vec<_>>();
-                    let source_end_sample = request
-                        .chunks
-                        .iter()
-                        .try_fold(0_u64, |total, chunk| {
-                            total.checked_add(chunk.content_identity.byte_length / 2)
-                        })
-                        .ok_or(())?;
-                    if !speaker_result.is_valid_for(
-                        &verified.result,
-                        source_duration_ms,
-                        Some(source_end_sample),
-                        &source_track_ids,
-                    ) {
-                        return Err(());
-                    }
-                    Some(
-                        speaker_result
-                            .speaker_turns
-                            .iter()
-                            .map(|turn| {
-                                let AnonymousSpeakerAttribution::SessionSpeaker {
-                                    session_speaker_id,
-                                } = &turn.attribution;
-                                CompletedSpeakerTranscriptTurn {
-                                    speaker_id: session_speaker_id.clone(),
-                                    start_ms: turn.start_ms,
-                                    end_ms: turn.end_ms,
-                                    text: turn.text.clone(),
-                                    overlap_group_id: turn.overlap_group_id.clone(),
-                                }
-                            })
-                            .collect(),
-                    )
-                } else {
-                    None
-                };
-                let language_review = (verified
+                let language_review = (published
+                    .bundle
                     .result
                     .language
                     .as_ref()
@@ -142,22 +74,21 @@ impl RecordingJobs {
                 })
                 .transpose()
                 .map_err(|_| ())?;
-                let result_summary = summarize_result(&verified.result, language_review.as_ref())?;
-                Ok(CompletedRemoteTranscript {
-                    session_id: verified.result.session_id,
+                let result_summary =
+                    summarize_result(&published.bundle.result, language_review.as_ref())?;
+                let speaker_transcript_available =
+                    published.bundle.result.requires_speaker_result();
+                Ok(PublishedRemoteTranscriptSummary {
+                    session_id: published.bundle.result.session_id,
                     name: record.display_name.clone(),
-                    source_path: source_path.display().to_string(),
+                    source_path: published.source_path,
                     output_path: output_path.display().to_string(),
                     created_at_ms: record.updated_at_ms,
-                    speaker_turns,
+                    speaker_transcript_available,
                     result_summary,
                     warning: (record.status == RecordingJobStatus::Partial).then(|| {
-                        if speaker_capacity_reached {
-                            "Speaker attribution may be incomplete because the server reached its eight-speaker limit; fallback reprocessing was not run."
-                                .into()
-                        } else {
-                            "Server transcript completed with unresolved work.".into()
-                        }
+                        "Speaker attribution may be incomplete because the server reached its eight-speaker limit; fallback reprocessing was recommended but not run."
+                            .into()
                     }),
                 })
             })();
@@ -172,7 +103,7 @@ impl RecordingJobs {
                 .cmp(&left.created_at_ms)
                 .then_with(|| left.session_id.cmp(&right.session_id))
         });
-        Ok(CompletedRemoteTranscriptCatalog {
+        Ok(PublishedRemoteTranscriptCatalog {
             sessions,
             maintenance_warnings: if omitted_invalid_result {
                 vec!["A saved private-server transcript could not be verified and was omitted from history.".into()]
@@ -180,6 +111,116 @@ impl RecordingJobs {
                 Vec::new()
             },
         })
+    }
+
+    pub(crate) fn published_speaker_transcript(
+        &self,
+        session_id: &str,
+        output_path: &str,
+    ) -> Result<Option<PublishedSpeakerTranscript>, JobCommandError> {
+        let records = self.ledger().list_jobs()?;
+        let Some(record) = records.into_iter().find(|record| {
+            matches!(
+                record.status,
+                RecordingJobStatus::Complete | RecordingJobStatus::Partial
+            ) && record.route == Some(RecordingRoute::ServerBatch)
+                && record
+                    .output_path
+                    .as_deref()
+                    .is_some_and(|path| path.display().to_string() == output_path)
+        }) else {
+            return Ok(None);
+        };
+        let published = self
+            .load_source_bound_published_result(&record)
+            .map_err(|()| {
+                command_error(
+                    "SPEAKER_TRANSCRIPT_INVALID",
+                    "The saved speaker transcript could not be verified.",
+                )
+            })?;
+        if published.bundle.result.session_id != session_id {
+            return Ok(None);
+        }
+        let Some(speaker_result) = published.bundle.load_speaker_result().map_err(|_| {
+            command_error(
+                "SPEAKER_TRANSCRIPT_INVALID",
+                "The saved speaker transcript could not be verified.",
+            )
+        })?
+        else {
+            return Ok(None);
+        };
+        validate_speaker_result_for_recording(
+            &speaker_result,
+            &published.bundle.result,
+            &published.request,
+        )
+        .map_err(|_| {
+            command_error(
+                "SPEAKER_TRANSCRIPT_INVALID",
+                "The saved speaker transcript conflicts with its source recording.",
+            )
+        })?;
+        let turns = speaker_result
+            .speaker_turns
+            .into_iter()
+            .map(|turn| {
+                let AnonymousSpeakerAttribution::SessionSpeaker { session_speaker_id } =
+                    turn.attribution;
+                PublishedSpeakerTranscriptTurn {
+                    turn_id: turn.turn_id,
+                    speaker_id: session_speaker_id,
+                    start_ms: turn.start_ms,
+                    end_ms: turn.end_ms,
+                    text: turn.text,
+                    overlap_group_id: turn.overlap_group_id,
+                }
+            })
+            .collect();
+        Ok(Some(PublishedSpeakerTranscript {
+            session_id: published.bundle.result.session_id,
+            source_result_sha256: published.bundle.result_sha256,
+            turns,
+        }))
+    }
+
+    fn load_source_bound_published_result(
+        &self,
+        record: &RecordingJobRecord,
+    ) -> Result<SourceBoundPublishedResult, ()> {
+        let output_path = record.output_path.as_deref().ok_or(())?;
+        let source_path = record.source_path.as_deref().ok_or(())?;
+        let prepared = self
+            .ledger()
+            .get_prepared_remote_job(&record.job_id)
+            .map_err(|_| ())?
+            .ok_or(())?;
+        let request = CreateRecordingJobRequest::decode_persisted(&prepared.create_request_json)
+            .map_err(|_| ())?;
+        let bundle =
+            remote::read_published_remote_result_bundle(output_path, self.remote_jobs_directory())
+                .map_err(|_| ())?;
+        validate_transcript_result_for_recording(&bundle.result, &request).map_err(|_| ())?;
+        if bundle.result.status != record.status.as_db()
+            || prepared.capture_manifest_sha256 != request.capture_manifest.sha256
+            || record.capture_manifest_sha256.as_deref()
+                != Some(request.capture_manifest.sha256.as_str())
+        {
+            return Err(());
+        }
+        Ok(SourceBoundPublishedResult {
+            bundle,
+            request,
+            source_path: source_path.display().to_string(),
+        })
+    }
+}
+
+fn command_error(code: &str, message: &str) -> JobCommandError {
+    JobCommandError {
+        code: code.into(),
+        message: message.into(),
     }
 }
 

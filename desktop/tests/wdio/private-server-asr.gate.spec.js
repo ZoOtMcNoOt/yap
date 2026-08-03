@@ -9,10 +9,14 @@ import {
 import path from "node:path";
 
 import {
+  canonicalPcm16Mono16KhzWav,
   isValidInFlightRemotePipeline,
-  matchCompletedRemoteHistoryEntry,
+  matchPublishedRemoteHistoryEntry,
+  meetingLanguageConfirmationRequest,
   matchesEnabledLoopbackServerSettings,
   matchesVerifiedHistoryDialog,
+  readCanonicalPcm16Mono16KhzWav,
+  repeatedPcm,
   settleSshTunnelChild,
 } from "./private-server-asr-gate-support.js";
 import {
@@ -26,6 +30,7 @@ import {
 
 const tunnelHost = "127.0.0.1";
 const tunnelPort = 18765;
+const meetingTranscriptionProfile = "meeting-transcription";
 const tunnelProcesses = [];
 const tunnelProcessEntries = new WeakMap();
 let tunnelProcess;
@@ -75,6 +80,55 @@ async function waitForConnectionState(expectedState, label) {
   return connection;
 }
 
+async function confirmMeetingImportLanguage(jobId, languageBcp47) {
+  let confirmationRequest;
+  let terminalFailure;
+  await browser.waitUntil(
+    async () => {
+      const snapshot = await invoke("recording_jobs_snapshot");
+      const job = snapshot.find((candidate) => candidate.id === jobId);
+      if (!job) {
+        terminalFailure = new Error(
+          "The meeting import disappeared before language confirmation.",
+        );
+        return true;
+      }
+      if (["failed", "cancelled"].includes(job.status)) {
+        terminalFailure = new Error(
+          `The meeting import reached ${job.status} before language confirmation.`,
+        );
+        return true;
+      }
+      if (job.status !== "preflighting") {
+        terminalFailure = new Error(
+          `The meeting import bypassed language confirmation in ${job.status}.`,
+        );
+        return true;
+      }
+      try {
+        confirmationRequest = meetingLanguageConfirmationRequest(job, languageBcp47);
+      } catch (error) {
+        terminalFailure = error;
+        return true;
+      }
+      return Boolean(confirmationRequest);
+    },
+    {
+      interval: 100,
+      timeout: 60_000,
+      timeoutMsg: "The meeting import did not request language confirmation within one minute.",
+    },
+  );
+  if (terminalFailure) throw terminalFailure;
+  const confirmed = await invoke("recording_job_confirm_language", confirmationRequest);
+  expect(confirmed.status).toBe("preflighting");
+  expect(confirmed.languageDecision).toEqual({
+    mode: "fixed",
+    languageBcp47,
+    disposition: "primary",
+  });
+}
+
 function canonicalPath(value) {
   return path.resolve(realpathSync.native(value));
 }
@@ -96,73 +150,18 @@ async function healthIsReachable() {
   }
 }
 
-function readCanonicalPcm16Mono16KhzWav(filePath) {
-  const bytes = readFileSync(filePath);
-  if (
-    bytes.length < 44
-    || bytes.toString("ascii", 0, 4) !== "RIFF"
-    || bytes.toString("ascii", 8, 12) !== "WAVE"
-  ) {
-    throw new Error("The language-preflight fixture is not a RIFF/WAVE file.");
-  }
-  let format;
-  let pcm;
-  for (let offset = 12; offset + 8 <= bytes.length;) {
-    const id = bytes.toString("ascii", offset, offset + 4);
-    const length = bytes.readUInt32LE(offset + 4);
-    const start = offset + 8;
-    const end = start + length;
-    if (end > bytes.length) {
-      throw new Error("The language-preflight fixture has a truncated WAV chunk.");
-    }
-    if (id === "fmt ") format = bytes.subarray(start, end);
-    if (id === "data") pcm = bytes.subarray(start, end);
-    offset = end + (length % 2);
-  }
-  if (
-    !format
-    || format.length < 16
-    || format.readUInt16LE(0) !== 1
-    || format.readUInt16LE(2) !== 1
-    || format.readUInt32LE(4) !== 16_000
-    || format.readUInt16LE(12) !== 2
-    || format.readUInt16LE(14) !== 16
-    || !pcm
-    || pcm.length < 2
-    || pcm.length % 2 !== 0
-  ) {
-    throw new Error(
-      "The language-preflight fixture must be mono signed-PCM16 at 16 kHz.",
-    );
-  }
-  return pcm;
-}
-
-function repeatedPcm(source, byteLength) {
-  const output = Buffer.alloc(byteLength);
-  for (let offset = 0; offset < output.length;) {
-    const copied = Math.min(source.length, output.length - offset);
-    source.copy(output, offset, 0, copied);
-    offset += copied;
-  }
-  return output;
-}
-
 function canonicalWavSha256(pcm) {
-  const header = Buffer.alloc(44);
-  header.write("RIFF", 0, "ascii");
-  header.writeUInt32LE(pcm.length + 36, 4);
-  header.write("WAVEfmt ", 8, "ascii");
-  header.writeUInt32LE(16, 16);
-  header.writeUInt16LE(1, 20);
-  header.writeUInt16LE(1, 22);
-  header.writeUInt32LE(16_000, 24);
-  header.writeUInt32LE(32_000, 28);
-  header.writeUInt16LE(2, 32);
-  header.writeUInt16LE(16, 34);
-  header.write("data", 36, "ascii");
-  header.writeUInt32LE(pcm.length, 40);
-  return createHash("sha256").update(header).update(pcm).digest("hex");
+  return createHash("sha256")
+    .update(canonicalPcm16Mono16KhzWav(pcm))
+    .digest("hex");
+}
+
+function activeGateProfile() {
+  const profile = requireEnvironment("YAP_PRIVATE_SERVER_ASR_GATE_PROFILE");
+  if (!["dictation", meetingTranscriptionProfile].includes(profile)) {
+    throw new Error(`Unsupported private-server ASR gate profile: ${profile}`);
+  }
+  return profile;
 }
 
 async function runLanguagePreflightExecution(catalog, fixturePath, checkedHead) {
@@ -421,13 +420,13 @@ describe("checked-head private-server ASR gate", () => {
       liveStreaming: false,
     });
 
+    const profile = activeGateProfile();
+    const meetingProfile = profile === meetingTranscriptionProfile;
     const catalog = await invoke("server_asr_capabilities");
     expect(catalog?.catalogRevision).toMatch(/^[0-9a-f]{64}$/);
-    const languagePreflightExecution = await runLanguagePreflightExecution(
-      catalog,
-      fixturePath,
-      checkedHead,
-    );
+    const languagePreflightExecution = meetingProfile
+      ? undefined
+      : await runLanguagePreflightExecution(catalog, fixturePath, checkedHead);
     const created = await invoke("recording_jobs_pick_imports", {
       languageBcp47: "en-US",
       catalogRevision: catalog.catalogRevision,
@@ -464,6 +463,9 @@ describe("checked-head private-server ASR gate", () => {
     await invoke("refresh_server_connection");
     const restoredConnection = await waitForConnectionState("ready", "recover after tunnel restart");
     expect((await invoke("server_settings")).baseUrl).toBe(expectedOrigin);
+    if (meetingProfile) {
+      await confirmMeetingImportLanguage(clientJobId, "en-US");
+    }
 
     await browser.waitUntil(
       async () => {
@@ -486,7 +488,7 @@ describe("checked-head private-server ASR gate", () => {
           );
           return true;
         }
-        history = matchCompletedRemoteHistoryEntry(createdJob, catalog);
+        history = matchPublishedRemoteHistoryEntry(createdJob, catalog);
         completedJobRetiredFromRecoverableQueue = !job && Boolean(history);
         return completedJobRetiredFromRecoverableQueue;
       },
@@ -521,14 +523,27 @@ describe("checked-head private-server ASR gate", () => {
     expect(result.sessionId).toBe(history.sessionId);
     expect(result.revision).toBe(1);
     expect(result.authority).toBe("server_authoritative");
-    expect(result.status).toBe("complete");
+    if (meetingProfile) {
+      expect(["complete", "partial"]).toContain(result.status);
+    } else {
+      expect(result.status).toBe("complete");
+    }
     expect(result.transcript.trim().length).toBeGreaterThan(0);
     expect(result.language?.languageBcp47).toBe(createdJob.languageDecision.languageBcp47);
-    expect(result.modelProvenance).toContainEqual({
-      calibrationRevision: "asr-not-applicable",
+    const expectedModel = result.modelProvenance.find(
+      ({ modelId }) => modelId === expectedModelId,
+    );
+    expect(expectedModel).toMatchObject({
       modelId: expectedModelId,
       revision: expectedModelRevision,
     });
+    if (meetingProfile) {
+      expect(expectedModel.calibrationRevision).toBe(
+        requireEnvironment("YAP_PRIVATE_SERVER_ASR_GATE_RUNTIME_LOCK_SHA256"),
+      );
+    } else {
+      expect(expectedModel.calibrationRevision).toBe("asr-not-applicable");
+    }
 
     const captureManifestPath = path.join(
       path.dirname(path.dirname(transcriptPath)),
@@ -547,6 +562,44 @@ describe("checked-head private-server ASR gate", () => {
     expect(captureManifest.languageDecision).toEqual(createdJob.languageDecision);
     expect(captureManifest.chunks?.length).toBeGreaterThan(0);
 
+    const resultArtifactSha256 = createHash("sha256").update(resultBytes).digest("hex");
+    let speakerResult;
+    let speakerResultArtifactSha256;
+    let speakerTranscript;
+    if (meetingProfile) {
+      expect(history.speakerTranscriptAvailable).toBe(true);
+      const speakerResultPath = path.join(path.dirname(transcriptPath), "speaker-result.json");
+      const speakerResultMetadata = lstatSync(speakerResultPath);
+      expect(speakerResultMetadata.isSymbolicLink()).toBe(false);
+      expect(speakerResultMetadata.isFile()).toBe(true);
+      const speakerResultBytes = readFileSync(speakerResultPath);
+      speakerResultArtifactSha256 = createHash("sha256")
+        .update(speakerResultBytes)
+        .digest("hex");
+      expect(speakerResultArtifactSha256).toBe(result.speakerResultSha256);
+      speakerResult = JSON.parse(speakerResultBytes.toString("utf8"));
+      expect(speakerResult).toMatchObject({
+        authority: result.authority,
+        revision: result.revision,
+        runtimeLockSha256: requireEnvironment(
+          "YAP_PRIVATE_SERVER_ASR_GATE_RUNTIME_LOCK_SHA256",
+        ),
+        sessionId: result.sessionId,
+        status: result.status,
+      });
+      expect(speakerResult.speakerTurns.length).toBeGreaterThan(0);
+      speakerTranscript = await invoke("history_speaker_transcript", {
+        identity: {
+          origin: "remote",
+          outputPath: history.outputPath,
+          sessionId: history.sessionId,
+        },
+      });
+      expect(speakerTranscript.sessionId).toBe(history.sessionId);
+      expect(speakerTranscript.sourceResultSha256).toBe(resultArtifactSha256);
+      expect(speakerTranscript.turns).toHaveLength(speakerResult.speakerTurns.length);
+    }
+
     const reviewButton = await browser.$(
       `[aria-label=${JSON.stringify(`Review recording ${history.name}`)}]`,
     );
@@ -554,6 +607,20 @@ describe("checked-head private-server ASR gate", () => {
     await reviewButton.click();
     await browser.waitUntil(
       async () => {
+        if (meetingProfile) {
+          const firstTurn = speakerTranscript.turns[0];
+          return browser.execute((name, speakerId, turnText) => (
+            [...document.querySelectorAll('[role="dialog"][data-state="open"]')].some(
+              (dialog) => (
+                dialog.querySelector('[data-slot="dialog-title"]')?.textContent?.trim() === name
+                && dialog.querySelector('[data-testid="speaker-attributed-transcript"]')
+                  ?.textContent?.includes(speakerId.replace("speaker-", "Speaker "))
+                && dialog.querySelector('[data-testid="speaker-attributed-transcript"]')
+                  ?.textContent?.includes(turnText)
+              ),
+            )
+          ), history.name, firstTurn.speakerId, firstTurn.text);
+        }
         const dialogs = await browser.execute(() => (
           [...document.querySelectorAll('[role="dialog"][data-state="open"]')].map((dialog) => ({
             label: dialog.querySelector('[data-slot="dialog-title"]')?.textContent?.trim() ?? "",
@@ -569,9 +636,50 @@ describe("checked-head private-server ASR gate", () => {
       {
         interval: 250,
         timeout: 15_000,
-        timeoutMsg: "History did not open the verified server-authoritative transcript.",
+        timeoutMsg: meetingProfile
+          ? "History did not render the verified speaker-attributed transcript."
+          : "History did not open the verified server-authoritative transcript.",
       },
     );
+
+    if (meetingProfile) {
+      const speakerIds = new Set(speakerTranscript.turns.map(({ speakerId }) => speakerId));
+      writeExclusivePrivateFile(
+        path.join(evidenceDirectory, "meeting-transcription-vertical.json"),
+        Buffer.from(`${JSON.stringify({
+          schemaVersion: 1,
+          checkedHead,
+          profile,
+          fixtureSha256,
+          fixtureDurationMs: Number(requireEnvironment(
+            "YAP_PRIVATE_SERVER_ASR_GATE_FIXTURE_DURATION_MS",
+          )),
+          clientJobId,
+          clientRoute: createdJob.route,
+          serverOrigin: expectedOrigin,
+          sessionId: result.sessionId,
+          resultRevision: result.revision,
+          resultAuthority: result.authority,
+          resultStatus: result.status,
+          resultArtifactSha256,
+          transcriptBytes: Buffer.byteLength(result.transcript, "utf8"),
+          modelId: expectedModel.modelId,
+          modelRevision: expectedModel.revision,
+          speakerResultRevision: speakerResult.revision,
+          speakerResultArtifactSha256,
+          speakerResultSourceSha256: speakerTranscript.sourceResultSha256,
+          speakerTurnCount: speakerTranscript.turns.length,
+          speakerCount: speakerIds.size,
+          runtimeLockSha256: speakerResult.runtimeLockSha256,
+          completedJobRetiredFromRecoverableQueue,
+          historyOpenedVerifiedResult: true,
+          historyLoadedSpeakerTranscript: true,
+          historyRenderedSpeakerTranscript: true,
+          status: "passed",
+        }, null, 2)}\n`),
+      );
+      return;
+    }
 
     writeExclusivePrivateFile(
       path.join(evidenceDirectory, "native-vertical-slice.json"),
@@ -585,7 +693,7 @@ describe("checked-head private-server ASR gate", () => {
         sessionId: result.sessionId,
         resultRevision: result.revision,
         resultAuthority: result.authority,
-        resultArtifactSha256: createHash("sha256").update(resultBytes).digest("hex"),
+        resultArtifactSha256,
         transcriptBytes: Buffer.byteLength(result.transcript, "utf8"),
         modelProvenance: result.modelProvenance,
         observedStatuses: [...observedStatuses].sort(),
@@ -602,4 +710,150 @@ describe("checked-head private-server ASR gate", () => {
       }, null, 2)}\n`),
     );
   });
+
+  if (process.env.YAP_PRIVATE_SERVER_ASR_GATE_PROFILE === meetingTranscriptionProfile) {
+    it("cancels an active meeting transcription without publishing History", async () => {
+      await browser.tauri.switchWindow("main");
+
+      const checkedHead = requireEnvironment("YAP_CHECKED_HEAD");
+      const evidenceDirectory = requireEnvironment(
+        "YAP_PRIVATE_SERVER_ASR_GATE_EVIDENCE_DIR",
+      );
+      const fixtureSha256 = requireEnvironment(
+        "YAP_PRIVATE_SERVER_ASR_GATE_FIXTURE_SHA256",
+      );
+      const timeoutMs = Number(
+        requireEnvironment("YAP_PRIVATE_SERVER_ASR_GATE_TIMEOUT_MS"),
+      );
+      const catalog = await invoke("server_asr_capabilities");
+      const created = await invoke("recording_jobs_pick_imports", {
+        languageBcp47: "en-US",
+        catalogRevision: catalog.catalogRevision,
+      });
+      expect(created).toHaveLength(1);
+      const createdJob = created[0];
+      expect(createdJob.route).toBe("serverBatch");
+      await confirmMeetingImportLanguage(createdJob.id, "en-US");
+
+      let terminalFailure;
+      let activeRemoteLifecycle;
+      await browser.waitUntil(
+        async () => {
+          const snapshot = await invoke("recording_jobs_snapshot");
+          const job = snapshot.find((candidate) => candidate.id === createdJob.id);
+          if (job && ["failed", "cancelled"].includes(job.status)) {
+            terminalFailure = new Error(
+              `The cancellation candidate reached ${job.status} before active inference.`,
+            );
+            return true;
+          }
+          const history = matchPublishedRemoteHistoryEntry(
+            createdJob,
+            await invoke("history_catalog"),
+          );
+          if (!job && history) {
+            terminalFailure = new Error(
+              "The cancellation candidate completed before active cancellation could be exercised.",
+            );
+            return true;
+          }
+          if (job?.status !== "server_processing") return false;
+          const remoteLifecycle = await invoke(
+            "wdio_recording_job_remote_lifecycle",
+            { jobId: createdJob.id },
+          );
+          if (
+            remoteLifecycle.remoteStatus === "server_processing"
+            && remoteLifecycle.asrStageState === "running"
+          ) {
+            activeRemoteLifecycle = remoteLifecycle;
+            return true;
+          }
+          if (["complete", "partial", "cancelled"].includes(remoteLifecycle.remoteStatus)) {
+            terminalFailure = new Error(
+              `The remote cancellation candidate reached ${remoteLifecycle.remoteStatus} before active inference was observed.`,
+            );
+            return true;
+          }
+          return false;
+        },
+        {
+          interval: 100,
+          timeout: timeoutMs,
+          timeoutMsg: "The meeting cancellation candidate did not enter active inference.",
+        },
+      );
+      if (terminalFailure) throw terminalFailure;
+
+      const cancelled = await invoke("recording_job_cancel", { jobId: createdJob.id });
+      expect(cancelled.status).toBe("cancelled");
+      let cancelledRemoteLifecycle;
+      await browser.waitUntil(
+        async () => {
+          const remoteLifecycle = await invoke(
+            "wdio_recording_job_remote_lifecycle",
+            { jobId: createdJob.id },
+          );
+          if (
+            remoteLifecycle.remoteStatus === "cancelled"
+            && remoteLifecycle.asrStageState === "cancelled"
+            && Number.isSafeInteger(remoteLifecycle.cancellationAcknowledgedAtMs)
+            && remoteLifecycle.cancellationAcknowledgedAtMs > 0
+          ) {
+            cancelledRemoteLifecycle = remoteLifecycle;
+            return true;
+          }
+          return false;
+        },
+        {
+          interval: 100,
+          timeout: timeoutMs,
+          timeoutMsg: "The server did not acknowledge active meeting cancellation and worker cleanup.",
+        },
+      );
+      expect(activeRemoteLifecycle.clientJobId).toBe(createdJob.id);
+      expect(cancelledRemoteLifecycle.clientJobId).toBe(createdJob.id);
+      expect(cancelledRemoteLifecycle.serverJobId).toBe(activeRemoteLifecycle.serverJobId);
+      const stabilityDeadline = Date.now() + 5_000;
+      await browser.waitUntil(
+        async () => {
+          const history = matchPublishedRemoteHistoryEntry(
+            createdJob,
+            await invoke("history_catalog"),
+          );
+          if (history) {
+            throw new Error("The cancelled meeting transcription was published to History.");
+          }
+          return Date.now() >= stabilityDeadline;
+        },
+        {
+          interval: 250,
+          timeout: 6_000,
+          timeoutMsg: "The meeting cancellation did not remain stable.",
+        },
+      );
+
+      writeExclusivePrivateFile(
+        path.join(evidenceDirectory, "meeting-cancellation.json"),
+        Buffer.from(`${JSON.stringify({
+          schemaVersion: 1,
+          checkedHead,
+          profile: meetingTranscriptionProfile,
+          fixtureSha256,
+          clientJobId: createdJob.id,
+          clientRoute: createdJob.route,
+          serverJobId: activeRemoteLifecycle.serverJobId,
+          observedRemoteServerProcessing: true,
+          observedAsrRunning: true,
+          cancelReturnedStatus: cancelled.status,
+          remoteCancellationAcknowledgedAtMs:
+            cancelledRemoteLifecycle.cancellationAcknowledgedAtMs,
+          remoteCancelled: true,
+          asrStageCancelled: true,
+          historyNotPublished: true,
+          status: "passed",
+        }, null, 2)}\n`),
+      );
+    });
+  }
 });

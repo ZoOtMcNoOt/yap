@@ -10,18 +10,7 @@ import stat
 from typing import Callable, Mapping, Sequence
 
 from yap_server.auth import PrincipalKey
-from yap_server.meeting_transcription.contract import MEETING_TRANSCRIPTION_POOL_ID
-from yap_server.meeting_transcription.result_revisions import (
-    MeetingResultAuthority,
-    MeetingResultContext,
-    published_result_fingerprint,
-    validate_speaker_result_revision,
-)
-from yap_server.pools.batch_contract import (
-    AsrRouteResolver,
-    DurableAsrRouting,
-    validate_asr_catalog_revision,
-)
+from yap_server.pools.batch_contract import DurableAsrRouting
 
 from .artifacts import (
     publish_json,
@@ -39,22 +28,18 @@ from .contract_values import (
     mapping,
     utc_timestamp,
 )
-from .intake_contract import (
-    selected_batch_mode,
-    selected_language,
-    validate_create_request,
-)
-from .ownership import (
-    DEVELOPMENT_JOB_OWNER,
-    LEGACY_UNOWNED_JOB_OWNER,
-    idempotency_owner_key,
+from .intake_contract import validate_create_request
+from .ownership import idempotency_owner_key
+from .result_bundle import (
+    ResultBundleAdapterRegistry,
+    result_bundle_fingerprint,
 )
 from .result_contract import (
     capture_duration_ms,
     validate_persisted_projection,
     validate_result_revision,
 )
-from .state_schema import persisted_state_metadata
+from .state_schema import PERSISTED_JOB_STATE_SCHEMA_VERSION, persisted_state_metadata
 from .stage_attempts import canonical_json_sha256, finish_stage, validate_stage_attempts
 
 
@@ -119,21 +104,16 @@ class RecordingJobStore:
         supported_languages: Sequence[str],
         now: Callable[[], str],
         startup_worker_cleanup_verified: bool,
-        route_resolver: AsrRouteResolver,
-        asr_catalog_revision: str,
-        legacy_owner: PrincipalKey | None = DEVELOPMENT_JOB_OWNER,
-        meeting_result_authority: MeetingResultAuthority | None = None,
+        result_bundle_adapters: ResultBundleAdapterRegistry | None = None,
     ) -> None:
         self.root = storage_root.resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         self._supported_languages = frozenset(supported_languages)
         self._now = now
         self._startup_worker_cleanup_verified = startup_worker_cleanup_verified
-        self._route_resolver = route_resolver
-        self._legacy_owner = legacy_owner
-        self._meeting_result_authority = meeting_result_authority
-        validate_asr_catalog_revision(asr_catalog_revision)
-        self._asr_catalog_revision = asr_catalog_revision
+        self._result_bundle_adapters = (
+            result_bundle_adapters or ResultBundleAdapterRegistry()
+        )
 
     def load(self) -> DurableJobState:
         state = DurableJobState()
@@ -341,7 +321,7 @@ class RecordingJobStore:
         publish_json(
             self.root / "jobs" / job_id / "state.json",
             {
-                "schemaVersion": 6,
+                "schemaVersion": PERSISTED_JOB_STATE_SCHEMA_VERSION,
                 "owner": {
                     "tenantId": state.owners[job_id].tenant_id,
                     "subjectId": state.owners[job_id].subject_id,
@@ -447,16 +427,7 @@ class RecordingJobStore:
         if _JOB_DIRECTORY.fullmatch(job_id) is None:
             raise ValueError("job storage contains an invalid job directory")
         persisted = read_json_file(job_root / "state.json")
-        (
-            schema_version,
-            persisted_owner,
-            create_idempotency_key,
-            cancellation_requested,
-            persisted_asr_routing,
-            stage_history_complete,
-            stage_attempts,
-            projection_revision,
-        ) = persisted_state_metadata(persisted)
+        metadata = persisted_state_metadata(persisted)
         creation = mapping(persisted.get("creation"), "persisted creation")
         validate_create_request(
             creation,
@@ -466,51 +437,27 @@ class RecordingJobStore:
         projection = dict(mapping(persisted.get("projection"), "persisted projection"))
         validate_persisted_projection(job_id, creation, projection)
         status = projection.get("status")
-        migration_needed = schema_version < 6
-        owner = (
-            persisted_owner
-            if persisted_owner is not None
-            else self._legacy_owner or LEGACY_UNOWNED_JOB_OWNER
+        asr_routing = (
+            None
+            if metadata.asr_routing is None
+            else DurableAsrRouting.from_persisted(metadata.asr_routing)
         )
-        if persisted_owner is None and self._legacy_owner is None:
-            self._quarantine_legacy_owner(job_id, projection)
-            status = projection.get("status")
-        requires_worker_cleanup = False
-        legacy_processing_without_route = False
-        if schema_version in {4, 5, 6}:
-            asr_routing = (
-                None
-                if persisted_asr_routing is None
-                else DurableAsrRouting.from_persisted(persisted_asr_routing)
-            )
-            if asr_routing is None and status not in {
-                "cancelled",
-                "complete",
-                "failed",
-                "partial",
-            }:
-                raise ValueError("active persisted job is missing frozen ASR routing")
-            if asr_routing is not None:
-                declared_catalog_revision = creation.get("asrCatalogRevision")
-                if (
-                    declared_catalog_revision is not None
-                    and declared_catalog_revision != asr_routing.asr_catalog_revision
-                ):
-                    raise ValueError(
-                        "persisted creation catalog revision differs from frozen routing"
-                    )
-        elif status in {"accepted", "uploading"}:
-            try:
-                asr_routing = self._freeze_legacy_routing(creation)
-            except (RuntimeError, ValueError):
-                asr_routing = None
-                self._quarantine_legacy_route(job_id, projection)
-        elif status == "server_processing":
-            asr_routing = None
-            requires_worker_cleanup = True
-            legacy_processing_without_route = True
-        else:
-            asr_routing = None
+        if asr_routing is None and status not in {
+            "cancelled",
+            "complete",
+            "failed",
+            "partial",
+        }:
+            raise ValueError("active persisted job is missing frozen ASR routing")
+        if asr_routing is not None:
+            declared_catalog_revision = creation.get("asrCatalogRevision")
+            if (
+                declared_catalog_revision is not None
+                and declared_catalog_revision != asr_routing.asr_catalog_revision
+            ):
+                raise ValueError(
+                    "persisted creation catalog revision differs from frozen routing"
+                )
         chunks_root = job_root / "chunks"
         if chunks_root.is_symlink() or not chunks_root.is_dir():
             raise ValueError("persisted chunk storage is unsafe")
@@ -519,14 +466,17 @@ class RecordingJobStore:
             raise ValueError("persisted receipts must be an array")
         state.requests[job_id] = deepcopy(dict(creation))
         state.jobs[job_id] = projection
-        state.owners[job_id] = owner
+        state.owners[job_id] = metadata.owner
         state.asr_routing[job_id] = asr_routing
-        state.stage_history_complete[job_id] = stage_history_complete
-        state.stage_attempts[job_id] = stage_attempts
-        state.projection_revisions[job_id] = projection_revision
-        state.create_keys[job_id] = create_idempotency_key
-        if create_idempotency_key is not None:
-            owner_key = idempotency_owner_key(owner, create_idempotency_key)
+        state.stage_history_complete[job_id] = metadata.stage_history_complete
+        state.stage_attempts[job_id] = metadata.stage_attempts
+        state.projection_revisions[job_id] = metadata.projection_revision
+        state.create_keys[job_id] = metadata.create_idempotency_key
+        if metadata.create_idempotency_key is not None:
+            owner_key = idempotency_owner_key(
+                metadata.owner,
+                metadata.create_idempotency_key,
+            )
             if owner_key in state.created_by_key:
                 raise ValueError("persisted create idempotency key is duplicated")
             state.created_by_key[owner_key] = job_id
@@ -537,64 +487,8 @@ class RecordingJobStore:
             job_id,
             job_root,
             projection,
-            cancellation_requested,
-            requires_worker_cleanup=requires_worker_cleanup,
-            legacy_processing_without_route=legacy_processing_without_route,
+            metadata.cancellation_requested,
         )
-        if migration_needed:
-            self.persist(state, job_id)
-
-    def _quarantine_legacy_owner(
-        self,
-        job_id: str,
-        projection: dict[str, object],
-    ) -> None:
-        if projection.get("status") in {"cancelled", "complete", "failed", "partial"}:
-            return
-        projection["status"] = "failed"
-        projection["updatedAtUtc"] = self._now()
-        projection["error"] = {
-            "code": "OWNER_UNRECOVERABLE",
-            "message": "The persisted job has no authenticated owner.",
-            "retryable": False,
-            "requestId": f"job-{job_id}",
-        }
-
-    def _freeze_legacy_routing(
-        self,
-        creation: Mapping[str, object],
-    ) -> DurableAsrRouting:
-        declared_catalog_revision = creation.get("asrCatalogRevision")
-        if (
-            declared_catalog_revision is not None
-            and declared_catalog_revision != self._asr_catalog_revision
-        ):
-            raise ValueError("legacy job declared a different ASR catalog revision")
-        language_bcp47 = selected_language(
-            creation,
-            self._supported_languages,
-        )
-        route = self._route_resolver(language_bcp47)
-        if route.execution_mode != selected_batch_mode(creation):
-            raise ValueError("legacy ASR route mode differs from its language decision")
-        return DurableAsrRouting(
-            route=route,
-            asr_catalog_revision=self._asr_catalog_revision,
-        )
-
-    def _quarantine_legacy_route(
-        self,
-        job_id: str,
-        projection: dict[str, object],
-    ) -> None:
-        projection["status"] = "failed"
-        projection["updatedAtUtc"] = self._now()
-        projection["error"] = {
-            "code": "ASR_ROUTE_UNRECOVERABLE",
-            "message": "The persisted ASR route could not be recovered safely.",
-            "retryable": False,
-            "requestId": f"job-{job_id}",
-        }
 
     def _load_receipt(
         self,
@@ -655,9 +549,6 @@ class RecordingJobStore:
         job_root: Path,
         projection: dict[str, object],
         cancellation_requested: bool,
-        *,
-        requires_worker_cleanup: bool = False,
-        legacy_processing_without_route: bool = False,
     ) -> None:
         status = projection.get("status")
         if status not in JOB_STATUSES:
@@ -673,7 +564,6 @@ class RecordingJobStore:
             cancellation_requested
             or status == "server_processing"
             or cleanup_was_unverified
-            or requires_worker_cleanup
         ) and not self._startup_worker_cleanup_verified:
             raise ValueError("persisted worker state requires verified startup cleanup")
         if cancellation_requested and status != "cancelled":
@@ -686,23 +576,7 @@ class RecordingJobStore:
             else:
                 self.purge_private_audio(state, job_id)
             return
-        result_path = job_root / "result-revision.json"
-        if legacy_processing_without_route and result_path.exists():
-            result_metadata = result_path.lstat()
-            if stat.S_ISLNK(result_metadata.st_mode) or not stat.S_ISREG(
-                result_metadata.st_mode
-            ):
-                raise ValueError("persisted result artifact is unsafe")
-        try:
-            status = self._load_result(state, job_id, job_root, projection, status)
-        except ValueError:
-            if not legacy_processing_without_route:
-                raise
-            self._quarantine_legacy_route(job_id, projection)
-            status = "failed"
-        if legacy_processing_without_route and status == "server_processing":
-            self._quarantine_legacy_route(job_id, projection)
-            status = "failed"
+        status = self._load_result(state, job_id, job_root, projection, status)
         if status == "cancelled":
             state.cancelled.add(job_id)
             if not retention_expired:
@@ -758,13 +632,17 @@ class RecordingJobStore:
         result_path = job_root / "result-revision.json"
         speaker_result_path = job_root / "speaker-result-revision.json"
         routing = state.asr_routing[job_id]
-        is_meeting_result = (
-            routing is not None
-            and routing.route.pool_id == MEETING_TRANSCRIPTION_POOL_ID
+        adapter = (
+            None
+            if routing is None
+            else self._result_bundle_adapters.for_route(routing.route)
+        )
+        requires_speaker_result = (
+            adapter is not None and adapter.requires_speaker_result
         )
         if not result_path.exists():
             if speaker_result_path.exists():
-                if is_meeting_result and status in {
+                if requires_speaker_result and status in {
                     "server_processing",
                     "failed",
                     "cancelled",
@@ -795,37 +673,25 @@ class RecordingJobStore:
         has_speaker_result = speaker_result_path.exists()
         if declares_speaker_result != has_speaker_result:
             raise ValueError("persisted joint result aggregate is incomplete")
-        if declares_speaker_result != is_meeting_result:
+        if declares_speaker_result != requires_speaker_result:
             raise ValueError("persisted speaker result differs from the frozen route")
         if status in {"complete", "partial"} and result.get("status") != status:
             raise ValueError("persisted result status differs")
         speaker_result: dict[str, object] | None = None
-        if is_meeting_result:
-            authority = self._meeting_result_authority
-            if authority is None or routing is None:
-                raise ValueError("meeting result authority is unavailable")
-            if (
-                routing.route.provider_id != "tiron"
-                or routing.route.execution_mode != "fixedBatch"
-                or routing.route.model_revision != authority.provenance.model.revision
-            ):
-                raise ValueError("meeting result route differs from its authority")
-            language = mapping(result.get("language"), "meeting result language")
+        if has_speaker_result:
             speaker_result = dict(read_json_file(speaker_result_path))
-            context = MeetingResultContext.from_job(
+        if adapter is not None:
+            if routing is None:
+                raise ValueError("adapted result has no frozen route")
+            adapter.validate_persisted_result_bundle(
+                result,
+                speaker_result,
                 projection=projection,
                 creation=state.requests[job_id],
-                created_at_utc=str(result.get("createdAtUtc")),
-                language_bcp47=str(language.get("languageBcp47")),
-                provider_language=routing.route.provider_language,
+                route=routing.route,
                 maximum_end_ms=capture_duration_ms(state.requests[job_id]),
             )
-            validate_speaker_result_revision(
-                speaker_result,
-                transcript_result=result,
-                context=context,
-                authority=authority,
-            )
+        if speaker_result is not None:
             state.speaker_results[job_id] = speaker_result
         state.results[job_id] = result
         if status == "server_processing":
@@ -868,7 +734,7 @@ class RecordingJobStore:
             completed_at_utc=str(result["createdAtUtc"]),
             retryable=False,
             output_fingerprint_sha256=canonical_json_sha256(
-                published_result_fingerprint(result, speaker_result)
+                result_bundle_fingerprint(result, speaker_result)
             ),
             evidence={
                 "resultRevision": result["revision"],

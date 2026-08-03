@@ -202,12 +202,6 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             state_path = job_root / "state.json"
             state = json.loads(state_path.read_text(encoding="utf-8"))
             state["projection"]["status"] = "server_processing"
-            state["schemaVersion"] = 3
-            del state["owner"]
-            del state["asrRouting"]
-            del state["stageHistoryComplete"]
-            del state["stageAttempts"]
-            del state["projectionRevision"]
             state_path.write_text(
                 json.dumps(state, separators=(",", ":")) + "\n",
                 encoding="utf-8",
@@ -226,8 +220,8 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             persisted = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(persisted["projection"]["status"], "complete")
             self.assertEqual(persisted["schemaVersion"], 6)
-            self.assertFalse(persisted["stageHistoryComplete"])
-            self.assertIsNone(persisted["asrRouting"])
+            self.assertTrue(persisted["stageHistoryComplete"])
+            self.assertIsNotNone(persisted["asrRouting"])
 
     def test_restart_rejects_speaker_companions_that_disagree_with_artifact_or_route(
         self,
@@ -290,14 +284,6 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
             cancelled = service.cancel(created["jobId"])
             job_root = root / "jobs" / created["jobId"]
             state_path = job_root / "state.json"
-            legacy = json.loads(state_path.read_text(encoding="utf-8"))
-            legacy["schemaVersion"] = 3
-            del legacy["owner"]
-            del legacy["asrRouting"]
-            del legacy["stageHistoryComplete"]
-            del legacy["stageAttempts"]
-            del legacy["projectionRevision"]
-            state_path.write_text(json.dumps(legacy), encoding="utf-8")
             result_path = job_root / "result-revision.json"
             result_path.write_text(
                 json.dumps(_published_result(created), separators=(",", ":")) + "\n",
@@ -314,54 +300,13 @@ class RecordingJobResultRecoveryTests(unittest.TestCase):
 
             self.assertEqual(restarted.get(created["jobId"]), cancelled)
             self.assertFalse(result_path.exists())
-            migrated = json.loads(state_path.read_text(encoding="utf-8"))
-            self.assertEqual(migrated["schemaVersion"], 6)
-            self.assertFalse(migrated["stageHistoryComplete"])
-            self.assertIsNone(migrated["asrRouting"])
+            persisted = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(persisted["schemaVersion"], 6)
+            self.assertTrue(persisted["stageHistoryComplete"])
+            self.assertIsNotNone(persisted["asrRouting"])
             with self.assertRaises(JobServiceError) as unavailable:
                 restarted.get_result(created["jobId"])
             self.assertEqual(unavailable.exception.code, "RESULT_NOT_READY")
-
-    def test_invalid_legacy_processing_result_is_quarantined_after_cleanup(
-        self,
-    ) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            service = RecordingJobService(
-                root,
-                processor=_Processor(),
-                supported_languages=("en",),
-                now=lambda: "2026-07-14T21:24:00Z",
-            )
-            created = service.create(_create_request())
-            job_root = root / "jobs" / created["jobId"]
-            state_path = job_root / "state.json"
-            legacy = json.loads(state_path.read_text(encoding="utf-8"))
-            legacy["schemaVersion"] = 3
-            del legacy["owner"]
-            legacy["projection"]["status"] = "server_processing"
-            del legacy["asrRouting"]
-            del legacy["stageHistoryComplete"]
-            del legacy["stageAttempts"]
-            del legacy["projectionRevision"]
-            state_path.write_text(json.dumps(legacy), encoding="utf-8")
-            (job_root / "result-revision.json").write_text(
-                "{not-json}\n",
-                encoding="utf-8",
-            )
-
-            restarted = RecordingJobService(
-                root,
-                processor=_Processor(),
-                supported_languages=("en",),
-                now=lambda: "2026-07-14T21:25:00Z",
-                startup_worker_cleanup_verified=True,
-            )
-
-            failed = restarted.get(created["jobId"])
-            self.assertEqual(failed["status"], "failed")
-            self.assertEqual(failed["error"]["code"], "ASR_ROUTE_UNRECOVERABLE")
-            self.assertFalse((job_root / "result-revision.json").exists())
 
     def test_cancelled_result_publication_removes_the_uncommitted_result(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

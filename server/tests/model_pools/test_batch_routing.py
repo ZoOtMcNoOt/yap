@@ -46,7 +46,9 @@ def _job(job_id: str, route: AsrRouteDecision) -> BatchAsrJob:
         language="und" if dynamic else "en",
         input_sha256=AUDIO_SHA256,
         route=route,
-        utterance_plan_path=(Path(f"{job_id}-utterance-plan.json") if dynamic else None),
+        utterance_plan_path=(
+            Path(f"{job_id}-utterance-plan.json") if dynamic else None
+        ),
         utterance_plan_sha256=("d" * 64 if dynamic else None),
     )
 
@@ -145,9 +147,7 @@ class AsrRouteDecisionTests(unittest.TestCase):
         self.assertEqual(DurableAsrRouting.from_persisted(persisted), routing)
         self.assertEqual(persisted["route"], routing.route.to_persisted())
         with self.assertRaises(ValueError):
-            DurableAsrRouting.from_persisted(
-                {"asrCatalogRevision": CATALOG_REVISION}
-            )
+            DurableAsrRouting.from_persisted({"asrCatalogRevision": CATALOG_REVISION})
 
     def test_fixed_job_language_must_match_its_provider_route(self) -> None:
         with self.assertRaisesRegex(ValueError, "route language"):
@@ -190,9 +190,7 @@ class ProviderBatchWorkerRegistryTests(unittest.TestCase):
         probe = _ConcurrencyProbe()
         cohere = _ProviderWorker("cohere", probe)
         nemotron = _ProviderWorker("nemotron", probe)
-        registry = ProviderBatchWorkerRegistry(
-            {"cohere": cohere, "nemotron": nemotron}
-        )
+        registry = ProviderBatchWorkerRegistry({"cohere": cohere, "nemotron": nemotron})
         pool = BatchAsrPool(
             registry,
             route_resolver=lambda provider_language: _route(
@@ -248,6 +246,16 @@ class ProviderBatchWorkerRegistryTests(unittest.TestCase):
                 )
         finally:
             registry.close()
+
+    def test_registry_requires_owned_worker_cleanup(self) -> None:
+        class RunOnlyWorker:
+            def run(self, job: object, cancellation: object) -> dict[str, object]:
+                return {}
+
+        with self.assertRaisesRegex(ValueError, "run and close"):
+            ProviderBatchWorkerRegistry(
+                {"cohere": RunOnlyWorker()},  # type: ignore[dict-item]
+            )
 
 
 if __name__ == "__main__":

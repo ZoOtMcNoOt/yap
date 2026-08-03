@@ -375,9 +375,10 @@ describe("Yap desktop shell", () => {
       writeFileSync(
         path.join(appDataRoot, "server-settings.json"),
         `${JSON.stringify({
-          schemaVersion: 1,
+          schemaVersion: 2,
           enabled: true,
           baseUrl: capabilityFixture.baseUrl,
+          authentication: null,
         }, null, 2)}\n`,
         { encoding: "utf8", flag: "wx" },
       );

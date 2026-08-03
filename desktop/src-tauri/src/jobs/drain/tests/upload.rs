@@ -622,12 +622,14 @@ fn stale_lease_is_rejected_before_create_upload_or_processing_dispatch() {
         ledger
             .mark_remote_job_committed("job-stale-pre-dispatch", 1_720_000_000_600)
             .unwrap();
+        let publication_gate = std::sync::Mutex::new(());
         let processing_error = advance_processing_once_guarded(
             &ledger,
             &remote_jobs,
             &client,
             1_720_000_000_700,
             &BatchCommitGuard::StaleForTest,
+            &publication_gate,
         )
         .await
         .unwrap_err();

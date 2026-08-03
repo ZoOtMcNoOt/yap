@@ -8,10 +8,8 @@ from .contract_values import exact_keys, integer_between, mapping, valid_sha256
 
 # 2 adds normalization.decodedFrom, recording that the admitted canonical
 # source was decoded from a compressed import rather than copied from an
-# already-canonical file. 1 stays readable because evidence is persisted in job
-# state, so refusing it would strand jobs created before the upgrade.
+# already-canonical file.
 PREPROCESSING_EVIDENCE_SCHEMA_VERSION = 2
-SUPPORTED_PREPROCESSING_EVIDENCE_SCHEMA_VERSIONS = frozenset({1, 2})
 
 _NORMALIZATION_REVISIONS = {
     "canonical_pcm16_identity": "canonical-pcm16-normalization-v1",
@@ -19,7 +17,7 @@ _NORMALIZATION_REVISIONS = {
 }
 
 
-def _normalization_provenance_valid(normalization: dict, schema_version: int) -> bool:
+def _normalization_provenance_valid(normalization: dict) -> bool:
     """Each method owns one revision, and decodedFrom must agree with it.
 
     A decoded import must say so, and an identity copy must not claim it, so the
@@ -28,11 +26,11 @@ def _normalization_provenance_valid(normalization: dict, schema_version: int) ->
     method = normalization.get("method")
     if _NORMALIZATION_REVISIONS.get(method) != normalization.get("componentRevision"):
         return False
-    decoded = normalization.get("decodedFrom")
-    if schema_version < 2 and (decoded is not None or method != "canonical_pcm16_identity"):
-        return False
     if method == "canonical_pcm16_identity":
-        return decoded is None
+        return "decodedFrom" not in normalization
+    if "decodedFrom" not in normalization:
+        return False
+    decoded = normalization["decodedFrom"]
     if not isinstance(decoded, dict):
         return False
     exact_keys(
@@ -48,6 +46,7 @@ def _normalization_provenance_valid(normalization: dict, schema_version: int) ->
         and integer_between(decoded.get("channels"), 1, 8)
         and integer_between(decoded.get("frameCount"), 1, 2**53)
     )
+
 
 SAMPLE_RATE_HZ = 16_000
 SAMPLES_PER_MILLISECOND = SAMPLE_RATE_HZ // 1_000
@@ -71,7 +70,11 @@ def validate_preprocessing_evidence(
         "preprocessingEvidence",
     )
     schema_version = evidence.get("schemaVersion")
-    if schema_version not in SUPPORTED_PREPROCESSING_EVIDENCE_SCHEMA_VERSIONS:
+    if not integer_between(
+        schema_version,
+        PREPROCESSING_EVIDENCE_SCHEMA_VERSION,
+        PREPROCESSING_EVIDENCE_SCHEMA_VERSION,
+    ):
         raise ValueError("unsupported preprocessing evidence schema")
     encoded = json.dumps(
         evidence,
@@ -85,7 +88,6 @@ def validate_preprocessing_evidence(
     source_sample_count = _validate_normalization(
         evidence.get("normalization"),
         output_sample_count=output_sample_count,
-        schema_version=schema_version,
     )
     _validate_vad(
         evidence.get("vad"),
@@ -97,7 +99,6 @@ def _validate_normalization(
     value: object,
     *,
     output_sample_count: int,
-    schema_version: int,
 ) -> int:
     normalization = mapping(value, "preprocessingEvidence.normalization")
     exact_keys(
@@ -129,7 +130,7 @@ def _validate_normalization(
     if (
         normalization.get("status") != "complete"
         or normalization.get("componentId") != "yap-imported-audio-normalizer"
-        or not _normalization_provenance_valid(normalization, schema_version)
+        or not _normalization_provenance_valid(normalization)
         or not valid_sha256(normalization.get("inputSourceSha256"))
         or not valid_sha256(normalization.get("sourcePcmSha256"))
         or not valid_sha256(normalization.get("outputPcmSha256"))

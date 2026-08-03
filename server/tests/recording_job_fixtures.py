@@ -148,6 +148,7 @@ def _recording_job_request(
             "languageBcp47": "en-US",
             "disposition": "primary",
         },
+        "asrCatalogRevision": TEST_ASR_CATALOG_REVISION,
         "tracks": [
             {
                 "trackId": track_id,
@@ -159,10 +160,52 @@ def _recording_job_request(
         ],
         "route": "server_batch",
         "captureManifest": {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "sessionId": session_id,
             "sha256": "a" * 64,
             "byteLength": 4096,
+        },
+        "preprocessingEvidence": {
+            "schemaVersion": 2,
+            "normalization": {
+                "status": "complete",
+                "componentId": "yap-imported-audio-normalizer",
+                "componentRevision": "canonical-pcm16-normalization-v1",
+                "method": "canonical_pcm16_identity",
+                "inputSourceSha256": chunk_sha256,
+                "sourcePcmSha256": chunk_sha256,
+                "outputPcmSha256": chunk_sha256,
+                "audioCodec": "pcm_s16le",
+                "sampleRateHz": 16000,
+                "channels": 1,
+                "sourceSampleCount": 160,
+                "outputSampleCount": 160,
+                "paddingSamples": 0,
+                "gainAppliedMilliDb": 0,
+                "samplesModified": 0,
+                "sourceTimePreserved": True,
+            },
+            "vad": {
+                "status": "complete",
+                "component": {
+                    "id": "sherpa-onnx-silero-vad",
+                    "revision": "sherpa-onnx-1.13.4",
+                    "modelId": "k2-fsa/silero_vad.onnx",
+                    "modelRevision": "github-release-asset-271935959",
+                    "artifactSha256": (
+                        "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+                    ),
+                },
+                "sourceSampleCount": 160,
+                "intervals": [
+                    {
+                        "startSample": 0,
+                        "endSampleExclusive": 160,
+                        "startMs": 0,
+                        "endMs": 10,
+                    }
+                ],
+            },
         },
         "chunks": [
             {

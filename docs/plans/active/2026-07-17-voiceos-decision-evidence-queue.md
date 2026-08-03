@@ -38,20 +38,20 @@ observed runtime behavior.
 | --- | --- | --- | --- | --- |
 | D-01 | Replaceable ASR models | Rust-owned job/session contracts and the versioned capability catalog remain stable while Cohere, Nemotron, Qwen, or another provider is replaced behind a worker adapter. No model owns durable job identity or UI state. | Accepted; Phases 6 and 10 | ADR 0014, ADR 0024, Phase 6 plan |
 | D-02 | Python and GPU base | Use Python 3.12 for checked NVIDIA workers. Phase 4/5 Transformers references use the pinned NVIDIA PyTorch 26.06 environment. Cohere's separate Phase 6 candidate uses digest-pinned `nvcr.io/nvidia/vllm:26.06-py3`, whose executable GB10 identity is Python 3.12, NVIDIA Torch 2.13 alpha/CUDA 13.3, and vLLM 0.22.1. Do not drift to Python 3.13/3.14 or mix packages across the two images without a new gate. | Accepted; Phase 6 | ADR 0014, ADR 0025, Phase 6 plan |
-| D-03 | Serving split | Cohere batch uses vLLM, Nemotron retains a Transformers reference and evaluates NeMo for server streaming, SGLang is reserved for compatible agent/LLM reasoning and structured tool output, and Rust owns orchestration, admission, state, cancellation, and validation. Triton is retired from the current ASR plane. | Exact Phase 6 candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed candidate-safety evidence for vLLM and NeMo without promotion. Provider selection remains Phase 8, SGLang Phase 9, and production integration Phase 10. | ADR 0025, roadmap |
+| D-03 | Serving split | Cohere batch uses vLLM, Nemotron retains a Transformers reference and evaluates NeMo for server streaming, SGLang is reserved for compatible agent/LLM reasoning and structured tool output, and Rust owns orchestration, admission, state, cancellation, and validation. Triton is retired from the current ASR plane. | Exact Phase 6 candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed candidate-safety evidence for vLLM and NeMo without promotion. Phase 8 merged a distinct Tiron meeting Preview without selecting a broad replacement; SGLang remains Phase 9 and production integration Phase 10. | ADR 0025, ADR 0027, roadmap |
 | D-04 | GPU versus CPU | ASR performance work belongs on GPU. CPU-only isolation is intentional only for bounded light preprocessing such as Silero VAD and the accepted AmberNet batch suggestion; it is not a plan to run the main server ASR on CPU. | Accepted; Phase 6 | ADR 0024, ADR 0026, Phase 6 plan |
 | D-05 | Concurrent users | Reference-worker concurrency is measured now, including c1/c2/c4/c8, queueing, tail latency, cancellation isolation, memory, and duration buckets. Authenticated multi-owner fairness and production mixed live/batch capacity require Phase 7 identity and the Phase 10 service gate. | Accepted split; Phases 6, 7, and 10 | ADR 0023, ADR 0024, roadmap |
-| D-06 | Fixed live language | Setup/Settings owns one confirmed primary locale. Local Nemotron applies that exact supported locale to native stream creation and reset; unsupported locales fail visibly. It never silently falls back to English or automatic detection. | Implemented on the active Phase 6 branch; exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the complete local/private gate. | ADR 0024, current architecture |
+| D-06 | Fixed live language | Setup/Settings owns one confirmed primary locale. Local Nemotron applies that exact supported locale to native stream creation and reset; unsupported locales fail visibly. It never silently falls back to English or automatic detection. | Implemented and merged in Phase 6; exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the complete local/private gate. | ADR 0024, current architecture |
 | D-07 | Local dynamic language detection | Phase 6 must add one bounded acoustic-LID model that remains resident while local live inference is warm/active, automatic offline switching, and within-utterance source-time language spans. `LiveRuntime` remains the sole lifecycle owner and continues to use one local Nemotron ASR; the LID component owns evidence only, not transcript, capture, or durable state. Initial selection and sustained switching use the accepted three-observation, `0.40`-margin policy over the confirmed primary plus explicit alternates. Current selection is restricted to immutable released checkpoints. | Accepted bounded candidate implemented with AmberNet 1.12.0 QDQ INT8 as an explicit, default-off Preview. The representative natural-switch quality target completed and failed. Exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed current-host resource/interference, lifecycle safety, short-boundary, UI, and complete-matrix gates. Low-end physical battery/thermal certification moves to default-on or Phase 10 release qualification. Removing Preview requires new independent quality evidence. | ADR 0019 amendment, ADR 0024, dynamic-language evaluation |
 | D-08 | Server language detection | AmberNet 1.12.0 INT8 QDQ is the verify-only, CPU-isolated, user-confirmed suggestion for longer fixed-language imports. It samples five strict source-stratified six-second regions and abstains unless all five agree. Server Nemotron automatic tags execute separately as finalized-utterance evidence. The shared versioned span contract distinguishes `clientDecision` from `serverUtterance`, binds server spans to the model/utterance plan, and links text fragments without claiming terminal tags are within-utterance language diarization. | Exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the source-exact ARM64 production-worker, connected five-window route, and complete Phase 6 gates. Representative suggestion quality remains unpromoted and is not a Phase 6 product claim because the path requires confirmation and fails visibly to manual selection. | ADR 0024, ADR 0026 |
 | D-09 | Global language coverage | Advertise only exact out-of-box, benchmarked locales. Nemotron's eight adaptation-ready locales are not planned capabilities. Broad coverage remains visibly lower-confidence until locale-specific evidence promotes it. | Accepted; Phase 6 | ADR 0024 |
 | D-10 | Client/server preprocessing | The client owns capture/source admission, deterministic normalization, source identity, optional advisory VAD, bounded local acoustic LID, source-time language spans, and durable client evidence. The server owns heavyweight verification, ASR, alignment, and official result production. Redundant server validation may reconcile or reject evidence but must not create a second client-state authority or erase client history. | Accepted boundary; Phase 6 | ADR 0020, ADR 0024, current architecture |
 | D-11 | Terminology | Present terminology under Dictation/Personalization, but store it in one model-independent terminology domain. Compile one versioned session snapshot into ASR hints/context first, deterministic casing/acronym normalization second, grammar-SLM preservation constraints third, and later OKF glossary projections. The SLM must not be the source of truth or reconstruct terms lost during decoding. | Boundary accepted; schema, scope, privacy, and delivery phase remain open | Section below; Phase 9 ADR amendment required before implementation |
-| D-12 | Evaluation coverage | Separate natural transcript quality from deterministic runtime-duration/load tests. Phase 6 keeps deterministic local quick-correction speech/transcription boundaries, one unattended 30-second default-microphone/rendered-UI lifecycle smoke under an isolated no-server profile, model-neutral custody/lifecycle checks, and one contract smoke for the currently advertised Cohere `en-US` route. Longer manual physical-device and multi-hour real-time Preview runs plus broad provider natural-quality, accent, terminology, future-locale, long-batch, multi-speaker, overlap, speaker-attributed, and virtual-meeting campaigns activate with default-on/Phase 10 release qualification or the Phase 8 Tiron/fallback selection gate as appropriate. | Accepted proportional split; one exact-source AMI close/far long-meeting diagnostic and exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the current-host local, resident-provider candidate-safety, advertised-route, and complete Phase 6 gates without creating a promotion claim. Broad provider and meeting promotion belongs to Phase 8. | ASR evaluation corpus and runtime qualification; ADR 0027 |
+| D-12 | Evaluation coverage | Separate natural transcript quality from deterministic runtime-duration/load tests. Phase 6 keeps deterministic local quick-correction speech/transcription boundaries, one unattended 30-second default-microphone/rendered-UI lifecycle smoke under an isolated no-server profile, model-neutral custody/lifecycle checks, and one contract smoke for the currently advertised Cohere `en-US` route. Longer manual physical-device and multi-hour real-time Preview runs plus broad provider natural-quality, accent, terminology, future-locale, long-batch, multi-speaker, overlap, speaker-attributed, and virtual-meeting campaigns activate with default-on/Phase 10 release qualification or a later Tiron/fallback promotion gate as appropriate. | Accepted proportional split; one exact-source AMI close/far long-meeting diagnostic and exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the current-host local, resident-provider candidate-safety, advertised-route, and complete Phase 6 gates without creating a promotion claim. Phase 8 merged the Tiron meeting Preview; broad provider and meeting promotion remains unproven later work. | ASR evaluation corpus and runtime qualification; ADR 0027 |
 | D-13 | Training/test exposure | Public corpora named in a model's training or evaluation are comparators, not independent promotion evidence. Use provenance locks, exposure classification, sealed post-freeze adjudicated holdouts, and exact audio/reference hashes. | Accepted; Phase 6 and later release gates | ASR evaluation corpus and runtime qualification |
-| D-14 | Model challengers | Retain Cohere and Nemotron as separate checked candidates without a universal quality label. The focused AMI comparator favored Nemotron lexical accuracy and Cohere throughput/punctuation for one meeting, so the frozen locale/workload gates—not family labels—must select routes. Do not expand Cohere solely to populate the language picker. Phase 8 will determine whether pinned Tiron earns a narrow meeting route, a broader batch-provider replacement, or neither; Qwen3-ASR-1.7B, VibeVoice, Riva/NIM, and other challengers still require their own later review. | Tiron now executes only as an explicitly enabled, disabled-by-default Preview meeting candidate; it remains unpromoted while Phase 6 provider contracts and the default catalog stay unchanged | ADR 0027, dynamic-language evaluation, later roadmap |
+| D-14 | Model challengers | Retain Cohere and Nemotron as separate checked candidates without a universal quality label. The focused AMI comparator favored Nemotron lexical accuracy and Cohere throughput/punctuation for one meeting, so the frozen locale/workload gates—not family labels—must select routes. Do not expand Cohere solely to populate the language picker. Phase 8 established pinned Tiron only as a narrow meeting Preview; a broader batch-provider replacement and Qwen3-ASR-1.7B, VibeVoice, Riva/NIM, or other challengers still require their own later review. | Tiron executes only as an explicitly enabled, disabled-by-default Preview meeting candidate; it remains unpromoted while Phase 6 provider contracts and the default catalog stay unchanged | ADR 0027, dynamic-language evaluation, later roadmap |
 | D-15 | Quantization | Never promote a local derivative below Q4. Treat Q4 as the most aggressive allowed format, not a blanket replacement for a passing Q8/INT8 or higher-precision artifact. Choose per exact model, target CPU, duration, and quality/latency/memory/battery gate. | Floor accepted; per-provider evidence remains open in Phases 6 and 10 | Phase 6 plan and ADR 0024 |
-| D-16 | NIM/Riva and DGX Spark | A serving product is usable only when its exact model/hardware support matrix and license/deployment contract include DGX Spark. Conflicting marketing/performance data does not override the support matrix. | Deferred challenger; revisit only in its Phase 8 or Phase 10 evidence gate | Phase 5 runtime evaluation, Phase 6 plan |
+| D-16 | NIM/Riva and DGX Spark | A serving product is usable only when its exact model/hardware support matrix and license/deployment contract include DGX Spark. Conflicting marketing/performance data does not override the support matrix. | Deferred challenger; revisit only in a later provider-promotion or Phase 10 evidence gate | Phase 5 runtime evaluation, Phase 6 plan |
 | D-17 | UI fluidity and ownership | Visual polish and motion can change later without replacing the backbone, but there must remain one tray-owned island/window and one state owner per domain. Invisible hit regions, duplicate state, accessibility regressions, or slow hot paths are correctness issues rather than cosmetic debt. | Accepted; focused UX closure in each phase, release polish in Phase 10 | Voice OS architecture, roadmap |
 | D-18 | Maintainability review | Prefer comprehensible modules, explicit domain owners, bounded state machines, focused adversarial/race review, and executable contracts. Do not use a full security-plugin scan as a substitute for code review. | Accepted continuous rule | Checkpoint A evidence, phase plans |
 | D-19 | Security scan cadence | Keep focused correctness/security/dependency/privacy review in every phase. Do not run another full-repository Codex Security plugin scan until Phase 10 unless a concrete new risk requires it. Keep scan artifacts private. | Accepted working rule; full scan Phase 10 | Roadmap working rules and Phase 10 queue |
@@ -366,10 +366,11 @@ selection.
   prove request/result identity, bounded residency/lifecycle/failure behavior,
   and clean teardown. Exact head
   `a21964c19e56648e9fddcb5200de419e59a7687c` passed the composed provider-
-  neutral candidate-safety lifecycle; broad output/quality comparison is Phase
-  8 work against pinned Tiron.
+  neutral candidate-safety lifecycle; broad output/quality comparison remains
+  later promotion work. The merged Phase 8 Tiron meeting Preview did not settle
+  a general replacement decision.
 - [x] Keep representative cold/warm percentiles, throughput comparison, and
-  provider-specific load tuning in the Phase 8 Tiron selection gate. Phase 6
+  provider-specific load tuning in a later explicit promotion gate. Phase 6
   closes only deterministic duration/concurrency safety, cancellation/recovery,
   resource ceilings, and isolation at c1/c2/c4/c8. vLLM owns continuous
   batching; Yap never concatenates or pads audio across requests.
@@ -391,7 +392,8 @@ non-root runtime identity. Receipts remain in owner-restricted evidence outside
 Git. Those smokes preceded the exact-head candidate-safety lifecycle that later
 closed the Phase 6 identity, deterministic duration/concurrency, resource,
 cancellation, failure, and teardown boundary. Representative quality,
-provider-comparative percentiles, rollback, and promotion remain Phase 8 work.
+provider-comparative percentiles, rollback, and promotion remain separate later
+evidence; the merged Phase 8 Tiron meeting Preview did not close them.
 
 #### Retired Triton evidence
 
@@ -447,7 +449,7 @@ resource, and teardown boundaries. It does not promote the resident Cohere or
 Nemotron services and therefore does not consume another Cohere natural-quality
 or long-duration campaign.
 Rights-adjudicated broad natural coverage below remains reusable promotion work
-for whichever provider survives the Phase 8 Tiron comparison; unchecked
+for any provider proposed for broader promotion; unchecked
 promotion-only items do not block retaining the current candidates behind the
 provider-neutral contract.
 
@@ -472,17 +474,18 @@ provider-neutral contract.
   audio, decoded-PCM, case, segment, plan, and suite identities.
 - [x] Separate comparator-only corpora from independent promotion evidence and
   record model training/evaluation exposure.
-- **Phase 8 provider-selection backlog, not a Phase 6 blocker:** add broad
+- **Later provider-promotion backlog, not a Phase 6 blocker:** add broad
   natural single-speaker mumbling, spontaneous dictation, accents, clean/noisy/
   far-field speech, silence/non-speech, terminology, names, numbers, units, and
   unspoken-continuation negatives for Cohere only if it remains a contender and
   for pinned Tiron or any replacement candidate.
 - [x] Route close/far multi-speaker meeting promotion, overlap, speaker-
   attributed scoring, and virtual-meeting codec/jitter/drop transformations to
-  the Phase 8 Tiron/fallback gate under ADR 0027. Retain the completed AMI
-  close/far run as diagnostic provider evidence only; it does not block or
-  create a Phase 6 meeting-quality claim.
-- **Phase 8 provider-selection backlog, not a Phase 6 blocker:** cover every
+  ADR 0027. Phase 8 established the Preview and frozen policy; exact public and
+  private scoring remains later promotion work. Retain the completed AMI close/
+  far run as diagnostic provider evidence only; it does not create a promotion
+  claim.
+- **Later provider-promotion backlog, not a Phase 6 blocker:** cover every
   locale proposed by the selected replacement individually; a macro average
   cannot hide a failed locale or broad-coverage tier. Phase 6 retains only a
   contract/capability smoke for the currently advertised Cohere `en-US` route.
@@ -492,8 +495,8 @@ provider-neutral contract.
   final timing through the `short-boundaries` profile. Permit blank sub-word
   250/500/750-ms cases; require speech-bearing one-second-through-30-second
   cases to produce text. Do not invent phoneme or raw-accuracy evidence without
-  exact timestamped references; score those in the Phase 8 selected-model
-  quality gate. Run one unattended 30-second default-microphone/rendered-UI
+  exact timestamped references; score those in a separate selected-model
+  promotion gate. Run one unattended 30-second default-microphone/rendered-UI
   local-live lifecycle smoke on the current host under the isolated no-server
   profile; keep speech/transcription assertions at the prepared-audio boundary.
   Keep longer manual
@@ -501,9 +504,8 @@ provider-neutral contract.
   release qualification.
 - [x] Include the 30-second unattended local-live lifecycle smoke explicitly in the
   machine-validated Phase 6 matrix. Reuse the existing bounded 30-second,
-  15-minute, two-hour, and supported-maximum server controls only when Phase 8
-  compares Tiron with a surviving provider; do not rerun them merely to polish
-  Cohere.
+  15-minute, two-hour, and supported-maximum server controls only for a later
+  explicit provider comparison; do not rerun them merely to polish Cohere.
 - [x] Exercise c1/c2/c4/c8 compatible and mixed loads, queue/capacity edges,
   restart, retry, cancellation, and teardown.
 - [x] Verify the advertised four-hour boundary at its exact claimed scope, or
@@ -553,7 +555,7 @@ independent promotion claim requires a private out-of-band-pinned registry,
 exact candidate/freeze/exposure artifacts, natural source audio recorded after
 the frozen model where applicable, and a case-bound scoring policy. Phase 6's
 bounded gate fixtures are now locked as recorded above. The broader real rights
-registry and admitted-corpus manifests remain Phase 8 provider-promotion work
+registry and admitted-corpus manifests remain later provider-promotion work
 until their candidate locks, releases, licenses, hashes, and private evidence
 actually exist. Schema support for a condition or suite is not evidence that
 its required natural cases have been admitted or passed.
@@ -582,7 +584,8 @@ Startup retry is limited to typed service unavailability; permanent auth/model/
 runtime mismatches fail immediately. Focused portable and shell-contract checks
 pass. The Cohere lifecycle set intentionally excludes the still-available
 `vllm-long-waves` and `vllm-mixed-eight` promotion comparators because Cohere is
-a replaceable candidate and Phase 8 will compare it with pinned Tiron.
+a replaceable candidate. The merged Phase 8 Tiron meeting Preview did not perform
+or authorize that broad provider comparison.
 
 The exact-head `e7d322fc07c6e1a39e69c2eec4d45e2c94d79e3a` attempt passed
 Cohere readiness, duration, and short-tail c1/c2/c4 isolation, then failed
@@ -625,8 +628,9 @@ identity, and cleanup was exact. The cell repeated one audio input, so lexical
 identity measured model determinism rather than cross-request ownership. The
 Phase 6 standard short/long cells now use `request-lifecycle`: all result,
 identity, completion, concurrency, idle-provider, and teardown requirements
-remain, while lexical variance is recorded for Phase 8's Tiron comparison rather
-than promoted now. A new exact-head run remained open at that point.
+remain, while lexical variance is recorded for a later provider-promotion
+comparison rather than promoted now. A new exact-head run remained open at that
+point.
 
 Exact head `27108e1f591920b5a62496f988ae9ee7b335f2ce` passed the full Cohere
 lifecycle and exact teardown, then NeMo readiness, both duration ladders,
@@ -636,8 +640,8 @@ evidence, but automatic segmentation changed wording and produced zero lexical
 matches. The checker incorrectly made lexical equality part of language-contract
 conformance; cleanup was exact. The renamed
 `nemo-finalized-fixed-auto-contract` cell now gates only the identity-rich
-fixed/automatic language contracts and records text parity for the Phase 8 Tiron
-comparison. Its changed plan identity requires a newly hash-bound private suite
+fixed/automatic language contracts and records text parity for a later explicit
+provider comparison. Its changed plan identity requires a newly hash-bound private suite
 and exact-head rerun.
 
 The subsequent plan-bound reruns exposed and corrected a cumulative native-
@@ -647,7 +651,7 @@ the frozen 256 task/thread ceilings. Exact GB10 head
 vLLM/Nemotron NeMo candidate-safety children and exact teardown. This closes the
 resident-provider Phase 6 component only. Both replaceable providers remain
 unpromoted; representative quality, output determinism, percentiles, rollback,
-and the Cohere-versus-Tiron replacement decision remain Phase 8 work.
+and any Cohere-versus-Tiron replacement decision remain later promotion work.
 
 ### P6-08 — Review UI and model-independent terminology hooks
 
@@ -685,6 +689,12 @@ unimplemented and cannot be claimed by Phase 6.
 
 ### P6-09 — Contract migration and recovery
 
+This subsection is a historical record of the Phase 6 candidate, not the
+current executable contract. The post-Phase-8 maintainability checkpoint
+supersedes its compatibility policy: desktop capture/preprocessing and ledger
+state now accept only their exact current schema identities and reject older
+records without rewriting them.
+
 - [x] Complete backward-readable desktop/server migrations for new language,
   preprocessing, timing, and provider evidence.
 - [x] Prove retries change only the failed stage, never source identity,
@@ -694,7 +704,7 @@ unimplemented and cannot be claimed by Phase 6.
 - [x] Bound retention and delete only verified Yap-owned derivatives; an expired
   confirmed preflight cannot be rebound to changed external source bytes.
 
-Focused verification on 2026-07-20 passed 14 native ledger-migration tests,
+At the Phase 6 gate, focused verification on 2026-07-20 passed 14 native ledger-migration tests,
 29 native legacy-compatibility and app-data recovery tests, 11 native automatic-
 routing persistence tests, and 35 server state/contract/recovery/admission
 tests. Compatible prior records upgrade without replacing source or decisions;
@@ -792,8 +802,14 @@ merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
 The completed
 [tenant-scoped identity and job authorization plan](../completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 governed Phase 7. Phase 7 and its adversarial checkpoint are closed. The focused
-local-first discovery branch is a narrow closure before Phase 8; it does not
-reopen identity scope or authorize enterprise SSO infrastructure.
+local-first discovery closure also merged before Phase 8 and did not reopen
+identity scope or authorize enterprise SSO infrastructure. Phase 8 Preview has
+since merged. Historical maintainability candidate `fb0985e7...` passed before
+documentation successor `e22368fc...` exposed a late high-severity development-
+tool advisory. Patched candidate `393710999...` passed its fresh exact-head
+lifecycle, single complete 18-child matrix, receipt validation, and required CI
+and CodeQL jobs. Final documentation-only hosted closure, disposable-Windows
+NSIS, and PR #143 merge remain before Phase 9.
 
 ## Later-phase queue
 
@@ -815,13 +831,11 @@ reopen identity scope or authorize enterprise SSO infrastructure.
   an all-green rollup. The separate adversarial checkpoint and concrete
   follow-ups are closed.
 
-### Phase 8 — Meeting evidence
+### Phase 8 — Meeting evidence (merged Preview; promotion work deferred)
 
-- Promote licensed multi-speaker/overlap evaluation sets and exact meeting
-  metrics before selecting diarization components.
-- Implement joint multi-speaker ASR as the selected server development baseline
+- [x] Implement joint multi-speaker ASR as the explicit server Preview baseline
   rather than assuming that diarization plus single-speaker ASR is always the
-  best overlap path. The Phase 8 execution set is `Trelis/tiron` revision
+  best overlap path. The merged execution set is `Trelis/tiron` revision
   `90bc0a4d198cd5cf6679b0e478375ba3a0040575`, 3,087,229,512-byte weight
   SHA-256 `2e9f644c5eb633d3c387975cf38677d3ffe1a7b98830a735867865ec1bd519b5`,
   and `TrelisResearch/tiron` runtime revision
@@ -830,18 +844,20 @@ reopen identity scope or authorize enterprise SSO infrastructure.
   thin offline worker now execute without porting the harness pipeline. This is
   feasibility, not production-promotion evidence: training/adaptation lineage
   is undisclosed, published quality evidence is English-only and self-reported,
-  and representative quality/concurrency/lifecycle evidence remains absent.
-- Freeze the messy-meeting manifest and thresholds before model output, then
-  score public AMI/ICSI/NOTSOFAR comparators separately from an independently
-  adjudicated private holdout. Distinguish more-than-15-attendee sessions with
-  a small active subset from 9/16/32-talker cross-epoch sessions; also include
-  one through eight talkers per window, explicit over-capacity pressure,
-  overlap, late arrivals/returns, far-field/noise/virtual transport, locales,
-  duration, and c1/c2/c4/c8 lifecycle/isolation evidence.
-- Add revisioned anonymous speaker evidence, source-time word/speaker
-  intersection, reconciliation, and purpose-authorized naming.
-- Keep audio/transcript authority and user corrections revisioned; do not infer
-  biometric identity from a display name or contact list.
+  and broad representative quality/concurrency/promotion evidence remains
+  absent.
+- [x] Freeze the messy-meeting manifest and thresholds before model output.
+  Exact public AMI/ICSI/NOTSOFAR scoring and an independently adjudicated private
+  holdout remain later promotion work, including attendee/window/epoch pressure,
+  overlap, returns, far-field/noise/virtual transport, locales, duration, and
+  c1/c2/c4/c8 lifecycle/isolation evidence.
+- [x] Publish revisioned source-bound transcript and anonymous-speaker evidence
+  through the existing owner-scoped result authority and native History.
+- [ ] Promote licensed multi-speaker/overlap evidence, exact window-cap behavior,
+  larger-roster speaker epochs, automatic fallback, and purpose-authorized
+  reconciliation/naming before claiming production meeting support.
+- [x] Keep audio/transcript authority and user corrections revisioned; do not
+  infer biometric identity from a display name or contact list.
 
 ### Phase 9 — Terminology, knowledge, and agents
 
@@ -885,7 +901,7 @@ reopen identity scope or authorize enterprise SSO infrastructure.
 
 | ID | Question | Evidence required before closure | Default while open |
 | --- | --- | --- | --- |
-| OQ-01 | Which exact acoustic-LID model and native format should power required local switching? | Immutable released artifact, compatible commercial use and explicit redistribution boundary, exact locale mapping, representative span accuracy and boundary error, packaging, CPU latency, incremental memory/energy, and ASR interference beside Nemotron | **Selected for the Phase 6 candidate:** NVIDIA AmberNet 1.12.0 static QDQ INT8, exact 29,613,392-byte graph and NeMo-compatible native frontend, three observations, `0.40` margin, full-label abstention, and user-selected Nemotron regional locales. The original natural/noisy gate failed; the product owner deliberately accepted that limitation instead of continuing model research. The later frozen holdout and natural product-route evidence remain recorded without retuning: the natural route detected 0/4 required switches, so automatic switching stays explicit, default-off Preview behavior. The artifact remains verified local-import only while NGC redistribution review is open. Exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed current-host resource/interference, lifecycle, short-boundary, UI, production-quit, teardown, and the complete Phase 6 matrix. Hosted CI, CodeQL, and stock-NSIS passed on docs-only review head `cee13f819a85417ea43a3c63e263be85f0570838`; final exact-head read-back and merge remain controlled in PR #67. Low-end battery/thermal certification remains default-on or Phase 10 work. |
+| OQ-01 | Which exact acoustic-LID model and native format should power required local switching? | Immutable released artifact, compatible commercial use and explicit redistribution boundary, exact locale mapping, representative span accuracy and boundary error, packaging, CPU latency, incremental memory/energy, and ASR interference beside Nemotron | **Selected for the Phase 6 candidate:** NVIDIA AmberNet 1.12.0 static QDQ INT8, exact 29,613,392-byte graph and NeMo-compatible native frontend, three observations, `0.40` margin, full-label abstention, and user-selected Nemotron regional locales. The original natural/noisy gate failed; the product owner deliberately accepted that limitation instead of continuing model research. The later frozen holdout and natural product-route evidence remain recorded without retuning: the natural route detected 0/4 required switches, so automatic switching stays explicit, default-off Preview behavior. The artifact remains verified local-import only while NGC redistribution review is open. Exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed current-host resource/interference, lifecycle, short-boundary, UI, production-quit, teardown, and the complete Phase 6 matrix. Hosted CI, CodeQL, and stock-NSIS passed on the reviewed lineage; final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929` merged through PR #67 as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. Low-end battery/thermal certification remains default-on or Phase 10 work. |
 
 The completed AmberNet trial started from original waveform, preserved the
 checkpoint feature configuration and all 107 logits, treated disabled-language
@@ -926,7 +942,7 @@ graph and Rust-native runtime contract enter the desktop dependency graph.
 | OQ-13 | What happens on ambiguity, silence, noise, or an unsupported local language? | False-positive/false-switch limits, unknown-state UX, manual correction, offline behavior, and recovery tests | Hold the current/primary locale, retain `Unknown` evidence, and never guess the nearest supported locale |
 | OQ-14 | Which preprocessing stages execute locally, on the server, or redundantly? | Latency, privacy, offline capability, CPU/GPU cost, source-authority rules, contract size, and conflict/retry evidence | Keep capture, normalization, advisory VAD, and local live LID client-side; keep heavyweight official inference server-side; duplicate only validation with explicit reconciliation |
 | OQ-15 | Which terminology slice belongs in Phase 6 versus Phase 9? | Model-independent schema/authority, privacy/scopes, exact session snapshot, provider hint support, deterministic normalization, SLM preservation, and OKF projection tests | Benchmark hooks and define the seam in Phase 6; defer canonical personal/team/org storage and agents until the approved ADR/phase |
-| OQ-16 | What is the model replacement and rollback contract? | Capability/version migration, immutable artifacts, result provenance, canary/rollback, cached-model cleanup, offline fallback, and backward-readable jobs | Keep durable job/result contracts model-independent and retain the last known-good compatible artifact until replacement passes the full route gate |
+| OQ-16 | What is the model replacement and rollback contract? | Current capability/schema identity, immutable artifacts, result provenance, canary/rollback, cached-model cleanup, offline fallback, and explicit incompatible-state rejection | Keep current job/result contracts model-independent and retain the last known-good current artifact until replacement passes the full route gate |
 | OQ-17 | When is quantization considered a Phase 6 route decision versus a Phase 10 production lock? | Exact-model quality/latency/memory/concurrency/duration comparison plus production capacity and rollback evidence | Select a checked Phase 6 candidate format; defer final fleet-wide capacity lock to Phase 10 |
 | OQ-18 | How do evaluation rights and training exposure affect promotion evidence? | Corpus license/provenance, base/adaptation training lineage, comparator classification, post-freeze holdout, audio/reference hashes, and private handling | Treat known or unknown exposure as comparator-only; promotion requires provenance-locked independent evidence |
 | OQ-19 | How are virtual meetings and system-loopback audio represented without losing source time? | Supported OS capture path, channel/mix identity, codec/jitter/drop fixtures, gaps, privacy, and end-to-end meeting tests | Preserve source/channel/gap evidence; do not simulate supported capture merely with clean concatenated clips |
@@ -955,15 +971,17 @@ graph and Rust-native runtime contract enter the desktop dependency graph.
   from presentation, but correctness/accessibility ownership stays gated now.
 - Adaptation-ready Nemotron languages are excluded rather than advertised as a
   future fine-tuning promise.
-- Tiron is the accepted Phase 8 server development baseline for joint
+- Tiron is the merged Phase 8 server Preview baseline for joint
   speaker-attributed meeting transcription. Production breadth remains an open
   evidence question; public model-card benchmarks alone do not promote it.
 - Phase 6 does not add a second Cohere locale merely to populate the recording-
-  language selector. The control remains catalog-derived, and Phase 8 evidence
-  decides whether Tiron replaces any Cohere batch workload.
-- Automatic offline language switching, one bounded live-session-resident local acoustic-LID
-  model, and within-utterance source-time language spans are required Phase 6
-  outcomes. Their exact candidate and thresholds remain evidence-gated, not
-  deferred to later phases.
+  language selector. The control remains catalog-derived; the merged Tiron
+  meeting Preview does not replace any Cohere batch workload, and any later
+  replacement requires an explicit independent gate.
+- Automatic offline language switching, one bounded live-session-resident local
+  acoustic-LID model, and within-utterance source-time language spans merged as
+  the exact AmberNet candidate and thresholds recorded above. Redistribution,
+  default-on promotion, and low-end physical battery/thermal qualification—not
+  candidate identity or policy—remain open.
 - A full-repository security-plugin scan is deferred to Phase 10; focused review
   and private handling remain mandatory in every phase.

@@ -8,18 +8,11 @@ use crate::language::live_catalog::base_language;
 use super::model::CURRENT_SCHEMA_VERSION;
 
 pub(super) const MAX_ROUTING_PREFERENCE_BYTES: usize = 8 * 1024;
-const LEGACY_SCHEMA_VERSION: u16 = 1;
 const MAX_ENABLED_ALTERNATES: usize = 16;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub(super) struct EnabledAlternateLocales {
     pub(super) locales: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub(super) struct LoadedRoutingPreference {
-    pub(super) locales: Vec<String>,
-    pub(super) requires_rewrite: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
@@ -28,14 +21,6 @@ struct PersistedLiveLanguageRouting {
     schema_version: u16,
     catalog_revision: String,
     enabled_alternate_locales: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct LegacyRegionalLanguageRouting {
-    schema_version: u16,
-    catalog_revision: String,
-    regional_locales: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -56,10 +41,6 @@ pub(super) fn load() -> Result<EnabledAlternateLocales, LiveLanguageRoutingError
     load_from_path(&preference_path())
 }
 
-pub(super) fn load_for_update() -> Result<LoadedRoutingPreference, LiveLanguageRoutingError> {
-    load_for_update_from_path(&preference_path())
-}
-
 pub(super) fn save(
     enabled_alternate_locales: Vec<String>,
 ) -> Result<EnabledAlternateLocales, LiveLanguageRoutingError> {
@@ -69,22 +50,14 @@ pub(super) fn save(
 pub(super) fn load_from_path(
     path: &Path,
 ) -> Result<EnabledAlternateLocales, LiveLanguageRoutingError> {
-    load_for_update_from_path(path).map(|loaded| EnabledAlternateLocales {
-        locales: loaded.locales,
-    })
-}
-
-pub(super) fn load_for_update_from_path(
-    path: &Path,
-) -> Result<LoadedRoutingPreference, LiveLanguageRoutingError> {
     let Some(parent) = path.parent() else {
-        return Ok(LoadedRoutingPreference::default());
+        return Ok(EnabledAlternateLocales::default());
     };
     match std::fs::metadata(parent) {
         Ok(metadata) if metadata.is_dir() => {}
         Ok(_) => return Err(LiveLanguageRoutingError::Access),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(LoadedRoutingPreference::default())
+            return Ok(EnabledAlternateLocales::default())
         }
         Err(_) => return Err(LiveLanguageRoutingError::Access),
     }
@@ -127,48 +100,25 @@ pub(super) fn save_to_path(
 
 fn load_from_path_under_lock(
     path: &Path,
-) -> Result<LoadedRoutingPreference, LiveLanguageRoutingError> {
+) -> Result<EnabledAlternateLocales, LiveLanguageRoutingError> {
     let text = match crate::bounded_file::read_text(path, MAX_ROUTING_PREFERENCE_BYTES) {
         Ok(text) => text,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(LoadedRoutingPreference::default())
+            return Ok(EnabledAlternateLocales::default())
         }
         Err(_) => return Err(LiveLanguageRoutingError::Access),
     };
     let value: serde_json::Value = serde_json::from_str(&text)
         .map_err(|_| LiveLanguageRoutingError::InvalidStoredPreference)?;
-    let schema_version = schema_version(&value)?;
-    let (catalog_revision, locales, requires_rewrite) = match schema_version {
-        CURRENT_SCHEMA_VERSION => {
-            let preference: PersistedLiveLanguageRouting = serde_json::from_value(value)
-                .map_err(|_| LiveLanguageRoutingError::InvalidStoredPreference)?;
-            (
-                preference.catalog_revision,
-                preference.enabled_alternate_locales,
-                false,
-            )
-        }
-        LEGACY_SCHEMA_VERSION => {
-            let preference: LegacyRegionalLanguageRouting = serde_json::from_value(value)
-                .map_err(|_| LiveLanguageRoutingError::InvalidStoredPreference)?;
-            (
-                preference.catalog_revision,
-                preference.regional_locales,
-                true,
-            )
-        }
-        version => {
-            return Err(LiveLanguageRoutingError::IncompatibleSchema(u64::from(
-                version,
-            )))
-        }
-    };
-    if catalog_revision != crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION {
+    ensure_current_schema(&value)?;
+    let preference: PersistedLiveLanguageRouting = serde_json::from_value(value)
+        .map_err(|_| LiveLanguageRoutingError::InvalidStoredPreference)?;
+    if preference.catalog_revision != crate::language::live_catalog::LOCAL_LANGUAGE_ROUTING_REVISION
+    {
         return Err(LiveLanguageRoutingError::StaleCatalog);
     }
-    Ok(LoadedRoutingPreference {
-        locales: validate_and_sort(locales, true)?,
-        requires_rewrite,
+    Ok(EnabledAlternateLocales {
+        locales: validate_and_sort(preference.enabled_alternate_locales, true)?,
     })
 }
 
@@ -216,18 +166,18 @@ fn ensure_existing_schema_compatible(path: &Path) -> Result<(), LiveLanguageRout
         Err(_) => return Err(LiveLanguageRoutingError::Access),
     };
     if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
-        schema_version(&value)?;
+        ensure_current_schema(&value)?;
     }
     Ok(())
 }
 
-fn schema_version(value: &serde_json::Value) -> Result<u16, LiveLanguageRoutingError> {
+fn ensure_current_schema(value: &serde_json::Value) -> Result<(), LiveLanguageRoutingError> {
     let version = value
         .get("schemaVersion")
         .and_then(serde_json::Value::as_u64)
         .ok_or(LiveLanguageRoutingError::InvalidStoredPreference)?;
-    if version > u64::from(CURRENT_SCHEMA_VERSION) {
+    if version != u64::from(CURRENT_SCHEMA_VERSION) {
         return Err(LiveLanguageRoutingError::IncompatibleSchema(version));
     }
-    u16::try_from(version).map_err(|_| LiveLanguageRoutingError::IncompatibleSchema(version))
+    Ok(())
 }

@@ -24,7 +24,11 @@ pub enum JobLedgerError {
         requested: &'static str,
         actual: String,
     },
-    UnsupportedSchema(i64),
+    DatabaseOwnershipConflict,
+    UnsupportedDatabaseIdentity {
+        application_id: i64,
+        schema_version: i64,
+    },
     NotFound(String),
     InvalidTransition {
         from: RecordingJobStatus,
@@ -69,10 +73,18 @@ impl fmt::Display for JobLedgerError {
                 formatter,
                 "job ledger requested {requested} for {pragma}, but SQLite applied {actual}"
             ),
-            Self::UnsupportedSchema(version) => {
+            Self::DatabaseOwnershipConflict => formatter.write_str(
+                "job ledger refuses to install into a non-empty database \
+                 without Yap ownership identity",
+            ),
+            Self::UnsupportedDatabaseIdentity {
+                application_id,
+                schema_version,
+            } => {
                 write!(
                     formatter,
-                    "job ledger uses unsupported schema version {version}"
+                    "job ledger uses unsupported database identity \
+                     (application ID {application_id}, schema version {schema_version})"
                 )
             }
             Self::NotFound(job_id) => write!(formatter, "recording job {job_id:?} was not found"),

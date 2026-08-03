@@ -20,43 +20,33 @@ vulnerability, certificate or configuration error, unrecognized failure, or
 exhausted registry retry still fails the audit. Do not use
 `--ignore-registry-errors` in a release gate.
 
-The workspace policy contains exactly one accepted frontend advisory exception:
-`GHSA-mh99-v99m-4gvg`. A unit test fails if that list expands or changes
-silently, and the hosted workflow names the documented policy boundary. Before
-the registry audit runs, the same command queries the installed production
-dependency graph with `pnpm why --prod` and fails closed if `brace-expansion`
-is reachable there. This guard is independent of pnpm's advisory ignore and
-prevents the exception from silently masking a future production path.
+The workspace has no frontend advisory exceptions. A unit test requires
+`auditConfig` to remain absent so a future ignore cannot enter silently.
 
-### Frontend development-tool exception
+On August 3, 2026, compatible `brace-expansion` backports made the earlier
+development-tool exception obsolete. The workspace now pins the older
+`minimatch` major lines to exact releases `1.1.18` and `2.1.4`. Those releases
+resolve both `GHSA-mh99-v99m-4gvg` and the later
+`GHSA-rgw5-rvv9-x895` without forcing a breaking `brace-expansion` major into
+WebdriverIO's glob graph. The exception and its production-only reachability
+guard were removed together.
 
-On July 24, 2026, the registry began reporting
-`GHSA-mh99-v99m-4gvg` for every `brace-expansion` release through 5.0.7.
-The fix is available in 5.0.8, whose API and packaging are a breaking change
-for the older `minimatch` consumers in WebdriverIO's development-only CLI,
-glob, archive, and scaffolding graph. The locked product dependency graph
-reports no known vulnerability under `pnpm audit --prod`.
+PostCSS is pinned to exact release `8.5.23`. It contains compatible fixes for
+the earlier `GHSA-r28c-9q8g-f849` finding and the August 3 residual
+`GHSA-fxqj-rqcc-2cmp` finding. Neither advisory is ignored.
 
-Yap temporarily accepts this one development-tool advisory because:
-
-- every reachable path is under the desktop test/build toolchain;
-- no shipped application code imports `brace-expansion`;
-- the checked commands use repository-owned glob patterns rather than
-  attacker-controlled patterns; and
-- forcing 5.0.8 underneath older `minimatch` majors would replace a known
-  development-tool risk with an unreviewed compatibility break in the release
-  gate.
-
-The exception must be removed as soon as the WebdriverIO/glob/minimatch graph
-offers compatible patched releases, or when the old scaffolding dependency can
-be removed without weakening desktop verification. Any new use of
-attacker-controlled glob patterns, any production-reachable path, or any second
-ignored frontend advisory invalidates this acceptance immediately.
-
-The same July 24 audit also reported
-`GHSA-r28c-9q8g-f849` in PostCSS 8.5.16. That finding has a compatible upstream
-fix and is resolved by the workspace's exact PostCSS 8.5.18 override; it is not
+WebdriverIO's two transitive Undici major lines are pinned to exact compatible
+releases `6.28.0` and `7.29.0`. Those releases resolve
+`GHSA-8xcm-r25x-g524` on both lines and `GHSA-4cwx-7wf7-3272` on the 7.x line.
+Both advisories appeared during the August 3 checkpoint closure; neither is
 ignored.
+
+WebdriverIO's Puppeteer proxy chain resolves `ip-address` only through desktop
+development dependencies. The workspace nevertheless pins it to exact patched
+release `10.3.1`, which resolves high-severity
+`GHSA-mwp4-54f8-5fhr` without an advisory exception. The registry published the
+advisory during the August 3 checkpoint closure after the executable candidate's
+audit had passed; the first documentation-successor frontend audit exposed it.
 
 ## Current Rust Policy
 
@@ -137,7 +127,8 @@ removed after `plist` 1.10.0 moved the transitive parser to `quick-xml` 0.41.0.
 
 ## Change Rules
 
-- New unignored vulnerabilities must fail CI.
+- New high- or critical-severity vulnerabilities must fail CI. Lower-severity
+  findings are reviewed and repaired when a compatible release exists.
 - The Windows graph guard must reject every reachable `glib` version until the
   alert is removed or this policy is deliberately revised with new executable
   evidence.

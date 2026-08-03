@@ -2,8 +2,11 @@ import { EventEmitter } from "node:events";
 import { describe, expect, it } from "vitest";
 
 import {
+  canonicalPcm16Mono16KhzWav,
   isValidInFlightRemotePipeline,
-  matchCompletedRemoteHistoryEntry,
+  matchPublishedRemoteHistoryEntry,
+  meetingCheckpointFixture,
+  meetingLanguageConfirmationRequest,
   matchesEnabledLoopbackServerSettings,
   matchesVerifiedHistoryDialog,
   resolvePrivateServerAsrGateTimeout,
@@ -46,6 +49,58 @@ describe("private-server ASR gate support", () => {
       settings,
       "http://127.0.0.1:18766",
     )).toBe(false);
+  });
+
+  it("builds a canonical bounded multi-window meeting fixture", () => {
+    const sourcePcm = Buffer.from([1, 0, 2, 0, 3, 0, 4, 0]);
+    const fixture = meetingCheckpointFixture(sourcePcm, 60);
+
+    expect(fixture.length).toBe(44 + 60 * 16_000 * 2);
+    expect(fixture.toString("ascii", 0, 4)).toBe("RIFF");
+    expect(fixture.toString("ascii", 8, 12)).toBe("WAVE");
+    expect(fixture.readUInt32LE(40)).toBe(60 * 16_000 * 2);
+    expect(fixture.subarray(44, 52)).toEqual(sourcePcm);
+    expect(() => meetingCheckpointFixture(sourcePcm, 59)).toThrow(
+      /between 60 and 120 seconds/,
+    );
+    expect(() => canonicalPcm16Mono16KhzWav(Buffer.alloc(3))).toThrow(
+      /whole signed-16 samples/,
+    );
+  });
+
+  it("confirms the selected language when the meeting-only server requires manual review", () => {
+    const job = {
+      id: "job-0123456789abcdef01234567",
+      status: "preflighting",
+      route: "serverBatch",
+      languageDecision: {
+        mode: "fixed",
+        languageBcp47: "en-US",
+        disposition: "primary",
+      },
+      languageReview: {
+        kind: "manual",
+        reason: "server_preflight_unavailable",
+        catalogRevision: "a".repeat(64),
+      },
+    };
+
+    expect(meetingLanguageConfirmationRequest(job, "en-US")).toEqual({
+      jobId: job.id,
+      languageBcp47: "en-US",
+      catalogRevision: "a".repeat(64),
+    });
+    expect(meetingLanguageConfirmationRequest(
+      { ...job, languageReview: undefined },
+      "en-US",
+    )).toBeUndefined();
+    expect(() => meetingLanguageConfirmationRequest(
+      {
+        ...job,
+        languageReview: { ...job.languageReview, reason: "short_recording" },
+      },
+      "en-US",
+    )).toThrow(/expected manual fixed-language review/);
   });
 
   it("accepts every legitimate in-flight server pipeline projection", () => {
@@ -111,7 +166,7 @@ describe("private-server ASR gate support", () => {
       sessionId: "s-0123456789abcdef01234567",
       sourcePath: "\\\\?\\c:\\fixture.wav",
     };
-    const matched = matchCompletedRemoteHistoryEntry(
+    const matched = matchPublishedRemoteHistoryEntry(
       createdJob,
       {
         maintenanceWarnings: [],
@@ -120,23 +175,23 @@ describe("private-server ASR gate support", () => {
     );
 
     expect(matched).toBe(historyEntry);
-    expect(matchCompletedRemoteHistoryEntry(
+    expect(matchPublishedRemoteHistoryEntry(
       { ...createdJob, route: "localFallback" },
       { maintenanceWarnings: [], sessions: [historyEntry] },
     )).toBeUndefined();
-    expect(matchCompletedRemoteHistoryEntry(
+    expect(matchPublishedRemoteHistoryEntry(
       { ...createdJob, id: "job-not-a-minted-id" },
       { maintenanceWarnings: [], sessions: [historyEntry] },
     )).toBeUndefined();
-    expect(matchCompletedRemoteHistoryEntry(
+    expect(matchPublishedRemoteHistoryEntry(
       createdJob,
       { maintenanceWarnings: [], sessions: [{ ...historyEntry, sessionId: "s-other" }] },
     )).toBeUndefined();
-    expect(matchCompletedRemoteHistoryEntry(
+    expect(matchPublishedRemoteHistoryEntry(
       createdJob,
       { maintenanceWarnings: [], sessions: [{ ...historyEntry, sourcePath: "C:\\other.wav" }] },
     )).toBeUndefined();
-    expect(matchCompletedRemoteHistoryEntry(
+    expect(matchPublishedRemoteHistoryEntry(
       createdJob,
       { maintenanceWarnings: [], sessions: [{ ...historyEntry, origin: "live" }] },
     )).toBeUndefined();

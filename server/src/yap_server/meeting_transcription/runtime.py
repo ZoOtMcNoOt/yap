@@ -14,7 +14,7 @@ from yap_server.config.runtime_environment import (
     TIRON_RUNTIME_LOCK_ENV,
     TIRON_WORKER_IMAGE_ENV,
 )
-from yap_server.evaluation.meeting_runtime_provenance import (
+from yap_server.meeting_transcription.runtime_provenance import (
     verify_meeting_runtime_repository_files,
     verify_repository_source_directory,
 )

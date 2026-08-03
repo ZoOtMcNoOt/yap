@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { RecordingJobView } from "@/lib/recording-job";
+import type { SpeakerTranscriptDetailState } from "@/lib/speaker-transcript";
 
 type MorphRect = {
   height: number;
@@ -58,6 +59,7 @@ export function TranscriptReviewDialog({
   onReveal,
   open,
   running,
+  speakerTranscript,
   text,
 }: {
   elapsedSeconds: number;
@@ -72,6 +74,7 @@ export function TranscriptReviewDialog({
   onReveal: (path: string) => void;
   open: boolean;
   running: boolean;
+  speakerTranscript?: SpeakerTranscriptDetailState;
   text?: string;
 }) {
   const morphLayerRef = useRef<HTMLDivElement>(null);
@@ -185,6 +188,7 @@ export function TranscriptReviewDialog({
               onRetry={onRetry}
               onReveal={onReveal}
               running={running}
+              speakerTranscript={speakerTranscript}
               text={text}
               variant="modal"
             />

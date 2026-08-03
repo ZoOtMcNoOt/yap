@@ -20,6 +20,7 @@ namespace Yap.Verification
         private const uint JobObjectLimitKillOnJobClose = 0x00002000;
         private const int JobObjectExtendedLimitInformationClass = 9;
         private const int JobObjectBasicAccountingInformationClass = 1;
+        private const int JobObjectBasicProcessIdListClass = 3;
         private const int ProcThreadAttributeHandleList = 0x00020002;
         private const uint DuplicateSameAccess = 0x00000002;
         private const uint GenericRead = 0x80000000;
@@ -67,6 +68,7 @@ namespace Yap.Verification
             bool activeProcessZeroObserved = false;
             bool terminationRequested = false;
             bool retainedDescendantDetected = false;
+            string[] retainedProcessNames = new string[0];
             uint finalActiveProcessCount = 0;
             Stopwatch elapsed = Stopwatch.StartNew();
 
@@ -227,6 +229,7 @@ namespace Yap.Verification
                         && elapsed.ElapsedMilliseconds - rootExitObservedAt.Value
                             >= NaturalDescendantDrainMilliseconds)
                     {
+                        retainedProcessNames = QueryActiveProcessNames(jobHandle);
                         retainedDescendantDetected = true;
                         terminationRequested = true;
                         terminationIssued = true;
@@ -276,6 +279,7 @@ namespace Yap.Verification
                     activeProcessZeroObserved,
                     cleanupProven,
                     retainedDescendantDetected,
+                    retainedProcessNames,
                     elapsed.ElapsedMilliseconds,
                     null);
                 return 0;
@@ -308,6 +312,7 @@ namespace Yap.Verification
                         activeProcessZeroObserved,
                         cleanupProven,
                         retainedDescendantDetected,
+                        retainedProcessNames,
                         elapsed.ElapsedMilliseconds,
                         error is Win32Exception
                             ? ((Win32Exception)error).NativeErrorCode

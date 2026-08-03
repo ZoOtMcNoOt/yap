@@ -19,7 +19,6 @@ from yap_server.pools.pcm_audio import MAX_AUDIO_SECONDS, SAMPLE_RATE_HZ
 from .service_fixtures import (
     _Processor,
     _create_request,
-    _request_with_preprocessing_evidence,
     _published_result,
 )
 
@@ -86,6 +85,23 @@ class RecordingJobContractTests(unittest.TestCase):
             )
             request = _create_request()
             request["chunks"][0]["replayKey"]["sequenceEnd"] = 0
+
+            with self.assertRaises(JobServiceError) as invalid:
+                service.create(request)
+
+            self.assertEqual(invalid.exception.status, 400)
+            self.assertEqual(invalid.exception.code, "INVALID_JOB")
+
+    def test_intake_rejects_an_obsolete_replay_key_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            service = RecordingJobService(
+                Path(temporary),
+                processor=_Processor(),
+                supported_languages=("en",),
+                now=lambda: "2026-07-14T21:00:00Z",
+            )
+            request = _create_request()
+            request["chunks"][0]["replayKey"]["schemaVersion"] = 2
 
             with self.assertRaises(JobServiceError) as invalid:
                 service.create(request)
@@ -187,19 +203,7 @@ class RecordingJobContractTests(unittest.TestCase):
                 supported_languages=("und",),
                 now=lambda: "2026-07-14T21:00:00Z",
             )
-            legacy_request = _create_request()
-            legacy_request["languageDecision"] = {
-                "mode": "dynamic",
-                "languageBcp47": None,
-                "disposition": "explicitDynamic",
-            }
-            legacy_request["metadata"]["localeHintBcp47"] = "und"
-            legacy_request["metadata"]["preferredLanguagesBcp47"] = ["und"]
-            with self.assertRaises(JobServiceError) as legacy_dynamic:
-                service.create(legacy_request)
-            self.assertEqual(legacy_dynamic.exception.code, "INVALID_JOB")
-
-            request = _request_with_preprocessing_evidence()
+            request = _create_request()
             request["languageDecision"] = {
                 "mode": "dynamic",
                 "languageBcp47": None,
@@ -269,6 +273,11 @@ class RecordingJobContractTests(unittest.TestCase):
                     ),
                 ),
             ),
+            "alignment": {
+                "status": "unavailable",
+                "reason": "ALIGNMENT_RUNTIME_FAILED",
+                "componentRevision": "cohere-attention-alignment-candidate-v1",
+            },
             "alignedWords": [],
             "modelProvenance": [
                 {
@@ -329,7 +338,7 @@ class RecordingJobContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "aligned word content"):
             validate_result_revision(result, projection, maximum_end_ms=10)
 
-    def test_intake_preserves_the_exact_legacy_schema_one_request_shape(self) -> None:
+    def test_intake_rejects_the_obsolete_schema_one_request_shape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             service = RecordingJobService(
                 Path(temporary),
@@ -338,19 +347,19 @@ class RecordingJobContractTests(unittest.TestCase):
                 now=lambda: "2026-07-14T21:00:00Z",
             )
             request = _create_request()
+            request["captureManifest"]["schemaVersion"] = 1
             del request["languageDecision"]
+            del request["asrCatalogRevision"]
+            del request["preprocessingEvidence"]
 
-            created = service.create(request, idempotency_key="legacy-implicit-default")
-            self.assertEqual(created["status"], "accepted")
-            self.assertEqual(
-                service.create(request, idempotency_key="legacy-implicit-default"),
-                created,
-            )
+            with self.assertRaises(JobServiceError) as rejected:
+                service.create(request, idempotency_key="schema-one-default")
+            self.assertEqual(rejected.exception.code, "INVALID_JOB")
 
     def test_preprocessing_evidence_is_validated_and_survives_restart(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            request = _request_with_preprocessing_evidence()
+            request = _create_request()
             service = RecordingJobService(
                 root,
                 processor=_Processor(),
@@ -411,22 +420,30 @@ class RecordingJobContractTests(unittest.TestCase):
                     now=lambda: "2026-07-14T21:02:00Z",
                 )
 
-    def test_manifest_version_and_preprocessing_evidence_are_one_contract(self) -> None:
+    def test_current_manifest_and_preprocessing_evidence_are_one_contract(self) -> None:
         invalid_requests: list[dict[str, object]] = []
 
         schema_two_without_evidence = _create_request()
-        schema_two_without_evidence["captureManifest"]["schemaVersion"] = 2
+        del schema_two_without_evidence["preprocessingEvidence"]
         invalid_requests.append(schema_two_without_evidence)
 
-        schema_one_with_evidence = _request_with_preprocessing_evidence()
+        schema_one_with_evidence = _create_request()
         schema_one_with_evidence["captureManifest"]["schemaVersion"] = 1
         invalid_requests.append(schema_one_with_evidence)
 
-        schema_two_without_language = _request_with_preprocessing_evidence()
+        schema_two_without_language = _create_request()
         del schema_two_without_language["languageDecision"]
         invalid_requests.append(schema_two_without_language)
 
-        unsupported_manifest = _request_with_preprocessing_evidence()
+        schema_two_without_catalog = _create_request()
+        del schema_two_without_catalog["asrCatalogRevision"]
+        invalid_requests.append(schema_two_without_catalog)
+
+        legacy_preprocessing = _create_request()
+        legacy_preprocessing["preprocessingEvidence"]["schemaVersion"] = 1
+        invalid_requests.append(legacy_preprocessing)
+
+        unsupported_manifest = _create_request()
         unsupported_manifest["captureManifest"]["schemaVersion"] = 3
         invalid_requests.append(unsupported_manifest)
 
@@ -443,76 +460,28 @@ class RecordingJobContractTests(unittest.TestCase):
                         service.create(request)
                     self.assertEqual(invalid.exception.code, "INVALID_JOB")
 
-    def test_legacy_uncommitted_state_freezes_current_route_during_load(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            request = _create_request()
-            service = RecordingJobService(
-                root,
-                processor=_Processor(),
-                supported_languages=("en",),
-                now=lambda: "2026-07-14T21:00:00Z",
-            )
-            created = service.create(request)
-            state_path = root / "jobs" / created["jobId"] / "state.json"
-            legacy = json.loads(state_path.read_text(encoding="utf-8"))
-            legacy["schemaVersion"] = 3
-            del legacy["owner"]
-            del legacy["asrRouting"]
-            del legacy["stageHistoryComplete"]
-            del legacy["stageAttempts"]
-            del legacy["projectionRevision"]
-            state_path.write_text(json.dumps(legacy), encoding="utf-8")
-
-            class RotatedCatalogProcessor(_Processor):
-                @property
-                def asr_catalog_revision(self) -> str:
-                    return "d" * 64
-
-            restarted = RecordingJobService(
-                root,
-                processor=RotatedCatalogProcessor(),
-                supported_languages=("en",),
-                now=lambda: "2026-07-14T21:01:00Z",
-            )
-
-            self.assertEqual(restarted.get(created["jobId"])["status"], "accepted")
-            migrated = json.loads(state_path.read_text(encoding="utf-8"))
-            self.assertEqual(migrated["schemaVersion"], 6)
-            self.assertEqual(
-                migrated["owner"],
-                {
-                    "tenantId": "development-loopback",
-                    "subjectId": "local-server",
-                },
-            )
-            self.assertFalse(migrated["stageHistoryComplete"])
-            self.assertEqual(migrated["stageAttempts"], [])
-            self.assertGreaterEqual(migrated["projectionRevision"], 1)
-            self.assertEqual(migrated["asrRouting"]["asrCatalogRevision"], "d" * 64)
-
     def test_preprocessing_evidence_rejects_unbounded_or_incoherent_shapes(
         self,
     ) -> None:
         invalid_requests: list[dict[str, object]] = []
 
-        output_count_mismatch = _request_with_preprocessing_evidence()
+        output_count_mismatch = _create_request()
         output_count_mismatch["preprocessingEvidence"]["normalization"][
             "outputSampleCount"
         ] = 159
         invalid_requests.append(output_count_mismatch)
 
-        source_count_mismatch = _request_with_preprocessing_evidence()
+        source_count_mismatch = _create_request()
         source_count_mismatch["preprocessingEvidence"]["vad"]["sourceSampleCount"] = 159
         invalid_requests.append(source_count_mismatch)
 
-        interval_time_mismatch = _request_with_preprocessing_evidence()
+        interval_time_mismatch = _create_request()
         interval_time_mismatch["preprocessingEvidence"]["vad"]["intervals"][0][
             "endMs"
         ] = 11
         invalid_requests.append(interval_time_mismatch)
 
-        overlapping_intervals = _request_with_preprocessing_evidence()
+        overlapping_intervals = _create_request()
         overlapping_intervals["preprocessingEvidence"]["vad"]["intervals"] = [
             {
                 "startSample": 0,
@@ -529,18 +498,24 @@ class RecordingJobContractTests(unittest.TestCase):
         ]
         invalid_requests.append(overlapping_intervals)
 
-        excessive_intervals = _request_with_preprocessing_evidence()
+        excessive_intervals = _create_request()
         interval = excessive_intervals["preprocessingEvidence"]["vad"]["intervals"][0]
         excessive_intervals["preprocessingEvidence"]["vad"]["intervals"] = [
             deepcopy(interval) for _ in range(4_097)
         ]
         invalid_requests.append(excessive_intervals)
 
-        unknown_nested_field = _request_with_preprocessing_evidence()
+        unknown_nested_field = _create_request()
         unknown_nested_field["preprocessingEvidence"]["normalization"]["unexpected"] = (
             True
         )
         invalid_requests.append(unknown_nested_field)
+
+        identity_with_explicit_null_provenance = _create_request()
+        identity_with_explicit_null_provenance["preprocessingEvidence"]["normalization"][
+            "decodedFrom"
+        ] = None
+        invalid_requests.append(identity_with_explicit_null_provenance)
 
         for request in invalid_requests:
             with self.subTest(case=len(invalid_requests)):

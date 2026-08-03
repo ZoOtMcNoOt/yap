@@ -312,14 +312,12 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         speaker_result_sha256: None,
         language_segments: None,
         language_span_evidence: None,
-        alignment: Some(
-            serde_json::from_value(serde_json::json!({
-                "status": "unavailable",
-                "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
-                "componentRevision": "joint-segment-timing-v1"
-            }))
-            .unwrap(),
-        ),
+        alignment: serde_json::from_value(serde_json::json!({
+            "status": "unavailable",
+            "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
+            "componentRevision": "joint-segment-timing-v1"
+        }))
+        .unwrap(),
         aligned_words: Vec::new(),
         model_provenance: vec![crate::server_connector::batch::ModelRevision {
             model_id: "Trelis/tiron".into(),
@@ -396,7 +394,7 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         .unwrap();
     let jobs = RecordingJobs::from_ledger(ledger, &dir);
 
-    let catalog = jobs.completed_remote_transcripts().unwrap();
+    let catalog = jobs.published_remote_transcript_catalog().unwrap();
     assert_eq!(catalog.sessions.len(), 1);
     assert_eq!(
         catalog.sessions[0].output_path,
@@ -413,10 +411,22 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         }
     );
     assert!(catalog.maintenance_warnings.is_empty());
-    let speaker_turns = catalog.sessions[0].speaker_turns.as_ref().unwrap();
-    assert_eq!(speaker_turns.len(), 1);
-    assert_eq!(speaker_turns[0].speaker_id, "speaker-1");
-    assert_eq!(speaker_turns[0].text, "Catalog result.");
+    assert!(catalog.sessions[0].speaker_transcript_available);
+    let speaker_transcript = jobs
+        .published_speaker_transcript(
+            &catalog.sessions[0].session_id,
+            &catalog.sessions[0].output_path,
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(speaker_transcript.turns.len(), 1);
+    assert_eq!(speaker_transcript.turns[0].turn_id, "turn-000001");
+    assert_eq!(speaker_transcript.turns[0].speaker_id, "speaker-1");
+    assert_eq!(speaker_transcript.turns[0].text, "Catalog result.");
+    assert_eq!(
+        serde_json::to_value(&speaker_transcript).unwrap()["turns"][0]["turnId"],
+        "turn-000001"
+    );
 
     let status_corruption = rusqlite::Connection::open(&database).unwrap();
     status_corruption
@@ -426,7 +436,7 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         )
         .unwrap();
     drop(status_corruption);
-    let mismatched_status = jobs.completed_remote_transcripts().unwrap();
+    let mismatched_status = jobs.published_remote_transcript_catalog().unwrap();
     assert!(mismatched_status.sessions.is_empty());
     assert_eq!(mismatched_status.maintenance_warnings.len(), 1);
     let restored_status = rusqlite::Connection::open(&database).unwrap();
@@ -447,7 +457,8 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         &changed_speaker_bytes,
     )
     .unwrap();
-    assert!(remote::read_published_remote_transcript(&output, &remote_jobs).is_err());
+    let metadata_only = remote::read_published_remote_result_bundle(&output, &remote_jobs).unwrap();
+    assert!(metadata_only.load_speaker_result().is_err());
     fs::write(
         result_directory.join("speaker-result.json"),
         &canonical_speaker_bytes,
@@ -471,9 +482,14 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         serde_json::to_vec(&forged_speaker).unwrap(),
     )
     .unwrap();
-    let request_mismatch = jobs.completed_remote_transcripts().unwrap();
-    assert!(request_mismatch.sessions.is_empty());
-    assert_eq!(request_mismatch.maintenance_warnings.len(), 1);
+    let request_mismatch = jobs.published_remote_transcript_catalog().unwrap();
+    assert_eq!(request_mismatch.sessions.len(), 1);
+    assert!(jobs
+        .published_speaker_transcript(
+            &request_mismatch.sessions[0].session_id,
+            &request_mismatch.sessions[0].output_path,
+        )
+        .is_err());
 
     fs::write(
         result_directory.join("result.json"),
@@ -487,7 +503,7 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
     .unwrap();
 
     fs::write(&output, "tampered\n").unwrap();
-    let rejected = jobs.completed_remote_transcripts().unwrap();
+    let rejected = jobs.published_remote_transcript_catalog().unwrap();
     assert!(rejected.sessions.is_empty());
     assert_eq!(rejected.maintenance_warnings.len(), 1);
 

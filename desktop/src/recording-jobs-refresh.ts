@@ -34,12 +34,10 @@ export function createRecordingJobsRefreshCoordinator<T>(
   };
 }
 
-export type RecordingJobsStartupPhase = "subscribe" | "migrate" | "refresh";
+export type RecordingJobsStartupPhase = "subscribe" | "refresh";
 
 type RecordingJobsLifecycleOptions = {
   failed: (error: Error, phase: RecordingJobsStartupPhase) => void;
-  migrate: () => Promise<unknown>;
-  ready: () => void;
   refresh: () => Promise<unknown>;
   refreshFailed: (error: Error) => void;
   subscribe: (handler: () => void) => Promise<() => void>;
@@ -51,8 +49,6 @@ function asError(error: unknown) {
 
 export function startRecordingJobsLifecycle({
   failed,
-  migrate,
-  ready,
   refresh,
   refreshFailed,
   subscribe,
@@ -74,12 +70,8 @@ export function startRecordingJobsLifecycle({
         return;
       }
       unlisten = subscribed;
-      phase = "migrate";
-      await migrate();
-      if (!active) return;
       phase = "refresh";
       await refresh();
-      if (active) ready();
     } catch (error) {
       if (active) failed(asError(error), phase);
     }

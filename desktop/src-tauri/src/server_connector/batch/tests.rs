@@ -1,19 +1,15 @@
 use std::{
     io::{Read, Write},
     net::TcpListener,
-    time::{Duration, UNIX_EPOCH},
 };
 
-use sha2::Digest;
-
-use crate::audio::session::{SessionId, SessionMetadata, SessionMode, SessionOrigin, TriggerMode};
 use crate::language::RecordingLanguageDecision;
 
 use super::{
     validate_batch_base_url, AlignmentUnavailableReason, AnonymousSpeakerAttribution, ApiError,
-    BatchApiClient, BatchClientError, CaptureChunkReference, CaptureManifestReference,
-    ContentIdentity, CreateRecordingJobRequest, PreprocessingEvidence, ServerReplayKey,
-    ServerStageProjectionEnvelope, SpeakerResultRevision, TranscriptResultRevision, UploadTrack,
+    BatchApiClient, BatchClientError, CaptureChunkReference, ContentIdentity,
+    CreateRecordingJobRequest, ServerReplayKey, ServerStageProjectionEnvelope,
+    SpeakerResultRevision, TranscriptResultRevision,
 };
 use crate::server_connector::{client::bounded_client, AuthenticatedRequestDispatcher};
 
@@ -282,59 +278,18 @@ fn shared_batch_dispatch_attaches_the_native_bearer_token() {
 
 #[test]
 fn persisted_create_request_round_trips_strictly_before_resume() {
-    let started = UNIX_EPOCH + Duration::from_secs(1_720_000_000);
     let session_id = "s-persisted-request";
-    let request = CreateRecordingJobRequest {
-        display_name: "interview.wav".into(),
-        metadata: SessionMetadata::new(
-            SessionId::new(session_id).unwrap(),
-            SessionMode::Meeting,
-            SessionOrigin::ImportedFile,
-            TriggerMode::Toggle,
-            started,
-            None,
-            Some("en-US".into()),
-            None,
-            vec!["en-US".into()],
-            Some(started + Duration::from_secs(3600)),
-        )
-        .unwrap(),
-        language_decision: RecordingLanguageDecision::primary("en-US".into()).unwrap(),
-        asr_catalog_revision: None,
-        tracks: vec![UploadTrack {
-            track_id: "track-1".into(),
-            source: serde_json::json!({"kind": "imported", "provenance": "unknown"}),
-            device_id: None,
-            original_sample_rate_hz: 16_000,
-            original_channels: 1,
-        }],
-        route: "server_batch".into(),
-        capture_manifest: CaptureManifestReference {
-            schema_version: 1,
-            session_id: session_id.into(),
-            sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".into(),
-            byte_length: 200,
-        },
-        preprocessing_evidence: None,
-        chunks: vec![CaptureChunkReference {
-            replay_key: ServerReplayKey {
-                schema_version: 1,
-                session_id: session_id.into(),
-                track_id: "track-1".into(),
-                sequence_start: 0,
-                sequence_end: 159,
-            },
-            content_identity: ContentIdentity {
-                sha256: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789".into(),
-                byte_length: 320,
-            },
-            audio_codec: "pcm_s16le".into(),
-            sample_rate_hz: 16_000,
-            channels: 1,
-            start_ms: 0,
-            duration_ms: 10,
-        }],
-    };
+    let request = CreateRecordingJobRequest::for_test_single_chunk(
+        "interview.wav",
+        session_id,
+        "track-1",
+        &"0".repeat(64),
+        200,
+        &"a".repeat(64),
+        320,
+        RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+        &"b".repeat(64),
+    );
     let encoded = serde_json::to_string(&request).unwrap();
     let original_key = request.create_idempotency_key().unwrap();
 
@@ -344,25 +299,10 @@ fn persisted_create_request_round_trips_strictly_before_resume() {
     );
     assert_eq!(request.create_idempotency_key().unwrap(), original_key);
     let encoded_language = serde_json::to_string(&request.language_decision).unwrap();
-    let legacy_encoded =
+    let missing_language_decision =
         encoded.replacen(&format!(",\"languageDecision\":{encoded_language}"), "", 1);
-    assert_ne!(legacy_encoded, encoded);
-    let legacy_value: serde_json::Value = serde_json::from_str(&legacy_encoded).unwrap();
-    let legacy_request = CreateRecordingJobRequest::decode_persisted(&legacy_encoded).unwrap();
-    assert!(legacy_request
-        .language_decision
-        .is_legacy_implicit_english_default());
-    assert_eq!(serde_json::to_value(&legacy_request).unwrap(), legacy_value);
-    assert_eq!(
-        legacy_request.create_idempotency_key().unwrap(),
-        format!(
-            "create-{}",
-            sha2::Sha256::digest(legacy_encoded.as_bytes())
-                .iter()
-                .map(|byte| format!("{byte:02x}"))
-                .collect::<String>()
-        )
-    );
+    assert_ne!(missing_language_decision, encoded);
+    assert!(CreateRecordingJobRequest::decode_persisted(&missing_language_decision).is_err());
     let mut new_attempt = request.clone();
     new_attempt.display_name = "a distinct immutable request".into();
     assert_ne!(new_attempt.create_idempotency_key().unwrap(), original_key);
@@ -519,61 +459,31 @@ fn server_stage_projection_is_strict_bounded_and_job_scoped() {
     assert!(!injected_reason.is_valid_for(job_id));
 }
 
-/// Evidence is persisted in the job ledger, so a job created by the previous
-/// build must stay drainable after the schema bump. Refusing it would leave the
-/// job permanently unresumable with its transcript already paid for.
 #[test]
-fn a_persisted_version_one_evidence_record_still_validates() {
-    let digest = "0".repeat(64);
-    let version_one = serde_json::json!({
-        "schemaVersion": 1,
-        "normalization": {
-            "status": "complete",
-            "componentId": "yap-imported-audio-normalizer",
-            "componentRevision": "canonical-pcm16-normalization-v1",
-            "method": "canonical_pcm16_identity",
-            "inputSourceSha256": digest,
-            "sourcePcmSha256": digest,
-            "outputPcmSha256": digest,
-            "audioCodec": "pcm_s16le",
-            "sampleRateHz": 16_000,
-            "channels": 1,
-            "sourceSampleCount": 480,
-            "outputSampleCount": 480,
-            "paddingSamples": 0,
-            "gainAppliedMilliDb": 0,
-            "samplesModified": 0,
-            "sourceTimePreserved": true
-        },
-        "vad": {
-            "status": "error",
-            "component": {
-                "id": "test-vad",
-                "revision": "test-revision",
-                "modelId": "test-model",
-                "modelRevision": "test-model-revision",
-                "artifactSha256": digest
-            },
-            "sourceSampleCount": 480,
-            "intervals": [],
-            "errorCode": "VAD_UNAVAILABLE"
-        }
-    });
-
-    let evidence: PreprocessingEvidence =
-        serde_json::from_value(version_one).expect("a version 1 record must deserialize");
-    assert!(
-        evidence.is_valid_for_output_samples(480),
-        "a persisted version 1 record must remain drainable after the schema bump"
+fn obsolete_capture_and_preprocessing_schemas_are_rejected() {
+    let current = CreateRecordingJobRequest::for_test_single_chunk(
+        "interview.wav",
+        "s-current-contract",
+        "track-1",
+        &"0".repeat(64),
+        200,
+        &"a".repeat(64),
+        320,
+        RecordingLanguageDecision::primary("en-US".into()).unwrap(),
+        &"b".repeat(64),
     );
 
-    // The absence of decodedFrom at version 1 is still a claim: a record cannot
-    // borrow the decoded method without carrying its provenance.
-    let mut forged = serde_json::to_value(&evidence).expect("serialize");
-    forged["normalization"]["method"] = serde_json::json!("decoded_to_canonical_pcm16");
-    let forged: PreprocessingEvidence = serde_json::from_value(forged).expect("deserialize");
-    assert!(
-        !forged.is_valid_for_output_samples(480),
-        "a record claiming the decoded method without decodedFrom must be refused"
-    );
+    let mut obsolete_manifest = serde_json::to_value(&current).unwrap();
+    obsolete_manifest["captureManifest"]["schemaVersion"] = serde_json::json!(1);
+    assert!(CreateRecordingJobRequest::decode_persisted(
+        &serde_json::to_string(&obsolete_manifest).unwrap()
+    )
+    .is_err());
+
+    let mut obsolete_preprocessing = serde_json::to_value(current).unwrap();
+    obsolete_preprocessing["preprocessingEvidence"]["schemaVersion"] = serde_json::json!(1);
+    assert!(CreateRecordingJobRequest::decode_persisted(
+        &serde_json::to_string(&obsolete_preprocessing).unwrap()
+    )
+    .is_err());
 }

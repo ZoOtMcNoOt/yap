@@ -6,13 +6,13 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from yap_server.evaluation.meeting_runtime_provenance import (
+from yap_server.meeting_transcription.runtime_provenance import (
     RepositorySource,
     load_meeting_runtime_provenance,
     verify_repository_source_directory,
     verify_meeting_runtime_repository_files,
 )
-from yap_server.evaluation.artifact_identity import ArtifactIdentity
+from yap_server.artifact_identity import ArtifactIdentity
 
 
 SERVER_ROOT = Path(__file__).resolve().parents[2]
@@ -60,7 +60,9 @@ class MeetingRuntimeProvenanceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "unexpected artifacts"):
                 verify_repository_source_directory(source, root)
 
-    def test_repository_lock_selects_the_current_upstream_whole_meeting_runtime(self) -> None:
+    def test_repository_lock_selects_the_current_upstream_whole_meeting_runtime(
+        self,
+    ) -> None:
         provenance = load_meeting_runtime_provenance(RUNTIME_LOCK)
 
         self.assertEqual(provenance.runtime_authority, "upstream-tiron-harness")
@@ -98,7 +100,9 @@ class MeetingRuntimeProvenanceTests(unittest.TestCase):
             repository_root=SERVER_ROOT.parent,
         )
 
-    def test_lock_rejects_the_superseded_checkpoint_and_missing_runtime_source(self) -> None:
+    def test_lock_rejects_the_superseded_checkpoint_and_missing_runtime_source(
+        self,
+    ) -> None:
         payload = json.loads(RUNTIME_LOCK.read_text(encoding="utf-8"))
         cases = (
             (
@@ -134,7 +138,9 @@ class MeetingRuntimeProvenanceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "harness artifact paths"):
                 load_meeting_runtime_provenance(lock_path)
 
-    def test_lock_rejects_downloads_duplicate_keys_and_changed_requirements(self) -> None:
+    def test_lock_rejects_downloads_duplicate_keys_and_changed_requirements(
+        self,
+    ) -> None:
         body = RUNTIME_LOCK.read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

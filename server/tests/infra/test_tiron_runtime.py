@@ -61,6 +61,18 @@ class TironRuntimeContractTests(unittest.TestCase):
         self.assertIn('com.mcnatg1.yap.runtime="meeting-transcription"', dockerfile)
         self.assertIn("ISC AND LGPL-2.1-or-later", dockerfile)
         self.assertIn("SHARED_PYTHON_THIRD_PARTY_NOTICES.md", dockerfile)
+        source_prune = "rm -rf /tmp/yap-application-source/yap_server/evaluation"
+        final_copy = (
+            "COPY --from=application-source /tmp/yap-application-source/yap_server "
+            "/opt/yap-server/yap_server"
+        )
+        self.assertIn(source_prune, dockerfile)
+        self.assertLess(dockerfile.index(source_prune), dockerfile.index(final_copy))
+        self.assertNotIn("rm -rf /opt/yap-server/yap_server/evaluation", dockerfile)
+        self.assertIn(
+            "test ! -e /opt/yap-server/yap_server/evaluation",
+            dockerfile,
+        )
         self.assertRegex(dockerfile, r"(?m)^USER 10001:10001$")
         self.assertNotIn("git clone", dockerfile)
         self.assertNotIn('Trelis/tiron",', dockerfile)

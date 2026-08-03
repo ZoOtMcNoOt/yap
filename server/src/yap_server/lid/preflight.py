@@ -38,6 +38,8 @@ class LidPreflightWorker(Protocol):
         cancellation: threading.Event | None = None,
     ) -> dict[str, Any]: ...
 
+    def close(self) -> None: ...
+
 
 class LidPreflightEngine:
     """Bounded inference adapter; it never confirms or mutates a language."""
@@ -61,9 +63,7 @@ class LidPreflightEngine:
         self._lock = lock
         self._worker = worker
         self._enabled_fixed_locales = locales
-        self._capacity = threading.BoundedSemaphore(
-            maximum_running + maximum_queued
-        )
+        self._capacity = threading.BoundedSemaphore(maximum_running + maximum_queued)
         self._running = threading.BoundedSemaphore(maximum_running)
         self._active_lock = threading.Lock()
         self._active: set[str] = set()
@@ -71,9 +71,7 @@ class LidPreflightEngine:
 
     def close(self) -> None:
         self._shutdown.set()
-        close = getattr(self._worker, "close", None)
-        if callable(close):
-            close()
+        self._worker.close()
 
     def evaluate(
         self,
@@ -152,6 +150,7 @@ def run_source_lid_preflight(
             reason=selection.reason,
             lock=lock,
         )
+
     def ensure_active() -> None:
         if cancellation is not None and cancellation.is_set():
             raise LidPreflightCancelled("LID preflight was cancelled")

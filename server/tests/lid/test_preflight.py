@@ -55,6 +55,9 @@ class _Worker:
             ],
         }
 
+    def close(self) -> None:
+        pass
+
 
 class LidPreflightTests(unittest.TestCase):
     def setUp(self) -> None:
