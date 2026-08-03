@@ -804,10 +804,12 @@ The completed
 governed Phase 7. Phase 7 and its adversarial checkpoint are closed. The focused
 local-first discovery closure also merged before Phase 8 and did not reopen
 identity scope or authorize enterprise SSO infrastructure. Phase 8 Preview has
-since merged. Its separate maintainability candidate `fb0985e7...` passed, but
-the documentation successor exposed a late high-severity development-tool
-advisory. The patched lockfile requires a fresh exact-head candidate gate,
-hosted closure, and PR #143 merge before Phase 9.
+since merged. Historical maintainability candidate `fb0985e7...` passed before
+documentation successor `e22368fc...` exposed a late high-severity development-
+tool advisory. Patched candidate `393710999...` passed its fresh exact-head
+lifecycle, single complete 18-child matrix, receipt validation, and required CI
+and CodeQL jobs. Final documentation-only hosted closure, disposable-Windows
+NSIS, and PR #143 merge remain before Phase 9.
 
 ## Later-phase queue
 

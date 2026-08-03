@@ -262,12 +262,12 @@ container mutation, separates create/start, uses an exclusive container-ID
 file, and retains a private pre-create recovery record whenever the daemon
 outcome cannot be resolved. Exact-tree re-review, all 14 focused proxy
 contracts, and the real root-owned GB10 target proof pass with no P0–P2 finding.
-Exact candidate `fb0985e7c08cf0a0e69752afbe61e372cbfe76db` passed fresh
+Historical candidate `fb0985e7...` passed before its documentation successor
+failed hosted frontend dependency audit. Patched development-only `ip-address`
+10.3.1 candidate `393710999b53a4bd1b00639e30c0fec88b152530` passed fresh
 private-controller packaging/prequalification, the complete checkpoint gate,
-and required CI and CodeQL jobs. Its documentation successor failed hosted
-frontend dependency audit; patched development-only `ip-address` 10.3.1 changes
-the lockfile and requires a fresh exact-head candidate gate, hosted closure
-including disposable-Windows NSIS, and PR #143 merge.
+receipt validation, and required CI and CodeQL jobs. Final documentation-only
+hosted closure including disposable-Windows NSIS and PR #143 merge remain.
 This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
 revocation propagation, guest behavior, packaged enterprise policy, or
 production approval. Run those only in a separately authorized IT-provided

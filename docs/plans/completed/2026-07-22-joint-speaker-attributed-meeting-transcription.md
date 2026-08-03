@@ -7,9 +7,11 @@
 [PR #142](https://github.com/mcnatg1/yap/pull/142) merged as
 `4201c5e7f1674dc0b15e76241bc308c49a5719bb`. The separate
 [meeting-transcription ownership and maintainability review](../active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-has a patched lockfile awaiting fresh exact-head candidate qualification after
-its previous documentation successor exposed a late development-tool advisory;
-hosted closure and PR #143 merge remain before Phase 9.
+has patched exact-head candidate `393710999...` with passed lifecycle, single
+complete matrix, receipt validation, and required CI/CodeQL after its previous
+documentation successor exposed a late development-tool advisory. Final
+documentation-only hosted closure including disposable-Windows NSIS and PR #143
+merge remain before Phase 9.
 
 **Decision authority:**
 [ADR 0020](../../adr/0020-meeting-capture-diarization-authority.md) and

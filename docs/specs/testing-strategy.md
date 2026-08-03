@@ -106,6 +106,13 @@ can be presented as a continuation or rerun of a phase-specific admission. The
 gate retains exact head, manifest, child-definition, single-attempt, and
 private-evidence bounds.
 
+Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` passed the
+canonical native build, receipt-bound image preflight, real History and
+cancellation lifecycle with independent teardown, its single complete 18-child
+matrix, independent receipt validation, and required CI and CodeQL jobs. The
+remaining closure is the reviewed documentation-only successor's exact-head
+hosted CI, CodeQL, and disposable-Windows NSIS receipt before PR #143 merges.
+
 The gate uses a license-clear public meeting fixture to prove the current
 Tiron result, anonymous-speaker History, active-cancellation, and teardown
 lifecycle through the product boundary. It does not rerun the separate model

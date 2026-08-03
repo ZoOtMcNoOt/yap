@@ -21,14 +21,15 @@ described as an all-green hosted rollup. Phase 8 reviewed head
 merged through PR #142 as
 `4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Its Tiron route remains an
 explicitly enabled Preview absent from the default catalog, not a
-production-promoted provider. Exact maintainability candidate
-`fb0985e7c08cf0a0e69752afbe61e372cbfe76db` completed focused checks, final
-antagonistic review, its single exact-head 18-child matrix, independent receipt
-validation, and the required CI and CodeQL jobs. Only the final
-documentation-only successor `e22368fc...` failed hosted frontend audit on
-`GHSA-mwp4-54f8-5fhr`. Patched `ip-address` 10.3.1 is development-only, but its
-lockfile change requires a fresh exact-head candidate gate, hosted closure
-including disposable-Windows NSIS, and PR #143 merge.
+production-promoted provider. Historical maintainability candidate `fb0985e7...`
+passed before documentation-only successor `e22368fc...` exposed
+`GHSA-mwp4-54f8-5fhr`. Patched development-only `ip-address` 10.3.1 candidate
+`393710999b53a4bd1b00639e30c0fec88b152530` completed focused checks, final
+antagonistic review, the canonical native build, receipt-bound image preflight,
+real History/cancellation lifecycle with teardown, its single exact-head
+18-child matrix, independent receipt validation, and the required CI and CodeQL
+jobs. Final documentation-only hosted closure including disposable-Windows NSIS
+and PR #143 merge remain.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -773,8 +774,8 @@ Reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks
 and PR #142 merged as `4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
 The separate maintainability checkpoint changes result/runtime ownership,
 request-time image contents, and bounded client projection. It does not change
-the checked model or relabel the historical Phase 8 Preview evidence. Exact
-candidate `fb0985e7c08cf0a0e69752afbe61e372cbfe76db` built, inspected, and
+the checked model or relabel the historical Phase 8 Preview evidence. Patched
+exact candidate `393710999b53a4bd1b00639e30c0fec88b152530` built, inspected, and
 qualified one new receipt-bound immutable image, passed its real History and
 cancellation lifecycle with teardown, single complete 18-child matrix,
 independent receipt validation, and required CI and CodeQL jobs. The Phase 8 image
@@ -888,10 +889,11 @@ reviewed head in required fresh GitHub-hosted Windows jobs. Connector and
 required WDIO runtime trees run there
 under the same kill-on-close Job supervisor used by candidate commands and
 must finish with zero active processes. Hosted CodeQL and disposable installer
-automation completed Phase 8 closure before merge. The last maintainability
-candidate completed its single applicable matrix and final antagonistic review,
-but its documentation-only successor exposed a new high-severity development-
-tool advisory. The patched lockfile receives a fresh exact-head candidate gate
-and hosted closure, including disposable-Windows NSIS, before PR #143 merges.
+automation completed Phase 8 closure before merge. Historical documentation-only
+successor `e22368fc...` exposed a new high-severity development-tool advisory.
+Patched candidate `393710999...` then completed its single applicable matrix,
+receipt validation, final antagonistic review, and required CI and CodeQL jobs.
+Its final documentation-only successor still requires hosted closure, including
+disposable-Windows NSIS, before PR #143 merges.
 The fresh VM is the lifecycle boundary for Microsoft build-tool helpers; it is
 not the product runtime cleanup mechanism.

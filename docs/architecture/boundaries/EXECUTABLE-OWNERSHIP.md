@@ -1,17 +1,18 @@
 # Executable Ownership and Trust Boundaries
 
 This map records the executable ownership baseline through the merged Phase 8
-Preview and the meeting-transcription maintainability repair awaiting fresh
-exact-head qualification. Phase
+Preview and the exact-head-gated meeting-transcription maintainability repair.
+Phase
 8 reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks
 and merged through PR #142 as
-`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Exact checkpoint candidate
-`fb0985e7c08cf0a0e69752afbe61e372cbfe76db` passed multi-lens review, its
-real lifecycle, one complete 18-child matrix, receipt validation, and required
-CI and CodeQL jobs. Documentation-only successor `e22368fc...` failed hosted
-frontend audit on `GHSA-mwp4-54f8-5fhr`; patched development-only `ip-address`
-10.3.1 changes the lockfile, so a fresh candidate gate, hosted closure including
-disposable-Windows NSIS, and PR #143 merge remain open. Paths are relative to the
+`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Historical candidate `fb0985e7...`
+passed before documentation-only successor `e22368fc...` exposed
+`GHSA-mwp4-54f8-5fhr`. Patched development-only `ip-address` 10.3.1 candidate
+`393710999b53a4bd1b00639e30c0fec88b152530` passed multi-lens review, the
+canonical native build, receipt-bound image preflight, real lifecycle, one
+complete 18-child matrix, receipt validation, and required CI and CodeQL jobs.
+Final documentation-only hosted closure including disposable-Windows NSIS and
+PR #143 merge remain open. Paths are relative to the
 repository root; later
 implementation must update this map only after its behavior is executable and
 verified.

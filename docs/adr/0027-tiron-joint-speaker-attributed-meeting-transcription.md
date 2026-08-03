@@ -23,12 +23,13 @@ route, separate immutable transcript and anonymous-speaker revisions,
   speaker labels. Reviewed head
   `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks and
   PR #142 merged as `4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
-  Separate post-phase ownership and maintainability candidate `fb0985e7...`
-  passed its exact-image lifecycle and checkpoint matrix. Documentation-only
-  successor `e22368fc...` failed hosted frontend audit on newly visible
-  `GHSA-mwp4-54f8-5fhr`; patched development-only `ip-address` 10.3.1 changes
-  the lockfile and therefore requires a fresh exact-head candidate gate, hosted
-  closure, and PR #143 merge. The
+  Historical post-phase ownership and maintainability candidate `fb0985e7...`
+  passed before documentation-only successor `e22368fc...` exposed newly visible
+  `GHSA-mwp4-54f8-5fhr`. Patched development-only `ip-address` 10.3.1 candidate
+  `393710999...` passed its canonical build, receipt-bound image preflight,
+  product lifecycle with teardown, one complete 18-child matrix, receipt
+  validation, and required CI and CodeQL jobs. Final documentation-only hosted
+  closure and PR #143 merge remain. The
   private holdout, meeting-score reproduction, larger-roster
   reconciler, automatic fallback, and production promotion remain later
   promotion work rather than blockers to the merged disabled-by-default
@@ -408,11 +409,13 @@ native follow-up approved runner-only descendant `9ff06d7d...`. The aggregate
 private receipt hash above contains no transcript or audio. The reviewed exact
 head passed hosted checks and merged through PR #142. Step 4's separate
 [meeting-transcription ownership and maintainability review](../plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-has historical candidate `fb0985e7...` with a passed matrix, independently
-validated receipt, and required CI and CodeQL jobs. Its documentation successor
-exposed `GHSA-mwp4-54f8-5fhr`; the patched lockfile now requires a fresh
-exact-head candidate gate, receipt validation, hosted closure including
-disposable-Windows NSIS, and PR #143 merge before Phase 9.
+has historical candidate `fb0985e7...` with a passed matrix and documentation
+successor `e22368fc...`, which exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate
+`393710999...` then passed the canonical native build, exact-image preflight,
+real History/cancellation lifecycle with teardown, one complete 18-child
+matrix, independent receipt validation, and required CI and CodeQL jobs. Final
+documentation-only hosted closure including disposable-Windows NSIS and PR
+#143 merge remain before Phase 9.
 
 ### Deferred production promotion
 

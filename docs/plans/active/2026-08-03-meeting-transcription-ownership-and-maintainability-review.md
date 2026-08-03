@@ -1,12 +1,12 @@
 # Meeting transcription ownership and maintainability review
 
-**Status:** Product implementation complete; late dependency repair awaiting a
-fresh exact-head candidate gate on
-`refactor/meeting-transcription-maintainability` from the Phase 8 merge
-`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Candidate `fb0985e7...` passed,
-but documentation-only successor `e22368fc...` failed hosted frontend audit on
-`GHSA-mwp4-54f8-5fhr`. The patched lockfile, hosted closure, and PR #143 merge
-remain open.
+**Status:** Product implementation and patched exact-head candidate gate are
+complete on `refactor/meeting-transcription-maintainability` from the Phase 8
+merge `4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Historical candidate
+`fb0985e7...` passed before documentation-only successor `e22368fc...` exposed
+`GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999...` passed its fresh gate
+and required CI/CodeQL. Final documentation-only hosted closure, including
+disposable-Windows NSIS, and PR #143 merge remain open.
 
 ## Outcome
 
@@ -139,19 +139,22 @@ separate private messy-meeting model-acceptance corpus.
   high-severity `GHSA-mwp4-54f8-5fhr` in the development-only WDIO/Puppeteer
   chain. Remaining CI and NSIS work was canceled. The current repair pins exact
   patched `ip-address` 10.3.1 without an exception. Because it changes the
-  lockfile, the repair does not qualify for documentation-only lineage and must
-  be admitted as a fresh candidate.
-- [ ] Freeze the repaired code and documentation, then run the complete
-  applicable checkpoint matrix exactly once on one new candidate.
-- [ ] Prepare and inspect the request-time-only Tiron image for that exact head,
+  lockfile, the repair did not qualify for documentation-only lineage and was
+  admitted as a fresh candidate.
+- [x] Freeze the repaired code and documentation, then run the complete
+  applicable checkpoint matrix exactly once on patched candidate
+  `393710999b53a4bd1b00639e30c0fec88b152530`.
+- [x] Prepare and inspect the request-time-only Tiron image for that exact head,
   then use the receipt-bound immutable image in the GB10 lifecycle lane.
-- [ ] Record the candidate and private receipt identity without committing
-  sensitive evidence.
-- [ ] Open one focused PR and merge only after hosted checks are green on the
-  reviewed exact head. If a hosted check is unavailable, disclose the missing
-  check and equivalent local evidence instead of inventing a pass. PR #143 is
-  open; the repaired exact-head candidate and its hosted closure, including
-  disposable-Windows NSIS, must pass before merge.
+- [x] Record the candidate and private receipt identity without committing
+  sensitive evidence. The canonical native build, server preflight, real
+  History/cancellation lifecycle with teardown, 18-child matrix, and independent
+  receipt validation passed.
+- [ ] Merge focused PR #143 only after final documentation-only hosted checks,
+  including disposable-Windows NSIS, are green on the reviewed exact head. If a
+  hosted check is unavailable, disclose the missing check and equivalent local
+  evidence instead of inventing a pass. Candidate `393710999...` already passed
+  every required CI and CodeQL job.
 - [ ] Begin Phase 9 only after this checkpoint merges.
 
 The full Codex Security plugin scan remains intentionally deferred to the Phase
