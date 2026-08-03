@@ -152,8 +152,24 @@ function Assert-ExpectedPrivateAcl {
     }
 }
 
+function ConvertTo-ExtendedPath {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+
+    if ($Path.StartsWith('\\?\', [StringComparison]::Ordinal)) {
+        return $Path
+    }
+    if ($Path.StartsWith('\\', [StringComparison]::Ordinal)) {
+        return '\\?\UNC\' + $Path.Substring(2)
+    }
+    return '\\?\' + $Path
+}
+
 $fullPath = [IO.Path]::GetFullPath($LiteralPath)
-$item = Get-Item -LiteralPath $fullPath -Force
+$ioPath = ConvertTo-ExtendedPath -Path $fullPath
+$item = Get-Item -LiteralPath $ioPath -Force
 $directory = $Operation.EndsWith(
     'directory',
     [StringComparison]::Ordinal
@@ -179,12 +195,12 @@ function Get-ObservedPrivateAcl {
     }
     if ($directory) {
         return [IO.FileSystemAclExtensions]::GetAccessControl(
-            [IO.DirectoryInfo]::new($fullPath),
+            [IO.DirectoryInfo]::new($ioPath),
             $sections
         )
     }
     return [IO.FileSystemAclExtensions]::GetAccessControl(
-        [IO.FileInfo]::new($fullPath),
+        [IO.FileInfo]::new($ioPath),
         $sections
     )
 }
@@ -201,13 +217,13 @@ function Set-ExpectedPrivateAcl {
     }
     if ($directory) {
         [IO.FileSystemAclExtensions]::SetAccessControl(
-            [IO.DirectoryInfo]::new($fullPath),
+            [IO.DirectoryInfo]::new($ioPath),
             $Security
         )
         return
     }
     [IO.FileSystemAclExtensions]::SetAccessControl(
-        [IO.FileInfo]::new($fullPath),
+        [IO.FileInfo]::new($ioPath),
         $Security
     )
 }

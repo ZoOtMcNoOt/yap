@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   chmodSync,
+  closeSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -76,6 +77,9 @@ import {
   readExactPrivateFile,
   writeExclusivePrivateFile,
 } from "../../../../verification/private-gate-artifacts.mjs";
+import {
+  openVerifiedCommandLog,
+} from "../../../../verification/bounded-command-log.mjs";
 
 const contractRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(contractRoot, "..", "..", "..", "..");
@@ -1980,6 +1984,40 @@ test("private gate artifacts use verified private directories and exclusive file
     );
   } finally {
     capability.fill(0);
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Windows private artifact protection supports long command-log paths", {
+  skip: process.platform !== "win32",
+}, () => {
+  const root = createCanonicalTemporaryDirectory("yap-private-long-path-");
+  let commandLogDirectory = root;
+  while (commandLogDirectory.length < 220) {
+    commandLogDirectory = path.join(
+      commandLogDirectory,
+      "long-command-log-parent",
+    );
+  }
+  const commandLog = path.join(
+    commandLogDirectory,
+    "windows.build-tools-optional-diagnostics-disabled.log",
+  );
+  try {
+    mkdirSync(commandLogDirectory, { recursive: true });
+    assert.ok(commandLogDirectory.length < 260);
+    assert.ok(commandLog.length > 260);
+    assert.equal(
+      protectAndVerifyPrivateDirectory(commandLogDirectory),
+      commandLogDirectory,
+    );
+    const descriptor = openVerifiedCommandLog(
+      commandLog,
+      commandLogDirectory,
+    );
+    closeSync(descriptor);
+    assert.equal(assertPrivateFile(commandLog), commandLog);
+  } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
