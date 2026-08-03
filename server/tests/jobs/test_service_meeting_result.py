@@ -88,7 +88,7 @@ def _request_with_pcm_bytes(total_bytes: int, *, session_id: str) -> dict[str, o
 
 
 class RecordingJobMeetingResultTests(unittest.TestCase):
-    def test_joint_worker_publishes_separate_restart_safe_result_revisions(
+    def test_joint_worker_publishes_restart_safe_partial_revisions_and_cancel_purges_them(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -129,6 +129,7 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                 },
             )
             worker_job = processor.jobs[0]
+            speakers = [f"SPEAKER_{index:02d}" for index in range(8)]
             processor.future.set_result(
                 {
                     "schemaVersion": 1,
@@ -151,15 +152,16 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                     },
                     "meeting": {
                         "language": "en",
-                        "speakers": ["SPEAKER_00"],
+                        "speakers": speakers,
                         "segments": [
                             {
-                                "index": 0,
-                                "speaker": "SPEAKER_00",
-                                "startSample": 0,
-                                "endSample": 160,
-                                "text": "joint meeting words",
+                                "index": index,
+                                "speaker": speaker,
+                                "startSample": index * 20,
+                                "endSample": (index + 1) * 20,
+                                "text": f"speaker {index + 1}",
                             }
+                            for index, speaker in enumerate(speakers)
                         ],
                         "numWindows": 1,
                         "sourceTimeUnit": "samples",
@@ -176,7 +178,18 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
             transcript = alice.get_result(created["jobId"])
             speaker = alice.get_speaker_result(created["jobId"])
             job_root = root / "jobs" / created["jobId"]
-            self.assertEqual(transcript["transcript"], "joint meeting words")
+            self.assertEqual(
+                transcript["transcript"],
+                "speaker 1 speaker 2 speaker 3 speaker 4 "
+                "speaker 5 speaker 6 speaker 7 speaker 8",
+            )
+            self.assertEqual(transcript["status"], "partial")
+            self.assertEqual(speaker["status"], "partial")
+            self.assertEqual(
+                speaker["speakerCapacityDegradation"]["code"],
+                "SPEAKER_CAPACITY_REACHED",
+            )
+            self.assertEqual(alice.get(created["jobId"])["status"], "partial")
             self.assertEqual(
                 speaker["speakerTurns"][0]["attribution"],
                 {"kind": "session_speaker", "sessionSpeakerId": "speaker-1"},
@@ -209,7 +222,9 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                 speaker,
             )
 
-            (job_root / "speaker-result-revision.json").unlink()
+            speaker_result_path = job_root / "speaker-result-revision.json"
+            speaker_result_bytes = speaker_result_path.read_bytes()
+            speaker_result_path.unlink()
             with self.assertRaisesRegex(ValueError, "aggregate is incomplete"):
                 RecordingJobService(
                     root,
@@ -219,6 +234,37 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                     meeting_result_authority=AUTHORITY,
                     development_principal=None,
                 )
+            speaker_result_path.write_bytes(speaker_result_bytes)
+
+            cancelled = restarted_alice.cancel(created["jobId"])
+            self.assertEqual(cancelled["status"], "cancelled")
+            self.assertFalse((job_root / "result-revision.json").exists())
+            self.assertFalse(speaker_result_path.exists())
+            for result_getter, expected_code in (
+                (restarted_alice.get_result, "RESULT_NOT_READY"),
+                (restarted_alice.get_speaker_result, "SPEAKER_RESULT_NOT_READY"),
+            ):
+                with self.assertRaises(JobServiceError) as unavailable:
+                    result_getter(created["jobId"])
+                self.assertEqual(unavailable.exception.code, expected_code)
+                self.assertFalse(unavailable.exception.retryable)
+
+            cancelled_restart = RecordingJobService(
+                root,
+                processor=_MeetingProcessor(),
+                supported_languages=("en-US",),
+                now=lambda: "2026-08-03T03:00:03Z",
+                meeting_result_authority=AUTHORITY,
+                development_principal=None,
+                startup_worker_cleanup_verified=True,
+            ).for_principal(ALICE)
+            self.assertEqual(cancelled_restart.get(created["jobId"])["status"], "cancelled")
+            with self.assertRaises(JobServiceError) as unavailable_result:
+                cancelled_restart.get_result(created["jobId"])
+            self.assertFalse(unavailable_result.exception.retryable)
+            with self.assertRaises(JobServiceError) as unavailable_speaker_result:
+                cancelled_restart.get_speaker_result(created["jobId"])
+            self.assertFalse(unavailable_speaker_result.exception.retryable)
 
     def test_restart_discards_speaker_only_terminal_publication_orphans(self) -> None:
         for terminal_status in ("failed", "cancelled"):

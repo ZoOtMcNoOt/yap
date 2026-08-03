@@ -231,7 +231,13 @@ async fn advance_upload_job_once_guarded(
         &status,
         &request,
         Some(server_job_id),
-        &["accepted", "uploading", "server_processing", "complete"],
+        &[
+            "accepted",
+            "uploading",
+            "server_processing",
+            "complete",
+            "partial",
+        ],
     )?;
     if matches!(status.status.as_str(), "accepted" | "uploading") {
         guard.ensure_current()?;
@@ -249,7 +255,7 @@ async fn advance_upload_job_once_guarded(
             &committed,
             &request,
             Some(server_job_id),
-            &["server_processing", "complete"],
+            &["server_processing", "complete", "partial"],
         )
         .map_err(DrainStepError::durable_ambiguous_commit)?;
     }

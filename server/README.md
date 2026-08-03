@@ -379,6 +379,15 @@ marker. Restart recovery rejects incomplete aggregates. The native client
 validates both against the original capture request before atomically
 publishing them under the existing remote-result directory.
 
+The upstream public whole-meeting API exposes only its capped aggregate, not
+the discarded per-window assignments or request-scoped embeddings. If that
+aggregate contains exactly eight distinct speaker labels, Yap conservatively
+publishes both artifacts as terminal `partial` with one meeting-scoped
+`SPEAKER_CAPACITY_REACHED` record spanning the exact source. History warns that
+speaker attribution may be incomplete and that fallback reprocessing was not
+run. This does not localize a saturated 30-second window or prove whether the
+meeting had exactly eight versus more than eight real talkers.
+
 ## Phase 7 identity and private live admission
 
 The current server implements provider-neutral OIDC discovery and JWKS

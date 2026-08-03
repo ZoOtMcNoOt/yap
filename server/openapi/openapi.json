@@ -575,7 +575,7 @@
           "jobs"
         ],
         "summary": "Read the immutable transcript result",
-        "description": "A completed server batch job publishes one immutable TranscriptResultRevision rooted in the accepted capture-manifest hash. Status polling never embeds transcript content.",
+        "description": "A terminal server batch job publishes one immutable TranscriptResultRevision rooted in the accepted capture-manifest hash. Status polling never embeds transcript content.",
         "operationId": "getJobResult",
         "x-yap-runtime-status": "Implemented in the loopback batch runtime",
         "x-yap-runtime-owner": "Transcript result retrieval",
@@ -2793,6 +2793,23 @@
                 }
               ]
             }
+          },
+          {
+            "if": {
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "const": "partial"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "speakerResultSha256"
+              ]
+            }
           }
         ],
         "required": [
@@ -2887,6 +2904,49 @@
           }
         }
       },
+      "SpeakerCapacityDegradation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "fallbackDisposition",
+          "scope",
+          "startSample",
+          "endSample",
+          "observedSpeakerCount",
+          "speakerLimit"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "const": "SPEAKER_CAPACITY_REACHED"
+          },
+          "fallbackDisposition": {
+            "type": "string",
+            "const": "not_run_recommended"
+          },
+          "scope": {
+            "type": "string",
+            "const": "meeting"
+          },
+          "startSample": {
+            "type": "integer",
+            "const": 0
+          },
+          "endSample": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "observedSpeakerCount": {
+            "type": "integer",
+            "const": 8
+          },
+          "speakerLimit": {
+            "type": "integer",
+            "const": 8
+          }
+        }
+      },
       "SpeakerResultRevision": {
         "type": "object",
         "additionalProperties": false,
@@ -2902,6 +2962,7 @@
           "language",
           "runtimeLockSha256",
           "speakerTurns",
+          "speakerCapacityDegradation",
           "alignment",
           "alignedWords",
           "modelProvenance"
@@ -2956,6 +3017,17 @@
               "$ref": "#/components/schemas/JointSpeakerTranscriptTurn"
             }
           },
+          "speakerCapacityDegradation": {
+            "description": "Null for a complete result. A terminal partial result states that the selected route exposed exactly eight meeting-global speaker labels across the complete source; fallback reprocessing is recommended but was not run.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SpeakerCapacityDegradation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "alignedWords": {
             "type": "array",
             "maxItems": 16384,
@@ -2972,7 +3044,35 @@
               "$ref": "#/components/schemas/ModelRevision"
             }
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "const": "partial"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "speakerCapacityDegradation": {
+                  "$ref": "#/components/schemas/SpeakerCapacityDegradation"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "speakerCapacityDegradation": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
       },
       "AsrExecutionMode": {
         "type": "string",

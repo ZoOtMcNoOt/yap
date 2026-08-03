@@ -153,6 +153,8 @@ def validate_result_revision(
         result.get("speakerResultSha256")
     ):
         raise ValueError("result speaker companion identity is invalid")
+    if result.get("status") == "partial" and "speakerResultSha256" not in result:
+        raise ValueError("partial result omitted its speaker companion identity")
 
     if "alignment" not in result:
         if result.get("alignedWords") != []:

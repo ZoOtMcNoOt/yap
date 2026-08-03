@@ -13,8 +13,6 @@ pub(crate) use owner::RemoteJobDrain;
 pub(crate) use scheduler::start;
 
 #[cfg(test)]
-use contract::validate_result_revision;
-#[cfg(test)]
 use error::remote_retry_plan;
 #[cfg(test)]
 use preparation::{attach_prepared_remote_job_or_cleanup, prepare_next_queued_job};

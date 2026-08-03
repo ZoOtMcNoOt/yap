@@ -12,6 +12,7 @@ from yap_server.meeting_transcription.result_revisions import (
     MeetingResultContext,
     build_meeting_result_revisions,
     load_meeting_result_authority,
+    speaker_result_sha256,
     validate_speaker_result_revision,
 )
 
@@ -89,6 +90,7 @@ def _context() -> MeetingResultContext:
         provider_language="en",
         source_track_ids=("track-1",),
         maximum_end_ms=2_000,
+        source_frame_count=32_000,
     )
 
 
@@ -112,6 +114,9 @@ class MeetingResultRevisionTests(unittest.TestCase):
         self.assertEqual(speaker["captureManifestSha256"], "a" * 64)
         self.assertNotIn("transcript", speaker)
         self.assertEqual(speaker["runtimeLockSha256"], RUNTIME_LOCK_SHA256)
+        self.assertEqual(transcript["status"], "complete")
+        self.assertEqual(speaker["status"], "complete")
+        self.assertIsNone(speaker["speakerCapacityDegradation"])
         self.assertEqual(
             [turn["attribution"] for turn in speaker["speakerTurns"]],
             [
@@ -135,6 +140,92 @@ class MeetingResultRevisionTests(unittest.TestCase):
             context=_context(),
             authority=AUTHORITY,
         )
+
+    def test_eight_observed_speakers_publish_a_typed_partial_result(self) -> None:
+        worker = _worker_result()
+        speakers = [f"SPEAKER_{index:02d}" for index in range(8)]
+        worker["meeting"] = {
+            "language": "en",
+            "speakers": speakers,
+            "segments": [
+                {
+                    "index": index,
+                    "speaker": speaker,
+                    "startSample": index * 4_000,
+                    "endSample": (index + 1) * 4_000,
+                    "text": f"speaker {index + 1}",
+                }
+                for index, speaker in enumerate(speakers)
+            ],
+            "numWindows": 1,
+            "sourceTimeUnit": "samples",
+        }
+
+        transcript, speaker = build_meeting_result_revisions(
+            worker,
+            context=_context(),
+            authority=AUTHORITY,
+        )
+
+        self.assertEqual(transcript["status"], "partial")
+        self.assertEqual(speaker["status"], "partial")
+        self.assertEqual(
+            speaker["speakerCapacityDegradation"],
+            {
+                "code": "SPEAKER_CAPACITY_REACHED",
+                "fallbackDisposition": "not_run_recommended",
+                "scope": "meeting",
+                "startSample": 0,
+                "endSample": 32_000,
+                "observedSpeakerCount": 8,
+                "speakerLimit": 8,
+            },
+        )
+        validate_speaker_result_revision(
+            speaker,
+            transcript_result=transcript,
+            context=_context(),
+            authority=AUTHORITY,
+        )
+
+        missing_degradation = deepcopy(speaker)
+        missing_degradation["status"] = "complete"
+        missing_degradation["speakerCapacityDegradation"] = None
+        matching_complete_transcript = deepcopy(transcript)
+        matching_complete_transcript["status"] = "complete"
+        matching_complete_transcript["speakerResultSha256"] = (
+            speaker_result_sha256(missing_degradation)
+        )
+        with self.assertRaisesRegex(ValueError, "differs from the roster"):
+            validate_speaker_result_revision(
+                missing_degradation,
+                transcript_result=matching_complete_transcript,
+                context=_context(),
+                authority=AUTHORITY,
+            )
+
+        complete_transcript, two_speaker_result = build_meeting_result_revisions(
+            _worker_result(),
+            context=_context(),
+            authority=AUTHORITY,
+        )
+        spurious_degradation = deepcopy(two_speaker_result)
+        spurious_degradation["status"] = "partial"
+        spurious_degradation["speakerCapacityDegradation"] = deepcopy(
+            speaker["speakerCapacityDegradation"]
+        )
+        matching_partial_transcript = deepcopy(complete_transcript)
+        matching_partial_transcript["status"] = "partial"
+        matching_partial_transcript["speakerResultSha256"] = (
+            speaker_result_sha256(spurious_degradation)
+        )
+        with self.assertRaisesRegex(ValueError, "differs from the roster"):
+            validate_speaker_result_revision(
+                spurious_degradation,
+                transcript_result=matching_partial_transcript,
+                context=_context(),
+                authority=AUTHORITY,
+            )
 
     def test_rejects_forged_identity_bounds_or_named_attribution(self) -> None:
         transcript, baseline = build_meeting_result_revisions(

@@ -351,6 +351,7 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
                 "supportingTrackIds": [request.tracks[0].track_id],
                 "overlapGroupId": null
             }],
+            "speakerCapacityDegradation": null,
             "alignment": {
                 "status": "unavailable",
                 "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
@@ -385,11 +386,12 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
     )
     .unwrap();
     ledger
-        .complete_remote_result(
+        .finalize_remote_result(
             "job-completed-catalog",
             &output,
             1_722_592_000_000,
             1_720_000_000_600,
+            RecordingJobStatus::Complete,
         )
         .unwrap();
     let jobs = RecordingJobs::from_ledger(ledger, &dir);
@@ -415,6 +417,26 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
     assert_eq!(speaker_turns.len(), 1);
     assert_eq!(speaker_turns[0].speaker_id, "speaker-1");
     assert_eq!(speaker_turns[0].text, "Catalog result.");
+
+    let status_corruption = rusqlite::Connection::open(&database).unwrap();
+    status_corruption
+        .execute(
+            "UPDATE recording_jobs SET status = 'partial' WHERE job_id = 'job-completed-catalog'",
+            [],
+        )
+        .unwrap();
+    drop(status_corruption);
+    let mismatched_status = jobs.completed_remote_transcripts().unwrap();
+    assert!(mismatched_status.sessions.is_empty());
+    assert_eq!(mismatched_status.maintenance_warnings.len(), 1);
+    let restored_status = rusqlite::Connection::open(&database).unwrap();
+    restored_status
+        .execute(
+            "UPDATE recording_jobs SET status = 'complete' WHERE job_id = 'job-completed-catalog'",
+            [],
+        )
+        .unwrap();
+    drop(restored_status);
 
     let result_directory = output.parent().unwrap();
     let canonical_speaker_bytes = serde_json::to_vec(&speaker_result).unwrap();

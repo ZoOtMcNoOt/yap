@@ -133,9 +133,35 @@ pub(crate) struct SpeakerResultRevision {
     pub language: LanguageDecision,
     pub runtime_lock_sha256: String,
     pub speaker_turns: Vec<SpeakerTurn>,
+    pub speaker_capacity_degradation: SpeakerCapacityDegradation,
     pub alignment: AlignmentOutcome,
     pub aligned_words: Vec<AlignedWord>,
     pub model_provenance: Vec<ModelRevision>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub(crate) enum SpeakerCapacityDegradation {
+    None(()),
+    Reached(SpeakerCapacityReached),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct SpeakerCapacityReached {
+    pub code: String,
+    pub fallback_disposition: String,
+    pub scope: SpeakerCapacityScope,
+    pub start_sample: u64,
+    pub end_sample: u64,
+    pub observed_speaker_count: u8,
+    pub speaker_limit: u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum SpeakerCapacityScope {
+    Meeting,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -423,10 +449,18 @@ impl SpeakerResultRevision {
         Some(digest.iter().map(|byte| format!("{byte:02x}")).collect())
     }
 
+    pub(crate) fn speaker_capacity_reached(&self) -> bool {
+        matches!(
+            &self.speaker_capacity_degradation,
+            SpeakerCapacityDegradation::Reached(_)
+        )
+    }
+
     pub(crate) fn is_valid_for(
         &self,
         transcript: &TranscriptResultRevision,
         source_duration_ms: u64,
+        expected_source_end_sample: Option<u64>,
         source_track_ids: &[String],
     ) -> bool {
         if self.session_id != transcript.session_id
@@ -456,6 +490,11 @@ impl SpeakerResultRevision {
                         .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
                     || model.calibration_revision != self.runtime_lock_sha256
             })
+            || !self.speaker_capacity_degradation.is_valid_for(
+                &self.status,
+                source_duration_ms,
+                expected_source_end_sample,
+            )
         {
             return false;
         }
@@ -463,6 +502,7 @@ impl SpeakerResultRevision {
         let mut previous_start_ms = 0_u64;
         let mut intervals = Vec::with_capacity(self.speaker_turns.len());
         let mut rendered_text = Vec::with_capacity(self.speaker_turns.len());
+        let mut observed_speakers = BTreeSet::new();
         for (index, turn) in self.speaker_turns.iter().enumerate() {
             let expected_turn_id = format!("turn-{:06}", index + 1);
             let AnonymousSpeakerAttribution::SessionSpeaker { session_speaker_id } =
@@ -481,16 +521,50 @@ impl SpeakerResultRevision {
                 return false;
             }
             previous_start_ms = turn.start_ms;
+            observed_speakers.insert(session_speaker_id.as_str());
             intervals.push((turn.start_ms, turn.end_ms));
             rendered_text.push(turn.text.as_str());
         }
-        rendered_text.join(" ") == transcript.transcript
+        self.speaker_capacity_reached() == (observed_speakers.len() == 8)
+            && rendered_text.join(" ") == transcript.transcript
             && expected_overlap_groups(&intervals)
                 == self
                     .speaker_turns
                     .iter()
                     .map(|turn| turn.overlap_group_id.clone())
                     .collect::<Vec<_>>()
+    }
+}
+
+impl SpeakerCapacityDegradation {
+    fn is_valid_for(
+        &self,
+        status: &str,
+        source_duration_ms: u64,
+        expected_source_end_sample: Option<u64>,
+    ) -> bool {
+        let Self::Reached(degradation) = self else {
+            return status == "complete";
+        };
+        if status != "partial"
+            || degradation.code != "SPEAKER_CAPACITY_REACHED"
+            || degradation.fallback_disposition != "not_run_recommended"
+            || degradation.scope != SpeakerCapacityScope::Meeting
+            || degradation.start_sample != 0
+            || degradation.observed_speaker_count != 8
+            || degradation.speaker_limit != 8
+        {
+            return false;
+        }
+        let Some(maximum_source_end) = source_duration_ms
+            .checked_mul(16)
+            .and_then(|value| value.checked_add(15))
+        else {
+            return false;
+        };
+        degradation.end_sample > 0
+            && degradation.end_sample <= maximum_source_end
+            && expected_source_end_sample.is_none_or(|expected| degradation.end_sample == expected)
     }
 }
 

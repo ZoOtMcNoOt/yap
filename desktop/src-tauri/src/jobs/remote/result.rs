@@ -198,7 +198,7 @@ pub(in crate::jobs) fn read_published_remote_transcript(
             .first()
             .map(|turn| turn.supporting_track_ids.clone())
             .unwrap_or_default();
-        if !speaker.is_valid_for(&result, MAX_RECORDING_DURATION_MS, &source_track_ids) {
+        if !speaker.is_valid_for(&result, MAX_RECORDING_DURATION_MS, None, &source_track_ids) {
             return Err("remote speaker result revision is incompatible".into());
         }
         Some(speaker)
@@ -304,7 +304,8 @@ pub(super) fn validate_published_result_contract(
             .speaker_result_sha256
             .as_deref()
             .is_some_and(|value| !valid_sha256(value))
-        || result.status != "complete"
+        || !matches!(result.status.as_str(), "complete" | "partial")
+        || (result.status == "partial" && !result.requires_speaker_result())
         || !language_valid
         || !result.transcript_is_canonical()
         || !result.language_evidence_is_valid(None, MAX_RECORDING_DURATION_MS)

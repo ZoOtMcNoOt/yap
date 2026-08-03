@@ -1190,7 +1190,8 @@ class RecordingJobService:
                     409,
                     "RESULT_NOT_READY",
                     "The immutable transcript result is not available yet.",
-                    retryable=self._state.jobs[job_id].get("status") != "failed",
+                    retryable=self._state.jobs[job_id].get("status")
+                    not in {"failed", "cancelled"},
                 )
             return deepcopy(self._state.results[job_id])
 
@@ -1208,7 +1209,8 @@ class RecordingJobService:
                     409,
                     "SPEAKER_RESULT_NOT_READY",
                     "The immutable speaker result is not available yet.",
-                    retryable=self._state.jobs[job_id].get("status") != "failed",
+                    retryable=self._state.jobs[job_id].get("status")
+                    not in {"failed", "cancelled"},
                 )
             return deepcopy(self._state.speaker_results[job_id])
 

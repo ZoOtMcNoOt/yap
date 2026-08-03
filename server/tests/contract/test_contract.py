@@ -288,6 +288,38 @@ class ContractTests(unittest.TestCase):
             speaker_result["properties"]["runtimeLockSha256"]["$ref"],
             "#/components/schemas/Sha256",
         )
+        capacity = schemas["SpeakerCapacityDegradation"]
+        self.assertEqual(
+            capacity["required"],
+            [
+                "code",
+                "fallbackDisposition",
+                "scope",
+                "startSample",
+                "endSample",
+                "observedSpeakerCount",
+                "speakerLimit",
+            ],
+        )
+        self.assertEqual(capacity["properties"]["scope"]["const"], "meeting")
+        self.assertNotIn("regions", capacity["properties"])
+        capacity_status_contract = speaker_result["allOf"][0]
+        self.assertEqual(
+            capacity_status_contract["if"]["properties"]["status"]["const"],
+            "partial",
+        )
+        self.assertEqual(
+            capacity_status_contract["then"]["properties"][
+                "speakerCapacityDegradation"
+            ]["$ref"],
+            "#/components/schemas/SpeakerCapacityDegradation",
+        )
+        self.assertEqual(
+            capacity_status_contract["else"]["properties"][
+                "speakerCapacityDegradation"
+            ]["type"],
+            "null",
+        )
         self.assertEqual(
             schemas["JointSpeakerTranscriptTurn"]["properties"]["overlapGroupId"],
             schemas["SpeakerTurn"]["properties"]["overlapGroupId"],
@@ -306,6 +338,14 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(
             transcript_result["allOf"][0]["then"]["required"],
             ["languageSegments", "languageSpanEvidence"],
+        )
+        self.assertEqual(
+            transcript_result["allOf"][1]["if"]["properties"]["status"]["const"],
+            "partial",
+        )
+        self.assertEqual(
+            transcript_result["allOf"][1]["then"]["required"],
+            ["speakerResultSha256"],
         )
         self.assertEqual(
             transcript_result["properties"]["languageSpanEvidence"]["$ref"],

@@ -230,9 +230,10 @@ slots. The pinned harness links those slots across 30-second windows but also
 caps its whole-meeting result at eight global identities. A separately gated
 Yap speaker-epoch reconciler is required before the route can claim more than
 eight distinct talkers; a larger attendee list alone is not such a claim. It
-does not replace the local baseline above. The server route remains
-unadvertised until a complete runtime lock and frozen messy-meeting gate prove
-the following additional properties:
+does not replace the local baseline above. The server route is disabled by
+default, explicitly selected as Preview, and unpromoted. Changing the committed
+default catalog or production-promoting it requires the following additional
+evidence:
 
 | Server joint-ASR gate | Required evidence |
 | --- | --- |
@@ -264,7 +265,12 @@ local provisional r1
 
 Reprocessing appends a result. It never mutates raw audio or silently replaces a user correction. A later server result may be presented as a proposed revision when manual labels exist.
 
-`Unknown` remains valid in any revision. A result is `partial` when source audio has gaps, is truncated, or was not fully uploaded.
+`Unknown` remains valid in any revision. A result is `partial` when source audio
+has gaps, is truncated, was not fully uploaded, or a selected route reaches an
+observable representation limit. The current Tiron Preview can observe only
+that the meeting-global aggregate contains exactly eight labels, so it reports
+one whole-source capacity record; it does not claim overflow or identify a
+specific saturated window.
 
 Timestamped diarization is normative at two levels:
 

@@ -723,12 +723,12 @@ the worker into the authenticated Python batch router. This explicit profile is
 meeting-only and rejects more than three hours before allocating job storage.
 The route publishes the anonymous-speaker revision first and the transcript
 revision last as the aggregate commit marker; the transcript carries the exact
-companion hash and every speaker turn carries reconstructable text.
-restart validation rejects incomplete aggregates. The owner-scoped API and
-Rust native connector validate and publish both artifacts without exposing raw
-Tiron speaker labels. No promotion result, larger-roster reconciler, default
-route, or production service exists. The local anonymous-speaker path and
-ASR-plus-diarization fallback remain separate.
+companion hash and every speaker turn carries reconstructable text. Restart
+validation rejects incomplete aggregates. The owner-scoped API and Rust native
+connector validate and publish both artifacts without exposing raw Tiron
+speaker labels. The profile is explicit Preview, absent from the committed
+default catalog, and not production-promoted. The local anonymous-speaker path
+and ASR-plus-diarization fallback remain separate.
 
 Tiron's model capacity is eight window-local speaker slots per 30-second
 decode, and the pinned reference harness separately caps the published global
@@ -736,20 +736,26 @@ meeting roster at eight. Neither limit is an attendee count. Yap retains ADR
 0020's dynamic 32-speaker target and 64-speaker safety ceiling, but reaching it
 requires the separately gated ADR 0027 speaker-epoch reconciler or the
 ASR-plus-diarization fallback; ordinary chunking does not lift the released
-global cap. Phase 8 must distinguish more-than-15-attendee sessions with a
-small active subset from nine/sixteen/thirty-two-talker sessions, and must
-explicitly degrade/reprocess a window that reaches or plausibly exceeds eight
-distinct talkers.
+global cap. The public whole-meeting API discards per-window assignments and
+embeddings. The current Preview therefore reports only what it can observe:
+an aggregate with exactly eight global speaker labels is terminal `partial`
+and carries one source-bound, meeting-scoped saturation record stating that
+fallback was recommended but not run. It cannot distinguish exactly eight
+real talkers from a larger collapsed roster or identify an exact saturated
+window. Window evidence, larger-roster speaker epochs, and automatic fallback
+remain production-promotion work; Yap will not fork private upstream pipeline
+internals to manufacture them.
 
-The frozen Phase 8 gate will score AMI/ICSI/NOTSOFAR public comparators
-separately from an independently adjudicated private messy-meeting holdout.
-Accuracy, overlap, locale, capacity pressure, long-session stability,
-c1/c2/c4/c8 isolation, cancellation, and teardown all remain promotion gates.
-The model emits evidence only. The Python server owns server-side source
-validation, durable jobs, admission, cancellation, containment, and immutable
-authoritative revisions. Rust independently binds those revisions to the
-persisted capture request, publishes the local aggregate, and projects its
-anonymous turns into History.
+The Phase 8 Preview gate proves the pinned route, source/result boundaries,
+lifecycle, supported launcher, and client projection on one exact candidate.
+The later promotion gate will score AMI/ICSI/NOTSOFAR public comparators
+separately from an independently adjudicated private messy-meeting holdout and
+qualify accuracy, overlap, locale, capacity pressure, long-session stability,
+c1/c2/c4/c8 isolation, cancellation, and teardown. The model emits evidence
+only. The Python server owns server-side source validation, durable jobs,
+admission, cancellation, containment, and immutable authoritative revisions.
+Rust independently binds those revisions to the persisted capture request,
+publishes the local aggregate, and projects its anonymous turns into History.
 
 ## Persistence and recovery
 

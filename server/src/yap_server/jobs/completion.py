@@ -207,7 +207,7 @@ class JobCompletionCoordinator:
             if speaker_result is not None:
                 self._state.speaker_results[job_id] = speaker_result
             job = self._state.jobs[job_id]
-            job["status"] = "complete"
+            job["status"] = result["status"]
             job["updatedAtUtc"] = created_at
             self._finish_running_stage(
                 job_id,

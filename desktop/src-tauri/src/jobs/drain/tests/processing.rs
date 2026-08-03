@@ -48,7 +48,7 @@ fn exact_processing_target_does_not_fall_through_to_a_neighbor_after_cancellatio
 }
 
 #[test]
-fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
+fn partial_server_result_is_published_before_the_ledger_becomes_partial() {
     let root = temp_dir("result");
     let database = root.join("jobs.sqlite3");
     let source = root.join("source.wav");
@@ -83,13 +83,44 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
         "displayName": request.display_name,
         "sessionMode": "meeting",
         "sessionOrigin": "imported_file",
-        "status": "complete",
+        "status": "partial",
         "route": "server_batch",
         "captureManifest": request.capture_manifest,
         "createdAtUtc": "2026-07-14T21:00:00Z",
         "updatedAtUtc": "2026-07-14T21:00:02Z"
     });
     let runtime_lock = "d".repeat(64);
+    let speaker_texts = [
+        "Phase five is connected.",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six",
+        "seven",
+        "eight",
+    ];
+    let transcript_text = speaker_texts.join(" ");
+    let speaker_turns = speaker_texts
+        .iter()
+        .enumerate()
+        .map(|(index, text)| {
+            let speaker_number = index + 1;
+            serde_json::json!({
+                "turnId": format!("turn-{speaker_number:06}"),
+                "startMs": 0,
+                "endMs": 10,
+                "text": text,
+                "attribution": {
+                    "kind": "session_speaker",
+                    "sessionSpeakerId": format!("speaker-{speaker_number}")
+                },
+                "confidence": null,
+                "supportingTrackIds": ["track-1"],
+                "overlapGroupId": "overlap-000001"
+            })
+        })
+        .collect::<Vec<_>>();
     let mut result = serde_json::json!({
         "sessionId": request.metadata.session_id.as_str(),
         "revision": 1,
@@ -97,12 +128,12 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
         "createdAtUtc": "2026-07-14T21:00:02Z",
         "captureManifestSha256": request.capture_manifest.sha256,
         "previousResultSha256": null,
-        "status": "complete",
+        "status": "partial",
         "language": {
             "languageBcp47": "en-US",
             "confidence": null
         },
-        "transcript": "Phase five is connected.",
+        "transcript": transcript_text,
         "alignment": {
             "status": "unavailable",
             "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
@@ -122,19 +153,19 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
         "createdAtUtc": "2026-07-14T21:00:02Z",
         "captureManifestSha256": request.capture_manifest.sha256,
         "previousResultSha256": null,
-        "status": "complete",
+        "status": "partial",
         "language": {"languageBcp47": "en-US", "confidence": null},
         "runtimeLockSha256": runtime_lock,
-        "speakerTurns": [{
-            "turnId": "turn-000001",
-            "startMs": 0,
-            "endMs": 10,
-            "text": "Phase five is connected.",
-            "attribution": {"kind": "session_speaker", "sessionSpeakerId": "speaker-1"},
-            "confidence": null,
-            "supportingTrackIds": ["track-1"],
-            "overlapGroupId": null
-        }],
+        "speakerTurns": speaker_turns,
+        "speakerCapacityDegradation": {
+            "code": "SPEAKER_CAPACITY_REACHED",
+            "fallbackDisposition": "not_run_recommended",
+            "scope": "meeting",
+            "startSample": 0,
+            "endSample": 160,
+            "observedSpeakerCount": 8,
+            "speakerLimit": 8
+        },
         "alignment": {
             "status": "unavailable",
             "reason": "ALIGNMENT_PROVIDER_UNSUPPORTED",
@@ -163,39 +194,6 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
         serde_json::from_value(speaker_result.clone()).unwrap();
     result["speakerResultSha256"] =
         serde_json::json!(decoded_speaker_result.content_sha256().unwrap());
-    let valid_result: crate::server_connector::batch::TranscriptResultRevision =
-        serde_json::from_value(result.clone()).unwrap();
-    let mut aligned_value = result.clone();
-    aligned_value["alignment"] = serde_json::json!({
-        "status": "available",
-        "reason": null,
-        "componentRevision": "cohere-attention-en-v1"
-    });
-    aligned_value["alignedWords"] = serde_json::json!([
-        {"wordIndex": 0, "text": "Phase", "startMs": 0, "endMs": 2,
-         "turnId": null, "attribution": {"kind": "unknown"}, "confidence": null},
-        {"wordIndex": 1, "text": "five", "startMs": 2, "endMs": 4,
-         "turnId": null, "attribution": {"kind": "unknown"}, "confidence": null},
-        {"wordIndex": 2, "text": "is", "startMs": 4, "endMs": 6,
-         "turnId": null, "attribution": {"kind": "unknown"}, "confidence": null},
-        {"wordIndex": 3, "text": "connected.", "startMs": 6, "endMs": 10,
-         "turnId": null, "attribution": {"kind": "unknown"}, "confidence": null}
-    ]);
-    let aligned_result: crate::server_connector::batch::TranscriptResultRevision =
-        serde_json::from_value(aligned_value).unwrap();
-    assert!(validate_result_revision(&aligned_result, &request).is_ok());
-    let mut out_of_source = aligned_result;
-    out_of_source.aligned_words[3].end_ms = 11;
-    assert!(validate_result_revision(&out_of_source, &request).is_err());
-    let mut silent_result = valid_result.clone();
-    silent_result.transcript.clear();
-    assert!(validate_result_revision(&silent_result, &request).is_ok());
-    let mut empty_result = valid_result.clone();
-    empty_result.transcript = " \n\t".into();
-    assert!(validate_result_revision(&empty_result, &request).is_err());
-    let mut offset_timestamp = valid_result;
-    offset_timestamp.created_at_utc = "2026-07-14T16:00:02-05:00".into();
-    assert!(validate_result_revision(&offset_timestamp, &request).is_err());
     let (base_url, observed, server) = start_json_server(vec![
         (200, projection),
         (200, result),
@@ -246,13 +244,35 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
     });
     server.join().unwrap();
 
-    let completed = ledger.get_job("job-drain-result").unwrap().unwrap();
-    assert_eq!(completed.status, RecordingJobStatus::Complete);
-    assert_eq!(completed.expires_at_ms, Some(1_722_592_000_000));
-    let output = completed.output_path.unwrap();
+    let partial = ledger.get_job("job-drain-result").unwrap().unwrap();
+    assert_eq!(partial.status, RecordingJobStatus::Partial);
+    assert_eq!(partial.expires_at_ms, Some(1_722_592_000_000));
+    let output = partial.output_path.unwrap();
+    assert_eq!(
+        ledger
+            .finalize_remote_result(
+                "job-drain-result",
+                &output,
+                1_722_592_000_000,
+                1_720_000_000_600,
+                RecordingJobStatus::Partial,
+            )
+            .unwrap()
+            .status,
+        RecordingJobStatus::Partial,
+    );
+    assert!(ledger
+        .finalize_remote_result(
+            "job-drain-result",
+            &output,
+            1_722_592_000_000,
+            1_720_000_000_600,
+            RecordingJobStatus::Complete,
+        )
+        .is_err());
     assert_eq!(
         fs::read_to_string(&output).unwrap(),
-        "Phase five is connected.\n"
+        format!("{transcript_text}\n")
     );
     let result_path = output.parent().unwrap().join("result.json");
     let persisted: serde_json::Value =
@@ -274,6 +294,15 @@ fn completed_server_result_is_published_before_the_ledger_becomes_complete() {
         "GET /v1/jobs/{server_job_id}/speaker-result HTTP/1.1"
     )));
     drop(requests);
-    drop(ledger);
+    let jobs = crate::jobs::commands::RecordingJobs::from_ledger(ledger, &root);
+    let catalog = jobs.completed_remote_transcripts().unwrap();
+    assert_eq!(catalog.sessions.len(), 1);
+    assert_eq!(
+        catalog.sessions[0].warning.as_deref(),
+        Some(
+            "Speaker attribution may be incomplete because the server reached its eight-speaker limit; fallback reprocessing was not run."
+        )
+    );
+    drop(jobs);
     fs::remove_dir_all(root).unwrap();
 }

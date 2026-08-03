@@ -16,9 +16,16 @@ startup now verifies both locked model roots and the private receipt for the
 checked Tiron image. Focused Python and Rust tests compose the existing
 authenticated job route, three-hour admission, separate hash-bound transcript
 and anonymous-speaker revisions, native publication, and History projection.
-A real supported-launcher HTTP/native roundtrip remains a gate item. This is an
-executable candidate contract path, not production promotion or complete Phase
-8 qualification.
+Exact application/runtime head
+`6d90a7225a45f181efcb90bb796b1ba97f645eba` then passed one supported-launcher
+development-loopback roundtrip from licensed client import through the real HTTP
+route and pinned upstream Tiron harness to a separately hash-bound speaker
+result and speaker-attributed History UI. Its protected receipt remains outside
+Git. This is an executable candidate path, not production promotion or complete
+Phase 8 Preview qualification. The executing contract now conservatively makes
+an exactly-eight-label upstream aggregate terminal `partial`, binds one
+meeting-global saturation record to the complete source, and states that
+fallback reprocessing was recommended but not run.
 
 ## Outcome
 
@@ -49,6 +56,22 @@ overlap and long multi-participant meetings.
 - Reimplementing or vendoring the upstream inference runtime inside Yap; the
   pinned harness runs as a third-party dependency behind a thin Yap wrapper.
 - Shipping a persistent production service or enterprise deployment in Phase 8.
+
+## Delivery boundary
+
+This branch closes the smallest honest Phase 8 product layer: an explicitly
+enabled, meeting-only Preview candidate that is absent from the committed
+default catalog. It does not production-promote Tiron. The remaining Preview
+closure work is limited to stabilizing the typed global-cap behavior, closing
+the adversarial review, proving the supported roundtrip again on the exact
+candidate, running the frozen Phase 8 local/native/server/GB10 matrix once,
+reconciling docs, and merging a green checked head.
+
+The private holdout, public-score reproduction, larger-roster speaker epochs,
+exact window-cap localization, automatic fallback execution, and broad
+accuracy/resource/concurrency promotion campaign remain required before a
+future production-promotion decision. They are recorded below but are not
+blockers to merging the disabled-by-default Preview baseline.
 
 ## Work slices
 
@@ -106,8 +129,11 @@ The required suite contains:
   speakers, queue depth, worker resources, and result bytes.
 - [ ] Measure and qualify embedding/exemplar, thread, GPU, and temporary-artifact
   bounds across the frozen duration/concurrency matrix.
-- [ ] Implement typed cancellation, timeout, OOM, malformed-output,
-  capacity-pressure, partial-result, and teardown outcomes.
+- [x] Publish a typed terminal `partial` result when the public upstream
+  aggregate exposes exactly eight global speaker labels; bind one meeting-wide
+  degradation record to the exact source and say fallback was not run.
+- [ ] Qualify the broader timeout, OOM, window-cap, fallback-execution, and
+  resource-pressure outcome matrix before production promotion.
 
 ### 3. Integrate through Yap-owned contracts
 
@@ -116,15 +142,18 @@ The required suite contains:
   neither the request nor model output can select an owner.
 - [x] Contract-compose work through the existing authenticated job/router
   boundary and Rust native connector with focused server/native tests.
-- [ ] Execute the same aggregate through the supported launcher, real HTTP
+- [x] Execute the same aggregate through the supported launcher, real HTTP
   route, and native publication/History path on the frozen candidate.
-- [ ] Bind every result to tenant, owner, job, capture-manifest hash, model and
+- [x] Bind every result to tenant, owner, job, capture-manifest hash, model and
   harness revisions, runtime lock, language decision, and source-time plan.
 - [x] Validate segment bounds, ordering, overlap groups, speaker slots, exact
   transcript reconstruction, capture binding, companion hash, and revision
   ancestry before publication/reopen.
-- [x] Translate window-local slots into anonymous session speakers without
-  exposing raw model token syntax to the client.
+- [x] Translate the upstream meeting-global anonymous labels into canonical
+  session-speaker IDs without exposing raw model token syntax to the client.
+- [ ] Translate or reconcile window-local speaker evidence only after an
+  accepted upstream evidence API exposes it; the current public aggregate does
+  not.
 - [ ] Preserve user corrections and publish improvements as new immutable
   revisions.
 - [x] Keep named identity and profile adaptation behind independent purpose
@@ -150,14 +179,16 @@ The required suite contains:
   non-adjacent epochs.
 - [ ] Use staggered views as evidence, not as proof that a cap-pressure region
   is complete.
-- [ ] Detect a reached or plausibly exceeded local slot cap or selected-route
-  global cap and publish a typed degraded/partial region.
+- [x] Detect the observable selected-route global cap and publish a typed
+  meeting-scoped partial result; do not invent unavailable source regions.
+- [ ] Obtain exact local-window saturation evidence from an accepted upstream
+  boundary before claiming window-cap localization.
 - [ ] Retain source audio and schedule fallback/reprocessing without silently
   dropping, merging, or inventing speakers.
 - [ ] Prove bounded memory and speaker state at the three-hour candidate limit
   with the separate 64-speaker synthetic pressure control.
 
-### 5. Compare quality and runtime on the same source
+### 5. Deferred production promotion: compare quality and runtime on the same source
 
 - [ ] Run the pinned Tiron harness, Yap speaker-epoch extension, and
   ASR-plus-diarization fallback from byte-identical source audio and the same
@@ -172,15 +203,17 @@ The required suite contains:
   tenant, leaked speaker state, failed overlap slice, unsupported advertised
   locale, missing participant, or dirty teardown.
 - [ ] Require a documented product-relevant benefit over the fallback before
-  production promotion; otherwise retain Tiron as an unadvertised or narrower
-  route without changing result authority.
+  production promotion; otherwise retain Tiron as an explicit Preview or
+  narrower route absent from the committed default catalog, without changing
+  result authority.
 
 ### 6. Close the phase cleanly
 
-- [ ] Use focused unit, contract, scorer, worker, integration, and selected
-  real-model checks while implementation changes.
-- [ ] Freeze the exact candidate only after code, locks, corpus policy,
-  thresholds, docs, and private evidence paths are ready.
+- [x] Use focused unit, contract, worker, integration, and selected real-model
+  checks while implementation changes.
+- [ ] Freeze the exact Preview candidate only after code, locks, docs, and
+  private evidence paths are ready; promotion-corpus thresholds remain
+  deferred promotion work.
 - [ ] Run the complete applicable local/native/server/GB10 Phase 8 matrix once
   on that exact candidate.
 - [ ] Reconcile ADR implementation scores and architecture/status claims only
@@ -205,9 +238,11 @@ The required suite contains:
 
 ## Promotion record
 
-The phase PR must record the exact checked head, artifact hashes, private
-receipt hashes, public comparator results, independent aggregate results,
-resource/capacity results, known failures, advertised locales/durations, and
-clean teardown. It must say explicitly whether Tiron is promoted generally,
-promoted for a narrower route, or retained as an unadvertised implementation
-baseline.
+The Phase 8 Preview PR must record the exact checked head, artifact hashes,
+private receipt hashes, focused and complete gate evidence, known failures,
+enabled locale/duration bounds, and clean teardown. It must explicitly say
+that Tiron remains an operator-enabled Preview candidate, absent from the
+committed default catalog and not production-promoted. A later promotion PR
+must additionally record public comparator results, independent aggregate
+results, resource/capacity results, and an explicit meeting-only,
+broader-replacement, or rejection decision.

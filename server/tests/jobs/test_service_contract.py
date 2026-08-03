@@ -570,6 +570,20 @@ class RecordingJobContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_result_revision(result, projection)
 
+    def test_partial_result_requires_a_speaker_companion_identity(self) -> None:
+        projection = {
+            "sessionId": "s-batch-create",
+            "captureManifest": {"sha256": "a" * 64},
+        }
+        result = _published_result(projection)
+        result["status"] = "partial"
+
+        with self.assertRaisesRegex(ValueError, "omitted its speaker companion"):
+            validate_result_revision(result, projection)
+
+        result["speakerResultSha256"] = "d" * 64
+        validate_result_revision(result, projection)
+
     def test_result_contract_accepts_empty_but_not_whitespace_only_transcript(
         self,
     ) -> None:
