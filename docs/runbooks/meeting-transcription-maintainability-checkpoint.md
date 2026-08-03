@@ -7,10 +7,13 @@ capacity, or production-promotion result.
 
 The authoritative manifest is
 [`verification/meeting-transcription-maintainability-checkpoint.json`](../../verification/meeting-transcription-maintainability-checkpoint.json).
-The gate runs the complete local/native/server matrix once and adds five
-private lifecycle receipts for the exact checked-head Tiron image, a real
+The gate runs its complete local/server/private candidate matrix once and adds
+five lifecycle receipts for the exact checked-head Tiron image, a real
 desktop-to-GB10 speaker-attributed result, active cancellation, and zero
-retained owners.
+retained owners. Native formatting, Clippy, compilation, tests,
+connector/dependency checks, and the WDIO build run once in the exact-head
+hosted Rust and native-WDIO closure on disposable Windows, following the
+existing compiler-versus-product process boundary.
 
 ## What this evaluates
 
@@ -51,9 +54,13 @@ Pop-Location
 ```
 
 Then run `pnpm test:desktop:build` from `desktop` as a focused pre-admission
-smoke. Do not admit the candidate until that build passes. This prevents stale
-archives from two incompatible AWS-LC build modes from being combined by the
-Windows linker during the product lifecycle.
+smoke. Do not admit the candidate until that build passes. This prepares the
+binary needed by the local product lifecycle and prevents stale archives from
+two incompatible AWS-LC build modes from being combined by the Windows linker.
+It is not the candidate's native compiler/test evidence; the exact-head hosted
+Rust and native-WDIO jobs own that evidence. Do not place compiler processes in
+the product Job, extend its natural drain, or add compiler-specific exceptions
+to its runtime containment policy.
 
 The checkpoint changes `server/runtime/tiron/Dockerfile`, so the Phase 8 image
 is historical evidence only. Prepare and verify a new image from the candidate:
@@ -192,9 +199,10 @@ receipts, and host identities stay outside Git.
 ## Run the complete checkpoint once
 
 After implementation, documentation, focused checks, and antagonist review are
-frozen, invoke completion exactly once. It consumes the protected admission
-capability, validates all five private receipts, runs every command cell, and
-publishes the candidate receipt only if the entire exact-head matrix passes:
+frozen, invoke local candidate completion exactly once. It consumes the
+protected admission capability, validates all five private receipts, runs all
+18 local/server command and receipt cells, and publishes the candidate receipt
+only if that exact-head candidate matrix passes:
 
 ```powershell
 node .\verification\integrated-gate-runner.mjs complete `
@@ -207,7 +215,10 @@ head. Any executable, test, workflow, manifest, verification-tool, or private
 evidence change consumes the attempt and requires a new clean head and
 admission.
 
-After the focused PR is reviewed, derive hosted closure only from successful
-first-attempt jobs on the exact reviewed head. A documentation-only descendant
+After the focused PR is reviewed, complete the remaining ten hosted closure
+cells only from successful jobs on the exact reviewed head. In particular,
+`hosted.ci.rust` owns native formatting, Clippy, compilation, tests, connector
+checks, and dependency checks; `hosted.ci.native-wdio` owns the native build and
+required WDIO evidence on disposable Windows. A documentation-only descendant
 may use the runner's documented lineage exception; any executable change
 requires a new candidate gate. Merge only after the exact head is green.

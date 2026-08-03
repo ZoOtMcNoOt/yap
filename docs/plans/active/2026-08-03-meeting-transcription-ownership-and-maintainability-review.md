@@ -106,6 +106,22 @@ separate private messy-meeting model-acceptance corpus.
   context, with no vertical, cancellation, or teardown receipt. The controller
   now retains one `CreateNew` stream per log from ACL protection through SSH
   copy and disposal, and that admission remains historical only.
+  Candidate `6d52be5bcf2f7a0f2f9607f80f3d8c1ec6121e5a` passed its
+  exact-image product lifecycle and all five private receipt validations. Its
+  matrix passed the frontend, optional-diagnostics, formatting, Clippy, and all
+  1,198 Rust tests, then failed because the product Job still owned one signed
+  Visual Studio `vctip.exe` process after a cold MSVC link. Focused cold-link
+  reproduction identified only that compiler helper; seven hot full-suite
+  replays and code-path review found no Rust test process leak. A longer drain,
+  the documented optional-diagnostics opt-out, and disabled test debug info did
+  not make the resident helper exit. This was a checkpoint-manifest regression
+  against the already documented Phase 7 boundary, not a product-runtime leak.
+  The strict product Job remains unchanged. The corrected manifest keeps local
+  frontend/server/private lifecycle evidence and the required Windows
+  optional-diagnostics prerequisite, while native formatting, Clippy,
+  compilation, tests, connector/dependency checks, and the WDIO build execute
+  in the existing exact-head hosted Rust and native-WDIO jobs. The failed
+  admission and its private evidence remain historical only.
 - [ ] Freeze code and documentation, then run the complete applicable
   checkpoint matrix exactly once on one candidate.
 - [ ] Prepare and inspect the request-time-only Tiron image for that exact head,

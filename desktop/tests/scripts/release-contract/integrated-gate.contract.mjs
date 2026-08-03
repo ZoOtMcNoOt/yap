@@ -261,6 +261,26 @@ const identityCandidateIds = [
   "integrated.authoritative-history-result",
   "integrated.teardown",
 ];
+const meetingCheckpointCandidateIds = [
+  "frontend.node-runtime",
+  "frontend.dependencies",
+  "frontend.dependency-audit",
+  "frontend.release-contracts",
+  "frontend.release-contracts-local",
+  "frontend.provenance",
+  "frontend.unit",
+  "frontend.production-build",
+  "frontend.chromium-runtime",
+  "frontend.browser-workflows",
+  "windows.build-tools-optional-diagnostics-disabled",
+  "server.python-3.12",
+  "server.lint",
+  "gb10.tiron-checked-image",
+  "gb10.tiron-runtime-boundary",
+  "integrated.meeting-result-history",
+  "integrated.meeting-cancellation",
+  "integrated.teardown",
+];
 const phase6CandidateIds = [
   "frontend.node-runtime",
   "frontend.dependencies",
@@ -305,6 +325,18 @@ const hostedClosureIds = [
   "hosted.nsis.disposable-windows",
 ];
 const identityHostedClosureIds = [
+  "hosted.ci.frontend",
+  "hosted.ci.rust",
+  "hosted.ci.native-wdio",
+  "hosted.ci.server",
+  "hosted.ci.mock-oidc",
+  "hosted.codeql.rust",
+  "hosted.codeql.actions",
+  "hosted.codeql.javascript-typescript",
+  "hosted.codeql.python",
+  "hosted.nsis.disposable-windows",
+];
+const meetingCheckpointHostedClosureIds = [
   "hosted.ci.frontend",
   "hosted.ci.rust",
   "hosted.ci.native-wdio",
@@ -505,6 +537,47 @@ test("identity and access gate keeps native toolchain work on disposable hosted 
   );
   assert.ok(
     identityHostedClosureIds.includes("hosted.ci.native-wdio"),
+    "the hosted closure must retain exact native UI evidence",
+  );
+});
+
+test("meeting-transcription checkpoint keeps native toolchain work on disposable hosted Windows", () => {
+  assert.deepEqual(
+    meetingCheckpointManifest.candidateCells.map(({ id }) => id),
+    meetingCheckpointCandidateIds,
+  );
+  assert.deepEqual(
+    meetingCheckpointManifest.hostedClosureCells.map(({ id }) => id),
+    meetingCheckpointHostedClosureIds,
+  );
+  const candidateIds = new Set(meetingCheckpointCandidateIds);
+  for (const nativeId of [
+    "native.format",
+    "native.clippy",
+    "native.tests",
+    "native.server-connectors",
+    "native.authenticated-server-connector",
+    "native.windows-dependency-boundary",
+    "native.dependency-audit",
+    "desktop.wdio-build",
+    "desktop.required-wdio",
+  ]) {
+    assert.equal(
+      candidateIds.has(nativeId),
+      false,
+      `${nativeId} must execute only through the hosted Windows closure`,
+    );
+  }
+  assert.ok(
+    candidateIds.has("windows.build-tools-optional-diagnostics-disabled"),
+    "the local Windows optional-diagnostics prerequisite must remain in the candidate gate",
+  );
+  assert.ok(
+    meetingCheckpointHostedClosureIds.includes("hosted.ci.rust"),
+    "the hosted closure must retain exact Rust and connector evidence",
+  );
+  assert.ok(
+    meetingCheckpointHostedClosureIds.includes("hosted.ci.native-wdio"),
     "the hosted closure must retain exact native UI evidence",
   );
 });

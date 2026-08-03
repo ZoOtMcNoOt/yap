@@ -80,69 +80,6 @@
       "timeoutMs": 30000
     },
     {
-      "id": "native.format",
-      "executor": "command",
-      "cwd": "desktop/src-tauri",
-      "command": ["cargo", "fmt", "--all", "--check"],
-      "timeoutMs": 900000
-    },
-    {
-      "id": "native.clippy",
-      "executor": "command",
-      "cwd": "desktop/src-tauri",
-      "command": ["cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings"],
-      "timeoutMs": 3600000
-    },
-    {
-      "id": "native.tests",
-      "executor": "command",
-      "cwd": "desktop/src-tauri",
-      "command": ["cargo", "test", "--locked"],
-      "timeoutMs": 3600000
-    },
-    {
-      "id": "native.server-connectors",
-      "executor": "command",
-      "cwd": ".",
-      "command": ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "./verification/test-server-connector.ps1"],
-      "timeoutMs": 1800000
-    },
-    {
-      "id": "native.authenticated-server-connector",
-      "executor": "command",
-      "cwd": ".",
-      "command": ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "./verification/test-authenticated-server-connector.ps1"],
-      "timeoutMs": 1800000
-    },
-    {
-      "id": "native.windows-dependency-boundary",
-      "executor": "command",
-      "cwd": ".",
-      "command": ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "./verification/test-windows-rust-dependency-boundary.ps1"],
-      "timeoutMs": 1800000
-    },
-    {
-      "id": "native.dependency-audit",
-      "executor": "command",
-      "cwd": ".",
-      "command": ["pwsh.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "./verification/audit-windows-rust-dependencies.ps1"],
-      "timeoutMs": 1800000
-    },
-    {
-      "id": "desktop.wdio-build",
-      "executor": "command",
-      "cwd": "desktop",
-      "command": ["pnpm", "test:desktop:build"],
-      "timeoutMs": 3600000
-    },
-    {
-      "id": "desktop.required-wdio",
-      "executor": "command",
-      "cwd": "desktop",
-      "command": ["pnpm", "exec", "wdio", "run", "./tests/wdio.required.conf.ts"],
-      "timeoutMs": 3600000
-    },
-    {
       "id": "server.python-3.12",
       "executor": "command",
       "cwd": ".",

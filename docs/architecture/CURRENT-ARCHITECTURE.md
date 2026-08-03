@@ -770,7 +770,14 @@ request-time image contents, and bounded client projection. It does not change
 the checked model or relabel the historical Phase 8 Preview evidence. Because
 the Tiron Dockerfile now excludes evaluation-only code before the final copy,
 the checkpoint must build, inspect, and qualify one new immutable exact-head
-image; the Phase 8 image remains historical evidence only.
+image; the Phase 8 image remains historical evidence only. Its local candidate
+matrix follows the established Phase 7 compiler boundary above: the strict
+product Job contains only actual application/runtime trees, while native
+formatting, compilation, tests, connector/dependency checks, and the WDIO build
+are exact-head hosted evidence on disposable Windows. A cold checkpoint attempt
+that retained signed Visual Studio `vctip.exe` after all 1,198 Rust tests exposed
+and corrected a manifest regression; it did not justify a longer product drain
+or a compiler-specific runtime exception.
 
 Tiron's model capacity is eight window-local speaker slots per 30-second
 decode, and the pinned reference harness separately caps the published global
