@@ -10,7 +10,8 @@ model acquisition into canonical app data. It merged as
 **Current Phase 8 baseline:** `main` at
 `cb4ddd1320f40c1b8b1a63ce42c468ca69bd8ae5`. The
 [joint speaker-attributed meeting transcription plan](plans/active/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
-is active on `feat/joint-meeting-transcription`. Exact current upstream runtime
+is active in [PR #142](https://github.com/mcnatg1/yap/pull/142). Exact current
+upstream runtime
 and model identities plus the frozen messy-meeting acceptance contract have
 executable validators. A focused offline Tiron worker now executes on GB10;
 the explicitly configured candidate is contract-composed across the authenticated
