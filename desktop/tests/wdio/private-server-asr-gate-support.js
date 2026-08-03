@@ -82,6 +82,29 @@ export function meetingCheckpointFixture(sourcePcm, durationSeconds = 65) {
   );
 }
 
+export function meetingLanguageConfirmationRequest(job, languageBcp47) {
+  const review = job?.languageReview;
+  if (!review) return undefined;
+  if (
+    job.status !== "preflighting"
+    || job.route !== "serverBatch"
+    || job.languageDecision?.mode !== "fixed"
+    || job.languageDecision.languageBcp47 !== languageBcp47
+    || review.kind !== "manual"
+    || review.reason !== "server_preflight_unavailable"
+    || !/^[0-9a-f]{64}$/.test(review.catalogRevision)
+  ) {
+    throw new Error(
+      "The meeting import did not expose the expected manual fixed-language review.",
+    );
+  }
+  return {
+    jobId: job.id,
+    languageBcp47,
+    catalogRevision: review.catalogRevision,
+  };
+}
+
 const defaultPrivateServerAsrGateTimeoutMs = 2_700_000;
 const inFlightRemotePipelineStages = new Map([
   ["queued_server", ["notStarted", "notStarted"]],

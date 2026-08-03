@@ -12,6 +12,7 @@ import {
   canonicalPcm16Mono16KhzWav,
   isValidInFlightRemotePipeline,
   matchPublishedRemoteHistoryEntry,
+  meetingLanguageConfirmationRequest,
   matchesEnabledLoopbackServerSettings,
   matchesVerifiedHistoryDialog,
   readCanonicalPcm16Mono16KhzWav,
@@ -77,6 +78,55 @@ async function waitForConnectionState(expectedState, label) {
     },
   );
   return connection;
+}
+
+async function confirmMeetingImportLanguage(jobId, languageBcp47) {
+  let confirmationRequest;
+  let terminalFailure;
+  await browser.waitUntil(
+    async () => {
+      const snapshot = await invoke("recording_jobs_snapshot");
+      const job = snapshot.find((candidate) => candidate.id === jobId);
+      if (!job) {
+        terminalFailure = new Error(
+          "The meeting import disappeared before language confirmation.",
+        );
+        return true;
+      }
+      if (["failed", "cancelled"].includes(job.status)) {
+        terminalFailure = new Error(
+          `The meeting import reached ${job.status} before language confirmation.`,
+        );
+        return true;
+      }
+      if (job.status !== "preflighting") {
+        terminalFailure = new Error(
+          `The meeting import bypassed language confirmation in ${job.status}.`,
+        );
+        return true;
+      }
+      try {
+        confirmationRequest = meetingLanguageConfirmationRequest(job, languageBcp47);
+      } catch (error) {
+        terminalFailure = error;
+        return true;
+      }
+      return Boolean(confirmationRequest);
+    },
+    {
+      interval: 100,
+      timeout: 60_000,
+      timeoutMsg: "The meeting import did not request language confirmation within one minute.",
+    },
+  );
+  if (terminalFailure) throw terminalFailure;
+  const confirmed = await invoke("recording_job_confirm_language", confirmationRequest);
+  expect(confirmed.status).toBe("preflighting");
+  expect(confirmed.languageDecision).toEqual({
+    mode: "fixed",
+    languageBcp47,
+    disposition: "primary",
+  });
 }
 
 function canonicalPath(value) {
@@ -413,6 +463,9 @@ describe("checked-head private-server ASR gate", () => {
     await invoke("refresh_server_connection");
     const restoredConnection = await waitForConnectionState("ready", "recover after tunnel restart");
     expect((await invoke("server_settings")).baseUrl).toBe(expectedOrigin);
+    if (meetingProfile) {
+      await confirmMeetingImportLanguage(clientJobId, "en-US");
+    }
 
     await browser.waitUntil(
       async () => {
@@ -680,6 +733,7 @@ describe("checked-head private-server ASR gate", () => {
       expect(created).toHaveLength(1);
       const createdJob = created[0];
       expect(createdJob.route).toBe("serverBatch");
+      await confirmMeetingImportLanguage(createdJob.id, "en-US");
 
       let terminalFailure;
       let activeRemoteLifecycle;

@@ -69,6 +69,18 @@ separate private messy-meeting model-acceptance corpus.
   no-assembly build contaminated the native link. Its exact remote server
   startup and cleanup passed, but that admission is failed historical evidence
   and cannot be retried or relabeled.
+  Replacement head `d944670841945bed3b5c22ac9a435b3800e72118` passed the
+  canonical build and exact remote preflight, then exposed a meeting-gate
+  driver defect: its 65-second import correctly entered ADR 0026's explicit
+  manual language review because the meeting-only server does not advertise
+  AmberNet, but the driver never performed the required confirmation. The
+  stopped run produced no vertical, cancellation, or independent product
+  teardown receipt. The remote controller reported cleanup success, and direct
+  post-stop inspection observed no retained local listener/application or
+  remote listener/container/process, but those observations are diagnostic
+  evidence rather than a passed product-teardown receipt. That admission is
+  also failed historical evidence. The repaired driver bounds and validates
+  this confirmation before either meeting path can wait on inference.
 - [ ] Freeze code and documentation, then run the complete applicable
   checkpoint matrix exactly once on one candidate.
 - [ ] Prepare and inspect the request-time-only Tiron image for that exact head,

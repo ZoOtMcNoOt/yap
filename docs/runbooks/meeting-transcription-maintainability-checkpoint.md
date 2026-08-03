@@ -22,6 +22,14 @@ speech-quality benchmark. Tiron's pinned upstream evaluation code remains
 available for the separate private messy-meeting acceptance corpus; it does not
 replace this end-to-end lifecycle proof.
 
+This meeting-only server profile does not advertise the separate AmberNet LID
+component. Consequently, the long fixed-language fixture must reach Yap's
+visible `server_preflight_unavailable` manual-review state. The WDIO product
+driver observes that state and confirms the already selected `en-US` language
+through the production native command within one minute before waiting for
+upload. That confirmation is required by ADR 0026; the gate must not bypass or
+silently lock the client language decision.
+
 ## Freeze and prepare the checked image
 
 Start from a clean checkout at the exact candidate head. The Windows controller

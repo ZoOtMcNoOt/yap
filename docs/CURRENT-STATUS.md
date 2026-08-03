@@ -70,6 +70,22 @@ the generated AWS-LC package when changing modes, pass the focused native build
 smoke before admission, and use a new protected private plan and exact-head
 runtime receipt.
 
+Replacement checkpoint head `d944670841945bed3b5c22ac9a435b3800e72118`
+passed the canonical desktop build and exact remote server preflight. Its
+product lifecycle then stopped before upload: the 65-second fixed-language
+fixture correctly reached ADR 0026's explicit manual-review state because the
+meeting-only server profile does not advertise AmberNet, while the new WDIO
+driver omitted the required user confirmation. No meeting vertical or
+cancellation receipt was published. The remote controller reported cleanup
+success, and direct post-stop inspection observed no retained local
+listener/application or remote listener/container/process, but no independent
+product-teardown receipt was published. The admission is failed historical
+evidence and cannot be retried or relabeled.
+The replacement driver now requires the expected
+`server_preflight_unavailable` review and confirms the selected language through
+the production native command within one minute; the native language-safety
+state machine remains unchanged.
+
 Replacement admissions `7d5d1b79f0f539ca3e4c1160ed25c32442cc3fa3`,
 `6b4eda32ca3853c90b40db607248fab5af23048e`,
 `550d9152771a8220dece90ecdb001217f2f36f4e`, and

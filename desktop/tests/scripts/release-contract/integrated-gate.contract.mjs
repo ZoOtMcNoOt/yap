@@ -1492,6 +1492,33 @@ test("connected gate records a real five-window AmberNet preflight", () => {
   assert.match(source, /schemaVersion: 3,/);
 });
 
+test("meeting gate performs the required fixed-language manual confirmation", () => {
+  const spec = readFileSync(
+    path.join(repoRoot, "desktop", "tests", "wdio", "private-server-asr.gate.spec.js"),
+    "utf8",
+  );
+  const support = readFileSync(
+    path.join(
+      repoRoot,
+      "desktop",
+      "tests",
+      "wdio",
+      "private-server-asr-gate-support.js",
+    ),
+    "utf8",
+  );
+  assert.match(spec, /timeout: 60_000/);
+  assert.match(spec, /catch \(error\) \{\s+terminalFailure = error;\s+return true;/);
+  assert.match(spec, /invoke\("recording_job_confirm_language", confirmationRequest\)/);
+  assert.equal(
+    [...spec.matchAll(/await confirmMeetingImportLanguage\(/g)].length,
+    2,
+    "both the completion and active-cancellation meeting jobs must confirm language",
+  );
+  assert.match(support, /review\.reason !== "server_preflight_unavailable"/);
+  assert.match(support, /job\.languageDecision\.languageBcp47 !== languageBcp47/);
+});
+
 test("target-client runbook carries prepared-audio identity into the UI gate", () => {
   const runbook = readFileSync(
     path.join(repoRoot, "docs", "runbooks", "target-client-language-routing-qualification.md"),
