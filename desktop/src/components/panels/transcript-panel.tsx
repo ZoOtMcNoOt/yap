@@ -32,7 +32,8 @@ import {
 } from "@/lib/recording-job";
 import { projectTranscriptText } from "@/lib/transcript-text";
 import {
-  speakerTranscriptPage,
+  projectSpeakerTranscript,
+  speakerTranscriptSpeakerLabel,
   type SpeakerTranscriptDetailState,
 } from "@/lib/speaker-transcript";
 import { cn } from "@/lib/utils";
@@ -74,9 +75,10 @@ export function TranscriptPanel({
   const hasSeparateSpeakerTranscript = speakerTranscript?.status !== undefined
     && speakerTranscript.status !== "unavailable";
   const speakerTurns = speakerTranscript?.status === "ready" ? speakerTranscript.turns : undefined;
-  const speakerPage = speakerTurns?.length
-    ? speakerTranscriptPage(speakerTurns, speakerPageIndex)
+  const speakerProjection = speakerTurns?.length
+    ? projectSpeakerTranscript(speakerTurns, speakerPageIndex)
     : undefined;
+  const speakerPage = speakerProjection?.mode === "attributed" ? speakerProjection : undefined;
   const transcriptText = projectTranscriptText(text);
 
   useEffect(() => {
@@ -198,7 +200,7 @@ export function TranscriptPanel({
                     {speakerPage.turns.map((turn) => (
                       <section key={turn.turnId}>
                         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          {turn.speakerId.replace("speaker-", "Speaker ")}
+                          {speakerTranscriptSpeakerLabel(turn.speakerId)}
                           {" · "}
                           {formatElapsed(Math.floor(turn.startMs / 1000))}
                           {"–"}
@@ -241,7 +243,10 @@ export function TranscriptPanel({
                     ) : null}
                   </div>
                 ) : (
-                  <pre className="whitespace-pre-wrap break-words text-[15px] leading-7 text-foreground">
+                  <pre
+                    className="whitespace-pre-wrap break-words text-[15px] leading-7 text-foreground"
+                    data-testid={speakerProjection?.mode === "plain" ? "single-speaker-transcript" : undefined}
+                  >
                     {transcriptText.text}
                   </pre>
                 )

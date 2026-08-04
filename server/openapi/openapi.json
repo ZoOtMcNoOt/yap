@@ -2176,22 +2176,38 @@
         }
       },
       "JointAnonymousSpeakerAttribution": {
-        "type": "object",
-        "additionalProperties": false,
         "description": "Anonymous speaker identity emitted by the current Tiron meeting candidate. Named identities are outside this candidate contract.",
-        "required": [
-          "kind",
-          "sessionSpeakerId"
-        ],
-        "properties": {
-          "kind": {
-            "const": "session_speaker"
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "sessionSpeakerId"
+            ],
+            "properties": {
+              "kind": {
+                "const": "session_speaker"
+              },
+              "sessionSpeakerId": {
+                "type": "string",
+                "pattern": "^speaker-(?:[1-9]|[1-5][0-9]|6[0-4])$"
+              }
+            }
           },
-          "sessionSpeakerId": {
-            "type": "string",
-            "pattern": "^speaker-[1-8]$"
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "unknown"
+              }
+            }
           }
-        }
+        ]
       },
       "JointSpeakerTranscriptTurn": {
         "type": "object",
@@ -2899,47 +2915,84 @@
         }
       },
       "SpeakerCapacityDegradation": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "code",
-          "fallbackDisposition",
-          "scope",
-          "startSample",
-          "endSample",
-          "observedSpeakerCount",
-          "speakerLimit"
-        ],
-        "properties": {
-          "code": {
-            "type": "string",
-            "const": "SPEAKER_CAPACITY_REACHED"
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "scope",
+              "startSample",
+              "endSample",
+              "observedSpeakerCount",
+              "speakerLimit"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "const": "SPEAKER_CAPACITY_REACHED"
+              },
+              "scope": {
+                "type": "string",
+                "const": "decode_window"
+              },
+              "startSample": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "endSample": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "observedSpeakerCount": {
+                "type": "integer",
+                "const": 8
+              },
+              "speakerLimit": {
+                "type": "integer",
+                "const": 8
+              }
+            }
           },
-          "fallbackDisposition": {
-            "type": "string",
-            "const": "not_run_recommended"
-          },
-          "scope": {
-            "type": "string",
-            "const": "meeting"
-          },
-          "startSample": {
-            "type": "integer",
-            "const": 0
-          },
-          "endSample": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "observedSpeakerCount": {
-            "type": "integer",
-            "const": 8
-          },
-          "speakerLimit": {
-            "type": "integer",
-            "const": 8
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "scope",
+              "startSample",
+              "endSample",
+              "observedSpeakerCount",
+              "speakerLimit"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "const": "SPEAKER_CAPACITY_REACHED"
+              },
+              "scope": {
+                "type": "string",
+                "const": "meeting"
+              },
+              "startSample": {
+                "type": "integer",
+                "const": 0
+              },
+              "endSample": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "observedSpeakerCount": {
+                "type": "integer",
+                "const": 64
+              },
+              "speakerLimit": {
+                "type": "integer",
+                "const": 64
+              }
+            }
           }
-        }
+        ]
       },
       "SpeakerResultRevision": {
         "type": "object",
@@ -3012,7 +3065,7 @@
             }
           },
           "speakerCapacityDegradation": {
-            "description": "Null for a complete result. A terminal partial result states that the selected route exposed exactly eight meeting-global speaker labels across the complete source; fallback reprocessing is recommended but was not run.",
+            "description": "Null for a complete result. A terminal partial result source-binds the Tiron decode-window or meeting-session capacity boundary that was reached.",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/SpeakerCapacityDegradation"
@@ -3034,9 +3087,36 @@
           },
           "modelProvenance": {
             "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ModelRevision"
-            }
+            "description": "Exactly four distinct components in execution order: Tiron model, Tiron harness, ECAPA encoder, and the Yap speaker-epoch reconciler. Application validation rejects duplicate modelId values.",
+            "minItems": 4,
+            "maxItems": 4,
+            "prefixItems": [
+              {
+                "$ref": "#/components/schemas/ModelRevision"
+              },
+              {
+                "$ref": "#/components/schemas/ModelRevision"
+              },
+              {
+                "$ref": "#/components/schemas/ModelRevision"
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ModelRevision"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "modelId": {
+                        "const": "yap/speaker-epoch-reconciliation"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "items": false
           }
         },
         "allOf": [

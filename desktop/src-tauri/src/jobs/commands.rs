@@ -83,7 +83,7 @@ pub struct PublishedSpeakerTranscript {
 #[serde(rename_all = "camelCase")]
 pub struct PublishedSpeakerTranscriptTurn {
     pub turn_id: String,
-    pub speaker_id: String,
+    pub speaker_id: Option<String>,
     pub start_ms: u64,
     pub end_ms: u64,
     pub text: String,

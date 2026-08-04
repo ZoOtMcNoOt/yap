@@ -146,7 +146,7 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                 },
             )
             worker_job = processor.jobs[0]
-            speakers = [f"SPEAKER_{index:02d}" for index in range(8)]
+            speakers = [f"speaker-{index}" for index in range(1, 9)]
             processor.future.set_result(
                 {
                     "schemaVersion": 1,
@@ -159,6 +159,7 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                         "speakerEncoderRevision": (
                             AUTHORITY.provenance.speaker_encoder.revision
                         ),
+                        "applicationRevision": "e" * 40,
                         "runtimeLockSha256": AUTHORITY.runtime_lock_sha256,
                     },
                     "audio": {
@@ -169,19 +170,27 @@ class RecordingJobMeetingResultTests(unittest.TestCase):
                     },
                     "meeting": {
                         "language": "en",
-                        "speakers": speakers,
-                        "segments": [
+                        "sessionSpeakerIds": speakers,
+                        "turns": [
                             {
                                 "index": index,
-                                "speaker": speaker,
+                                "sessionSpeakerId": speaker,
                                 "startSample": index * 20,
                                 "endSample": (index + 1) * 20,
                                 "text": f"speaker {index + 1}",
                             }
                             for index, speaker in enumerate(speakers)
                         ],
-                        "numWindows": 1,
+                        "numDecodeWindows": 1,
                         "sourceTimeUnit": "samples",
+                        "speakerCapacityDegradation": {
+                            "code": "SPEAKER_CAPACITY_REACHED",
+                            "scope": "decode_window",
+                            "startSample": 0,
+                            "endSample": 160,
+                            "observedSpeakerCount": 8,
+                            "speakerLimit": 8,
+                        },
                     },
                     "runtime": {
                         "device": "cuda:0",

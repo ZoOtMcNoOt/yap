@@ -87,7 +87,7 @@ impl RecordingJobs {
                     speaker_transcript_available,
                     result_summary,
                     warning: (record.status == RecordingJobStatus::Partial).then(|| {
-                        "Speaker attribution may be incomplete because the server reached its eight-speaker limit; fallback reprocessing was recommended but not run."
+                        "Speaker attribution may be incomplete because the server reached a model capacity boundary."
                             .into()
                     }),
                 })
@@ -166,11 +166,15 @@ impl RecordingJobs {
             .speaker_turns
             .into_iter()
             .map(|turn| {
-                let AnonymousSpeakerAttribution::SessionSpeaker { session_speaker_id } =
-                    turn.attribution;
+                let speaker_id = match turn.attribution {
+                    AnonymousSpeakerAttribution::SessionSpeaker { session_speaker_id } => {
+                        Some(session_speaker_id)
+                    }
+                    AnonymousSpeakerAttribution::Unknown => None,
+                };
                 PublishedSpeakerTranscriptTurn {
                     turn_id: turn.turn_id,
-                    speaker_id: session_speaker_id,
+                    speaker_id,
                     start_ms: turn.start_ms,
                     end_ms: turn.end_ms,
                     text: turn.text,

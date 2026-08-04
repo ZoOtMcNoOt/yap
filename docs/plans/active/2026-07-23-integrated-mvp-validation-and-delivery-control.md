@@ -41,9 +41,8 @@ complexity.
   passed before documentation successor `e22368fc...` exposed high-severity
   `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999...` passed its exact-head
   lifecycle, single complete 18-child matrix, independent receipt validation,
-  and required CI and CodeQL jobs. Phase 9 begins only after final
-  documentation-only hosted closure including disposable-Windows NSIS and PR
-  #143 merge.
+  and required CI and CodeQL jobs. PR #143 merged the reviewed closure as
+  `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
 - Historical Checkpoint B candidate
   `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
   `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence
@@ -276,7 +275,7 @@ The following work is not required to close Phase 6:
 | Phase 7 — merged | Authenticated identity/access seam, token-derived ownership, purpose grants, authorization/revocation, and multi-owner contract behavior. Use synthetic/mock identity for developer-owned validation until IT provides an approved Entra environment. | Merged as `66d314d7`; real enterprise conformance remains an IT handoff. |
 | Post-Phase-7 checkpoint — merged | Review the new identity boundary and affected earlier owners. Fix blockers; defer optional polish. | Closed at `ef6d977` with recorded follow-ups. |
 | Phase 8 — merged Preview | Pinned Tiron meeting baseline plus model-independent speaker/result contracts, exact checked-image startup, native publication, and History projection. | PR #142 merged as `4201c5e7`; the route remains explicitly enabled and unpromoted. |
-| Post-Phase-8 checkpoint — final hosted closure | Reconcile executable ownership, durable result decoding, native detail loading, lifecycle races, evaluation/runtime separation, and current documentation without changing model qualification. | Patched candidate `393710999...` passed its exact-head lifecycle, single complete matrix, receipt validation, and required CI/CodeQL after historical successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`; final documentation-only hosted closure including disposable-Windows NSIS and PR #143 merge remain. |
+| Post-Phase-8 checkpoint — merged | Reconcile executable ownership, durable result decoding, native detail loading, lifecycle races, evaluation/runtime separation, and current documentation without changing model qualification. | Patched candidate `393710999...` passed its exact-head lifecycle, single complete matrix, receipt validation, and required CI/CodeQL after historical successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`; PR #143 merged as `8fb511ad...`. |
 | Phase 9 | Governed terminology, OKF compilation, permission-safe retrieval, agents/RAG/MCP, and evidence-selected SGLang model. | Permission-isolated integrated workflows, phase gate, PR, and merge. |
 | Post-Phase-9 checkpoint | Review knowledge, tool, model, and permission boundaries. | Checkpoint gate, PR, and merge. |
 | Phase 10 | Production supervision, mixed-user capacity, observability, release governance, full maintainability audit, private full security scan, deployment evidence, and explicit IT/security/network handoffs. | Final exact-head matrix, hosted checks, reviewed PR, and merge; external enterprise conformance remains a named handoff when unavailable. |

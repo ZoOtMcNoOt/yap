@@ -16,7 +16,9 @@ ACCEPTANCE_PLAN = SERVER_ROOT / "meeting-transcription-acceptance.json"
 
 
 class MeetingAcceptancePlanTests(unittest.TestCase):
-    def test_repository_plan_freezes_non_promotional_public_and_private_evidence(self) -> None:
+    def test_repository_plan_freezes_non_promotional_public_and_private_evidence(
+        self,
+    ) -> None:
         plan = load_meeting_acceptance_plan(ACCEPTANCE_PLAN)
 
         self.assertEqual(
@@ -56,6 +58,8 @@ class MeetingAcceptancePlanTests(unittest.TestCase):
         self.assertTrue(plan.private_holdout.independent_promotion_required)
         self.assertFalse(plan.private_holdout.repository_fallback)
         self.assertEqual(plan.private_holdout.cache_environment, "YAP_EVAL_CACHE")
+        self.assertEqual(plan.private_holdout.minimum_natural_meeting_count, 6)
+        self.assertEqual(plan.private_holdout.minimum_natural_duration_seconds, 7_200)
         self.assertEqual(
             set(plan.evidence_classes),
             {"public-comparator", "independent-holdout", "constructed-controls"},
@@ -89,8 +93,14 @@ class MeetingAcceptancePlanTests(unittest.TestCase):
         self.assertTrue(plan.promotion.require_every_mandatory_slice)
         self.assertTrue(plan.promotion.forbid_macro_compensation)
         self.assertGreater(plan.promotion.minimum_overlap_cpwer_improvement_percent, 0)
+        self.assertEqual(plan.promotion.maximum_worker_memory_bytes, 17_179_869_184)
+        self.assertEqual(
+            plan.promotion.maximum_concurrent_eight_p95_realtime_factor, 0.5
+        )
 
-    def test_plan_rejects_public_promotion_missing_pressure_and_overlap_exclusion(self) -> None:
+    def test_plan_rejects_public_promotion_missing_pressure_and_overlap_exclusion(
+        self,
+    ) -> None:
         payload = json.loads(ACCEPTANCE_PLAN.read_text(encoding="utf-8"))
         cases = (
             (

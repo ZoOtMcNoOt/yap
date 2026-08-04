@@ -517,7 +517,7 @@ meeting rows under ADR 0027.
 | Close and far multi-speaker meetings | AMI, ICSI, NOTSOFAR-1 | WER plus speaker-attributed meeting metrics; channel/source-time identity retained |
 | Simultaneous/overlapping speech | LibriCSS, NOTSOFAR-1, AMI overlap regions | ORC/cp/tcpWER as applicable; overlap slice reported separately |
 | Attendance scale | Independent messy-meeting holdout plus licensed constructed controls | 16/32/64 attendees with no more than eight people speaking; no identities or speech inferred from attendance metadata |
-| Global speaking-roster scale | Independent messy-meeting holdout plus licensed constructed controls | Reproduce Tiron's released eight-global cap, then score Yap's 9/16/32-talker cross-epoch extension for late returns, merge/split/fragmentation, and explicit fallback |
+| Global speaking-roster scale | Independent messy-meeting holdout plus licensed constructed controls | Reproduce Tiron's released eight-global cap, then score Yap's 9/16/32-talker cross-epoch extension for late returns, merge/split/fragmentation, explicit `Unknown`, and fail-closed capacity outcomes on the sole Tiron route |
 | Window-speaker scale | Independent messy-meeting holdout plus licensed constructed controls | One through eight distinct Tiron window slots; explicit typed degradation when more than eight talkers occur within 30 seconds |
 | Medical conversation and terminology | PriMock57 plus future approved use-context holdout | General WER plus medical entity, negation, number, dose/unit, and speaker-turn error rates |
 | Every advertised locale | FLEURS plus exact-locale Common Voice where available | Per-locale WER/CER and language tag accuracy; no macro average may promote a failed locale |

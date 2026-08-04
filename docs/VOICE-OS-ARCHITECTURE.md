@@ -36,7 +36,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | **Critical path isolation** | Live stays fast; heavy work (diarization, OKF, agents) never blocks typing. |
 | **Right model per job** | Nemotron INT8 for local live/offline fallback; server router for official recordings/live; **LLM pool** for polish/agents — not one model for everything. |
 | **Revisioned diarization** | Local results may use anonymous `Unknown` and `Speaker N`; server reconciliation may refine boundaries and attach purpose-authorized names. |
-| **Model-independent meeting authority** | Existing `sherpa-onnx` APIs provide the first local anonymous baseline; Tiron is the selected Phase 8 server development baseline, while Yap contracts and frozen messy-meeting evidence still control promotion and replacement. The released Tiron route is capped at eight window-local and eight global identities; larger speaking rosters require a separately qualified Yap speaker-epoch reconciler or fallback. |
+| **Model-independent meeting authority** | Existing `sherpa-onnx` APIs provide the local anonymous baseline. Tiron is the selected server meeting baseline, while Yap contracts and frozen messy-meeting evidence control promotion and replacement. The product invokes Tiron on exact 30-second source epochs, preserves its eight-slot decode limit, and reconciles a bounded 32-target/64-ceiling session roster without a duplicate diarization fallback. |
 | **Graceful degradation** | Dual-track Scribe, quarantine folder, RAG confidence gates, offline fallback to local sidecar — production-minded. |
 | **Recordings as moat** | Journalists/researchers already have files; Cohere batch (GPU-accelerated in team profile) is differentiated vs pure dictation apps. |
 
@@ -80,7 +80,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | STT (live) | Local Nemotron INT8 (`sherpa-onnx`) | Server streaming ASR pool (WSS) |
 | STT (batch) | Queue/block when offline; official larger recordings use the server path | Current Cohere batch route plus evidence-gated Cohere/vLLM and Nemotron/NeMo candidates |
 | LLM | No shipped local LLM; development Polish currently calls Ollama | Future server LLM pool (GPU, multi-tenant) |
-| Diarization | Optional local `Unknown` / `Speaker N`; no durable profiles | Tiron joint speaker-attributed development baseline plus ASR/diarization fallback; server-authoritative reconciliation and evidence-gated promotion (ADR 0020/0027) |
+| Diarization | Optional local `Unknown` / `Speaker N`; no durable profiles | One Tiron joint speaker-attributed server route with source-time epoch reconciliation; evidence-gated promotion (ADR 0020/0027) |
 | Identity | Per-transcript contact labels only; no biometric matching | Provider-neutral OIDC verification with Entra policy; approved native token adapter and explicit voice enrollment remain gated (ADR 0016/0020) |
 | Knowledge base | Future Google OKF Markdown with local SQLite retrieval | Future `yap-knowledge` Git + deterministic compiler + Postgres permissions/relationships + pgvector baseline; optional Neo4j challenger (Phase 9, ADR 0017/0022) |
 | Network | None required for live fallback; server required for official recordings | LAN/VPN to the GB-class server node; future HTTP/3 secure edge with HTTP/2 or HTTP/1.1 fallback |
@@ -102,7 +102,7 @@ Details: [ADR 0014](adr/0014-server-tier-compute-topology.md) (topology) · [ADR
 3. **One warm local sherpa recognizer**; server router owns heavier model residency.
 4. **Language decision** = confirmed primary/manual language for short fixed work, bounded verify-only AmberNet suggestion for longer fixed recordings, or an explicit Nemotron auto mode; never silent provider switching.
 5. **Meeting enrichment** = independent bounded sinks and revisioned results; never block dictation.
-6. **Meeting speakers** = local anonymous evidence when available; pinned Tiron joint speaker-attributed server baseline with ASR/diarization fallback; server-authoritative reconciliation and purpose-authorized names.
+6. **Meeting speakers** = local anonymous evidence when available; one pinned Tiron joint speaker-attributed server route; bounded server-authoritative reconciliation and purpose-authorized names.
 7. **Align raw STT**, never polished LLM text, before word→speaker intersection.
 8. **On-prem GPU** = "our hardware, our network" — not cloud; extends local-first trust to the org's LAN (team profile).
 9. **Auth** = provider-neutral OIDC validation with Entra policy; `(tid, oid)`
@@ -153,7 +153,7 @@ flowchart TB
     Handoff["Async handoff<br/>capture/gaps current · transport deferred"]
 
     subgraph L3["L3 — background enrich · Phase 8"]
-        L3n["Anonymous speaker timeline · result revisions<br/>Tiron server baseline · ASR/diarization fallback"]
+        L3n["Anonymous speaker timeline · result revisions<br/>Tiron source-time epoch route"]
     end
 
     L4["L4 — OKF knowledge_base/ · Phase 9"]
@@ -397,7 +397,7 @@ flowchart TB
 
     subgraph L3["L3 — meeting evidence and authoritative reconciliation · Phases 8–9"]
         Align["Forced align · raw text only · server final"]
-        Diar["Local Unknown / Speaker N<br/>Tiron joint server baseline · fallback retained"]
+        Diar["Local Unknown / Speaker N<br/>Tiron joint server route"]
         Intersect["Revisioned word-to-speaker timeline"]
         Archivist["Archivist · OKF markdown + YAML · no LLM"]
         Stitch["Session stitch · merge chunks → one conversation"]
@@ -645,7 +645,7 @@ All intervals are end-exclusive on the monotonic session timeline. Speaker turns
 1. **Validate** schema, session, track, timing, content identity, and gaps.
 2. **Preserve** raw audio and raw text as immutable inputs.
 3. **Project local evidence** to `Unknown` or session-scoped `Speaker N` when the optional client path is available.
-4. **Reconcile on the server** from retained source audio; use the pinned Tiron joint speaker-attributed baseline first, retain the ASR/diarization fallback, align raw text when separately validated, and publish a new result revision.
+4. **Reconcile on the server** from retained source audio through the pinned Tiron source-time epoch route, align raw text when separately validated, and publish a new result revision. A failed model gate is explicit; no duplicate fallback runs.
 5. **Attach names only** through purpose-authorized, tenant-scoped profiles with model and calibration provenance.
 
 ### Back-pressure
@@ -917,7 +917,7 @@ timeline
 | **Checkpoint A** | Phase 1-5 foundation | Review the complete executable Phase 1-5 system, resolve correctness/security and duplicate-ownership findings, remove dead or speculative machinery, decompose mixed responsibilities, measure justified efficiency changes, and organize current/normative/historical documentation without adding Phase 6 functionality. | Post-Phase-5 architecture checkpoint |
 | **6** | preprocessing | Audio normalization, advisory VAD/chunk manifests, primary/per-job language decisions, guarded LID, fixed/dynamic server routing, fail-closed word timing, and retryable pipeline state. | ADR 0003/0004/0006/0007/0008/0014/0019/0020/0023/0024/0025 |
 | **7** | identity/access | Provider-neutral OIDC verification with Entra policy, a native token-provider seam with separately approved production adapter, Yap API audience, purpose grants that are implemented but called by nothing, tenant-scoped identity, permission hooks, and authenticated bounded private live admission. | Old Phase 9; ADR 0016/0020 |
-| **8** | meeting evidence | Local anonymous speaker evidence, pinned Tiron eight-window/eight-global server baseline, separately gated larger-roster reconciliation, frozen messy-meeting gate, timestamped result revisions, server reconciliation, and purpose-authorized named identity. | Old 7b/10; ADR 0020/0027 |
+| **8** | meeting evidence | Local anonymous speaker evidence, the pinned Tiron historical whole-meeting reproduction, one integrated source-time epoch route with bounded request-scoped speaker reconciliation, frozen messy-meeting promotion evidence, timestamped result revisions, and later purpose-authorized named identity. | Old 7b/10; ADR 0020/0027 |
 | **9** | knowledge | Pinned Google OKF, KB compiler, agents, GraphRAG/vector retrieval, MCP, and permission-safe virtual views. | Old 7c-7e/11; ADR 0010/0011/0012/0017/0022 |
 | **10** | enterprise/release | Service-integrated production router, authenticated external batch and WSS/live transport, supervised warm/multi-worker pools, measured mixed-load capacity/SLO evidence, observability, Zscaler/corporate access hardening, HTTP/3 secure-edge evaluation, publication governance/evidence, audit/deploy runbooks, and eventual repo split. | Old 7+/12; ADR 0013/0014/0018/0021/0023/0025 |
 
@@ -934,7 +934,7 @@ timeline
 | **Checkpoint A** | Merged and verified | Exact implementation candidate `6d55816b0406a2365376d7b2d9a7da2afecf9118` passed the one-time complete local/native/server/GB10 gate. Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted CI, CodeQL, and disposable-Windows NSIS, then merged as `a80934d844a068110e7f86b30b6e29d35146db57` through PR #59. Private security evidence remains outside Git. |
 | **6** | Merged and verified | ADRs 0024–0026 and the completed plan define the provider catalog, primary language, bounded resident AmberNet/Nemotron Preview, verify-only five-region AmberNet batch preflight, explicit server Nemotron auto mode, fail-closed alignment, and provider-specific serving gates. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed its frozen 30-child local/native/server/private-runtime matrix after bounded three-agent remediation re-review. Runtime images were prepared before admission and emitted private receipts after a second clean-head check. The admitted gates verified each frozen receipt hash and exact prepared ARM64 image identity, launched the receipt-bound immutable ID, and bound it into evidence; they could not build, pull, reconnect, or substitute an image. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`, and its private closure receipt was independently validated outside Git. PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. The local route remains default-off Preview because its natural-switch target failed; the catalog still advertises only gated Cohere `en-US` with `wordAlignment: false`; neither resident server provider is promoted. Phase 8 later added the distinct Tiron meeting Preview; broader provider promotion remains unproven. Authentication merged in Phase 7, while persistent supervised mixed-load production remains Phase 10. |
 | **7** | Merged and gated | Phase 7 merged as `66d314d7`; its adversarial checkpoint closed at `ef6d977`. The merged work has a provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` ownership, owner-scoped jobs/LID, authenticated bounded private WebSocket admission, and a qualified native lower handshake. The desktop has only a narrow native token-provider seam; no production adapter is approved. Exact application/runtime candidate `dc6359162fb16909d38f410cdb75c2729d83972f` passed the one complete private 25-cell matrix and independent receipt validation. Hosted CI exposed only runner-portability defects. Reviewed repairs through `c1d81fc085218cf91a4e370087bcc5927e5b1f70` change hosted/gate tooling, its contracts, and documentation—not shipped product/runtime or candidate-manifest behavior—so the passed candidate matrix remains authoritative. Purpose grants, revocation, and their audit records are implemented and unit-tested but reachable only from tests: nothing calls `IdentityAuthorizationService`, so `access_disabled` and grants can be changed only by editing `identity.sqlite` directly. The layer is not a shipped capability; a future purpose-authorized speaker reconciliation/naming workflow must expose or remove it under review. Real IT-provided Entra policy conformance remains open. |
-| **8** | Merged and Preview-gated; maintainability candidate gated | ADR 0020, ADR 0027, and the source-aware design are canonical. Track/timeline/recording prerequisites execute. The explicit meeting-only profile composes receipt-bound Tiron startup, three-hour admission, hash-bound anonymous-speaker/transcript revisions, owner-scoped retrieval, native publication, and History projection. Exact application/runtime head `1c69b61cf2902c9cfda50c6158168890974f969f` passed a supported-launcher client/HTTP/Tiron/native/History roundtrip and the one admitted local/native/server/GB10 Preview matrix against immutable image `sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`. Protected aggregate receipt SHA-256 `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154` binds the exact evidence and reviewed test/gate-only descendant `9ff06d7d...`. Reviewed head `ec4e4ab...` passed hosted checks and PR #142 merged as `4201c5e7...`. The route makes an exactly-eight-label aggregate terminal `partial`, binds the meeting-global signal to the complete source, and says fallback was recommended but not run. Historical maintainability candidate `fb0985e...` passed before documentation-only successor `e22368fc...` exposed high-severity `GHSA-mwp4-54f8-5fhr`. Patched development-only `ip-address` 10.3.1 candidate `393710999...` passed its canonical native build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, one complete 18-child matrix, receipt validation, and required CI and CodeQL jobs without changing qualification. Final documentation-only hosted closure including disposable-Windows NSIS and PR #143 merge remain. Local anonymous meeting promotion, exact window-cap evidence, larger-roster speaker epochs, scored messy-meeting promotion evidence, automatic fallback, purpose-authorized reconciliation/naming, and production promotion remain later work. |
+| **8** | Merged and Preview-gated; production promotion in progress | ADR 0020, ADR 0027, and the source-aware design are canonical. The merged Preview evidence remains historical proof for its exact candidate. The production-promotion branch replaces the capped aggregate contract with exact 30-second Tiron epochs, request-scoped reuse of its ECAPA encoder, an eight-slot decode-window boundary, a 32-speaker session target, a 64-speaker ceiling, strict `Unknown`, and clean one-speaker History projection. The server has one meeting-inference path and no ASR-plus-diarization fallback. Tiron remains absent from the default catalog and unpromoted until independent quality and production-runtime evidence pass on the reviewed exact head. |
 | **9** | Planned | Google OKF conformance, KB compiler, Postgres permission/relationship ledger, pgvector baseline, optional Neo4j challenger, agents, RAG, and MCP wait on preprocessing, identity, and diarization outputs. |
 | **10** | Later | Persistent supervised model services, warm/multi-worker and mixed-load capacity promotion, observability, corporate access hardening, HTTP/3 edge promotion, production publication governance, and repo split come after the remote transport and authentication baselines are real. Stock installer packaging and disposable-Windows lifecycle proof exist; production release governance remains later work. |
 
@@ -977,11 +977,11 @@ privacy review and ADR.
 
 **Build specs:** [Client state machine](specs/client-state-machine.md) · [Model download UX](specs/model-download-ux.md) · [Local audio preprocessing](specs/local-audio-preprocessing-stack.md) · [Local live fallback](specs/local-live-fallback-sidecar.md) · [Local LLM sidecar](specs/local-llm-sidecar.md) · [Live dictation client](specs/live-dictation-client-ux.md) · [Server tier MVP](specs/server-tier-mvp.md) · [Source-aware diarization](specs/source-aware-diarization.md) · [Testing](specs/testing-strategy.md).
 
-**Next execution order:** Phase 8 Preview delivery is merged. Complete the final
-documentation-only hosted closure, including disposable-Windows NSIS, and merge the
-security-patched
-[meeting-transcription ownership and maintainability review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-through PR #143, then continue Phases 9–10 in documented order. Live ASR,
+**Next execution order:** Phase 8 Preview delivery and its
+[meeting-transcription ownership and maintainability review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+are merged. Finish the active meeting-only production-promotion decision from
+complete hash-bound private quality/runtime evidence, then continue Phases 9–10
+in documented order. Live ASR,
 managed LAN/enterprise and
 live-endpoint discovery, external
 same-origin WSS/TLS, real enterprise identity-policy conformance, local or
@@ -1004,7 +1004,7 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 | **5** Remote STT | Long-recording upload + server STT routing | Recording queue UX; remote/local policy |
 | **6** Preprocessing | Versioned provider/language/timing catalog; primary/per-job decision; advisory VAD/chunks; bounded LID; pinned reference fixed/dynamic routes; fail-closed word timing; durable stages; Cohere vLLM lifecycle/capacity evidence; and a separate Nemotron NeMo streaming gate—not authenticated or persistent supervised production capacity | [ADR 0024](adr/0024-global-language-routing.md); [ADR 0025](adr/0025-provider-specific-asr-serving.md); preprocessing spec; [completed Phase 6 plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md); OpenAPI/result contracts |
 | **7** Identity/access | Provider-neutral OIDC validation with Entra policy, fail-closed native token-provider seam, replacement of the fixed development owner, purpose grants that are implemented but called by nothing, tenant-scoped identity DB, and authenticated private live admission; production adapter and enterprise conformance require separate approval | [ADR 0016](adr/0016-auth-identity-bridge.md); sign-in/access UX |
-| **8** Meeting evidence | Anonymous local labels, pinned Tiron eight-window/eight-global baseline, separately switched speaker-epoch extension, frozen messy-meeting public/independent evidence, attendance/window/global-roster pressure, timestamped result revisions, server reconciliation, deliberate voice-enrollment UX and profile lifecycle | [ADR 0020](adr/0020-meeting-capture-diarization-authority.md); [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md); [source-aware design](specs/source-aware-diarization.md) |
+| **8** Meeting evidence | Anonymous local labels, pinned Tiron eight-window/eight-global baseline, one integrated source-time epoch route with request-scoped reconciliation, frozen messy-meeting public/independent evidence, attendance/window/global-roster pressure, timestamped result revisions, server reconciliation, deliberate voice-enrollment UX and profile lifecycle | [ADR 0020](adr/0020-meeting-capture-diarization-authority.md); [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md); [source-aware design](specs/source-aware-diarization.md) |
 | **9** Knowledge/agents | Google OKF profile, deterministic compiler, Postgres/pgvector relationship/vector baseline, optional Neo4j challenger, RAG, MCP | ADR 0022 conformance/isolation/generation and challenger-promotion gates; permission compile SLA |
 | **10** Enterprise/release | Persistent supervised model services, warm/multi-worker and mixed-load capacity promotion, observability, Zscaler/corp access, HTTP/3 secure-edge benchmark/promotion, packaging, repo split | ADR 0021 transport evidence; capacity/SLO evidence; CI/CD migration; cross-repo link update |
 
@@ -1104,15 +1104,15 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 - [x] Compose the meeting-only three-hour server/native candidate contract with separate hash-bound transcript and anonymous-speaker revisions plus History projection
 - [x] Pass the supported-launcher client/HTTP/Tiron/native/History roundtrip and one admitted local/native/server/GB10 Preview matrix on exact application/runtime candidate `1c69b61cf2902c9cfda50c6158168890974f969f`; keep protected receipts outside Git
 - [x] Merge reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8` after hosted checks; PR #142 merged as `4201c5e7f1674dc0b15e76241bc308c49a5719bb`
-- [ ] Merge the repaired [meeting-transcription ownership and maintainability review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) after final documentation-only hosted closure, including disposable-Windows NSIS, and before Phase 9; patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` already passed its exact-head matrix and CI/CodeQL
-- [ ] Reproduce the pinned eight-window/eight-global harness before evaluating the separately switched speaker-epoch extension
+- [x] Merge the repaired [meeting-transcription ownership and maintainability review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md); PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`
+- [x] Reproduce the pinned eight-window/eight-global harness and implement the integrated source-time epoch candidate without adding a second product route
 - [ ] Production speaker inference and result publication
 - [ ] Transient client embeddings; no passive contact/profile enrollment
 - [ ] Server-authoritative reconciliation and purpose-authorized identity
 - [ ] Align raw STT only
 - [ ] Freeze the messy-meeting suite before hypotheses; separate public AMI/ICSI/NOTSOFAR comparators from the independent holdout
 - [ ] Prove 1–8 window slots, explicit >8 window pressure, >15-attendee/small-active-subset behavior, 9/16/32-talker cross-epoch linking, overlap, locales, long duration, c1/c2/c4/c8 isolation, cancellation, and teardown
-- [ ] Compare the pinned Tiron baseline and speaker-epoch extension with the ASR-plus-diarization fallback; retain SphereVBx-PF and EEND/MS-SphereVBx as local/fallback challengers
+- [ ] Qualify the pinned Tiron source-time epoch route against the frozen acceptance gates; retain source audio and the model-replacement seam when it fails
 
 ---
 
@@ -1164,9 +1164,8 @@ Current implementation ownership and completeness for all decisions: [ADR implem
 | [Source-aware diarization design](specs/source-aware-diarization.md) | Foundation slices in 1/3/5; local anonymous evidence and Tiron-based server meeting inference in 8 |
 | [Testing strategy](specs/testing-strategy.md) | all |
 
-Current execution: final documentation-only hosted closure, including
-disposable-Windows NSIS, and merge for the
-[meeting-transcription ownership and maintainability review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md).
+Current execution: the
+[meeting-transcription production-promotion plan](plans/active/2026-08-03-meeting-transcription-production-promotion.md).
 Completed Phase 8 delivery:
 [joint speaker-attributed meeting transcription](plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
 

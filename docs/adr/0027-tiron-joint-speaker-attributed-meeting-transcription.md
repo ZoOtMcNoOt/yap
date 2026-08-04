@@ -18,9 +18,12 @@ route, separate immutable transcript and anonymous-speaker revisions,
   Protected aggregate receipt SHA-256
   `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`
   binds the subordinate evidence and reviewed test/gate-only descendant
-  `9ff06d7d...` outside Git. The current contract also publishes a terminal
-  `partial` result when the upstream aggregate exposes exactly eight global
-  speaker labels. Reviewed head
+  `9ff06d7d...` outside Git. That Preview's exactly-eight-global-label contract
+  is historical. The production-promotion implementation now calls the public
+  Tiron API on exact source-time epochs, reuses its loaded ECAPA encoder for
+  request-scoped reconciliation, distinguishes the eight-slot decode boundary
+  from Yap's 32-target/64-ceiling session roster, and removes the obsolete
+  fallback-not-run contract. Reviewed head
   `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks and
   PR #142 merged as `4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
   Historical post-phase ownership and maintainability candidate `fb0985e7...`
@@ -28,12 +31,11 @@ route, separate immutable transcript and anonymous-speaker revisions,
   `GHSA-mwp4-54f8-5fhr`. Patched development-only `ip-address` 10.3.1 candidate
   `393710999...` passed its canonical build, receipt-bound image preflight,
   product lifecycle with teardown, one complete 18-child matrix, receipt
-  validation, and required CI and CodeQL jobs. Final documentation-only hosted
-  closure and PR #143 merge remain. The
-  private holdout, meeting-score reproduction, larger-roster
-  reconciler, automatic fallback, and production promotion remain later
-  promotion work rather than blockers to the merged disabled-by-default
-  Preview baseline.
+  validation, and required CI and CodeQL jobs. PR #143 merged the reviewed
+  closure as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. The
+  private holdout, meeting-score reproduction, production runtime evidence,
+  and exact-head promotion decision remain open. The route stays absent from
+  the default catalog until those gates pass.
 
 ## Context
 
@@ -43,10 +45,11 @@ not yet select the server model that produces the first authoritative
 speaker-attributed transcript.
 
 A conventional pipeline transcribes a mixed recording, estimates speaker
-turns separately, aligns words, and intersects the two outputs. That remains a
-useful fallback, but errors compound when people overlap: the ASR may delete one
-speaker before a later diarizer has any words to attribute, and independent
-boundaries require more reconciliation code.
+turns separately, aligns words, and intersects the two outputs. Yap does not
+add that second server meeting stack: errors compound when people overlap, its
+independent boundaries require more reconciliation code, and it duplicates
+model, artifact, lifecycle, and evaluation ownership without an accepted
+product need.
 
 Trelis released `Trelis/tiron` on 2026-07-21. The model adapts the Whisper
 large-v3 architecture to emit timestamp and speaker tokens together. Its
@@ -180,28 +183,21 @@ an ECAPA similarity cannot manufacture a person's name.
 ### 4. Treat attendance, window capacity, and speaking-roster capacity separately
 
 Tiron may represent at most eight distinct speaker slots in one 30-second
-decode window. The released harness may also publish at most eight global
-speaker identities for the complete meeting. Phase 8 first reproduces that
-pinned eight-window/eight-global baseline without silently raising a constant
-or relabeling the result as a larger-roster proof.
+decode window. The released harness also publishes at most eight global
+speaker identities when invoked on a whole meeting. Phase 8 reproduced that
+pinned baseline. The production route no longer uses the capped whole-meeting
+aggregate as its product boundary.
 
-The pinned public `TironEngine.transcribe()` boundary discards per-window
-assignments and request-scoped embeddings before returning its aggregate. Yap
-therefore cannot honestly reconstruct the exact window or source region that
-caused saturation. The current Preview takes the conservative observable
-action: when the aggregate exposes exactly eight distinct global speaker
-labels, the transcript and speaker companion are terminal `partial`, and the
-companion carries one source-bound, meeting-scoped
-`SPEAKER_CAPACITY_REACHED` record. That record says fallback reprocessing is
-recommended and was not run. It intentionally cannot distinguish exactly
-eight real talkers from a larger roster collapsed by the upstream cap.
+The public `TironEngine.transcribe()` boundary discards its internal
+per-window assignments and request-scoped embeddings before returning. Yap
+therefore invokes it on exact 30-second source-time epochs. An epoch exposing
+all eight labels produces a source-bound `decode_window`
+`SPEAKER_CAPACITY_REACHED` record. Reaching Yap's 64-speaker session ceiling
+produces a meeting-scoped record. Either result is terminal `partial`.
 
-Yap will not copy, monkey-patch, or fork private upstream pipeline internals to
-manufacture missing evidence. A future larger-roster route must either compose
-source-time epochs around the public whole-meeting API or consume an accepted
-upstream evidence API. That work, exact window-cap localization, and automatic
-fallback reprocessing are production-promotion work beyond the current Preview
-baseline.
+Yap does not copy, monkey-patch, or fork private upstream pipeline internals.
+The source-time adapter composes only the pinned public API and the ECAPA
+classifier already owned by the pinned engine.
 
 A meeting may contain 15, 32, or more attendees while only a subset ever
 speaks. Attendance metadata does not consume a model speaker slot and must not
@@ -209,13 +205,12 @@ cause Yap to invent speech or anonymous identities. Conversely, a meeting with
 nine distinct talkers is above the released global limit even if they take
 turns across widely separated windows.
 
-For more than eight distinct talkers across a meeting, Phase 8 will evaluate a
-separately switchable, Yap-owned **speaker-epoch reconciler**. It preserves the
-model's 30-second source windows, groups them into bounded activity epochs at
-recorded source-time boundaries, links at most eight anonymous voices inside
-each epoch, and cross-references only high-confidence ECAPA evidence across
-epochs. Overlap-derived cannot-link evidence prevents incompatible epoch
-identities from being merged. The Python server owns the resulting
+For more than eight distinct talkers across a meeting, Yap uses one request-
+scoped **speaker-epoch reconciler** in the Tiron route. It preserves exact
+30-second source windows, links at most eight anonymous voices inside each
+epoch, and cross-references only unambiguous ECAPA evidence across epochs.
+Epoch-local labels are cannot-link evidence and cannot collapse into one
+session identity. The Python server owns the resulting
 32-target/64-ceiling authoritative session roster; Rust independently validates
 and projects the published roster locally. An ambiguous cross-epoch match
 remains a separate anonymous or `Unknown` identity instead of being forced.
@@ -226,10 +221,11 @@ confidence policies are deterministic, bounded, and frozen before hypotheses
 are inspected. Embeddings and exemplars remain request-scoped and are discarded
 after the revision is validated.
 
-This extension is a hypothesis until it passes the frozen gate. If it does not
-beat the ASR-plus-diarization fallback, more-than-eight-talker meetings remain a
-typed unsupported/degraded route. No epoch boundary can recover a ninth talker
-that the model failed to represent inside one 30-second window.
+This extension is a hypothesis until it passes the frozen gate. If it fails any
+required quality, capacity, or runtime slice, more-than-eight-talker meetings
+remain a typed unsupported/degraded route and Tiron remains unpromoted. No
+epoch boundary can recover a ninth talker that the model failed to represent
+inside one 30-second window.
 
 Production promotion must explicitly test and report:
 
@@ -241,20 +237,14 @@ Production promotion must explicitly test and report:
 - windows containing one through eight distinct talkers; and
 - pressure cases with more than eight distinct talkers inside one window.
 
-The pinned harness, the speaker-epoch extension, and the ASR-plus-diarization
-fallback are scored separately from byte-identical source audio. Staggered
-windows provide useful cross-evidence but do not prove that an over-capacity
-region was decoded completely. The current route truthfully reports only the
-observable meeting-global saturation described above. Exact window-cap
-localization remains unavailable at the public runtime boundary. Yap must not
-merge, drop, or invent a speaker merely to stay under a cap, and no document
-may claim fallback ran when the published disposition is
-`not_run_recommended`.
+The released whole-meeting aggregate remains an evaluation-only reproduction
+baseline. It is not a separately selectable product route. Yap must not merge,
+drop, or invent a speaker merely to stay under a cap.
 
 ### 5. Promote against a frozen messy-meeting acceptance suite
 
-The Phase 8 corpus manifest, scoring policy, slice thresholds, and baseline/
-fallback configurations are frozen before Tiron hypotheses are inspected. The
+The Phase 8 corpus manifest, scoring policy, slice thresholds, and route
+configurations are frozen before Tiron hypotheses are inspected. The
 suite has three separately reported evidence classes:
 
 - **Public comparators:** immutable, rights-reviewed subsets of AMI, ICSI, and
@@ -297,17 +287,17 @@ reporting includes cold/warm latency, real-time factor, VRAM/RAM, c1/c2/c4/c8
 admission and tail latency, cancellation, cross-request isolation, restart,
 teardown, and long-meeting memory/identity stability.
 
-Production promotion requires every frozen absolute gate, no failed required
-slice, and a documented product-relevant improvement over Yap's separately
-scored ASR-plus-diarization fallback. A favorable macro average cannot erase a
-failed overlap, locale, capacity, isolation, or lifecycle gate.
+Production promotion requires every frozen absolute gate and no failed
+required slice. A favorable macro average cannot erase a failed overlap,
+locale, capacity, isolation, or lifecycle gate.
 
-### 6. Keep the fallback and replacement boundary real
+### 6. Keep the replacement boundary real
 
-The accepted ASR-plus-diarization design remains a fallback for unsupported
-locales, capacity pressure, worker failure, and comparative evidence. It also
-keeps the architecture replaceable if Tiron later loses on quality,
-maintainability, licensing, or runtime cost.
+Yap does not operate a duplicate ASR-plus-diarization server path. Unsupported
+locales, capacity pressure, worker failure, or a failed promotion gate remain
+explicit unavailable/degraded outcomes with retained canonical source. The
+model-independent result contract keeps the architecture replaceable if Tiron
+later loses on quality, maintainability, licensing, or runtime cost.
 
 The canonical output remains Yap's revisioned transcript/speaker contract, not
 Tiron token syntax or ECAPA cluster IDs. Replacing the model must not rewrite
@@ -333,7 +323,7 @@ networking, and enterprise deployment handoffs.
 - Window-local identities remain compatible with ADR 0020's larger dynamic
   session roster and immutable result revisions.
 - The chosen baseline focuses Phase 8 engineering while preserving a real
-  fallback and model-replacement seam.
+  model-replacement seam.
 
 ### Negative
 
@@ -345,8 +335,9 @@ networking, and enterprise deployment handoffs.
   global language evidence.
 - Eight window-local and eight released global speaker slots create distinct
   degraded-result cases that the product and scorer must expose.
-- Supporting larger speaking rosters requires a separately qualified
-  cross-epoch reconciliation layer; chunking alone is not the solution.
+- Supporting larger speaking rosters requires the integrated cross-epoch
+  reconciler to qualify with the same exact candidate; chunking alone is not
+  the solution.
 - The runtime harness is not a production service. Yap still needs an isolated
   dependency lock, bounded admission, cancellation, source-time/result
   validation, and lifecycle control around it.
@@ -364,9 +355,9 @@ networking, and enterprise deployment handoffs.
 
 ### Keep ASR plus diarization as the only server path
 
-Rejected as the primary Phase 8 approach. It remains the fallback, but it
-cannot recover a second speaker's words after mixed-speech ASR has already
-deleted them and it requires more cross-model alignment.
+Rejected. Yap does not operate it as a fallback because it cannot recover a
+second speaker's words after mixed-speech ASR has already deleted them and it
+duplicates model, lifecycle, and cross-model alignment ownership.
 
 ### Run Tiron on the client
 
@@ -408,24 +399,23 @@ Three independent adversarial lenses approved the candidate, and a focused
 native follow-up approved runner-only descendant `9ff06d7d...`. The aggregate
 private receipt hash above contains no transcript or audio. The reviewed exact
 head passed hosted checks and merged through PR #142. Step 4's separate
-[meeting-transcription ownership and maintainability review](../plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+[meeting-transcription ownership and maintainability review](../plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
 has historical candidate `fb0985e7...` with a passed matrix and documentation
 successor `e22368fc...`, which exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate
 `393710999...` then passed the canonical native build, exact-image preflight,
 real History/cancellation lifecycle with teardown, one complete 18-child
-matrix, independent receipt validation, and required CI and CodeQL jobs. Final
-documentation-only hosted closure including disposable-Windows NSIS and PR
-#143 merge remain before Phase 9.
+matrix, independent receipt validation, and required CI and CodeQL jobs. PR
+#143 merged that reviewed closure as
+`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
 
-### Deferred production promotion
+### Production promotion closure
 
 1. Freeze and seal the private holdout, reproduce public comparators, and run
    the scorer without mixing exposed and independent evidence.
-2. Obtain exact per-window evidence from an accepted upstream boundary or
-   qualify source-time epochs around the public whole-meeting API; compare that
-   route and the ASR-plus-diarization fallback on byte-identical input.
+2. Completed in the promotion candidate: use exact source-time epochs around
+   the public API and retain window-local labels for bounded reconciliation.
 3. Qualify accuracy, larger rosters, resource bounds, concurrency, long-session
-   behavior, fallback execution, and advertised locale/duration claims.
+   behavior, explicit degraded outcomes, and advertised locale/duration claims.
 4. Record an explicit meeting-only, broader-replacement, or rejection decision
    before changing the committed default catalog or calling the route
    production-promoted.

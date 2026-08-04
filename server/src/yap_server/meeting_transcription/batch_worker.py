@@ -6,7 +6,7 @@ from typing import Protocol
 from yap_server.pools.batch_contract import BatchAsrJob
 
 from .container_worker import MeetingTranscriptionJob
-from .contract import MAX_MEETING_SPEAKERS, validate_meeting_transcription_route
+from .contract import validate_meeting_transcription_route
 from .result_revisions import MeetingResultAuthority
 
 
@@ -53,7 +53,6 @@ class MeetingTranscriptionBatchWorker:
                 input_sha256=job.input_sha256,
                 capture_manifest_sha256=job.capture_manifest_sha256,
                 language=route.provider_language,
-                max_speakers=MAX_MEETING_SPEAKERS,
                 frame_count=job.source_frame_count,
             ),
             cancellation,
