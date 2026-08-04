@@ -355,12 +355,14 @@ runtime artifacts and promotion evidence pass.
 
 ## Tiron whole-meeting candidate
 
-The Phase 8 candidate uses the pinned upstream `TrelisResearch/tiron` harness,
-not a standalone Transformers decode. The harness retains ownership of
-30-second chunking, constrained decoding, the default staggered second pass,
-and ECAPA cross-window speaker linking. Yap owns verified artifact paths,
-offline container execution, bounded admission and cancellation, authenticated
-job ownership, source identity, result validation, and publication.
+The meeting candidate uses the pinned upstream `TrelisResearch/tiron` harness,
+not a standalone Transformers decode. Tiron owns constrained decoding, the
+default staggered second pass, and anonymous labels inside each source-bounded
+30-second epoch. Yap uses the same already-loaded ECAPA encoder to reconcile
+only unambiguous anonymous voices across epochs. Yap also owns verified artifact
+paths, offline container execution, bounded admission and cancellation,
+authenticated job ownership, source identity, result validation, and
+publication. There is no second ASR-plus-diarization product route.
 
 The foreground development launcher selects this profile only when the Tiron
 settings are explicit. Set `YAP_TIRON_MODEL_DIR`, `YAP_TIRON_ECAPA_DIR`, and
@@ -379,14 +381,15 @@ marker. Restart recovery rejects incomplete aggregates. The native client
 validates both against the original capture request before atomically
 publishing them under the existing remote-result directory.
 
-The upstream public whole-meeting API exposes only its capped aggregate, not
-the discarded per-window assignments or request-scoped embeddings. If that
-aggregate contains exactly eight distinct speaker labels, Yap conservatively
-publishes both artifacts as terminal `partial` with one meeting-scoped
-`SPEAKER_CAPACITY_REACHED` record spanning the exact source. History warns that
-speaker attribution may be incomplete and that fallback reprocessing was not
-run. This does not localize a saturated 30-second window or prove whether the
-meeting had exactly eight versus more than eight real talkers.
+The product calls Tiron on exact source-time epochs so window-local labels are
+available before the public aggregate discards them. Tiron's eight-slot decode
+boundary is distinct from Yap's 32-speaker session target and 64-speaker safety
+ceiling. An epoch exposing all eight slots produces a source-bound
+`decode_window` capacity record; reaching the session ceiling produces a
+meeting-scoped record. Either makes the immutable result terminal `partial`.
+Ambiguous cross-epoch evidence is never forced, and no fallback pipeline runs
+automatically. The retained source remains available to a later reviewed model
+revision.
 
 ## Phase 7 identity and private live admission
 

@@ -106,6 +106,11 @@ fn joint_speaker_result_is_capture_bound_and_rejects_named_or_forged_turns() {
                 "modelId": "speechbrain/spkrec-ecapa-voxceleb",
                 "revision": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286",
                 "calibrationRevision": runtime_lock
+            },
+            {
+                "modelId": "yap/speaker-epoch-reconciliation",
+                "revision": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                "calibrationRevision": runtime_lock
             }
         ]
     });
@@ -116,6 +121,41 @@ fn joint_speaker_result_is_capture_bound_and_rejects_named_or_forged_turns() {
     assert!(transcript.requires_speaker_result());
     assert!(speaker.is_valid_for(&transcript, 2_000, Some(32_000), &["track-1".into()]));
 
+    let mut duplicate_provenance = speaker.clone();
+    duplicate_provenance.model_provenance[1].model_id =
+        duplicate_provenance.model_provenance[0].model_id.clone();
+    let mut duplicate_provenance_transcript = transcript.clone();
+    duplicate_provenance_transcript.speaker_result_sha256 = duplicate_provenance.content_sha256();
+    assert!(!duplicate_provenance.is_valid_for(
+        &duplicate_provenance_transcript,
+        2_000,
+        Some(32_000),
+        &["track-1".into()]
+    ));
+
+    let mut short_provenance = speaker.clone();
+    short_provenance.model_provenance.pop();
+    let mut short_provenance_transcript = transcript.clone();
+    short_provenance_transcript.speaker_result_sha256 = short_provenance.content_sha256();
+    assert!(!short_provenance.is_valid_for(
+        &short_provenance_transcript,
+        2_000,
+        Some(32_000),
+        &["track-1".into()]
+    ));
+
+    let mut wrong_final_provenance = speaker.clone();
+    wrong_final_provenance.model_provenance[3].model_id = "other/reconciler".into();
+    let mut wrong_final_provenance_transcript = transcript.clone();
+    wrong_final_provenance_transcript.speaker_result_sha256 =
+        wrong_final_provenance.content_sha256();
+    assert!(!wrong_final_provenance.is_valid_for(
+        &wrong_final_provenance_transcript,
+        2_000,
+        Some(32_000),
+        &["track-1".into()]
+    ));
+
     let mut forged_overlap = speaker.clone();
     forged_overlap.speaker_turns[1].overlap_group_id = None;
     assert!(!forged_overlap.is_valid_for(&transcript, 2_000, Some(32_000), &["track-1".into()]));
@@ -125,9 +165,12 @@ fn joint_speaker_result_is_capture_bound_and_rejects_named_or_forged_turns() {
     assert!(!forged_text.is_valid_for(&transcript, 2_000, Some(32_000), &["track-1".into()]));
 
     let mut noncanonical_speaker = speaker.clone();
-    let AnonymousSpeakerAttribution::SessionSpeaker { session_speaker_id } =
-        &mut noncanonical_speaker.speaker_turns[0].attribution;
-    *session_speaker_id = "speaker-01".into();
+    match &mut noncanonical_speaker.speaker_turns[0].attribution {
+        AnonymousSpeakerAttribution::SessionSpeaker { session_speaker_id } => {
+            *session_speaker_id = "speaker-01".into();
+        }
+        AnonymousSpeakerAttribution::Unknown => unreachable!(),
+    }
     assert!(!noncanonical_speaker.is_valid_for(
         &transcript,
         2_000,
@@ -139,8 +182,7 @@ fn joint_speaker_result_is_capture_bound_and_rejects_named_or_forged_turns() {
     partial_speaker_value["status"] = serde_json::json!("partial");
     partial_speaker_value["speakerCapacityDegradation"] = serde_json::json!({
         "code": "SPEAKER_CAPACITY_REACHED",
-        "fallbackDisposition": "not_run_recommended",
-        "scope": "meeting",
+        "scope": "decode_window",
         "startSample": 0,
         "endSample": 32000,
         "observedSpeakerCount": 8,
@@ -186,13 +228,15 @@ fn joint_speaker_result_is_capture_bound_and_rejects_named_or_forged_turns() {
         &["track-1".into()]
     ));
 
-    let mut spurious_degradation = partial_speaker.clone();
-    spurious_degradation.speaker_turns.truncate(2);
-    let mut spurious_transcript = partial_transcript.clone();
-    spurious_transcript.transcript = "hello overlapping reply".into();
-    spurious_transcript.speaker_result_sha256 = spurious_degradation.content_sha256();
-    assert!(!spurious_degradation.is_valid_for(
-        &spurious_transcript,
+    let mut forged_capacity_interval = partial_speaker.clone();
+    let super::response::SpeakerCapacityDegradation::Reached(degradation) =
+        &mut forged_capacity_interval.speaker_capacity_degradation
+    else {
+        unreachable!()
+    };
+    degradation.start_sample = 1;
+    assert!(!forged_capacity_interval.is_valid_for(
+        &partial_transcript,
         2_000,
         Some(32_000),
         &["track-1".into()]
@@ -203,6 +247,37 @@ fn joint_speaker_result_is_capture_bound_and_rejects_named_or_forged_turns() {
         super::response::SpeakerCapacityDegradation::None(());
     assert!(!missing_degradation.is_valid_for(
         &partial_transcript,
+        2_000,
+        Some(32_000),
+        &["track-1".into()]
+    ));
+
+    let mut unknown_value = speaker_value.clone();
+    unknown_value["speakerTurns"][1]["attribution"] = serde_json::json!({"kind": "unknown"});
+    let unknown: SpeakerResultRevision = serde_json::from_value(unknown_value).unwrap();
+    let mut unknown_transcript_value = serde_json::to_value(&transcript).unwrap();
+    unknown_transcript_value["speakerResultSha256"] =
+        serde_json::json!(unknown.content_sha256().unwrap());
+    let unknown_transcript: TranscriptResultRevision =
+        serde_json::from_value(unknown_transcript_value).unwrap();
+    assert!(unknown.is_valid_for(
+        &unknown_transcript,
+        2_000,
+        Some(32_000),
+        &["track-1".into()]
+    ));
+
+    let mut high_session_id = speaker.clone();
+    match &mut high_session_id.speaker_turns[1].attribution {
+        AnonymousSpeakerAttribution::SessionSpeaker { session_speaker_id } => {
+            *session_speaker_id = "speaker-64".into();
+        }
+        AnonymousSpeakerAttribution::Unknown => unreachable!(),
+    }
+    let mut high_session_transcript = transcript.clone();
+    high_session_transcript.speaker_result_sha256 = high_session_id.content_sha256();
+    assert!(high_session_id.is_valid_for(
+        &high_session_transcript,
         2_000,
         Some(32_000),
         &["track-1".into()]

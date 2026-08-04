@@ -563,8 +563,7 @@ fn partial_server_result_is_published_before_the_ledger_becomes_partial() {
         "speakerTurns": speaker_turns,
         "speakerCapacityDegradation": {
             "code": "SPEAKER_CAPACITY_REACHED",
-            "fallbackDisposition": "not_run_recommended",
-            "scope": "meeting",
+            "scope": "decode_window",
             "startSample": 0,
             "endSample": 160,
             "observedSpeakerCount": 8,
@@ -590,6 +589,11 @@ fn partial_server_result_is_published_before_the_ledger_becomes_partial() {
             {
                 "modelId": "speechbrain/spkrec-ecapa-voxceleb",
                 "revision": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286",
+                "calibrationRevision": runtime_lock
+            },
+            {
+                "modelId": "yap/speaker-epoch-reconciliation",
+                "revision": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
                 "calibrationRevision": runtime_lock
             }
         ]
@@ -704,7 +708,7 @@ fn partial_server_result_is_published_before_the_ledger_becomes_partial() {
     assert_eq!(
         catalog.sessions[0].warning.as_deref(),
         Some(
-            "Speaker attribution may be incomplete because the server reached its eight-speaker limit; fallback reprocessing was recommended but not run."
+            "Speaker attribution may be incomplete because the server reached a model capacity boundary."
         )
     );
     drop(jobs);

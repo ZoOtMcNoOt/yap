@@ -11,8 +11,8 @@ passed before documentation-only successor `e22368fc...` exposed
 `393710999b53a4bd1b00639e30c0fec88b152530` passed multi-lens review, the
 canonical native build, receipt-bound image preflight, real lifecycle, one
 complete 18-child matrix, receipt validation, and required CI and CodeQL jobs.
-Final documentation-only hosted closure including disposable-Windows NSIS and
-PR #143 merge remain open. Paths are relative to the
+PR #143 merged the reviewed closure as
+`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. Paths are relative to the
 repository root; later
 implementation must update this map only after its behavior is executable and
 verified.

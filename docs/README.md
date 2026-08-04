@@ -64,7 +64,7 @@ availability.
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
 - [VoiceOS/Yap decision, evidence, and future-work queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 - [Integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
-- [Meeting transcription ownership and maintainability review](plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+- [Meeting transcription production promotion](plans/active/2026-08-03-meeting-transcription-production-promotion.md)
 
 ### Queued
 
@@ -72,6 +72,7 @@ None currently.
 
 ### Completed implementation records
 
+- [Meeting transcription ownership and maintainability review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
 - [Tenant-scoped identity and job authorization](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
 - [Joint speaker-attributed meeting transcription](plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
 - [Codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md)

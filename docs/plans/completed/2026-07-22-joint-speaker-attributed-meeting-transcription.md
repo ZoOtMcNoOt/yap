@@ -2,16 +2,21 @@
 
 **Date:** 2026-07-22
 
+> **Historical Preview record:** This plan records the implementation and
+> evidence that produced the merged Preview. Its fallback-comparison language
+> is superseded by the single-route production design in
+> [ADR 0027](../../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
+> and the active
+> [production-promotion plan](../active/2026-08-03-meeting-transcription-production-promotion.md).
+> It is not a current implementation requirement.
+
 **Status:** Completed Preview delivery. Reviewed head
 `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks and
 [PR #142](https://github.com/mcnatg1/yap/pull/142) merged as
 `4201c5e7f1674dc0b15e76241bc308c49a5719bb`. The separate
-[meeting-transcription ownership and maintainability review](../active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-has patched exact-head candidate `393710999...` with passed lifecycle, single
-complete matrix, receipt validation, and required CI/CodeQL after its previous
-documentation successor exposed a late development-tool advisory. Final
-documentation-only hosted closure including disposable-Windows NSIS and PR #143
-merge remain before Phase 9.
+[meeting-transcription ownership and maintainability review](2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+closed in merged PR #143 at
+`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
 
 **Decision authority:**
 [ADR 0020](../../adr/0020-meeting-capture-diarization-authority.md) and
@@ -238,7 +243,7 @@ The required suite contains:
   green. Reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8`
   passed hosted CI and CodeQL before PR #142 merged as `4201c5e7...`.
 - [x] After merge, activate the required separate
-  [multi-lens ownership and maintainability checkpoint](../active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+  [multi-lens ownership and maintainability checkpoint](2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
   before Phase 9 begins.
 
 The frozen implementation candidate is

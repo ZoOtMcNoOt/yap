@@ -17,10 +17,11 @@ durable loopback upload/reconnect, publishes verified server-authoritative
 results, and applies seven-day pending-source plus finite completed-result
 retention. The merged Phase 8 Tiron Preview publishes immutable anonymous
 speaker-attributed result revisions and projects their source-bound speaker
-companion through History. General media conversion, a client-local anonymous
-baseline, named identity, system loopback, cross-window speaker-epoch
-reconciliation beyond the upstream eight-label aggregate, and a supported
-recording-only product mode remain unimplemented.
+companion through History. The active production-promotion candidate adds the
+single Tiron source-time epoch route and request-scoped speaker reconciliation;
+it remains unpromoted pending frozen quality and runtime evidence. General
+media conversion, a client-local anonymous baseline, named identity, system
+loopback, and a supported recording-only product mode remain unimplemented.
 
 ## Context
 
@@ -120,24 +121,22 @@ Thresholds are versioned calibration artifacts, not universal constants in an AD
 
 ### 6. Bound local work without fixing the meeting to four people
 
-Session speaker storage is dynamic. The initial product target is 32 anonymous speakers with a safety ceiling of 64. Above the safety ceiling, Yap retains speech as unknown and marks the session for authoritative reprocessing rather than growing memory or assignment state without bound.
+Session speaker storage is dynamic. The initial product target is 32 anonymous speakers with a safety ceiling of 64. Above the safety ceiling, Yap retains speech as unknown and marks the result degraded rather than growing memory or assignment state without bound.
 
 The first local implementation reuses the existing `sherpa-onnx` runtime for speaker embeddings and a measurable anonymous clustering baseline. That baseline does not ship merely because it runs: it must pass the accuracy, callback-drop, CPU, memory, and local-ASR latency gates in the source-aware design. SphereVBx-PF is the preferred clustering challenger because it avoids a separately trained PLDA backend. EEND-VC with MS-SphereVBx remains an overlap-quality challenger, not an initial dependency.
 
 Exact multi-stream inference must have a state budget. Candidate pruning or one-to-one per-window assignment replaces exhaustive joint assignment when the budget would be exceeded. A more complex backend is promoted only after it beats the baseline on licensed meeting fixtures and remains within CPU, memory, latency, and licensing budgets.
 
-ADR 0027 selects Tiron as the separate Phase 8 server development baseline for
-joint speaker-attributed meeting transcription. The pinned release exposes
-eight window-local speaker slots and its reference harness also caps the linked
-meeting result at eight global identities. Those limits do not replace the
-dynamic 32-speaker product target or 64-speaker safety ceiling. ADR 0027
-therefore requires an independently gated Yap speaker-epoch reconciler before
-claiming larger speaking rosters; attendee count alone is not speaker count.
-A window that reaches or plausibly exceeds local capacity, or a larger-roster
-route that cannot reconcile safely, remains explicitly degraded and eligible
-for fallback/reprocessing. This selection does not change the lightweight
-local anonymous baseline or allow server model output to bypass this ADR's
-source, revision, privacy, and identity contracts.
+ADR 0027 selects Tiron as the Phase 8 server baseline for joint speaker-
+attributed meeting transcription. The production-promotion candidate invokes
+the pinned public API on exact source-time epochs, preserves the eight-slot
+decode boundary, and reuses Tiron's loaded ECAPA encoder for request-scoped
+reconciliation into the dynamic 32-speaker target and 64-speaker ceiling.
+Attendee count alone is not speaker count. A saturated window or session roster
+remains explicitly degraded; ambiguous evidence remains `Unknown`. Yap does not
+operate a duplicate ASR-plus-diarization fallback. This selection does not
+change the lightweight local anonymous baseline or allow server model output to
+bypass this ADR's source, revision, privacy, and identity contracts.
 
 ### 7. Keep server reconciliation authoritative but optional for capture
 
@@ -262,9 +261,10 @@ Steps 1–4 are cross-phase client/server prerequisites and ship during canonica
 6. Add the Rust-owned reconnect ledger with the real server connector.
 7. Add server reconciliation, purpose grants, deletion tombstones, and authorized identity matching.
 8. Specify Windows system loopback separately.
-9. Implement and benchmark the ADR 0027 Tiron server baseline against the
-   ASR-plus-diarization fallback on the frozen messy-meeting suite; retain
-   SphereVBx-PF and EEND/MS-SphereVBx as local/fallback challengers.
+9. Implement and benchmark the single ADR 0027 Tiron source-time epoch route,
+   including its request-scoped speaker reconciler, on the frozen messy-meeting
+   suite. A failed gate leaves the route unpromoted; do not add a second server
+   meeting pipeline.
 
 ## References
 

@@ -37,7 +37,7 @@ class _Worker:
     ) -> dict[str, object]:
         self.jobs.append(job)
         self.cancellations.append(cancellation)
-        return {"meeting": {"segments": []}}
+        return {"meeting": {"turns": []}}
 
     def close(self) -> None:
         self.closed = True
@@ -81,13 +81,13 @@ class MeetingTranscriptionBatchWorkerTests(unittest.TestCase):
                 cancellation,
             )
 
-            self.assertEqual(result, {"meeting": {"segments": []}})
+            self.assertEqual(result, {"meeting": {"turns": []}})
             self.assertEqual(len(worker.jobs), 1)
             meeting_job = worker.jobs[0]
             self.assertEqual(meeting_job.capture_manifest_sha256, "a" * 64)
             self.assertEqual(meeting_job.input_sha256, "b" * 64)
             self.assertEqual(meeting_job.language, "en")
-            self.assertEqual(meeting_job.max_speakers, 8)
+            self.assertFalse(hasattr(meeting_job, "max_speakers"))
             self.assertEqual(meeting_job.frame_count, 32_000)
             self.assertIs(worker.cancellations[0], cancellation)
 

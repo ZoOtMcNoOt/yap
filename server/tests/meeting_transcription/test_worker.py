@@ -18,6 +18,7 @@ from yap_server.pools import pcm_audio
 
 SERVER_ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_LOCK = SERVER_ROOT / "meeting-transcription-runtime.lock.json"
+APPLICATION_REVISION = "e" * 40
 
 
 class _FakeEngine:
@@ -37,6 +38,13 @@ class _FakeEngine:
         return self.result
 
 
+class _FakeSpeakerEncoder:
+    def encode_pcm16(self, pcm_bytes: bytes) -> tuple[float, ...]:
+        if not pcm_bytes:
+            raise AssertionError("speaker evidence must not be empty")
+        return (1.0, 0.0)
+
+
 def _write_wav(path: Path, frames: int = 16_000) -> pcm_audio.PcmAudio:
     with wave.open(str(path), "wb") as output:
         output.setnchannels(1)
@@ -51,17 +59,17 @@ class MeetingWorkerTests(unittest.TestCase):
         provenance = load_meeting_runtime_provenance(RUNTIME_LOCK)
         with tempfile.TemporaryDirectory() as temporary:
             audio_path = Path(temporary) / "meeting.wav"
-            audio = _write_wav(audio_path)
+            audio = _write_wav(audio_path, frames=32_000)
             engine = _FakeEngine(
                 {
-                    "duration": 1.0,
+                    "duration": 2.0,
                     "language": "en",
                     "speakers": ["SPEAKER_00"],
                     "segments": [
                         {
                             "speaker": "SPEAKER_00",
                             "start": 0.0,
-                            "end": 0.86,
+                            "end": 1.7,
                             "text": "hello there",
                         }
                     ],
@@ -75,38 +83,41 @@ class MeetingWorkerTests(unittest.TestCase):
                 input_sha256=audio.sha256,
                 capture_manifest_sha256="a" * 64,
                 language="en",
-                max_speakers=4,
             )
 
             result = transcribe_meeting(
                 request=request,
-                input_path=audio_path,
                 audio=audio,
                 runtime_lock_sha256=hashlib.sha256(
                     RUNTIME_LOCK.read_bytes()
                 ).hexdigest(),
+                application_revision=APPLICATION_REVISION,
                 provenance=provenance,
                 engine=engine,
+                speaker_encoder=_FakeSpeakerEncoder(),
             )
 
-            self.assertEqual(
-                engine.calls,
-                [(str(audio_path.resolve()), "en", 4, True)],
-            )
+            self.assertEqual(len(engine.calls), 1)
+            self.assertEqual(engine.calls[0][1:], ("en", 8, True))
+            self.assertFalse(Path(engine.calls[0][0]).exists())
             self.assertEqual(result["jobId"], "meeting-1")
             self.assertEqual(result["captureManifestSha256"], "a" * 64)
+            self.assertEqual(
+                result["model"]["applicationRevision"],  # type: ignore[index]
+                APPLICATION_REVISION,
+            )
             self.assertEqual(result["audio"]["sha256"], audio.sha256)  # type: ignore[index]
             meeting = result["meeting"]
             assert isinstance(meeting, dict)
-            self.assertEqual(meeting["speakers"], ["SPEAKER_00"])
+            self.assertEqual(meeting["sessionSpeakerIds"], ["speaker-1"])
             self.assertEqual(
-                meeting["segments"],
+                meeting["turns"],
                 [
                     {
                         "index": 0,
-                        "speaker": "SPEAKER_00",
+                        "sessionSpeakerId": "speaker-1",
                         "startSample": 0,
-                        "endSample": 13_760,
+                        "endSample": 27_200,
                         "text": "hello there",
                     }
                 ],
@@ -142,42 +153,40 @@ class MeetingWorkerTests(unittest.TestCase):
                 input_sha256=audio.sha256,
                 capture_manifest_sha256="b" * 64,
                 language="en",
-                max_speakers=8,
             )
 
             with self.assertRaisesRegex(ValueError, "source bounds"):
                 transcribe_meeting(
                     request=request,
-                    input_path=audio_path,
                     audio=audio,
                     runtime_lock_sha256=hashlib.sha256(
                         RUNTIME_LOCK.read_bytes()
                     ).hexdigest(),
+                    application_revision=APPLICATION_REVISION,
                     provenance=provenance,
                     engine=engine,
+                    speaker_encoder=_FakeSpeakerEncoder(),
                 )
 
-    def test_accepts_silence_snapped_upstream_window_counts(self) -> None:
+    def test_accepts_two_upstream_windows_inside_one_source_epoch(self) -> None:
         provenance = load_meeting_runtime_provenance(RUNTIME_LOCK)
         with tempfile.TemporaryDirectory() as temporary:
             audio_path = Path(temporary) / "snapped-meeting.wav"
-            audio = _write_wav(audio_path, frames=58 * 16_000)
+            audio = _write_wav(audio_path, frames=30 * 16_000)
             engine = _FakeEngine(
                 {
-                    "duration": 58.0,
+                    "duration": 30.0,
                     "language": "en",
                     "speakers": ["SPEAKER_00"],
                     "segments": [
                         {
                             "speaker": "SPEAKER_00",
                             "start": 0.0,
-                            "end": 57.5,
-                            "text": "three silence-snapped windows",
+                            "end": 29.5,
+                            "text": "two windows after right padding",
                         }
                     ],
-                    # The pinned chunker may close each non-final 30-second
-                    # target up to three seconds early at silence.
-                    "num_chunks": 3,
+                    "num_chunks": 2,
                     "elapsed_s": 1.0,
                     "two_pass": {"mode": "staggered", "engaged": True},
                 }
@@ -187,21 +196,21 @@ class MeetingWorkerTests(unittest.TestCase):
                 input_sha256=audio.sha256,
                 capture_manifest_sha256="c" * 64,
                 language="en",
-                max_speakers=8,
             )
 
             result = transcribe_meeting(
                 request=request,
-                input_path=audio_path,
                 audio=audio,
                 runtime_lock_sha256=hashlib.sha256(
                     RUNTIME_LOCK.read_bytes()
                 ).hexdigest(),
+                application_revision=APPLICATION_REVISION,
                 provenance=provenance,
                 engine=engine,
+                speaker_encoder=_FakeSpeakerEncoder(),
             )
 
-            self.assertEqual(result["meeting"]["numWindows"], 3)  # type: ignore[index]
+            self.assertEqual(result["meeting"]["numDecodeWindows"], 2)  # type: ignore[index]
 
 
 if __name__ == "__main__":

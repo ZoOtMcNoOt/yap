@@ -286,10 +286,9 @@ class ContractTests(unittest.TestCase):
         )
         capacity = schemas["SpeakerCapacityDegradation"]
         self.assertEqual(
-            capacity["required"],
+            capacity["oneOf"][0]["required"],
             [
                 "code",
-                "fallbackDisposition",
                 "scope",
                 "startSample",
                 "endSample",
@@ -297,8 +296,35 @@ class ContractTests(unittest.TestCase):
                 "speakerLimit",
             ],
         )
-        self.assertEqual(capacity["properties"]["scope"]["const"], "meeting")
-        self.assertNotIn("regions", capacity["properties"])
+        self.assertEqual(
+            [variant["properties"]["scope"]["const"] for variant in capacity["oneOf"]],
+            ["decode_window", "meeting"],
+        )
+        self.assertEqual(
+            capacity["oneOf"][1]["properties"]["speakerLimit"]["const"],
+            64,
+        )
+        anonymous = schemas["JointAnonymousSpeakerAttribution"]
+        self.assertEqual(
+            anonymous["oneOf"][0]["properties"]["sessionSpeakerId"]["pattern"],
+            "^speaker-(?:[1-9]|[1-5][0-9]|6[0-4])$",
+        )
+        self.assertEqual(
+            anonymous["oneOf"][1]["properties"]["kind"]["const"],
+            "unknown",
+        )
+        speaker_provenance = speaker_result["properties"]["modelProvenance"]
+        self.assertEqual(speaker_provenance["minItems"], 4)
+        self.assertEqual(speaker_provenance["maxItems"], 4)
+        self.assertIs(speaker_provenance["items"], False)
+        self.assertEqual(len(speaker_provenance["prefixItems"]), 4)
+        self.assertEqual(
+            speaker_provenance["prefixItems"][3]["allOf"][1]["properties"][
+                "modelId"
+            ]["const"],
+            "yap/speaker-epoch-reconciliation",
+        )
+        self.assertIn("rejects duplicate modelId", speaker_provenance["description"])
         capacity_status_contract = speaker_result["allOf"][0]
         self.assertEqual(
             capacity_status_contract["if"]["properties"]["status"]["const"],

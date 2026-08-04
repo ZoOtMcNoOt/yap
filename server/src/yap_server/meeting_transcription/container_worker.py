@@ -35,13 +35,15 @@ from yap_server.pools.container_runtime import (
 from yap_server.transcript_text import canonical_transcript
 
 from .contract import (
+    MEETING_SESSION_SPEAKER_LIMIT,
     MAX_MEETING_FRAME_COUNT,
     MAX_MEETING_SEGMENT_COUNT,
-    MAX_MEETING_SPEAKERS,
     MEETING_SAMPLE_RATE_HZ,
-    is_meeting_speaker_id,
-    maximum_upstream_window_count,
+    canonical_session_speaker_ids,
+    is_session_speaker_id,
+    maximum_source_time_decode_window_count,
 )
+from .speaker_capacity import validate_speaker_capacity_degradation
 
 
 _IMAGE = re.compile(r"^(?:sha256:[0-9a-f]{64}|.+@sha256:[0-9a-f]{64})$")
@@ -60,7 +62,6 @@ class MeetingTranscriptionJob:
     input_sha256: str
     capture_manifest_sha256: str
     language: str
-    max_speakers: int
     frame_count: int
 
     def __post_init__(self) -> None:
@@ -73,12 +74,6 @@ class MeetingTranscriptionJob:
                 raise ValueError(f"meeting {field} is invalid")
         if self.language != "auto" and _LANGUAGE.fullmatch(self.language) is None:
             raise ValueError("meeting language is invalid")
-        if (
-            not isinstance(self.max_speakers, int)
-            or isinstance(self.max_speakers, bool)
-            or not 1 <= self.max_speakers <= MAX_MEETING_SPEAKERS
-        ):
-            raise ValueError("meeting max speakers must be between one and eight")
         if (
             not isinstance(self.frame_count, int)
             or isinstance(self.frame_count, bool)
@@ -247,8 +242,8 @@ class ContainerMeetingTranscriptionWorker:
             job.job_id,
             "--language",
             job.language,
-            "--max-speakers",
-            str(job.max_speakers),
+            "--application-revision",
+            self._checked_head,
         ]
 
     def run(
@@ -294,6 +289,7 @@ class ContainerMeetingTranscriptionWorker:
                 job=job,
                 provenance=self._provenance,
                 runtime_lock_sha256=self._runtime_lock_sha256,
+                checked_head=self._checked_head,
             )
         except (json.JSONDecodeError, ValueError) as error:
             raise WorkerExecutionError(
@@ -309,6 +305,7 @@ def validate_meeting_worker_result(
     job: MeetingTranscriptionJob,
     provenance: MeetingRuntimeProvenance,
     runtime_lock_sha256: str,
+    checked_head: str,
 ) -> dict[str, object]:
     result = _exact_mapping(
         value,
@@ -337,6 +334,7 @@ def validate_meeting_worker_result(
             "revision",
             "runtimeHarnessRevision",
             "speakerEncoderRevision",
+            "applicationRevision",
             "runtimeLockSha256",
         },
         "meeting worker model",
@@ -346,6 +344,7 @@ def validate_meeting_worker_result(
         "revision": provenance.model.revision,
         "runtimeHarnessRevision": provenance.harness.revision,
         "speakerEncoderRevision": provenance.speaker_encoder.revision,
+        "applicationRevision": checked_head,
         "runtimeLockSha256": runtime_lock_sha256,
     }:
         raise ValueError("meeting worker model identity is invalid")
@@ -365,7 +364,14 @@ def validate_meeting_worker_result(
 
     meeting = _exact_mapping(
         result["meeting"],
-        {"language", "speakers", "segments", "numWindows", "sourceTimeUnit"},
+        {
+            "language",
+            "sessionSpeakerIds",
+            "turns",
+            "numDecodeWindows",
+            "sourceTimeUnit",
+            "speakerCapacityDegradation",
+        },
         "meeting worker meeting",
     )
     language = meeting["language"]
@@ -375,15 +381,15 @@ def validate_meeting_worker_result(
         or (job.language != "auto" and language != job.language)
     ):
         raise ValueError("meeting worker language is invalid")
-    speakers = meeting["speakers"]
+    speakers = meeting["sessionSpeakerIds"]
     if (
         not isinstance(speakers, list)
-        or len(speakers) > job.max_speakers
-        or speakers != sorted(set(speakers))
-        or any(not is_meeting_speaker_id(item) for item in speakers)
+        or len(speakers) > MEETING_SESSION_SPEAKER_LIMIT
+        or speakers != canonical_session_speaker_ids(len(speakers))
+        or any(not is_session_speaker_id(item) for item in speakers)
     ):
         raise ValueError("meeting worker speakers are invalid")
-    raw_segments = meeting["segments"]
+    raw_segments = meeting["turns"]
     if (
         not isinstance(raw_segments, list)
         or len(raw_segments) > MAX_MEETING_SEGMENT_COUNT
@@ -395,18 +401,17 @@ def validate_meeting_worker_result(
     for index, value in enumerate(raw_segments):
         segment = _exact_mapping(
             value,
-            {"index", "speaker", "startSample", "endSample", "text"},
-            f"meeting worker segment {index}",
+            {"index", "sessionSpeakerId", "startSample", "endSample", "text"},
+            f"meeting worker turn {index}",
         )
-        speaker = segment["speaker"]
+        speaker = segment["sessionSpeakerId"]
         start = segment["startSample"]
         end = segment["endSample"]
         text = canonical_transcript(segment["text"], "meeting worker segment text")
         if (
             segment["index"] != index
             or not text
-            or not isinstance(speaker, str)
-            or speaker not in speakers
+            or (speaker is not None and speaker not in speakers)
             or not isinstance(start, int)
             or isinstance(start, bool)
             or not isinstance(end, int)
@@ -416,18 +421,17 @@ def validate_meeting_worker_result(
             or end <= start
             or end > job.frame_count
         ):
-            raise ValueError("meeting worker segment is invalid")
+            raise ValueError("meeting worker turn is invalid")
         previous_start = start
-        observed_speakers.add(speaker)
+        if isinstance(speaker, str):
+            observed_speakers.add(speaker)
         transcript_bytes += len(text.encode("utf-8"))
         if transcript_bytes > MAX_TRANSCRIPT_BYTES:
             raise ValueError("meeting worker transcript exceeds the byte bound")
     if observed_speakers != set(speakers):
         raise ValueError("meeting worker speaker inventory differs from its segments")
-    maximum_windows = maximum_upstream_window_count(
-        job.frame_count / MEETING_SAMPLE_RATE_HZ
-    )
-    num_windows = meeting["numWindows"]
+    maximum_windows = maximum_source_time_decode_window_count(job.frame_count)
+    num_windows = meeting["numDecodeWindows"]
     if (
         not isinstance(num_windows, int)
         or isinstance(num_windows, bool)
@@ -435,6 +439,16 @@ def validate_meeting_worker_result(
         or meeting["sourceTimeUnit"] != "samples"
     ):
         raise ValueError("meeting worker window identity is invalid")
+    degradation = validate_speaker_capacity_degradation(
+        meeting["speakerCapacityDegradation"],
+        source_frame_count=job.frame_count,
+    )
+    if (
+        degradation is not None
+        and degradation["scope"] == "meeting"
+        and len(speakers) != MEETING_SESSION_SPEAKER_LIMIT
+    ):
+        raise ValueError("meeting speaker capacity differs from its roster")
 
     runtime = _exact_mapping(
         result["runtime"],

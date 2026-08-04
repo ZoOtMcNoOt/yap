@@ -5,44 +5,34 @@ from contextlib import redirect_stdout
 from dataclasses import dataclass
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 import re
 import sys
-from typing import Mapping, Protocol
+from typing import Protocol
 
 from yap_server.meeting_transcription.runtime_provenance import (
     MeetingRuntimeProvenance,
     load_meeting_runtime_provenance,
     verify_repository_source_directory,
 )
-from yap_server.limits import MAX_TRANSCRIPT_BYTES, MAX_WORKER_RESULT_BYTES
+from yap_server.limits import MAX_WORKER_RESULT_BYTES
 from yap_server.pools import pcm_audio
 from yap_server.pools.batch_contract import validate_batch_job_id
 
-from .contract import (
-    MAX_MEETING_DURATION_SECONDS,
-    MAX_MEETING_SEGMENT_COUNT,
-    MAX_MEETING_SPEAKERS,
-    is_meeting_speaker_id,
-    maximum_upstream_window_count,
+from .contract import MAX_MEETING_DURATION_SECONDS
+from .speaker_capacity import speaker_capacity_degradation_to_wire
+from .source_time_epoch_transcription import (
+    SpeakerEmbeddingEncoder,
+    SpeechBrainSpeakerEncoder,
+    SourceTimeMeetingTranscription,
+    transcribe_source_time_epochs,
 )
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _LANGUAGE = re.compile(r"^[A-Za-z][A-Za-z-]{0,34}$")
-_UPSTREAM_RESULT_KEYS = {
-    "duration",
-    "language",
-    "speakers",
-    "segments",
-    "num_chunks",
-    "elapsed_s",
-    "two_pass",
-}
-_UPSTREAM_SEGMENT_KEYS = {"speaker", "start", "end", "text"}
-_MAX_DIAGNOSTIC_BYTES = 64 * 1024
 
 
 class TironEngine(Protocol):
@@ -62,7 +52,6 @@ class MeetingWorkerRequest:
     input_sha256: str
     capture_manifest_sha256: str
     language: str
-    max_speakers: int
 
     def __post_init__(self) -> None:
         validate_batch_job_id(self.job_id)
@@ -74,36 +63,31 @@ class MeetingWorkerRequest:
                 raise ValueError(f"{field} is invalid")
         if self.language != "auto" and _LANGUAGE.fullmatch(self.language) is None:
             raise ValueError("meeting language is invalid")
-        if (
-            not isinstance(self.max_speakers, int)
-            or isinstance(self.max_speakers, bool)
-            or not 1 <= self.max_speakers <= MAX_MEETING_SPEAKERS
-        ):
-            raise ValueError("meeting max speakers must be between one and eight")
 
 
 def transcribe_meeting(
     *,
     request: MeetingWorkerRequest,
-    input_path: Path,
     audio: pcm_audio.PcmAudio,
     runtime_lock_sha256: str,
+    application_revision: str,
     provenance: MeetingRuntimeProvenance,
     engine: TironEngine,
+    speaker_encoder: SpeakerEmbeddingEncoder,
 ) -> dict[str, object]:
     if request.input_sha256 != audio.sha256:
         raise ValueError("meeting input SHA-256 differs from the canonical audio")
     if _SHA256.fullmatch(runtime_lock_sha256) is None:
         raise ValueError("meeting runtime lock SHA-256 is invalid")
-    resolved_input = input_path.resolve(strict=True)
+    if _GIT_SHA.fullmatch(application_revision) is None:
+        raise ValueError("meeting application revision is invalid")
     with redirect_stdout(sys.stderr):
-        raw_result = engine.transcribe(
-            str(resolved_input),
+        transcription = transcribe_source_time_epochs(
+            audio=audio,
+            engine=engine,
             language=request.language,
-            max_speakers=request.max_speakers,
-            two_pass=True,
+            speaker_encoder=speaker_encoder,
         )
-    meeting = _validated_meeting_result(raw_result, audio)
     return {
         "schemaVersion": 1,
         "jobId": request.job_id,
@@ -113,6 +97,7 @@ def transcribe_meeting(
             "revision": provenance.model.revision,
             "runtimeHarnessRevision": provenance.harness.revision,
             "speakerEncoderRevision": provenance.speaker_encoder.revision,
+            "applicationRevision": application_revision,
             "runtimeLockSha256": runtime_lock_sha256,
         },
         "audio": {
@@ -121,7 +106,7 @@ def transcribe_meeting(
             "sampleRateHz": audio.sample_rate,
             "frameCount": audio.frame_count,
         },
-        "meeting": meeting,
+        "meeting": _meeting_payload(transcription),
         "runtime": {
             "device": "cuda:0",
             "dtype": "bfloat16",
@@ -131,107 +116,26 @@ def transcribe_meeting(
     }
 
 
-def _validated_meeting_result(
-    value: object,
-    audio: pcm_audio.PcmAudio,
+def _meeting_payload(
+    transcription: SourceTimeMeetingTranscription,
 ) -> dict[str, object]:
-    result = _exact_mapping(value, _UPSTREAM_RESULT_KEYS, "Tiron result")
-    source_duration = audio.frame_count / audio.sample_rate
-    duration = _finite_number(result["duration"], "Tiron duration")
-    if abs(duration - source_duration) > 0.011:
-        raise ValueError("Tiron duration differs from the canonical source")
-
-    language = result["language"]
-    if not isinstance(language, str) or _LANGUAGE.fullmatch(language) is None:
-        raise ValueError("Tiron language is invalid")
-    raw_speakers = result["speakers"]
-    if (
-        not isinstance(raw_speakers, list)
-        or len(raw_speakers) > MAX_MEETING_SPEAKERS
-        or any(not is_meeting_speaker_id(item) for item in raw_speakers)
-        or raw_speakers != sorted(set(raw_speakers))
-    ):
-        raise ValueError("Tiron speakers are invalid")
-
-    raw_segments = result["segments"]
-    if (
-        not isinstance(raw_segments, list)
-        or len(raw_segments) > MAX_MEETING_SEGMENT_COUNT
-    ):
-        raise ValueError("Tiron segments exceed the bounded contract")
-    segments: list[dict[str, object]] = []
-    transcript_bytes = 0
-    previous_start = -1
-    observed_speakers: set[str] = set()
-    for index, raw_segment in enumerate(raw_segments):
-        segment = _exact_mapping(
-            raw_segment,
-            _UPSTREAM_SEGMENT_KEYS,
-            f"Tiron segment {index}",
-        )
-        speaker = segment["speaker"]
-        text = segment["text"]
-        if not is_meeting_speaker_id(speaker):
-            raise ValueError("Tiron segment speaker is invalid")
-        if not isinstance(text, str) or not text.strip():
-            raise ValueError("Tiron segment text is invalid")
-        transcript_bytes += len(text.encode("utf-8"))
-        if transcript_bytes > MAX_TRANSCRIPT_BYTES:
-            raise ValueError("Tiron transcript exceeds the bounded contract")
-        start = _finite_number(segment["start"], "Tiron segment start")
-        end = _finite_number(segment["end"], "Tiron segment end")
-        start_sample = round(start * audio.sample_rate)
-        end_sample = round(end * audio.sample_rate)
-        if (
-            start_sample < 0
-            or start_sample < previous_start
-            or end_sample <= start_sample
-            or end_sample > audio.frame_count
-        ):
-            raise ValueError("Tiron segment source bounds are invalid")
-        previous_start = start_sample
-        observed_speakers.add(speaker)
-        segments.append(
+    degradation = transcription.capacity_degradation
+    return {
+        "language": transcription.language,
+        "sessionSpeakerIds": list(transcription.session_speaker_ids),
+        "turns": [
             {
                 "index": index,
-                "speaker": speaker,
-                "startSample": start_sample,
-                "endSample": end_sample,
-                "text": text,
+                "sessionSpeakerId": turn.session_speaker_id,
+                "startSample": turn.start_sample,
+                "endSample": turn.end_sample,
+                "text": turn.text,
             }
-        )
-    if observed_speakers != set(raw_speakers):
-        raise ValueError("Tiron speaker inventory differs from its segments")
-
-    num_chunks = result["num_chunks"]
-    maximum_chunks = maximum_upstream_window_count(source_duration)
-    if (
-        not isinstance(num_chunks, int)
-        or isinstance(num_chunks, bool)
-        or not 1 <= num_chunks <= maximum_chunks
-    ):
-        raise ValueError("Tiron chunk count is invalid")
-    elapsed = _finite_number(result["elapsed_s"], "Tiron elapsed time")
-    if elapsed < 0:
-        raise ValueError("Tiron elapsed time is invalid")
-    try:
-        diagnostics = json.dumps(
-            result["two_pass"],
-            ensure_ascii=False,
-            separators=(",", ":"),
-            allow_nan=False,
-        ).encode("utf-8")
-    except (TypeError, ValueError) as error:
-        raise ValueError("Tiron two-pass diagnostics are invalid") from error
-    if len(diagnostics) > _MAX_DIAGNOSTIC_BYTES:
-        raise ValueError("Tiron two-pass diagnostics exceed the bounded contract")
-
-    return {
-        "language": language,
-        "speakers": raw_speakers,
-        "segments": segments,
-        "numWindows": num_chunks,
+            for index, turn in enumerate(transcription.turns)
+        ],
+        "numDecodeWindows": transcription.num_decode_windows,
         "sourceTimeUnit": "samples",
+        "speakerCapacityDegradation": speaker_capacity_degradation_to_wire(degradation),
     }
 
 
@@ -270,28 +174,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--capture-manifest-sha256", required=True)
     parser.add_argument("--job-id", required=True)
     parser.add_argument("--language", required=True)
-    parser.add_argument("--max-speakers", type=int, default=8)
+    parser.add_argument("--application-revision", required=True)
     return parser
-
-
-def _exact_mapping(
-    value: object,
-    keys: set[str],
-    field: str,
-) -> Mapping[str, object]:
-    if not isinstance(value, Mapping) or set(value) != keys:
-        raise ValueError(f"{field} fields are invalid")
-    return value
-
-
-def _finite_number(value: object, field: str) -> float:
-    if (
-        not isinstance(value, (int, float))
-        or isinstance(value, bool)
-        or not math.isfinite(value)
-    ):
-        raise ValueError(f"{field} is invalid")
-    return float(value)
 
 
 def _emit_error(code: str, message: str) -> None:
@@ -323,7 +207,6 @@ def main(argv: list[str] | None = None) -> int:
             input_sha256=arguments.input_sha256,
             capture_manifest_sha256=arguments.capture_manifest_sha256,
             language=arguments.language,
-            max_speakers=arguments.max_speakers,
         )
         runtime_lock_path = Path(arguments.runtime_lock).resolve(strict=True)
         runtime_lock_bytes = runtime_lock_path.read_bytes()
@@ -345,13 +228,15 @@ def main(argv: list[str] | None = None) -> int:
             max_audio_seconds=MAX_MEETING_DURATION_SECONDS,
         )
         engine = _load_engine(model_dir, speaker_encoder_dir)
+        speaker_encoder = SpeechBrainSpeakerEncoder(getattr(engine, "ecapa", None))
         result = transcribe_meeting(
             request=request,
-            input_path=input_path,
             audio=audio,
             runtime_lock_sha256=runtime_lock_sha256,
+            application_revision=arguments.application_revision,
             provenance=provenance,
             engine=engine,
+            speaker_encoder=speaker_encoder,
         )
         encoded = json.dumps(
             result,

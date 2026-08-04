@@ -28,8 +28,8 @@ passed before documentation-only successor `e22368fc...` exposed
 antagonistic review, the canonical native build, receipt-bound image preflight,
 real History/cancellation lifecycle with teardown, its single exact-head
 18-child matrix, independent receipt validation, and the required CI and CodeQL
-jobs. Final documentation-only hosted closure including disposable-Windows NSIS
-and PR #143 merge remain.
+jobs. PR #143 merged the reviewed closure as
+`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -756,7 +756,8 @@ validation rejects incomplete aggregates. The owner-scoped API and Rust native
 connector validate and publish both artifacts without exposing raw Tiron
 speaker labels. The profile is explicit Preview, absent from the committed
 default catalog, and not production-promoted. The local anonymous-speaker path
-and ASR-plus-diarization fallback remain separate.
+remains independent. The server does not run a second ASR-plus-diarization
+fallback.
 
 Exact application/runtime candidate
 `1c69b61cf2902c9cfda50c6158168890974f969f` passed the supported-launcher
@@ -788,21 +789,16 @@ that retained signed Visual Studio `vctip.exe` after all 1,198 Rust tests expose
 and corrected a manifest regression; it did not justify a longer product drain
 or a compiler-specific runtime exception.
 
-Tiron's model capacity is eight window-local speaker slots per 30-second
-decode, and the pinned reference harness separately caps the published global
-meeting roster at eight. Neither limit is an attendee count. Yap retains ADR
-0020's dynamic 32-speaker target and 64-speaker safety ceiling, but reaching it
-requires the separately gated ADR 0027 speaker-epoch reconciler or the
-ASR-plus-diarization fallback; ordinary chunking does not lift the released
-global cap. The public whole-meeting API discards per-window assignments and
-embeddings. The current Preview therefore reports only what it can observe:
-an aggregate with exactly eight global speaker labels is terminal `partial`
-and carries one source-bound, meeting-scoped saturation record stating that
-fallback was recommended but not run. It cannot distinguish exactly eight
-real talkers from a larger collapsed roster or identify an exact saturated
-window. Window evidence, larger-roster speaker epochs, and automatic fallback
-remain production-promotion work; Yap will not fork private upstream pipeline
-internals to manufacture them.
+Tiron's model capacity is eight speaker slots per 30-second decode. Neither the
+limit nor Yap's session roster is an attendee count. The production-promotion
+candidate calls the public Tiron API on exact source-time epochs, keeps Tiron's
+window-local labels long enough to reuse its already-loaded ECAPA encoder, and
+links only unambiguous evidence across epochs. Yap owns the resulting dynamic
+32-speaker target and 64-speaker safety ceiling without forking Tiron internals.
+An epoch that exposes all eight slots produces a source-bound `decode_window`
+capacity record; reaching the session ceiling produces a meeting-scoped record.
+Ambiguous evidence is published as `Unknown`, not forced. This is the only
+server meeting-inference path; a failed promotion gate leaves it unadvertised.
 
 The passed Phase 8 Preview gate proves the pinned route, source/result
 boundaries, lifecycle, supported launcher, and client projection on one exact
@@ -893,7 +889,7 @@ automation completed Phase 8 closure before merge. Historical documentation-only
 successor `e22368fc...` exposed a new high-severity development-tool advisory.
 Patched candidate `393710999...` then completed its single applicable matrix,
 receipt validation, final antagonistic review, and required CI and CodeQL jobs.
-Its final documentation-only successor still requires hosted closure, including
-disposable-Windows NSIS, before PR #143 merges.
+Its reviewed successor passed hosted closure, including disposable-Windows
+NSIS, and PR #143 merged as `8fb511ad...`.
 The fresh VM is the lifecycle boundary for Microsoft build-tool helpers; it is
 not the product runtime cleanup mechanism.

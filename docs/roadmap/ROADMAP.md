@@ -117,9 +117,8 @@ Phase 8 Preview then merged through PR #142. Historical meeting-transcription
 maintainability candidate `fb0985e7...` passed before documentation successor
 `e22368fc...` exposed high-severity `GHSA-mwp4-54f8-5fhr`. Patched candidate
 `393710999...` passed its exact-image lifecycle, single complete matrix,
-independent receipt validation, and required CI and CodeQL jobs. Final
-documentation-only hosted closure including disposable-Windows NSIS and PR #143
-merge remain before Phase 9.
+independent receipt validation, and required CI and CodeQL jobs. PR #143 merged
+the reviewed closure as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
 
 ## Last merged phase: meeting evidence Preview (Phase 8)
 
@@ -129,9 +128,12 @@ implemented the explicit meeting-only Tiron Preview and merged through
 [PR #142](https://github.com/mcnatg1/yap/pull/142) as `4201c5e7`. The route
 publishes source-bound transcript and anonymous-speaker revisions through the
 existing owner-scoped result authority and projects them into native History.
-It is not the default route and is not production-promoted. Independent quality,
-capacity, fallback, larger-roster, identity, and promotion evidence remains
-open under ADRs 0020 and 0027.
+It is not the default route and is not production-promoted. The active
+production-promotion candidate replaces the capped whole-meeting product
+boundary with one exact source-time epoch route and integrated request-scoped
+speaker reconciliation. Independent quality, capacity, runtime, identity, and
+promotion evidence remains open under ADRs 0020 and 0027; no second server
+meeting pipeline is planned.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 
@@ -169,7 +171,7 @@ native provider remain IT-authorized follow-ups rather than Phase 8 work.
 | Phase | Boundary | Exit direction |
 | --- | --- | --- |
 | 7 | Identity and access | Provider-neutral OIDC validation with Entra policy, a native token-provider seam whose production adapter requires separate approval, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants and authorization/revocation/audit records that are implemented but reachable only from tests, and authenticated bounded private live admission without a live ASR or external edge claim. |
-| 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron eight-window/eight-global server baseline, a separately gated speaker-epoch extension for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/global/window pressure, ASR-plus-diarization fallback, and purpose-authorized server reconciliation/naming. |
+| 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron historical whole-meeting reproduction, one integrated source-time epoch route with bounded request-scoped speaker reconciliation for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/session/window pressure, and later purpose-authorized naming. A failed Tiron gate leaves the sole server meeting route unpromoted. |
 | 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and SGLang-backed compatible reasoning/tool-output models. |
 | 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus SGLang agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
 
@@ -184,10 +186,10 @@ Selecting and explicitly enabling the Preview baseline does not place it in the
 committed default catalog or production-promote it. Independent accuracy,
 capacity, lifecycle, and privacy evidence remains required for promotion.
 The separate
-[meeting-transcription ownership and maintainability review](../plans/active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-has qualified patched candidate `393710999...`; it must complete final
-documentation-only hosted closure, including disposable-Windows NSIS, before PR
-#143 merges and Phase 9 begins.
+[meeting-transcription ownership and maintainability review](../plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+qualified patched candidate `393710999...`; PR #143 merged the reviewed closure
+as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. Production promotion remains a
+separate evidence decision.
 
 ## Enterprise handoffs
 

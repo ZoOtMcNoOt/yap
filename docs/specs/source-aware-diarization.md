@@ -1,6 +1,6 @@
 # Source-Aware Diarization Design
 
-**Status:** Accepted design; client capture foundation implemented and verified 2026-07-11; model-specific diarization remains deferred
+**Status:** Accepted design; client capture foundation and the unpromoted Tiron source-time server route are implemented; production qualification remains open
 **Date:** 2026-07-10
 **Scope:** Track-aware client audio contracts, local anonymous speaker evidence,
 and Tiron-based server-authoritative speaker-attributed transcription and
@@ -19,8 +19,9 @@ evidence and server-transport ports are implemented but their consumers are
 `None`. The recording sink publishes an immutable capture sidecar and commit;
 recovery and deletion operate on that canonical lineage. A successful dictation
 start still requires local ASR completion, so system loopback, server transport,
-speaker inference, and an ASR-independent recording-only product mode remain
-future work on the same contract.
+client-live speaker evidence, and an ASR-independent recording-only product
+mode remain future work on that client contract. Server meeting inference now
+executes through the unpromoted Tiron source-time route.
 
 The existing diarization ADRs also disagree about ownership and algorithms. This design establishes the contract before selecting or integrating a heavier diarization model.
 
@@ -226,10 +227,12 @@ The EEND challenger must also improve macro DER by at least 10% relative and ove
 [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
 selects `Trelis/tiron` as the independent server development baseline. It
 jointly decodes transcript, timestamps, and up to eight window-local speaker
-slots. The pinned harness links those slots across 30-second windows but also
-caps its whole-meeting result at eight global identities. A separately gated
-Yap speaker-epoch reconciler is required before the route can claim more than
-eight distinct talkers; a larger attendee list alone is not such a claim. It
+slots. The product calls the pinned public harness on exact 30-second
+source-time epochs, then reuses Tiron's already-loaded ECAPA encoder to
+reconcile only unambiguous anonymous voices across epochs. Tiron remains capped
+at eight slots per decode; Yap owns a 32-speaker session target and 64-speaker
+safety ceiling. A larger attendee list alone is not a larger speaking-roster
+claim. It
 does not replace the local baseline above. The server route is disabled by
 default, explicitly selected as Preview, and unpromoted. Changing the committed
 default catalog or production-promoting it requires the following additional
@@ -266,11 +269,10 @@ local provisional r1
 Reprocessing appends a result. It never mutates raw audio or silently replaces a user correction. A later server result may be presented as a proposed revision when manual labels exist.
 
 `Unknown` remains valid in any revision. A result is `partial` when source audio
-has gaps, is truncated, was not fully uploaded, or a selected route reaches an
-observable representation limit. The current Tiron Preview can observe only
-that the meeting-global aggregate contains exactly eight labels, so it reports
-one whole-source capacity record; it does not claim overflow or identify a
-specific saturated window.
+has gaps, is truncated, was not fully uploaded, or the selected route reaches
+an observable representation limit. Eight labels inside one source epoch
+produce a source-bound `decode_window` capacity record. Reaching the 64-speaker
+session ceiling produces a meeting-scoped capacity record.
 
 Timestamped diarization is normative at two levels:
 
@@ -490,16 +492,18 @@ Client transient embedding and exemplar types must not implement ordinary persis
 - Remove the retained-PCM duration limitation for meeting sessions without allowing unbounded memory growth.
 - Persist an immutable single-track capture sidecar and separate result revisions while preserving current WAV/TXT playback.
 
-### Deferred Phase 8 slice: Local anonymous and server joint baselines
+### Phase 8 implementation and remaining qualification
 
 - Add optional speaker-model download state.
 - Benchmark a commercially usable `sherpa-onnx` embedding model.
 - Implement unknown/candidate/stable-anonymous clustering and result revisions.
 - Persist only the anonymous timeline and provenance; discard embeddings.
-- Add a pinned Tiron/ECAPA Python 3.12 worker on the private GPU tier behind the
-  Rust-owned meeting-result contract.
-- Compare it with the ASR-plus-diarization fallback on byte-identical source
-  audio and the frozen messy-meeting suite before promotion.
+- The pinned Tiron/ECAPA Python 3.12 worker now sits behind the Rust-owned
+  meeting-result contract and invokes exact 30-second source-time epochs.
+- The same product route reuses the loaded ECAPA encoder for bounded,
+  request-scoped speaker reconciliation. Score that integrated route on the
+  frozen messy-meeting suite before promotion. A failed gate leaves it
+  unpromoted; Yap does not add a second server meeting pipeline.
 
 ### Delivered transport prerequisite and subsequent plans
 
@@ -514,7 +518,8 @@ Client transient embedding and exemplar types must not implement ordinary persis
 
 ## Acceptance For The Client Foundation Plan
 
-- [x] Dictation behavior and existing serialized settings remain backward compatible.
+- [x] The current dictation and serialized-settings contracts remain valid;
+  obsolete schemas are rejected rather than carried by compatibility paths.
 - [ ] Production microphone capture can complete as a supported recording-only session without constructing local ASR. Current dictation startup installs CPAL capture first, but successful start completion still requires the Nemotron stream and local-ASR adapter.
 - [x] Long capture streams to disk with bounded memory and recoverable partial state; there is no retained-PCM duration cap.
 - [x] Audio drops are explicit timeline gaps.
@@ -541,9 +546,9 @@ result path, licensed speech/WER fixture, and hosted Phase 5 gate now exist.
 - The licensed fixture manifest, RTTM annotations, and reference-hardware benchmark report exist before a model is promoted.
 - The server Tiron baseline publishes no result until Rust validates its source
   bounds, overlap, model/runtime provenance, capture lineage, and revision.
-- The eight-slot window cap and released eight-identity global cap are distinct
-  from the dynamic product session roster. Larger speaking rosters require the
-  separately qualified speaker-epoch reconciler or fallback; over-capacity
-  regions are typed partial/degraded results, never silent loss.
+- The eight-slot window cap is distinct from the dynamic product session
+  roster. The source-time speaker-epoch reconciler owns the 32-speaker target
+  and 64-speaker ceiling; over-capacity regions are typed partial/degraded
+  results, never silent loss or automatic fallback.
 - Public comparator results and independent messy-meeting promotion evidence are
   reported separately.

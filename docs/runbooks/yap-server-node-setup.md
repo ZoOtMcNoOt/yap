@@ -266,8 +266,8 @@ Historical candidate `fb0985e7...` passed before its documentation successor
 failed hosted frontend dependency audit. Patched development-only `ip-address`
 10.3.1 candidate `393710999b53a4bd1b00639e30c0fec88b152530` passed fresh
 private-controller packaging/prequalification, the complete checkpoint gate,
-receipt validation, and required CI and CodeQL jobs. Final documentation-only
-hosted closure including disposable-Windows NSIS and PR #143 merge remain.
+receipt validation, and required CI and CodeQL jobs. PR #143 merged the
+reviewed closure as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
 This evidence does not prove real login, WAM, Conditional Access, MFA, consent,
 revocation propagation, guest behavior, packaged enterprise policy, or
 production approval. Run those only in a separately authorized IT-provided

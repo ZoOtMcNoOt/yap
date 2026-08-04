@@ -1,6 +1,6 @@
 export type SpeakerTranscriptTurn = {
   turnId: string;
-  speakerId: string;
+  speakerId: string | null;
   startMs: number;
   endMs: number;
   text: string;
@@ -12,8 +12,9 @@ export function isSpeakerTranscriptTurn(value: unknown): value is SpeakerTranscr
   const turn = value as Record<string, unknown>;
   return typeof turn.turnId === "string"
     && /^turn-\d{6}$/.test(turn.turnId)
-    && typeof turn.speakerId === "string"
-    && /^speaker-[1-8]$/.test(turn.speakerId)
+    && (turn.speakerId === null
+      || (typeof turn.speakerId === "string"
+        && /^speaker-(?:[1-9]|[1-5][0-9]|6[0-4])$/.test(turn.speakerId)))
     && Number.isSafeInteger(turn.startMs)
     && Number.isSafeInteger(turn.endMs)
     && Number(turn.startMs) >= 0
@@ -33,10 +34,19 @@ export type SpeakerTranscriptPage = {
   turns: SpeakerTranscriptTurn[];
 };
 
-export function speakerTranscriptPage(
+export type SpeakerTranscriptProjection =
+  | { mode: "plain" }
+  | ({ mode: "attributed" } & SpeakerTranscriptPage);
+
+export function projectSpeakerTranscript(
   turns: SpeakerTranscriptTurn[],
   requestedIndex: number,
-): SpeakerTranscriptPage {
+): SpeakerTranscriptProjection {
+  const firstSpeakerId = turns[0]?.speakerId;
+  if (firstSpeakerId && turns.every(({ speakerId }) => speakerId === firstSpeakerId)) {
+    return { mode: "plain" };
+  }
+
   const pageCount = Math.max(1, Math.ceil(turns.length / speakerTranscriptPageSize));
   const index = Math.min(Math.max(0, requestedIndex), pageCount - 1);
   const start = index * speakerTranscriptPageSize;
@@ -44,10 +54,15 @@ export function speakerTranscriptPage(
   return {
     end,
     index,
+    mode: "attributed",
     pageCount,
     start,
     turns: turns.slice(start, end),
   };
+}
+
+export function speakerTranscriptSpeakerLabel(speakerId: string | null): string {
+  return speakerId ? `Speaker ${speakerId.slice("speaker-".length)}` : "Unknown speaker";
 }
 
 export type SpeakerTranscriptDetailState =

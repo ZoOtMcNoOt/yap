@@ -34,6 +34,7 @@ def _worker_result() -> dict[str, object]:
             "revision": PROVENANCE.model.revision,
             "runtimeHarnessRevision": PROVENANCE.harness.revision,
             "speakerEncoderRevision": PROVENANCE.speaker_encoder.revision,
+            "applicationRevision": "e" * 40,
             "runtimeLockSha256": RUNTIME_LOCK_SHA256,
         },
         "audio": {
@@ -44,32 +45,33 @@ def _worker_result() -> dict[str, object]:
         },
         "meeting": {
             "language": "en",
-            "speakers": ["SPEAKER_00", "SPEAKER_01"],
-            "segments": [
+            "sessionSpeakerIds": ["speaker-1", "speaker-2"],
+            "turns": [
                 {
                     "index": 0,
-                    "speaker": "SPEAKER_00",
+                    "sessionSpeakerId": "speaker-1",
                     "startSample": 0,
                     "endSample": 16_000,
                     "text": "hello there",
                 },
                 {
                     "index": 1,
-                    "speaker": "SPEAKER_01",
+                    "sessionSpeakerId": "speaker-2",
                     "startSample": 8_000,
                     "endSample": 24_000,
                     "text": "overlapping reply",
                 },
                 {
                     "index": 2,
-                    "speaker": "SPEAKER_00",
+                    "sessionSpeakerId": "speaker-1",
                     "startSample": 24_000,
                     "endSample": 32_000,
                     "text": "final words",
                 },
             ],
-            "numWindows": 1,
+            "numDecodeWindows": 1,
             "sourceTimeUnit": "samples",
+            "speakerCapacityDegradation": None,
         },
         "runtime": {
             "device": "cuda:0",
@@ -114,6 +116,14 @@ class MeetingResultRevisionTests(unittest.TestCase):
         self.assertEqual(speaker["captureManifestSha256"], "a" * 64)
         self.assertNotIn("transcript", speaker)
         self.assertEqual(speaker["runtimeLockSha256"], RUNTIME_LOCK_SHA256)
+        self.assertEqual(
+            speaker["modelProvenance"][-1],
+            {
+                "modelId": "yap/speaker-epoch-reconciliation",
+                "revision": "e" * 40,
+                "calibrationRevision": RUNTIME_LOCK_SHA256,
+            },
+        )
         self.assertEqual(transcript["status"], "complete")
         self.assertEqual(speaker["status"], "complete")
         self.assertIsNone(speaker["speakerCapacityDegradation"])
@@ -141,24 +151,34 @@ class MeetingResultRevisionTests(unittest.TestCase):
             authority=AUTHORITY,
         )
 
-    def test_eight_observed_speakers_publish_a_typed_partial_result(self) -> None:
+    def test_explicit_decode_window_capacity_publishes_a_typed_partial_result(
+        self,
+    ) -> None:
         worker = _worker_result()
-        speakers = [f"SPEAKER_{index:02d}" for index in range(8)]
+        speakers = [f"speaker-{index}" for index in range(1, 9)]
         worker["meeting"] = {
             "language": "en",
-            "speakers": speakers,
-            "segments": [
+            "sessionSpeakerIds": speakers,
+            "turns": [
                 {
                     "index": index,
-                    "speaker": speaker,
+                    "sessionSpeakerId": speaker,
                     "startSample": index * 4_000,
                     "endSample": (index + 1) * 4_000,
                     "text": f"speaker {index + 1}",
                 }
                 for index, speaker in enumerate(speakers)
             ],
-            "numWindows": 1,
+            "numDecodeWindows": 1,
             "sourceTimeUnit": "samples",
+            "speakerCapacityDegradation": {
+                "code": "SPEAKER_CAPACITY_REACHED",
+                "scope": "decode_window",
+                "startSample": 0,
+                "endSample": 32_000,
+                "observedSpeakerCount": 8,
+                "speakerLimit": 8,
+            },
         }
 
         transcript, speaker = build_meeting_result_revisions(
@@ -173,8 +193,7 @@ class MeetingResultRevisionTests(unittest.TestCase):
             speaker["speakerCapacityDegradation"],
             {
                 "code": "SPEAKER_CAPACITY_REACHED",
-                "fallbackDisposition": "not_run_recommended",
-                "scope": "meeting",
+                "scope": "decode_window",
                 "startSample": 0,
                 "endSample": 32_000,
                 "observedSpeakerCount": 8,
@@ -188,44 +207,47 @@ class MeetingResultRevisionTests(unittest.TestCase):
             authority=AUTHORITY,
         )
 
-        missing_degradation = deepcopy(speaker)
-        missing_degradation["status"] = "complete"
-        missing_degradation["speakerCapacityDegradation"] = None
-        matching_complete_transcript = deepcopy(transcript)
-        matching_complete_transcript["status"] = "complete"
-        matching_complete_transcript["speakerResultSha256"] = speaker_result_sha256(
-            missing_degradation
-        )
-        with self.assertRaisesRegex(ValueError, "differs from the roster"):
-            validate_speaker_result_revision(
-                missing_degradation,
-                transcript_result=matching_complete_transcript,
-                context=_context(),
-                authority=AUTHORITY,
-            )
-
-        complete_transcript, two_speaker_result = build_meeting_result_revisions(
-            _worker_result(),
-            context=_context(),
-            authority=AUTHORITY,
-        )
-        spurious_degradation = deepcopy(two_speaker_result)
-        spurious_degradation["status"] = "partial"
-        spurious_degradation["speakerCapacityDegradation"] = deepcopy(
-            speaker["speakerCapacityDegradation"]
-        )
-        matching_partial_transcript = deepcopy(complete_transcript)
-        matching_partial_transcript["status"] = "partial"
+        invalid_degradation = deepcopy(speaker)
+        invalid_degradation["speakerCapacityDegradation"]["speakerLimit"] = 64
+        matching_partial_transcript = deepcopy(transcript)
         matching_partial_transcript["speakerResultSha256"] = speaker_result_sha256(
-            spurious_degradation
+            invalid_degradation
         )
-        with self.assertRaisesRegex(ValueError, "differs from the roster"):
+        with self.assertRaisesRegex(ValueError, "capacity"):
             validate_speaker_result_revision(
-                spurious_degradation,
+                invalid_degradation,
                 transcript_result=matching_partial_transcript,
                 context=_context(),
                 authority=AUTHORITY,
             )
+
+    def test_preserves_an_unknown_tiron_attribution_without_inventing_identity(
+        self,
+    ) -> None:
+        worker = _worker_result()
+        meeting = worker["meeting"]
+        assert isinstance(meeting, dict)
+        meeting["sessionSpeakerIds"] = ["speaker-1"]
+        turns = meeting["turns"]
+        assert isinstance(turns, list)
+        turns[1]["sessionSpeakerId"] = None
+
+        transcript, speaker = build_meeting_result_revisions(
+            worker,
+            context=_context(),
+            authority=AUTHORITY,
+        )
+
+        self.assertEqual(
+            speaker["speakerTurns"][1]["attribution"],
+            {"kind": "unknown"},
+        )
+        validate_speaker_result_revision(
+            speaker,
+            transcript_result=transcript,
+            context=_context(),
+            authority=AUTHORITY,
+        )
 
     def test_rejects_forged_identity_bounds_or_named_attribution(self) -> None:
         transcript, baseline = build_meeting_result_revisions(

@@ -42,7 +42,6 @@ def _job(root: Path, *, frames: int = 16_000) -> MeetingTranscriptionJob:
         input_sha256=input_sha256,
         capture_manifest_sha256="c" * 64,
         language="en",
-        max_speakers=8,
         frame_count=frames,
     )
 
@@ -57,6 +56,7 @@ def _result(job: MeetingTranscriptionJob) -> dict[str, object]:
             "revision": "90bc0a4d198cd5cf6679b0e478375ba3a0040575",
             "runtimeHarnessRevision": "d249c5a81fc6e0f1ecd34fd30cf2519f06fe671c",
             "speakerEncoderRevision": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286",
+            "applicationRevision": CHECKED_HEAD,
             "runtimeLockSha256": RUNTIME_LOCK_SHA256,
         },
         "audio": {
@@ -67,18 +67,19 @@ def _result(job: MeetingTranscriptionJob) -> dict[str, object]:
         },
         "meeting": {
             "language": "en",
-            "speakers": ["SPEAKER_00"],
-            "segments": [
+            "sessionSpeakerIds": ["speaker-1"],
+            "turns": [
                 {
                     "index": 0,
-                    "speaker": "SPEAKER_00",
+                    "sessionSpeakerId": "speaker-1",
                     "startSample": 0,
                     "endSample": 13_760,
                     "text": "hello there",
                 }
             ],
-            "numWindows": 1,
+            "numDecodeWindows": 1,
             "sourceTimeUnit": "samples",
+            "speakerCapacityDegradation": None,
         },
         "runtime": {
             "device": "cuda:0",
@@ -151,9 +152,10 @@ class ContainerMeetingTranscriptionWorkerTests(unittest.TestCase):
                 "--speaker-encoder-dir /models/ecapa",
                 "--capture-manifest-sha256 " + "c" * 64,
                 "--language en",
-                "--max-speakers 8",
+                "--application-revision " + CHECKED_HEAD,
             ):
                 self.assertIn(expected, rendered)
+            self.assertNotIn("--max-speakers", rendered)
             self.assertNotIn(str(job.result_path), rendered)
 
     def test_validates_and_atomically_publishes_one_source_bound_result(self) -> None:
@@ -188,7 +190,7 @@ class ContainerMeetingTranscriptionWorkerTests(unittest.TestCase):
             root = Path(directory)
             job = _job(root, frames=58 * 16_000)
             payload = _result(job)
-            payload["meeting"]["numWindows"] = 3  # type: ignore[index]
+            payload["meeting"]["numDecodeWindows"] = 3  # type: ignore[index]
 
             def runner(
                 *args: object, **kwargs: object
@@ -205,7 +207,7 @@ class ContainerMeetingTranscriptionWorkerTests(unittest.TestCase):
 
             result = worker.run(job)
 
-            self.assertEqual(result["meeting"]["numWindows"], 3)  # type: ignore[index]
+            self.assertEqual(result["meeting"]["numDecodeWindows"], 3)  # type: ignore[index]
 
     def test_rejects_forged_runtime_or_source_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -216,11 +218,11 @@ class ContainerMeetingTranscriptionWorkerTests(unittest.TestCase):
                 "audio": ("audio", "sha256", "0" * 64),
                 "source bounds": (
                     "meeting",
-                    "segments",
+                    "turns",
                     [
                         {
                             "index": 0,
-                            "speaker": "SPEAKER_00",
+                            "sessionSpeakerId": "speaker-1",
                             "startSample": 0,
                             "endSample": 16_001,
                             "text": "hello there",
@@ -249,6 +251,35 @@ class ContainerMeetingTranscriptionWorkerTests(unittest.TestCase):
                     with self.assertRaises(WorkerExecutionError):
                         worker.run(job)
                     self.assertFalse(job.result_path.exists())
+
+    def test_rejects_a_noncanonical_decode_window_capacity_interval(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            job = _job(root)
+            payload = _result(job)
+            payload["meeting"]["speakerCapacityDegradation"] = {  # type: ignore[index]
+                "code": "SPEAKER_CAPACITY_REACHED",
+                "scope": "decode_window",
+                "startSample": 1,
+                "endSample": job.frame_count,
+                "observedSpeakerCount": 8,
+                "speakerLimit": 8,
+            }
+
+            def runner(
+                *args: object, **kwargs: object
+            ) -> subprocess.CompletedProcess[str]:
+                del args, kwargs
+                return subprocess.CompletedProcess(
+                    args=["docker"],
+                    returncode=0,
+                    stdout=json.dumps(payload),
+                    stderr="",
+                )
+
+            worker = self._worker(root / "forged-capacity", runner=runner)
+            with self.assertRaises(WorkerExecutionError):
+                worker.run(job)
 
 
 if __name__ == "__main__":

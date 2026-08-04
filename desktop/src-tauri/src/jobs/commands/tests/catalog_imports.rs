@@ -371,6 +371,11 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
                     "modelId": "speechbrain/spkrec-ecapa-voxceleb",
                     "revision": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286",
                     "calibrationRevision": runtime_lock_sha256
+                },
+                {
+                    "modelId": "yap/speaker-epoch-reconciliation",
+                    "revision": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                    "calibrationRevision": runtime_lock_sha256
                 }
             ]
         }))
@@ -421,7 +426,10 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         .unwrap();
     assert_eq!(speaker_transcript.turns.len(), 1);
     assert_eq!(speaker_transcript.turns[0].turn_id, "turn-000001");
-    assert_eq!(speaker_transcript.turns[0].speaker_id, "speaker-1");
+    assert_eq!(
+        speaker_transcript.turns[0].speaker_id.as_deref(),
+        Some("speaker-1")
+    );
     assert_eq!(speaker_transcript.turns[0].text, "Catalog result.");
     assert_eq!(
         serde_json::to_value(&speaker_transcript).unwrap()["turns"][0]["turnId"],

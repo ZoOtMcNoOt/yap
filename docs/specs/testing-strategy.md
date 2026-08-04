@@ -109,9 +109,9 @@ private-evidence bounds.
 Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` passed the
 canonical native build, receipt-bound image preflight, real History and
 cancellation lifecycle with independent teardown, its single complete 18-child
-matrix, independent receipt validation, and required CI and CodeQL jobs. The
-remaining closure is the reviewed documentation-only successor's exact-head
-hosted CI, CodeQL, and disposable-Windows NSIS receipt before PR #143 merges.
+matrix, independent receipt validation, and required CI and CodeQL jobs. PR
+#143 merged the reviewed closure as
+`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
 
 The gate uses a license-clear public meeting fixture to prove the current
 Tiron result, anonymous-speaker History, active-cancellation, and teardown
@@ -523,7 +523,7 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 | 5 Remote STT | Resumable upload identity, queue drain, job state/cancel/retry, capability truth, result ingestion, tunnel-loss recovery |
 | 6 Preprocessing | versioned provider/language/timing catalog; primary/per-job choice; mixed-session rejection; track-aware content IDs; exact gaps; bounded windows; advisory VAD/source preservation; verify-only AmberNet five-region strict-agreement/manual gate including exact long-tail selection; fixed/dynamic routing; durable stage restart/cancel/retry; fail-closed aligned words; model/license locks; AMD64/ARM64 frontend parity plus checked-head GB10 resource/accuracy/teardown evidence |
 | 7 Identity/access | Yap API token audience, `(tid, oid)` isolation, consent and withdrawal, profile-version compatibility |
-| 8 Meeting evidence | local one/two/overlap/short/noisy anonymous evidence; pinned Tiron eight-window/eight-global server baseline; separately switched speaker-epoch extension; messy-meeting public comparators plus independent holdout; 1–8 and over-capacity window pressure; >15-attendee/small-active-subset and 9/16/32-talker cross-epoch cases; stable result revisions; bounded clusters; no local names or persistent embeddings |
+| 8 Meeting evidence | local one/two/overlap/short/noisy anonymous evidence; pinned Tiron historical eight-window/eight-global reproduction; one integrated source-time epoch route; messy-meeting public comparators plus independent holdout; 1–8 and over-capacity window pressure; >15-attendee/small-active-subset and 9/16/32-talker cross-epoch cases; stable result revisions; bounded clusters; no local names or persistent embeddings |
 | 9 Knowledge/agents | Google OKF conformance, permission-safe projection, citation-required Analyst, three-strike Student, RAG confidence floor |
 | 10 Enterprise/release | authenticated multi-owner fairness/no-starvation; bounded overload/backpressure; cancellation and timeout isolation; restart recovery; fixed worker/memory ceilings; sustained mixed live/batch p50/p95 latency, throughput, and queue-age evidence on GB10; approved network/policy evidence; deployment rollback; publication governance; repo-boundary checks |
 
@@ -550,15 +550,16 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 - Speaker-turn and aligned-word intervals are end-exclusive, monotonic, bounded by the capture timeline, and preserve overlap.
 - Alignment failure leaves timestamped speaker turns intact and omits or marks word timing unavailable.
 - The local baseline passes the absolute DER, speaker-count, CPU, RSS, latency, and callback-drop gates before release.
-- The server Tiron route consumes the same source timeline as the fallback,
+- The server Tiron route consumes the retained canonical source timeline,
   preserves concurrent segments, and cannot publish malformed speaker tokens,
   out-of-bounds timestamps, or a result whose runtime/capture identity differs
   from the admitted job.
-- The eight-speaker decode-window cap and released eight-identity global cap
-  are tested independently from the 32-target/64-ceiling product roster. The
-  larger roster requires a separately switched and qualified speaker-epoch
-  reconciler. Reaching or plausibly exceeding a selected route's cap yields an
-  explicit partial/degraded region and retained source for fallback.
+- The eight-speaker decode-window cap and released eight-identity historical
+  aggregate cap are tested independently from the 32-target/64-ceiling product
+  roster. The sole product route invokes exact source-time epochs and qualifies
+  its request-scoped speaker reconciler as part of the same frozen candidate.
+  Reaching a decode-window or session cap yields an explicit partial/degraded
+  region and retained source; it never invokes a second diarization pipeline.
 - Public Tiron benchmark corpora remain comparator-only; promotion uses the
   separately frozen independent messy-meeting holdout and fails on any required
   overlap, locale, capacity, isolation, or lifecycle slice.

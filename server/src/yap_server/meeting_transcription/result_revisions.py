@@ -27,14 +27,15 @@ from yap_server.jobs.contract_values import (
 from yap_server.transcript_text import canonical_transcript
 
 from .contract import (
+    MEETING_SESSION_SPEAKER_LIMIT,
     MAX_MEETING_SEGMENT_COUNT,
-    MAX_MEETING_SPEAKERS,
     MEETING_SAMPLE_RATE_HZ,
+    YAP_SPEAKER_RECONCILIATION_COMPONENT_ID,
+    canonical_session_speaker_ids,
+    is_session_speaker_id,
 )
+from .speaker_capacity import validate_speaker_capacity_degradation
 
-_SPEAKER_CAPACITY_LIMIT = MAX_MEETING_SPEAKERS
-_SPEAKER_CAPACITY_CODE = "SPEAKER_CAPACITY_REACHED"
-_SPEAKER_CAPACITY_FALLBACK = "not_run_recommended"
 _GIT_REVISION = re.compile(r"^[0-9a-f]{40}$")
 _MAX_MODEL_PROVENANCE_CHARS = 256
 
@@ -201,14 +202,18 @@ def build_meeting_result_revisions(
             "revision",
             "runtimeHarnessRevision",
             "speakerEncoderRevision",
+            "applicationRevision",
             "runtimeLockSha256",
         },
         "meeting worker model",
     )
     runtime_lock_sha256 = model.get("runtimeLockSha256")
+    application_revision = model.get("applicationRevision")
     if (
         not valid_sha256(runtime_lock_sha256)
         or runtime_lock_sha256 != authority.runtime_lock_sha256
+        or not isinstance(application_revision, str)
+        or _GIT_REVISION.fullmatch(application_revision) is None
     ):
         raise ValueError("meeting worker runtime lock identity is invalid")
     if (
@@ -224,28 +229,48 @@ def build_meeting_result_revisions(
     if audio.get("frameCount") != context.source_frame_count:
         raise ValueError("meeting worker audio differs from the frozen source")
 
-    speakers = meeting.get("speakers")
+    exact_keys(
+        meeting,
+        {
+            "language",
+            "sessionSpeakerIds",
+            "turns",
+            "numDecodeWindows",
+            "sourceTimeUnit",
+            "speakerCapacityDegradation",
+        },
+        "meeting worker output",
+    )
+
+    speakers = meeting.get("sessionSpeakerIds")
     if (
         not isinstance(speakers, list)
-        or len(speakers) > _SPEAKER_CAPACITY_LIMIT
-        or speakers != sorted(set(speakers))
+        or len(speakers) > MEETING_SESSION_SPEAKER_LIMIT
+        or speakers != canonical_session_speaker_ids(len(speakers))
+        or any(not is_session_speaker_id(value) for value in speakers)
     ):
         raise ValueError("meeting worker speaker inventory is invalid")
-    speaker_capacity_degradation = _speaker_capacity_degradation(
-        observed_speaker_count=len(speakers),
+    speaker_capacity_degradation = validate_speaker_capacity_degradation(
+        meeting.get("speakerCapacityDegradation"),
         source_frame_count=context.source_frame_count,
     )
+    if (
+        speaker_capacity_degradation is not None
+        and speaker_capacity_degradation["scope"] == "meeting"
+        and len(speakers) != MEETING_SESSION_SPEAKER_LIMIT
+    ):
+        raise ValueError("meeting speaker capacity differs from its roster")
     result_status = (
         "partial" if speaker_capacity_degradation is not None else "complete"
     )
 
-    raw_segments = meeting.get("segments")
+    raw_segments = meeting.get("turns")
     if (
         not isinstance(raw_segments, list)
         or len(raw_segments) > MAX_MEETING_SEGMENT_COUNT
     ):
-        raise ValueError("meeting worker segments are invalid")
-    segments = [mapping(value, "meeting worker segment") for value in raw_segments]
+        raise ValueError("meeting worker turns are invalid")
+    segments = [mapping(value, "meeting worker turn") for value in raw_segments]
     segment_texts = [
         _canonical_segment_text(segment.get("text"), index)
         for index, segment in enumerate(segments)
@@ -257,12 +282,18 @@ def build_meeting_result_revisions(
     model_provenance = _model_provenance(
         authority.provenance,
         str(runtime_lock_sha256),
+        str(application_revision),
     )
     alignment = unavailable_alignment(
         AlignmentUnavailableReason.PROVIDER_UNSUPPORTED,
         component_revision=JOINT_SEGMENT_TIMING_REVISION,
     )
-    turns = _speaker_turns(segments, segment_texts, context)
+    turns = _speaker_turns(
+        segments,
+        segment_texts,
+        session_speaker_ids=speakers,
+        context=context,
+    )
     speaker_result: dict[str, object] = {
         **_revision_identity(context, status=result_status),
         "language": {
@@ -312,6 +343,20 @@ def validate_speaker_result_revision(
     context: MeetingResultContext,
     authority: MeetingResultAuthority,
 ) -> None:
+    observed_provenance = value.get("modelProvenance")
+    if not isinstance(observed_provenance, list) or len(observed_provenance) != 4:
+        raise ValueError("speaker result reconciliation provenance is invalid")
+    reconciliation = mapping(
+        observed_provenance[-1],
+        "speaker result reconciliation provenance",
+    )
+    application_revision = reconciliation.get("revision")
+    if (
+        reconciliation.get("modelId") != YAP_SPEAKER_RECONCILIATION_COMPONENT_ID
+        or not isinstance(application_revision, str)
+        or _GIT_REVISION.fullmatch(application_revision) is None
+    ):
+        raise ValueError("speaker result reconciliation provenance is invalid")
     _validate_speaker_result_revision(
         value,
         transcript_result=transcript_result,
@@ -320,6 +365,7 @@ def validate_speaker_result_revision(
         expected_model_provenance=_model_provenance(
             authority.provenance,
             authority.runtime_lock_sha256,
+            application_revision,
         ),
     )
 
@@ -391,12 +437,11 @@ def _validate_speaker_result_revision(
         or transcript_result.get("status") != observed_status
     ):
         raise ValueError("speaker result companion identity is invalid")
-    _validate_speaker_capacity_degradation(
+    capacity_degradation = _validate_speaker_capacity_degradation(
         value.get("speakerCapacityDegradation"),
         status=value.get("status"),
         source_frame_count=context.source_frame_count,
     )
-    capacity_reached = value.get("speakerCapacityDegradation") is not None
     language = mapping(value.get("language"), "speaker result language")
     exact_keys(language, {"languageBcp47", "confidence"}, "speaker result language")
     if (
@@ -450,26 +495,32 @@ def _validate_speaker_result_revision(
         ):
             raise ValueError("speaker result turn is invalid")
         attribution = mapping(turn.get("attribution"), "speaker attribution")
-        exact_keys(
-            attribution,
-            {"kind", "sessionSpeakerId"},
-            "speaker attribution",
-        )
-        speaker_id = attribution.get("sessionSpeakerId")
-        if (
-            attribution.get("kind") != "session_speaker"
-            or not isinstance(speaker_id, str)
-            or speaker_id not in {f"speaker-{number}" for number in range(1, 9)}
-        ):
+        kind = attribution.get("kind")
+        if kind == "session_speaker":
+            exact_keys(
+                attribution,
+                {"kind", "sessionSpeakerId"},
+                "speaker attribution",
+            )
+            speaker_id = attribution.get("sessionSpeakerId")
+            if not is_session_speaker_id(speaker_id):
+                raise ValueError("speaker result attribution is invalid")
+            observed_speakers.add(str(speaker_id))
+        elif kind == "unknown":
+            exact_keys(attribution, {"kind"}, "speaker attribution")
+        else:
             raise ValueError("speaker result attribution is invalid")
-        observed_speakers.add(speaker_id)
         rendered_text.append(text)
         previous_start = start
         intervals.append((start, end))
-    if len(observed_speakers) > 8:
+    if len(observed_speakers) > MEETING_SESSION_SPEAKER_LIMIT:
         raise ValueError("speaker result exceeds the released speaker boundary")
-    if capacity_reached != (len(observed_speakers) == _SPEAKER_CAPACITY_LIMIT):
-        raise ValueError("speaker capacity degradation differs from the roster")
+    if (
+        capacity_degradation is not None
+        and capacity_degradation["scope"] == "meeting"
+        and len(observed_speakers) != MEETING_SESSION_SPEAKER_LIMIT
+    ):
+        raise ValueError("meeting speaker capacity differs from its roster")
     if " ".join(rendered_text) != transcript_result.get("transcript"):
         raise ValueError("speaker result text differs from the transcript")
     expected_overlap_groups = _overlap_group_ids(intervals)
@@ -526,72 +577,29 @@ def _revision_identity(
     }
 
 
-def _speaker_capacity_degradation(
-    *,
-    observed_speaker_count: int,
-    source_frame_count: int,
-) -> dict[str, object] | None:
-    if observed_speaker_count < _SPEAKER_CAPACITY_LIMIT:
-        return None
-    return {
-        "code": _SPEAKER_CAPACITY_CODE,
-        "fallbackDisposition": _SPEAKER_CAPACITY_FALLBACK,
-        "scope": "meeting",
-        "startSample": 0,
-        "endSample": source_frame_count,
-        "observedSpeakerCount": _SPEAKER_CAPACITY_LIMIT,
-        "speakerLimit": _SPEAKER_CAPACITY_LIMIT,
-    }
-
-
 def _validate_speaker_capacity_degradation(
     value: object,
     *,
     status: object,
     source_frame_count: int,
-) -> None:
-    if value is None:
-        if status != "complete":
-            raise ValueError("partial speaker result omitted capacity degradation")
-        return
-    if status != "partial":
-        raise ValueError("complete speaker result contains capacity degradation")
-    degradation = mapping(value, "speaker capacity degradation")
-    exact_keys(
-        degradation,
-        {
-            "code",
-            "fallbackDisposition",
-            "scope",
-            "startSample",
-            "endSample",
-            "observedSpeakerCount",
-            "speakerLimit",
-        },
-        "speaker capacity degradation",
+) -> dict[str, object] | None:
+    degradation = validate_speaker_capacity_degradation(
+        value,
+        source_frame_count=source_frame_count,
     )
-    if (
-        degradation.get("code") != _SPEAKER_CAPACITY_CODE
-        or degradation.get("fallbackDisposition") != _SPEAKER_CAPACITY_FALLBACK
+    if (degradation is None and status != "complete") or (
+        degradation is not None and status != "partial"
     ):
-        raise ValueError("speaker capacity degradation identity is invalid")
-    if degradation != {
-        "code": _SPEAKER_CAPACITY_CODE,
-        "fallbackDisposition": _SPEAKER_CAPACITY_FALLBACK,
-        "scope": "meeting",
-        "startSample": 0,
-        "endSample": source_frame_count,
-        "observedSpeakerCount": _SPEAKER_CAPACITY_LIMIT,
-        "speakerLimit": _SPEAKER_CAPACITY_LIMIT,
-    }:
-        raise ValueError("speaker capacity degradation is not source-bound")
+        raise ValueError("speaker capacity degradation differs from result status")
+    return degradation
 
 
 def _model_provenance(
     provenance: MeetingRuntimeProvenance,
     runtime_lock_sha256: str,
+    application_revision: str,
 ) -> list[dict[str, str]]:
-    return [
+    upstream = [
         {
             "modelId": component.identifier,
             "revision": component.revision,
@@ -603,6 +611,14 @@ def _model_provenance(
             provenance.speaker_encoder,
         )
     ]
+    return [
+        *upstream,
+        {
+            "modelId": YAP_SPEAKER_RECONCILIATION_COMPONENT_ID,
+            "revision": application_revision,
+            "calibrationRevision": runtime_lock_sha256,
+        },
+    ]
 
 
 def _persisted_model_provenance(
@@ -613,7 +629,7 @@ def _persisted_model_provenance(
 ) -> list[dict[str, str]]:
     if not valid_sha256(runtime_lock_sha256):
         raise ValueError("persisted meeting runtime lock identity is invalid")
-    if not isinstance(value, list) or len(value) != 3:
+    if not isinstance(value, list) or len(value) != 4:
         raise ValueError("persisted meeting model provenance is invalid")
     parsed: list[dict[str, str]] = []
     for raw_component in value:
@@ -642,9 +658,11 @@ def _persisted_model_provenance(
                 "calibrationRevision": str(runtime_lock_sha256),
             }
         )
-    if parsed[0]["revision"] != route_model_revision or len(
-        {component["modelId"] for component in parsed}
-    ) != len(parsed):
+    if (
+        parsed[0]["revision"] != route_model_revision
+        or parsed[-1]["modelId"] != YAP_SPEAKER_RECONCILIATION_COMPONENT_ID
+        or len({component["modelId"] for component in parsed}) != len(parsed)
+    ):
         raise ValueError(
             "persisted meeting model provenance differs from the frozen route"
         )
@@ -654,19 +672,41 @@ def _persisted_model_provenance(
 def _speaker_turns(
     segments: list[Mapping[str, object]],
     segment_texts: list[str],
+    *,
+    session_speaker_ids: list[object],
     context: MeetingResultContext,
 ) -> list[dict[str, object]]:
-    speaker_labels = sorted({str(segment.get("speaker")) for segment in segments})
-    speaker_ids = {
-        label: f"speaker-{index + 1}" for index, label in enumerate(speaker_labels)
-    }
-    intervals = [
-        (
-            _sample_to_ms(segment.get("startSample")),
-            _sample_to_ms(segment.get("endSample")),
+    intervals: list[tuple[int, int]] = []
+    observed_speakers: set[str] = set()
+    previous_start_sample = -1
+    for index, segment in enumerate(segments):
+        exact_keys(
+            segment,
+            {"index", "sessionSpeakerId", "startSample", "endSample", "text"},
+            "meeting worker turn",
         )
-        for segment in segments
-    ]
+        start_sample = segment.get("startSample")
+        end_sample = segment.get("endSample")
+        speaker_id = segment.get("sessionSpeakerId")
+        if (
+            segment.get("index") != index
+            or not isinstance(start_sample, int)
+            or isinstance(start_sample, bool)
+            or not isinstance(end_sample, int)
+            or isinstance(end_sample, bool)
+            or start_sample < previous_start_sample
+            or start_sample < 0
+            or end_sample <= start_sample
+            or end_sample > context.source_frame_count
+            or (speaker_id is not None and speaker_id not in session_speaker_ids)
+        ):
+            raise ValueError("meeting worker turn is invalid")
+        if isinstance(speaker_id, str):
+            observed_speakers.add(speaker_id)
+        previous_start_sample = start_sample
+        intervals.append((_sample_to_ms(start_sample), _sample_to_ms(end_sample)))
+    if observed_speakers != set(session_speaker_ids):
+        raise ValueError("meeting worker speaker inventory differs from its turns")
     overlap_groups = _overlap_group_ids(intervals)
     return [
         {
@@ -674,9 +714,11 @@ def _speaker_turns(
             "startMs": intervals[index][0],
             "endMs": intervals[index][1],
             "text": segment_texts[index],
-            "attribution": {
+            "attribution": {"kind": "unknown"}
+            if segment.get("sessionSpeakerId") is None
+            else {
                 "kind": "session_speaker",
-                "sessionSpeakerId": speaker_ids[str(segment.get("speaker"))],
+                "sessionSpeakerId": segment.get("sessionSpeakerId"),
             },
             "confidence": None,
             "supportingTrackIds": list(context.source_track_ids),

@@ -158,6 +158,8 @@ class PrivateHoldout:
     repository_fallback: bool
     sealed_before_hypotheses: bool
     independent_promotion_required: bool
+    minimum_natural_meeting_count: int
+    minimum_natural_duration_seconds: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,7 +177,20 @@ class ScoringPolicy:
 class PromotionPolicy:
     require_every_mandatory_slice: bool
     forbid_macro_compensation: bool
+    public_reproduction_tolerance_percentage_points: float
+    maximum_private_pooled_cpwer_percent: float
+    maximum_mandatory_slice_cpwer_percent: float
     minimum_overlap_cpwer_improvement_percent: float
+    maximum_der_percent: float
+    maximum_jer_percent: float
+    maximum_speaker_count_absolute_error: int
+    maximum_timestamp_p95_seconds: float
+    maximum_warm_single_request_realtime_factor: float
+    maximum_concurrent_eight_p95_realtime_factor: float
+    maximum_worker_memory_bytes: int
+    maximum_cancellation_seconds: float
+    require_cross_request_isolation: bool
+    require_exact_teardown: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -379,6 +394,8 @@ def _private_holdout(value: object) -> PrivateHoldout:
         repository_fallback=False,
         sealed_before_hypotheses=True,
         independent_promotion_required=True,
+        minimum_natural_meeting_count=6,
+        minimum_natural_duration_seconds=7_200,
     )
 
 
@@ -611,7 +628,6 @@ def _promotion(value: object) -> PromotionPolicy:
             "maximumCancellationSeconds",
             "requireCrossRequestIsolation",
             "requireExactTeardown",
-            "requireFallbackComparison",
             "allowedOutcomes",
         },
         "meeting promotion policy",
@@ -633,7 +649,6 @@ def _promotion(value: object) -> PromotionPolicy:
         "maximumCancellationSeconds": 2.0,
         "requireCrossRequestIsolation": True,
         "requireExactTeardown": True,
-        "requireFallbackComparison": True,
     }
     for key, expected_value in expected.items():
         actual = promotion[key]
@@ -649,7 +664,20 @@ def _promotion(value: object) -> PromotionPolicy:
     return PromotionPolicy(
         require_every_mandatory_slice=True,
         forbid_macro_compensation=True,
+        public_reproduction_tolerance_percentage_points=1.5,
+        maximum_private_pooled_cpwer_percent=35.0,
+        maximum_mandatory_slice_cpwer_percent=45.0,
         minimum_overlap_cpwer_improvement_percent=5.0,
+        maximum_der_percent=35.0,
+        maximum_jer_percent=45.0,
+        maximum_speaker_count_absolute_error=1,
+        maximum_timestamp_p95_seconds=1.5,
+        maximum_warm_single_request_realtime_factor=0.1,
+        maximum_concurrent_eight_p95_realtime_factor=0.5,
+        maximum_worker_memory_bytes=17_179_869_184,
+        maximum_cancellation_seconds=2.0,
+        require_cross_request_isolation=True,
+        require_exact_teardown=True,
     )
 
 

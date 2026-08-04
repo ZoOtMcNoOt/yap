@@ -15,12 +15,13 @@ Current work:
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
 - [VoiceOS/Yap decision, evidence, and future-work queue](active/2026-07-17-voiceos-decision-evidence-queue.md)
 - [Integrated MVP validation and delivery control](active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
-- [Meeting transcription ownership and maintainability review](active/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
+- [Meeting transcription production promotion](active/2026-08-03-meeting-transcription-production-promotion.md)
 
 Queued work (activate only in roadmap order): none.
 
 Recently completed:
 
+- [Meeting transcription ownership and maintainability review](completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
 - [Joint speaker-attributed meeting transcription](completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
 - [Local-first server discovery and optional authentication](completed/2026-08-02-local-first-server-discovery-and-optional-auth.md)
 - [Tenant-scoped identity and job authorization](completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
