@@ -165,6 +165,6 @@
     "maximumCancellationSeconds": 2.0,
     "requireCrossRequestIsolation": true,
     "requireExactTeardown": true,
-    "allowedOutcomes": ["general-promotion", "narrow-route-promotion", "unadvertised-baseline"]
+    "allowedOutcomes": ["narrow-route-promotion", "unadvertised-baseline"]
   }
 }
