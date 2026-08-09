@@ -135,6 +135,19 @@ class MeetingAcceptancePlanTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "pressure axes"):
                 load_meeting_acceptance_plan(plan_path)
 
+    def test_meeting_route_cannot_claim_general_promotion(self) -> None:
+        payload = json.loads(ACCEPTANCE_PLAN.read_text(encoding="utf-8"))
+        payload["promotion"]["allowedOutcomes"] = [
+            "general-promotion",
+            "narrow-route-promotion",
+            "unadvertised-baseline",
+        ]
+        with tempfile.TemporaryDirectory() as temporary:
+            plan_path = Path(temporary) / "plan.json"
+            plan_path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "promotion outcomes"):
+                load_meeting_acceptance_plan(plan_path)
+
 
 if __name__ == "__main__":
     unittest.main()

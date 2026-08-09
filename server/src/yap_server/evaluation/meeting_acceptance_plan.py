@@ -658,7 +658,7 @@ def _promotion(value: object) -> PromotionPolicy:
             raise ValueError("meeting promotion thresholds differ from the contract")
     _exact_text_array(
         promotion["allowedOutcomes"],
-        ("general-promotion", "narrow-route-promotion", "unadvertised-baseline"),
+        ("narrow-route-promotion", "unadvertised-baseline"),
         "meeting promotion outcomes",
     )
     return PromotionPolicy(
