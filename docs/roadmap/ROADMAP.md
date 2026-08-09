@@ -120,7 +120,7 @@ maintainability candidate `fb0985e7...` passed before documentation successor
 independent receipt validation, and required CI and CodeQL jobs. PR #143 merged
 the reviewed closure as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
 
-## Last merged phase: meeting evidence Preview (Phase 8)
+## Last completed phase: meeting evidence (Phase 8)
 
 The
 [joint speaker-attributed meeting transcription plan](../plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
@@ -128,12 +128,15 @@ implemented the explicit meeting-only Tiron Preview and merged through
 [PR #142](https://github.com/mcnatg1/yap/pull/142) as `4201c5e7`. The route
 publishes source-bound transcript and anonymous-speaker revisions through the
 existing owner-scoped result authority and projects them into native History.
-It is not the default route and is not production-promoted. The active
-production-promotion candidate replaces the capped whole-meeting product
-boundary with one exact source-time epoch route and integrated request-scoped
-speaker reconciliation. Independent quality, capacity, runtime, identity, and
-promotion evidence remains open under ADRs 0020 and 0027; no second server
-meeting pipeline is planned.
+It is not the default route and is not production-promoted. PR #144 merged the
+replacement exact source-time epoch route and integrated request-scoped speaker
+reconciliation as `b5b52bfd297edf1e95d93e120a8e59c206f7ab77`. Exact
+qualification candidate `3ddb930268b544d2cae80d4389f12ef315b35ded`
+then recorded `unadvertised-baseline` because the required independent private
+holdout was unconfigured. No runtime/image gate was admissible, neither catalog
+changed, and no second server meeting pipeline is planned. PR #150 passed all
+hosted checks at exact head `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`
+and merged the closure as `599a0d0b`. Phase 8 is closed; Phase 9 is next.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 
@@ -183,13 +186,14 @@ The merged Phase 8 Preview follows
 and the completed
 [joint speaker-attributed meeting transcription plan](../plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
 Selecting and explicitly enabling the Preview baseline does not place it in the
-committed default catalog or production-promote it. Independent accuracy,
-capacity, lifecycle, and privacy evidence remains required for promotion.
+committed default catalog or production-promote it. The completed qualification
+record preserves the explicit `unadvertised-baseline` outcome.
 The separate
 [meeting-transcription ownership and maintainability review](../plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
 qualified patched candidate `393710999...`; PR #143 merged the reviewed closure
-as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. Production promotion remains a
-separate evidence decision.
+as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. PR #144 merged the sole
+source-time route, and the completed production-qualification record closes the
+Phase 8 evidence decision without promotion.
 
 ## Enterprise handoffs
 

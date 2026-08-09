@@ -17,9 +17,11 @@ durable loopback upload/reconnect, publishes verified server-authoritative
 results, and applies seven-day pending-source plus finite completed-result
 retention. The merged Phase 8 Tiron Preview publishes immutable anonymous
 speaker-attributed result revisions and projects their source-bound speaker
-companion through History. The active production-promotion candidate adds the
+companion through History. The merged source-time route adds the
 single Tiron source-time epoch route and request-scoped speaker reconciliation;
-it remains unpromoted pending frozen quality and runtime evidence. General
+Phase 8 qualification closed it as `unadvertised-baseline` because the required
+independent holdout was unconfigured. Any later promotion requires a separately
+authorized evidence decision. General
 media conversion, a client-local anonymous baseline, named identity, system
 loopback, and a supported recording-only product mode remain unimplemented.
 
@@ -128,7 +130,7 @@ The first local implementation reuses the existing `sherpa-onnx` runtime for spe
 Exact multi-stream inference must have a state budget. Candidate pruning or one-to-one per-window assignment replaces exhaustive joint assignment when the budget would be exceeded. A more complex backend is promoted only after it beats the baseline on licensed meeting fixtures and remains within CPU, memory, latency, and licensing budgets.
 
 ADR 0027 selects Tiron as the Phase 8 server baseline for joint speaker-
-attributed meeting transcription. The production-promotion candidate invokes
+attributed meeting transcription. The merged route invokes
 the pinned public API on exact source-time epochs, preserves the eight-slot
 decode boundary, and reuses Tiron's loaded ECAPA encoder for request-scoped
 reconciliation into the dynamic 32-speaker target and 64-speaker ceiling.
