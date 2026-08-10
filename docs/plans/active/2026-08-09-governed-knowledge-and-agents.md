@@ -109,8 +109,10 @@ never compile permissions, grant access, or promote their own output.
   semantic multi-step orchestration track in addition to common admission.
   Exact private qualification head
   `36350d449735a4daea6546e16759f28f6f15631a` returned
-  `required-workload-routes-qualified`; the committed lock records only its
-  public-safe identity and the full gate independently admits the private tree.
+  `required-workload-routes-qualified` with public-safe evidence SHA-256
+  `ca5a3f712ff737b92cc0d17979e5cd5b00e3034c880729e290a6f6ba255ca951`;
+  the committed lock records only its public-safe identity and the full gate
+  independently admits the private tree.
 - [x] Preserve a deterministic no-model path for compiler, authorization,
   retrieval, and citations. Route qualification does not advertise or
   production-promote either model.
@@ -127,9 +129,10 @@ never compile permissions, grant access, or promote their own output.
 - [x] Prove cross-tenant, cross-owner, stale-generation, purpose, cancellation,
   reconnect, and partial-publication failure paths. Phase 9 ships no cache, so
   cache invalidation is non-applicable; any future cache requires its own gate.
-- [ ] Prove a real Postgres process restart preserves cited retrieval, rejects
+- [x] Prove a real Postgres process restart preserves cited retrieval, rejects
   the stale generation after successor activation, and leaves no owned runtime
-  residue. The one complete gate owns this evidence.
+  residue. Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e`
+  passed this proof inside the complete gate.
 - [x] Preserve local/offline controls when the knowledge or agent server is
   unavailable; do not silently route content or acquire credentials. Phase 9
   changes no desktop dependency path from reviewed Phase 8 baseline
@@ -143,9 +146,9 @@ never compile permissions, grant access, or promote their own output.
   tokens, and private evaluation output outside Git and hosted artifacts.
 - [x] Complete one bounded adversarial review of permission, compiler, retrieval,
   tool, concurrency, provenance, privacy, and maintainability boundaries.
-- Freeze one exact candidate only after implementation, tests, documentation,
-  provenance, and accepted findings are complete.
-- Run the complete Phase 9 matrix exactly once from `server/` with:
+- [x] Freeze one exact candidate only after implementation, tests, provenance,
+  and accepted findings are complete.
+- [x] Run the complete Phase 9 matrix exactly once from `server/` with:
 
   ```text
   uv run --locked python -m yap_server.evaluation.governed_knowledge_gate \
@@ -161,9 +164,22 @@ never compile permissions, grant access, or promote their own output.
   zero-skip database modules, a real database restart/retrieval probe, exact teardown, and
   hash-bound semantic admission of the already-consumed private GB10 route
   evidence while publishing only public-safe hashes and outcomes.
-- Reconcile ADR scores and all architecture/status claims only from evidence.
-- Open one focused PR and merge only a reviewed hosted-green exact head.
-- Complete the separate post-Phase-9 architecture checkpoint before Phase 10.
+
+  Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` returned
+  `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+  `4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
+  The gate ran 109 portable tests across 22 modules, Ruff, nine zero-skip
+  Postgres tests across four modules, and the real restart/recovery/stale-
+  generation/successor path. It admitted private predecessor head
+  `36350d449735a4daea6546e16759f28f6f15631a` and proved container, listener,
+  PID, network, and volume teardown. Only these public-safe identities,
+  outcomes, counts, and booleans belong in Git.
+- [x] Reconcile ADR scores and architecture/status claims from the complete
+  local gate evidence. ADRs 0017, 0022, 0028, and 0029 remain
+  evidence-conservative at 150.
+- [ ] Open one focused PR and merge only a reviewed hosted-green exact head.
+- [ ] Complete the separate post-Phase-9 architecture checkpoint after merge
+  and before Phase 10.
 
 ## Explicit exclusions and handoffs
 

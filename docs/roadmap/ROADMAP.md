@@ -137,8 +137,8 @@ holdout was unconfigured. No runtime/image gate was admissible, neither catalog
 changed, and no second server meeting pipeline is planned. PR #150 passed all
 hosted checks at exact head `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`
 and merged the closure as `599a0d0b`. Phase 8 is closed. Phase 9 is an
-implemented candidate awaiting its one complete gate, hosted exact-head review,
-PR, and merge.
+implemented candidate whose complete local gate passed; hosted exact-head
+review, PR, and merge remain open.
 
 ## Active phase: governed knowledge and agents (Phase 9)
 
@@ -150,15 +150,17 @@ no-fallback workload routing. Exact private GB10 head
 Gemma complex routes on the checked vLLM evaluation runtime. That is
 route-specific evaluation evidence, not production service promotion.
 
-The remaining phase boundary is deliberately small: freeze the reviewed
-candidate, run the canonical Python/Ruff/Postgres/pgvector/restart/private-route
-matrix once, obtain hosted-green exact-head review, merge the focused PR, then
-run the separate post-Phase-9 architecture checkpoint. Postgres remains the
-only current knowledge projection; Redis, object storage, and Neo4j require a
-measured need and a later authorized gate. Persistent supervision, simultaneous
-model residency, sustained mixed-user capacity/SLOs, external serving,
-observability, enterprise networking, and deployment remain Phase 10 or IT
-handoffs.
+Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` passed the canonical
+Python/Ruff/Postgres/pgvector/restart/private-route matrix with outcome
+`governed-knowledge-gate-passed` and public-safe evidence SHA-256
+`4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
+The remaining phase boundary is deliberately small: obtain hosted-green
+exact-head review, merge the focused PR, then run the separate post-Phase-9
+architecture checkpoint. Postgres remains the only current knowledge
+projection; Redis, object storage, and Neo4j require a measured need and a
+later authorized gate. Persistent supervision, simultaneous model residency,
+sustained mixed-user capacity/SLOs, external serving, observability, enterprise
+networking, and deployment remain Phase 10 or IT handoffs.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 

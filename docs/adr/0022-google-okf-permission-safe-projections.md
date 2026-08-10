@@ -205,10 +205,12 @@ Phase 9 cannot claim this ADR complete without automated evidence for:
 
 The active Phase 9 candidate implements the Google OKF/Yap profile, deterministic
 projection identities, Postgres/pgvector plus typed relationships, compiled
-permission views, atomic generations, cited retrieval, revocation, non-disclosure,
-and restart/rebuild paths under focused tests. No measured baseline gap justified
-adding Neo4j. The one complete Phase 9 gate and merge remain pending, so this is
-not a production database-operations claim.
+permission views, atomic generations, cited retrieval, revocation,
+non-disclosure, and restart/rebuild paths. Exact candidate
+`a4f34678ea9980379b18266d40d3347b818ac57e` passed the complete Phase 9 gate,
+including the real process restart, recovery, stale-generation, successor, and
+teardown proofs. No measured baseline gap justified adding Neo4j. Hosted review
+and merge remain pending; this is not a production database-operations claim.
 
 ## Consequences
 

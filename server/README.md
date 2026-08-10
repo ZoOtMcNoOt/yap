@@ -465,6 +465,16 @@ outside the repository. It contains only checked identities and public-safe
 counts/booleans; never commit the private evidence tree, DSN, password, model
 output, or database content.
 
+Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` consumed this gate and
+returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
+It ran 109 portable tests across 22 modules, Ruff, nine mandatory Postgres tests
+across four modules with zero skips on locked PostgreSQL 17 / pgvector 0.8.6,
+and the real restart/recovery/stale-
+generation/successor path, then proved exact teardown and zero owned residue.
+Hosted review and merge remain open. These facts do not promote a production
+agent service, simultaneous model residency, or sustained mixed-route capacity.
+
 ## Local checks
 
 ```powershell

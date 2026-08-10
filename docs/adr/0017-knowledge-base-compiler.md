@@ -319,9 +319,11 @@ The compiler resolves permission-file names inside the configured tenant and exp
 - [ ] Production `yap-knowledge` repository extraction, webhook/trigger
   integration, object storage, backup/restore policy, monitoring, encryption,
   and IaC remain Phase 10/IT handoffs.
-- [ ] The one complete Phase 9 gate must restart the real owned Postgres process,
-  prove post-restart cited retrieval and successor/stale-generation behavior,
-  and prove teardown before phase closure.
+- [x] Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e`
+  passed the one complete Phase 9 gate: it restarted the real owned Postgres
+  process, recovered cited retrieval, rejected the stale generation after
+  successor activation, retrieved the successor, and proved exact teardown.
+  Hosted review and merge remain open.
 
 ## Open questions
 

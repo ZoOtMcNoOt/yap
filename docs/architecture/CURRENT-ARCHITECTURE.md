@@ -845,15 +845,21 @@ evidence access.
 The candidate uses Postgres/pgvector as its sole Phase 9 projection. Redis,
 object storage, and Neo4j are not speculative dependencies: a later addition
 requires measured need and its own lifecycle, permission, and operations gate.
-The complete Phase 9 gate owns the exact ARM64 Postgres/pgvector container on a
-fresh owned bridge. The container attaches only to that bridge and has an exact
-loopback-only host binding. The gate runs the exact Phase 9 portable server
-modules and requires all database tests without skips, restarts the real
-database process, verifies retrieval and stale
-generation rejection after recovery, then proves teardown. It also admits the
-exact private Qwen/Gemma qualification tree by committed hashes without copying
-raw model output into Git or the public aggregate. The complete gate has not yet
-been consumed; production service integration remains Phase 10.
+Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` passed the complete
+Phase 9 gate with outcome `governed-knowledge-gate-passed` and public-safe
+evidence SHA-256
+`4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
+The gate owned the locked PostgreSQL 17 / pgvector 0.8.6 ARM64 container on a
+fresh owned bridge; the container attached only to that bridge with an exact
+loopback-only host binding. It ran 109 portable tests across 22 modules, server-wide Ruff,
+and nine mandatory Postgres tests across four modules with zero skips. It then
+restarted the real database process, recovered cited retrieval, rejected the
+stale generation after successor activation, retrieved the successor, and
+proved container, listener, PID, network, and volume teardown. The aggregate
+also semantically admitted the exact hash-locked private Qwen/Gemma
+qualification tree without copying raw model output or measurements into Git.
+Hosted review and merge remain open; production service integration remains
+Phase 10.
 
 ## Persistence and recovery
 

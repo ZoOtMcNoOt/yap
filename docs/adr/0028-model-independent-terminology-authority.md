@@ -112,7 +112,8 @@ job-bound snapshot identity, four deterministic projections, and governed-agent
 snapshot consumption. Focused tests cover forged membership/admin claims,
 cross-owner and cross-tenant access, precedence/conflicts/tombstones, stale or
 wrong-owner job snapshots, projection bounds, revocation, and redacted evidence.
-The one complete Phase 9 gate and merge remain pending; this is not a production
+Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` passed the one complete
+Phase 9 gate. Hosted review and merge remain pending; this is not a production
 retention, administration, or enterprise-directory claim.
 
 Enterprise group resolution, administrator policy, retention periods, and

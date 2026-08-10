@@ -45,9 +45,16 @@ qualification proves common safety, structured-output, isolation, cancellation,
 and lifecycle admission independently. Exact private checked head
 `36350d449735a4daea6546e16759f28f6f15631a` additionally passed the frozen Qwen
 rapid-route and Gemma semantic multi-step tracks and returned
-`required-workload-routes-qualified`. That outcome qualifies the two assigned
-workloads; it does not advertise a production service or authorize silent
-cross-route substitution.
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`ca5a3f712ff737b92cc0d17979e5cd5b00e3034c880729e290a6f6ba255ca951`.
+That outcome qualifies the two assigned workloads; it does not advertise a
+production service or authorize silent cross-route substitution.
+Exact aggregate candidate `a4f34678ea9980379b18266d40d3347b818ac57e`
+then admitted that hash-locked private tree through semantic validation and
+passed the complete knowledge gate with outcome
+`governed-knowledge-gate-passed` and public-safe evidence SHA-256
+`4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
+This is aggregate gate admission, not production service promotion.
 Simultaneous residency and sustained mixed-route capacity remain Phase 10
 claims and require their own measured evidence.
 
