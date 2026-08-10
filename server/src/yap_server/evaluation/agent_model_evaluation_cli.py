@@ -4,14 +4,17 @@ import argparse
 import json
 import os
 from pathlib import Path
+import subprocess
 import urllib.error
 import urllib.request
 
+from yap_server.knowledge.sglang_reasoning_client import SglangReasoningClient
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
 from .agent_model_fixture_runner import run_agent_model_fixtures
 from .agent_model_scoring import score_agent_model_results
+from .agent_runtime_pressure import run_agent_runtime_pressure
 
 
 def main() -> int:
@@ -22,6 +25,7 @@ def main() -> int:
     arguments = parser.parse_args()
     repository_root = arguments.repository_root.resolve(strict=True)
     evidence_root = _evidence_root(repository_root)
+    acceptance = load_agent_model_acceptance(repository_root)
     candidate = _candidate(repository_root, arguments.candidate_id)
     endpoint = _loopback_endpoint(arguments.endpoint)
 
@@ -54,7 +58,22 @@ def main() -> int:
     )
     records = tuple(item.record() for item in results)
     score = score_agent_model_results(repository_root, records)
-    destination = evidence_root / "agent-model" / arguments.candidate_id / "results.json"
+    tracks = acceptance.runtime_tracks
+    reasoning_client = SglangReasoningClient(
+        endpoint=endpoint,
+        model=str(candidate["model"]),
+        timeout_seconds=int(tracks["requestTimeoutSeconds"]),
+        maximum_response_bytes=4_000_000,
+        maximum_output_tokens=int(tracks["maximumOutputTokens"]),
+    )
+    pressure = run_agent_runtime_pressure(
+        repository_root,
+        request=reasoning_client,
+        memory_bytes=_gpu_memory_bytes,
+    )
+    destination = (
+        evidence_root / "agent-model" / arguments.candidate_id / "results.json"
+    )
     _write_private_json(
         destination,
         {
@@ -63,6 +82,17 @@ def main() -> int:
             "model": candidate["model"],
             "revision": candidate["revision"],
             "results": list(records),
+            "runtimePressure": {
+                "coldLatencyMilliseconds": pressure.cold_latency_milliseconds,
+                "warmLatencyMilliseconds": list(pressure.warm_latency_milliseconds),
+                "concurrencyLatencyMilliseconds": {
+                    str(level): list(values)
+                    for level, values in pressure.concurrency_latency_milliseconds.items()
+                },
+                "peakGpuMemoryBytes": pressure.peak_memory_bytes,
+                "isolationLeakCount": pressure.isolation_leak_count,
+                "cancelledRequestCompletionCount": pressure.cancelled_request_completion_count,
+            },
         },
     )
     print(
@@ -71,13 +101,39 @@ def main() -> int:
                 "candidateId": arguments.candidate_id,
                 "caseCount": score.case_count,
                 "passed": score.passed,
+                "runtimePassed": pressure.isolation_leak_count == 0
+                and pressure.cancelled_request_completion_count == 0,
                 "privateEvidenceWritten": True,
             },
             separators=(",", ":"),
             sort_keys=True,
         )
     )
-    return 0 if score.passed else 1
+    return (
+        0
+        if score.passed
+        and pressure.isolation_leak_count == 0
+        and pressure.cancelled_request_completion_count == 0
+        else 1
+    )
+
+
+def _gpu_memory_bytes() -> int:
+    completed = subprocess.run(
+        [
+            "nvidia-smi",
+            "--query-compute-apps=used_memory",
+            "--format=csv,noheader,nounits",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    values = [
+        int(line.strip()) for line in completed.stdout.splitlines() if line.strip()
+    ]
+    return sum(values) * 1024 * 1024
 
 
 def _candidate(repository_root: Path, candidate_id: str) -> dict[str, object]:

@@ -31,6 +31,7 @@ class AgentModelAcceptance:
     candidate_ids: tuple[str, ...]
     case_ids: tuple[str, ...]
     permitted_outcomes: tuple[str, ...]
+    runtime_tracks: dict[str, object]
 
 
 def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
@@ -75,7 +76,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
     ):
         raise ValueError("agent workload coverage is incomplete")
     _thresholds(plan["thresholds"])
-    _runtime_tracks(plan["runtimeTracks"])
+    runtime_tracks = _runtime_tracks(plan["runtimeTracks"])
     outcomes = plan["permittedOutcomes"]
     if outcomes != ["selected-candidate", "deterministic-no-model"]:
         raise ValueError("agent model outcomes differ from the contract")
@@ -86,15 +87,24 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         candidate_ids,
         case_ids,
         tuple(outcomes),
+        runtime_tracks,
     )
 
 
 def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
-    if set(value) != {"schemaVersion", "runtime", "candidates"} or value["schemaVersion"] != 1:
+    if (
+        set(value) != {"schemaVersion", "runtime", "candidates"}
+        or value["schemaVersion"] != 1
+    ):
         raise ValueError("agent reasoning candidate lock differs from the contract")
     runtime = value["runtime"]
     if not isinstance(runtime, dict) or set(runtime) != {
-        "image", "manifestDigest", "platformDigest", "platform", "python", "sglang"
+        "image",
+        "manifestDigest",
+        "platformDigest",
+        "platform",
+        "python",
+        "sglang",
     }:
         raise ValueError("agent runtime lock is invalid")
     if runtime != {
@@ -112,17 +122,34 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
     identities: list[str] = []
     for candidate in candidates:
         if not isinstance(candidate, dict) or not {
-            "candidateId", "model", "revision", "quantization", "toolCallParser", "license", "source"
+            "candidateId",
+            "model",
+            "revision",
+            "quantization",
+            "toolCallParser",
+            "license",
+            "source",
         } <= set(candidate) <= {
-            "candidateId", "model", "revision", "quantization", "toolCallParser", "reasoningParser", "license", "source"
+            "candidateId",
+            "model",
+            "revision",
+            "quantization",
+            "toolCallParser",
+            "reasoningParser",
+            "license",
+            "source",
         }:
             raise ValueError("agent candidate differs from the contract")
         candidate_id = candidate["candidateId"]
         if not isinstance(candidate_id, str) or not candidate_id:
             raise ValueError("agent candidate ID is invalid")
-        if not isinstance(candidate["revision"], str) or not _REVISION.fullmatch(candidate["revision"]):
+        if not isinstance(candidate["revision"], str) or not _REVISION.fullmatch(
+            candidate["revision"]
+        ):
             raise ValueError("agent candidate revision is invalid")
-        if not isinstance(candidate["source"], str) or not candidate["source"].startswith("https://huggingface.co/"):
+        if not isinstance(candidate["source"], str) or not candidate[
+            "source"
+        ].startswith("https://huggingface.co/"):
             raise ValueError("agent candidate provenance is invalid")
         identities.append(candidate_id)
     if len(set(identities)) != len(identities):
@@ -131,7 +158,12 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
 
 
 def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
-    if set(value) != {"schemaVersion", "license", "provenance", "sharedSystemPrompt", "cases"} or value["schemaVersion"] != 1 or value["license"] != "CC0-1.0":
+    if (
+        set(value)
+        != {"schemaVersion", "license", "provenance", "sharedSystemPrompt", "cases"}
+        or value["schemaVersion"] != 1
+        or value["license"] != "CC0-1.0"
+    ):
         raise ValueError("agent workload fixture differs from the contract")
     cases = value["cases"]
     if not isinstance(cases, list):
@@ -146,7 +178,9 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
         category = case.get("category")
         if not isinstance(case_id, str) or not case_id or not isinstance(category, str):
             raise ValueError("agent workload identity is invalid")
-        if not isinstance(case.get("user"), str) or not isinstance(case.get("visibleContext"), list):
+        if not isinstance(case.get("user"), str) or not isinstance(
+            case.get("visibleContext"), list
+        ):
             raise ValueError("agent workload content is invalid")
         case_ids.append(case_id)
         categories.add(category)
@@ -155,7 +189,11 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
             if not isinstance(pair, str):
                 raise ValueError("agent isolation pair is invalid")
             isolation_counts[pair] = isolation_counts.get(pair, 0) + 1
-    if len(set(case_ids)) != len(case_ids) or not isolation_counts or set(isolation_counts.values()) != {2}:
+    if (
+        len(set(case_ids)) != len(case_ids)
+        or not isolation_counts
+        or set(isolation_counts.values()) != {2}
+    ):
         raise ValueError("agent workload identities are incomplete")
     return tuple(case_ids), categories
 
@@ -174,17 +212,48 @@ def _thresholds(value: object) -> None:
         raise ValueError("agent model thresholds differ from the contract")
 
 
-def _runtime_tracks(value: object) -> None:
+def _runtime_tracks(value: object) -> dict[str, object]:
     if not isinstance(value, dict) or set(value) != {
-        "coldRequests", "warmRequests", "concurrencyLevels", "prefixIsolationRepetitions", "maximumContextTokens", "maximumOutputTokens", "requestTimeoutSeconds", "teardownTimeoutSeconds"
+        "coldRequests",
+        "warmRequests",
+        "concurrencyLevels",
+        "prefixIsolationRepetitions",
+        "maximumContextTokens",
+        "maximumOutputTokens",
+        "requestTimeoutSeconds",
+        "teardownTimeoutSeconds",
     }:
         raise ValueError("agent runtime tracks differ from the contract")
-    if value["concurrencyLevels"] != [1, 2, 4, 8] or value["prefixIsolationRepetitions"] != 4:
+    if (
+        value["concurrencyLevels"] != [1, 2, 4, 8]
+        or value["prefixIsolationRepetitions"] != 4
+    ):
         raise ValueError("agent runtime pressure tracks are incomplete")
+    numeric = {
+        "coldRequests": (1, 8),
+        "warmRequests": (1, 100),
+        "maximumContextTokens": (1, 131_072),
+        "maximumOutputTokens": (1, 4_096),
+        "requestTimeoutSeconds": (1, 300),
+        "teardownTimeoutSeconds": (1, 300),
+    }
+    for field, (minimum, maximum) in numeric.items():
+        observed = value[field]
+        if (
+            isinstance(observed, bool)
+            or not isinstance(observed, int)
+            or not minimum <= observed <= maximum
+        ):
+            raise ValueError("agent runtime pressure bound is invalid")
+    return dict(value)
 
 
 def _file_name(value: object, field: str) -> str:
-    if not isinstance(value, str) or Path(value).name != value or not value.endswith(".json"):
+    if (
+        not isinstance(value, str)
+        or Path(value).name != value
+        or not value.endswith(".json")
+    ):
         raise ValueError(f"{field} is invalid")
     return value
 
