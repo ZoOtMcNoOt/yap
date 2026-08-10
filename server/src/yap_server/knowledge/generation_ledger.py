@@ -32,6 +32,8 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                 source_revision text NOT NULL,
                 okf_version text NOT NULL,
                 concept_count integer NOT NULL CHECK (concept_count >= 0),
+                chunk_count integer NOT NULL CHECK (chunk_count >= 0),
+                relationship_count integer NOT NULL CHECK (relationship_count >= 0),
                 permission_count integer NOT NULL CHECK (permission_count > 0),
                 created_at timestamptz NOT NULL DEFAULT transaction_timestamp(),
                 PRIMARY KEY (tenant_id, generation_sha256)
@@ -70,12 +72,34 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
             )"""
         )
         connection.execute(
+            """CREATE TABLE IF NOT EXISTS yap_knowledge_relationships (
+                tenant_id text NOT NULL,
+                generation_sha256 text NOT NULL,
+                relationship_id text NOT NULL,
+                source_concept_id text NOT NULL,
+                target_concept_id text NOT NULL,
+                relationship_type text NOT NULL,
+                authority text NOT NULL,
+                source_char_start integer,
+                source_char_end integer,
+                canonical boolean NOT NULL,
+                PRIMARY KEY (tenant_id, generation_sha256, relationship_id),
+                FOREIGN KEY (tenant_id, generation_sha256, source_concept_id)
+                    REFERENCES yap_knowledge_concepts
+                    (tenant_id, generation_sha256, concept_id) ON DELETE CASCADE
+            )"""
+        )
+        connection.execute(
             """CREATE TABLE IF NOT EXISTS yap_knowledge_chunks (
                 tenant_id text NOT NULL,
                 generation_sha256 text NOT NULL,
                 concept_id text NOT NULL,
                 chunk_id text NOT NULL,
+                permission_sha256 text NOT NULL,
+                char_start integer NOT NULL CHECK (char_start >= 0),
+                char_end integer NOT NULL CHECK (char_end >= char_start),
                 body text NOT NULL,
+                linked_concept_ids jsonb NOT NULL,
                 embedding vector(768),
                 PRIMARY KEY (tenant_id, generation_sha256, chunk_id),
                 FOREIGN KEY (tenant_id, generation_sha256, concept_id)
@@ -107,14 +131,16 @@ def publish_compiled_generation(
         connection.execute(
             """INSERT INTO yap_knowledge_builds (
                 tenant_id, generation_sha256, source_revision, okf_version,
-                concept_count, permission_count
-            ) VALUES (%s, %s, %s, %s, %s, %s)""",
+                concept_count, chunk_count, relationship_count, permission_count
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
             (
                 generation.tenant_id,
                 generation.generation_sha256,
                 generation.source_revision,
                 generation.okf_version,
                 len(generation.concepts),
+                len(generation.chunks),
+                len(generation.relationships),
                 len(generation.permissions),
             ),
         )
@@ -152,9 +178,52 @@ def publish_compiled_generation(
                     Jsonb(list(concept.broken_links)),
                 ),
             )
+        for chunk in generation.chunks:
+            connection.execute(
+                """INSERT INTO yap_knowledge_chunks (
+                    tenant_id, generation_sha256, concept_id, chunk_id,
+                    permission_sha256, char_start, char_end, body,
+                    linked_concept_ids
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (
+                    generation.tenant_id,
+                    generation.generation_sha256,
+                    chunk.concept_id,
+                    chunk.chunk_id,
+                    chunk.permission_sha256,
+                    chunk.char_start,
+                    chunk.char_end,
+                    chunk.text,
+                    Jsonb(list(chunk.linked_concept_ids)),
+                ),
+            )
+        for relationship in generation.relationships:
+            connection.execute(
+                """INSERT INTO yap_knowledge_relationships (
+                    tenant_id, generation_sha256, relationship_id,
+                    source_concept_id, target_concept_id, relationship_type,
+                    authority, source_char_start, source_char_end, canonical
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (
+                    generation.tenant_id,
+                    generation.generation_sha256,
+                    relationship.relationship_id,
+                    relationship.source_concept_id,
+                    relationship.target_concept_id,
+                    relationship.relationship_type,
+                    relationship.authority,
+                    relationship.source_char_start,
+                    relationship.source_char_end,
+                    relationship.canonical,
+                ),
+            )
         counts = connection.execute(
             """SELECT
                 (SELECT count(*) FROM yap_knowledge_concepts
+                 WHERE tenant_id = %s AND generation_sha256 = %s),
+                (SELECT count(*) FROM yap_knowledge_chunks
+                 WHERE tenant_id = %s AND generation_sha256 = %s),
+                (SELECT count(*) FROM yap_knowledge_relationships
                  WHERE tenant_id = %s AND generation_sha256 = %s),
                 (SELECT count(*) FROM yap_knowledge_permissions
                  WHERE tenant_id = %s AND generation_sha256 = %s)""",
@@ -163,9 +232,18 @@ def publish_compiled_generation(
                 generation.generation_sha256,
                 generation.tenant_id,
                 generation.generation_sha256,
+                generation.tenant_id,
+                generation.generation_sha256,
+                generation.tenant_id,
+                generation.generation_sha256,
             ),
         ).fetchone()
-        if counts != (len(generation.concepts), len(generation.permissions)):
+        if counts != (
+            len(generation.concepts),
+            len(generation.chunks),
+            len(generation.relationships),
+            len(generation.permissions),
+        ):
             raise RuntimeError("staged knowledge generation is incomplete")
         connection.execute(
             """INSERT INTO yap_knowledge_active_builds

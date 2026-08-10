@@ -185,6 +185,73 @@ denials: {users: []}
                     source_revision="commit-a",
                 )
 
+    def test_compiles_deterministic_chunks_and_relationship_authority(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "index.md").write_text(
+                "---\nokf_version: '0.1'\n---\n# Knowledge\n", encoding="utf-8"
+            )
+            for folder in ("decisions", "projects", "permissions"):
+                (root / folder).mkdir()
+            (root / "decisions" / "release.md").write_text(
+                """---
+type: Decision
+title: Release
+resource: yap://tenant/tenant-a/decision/release
+timestamp: 2026-08-09T12:00:00Z
+yap_schema: 1
+provenance: {source: reviewed-document, source_revision: revision-1}
+relationships:
+  - {type: affects, target: /projects/voiceos.md, authority: human_confirmed}
+  - {type: suggests, target: /projects/voiceos.md, authority: agent_proposed}
+---
+# Release
+
+The approved release affects [VoiceOS](/projects/voiceos.md).
+""",
+                encoding="utf-8",
+            )
+            (root / "projects" / "voiceos.md").write_text(
+                """---
+type: Project
+title: VoiceOS
+resource: yap://tenant/tenant-a/project/voiceos
+timestamp: 2026-08-09T12:00:00Z
+yap_schema: 1
+provenance: {source: reviewed-document, source_revision: revision-1}
+---
+# VoiceOS
+""",
+                encoding="utf-8",
+            )
+            for name, prefix in (
+                ("decisions", "decisions/"),
+                ("projects", "projects/"),
+            ):
+                (root / "permissions" / f"{name}.yml").write_text(
+                    f"""path_prefix: {prefix}
+audience: {{users: [{{tenant_id: tenant-a, subject_id: alice}}]}}
+purposes: [knowledge.read]
+classification: internal
+denials: {{users: []}}
+""",
+                    encoding="utf-8",
+                )
+
+            first = compile_okf_bundle(root, tenant_id="tenant-a", source_revision="r1")
+            second = compile_okf_bundle(
+                root, tenant_id="tenant-a", source_revision="r1"
+            )
+
+        self.assertEqual(first.chunks, second.chunks)
+        self.assertEqual(len(first.chunks), 1)
+        self.assertEqual(first.chunks[0].linked_concept_ids, ("projects/voiceos",))
+        authorities = {item.authority: item.canonical for item in first.relationships}
+        self.assertEqual(
+            authorities,
+            {"asserted": True, "human_confirmed": True, "agent_proposed": False},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

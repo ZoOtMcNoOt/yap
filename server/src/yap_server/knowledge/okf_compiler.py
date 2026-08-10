@@ -19,6 +19,12 @@ from .okf_source import (
     read_okf_document,
     real_bundle_directory,
 )
+from .okf_projection import (
+    CompiledChunk,
+    CompiledRelationship,
+    compile_chunks,
+    compile_relationships,
+)
 from .permission_policy import (
     CompiledPermission,
     compile_permissions,
@@ -45,6 +51,8 @@ class CompiledKnowledgeGeneration:
     source_revision: str
     okf_version: str
     concepts: tuple[CompiledConcept, ...]
+    chunks: tuple[CompiledChunk, ...]
+    relationships: tuple[CompiledRelationship, ...]
     permissions: tuple[CompiledPermission, ...]
     generation_sha256: str
 
@@ -84,6 +92,8 @@ def compile_okf_bundle(
         if path.name.casefold() not in {"index.md", "log.md"}
     }
     concepts: list[CompiledConcept] = []
+    chunks: list[CompiledChunk] = []
+    relationships: list[CompiledRelationship] = []
     resources: set[str] = set()
     canonical_records: list[dict[str, object]] = []
     for path in sorted(concept_paths, key=lambda item: item.as_posix()):
@@ -107,6 +117,22 @@ def compile_okf_bundle(
             "permissionPathPrefix": permission.path_prefix,
         }
         canonical_records.append(record)
+        chunks.extend(
+            compile_chunks(
+                concept_id=record["conceptId"],
+                source_path=record["sourcePath"],
+                body=markdown,
+                permission_sha256=permission.permission_sha256,
+            )
+        )
+        relationships.extend(
+            compile_relationships(
+                concept_id=record["conceptId"],
+                source_path=record["sourcePath"],
+                body=markdown,
+                frontmatter=canonical_frontmatter,
+            )
+        )
         concepts.append(
             CompiledConcept(
                 concept_id=record["conceptId"],
@@ -126,6 +152,8 @@ def compile_okf_bundle(
         "tenantId": tenant,
         "sourceRevision": revision,
         "concepts": canonical_records,
+        "chunks": [chunk_record(item) for item in chunks],
+        "relationships": [relationship_record(item) for item in relationships],
         "permissions": [permission_record(item) for item in permissions],
     }
     generation_sha256 = hashlib.sha256(
@@ -141,14 +169,45 @@ def compile_okf_bundle(
         source_revision=revision,
         okf_version="0.1",
         concepts=tuple(concepts),
+        chunks=tuple(chunks),
+        relationships=tuple(relationships),
         permissions=permissions,
         generation_sha256=generation_sha256,
     )
 
 
+def chunk_record(value: CompiledChunk) -> dict[str, object]:
+    return {
+        "chunkId": value.chunk_id,
+        "conceptId": value.concept_id,
+        "permissionSha256": value.permission_sha256,
+        "charStart": value.char_start,
+        "charEnd": value.char_end,
+        "text": value.text,
+        "linkedConceptIds": list(value.linked_concept_ids),
+    }
+
+
+def relationship_record(value: CompiledRelationship) -> dict[str, object]:
+    return {
+        "relationshipId": value.relationship_id,
+        "sourceConceptId": value.source_concept_id,
+        "targetConceptId": value.target_concept_id,
+        "type": value.relationship_type,
+        "authority": value.authority,
+        "sourceCharStart": value.source_char_start,
+        "sourceCharEnd": value.source_char_end,
+        "canonical": value.canonical,
+    }
+
+
 __all__ = [
     "CompiledConcept",
+    "CompiledChunk",
     "CompiledKnowledgeGeneration",
     "CompiledPermission",
+    "CompiledRelationship",
+    "chunk_record",
     "compile_okf_bundle",
+    "relationship_record",
 ]
