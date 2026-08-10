@@ -15,6 +15,10 @@ from yap_server.knowledge.knowledge_tool_contract import (
     KnowledgeToolItem,
     KnowledgeToolResponse,
 )
+from yap_server.knowledge.terminology_snapshot import (
+    TerminologyRecord,
+    freeze_terminology_snapshot,
+)
 
 
 class _Tools:
@@ -69,6 +73,7 @@ class GovernedRagAgentTests(unittest.TestCase):
             reason=lambda prompt, cancellation: next(outputs),
             maximum_prompt_characters=10_000,
             maximum_output_characters=2_000,
+            read_terminology_snapshot=_snapshot_reader,
         )
 
         result = agent.answer(
@@ -77,7 +82,7 @@ class GovernedRagAgentTests(unittest.TestCase):
             agent_id="librarian",
             purpose="knowledge.read",
             question="TAVI publication",
-            terminology_exact_forms=("TAVI",),
+            job_id="job-1",
             cancellation=threading.Event(),
         )
 
@@ -99,6 +104,7 @@ class GovernedRagAgentTests(unittest.TestCase):
             reason=reason,
             maximum_prompt_characters=10_000,
             maximum_output_characters=2_000,
+            read_terminology_snapshot=_snapshot_reader,
         )
         result = agent.answer(
             object(),  # type: ignore[arg-type]
@@ -106,7 +112,7 @@ class GovernedRagAgentTests(unittest.TestCase):
             agent_id="librarian",
             purpose="knowledge.read",
             question="unknown evidence",
-            terminology_exact_forms=(),
+            job_id="job-1",
             cancellation=threading.Event(),
         )
 
@@ -124,6 +130,7 @@ class GovernedRagAgentTests(unittest.TestCase):
             reason=lambda prompt, cancellation: output,
             maximum_prompt_characters=10_000,
             maximum_output_characters=2_000,
+            read_terminology_snapshot=_snapshot_reader,
         )
         with self.assertRaisesRegex(ValueError, "admissible"):
             agent.answer(
@@ -132,7 +139,7 @@ class GovernedRagAgentTests(unittest.TestCase):
                 agent_id="librarian",
                 purpose="knowledge.read",
                 question="TAVI publication",
-                terminology_exact_forms=("TAVI",),
+                job_id="job-1",
                 cancellation=threading.Event(),
             )
 
@@ -151,6 +158,7 @@ class GovernedRagAgentTests(unittest.TestCase):
             reason=unavailable,
             maximum_prompt_characters=10_000,
             maximum_output_characters=2_000,
+            read_terminology_snapshot=_snapshot_reader,
         )
 
         with self.assertRaisesRegex(ValueError, "admissible"):
@@ -160,12 +168,34 @@ class GovernedRagAgentTests(unittest.TestCase):
                 agent_id="librarian",
                 purpose="knowledge.read",
                 question="TAVI publication",
-                terminology_exact_forms=("TAVI",),
+                job_id="job-1",
                 cancellation=threading.Event(),
             )
 
         self.assertEqual(attempts, 2)
         self.assertEqual(proposals.calls, [])
+
+    def test_rejects_snapshot_owned_by_another_subject(self) -> None:
+        agent = GovernedRagAgent(
+            tools=_Tools((_item(),)),  # type: ignore[arg-type]
+            proposals=_Proposals(),  # type: ignore[arg-type]
+            reason=lambda prompt, cancellation: "{}",
+            maximum_prompt_characters=10_000,
+            maximum_output_characters=2_000,
+            read_terminology_snapshot=lambda connection, principal, job_id: _snapshot(
+                PrincipalKey(principal.tenant_id, "other-person")
+            ),
+        )
+        with self.assertRaisesRegex(PermissionError, "unavailable"):
+            agent.answer(
+                object(),  # type: ignore[arg-type]
+                principal=PrincipalKey("tenant-1", "person-1"),
+                agent_id="librarian",
+                purpose="knowledge.read",
+                question="TAVI publication",
+                job_id="job-1",
+                cancellation=threading.Event(),
+            )
 
 
 def _item() -> KnowledgeToolItem:
@@ -174,6 +204,36 @@ def _item() -> KnowledgeToolItem:
         "TAVI publication is atomic.",
         None,
         None,
+    )
+
+
+def _snapshot_reader(connection: object, principal: PrincipalKey, job_id: str):
+    del connection, job_id
+    return _snapshot(principal)
+
+
+def _snapshot(principal: PrincipalKey):
+    return freeze_terminology_snapshot(
+        (
+            TerminologyRecord(
+                record_id="tavi",
+                tenant_id=principal.tenant_id,
+                scope="personal",
+                owner_id=principal.subject_id,
+                locale="en-US",
+                canonical_form="TAVI",
+                variants=("tavi",),
+                sensitivity="internal",
+                version=1,
+                deleted=False,
+                audit_revision="audit-1",
+                changed_at="2026-08-09T12:00:00Z",
+            ),
+        ),
+        principal=principal,
+        team_ids=(),
+        locale="en-US",
+        source_revision="a" * 64,
     )
 
 

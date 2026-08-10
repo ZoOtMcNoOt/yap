@@ -13,9 +13,14 @@ from .governed_knowledge_proposals import GovernedKnowledgeProposals
 from .governed_knowledge_tools import GovernedKnowledgeTools
 from .knowledge_proposals import KnowledgeProposal, ProposalCitation
 from .knowledge_tool_contract import KnowledgeToolCancelled, SearchKnowledgeRequest
+from .terminology_ledger import read_job_terminology_snapshot
+from .terminology_snapshot import TerminologySnapshot
 
 
 ReasoningFunction = Callable[[str, threading.Event], str]
+TerminologySnapshotReader = Callable[
+    [Connection[object], PrincipalKey, str], TerminologySnapshot
+]
 
 
 class ReasoningRetryableError(RuntimeError):
@@ -28,6 +33,7 @@ class GovernedRagResult:
     proposal: KnowledgeProposal | None
     generation_sha256: str
     model_invoked: bool
+    terminology_snapshot_sha256: str
 
 
 class GovernedRagAgent:
@@ -42,6 +48,7 @@ class GovernedRagAgent:
         maximum_prompt_characters: int,
         maximum_output_characters: int,
         maximum_attempts: int = 2,
+        read_terminology_snapshot: TerminologySnapshotReader | None = None,
     ) -> None:
         if not 1 <= maximum_prompt_characters <= 1_000_000:
             raise ValueError("RAG prompt bound is invalid")
@@ -55,6 +62,9 @@ class GovernedRagAgent:
         self._maximum_prompt_characters = maximum_prompt_characters
         self._maximum_output_characters = maximum_output_characters
         self._maximum_attempts = maximum_attempts
+        self._read_terminology_snapshot = (
+            read_terminology_snapshot or _read_job_terminology_snapshot
+        )
 
     def answer(
         self,
@@ -64,7 +74,7 @@ class GovernedRagAgent:
         agent_id: str,
         purpose: str,
         question: str,
-        terminology_exact_forms: tuple[str, ...],
+        job_id: str,
         cancellation: threading.Event,
         expected_generation_sha256: str | None = None,
     ) -> GovernedRagResult:
@@ -75,18 +85,15 @@ class GovernedRagAgent:
             or len(question) > 4_096
         ):
             raise ValueError("RAG question is invalid")
+        terminology = self._read_terminology_snapshot(connection, principal, job_id)
         if (
-            not isinstance(terminology_exact_forms, tuple)
-            or len(terminology_exact_forms) > 1_000
-            or any(
-                not isinstance(term, str)
-                or not term
-                or len(term) > 512
-                or term.strip() != term
-                for term in terminology_exact_forms
-            )
+            terminology.tenant_id != principal.tenant_id
+            or terminology.subject_id != principal.subject_id
         ):
-            raise ValueError("RAG terminology constraints are invalid")
+            raise PermissionError("job terminology snapshot is unavailable")
+        terminology_exact_forms = tuple(
+            sorted({record.canonical_form for record in terminology.entries})
+        )
         retrieval = self._tools.execute(
             connection,
             principal=principal,
@@ -104,6 +111,7 @@ class GovernedRagAgent:
                 None,
                 retrieval.generation_sha256,
                 False,
+                terminology.snapshot_sha256,
             )
         prompt = _prompt(question, retrieval.items, terminology_exact_forms)
         if len(prompt) > self._maximum_prompt_characters:
@@ -151,7 +159,18 @@ class GovernedRagAgent:
             proposal,
             retrieval.generation_sha256,
             True,
+            terminology.snapshot_sha256,
         )
+
+
+def _read_job_terminology_snapshot(
+    connection: Connection[object], principal: PrincipalKey, job_id: str
+) -> TerminologySnapshot:
+    return read_job_terminology_snapshot(
+        connection,
+        principal=principal,
+        job_id=job_id,
+    )
 
 
 def _prompt(question: str, items: tuple[object, ...], exact_forms: tuple[str, ...]) -> str:
@@ -229,4 +248,5 @@ __all__ = [
     "GovernedRagResult",
     "ReasoningFunction",
     "ReasoningRetryableError",
+    "TerminologySnapshotReader",
 ]

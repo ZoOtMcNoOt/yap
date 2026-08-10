@@ -24,6 +24,7 @@ from yap_server.knowledge.governed_knowledge_proposals import (
     GovernedKnowledgeProposals,
 )
 from yap_server.knowledge.governed_rag_agent import GovernedRagAgent
+from yap_server.knowledge.terminology_snapshot import freeze_terminology_snapshot
 from yap_server.knowledge.knowledge_tool_audit import (
     install_knowledge_tool_audit_schema,
 )
@@ -205,6 +206,15 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 ),
                 maximum_prompt_characters=20_000,
                 maximum_output_characters=2_000,
+                read_terminology_snapshot=lambda connection, principal, job_id: (
+                    freeze_terminology_snapshot(
+                        (),
+                        principal=principal,
+                        team_ids=(),
+                        locale="en-US",
+                        source_revision="0" * 64,
+                    )
+                ),
             )
             cited_answer = rag_agent.answer(
                 connection,
@@ -212,7 +222,7 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 agent_id="librarian",
                 purpose="knowledge.read",
                 question="crash safe transcript",
-                terminology_exact_forms=("crash safety",),
+                job_id="reviewed-meeting-job",
                 expected_generation_sha256=generation.generation_sha256,
                 cancellation=threading.Event(),
             )

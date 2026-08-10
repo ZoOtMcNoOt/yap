@@ -6,7 +6,10 @@ from uuid import uuid4
 
 import psycopg
 
-from yap_server.auth.principal import PrincipalKey
+from yap_server.auth.principal import AuthenticatedPrincipal, PrincipalKey
+from yap_server.knowledge.terminology_authorization import (
+    resolve_terminology_authorization,
+)
 from yap_server.knowledge.terminology_ledger import (
     append_terminology_record,
     bind_job_terminology_snapshot,
@@ -31,23 +34,26 @@ class TerminologyLedgerTests(unittest.TestCase):
 
         with psycopg.connect(POSTGRES_DSN) as connection:
             install_terminology_schema(connection)
-            append_terminology_record(connection, first, actor=principal)
+            authorization = _authorization(principal)
+            append_terminology_record(
+                connection, first, authorization=authorization
+            )
             bound = bind_job_terminology_snapshot(
                 connection,
                 job_id=job_id,
-                principal=principal,
-                team_ids=(),
+                authorization=authorization,
                 locale="en-US",
             )
-            append_terminology_record(connection, second, actor=principal)
+            append_terminology_record(
+                connection, second, authorization=authorization
+            )
             unchanged = read_job_terminology_snapshot(
-                connection, tenant_id=tenant_id, job_id=job_id
+                connection, principal=principal, job_id=job_id
             )
             next_job = bind_job_terminology_snapshot(
                 connection,
                 job_id=f"next-{job_id}",
-                principal=principal,
-                team_ids=(),
+                authorization=authorization,
                 locale="en-US",
             )
 
@@ -77,7 +83,9 @@ class TerminologyLedgerTests(unittest.TestCase):
         with psycopg.connect(POSTGRES_DSN) as connection:
             install_terminology_schema(connection)
             with self.assertRaisesRegex(PermissionError, "does not own"):
-                append_terminology_record(connection, record, actor=actor)
+                append_terminology_record(
+                    connection, record, authorization=_authorization(actor)
+                )
 
     def test_record_lineage_cannot_change_owner_or_resume_after_deletion(self) -> None:
         suffix = uuid4().hex
@@ -87,27 +95,99 @@ class TerminologyLedgerTests(unittest.TestCase):
         with psycopg.connect(POSTGRES_DSN) as connection:
             install_terminology_schema(connection)
             append_terminology_record(
-                connection, _record(tenant_id, alice.subject_id, 1, "TAVI"), actor=alice
+                connection,
+                _record(tenant_id, alice.subject_id, 1, "TAVI"),
+                authorization=_authorization(alice),
             )
             with self.assertRaisesRegex(ValueError, "authority is immutable"):
                 append_terminology_record(
                     connection,
                     _record(tenant_id, bob.subject_id, 2, "TAVI"),
-                    actor=bob,
+                    authorization=_authorization(bob),
                 )
             deleted = _record(tenant_id, alice.subject_id, 2, "TAVI", deleted=True)
-            append_terminology_record(connection, deleted, actor=alice)
+            append_terminology_record(
+                connection, deleted, authorization=_authorization(alice)
+            )
             with self.assertRaisesRegex(ValueError, "cannot be restored"):
                 append_terminology_record(
                     connection,
                     _record(tenant_id, alice.subject_id, 3, "TAVI"),
-                    actor=alice,
+                    authorization=_authorization(alice),
                 )
             connection.execute(
                 "DELETE FROM yap_terminology_records WHERE tenant_id = %s",
                 (tenant_id,),
             )
             connection.commit()
+
+    def test_same_tenant_job_identity_does_not_cross_owners(self) -> None:
+        suffix = uuid4().hex
+        tenant_id = f"tenant-{suffix}"
+        alice = PrincipalKey(tenant_id, f"alice-{suffix}")
+        bob = PrincipalKey(tenant_id, f"bob-{suffix}")
+        job_id = f"job-{suffix}"
+        with psycopg.connect(POSTGRES_DSN) as connection:
+            install_terminology_schema(connection)
+            append_terminology_record(
+                connection,
+                _record(tenant_id, alice.subject_id, 1, "AliceTerm"),
+                authorization=_authorization(alice),
+            )
+            alice_snapshot = bind_job_terminology_snapshot(
+                connection,
+                job_id=job_id,
+                authorization=_authorization(alice),
+                locale="en-US",
+            )
+            bob_snapshot = bind_job_terminology_snapshot(
+                connection,
+                job_id=job_id,
+                authorization=_authorization(bob),
+                locale="en-US",
+            )
+            self.assertEqual(alice_snapshot.subject_id, alice.subject_id)
+            self.assertEqual(bob_snapshot.subject_id, bob.subject_id)
+            self.assertNotEqual(alice_snapshot.snapshot_sha256, bob_snapshot.snapshot_sha256)
+            with self.assertRaisesRegex(LookupError, "no terminology snapshot"):
+                read_job_terminology_snapshot(
+                    connection,
+                    principal=PrincipalKey(f"other-{suffix}", alice.subject_id),
+                    job_id=job_id,
+                )
+            connection.execute(
+                "DELETE FROM yap_terminology_job_bindings WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.execute(
+                "DELETE FROM yap_terminology_snapshots WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.execute(
+                "DELETE FROM yap_terminology_records WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.commit()
+
+
+class _Memberships:
+    def team_ids_for(self, principal: PrincipalKey) -> tuple[str, ...]:
+        del principal
+        return ()
+
+
+def _authorization(principal: PrincipalKey):
+    authenticated = AuthenticatedPrincipal(
+        principal.tenant_id,
+        principal.subject_id,
+        "test-client",
+        frozenset({"knowledge.read"}),
+    )
+    return resolve_terminology_authorization(
+        authenticated,
+        memberships=_Memberships(),
+        administrator_roles=frozenset({"knowledge.admin"}),
+    )
 
 
 def _record(

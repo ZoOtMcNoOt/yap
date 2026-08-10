@@ -16,6 +16,7 @@ from .terminology_snapshot import (
     terminology_snapshot_payload,
     validate_terminology_record,
 )
+from .terminology_authorization import TerminologyAuthorization
 
 
 def install_terminology_schema(connection: Connection[object]) -> None:
@@ -52,10 +53,11 @@ def install_terminology_schema(connection: Connection[object]) -> None:
         connection.execute(
             """CREATE TABLE IF NOT EXISTS yap_terminology_job_bindings (
                 tenant_id text NOT NULL,
+                subject_id text NOT NULL,
                 job_id text NOT NULL,
                 snapshot_sha256 text NOT NULL,
                 bound_at timestamptz NOT NULL DEFAULT transaction_timestamp(),
-                PRIMARY KEY (tenant_id, job_id),
+                PRIMARY KEY (tenant_id, subject_id, job_id),
                 FOREIGN KEY (tenant_id, snapshot_sha256)
                     REFERENCES yap_terminology_snapshots
             )"""
@@ -66,18 +68,17 @@ def append_terminology_record(
     connection: Connection[object],
     record: TerminologyRecord,
     *,
-    actor: PrincipalKey,
-    actor_team_ids: tuple[str, ...] = (),
-    may_manage_organization: bool = False,
+    authorization: TerminologyAuthorization,
 ) -> None:
     """Append an authorized immutable record version; never overwrite history."""
 
+    actor = authorization.principal
     validate_terminology_record(record, tenant_id=actor.tenant_id)
     if not _actor_owns(
         record,
         actor=actor,
-        actor_team_ids=actor_team_ids,
-        may_manage_organization=may_manage_organization,
+        actor_team_ids=authorization.team_ids,
+        may_manage_organization=authorization.may_manage_organization,
     ):
         raise PermissionError("terminology actor does not own the requested scope")
     with connection.transaction():
@@ -129,18 +130,18 @@ def bind_job_terminology_snapshot(
     connection: Connection[object],
     *,
     job_id: str,
-    principal: PrincipalKey,
-    team_ids: tuple[str, ...],
+    authorization: TerminologyAuthorization,
     locale: str,
 ) -> TerminologySnapshot:
     """Freeze current terminology and bind it once to a durable job identity."""
 
+    principal = authorization.principal
     records = _read_tenant_records(connection, principal.tenant_id)
     source_revision = _ledger_revision(records)
     snapshot = freeze_terminology_snapshot(
         records,
         principal=principal,
-        team_ids=team_ids,
+        team_ids=authorization.team_ids,
         locale=locale,
         source_revision=source_revision,
     )
@@ -151,12 +152,12 @@ def bind_job_terminology_snapshot(
         )
         existing = connection.execute(
             """SELECT snapshot_sha256 FROM yap_terminology_job_bindings
-               WHERE tenant_id = %s AND job_id = %s""",
-            (principal.tenant_id, job_id),
+               WHERE tenant_id = %s AND subject_id = %s AND job_id = %s""",
+            (principal.tenant_id, principal.subject_id, job_id),
         ).fetchone()
         if existing is not None:
             return read_job_terminology_snapshot(
-                connection, tenant_id=principal.tenant_id, job_id=job_id
+                connection, principal=principal, job_id=job_id
             )
         connection.execute(
             """INSERT INTO yap_terminology_snapshots (
@@ -173,14 +174,20 @@ def bind_job_terminology_snapshot(
         )
         connection.execute(
             """INSERT INTO yap_terminology_job_bindings
-                (tenant_id, job_id, snapshot_sha256) VALUES (%s, %s, %s)""",
-            (principal.tenant_id, job_id, snapshot.snapshot_sha256),
+                (tenant_id, subject_id, job_id, snapshot_sha256)
+                VALUES (%s, %s, %s, %s)""",
+            (
+                principal.tenant_id,
+                principal.subject_id,
+                job_id,
+                snapshot.snapshot_sha256,
+            ),
         )
     return snapshot
 
 
 def read_job_terminology_snapshot(
-    connection: Connection[object], *, tenant_id: str, job_id: str
+    connection: Connection[object], *, principal: PrincipalKey, job_id: str
 ) -> TerminologySnapshot:
     row = connection.execute(
         """SELECT s.payload
@@ -188,8 +195,9 @@ def read_job_terminology_snapshot(
            JOIN yap_terminology_snapshots s
              ON s.tenant_id = b.tenant_id
             AND s.snapshot_sha256 = b.snapshot_sha256
-           WHERE b.tenant_id = %s AND b.job_id = %s""",
-        (tenant_id, job_id),
+           WHERE b.tenant_id = %s AND b.subject_id = %s AND b.job_id = %s
+             AND s.subject_id = b.subject_id""",
+        (principal.tenant_id, principal.subject_id, job_id),
     ).fetchone()
     if row is None:
         raise LookupError("job has no terminology snapshot")
