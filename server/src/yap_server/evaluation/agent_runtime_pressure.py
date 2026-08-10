@@ -20,6 +20,7 @@ class RuntimePressureResult:
     cold_latency_milliseconds: int
     warm_latency_milliseconds: tuple[int, ...]
     concurrency_latency_milliseconds: dict[int, tuple[int, ...]]
+    baseline_memory_bytes: int
     peak_memory_bytes: int
     isolation_leak_count: int
     cancelled_request_completion_count: int
@@ -34,6 +35,7 @@ def run_agent_runtime_pressure(
     """Exercise the frozen pressure tracks without trusting server summaries."""
 
     tracks = load_agent_model_acceptance(repository_root).runtime_tracks
+    baseline = _memory(memory_bytes)
     cancel = threading.Event()
     cold = _timed(request, "Return exactly COLD-READY.", cancel)
     warm = tuple(
@@ -62,7 +64,7 @@ def run_agent_runtime_pressure(
         timeout_seconds=int(tracks["requestTimeoutSeconds"]),
     )
     return RuntimePressureResult(
-        cold, warm, concurrency, peak, leaks, cancelled_completions
+        cold, warm, concurrency, baseline, peak, leaks, cancelled_completions
     )
 
 

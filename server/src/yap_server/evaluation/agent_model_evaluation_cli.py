@@ -4,7 +4,6 @@ import argparse
 import json
 import os
 from pathlib import Path
-import subprocess
 import urllib.error
 import urllib.request
 
@@ -69,7 +68,7 @@ def main() -> int:
     pressure = run_agent_runtime_pressure(
         repository_root,
         request=reasoning_client,
-        memory_bytes=_gpu_memory_bytes,
+        memory_bytes=_host_used_memory_bytes,
     )
     destination = (
         evidence_root / "agent-model" / arguments.candidate_id / "results.json"
@@ -89,7 +88,8 @@ def main() -> int:
                     str(level): list(values)
                     for level, values in pressure.concurrency_latency_milliseconds.items()
                 },
-                "peakGpuMemoryBytes": pressure.peak_memory_bytes,
+                "baselineUnifiedMemoryBytes": pressure.baseline_memory_bytes,
+                "peakUnifiedMemoryBytes": pressure.peak_memory_bytes,
                 "isolationLeakCount": pressure.isolation_leak_count,
                 "cancelledRequestCompletionCount": pressure.cancelled_request_completion_count,
             },
@@ -118,22 +118,22 @@ def main() -> int:
     )
 
 
-def _gpu_memory_bytes() -> int:
-    completed = subprocess.run(
-        [
-            "nvidia-smi",
-            "--query-compute-apps=used_memory",
-            "--format=csv,noheader,nounits",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=10,
-    )
-    values = [
-        int(line.strip()) for line in completed.stdout.splitlines() if line.strip()
-    ]
-    return sum(values) * 1024 * 1024
+def _host_used_memory_bytes() -> int:
+    fields: dict[str, int] = {}
+    with Path("/proc/meminfo").open(encoding="ascii") as source:
+        for line in source:
+            name, separator, remainder = line.partition(":")
+            if separator and name in {"MemTotal", "MemAvailable"}:
+                parts = remainder.split()
+                if len(parts) != 2 or parts[1] != "kB":
+                    raise ValueError("host memory observation is invalid")
+                fields[name] = int(parts[0]) * 1024
+    if set(fields) != {"MemTotal", "MemAvailable"}:
+        raise ValueError("host memory observation is incomplete")
+    used = fields["MemTotal"] - fields["MemAvailable"]
+    if used < 0:
+        raise ValueError("host memory observation is invalid")
+    return used
 
 
 def _candidate(repository_root: Path, candidate_id: str) -> dict[str, object]:

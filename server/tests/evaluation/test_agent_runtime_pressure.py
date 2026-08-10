@@ -37,6 +37,7 @@ def test_runs_every_frozen_pressure_track() -> None:
         level: len(values)
         for level, values in result.concurrency_latency_milliseconds.items()
     } == {1: 1, 2: 2, 4: 4, 8: 8}
+    assert result.baseline_memory_bytes == 123
     assert result.peak_memory_bytes == 123
     assert result.isolation_leak_count == 0
     assert result.cancelled_request_completion_count == 0
