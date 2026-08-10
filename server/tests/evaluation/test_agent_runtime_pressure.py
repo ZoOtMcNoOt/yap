@@ -3,6 +3,9 @@ from __future__ import annotations
 import threading
 from pathlib import Path
 
+import pytest
+
+from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
 from yap_server.evaluation.agent_runtime_pressure import run_agent_runtime_pressure
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -16,7 +19,7 @@ def test_runs_every_frozen_pressure_track() -> None:
         if "until cancelled" in prompt:
             cancellation.wait(1)
         if cancellation.is_set():
-            raise RuntimeError("cancelled")
+            raise KnowledgeToolCancelled("cancelled")
         if "ALPHA-7Q9" in prompt:
             return "ALPHA-7Q9"
         if "BRAVO-2M4" in prompt:
@@ -45,7 +48,7 @@ def test_detects_cross_request_marker_leak() -> None:
         if "until cancelled" in prompt:
             cancellation.wait(1)
         if cancellation.is_set():
-            raise RuntimeError("cancelled")
+            raise KnowledgeToolCancelled("cancelled")
         if "ALPHA-7Q9" in prompt:
             return "ALPHA-7Q9 BRAVO-2M4"
         return "ok"
@@ -55,3 +58,21 @@ def test_detects_cross_request_marker_leak() -> None:
     )
 
     assert result.isolation_leak_count == 4
+
+
+def test_rejects_unrelated_cancellation_failure() -> None:
+    def request(prompt: str, cancellation: threading.Event) -> str:
+        if "until cancelled" in prompt:
+            raise OSError("transport failed")
+        if "ALPHA-7Q9" in prompt:
+            return "ALPHA-7Q9"
+        if "BRAVO-2M4" in prompt:
+            return "BRAVO-2M4"
+        return "ok"
+
+    with pytest.raises(RuntimeError, match="failed incorrectly"):
+        run_agent_runtime_pressure(
+            REPOSITORY_ROOT,
+            request=request,
+            memory_bytes=lambda: 0,
+        )

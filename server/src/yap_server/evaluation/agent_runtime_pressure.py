@@ -6,6 +6,8 @@ import threading
 import time
 from typing import Callable
 
+from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
+
 from .agent_model_acceptance import load_agent_model_acceptance
 
 
@@ -97,15 +99,16 @@ def _cancelled_completions(request: Request, *, timeout_seconds: int) -> int:
     entered = threading.Event()
     finished = threading.Event()
     returned = False
+    failure: BaseException | None = None
 
     def invoke() -> None:
-        nonlocal returned
+        nonlocal failure, returned
         try:
             entered.set()
             request("Produce a long response until cancelled.", cancellation)
             returned = True
-        except BaseException:
-            pass
+        except BaseException as error:
+            failure = error
         finally:
             finished.set()
 
@@ -116,6 +119,8 @@ def _cancelled_completions(request: Request, *, timeout_seconds: int) -> int:
     cancellation.set()
     if not finished.wait(timeout_seconds):
         raise TimeoutError("cancelled agent request did not terminate")
+    if failure is not None and not isinstance(failure, KnowledgeToolCancelled):
+        raise RuntimeError("cancelled agent request failed incorrectly") from failure
     return int(returned)
 
 
