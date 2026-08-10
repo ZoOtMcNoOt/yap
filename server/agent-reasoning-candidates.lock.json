@@ -25,7 +25,7 @@
       "revision": "ce1b118ae66ec705d02c241525192832eb045fd3",
       "quantization": "modelopt_fp4",
       "toolCallParser": "qwen3_coder",
-      "reasoningParser": "nano_v3",
+      "reasoningParser": "nemotron_3",
       "license": "NVIDIA-Nemotron-Open-Model-License",
       "source": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4"
     }
