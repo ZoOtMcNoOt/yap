@@ -2,9 +2,12 @@
 
 **As of:** 2026-08-10
 
-**Most recent merged closure:** PR #150 merged the Phase 8 qualification as
-`599a0d0b` from exact hosted-green head
-`2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`. PR #144 previously merged the
+**Most recent merged closure:** [PR #152](https://github.com/mcnatg1/yap/pull/152)
+merged Phase 9 as `ae81ff067c73a64528eecc14403765562726f2fe` from exact
+hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`. PR #150
+previously merged the Phase 8 qualification as `599a0d0b` from exact
+hosted-green head `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`. PR #144
+previously merged the
 sole source-time meeting route as `b5b52bfd297edf1e95d93e120a8e59c206f7ab77`
 from exact head `bc9b57141702bb1dd6ab7df3ebc18f045fb60ee8`. The earlier reviewed head
 `ec4e4ab46234c35555136a75da530c6d73a042d8` passed every hosted CI and
@@ -49,8 +52,7 @@ independently adjudicated holdout were unconfigured, it recorded
 No image preparation or GPU inference was admissible, and the catalogs remain
 unchanged.
 
-Phase 9 is an implemented and locally gated candidate on
-`feat/governed-knowledge-retrieval`. Its deterministic OKF compiler,
+Phase 9 is merged and gated. Its deterministic OKF compiler,
 model-independent terminology snapshots, Postgres/pgvector generations,
 permission-filtered retrieval, governed proposal/RAG/MCP interfaces, and
 explicit Qwen/Gemma workload router execute. Exact private GB10 qualification
@@ -65,10 +67,12 @@ evidence SHA-256
 The gate ran 109 portable tests across 22 modules, Ruff, nine zero-skip
 Postgres tests across four modules, and a real Postgres process restart with
 recovered cited retrieval, stale-generation rejection, successor retrieval,
-and exact teardown. Raw outputs, measurements, credentials, database content,
-and private paths remain private. Exact-head hosted review, PR, merge, and the
-post-phase checkpoint remain open; no production agent service, simultaneous
-model residency, or sustained mixed-route capacity is claimed.
+and exact teardown. Exact hosted-green head
+`fa26caaf7e3ea4e20f27b390355dff80bee2464f` then merged through PR #152 as
+`ae81ff067c73a64528eecc14403765562726f2fe`. Raw outputs, measurements,
+credentials, database content, and private paths remain private. The separate
+post-Phase-9 maintainability checkpoint is active; no production agent service,
+simultaneous model residency, or sustained mixed-route capacity is claimed.
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -95,7 +99,8 @@ rewrite that target; this status document distinguishes what currently executes.
 | Post-Phase-7 local-first closure | Implemented and locally gated | On-device setup and recovery no longer await optional server/auth refresh. The fixed numeric-loopback offer retries safely after launch, requires explicit connection approval, never scans the LAN, and stops after configuration or durable dismissal. Server and sign-in controls remain optional and progressively disclosed; no production SSO provider or enterprise configuration is invented. |
 | Phase 8: meeting evidence | Closed as unadvertised baseline | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron for the sole server meeting route. PR #144 merged exact 30-second source-time epochs, request-scoped ECAPA reconciliation, canonical `speaker-1` through `speaker-64` identities, typed capacity records, strict `Unknown`, and one-speaker plain-text History projection. Exact qualification candidate `3ddb930...` recorded `unadvertised-baseline` because the required private holdout was unconfigured. Tiron remains explicit Preview and absent from the default catalog; Phase 8 adds no fallback pipeline. |
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
-| Phase 9 | Complete local gate passed; hosted PR/merge pending | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Production service integration and Phase 10 capacity remain unproved. |
+| Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
+| Post-Phase-9 maintainability checkpoint | Active | The [governed-knowledge ownership and maintainability review](plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) is auditing executable authority, persistence, runtime/evidence ownership, human maintainability, and documentation truth without adding Phase 10 behavior. |
 | Phase 10 | Planned | Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
@@ -717,9 +722,8 @@ publication boundaries retain ownership.
 - Tiron production qualification closed as `unadvertised-baseline` because the
   independent private holdout was unconfigured. The source-time larger-roster
   reconciliation and anonymous speaker-result publication execute, but Tiron
-  remains explicit Preview and absent from the default catalog. Phase 9 is an
-  implemented candidate whose exact complete local gate passed; hosted PR and
-  merge remain open.
+  remains explicit Preview and absent from the default catalog. Phase 9 passed
+  its exact complete gate and merged through hosted-green PR #152.
 - Private security scans, scan identifiers, host paths, and detailed private
   findings are not repository or PR material.
 
@@ -881,13 +885,12 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Open the focused Phase 9 PR and merge only its hosted-green exact head.
+1. Complete the separate post-Phase-9 architecture and maintainability
+   checkpoint before Phase 10.
 2. Keep Tiron absent from the default catalog at the recorded
    `unadvertised-baseline`; the source-time implementation remains the sole
    server meeting path.
-3. Complete the separate post-Phase-9 architecture checkpoint before Phase 10
-   and keep the full security scan at
-   the Phase 10 enterprise gate.
+3. Keep the full security scan at the Phase 10 enterprise gate.
 4. Leave Entra registration, production SSO/provider approval, Conditional
    Access, DNS, certificates, ZPA, firewall, and deployment policy as explicit
    IT/security handoffs rather than developer-invented infrastructure.

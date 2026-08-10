@@ -887,8 +887,9 @@ unconfigured.
   sustained mixed-user capacity remain Phase 10 evidence.
 - Exact aggregate candidate `a4f34678ea9980379b18266d40d3347b818ac57e`
   admitted the hash-locked private route tree and passed the complete Phase 9
-  knowledge gate. Hosted review and merge remain open; this is not production
-  service promotion.
+  knowledge gate. Exact hosted-green head `fa26caaf...` merged through PR #152
+  as `ae81ff06...`; this is not production service promotion. The separate
+  ownership and maintainability checkpoint remains active before Phase 10.
 
 ### Phase 10 — Production services, security, and enterprise handoff
 

@@ -55,6 +55,8 @@ passed the complete knowledge gate with outcome
 `governed-knowledge-gate-passed` and public-safe evidence SHA-256
 `4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
 This is aggregate gate admission, not production service promotion.
+Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
 Simultaneous residency and sustained mixed-route capacity remain Phase 10
 claims and require their own measured evidence.
 

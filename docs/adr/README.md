@@ -60,8 +60,9 @@ exact aggregate candidate `a4f34678ea9980379b18266d40d3347b818ac57e`
 then admitted the hash-locked private tree and passed the complete Phase 9 gate
 with public-safe evidence SHA-256
 `4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
-Hosted review and merge remain open; production supervision and capacity remain
-Phase 10.
+Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`;
+production supervision and capacity remain Phase 10.
 
 ## Applicability and precedence
 
@@ -109,8 +110,8 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0025](0025-provider-specific-asr-serving.md) | Provider-specific ASR serving runtimes | Accepted; Cohere vLLM, resident Nemotron NeMo, and all 18 candidate-safety children passed inside exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88`; both services remain unpromoted and broad quality evidence stays open |
 | [0026](0026-ambernet-batch-language-preflight.md) | AmberNet batch language preflight | Accepted; exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the source-exact ARM64 lifecycle, connected route, and complete matrix; representative suggestion quality remains open |
 | [0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) | Tiron joint speaker-attributed meeting transcription | Accepted Phase 8 explicit Preview baseline; PR #142 merged Preview, PR #143 merged maintainability closure, PR #144 merged the sole source-time route, and PR #150 merged the `unadvertised-baseline` qualification closure. No fallback or production claim was added. |
-| [0028](0028-model-independent-terminology-authority.md) | Model-independent terminology authority and frozen projections | Accepted; executable Phase 9 candidate has server-derived ownership, immutable job snapshots, bounded projections, revocation, and governed-agent consumption; complete gate passed and merge remains open |
-| [0029](0029-vllm-agent-reasoning-runtime.md) | vLLM agent reasoning runtime on DGX Spark | Accepted; exact-head private Qwen rapid/Gemma complex route qualification and aggregate Phase 9 admission passed; merge remains open, while production serving, simultaneous residency, and sustained capacity remain Phase 10 |
+| [0028](0028-model-independent-terminology-authority.md) | Model-independent terminology authority and frozen projections | Accepted; merged Phase 9 has server-derived ownership, immutable job snapshots, bounded projections, revocation, governed-agent consumption, and a passed complete gate; production UI and operations remain open |
+| [0029](0029-vllm-agent-reasoning-runtime.md) | vLLM agent reasoning runtime on DGX Spark | Accepted; exact-head private Qwen rapid/Gemma complex route qualification and aggregate Phase 9 admission passed and merged through PR #152; production serving, simultaneous residency, and sustained capacity remain Phase 10 |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

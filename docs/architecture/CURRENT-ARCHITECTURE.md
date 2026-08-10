@@ -858,8 +858,10 @@ stale generation after successor activation, retrieved the successor, and
 proved container, listener, PID, network, and volume teardown. The aggregate
 also semantically admitted the exact hash-locked private Qwen/Gemma
 qualification tree without copying raw model output or measurements into Git.
-Hosted review and merge remain open; production service integration remains
-Phase 10.
+Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
+The separate post-Phase-9 maintainability checkpoint is active; production
+service integration remains Phase 10.
 
 ## Persistence and recovery
 

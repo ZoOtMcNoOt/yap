@@ -323,7 +323,9 @@ The compiler resolves permission-file names inside the configured tenant and exp
   passed the one complete Phase 9 gate: it restarted the real owned Postgres
   process, recovered cited retrieval, rejected the stale generation after
   successor activation, retrieved the successor, and proved exact teardown.
-  Hosted review and merge remain open.
+  Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+  merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
+  Production database operations remain Phase 10/IT handoffs.
 
 ## Open questions
 

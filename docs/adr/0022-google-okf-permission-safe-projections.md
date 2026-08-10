@@ -203,14 +203,16 @@ Phase 9 cannot claim this ADR complete without automated evidence for:
 | Retrieval baseline | Postgres/pgvector must pass representative lexical/vector/relationship, permission-isolation, citation, and restart/rebuild evidence. A Neo4j challenger activates only after a measured baseline gap and then requires the predefined quality, latency, resource, licensing, rebuild, and operations comparison. |
 | Operational recovery | Phase 9 requires deterministic rebuild, rollback, restart recovery, stale-generation rejection, retention, and orphan cleanup. Production backup/restore, schema migration operations, monitoring, encryption, and disaster recovery remain Phase 10/IT handoffs. |
 
-The active Phase 9 candidate implements the Google OKF/Yap profile, deterministic
+Merged Phase 9 implements the Google OKF/Yap profile, deterministic
 projection identities, Postgres/pgvector plus typed relationships, compiled
 permission views, atomic generations, cited retrieval, revocation,
 non-disclosure, and restart/rebuild paths. Exact candidate
 `a4f34678ea9980379b18266d40d3347b818ac57e` passed the complete Phase 9 gate,
 including the real process restart, recovery, stale-generation, successor, and
-teardown proofs. No measured baseline gap justified adding Neo4j. Hosted review
-and merge remain pending; this is not a production database-operations claim.
+teardown proofs. No measured baseline gap justified adding Neo4j. Exact
+hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`;
+this is not a production database-operations claim.
 
 ## Consequences
 

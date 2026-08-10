@@ -431,9 +431,9 @@ for enterprise inputs and the
 [integrated identity and access gate](../docs/runbooks/integrated-identity-access-gate.md)
 for candidate and hosted closure.
 
-## Governed knowledge candidate and complete gate
+## Governed knowledge runtime and complete gate
 
-The active Phase 9 candidate compiles reviewed sources into deterministic Google
+The merged Phase 9 runtime compiles reviewed sources into deterministic Google
 OKF concepts and immutable terminology snapshots, stages atomic
 Postgres/pgvector generations, filters retrieval through server-derived
 principal/purpose/generation authority, and exposes the same bounded cited
@@ -472,8 +472,10 @@ It ran 109 portable tests across 22 modules, Ruff, nine mandatory Postgres tests
 across four modules with zero skips on locked PostgreSQL 17 / pgvector 0.8.6,
 and the real restart/recovery/stale-
 generation/successor path, then proved exact teardown and zero owned residue.
-Hosted review and merge remain open. These facts do not promote a production
-agent service, simultaneous model residency, or sustained mixed-route capacity.
+Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
+These facts do not promote a production agent service, simultaneous model
+residency, or sustained mixed-route capacity.
 
 ## Local checks
 
