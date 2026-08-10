@@ -189,7 +189,7 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                 )
                 self.assertEqual(len(restored_search.results), 1)
                 self.assertEqual(
-                    restored_search.results[0].concept_id, "project/voiceos"
+                    restored_search.results[0].concept_id, "projects/voiceos"
                 )
                 self.assertEqual(
                     restored_search.results[0].generation_sha256,
