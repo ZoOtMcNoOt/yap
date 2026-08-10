@@ -2,16 +2,18 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+import math
 
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from .okf_compiler import CompiledKnowledgeGeneration
+from .okf_profile import identity
 from .permission_policy import permission_record
 
 
 @dataclass(frozen=True, slots=True)
-class ActiveKnowledgeGeneration:
+class KnowledgeGenerationDescriptor:
     tenant_id: str
     generation_sha256: str
     source_revision: str
@@ -72,6 +74,44 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
             )"""
         )
         connection.execute(
+            """CREATE TABLE IF NOT EXISTS yap_knowledge_permission_audience (
+                tenant_id text NOT NULL,
+                generation_sha256 text NOT NULL,
+                path_prefix text NOT NULL,
+                subject_id text NOT NULL,
+                PRIMARY KEY
+                    (tenant_id, generation_sha256, path_prefix, subject_id),
+                FOREIGN KEY (tenant_id, generation_sha256, path_prefix)
+                    REFERENCES yap_knowledge_permissions
+                    (tenant_id, generation_sha256, path_prefix) ON DELETE CASCADE
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS yap_knowledge_permission_denials (
+                tenant_id text NOT NULL,
+                generation_sha256 text NOT NULL,
+                path_prefix text NOT NULL,
+                subject_id text NOT NULL,
+                PRIMARY KEY
+                    (tenant_id, generation_sha256, path_prefix, subject_id),
+                FOREIGN KEY (tenant_id, generation_sha256, path_prefix)
+                    REFERENCES yap_knowledge_permissions
+                    (tenant_id, generation_sha256, path_prefix) ON DELETE CASCADE
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS yap_knowledge_permission_purposes (
+                tenant_id text NOT NULL,
+                generation_sha256 text NOT NULL,
+                path_prefix text NOT NULL,
+                purpose text NOT NULL,
+                PRIMARY KEY (tenant_id, generation_sha256, path_prefix, purpose),
+                FOREIGN KEY (tenant_id, generation_sha256, path_prefix)
+                    REFERENCES yap_knowledge_permissions
+                    (tenant_id, generation_sha256, path_prefix) ON DELETE CASCADE
+            )"""
+        )
+        connection.execute(
             """CREATE TABLE IF NOT EXISTS yap_knowledge_relationships (
                 tenant_id text NOT NULL,
                 generation_sha256 text NOT NULL,
@@ -101,6 +141,8 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                 body text NOT NULL,
                 linked_concept_ids jsonb NOT NULL,
                 embedding vector(768),
+                embedding_model_id text,
+                embedding_model_revision text,
                 PRIMARY KEY (tenant_id, generation_sha256, chunk_id),
                 FOREIGN KEY (tenant_id, generation_sha256, concept_id)
                     REFERENCES yap_knowledge_concepts
@@ -118,10 +160,10 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
         )
 
 
-def publish_compiled_generation(
+def stage_compiled_generation(
     connection: Connection[object], generation: CompiledKnowledgeGeneration
-) -> ActiveKnowledgeGeneration:
-    """Stage and atomically activate one already-compiled immutable generation."""
+) -> KnowledgeGenerationDescriptor:
+    """Stage one immutable generation without making it queryable."""
 
     with connection.transaction():
         connection.execute(
@@ -158,6 +200,42 @@ def publish_compiled_generation(
                     Jsonb(permission_record(permission)),
                 ),
             )
+            for principal in permission.audience:
+                connection.execute(
+                    """INSERT INTO yap_knowledge_permission_audience
+                        (tenant_id, generation_sha256, path_prefix, subject_id)
+                        VALUES (%s, %s, %s, %s)""",
+                    (
+                        generation.tenant_id,
+                        generation.generation_sha256,
+                        permission.path_prefix,
+                        principal.subject_id,
+                    ),
+                )
+            for principal in permission.denials:
+                connection.execute(
+                    """INSERT INTO yap_knowledge_permission_denials
+                        (tenant_id, generation_sha256, path_prefix, subject_id)
+                        VALUES (%s, %s, %s, %s)""",
+                    (
+                        generation.tenant_id,
+                        generation.generation_sha256,
+                        permission.path_prefix,
+                        principal.subject_id,
+                    ),
+                )
+            for purpose in permission.purposes:
+                connection.execute(
+                    """INSERT INTO yap_knowledge_permission_purposes
+                        (tenant_id, generation_sha256, path_prefix, purpose)
+                        VALUES (%s, %s, %s, %s)""",
+                    (
+                        generation.tenant_id,
+                        generation.generation_sha256,
+                        permission.path_prefix,
+                        purpose,
+                    ),
+                )
         for concept in generation.concepts:
             connection.execute(
                 """INSERT INTO yap_knowledge_concepts (
@@ -245,6 +323,126 @@ def publish_compiled_generation(
             len(generation.permissions),
         ):
             raise RuntimeError("staged knowledge generation is incomplete")
+    return _descriptor(generation)
+
+
+def store_generation_embeddings(
+    connection: Connection[object],
+    *,
+    tenant_id: str,
+    generation_sha256: str,
+    embedding_model_id: str,
+    embedding_model_revision: str,
+    embeddings: Mapping[str, tuple[float, ...]],
+) -> None:
+    """Store one complete, model-bound vector projection on a staged generation."""
+
+    model_id = identity(embedding_model_id, "embedding_model_id")
+    model_revision = identity(embedding_model_revision, "embedding_model_revision")
+    expected = frozenset(
+        row[0]
+        for row in connection.execute(
+            """SELECT chunk_id FROM yap_knowledge_chunks
+               WHERE tenant_id = %s AND generation_sha256 = %s""",
+            (tenant_id, generation_sha256),
+        ).fetchall()
+    )
+    if frozenset(embeddings) != expected:
+        raise ValueError("embedding projection differs from staged chunks")
+    prepared = {
+        chunk_id: serialize_embedding_vector(vector)
+        for chunk_id, vector in embeddings.items()
+    }
+    with connection.transaction():
+        connection.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+            (tenant_id,),
+        )
+        active = connection.execute(
+            """SELECT 1 FROM yap_knowledge_active_builds
+               WHERE tenant_id = %s AND generation_sha256 = %s""",
+            (tenant_id, generation_sha256),
+        ).fetchone()
+        if active is not None:
+            raise ValueError("active knowledge generation is immutable")
+        for chunk_id, vector in prepared.items():
+            connection.execute(
+                """UPDATE yap_knowledge_chunks
+                   SET embedding = %s::vector,
+                       embedding_model_id = %s,
+                       embedding_model_revision = %s
+                   WHERE tenant_id = %s AND generation_sha256 = %s
+                     AND chunk_id = %s""",
+                (
+                    vector,
+                    model_id,
+                    model_revision,
+                    tenant_id,
+                    generation_sha256,
+                    chunk_id,
+                ),
+            )
+
+
+def activate_complete_generation(
+    connection: Connection[object],
+    *,
+    tenant_id: str,
+    generation_sha256: str,
+    embedding_model_id: str,
+    embedding_model_revision: str,
+) -> KnowledgeGenerationDescriptor:
+    """Atomically expose a complete relational and vector generation."""
+
+    model_id = identity(embedding_model_id, "embedding_model_id")
+    model_revision = identity(embedding_model_revision, "embedding_model_revision")
+    with connection.transaction():
+        connection.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (tenant_id,)
+        )
+        row = connection.execute(
+            """SELECT tenant_id, generation_sha256, source_revision,
+                      okf_version, concept_count, permission_count,
+                      chunk_count, relationship_count
+               FROM yap_knowledge_builds
+               WHERE tenant_id = %s AND generation_sha256 = %s""",
+            (tenant_id, generation_sha256),
+        ).fetchone()
+        if row is None:
+            raise LookupError("staged knowledge generation does not exist")
+        actual = connection.execute(
+            """SELECT
+                (SELECT count(*) FROM yap_knowledge_concepts
+                 WHERE tenant_id = %s AND generation_sha256 = %s),
+                (SELECT count(*) FROM yap_knowledge_permissions
+                 WHERE tenant_id = %s AND generation_sha256 = %s),
+                (SELECT count(*) FROM yap_knowledge_chunks
+                 WHERE tenant_id = %s AND generation_sha256 = %s),
+                (SELECT count(*) FROM yap_knowledge_relationships
+                 WHERE tenant_id = %s AND generation_sha256 = %s),
+                (SELECT count(*) FROM yap_knowledge_chunks
+                 WHERE tenant_id = %s AND generation_sha256 = %s
+                   AND embedding IS NOT NULL
+                   AND embedding_model_id = %s
+                   AND embedding_model_revision = %s)""",
+            (
+                tenant_id,
+                generation_sha256,
+                tenant_id,
+                generation_sha256,
+                tenant_id,
+                generation_sha256,
+                tenant_id,
+                generation_sha256,
+                tenant_id,
+                generation_sha256,
+                model_id,
+                model_revision,
+            ),
+        ).fetchone()
+        expected = (row[4], row[5], row[6], row[7], row[6])
+        if actual != expected:
+            raise ValueError("staged knowledge projections are incomplete")
         connection.execute(
             """INSERT INTO yap_knowledge_active_builds
                 (tenant_id, generation_sha256)
@@ -252,14 +450,14 @@ def publish_compiled_generation(
                 ON CONFLICT (tenant_id) DO UPDATE SET
                     generation_sha256 = EXCLUDED.generation_sha256,
                     activated_at = transaction_timestamp()""",
-            (generation.tenant_id, generation.generation_sha256),
+            (tenant_id, generation_sha256),
         )
-    return _descriptor(generation)
+    return KnowledgeGenerationDescriptor(*row[:6])
 
 
 def read_active_generation(
     connection: Connection[object], *, tenant_id: str
-) -> ActiveKnowledgeGeneration:
+) -> KnowledgeGenerationDescriptor:
     row = connection.execute(
         """SELECT b.tenant_id, b.generation_sha256, b.source_revision,
                   b.okf_version, b.concept_count, b.permission_count
@@ -272,11 +470,13 @@ def read_active_generation(
     ).fetchone()
     if row is None:
         raise LookupError("tenant has no active knowledge generation")
-    return ActiveKnowledgeGeneration(*row)
+    return KnowledgeGenerationDescriptor(*row)
 
 
-def _descriptor(generation: CompiledKnowledgeGeneration) -> ActiveKnowledgeGeneration:
-    return ActiveKnowledgeGeneration(
+def _descriptor(
+    generation: CompiledKnowledgeGeneration,
+) -> KnowledgeGenerationDescriptor:
+    return KnowledgeGenerationDescriptor(
         tenant_id=generation.tenant_id,
         generation_sha256=generation.generation_sha256,
         source_revision=generation.source_revision,
@@ -294,9 +494,26 @@ def _json_value(value: object) -> object:
     return value
 
 
+def serialize_embedding_vector(value: tuple[float, ...]) -> str:
+    if not isinstance(value, tuple) or len(value) != 768:
+        raise ValueError("knowledge embedding dimensions are invalid")
+    numbers: list[str] = []
+    for item in value:
+        if isinstance(item, bool) or not isinstance(item, (int, float)):
+            raise ValueError("knowledge embedding value is invalid")
+        number = float(item)
+        if not math.isfinite(number):
+            raise ValueError("knowledge embedding value is invalid")
+        numbers.append(format(number, ".9g"))
+    return "[" + ",".join(numbers) + "]"
+
+
 __all__ = [
-    "ActiveKnowledgeGeneration",
+    "KnowledgeGenerationDescriptor",
+    "activate_complete_generation",
     "install_knowledge_schema",
-    "publish_compiled_generation",
     "read_active_generation",
+    "serialize_embedding_vector",
+    "stage_compiled_generation",
+    "store_generation_embeddings",
 ]

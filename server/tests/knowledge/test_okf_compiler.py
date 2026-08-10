@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 from tempfile import TemporaryDirectory
 import unittest
 
@@ -251,6 +252,53 @@ denials: {{users: []}}
             authorities,
             {"asserted": True, "human_confirmed": True, "agent_proposed": False},
         )
+
+    def test_allows_dotted_permission_prefixes_but_rejects_linked_directories(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory, TemporaryDirectory() as external:
+            root = Path(directory)
+            (root / "index.md").write_text(
+                "---\nokf_version: '0.1'\n---\n# Knowledge\n", encoding="utf-8"
+            )
+            (root / "team.v1").mkdir()
+            (root / "team.v1" / "term.md").write_text(
+                """---
+type: Term
+title: Term
+resource: yap://tenant/tenant-a/term/one
+timestamp: 2026-08-09T12:00:00Z
+yap_schema: 1
+provenance: {source: reviewed-document, source_revision: revision-1}
+---
+# Term
+""",
+                encoding="utf-8",
+            )
+            (root / "permissions").mkdir()
+            (root / "permissions" / "term.yml").write_text(
+                """path_prefix: team.v1/
+audience: {users: [{tenant_id: tenant-a, subject_id: alice}]}
+purposes: [knowledge.read]
+classification: internal
+denials: {users: []}
+""",
+                encoding="utf-8",
+            )
+            generation = compile_okf_bundle(
+                root, tenant_id="tenant-a", source_revision="revision-1"
+            )
+            self.assertEqual(generation.concepts[0].concept_id, "team.v1/term")
+
+            linked = root / "permissions" / "linked"
+            try:
+                os.symlink(external, linked, target_is_directory=True)
+            except OSError:
+                self.skipTest("directory symlinks are unavailable on this host")
+            with self.assertRaisesRegex(ValueError, "linked directories"):
+                compile_okf_bundle(
+                    root, tenant_id="tenant-a", source_revision="revision-1"
+                )
 
 
 if __name__ == "__main__":

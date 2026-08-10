@@ -3,13 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import os
 from pathlib import Path, PurePosixPath
 import stat
 
 from yap_server.auth.principal import PrincipalKey
 from yap_server.private_artifact import read_bounded_regular_file
 
-from .okf_source import MAX_OKF_DOCUMENT_BYTES, load_unique_yaml
+from .okf_source import (
+    MAX_OKF_DOCUMENT_BYTES,
+    load_unique_yaml,
+    reject_linked_directories,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,7 +43,7 @@ def compile_permissions(root: Path, tenant_id: str) -> tuple[CompiledPermission,
 
     rules: list[CompiledPermission] = []
     prefixes: set[str] = set()
-    for path in sorted(permission_root.rglob("*.yml")):
+    for path in _permission_files(permission_root):
         body = read_bounded_regular_file(
             path,
             maximum_bytes=MAX_OKF_DOCUMENT_BYTES,
@@ -86,6 +91,21 @@ def compile_permissions(root: Path, tenant_id: str) -> tuple[CompiledPermission,
     return tuple(sorted(rules, key=lambda item: item.path_prefix))
 
 
+def _permission_files(permission_root: Path) -> tuple[Path, ...]:
+    paths: list[Path] = []
+    for directory, names, files in os.walk(
+        permission_root, topdown=True, followlinks=False
+    ):
+        current = Path(directory)
+        reject_linked_directories(current, names)
+        paths.extend(
+            current / name for name in files if name.casefold().endswith(".yml")
+        )
+        if len(paths) > 10_000:
+            raise ValueError("OKF permission set exceeds its file limit")
+    return tuple(sorted(paths))
+
+
 def effective_permission(
     path: Path, permissions: tuple[CompiledPermission, ...]
 ) -> CompiledPermission:
@@ -120,7 +140,7 @@ def _path_prefix(value: object) -> str:
     if not isinstance(value, str) or not value or value.startswith(("/", ".")):
         raise ValueError("OKF permission path_prefix is invalid")
     pure = PurePosixPath(value)
-    if ".." in pure.parts or "\\" in value or pure.suffix:
+    if ".." in pure.parts or "\\" in value:
         raise ValueError("OKF permission path_prefix is invalid")
     return pure.as_posix().rstrip("/") + "/"
 

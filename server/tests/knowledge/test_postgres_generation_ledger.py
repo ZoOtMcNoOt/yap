@@ -9,9 +9,11 @@ from uuid import uuid4
 import psycopg
 
 from yap_server.knowledge.generation_ledger import (
+    activate_complete_generation,
     install_knowledge_schema,
-    publish_compiled_generation,
     read_active_generation,
+    stage_compiled_generation,
+    store_generation_embeddings,
 )
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 
@@ -38,7 +40,8 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
 
             with psycopg.connect(POSTGRES_DSN) as connection:
                 install_knowledge_schema(connection)
-                publish_compiled_generation(connection, first)
+                stage_compiled_generation(connection, first)
+                _embed_and_activate(connection, first)
                 connection.execute(
                     f"""CREATE OR REPLACE FUNCTION yap_test_reject_generation()
                     RETURNS trigger LANGUAGE plpgsql AS $$
@@ -56,7 +59,7 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                 )
                 connection.commit()
                 with self.assertRaises(psycopg.Error):
-                    publish_compiled_generation(connection, second)
+                    stage_compiled_generation(connection, second)
                 active = read_active_generation(connection, tenant_id=tenant_id)
                 self.assertEqual(active.generation_sha256, first.generation_sha256)
                 connection.execute(
@@ -106,6 +109,24 @@ denials: {{users: []}}
         encoding="utf-8",
     )
     return root
+
+
+def _embed_and_activate(connection, generation) -> None:
+    store_generation_embeddings(
+        connection,
+        tenant_id=generation.tenant_id,
+        generation_sha256=generation.generation_sha256,
+        embedding_model_id="synthetic-test",
+        embedding_model_revision="revision-1",
+        embeddings={item.chunk_id: (0.0,) * 768 for item in generation.chunks},
+    )
+    activate_complete_generation(
+        connection,
+        tenant_id=generation.tenant_id,
+        generation_sha256=generation.generation_sha256,
+        embedding_model_id="synthetic-test",
+        embedding_model_revision="revision-1",
+    )
 
 
 if __name__ == "__main__":
