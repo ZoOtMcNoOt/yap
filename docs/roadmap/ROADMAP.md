@@ -83,9 +83,9 @@ independently validated outside Git. Final reviewed head
 hosted policy and final adversarial read-back, and
 [PR #67](https://github.com/mcnatg1/yap/pull/67) merged as
 `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
-Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
-SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
-and SGLang services, production multi-worker/mixed-load capacity promotion, production
+Authenticated owner derivation remains Phase 7. Phase 9 now has executable
+vLLM Qwen/Gemma agent workload routes under ADR 0029. Persistent supervision of vLLM and NeMo
+services, production multi-worker/mixed-load capacity promotion, production
 observability, and external deployment remain Phase 10.
 
 ## Delivered post-Phase-6 checkpoint
@@ -136,7 +136,31 @@ then recorded `unadvertised-baseline` because the required independent private
 holdout was unconfigured. No runtime/image gate was admissible, neither catalog
 changed, and no second server meeting pipeline is planned. PR #150 passed all
 hosted checks at exact head `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`
-and merged the closure as `599a0d0b`. Phase 8 is closed; Phase 9 is next.
+and merged the closure as `599a0d0b`. Phase 8 is closed. Phase 9 is an
+implemented candidate whose complete local gate passed; hosted exact-head
+review, PR, and merge remain open.
+
+## Active phase: governed knowledge and agents (Phase 9)
+
+The active branch now contains the pinned Google OKF compiler, immutable
+model-independent terminology snapshots, atomic Postgres/pgvector generations,
+permission-filtered cited retrieval, governed proposals/RAG/MCP, and explicit
+no-fallback workload routing. Exact private GB10 head
+`36350d449735a4daea6546e16759f28f6f15631a` qualified the locked Qwen rapid and
+Gemma complex routes on the checked vLLM evaluation runtime. That is
+route-specific evaluation evidence, not production service promotion.
+
+Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` passed the canonical
+Python/Ruff/Postgres/pgvector/restart/private-route matrix with outcome
+`governed-knowledge-gate-passed` and public-safe evidence SHA-256
+`4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
+The remaining phase boundary is deliberately small: obtain hosted-green
+exact-head review, merge the focused PR, then run the separate post-Phase-9
+architecture checkpoint. Postgres remains the only current knowledge
+projection; Redis, object storage, and Neo4j require a measured need and a
+later authorized gate. Persistent supervision, simultaneous model residency,
+sustained mixed-user capacity/SLOs, external serving, observability, enterprise
+networking, and deployment remain Phase 10 or IT handoffs.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 
@@ -175,8 +199,8 @@ native provider remain IT-authorized follow-ups rather than Phase 8 work.
 | --- | --- | --- |
 | 7 | Identity and access | Provider-neutral OIDC validation with Entra policy, a native token-provider seam whose production adapter requires separate approval, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants and authorization/revocation/audit records that are implemented but reachable only from tests, and authenticated bounded private live admission without a live ASR or external edge claim. |
 | 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron historical whole-meeting reproduction, one integrated source-time epoch route with bounded request-scoped speaker reconciliation for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/session/window pressure, and later purpose-authorized naming. A failed Tiron gate leaves the sole server meeting route unpromoted. |
-| 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and SGLang-backed compatible reasoning/tool-output models. |
-| 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus SGLang agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
+| 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and vLLM-backed compatible reasoning/tool-output models. |
+| 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus vLLM agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
 
 Accepted ADRs remain requirements even when no premature implementation exists.
 Do not treat an unchecked historical plan box as current backlog.

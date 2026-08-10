@@ -431,6 +431,50 @@ for enterprise inputs and the
 [integrated identity and access gate](../docs/runbooks/integrated-identity-access-gate.md)
 for candidate and hosted closure.
 
+## Governed knowledge candidate and complete gate
+
+The active Phase 9 candidate compiles reviewed sources into deterministic Google
+OKF concepts and immutable terminology snapshots, stages atomic
+Postgres/pgvector generations, filters retrieval through server-derived
+principal/purpose/generation authority, and exposes the same bounded cited
+answer/proposal tools to the governed agent and MCP adapters. Postgres/pgvector
+is the only current projection. Redis, object storage, Neo4j, production
+supervision, and enterprise deployment are not implicit dependencies.
+
+The complete gate must run once from a clean Linux/ARM64 candidate with the
+already-qualified private Qwen/Gemma tree available outside Git:
+
+```bash
+umask 077
+uv run --locked python -m yap_server.evaluation.governed_knowledge_gate \
+  --repository-root /absolute/path/to/clean/yap \
+  --checked-head <full-lowercase-git-sha> \
+  --agent-route-evidence-root /absolute/private/agent-model \
+  --receipt-path /absolute/private/governed-knowledge-gate.json
+```
+
+The command admits the exact hash-locked private model evidence without copying
+raw outputs or measurements, runs the locked Python 3.12 Phase 9 portable suite
+and server-wide Ruff, launches the immutable ARM64 Postgres/pgvector image on a fresh owned
+bridge, requires that container to attach only to that bridge with an exact
+loopback-only host port, requires every mandatory database test with zero skips,
+restarts the actual database process, verifies cited retrieval
+and stale-generation rejection after recovery, and proves container, listener,
+PID, network, and volume teardown. The destination receipt must be new and
+outside the repository. It contains only checked identities and public-safe
+counts/booleans; never commit the private evidence tree, DSN, password, model
+output, or database content.
+
+Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` consumed this gate and
+returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
+It ran 109 portable tests across 22 modules, Ruff, nine mandatory Postgres tests
+across four modules with zero skips on locked PostgreSQL 17 / pgvector 0.8.6,
+and the real restart/recovery/stale-
+generation/successor path, then proved exact teardown and zero owned residue.
+Hosted review and merge remain open. These facts do not promote a production
+agent service, simultaneous model residency, or sustained mixed-route capacity.
+
 ## Local checks
 
 ```powershell

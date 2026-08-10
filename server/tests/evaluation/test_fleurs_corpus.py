@@ -165,7 +165,7 @@ class FleursCorpusTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             cache = root / "cache"
-            cache.mkdir()
+            cache.mkdir(mode=0o700)
             mounted_module = (
                 root / "src" / "yap_server" / "evaluation" / "fleurs_corpus.py"
             )

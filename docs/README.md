@@ -64,6 +64,7 @@ availability.
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
 - [VoiceOS/Yap decision, evidence, and future-work queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 - [Integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
+- [Governed knowledge and agents](plans/active/2026-08-09-governed-knowledge-and-agents.md)
 
 ### Queued
 
@@ -103,6 +104,7 @@ instructions. Detailed historical task reports live under
 - [Integrated product checkpoint gate](runbooks/integrated-product-checkpoint-gate.md)
 - [Meeting-transcription maintainability checkpoint](runbooks/meeting-transcription-maintainability-checkpoint.md)
 - [Integrated identity and access gate](runbooks/integrated-identity-access-gate.md)
+- [Phase 9 governed-knowledge gate command and private-evidence boundary](../server/README.md#governed-knowledge-candidate-and-complete-gate)
 - [Historical Phase 6 preprocessing and language-routing gate](runbooks/integrated-preprocessing-language-routing-gate.md)
 - [Independent transcript-reference review](runbooks/independent-transcript-reference-review.md)
 - [Research index](research/README.md)

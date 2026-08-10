@@ -11,6 +11,11 @@ import tomllib
 import unittest
 
 
+_REQUIRED_RUNTIME_PACKAGES = frozenset(
+    {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
+)
+
+
 def configure_canonical_test_temp_root() -> None:
     """Keep test fixtures off hosted-runner junction aliases."""
 
@@ -40,13 +45,12 @@ def validate_runtime_identity() -> dict[str, object]:
     locked_versions = {
         package["name"]: package["version"]
         for package in lock["package"]
-        if package["name"] in {"numpy", "rapidfuzz", "regex"}
+        if package["name"] in _REQUIRED_RUNTIME_PACKAGES
     }
-    if set(locked_versions) != {"numpy", "rapidfuzz", "regex"}:
+    if set(locked_versions) != _REQUIRED_RUNTIME_PACKAGES:
         raise RuntimeError("uv.lock does not contain the portable suite dependencies.")
     installed_versions = {
-        name: importlib.metadata.version(name)
-        for name in sorted(locked_versions)
+        name: importlib.metadata.version(name) for name in sorted(locked_versions)
     }
     if installed_versions != dict(sorted(locked_versions.items())):
         raise RuntimeError("Installed evaluation dependencies do not match uv.lock.")

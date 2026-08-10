@@ -51,7 +51,8 @@ class MockOidcHarnessTests(unittest.TestCase):
         body: str,
     ) -> tuple[subprocess.CompletedProcess[str], list[str]]:
         powershell = shutil.which("pwsh")
-        self.assertIsNotNone(powershell, "PowerShell Core is required")
+        if powershell is None:
+            self.skipTest("PowerShell Core is unavailable")
         with tempfile.TemporaryDirectory(prefix="yap-fake-docker-") as temporary:
             root = Path(temporary)
             driver = root / "driver.ps1"
@@ -731,7 +732,8 @@ Write-Output 'FAKE_DOCKER_MALFORMED_TEARDOWN=PASS'
         if os.name != "nt" and not sys.platform.startswith("linux"):
             self.skipTest("Private receipt output supports Windows and Linux")
         powershell = shutil.which("pwsh")
-        self.assertIsNotNone(powershell, "PowerShell Core is required")
+        if powershell is None:
+            self.skipTest("PowerShell Core is unavailable")
         with tempfile.TemporaryDirectory(prefix="yap-private-output-") as temporary:
             root = Path(temporary)
             destination = root / "receipt.json"

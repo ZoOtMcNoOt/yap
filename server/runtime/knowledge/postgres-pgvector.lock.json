@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "image": "pgvector/pgvector:pg17",
+  "platform": "linux/arm64",
+  "manifestDigest": "sha256:f1152484f5b882c4a9b4d08e9160fb91625f89804ef3e84b42372535034cdca6",
+  "observedImageId": "sha256:46491f384905637f1009bf48d155c0b0a5a7cd0c554601927963cd9d377e979f",
+  "postgresVersion": "17.10-1.pgdg12+1",
+  "pgvectorVersion": "0.8.6",
+  "source": "https://github.com/pgvector/pgvector",
+  "license": "PostgreSQL"
+}

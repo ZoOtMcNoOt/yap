@@ -386,7 +386,7 @@ class ProviderRuntimeQualificationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             cache = root / "private-cache"
-            cache.mkdir()
+            cache.mkdir(mode=0o700)
             audio = cache / "fifteen-minute.wav"
             audio.write_bytes(b"private-placeholder")
             track = LoadedDurationTrack(

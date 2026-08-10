@@ -9,8 +9,9 @@
 **Amended by:** [ADR 0021](0021-http3-secure-edge-transport.md) (HTTP/3 is the gated future client-facing edge; the bounded application service remains private with TCP fallback)
 **Amended by:** [ADR 0023](0023-bounded-live-priority.md) (interactive live work remains preferred, but a ready batch job must run after a bounded live-dispatch streak)
 **Amended by:** [ADR 0024](0024-global-language-routing.md) (Phase 6 proves engine-neutral ASR routes with reference workers)
-**Amended by:** [ADR 0025](0025-provider-specific-asr-serving.md) (Cohere batch uses vLLM; Nemotron retains a Transformers reference and a separately gated NeMo streaming candidate; SGLang remains agent/LLM-only; Rust retains orchestration authority)
+**Amended by:** [ADR 0025](0025-provider-specific-asr-serving.md) (Cohere batch uses vLLM; Nemotron retains a Transformers reference and a separately gated NeMo streaming candidate; Rust retains orchestration authority; its former SGLang agent note is superseded by ADR 0029)
 **Amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 adds one server-only Tiron joint speaker-attributed meeting worker behind the same Rust-owned job/result authority)
+**Amended by:** [ADR 0029](0029-vllm-agent-reasoning-runtime.md) (vLLM replaces SGLang as the sole checked agent/LLM serving runtime)
 **Implementation status:** Client capture/local fallback, machine-readable HTTP/live contracts, the bounded loopback capability-health service, desktop connector state, and the durable SQLite imported-job ledger exist. Phase 4 supplied the bounded router and transient isolated Cohere worker. Phase 5 connected them to durable loopback create/upload/commit/status/result/cancel, reconnect/restart recovery, and verified native History publication; exact PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the one-time local/native/server/GB10 gate and merged. Phase 6 added pinned Transformers references, a bounded authenticated Cohere vLLM adapter/image/launcher, and a resident native NeMo worker/service/image/launcher. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the frozen 30-child Phase 6 matrix, including the composed 18-child provider lifecycle, the connected interruption/recovery/History path, and exact teardown after the focused three-agent remediation re-review. Runtime images were prepared before admission from digest-pinned bases and pinned dependencies; the admitted gate verified the exact prepared ARM64 image, checked-head revision, and base digest by inspection and could not build, pull, reconnect, or substitute an image. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. The earlier Triton experiment is retired. Phase 7 added fail-closed authenticated REST ownership and bounded private WebSocket admission with a native bearer/subprotocol handshake primitive. It does not add live ASR, discover or publish a client-facing live endpoint, or implement the external same-origin WSS/TLS edge. Neither replaceable provider is promoted; representative model-quality/replacement work remains Phase 8. Persistent production supervision, external application networking, representative long-recording promotion evidence, multi-worker capacity, and the TLS/QUIC edge remain unimplemented.
 
 ## Context
@@ -38,7 +39,7 @@ Yap supports two deployment profiles. Neither profile is deleted. The team profi
 | Target | Individual users with local live fallback | Org teams on a shared GB-class server node |
 | STT (live) | Local Nemotron INT8 (`sherpa-onnx`) | Server-hosted streaming ASR pool |
 | STT (batch) | Queue/block every imported recording when offline; no local file-ASR path | Server Cohere batch pool (concurrent GPU workers) |
-| LLM | Future local llama-server (`-ngl 0`); not shipped | Future SGLang agent/LLM pool (Scribe/polish/agents on GPU) |
+| LLM | Future local llama-server (`-ngl 0`); not shipped | vLLM agent/LLM pool (governed tools and RAG on GPU) |
 | Diarization | Optional local anonymous evidence; no durable voice profiles | Server-authoritative reconciliation and purpose-authorized identity (ADR 0020, canonical Phase 8) |
 | Knowledge base | Local OKF markdown (legacy phase map) | `yap-knowledge` Git repo + KB compiler (ADR 0017, canonical Phase 9) |
 | Auth | None / local | Entra ID / MSAL (ADR 0016, canonical Phase 7) |
@@ -73,7 +74,7 @@ flowchart TB
         subgraph Pools["Model Pools"]
             ASR["NeMo Nemotron candidate\nstreaming ASR · GPU"]
             Batch["vLLM Cohere plane\nbatch ASR · GPU"]
-            LLM["SGLang agent/LLM plane\nprefix cache · structured output · GPU"]
+            LLM["vLLM agent/LLM plane\nprefix cache · structured output · GPU"]
         end
 
         KB["Knowledge compiler\n(ADR 0017)"]
@@ -111,7 +112,7 @@ C4Container
         Container(router, "Orchestration plane", "Rust target", "Durable sessions, admission, queues, fairness, cancellation")
         Container(asr, "Streaming ASR", "NeMo candidate", "Live partial/final tokens after promotion")
         Container(batch, "Batch ASR", "vLLM + Cohere", "Large recording jobs")
-        Container(llm, "Agent/LLM inference", "SGLang", "Scribe, polish, agents, structured outputs")
+        Container(llm, "Agent/LLM inference", "vLLM", "Governed tools, RAG, structured outputs")
         Container(kbCompiler, "KB compiler", "Service", "Permission-filtered OKF view")
         ContainerDb(storage, "Compiled stores", "Postgres, Redis, vector DB, S3", "Identity, jobs, permissions, retrieval")
     }
@@ -146,7 +147,7 @@ C4Deployment
         Container(router, "Orchestration plane", "Rust target", "Durable sessions, admission, queues, fairness, cancellation")
         Container(asr, "Streaming ASR", "NeMo candidate", "Live partial/final tokens after promotion")
         Container(batch, "Batch ASR", "vLLM + Cohere", "Large recording jobs")
-        Container(llm, "Agent/LLM inference", "SGLang", "Scribe, polish, agents, structured outputs")
+        Container(llm, "Agent/LLM inference", "vLLM", "Governed tools, RAG, structured outputs")
         Container(kbCompiler, "KB compiler", "Service", "Permission-filtered OKF view")
         ContainerDb(postgres, "Postgres", "Database", "Identity, jobs, permissions")
         ContainerDb(redis, "Redis", "Cache", "Hot queues and permission cache")
@@ -187,7 +188,7 @@ C4Deployment
 |------|-------|------|-------|
 | **Streaming ASR** | Nemotron through a separately gated NeMo runtime | Live mic, real-time WSS | The resident cache-aware candidate now handles bounded finalized jobs behind an authenticated loopback adapter. It is not selected and does not implement client-facing live/WSS transport. NeMo owns model state after promotion; Rust retains session authority. |
 | **Batch ASR** | Cohere through vLLM | File / queue jobs | vLLM owns warm residency, continuous batching, and GPU scheduling. Rust retains admission, fairness, retries, cancellation intent, and durable jobs. |
-| **Agent/LLM** | SGLang-hosted agent models | Scribe polish, Student/Curator/Analyst/Coordinator | Prefix caching, continuous batching, quantization, and structured output are model-specific promotion gates; SGLang is not an ASR route. |
+| **Agent/LLM** | vLLM-hosted checked model | Governed tools, RAG, and proposals | Prefix caching, continuous batching, quantization, and structured output are model-specific promotion gates; vLLM agent serving is not an ASR route. |
 
 Exact-head Phase 4 evidence covers only the Cohere row's single-worker reference
 seam: executable candidate `309a2d427707e3483b2649f13940bd48dfaee836`
@@ -221,7 +222,9 @@ wrapper accepted but did not apply prompt vectors, so Yap validates the
 checkpoint catalog and projects the selected prompt after encoding and before
 RNNT decode. Focused c8/cancellation/recovery evidence exists, but the frozen
 representative gate and client-facing live transport do not. Nemotron is not
-sent through vLLM or SGLang. Phase 7 owns authenticated owner derivation.
+sent through an LLM-serving runtime and is not an agent candidate; ADR 0029
+governs the separate Qwen/Gemma vLLM agent routes. Phase 7 owns authenticated
+owner derivation.
 Persistent supervision, production mixed-user capacity, and enterprise
 observability remain Phase 10 promotion gates.
 
@@ -260,13 +263,13 @@ The accepted production target has four replaceable responsibilities:
    adapter is implemented, but it must pass a separate frozen model-native
    streaming/representative-workload gate before selection. The Transformers
    worker remains the comparison and rollback reference.
-3. **SGLang is the agent/LLM execution plane.** It serves compatible reasoning
+3. **ADR 0029 makes vLLM the agent/LLM execution plane.** It serves compatible reasoning
    and tool-output models once Phase 9 supplies real agent workloads. Prefix
    caching is useful for repeated system/context prefixes, not for ASR audio.
 4. **Rust is the authoritative orchestration plane.** It owns authenticated
    session/job identity, admission and fairness policy, flow control, retries,
    cancellation, durable stage transitions, and result validation. It reaches
-   vLLM, NeMo, and SGLang through bounded versioned network adapters rather than
+   the ASR vLLM/NeMo routes and the separate agent vLLM route through bounded versioned network adapters rather than
    sharing model-runtime memory or state.
 
 This split can remove Yap-specific container-spawn and inference-scheduler code

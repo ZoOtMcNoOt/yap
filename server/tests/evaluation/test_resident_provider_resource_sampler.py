@@ -174,6 +174,8 @@ class ResidentProviderResourceSamplerTests(unittest.TestCase):
                 output,
                 environ={"YAP_EVAL_CACHE": str(root)},
             )
+            if os.name == "posix":
+                self.assertEqual(output.stat().st_mode & 0o777, 0o600)
 
         self.assertGreaterEqual(len(lines), 8)
         self.assertEqual(len(loaded), len(lines))
@@ -187,9 +189,6 @@ class ResidentProviderResourceSamplerTests(unittest.TestCase):
             encoded_window["workloadEndMs"],
             window.workload_end_ms,
         )
-        if os.name == "posix":
-            self.assertEqual(output.stat().st_mode & 0o777, 0o600)
-
     def test_rejects_an_unowned_or_root_container(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

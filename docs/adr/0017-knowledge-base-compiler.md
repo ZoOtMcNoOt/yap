@@ -7,6 +7,13 @@
 **Identity-key rule:** Per [ADR 0016](0016-auth-identity-bridge.md), every user and group reference is tenant-scoped. Bare Entra object IDs are historical shorthand and are not valid cache, index, or authorization keys.
 **Consolidates / supersedes server-profile details in:** [ADR 0009](0009-knowledge-worker-protocol.md) (knowledge worker IPC → server KB compiler API), [ADR 0010](0010-okf-conversation-schema.md) (adds two-lane store context), [ADR 0011](0011-vector-rag-retrieval.md) (SQLite → server-side vector DB for team profile), [ADR 0012](0012-mcp-server-surface.md) (MCP now runs in yap-server)
 
+> **2026-08-10 execution amendment:** The smallest complete Phase 9 layer uses
+> Postgres/pgvector as its sole compiled projection inside the staged monorepo.
+> Redis, object storage, separate `yap-knowledge` hosting, webhooks, and their IaC
+> remain optional Phase 10/IT operations work and are not Phase 9 dependencies.
+> Neo4j activates only after a measured Postgres baseline gap. The diagrams below
+> retain those long-term homes without claiming they currently execute.
+
 ## Context
 
 The solo-profile knowledge base (ADR 0004, 0009–0012) stores everything as local OKF markdown and a SQLite index on the client machine. This is correct for one user; it breaks for a team:
@@ -28,9 +35,9 @@ The knowledge base for the team profile is primarily **text**: meeting transcrip
 > Frontmatter = metadata.
 > Permission files = mutable access source-of-truth.
 > Postgres = compiled ledger.
-> Redis = speed layer.
+> Redis = optional later speed layer, never authority.
 > Relationship/vector projections = disposable indexes; Postgres/pgvector is the baseline and Neo4j is a gated challenger.
-> S3 = raw blobs, backups, and snapshots.
+> S3/object storage = optional production raw/blob/backup handoff.
 > Agent artifacts = generated knowledge with provenance + inherited permissions.**
 
 This is **not** OneDrive-style file sync. It **compiles** authorised, versioned knowledge views from source, similar to how a build system compiles source code into an executable.
@@ -140,7 +147,7 @@ ADR 0022 requires Postgres typed relationship tables plus pgvector as the Phase 
 | `char_span` | `[start, end]` character offsets in source document |
 | `embedding` | 384-D or 768-D semantic vector |
 
-The vector DB is **disposable** — it is rebuilt from OKF sources at any time. It is **not** the permission source-of-truth: every search result must still pass through the Postgres/Redis compiled-permission check before being returned to the user. The `permission_hash` field enables efficient cache-key invalidation when permissions change.
+The vector projection is **disposable** — it is rebuilt from OKF sources at any time. It is **not** the permission source-of-truth: every search result must still pass through the compiled Postgres permission view before being returned to the user. A later cache must preserve that check. The `permission_hash` field enables efficient stale-generation rejection and any future cache invalidation.
 
 #### S3 / object storage
 
@@ -160,9 +167,9 @@ These invariants are **non-negotiable** for correctness and security:
 | Invariant | Rule |
 |-----------|------|
 | **Permission source-of-truth** | The permission/metadata file in `yap-knowledge` is the sole mutable source-of-truth. Every index is disposable. |
-| **Compile trigger** | Editing permissions = edit file → commit → webhook → deterministic compiler → Postgres + Redis + vector/OKF rebuild-or-invalidate. |
-| **No inline permission checks** | Viewing a knowledge tree never opens a markdown file to check access. It checks the compiled Postgres/Redis permission cache for allowed paths, then returns the allowed OKF view from the current source version. |
-| **Redis miss fallback** | A Redis miss falls back to Postgres, never to the raw permission file (which is not deployed to the app server). |
+| **Compile trigger** | A reviewed source revision enters the deterministic compiler, which stages and validates a complete Postgres/pgvector generation before atomic activation. A future repository webhook may trigger the same compiler but is not the authority. |
+| **No inline permission checks** | Viewing a knowledge tree never opens a markdown file to decide access. It checks the compiled Postgres permission view, then returns only the allowed current-generation OKF projection. |
+| **Optional-cache fallback** | If a later cache is introduced, a miss falls back to Postgres, never to raw policy input. Phase 9 ships no cache. |
 | **Agent artifact inheritance** | An artifact (summary, entity card, decision record, relationship graph) inherits the **strictest effective permissions** of all its sources: audience = INTERSECTION; denials = UNION; classification = MOST RESTRICTIVE. An artifact can never leak from its most-restricted source. |
 
 #### Agent artifact permissions
@@ -232,8 +239,13 @@ ADR 0009–0012's local OKF markdown + SQLite index is **retained as-is for the 
 
 ### Negative
 
-- **Compile latency** — a permission change is not instantaneous; it triggers a compile run. Compile time grows with corpus size. Mitigated by incremental compiles and the Redis hot cache for reads.
-- **Operational complexity** — Postgres + Redis + vector DB + S3 + Git repo + compiler service is a multi-component system. All are standard, widely-operated technologies; the IaC lives in `yap-server/infra/`.
+- **Compile latency** — a permission change is not instantaneous; it stages and
+  validates a complete generation before atomic activation. Phase 9 uses
+  deterministic full generations; incremental compilation or caching requires
+  later measured evidence.
+- **Operational complexity** — the Phase 9 candidate owns only the compiler and
+  Postgres/pgvector projection. A separate Git host, Redis, object storage, and
+  production IaC would add services and remain Phase 10/IT handoffs.
 - **Two ingestion lanes** — Lane 1 and Lane 2 have different write paths; the KB compiler must handle both without confusion.
 
 ### Neutral
@@ -241,29 +253,33 @@ ADR 0009–0012's local OKF markdown + SQLite index is **retained as-is for the 
 - ADR 0010's example frontmatter is historical. ADR 0022's pinned Google OKF base and Yap Enterprise OKF profile govern canonical Phase 9 concepts and compiler behavior.
 - The vector DB schema adds `permission_hash`, `access_tags`, `repo_commit`/`content_hash` fields to the ADR 0011 chunk schema; the retrieval flow and confidence gate are preserved.
 
-## Implementation notes
+## Executing Phase 9 ingestion paths
 
 ### Lane 1 ingestion path
 
 ```
 Client captures meeting audio → Pass 2 produces OKF conversation
-  → KB compiler receives OKF via yap-server API
-  → Normalise frontmatter
-  → Assign content hash + monotonic ID
-  → Append to Lane 1 store (Postgres `raw_captures` table)
-  → Compiler event: embed + index in vector DB; update Redis
+  → reviewed meeting result is bound to tenant/subject/source identity
+  → deterministic OKF compiler validates and normalises the bounded source
+  → append immutable reviewed-capture identity
+  → stage complete Postgres concepts, relationships, permissions, chunks,
+    and model/revision-bound embedding inputs
+  → validate and atomically activate the generation
   → (No Git commit for Lane 1 raw captures)
 ```
 
 ### Lane 2 ingestion path
 
 ```
-Human / agent edits curated document or permission file
-  → Commit to yap-knowledge repo (PR or direct depending on policy)
-  → GitHub/Gitea webhook fires on push to main
-  → KB compiler service pulls latest commit
-  → Validate → compile → Postgres + Redis + vector DB + OKF view
+Reviewed curated source tree
+  → deterministic OKF compiler validates paths, schema, provenance, and policy
+  → stage complete Postgres/pgvector generation
+  → validate and atomically activate the permission-safe OKF view
 ```
+
+A future separate `yap-knowledge` repository and webhook may invoke the same
+compiler after Phase 10/IT hosting decisions. They are not executing Phase 9
+dependencies.
 
 ### Permission file format (normative)
 
@@ -286,18 +302,28 @@ The compiler resolves permission-file names inside the configured tenant and exp
 
 ### Canonical Phase 9 deliverables
 
-- [ ] `yap-knowledge` repo scaffolding (ADR 0018)
-- [ ] KB compiler service in `yap-server`
-- [ ] Lane 1 append store (Postgres `raw_captures` + content hash)
-- [ ] Lane 2 webhook handler (push → compile trigger)
-- [ ] Postgres schema: metadata, permissions, lineage, audit
-- [ ] Redis hot cache: allowed-paths by user + build version
-- [ ] Postgres typed relationships + pgvector baseline; Neo4j benchmark challenger (ADR 0022)
-- [ ] S3 integration: raw blob storage + backup lifecycle
-- [ ] Permission inheritance for agent artifacts
-- [ ] Deterministic rebuild CLI (`yap-server rebuild-index`)
-- [ ] Permission-filtered OKF view API (replaces ADR 0012 local MCP for team profile)
-- [ ] IaC under `yap-server/infra/` (Postgres migrations, Redis config, vector index config, S3 lifecycle)
+- [x] Deterministic bounded OKF source/compiler modules in `yap-server`.
+- [x] Immutable reviewed-capture and reviewed-meeting Lane 1 ledgers with exact
+  content, source, owner, and revision identities.
+- [x] Deterministic curated-source compilation without requiring a webhook or
+  separate repository during the staged-monorepo phase.
+- [x] Postgres schemas for generations, metadata, permissions, lineage, audit,
+  chunks, typed relationships, terminology, proposals, captures, and pgvector.
+- [x] Atomic stage/validate/activate, rollback/history, retention, orphan
+  cleanup, deterministic rebuild, reconnect recovery, and stale-generation
+  rejection.
+- [x] Permission inheritance for generated proposals and governed cited
+  retrieval/MCP interfaces.
+- [x] Retain Postgres/pgvector as the sole Phase 9 projection. Do not add Redis
+  or Neo4j without measured need and a separate gate.
+- [ ] Production `yap-knowledge` repository extraction, webhook/trigger
+  integration, object storage, backup/restore policy, monitoring, encryption,
+  and IaC remain Phase 10/IT handoffs.
+- [x] Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e`
+  passed the one complete Phase 9 gate: it restarted the real owned Postgres
+  process, recovered cited retrieval, rejected the stale generation after
+  successor activation, retrieved the successor, and proved exact teardown.
+  Hosted review and merge remain open.
 
 ## Open questions
 
@@ -322,4 +348,8 @@ The compiler resolves permission-file names inside the configured tenant and exp
 
 ### Single-permission check at read time (open files, check ACL)
 
-**Rejected.** Opening every markdown file to check an in-file ACL on every knowledge-tree view is slow, inconsistent (what if the file is corrupted?), and leaves no audit trail. Compiled permissions in Postgres + Redis are faster, auditable, and deterministic.
+**Rejected.** Opening every markdown file to check an in-file ACL on every
+knowledge-tree view is slow, inconsistent (what if the file is corrupted?), and
+leaves no audit trail. The executing compiled Postgres permission view is
+auditable and deterministic; a future cache may accelerate it but cannot replace
+its authority.

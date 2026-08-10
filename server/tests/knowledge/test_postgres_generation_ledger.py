@@ -1,0 +1,300 @@
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
+from uuid import uuid4
+
+import psycopg
+
+from yap_server.auth.principal import PrincipalKey
+from yap_server.knowledge.generation_ledger import (
+    activate_complete_generation,
+    install_knowledge_schema,
+    prune_inactive_generations,
+    read_active_generation,
+    rollback_to_generation,
+    stage_compiled_generation,
+    store_generation_embeddings,
+)
+from yap_server.knowledge.okf_compiler import compile_okf_bundle
+from yap_server.knowledge.postgres_knowledge_retrieval import (
+    search_postgres_knowledge_lexical,
+)
+
+
+POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
+
+
+@unittest.skipUnless(POSTGRES_DSN, "YAP_TEST_POSTGRES_DSN is not configured")
+class PostgresGenerationLedgerTests(unittest.TestCase):
+    def test_failed_staging_transaction_leaves_previous_generation_active(self) -> None:
+        tenant_id = f"test-{uuid4()}"
+        with TemporaryDirectory() as directory:
+            root = _bundle(Path(directory), tenant_id)
+            first = compile_okf_bundle(
+                root,
+                tenant_id=tenant_id,
+                source_revision="revision-1",
+            )
+            second = compile_okf_bundle(
+                root,
+                tenant_id=tenant_id,
+                source_revision="revision-2",
+            )
+
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                install_knowledge_schema(connection)
+                stage_compiled_generation(connection, first)
+                _embed_and_activate(connection, first)
+                connection.execute(
+                    f"""CREATE OR REPLACE FUNCTION yap_test_reject_generation()
+                    RETURNS trigger LANGUAGE plpgsql AS $$
+                    BEGIN
+                      IF NEW.generation_sha256 = '{second.generation_sha256}' THEN
+                        RAISE EXCEPTION 'injected staging failure';
+                      END IF;
+                      RETURN NEW;
+                    END $$"""
+                )
+                connection.execute(
+                    """CREATE TRIGGER yap_test_reject_generation
+                    BEFORE INSERT ON yap_knowledge_concepts
+                    FOR EACH ROW EXECUTE FUNCTION yap_test_reject_generation()"""
+                )
+                connection.commit()
+                with self.assertRaises(psycopg.Error):
+                    stage_compiled_generation(connection, second)
+                active = read_active_generation(connection, tenant_id=tenant_id)
+                self.assertEqual(active.generation_sha256, first.generation_sha256)
+                connection.execute(
+                    "DROP TRIGGER yap_test_reject_generation ON yap_knowledge_concepts"
+                )
+                connection.execute("DROP FUNCTION yap_test_reject_generation()")
+                connection.execute(
+                    "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.commit()
+
+    def test_rollback_and_retention_preserve_active_generation(self) -> None:
+        tenant_id = f"test-{uuid4()}"
+        with TemporaryDirectory() as directory:
+            root = _bundle(Path(directory), tenant_id)
+            generations = tuple(
+                compile_okf_bundle(
+                    root,
+                    tenant_id=tenant_id,
+                    source_revision=f"revision-{index}",
+                )
+                for index in range(1, 4)
+            )
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                install_knowledge_schema(connection)
+                for generation in generations:
+                    stage_compiled_generation(connection, generation)
+                    _embed_and_activate(connection, generation)
+
+                restored = rollback_to_generation(
+                    connection,
+                    tenant_id=tenant_id,
+                    generation_sha256=generations[0].generation_sha256,
+                )
+                self.assertEqual(
+                    restored.generation_sha256, generations[0].generation_sha256
+                )
+                connection.execute(
+                    """INSERT INTO yap_knowledge_generation_holds
+                       (tenant_id, generation_sha256, hold_type, hold_id)
+                       VALUES (%s, %s, 'test', 'retained-provenance')""",
+                    (tenant_id, generations[1].generation_sha256),
+                )
+                removed = prune_inactive_generations(
+                    connection, tenant_id=tenant_id, retain=0
+                )
+                self.assertEqual(len(removed), 1)
+                self.assertNotIn(generations[0].generation_sha256, removed)
+                self.assertNotIn(generations[1].generation_sha256, removed)
+                active = read_active_generation(connection, tenant_id=tenant_id)
+                self.assertEqual(
+                    active.generation_sha256, generations[0].generation_sha256
+                )
+                history = connection.execute(
+                    """SELECT reason FROM yap_knowledge_activation_history
+                       WHERE tenant_id = %s ORDER BY activation_id""",
+                    (tenant_id,),
+                ).fetchall()
+                self.assertEqual(
+                    tuple(row[0] for row in history),
+                    ("publish", "publish", "publish", "rollback"),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_activation_history WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_generation_holds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.commit()
+
+    def test_active_generation_survives_reconnect_and_successor_stays_current(
+        self,
+    ) -> None:
+        tenant_id = f"test-{uuid4()}"
+        with TemporaryDirectory() as directory:
+            root = _bundle(Path(directory), tenant_id)
+            first = compile_okf_bundle(
+                root,
+                tenant_id=tenant_id,
+                source_revision="revision-before-reconnect",
+            )
+            second = compile_okf_bundle(
+                root,
+                tenant_id=tenant_id,
+                source_revision="revision-after-reconnect",
+            )
+
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                install_knowledge_schema(connection)
+                stage_compiled_generation(connection, first)
+                _embed_and_activate(connection, first)
+
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                restored = read_active_generation(connection, tenant_id=tenant_id)
+                self.assertEqual(restored.generation_sha256, first.generation_sha256)
+                restored_search = search_postgres_knowledge_lexical(
+                    connection,
+                    principal=PrincipalKey(tenant_id, "alice"),
+                    purpose="knowledge.read",
+                    agent_capabilities=frozenset({"knowledge.search.lexical"}),
+                    search_text="generation promotion atomic",
+                    expected_generation_sha256=first.generation_sha256,
+                )
+                self.assertEqual(
+                    restored_search.generation_sha256, first.generation_sha256
+                )
+                self.assertEqual(len(restored_search.results), 1)
+                self.assertEqual(
+                    restored_search.results[0].concept_id, "projects/voiceos"
+                )
+                self.assertEqual(
+                    restored_search.results[0].generation_sha256,
+                    first.generation_sha256,
+                )
+                stage_compiled_generation(connection, second)
+                _embed_and_activate(connection, second)
+
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                current = read_active_generation(connection, tenant_id=tenant_id)
+                self.assertEqual(current.generation_sha256, second.generation_sha256)
+                with self.assertRaisesRegex(ValueError, "stale"):
+                    search_postgres_knowledge_lexical(
+                        connection,
+                        principal=PrincipalKey(tenant_id, "alice"),
+                        purpose="knowledge.read",
+                        agent_capabilities=frozenset({"knowledge.search.lexical"}),
+                        search_text="generation promotion atomic",
+                        expected_generation_sha256=first.generation_sha256,
+                    )
+                current_search = search_postgres_knowledge_lexical(
+                    connection,
+                    principal=PrincipalKey(tenant_id, "alice"),
+                    purpose="knowledge.read",
+                    agent_capabilities=frozenset({"knowledge.search.lexical"}),
+                    search_text="generation promotion atomic",
+                    expected_generation_sha256=second.generation_sha256,
+                )
+                self.assertEqual(
+                    current_search.generation_sha256, second.generation_sha256
+                )
+                self.assertEqual(len(current_search.results), 1)
+                history = connection.execute(
+                    """SELECT generation_sha256 FROM yap_knowledge_activation_history
+                       WHERE tenant_id = %s ORDER BY activation_id""",
+                    (tenant_id,),
+                ).fetchall()
+                self.assertEqual(
+                    [row[0] for row in history],
+                    [first.generation_sha256, second.generation_sha256],
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_activation_history WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.commit()
+
+
+def _bundle(root: Path, tenant_id: str) -> Path:
+    (root / "index.md").write_text(
+        "---\nokf_version: '0.1'\n---\n# Knowledge\n",
+        encoding="utf-8",
+    )
+    (root / "projects").mkdir()
+    (root / "projects" / "voiceos.md").write_text(
+        f"""---
+type: Project
+title: VoiceOS
+resource: yap://tenant/{tenant_id}/project/voiceos
+timestamp: 2026-08-09T12:00:00Z
+yap_schema: 1
+provenance: {{source: synthetic, source_revision: source-1}}
+---
+# VoiceOS
+
+Generation promotion is atomic.
+""",
+        encoding="utf-8",
+    )
+    (root / "permissions").mkdir()
+    (root / "permissions" / "projects.yml").write_text(
+        f"""path_prefix: projects/
+audience: {{users: [{{tenant_id: {tenant_id}, subject_id: alice}}]}}
+purposes: [knowledge.read]
+classification: internal
+denials: {{users: []}}
+""",
+        encoding="utf-8",
+    )
+    return root
+
+
+def _embed_and_activate(connection, generation) -> None:
+    store_generation_embeddings(
+        connection,
+        tenant_id=generation.tenant_id,
+        generation_sha256=generation.generation_sha256,
+        embedding_model_id="synthetic-test",
+        embedding_model_revision="revision-1",
+        embeddings={item.chunk_id: (0.0,) * 768 for item in generation.chunks},
+    )
+    activate_complete_generation(
+        connection,
+        tenant_id=generation.tenant_id,
+        generation_sha256=generation.generation_sha256,
+    )
+
+
+if __name__ == "__main__":
+    unittest.main()
