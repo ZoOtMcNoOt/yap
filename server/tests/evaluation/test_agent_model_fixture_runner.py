@@ -285,6 +285,20 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         self.assertGreaterEqual(score.invalid_structured_output_count, 1)
         self.assertFalse(score.passed)
 
+    def test_identifies_the_case_for_a_runtime_request_failure(self) -> None:
+        def request(_payload: dict[str, object]) -> dict[str, object]:
+            raise RuntimeError("private endpoint detail")
+
+        with self.assertRaisesRegex(
+            RuntimeError, "agent workload case lexical-cited-answer failed"
+        ):
+            run_agent_model_fixtures(
+                REPOSITORY_ROOT,
+                model="synthetic",
+                workload_class="rapid-automation",
+                request_json=request,
+            )
+
 
 def _tool_response(
     name: str, arguments: dict[str, object] | None = None

@@ -98,6 +98,12 @@ def _run_case_safely(
             system_prompt=system_prompt,
             request_json=request_json,
         )
+    except RuntimeError as error:
+        if not isinstance(case, dict) or not isinstance(case.get("caseId"), str):
+            raise
+        raise RuntimeError(
+            f"agent workload case {case['caseId']} failed"
+        ) from error
     except ValueError:
         if not isinstance(case, dict) or not isinstance(case.get("caseId"), str):
             raise
