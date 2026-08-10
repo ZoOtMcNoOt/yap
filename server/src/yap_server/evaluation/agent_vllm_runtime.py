@@ -65,7 +65,7 @@ class OwnedAgentVllmRuntime:
     def start(self, *, timeout_seconds: int) -> StartedAgentVllmRuntime:
         if self._started is not None:
             raise RuntimeError("agent runtime is already started")
-        if not 1 <= timeout_seconds <= 300:
+        if not 1 <= timeout_seconds <= 900:
             raise ValueError("agent runtime startup timeout is invalid")
         self._assert_container_absent()
         _assert_listener_absent(_PORT)
