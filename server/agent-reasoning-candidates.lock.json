@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "runtime": {
+    "image": "nvcr.io/nvidia/sglang:26.06-py3",
+    "manifestDigest": "sha256:f1e23b1c96d7e04d061c76b179f81aa32fcef367590a90f6079a0bf899dc4300",
+    "platformDigest": "sha256:8689bc346a5f92309c3887f3431f6d29747be10a6d5dbb871f4d4ae431d3309b",
+    "platform": "linux/arm64",
+    "python": "3.12",
+    "sglang": "0.5.12.post1"
+  },
+  "candidates": [
+    {
+      "candidateId": "qwen3-30b-a3b-instruct-2507-fp8",
+      "model": "Qwen/Qwen3-30B-A3B-Instruct-2507-FP8",
+      "revision": "5a5a776300a41aaa681dd7ff0106608ef2bc90db",
+      "quantization": "fp8",
+      "toolCallParser": "qwen25",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507-FP8"
+    },
+    {
+      "candidateId": "nemotron-3-nano-30b-a3b-nvfp4",
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4",
+      "revision": "ce1b118ae66ec705d02c241525192832eb045fd3",
+      "quantization": "modelopt_fp4",
+      "toolCallParser": "qwen3_coder",
+      "reasoningParser": "nano_v3",
+      "license": "NVIDIA-Nemotron-Open-Model-License",
+      "source": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4"
+    }
+  ]
+}
