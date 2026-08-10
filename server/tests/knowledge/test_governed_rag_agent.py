@@ -5,7 +5,10 @@ import threading
 import unittest
 
 from yap_server.auth.principal import PrincipalKey
-from yap_server.knowledge.governed_rag_agent import GovernedRagAgent
+from yap_server.knowledge.governed_rag_agent import (
+    GovernedRagAgent,
+    ReasoningRetryableError,
+)
 from yap_server.knowledge.knowledge_proposals import KnowledgeProposal
 from yap_server.knowledge.knowledge_tool_contract import (
     KnowledgeToolCitation,
@@ -132,6 +135,37 @@ class GovernedRagAgentTests(unittest.TestCase):
                 terminology_exact_forms=("TAVI",),
                 cancellation=threading.Event(),
             )
+
+    def test_bounds_unavailable_reasoning_server_retries(self) -> None:
+        attempts = 0
+        proposals = _Proposals()
+
+        def unavailable(prompt: str, cancellation: threading.Event) -> str:
+            nonlocal attempts
+            attempts += 1
+            raise ReasoningRetryableError("server unavailable")
+
+        agent = GovernedRagAgent(
+            tools=_Tools((_item(),)),  # type: ignore[arg-type]
+            proposals=proposals,  # type: ignore[arg-type]
+            reason=unavailable,
+            maximum_prompt_characters=10_000,
+            maximum_output_characters=2_000,
+        )
+
+        with self.assertRaisesRegex(ValueError, "admissible"):
+            agent.answer(
+                object(),  # type: ignore[arg-type]
+                principal=PrincipalKey("tenant-1", "person-1"),
+                agent_id="librarian",
+                purpose="knowledge.read",
+                question="TAVI publication",
+                terminology_exact_forms=("TAVI",),
+                cancellation=threading.Event(),
+            )
+
+        self.assertEqual(attempts, 2)
+        self.assertEqual(proposals.calls, [])
 
 
 def _item() -> KnowledgeToolItem:
