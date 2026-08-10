@@ -22,10 +22,11 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 
 ## Focused checkpoint verification
 
-Remediation through commit `7c4fd57237ef41c9b0852bbae40adccf593ee114`
-and its current documentation/evidence descendant have the following focused,
-non-promotional verification. Commands are shown from their working directory;
-the Windows runs used the locked project environment and Python 3.12.
+Executable remediation commit
+`9bdf3399802ce4d2e557cb4559294847f20fe8df` and its current
+documentation-only descendant have the following focused, non-promotional
+verification. Commands are shown from their working directory; the Windows
+runs used the locked project environment and Python 3.12.
 
 - From `server`,
   `uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py`
@@ -51,7 +52,7 @@ the Windows runs used the locked project environment and Python 3.12.
   from 250 through 349. A read-back comparison of the 350-line output against
   `THRESHOLD-DISPOSITION.md` found all 250 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
-  `7c4fd57237ef41c9b0852bbae40adccf593ee114`, the gate-owned locked PostgreSQL
+  `9bdf3399802ce4d2e557cb4559294847f20fe8df`, the gate-owned locked PostgreSQL
   17 / pgvector 0.8.6 runtime invoked, from `server` with `PYTHONPATH=src`,
   `uv run --locked python ../verification/run-governed-knowledge-postgres-suite.py`.
   All 17 mandatory tests across four modules passed with zero skips, expected
@@ -59,10 +60,12 @@ the Windows runs used the locked project environment and Python 3.12.
   pinning, reviewed/curated source authority, durable-row rehashing,
   stage/activation tamper rejection, permission-safe retrieval,
   proposals/retention, and terminology ownership.
-- A separate focused owned-runtime diagnostic performed a real database process
-  restart, recovered cited retrieval, rejected the stale generation, retrieved
-  the successor, and proved complete teardown. It did not publish or consume
-  the complete checkpoint gate.
+- At the same exact head, a focused owned-runtime diagnostic performed a real
+  database process restart, retained the same container identity, observed a
+  new process and re-read loopback binding, recovered cited retrieval, rejected
+  the stale generation, retrieved the successor, and proved container,
+  listener, process, same-label owner, network, and volume teardown. It did not
+  publish or consume the complete checkpoint gate.
 
 These checks validate the repair seams while preserving the one-spend rule for
 fresh private model qualification and the final aggregate matrix.
