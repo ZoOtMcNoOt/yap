@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -9,7 +10,7 @@ from uuid import uuid4
 
 import psycopg
 
-from yap_server.auth.principal import PrincipalKey
+from yap_server.auth.principal import AuthenticatedPrincipal, PrincipalKey
 from yap_server.jobs.ownership import PrincipalRecordingJobs
 from yap_server.knowledge.agent_reasoning_routes import (
     AgentReasoningRoutes,
@@ -44,8 +45,17 @@ from yap_server.knowledge.knowledge_proposals import (
 )
 from yap_server.knowledge.knowledge_source_admission import (
     admit_reviewed_capture_generation,
+    require_knowledge_source_admission,
 )
-from yap_server.knowledge.okf_compiler import compile_okf_bundle
+from yap_server.knowledge.okf_compiler import (
+    compiled_generation_sha256,
+    compile_okf_bundle,
+)
+from yap_server.knowledge.okf_projection import (
+    compile_chunks,
+    compile_relationships,
+)
+from yap_server.knowledge.permission_policy import effective_permission
 from yap_server.knowledge.postgres_knowledge_retrieval import (
     search_postgres_knowledge_lexical,
 )
@@ -67,6 +77,182 @@ POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
 
 @unittest.skipUnless(POSTGRES_DSN, "YAP_TEST_POSTGRES_DSN is not configured")
 class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
+    def test_reviewed_admission_derives_exact_source_and_owner_policy(self) -> None:
+        suffix = uuid4().hex
+        tenant_id = f"tenant-{suffix}"
+        owner = PrincipalKey(tenant_id, f"alice-{suffix}")
+        bob = PrincipalKey(tenant_id, f"bob-{suffix}")
+        job_id = f"job-{suffix}"
+        job = {
+            "sessionId": f"session-{suffix}",
+            "captureManifest": {"sha256": "a" * 64},
+        }
+        result = _published_result(job)
+        review = KnowledgeSourceReview(
+            reviewer=owner,
+            job_id=job_id,
+            title="Architecture review",
+            reviewed_at_utc="2026-08-09T13:00:00Z",
+            result_revision_sha256=result_revision_sha256(result),
+            decision="accepted",
+        )
+        with psycopg.connect(POSTGRES_DSN) as connection:
+            install_reviewed_capture_schema(connection)
+            capture = append_reviewed_meeting_capture(
+                connection,
+                PrincipalRecordingJobs(_ResultService(job, result), owner),
+                review=review,
+            )
+            install_knowledge_schema(connection)
+            with TemporaryDirectory() as directory:
+                root = Path(directory)
+                _bundle(root, capture.normalized_okf, tenant_id, owner.subject_id, job_id)
+                generation = compile_okf_bundle(
+                    root,
+                    tenant_id=tenant_id,
+                    source_revision=capture.capture_sha256,
+                )
+            with TemporaryDirectory() as directory:
+                root = Path(directory)
+                _bundle(root, capture.normalized_okf, tenant_id, bob.subject_id, job_id)
+                cross_owner = compile_okf_bundle(
+                    root,
+                    tenant_id=tenant_id,
+                    source_revision=capture.capture_sha256,
+                )
+            with TemporaryDirectory() as directory:
+                wrong_path = _compile_capture_at_wrong_path(
+                    Path(directory),
+                    capture.normalized_okf,
+                    tenant_id,
+                    owner,
+                    capture.capture_sha256,
+                )
+
+            body_mutation = _rehashed_reviewed_mutation(
+                generation,
+                replace(
+                    generation.concepts[0],
+                    body=generation.concepts[0].body + "\nInjected content.\n",
+                ),
+            )
+            frontmatter_mutation = _rehashed_reviewed_mutation(
+                generation,
+                replace(
+                    generation.concepts[0],
+                    frontmatter={
+                        **generation.concepts[0].frontmatter,
+                        "resource": f"yap://tenant/{tenant_id}/meeting/other",
+                    },
+                ),
+            )
+            for invalid in (
+                cross_owner,
+                wrong_path,
+                body_mutation,
+                frontmatter_mutation,
+            ):
+                with self.subTest(generation=invalid.generation_sha256):
+                    with self.assertRaises((PermissionError, ValueError)):
+                        admit_reviewed_capture_generation(
+                            connection,
+                            principal=_authenticated(owner),
+                            capture_sha256=capture.capture_sha256,
+                            generation=invalid,
+                        )
+            self.assertEqual(
+                connection.execute(
+                    """SELECT count(*) FROM yap_knowledge_source_admissions
+                       WHERE tenant_id = %s""",
+                    (tenant_id,),
+                ).fetchone()[0],
+                0,
+            )
+            admission = admit_reviewed_capture_generation(
+                connection,
+                principal=_authenticated(owner),
+                capture_sha256=capture.capture_sha256,
+                generation=generation,
+            )
+            connection.execute(
+                """UPDATE yap_knowledge_source_admissions SET source_path = %s
+                   WHERE tenant_id = %s AND admission_sha256 = %s""",
+                ("forged/path.md", tenant_id, admission.admission_sha256),
+            )
+            with self.assertRaisesRegex(ValueError, "differs from its identity"):
+                require_knowledge_source_admission(
+                    connection,
+                    tenant_id=tenant_id,
+                    admission_sha256=admission.admission_sha256,
+                    generation_sha256=generation.generation_sha256,
+                    source_revision=generation.source_revision,
+                )
+            connection.execute(
+                "DELETE FROM yap_knowledge_source_admissions WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.execute(
+                "DELETE FROM yap_knowledge_reviewed_captures WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.commit()
+
+    def test_reviewed_capture_read_rehashes_durable_content(self) -> None:
+        for field in ("normalized_okf", "result_payload"):
+            with self.subTest(field=field):
+                suffix = uuid4().hex
+                tenant_id = f"tenant-{suffix}"
+                owner = PrincipalKey(tenant_id, f"alice-{suffix}")
+                job_id = f"job-{suffix}"
+                job = {
+                    "sessionId": f"session-{suffix}",
+                    "captureManifest": {"sha256": "a" * 64},
+                }
+                result = _published_result(job)
+                review = KnowledgeSourceReview(
+                    reviewer=owner,
+                    job_id=job_id,
+                    title="Architecture review",
+                    reviewed_at_utc="2026-08-09T13:00:00Z",
+                    result_revision_sha256=result_revision_sha256(result),
+                    decision="accepted",
+                )
+                with psycopg.connect(POSTGRES_DSN) as connection:
+                    install_reviewed_capture_schema(connection)
+                    capture = append_reviewed_meeting_capture(
+                        connection,
+                        PrincipalRecordingJobs(_ResultService(job, result), owner),
+                        review=review,
+                    )
+                    if field == "normalized_okf":
+                        connection.execute(
+                            """UPDATE yap_knowledge_reviewed_captures
+                               SET normalized_okf = normalized_okf || %s
+                               WHERE tenant_id = %s AND capture_sha256 = %s""",
+                            ("\nforged", tenant_id, capture.capture_sha256),
+                        )
+                    else:
+                        connection.execute(
+                            """UPDATE yap_knowledge_reviewed_captures
+                               SET result_payload = result_payload || %s::jsonb
+                               WHERE tenant_id = %s AND capture_sha256 = %s""",
+                            ('{"forged":true}', tenant_id, capture.capture_sha256),
+                        )
+                    connection.commit()
+                with psycopg.connect(POSTGRES_DSN) as restarted:
+                    with self.assertRaisesRegex(ValueError, "content identity"):
+                        read_reviewed_capture(
+                            restarted,
+                            principal=owner,
+                            capture_sha256=capture.capture_sha256,
+                        )
+                    restarted.execute(
+                        """DELETE FROM yap_knowledge_reviewed_captures
+                           WHERE tenant_id = %s""",
+                        (tenant_id,),
+                    )
+                    restarted.commit()
+
     def test_authoritative_result_reaches_permission_safe_cited_search(self) -> None:
         suffix = uuid4().hex
         tenant_id = f"tenant-{suffix}"
@@ -106,13 +292,15 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
             with self.assertRaisesRegex(LookupError, "does not exist"):
                 admit_reviewed_capture_generation(
                     connection,
-                    principal=PrincipalKey(tenant_id, f"bob-{suffix}"),
+                    principal=_authenticated(
+                        PrincipalKey(tenant_id, f"bob-{suffix}")
+                    ),
                     capture_sha256=capture.capture_sha256,
                     generation=generation,
                 )
             source_admission = admit_reviewed_capture_generation(
                 connection,
-                principal=owner,
+                principal=_authenticated(owner),
                 capture_sha256=capture.capture_sha256,
                 generation=generation,
             )
@@ -510,6 +698,69 @@ classification: confidential
 denials: {{users: []}}
 """,
         encoding="utf-8",
+    )
+
+
+def _compile_capture_at_wrong_path(
+    root: Path,
+    concept: str,
+    tenant_id: str,
+    owner: PrincipalKey,
+    source_revision: str,
+):
+    (root / "index.md").write_text(
+        "---\nokf_version: '0.1'\n---\n# Knowledge\n", encoding="utf-8"
+    )
+    (root / "projects").mkdir()
+    (root / "projects" / "meeting.md").write_text(concept, encoding="utf-8")
+    (root / "permissions").mkdir()
+    (root / "permissions" / "projects.yml").write_text(
+        f"""path_prefix: projects/
+audience: {{users: [{{tenant_id: {tenant_id}, subject_id: {owner.subject_id}}}]}}
+purposes: [knowledge.read]
+classification: confidential
+denials: {{users: []}}
+""",
+        encoding="utf-8",
+    )
+    return compile_okf_bundle(
+        root,
+        tenant_id=tenant_id,
+        source_revision=source_revision,
+    )
+
+
+def _rehashed_reviewed_mutation(generation, concept):
+    permission = effective_permission(Path(concept.source_path), generation.permissions)
+    candidate = replace(
+        generation,
+        concepts=(concept,),
+        chunks=compile_chunks(
+            concept_id=concept.concept_id,
+            source_path=concept.source_path,
+            body=concept.body,
+            permission_sha256=permission.permission_sha256,
+        ),
+        relationships=compile_relationships(
+            concept_id=concept.concept_id,
+            source_path=concept.source_path,
+            body=concept.body,
+            frontmatter=concept.frontmatter,
+        ),
+        generation_sha256="",
+    )
+    return replace(
+        candidate,
+        generation_sha256=compiled_generation_sha256(candidate),
+    )
+
+
+def _authenticated(principal: PrincipalKey) -> AuthenticatedPrincipal:
+    return AuthenticatedPrincipal(
+        tenant_id=principal.tenant_id,
+        subject_id=principal.subject_id,
+        client_id="reviewed-meeting-tests",
+        scopes=frozenset(),
     )
 
 

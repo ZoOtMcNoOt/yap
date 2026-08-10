@@ -39,7 +39,7 @@ _EXPECTED_DATABASE_MODULES = (
     "tests.knowledge.test_reviewed_meeting_postgres_route",
     "tests.knowledge.test_terminology_ledger",
 )
-_EXPECTED_DATABASE_TEST_COUNT = 14
+_EXPECTED_DATABASE_TEST_COUNT = 17
 _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
 )
@@ -69,7 +69,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 125
+_EXPECTED_PORTABLE_TEST_COUNT = 129
 
 
 def evaluate_governed_knowledge_gate(

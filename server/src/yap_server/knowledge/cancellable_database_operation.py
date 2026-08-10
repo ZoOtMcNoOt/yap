@@ -14,7 +14,6 @@ from .knowledge_tool_contract import (
 ResultT = TypeVar("ResultT")
 _CANCEL_ATTEMPT_SECONDS = 1.0
 _CLOSE_ACKNOWLEDGEMENT_SECONDS = 1.0
-_WATCHER_JOIN_SECONDS = 2.25
 
 
 def run_cancellable_database_operation(
@@ -60,17 +59,7 @@ def run_cancellable_database_operation(
         return result
     finally:
         completed.set()
-        watcher.join(timeout=_WATCHER_JOIN_SECONDS)
-        if watcher.is_alive():
-            try:
-                connection.close()
-            except BaseException as error:
-                watcher_failures.append(error)
-            watcher.join(timeout=_CLOSE_ACKNOWLEDGEMENT_SECONDS)
-        if watcher.is_alive():
-            raise KnowledgeToolCancellationFailed(
-                "knowledge cancellation watcher did not stop"
-            )
+        watcher.join()
         if watcher_failures:
             raise KnowledgeToolCancellationFailed(
                 "knowledge database cancellation could not be acknowledged"

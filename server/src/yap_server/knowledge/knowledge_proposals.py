@@ -10,7 +10,7 @@ from psycopg.types.json import Jsonb
 
 from yap_server.auth.principal import PrincipalKey
 
-from .postgres_permission_view import authorize_knowledge_query
+from .postgres_permission_view import _authorize_knowledge_query
 from .knowledge_tool_contract import (
     MAX_CONCEPT_ID_CHARACTERS,
     MAX_PROPOSAL_CHARACTERS,
@@ -102,8 +102,34 @@ def store_knowledge_proposal(
 ) -> KnowledgeProposal:
     """Store a noncanonical proposal with exact provenance and inherited policy."""
 
+    with connection.transaction():
+        return _store_knowledge_proposal(
+            connection,
+            principal=principal,
+            purpose=purpose,
+            agent_id=agent_id,
+            agent_capabilities=agent_capabilities,
+            proposal_type=proposal_type,
+            proposed_content=proposed_content,
+            source_citations=source_citations,
+            expected_generation_sha256=expected_generation_sha256,
+        )
+
+
+def _store_knowledge_proposal(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    purpose: str,
+    agent_id: str,
+    agent_capabilities: frozenset[str],
+    proposal_type: str,
+    proposed_content: str,
+    source_citations: tuple[ProposalCitation, ...],
+    expected_generation_sha256: str | None,
+) -> KnowledgeProposal:
     _proposal_input(agent_id, proposal_type, proposed_content, source_citations)
-    authorized = authorize_knowledge_query(
+    authorized = _authorize_knowledge_query(
         connection,
         principal=principal,
         purpose=purpose,

@@ -12,7 +12,7 @@ from uuid import uuid4
 
 import psycopg
 
-from yap_server.auth.principal import PrincipalKey
+from yap_server.auth.principal import AuthenticatedPrincipal, PrincipalKey
 from yap_server.knowledge.generation_ledger import (
     activate_complete_generation,
     install_knowledge_schema,
@@ -21,6 +21,7 @@ from yap_server.knowledge.generation_ledger import (
 )
 from yap_server.knowledge.knowledge_source_admission import (
     admit_curated_knowledge_generation,
+    review_curated_knowledge_generation,
 )
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
@@ -161,12 +162,21 @@ denials: {{users: []}}
 
 
 def _stage_and_activate(connection, generation) -> None:
-    admission = admit_curated_knowledge_generation(
-        connection,
-        reviewer=PrincipalKey(generation.tenant_id, _SUBJECT_ID),
+    review = review_curated_knowledge_generation(
+        AuthenticatedPrincipal(
+            tenant_id=generation.tenant_id,
+            subject_id=_SUBJECT_ID,
+            client_id="governed-knowledge-gate",
+            scopes=frozenset(),
+            roles=frozenset({"knowledge.curator"}),
+        ),
         repository_revision=generation.source_revision,
         source_path="verification/restart-probe",
-        source_manifest_sha256="c" * 64,
+        generation=generation,
+    )
+    admission = admit_curated_knowledge_generation(
+        connection,
+        review=review,
         generation=generation,
     )
     stage_compiled_generation(

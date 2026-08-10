@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import re
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 
 KNOWLEDGE_READ_PURPOSE = "knowledge.read"
@@ -22,17 +22,25 @@ KnowledgePurpose = Literal["knowledge.read"]
 SearchText = Annotated[
     str, Field(min_length=1, max_length=MAX_SEARCH_TEXT_CHARACTERS)
 ]
-SearchResultLimit = Annotated[int, Field(ge=1, le=MAX_SEARCH_RESULTS)]
+SearchResultLimit = Annotated[
+    int, Field(strict=True, ge=1, le=MAX_SEARCH_RESULTS)
+]
 ConceptId = Annotated[
     str, Field(min_length=1, max_length=MAX_CONCEPT_ID_CHARACTERS)
 ]
-TraversalDepth = Annotated[int, Field(ge=1, le=MAX_TRAVERSAL_DEPTH)]
-TraversalResultLimit = Annotated[int, Field(ge=1, le=MAX_TRAVERSAL_RESULTS)]
+TraversalDepth = Annotated[
+    int, Field(strict=True, ge=1, le=MAX_TRAVERSAL_DEPTH)
+]
+TraversalResultLimit = Annotated[
+    int, Field(strict=True, ge=1, le=MAX_TRAVERSAL_RESULTS)
+]
 GenerationSha256 = Annotated[str, Field(pattern=SHA256_PATTERN)]
 ProposalType = Literal["summary", "relationship"]
 ProposalContent = Annotated[
     str, Field(min_length=1, max_length=MAX_PROPOSAL_CHARACTERS)
 ]
+CitationOffset = Annotated[int, Field(strict=True, ge=0, le=2**63 - 1)]
+CitationEndOffset = Annotated[int, Field(strict=True, ge=1, le=2**63 - 1)]
 
 _SHA256 = re.compile(SHA256_PATTERN)
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
@@ -48,6 +56,30 @@ class KnowledgeToolCancellationFailed(RuntimeError):
 
 class KnowledgeToolTimedOut(TimeoutError):
     pass
+
+
+class ProposalCitationInput(BaseModel):
+    """Strict model/MCP input for one persisted proposal citation."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    concept_id: ConceptId
+    source_revision: ConceptId
+    content_sha256: GenerationSha256
+    char_start: CitationOffset
+    char_end: CitationEndOffset
+
+    @model_validator(mode="after")
+    def _ordered_span(self) -> ProposalCitationInput:
+        if self.char_end <= self.char_start:
+            raise ValueError("proposal citation end must follow its start")
+        return self
+
+
+ProposalCitations = Annotated[
+    list[ProposalCitationInput],
+    Field(min_length=1, max_length=MAX_PROPOSAL_CITATIONS),
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -174,6 +206,8 @@ def governed_agent_tool_definitions(
             ),
         },
     }
+    citation_schema = ProposalCitationInput.model_json_schema()
+    citation_schema.pop("title", None)
     return [
         _tool_definition(
             "search_knowledge",
@@ -255,35 +289,7 @@ def governed_agent_tool_definitions(
                     "type": "array",
                     "minItems": 1,
                     "maxItems": MAX_PROPOSAL_CITATIONS,
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "concept_id": {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": MAX_CONCEPT_ID_CHARACTERS,
-                            },
-                            "source_revision": {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": MAX_CONCEPT_ID_CHARACTERS,
-                            },
-                            "content_sha256": {
-                                "type": "string",
-                                "pattern": SHA256_PATTERN,
-                            },
-                            "char_start": {"type": "integer", "minimum": 0},
-                            "char_end": {"type": "integer", "minimum": 1},
-                        },
-                        "required": [
-                            "concept_id",
-                            "source_revision",
-                            "content_sha256",
-                            "char_start",
-                            "char_end",
-                        ],
-                        "additionalProperties": False,
-                    },
+                    "items": citation_schema,
                 },
             },
             [
@@ -420,34 +426,19 @@ def _validate_agent_citations(value: object) -> None:
         raise ValueError("agent proposal citations are invalid")
     identities: set[tuple[object, ...]] = set()
     for citation in value:
-        if not isinstance(citation, dict) or set(citation) != {
-            "concept_id",
-            "source_revision",
-            "content_sha256",
-            "char_start",
-            "char_end",
-        }:
-            raise ValueError("agent proposal citation differs from the contract")
-        validate_bounded_text(
-            citation["concept_id"],
-            field="agent citation concept ID",
-            maximum=MAX_CONCEPT_ID_CHARACTERS,
+        try:
+            parsed = ProposalCitationInput.model_validate(citation, strict=True)
+        except ValidationError as error:
+            raise ValueError(
+                "agent proposal citation differs from the contract"
+            ) from error
+        identity = (
+            parsed.concept_id,
+            parsed.source_revision,
+            parsed.content_sha256,
+            parsed.char_start,
+            parsed.char_end,
         )
-        validate_bounded_text(
-            citation["source_revision"],
-            field="agent citation revision",
-            maximum=MAX_CONCEPT_ID_CHARACTERS,
-        )
-        digest = citation["content_sha256"]
-        start = citation["char_start"]
-        end = citation["char_end"]
-        if not isinstance(digest, str) or not _SHA256.fullmatch(digest):
-            raise ValueError("agent proposal citation digest is invalid")
-        validate_integer(start, minimum=0, maximum=2**63 - 1, field="citation start")
-        validate_integer(end, minimum=1, maximum=2**63 - 1, field="citation end")
-        if end <= start:
-            raise ValueError("agent proposal citation span is invalid")
-        identity = tuple(citation[key] for key in sorted(citation))
         if identity in identities:
             raise ValueError("agent proposal citation is duplicated")
         identities.add(identity)
@@ -487,6 +478,8 @@ __all__ = [
     "GenerationSha256",
     "ProposalType",
     "ProposalContent",
+    "ProposalCitationInput",
+    "ProposalCitations",
     "KnowledgeToolCancellationFailed",
     "KnowledgeToolCancelled",
     "KnowledgeToolCitation",

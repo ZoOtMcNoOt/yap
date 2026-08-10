@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -9,7 +10,7 @@ from uuid import uuid4
 
 import psycopg
 
-from yap_server.auth.principal import PrincipalKey
+from yap_server.auth.principal import AuthenticatedPrincipal, PrincipalKey
 from yap_server.knowledge.generation_ledger import (
     activate_complete_generation,
     install_knowledge_schema,
@@ -21,6 +22,7 @@ from yap_server.knowledge.generation_ledger import (
 )
 from yap_server.knowledge.knowledge_source_admission import (
     admit_curated_knowledge_generation,
+    review_curated_knowledge_generation,
 )
 from yap_server.knowledge.knowledge_proposals import (
     ProposalCitation,
@@ -38,6 +40,107 @@ POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
 
 @unittest.skipUnless(POSTGRES_DSN, "YAP_TEST_POSTGRES_DSN is not configured")
 class PostgresGenerationLedgerTests(unittest.TestCase):
+    def test_activation_rehashes_every_persisted_projection(self) -> None:
+        mutations = {
+            "audience": """UPDATE yap_knowledge_permission_audience
+                SET subject_id = 'mallory'
+                WHERE tenant_id = %s AND generation_sha256 = %s""",
+            "permission-policy": """UPDATE yap_knowledge_permissions
+                SET policy = jsonb_set(policy, '{classification}', '"restricted"')
+                WHERE tenant_id = %s AND generation_sha256 = %s""",
+            "permission-hash": """UPDATE yap_knowledge_permissions
+                SET permission_sha256 = repeat('0', 64)
+                WHERE tenant_id = %s AND generation_sha256 = %s""",
+            "concept-frontmatter": """UPDATE yap_knowledge_concepts
+                SET frontmatter = jsonb_set(frontmatter, '{title}', '"Forged"')
+                WHERE tenant_id = %s AND generation_sha256 = %s""",
+            "concept-body": """UPDATE yap_knowledge_concepts
+                SET body = body || E'\\nforged'
+                WHERE tenant_id = %s AND generation_sha256 = %s""",
+            "concept-links": """UPDATE yap_knowledge_concepts
+                SET links = '[]'::jsonb
+                WHERE tenant_id = %s AND generation_sha256 = %s
+                  AND jsonb_array_length(links) > 0""",
+            "chunk-body": """UPDATE yap_knowledge_chunks
+                SET body = body || ' forged'
+                WHERE tenant_id = %s AND generation_sha256 = %s""",
+            "chunk-span": """UPDATE yap_knowledge_chunks
+                SET char_end = char_end + 1
+                WHERE tenant_id = %s AND generation_sha256 = %s""",
+            "chunk-links": """UPDATE yap_knowledge_chunks
+                SET linked_concept_ids = '[]'::jsonb
+                WHERE tenant_id = %s AND generation_sha256 = %s
+                  AND jsonb_array_length(linked_concept_ids) > 0""",
+            "relationship": """UPDATE yap_knowledge_relationships
+                SET relationship_type = 'forged'
+                WHERE tenant_id = %s AND generation_sha256 = %s""",
+        }
+        for name, statement in mutations.items():
+            with self.subTest(mutation=name):
+                tenant_id = f"test-{uuid4()}"
+                with TemporaryDirectory() as directory:
+                    root = _tamper_bundle(Path(directory), tenant_id)
+                    baseline = compile_okf_bundle(
+                        root,
+                        tenant_id=tenant_id,
+                        source_revision="baseline",
+                    )
+                    candidate = compile_okf_bundle(
+                        root,
+                        tenant_id=tenant_id,
+                        source_revision="candidate",
+                    )
+                with psycopg.connect(POSTGRES_DSN) as connection:
+                    install_knowledge_schema(connection)
+                    _stage_reviewed_generation(connection, baseline)
+                    _embed_and_activate(connection, baseline)
+                    _stage_reviewed_generation(connection, candidate)
+                    store_generation_embeddings(
+                        connection,
+                        tenant_id=tenant_id,
+                        generation_sha256=candidate.generation_sha256,
+                        embedding_model_id="synthetic-test",
+                        embedding_model_revision="revision-1",
+                        embeddings={
+                            item.chunk_id: (0.0,) * 768 for item in candidate.chunks
+                        },
+                    )
+                    connection.execute(
+                        statement, (tenant_id, candidate.generation_sha256)
+                    )
+                    connection.commit()
+                    with self.assertRaises(ValueError):
+                        activate_complete_generation(
+                            connection,
+                            tenant_id=tenant_id,
+                            generation_sha256=candidate.generation_sha256,
+                        )
+                    self.assertEqual(
+                        read_active_generation(
+                            connection, tenant_id=tenant_id
+                        ).generation_sha256,
+                        baseline.generation_sha256,
+                    )
+                    connection.execute(
+                        "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
+                        (tenant_id,),
+                    )
+                    connection.execute(
+                        """DELETE FROM yap_knowledge_activation_history
+                           WHERE tenant_id = %s""",
+                        (tenant_id,),
+                    )
+                    connection.execute(
+                        "DELETE FROM yap_knowledge_builds WHERE tenant_id = %s",
+                        (tenant_id,),
+                    )
+                    connection.execute(
+                        """DELETE FROM yap_knowledge_source_admissions
+                           WHERE tenant_id = %s""",
+                        (tenant_id,),
+                    )
+                    connection.commit()
+
     def test_proposal_disposition_and_pruning_are_atomic(self) -> None:
         tenant_id = f"test-{uuid4()}"
         with TemporaryDirectory() as directory:
@@ -203,13 +306,36 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                     reviewed,
                     source_admission_sha256="0" * 64,
                 )
-            admission = admit_curated_knowledge_generation(
-                connection,
-                reviewer=PrincipalKey(tenant_id, "curator"),
+            review = review_curated_knowledge_generation(
+                _curator(tenant_id, "curator"),
                 repository_revision=reviewed.source_revision,
                 source_path="knowledge/voiceos",
-                source_manifest_sha256="d" * 64,
                 generation=reviewed,
+            )
+            admission = admit_curated_knowledge_generation(
+                connection, review=review, generation=reviewed
+            )
+            forged = replace(
+                reviewed,
+                permissions=(
+                    replace(
+                        reviewed.permissions[0],
+                        audience=(PrincipalKey(tenant_id, "mallory"),),
+                    ),
+                ),
+            )
+            with self.assertRaisesRegex(ValueError, "permission"):
+                stage_compiled_generation(
+                    connection,
+                    forged,
+                    source_admission_sha256=admission.admission_sha256,
+                )
+            self.assertIsNone(
+                connection.execute(
+                    """SELECT 1 FROM yap_knowledge_builds
+                       WHERE tenant_id = %s AND generation_sha256 = %s""",
+                    (tenant_id, reviewed.generation_sha256),
+                ).fetchone()
             )
             with self.assertRaisesRegex(ValueError, "differs from the generation"):
                 stage_compiled_generation(
@@ -556,6 +682,55 @@ denials: {{users: []}}
     return root
 
 
+def _tamper_bundle(root: Path, tenant_id: str) -> Path:
+    (root / "index.md").write_text(
+        "---\nokf_version: '0.1'\n---\n# Knowledge\n", encoding="utf-8"
+    )
+    for folder in ("projects", "decisions", "permissions"):
+        (root / folder).mkdir()
+    (root / "projects" / "voiceos.md").write_text(
+        f"""---
+type: Project
+title: VoiceOS
+resource: yap://tenant/{tenant_id}/project/voiceos
+timestamp: 2026-08-09T12:00:00Z
+yap_schema: 1
+provenance: {{source: synthetic, source_revision: source-1}}
+relationships:
+  - {{type: depends_on, target: /decisions/release.md, authority: asserted}}
+---
+# VoiceOS
+
+See the [release decision](/decisions/release.md).
+""",
+        encoding="utf-8",
+    )
+    (root / "decisions" / "release.md").write_text(
+        f"""---
+type: Decision
+title: Release
+resource: yap://tenant/{tenant_id}/decision/release
+timestamp: 2026-08-09T12:00:00Z
+yap_schema: 1
+provenance: {{source: synthetic, source_revision: source-1}}
+---
+# Release
+""",
+        encoding="utf-8",
+    )
+    for name in ("projects", "decisions"):
+        (root / "permissions" / f"{name}.yml").write_text(
+            f"""path_prefix: {name}/
+audience: {{users: [{{tenant_id: {tenant_id}, subject_id: alice}}]}}
+purposes: [knowledge.read]
+classification: internal
+denials: {{users: []}}
+""",
+            encoding="utf-8",
+        )
+    return root
+
+
 def _embed_and_activate(connection, generation) -> None:
     store_generation_embeddings(
         connection,
@@ -573,18 +748,31 @@ def _embed_and_activate(connection, generation) -> None:
 
 
 def _stage_reviewed_generation(connection, generation) -> None:
-    admission = admit_curated_knowledge_generation(
-        connection,
-        reviewer=PrincipalKey(generation.tenant_id, "synthetic-curator"),
+    review = review_curated_knowledge_generation(
+        _curator(generation.tenant_id, "synthetic-curator"),
         repository_revision=generation.source_revision,
         source_path="tests/fixtures/okf",
-        source_manifest_sha256="a" * 64,
+        generation=generation,
+    )
+    admission = admit_curated_knowledge_generation(
+        connection,
+        review=review,
         generation=generation,
     )
     stage_compiled_generation(
         connection,
         generation,
         source_admission_sha256=admission.admission_sha256,
+    )
+
+
+def _curator(tenant_id: str, subject_id: str) -> AuthenticatedPrincipal:
+    return AuthenticatedPrincipal(
+        tenant_id=tenant_id,
+        subject_id=subject_id,
+        client_id="knowledge-tests",
+        scopes=frozenset(),
+        roles=frozenset({"knowledge.curator"}),
     )
 
 

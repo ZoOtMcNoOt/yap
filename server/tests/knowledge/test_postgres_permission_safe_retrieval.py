@@ -6,11 +6,13 @@ from tempfile import TemporaryDirectory
 import threading
 import time
 import unittest
+from unittest.mock import patch
 from uuid import uuid4
 
 import psycopg
+import yap_server.knowledge.postgres_knowledge_retrieval as retrieval_module
 
-from yap_server.auth.principal import PrincipalKey
+from yap_server.auth.principal import AuthenticatedPrincipal, PrincipalKey
 from yap_server.knowledge.generation_ledger import (
     activate_complete_generation,
     install_knowledge_schema,
@@ -20,6 +22,7 @@ from yap_server.knowledge.generation_ledger import (
 )
 from yap_server.knowledge.knowledge_source_admission import (
     admit_curated_knowledge_generation,
+    review_curated_knowledge_generation,
 )
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
@@ -31,7 +34,6 @@ from yap_server.knowledge.postgres_knowledge_retrieval import (
 from yap_server.knowledge.postgres_relationship_retrieval import (
     traverse_postgres_knowledge_relationships,
 )
-from yap_server.knowledge.postgres_permission_view import authorize_knowledge_query
 
 
 POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
@@ -293,33 +295,55 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
             finally:
                 writer_finished.set()
 
-        with psycopg.connect(POSTGRES_DSN) as reader:
-            with reader.transaction():
-                admitted = authorize_knowledge_query(
-                    reader,
-                    principal=principal,
-                    purpose="knowledge.read",
-                    agent_capabilities=capabilities,
-                    required_capability="knowledge.search.lexical",
-                )
-                writer = threading.Thread(target=activate_and_prune)
-                writer.start()
-                self.assertTrue(writer_started.wait(2))
-                _wait_for_advisory_lock_wait(writer_pid[0])
-                self.assertFalse(writer_finished.is_set())
-                result = search_postgres_knowledge_lexical(
-                    reader,
-                    principal=principal,
-                    purpose="knowledge.read",
-                    agent_capabilities=capabilities,
-                    search_text="approved roadmap",
-                )
-                self.assertEqual(result.generation_sha256, admitted.generation_sha256)
-                self.assertEqual(result.generation_sha256, first.generation_sha256)
+        authorization_finished = threading.Event()
+        release_reader = threading.Event()
+        reader_errors: list[BaseException] = []
+        reader_results = []
+        original_lexical = retrieval_module._lexical_results
+
+        def pause_after_authorization(*args, **kwargs):
+            authorization_finished.set()
+            release_reader.wait()
+            return original_lexical(*args, **kwargs)
+
+        def read_with_autocommit() -> None:
+            try:
+                with psycopg.connect(POSTGRES_DSN, autocommit=True) as reader:
+                    reader_results.append(
+                        search_postgres_knowledge_lexical(
+                            reader,
+                            principal=principal,
+                            purpose="knowledge.read",
+                            agent_capabilities=capabilities,
+                            search_text="approved roadmap",
+                        )
+                    )
+            except BaseException as error:
+                reader_errors.append(error)
+
+        with patch.object(
+            retrieval_module, "_lexical_results", side_effect=pause_after_authorization
+        ):
+            reader = threading.Thread(target=read_with_autocommit)
+            reader.start()
+            self.assertTrue(authorization_finished.wait(2))
+            writer = threading.Thread(target=activate_and_prune)
+            writer.start()
+            self.assertTrue(writer_started.wait(2))
+            _wait_for_advisory_lock_wait(writer_pid[0])
+            self.assertFalse(writer_finished.is_set())
+            release_reader.set()
+            reader.join(5)
             writer.join(5)
 
+        self.assertFalse(reader.is_alive())
         self.assertFalse(writer.is_alive())
+        self.assertFalse(reader_errors)
         self.assertFalse(writer_errors)
+        self.assertEqual(len(reader_results), 1)
+        self.assertEqual(
+            reader_results[0].generation_sha256, first.generation_sha256
+        )
         with psycopg.connect(POSTGRES_DSN) as verification:
             current = search_postgres_knowledge_lexical(
                 verification,
@@ -411,12 +435,21 @@ def _wait_for_advisory_lock_wait(process_id: int) -> None:
 
 
 def _stage_reviewed_generation(connection, generation) -> None:
-    admission = admit_curated_knowledge_generation(
-        connection,
-        reviewer=PrincipalKey(generation.tenant_id, "synthetic-curator"),
+    review = review_curated_knowledge_generation(
+        AuthenticatedPrincipal(
+            tenant_id=generation.tenant_id,
+            subject_id="synthetic-curator",
+            client_id="knowledge-tests",
+            scopes=frozenset(),
+            roles=frozenset({"knowledge.curator"}),
+        ),
         repository_revision=generation.source_revision,
         source_path="tests/fixtures/permission-safe-okf",
-        source_manifest_sha256="b" * 64,
+        generation=generation,
+    )
+    admission = admit_curated_knowledge_generation(
+        connection,
+        review=review,
         generation=generation,
     )
     stage_compiled_generation(

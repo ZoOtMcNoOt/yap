@@ -3,11 +3,10 @@ from __future__ import annotations
 from contextlib import AbstractContextManager
 from dataclasses import asdict
 import threading
-from typing import Annotated, Callable, TypeVar
+from typing import Callable, TypeVar
 
 import anyio
 from mcp.server import MCPServer
-from pydantic import Field
 from psycopg import Connection
 
 from yap_server.auth.principal import PrincipalKey
@@ -22,8 +21,9 @@ from .knowledge_tool_contract import (
     KnowledgeToolRequest,
     KnowledgeToolCancellationFailed,
     KnowledgePurpose,
-    MAX_PROPOSAL_CITATIONS,
     ProposalContent,
+    ProposalCitations,
+    ProposalCitationInput,
     ProposalType,
     SearchResultLimit,
     SearchText,
@@ -36,10 +36,6 @@ from .knowledge_tool_contract import (
 
 ConnectionFactory = Callable[[], AbstractContextManager[Connection[object]]]
 ResultT = TypeVar("ResultT")
-ProposalCitations = Annotated[
-    list[ProposalCitation], Field(min_length=1, max_length=MAX_PROPOSAL_CITATIONS)
-]
-_DATABASE_CLEANUP_SECONDS = 5.0
 
 
 def create_governed_knowledge_mcp_server(
@@ -91,7 +87,9 @@ def create_governed_knowledge_mcp_server(
                     purpose=purpose,
                     proposal_type=proposal_type,
                     proposed_content=proposed_content,
-                    source_citations=tuple(source_citations),
+                    source_citations=tuple(
+                        _persisted_citation(item) for item in source_citations
+                    ),
                     expected_generation_sha256=expected_generation_sha256,
                     cancellation=cancellation,
                 )
@@ -184,15 +182,10 @@ async def _run_acknowledged_database_call(
     except BaseException as cancellation_error:
         cancellation.set()
         with anyio.CancelScope(shield=True):
-            acknowledged = await anyio.to_thread.run_sync(
+            await anyio.to_thread.run_sync(
                 finished.wait,
-                _DATABASE_CLEANUP_SECONDS,
                 abandon_on_cancel=False,
             )
-        if not acknowledged:
-            raise KnowledgeToolCancellationFailed(
-                "knowledge database worker did not stop after cancellation"
-            ) from cancellation_error
         if len(outcome) == 1 and isinstance(
             outcome[0], KnowledgeToolCancellationFailed
         ):
@@ -203,6 +196,16 @@ async def _run_acknowledged_database_call(
     if isinstance(outcome[0], BaseException):
         raise outcome[0]
     return outcome[0]
+
+
+def _persisted_citation(value: ProposalCitationInput) -> ProposalCitation:
+    return ProposalCitation(
+        concept_id=value.concept_id,
+        source_revision=value.source_revision,
+        content_sha256=value.content_sha256,
+        char_start=value.char_start,
+        char_end=value.char_end,
+    )
 
 
 __all__ = ["ConnectionFactory", "create_governed_knowledge_mcp_server"]

@@ -13,7 +13,7 @@ from .knowledge_tool_contract import (
     validate_bounded_text,
     validate_integer,
 )
-from .postgres_permission_view import authorize_knowledge_query
+from .postgres_permission_view import _authorize_knowledge_query
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +53,30 @@ def traverse_postgres_knowledge_relationships(
     maximum_results: int = 50,
     expected_generation_sha256: str | None = None,
 ) -> PostgresRelationshipTraversal:
+    with connection.transaction():
+        return _traverse_postgres_knowledge_relationships(
+            connection,
+            principal=principal,
+            purpose=purpose,
+            agent_capabilities=agent_capabilities,
+            start_concept_id=start_concept_id,
+            maximum_depth=maximum_depth,
+            maximum_results=maximum_results,
+            expected_generation_sha256=expected_generation_sha256,
+        )
+
+
+def _traverse_postgres_knowledge_relationships(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    purpose: str,
+    agent_capabilities: frozenset[str],
+    start_concept_id: str,
+    maximum_depth: int,
+    maximum_results: int,
+    expected_generation_sha256: str | None,
+) -> PostgresRelationshipTraversal:
     validate_bounded_text(
         start_concept_id,
         field="knowledge traversal start",
@@ -70,7 +94,7 @@ def traverse_postgres_knowledge_relationships(
         maximum=MAX_STORAGE_RESULTS,
         field="knowledge traversal result limit",
     )
-    query = authorize_knowledge_query(
+    query = _authorize_knowledge_query(
         connection,
         principal=principal,
         purpose=purpose,

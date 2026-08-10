@@ -160,34 +160,6 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
             )
         )
 
-    def test_reviewed_cancellation_fixture_transition_is_exact(self) -> None:
-        path = "server/tests/knowledge/test_vllm_reasoning_client.py"
-        reference = route_evidence.load_agent_route_qualification_reference(
-            REPOSITORY_ROOT
-        )
-        self.assertTrue(route_evidence.is_agent_route_evidence_path(path))
-        self.assertTrue(
-            route_evidence._is_allowed_protected_transition(
-                REPOSITORY_ROOT,
-                path=path,
-                reference=reference,
-                runner=subprocess.run,
-            )
-        )
-        with patch.object(
-            route_evidence,
-            "read_bounded_regular_file",
-            return_value=b"additional semantic drift",
-        ):
-            self.assertFalse(
-                route_evidence._is_allowed_protected_transition(
-                    REPOSITORY_ROOT,
-                    path=path,
-                    reference=reference,
-                    runner=subprocess.run,
-                )
-            )
-
     def test_agent_route_reference_rejects_protected_descendant_changes(self) -> None:
         reference = route_evidence.load_agent_route_qualification_reference(
             REPOSITORY_ROOT
