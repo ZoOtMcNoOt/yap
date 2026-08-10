@@ -7,7 +7,9 @@ import json
 import math
 import os
 from pathlib import Path
+import shutil
 import sys
+import tempfile
 import re
 
 from yap_server.evaluation.provider_runtime_observations import (
@@ -17,7 +19,8 @@ from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
 from .agent_model_candidate_runner import (
-    AgentCandidateRun,
+    FailedAgentCandidateRun,
+    OwnedAgentCandidateRun,
     agent_evidence_sha256,
     run_agent_model_candidate,
 )
@@ -61,7 +64,7 @@ _PRESSURE_KEYS = {
 def evaluate_agent_model_qualification(
     *,
     candidate: CheckedCandidate,
-    runs: tuple[AgentCandidateRun, ...],
+    runs: tuple[OwnedAgentCandidateRun, ...],
 ) -> dict[str, object]:
     """Select only from model runs owned by this checked process."""
 
@@ -105,10 +108,12 @@ def evaluate_agent_model_qualification(
 
 def _candidate_summary(
     candidate: CheckedCandidate,
-    run: AgentCandidateRun,
+    run: OwnedAgentCandidateRun,
     *,
     expected: dict[str, object],
 ) -> dict[str, object]:
+    if isinstance(run, FailedAgentCandidateRun):
+        return _failed_candidate_summary(candidate, run, expected=expected)
     evidence = run.evidence
     if set(evidence) != _EVIDENCE_KEYS or evidence["schemaVersion"] != 1:
         raise ValueError("agent model candidate evidence differs from the contract")
@@ -173,6 +178,84 @@ def _candidate_summary(
             0,
             pressure["peakCgroupMemoryBytes"] - pressure["baselineCgroupMemoryBytes"],
         ),
+    }
+
+
+def _failed_candidate_summary(
+    candidate: CheckedCandidate,
+    run: FailedAgentCandidateRun,
+    *,
+    expected: dict[str, object],
+) -> dict[str, object]:
+    failure = run.failure
+    if (
+        set(failure)
+        != {
+            "schemaVersion",
+            "candidateId",
+            "model",
+            "revision",
+            "artifactManifestSha256",
+            "stage",
+            "reasonCode",
+            "errorType",
+            "diagnostic",
+            "runtime",
+            "candidate",
+            "evidenceSha256",
+        }
+        or failure["schemaVersion"] != 1
+    ):
+        raise ValueError("agent candidate failure differs from the contract")
+    unhashed = dict(failure)
+    supplied_hash = unhashed.pop("evidenceSha256")
+    if supplied_hash != canonical_evidence_sha256(unhashed):
+        raise ValueError("agent candidate failure digest differs")
+    if failure["candidate"] != {
+        "checkedHead": candidate.checked_head,
+        "repositoryState": "clean",
+        "inputs": dict(sorted(candidate.input_sha256.items())),
+    }:
+        raise ValueError("agent candidate failure binding differs")
+    if (
+        run.candidate_id != expected["candidateId"]
+        or failure["candidateId"] != expected["candidateId"]
+        or failure["model"] != expected["model"]
+        or failure["revision"] != expected["revision"]
+        or failure["artifactManifestSha256"] != expected["artifactManifestSha256"]
+        or (failure["stage"], failure["reasonCode"])
+        not in {
+            ("startup", "runtime-startup-rejected"),
+            ("fixtures", "workload-contract-rejected"),
+            ("pressure", "runtime-pressure-rejected"),
+        }
+        or failure["errorType"] not in {"RuntimeError", "TimeoutError", "ValueError"}
+        or not isinstance(failure["diagnostic"], str)
+        or not 1 <= len(failure["diagnostic"]) <= 1_024
+    ):
+        raise ValueError("agent candidate failure identity is invalid")
+    runtime = failure["runtime"]
+    if not isinstance(runtime, dict) or (
+        runtime.get("modelArtifactManifestSha256") != expected["artifactManifestSha256"]
+        or runtime.get("launchArguments") != _expected_launch_arguments(expected)
+        or canonical_evidence_sha256(runtime.get("launchArguments"))
+        != runtime.get("launchArgumentsSha256")
+        or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(runtime.get("imageId")))
+        or runtime.get("teardown")
+        != {
+            "containerAbsent": True,
+            "listenerAbsent": True,
+            "ownedWorkersReaped": True,
+            "ownedCgroupEmpty": True,
+        }
+    ):
+        raise ValueError("failed agent runtime containment differs")
+    return {
+        "candidateId": expected["candidateId"],
+        "artifactSha256": agent_evidence_sha256(failure),
+        "eligible": False,
+        "disposition": "contained-candidate-rejection",
+        "reasonCode": failure["reasonCode"],
     }
 
 
@@ -486,33 +569,66 @@ def main(argv: list[str] | None = None) -> int:
         input_paths=tuple(repository_root / path for path in _INPUTS),
     )
     evidence_root = _evidence_root(repository_root)
+    evidence_destination = evidence_root / "agent-model"
+    if evidence_destination.exists() or evidence_destination.is_symlink():
+        raise ValueError("agent model evidence destination must be absent")
+    staging = Path(tempfile.mkdtemp(prefix=".agent-model-", dir=evidence_root)).resolve(
+        strict=True
+    )
     acceptance = load_agent_model_acceptance(repository_root)
-    runs = tuple(
-        run_agent_model_candidate(
-            checked_candidate=candidate,
-            candidate_id=candidate_id,
-        )
-        for candidate_id in acceptance.candidate_ids
-    )
-    decision = evaluate_agent_model_qualification(
-        candidate=candidate,
-        runs=runs,
-    )
-    for run in runs:
-        directory = evidence_root / "agent-model" / run.candidate_id
-        for name, child in run.children.items():
-            write_new_agent_model_evidence(
-                directory / "children" / f"{name}.json", child
+    try:
+        runs = tuple(
+            run_agent_model_candidate(
+                checked_candidate=candidate,
+                candidate_id=candidate_id,
             )
-        write_new_agent_model_evidence(
-            directory / "runtime-receipt.json", run.runtime_receipt
+            for candidate_id in acceptance.candidate_ids
         )
-        write_new_agent_model_evidence(directory / "results.json", run.evidence)
-    write_new_agent_model_evidence(
-        evidence_root / "agent-model" / "qualification.json", decision
-    )
+        decision = evaluate_agent_model_qualification(
+            candidate=candidate,
+            runs=runs,
+        )
+        for run in runs:
+            directory = staging / run.candidate_id
+            if isinstance(run, FailedAgentCandidateRun):
+                write_new_agent_model_evidence(directory / "failure.json", run.failure)
+                continue
+            for name, child in run.children.items():
+                write_new_agent_model_evidence(
+                    directory / "children" / f"{name}.json", child
+                )
+            write_new_agent_model_evidence(
+                directory / "runtime-receipt.json", run.runtime_receipt
+            )
+            write_new_agent_model_evidence(directory / "results.json", run.evidence)
+        write_new_agent_model_evidence(staging / "qualification.json", decision)
+        _fsync_evidence_tree(staging)
+        os.replace(staging, evidence_destination)
+        _fsync_directory(evidence_root)
+    except BaseException:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
     print(json.dumps(decision, sort_keys=True, separators=(",", ":")))
     return 0 if decision["outcome"] == "selected-candidate" else 1
+
+
+def _fsync_evidence_tree(root: Path) -> None:
+    directories = sorted(
+        (path for path in root.rglob("*") if path.is_dir()),
+        key=lambda path: len(path.parts),
+        reverse=True,
+    )
+    for directory in directories:
+        _fsync_directory(directory)
+    _fsync_directory(root)
+
+
+def _fsync_directory(path: Path) -> None:
+    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 if __name__ == "__main__":

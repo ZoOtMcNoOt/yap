@@ -222,7 +222,8 @@ wrapper accepted but did not apply prompt vectors, so Yap validates the
 checkpoint catalog and projects the selected prompt after encoding and before
 RNNT decode. Focused c8/cancellation/recovery evidence exists, but the frozen
 representative gate and client-facing live transport do not. Nemotron is not
-sent through vLLM or SGLang. Phase 7 owns authenticated owner derivation.
+sent through an LLM-serving runtime; the separately identified Nemotron agent
+candidate is governed by ADR 0029. Phase 7 owns authenticated owner derivation.
 Persistent supervision, production mixed-user capacity, and enterprise
 observability remain Phase 10 promotion gates.
 

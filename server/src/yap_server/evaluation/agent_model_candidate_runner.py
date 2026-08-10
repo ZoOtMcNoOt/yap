@@ -27,9 +27,18 @@ class AgentCandidateRun:
     children: dict[str, dict[str, object]]
 
 
+@dataclass(frozen=True, slots=True)
+class FailedAgentCandidateRun:
+    candidate_id: str
+    failure: dict[str, object]
+
+
+OwnedAgentCandidateRun = AgentCandidateRun | FailedAgentCandidateRun
+
+
 def run_agent_model_candidate(
     *, checked_candidate: CheckedCandidate, candidate_id: str
-) -> AgentCandidateRun:
+) -> OwnedAgentCandidateRun:
     """Own one model lifecycle and return evidence without an importable file seam."""
 
     checked_candidate.verify_unchanged()
@@ -41,10 +50,23 @@ def run_agent_model_candidate(
         runtime=runtime_lock,
         candidate=model_candidate,
     )
-    started = owned_runtime.start(
-        timeout_seconds=int(acceptance.runtime_tracks["startupTimeoutSeconds"])
-    )
-    endpoint = started.endpoint
+    stage = "startup"
+    try:
+        started = owned_runtime.start(
+            timeout_seconds=int(acceptance.runtime_tracks["startupTimeoutSeconds"])
+        )
+        endpoint = started.endpoint
+    except (RuntimeError, TimeoutError, ValueError) as error:
+        return _contained_failure(
+            owned_runtime,
+            checked_candidate=checked_candidate,
+            model_candidate=model_candidate,
+            stage=stage,
+            error=error,
+            teardown_timeout_seconds=int(
+                acceptance.runtime_tracks["teardownTimeoutSeconds"]
+            ),
+        )
 
     def request_json(payload: dict[str, object]) -> dict[str, object]:
         request = urllib.request.Request(
@@ -69,6 +91,7 @@ def run_agent_model_candidate(
         return value
 
     try:
+        stage = "fixtures"
         records = tuple(
             item.record()
             for item in run_agent_model_fixtures(
@@ -78,6 +101,7 @@ def run_agent_model_candidate(
             )
         )
         tracks = acceptance.runtime_tracks
+        stage = "pressure"
         reasoning_client = VllmReasoningClient(
             endpoint=endpoint,
             model=str(model_candidate["model"]),
@@ -99,15 +123,23 @@ def run_agent_model_candidate(
             pressure=pressure,
             started=started,
         )
-        receipt = owned_runtime.stop(
-            timeout_seconds=int(tracks["teardownTimeoutSeconds"]),
-            child_evidence_sha256={
-                name: agent_evidence_sha256(value) for name, value in children.items()
-            },
+    except (RuntimeError, TimeoutError, ValueError) as error:
+        return _contained_failure(
+            owned_runtime,
+            checked_candidate=checked_candidate,
+            model_candidate=model_candidate,
+            stage=stage,
+            error=error,
+            teardown_timeout_seconds=int(
+                acceptance.runtime_tracks["teardownTimeoutSeconds"]
+            ),
         )
-    except BaseException:
-        owned_runtime.abort()
-        raise
+    receipt = owned_runtime.stop(
+        timeout_seconds=int(tracks["teardownTimeoutSeconds"]),
+        child_evidence_sha256={
+            name: agent_evidence_sha256(value) for name, value in children.items()
+        },
+    )
     checked_candidate.verify_unchanged()
     evidence = bind_checked_candidate_evidence(
         {
@@ -133,6 +165,45 @@ def run_agent_model_candidate(
         checked_candidate,
     )
     return AgentCandidateRun(candidate_id, evidence, receipt, children)
+
+
+def _contained_failure(
+    owned_runtime: OwnedAgentVllmRuntime,
+    *,
+    checked_candidate: CheckedCandidate,
+    model_candidate: dict[str, object],
+    stage: str,
+    error: BaseException,
+    teardown_timeout_seconds: int,
+) -> FailedAgentCandidateRun:
+    try:
+        runtime = owned_runtime.contain_failed_run(
+            timeout_seconds=teardown_timeout_seconds
+        )
+    except RuntimeError:
+        raise error
+    checked_candidate.verify_unchanged()
+    reason_code = {
+        "startup": "runtime-startup-rejected",
+        "fixtures": "workload-contract-rejected",
+        "pressure": "runtime-pressure-rejected",
+    }[stage]
+    failure = bind_checked_candidate_evidence(
+        {
+            "schemaVersion": 1,
+            "candidateId": model_candidate["candidateId"],
+            "model": model_candidate["model"],
+            "revision": model_candidate["revision"],
+            "artifactManifestSha256": model_candidate["artifactManifestSha256"],
+            "stage": stage,
+            "reasonCode": reason_code,
+            "errorType": type(error).__name__,
+            "diagnostic": str(error)[:1_024],
+            "runtime": runtime,
+        },
+        checked_candidate,
+    )
+    return FailedAgentCandidateRun(str(model_candidate["candidateId"]), failure)
 
 
 def agent_evidence_sha256(value: object) -> str:
@@ -219,6 +290,8 @@ def _candidate_lock(
 
 __all__ = [
     "AgentCandidateRun",
+    "FailedAgentCandidateRun",
+    "OwnedAgentCandidateRun",
     "agent_evidence_sha256",
     "run_agent_model_candidate",
 ]

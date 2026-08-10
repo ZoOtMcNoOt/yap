@@ -115,7 +115,6 @@ class OwnedAgentVllmRuntime:
                 image_id=image_id,
                 arguments=arguments,
             )
-            self._wait_ready(timeout_seconds)
         except BaseException:
             self._remove_failed_container()
             raise
@@ -131,6 +130,7 @@ class OwnedAgentVllmRuntime:
             process_id=process_id,
         )
         self._started = started
+        self._wait_ready(timeout_seconds)
         return started
 
     def stop(
@@ -188,11 +188,12 @@ class OwnedAgentVllmRuntime:
             },
         }
 
-    def abort(self, *, timeout_seconds: int = 30) -> None:
-        """Contain a failed qualification without emitting an admissible receipt."""
+    def contain_failed_run(self, *, timeout_seconds: int) -> dict[str, object]:
+        """Stop a verified runtime and prove containment after candidate rejection."""
 
-        if self._started is None:
-            return
+        started = self._started
+        if started is None:
+            raise RuntimeError("failed agent runtime was not identity-verified")
         self._run(
             ["docker", "stop", "--time", str(timeout_seconds), _CONTAINER_NAME],
             check=False,
@@ -200,6 +201,21 @@ class OwnedAgentVllmRuntime:
         )
         self._run(["docker", "rm", "--force", _CONTAINER_NAME], check=False)
         self._started = None
+        teardown = {
+            "containerAbsent": not self._container_exists(),
+            "listenerAbsent": _listener_is_absent(_PORT),
+            "ownedWorkersReaped": not Path(f"/proc/{started.process_id}").exists(),
+            "ownedCgroupEmpty": _cgroup_is_empty(started.cgroup_path),
+        }
+        if not all(teardown.values()):
+            raise RuntimeError("failed agent runtime containment did not complete")
+        return {
+            "imageId": started.image_id,
+            "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,
+            "launchArguments": list(started.launch_arguments),
+            "launchArgumentsSha256": started.launch_arguments_sha256,
+            "teardown": teardown,
+        }
 
     def _verified_image_id(self) -> str:
         image = str(self._runtime.get("image", ""))

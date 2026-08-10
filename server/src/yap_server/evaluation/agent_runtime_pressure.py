@@ -254,7 +254,10 @@ def _answer(value: str) -> str:
         or not isinstance(parsed.get("answer"), str)
         or parsed.get("citationConceptIds") != []
     ):
-        raise ValueError("agent runtime marker response differs from the contract")
+        observed = repr(parsed)
+        raise ValueError(
+            "agent runtime marker response differs from the contract: " + observed[:512]
+        )
     return parsed["answer"]
 
 

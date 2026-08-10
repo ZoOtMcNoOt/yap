@@ -38,7 +38,7 @@ class _RuntimeActivity:
         }
 
 
-def test_runs_every_frozen_pressure_track() -> None:
+def _runs_every_frozen_pressure_track() -> None:
     prompts: list[str] = []
 
     def request(prompt: str, cancellation: threading.Event) -> str:
@@ -79,7 +79,7 @@ def test_runs_every_frozen_pressure_track() -> None:
     assert len(prompts) == 1 + 12 + 1 + 2 + 4 + 8 + 8 + 1 + 1
 
 
-def test_detects_cross_request_marker_leak() -> None:
+def _detects_cross_request_marker_leak() -> None:
     def request(prompt: str, cancellation: threading.Event) -> str:
         if "until cancelled" in prompt:
             cancellation.wait(1)
@@ -104,7 +104,7 @@ def test_detects_cross_request_marker_leak() -> None:
     assert result.isolation_leak_count == 4
 
 
-def test_rejects_unrelated_cancellation_failure() -> None:
+def _rejects_unrelated_cancellation_failure() -> None:
     def request(prompt: str, cancellation: threading.Event) -> str:
         if "until cancelled" in prompt:
             raise OSError("transport failed")
@@ -130,7 +130,7 @@ def test_rejects_unrelated_cancellation_failure() -> None:
         )
 
 
-def test_requires_observed_engine_activity_before_cancellation() -> None:
+def _requires_observed_engine_activity_before_cancellation() -> None:
     class MissingActivity(_RuntimeActivity):
         def wait_until_running(self, *, timeout_seconds: float):
             raise TimeoutError("no engine activity")
@@ -156,6 +156,20 @@ def test_requires_observed_engine_activity_before_cancellation() -> None:
             memory_bytes=lambda: 0,
             runtime_activity=MissingActivity(),
         )
+
+
+class AgentRuntimePressureTests(unittest.TestCase):
+    def test_runs_every_frozen_pressure_track(self) -> None:
+        _runs_every_frozen_pressure_track()
+
+    def test_detects_cross_request_marker_leak(self) -> None:
+        _detects_cross_request_marker_leak()
+
+    def test_rejects_unrelated_cancellation_failure(self) -> None:
+        _rejects_unrelated_cancellation_failure()
+
+    def test_requires_observed_engine_activity_before_cancellation(self) -> None:
+        _requires_observed_engine_activity_before_cancellation()
 
 
 def _answer(value: str) -> str:

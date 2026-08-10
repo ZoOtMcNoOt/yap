@@ -50,6 +50,20 @@ class AgentVllmRuntimeTests(unittest.TestCase):
             },
         )
 
+    def test_failed_candidate_containment_retains_verified_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            cgroup = Path(temporary)
+            (cgroup / "cgroup.procs").write_text("", encoding="ascii")
+            runtime = _runtime(cgroup)
+            with patch(
+                "yap_server.evaluation.agent_vllm_runtime._listener_is_absent",
+                return_value=True,
+            ):
+                evidence = runtime.contain_failed_run(timeout_seconds=1)
+
+        self.assertEqual(evidence["imageId"], "sha256:" + "d" * 64)
+        self.assertTrue(all(evidence["teardown"].values()))  # type: ignore[union-attr]
+
 
 def _runtime(cgroup: Path) -> OwnedAgentVllmRuntime:
     def runner(command, **_kwargs):

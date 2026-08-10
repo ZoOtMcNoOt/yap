@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from yap_server.evaluation.agent_model_candidate_runner import (
     AgentCandidateRun,
+    FailedAgentCandidateRun,
     agent_evidence_sha256,
 )
 from yap_server.evaluation.agent_model_qualification import (
@@ -92,6 +93,22 @@ class AgentModelQualificationTests(unittest.TestCase):
             evaluate_agent_model_qualification(
                 candidate=candidate, runs=(tampered, other)
             )
+
+    def test_records_contained_failure_and_can_select_other_candidate(self) -> None:
+        candidate = _checked_candidate()
+        failed = _failed_run(candidate, "qwen3.6-35b-a3b-nvfp4")
+        completed = _candidate_run(candidate, "nemotron-3-nano-30b-a3b-nvfp4", 10)
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            decision = evaluate_agent_model_qualification(
+                candidate=candidate, runs=(failed, completed)
+            )
+
+        self.assertEqual(decision["outcome"], "selected-candidate")
+        self.assertEqual(
+            decision["candidateSummaries"][0]["disposition"],
+            "contained-candidate-rejection",
+        )
 
 
 def _checked_candidate() -> CheckedCandidate:
@@ -178,6 +195,47 @@ def _candidate_run(
         candidate,
     )
     return AgentCandidateRun(candidate_id, evidence, receipt, children)
+
+
+def _failed_run(
+    candidate: CheckedCandidate, candidate_id: str
+) -> FailedAgentCandidateRun:
+    lock = json.loads(
+        (REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    model = next(
+        item for item in lock["candidates"] if item["candidateId"] == candidate_id
+    )
+    launch_arguments = _launch_arguments(model)
+    failure = bind_checked_candidate_evidence(
+        {
+            "schemaVersion": 1,
+            "candidateId": candidate_id,
+            "model": model["model"],
+            "revision": model["revision"],
+            "artifactManifestSha256": model["artifactManifestSha256"],
+            "stage": "pressure",
+            "reasonCode": "runtime-pressure-rejected",
+            "errorType": "ValueError",
+            "diagnostic": "synthetic pressure rejection",
+            "runtime": {
+                "imageId": "sha256:" + "9" * 64,
+                "modelArtifactManifestSha256": model["artifactManifestSha256"],
+                "launchArguments": launch_arguments,
+                "launchArgumentsSha256": canonical_evidence_sha256(launch_arguments),
+                "teardown": {
+                    "containerAbsent": True,
+                    "listenerAbsent": True,
+                    "ownedWorkersReaped": True,
+                    "ownedCgroupEmpty": True,
+                },
+            },
+        },
+        candidate,
+    )
+    return FailedAgentCandidateRun(candidate_id, failure)
 
 
 def _children(candidate, model, results, latency, launch_sha256):
