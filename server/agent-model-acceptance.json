@@ -25,5 +25,14 @@
     "requestTimeoutSeconds": 30,
     "teardownTimeoutSeconds": 30
   },
+  "selectionPolicy": {
+    "requireEveryCandidate": true,
+    "ranking": [
+      "concurrencyC8P95LatencyMilliseconds",
+      "warmP95LatencyMilliseconds",
+      "incrementalUnifiedMemoryBytes",
+      "candidateId"
+    ]
+  },
   "permittedOutcomes": ["selected-candidate", "deterministic-no-model"]
 }

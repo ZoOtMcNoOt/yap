@@ -19,6 +19,7 @@ _PLAN_KEYS = {
     "requiredCategories",
     "thresholds",
     "runtimeTracks",
+    "selectionPolicy",
     "permittedOutcomes",
 }
 
@@ -32,6 +33,7 @@ class AgentModelAcceptance:
     case_ids: tuple[str, ...]
     permitted_outcomes: tuple[str, ...]
     runtime_tracks: dict[str, object]
+    selection_policy: dict[str, object]
 
 
 def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
@@ -77,6 +79,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         raise ValueError("agent workload coverage is incomplete")
     _thresholds(plan["thresholds"])
     runtime_tracks = _runtime_tracks(plan["runtimeTracks"])
+    selection_policy = _selection_policy(plan["selectionPolicy"])
     outcomes = plan["permittedOutcomes"]
     if outcomes != ["selected-candidate", "deterministic-no-model"]:
         raise ValueError("agent model outcomes differ from the contract")
@@ -88,6 +91,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         case_ids,
         tuple(outcomes),
         runtime_tracks,
+        selection_policy,
     )
 
 
@@ -245,6 +249,21 @@ def _runtime_tracks(value: object) -> dict[str, object]:
             or not minimum <= observed <= maximum
         ):
             raise ValueError("agent runtime pressure bound is invalid")
+    return dict(value)
+
+
+def _selection_policy(value: object) -> dict[str, object]:
+    expected = {
+        "requireEveryCandidate": True,
+        "ranking": [
+            "concurrencyC8P95LatencyMilliseconds",
+            "warmP95LatencyMilliseconds",
+            "incrementalUnifiedMemoryBytes",
+            "candidateId",
+        ],
+    }
+    if value != expected:
+        raise ValueError("agent model selection policy differs from the contract")
     return dict(value)
 
 

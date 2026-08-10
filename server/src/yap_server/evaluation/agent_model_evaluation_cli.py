@@ -11,6 +11,11 @@ from yap_server.knowledge.sglang_reasoning_client import SglangReasoningClient
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
+from .agent_model_evidence import write_new_agent_model_evidence
+from .checked_candidate import (
+    admit_checked_candidate,
+    bind_checked_candidate_evidence,
+)
 from .agent_model_fixture_runner import run_agent_model_fixtures
 from .agent_model_scoring import score_agent_model_results
 from .agent_runtime_pressure import run_agent_runtime_pressure
@@ -19,11 +24,22 @@ from .agent_runtime_pressure import run_agent_runtime_pressure
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repository-root", type=Path, required=True)
+    parser.add_argument("--checked-head", required=True)
     parser.add_argument("--candidate-id", required=True)
     parser.add_argument("--endpoint", default="http://127.0.0.1:30000")
     arguments = parser.parse_args()
     repository_root = arguments.repository_root.resolve(strict=True)
     evidence_root = _evidence_root(repository_root)
+    server_root = repository_root / "server"
+    checked_candidate = admit_checked_candidate(
+        repository_root=repository_root,
+        checked_head=arguments.checked_head,
+        input_paths=(
+            server_root / "agent-model-acceptance.json",
+            server_root / "agent-reasoning-candidates.lock.json",
+            server_root / "agent-workload-fixtures.json",
+        ),
+    )
     acceptance = load_agent_model_acceptance(repository_root)
     candidate = _candidate(repository_root, arguments.candidate_id)
     endpoint = _loopback_endpoint(arguments.endpoint)
@@ -73,8 +89,8 @@ def main() -> int:
     destination = (
         evidence_root / "agent-model" / arguments.candidate_id / "results.json"
     )
-    _write_private_json(
-        destination,
+    checked_candidate.verify_unchanged()
+    evidence = bind_checked_candidate_evidence(
         {
             "schemaVersion": 1,
             "candidateId": arguments.candidate_id,
@@ -94,6 +110,11 @@ def main() -> int:
                 "cancelledRequestCompletionCount": pressure.cancelled_request_completion_count,
             },
         },
+        checked_candidate,
+    )
+    write_new_agent_model_evidence(
+        destination,
+        evidence,
     )
     print(
         json.dumps(
@@ -169,18 +190,6 @@ def _loopback_endpoint(value: str) -> str:
     if value not in {"http://127.0.0.1:30000", "http://localhost:30000"}:
         raise ValueError("agent model endpoint must be loopback")
     return value
-
-
-def _write_private_json(path: Path, value: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.parent.is_symlink() or path.exists():
-        raise ValueError("agent model evidence destination must be new and real")
-    body = json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:
-        output.write(body)
-        output.flush()
-        os.fsync(output.fileno())
 
 
 if __name__ == "__main__":
