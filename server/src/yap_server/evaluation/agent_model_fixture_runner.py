@@ -66,6 +66,9 @@ def run_agent_model_fixtures(
     cases = fixture["cases"]
     if not isinstance(system_prompt, str) or not isinstance(cases, list):
         raise ValueError("agent workload fixture is invalid")
+    maximum_output_tokens = int(
+        acceptance.runtime_tracks["maximumOutputTokens"]
+    )
     selected_cases = [
         case
         for case in cases
@@ -77,10 +80,68 @@ def run_agent_model_fixtures(
             case,
             model=model,
             system_prompt=system_prompt,
+            maximum_output_tokens=maximum_output_tokens,
             request_json=request_json,
         )
         for case in selected_cases
     )
+
+
+def warm_agent_model_fixture_runtime(
+    *,
+    model: str,
+    maximum_output_tokens: int,
+    request_json: JsonRequest,
+) -> None:
+    """Compile the exact tool and structured-output shapes before measurement."""
+
+    if not model or not 1 <= maximum_output_tokens <= 4_096:
+        raise ValueError("agent fixture warmup contract is invalid")
+    tool_response = request_json(
+        {
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "Select the requested governed tool exactly once.",
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Call search_knowledge exactly once with purpose "
+                        "knowledge.read and search_text runtime warmup."
+                    ),
+                },
+            ],
+            "tools": _tool_definitions(),
+            "tool_choice": "required",
+            "temperature": 0,
+            "max_tokens": maximum_output_tokens,
+            "chat_template_kwargs": {"enable_thinking": False},
+        }
+    )
+    _message, _tool_id, tool_name, arguments = _tool_call(tool_response)
+    validate_agent_tool_arguments(tool_name, arguments)
+    final_response = request_json(
+        {
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "Return the requested JSON structure only.",
+                },
+                {
+                    "role": "user",
+                    "content": "Return WARMUP_READY with no citations.",
+                },
+            ],
+            "temperature": 0,
+            "max_tokens": maximum_output_tokens,
+            "chat_template_kwargs": {"enable_thinking": False},
+            "response_format": _governed_answer_response_format(),
+        }
+    )
+    _final_answer(final_response)
 
 
 def _run_case_safely(
@@ -88,6 +149,7 @@ def _run_case_safely(
     *,
     model: str,
     system_prompt: str,
+    maximum_output_tokens: int,
     request_json: JsonRequest,
 ) -> AgentFixtureResult:
     started = time.monotonic()
@@ -96,6 +158,7 @@ def _run_case_safely(
             case,
             model=model,
             system_prompt=system_prompt,
+            maximum_output_tokens=maximum_output_tokens,
             request_json=request_json,
         )
     except RuntimeError as error:
@@ -124,6 +187,7 @@ def _run_case(
     *,
     model: str,
     system_prompt: str,
+    maximum_output_tokens: int,
     request_json: JsonRequest,
 ) -> AgentFixtureResult:
     if not isinstance(case, dict):
@@ -148,7 +212,7 @@ def _run_case(
                 "tools": _tool_definitions(),
                 "tool_choice": "required",
                 "temperature": 0,
-                "max_tokens": 512,
+                "max_tokens": maximum_output_tokens,
                 "chat_template_kwargs": {"enable_thinking": False},
             }
         )
@@ -184,27 +248,9 @@ def _run_case(
             "model": model,
             "messages": messages,
             "temperature": 0,
-            "max_tokens": 512,
+            "max_tokens": maximum_output_tokens,
             "chat_template_kwargs": {"enable_thinking": False},
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "governed_answer",
-                    "strict": True,
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "answer": {"type": "string"},
-                            "citationConceptIds": {
-                                "type": "array",
-                                "items": {"type": "string"},
-                            },
-                        },
-                        "required": ["answer", "citationConceptIds"],
-                        "additionalProperties": False,
-                    },
-                },
-            },
+            "response_format": _governed_answer_response_format(),
         }
     )
     answer, citations = _final_answer(final)
@@ -340,6 +386,28 @@ def _message(response: dict[str, object]) -> dict[str, object]:
     if not isinstance(message, dict):
         raise ValueError("agent response message is invalid")
     return message
+
+
+def _governed_answer_response_format() -> dict[str, object]:
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "governed_answer",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "answer": {"type": "string"},
+                    "citationConceptIds": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                },
+                "required": ["answer", "citationConceptIds"],
+                "additionalProperties": False,
+            },
+        },
+    }
 
 
 def _tool_definitions() -> list[dict[str, object]]:

@@ -21,7 +21,7 @@
     "concurrencyLevels": [1, 2, 4, 8],
     "prefixIsolationRepetitions": 4,
     "maximumContextTokens": 8192,
-    "maximumOutputTokens": 512,
+    "maximumOutputTokens": 256,
     "requestTimeoutSeconds": 30,
     "startupTimeoutSeconds": 600,
     "teardownTimeoutSeconds": 30

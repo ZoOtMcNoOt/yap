@@ -13,7 +13,10 @@ from yap_server.knowledge.vllm_reasoning_client import (
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
-from .agent_model_fixture_runner import run_agent_model_fixtures
+from .agent_model_fixture_runner import (
+    run_agent_model_fixtures,
+    warm_agent_model_fixture_runtime,
+)
 from .agent_runtime_pressure import run_agent_runtime_pressure
 from .agent_vllm_metrics import AgentVllmActivity
 from .agent_vllm_runtime import OwnedAgentVllmRuntime
@@ -90,6 +93,13 @@ def run_agent_model_candidate(
         return fixture_client.request(payload, request_cancellation)
 
     try:
+        warm_agent_model_fixture_runtime(
+            model=str(model_candidate["model"]),
+            maximum_output_tokens=int(
+                acceptance.runtime_tracks["maximumOutputTokens"]
+            ),
+            request_json=request_json,
+        )
         stage = "fixtures"
         records = tuple(
             item.record()

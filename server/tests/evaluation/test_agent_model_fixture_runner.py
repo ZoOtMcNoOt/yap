@@ -7,6 +7,7 @@ import unittest
 from yap_server.evaluation.agent_model_fixture_runner import (
     _step_visible_context,
     run_agent_model_fixtures,
+    warm_agent_model_fixture_runtime,
 )
 from yap_server.evaluation.agent_model_scoring import score_agent_model_results
 
@@ -15,6 +16,33 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 class AgentModelFixtureRunnerTests(unittest.TestCase):
+    def test_warms_exact_tool_and_structured_response_shapes(self) -> None:
+        requests: list[dict[str, object]] = []
+
+        def request(payload: dict[str, object]) -> dict[str, object]:
+            requests.append(payload)
+            if "tools" in payload:
+                return _tool_response(
+                    "search_knowledge",
+                    {
+                        "purpose": "knowledge.read",
+                        "search_text": "runtime warmup",
+                    },
+                )
+            return _answer_response("WARMUP_READY")
+
+        warm_agent_model_fixture_runtime(
+            model="synthetic",
+            maximum_output_tokens=256,
+            request_json=request,
+        )
+
+        self.assertEqual(len(requests), 2)
+        self.assertEqual([item["max_tokens"] for item in requests], [256, 256])
+        self.assertIn("tools", requests[0])
+        self.assertNotIn("tools", requests[1])
+        self.assertIn("response_format", requests[1])
+
     def test_terminology_workloads_request_a_noncanonical_proposal(self) -> None:
         fixture = json.loads(
             (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
@@ -196,6 +224,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
 
         def request(payload: dict[str, object]) -> dict[str, object]:
             nonlocal active
+            self.assertEqual(payload["max_tokens"], 256)
             self.assertEqual(
                 payload["chat_template_kwargs"], {"enable_thinking": False}
             )
@@ -355,13 +384,15 @@ def _tool_response(
     }
 
 
-def _answer_response() -> dict[str, object]:
+def _answer_response(answer: str = "unavailable") -> dict[str, object]:
     return {
         "choices": [
             {
                 "message": {
                     "role": "assistant",
-                    "content": '{"answer":"unavailable","citationConceptIds":[]}',
+                    "content": json.dumps(
+                        {"answer": answer, "citationConceptIds": []}
+                    ),
                 }
             }
         ]

@@ -110,8 +110,8 @@ def build_agent_vllm_launch_arguments(
                 "8",
                 "--max-num-batched-tokens",
                 "8192",
-                "--safetensors-load-strategy",
-                "prefetch",
+                "--load-format",
+                "fastsafetensors",
             ]
         )
     return arguments

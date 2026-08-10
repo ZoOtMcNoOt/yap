@@ -31,7 +31,7 @@ class AgentVllmRuntimeTests(unittest.TestCase):
         self.assertEqual(qwen[qwen.index("--load-format") + 1], "fastsafetensors")
         self.assertIn("--speculative-config", qwen)
         self.assertEqual(
-            gemma[gemma.index("--safetensors-load-strategy") + 1], "prefetch"
+            gemma[gemma.index("--load-format") + 1], "fastsafetensors"
         )
         self.assertIn("--language-model-only", qwen)
         self.assertIn("--language-model-only", gemma)
