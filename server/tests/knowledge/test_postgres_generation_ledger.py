@@ -104,11 +104,18 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                 self.assertEqual(
                     restored.generation_sha256, generations[0].generation_sha256
                 )
+                connection.execute(
+                    """INSERT INTO yap_knowledge_generation_holds
+                       (tenant_id, generation_sha256, hold_type, hold_id)
+                       VALUES (%s, %s, 'test', 'retained-provenance')""",
+                    (tenant_id, generations[1].generation_sha256),
+                )
                 removed = prune_inactive_generations(
-                    connection, tenant_id=tenant_id, retain=1
+                    connection, tenant_id=tenant_id, retain=0
                 )
                 self.assertEqual(len(removed), 1)
                 self.assertNotIn(generations[0].generation_sha256, removed)
+                self.assertNotIn(generations[1].generation_sha256, removed)
                 active = read_active_generation(connection, tenant_id=tenant_id)
                 self.assertEqual(active.generation_sha256, generations[0].generation_sha256)
                 history = connection.execute(
@@ -126,6 +133,10 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                 )
                 connection.execute(
                     "DELETE FROM yap_knowledge_activation_history WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_generation_holds WHERE tenant_id = %s",
                     (tenant_id,),
                 )
                 connection.execute(

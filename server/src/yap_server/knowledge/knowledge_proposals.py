@@ -140,6 +140,13 @@ def store_knowledge_proposal(
     proposal_id = _sha256(canonical)
     with connection.transaction():
         connection.execute(
+            """INSERT INTO yap_knowledge_generation_holds (
+                   tenant_id, generation_sha256, hold_type, hold_id
+               ) VALUES (%s, %s, 'proposal', %s)
+               ON CONFLICT DO NOTHING""",
+            (principal.tenant_id, authorized.generation_sha256, proposal_id),
+        )
+        connection.execute(
             """INSERT INTO yap_knowledge_proposals (
                    tenant_id, proposal_id, generation_sha256,
                    proposer_subject_id, proposer_agent_id, proposal_type,

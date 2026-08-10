@@ -171,6 +171,18 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                 activated_at timestamptz NOT NULL DEFAULT transaction_timestamp()
             )"""
         )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS yap_knowledge_generation_holds (
+                tenant_id text NOT NULL,
+                generation_sha256 text NOT NULL,
+                hold_type text NOT NULL,
+                hold_id text NOT NULL,
+                created_at timestamptz NOT NULL DEFAULT transaction_timestamp(),
+                PRIMARY KEY (tenant_id, generation_sha256, hold_type, hold_id),
+                FOREIGN KEY (tenant_id, generation_sha256)
+                    REFERENCES yap_knowledge_builds
+            )"""
+        )
 
 
 def stage_compiled_generation(
@@ -546,6 +558,11 @@ def prune_inactive_generations(
                  ON a.tenant_id = b.tenant_id
                 AND a.generation_sha256 = b.generation_sha256
                WHERE b.tenant_id = %s AND a.generation_sha256 IS NULL
+                 AND NOT EXISTS (
+                    SELECT 1 FROM yap_knowledge_generation_holds h
+                    WHERE h.tenant_id = b.tenant_id
+                      AND h.generation_sha256 = b.generation_sha256
+                 )
                ORDER BY b.created_at DESC, b.generation_sha256 DESC
                OFFSET %s""",
             (tenant_id, retain),

@@ -237,6 +237,10 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 (tenant_id,),
             )
             connection.execute(
+                "DELETE FROM yap_knowledge_generation_holds WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.execute(
                 "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
                 (tenant_id,),
             )
