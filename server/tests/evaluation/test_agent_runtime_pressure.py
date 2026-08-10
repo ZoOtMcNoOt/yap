@@ -177,6 +177,6 @@ def _answer(value: str) -> str:
 
 
 def _expected_marker(prompt: str) -> str:
-    match = re.search(r"Return exactly ([A-Z0-9-]+)\.?", prompt)
+    match = re.search(r"Set answer to the exact string \"([A-Z0-9-]+)\"", prompt)
     assert match is not None
     return match.group(1)

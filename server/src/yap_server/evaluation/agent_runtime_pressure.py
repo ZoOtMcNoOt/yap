@@ -78,9 +78,14 @@ def run_agent_runtime_pressure(
     sampler.start()
     try:
         cancel = threading.Event()
-        cold = _timed(request, "Return exactly COLD-READY.", "COLD-READY", cancel)
+        cold = _timed(request, _marker_prompt("COLD-READY"), "COLD-READY", cancel)
         warm = tuple(
-            _timed(request, f"Return exactly WARM-{index}.", f"WARM-{index}", cancel)
+            _timed(
+                request,
+                _marker_prompt(f"WARM-{index}"),
+                f"WARM-{index}",
+                cancel,
+            )
             for index in range(int(tracks["warmRequests"]))
         )
         concurrency: dict[int, tuple[int, ...]] = {}
@@ -91,7 +96,7 @@ def run_agent_runtime_pressure(
             def concurrent_call(index: int) -> int:
                 marker = f"C{level}-{index}"
                 barrier.wait(timeout=int(tracks["requestTimeoutSeconds"]))
-                return _timed(request, f"Return exactly {marker}.", marker, cancel)
+                return _timed(request, _marker_prompt(marker), marker, cancel)
 
             with ThreadPoolExecutor(max_workers=level) as executor:
                 concurrency[level] = tuple(executor.map(concurrent_call, range(level)))
@@ -171,7 +176,7 @@ def _isolation_leaks(
             barrier.wait(timeout=timeout_seconds)
             return _answer(
                 request(
-                    f"{shared}\nPrivate marker {marker}. Return exactly {marker}.",
+                    _marker_prompt(marker, prefix=shared),
                     threading.Event(),
                 )
             )
@@ -229,7 +234,7 @@ def _cancelled_completions(
     )
     recovery = _answer(
         recovery_request(
-            "Return exactly CANCEL-RECOVERED.",
+            _marker_prompt("CANCEL-RECOVERED"),
             threading.Event(),
         )
     )
@@ -259,6 +264,15 @@ def _answer(value: str) -> str:
             "agent runtime marker response differs from the contract: " + observed[:512]
         )
     return parsed["answer"]
+
+
+def _marker_prompt(marker: str, *, prefix: str = "") -> str:
+    instruction = (
+        "Return one JSON object. Set answer to the exact string "
+        f"{json.dumps(marker)} with no added punctuation. Set citationConceptIds "
+        "to an empty array because no governed sources were supplied."
+    )
+    return f"{prefix}\n{instruction}" if prefix else instruction
 
 
 __all__ = ["RuntimePressureResult", "run_agent_runtime_pressure"]
