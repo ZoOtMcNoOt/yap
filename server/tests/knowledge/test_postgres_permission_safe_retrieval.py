@@ -22,7 +22,6 @@ from yap_server.knowledge.generation_ledger import (
 )
 from yap_server.knowledge.knowledge_source_admission import (
     admit_curated_knowledge_generation,
-    review_curated_knowledge_generation,
 )
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
@@ -435,8 +434,9 @@ def _wait_for_advisory_lock_wait(process_id: int) -> None:
 
 
 def _stage_reviewed_generation(connection, generation) -> None:
-    review = review_curated_knowledge_generation(
-        AuthenticatedPrincipal(
+    admission = admit_curated_knowledge_generation(
+        connection,
+        principal=AuthenticatedPrincipal(
             tenant_id=generation.tenant_id,
             subject_id="synthetic-curator",
             client_id="knowledge-tests",
@@ -445,11 +445,6 @@ def _stage_reviewed_generation(connection, generation) -> None:
         ),
         repository_revision=generation.source_revision,
         source_path="tests/fixtures/permission-safe-okf",
-        generation=generation,
-    )
-    admission = admit_curated_knowledge_generation(
-        connection,
-        review=review,
         generation=generation,
     )
     stage_compiled_generation(

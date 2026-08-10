@@ -100,7 +100,7 @@ class GovernedKnowledgeMcpTests(unittest.TestCase):
             expected["propose_knowledge"]["properties"]["proposed_content"]["maxLength"],
         )
         listed_citation = listed["propose_knowledge"]["$defs"][
-            "ProposalCitationInput"
+            "ProposalCitation"
         ]
         expected_citation = expected["propose_knowledge"]["properties"][
             "source_citations"

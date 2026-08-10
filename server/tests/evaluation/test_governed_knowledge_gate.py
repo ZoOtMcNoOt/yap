@@ -132,6 +132,7 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
             "server/src/yap_server/evaluation/agent_vllm_runtime.py",
             "server/src/yap_server/evaluation/vllm_runtime_metrics.py",
             "server/src/yap_server/evaluation/provider_runtime_observations.py",
+            "server/src/yap_server/evaluation/private_json_evidence.py",
             "server/src/yap_server/knowledge/agent_reasoning_routes.py",
             "server/src/yap_server/knowledge/governed_rag_agent.py",
             "server/src/yap_server/knowledge/governed_knowledge_tools.py",

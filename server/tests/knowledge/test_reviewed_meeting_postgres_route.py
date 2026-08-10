@@ -37,10 +37,10 @@ from yap_server.knowledge.knowledge_tool_audit import (
 from yap_server.knowledge.knowledge_tool_contract import (
     KnowledgeAgentProfile,
     KnowledgeToolCancelled,
+    ProposalCitation,
     SearchKnowledgeRequest,
 )
 from yap_server.knowledge.knowledge_proposals import (
-    ProposalCitation,
     install_knowledge_proposal_schema,
 )
 from yap_server.knowledge.knowledge_source_admission import (
@@ -357,11 +357,11 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 proposed_content="The reviewed meeting records crash safety.",
                 source_citations=(
                     ProposalCitation(
-                        source.concept_id,
-                        source.source_revision,
-                        source.content_sha256,
-                        source.char_start,
-                        source.char_end,
+                        concept_id=source.concept_id,
+                        source_revision=source.source_revision,
+                        content_sha256=source.content_sha256,
+                        char_start=source.char_start,
+                        char_end=source.char_end,
                     ),
                 ),
                 expected_generation_sha256=generation.generation_sha256,

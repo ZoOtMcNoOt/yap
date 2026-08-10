@@ -495,7 +495,8 @@ def _activate_complete_generation(
             """SELECT tenant_id, generation_sha256, source_revision,
                       okf_version, concept_count, permission_count,
                       chunk_count, relationship_count,
-                      embedding_model_id, embedding_model_revision
+                      embedding_model_id, embedding_model_revision,
+                      source_admission_sha256
                FROM yap_knowledge_builds
                WHERE tenant_id = %s AND generation_sha256 = %s""",
             (tenant_id, generation_sha256),
@@ -545,6 +546,13 @@ def _activate_complete_generation(
             okf_version=str(row[3]),
         )
         validate_compiled_generation(persisted)
+        require_knowledge_source_admission(
+            connection,
+            tenant_id=tenant_id,
+            admission_sha256=str(row[10]),
+            generation_sha256=generation_sha256,
+            source_revision=str(row[2]),
+        )
         previous = connection.execute(
             """SELECT generation_sha256 FROM yap_knowledge_active_builds
                WHERE tenant_id = %s""",

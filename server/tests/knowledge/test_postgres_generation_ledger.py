@@ -22,13 +22,12 @@ from yap_server.knowledge.generation_ledger import (
 )
 from yap_server.knowledge.knowledge_source_admission import (
     admit_curated_knowledge_generation,
-    review_curated_knowledge_generation,
 )
 from yap_server.knowledge.knowledge_proposals import (
-    ProposalCitation,
     discard_knowledge_proposal,
     store_knowledge_proposal,
 )
+from yap_server.knowledge.knowledge_tool_contract import ProposalCitation
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
     search_postgres_knowledge_lexical,
@@ -42,6 +41,9 @@ POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
 class PostgresGenerationLedgerTests(unittest.TestCase):
     def test_activation_rehashes_every_persisted_projection(self) -> None:
         mutations = {
+            "source-admission": """UPDATE yap_knowledge_source_admissions
+                SET reviewer_id = 'mallory'
+                WHERE tenant_id = %s AND generation_sha256 = %s""",
             "audience": """UPDATE yap_knowledge_permission_audience
                 SET subject_id = 'mallory'
                 WHERE tenant_id = %s AND generation_sha256 = %s""",
@@ -167,6 +169,32 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                 char_start=0,
                 char_end=1,
             )
+
+            for char_start, char_end in (
+                (False, True),
+                (0.0, 1.0),
+                ("0", "1"),
+            ):
+                invalid = ProposalCitation.model_construct(
+                    concept_id=concept.concept_id,
+                    source_revision=retained.source_revision,
+                    content_sha256=concept.content_sha256,
+                    char_start=char_start,
+                    char_end=char_end,
+                )
+                with self.subTest(char_start=char_start, char_end=char_end):
+                    with self.assertRaisesRegex(ValueError, "citation"):
+                        store_knowledge_proposal(
+                            setup,
+                            principal=PrincipalKey(tenant_id, "alice"),
+                            purpose="knowledge.read",
+                            agent_id="retention-test",
+                            agent_capabilities=frozenset({"knowledge.propose"}),
+                            proposal_type="summary",
+                            proposed_content="Reject invalid citation offsets.",
+                            source_citations=(invalid,),
+                            expected_generation_sha256=retained.generation_sha256,
+                        )
 
             def store(content: str):
                 return store_knowledge_proposal(
@@ -306,14 +334,12 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                     reviewed,
                     source_admission_sha256="0" * 64,
                 )
-            review = review_curated_knowledge_generation(
-                _curator(tenant_id, "curator"),
+            admission = admit_curated_knowledge_generation(
+                connection,
+                principal=_curator(tenant_id, "curator"),
                 repository_revision=reviewed.source_revision,
                 source_path="knowledge/voiceos",
                 generation=reviewed,
-            )
-            admission = admit_curated_knowledge_generation(
-                connection, review=review, generation=reviewed
             )
             forged = replace(
                 reviewed,
@@ -748,15 +774,11 @@ def _embed_and_activate(connection, generation) -> None:
 
 
 def _stage_reviewed_generation(connection, generation) -> None:
-    review = review_curated_knowledge_generation(
-        _curator(generation.tenant_id, "synthetic-curator"),
-        repository_revision=generation.source_revision,
-        source_path="tests/fixtures/okf",
-        generation=generation,
-    )
     admission = admit_curated_knowledge_generation(
         connection,
-        review=review,
+        principal=_curator(generation.tenant_id, "synthetic-curator"),
+        repository_revision=generation.source_revision,
+        source_path="tests/fixtures/okf",
         generation=generation,
     )
     stage_compiled_generation(

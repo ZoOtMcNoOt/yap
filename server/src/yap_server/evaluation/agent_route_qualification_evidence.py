@@ -69,7 +69,7 @@ _PROTECTED_ROUTE_PATHS = frozenset(
         *_MODEL_INPUT_PATHS,
         *_MODEL_DEPENDENCY_PATHS,
         "server/src/yap_server/private_artifact.py",
-        "server/src/yap_server/private_json_evidence.py",
+        "server/src/yap_server/evaluation/private_json_evidence.py",
         "server/src/yap_server/evaluation/checked_candidate.py",
         "server/src/yap_server/evaluation/provider_runtime_observations.py",
         "server/src/yap_server/evaluation/vllm_runtime_metrics.py",

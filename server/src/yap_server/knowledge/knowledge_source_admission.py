@@ -39,16 +39,6 @@ class KnowledgeSourceAdmission:
     review_authority_sha256: str
 
 
-@dataclass(frozen=True, slots=True)
-class CuratedKnowledgeSourceReview:
-    reviewer: PrincipalKey
-    repository_revision: str
-    source_path: str
-    source_manifest_sha256: str
-    generation_sha256: str
-    review_sha256: str
-
-
 def install_knowledge_source_admission_schema(
     connection: Connection[object],
 ) -> None:
@@ -141,37 +131,12 @@ def admit_reviewed_capture_generation(
 def admit_curated_knowledge_generation(
     connection: Connection[object],
     *,
-    review: CuratedKnowledgeSourceReview,
-    generation: CompiledKnowledgeGeneration,
-) -> KnowledgeSourceAdmission:
-    _validate_curated_review(review)
-    validate_compiled_generation(generation)
-    if (
-        generation.tenant_id != review.reviewer.tenant_id
-        or generation.source_revision != review.repository_revision
-        or generation.generation_sha256 != review.generation_sha256
-    ):
-        raise ValueError("curated source review differs from the generation")
-    return _record_admission(
-        connection,
-        principal=review.reviewer,
-        source_kind="curated-repository",
-        source_identity_sha256=review.source_manifest_sha256,
-        source_path=review.source_path,
-        source_revision=review.repository_revision,
-        review_authority_sha256=review.review_sha256,
-        generation=generation,
-    )
-
-
-def review_curated_knowledge_generation(
     principal: AuthenticatedPrincipal,
-    *,
     repository_revision: str,
     source_path: str,
     generation: CompiledKnowledgeGeneration,
-) -> CuratedKnowledgeSourceReview:
-    """Bind an authenticated curator to one exact source and compiled generation."""
+) -> KnowledgeSourceAdmission:
+    """Authenticate one curator and durably bind one exact compiled source."""
 
     if _CURATED_KNOWLEDGE_REVIEWER_ROLE not in principal.roles:
         raise PermissionError("principal cannot review curated knowledge")
@@ -191,20 +156,24 @@ def review_curated_knowledge_generation(
             "compiledGeneration": compiled_generation_record(generation),
         }
     )
-    identity = _curated_review_identity(
-        reviewer=principal.key,
-        repository_revision=revision,
-        source_path=reviewed_path,
-        source_manifest_sha256=source_manifest_sha256,
-        generation_sha256=generation.generation_sha256,
+    review_authority_sha256 = _sha256(
+        _curated_review_identity(
+            reviewer=principal.key,
+            repository_revision=revision,
+            source_path=reviewed_path,
+            source_manifest_sha256=source_manifest_sha256,
+            generation_sha256=generation.generation_sha256,
+        )
     )
-    return CuratedKnowledgeSourceReview(
-        reviewer=principal.key,
-        repository_revision=revision,
+    return _record_admission(
+        connection,
+        principal=principal.key,
+        source_kind="curated-repository",
+        source_identity_sha256=source_manifest_sha256,
         source_path=reviewed_path,
-        source_manifest_sha256=source_manifest_sha256,
-        generation_sha256=generation.generation_sha256,
-        review_sha256=_sha256(identity),
+        source_revision=revision,
+        review_authority_sha256=review_authority_sha256,
+        generation=generation,
     )
 
 
@@ -227,30 +196,6 @@ def _curated_review_identity(
         "sourceManifestSha256": source_manifest_sha256,
         "generationSha256": generation_sha256,
     }
-
-
-def _validate_curated_review(review: CuratedKnowledgeSourceReview) -> None:
-    if not isinstance(review, CuratedKnowledgeSourceReview):
-        raise TypeError("curated knowledge review has an invalid type")
-    revision = identifier(
-        review.repository_revision, 512, "curated source revision"
-    )
-    source_path = _relative_source_path(review.source_path)
-    if (
-        not valid_sha256(review.source_manifest_sha256)
-        or not valid_sha256(review.generation_sha256)
-        or review.review_sha256
-        != _sha256(
-            _curated_review_identity(
-                reviewer=review.reviewer,
-                repository_revision=revision,
-                source_path=source_path,
-                source_manifest_sha256=review.source_manifest_sha256,
-                generation_sha256=review.generation_sha256,
-            )
-        )
-    ):
-        raise ValueError("curated knowledge review identity is invalid")
 
 
 def require_knowledge_source_admission(
@@ -425,10 +370,8 @@ def _sha256(value: object) -> str:
 
 __all__ = [
     "KnowledgeSourceAdmission",
-    "CuratedKnowledgeSourceReview",
     "admit_curated_knowledge_generation",
     "admit_reviewed_capture_generation",
     "install_knowledge_source_admission_schema",
     "require_knowledge_source_admission",
-    "review_curated_knowledge_generation",
 ]

@@ -32,7 +32,7 @@ from yap_server.evaluation.owned_postgres_knowledge_runtime import (
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_PHASE9_DESKTOP_BASE_HEAD = "10618e9d292e6810d6fee7defd7adc4902ecb2ed"
+_LOCAL_OFFLINE_DESKTOP_BASE_HEAD = "10618e9d292e6810d6fee7defd7adc4902ecb2ed"
 _EXPECTED_DATABASE_MODULES = (
     "tests.knowledge.test_postgres_generation_ledger",
     "tests.knowledge.test_postgres_permission_safe_retrieval",
@@ -69,7 +69,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 129
+_EXPECTED_PORTABLE_TEST_COUNT = 130
 
 
 def evaluate_governed_knowledge_gate(
@@ -291,18 +291,18 @@ def verify_local_offline_dependency_boundary(
 ) -> dict[str, object]:
     ancestor = _git(
         repository_root,
-        ("merge-base", "--is-ancestor", _PHASE9_DESKTOP_BASE_HEAD, checked_head),
+        ("merge-base", "--is-ancestor", _LOCAL_OFFLINE_DESKTOP_BASE_HEAD, checked_head),
         runner=runner,
         check=False,
     )
     if ancestor.returncode != 0:
-        raise ValueError("Phase 9 desktop dependency baseline is not an ancestor")
+        raise ValueError("local/offline desktop dependency baseline is not an ancestor")
     changed = _git(
         repository_root,
         (
             "diff",
             "--name-only",
-            f"{_PHASE9_DESKTOP_BASE_HEAD}..{checked_head}",
+            f"{_LOCAL_OFFLINE_DESKTOP_BASE_HEAD}..{checked_head}",
             "--",
             "desktop",
         ),
@@ -310,10 +310,10 @@ def verify_local_offline_dependency_boundary(
     ).stdout.splitlines()
     if changed:
         raise ValueError(
-            "Phase 9 changed the local/offline desktop dependency boundary"
+            "governed knowledge changed the local/offline desktop dependency boundary"
         )
     return {
-        "baselineHead": _PHASE9_DESKTOP_BASE_HEAD,
+        "baselineHead": _LOCAL_OFFLINE_DESKTOP_BASE_HEAD,
         "desktopChanged": False,
         "evidenceKind": "unchanged-desktop-dependency-boundary",
     }

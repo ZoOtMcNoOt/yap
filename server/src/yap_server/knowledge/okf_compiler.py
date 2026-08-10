@@ -242,6 +242,7 @@ def validate_compiled_generation(value: CompiledKnowledgeGeneration) -> None:
     expected_chunks: list[CompiledChunk] = []
     expected_relationships: list[CompiledRelationship] = []
     redirect_owners: dict[str, str] = {}
+    resources: set[str] = set()
     for concept in value.concepts:
         path = Path(concept.source_path)
         if (
@@ -251,6 +252,13 @@ def validate_compiled_generation(value: CompiledKnowledgeGeneration) -> None:
         ):
             raise ValueError("compiled concept path identity is invalid")
         frontmatter = _canonical_mapping(concept.frontmatter, "compiled frontmatter")
+        validate_concept_profile(frontmatter, tenant, path, resources)
+        if (
+            not isinstance(concept.content_sha256, str)
+            or len(concept.content_sha256) != 64
+            or any(character not in "0123456789abcdef" for character in concept.content_sha256)
+        ):
+            raise ValueError("compiled concept content identity is invalid")
         permission = effective_permission(path, value.permissions)
         links = concept_links(path, concept.body)
         broken_links = tuple(

@@ -13,7 +13,6 @@ from yap_server.auth.principal import PrincipalKey
 
 from .governed_knowledge_tools import GovernedKnowledgeTools
 from .governed_knowledge_proposals import GovernedKnowledgeProposals
-from .knowledge_proposals import ProposalCitation
 from .knowledge_tool_contract import (
     BrowseKnowledgeRequest,
     ConceptId,
@@ -23,7 +22,6 @@ from .knowledge_tool_contract import (
     KnowledgePurpose,
     ProposalContent,
     ProposalCitations,
-    ProposalCitationInput,
     ProposalType,
     SearchResultLimit,
     SearchText,
@@ -87,13 +85,15 @@ def create_governed_knowledge_mcp_server(
                     purpose=purpose,
                     proposal_type=proposal_type,
                     proposed_content=proposed_content,
-                    source_citations=tuple(
-                        _persisted_citation(item) for item in source_citations
-                    ),
+                    source_citations=tuple(source_citations),
                     expected_generation_sha256=expected_generation_sha256,
                     cancellation=cancellation,
                 )
-                return asdict(response)
+                materialized = asdict(response)
+                materialized["source_citations"] = [
+                    item.model_dump(mode="json") for item in response.source_citations
+                ]
+                return materialized
 
         return await _run_acknowledged_database_call(execute)
 
@@ -196,16 +196,6 @@ async def _run_acknowledged_database_call(
     if isinstance(outcome[0], BaseException):
         raise outcome[0]
     return outcome[0]
-
-
-def _persisted_citation(value: ProposalCitationInput) -> ProposalCitation:
-    return ProposalCitation(
-        concept_id=value.concept_id,
-        source_revision=value.source_revision,
-        content_sha256=value.content_sha256,
-        char_start=value.char_start,
-        char_end=value.char_end,
-    )
 
 
 __all__ = ["ConnectionFactory", "create_governed_knowledge_mcp_server"]

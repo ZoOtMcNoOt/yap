@@ -16,9 +16,10 @@ from .agent_reasoning_routes import (
 )
 from .governed_knowledge_proposals import GovernedKnowledgeProposals
 from .governed_knowledge_tools import GovernedKnowledgeTools
-from .knowledge_proposals import KnowledgeProposal, ProposalCitation
+from .knowledge_proposals import KnowledgeProposal
 from .knowledge_tool_contract import (
     KnowledgeToolCancelled,
+    ProposalCitation,
     SearchKnowledgeRequest,
     validate_search_text,
 )
@@ -139,11 +140,11 @@ class GovernedRagAgent:
         by_concept = {item.citation.concept_id: item for item in retrieval.items}
         citations = tuple(
             ProposalCitation(
-                concept_id,
-                by_concept[concept_id].citation.source_revision,
-                by_concept[concept_id].citation.content_sha256,
-                int(by_concept[concept_id].citation.char_start),
-                int(by_concept[concept_id].citation.char_end),
+                concept_id=concept_id,
+                source_revision=by_concept[concept_id].citation.source_revision,
+                content_sha256=by_concept[concept_id].citation.content_sha256,
+                char_start=int(by_concept[concept_id].citation.char_start),
+                char_end=int(by_concept[concept_id].citation.char_end),
             )
             for concept_id in citation_ids
         )

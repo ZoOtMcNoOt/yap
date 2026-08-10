@@ -10,13 +10,13 @@ from yap_server.auth.principal import PrincipalKey
 
 from .cancellable_database_operation import run_cancellable_database_operation
 from .knowledge_agent_authority import KnowledgeAgentAuthority
-from .knowledge_proposals import (
-    KnowledgeProposal,
-    ProposalCitation,
-    store_knowledge_proposal,
-)
+from .knowledge_proposals import KnowledgeProposal, store_knowledge_proposal
 from .knowledge_tool_audit import record_knowledge_tool_audit
-from .knowledge_tool_contract import KnowledgeToolCancelled, KnowledgeToolTimedOut
+from .knowledge_tool_contract import (
+    KnowledgeToolCancelled,
+    KnowledgeToolTimedOut,
+    ProposalCitation,
+)
 
 
 class GovernedKnowledgeProposals:

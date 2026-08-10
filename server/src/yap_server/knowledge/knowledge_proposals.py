@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 import hashlib
 import json
 import re
@@ -12,9 +12,9 @@ from yap_server.auth.principal import PrincipalKey
 
 from .postgres_permission_view import _authorize_knowledge_query
 from .knowledge_tool_contract import (
-    MAX_CONCEPT_ID_CHARACTERS,
     MAX_PROPOSAL_CHARACTERS,
     MAX_PROPOSAL_CITATIONS,
+    ProposalCitation,
     validate_bounded_text,
 )
 
@@ -26,15 +26,6 @@ _CLASSIFICATION_ORDER = {
     "confidential": 2,
     "restricted": 3,
 }
-
-
-@dataclass(frozen=True, slots=True)
-class ProposalCitation:
-    concept_id: str
-    source_revision: str
-    content_sha256: str
-    char_start: int
-    char_end: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,7 +171,7 @@ def _store_knowledge_proposal(
         "proposerAgentId": agent_id,
         "proposalType": proposal_type,
         "proposedContent": proposed_content,
-        "sourceCitations": [asdict(item) for item in source_citations],
+        "sourceCitations": [item.model_dump(mode="json") for item in source_citations],
         "inheritedPermissionSha256": inherited_hash,
     }
     proposal_id = _sha256(canonical)
@@ -340,16 +331,14 @@ def _proposal_input(
     ):
         raise ValueError("knowledge proposal citations are invalid")
     for citation in citations:
-        validate_bounded_text(
-            citation.concept_id,
-            field="knowledge proposal citation concept ID",
-            maximum=MAX_CONCEPT_ID_CHARACTERS,
-        )
-        validate_bounded_text(
-            citation.source_revision,
-            field="knowledge proposal citation revision",
-            maximum=MAX_CONCEPT_ID_CHARACTERS,
-        )
+        if not isinstance(citation, ProposalCitation):
+            raise ValueError("knowledge proposal citation differs from the contract")
+        try:
+            ProposalCitation.model_validate(citation.model_dump(), strict=True)
+        except ValueError as error:
+            raise ValueError(
+                "knowledge proposal citation differs from the contract"
+            ) from error
     if len({(item.concept_id, item.char_start, item.char_end) for item in citations}) != len(citations):
         raise ValueError("knowledge proposal citation is duplicated")
 
@@ -363,7 +352,6 @@ def _sha256(value: object) -> str:
 __all__ = [
     "KnowledgeProposal",
     "KnowledgeProposalDisposition",
-    "ProposalCitation",
     "discard_knowledge_proposal",
     "install_knowledge_proposal_schema",
     "store_knowledge_proposal",

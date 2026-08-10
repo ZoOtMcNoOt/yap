@@ -5,14 +5,16 @@ from pathlib import Path
 import os
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch, sentinel
 
 from yap_server.knowledge.okf_compiler import (
     compile_okf_bundle,
+    compiled_generation_sha256,
     validate_compiled_generation,
 )
 from yap_server.auth.principal import AuthenticatedPrincipal, PrincipalKey
 from yap_server.knowledge.knowledge_source_admission import (
-    review_curated_knowledge_generation,
+    admit_curated_knowledge_generation,
 )
 
 
@@ -20,7 +22,7 @@ FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "okf" / "pinne
 
 
 class OkfCompilerTests(unittest.TestCase):
-    def test_curated_review_requires_authenticated_fixed_role_and_derives_manifest(
+    def test_curated_admission_requires_authenticated_fixed_role_and_derives_manifest(
         self,
     ) -> None:
         with TemporaryDirectory() as directory:
@@ -38,8 +40,9 @@ class OkfCompilerTests(unittest.TestCase):
             scopes=frozenset(),
         )
         with self.assertRaisesRegex(PermissionError, "cannot review"):
-            review_curated_knowledge_generation(
-                unprivileged,
+            admit_curated_knowledge_generation(
+                object(),  # type: ignore[arg-type]
+                principal=unprivileged,
                 repository_revision=generation.source_revision,
                 source_path="knowledge/voiceos",
                 generation=generation,
@@ -48,20 +51,30 @@ class OkfCompilerTests(unittest.TestCase):
             unprivileged,
             roles=frozenset({"knowledge.curator"}),
         )
-        first = review_curated_knowledge_generation(
-            authorized,
-            repository_revision=generation.source_revision,
-            source_path="knowledge/voiceos",
-            generation=generation,
-        )
-        second = review_curated_knowledge_generation(
-            authorized,
-            repository_revision=generation.source_revision,
-            source_path="knowledge/voiceos",
-            generation=generation,
-        )
-        self.assertEqual(first, second)
-        self.assertNotEqual(first.source_manifest_sha256, generation.generation_sha256)
+        with patch(
+            "yap_server.knowledge.knowledge_source_admission._record_admission",
+            return_value=sentinel.admission,
+        ) as record:
+            first = admit_curated_knowledge_generation(
+                object(),  # type: ignore[arg-type]
+                principal=authorized,
+                repository_revision=generation.source_revision,
+                source_path="knowledge/voiceos",
+                generation=generation,
+            )
+            second = admit_curated_knowledge_generation(
+                object(),  # type: ignore[arg-type]
+                principal=authorized,
+                repository_revision=generation.source_revision,
+                source_path="knowledge/voiceos",
+                generation=generation,
+            )
+        self.assertIs(first, sentinel.admission)
+        self.assertIs(second, sentinel.admission)
+        first_manifest = record.call_args_list[0].kwargs["source_identity_sha256"]
+        second_manifest = record.call_args_list[1].kwargs["source_identity_sha256"]
+        self.assertEqual(first_manifest, second_manifest)
+        self.assertNotEqual(first_manifest, generation.generation_sha256)
 
     def test_rejects_mutated_compiled_projection_identities(self) -> None:
         with TemporaryDirectory() as directory:
@@ -127,6 +140,72 @@ class OkfCompilerTests(unittest.TestCase):
             with self.subTest(mutation=mutation):
                 with self.assertRaises(ValueError):
                     validate_compiled_generation(mutation)
+
+    def test_rejects_internally_rehashed_invalid_concept_profiles(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_linked_bundle(root)
+            generation = compile_okf_bundle(
+                root,
+                tenant_id="tenant-a",
+                source_revision="reviewed-revision",
+            )
+
+        first, second = generation.concepts
+        invalid = (
+            replace(
+                generation,
+                concepts=(
+                    replace(
+                        first,
+                        frontmatter={
+                            **first.frontmatter,
+                            "resource": "yap://tenant/tenant-b/project/voiceos",
+                        },
+                    ),
+                    second,
+                ),
+            ),
+            replace(
+                generation,
+                concepts=(
+                    first,
+                    replace(
+                        second,
+                        frontmatter={
+                            **second.frontmatter,
+                            "resource": first.frontmatter["resource"],
+                        },
+                    ),
+                ),
+            ),
+            replace(
+                generation,
+                concepts=(
+                    replace(
+                        first,
+                        frontmatter={
+                            key: value
+                            for key, value in first.frontmatter.items()
+                            if key != "type"
+                        },
+                    ),
+                    second,
+                ),
+            ),
+            replace(
+                generation,
+                concepts=(replace(first, content_sha256="not-a-sha256"), second),
+            ),
+        )
+        for mutation in invalid:
+            rehashed = replace(
+                mutation,
+                generation_sha256=compiled_generation_sha256(mutation),
+            )
+            with self.subTest(mutation=rehashed):
+                with self.assertRaises(ValueError):
+                    validate_compiled_generation(rehashed)
 
     def test_compiles_the_pinned_synthetic_conformance_fixture(self) -> None:
         generation = compile_okf_bundle(

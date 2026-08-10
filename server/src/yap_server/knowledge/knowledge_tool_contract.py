@@ -58,10 +58,12 @@ class KnowledgeToolTimedOut(TimeoutError):
     pass
 
 
-class ProposalCitationInput(BaseModel):
-    """Strict model/MCP input for one persisted proposal citation."""
+class ProposalCitation(BaseModel):
+    """One strict immutable citation shared by model input and persistence."""
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(
+        extra="forbid", frozen=True, strict=True, revalidate_instances="always"
+    )
 
     concept_id: ConceptId
     source_revision: ConceptId
@@ -70,14 +72,14 @@ class ProposalCitationInput(BaseModel):
     char_end: CitationEndOffset
 
     @model_validator(mode="after")
-    def _ordered_span(self) -> ProposalCitationInput:
+    def _ordered_span(self) -> ProposalCitation:
         if self.char_end <= self.char_start:
             raise ValueError("proposal citation end must follow its start")
         return self
 
 
 ProposalCitations = Annotated[
-    list[ProposalCitationInput],
+    list[ProposalCitation],
     Field(min_length=1, max_length=MAX_PROPOSAL_CITATIONS),
 ]
 
@@ -206,7 +208,7 @@ def governed_agent_tool_definitions(
             ),
         },
     }
-    citation_schema = ProposalCitationInput.model_json_schema()
+    citation_schema = ProposalCitation.model_json_schema()
     citation_schema.pop("title", None)
     return [
         _tool_definition(
@@ -427,7 +429,7 @@ def _validate_agent_citations(value: object) -> None:
     identities: set[tuple[object, ...]] = set()
     for citation in value:
         try:
-            parsed = ProposalCitationInput.model_validate(citation, strict=True)
+            parsed = ProposalCitation.model_validate(citation, strict=True)
         except ValidationError as error:
             raise ValueError(
                 "agent proposal citation differs from the contract"
@@ -478,7 +480,7 @@ __all__ = [
     "GenerationSha256",
     "ProposalType",
     "ProposalContent",
-    "ProposalCitationInput",
+    "ProposalCitation",
     "ProposalCitations",
     "KnowledgeToolCancellationFailed",
     "KnowledgeToolCancelled",
