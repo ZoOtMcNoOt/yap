@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "license": "CC0-1.0",
   "provenance": "Original synthetic Yap evaluation cases; no private or third-party content.",
-  "sharedSystemPrompt": "You are Yap's governed knowledge assistant. Use only the supplied tools. Never infer authorization, identity, hidden content, or missing citations. Preserve medical terminology exactly. Return the requested JSON object and no extra text.",
+  "sharedSystemPrompt": "You are Yap's governed knowledge assistant. Use only the supplied tools. When tools are present, call the required governed tool immediately without analysis or prose. After tool results are supplied, return the requested JSON object and no extra text. Never infer authorization, identity, hidden content, or missing citations. Preserve medical terminology exactly.",
   "cases": [
     {
       "caseId": "lexical-cited-answer",
@@ -79,7 +79,7 @@
     {
       "caseId": "stale-generation-binding",
       "category": "generation",
-      "user": "Search only generation ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff for the release decision.",
+      "user": "Call search_knowledge for the release decision with expected_generation_sha256 set exactly to ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.",
       "visibleContext": [],
       "expectedTool": "search_knowledge",
       "expectedArguments": {"expected_generation_sha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}
