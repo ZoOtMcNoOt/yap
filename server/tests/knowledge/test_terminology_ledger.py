@@ -79,9 +79,44 @@ class TerminologyLedgerTests(unittest.TestCase):
             with self.assertRaisesRegex(PermissionError, "does not own"):
                 append_terminology_record(connection, record, actor=actor)
 
+    def test_record_lineage_cannot_change_owner_or_resume_after_deletion(self) -> None:
+        suffix = uuid4().hex
+        tenant_id = f"tenant-{suffix}"
+        alice = PrincipalKey(tenant_id, f"alice-{suffix}")
+        bob = PrincipalKey(tenant_id, f"bob-{suffix}")
+        with psycopg.connect(POSTGRES_DSN) as connection:
+            install_terminology_schema(connection)
+            append_terminology_record(
+                connection, _record(tenant_id, alice.subject_id, 1, "TAVI"), actor=alice
+            )
+            with self.assertRaisesRegex(ValueError, "authority is immutable"):
+                append_terminology_record(
+                    connection,
+                    _record(tenant_id, bob.subject_id, 2, "TAVI"),
+                    actor=bob,
+                )
+            deleted = _record(tenant_id, alice.subject_id, 2, "TAVI", deleted=True)
+            append_terminology_record(connection, deleted, actor=alice)
+            with self.assertRaisesRegex(ValueError, "cannot be restored"):
+                append_terminology_record(
+                    connection,
+                    _record(tenant_id, alice.subject_id, 3, "TAVI"),
+                    actor=alice,
+                )
+            connection.execute(
+                "DELETE FROM yap_terminology_records WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.commit()
+
 
 def _record(
-    tenant_id: str, owner_id: str, version: int, canonical_form: str
+    tenant_id: str,
+    owner_id: str,
+    version: int,
+    canonical_form: str,
+    *,
+    deleted: bool = False,
 ) -> TerminologyRecord:
     return TerminologyRecord(
         record_id="tavi",
@@ -93,7 +128,7 @@ def _record(
         variants=("tavi",),
         sensitivity="internal",
         version=version,
-        deleted=False,
+        deleted=deleted,
         audit_revision=f"audit-{version}",
         changed_at=f"2026-08-09T12:00:0{version}Z",
     )

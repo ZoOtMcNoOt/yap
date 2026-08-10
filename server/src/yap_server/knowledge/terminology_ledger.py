@@ -86,13 +86,22 @@ def append_terminology_record(
             (f"{record.tenant_id}:{record.record_id}",),
         )
         latest = connection.execute(
-            """SELECT max(version) FROM yap_terminology_records
-               WHERE tenant_id = %s AND record_id = %s""",
+            """SELECT version, scope, owner_id, locale, deleted
+               FROM yap_terminology_records
+               WHERE tenant_id = %s AND record_id = %s
+               ORDER BY version DESC LIMIT 1""",
             (record.tenant_id, record.record_id),
         ).fetchone()
-        latest_version = latest[0] if latest is not None else None
-        if latest_version is not None and record.version <= latest_version:
-            raise ValueError("terminology version does not advance")
+        if latest is None:
+            if record.version != 1:
+                raise ValueError("terminology lineage must begin at version one")
+        else:
+            if (record.scope, record.owner_id, record.locale) != tuple(latest[1:4]):
+                raise ValueError("terminology lineage authority is immutable")
+            if latest[4]:
+                raise ValueError("deleted terminology lineage cannot be restored")
+            if record.version != latest[0] + 1:
+                raise ValueError("terminology version must advance contiguously")
         connection.execute(
             """INSERT INTO yap_terminology_records (
                 tenant_id, record_id, version, scope, owner_id, locale,
