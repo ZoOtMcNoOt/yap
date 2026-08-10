@@ -845,9 +845,10 @@ evidence access.
 The candidate uses Postgres/pgvector as its sole Phase 9 projection. Redis,
 object storage, and Neo4j are not speculative dependencies: a later addition
 requires measured need and its own lifecycle, permission, and operations gate.
-The complete Phase 9 gate owns the exact ARM64 Postgres/pgvector container on an
-internal network with a loopback-only host binding, requires all database tests
-without skips, restarts the real database process, verifies retrieval and stale
+The complete Phase 9 gate owns the exact ARM64 Postgres/pgvector container on a
+fresh owned bridge. The container attaches only to that bridge and has an exact
+loopback-only host binding. The gate requires all database tests without skips,
+restarts the real database process, verifies retrieval and stale
 generation rejection after recovery, then proves teardown. It also admits the
 exact private Qwen/Gemma qualification tree by committed hashes without copying
 raw model output into Git or the public aggregate. The complete gate has not yet

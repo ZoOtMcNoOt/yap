@@ -280,7 +280,6 @@ class OwnedPostgresKnowledgeRuntime:
                 "create",
                 "--driver",
                 "bridge",
-                "--internal",
                 "--label",
                 f"io.yap.owner={_OWNER_LABEL}",
                 "--label",
@@ -296,7 +295,7 @@ class OwnedPostgresKnowledgeRuntime:
         if (
             inspected.get("Name") != _NETWORK_NAME
             or inspected.get("Driver") != "bridge"
-            or inspected.get("Internal") is not True
+            or inspected.get("Internal") is not False
             or not isinstance(labels, dict)
             or labels.get("io.yap.owner") != _OWNER_LABEL
             or labels.get("io.yap.revision") != self._checked_head

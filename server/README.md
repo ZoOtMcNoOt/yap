@@ -455,9 +455,10 @@ uv run --locked python -m yap_server.evaluation.governed_knowledge_gate \
 
 The command admits the exact hash-locked private model evidence without copying
 raw outputs or measurements, runs the locked Python 3.12 portable suite and
-Ruff, launches the immutable ARM64 Postgres/pgvector image on an owned internal
-network with a loopback-only host port, requires every mandatory database test
-with zero skips, restarts the actual database process, verifies cited retrieval
+Ruff, launches the immutable ARM64 Postgres/pgvector image on a fresh owned
+bridge, requires that container to attach only to that bridge with an exact
+loopback-only host port, requires every mandatory database test with zero skips,
+restarts the actual database process, verifies cited retrieval
 and stale-generation rejection after recovery, and proves container, listener,
 PID, network, and volume teardown. The destination receipt must be new and
 outside the repository. It contains only checked identities and public-safe

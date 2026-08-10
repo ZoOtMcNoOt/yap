@@ -207,6 +207,12 @@ class OwnedPostgresKnowledgeRuntimeTests(unittest.TestCase):
         launch = next(
             command for command in runner.commands if command[:2] == ["docker", "run"]
         )
+        network_create = next(
+            command
+            for command in runner.commands
+            if command[:3] == ["docker", "network", "create"]
+        )
+        self.assertNotIn("--internal", network_create)
         self.assertEqual(launch[launch.index("--pull") + 1], "never")
         self.assertEqual(launch[launch.index("--memory") + 1], "2g")
         self.assertEqual(launch[launch.index("--cpus") + 1], "2")
@@ -248,6 +254,7 @@ class OwnedPostgresKnowledgeRuntimeTests(unittest.TestCase):
             ("container_id", "c" * 64, RuntimeError, "identity"),
             ("memory_bytes", 1, ValueError, "container"),
             ("extra_network", True, ValueError, "container"),
+            ("network_internal", True, ValueError, "network"),
         ):
             with self.subTest(field=field):
                 runner = _FakeDockerRunner(**{field: value})
@@ -374,6 +381,7 @@ class _FakeDockerRunner:
         container_id: str = _CONTAINER_ID,
         memory_bytes: int = postgres_runtime._MEMORY_BYTES,
         extra_network: bool = False,
+        network_internal: bool = False,
         run_stdout: str = _CONTAINER_ID,
         inspect_failures: int = 0,
     ) -> None:
@@ -382,6 +390,7 @@ class _FakeDockerRunner:
         self.inspected_container_id = container_id
         self.memory_bytes = memory_bytes
         self.extra_network = extra_network
+        self.network_internal = network_internal
         self.run_stdout = run_stdout
         self.inspect_failures = inspect_failures
         self.inspect_attempts = 0
@@ -446,7 +455,7 @@ class _FakeDockerRunner:
                         {
                             "Name": postgres_runtime._NETWORK_NAME,
                             "Driver": "bridge",
-                            "Internal": True,
+                            "Internal": self.network_internal,
                             "Labels": self._labels(),
                         }
                     ]

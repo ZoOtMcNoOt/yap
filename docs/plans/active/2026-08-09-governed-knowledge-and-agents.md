@@ -156,8 +156,8 @@ never compile permissions, grant access, or promote their own output.
   ```
 
   The command owns the locked Python 3.12 portable suite, Ruff, an immutable
-  loopback-only Postgres/pgvector runtime, the mandatory zero-skip database
-  modules, a real database restart/retrieval probe, exact teardown, and
+  Postgres/pgvector runtime with loopback-only host publication, the mandatory
+  zero-skip database modules, a real database restart/retrieval probe, exact teardown, and
   hash-bound semantic admission of the already-consumed private GB10 route
   evidence while publishing only public-safe hashes and outcomes.
 - Reconcile ADR scores and all architecture/status claims only from evidence.
