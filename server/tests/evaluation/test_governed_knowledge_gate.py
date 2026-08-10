@@ -288,10 +288,30 @@ class OwnedPostgresKnowledgeRuntimeTests(unittest.TestCase):
 
     def test_launches_bounded_immutable_runtime_restarts_and_tears_down(self) -> None:
         runner = _FakeDockerRunner()
-        runtime = _owned_runtime(runner)
+        observed_ports: list[int] = []
+        observed_processes: list[int] = []
+
+        def listener_absent(port: int) -> bool:
+            observed_ports.append(port)
+            return True
+
+        def process_absent(process: int) -> bool:
+            observed_processes.append(process)
+            return True
+
+        runtime = postgres_runtime.OwnedPostgresKnowledgeRuntime(
+            checked_head=_HEAD,
+            runtime_lock=_runtime_lock(),
+            runner=runner,
+            sleep=lambda _seconds: None,
+            listener_absent=listener_absent,
+            process_absent=process_absent,
+        )
 
         started = runtime.start(timeout_seconds=10)
-        restart = runtime.restart(timeout_seconds=10)
+        restarted = runtime.restart(timeout_seconds=10)
+        observed_ports.clear()
+        observed_processes.clear()
         teardown = runtime.stop(timeout_seconds=5)
 
         launch = next(
@@ -318,8 +338,63 @@ class OwnedPostgresKnowledgeRuntimeTests(unittest.TestCase):
         self.assertIn('PGPASSWORD="$POSTGRES_PASSWORD"', readiness[-1])
         self.assertNotIn(runner.password, readiness[-1])
         self.assertEqual(started.host_port, 35432)
-        self.assertTrue(all(restart.values()))
+        self.assertEqual(restarted.host_port, 35433)
+        self.assertNotEqual(restarted.process_id, started.process_id)
+        self.assertEqual(restarted.container_id, started.container_id)
         self.assertTrue(all(teardown.values()))
+        self.assertEqual(set(observed_ports), {35432, 35433})
+        self.assertEqual(set(observed_processes), {4321, 4322})
+        self.assertFalse(runner.container_exists)
+        self.assertFalse(runner.network_exists)
+        self.assertFalse(runner.volume_exists)
+
+    def test_containment_recovers_one_failed_post_restart_inspection(self) -> None:
+        runner = _FakeDockerRunner()
+        runtime = _owned_runtime(runner)
+
+        runtime.start(timeout_seconds=10)
+        runner.inspect_failures = runner.inspect_attempts + 1
+        with self.assertRaisesRegex(RuntimeError, "command failed"):
+            runtime.restart(timeout_seconds=10)
+        teardown = runtime.contain_failed_run()
+
+        self.assertTrue(all(teardown.values()))
+        self.assertFalse(runner.container_exists)
+        self.assertFalse(runner.network_exists)
+        self.assertFalse(runner.volume_exists)
+
+    def test_unobservable_post_restart_identity_fails_containment(self) -> None:
+        runner = _FakeDockerRunner()
+        runtime = _owned_runtime(runner)
+
+        runtime.start(timeout_seconds=10)
+        runner.inspect_failures = runner.inspect_attempts + 2
+        with self.assertRaisesRegex(RuntimeError, "command failed"):
+            runtime.restart(timeout_seconds=10)
+        with self.assertRaisesRegex(RuntimeError, "identity could not be observed"):
+            runtime.contain_failed_run()
+
+        self.assertFalse(runner.container_exists)
+        self.assertFalse(runner.network_exists)
+        self.assertFalse(runner.volume_exists)
+
+    def test_restart_rejects_a_surviving_previous_loopback_listener(self) -> None:
+        runner = _FakeDockerRunner()
+        runtime = postgres_runtime.OwnedPostgresKnowledgeRuntime(
+            checked_head=_HEAD,
+            runtime_lock=_runtime_lock(),
+            runner=runner,
+            sleep=lambda _seconds: None,
+            listener_absent=lambda port: port != 35432,
+            process_absent=lambda _pid: True,
+        )
+
+        runtime.start(timeout_seconds=10)
+        with self.assertRaisesRegex(RuntimeError, "restart identity differs"):
+            runtime.restart(timeout_seconds=10)
+        with self.assertRaisesRegex(RuntimeError, "containment did not complete"):
+            runtime.contain_failed_run()
+
         self.assertFalse(runner.container_exists)
         self.assertFalse(runner.network_exists)
         self.assertFalse(runner.volume_exists)
@@ -499,6 +574,7 @@ class _FakeDockerRunner:
         self.password = ""
         self.readiness_polled = False
         self.process_id = 4321
+        self.host_port = 35432
         self.commands: list[list[str]] = []
 
     def __call__(self, command, **_kwargs):
@@ -593,6 +669,7 @@ class _FakeDockerRunner:
                 return _completed(command, stdout="17.10-1.pgdg12+1")
         if command[:2] == ["docker", "restart"]:
             self.process_id = 4322
+            self.host_port = 35433
             return _completed(command, stdout=postgres_runtime._CONTAINER_NAME + "\n")
         if command[:2] == ["docker", "stop"]:
             return _completed(command, stdout=postgres_runtime._CONTAINER_NAME + "\n")
@@ -626,7 +703,7 @@ class _FakeDockerRunner:
         }
 
     def _container_inspection(self) -> dict[str, object]:
-        binding = [{"HostIp": self.host_ip, "HostPort": "35432"}]
+        binding = [{"HostIp": self.host_ip, "HostPort": str(self.host_port)}]
         return {
             "Id": self.inspected_container_id,
             "Name": f"/{postgres_runtime._CONTAINER_NAME}",

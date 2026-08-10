@@ -67,7 +67,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 106
+_EXPECTED_PORTABLE_TEST_COUNT = 109
 
 
 def evaluate_governed_knowledge_gate(
@@ -196,7 +196,13 @@ def evaluate_governed_knowledge_gate(
             timeout=120,
         )
         _validate_restart_seed(restart_seed)
-        restart_runtime = runtime.restart(timeout_seconds=120)
+        restarted = runtime.restart(timeout_seconds=120)
+        database_environment["YAP_TEST_POSTGRES_DSN"] = restarted.dsn
+        restart_runtime = {
+            "loopbackBindingReobserved": True,
+            "newProcessObserved": restarted.process_id != started.process_id,
+            "sameContainerObserved": restarted.container_id == started.container_id,
+        }
         restart_result = _run_json_command(
             [
                 sys.executable,

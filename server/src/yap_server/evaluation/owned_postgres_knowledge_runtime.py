@@ -75,11 +75,18 @@ class OwnedPostgresKnowledgeRuntime:
         self._volume_created = False
         self._password: str | None = None
         self._started: StartedKnowledgeDatabase | None = None
+        self._observed_started: list[StartedKnowledgeDatabase] = []
+        self._restart_observation_pending = False
         self._container_created = False
         self._created_container_id: str | None = None
 
     def start(self, *, timeout_seconds: int) -> StartedKnowledgeDatabase:
-        if self._started is not None or self._network_created or self._volume_created:
+        if (
+            self._started is not None
+            or self._observed_started
+            or self._network_created
+            or self._volume_created
+        ):
             raise RuntimeError("knowledge database runtime is already started")
         if not 1 <= timeout_seconds <= 300:
             raise ValueError("knowledge database startup timeout is invalid")
@@ -136,7 +143,7 @@ class OwnedPostgresKnowledgeRuntime:
                 image_id=image_id,
                 password=password,
             )
-            self._started = started
+            self._remember_started(started)
             if returned_container_id != started.container_id:
                 raise ValueError("knowledge database container identity is invalid")
             self._verify_container_policy(inspected, started=started, password=password)
@@ -150,13 +157,14 @@ class OwnedPostgresKnowledgeRuntime:
                 raise containment_error from error
             raise
 
-    def restart(self, *, timeout_seconds: int) -> dict[str, bool]:
+    def restart(self, *, timeout_seconds: int) -> StartedKnowledgeDatabase:
         previous = self._started
         password = self._password
         if previous is None or password is None:
             raise RuntimeError("knowledge database runtime was not started")
         if not 1 <= timeout_seconds <= 300:
             raise ValueError("knowledge database restart timeout is invalid")
+        self._restart_observation_pending = True
         self._run(
             ["docker", "restart", "--time", "15", _CONTAINER_NAME],
             timeout=timeout_seconds + 15,
@@ -167,26 +175,28 @@ class OwnedPostgresKnowledgeRuntime:
             image_id=previous.image_id,
             password=password,
         )
-        self._started = restarted
+        self._remember_started(restarted)
+        self._restart_observation_pending = False
         self._verify_container_policy(inspected, started=restarted, password=password)
         if (
             restarted.process_id == previous.process_id
-            or restarted.host_port != previous.host_port
             or not self._process_absent(previous.process_id)
+            or (
+                restarted.host_port != previous.host_port
+                and not self._listener_absent(previous.host_port)
+            )
         ):
             raise RuntimeError("knowledge database restart identity differs")
         self._wait_ready(timeout_seconds)
         self._verify_postgres_package_version()
-        return {
-            "newProcessObserved": True,
-            "sameContainerObserved": True,
-            "sameLoopbackPortObserved": True,
-        }
+        return restarted
 
     def stop(self, *, timeout_seconds: int) -> dict[str, bool]:
         started = self._started
         if started is None:
             raise RuntimeError("knowledge database runtime was not started")
+        if self._restart_observation_pending:
+            raise RuntimeError("knowledge database restart identity is unobserved")
         if not 1 <= timeout_seconds <= 60:
             raise ValueError("knowledge database teardown timeout is invalid")
         self._run(
@@ -196,16 +206,32 @@ class OwnedPostgresKnowledgeRuntime:
         self._run(["docker", "rm", _CONTAINER_NAME])
         self._run(["docker", "network", "rm", _NETWORK_NAME])
         self._run(["docker", "volume", "rm", _VOLUME_NAME])
-        teardown = self._teardown_state(started)
+        teardown = self._teardown_state()
         if not all(teardown.values()):
             raise RuntimeError("knowledge database teardown did not complete")
         self._clear_identity()
         return teardown
 
     def contain_failed_run(self) -> dict[str, bool]:
-        started = self._started
         observation_error: BaseException | None = None
-        if started is None and self._container_created:
+        if self._restart_observation_pending:
+            try:
+                password = self._password
+                if password is None:
+                    raise RuntimeError(
+                        "knowledge database launch secret is unavailable"
+                    )
+                restarted, _inspected = self._inspect_started_container(
+                    inspect_target=self._created_container_id or _CONTAINER_NAME,
+                    container_id=self._created_container_id,
+                    image_id=self._runtime_lock.image_id,
+                    password=password,
+                )
+                self._remember_started(restarted)
+                self._restart_observation_pending = False
+            except BaseException as error:
+                observation_error = error
+        elif self._started is None and self._container_created:
             try:
                 password = self._password
                 if password is None:
@@ -218,12 +244,14 @@ class OwnedPostgresKnowledgeRuntime:
                     image_id=self._runtime_lock.image_id,
                     password=password,
                 )
-                self._started = started
+                self._remember_started(started)
             except BaseException as error:
                 observation_error = error
         self._force_cleanup()
-        identity_unobserved = started is None and self._container_created
-        if started is None:
+        identity_unobserved = self._restart_observation_pending or (
+            not self._observed_started and self._container_created
+        )
+        if not self._observed_started:
             teardown = {
                 "containerAbsent": not self._container_exists(),
                 "listenerAbsent": True,
@@ -233,14 +261,15 @@ class OwnedPostgresKnowledgeRuntime:
                 "volumeAbsent": not self._volume_exists(),
             }
         else:
-            teardown = self._teardown_state(started)
+            teardown = self._teardown_state()
         if not all(teardown.values()):
             raise RuntimeError(
                 "knowledge database failure containment did not complete"
             )
         if identity_unobserved:
             raise RuntimeError(
-                "created knowledge database identity could not be observed for containment"
+                "created or restarted knowledge database identity could not be "
+                "observed for containment"
             ) from observation_error
         self._clear_identity()
         return teardown
@@ -466,15 +495,22 @@ class OwnedPostgresKnowledgeRuntime:
                 "knowledge database Postgres version differs from its lock"
             )
 
-    def _teardown_state(
-        self,
-        started: StartedKnowledgeDatabase,
-    ) -> dict[str, bool]:
+    def _teardown_state(self) -> dict[str, bool]:
+        if not self._observed_started:
+            raise RuntimeError("knowledge database teardown identity is unavailable")
+        listener_absence = tuple(
+            self._listener_absent(runtime.host_port)
+            for runtime in self._observed_started
+        )
+        process_absence = tuple(
+            self._process_absent(runtime.process_id)
+            for runtime in self._observed_started
+        )
         return {
             "containerAbsent": not self._container_exists(),
-            "listenerAbsent": self._listener_absent(started.host_port),
+            "listenerAbsent": all(listener_absence),
             "networkAbsent": not self._network_exists(),
-            "ownedProcessAbsent": self._process_absent(started.process_id),
+            "ownedProcessAbsent": all(process_absence),
             "sameLabelOwnersAbsent": self._same_label_owners_absent(),
             "volumeAbsent": not self._volume_exists(),
         }
@@ -540,11 +576,18 @@ class OwnedPostgresKnowledgeRuntime:
 
     def _clear_identity(self) -> None:
         self._started = None
+        self._observed_started.clear()
+        self._restart_observation_pending = False
         self._password = None
         self._network_created = False
         self._volume_created = False
         self._container_created = False
         self._created_container_id = None
+
+    def _remember_started(self, started: StartedKnowledgeDatabase) -> None:
+        if started not in self._observed_started:
+            self._observed_started.append(started)
+        self._started = started
 
     def _run(
         self,
