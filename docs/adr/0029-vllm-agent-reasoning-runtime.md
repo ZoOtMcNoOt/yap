@@ -34,10 +34,11 @@ supervision target. The locked runtime is:
 - reported vLLM `0.22.1+7b9cb5b7.dev`.
 
 Qwen and Gemma are both required workload routes, not interchangeable fallback
-models and not competitors for one universal winner. Qwen owns
-`rapid-automation`; Gemma owns `complex-orchestration`. A route is advertised
-only if both exact checkpoints pass the common frozen admission workload
-through an owned,
+models and not competitors for one universal winner. The frozen assignment is
+Qwen to `rapid-automation` and Gemma to `complex-orchestration`. The common gate
+may admit both required model candidates, but it cannot advertise or promote
+either workload route. Each exact checkpoint first passes the common frozen
+admission workload through an owned,
 receipt-bound runtime. Candidate evidence binds the
 exact image, model revision and artifact manifest, quantization, parser flags,
 launch arguments, checked head, cgroup observations, concurrent prefix

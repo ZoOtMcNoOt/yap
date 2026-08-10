@@ -85,14 +85,14 @@ def evaluate_agent_model_qualification(
         for candidate_id in acceptance.candidate_ids
     ]
     summary_by_id = {str(summary["candidateId"]): summary for summary in summaries}
-    selected_routes = {
-        workload_class: candidate_id
-        for workload_class, candidate_id in acceptance.required_routes.items()
+    admitted_candidates = {
+        candidate_id
+        for candidate_id in acceptance.required_routes.values()
         if summary_by_id[candidate_id]["eligible"]
     }
-    if selected_routes != acceptance.required_routes:
+    if admitted_candidates != set(acceptance.required_routes.values()):
         outcome = "deterministic-no-model"
-        selected_routes = {}
+        admitted_candidates = set()
         reasons = ["required-workload-route-did-not-meet-acceptance"]
     else:
         outcome = "required-models-admitted"
@@ -101,7 +101,7 @@ def evaluate_agent_model_qualification(
         "schemaVersion": 1,
         "qualificationScope": "governed-agent-reasoning",
         "outcome": outcome,
-        "selectedRoutes": dict(sorted(selected_routes.items())),
+        "admittedModelCandidates": sorted(admitted_candidates),
         "reasonCodes": reasons,
         "candidateSummaries": summaries,
     }

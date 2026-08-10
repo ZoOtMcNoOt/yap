@@ -73,11 +73,8 @@ class AgentModelQualificationTests(unittest.TestCase):
 
         self.assertEqual(decision["outcome"], "required-models-admitted")
         self.assertEqual(
-            decision["selectedRoutes"],
-            {
-                "complex-orchestration": "gemma-4-31b-it-nvfp4",
-                "rapid-automation": "qwen3.6-35b-a3b-nvfp4",
-            },
+            decision["admittedModelCandidates"],
+            ["gemma-4-31b-it-nvfp4", "qwen3.6-35b-a3b-nvfp4"],
         )
         self.assertNotIn("results", json.dumps(decision))
 
@@ -100,7 +97,7 @@ class AgentModelQualificationTests(unittest.TestCase):
             decision["reasonCodes"],
             ["required-workload-route-did-not-meet-acceptance"],
         )
-        self.assertEqual(decision["selectedRoutes"], {})
+        self.assertEqual(decision["admittedModelCandidates"], [])
 
     def test_rejects_incomplete_or_tampered_owned_run_set(self) -> None:
         candidate = _checked_candidate()

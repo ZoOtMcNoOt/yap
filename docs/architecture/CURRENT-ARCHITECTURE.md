@@ -288,8 +288,9 @@ provider-selection comparison. Neither candidate has been promoted. The earlier
 Triton Python-backend experiment remains historical negative evidence because parity-
 preserving execution serialized model calls without a demonstrated throughput
 gain. ADR 0029 selects vLLM as the sole Phase 9 agent/LLM runtime. Its required
-workload routes are Qwen 3.6 NVFP4 for rapid automation and Gemma 4 31B IT
-NVFP4 for complex orchestration; neither silently substitutes for the other.
+assigned workload candidates are Qwen 3.6 NVFP4 for rapid automation and Gemma
+4 31B IT NVFP4 for complex orchestration; the assignment is unpromoted pending
+route-specific proof, and neither silently substitutes for the other.
 Persistent supervised
 production deployment remains Phase 10 work.
 
