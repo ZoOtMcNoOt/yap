@@ -115,7 +115,7 @@ knowledge.
   `ae81ff067c73a64528eecc14403765562726f2fe`.
 - [x] Archive the governed-knowledge delivery plan with exact PR/head/merge
   evidence and establish this separate checkpoint plan.
-- [ ] Inventory changed production modules, tests, dependencies, locks,
+- [x] Inventory changed production modules, tests, dependencies, locks,
   fixtures, runtime/gate owners, documents, and Git state from the merged base;
   inventory the earlier active system as required by the whole-codebase scope.
 - [ ] Run the three read-only antagonistic reviews and adjudicate a public-safe
