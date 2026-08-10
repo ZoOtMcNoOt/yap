@@ -336,6 +336,7 @@ def _route_evidence(
         },
         "complex-orchestration": {
             "candidateId": "gemma-4-31b-it-nvfp4",
+            "requestTimeoutSeconds": 60,
             "requiredMultiStepCaseId": "complex-governed-orchestration",
         },
     }

@@ -46,6 +46,14 @@ def run_agent_model_candidate(
     repository_root = checked_candidate.repository_root
     acceptance = load_agent_model_acceptance(repository_root)
     runtime_lock, model_candidate = _candidate_lock(repository_root, candidate_id)
+    workload_class = str(model_candidate["workloadClass"])
+    route_policy = acceptance.route_evidence[workload_class]
+    request_timeout_seconds = int(
+        route_policy.get(
+            "requestTimeoutSeconds",
+            acceptance.runtime_tracks["requestTimeoutSeconds"],
+        )
+    )
     owned_runtime = OwnedAgentVllmRuntime(
         checked_head=checked_candidate.checked_head,
         runtime=runtime_lock,
@@ -77,7 +85,9 @@ def run_agent_model_candidate(
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
+            with urllib.request.urlopen(
+                request, timeout=request_timeout_seconds
+            ) as response:
                 body = response.read(4_000_001)
         except (urllib.error.URLError, TimeoutError) as error:
             raise RuntimeError("agent model endpoint request failed") from error
@@ -98,7 +108,7 @@ def run_agent_model_candidate(
             for item in run_agent_model_fixtures(
                 repository_root,
                 model=str(model_candidate["model"]),
-                workload_class=str(model_candidate["workloadClass"]),
+                workload_class=workload_class,
                 request_json=request_json,
             )
         )
@@ -107,7 +117,7 @@ def run_agent_model_candidate(
         reasoning_client = VllmReasoningClient(
             endpoint=endpoint,
             model=str(model_candidate["model"]),
-            timeout_seconds=int(tracks["requestTimeoutSeconds"]),
+            timeout_seconds=request_timeout_seconds,
             maximum_response_bytes=4_000_000,
             maximum_output_tokens=int(tracks["maximumOutputTokens"]),
         )

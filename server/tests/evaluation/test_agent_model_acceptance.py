@@ -32,6 +32,11 @@ class AgentModelAcceptanceTests(unittest.TestCase):
             plan.permitted_outcomes,
             ("required-workload-routes-qualified", "deterministic-no-model"),
         )
+        self.assertEqual(plan.runtime_tracks["requestTimeoutSeconds"], 30)
+        self.assertEqual(
+            plan.route_evidence["complex-orchestration"]["requestTimeoutSeconds"],
+            60,
+        )
 
 
 if __name__ == "__main__":
