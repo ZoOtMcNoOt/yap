@@ -1,0 +1,8 @@
+path_prefix: projects/
+audience:
+  users:
+    - tenant_id: fixture-tenant
+      subject_id: fixture-user
+purposes: [knowledge.read]
+classification: internal
+denials: {users: []}
