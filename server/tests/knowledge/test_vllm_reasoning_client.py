@@ -5,7 +5,9 @@ import json
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
+from yap_server.knowledge import vllm_reasoning_client
 from yap_server.knowledge.governed_rag_agent import ReasoningRetryableError
 from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
 from yap_server.knowledge.vllm_reasoning_client import VllmReasoningClient
@@ -162,19 +164,37 @@ class VllmReasoningClientTests(unittest.TestCase):
     ) -> None:
         _Handler.delay_seconds = 2.0
         cancellation = threading.Event()
+        dispatched = threading.Event()
         outcome: list[BaseException] = []
+        close_attempts = 0
+        close_connection = vllm_reasoning_client._close_connection
+
+        def close_after_failed_acknowledgement(connection) -> None:
+            nonlocal close_attempts
+            close_attempts += 1
+            if close_attempts > 1:
+                close_connection(connection)
 
         def call() -> None:
             try:
-                self.client("governed prompt", cancellation)
+                self.client.request(
+                    "governed prompt",
+                    cancellation,
+                    dispatched,
+                )
             except BaseException as error:
                 outcome.append(error)
 
         request = threading.Thread(target=call)
-        request.start()
-        time.sleep(0.1)
-        cancellation.set()
-        request.join(timeout=2.0)
+        with patch.object(
+            vllm_reasoning_client,
+            "_close_connection",
+            side_effect=close_after_failed_acknowledgement,
+        ):
+            request.start()
+            self.assertTrue(dispatched.wait(timeout=1.0))
+            cancellation.set()
+            request.join(timeout=2.0)
 
         self.assertFalse(request.is_alive())
         self.assertIsInstance(outcome[0], RuntimeError)

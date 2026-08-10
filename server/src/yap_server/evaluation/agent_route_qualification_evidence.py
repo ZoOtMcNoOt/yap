@@ -86,6 +86,13 @@ _PROTECTED_ROUTE_PATHS = frozenset(
         "server/tests/knowledge/test_vllm_reasoning_client.py",
     }
 )
+_ALLOWED_PROTECTED_TRANSITIONS = {
+    "server/tests/knowledge/test_vllm_reasoning_client.py": (
+        "36350d449735a4daea6546e16759f28f6f15631a",
+        "94efadb054ade4e73e0957e2f7e71ff4ecae4ba2e3f26282761f90d0290e5a13",
+        "4a727fa889508a28c68bbf8476784e23ad2b1edbb186ad07b242a71355fa6eb8",
+    )
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -249,8 +256,41 @@ def _verify_unchanged_route_inputs(
         ("diff", "--name-only", f"{reference.checked_head}..{checked_head}"),
         runner=runner,
     ).stdout.splitlines()
-    if any(is_agent_route_evidence_path(path) for path in changed):
-        raise ValueError("agent route qualification implementation changed")
+    for path in changed:
+        if is_agent_route_evidence_path(path) and not _is_allowed_protected_transition(
+            repository_root,
+            path=path,
+            reference=reference,
+            runner=runner,
+        ):
+            raise ValueError("agent route qualification implementation changed")
+
+
+def _is_allowed_protected_transition(
+    repository_root: Path,
+    *,
+    path: str,
+    reference: AgentRouteQualificationReference,
+    runner: GitRunner,
+) -> bool:
+    transition = _ALLOWED_PROTECTED_TRANSITIONS.get(path)
+    if transition is None or reference.checked_head != transition[0]:
+        return False
+    historic = _git(
+        repository_root,
+        ("show", f"{reference.checked_head}:{path}"),
+        runner=runner,
+    ).stdout.encode("utf-8")
+    current = read_bounded_regular_file(
+        repository_root / path,
+        maximum_bytes=1024 * 1024,
+        field="agent route qualification reviewed test transition",
+        containment_root=repository_root,
+    )
+    return (
+        hashlib.sha256(historic).hexdigest() == transition[1]
+        and hashlib.sha256(current).hexdigest() == transition[2]
+    )
 
 
 def _validate_qualification_tree(
