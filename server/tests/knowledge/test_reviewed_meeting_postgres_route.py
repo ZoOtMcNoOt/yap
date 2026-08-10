@@ -23,6 +23,7 @@ from yap_server.knowledge.governed_knowledge_tools import (
 from yap_server.knowledge.governed_knowledge_proposals import (
     GovernedKnowledgeProposals,
 )
+from yap_server.knowledge.governed_rag_agent import GovernedRagAgent
 from yap_server.knowledge.knowledge_tool_audit import (
     install_knowledge_tool_audit_schema,
 )
@@ -161,14 +162,14 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
             tools = GovernedKnowledgeTools(
                 KnowledgeAgentAuthority(
                     (
-                    KnowledgeAgentProfile(
-                        agent_id="librarian",
-                        capabilities=frozenset({"knowledge.search.lexical"}),
-                        purposes=frozenset({"knowledge.read"}),
-                        maximum_results=5,
-                        maximum_output_characters=2_000,
-                        statement_timeout_milliseconds=5_000,
-                    ),
+                        KnowledgeAgentProfile(
+                            agent_id="librarian",
+                            capabilities=frozenset({"knowledge.search.lexical"}),
+                            purposes=frozenset({"knowledge.read"}),
+                            maximum_results=5,
+                            maximum_output_characters=2_000,
+                            statement_timeout_milliseconds=5_000,
+                        ),
                     )
                 )
             )
@@ -182,17 +183,50 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 ),
                 cancellation=threading.Event(),
             )
+            rag_agent = GovernedRagAgent(
+                tools=tools,
+                proposals=GovernedKnowledgeProposals(
+                    KnowledgeAgentAuthority(
+                        (
+                            KnowledgeAgentProfile(
+                                agent_id="librarian",
+                                capabilities=frozenset({"knowledge.propose"}),
+                                purposes=frozenset({"knowledge.read"}),
+                                maximum_results=5,
+                                maximum_output_characters=2_000,
+                                statement_timeout_milliseconds=5_000,
+                            ),
+                        )
+                    )
+                ),
+                reason=lambda _prompt, _cancellation: (
+                    '{"answer":"The reviewed meeting records crash safety.",'
+                    f'"citationConceptIds":["meetings/{job_id}"]}}'
+                ),
+                maximum_prompt_characters=20_000,
+                maximum_output_characters=2_000,
+            )
+            cited_answer = rag_agent.answer(
+                connection,
+                principal=owner,
+                agent_id="librarian",
+                purpose="knowledge.read",
+                question="crash safe transcript",
+                terminology_exact_forms=("crash safety",),
+                expected_generation_sha256=generation.generation_sha256,
+                cancellation=threading.Event(),
+            )
             tiny_tools = GovernedKnowledgeTools(
                 KnowledgeAgentAuthority(
                     (
-                    KnowledgeAgentProfile(
-                        agent_id="bounded-librarian",
-                        capabilities=frozenset({"knowledge.search.lexical"}),
-                        purposes=frozenset({"knowledge.read"}),
-                        maximum_results=5,
-                        maximum_output_characters=1,
-                        statement_timeout_milliseconds=5_000,
-                    ),
+                        KnowledgeAgentProfile(
+                            agent_id="bounded-librarian",
+                            capabilities=frozenset({"knowledge.search.lexical"}),
+                            purposes=frozenset({"knowledge.read"}),
+                            maximum_results=5,
+                            maximum_output_characters=1,
+                            statement_timeout_milliseconds=5_000,
+                        ),
                     )
                 )
             )
@@ -265,6 +299,9 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
         self.assertEqual(results.results[0].source_revision, capture.capture_sha256)
         self.assertEqual(results.results[0].concept_id, f"meetings/{job_id}")
         self.assertEqual(tool_result.items[0].text, results.results[0].text)
+        self.assertTrue(cited_answer.model_invoked)
+        self.assertEqual(cited_answer.generation_sha256, generation.generation_sha256)
+        self.assertEqual(cited_answer.proposal.status, "proposed")
         self.assertEqual(bounded_result.items, ())
         self.assertTrue(bounded_result.output_budget_exhausted)
         self.assertEqual(
@@ -284,6 +321,8 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
             [
                 ("succeeded", proposal.generation_sha256),
                 ("succeeded", tool_result.generation_sha256),
+                ("succeeded", cited_answer.generation_sha256),
+                ("succeeded", cited_answer.generation_sha256),
                 ("succeeded", bounded_result.generation_sha256),
                 ("cancelled", None),
             ],
