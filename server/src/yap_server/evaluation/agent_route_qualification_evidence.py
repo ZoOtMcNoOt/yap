@@ -212,7 +212,9 @@ def is_agent_route_evidence_path(path: str) -> bool:
             "server/src/yap_server/evaluation/agent_model_",
             "server/src/yap_server/evaluation/agent_runtime_pressure.py",
             "server/src/yap_server/evaluation/agent_vllm_",
-            "server/tests/evaluation/test_agent_",
+            "server/tests/evaluation/test_agent_model_",
+            "server/tests/evaluation/test_agent_runtime_pressure.py",
+            "server/tests/evaluation/test_agent_vllm_",
         )
     )
 

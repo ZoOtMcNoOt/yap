@@ -76,6 +76,9 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
             "server/pyproject.toml",
             "server/uv.lock",
             "server/agent-workload-fixtures.json",
+            "server/tests/evaluation/test_agent_model_qualification.py",
+            "server/tests/evaluation/test_agent_runtime_pressure.py",
+            "server/tests/evaluation/test_agent_vllm_runtime.py",
             "server/tests/evaluation/test_vllm_runtime_metrics.py",
             "server/tests/knowledge/test_agent_reasoning_routes.py",
             "server/tests/knowledge/test_governed_rag_agent.py",
@@ -86,6 +89,11 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
         self.assertFalse(
             route_evidence.is_agent_route_evidence_path(
                 "server/src/yap_server/evaluation/governed_knowledge_gate.py"
+            )
+        )
+        self.assertFalse(
+            route_evidence.is_agent_route_evidence_path(
+                "server/tests/evaluation/test_agent_route_qualification_evidence.py"
             )
         )
 
