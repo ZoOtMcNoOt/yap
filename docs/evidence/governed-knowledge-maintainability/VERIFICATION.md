@@ -23,7 +23,7 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 ## Focused checkpoint verification
 
 Executable remediation commit
-`9bdf3399802ce4d2e557cb4559294847f20fe8df` and its current
+`8e3ece5a3580ec29116c05f31b045a5748c143b8` and its current
 documentation-only descendant have the following focused, non-promotional
 verification. Commands are shown from their working directory; the Windows
 runs used the locked project environment and Python 3.12.
@@ -42,7 +42,7 @@ runs used the locked project environment and Python 3.12.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
   ran 40 tests: 39 passed and one Windows directory-link capability test
-  skipped. This covers canonical generation/profile/resource identity,
+  skipped. This covers canonical POSIX path/generation/profile/resource identity,
   durable-write curated authorization, strict nested MCP inputs, exact
   database-worker cancellation acknowledgement, and shared evaluator/product
   tool bounds.
@@ -52,7 +52,7 @@ runs used the locked project environment and Python 3.12.
   from 250 through 349. A read-back comparison of the 350-line output against
   `THRESHOLD-DISPOSITION.md` found all 250 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
-  `9bdf3399802ce4d2e557cb4559294847f20fe8df`, the gate-owned locked PostgreSQL
+  `8e3ece5a3580ec29116c05f31b045a5748c143b8`, the gate-owned locked PostgreSQL
   17 / pgvector 0.8.6 runtime invoked, from `server` with `PYTHONPATH=src`,
   `uv run --locked python ../verification/run-governed-knowledge-postgres-suite.py`.
   All 17 mandatory tests across four modules passed with zero skips, expected
