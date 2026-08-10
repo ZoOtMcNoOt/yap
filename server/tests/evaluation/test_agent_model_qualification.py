@@ -6,6 +6,8 @@ from pathlib import Path
 import tempfile
 from unittest.mock import patch
 
+import pytest
+
 from yap_server.evaluation.agent_model_qualification import (
     evaluate_agent_model_qualification,
 )
@@ -67,6 +69,56 @@ def test_keeps_deterministic_route_when_candidate_evidence_is_missing() -> None:
     ]
 
 
+def test_keeps_deterministic_route_when_no_candidate_passes() -> None:
+    candidate = _checked_candidate()
+    with tempfile.TemporaryDirectory() as temporary:
+        evidence_root = Path(temporary)
+        _write_candidate(
+            evidence_root,
+            candidate,
+            "qwen3.6-35b-a3b-nvfp4",
+            10,
+            passing=False,
+        )
+        _write_candidate(
+            evidence_root,
+            candidate,
+            "nemotron-3-nano-30b-a3b-nvfp4",
+            20,
+            passing=False,
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            decision = evaluate_agent_model_qualification(
+                candidate=candidate,
+                evidence_root=evidence_root,
+            )
+
+    assert decision["outcome"] == "deterministic-no-model"
+    assert decision["reasonCodes"] == ["no-candidate-met-acceptance"]
+
+
+def test_rejects_tampered_candidate_evidence() -> None:
+    candidate = _checked_candidate()
+    with tempfile.TemporaryDirectory() as temporary:
+        evidence_root = Path(temporary)
+        path = _write_candidate(
+            evidence_root, candidate, "qwen3.6-35b-a3b-nvfp4", 10
+        )
+        value = json.loads(path.read_text(encoding="utf-8"))
+        value["revision"] = "0" * 40
+        path.write_text(json.dumps(value), encoding="utf-8")
+
+        with (
+            patch.object(CheckedCandidate, "verify_unchanged"),
+            pytest.raises(ValueError, match="digest differs"),
+        ):
+            evaluate_agent_model_qualification(
+                candidate=candidate,
+                evidence_root=evidence_root,
+            )
+
+
 def _checked_candidate() -> CheckedCandidate:
     identities = {
         path.relative_to(REPOSITORY_ROOT).as_posix(): hashlib.sha256(
@@ -87,7 +139,9 @@ def _write_candidate(
     candidate: CheckedCandidate,
     candidate_id: str,
     latency: int,
-) -> None:
+    *,
+    passing: bool = True,
+) -> Path:
     lock = json.loads(
         (REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json").read_text(
             encoding="utf-8"
@@ -96,13 +150,16 @@ def _write_candidate(
     model = next(
         item for item in lock["candidates"] if item["candidateId"] == candidate_id
     )
+    results = list(_perfect_results())
+    if not passing:
+        results[0]["toolName"] = "wrong_tool"
     evidence = bind_checked_candidate_evidence(
         {
             "schemaVersion": 1,
             "candidateId": candidate_id,
             "model": model["model"],
             "revision": model["revision"],
-            "results": list(_perfect_results()),
+            "results": results,
             "runtimePressure": {
                 "coldLatencyMilliseconds": latency,
                 "warmLatencyMilliseconds": [latency] * 12,
@@ -123,6 +180,7 @@ def _write_candidate(
     destination = evidence_root / "agent-model" / candidate_id / "results.json"
     destination.parent.mkdir(parents=True)
     destination.write_text(json.dumps(evidence), encoding="utf-8")
+    return destination
 
 
 def _perfect_results() -> tuple[dict[str, object], ...]:
