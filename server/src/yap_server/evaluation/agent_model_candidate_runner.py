@@ -34,6 +34,7 @@ class FailedAgentCandidateRun:
 
 
 OwnedAgentCandidateRun = AgentCandidateRun | FailedAgentCandidateRun
+_EXPECTED_CANDIDATE_FAILURES = (RuntimeError, TimeoutError, ValueError)
 
 
 def run_agent_model_candidate(
@@ -56,7 +57,7 @@ def run_agent_model_candidate(
             timeout_seconds=int(acceptance.runtime_tracks["startupTimeoutSeconds"])
         )
         endpoint = started.endpoint
-    except (RuntimeError, TimeoutError, ValueError) as error:
+    except BaseException as error:
         return _contained_failure(
             owned_runtime,
             checked_candidate=checked_candidate,
@@ -123,7 +124,7 @@ def run_agent_model_candidate(
             pressure=pressure,
             started=started,
         )
-    except (RuntimeError, TimeoutError, ValueError) as error:
+    except BaseException as error:
         return _contained_failure(
             owned_runtime,
             checked_candidate=checked_candidate,
@@ -134,12 +135,18 @@ def run_agent_model_candidate(
                 acceptance.runtime_tracks["teardownTimeoutSeconds"]
             ),
         )
-    receipt = owned_runtime.stop(
-        timeout_seconds=int(tracks["teardownTimeoutSeconds"]),
-        child_evidence_sha256={
-            name: agent_evidence_sha256(value) for name, value in children.items()
-        },
-    )
+    try:
+        receipt = owned_runtime.stop(
+            timeout_seconds=int(tracks["teardownTimeoutSeconds"]),
+            child_evidence_sha256={
+                name: agent_evidence_sha256(value) for name, value in children.items()
+            },
+        )
+    except BaseException as error:
+        owned_runtime.contain_failed_run(
+            timeout_seconds=int(tracks["teardownTimeoutSeconds"])
+        )
+        raise error
     checked_candidate.verify_unchanged()
     evidence = bind_checked_candidate_evidence(
         {
@@ -176,11 +183,10 @@ def _contained_failure(
     error: BaseException,
     teardown_timeout_seconds: int,
 ) -> FailedAgentCandidateRun:
-    try:
-        runtime = owned_runtime.contain_failed_run(
-            timeout_seconds=teardown_timeout_seconds
-        )
-    except RuntimeError:
+    runtime = owned_runtime.contain_failed_run(
+        timeout_seconds=teardown_timeout_seconds
+    )
+    if not isinstance(error, _EXPECTED_CANDIDATE_FAILURES):
         raise error
     checked_candidate.verify_unchanged()
     reason_code = {

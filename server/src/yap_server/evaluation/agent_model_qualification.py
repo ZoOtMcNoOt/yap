@@ -572,10 +572,10 @@ def main(argv: list[str] | None = None) -> int:
     evidence_destination = evidence_root / "agent-model"
     if evidence_destination.exists() or evidence_destination.is_symlink():
         raise ValueError("agent model evidence destination must be absent")
+    acceptance = load_agent_model_acceptance(repository_root)
     staging = Path(tempfile.mkdtemp(prefix=".agent-model-", dir=evidence_root)).resolve(
         strict=True
     )
-    acceptance = load_agent_model_acceptance(repository_root)
     try:
         runs = tuple(
             run_agent_model_candidate(

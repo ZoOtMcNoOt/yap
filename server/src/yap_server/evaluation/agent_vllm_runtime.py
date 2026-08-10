@@ -158,7 +158,6 @@ class OwnedAgentVllmRuntime:
             timeout=timeout_seconds + 10,
         )
         self._run(["docker", "rm", _CONTAINER_NAME])
-        self._started = None
         container_absent = not self._container_exists()
         listener_absent = _listener_is_absent(_PORT)
         workers_reaped = not Path(f"/proc/{started.process_id}").exists()
@@ -167,6 +166,7 @@ class OwnedAgentVllmRuntime:
             container_absent and listener_absent and workers_reaped and cgroup_empty
         ):
             raise RuntimeError("agent runtime teardown did not complete")
+        self._started = None
         return {
             "schemaVersion": 1,
             "checkedHead": self._checked_head,
@@ -200,7 +200,6 @@ class OwnedAgentVllmRuntime:
             timeout=timeout_seconds + 10,
         )
         self._run(["docker", "rm", "--force", _CONTAINER_NAME], check=False)
-        self._started = None
         teardown = {
             "containerAbsent": not self._container_exists(),
             "listenerAbsent": _listener_is_absent(_PORT),
@@ -209,6 +208,7 @@ class OwnedAgentVllmRuntime:
         }
         if not all(teardown.values()):
             raise RuntimeError("failed agent runtime containment did not complete")
+        self._started = None
         return {
             "imageId": started.image_id,
             "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,

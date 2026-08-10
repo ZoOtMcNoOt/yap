@@ -27,6 +27,16 @@ class AgentVllmRuntimeTests(unittest.TestCase):
             ):
                 runtime.stop(timeout_seconds=1, child_evidence_sha256=_children())
 
+            # A failed proof must retain the verified identity so forced
+            # containment can be retried after the survivor exits.
+            (cgroup / "cgroup.procs").write_text("", encoding="ascii")
+            with patch(
+                "yap_server.evaluation.agent_vllm_runtime._listener_is_absent",
+                return_value=True,
+            ):
+                evidence = runtime.contain_failed_run(timeout_seconds=1)
+            self.assertTrue(all(evidence["teardown"].values()))  # type: ignore[union-attr]
+
     def test_teardown_records_empty_cgroup_and_removed_runtime(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             cgroup = Path(temporary)

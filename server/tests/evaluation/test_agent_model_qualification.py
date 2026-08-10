@@ -4,11 +4,12 @@ import hashlib
 import json
 from pathlib import Path
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from yap_server.evaluation.agent_model_candidate_runner import (
     AgentCandidateRun,
     FailedAgentCandidateRun,
+    _contained_failure,
     agent_evidence_sha256,
 )
 from yap_server.evaluation.agent_model_qualification import (
@@ -35,6 +36,29 @@ INPUTS = tuple(
 
 
 class AgentModelQualificationTests(unittest.TestCase):
+    def test_unexpected_candidate_error_is_contained_then_reraised(self) -> None:
+        candidate = _checked_candidate()
+        runtime = MagicMock()
+        error = OSError("unexpected evaluation failure")
+
+        with self.assertRaises(OSError) as raised:
+            _contained_failure(
+                runtime,
+                checked_candidate=candidate,
+                model_candidate={
+                    "candidateId": "qwen3.6-35b-a3b-nvfp4",
+                    "model": "model",
+                    "revision": "b" * 40,
+                    "artifactManifestSha256": "c" * 64,
+                },
+                stage="fixtures",
+                error=error,
+                teardown_timeout_seconds=7,
+            )
+
+        self.assertIs(raised.exception, error)
+        runtime.contain_failed_run.assert_called_once_with(timeout_seconds=7)
+
     def test_selects_only_after_recomputing_every_candidate(self) -> None:
         candidate = _checked_candidate()
         runs = (
