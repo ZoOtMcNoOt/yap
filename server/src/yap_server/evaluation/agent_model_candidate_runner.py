@@ -59,6 +59,7 @@ def run_agent_model_candidate(
             acceptance.runtime_tracks["requestTimeoutSeconds"],
         )
     )
+    maximum_output_tokens = int(route_policy["maximumOutputTokens"])
     owned_runtime = OwnedAgentVllmRuntime(
         checked_head=checked_candidate.checked_head,
         runtime=runtime_lock,
@@ -95,9 +96,7 @@ def run_agent_model_candidate(
     try:
         warm_agent_model_fixture_runtime(
             model=str(model_candidate["model"]),
-            maximum_output_tokens=int(
-                acceptance.runtime_tracks["maximumOutputTokens"]
-            ),
+            maximum_output_tokens=maximum_output_tokens,
             request_json=request_json,
         )
         stage = "fixtures"
@@ -107,6 +106,7 @@ def run_agent_model_candidate(
                 repository_root,
                 model=str(model_candidate["model"]),
                 workload_class=workload_class,
+                maximum_output_tokens=maximum_output_tokens,
                 request_json=request_json,
             )
         )
@@ -117,7 +117,7 @@ def run_agent_model_candidate(
             model=str(model_candidate["model"]),
             timeout_seconds=request_timeout_seconds,
             maximum_response_bytes=4_000_000,
-            maximum_output_tokens=int(tracks["maximumOutputTokens"]),
+            maximum_output_tokens=maximum_output_tokens,
         )
         pressure = run_agent_runtime_pressure(
             repository_root,

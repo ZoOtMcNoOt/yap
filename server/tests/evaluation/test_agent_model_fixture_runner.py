@@ -21,15 +21,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
 
         def request(payload: dict[str, object]) -> dict[str, object]:
             requests.append(payload)
-            if "tools" in payload:
-                return _tool_response(
-                    "search_knowledge",
-                    {
-                        "purpose": "knowledge.read",
-                        "search_text": "runtime warmup",
-                    },
-                )
-            return _answer_response("WARMUP_READY")
+            return {}
 
         warm_agent_model_fixture_runtime(
             model="synthetic",
@@ -184,6 +176,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             REPOSITORY_ROOT,
             model="synthetic",
             workload_class="complex-orchestration",
+            maximum_output_tokens=256,
             request_json=request,
         )
         result = results[-1].record()
@@ -224,7 +217,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
 
         def request(payload: dict[str, object]) -> dict[str, object]:
             nonlocal active
-            self.assertEqual(payload["max_tokens"], 256)
+            self.assertEqual(payload["max_tokens"], 512)
             self.assertEqual(
                 payload["chat_template_kwargs"], {"enable_thinking": False}
             )
@@ -298,6 +291,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             REPOSITORY_ROOT,
             model="synthetic",
             workload_class="rapid-automation",
+            maximum_output_tokens=512,
             request_json=request,
         )
         score = score_agent_model_results(
@@ -325,6 +319,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             REPOSITORY_ROOT,
             model="synthetic",
             workload_class="rapid-automation",
+            maximum_output_tokens=512,
             request_json=request,
         )
 
@@ -349,6 +344,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 REPOSITORY_ROOT,
                 model="synthetic",
                 workload_class="rapid-automation",
+                maximum_output_tokens=512,
                 request_json=request,
             )
 

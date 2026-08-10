@@ -3,7 +3,7 @@
   "candidateLock": "agent-reasoning-candidates.lock.json",
   "fixtureFile": "agent-workload-fixtures.json",
   "candidateLockSha256": "ee16d9d118283cb5b92ebf3f4f16384229b0f679d55bcba7a26c2378ca9b57ea",
-  "fixtureSha256": "326bf94be034c0b503c1546550096256d4e338ef595d27a4e38fafe075a1db91",
+  "fixtureSha256": "95c0fcd23f8af42becaee24874952788055f0f670dea231e32870bf41259ae58",
   "minimumCaseCount": 12,
   "requiredCategories": ["authorization", "failure", "generation", "isolation", "proposal", "question-answering", "structured-tool", "terminology"],
   "thresholds": {
@@ -21,7 +21,7 @@
     "concurrencyLevels": [1, 2, 4, 8],
     "prefixIsolationRepetitions": 4,
     "maximumContextTokens": 8192,
-    "maximumOutputTokens": 256,
+    "maximumOutputTokens": 512,
     "requestTimeoutSeconds": 30,
     "startupTimeoutSeconds": 600,
     "teardownTimeoutSeconds": 30
@@ -36,12 +36,14 @@
   "routeEvidence": {
     "rapid-automation": {
       "candidateId": "qwen3.6-35b-a3b-nvfp4",
+      "maximumOutputTokens": 512,
       "maximumFixtureP95LatencyMilliseconds": 3000,
       "maximumWarmP95LatencyMilliseconds": 750,
       "maximumC8P95LatencyMilliseconds": 1500
     },
     "complex-orchestration": {
       "candidateId": "gemma-4-31b-it-nvfp4",
+      "maximumOutputTokens": 256,
       "requestTimeoutSeconds": 60,
       "requiredMultiStepCaseId": "complex-governed-orchestration"
     }

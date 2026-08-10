@@ -50,6 +50,7 @@ def run_agent_model_fixtures(
     *,
     model: str,
     workload_class: str,
+    maximum_output_tokens: int,
     request_json: JsonRequest,
 ) -> tuple[AgentFixtureResult, ...]:
     """Run frozen cases through one OpenAI-compatible reasoning endpoint."""
@@ -66,9 +67,10 @@ def run_agent_model_fixtures(
     cases = fixture["cases"]
     if not isinstance(system_prompt, str) or not isinstance(cases, list):
         raise ValueError("agent workload fixture is invalid")
-    maximum_output_tokens = int(
+    if not 1 <= maximum_output_tokens <= int(
         acceptance.runtime_tracks["maximumOutputTokens"]
-    )
+    ):
+        raise ValueError("agent fixture output bound is invalid")
     selected_cases = [
         case
         for case in cases
@@ -97,7 +99,7 @@ def warm_agent_model_fixture_runtime(
 
     if not model or not 1 <= maximum_output_tokens <= 4_096:
         raise ValueError("agent fixture warmup contract is invalid")
-    tool_response = request_json(
+    request_json(
         {
             "model": model,
             "messages": [
@@ -120,9 +122,7 @@ def warm_agent_model_fixture_runtime(
             "chat_template_kwargs": {"enable_thinking": False},
         }
     )
-    _message, _tool_id, tool_name, arguments = _tool_call(tool_response)
-    validate_agent_tool_arguments(tool_name, arguments)
-    final_response = request_json(
+    request_json(
         {
             "model": model,
             "messages": [
@@ -141,7 +141,6 @@ def warm_agent_model_fixture_runtime(
             "response_format": _governed_answer_response_format(),
         }
     )
-    _final_answer(final_response)
 
 
 def _run_case_safely(

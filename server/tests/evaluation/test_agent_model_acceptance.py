@@ -37,6 +37,13 @@ class AgentModelAcceptanceTests(unittest.TestCase):
             plan.route_evidence["complex-orchestration"]["requestTimeoutSeconds"],
             60,
         )
+        self.assertEqual(
+            plan.route_evidence["rapid-automation"]["maximumOutputTokens"], 512
+        )
+        self.assertEqual(
+            plan.route_evidence["complex-orchestration"]["maximumOutputTokens"],
+            256,
+        )
 
 
 if __name__ == "__main__":
