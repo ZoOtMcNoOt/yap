@@ -1,10 +1,12 @@
 # Current Status
 
-**As of:** 2026-08-03
+**As of:** 2026-08-09
 
-**Most recent merged closure:** PR #143 merged the post-Phase-8 ownership and
-maintainability review as
-`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. The earlier reviewed head
+**Most recent merged closure:** PR #150 merged the Phase 8 qualification as
+`599a0d0b` from exact hosted-green head
+`2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`. PR #144 previously merged the
+sole source-time meeting route as `b5b52bfd297edf1e95d93e120a8e59c206f7ab77`
+from exact head `bc9b57141702bb1dd6ab7df3ebc18f045fb60ee8`. The earlier reviewed head
 `ec4e4ab46234c35555136a75da530c6d73a042d8` passed every hosted CI and
 CodeQL check for [PR #142](https://github.com/mcnatg1/yap/pull/142), which
 merged the Phase 8 Tiron meeting-transcription Preview as
@@ -29,16 +31,23 @@ evaluation code from the request-time Tiron image, serialize publication with
 cancellation, bound History detail work, and defer full speaker-companion
 verification until the exact result is selected.
 
-The merged Phase 8 qualification remains bound to application/runtime head
+The historical Phase 8 Preview qualification remains bound to application/runtime head
 `1c69b61cf2902c9cfda50c6158168890974f969f`, immutable ARM64 image
 `sha256:19ffb7fbadb95e8332a92ee82ed6a4554e090eeec3d5c680d133c8787dfb4330`,
 and protected aggregate receipt SHA-256
 `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`.
 That evidence proves the explicitly enabled, absent-from-default-catalog
 Preview route, not production promotion. Its eight-label aggregate contract is
-historical. The active production-promotion branch replaces it with exact
+historical. PR #144 replaced it with exact
 source-time epochs, an eight-slot decode-window boundary, a 32-speaker session
-target, a 64-speaker safety ceiling, and no second diarization fallback.
+target, a 64-speaker safety ceiling, and no second diarization fallback. Exact
+qualification candidate `3ddb930268b544d2cae80d4389f12ef315b35ded`
+then consumed the single production gate. Because `YAP_EVAL_CACHE` and the
+independently adjudicated holdout were unconfigured, it recorded
+`unadvertised-baseline` with transcript-free evidence SHA-256
+`36b45ddb929fab49ab97a215154a3fcc8e6dab099db1cbdcd6a9d047c7eaff22`.
+No image preparation or GPU inference was admissible, and the catalogs remain
+unchanged.
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -63,9 +72,10 @@ rewrite that target; this status document distinguishes what currently executes.
 | Checkpoint B | Merged and gated | The [completed codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md) added no Phase 7 functionality. Exact executable candidate `9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted 31-child matrix and independent receipt validation with exact teardown. First-attempt hosted CI, CodeQL, and stock-NSIS passed on documentation-only reviewed head `0bd11ae8dea34cd22029c6c09a9fd62a5951a363`; PR #68 merged as `15f9c8ac00211b9d2f28845d419258ae2c8de8e4`. Private receipts and sensitive evidence remain outside Git and hosted artifacts. |
 | Phase 7: identity/access | Merged and gated | The [tenant-scoped identity and job authorization plan](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md) governed the branch. [PR #69](https://github.com/mcnatg1/yap/pull/69) merged as `66d314d7`. Provider-neutral OIDC/Entra token validation, tenant-scoped `(tid, oid)` ownership across jobs, results, REST and WSS, protected readiness, authenticated bounded private WebSocket admission, and the qualified native lower handshake execute. Two things carried by the branch do NOT execute as product behaviour and are gates rather than capabilities: the purpose-grant and revocation layer is reachable only from tests, since no HTTP route or operator entry point calls `RequestAuthorizationRuntime.purpose_authorization`, so `access_disabled` can be set only by editing `identity.sqlite` by hand; and the desktop production token manager discovers no provider by default. A WAM adapter exists only behind explicit opt-in and is not approved or selected. In release/default builds, explicit `YAP_AUTH_MODE=development_loopback` is the only end-to-end mode that does not require an IT-provided identity environment; the debug-only demo provider is test/demo evidence, not production SSO. Real Entra policy conformance remains an IT-owned handoff. |
 | Post-Phase-7 local-first closure | Implemented and locally gated | On-device setup and recovery no longer await optional server/auth refresh. The fixed numeric-loopback offer retries safely after launch, requires explicit connection approval, never scans the LAN, and stops after configuration or durable dismissal. Server and sign-in controls remain optional and progressively disclosed; no production SSO provider or enterprise configuration is invented. |
-| Phase 8: meeting evidence | Merged and Preview-gated; production promotion in progress | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron for the server meeting route. The merged Preview evidence and immutable identities remain historical proof. The active promotion branch now uses exact 30-second source-time epochs, Tiron's existing ECAPA encoder for request-scoped unambiguous speaker reconciliation, canonical `speaker-1` through `speaker-64` session identities, typed decode-window/session capacity records, strict `Unknown`, and one-speaker plain-text History projection. It removes the obsolete caller-selected speaker limit and fallback-not-run contract. Tiron remains absent from the default catalog and unpromoted until the independently reviewed private holdout and production-specific runtime gate pass on the exact head. |
+| Phase 8: meeting evidence | Closed as unadvertised baseline | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron for the sole server meeting route. PR #144 merged exact 30-second source-time epochs, request-scoped ECAPA reconciliation, canonical `speaker-1` through `speaker-64` identities, typed capacity records, strict `Unknown`, and one-speaker plain-text History projection. Exact qualification candidate `3ddb930...` recorded `unadvertised-baseline` because the required private holdout was unconfigured. Tiron remains explicit Preview and absent from the default catalog; Phase 8 adds no fallback pipeline. |
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
-| Phases 9–10 | Planned | Follow the accepted order in the [roadmap](roadmap/ROADMAP.md). Enterprise infrastructure remains an explicit IT/security handoff. |
+| Phase 9 | Next | Begin the pinned Google OKF compiler and permission-safe retrieval slice under ADRs 0017/0022. |
+| Phase 10 | Planned | Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -681,11 +691,10 @@ publication boundaries retain ownership.
   tensor batching changed a Cohere transcript and its parity-preserving profile
   serialized model execution without a demonstrated throughput gain. Server
   live remains false.
-- Tiron production promotion, exact frozen messy-meeting scoring, and
-  larger-roster reconciliation remain open later evidence. The explicitly configured Tiron
-  candidate and anonymous speaker-result publication now execute, but that is
-  not complete qualification or a default advertised route. Phase 9
-  knowledge/agent behavior remains deferred.
+- Tiron production qualification closed as `unadvertised-baseline` because the
+  independent private holdout was unconfigured. The source-time larger-roster
+  reconciliation and anonymous speaker-result publication execute, but Tiron
+  remains explicit Preview and absent from the default catalog. Phase 9 is next.
 - Private security scans, scan identifiers, host paths, and detailed private
   findings are not repository or PR material.
 
@@ -838,21 +847,21 @@ and reviewable sub-tasks. Phases 1–8, Checkpoints A/B, and the post-Phase-7
 adversarial checkpoint are merged and closed. Patched post-Phase-8
 maintainability candidate `393710999...` passed its fresh exact-head gate and
 required CI/CodeQL after the late development-tool security pin; PR #143 then
-merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. The active meeting work is
-now the production-promotion plan, not checkpoint closure.
+merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. PR #144 then merged the
+source-time route as `b5b52bfd...`; exact candidate `3ddb930...` closed the
+production decision as `unadvertised-baseline` because the private holdout was
+unconfigured.
 The concise
 [integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Finish the active
-   [meeting-transcription production-promotion plan](plans/active/2026-08-03-meeting-transcription-production-promotion.md)
-   with focused checks, adversarial review, and one exact-head gate.
-2. Keep Tiron absent from the default catalog and unpromoted until the
-   independently reviewed private holdout and production runtime evidence pass.
-   The source-time epoch implementation is the sole server meeting path; a
-   failed decision remains `unadvertised-baseline`.
-3. Continue Phases 9–10 in documented order and keep the full security scan at
+1. Begin Phase 9 with the deterministic Google OKF validation/compiler and
+   permission-safe retrieval slice under ADRs 0017/0022.
+2. Keep Tiron absent from the default catalog at the recorded
+   `unadvertised-baseline`; the source-time implementation remains the sole
+   server meeting path.
+3. Continue Phase 10 only after Phase 9 and keep the full security scan at
    the Phase 10 enterprise gate.
 4. Leave Entra registration, production SSO/provider approval, Conditional
    Access, DNS, certificates, ZPA, firewall, and deployment policy as explicit

@@ -58,7 +58,7 @@ observed runtime behavior.
 | D-20 | GLib/platform warnings | GLib is not a Yap application architecture choice; it may enter through platform/native dependencies. Do not edit a lockfile merely to hide warnings. Classify each warning as a real supported-target defect, upstream-only warning, or missing native-platform gate, then fix/pin/patch only with reproducible evidence. | Current warning classified as target-all Linux dependency debt; the locked Windows graph is GLib-free and guarded. Re-evaluate at the explicit Linux release gate or on new reproducible impact. | P6-10 below |
 | D-21 | LAN, SSH, Wi-Fi, and enterprise networking | Preserve LAN/loopback development and the SSH-tunnel rehearsal. DNS, certificates, ZPA, firewall policy, conditional access, production hosting, and deployment remain explicit IT/security handoffs. | Accepted; developer rehearsal now, external handoff Phase 10 | ADR 0021, roadmap |
 | D-22 | Security and enterprise readiness | Secure coding, bounded inputs, provenance, privacy, cancellation, and fail-closed contracts are product work now. Enterprise certification, production access policy, formal deployment approval, and managed network controls cannot be claimed early. | Accepted split; every phase plus Phase 10 handoff | Roadmap |
-| D-23 | Joint speaker-attributed meeting ASR | Use pinned `Trelis/tiron` as the sole server meeting-inference route. Keep the local anonymous-speaker path, Rust result authority, and model-replacement seam; do not operate a duplicate ASR-plus-diarization fallback. Invoke the public API on exact 30-second source epochs, preserve its eight-slot decode limit, and reconcile a 32-target/64-ceiling session roster from request-scoped ECAPA evidence. | The merged Preview remains historical evidence. The production-promotion candidate implements source-time epochs, typed decode/session capacity, strict `Unknown`, and one-speaker plain History projection. Independent quality/runtime promotion evidence remains open. | ADR 0027 and meeting-transcription production-promotion plan |
+| D-23 | Joint speaker-attributed meeting ASR | Use pinned `Trelis/tiron` as the sole server meeting-inference route. Keep the local anonymous-speaker path, Rust result authority, and model-replacement seam; do not operate a duplicate ASR-plus-diarization fallback. Invoke the public API on exact 30-second source epochs, preserve its eight-slot decode limit, and reconcile a 32-target/64-ceiling session roster from request-scoped ECAPA evidence. | PR #144 merged the source-time route. Exact Phase 8 qualification candidate `3ddb930...` recorded `unadvertised-baseline` because the required private holdout was unconfigured. Tiron remains explicit Preview and absent from the default catalog; Phase 8 is closed. | ADR 0027 and completed meeting-transcription production-qualification plan |
 
 ## Current Phase 6 implementation queue
 
@@ -809,8 +809,10 @@ documentation successor `e22368fc...` exposed a late high-severity development-
 tool advisory. Patched candidate `393710999...` passed its fresh exact-head
 lifecycle, single complete 18-child matrix, receipt validation, and required CI
 and CodeQL jobs. PR #143 merged the reviewed closure as
-`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`; meeting production promotion is a
-separate active evidence decision.
+`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. PR #144 merged the source-time
+route as `b5b52bfd...`; exact candidate `3ddb930...` closed meeting production
+qualification as `unadvertised-baseline` because the private holdout was
+unconfigured.
 
 ## Later-phase queue
 
@@ -959,7 +961,7 @@ graph and Rust-native runtime contract enter the desktop dependency graph.
 | OQ-28 | What diagnostic evidence can be retained without leaking private audio or transcripts? | Redaction schema, bounded metrics, event correlation, local retention/deletion, crash evidence, hosted-log review, and user controls | Record hashes, counts, timings, typed states, and model revisions; keep raw audio/transcripts and private scan output outside Git and hosted artifacts |
 | OQ-29 | Which networking work is developer-owned versus an IT/security handoff? | LAN and SSH-tunnel rehearsal, authenticated API contract, threat model, DNS/certificate/ZPA/firewall/conditional-access ownership, and deployment approvals | Preserve loopback/LAN/tunnel development; record enterprise controls as explicit Phase 10 handoffs or blockers |
 | OQ-30 | How do language spans interact with Phase 8 speaker diarization and overlap? | Independent source-time contracts, span intersection rules, overlap representation, revision precedence, and multilingual multi-speaker fixtures | Keep language and speaker evidence separate and composable; neither model may infer the other's identity or erase overlapping evidence |
-| OQ-31 | Does the selected Tiron route earn narrow meeting production promotion? | Immutable model/harness/dependency provenance; disclosed training exposure; frozen public comparators plus independent holdout; released-baseline reproduction; scored source-time epoch route; cpWER and speaker-attributed WER; overlap deletion/recall; speaker-count, capacity-pressure, timestamp, and identity-fragmentation error; per-locale quality; single-speaker and long-batch controls; latency, RTF, VRAM/RAM, c1/c2/c4/c8 admission, cancellation, isolation, teardown, and long-meeting stability | Keep Tiron absent from the default catalog until every required slice passes. The executable decision yields `narrow-route-promotion` or `unadvertised-baseline`; no duplicate fallback is built. Broader batch replacement would require a separate future decision and evidence. |
+| OQ-31 | Does the selected Tiron route earn narrow meeting production promotion? | Closed in Phase 8. Exact candidate `3ddb930...` found the required independent holdout unconfigured, so production runtime/scoring admission did not occur. | Recorded `unadvertised-baseline`; Tiron stays explicit Preview and absent from the default catalog. No duplicate fallback was built. Any later promotion is a new authorized evidence decision. |
 
 ## Closed discussion items
 

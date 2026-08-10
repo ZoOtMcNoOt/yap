@@ -1,8 +1,8 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–8 Preview system plus the
-meeting-transcription ownership and maintainability repair awaiting a fresh
-exact-head candidate gate after a late development-tool security pin. Phase 7
+This document describes the merged executable Phase 1–8 system after the
+meeting-transcription ownership, source-time reconciliation, and explicit
+production-qualification decision. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -29,7 +29,10 @@ antagonistic review, the canonical native build, receipt-bound image preflight,
 real History/cancellation lifecycle with teardown, its single exact-head
 18-child matrix, independent receipt validation, and the required CI and CodeQL
 jobs. PR #143 merged the reviewed closure as
-`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
+`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. PR #144 merged the sole
+source-time meeting route as `b5b52bfd297edf1e95d93e120a8e59c206f7ab77`.
+Exact qualification candidate `3ddb930...` then recorded
+`unadvertised-baseline` because the required private holdout was unconfigured.
 
 The merged Phase 6 boundary includes the provider catalog, fixed-language
 decision, local primary-language conditioning, durable preprocessing, advisory
@@ -736,7 +739,7 @@ final hosted head is not represented as an all-green rollup. Real IT-provided
 Entra and Conditional Access policy and an approved native adapter remain
 external conformance work.
 
-## Merged meeting-runtime Preview, not a production route
+## Merged meeting runtime, closed as an unadvertised baseline
 
 [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
 selects pinned `Trelis/tiron` as the Phase 8 server development baseline for
@@ -790,8 +793,8 @@ and corrected a manifest regression; it did not justify a longer product drain
 or a compiler-specific runtime exception.
 
 Tiron's model capacity is eight speaker slots per 30-second decode. Neither the
-limit nor Yap's session roster is an attendee count. The production-promotion
-candidate calls the public Tiron API on exact source-time epochs, keeps Tiron's
+limit nor Yap's session roster is an attendee count. The merged route calls the
+public Tiron API on exact source-time epochs, keeps Tiron's
 window-local labels long enough to reuse its already-loaded ECAPA encoder, and
 links only unambiguous evidence across epochs. Yap owns the resulting dynamic
 32-speaker target and 64-speaker safety ceiling without forking Tiron internals.
@@ -803,11 +806,11 @@ server meeting-inference path; a failed promotion gate leaves it unadvertised.
 The passed Phase 8 Preview gate proves the pinned route, source/result
 boundaries, lifecycle, supported launcher, and client projection on one exact
 application/runtime candidate.
-The later promotion gate will score AMI/ICSI/NOTSOFAR public comparators
-separately from an independently adjudicated private messy-meeting holdout and
-qualify accuracy, overlap, locale, capacity pressure, long-session stability,
-c1/c2/c4/c8 isolation, cancellation, and teardown. The model emits evidence
-only. The Python server owns server-side source validation, durable jobs,
+The Phase 8 qualification gate did not admit those production workloads because
+the independently adjudicated private holdout and `YAP_EVAL_CACHE` were absent.
+It recorded `unadvertised-baseline`; no image was prepared and no GPU inference
+ran. The model emits evidence only. The Python server owns server-side source
+validation, durable jobs,
 admission, cancellation, containment, and immutable authoritative revisions.
 Rust independently binds those revisions to the persisted capture request,
 publishes the local aggregate, and projects its anonymous turns into History.

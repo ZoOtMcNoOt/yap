@@ -6,8 +6,8 @@
 > evidence that produced the merged Preview. Its fallback-comparison language
 > is superseded by the single-route production design in
 > [ADR 0027](../../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
-> and the active
-> [production-promotion plan](../active/2026-08-03-meeting-transcription-production-promotion.md).
+> and the completed
+> [production-qualification plan](2026-08-03-meeting-transcription-production-qualification.md).
 > It is not a current implementation requirement.
 
 **Status:** Completed Preview delivery. Reviewed head

@@ -1,7 +1,7 @@
 # ADR 0027: Tiron joint speaker-attributed meeting transcription
 
 **Date:** 2026-07-22
-**Status:** Accepted (canonical Phase 8 server baseline; production promotion pending)
+**Status:** Accepted (canonical Phase 8 server baseline; qualification closed as `unadvertised-baseline`)
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md), [ADR 0020](0020-meeting-capture-diarization-authority.md), and [ADR 0025](0025-provider-specific-asr-serving.md)
 **Implementation status:** The current upstream model, runtime harness, ECAPA,
 container, and Python dependency identities are locked, and the frozen
@@ -19,7 +19,7 @@ route, separate immutable transcript and anonymous-speaker revisions,
   `9f647b3a968ae31ab4b7f869bda160177b665747a3be5deecdde11399919e154`
   binds the subordinate evidence and reviewed test/gate-only descendant
   `9ff06d7d...` outside Git. That Preview's exactly-eight-global-label contract
-  is historical. The production-promotion implementation now calls the public
+  is historical. The merged source-time implementation calls the public
   Tiron API on exact source-time epochs, reuses its loaded ECAPA encoder for
   request-scoped reconciliation, distinguishes the eight-slot decode boundary
   from Yap's 32-target/64-ceiling session roster, and removes the obsolete
@@ -33,9 +33,18 @@ route, separate immutable transcript and anonymous-speaker revisions,
   product lifecycle with teardown, one complete 18-child matrix, receipt
   validation, and required CI and CodeQL jobs. PR #143 merged the reviewed
   closure as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. The
-  private holdout, meeting-score reproduction, production runtime evidence,
-  and exact-head promotion decision remain open. The route stays absent from
-  the default catalog until those gates pass.
+  source-time route merged through PR #144 as
+  `b5b52bfd297edf1e95d93e120a8e59c206f7ab77` from implementation head
+  `bc9b57141702bb1dd6ab7df3ebc18f045fb60ee8`. Exact qualification
+  candidate `3ddb930268b544d2cae80d4389f12ef315b35ded` then consumed the
+  single Phase 8 production gate. Because the private holdout and
+  `YAP_EVAL_CACHE` were unconfigured, the gate recorded
+  `unadvertised-baseline` and stopped before image preparation or GPU
+  inference. The route remains explicit Preview and absent from the default
+  catalog. PR #150 passed all hosted CI and CodeQL checks at exact head
+  `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b` and merged the qualification
+  closure as `599a0d0b`. Phase 8 is closed without a fallback pipeline or
+  production claim.
 
 ## Context
 
