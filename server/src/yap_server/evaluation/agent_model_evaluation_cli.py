@@ -6,8 +6,9 @@ import os
 from pathlib import Path
 import urllib.error
 import urllib.request
+import hashlib
 
-from yap_server.knowledge.sglang_reasoning_client import SglangReasoningClient
+from yap_server.knowledge.vllm_reasoning_client import VllmReasoningClient
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
@@ -19,6 +20,7 @@ from .checked_candidate import (
 from .agent_model_fixture_runner import run_agent_model_fixtures
 from .agent_model_scoring import score_agent_model_results
 from .agent_runtime_pressure import run_agent_runtime_pressure
+from .agent_vllm_runtime import OwnedAgentVllmRuntime
 
 
 def main() -> int:
@@ -26,7 +28,6 @@ def main() -> int:
     parser.add_argument("--repository-root", type=Path, required=True)
     parser.add_argument("--checked-head", required=True)
     parser.add_argument("--candidate-id", required=True)
-    parser.add_argument("--endpoint", default="http://127.0.0.1:30000")
     arguments = parser.parse_args()
     repository_root = arguments.repository_root.resolve(strict=True)
     evidence_root = _evidence_root(repository_root)
@@ -41,8 +42,16 @@ def main() -> int:
         ),
     )
     acceptance = load_agent_model_acceptance(repository_root)
-    candidate = _candidate(repository_root, arguments.candidate_id)
-    endpoint = _loopback_endpoint(arguments.endpoint)
+    runtime_lock, candidate = _candidate_lock(repository_root, arguments.candidate_id)
+    owned_runtime = OwnedAgentVllmRuntime(
+        checked_head=arguments.checked_head,
+        runtime=runtime_lock,
+        candidate=candidate,
+    )
+    started = owned_runtime.start(
+        timeout_seconds=int(acceptance.runtime_tracks["startupTimeoutSeconds"])
+    )
+    endpoint = started.endpoint
 
     def request_json(payload: dict[str, object]) -> dict[str, object]:
         request = urllib.request.Request(
@@ -66,26 +75,94 @@ def main() -> int:
             raise ValueError("agent model response must be an object")
         return value
 
-    results = run_agent_model_fixtures(
-        repository_root,
-        model=str(candidate["model"]),
-        request_json=request_json,
+    try:
+        results = run_agent_model_fixtures(
+            repository_root,
+            model=str(candidate["model"]),
+            request_json=request_json,
+        )
+        records = tuple(item.record() for item in results)
+        score = score_agent_model_results(repository_root, records)
+        tracks = acceptance.runtime_tracks
+        reasoning_client = VllmReasoningClient(
+            endpoint=endpoint,
+            model=str(candidate["model"]),
+            timeout_seconds=int(tracks["requestTimeoutSeconds"]),
+            maximum_response_bytes=4_000_000,
+            maximum_output_tokens=int(tracks["maximumOutputTokens"]),
+        )
+        pressure = run_agent_runtime_pressure(
+            repository_root,
+            request=reasoning_client,
+            dispatched_request=reasoning_client.request,
+            memory_bytes=started.memory_bytes,
+        )
+        child_root = (
+            evidence_root / "agent-model" / arguments.candidate_id / "children"
+        )
+        children = {
+            "fixtures": {
+                "schemaVersion": 1,
+                "checkedHead": arguments.checked_head,
+                "candidateId": arguments.candidate_id,
+                "results": list(records),
+            },
+            "pressure": {
+                "schemaVersion": 1,
+                "checkedHead": arguments.checked_head,
+                "coldLatencyMilliseconds": pressure.cold_latency_milliseconds,
+                "warmLatencyMilliseconds": list(pressure.warm_latency_milliseconds),
+                "concurrencyLatencyMilliseconds": {
+                    str(level): list(values)
+                    for level, values in pressure.concurrency_latency_milliseconds.items()
+                },
+                "isolationLeakCount": pressure.isolation_leak_count,
+                "isolationConcurrent": pressure.isolation_concurrent,
+            },
+            "cancellation": {
+                "schemaVersion": 1,
+                "checkedHead": arguments.checked_head,
+                "requestDispatched": pressure.cancellation_dispatched,
+                "cancelledRequestCompletionCount": pressure.cancelled_request_completion_count,
+            },
+            "resources": {
+                "schemaVersion": 1,
+                "checkedHead": arguments.checked_head,
+                "measurementBoundary": "owned-vllm-cgroup-v2",
+                "baselineMemoryBytes": pressure.baseline_memory_bytes,
+                "peakMemoryBytes": pressure.peak_memory_bytes,
+                "sampleCount": pressure.memory_sample_count,
+            },
+            "lifecycle": {
+                "schemaVersion": 1,
+                "checkedHead": arguments.checked_head,
+                "containerId": started.container_id,
+                "imageId": started.image_id,
+                "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,
+                "launchArgumentsSha256": started.launch_arguments_sha256,
+                "endpoint": endpoint,
+            },
+        }
+        child_hashes: dict[str, str] = {}
+        for name, value in children.items():
+            path = child_root / f"{name}.json"
+            write_new_agent_model_evidence(path, value)
+            child_hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        receipt = owned_runtime.stop(
+            timeout_seconds=int(tracks["teardownTimeoutSeconds"]),
+            child_evidence_sha256=child_hashes,
+        )
+    except BaseException:
+        owned_runtime.abort()
+        raise
+    receipt_path = (
+        evidence_root
+        / "agent-model"
+        / arguments.candidate_id
+        / "runtime-receipt.json"
     )
-    records = tuple(item.record() for item in results)
-    score = score_agent_model_results(repository_root, records)
-    tracks = acceptance.runtime_tracks
-    reasoning_client = SglangReasoningClient(
-        endpoint=endpoint,
-        model=str(candidate["model"]),
-        timeout_seconds=int(tracks["requestTimeoutSeconds"]),
-        maximum_response_bytes=4_000_000,
-        maximum_output_tokens=int(tracks["maximumOutputTokens"]),
-    )
-    pressure = run_agent_runtime_pressure(
-        repository_root,
-        request=reasoning_client,
-        memory_bytes=_host_used_memory_bytes,
-    )
+    write_new_agent_model_evidence(receipt_path, receipt)
+    runtime_receipt_sha256 = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
     destination = (
         evidence_root / "agent-model" / arguments.candidate_id / "results.json"
     )
@@ -96,6 +173,7 @@ def main() -> int:
             "candidateId": arguments.candidate_id,
             "model": candidate["model"],
             "revision": candidate["revision"],
+            "runtimeReceiptSha256": runtime_receipt_sha256,
             "results": list(records),
             "runtimePressure": {
                 "coldLatencyMilliseconds": pressure.cold_latency_milliseconds,
@@ -139,25 +217,9 @@ def main() -> int:
     )
 
 
-def _host_used_memory_bytes() -> int:
-    fields: dict[str, int] = {}
-    with Path("/proc/meminfo").open(encoding="ascii") as source:
-        for line in source:
-            name, separator, remainder = line.partition(":")
-            if separator and name in {"MemTotal", "MemAvailable"}:
-                parts = remainder.split()
-                if len(parts) != 2 or parts[1] != "kB":
-                    raise ValueError("host memory observation is invalid")
-                fields[name] = int(parts[0]) * 1024
-    if set(fields) != {"MemTotal", "MemAvailable"}:
-        raise ValueError("host memory observation is incomplete")
-    used = fields["MemTotal"] - fields["MemAvailable"]
-    if used < 0:
-        raise ValueError("host memory observation is invalid")
-    return used
-
-
-def _candidate(repository_root: Path, candidate_id: str) -> dict[str, object]:
+def _candidate_lock(
+    repository_root: Path, candidate_id: str
+) -> tuple[dict[str, object], dict[str, object]]:
     acceptance = load_agent_model_acceptance(repository_root)
     lock, _identity = read_json_object_with_identity(
         repository_root / "server" / "agent-reasoning-candidates.lock.json",
@@ -171,7 +233,10 @@ def _candidate(repository_root: Path, candidate_id: str) -> dict[str, object]:
     matches = [item for item in candidates if item["candidateId"] == candidate_id]
     if len(matches) != 1:
         raise ValueError("agent model candidate is not admitted")
-    return matches[0]
+    runtime = lock["runtime"]
+    if not isinstance(runtime, dict):
+        raise ValueError("agent runtime lock is invalid")
+    return runtime, matches[0]
 
 
 def _evidence_root(repository_root: Path) -> Path:
@@ -184,12 +249,6 @@ def _evidence_root(repository_root: Path) -> Path:
     except ValueError:
         return root
     raise ValueError("agent model evidence must remain outside the repository")
-
-
-def _loopback_endpoint(value: str) -> str:
-    if value not in {"http://127.0.0.1:30000", "http://localhost:30000"}:
-        raise ValueError("agent model endpoint must be loopback")
-    return value
 
 
 if __name__ == "__main__":

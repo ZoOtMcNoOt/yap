@@ -30,7 +30,6 @@ class AgentModelAcceptance:
     candidate_lock_sha256: str
     fixture_sha256: str
     candidate_ids: tuple[str, ...]
-    rejected_candidate_ids: tuple[str, ...]
     case_ids: tuple[str, ...]
     permitted_outcomes: tuple[str, ...]
     runtime_tracks: dict[str, object]
@@ -65,7 +64,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         expected_sha256=fixture_hash,
         containment_root=repository_root,
     )
-    candidate_ids, rejected_candidate_ids = _candidate_lock(lock)
+    candidate_ids = _candidate_lock(lock)
     case_ids, categories = _fixtures(fixtures)
     minimum = plan["minimumCaseCount"]
     required_categories = plan["requiredCategories"]
@@ -89,7 +88,6 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         observed_lock_hash,
         observed_fixture_hash,
         candidate_ids,
-        rejected_candidate_ids,
         case_ids,
         tuple(outcomes),
         runtime_tracks,
@@ -97,7 +95,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
     )
 
 
-def _candidate_lock(value: dict[str, object]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
     if (
         set(value) != {"schemaVersion", "runtime", "candidates"}
         or value["schemaVersion"] != 1
@@ -105,29 +103,27 @@ def _candidate_lock(value: dict[str, object]) -> tuple[tuple[str, ...], tuple[st
         raise ValueError("agent reasoning candidate lock differs from the contract")
     runtime = value["runtime"]
     if not isinstance(runtime, dict) or set(runtime) != {
+        "engine",
         "image",
-        "manifestDigest",
-        "platformDigest",
+        "digest",
         "platform",
         "python",
-        "sglang",
+        "vllm",
     }:
         raise ValueError("agent runtime lock is invalid")
     if runtime != {
-        "image": "nvcr.io/nvidia/sglang:26.06-py3",
-        "manifestDigest": "sha256:f1e23b1c96d7e04d061c76b179f81aa32fcef367590a90f6079a0bf899dc4300",
-        "platformDigest": "sha256:8689bc346a5f92309c3887f3431f6d29747be10a6d5dbb871f4d4ae431d3309b",
+        "engine": "vllm",
+        "image": "nvcr.io/nvidia/vllm:26.06-py3",
+        "digest": "sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e",
         "platform": "linux/arm64",
         "python": "3.12",
-        "sglang": "0.5.12.post1",
+        "vllm": "0.22.1+7b9cb5b7.dev",
     }:
         raise ValueError("agent runtime identity is not the approved GB10 image")
     candidates = value["candidates"]
     if not isinstance(candidates, list) or len(candidates) != 2:
         raise ValueError("agent candidate set is invalid")
     identities: list[str] = []
-    admitted: list[str] = []
-    rejected: list[str] = []
     for candidate in candidates:
         if not isinstance(candidate, dict) or not {
             "candidateId",
@@ -135,7 +131,6 @@ def _candidate_lock(value: dict[str, object]) -> tuple[tuple[str, ...], tuple[st
             "revision",
             "quantization",
             "toolCallParser",
-            "evaluationStatus",
             "license",
             "source",
         } <= set(candidate) <= {
@@ -145,8 +140,6 @@ def _candidate_lock(value: dict[str, object]) -> tuple[tuple[str, ...], tuple[st
             "quantization",
             "toolCallParser",
             "reasoningParser",
-            "evaluationStatus",
-            "reasonCode",
             "license",
             "source",
         }:
@@ -163,22 +156,9 @@ def _candidate_lock(value: dict[str, object]) -> tuple[tuple[str, ...], tuple[st
         ].startswith("https://huggingface.co/"):
             raise ValueError("agent candidate provenance is invalid")
         identities.append(candidate_id)
-        status = candidate["evaluationStatus"]
-        if status == "workload-candidate" and "reasonCode" not in candidate:
-            admitted.append(candidate_id)
-        elif (
-            status == "runtime-incompatible"
-            and candidate.get("reasonCode")
-            == "sglang-w4afp8-block-shape-unsupported"
-        ):
-            rejected.append(candidate_id)
-        else:
-            raise ValueError("agent candidate evaluation status is invalid")
     if len(set(identities)) != len(identities):
         raise ValueError("agent candidate is duplicated")
-    if not admitted or not rejected:
-        raise ValueError("agent candidate comparison is incomplete")
-    return tuple(admitted), tuple(rejected)
+    return tuple(identities)
 
 
 def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
@@ -245,6 +225,7 @@ def _runtime_tracks(value: object) -> dict[str, object]:
         "maximumContextTokens",
         "maximumOutputTokens",
         "requestTimeoutSeconds",
+        "startupTimeoutSeconds",
         "teardownTimeoutSeconds",
     }:
         raise ValueError("agent runtime tracks differ from the contract")
@@ -259,6 +240,7 @@ def _runtime_tracks(value: object) -> dict[str, object]:
         "maximumContextTokens": (1, 131_072),
         "maximumOutputTokens": (1, 4_096),
         "requestTimeoutSeconds": (1, 300),
+        "startupTimeoutSeconds": (1, 900),
         "teardownTimeoutSeconds": (1, 300),
     }
     for field, (minimum, maximum) in numeric.items():

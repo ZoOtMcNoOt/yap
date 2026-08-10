@@ -32,26 +32,31 @@ def test_selects_admitted_candidate_after_recomputing_every_threshold() -> None:
     candidate = _checked_candidate()
     with tempfile.TemporaryDirectory() as temporary:
         evidence_root = Path(temporary)
-        _write_candidate(
+        paths = {}
+        paths["qwen3.6-35b-a3b-nvfp4"] = _write_candidate(
+            evidence_root,
+            candidate,
+            "qwen3.6-35b-a3b-nvfp4",
+            20,
+        )
+        paths["nemotron-3-nano-30b-a3b-nvfp4"] = _write_candidate(
             evidence_root,
             candidate,
             "nemotron-3-nano-30b-a3b-nvfp4",
             10,
         )
+        registry_sha256 = _write_registry(evidence_root, candidate, paths)
 
         with patch.object(CheckedCandidate, "verify_unchanged"):
             decision = evaluate_agent_model_qualification(
                 candidate=candidate,
                 evidence_root=evidence_root,
+                evidence_registry_sha256=registry_sha256,
             )
 
     assert decision["outcome"] == "selected-candidate"
     assert decision["selectedCandidateId"] == "nemotron-3-nano-30b-a3b-nvfp4"
-    assert decision["candidateSummaries"][0] == {
-        "candidateId": "qwen3.6-35b-a3b-nvfp4",
-        "eligible": False,
-        "rejectionReasonCode": "sglang-w4afp8-block-shape-unsupported",
-    }
+    assert len(decision["candidateSummaries"]) == 2
     assert "results" not in json.dumps(decision)
 
 
@@ -59,14 +64,17 @@ def test_keeps_deterministic_route_when_candidate_evidence_is_missing() -> None:
     candidate = _checked_candidate()
     with tempfile.TemporaryDirectory() as temporary:
         evidence_root = Path(temporary)
+        registry_sha256 = _write_registry(evidence_root, candidate, {})
         with patch.object(CheckedCandidate, "verify_unchanged"):
             decision = evaluate_agent_model_qualification(
                 candidate=candidate,
                 evidence_root=evidence_root,
+                evidence_registry_sha256=registry_sha256,
             )
 
     assert decision["outcome"] == "deterministic-no-model"
     assert decision["missingCandidateIds"] == [
+        "qwen3.6-35b-a3b-nvfp4",
         "nemotron-3-nano-30b-a3b-nvfp4"
     ]
 
@@ -75,18 +83,28 @@ def test_keeps_deterministic_route_when_no_candidate_passes() -> None:
     candidate = _checked_candidate()
     with tempfile.TemporaryDirectory() as temporary:
         evidence_root = Path(temporary)
-        _write_candidate(
+        paths = {}
+        paths["qwen3.6-35b-a3b-nvfp4"] = _write_candidate(
+            evidence_root,
+            candidate,
+            "qwen3.6-35b-a3b-nvfp4",
+            20,
+            passing=False,
+        )
+        paths["nemotron-3-nano-30b-a3b-nvfp4"] = _write_candidate(
             evidence_root,
             candidate,
             "nemotron-3-nano-30b-a3b-nvfp4",
             20,
             passing=False,
         )
+        registry_sha256 = _write_registry(evidence_root, candidate, paths)
 
         with patch.object(CheckedCandidate, "verify_unchanged"):
             decision = evaluate_agent_model_qualification(
                 candidate=candidate,
                 evidence_root=evidence_root,
+                evidence_registry_sha256=registry_sha256,
             )
 
     assert decision["outcome"] == "deterministic-no-model"
@@ -97,20 +115,27 @@ def test_rejects_tampered_candidate_evidence() -> None:
     candidate = _checked_candidate()
     with tempfile.TemporaryDirectory() as temporary:
         evidence_root = Path(temporary)
+        paths = {}
         path = _write_candidate(
             evidence_root, candidate, "nemotron-3-nano-30b-a3b-nvfp4", 10
         )
+        paths["nemotron-3-nano-30b-a3b-nvfp4"] = path
+        paths["qwen3.6-35b-a3b-nvfp4"] = _write_candidate(
+            evidence_root, candidate, "qwen3.6-35b-a3b-nvfp4", 20
+        )
+        registry_sha256 = _write_registry(evidence_root, candidate, paths)
         value = json.loads(path.read_text(encoding="utf-8"))
         value["revision"] = "0" * 40
         path.write_text(json.dumps(value), encoding="utf-8")
 
         with (
             patch.object(CheckedCandidate, "verify_unchanged"),
-            pytest.raises(ValueError, match="digest differs"),
+            pytest.raises(ValueError, match="out-of-band digest"),
         ):
             evaluate_agent_model_qualification(
                 candidate=candidate,
                 evidence_root=evidence_root,
+                evidence_registry_sha256=registry_sha256,
             )
 
 
@@ -145,6 +170,34 @@ def _write_candidate(
     model = next(
         item for item in lock["candidates"] if item["candidateId"] == candidate_id
     )
+    runtime_receipt = {
+        "schemaVersion": 1,
+        "checkedHead": candidate.checked_head,
+        "candidateId": candidate_id,
+        "model": model["model"],
+        "revision": model["revision"],
+        "runtime": lock["runtime"],
+        "modelArtifactManifestSha256": "b" * 64,
+        "launchArgumentsSha256": "c" * 64,
+        "childEvidenceSha256": {
+            "fixtures": "1" * 64,
+            "pressure": "2" * 64,
+            "cancellation": "3" * 64,
+            "resources": "4" * 64,
+            "lifecycle": "5" * 64,
+        },
+        "teardown": {
+            "containerAbsent": True,
+            "listenerAbsent": True,
+            "ownedWorkersReaped": True,
+        },
+    }
+    runtime_path = (
+        evidence_root / "agent-model" / candidate_id / "runtime-receipt.json"
+    )
+    runtime_path.parent.mkdir(parents=True)
+    runtime_path.write_text(json.dumps(runtime_receipt), encoding="utf-8")
+    runtime_sha256 = hashlib.sha256(runtime_path.read_bytes()).hexdigest()
     results = list(_perfect_results())
     if not passing:
         results[0]["toolName"] = "wrong_tool"
@@ -154,6 +207,7 @@ def _write_candidate(
             "candidateId": candidate_id,
             "model": model["model"],
             "revision": model["revision"],
+            "runtimeReceiptSha256": runtime_sha256,
             "results": results,
             "runtimePressure": {
                 "coldLatencyMilliseconds": latency,
@@ -173,9 +227,51 @@ def _write_candidate(
         candidate,
     )
     destination = evidence_root / "agent-model" / candidate_id / "results.json"
-    destination.parent.mkdir(parents=True)
+    destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(evidence), encoding="utf-8")
     return destination
+
+
+def _write_registry(
+    evidence_root: Path,
+    candidate: CheckedCandidate,
+    result_paths: dict[str, Path],
+) -> str:
+    candidate_ids = (
+        "qwen3.6-35b-a3b-nvfp4",
+        "nemotron-3-nano-30b-a3b-nvfp4",
+    )
+    entries = []
+    for candidate_id in candidate_ids:
+        result_path = result_paths.get(candidate_id)
+        runtime_path = (
+            evidence_root / "agent-model" / candidate_id / "runtime-receipt.json"
+        )
+        entries.append(
+            {
+                "candidateId": candidate_id,
+                "resultSha256": (
+                    hashlib.sha256(result_path.read_bytes()).hexdigest()
+                    if result_path is not None
+                    else "0" * 64
+                ),
+                "runtimeReceiptSha256": (
+                    hashlib.sha256(runtime_path.read_bytes()).hexdigest()
+                    if runtime_path.exists()
+                    else "f" * 64
+                ),
+            }
+        )
+    value = {
+        "schemaVersion": 1,
+        "checkedHead": candidate.checked_head,
+        "inputs": dict(sorted(candidate.input_sha256.items())),
+        "candidates": entries,
+    }
+    destination = evidence_root / "agent-model" / "evidence-registry.json"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(value), encoding="utf-8")
+    return hashlib.sha256(destination.read_bytes()).hexdigest()
 
 
 def _perfect_results() -> tuple[dict[str, object], ...]:
@@ -188,13 +284,21 @@ def _perfect_results() -> tuple[dict[str, object], ...]:
     for case in fixture["cases"]:
         arguments = dict(case.get("expectedArguments", {}))
         arguments["purpose"] = "knowledge.read"
+        if case["expectedTool"] == "search_knowledge":
+            arguments["search_text"] = case["user"]
         if "expectedProposalType" in case:
             arguments.update(
                 proposal_type=case["expectedProposalType"],
                 proposed_content=" ".join(case.get("requiredTerms", [])),
                 source_citations=[
-                    {"concept_id": value}
-                    for value in case.get("requiredCitationConceptIds", [])
+                    {
+                        "concept_id": item["conceptId"],
+                        "source_revision": item["sourceRevision"],
+                        "content_sha256": item["contentSha256"],
+                        "char_start": item["charStart"],
+                        "char_end": item["charEnd"],
+                    }
+                    for item in case["visibleContext"]
                 ],
             )
         results.append(

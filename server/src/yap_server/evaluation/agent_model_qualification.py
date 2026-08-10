@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import sys
 from typing import Mapping
+import re
 
 from yap_server.evaluation.provider_runtime_observations import (
     canonical_evidence_sha256,
@@ -38,8 +39,10 @@ _EVIDENCE_KEYS = {
     "results",
     "runtimePressure",
     "candidate",
+    "runtimeReceiptSha256",
     "evidenceSha256",
 }
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PRESSURE_KEYS = {
     "coldLatencyMilliseconds",
     "warmLatencyMilliseconds",
@@ -55,20 +58,20 @@ def evaluate_agent_model_qualification(
     *,
     candidate: CheckedCandidate,
     evidence_root: Path,
+    evidence_registry_sha256: str,
 ) -> dict[str, object]:
     """Recompute all candidate scores and emit a transcript-free decision."""
 
     acceptance = load_agent_model_acceptance(candidate.repository_root)
     models = _candidate_models(candidate.repository_root, acceptance.candidate_lock_sha256)
+    registry = _evidence_registry(
+        candidate,
+        evidence_root=evidence_root,
+        expected_sha256=evidence_registry_sha256,
+        candidate_ids=acceptance.candidate_ids,
+    )
     candidate.verify_unchanged()
-    summaries: list[dict[str, object]] = [
-        {
-            "candidateId": candidate_id,
-            "eligible": False,
-            "rejectionReasonCode": str(models[candidate_id]["reasonCode"]),
-        }
-        for candidate_id in acceptance.rejected_candidate_ids
-    ]
+    summaries: list[dict[str, object]] = []
     missing: list[str] = []
     for candidate_id in acceptance.candidate_ids:
         path = evidence_root / "agent-model" / candidate_id / "results.json"
@@ -79,6 +82,7 @@ def evaluate_agent_model_qualification(
             path,
             maximum_bytes=16_000_000,
             field="agent model candidate evidence",
+            expected_sha256=registry[candidate_id]["resultSha256"],
             containment_root=evidence_root,
         )
         summaries.append(
@@ -87,6 +91,8 @@ def evaluate_agent_model_qualification(
                 evidence,
                 artifact_sha256=artifact_sha256,
                 expected=models[candidate_id],
+                runtime_receipt_sha256=registry[candidate_id]["runtimeReceiptSha256"],
+                evidence_root=evidence_root,
             )
         )
 
@@ -130,6 +136,8 @@ def _candidate_summary(
     *,
     artifact_sha256: str,
     expected: dict[str, object],
+    runtime_receipt_sha256: str,
+    evidence_root: Path,
 ) -> dict[str, object]:
     if set(evidence) != _EVIDENCE_KEYS or evidence["schemaVersion"] != 1:
         raise ValueError("agent model candidate evidence differs from the contract")
@@ -151,6 +159,14 @@ def _candidate_summary(
         or evidence["revision"] != expected["revision"]
     ):
         raise ValueError("agent model candidate identity differs")
+    if evidence["runtimeReceiptSha256"] != runtime_receipt_sha256:
+        raise ValueError("agent model runtime receipt binding differs")
+    _runtime_receipt(
+        candidate,
+        expected=expected,
+        evidence_root=evidence_root,
+        expected_sha256=runtime_receipt_sha256,
+    )
     results = evidence["results"]
     if not isinstance(results, list):
         raise ValueError("agent model candidate results are invalid")
@@ -223,6 +239,120 @@ def _candidate_models(repository_root: Path, expected_sha256: str) -> dict[str, 
     return {str(value["candidateId"]): value for value in candidates}
 
 
+def _evidence_registry(
+    candidate: CheckedCandidate,
+    *,
+    evidence_root: Path,
+    expected_sha256: str,
+    candidate_ids: tuple[str, ...],
+) -> dict[str, dict[str, str]]:
+    if not _SHA256.fullmatch(expected_sha256):
+        raise ValueError("agent evidence registry SHA-256 is invalid")
+    value, _identity = read_json_object_with_identity(
+        evidence_root / "agent-model" / "evidence-registry.json",
+        maximum_bytes=64_000,
+        field="agent model evidence registry",
+        expected_sha256=expected_sha256,
+        containment_root=evidence_root,
+    )
+    if set(value) != {"schemaVersion", "checkedHead", "inputs", "candidates"}:
+        raise ValueError("agent evidence registry differs from the contract")
+    if (
+        value["schemaVersion"] != 1
+        or value["checkedHead"] != candidate.checked_head
+        or value["inputs"] != dict(sorted(candidate.input_sha256.items()))
+        or not isinstance(value["candidates"], list)
+    ):
+        raise ValueError("agent evidence registry binding differs")
+    admitted: dict[str, dict[str, str]] = {}
+    for item in value["candidates"]:
+        if not isinstance(item, dict) or set(item) != {
+            "candidateId",
+            "resultSha256",
+            "runtimeReceiptSha256",
+        }:
+            raise ValueError("agent evidence registry entry is invalid")
+        candidate_id = item["candidateId"]
+        if (
+            not isinstance(candidate_id, str)
+            or candidate_id in admitted
+            or not _SHA256.fullmatch(str(item["resultSha256"]))
+            or not _SHA256.fullmatch(str(item["runtimeReceiptSha256"]))
+        ):
+            raise ValueError("agent evidence registry identity is invalid")
+        admitted[candidate_id] = {
+            "resultSha256": str(item["resultSha256"]),
+            "runtimeReceiptSha256": str(item["runtimeReceiptSha256"]),
+        }
+    if set(admitted) != set(candidate_ids):
+        raise ValueError("agent evidence registry candidate set is incomplete")
+    return admitted
+
+
+def _runtime_receipt(
+    candidate: CheckedCandidate,
+    *,
+    expected: dict[str, object],
+    evidence_root: Path,
+    expected_sha256: str,
+) -> None:
+    value, _identity = read_json_object_with_identity(
+        evidence_root
+        / "agent-model"
+        / str(expected["candidateId"])
+        / "runtime-receipt.json",
+        maximum_bytes=256_000,
+        field="agent model runtime receipt",
+        expected_sha256=expected_sha256,
+        containment_root=evidence_root,
+    )
+    required = {
+        "schemaVersion",
+        "checkedHead",
+        "candidateId",
+        "model",
+        "revision",
+        "runtime",
+        "modelArtifactManifestSha256",
+        "launchArgumentsSha256",
+        "childEvidenceSha256",
+        "teardown",
+    }
+    if set(value) != required or value["schemaVersion"] != 1:
+        raise ValueError("agent runtime receipt differs from the contract")
+    if (
+        value["checkedHead"] != candidate.checked_head
+        or value["candidateId"] != expected["candidateId"]
+        or value["model"] != expected["model"]
+        or value["revision"] != expected["revision"]
+        or value["runtime"]
+        != {
+            "engine": "vllm",
+            "image": "nvcr.io/nvidia/vllm:26.06-py3",
+            "digest": "sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e",
+            "platform": "linux/arm64",
+            "python": "3.12",
+            "vllm": "0.22.1+7b9cb5b7.dev",
+        }
+        or not _SHA256.fullmatch(str(value["modelArtifactManifestSha256"]))
+        or not _SHA256.fullmatch(str(value["launchArgumentsSha256"]))
+        or not isinstance(value["childEvidenceSha256"], dict)
+        or set(value["childEvidenceSha256"])
+        != {"fixtures", "pressure", "cancellation", "resources", "lifecycle"}
+        or any(
+            not _SHA256.fullmatch(str(item))
+            for item in value["childEvidenceSha256"].values()
+        )
+        or value["teardown"]
+        != {
+            "containerAbsent": True,
+            "listenerAbsent": True,
+            "ownedWorkersReaped": True,
+        }
+    ):
+        raise ValueError("agent runtime receipt identity is invalid")
+
+
 def _ranking_key(summary: dict[str, object]) -> tuple[int, int, int, str]:
     return (
         int(summary["concurrencyC8P95LatencyMilliseconds"]),
@@ -272,9 +402,11 @@ def main(argv: list[str] | None = None) -> int:
         input_paths=tuple(repository_root / path for path in _INPUTS),
     )
     evidence_root = _evidence_root(repository_root, os.environ)
+    registry_sha256 = os.environ.get("YAP_EVAL_AGENT_EVIDENCE_REGISTRY_SHA256", "")
     decision = evaluate_agent_model_qualification(
         candidate=candidate,
         evidence_root=evidence_root,
+        evidence_registry_sha256=registry_sha256,
     )
     write_new_agent_model_evidence(
         evidence_root / "agent-model" / "qualification.json", decision

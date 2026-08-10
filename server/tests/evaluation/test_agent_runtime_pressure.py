@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import threading
 from pathlib import Path
+import json
+import re
 
 import pytest
 
@@ -21,14 +23,21 @@ def test_runs_every_frozen_pressure_track() -> None:
         if cancellation.is_set():
             raise KnowledgeToolCancelled("cancelled")
         if "ALPHA-7Q9" in prompt:
-            return "ALPHA-7Q9"
+            return _answer("ALPHA-7Q9")
         if "BRAVO-2M4" in prompt:
-            return "BRAVO-2M4"
-        return "ok"
+            return _answer("BRAVO-2M4")
+        return _answer(_expected_marker(prompt))
+
+    def dispatched_request(
+        prompt: str, cancellation: threading.Event, dispatched: threading.Event
+    ) -> str:
+        dispatched.set()
+        return request(prompt, cancellation)
 
     result = run_agent_runtime_pressure(
         REPOSITORY_ROOT,
         request=request,
+        dispatched_request=dispatched_request,
         memory_bytes=lambda: 123,
     )
 
@@ -51,11 +60,18 @@ def test_detects_cross_request_marker_leak() -> None:
         if cancellation.is_set():
             raise KnowledgeToolCancelled("cancelled")
         if "ALPHA-7Q9" in prompt:
-            return "ALPHA-7Q9 BRAVO-2M4"
-        return "ok"
+            return _answer("ALPHA-7Q9 BRAVO-2M4")
+        if "BRAVO-2M4" in prompt:
+            return _answer("BRAVO-2M4")
+        return _answer(_expected_marker(prompt))
 
     result = run_agent_runtime_pressure(
-        REPOSITORY_ROOT, request=request, memory_bytes=lambda: 0
+        REPOSITORY_ROOT,
+        request=request,
+        dispatched_request=lambda prompt, cancellation, dispatched: (
+            dispatched.set() or request(prompt, cancellation)
+        ),
+        memory_bytes=lambda: 0,
     )
 
     assert result.isolation_leak_count == 4
@@ -66,14 +82,31 @@ def test_rejects_unrelated_cancellation_failure() -> None:
         if "until cancelled" in prompt:
             raise OSError("transport failed")
         if "ALPHA-7Q9" in prompt:
-            return "ALPHA-7Q9"
+            return _answer("ALPHA-7Q9")
         if "BRAVO-2M4" in prompt:
-            return "BRAVO-2M4"
-        return "ok"
+            return _answer("BRAVO-2M4")
+        return _answer(_expected_marker(prompt))
+
+    def dispatched_request(
+        prompt: str, cancellation: threading.Event, dispatched: threading.Event
+    ) -> str:
+        dispatched.set()
+        return request(prompt, cancellation)
 
     with pytest.raises(RuntimeError, match="failed incorrectly"):
         run_agent_runtime_pressure(
             REPOSITORY_ROOT,
             request=request,
+            dispatched_request=dispatched_request,
             memory_bytes=lambda: 0,
         )
+
+
+def _answer(value: str) -> str:
+    return json.dumps({"answer": value, "citationConceptIds": []})
+
+
+def _expected_marker(prompt: str) -> str:
+    match = re.search(r"Return exactly ([A-Z0-9-]+)\.?", prompt)
+    assert match is not None
+    return match.group(1)

@@ -84,8 +84,8 @@ hosted policy and final adversarial read-back, and
 [PR #67](https://github.com/mcnatg1/yap/pull/67) merged as
 `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
 Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
-SGLang agent/LLM workloads. Persistent supervision of the selected vLLM, NeMo,
-and SGLang services, production multi-worker/mixed-load capacity promotion, production
+vLLM agent/LLM workloads under ADR 0029. Persistent supervision of the selected vLLM and NeMo
+services, production multi-worker/mixed-load capacity promotion, production
 observability, and external deployment remain Phase 10.
 
 ## Delivered post-Phase-6 checkpoint
@@ -175,8 +175,8 @@ native provider remain IT-authorized follow-ups rather than Phase 8 work.
 | --- | --- | --- |
 | 7 | Identity and access | Provider-neutral OIDC validation with Entra policy, a native token-provider seam whose production adapter requires separate approval, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants and authorization/revocation/audit records that are implemented but reachable only from tests, and authenticated bounded private live admission without a live ASR or external edge claim. |
 | 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron historical whole-meeting reproduction, one integrated source-time epoch route with bounded request-scoped speaker reconciliation for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/session/window pressure, and later purpose-authorized naming. A failed Tiron gate leaves the sole server meeting route unpromoted. |
-| 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and SGLang-backed compatible reasoning/tool-output models. |
-| 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus SGLang agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
+| 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and vLLM-backed compatible reasoning/tool-output models. |
+| 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus vLLM agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
 
 Accepted ADRs remain requirements even when no premature implementation exists.
 Do not treat an unchecked historical plan box as current backlog.

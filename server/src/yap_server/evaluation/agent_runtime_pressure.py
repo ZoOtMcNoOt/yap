@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import json
 import threading
 import time
 from typing import Callable
@@ -12,6 +13,7 @@ from .agent_model_acceptance import load_agent_model_acceptance
 
 
 Request = Callable[[str, threading.Event], str]
+DispatchedRequest = Callable[[str, threading.Event, threading.Event], str]
 MemoryBytes = Callable[[], int]
 
 
@@ -24,55 +26,93 @@ class RuntimePressureResult:
     peak_memory_bytes: int
     isolation_leak_count: int
     cancelled_request_completion_count: int
+    memory_sample_count: int
+    cancellation_dispatched: bool
+    isolation_concurrent: bool
 
 
 def run_agent_runtime_pressure(
     repository_root,
     *,
     request: Request,
+    dispatched_request: DispatchedRequest,
     memory_bytes: MemoryBytes,
 ) -> RuntimePressureResult:
     """Exercise the frozen pressure tracks without trusting server summaries."""
 
     tracks = load_agent_model_acceptance(repository_root).runtime_tracks
-    baseline = _memory(memory_bytes)
-    cancel = threading.Event()
-    cold = _timed(request, "Return exactly COLD-READY.", cancel)
-    warm = tuple(
-        _timed(request, f"Return exactly WARM-{index}.", cancel)
-        for index in range(int(tracks["warmRequests"]))
-    )
-    peak = _memory(memory_bytes)
-    concurrency: dict[int, tuple[int, ...]] = {}
-    for level in tracks["concurrencyLevels"]:
-        assert isinstance(level, int)
-        barrier = threading.Barrier(level)
+    samples = [_memory(memory_bytes)]
+    sampling_stop = threading.Event()
+    sampling_failure: list[BaseException] = []
 
-        def concurrent_call(index: int) -> int:
-            barrier.wait(timeout=int(tracks["requestTimeoutSeconds"]))
-            return _timed(request, f"Return exactly C{level}-{index}.", cancel)
+    def sample() -> None:
+        try:
+            while not sampling_stop.wait(0.02):
+                samples.append(_memory(memory_bytes))
+        except BaseException as error:
+            sampling_failure.append(error)
 
-        with ThreadPoolExecutor(max_workers=level) as executor:
-            concurrency[level] = tuple(executor.map(concurrent_call, range(level)))
-        peak = max(peak, _memory(memory_bytes))
-    leaks = _isolation_leaks(
-        request,
-        repetitions=int(tracks["prefixIsolationRepetitions"]),
-    )
-    cancelled_completions = _cancelled_completions(
-        request,
-        timeout_seconds=int(tracks["requestTimeoutSeconds"]),
-    )
+    sampler = threading.Thread(target=sample, name="yap-agent-memory-sampler", daemon=True)
+    sampler.start()
+    try:
+        cancel = threading.Event()
+        cold = _timed(request, "Return exactly COLD-READY.", "COLD-READY", cancel)
+        warm = tuple(
+            _timed(request, f"Return exactly WARM-{index}.", f"WARM-{index}", cancel)
+            for index in range(int(tracks["warmRequests"]))
+        )
+        concurrency: dict[int, tuple[int, ...]] = {}
+        for level in tracks["concurrencyLevels"]:
+            assert isinstance(level, int)
+            barrier = threading.Barrier(level)
+
+            def concurrent_call(index: int) -> int:
+                marker = f"C{level}-{index}"
+                barrier.wait(timeout=int(tracks["requestTimeoutSeconds"]))
+                return _timed(request, f"Return exactly {marker}.", marker, cancel)
+
+            with ThreadPoolExecutor(max_workers=level) as executor:
+                concurrency[level] = tuple(executor.map(concurrent_call, range(level)))
+        leaks = _isolation_leaks(
+            request,
+            repetitions=int(tracks["prefixIsolationRepetitions"]),
+            timeout_seconds=int(tracks["requestTimeoutSeconds"]),
+        )
+        cancelled_completions = _cancelled_completions(
+            dispatched_request,
+            timeout_seconds=int(tracks["requestTimeoutSeconds"]),
+        )
+    finally:
+        sampling_stop.set()
+        sampler.join(timeout=1)
+    if sampler.is_alive() or sampling_failure:
+        raise RuntimeError("agent runtime memory sampling lost containment")
+    baseline = samples[0]
+    peak = max(samples)
     return RuntimePressureResult(
-        cold, warm, concurrency, baseline, peak, leaks, cancelled_completions
+        cold,
+        warm,
+        concurrency,
+        baseline,
+        peak,
+        leaks,
+        cancelled_completions,
+        len(samples),
+        True,
+        True,
     )
 
 
-def _timed(request: Request, prompt: str, cancellation: threading.Event) -> int:
+def _timed(
+    request: Request,
+    prompt: str,
+    expected: str,
+    cancellation: threading.Event,
+) -> int:
     started = time.monotonic()
     result = request(prompt, cancellation)
-    if not isinstance(result, str) or not result:
-        raise ValueError("agent runtime returned an invalid response")
+    if _answer(result) != expected:
+        raise ValueError("agent runtime returned the wrong marker")
     return max(0, round((time.monotonic() - started) * 1_000))
 
 
@@ -83,22 +123,38 @@ def _memory(memory_bytes: MemoryBytes) -> int:
     return value
 
 
-def _isolation_leaks(request: Request, *, repetitions: int) -> int:
+def _isolation_leaks(
+    request: Request, *, repetitions: int, timeout_seconds: int
+) -> int:
     leaks = 0
     for _ in range(repetitions):
-        left = request(
-            "Private marker ALPHA-7Q9. Return only ALPHA-7Q9.", threading.Event()
-        )
-        right = request(
-            "Private marker BRAVO-2M4. Return only BRAVO-2M4.", threading.Event()
-        )
-        leaks += int("BRAVO-2M4" in left or "ALPHA-7Q9" in right)
+        shared = "Shared governed prefix " * 256
+        barrier = threading.Barrier(2)
+
+        def invoke(marker: str) -> str:
+            barrier.wait(timeout=timeout_seconds)
+            return _answer(
+                request(
+                    f"{shared}\nPrivate marker {marker}. Return exactly {marker}.",
+                    threading.Event(),
+                )
+            )
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            left = executor.submit(invoke, "ALPHA-7Q9")
+            right = executor.submit(invoke, "BRAVO-2M4")
+            leaks += int(
+                left.result(timeout=timeout_seconds) != "ALPHA-7Q9"
+                or right.result(timeout=timeout_seconds) != "BRAVO-2M4"
+            )
     return leaks
 
 
-def _cancelled_completions(request: Request, *, timeout_seconds: int) -> int:
+def _cancelled_completions(
+    request: DispatchedRequest, *, timeout_seconds: int
+) -> int:
     cancellation = threading.Event()
-    entered = threading.Event()
+    dispatched = threading.Event()
     finished = threading.Event()
     returned = False
     failure: BaseException | None = None
@@ -106,8 +162,11 @@ def _cancelled_completions(request: Request, *, timeout_seconds: int) -> int:
     def invoke() -> None:
         nonlocal failure, returned
         try:
-            entered.set()
-            request("Produce a long response until cancelled.", cancellation)
+            request(
+                "Produce a long response until cancelled.",
+                cancellation,
+                dispatched,
+            )
             returned = True
         except BaseException as error:
             failure = error
@@ -116,14 +175,31 @@ def _cancelled_completions(request: Request, *, timeout_seconds: int) -> int:
 
     worker = threading.Thread(target=invoke, daemon=True)
     worker.start()
-    if not entered.wait(timeout_seconds):
-        raise TimeoutError("agent cancellation request did not start")
+    if not dispatched.wait(timeout_seconds):
+        raise TimeoutError("agent cancellation request was not dispatched")
     cancellation.set()
     if not finished.wait(timeout_seconds):
         raise TimeoutError("cancelled agent request did not terminate")
     if failure is not None and not isinstance(failure, KnowledgeToolCancelled):
         raise RuntimeError("cancelled agent request failed incorrectly") from failure
     return int(returned)
+
+
+def _answer(value: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError("agent runtime returned an invalid response")
+    try:
+        parsed = json.loads(value)
+    except (ValueError, TypeError) as error:
+        raise ValueError("agent runtime response is not structured JSON") from error
+    if (
+        not isinstance(parsed, dict)
+        or set(parsed) != {"answer", "citationConceptIds"}
+        or not isinstance(parsed.get("answer"), str)
+        or parsed.get("citationConceptIds") != []
+    ):
+        raise ValueError("agent runtime marker response differs from the contract")
+    return parsed["answer"]
 
 
 __all__ = ["RuntimePressureResult", "run_agent_runtime_pressure"]

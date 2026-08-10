@@ -8,7 +8,7 @@ import unittest
 
 from yap_server.knowledge.governed_rag_agent import ReasoningRetryableError
 from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
-from yap_server.knowledge.sglang_reasoning_client import SglangReasoningClient
+from yap_server.knowledge.vllm_reasoning_client import VllmReasoningClient
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -49,7 +49,7 @@ class _Handler(BaseHTTPRequestHandler):
         pass
 
 
-class SglangReasoningClientTests(unittest.TestCase):
+class VllmReasoningClientTests(unittest.TestCase):
     def setUp(self) -> None:
         _Handler.status = 200
         _Handler.observed = None
@@ -57,7 +57,7 @@ class SglangReasoningClientTests(unittest.TestCase):
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
-        self.client = SglangReasoningClient(
+        self.client = VllmReasoningClient(
             endpoint=f"http://127.0.0.1:{self.server.server_port}",
             model="selected/model",
             timeout_seconds=2,
@@ -90,7 +90,7 @@ class SglangReasoningClientTests(unittest.TestCase):
         with self.assertRaises(ReasoningRetryableError):
             self.client("governed prompt", threading.Event())
 
-    def test_cancels_in_flight_request(self) -> None:
+    def test_fails_closed_when_transport_does_not_acknowledge_cancellation(self) -> None:
         _Handler.delay_seconds = 2.0
         cancellation = threading.Event()
         outcome: list[BaseException] = []
@@ -105,10 +105,11 @@ class SglangReasoningClientTests(unittest.TestCase):
         request.start()
         time.sleep(0.1)
         cancellation.set()
-        request.join(timeout=1.0)
+        request.join(timeout=2.0)
 
         self.assertFalse(request.is_alive())
-        self.assertIsInstance(outcome[0], KnowledgeToolCancelled)
+        self.assertIsInstance(outcome[0], RuntimeError)
+        self.assertIn("transport did not stop", str(outcome[0]))
 
 
 if __name__ == "__main__":

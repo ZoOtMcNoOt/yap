@@ -8,6 +8,7 @@ closure `10618e9d292e6810d6fee7defd7adc4902ecb2ed`.
 - [ADR 0017](../../adr/0017-knowledge-base-compiler.md)
 - [ADR 0022](../../adr/0022-google-okf-permission-safe-projections.md)
 - [ADR 0016](../../adr/0016-auth-identity-bridge.md)
+- [ADR 0029](../../adr/0029-vllm-agent-reasoning-runtime.md)
 - [Voice OS architecture](../../VOICE-OS-ARCHITECTURE.md)
 - [Roadmap](../../roadmap/ROADMAP.md)
 - Pinned Google OKF v0.1 revision
@@ -92,7 +93,7 @@ never compile permissions, grant access, or promote their own output.
 
 - [ ] Freeze licensed representative terminology, question-answering,
   structured-tool, and multi-user isolation fixtures before model output.
-- [ ] Compare SGLang-compatible candidates for task quality, citation fidelity,
+- [ ] Compare vLLM-compatible candidates for task quality, citation fidelity,
   structured-output validity, terminology preservation, prefix-cache isolation,
   latency, concurrency, memory, license, cancellation, and teardown.
 - [ ] Promote no model without workload-specific evidence; keep a deterministic
@@ -120,7 +121,7 @@ never compile permissions, grant access, or promote their own output.
   tool, concurrency, provenance, privacy, and maintainability boundaries.
 - Freeze one exact candidate only after implementation, tests, documentation,
   provenance, and accepted findings are complete.
-- Run the complete applicable local/native/server/Postgres/pgvector/SGLang/GB10
+- Run the complete applicable local/native/server/Postgres/pgvector/vLLM/GB10
   Phase 9 matrix exactly once against that candidate.
 - Reconcile ADR scores and all architecture/status claims only from evidence.
 - Open one focused PR and merge only a reviewed hosted-green exact head.
@@ -130,7 +131,7 @@ never compile permissions, grant access, or promote their own output.
 
 - No raw knowledge source is queried as a substitute for the compiled ledger.
 - No model output grants permission or becomes canonical without review.
-- No unproved Neo4j, SGLang model, capacity, or production-readiness claim.
+- No unproved Neo4j, vLLM model, capacity, or production-readiness claim.
 - No full Codex Security scan before the Phase 10 final gate.
 - Entra configuration, enterprise repository hosting, DNS, certificates, ZPA,
   firewall policy, production Postgres/Redis/object storage, backup policy,

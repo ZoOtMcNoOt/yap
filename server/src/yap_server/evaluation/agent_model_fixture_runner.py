@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import time
 from typing import Callable
+import re
 
 from yap_server.private_artifact import read_json_object_with_identity
 
@@ -12,6 +13,7 @@ from .agent_model_acceptance import load_agent_model_acceptance
 
 
 JsonRequest = Callable[[dict[str, object]], dict[str, object]]
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,7 +46,7 @@ def run_agent_model_fixtures(
     model: str,
     request_json: JsonRequest,
 ) -> tuple[AgentFixtureResult, ...]:
-    """Run frozen cases through one OpenAI-compatible SGLang endpoint."""
+    """Run frozen cases through one OpenAI-compatible reasoning endpoint."""
 
     acceptance = load_agent_model_acceptance(repository_root)
     fixture, _identity = read_json_object_with_identity(
@@ -112,6 +114,8 @@ def _run_case(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": case["user"]},
     ]
+    if case.get("expectedTool") == "propose_knowledge":
+        messages.extend(_retrieval_messages(case))
     initial = request_json(
         {
             "model": model,
@@ -123,6 +127,7 @@ def _run_case(
         }
     )
     assistant_message, tool_id, tool_name, arguments = _tool_call(initial)
+    validate_agent_tool_arguments(tool_name, arguments)
     messages.append(assistant_message)
     messages.append(
         {
@@ -177,6 +182,47 @@ def _run_case(
         citation_concept_ids=citations,
         latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
     )
+
+
+def _retrieval_messages(case: dict[str, object]) -> list[dict[str, object]]:
+    tool_id = f"retrieval-{case['caseId']}"
+    return [
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": tool_id,
+                    "type": "function",
+                    "function": {
+                        "name": "search_knowledge",
+                        "arguments": json.dumps(
+                            {
+                                "purpose": "knowledge.read",
+                                "search_text": case["user"],
+                            },
+                            separators=(",", ":"),
+                        ),
+                    },
+                }
+            ],
+        },
+        {
+            "role": "tool",
+            "tool_call_id": tool_id,
+            "name": "search_knowledge",
+            "content": json.dumps(
+                {
+                    "generationSha256": "f" * 64,
+                    "items": case["visibleContext"],
+                    "outputBudgetExhausted": False,
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ),
+        },
+    ]
 
 
 def _tool_call(
@@ -308,6 +354,108 @@ def _tool_definitions() -> list[dict[str, object]]:
     ]
 
 
+def validate_agent_tool_arguments(name: str, arguments: dict[str, object]) -> None:
+    """Apply the exact frozen product-tool bounds to model-authored arguments."""
+
+    if not isinstance(arguments, dict):
+        raise ValueError("agent tool arguments must be an object")
+    common = {"purpose", "expected_generation_sha256"}
+    required: set[str]
+    allowed: set[str]
+    if name == "search_knowledge":
+        required = {"purpose", "search_text"}
+        allowed = common | {"search_text", "maximum_results"}
+        _bounded_text(arguments.get("search_text"), "search text", 4_096)
+        _optional_integer(arguments.get("maximum_results"), 1, 10)
+    elif name == "browse_knowledge":
+        required = {"purpose"}
+        allowed = common
+    elif name == "traverse_knowledge":
+        required = {"purpose", "start_concept_id"}
+        allowed = common | {"start_concept_id", "maximum_depth", "maximum_results"}
+        _bounded_text(arguments.get("start_concept_id"), "start concept ID", 512)
+        _optional_integer(arguments.get("maximum_depth"), 1, 4)
+        _optional_integer(arguments.get("maximum_results"), 1, 50)
+    elif name == "propose_knowledge":
+        required = {
+            "purpose",
+            "proposal_type",
+            "proposed_content",
+            "source_citations",
+        }
+        allowed = common | required
+        if arguments.get("proposal_type") not in {"summary", "relationship"}:
+            raise ValueError("agent proposal type is invalid")
+        _bounded_text(arguments.get("proposed_content"), "proposed content", 100_000)
+        _validate_citations(arguments.get("source_citations"))
+    else:
+        raise ValueError("agent selected an unknown tool")
+    if set(arguments) - allowed or not required <= set(arguments):
+        raise ValueError("agent tool arguments differ from the contract")
+    if arguments.get("purpose") != "knowledge.read":
+        raise ValueError("agent tool purpose is invalid")
+    generation = arguments.get("expected_generation_sha256")
+    if generation is not None and (
+        not isinstance(generation, str) or not _SHA256.fullmatch(generation)
+    ):
+        raise ValueError("agent expected generation is invalid")
+
+
+def _validate_citations(value: object) -> None:
+    if not isinstance(value, list) or not value or len(value) > 100:
+        raise ValueError("agent proposal citations are invalid")
+    identities: set[tuple[object, ...]] = set()
+    for citation in value:
+        if not isinstance(citation, dict) or set(citation) != {
+            "concept_id",
+            "source_revision",
+            "content_sha256",
+            "char_start",
+            "char_end",
+        }:
+            raise ValueError("agent proposal citation differs from the contract")
+        _bounded_text(citation["concept_id"], "citation concept ID", 512)
+        _bounded_text(citation["source_revision"], "citation revision", 512)
+        digest = citation["content_sha256"]
+        start = citation["char_start"]
+        end = citation["char_end"]
+        if not isinstance(digest, str) or not _SHA256.fullmatch(digest):
+            raise ValueError("agent proposal citation digest is invalid")
+        if (
+            isinstance(start, bool)
+            or not isinstance(start, int)
+            or isinstance(end, bool)
+            or not isinstance(end, int)
+            or start < 0
+            or end <= start
+        ):
+            raise ValueError("agent proposal citation span is invalid")
+        identity = tuple(citation[key] for key in sorted(citation))
+        if identity in identities:
+            raise ValueError("agent proposal citation is duplicated")
+        identities.add(identity)
+
+
+def _bounded_text(value: object, field: str, maximum: int) -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or len(value) > maximum
+        or value.strip() != value
+    ):
+        raise ValueError(f"agent {field} is invalid")
+    return value
+
+
+def _optional_integer(value: object, minimum: int, maximum: int) -> None:
+    if value is not None and (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not minimum <= value <= maximum
+    ):
+        raise ValueError("agent tool integer bound is invalid")
+
+
 def _tool(
     name: str,
     description: str,
@@ -330,4 +478,8 @@ def _tool(
     }
 
 
-__all__ = ["AgentFixtureResult", "run_agent_model_fixtures"]
+__all__ = [
+    "AgentFixtureResult",
+    "run_agent_model_fixtures",
+    "validate_agent_tool_arguments",
+]

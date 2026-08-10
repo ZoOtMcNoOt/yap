@@ -7,6 +7,7 @@ from pathlib import Path
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
+from .agent_model_fixture_runner import validate_agent_tool_arguments
 
 
 _RESULT_KEYS = {
@@ -81,24 +82,23 @@ def score_agent_model_results(
         result = result_by_id[case_id]
         if result.get("toolName") == case.get("expectedTool"):
             tool_pass += 1
+        argument_checks += 1
         expected_arguments = dict(case.get("expectedArguments", {}))
         if "expectedProposalType" in case:
             expected_arguments["proposal_type"] = case["expectedProposalType"]
-        if expected_arguments:
-            argument_checks += 1
-            arguments = result.get("arguments")
-            if isinstance(arguments, dict) and all(
-                arguments.get(key) == value for key, value in expected_arguments.items()
-            ):
+        arguments = result.get("arguments")
+        try:
+            if isinstance(arguments, dict):
+                validate_agent_tool_arguments(str(result.get("toolName")), arguments)
+            else:
+                raise ValueError("agent tool arguments must be an object")
+            if all(arguments.get(key) == value for key, value in expected_arguments.items()):
                 argument_pass += 1
-        required_citations = case.get("requiredCitationConceptIds", [])
-        if required_citations:
-            citation_checks += 1
-            citations = result.get("citationConceptIds")
-            observed = set(citations) if isinstance(citations, list) else set()
-            argument_citations = _argument_citations(result.get("arguments"))
-            if set(required_citations) <= observed | argument_citations:
-                citation_pass += 1
+        except ValueError:
+            pass
+        citation_checks += 1
+        if _citations_are_faithful(case, result):
+            citation_pass += 1
         required_terms = case.get("requiredTerms", [])
         if required_terms:
             terminology_checks += 1
@@ -110,9 +110,7 @@ def score_agent_model_results(
             + list(case.get("forbiddenClaims", []))
             + list(case.get("forbiddenTools", []))
         )
-        observed_output = (
-            f"{result.get('toolName', '')} {_rendered_output(result)}".casefold()
-        )
+        observed_output = _policy_relevant_output(result).casefold()
         leaks += sum(
             1 for term in forbidden_output if str(term).casefold() in observed_output
         )
@@ -155,23 +153,71 @@ def _valid_result_types(result: dict[str, object]) -> bool:
     )
 
 
-def _argument_citations(value: object) -> set[str]:
-    if not isinstance(value, dict):
-        return set()
-    citations = value.get("source_citations", [])
-    if not isinstance(citations, list):
-        return set()
-    return {
-        str(item["concept_id"])
-        for item in citations
-        if isinstance(item, dict) and isinstance(item.get("concept_id"), str)
+def _citations_are_faithful(
+    case: dict[str, object], result: dict[str, object]
+) -> bool:
+    visible = case.get("visibleContext", [])
+    if not isinstance(visible, list):
+        return False
+    exact = {
+        (
+            item.get("conceptId"),
+            item.get("sourceRevision"),
+            item.get("contentSha256"),
+            item.get("charStart"),
+            item.get("charEnd"),
+        )
+        for item in visible
+        if isinstance(item, dict)
     }
+    allowed_ids = {str(item[0]) for item in exact}
+    required = set(case.get("requiredCitationConceptIds", []))
+    citations = result.get("citationConceptIds")
+    if (
+        not isinstance(citations, list)
+        or len(set(citations)) != len(citations)
+        or not set(citations) <= allowed_ids
+        or not required <= set(citations)
+    ):
+        return False
+    arguments = result.get("arguments")
+    if not isinstance(arguments, dict):
+        return False
+    supplied = arguments.get("source_citations", [])
+    if not isinstance(supplied, list):
+        return False
+    tuples = []
+    for item in supplied:
+        if not isinstance(item, dict):
+            return False
+        tuples.append(
+            (
+                item.get("concept_id"),
+                item.get("source_revision"),
+                item.get("content_sha256"),
+                item.get("char_start"),
+                item.get("char_end"),
+            )
+        )
+    return (
+        len(set(tuples)) == len(tuples)
+        and set(tuples) <= exact
+        and required <= {str(item[0]) for item in tuples} | set(citations)
+    )
 
 
 def _rendered_output(result: dict[str, object]) -> str:
     return str(result.get("answer", "")) + json.dumps(
         result.get("arguments", {}), ensure_ascii=False, sort_keys=True
     )
+
+
+def _policy_relevant_output(result: dict[str, object]) -> str:
+    arguments = result.get("arguments")
+    proposed = (
+        arguments.get("proposed_content", "") if isinstance(arguments, dict) else ""
+    )
+    return f"{result.get('toolName', '')} {result.get('answer', '')} {proposed}"
 
 
 def _ratio(numerator: int, denominator: int) -> float:

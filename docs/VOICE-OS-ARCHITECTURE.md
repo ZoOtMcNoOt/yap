@@ -19,7 +19,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 
 > **2026-07-08 — Local model reset:** Yap keeps one local live/offline fallback model: Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. Client-side fusion routing is rejected; model routing belongs on the server.
 
-> **ADR precedence:** ADR 0014-0027 define the current thin-client, server, local-fallback, meeting-processing, transport-evolution, knowledge-projection, bounded-priority, Phase 6 language/timing, provider-specific serving, batch-language preflight, and Phase 8 joint meeting-ASR direction. ADR 0020 supersedes conflicting diarization details in ADR 0004 and ADR 0015. ADR 0021 makes HTTP/3 a gated future secure-edge target without changing the bounded Phase 3 loopback service. ADR 0022 adopts pinned Google OKF v0.1, requires a permission-safe Postgres/pgvector plus typed-relationship baseline, and makes Neo4j an optional benchmark-gated challenger; no database becomes the knowledge or authorization source-of-truth. ADR 0023 amends absolute live priority so ready batch work cannot starve. ADR 0024 defines primary-language, guarded language, server Nemotron auto, and fail-closed timing behavior. ADR 0025 retires the universal Triton ASR plane in favor of provider-specific vLLM/NeMo serving. ADR 0026 replaces the executing SpeechBrain batch preflight with one verify-only AmberNet artifact and a strict five-region, user-confirmed decision. ADR 0027 selects pinned Tiron as the Phase 8 server development baseline for joint speaker-attributed meeting transcription without promoting it before independent evidence. SGLang remains for compatible agent/LLM inference, and Rust remains the orchestration target. The desktop owns capture, deterministic preprocessing, recording, hotkey/UI, local live fallback, optional anonymous speaker evidence, and future transport packaging. The server owns official long-recording STT, authoritative meeting reconciliation, purpose-authorized named identity, team storage, KB compilation, and agent workloads.
+> **ADR precedence:** ADR 0014-0029 define the current thin-client, server, local-fallback, meeting-processing, transport-evolution, knowledge-projection, bounded-priority, language/timing, provider-specific serving, meeting-ASR, terminology, and agent-runtime direction. ADR 0020 supersedes conflicting diarization details in ADR 0004 and ADR 0015. ADR 0021 keeps HTTP/3 evidence-gated. ADR 0022 owns permission-safe OKF/Postgres/pgvector projections. ADR 0023 owns bounded priority. ADRs 0024-0027 own language, provider ASR, AmberNet preflight, and Tiron Preview behavior. ADR 0028 owns model-independent terminology. ADR 0029 selects vLLM for evidence-gated agent inference after exact GB10 compatibility evidence; Rust remains the orchestration target. The desktop owns capture, deterministic preprocessing, recording, hotkey/UI, local live fallback, optional anonymous speaker evidence, and future transport packaging. The server owns official long-recording STT, authoritative meeting reconciliation, purpose-authorized named identity, team storage, KB compilation, and agent workloads.
 
 ---
 
@@ -193,8 +193,8 @@ loopback only through a manually selected SSH forward. Fixed-loopback discovery
 and authenticated REST/private-WebSocket admission exist; live ASR, persistent
 supervision, and the managed enterprise edge remain deferred. The accepted performance topology is provider-specific: Cohere batch
 uses a digest-pinned vLLM candidate, Nemotron keeps a Transformers correctness
-reference and evaluates NeMo for server streaming, SGLang serves later
-agent/LLM workloads, and Rust remains the orchestration target. The vLLM
+reference and evaluates NeMo for server streaming, vLLM serves later
+agent/LLM workloads under ADR 0029, and Rust remains the orchestration target. The vLLM
 adapter/image/loopback launcher and the resident NeMo worker/service/image/
 launcher execute under focused tests but remain unselected until their separate
 frozen GB10 lifecycle and workload gates. Both foreground launchers require an
@@ -303,7 +303,7 @@ flowchart TB
         Router["Orchestration\ncurrent Python reference seam\ntarget Rust session + flow control"]
         ASR["Nemotron server streaming\nTransformers reference · NeMo candidate"]
         Batch["Cohere batch\ntransient reference · vLLM candidate"]
-        LLM["TARGET SGLang agent/LLM plane\nprefix cache + structured outputs"]
+        LLM["TARGET vLLM agent/LLM plane\nprefix cache + structured outputs"]
         Diar["Diarization service\nserver reconciliation · ADR 0020"]
         KB["Google OKF compiler + permission-safe relationship/vector views\n(Postgres/pgvector baseline · ADR 0017/0022)"]
     end
@@ -561,7 +561,7 @@ wires recording and local Nemotron ASR. The merged Phase 6 imported-file path
 prepares and drains durable loopback batch jobs and can run explicitly installed
 Silero over canonical WAV as advisory source-time evidence. It does not run live
 Silero, llama-server/Scribe, speaker inference, live ASR or an external WSS
-edge, a promoted Nemotron NeMo live route, or SGLang. Cohere vLLM and resident NeMo adapters are
+edge, a promoted Nemotron NeMo live route, or the ADR 0029 vLLM agent plane. Cohere vLLM and resident NeMo adapters are
 gated development candidates rather than promoted persistent services.
 
 ```
@@ -697,7 +697,7 @@ Scoped profiles, mutex groups, and state rules: **[ADR 0006](adr/0006-silero-age
 
 ## Runtime orchestration (summary)
 
-**Target state-machine limits** — full decision in [ADR 0006](adr/0006-silero-agents-state-machine.md). The implemented Rust domain owners enforce the local Nemotron lifecycle, project connector health/capabilities/retries, and retain durable imported-job plus normalization/VAD stage attempts. The server owns durable ASR/alignment/result-publication attempts and verified result publication. Imported-file Silero executes; fixed-loopback server discovery, authenticated private WebSocket admission, and the native lower handshake exist, while live Silero, live server ASR, managed LAN/enterprise and live-endpoint discovery, the external WSS edge, LLM scheduling, and promoted NeMo/SGLang serving are not wired. The Cohere vLLM and resident NeMo candidates remain behind the existing bounded batch contract:
+**Target state-machine limits** — full decision in [ADR 0006](adr/0006-silero-agents-state-machine.md). The implemented Rust domain owners enforce the local Nemotron lifecycle, project connector health/capabilities/retries, and retain durable imported-job plus normalization/VAD stage attempts. The server owns durable ASR/alignment/result-publication attempts and verified result publication. Imported-file Silero executes; fixed-loopback server discovery, authenticated private WebSocket admission, and the native lower handshake exist, while live Silero, live server ASR, managed LAN/enterprise and live-endpoint discovery, the external WSS edge, LLM scheduling, and promoted NeMo/vLLM agent serving are not wired. The Cohere vLLM and resident NeMo candidates remain behind the existing bounded batch contract:
 
 | Rule | Limit |
 |------|--------|
@@ -866,7 +866,7 @@ yap-server (GB-class server node, org LAN/VPN)
   ├─ Cohere Transformers worker [current comparison/rollback baseline]
   ├─ Nemotron NeMo service      [Phase 6 candidate] server streaming; separate gate
   ├─ Nemotron Transformers      [current correctness reference]
-  ├─ SGLang agent/LLM plane     [Phase 9 target] prefix cache + structured output
+  ├─ vLLM agent/LLM plane       [Phase 9 target] prefix cache + structured output
   ├─ Diarization service        authoritative model-selected reconciliation (ADR 0020)
   ├─ KB compiler service        Lane 1 + Google OKF Lane 2 → Postgres/pgvector + optional Redis (ADR 0017/0022)
   ├─ Identity DB (Postgres)     (tid, oid) → purpose-authorized versioned voice profile (ADR 0016/0020)

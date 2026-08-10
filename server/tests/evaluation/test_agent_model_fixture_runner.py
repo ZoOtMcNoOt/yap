@@ -29,6 +29,8 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                     "purpose": "knowledge.read",
                     **active.get("expectedArguments", {}),
                 }
+                if active["expectedTool"] == "search_knowledge":
+                    arguments["search_text"] = active["user"]
                 if "expectedProposalType" in active:
                     arguments.update(
                         {
@@ -133,7 +135,15 @@ def _tool_response(name: str) -> dict[str, object]:
                         {
                             "id": "call-1",
                             "type": "function",
-                            "function": {"name": name, "arguments": "{}"},
+                            "function": {
+                                "name": name,
+                                "arguments": json.dumps(
+                                    {
+                                        "purpose": "knowledge.read",
+                                        "search_text": "bounded test",
+                                    }
+                                ),
+                            },
                         }
                     ],
                 }

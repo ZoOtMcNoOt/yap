@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "runtime": {
-    "image": "nvcr.io/nvidia/sglang:26.06-py3",
-    "manifestDigest": "sha256:f1e23b1c96d7e04d061c76b179f81aa32fcef367590a90f6079a0bf899dc4300",
-    "platformDigest": "sha256:8689bc346a5f92309c3887f3431f6d29747be10a6d5dbb871f4d4ae431d3309b",
+    "engine": "vllm",
+    "image": "nvcr.io/nvidia/vllm:26.06-py3",
+    "digest": "sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e",
     "platform": "linux/arm64",
     "python": "3.12",
-    "sglang": "0.5.12.post1"
+    "vllm": "0.22.1+7b9cb5b7.dev"
   },
   "candidates": [
     {
@@ -14,10 +14,8 @@
       "model": "nvidia/Qwen3.6-35B-A3B-NVFP4",
       "revision": "491c2f1ea524c639598bf8fa787a93fed5a6fbce",
       "quantization": "w4afp8",
-      "toolCallParser": "qwen",
+      "toolCallParser": "qwen3_coder",
       "reasoningParser": "qwen3",
-      "evaluationStatus": "runtime-incompatible",
-      "reasonCode": "sglang-w4afp8-block-shape-unsupported",
       "license": "Apache-2.0",
       "source": "https://huggingface.co/nvidia/Qwen3.6-35B-A3B-NVFP4"
     },
@@ -28,7 +26,6 @@
       "quantization": "modelopt_fp4",
       "toolCallParser": "qwen3_coder",
       "reasoningParser": "nemotron_3",
-      "evaluationStatus": "workload-candidate",
       "license": "NVIDIA-Nemotron-Open-Model-License",
       "source": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4"
     }

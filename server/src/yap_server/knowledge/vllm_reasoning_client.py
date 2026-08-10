@@ -11,8 +11,8 @@ from .governed_rag_agent import ReasoningRetryableError
 from .knowledge_tool_contract import KnowledgeToolCancelled
 
 
-class SglangReasoningClient:
-    """Call one server-selected SGLang model over a bounded loopback connection."""
+class VllmReasoningClient:
+    """Call one server-selected vLLM model over a bounded loopback connection."""
 
     def __init__(
         self,
@@ -32,15 +32,15 @@ class SglangReasoningClient:
             or parsed.fragment
             or parsed.port is None
         ):
-            raise ValueError("SGLang endpoint must be explicit loopback HTTP")
+            raise ValueError("vLLM endpoint must be explicit loopback HTTP")
         if not model or len(model) > 256 or model.strip() != model:
-            raise ValueError("SGLang model identity is invalid")
+            raise ValueError("vLLM model identity is invalid")
         if not 1 <= timeout_seconds <= 300:
-            raise ValueError("SGLang timeout is invalid")
+            raise ValueError("vLLM timeout is invalid")
         if not 1 <= maximum_response_bytes <= 4_000_000:
-            raise ValueError("SGLang response bound is invalid")
+            raise ValueError("vLLM response bound is invalid")
         if not 1 <= maximum_output_tokens <= 4_096:
-            raise ValueError("SGLang output token bound is invalid")
+            raise ValueError("vLLM output token bound is invalid")
         self._host = parsed.hostname
         self._port = parsed.port
         self._model = model
@@ -49,10 +49,18 @@ class SglangReasoningClient:
         self._maximum_output_tokens = maximum_output_tokens
 
     def __call__(self, prompt: str, cancellation: threading.Event) -> str:
+        return self.request(prompt, cancellation, dispatched=None)
+
+    def request(
+        self,
+        prompt: str,
+        cancellation: threading.Event,
+        dispatched: threading.Event | None,
+    ) -> str:
         if not isinstance(prompt, str) or not prompt:
-            raise ValueError("SGLang prompt is invalid")
+            raise ValueError("vLLM prompt is invalid")
         if cancellation.is_set():
-            raise KnowledgeToolCancelled("SGLang reasoning was cancelled")
+            raise KnowledgeToolCancelled("vLLM reasoning was cancelled")
         connection = http.client.HTTPConnection(
             self._host, self._port, timeout=self._timeout_seconds
         )
@@ -103,6 +111,7 @@ class SglangReasoningClient:
                     body,
                     self._maximum_response_bytes,
                     outcome,
+                    dispatched,
                 ),
                 daemon=True,
             )
@@ -110,12 +119,15 @@ class SglangReasoningClient:
             while worker.is_alive():
                 if cancellation.wait(0.01):
                     _close_connection(connection)
-                    raise KnowledgeToolCancelled("SGLang reasoning was cancelled")
+                    worker.join(timeout=1.0)
+                    if worker.is_alive():
+                        raise RuntimeError("vLLM reasoning transport did not stop")
+                    raise KnowledgeToolCancelled("vLLM reasoning was cancelled")
             result = outcome.get_nowait()
             if isinstance(result, BaseException):
                 if isinstance(result, (OSError, http.client.HTTPException)):
                     raise ReasoningRetryableError(
-                        "SGLang reasoning transport failed"
+                        "vLLM reasoning transport failed"
                     ) from result
                 raise result
             return result
@@ -128,6 +140,7 @@ def _request(
     body: bytes,
     maximum_response_bytes: int,
     outcome: queue.Queue[str | BaseException],
+    dispatched: threading.Event | None,
 ) -> None:
     try:
         connection.request(
@@ -136,14 +149,16 @@ def _request(
             body=body,
             headers={"Content-Type": "application/json"},
         )
+        if dispatched is not None:
+            dispatched.set()
         response = connection.getresponse()
         response_body = response.read(maximum_response_bytes + 1)
         if response.status in {429, 502, 503, 504}:
-            raise ReasoningRetryableError("SGLang reasoning is temporarily unavailable")
+            raise ReasoningRetryableError("vLLM reasoning is temporarily unavailable")
         if response.status != 200:
-            raise RuntimeError("SGLang reasoning request was rejected")
+            raise RuntimeError("vLLM reasoning request was rejected")
         if len(response_body) > maximum_response_bytes:
-            raise ValueError("SGLang response exceeds its byte bound")
+            raise ValueError("vLLM response exceeds its byte bound")
         outcome.put_nowait(_response_content(response_body))
     except BaseException as error:
         outcome.put_nowait(error)
@@ -164,10 +179,10 @@ def _response_content(body: bytes) -> str:
         choices = value["choices"]
         content = choices[0]["message"]["content"]
     except (UnicodeDecodeError, json.JSONDecodeError, KeyError, IndexError, TypeError) as error:
-        raise ValueError("SGLang response differs from the contract") from error
+        raise ValueError("vLLM response differs from the contract") from error
     if not isinstance(choices, list) or len(choices) != 1 or not isinstance(content, str):
-        raise ValueError("SGLang response differs from the contract")
+        raise ValueError("vLLM response differs from the contract")
     return content
 
 
-__all__ = ["SglangReasoningClient"]
+__all__ = ["VllmReasoningClient"]
