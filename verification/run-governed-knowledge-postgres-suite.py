@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import os
+from pathlib import Path
 import sys
 import unittest
 
@@ -16,6 +17,13 @@ _MODULES = (
     "tests.knowledge.test_terminology_ledger",
 )
 _EXPECTED_TEST_COUNT = 9
+
+
+def _configure_server_test_imports() -> None:
+    server_root = Path.cwd().resolve(strict=True)
+    if not (server_root / "tests").is_dir():
+        raise RuntimeError("governed knowledge Postgres suite root differs")
+    sys.path.insert(0, str(server_root))
 
 
 def _postgres_version(dsn: str) -> str:
@@ -58,6 +66,7 @@ def _load_required_suite() -> unittest.TestSuite:
 def main() -> int:
     if sys.argv[1:]:
         raise RuntimeError("the governed-knowledge Postgres suite takes no arguments")
+    _configure_server_test_imports()
     dsn = os.environ.get("YAP_TEST_POSTGRES_DSN")
     if not dsn:
         raise RuntimeError("YAP_TEST_POSTGRES_DSN is required")

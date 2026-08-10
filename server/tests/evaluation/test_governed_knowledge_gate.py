@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import replace
 from pathlib import Path
 import runpy
 import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -84,6 +86,23 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
         del identity["packages"]["psycopg-binary"]
         with self.assertRaisesRegex(ValueError, "identity differs"):
             gate._validate_python_identity(identity, "a" * 64)
+
+    def test_postgres_runner_adds_the_server_test_package_root(self) -> None:
+        postgres_suite = runpy.run_path(
+            str(
+                REPOSITORY_ROOT
+                / "verification/run-governed-knowledge-postgres-suite.py"
+            )
+        )
+        server_root = REPOSITORY_ROOT / "server"
+        previous_cwd = Path.cwd()
+        try:
+            os.chdir(server_root)
+            with patch.object(sys, "path", ["sentinel"]):
+                postgres_suite["_configure_server_test_imports"]()
+                self.assertEqual(sys.path[0], str(server_root))
+        finally:
+            os.chdir(previous_cwd)
 
     def test_agent_route_drift_contract_covers_all_transitive_owners(self) -> None:
         protected = (
