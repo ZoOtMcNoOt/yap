@@ -39,6 +39,16 @@ class AgentModelScoringTests(unittest.TestCase):
         self.assertEqual(score.isolation_leak_count, 1)
         self.assertEqual(score.invalid_structured_output_count, 1)
 
+    def test_counts_forbidden_claims_and_tools_as_leaks(self) -> None:
+        results = list(_perfect_results())
+        results[6]["answer"] = "The acquisition price is hidden value."
+        results[7]["answer"] = "Use the filesystem."
+
+        score = score_agent_model_results(REPOSITORY_ROOT, tuple(results))
+
+        self.assertEqual(score.isolation_leak_count, 3)
+        self.assertFalse(score.passed)
+
 
 def _perfect_results() -> tuple[dict[str, object], ...]:
     fixture = json.loads(

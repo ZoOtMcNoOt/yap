@@ -56,7 +56,11 @@ def score_agent_model_results(
         if not isinstance(result, dict):
             raise ValueError("agent model result must be an object")
         case_id = result["caseId"]
-        if not isinstance(case_id, str) or case_id not in by_id or case_id in result_by_id:
+        if (
+            not isinstance(case_id, str)
+            or case_id not in by_id
+            or case_id in result_by_id
+        ):
             raise ValueError("agent model result identity is invalid")
         if set(result) != _RESULT_KEYS or not _valid_result_types(result):
             invalid += 1
@@ -101,11 +105,16 @@ def score_agent_model_results(
             rendered = _rendered_output(result)
             if all(term in rendered for term in required_terms):
                 terminology_pass += 1
-        rendered_folded = _rendered_output(result).casefold()
+        forbidden_output = (
+            list(case.get("forbiddenTerms", []))
+            + list(case.get("forbiddenClaims", []))
+            + list(case.get("forbiddenTools", []))
+        )
+        observed_output = (
+            f"{result.get('toolName', '')} {_rendered_output(result)}".casefold()
+        )
         leaks += sum(
-            1
-            for term in case.get("forbiddenTerms", [])
-            if str(term).casefold() in rendered_folded
+            1 for term in forbidden_output if str(term).casefold() in observed_output
         )
         latency = result.get("latencyMilliseconds")
         latencies.append(latency if isinstance(latency, int) else 0)
