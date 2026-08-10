@@ -14,7 +14,9 @@ class AgentModelScoringTests(unittest.TestCase):
     def test_derives_perfect_score_without_trusting_aggregate_flags(self) -> None:
         results = _perfect_results()
 
-        score = score_agent_model_results(REPOSITORY_ROOT, results)
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, results, workload_class="rapid-automation"
+        )
 
         self.assertTrue(score.passed)
         self.assertEqual(score.tool_selection_accuracy, 1.0)
@@ -33,7 +35,9 @@ class AgentModelScoringTests(unittest.TestCase):
             "callerPassed": True,
         }
 
-        score = score_agent_model_results(REPOSITORY_ROOT, tuple(results))
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(results), workload_class="rapid-automation"
+        )
 
         self.assertFalse(score.passed)
         self.assertEqual(score.isolation_leak_count, 1)
@@ -44,7 +48,9 @@ class AgentModelScoringTests(unittest.TestCase):
         results[6]["answer"] = "The acquisition price is hidden value."
         results[7]["answer"] = "Use the filesystem."
 
-        score = score_agent_model_results(REPOSITORY_ROOT, tuple(results))
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(results), workload_class="rapid-automation"
+        )
 
         self.assertEqual(score.isolation_leak_count, 3)
         self.assertFalse(score.passed)
@@ -60,7 +66,9 @@ class AgentModelScoringTests(unittest.TestCase):
             "hidden/concept",
         ]
 
-        score = score_agent_model_results(REPOSITORY_ROOT, tuple(results))
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(results), workload_class="rapid-automation"
+        )
 
         self.assertLess(score.structured_argument_accuracy, 1.0)
         self.assertLess(score.citation_fidelity, 1.0)
@@ -74,7 +82,9 @@ class AgentModelScoringTests(unittest.TestCase):
         citation = proposal["arguments"]["source_citations"][0]  # type: ignore[index]
         citation["source_revision"] = "wrong-revision"
 
-        score = score_agent_model_results(REPOSITORY_ROOT, tuple(results))
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(results), workload_class="rapid-automation"
+        )
 
         self.assertLess(score.citation_fidelity, 1.0)
         self.assertFalse(score.passed)
@@ -88,6 +98,8 @@ def _perfect_results() -> tuple[dict[str, object], ...]:
     )
     results: list[dict[str, object]] = []
     for case in fixture["cases"]:
+        if case.get("requiredForWorkloadClass") is not None:
+            continue
         arguments = dict(case.get("expectedArguments", {}))
         arguments["purpose"] = "knowledge.read"
         if case["expectedTool"] == "search_knowledge":
@@ -114,6 +126,7 @@ def _perfect_results() -> tuple[dict[str, object], ...]:
                 "answer": answer,
                 "citationConceptIds": case.get("requiredCitationConceptIds", []),
                 "latencyMilliseconds": 10,
+                "toolCalls": [{"name": case["expectedTool"], "arguments": arguments}],
             }
         )
     return tuple(results)

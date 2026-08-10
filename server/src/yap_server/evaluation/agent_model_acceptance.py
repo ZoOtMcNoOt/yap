@@ -20,6 +20,7 @@ _PLAN_KEYS = {
     "thresholds",
     "runtimeTracks",
     "selectionPolicy",
+    "routeEvidence",
     "permittedOutcomes",
 }
 
@@ -35,6 +36,7 @@ class AgentModelAcceptance:
     permitted_outcomes: tuple[str, ...]
     runtime_tracks: dict[str, object]
     selection_policy: dict[str, object]
+    route_evidence: dict[str, object]
 
 
 def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
@@ -83,8 +85,9 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
     runtime_tracks = _runtime_tracks(plan["runtimeTracks"])
     selection_policy = _selection_policy(plan["selectionPolicy"], candidate_routes)
     required_routes = dict(selection_policy["requiredRoutes"])
+    route_evidence = _route_evidence(plan["routeEvidence"], required_routes)
     outcomes = plan["permittedOutcomes"]
-    if outcomes != ["required-models-admitted", "deterministic-no-model"]:
+    if outcomes != ["required-workload-routes-qualified", "deterministic-no-model"]:
         raise ValueError("agent model outcomes differ from the contract")
     return AgentModelAcceptance(
         plan_hash,
@@ -96,6 +99,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         tuple(outcomes),
         runtime_tracks,
         selection_policy,
+        route_evidence,
     )
 
 
@@ -192,6 +196,7 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
     case_ids: list[str] = []
     categories: set[str] = set()
     isolation_counts: dict[str, int] = {}
+    route_specific_counts = {"complex-orchestration": 0}
     for case in cases:
         if not isinstance(case, dict):
             raise ValueError("agent workload case is invalid")
@@ -210,10 +215,24 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
             if not isinstance(pair, str):
                 raise ValueError("agent isolation pair is invalid")
             isolation_counts[pair] = isolation_counts.get(pair, 0) + 1
+        route = case.get("requiredForWorkloadClass")
+        if route is not None:
+            if route not in route_specific_counts:
+                raise ValueError("agent route-specific workload is invalid")
+            route_specific_counts[route] += 1
+        sequence = case.get("expectedToolSequence")
+        if sequence is not None and (
+            not isinstance(sequence, list)
+            or len(sequence) < 2
+            or not all(isinstance(item, str) and item for item in sequence)
+            or sequence[-1] != case.get("expectedTool")
+        ):
+            raise ValueError("agent multi-step workload is invalid")
     if (
         len(set(case_ids)) != len(case_ids)
         or not isolation_counts
         or set(isolation_counts.values()) != {2}
+        or route_specific_counts != {"complex-orchestration": 1}
     ):
         raise ValueError("agent workload identities are incomplete")
     return tuple(case_ids), categories
@@ -288,6 +307,27 @@ def _selection_policy(
         for workload_class, candidate_id in expected["requiredRoutes"].items()
     } != candidate_routes:
         raise ValueError("agent route policy differs from candidate ownership")
+    return dict(value)
+
+
+def _route_evidence(
+    value: object, required_routes: dict[str, str]
+) -> dict[str, object]:
+    expected = {
+        "rapid-automation": {
+            "candidateId": "qwen3.6-35b-a3b-nvfp4",
+            "maximumWarmP95LatencyMilliseconds": 750,
+            "maximumC8P95LatencyMilliseconds": 1_500,
+        },
+        "complex-orchestration": {
+            "candidateId": "gemma-4-31b-it-nvfp4",
+            "requiredMultiStepCaseId": "complex-governed-orchestration",
+        },
+    }
+    if value != expected or {
+        route: policy["candidateId"] for route, policy in expected.items()
+    } != required_routes:
+        raise ValueError("agent route evidence policy differs from the contract")
     return dict(value)
 
 

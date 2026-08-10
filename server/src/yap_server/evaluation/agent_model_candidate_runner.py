@@ -98,6 +98,7 @@ def run_agent_model_candidate(
             for item in run_agent_model_fixtures(
                 repository_root,
                 model=str(model_candidate["model"]),
+                workload_class=str(model_candidate["workloadClass"]),
                 request_json=request_json,
             )
         )

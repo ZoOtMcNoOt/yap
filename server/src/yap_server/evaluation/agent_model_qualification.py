@@ -81,6 +81,9 @@ def evaluate_agent_model_qualification(
             candidate,
             run_by_id[candidate_id],
             expected=models[candidate_id],
+            route_policy=acceptance.route_evidence[
+                str(models[candidate_id]["workloadClass"])
+            ],
         )
         for candidate_id in acceptance.candidate_ids
     ]
@@ -95,8 +98,8 @@ def evaluate_agent_model_qualification(
         admitted_candidates = set()
         reasons = ["required-workload-route-did-not-meet-acceptance"]
     else:
-        outcome = "required-models-admitted"
-        reasons = ["every-required-model-passed-common-admission"]
+        outcome = "required-workload-routes-qualified"
+        reasons = ["every-required-workload-route-passed-frozen-evidence"]
     decision = {
         "schemaVersion": 1,
         "qualificationScope": "governed-agent-reasoning",
@@ -114,6 +117,7 @@ def _candidate_summary(
     run: OwnedAgentCandidateRun,
     *,
     expected: dict[str, object],
+    route_policy: object,
 ) -> dict[str, object]:
     if isinstance(run, FailedAgentCandidateRun):
         return _failed_candidate_summary(candidate, run, expected=expected)
@@ -150,7 +154,11 @@ def _candidate_summary(
     results = evidence["results"]
     if not isinstance(results, list):
         raise ValueError("agent model candidate results are invalid")
-    score = score_agent_model_results(candidate.repository_root, tuple(results))
+    score = score_agent_model_results(
+        candidate.repository_root,
+        tuple(results),
+        workload_class=str(expected["workloadClass"]),
+    )
     pressure = _runtime_pressure(evidence["runtimePressure"])
     _verify_runtime_children(
         run.children,
@@ -158,31 +166,72 @@ def _candidate_summary(
         evidence_results=results,
         pressure=pressure,
     )
+    warm_p95 = _p95(pressure["warmLatencyMilliseconds"])
+    c8_p95 = _p95(pressure["concurrencyLatencyMilliseconds"]["8"])
+    route_evidence_passed = _route_evidence_passed(
+        route_policy,
+        workload_class=str(expected["workloadClass"]),
+        results=results,
+        warm_p95=warm_p95,
+        c8_p95=c8_p95,
+    )
     eligible = (
         score.passed
         and pressure["isolationLeakCount"] == 0
         and pressure["cancelledRequestCompletionCount"] == 0
+        and route_evidence_passed
     )
     return {
         "candidateId": expected["candidateId"],
         "workloadClass": expected["workloadClass"],
         "artifactSha256": agent_evidence_sha256(evidence),
         "eligible": eligible,
+        "routeEvidencePassed": route_evidence_passed,
         "toolSelectionAccuracy": score.tool_selection_accuracy,
         "structuredArgumentAccuracy": score.structured_argument_accuracy,
         "citationFidelity": score.citation_fidelity,
         "terminologyPreservation": score.terminology_preservation,
         "isolationLeakCount": score.isolation_leak_count,
         "invalidStructuredOutputCount": score.invalid_structured_output_count,
-        "concurrencyC8P95LatencyMilliseconds": _p95(
-            pressure["concurrencyLatencyMilliseconds"]["8"]
-        ),
-        "warmP95LatencyMilliseconds": _p95(pressure["warmLatencyMilliseconds"]),
+        "concurrencyC8P95LatencyMilliseconds": c8_p95,
+        "warmP95LatencyMilliseconds": warm_p95,
         "incrementalCgroupMemoryBytes": max(
             0,
             pressure["peakCgroupMemoryBytes"] - pressure["baselineCgroupMemoryBytes"],
         ),
     }
+
+
+def _route_evidence_passed(
+    policy: object,
+    *,
+    workload_class: str,
+    results: list[object],
+    warm_p95: int,
+    c8_p95: int,
+) -> bool:
+    if not isinstance(policy, dict):
+        raise ValueError("agent route evidence policy is invalid")
+    if workload_class == "rapid-automation":
+        return (
+            warm_p95 <= policy["maximumWarmP95LatencyMilliseconds"]
+            and c8_p95 <= policy["maximumC8P95LatencyMilliseconds"]
+        )
+    if workload_class == "complex-orchestration":
+        required = policy["requiredMultiStepCaseId"]
+        return any(
+            isinstance(result, dict)
+            and result.get("caseId") == required
+            and [
+                call.get("name") for call in result["toolCalls"] if isinstance(call, dict)
+            ]
+            == ["search_knowledge", "traverse_knowledge", "propose_knowledge"]
+            for result in results
+            if isinstance(result, dict)
+            and isinstance(result.get("toolCalls"), list)
+            and len(result["toolCalls"]) == 3
+        )
+    raise ValueError("agent workload class is invalid")
 
 
 def _failed_candidate_summary(
@@ -259,6 +308,7 @@ def _failed_candidate_summary(
         "workloadClass": expected["workloadClass"],
         "artifactSha256": agent_evidence_sha256(failure),
         "eligible": False,
+        "routeEvidencePassed": False,
         "disposition": "contained-candidate-rejection",
         "reasonCode": failure["reasonCode"],
     }
@@ -607,7 +657,7 @@ def main(argv: list[str] | None = None) -> int:
         shutil.rmtree(staging, ignore_errors=True)
         raise
     print(json.dumps(decision, sort_keys=True, separators=(",", ":")))
-    return 0 if decision["outcome"] == "required-models-admitted" else 1
+    return 0 if decision["outcome"] == "required-workload-routes-qualified" else 1
 
 
 def _fsync_evidence_tree(root: Path) -> None:

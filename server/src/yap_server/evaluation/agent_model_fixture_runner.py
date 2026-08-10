@@ -24,6 +24,7 @@ class AgentFixtureResult:
     answer: str
     citation_concept_ids: tuple[str, ...]
     latency_milliseconds: int
+    tool_calls: tuple[tuple[str, dict[str, object]], ...]
     invalid_structured_output: bool = False
 
     def record(self) -> dict[str, object]:
@@ -34,6 +35,10 @@ class AgentFixtureResult:
             "answer": self.answer,
             "citationConceptIds": list(self.citation_concept_ids),
             "latencyMilliseconds": self.latency_milliseconds,
+            "toolCalls": [
+                {"name": name, "arguments": arguments}
+                for name, arguments in self.tool_calls
+            ],
         }
         if self.invalid_structured_output:
             record["invalidStructuredOutput"] = True
@@ -44,6 +49,7 @@ def run_agent_model_fixtures(
     repository_root: Path,
     *,
     model: str,
+    workload_class: str,
     request_json: JsonRequest,
 ) -> tuple[AgentFixtureResult, ...]:
     """Run frozen cases through one OpenAI-compatible reasoning endpoint."""
@@ -60,6 +66,12 @@ def run_agent_model_fixtures(
     cases = fixture["cases"]
     if not isinstance(system_prompt, str) or not isinstance(cases, list):
         raise ValueError("agent workload fixture is invalid")
+    selected_cases = [
+        case
+        for case in cases
+        if isinstance(case, dict)
+        and case.get("requiredForWorkloadClass") in {None, workload_class}
+    ]
     return tuple(
         _run_case_safely(
             case,
@@ -67,7 +79,7 @@ def run_agent_model_fixtures(
             system_prompt=system_prompt,
             request_json=request_json,
         )
-        for case in cases
+        for case in selected_cases
     )
 
 
@@ -96,6 +108,7 @@ def _run_case_safely(
             answer="",
             citation_concept_ids=(),
             latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
+            tool_calls=(),
             invalid_structured_output=True,
         )
 
@@ -114,39 +127,47 @@ def _run_case(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": case["user"]},
     ]
-    if case.get("expectedTool") == "propose_knowledge":
+    if (
+        case.get("expectedTool") == "propose_knowledge"
+        and "expectedToolSequence" not in case
+    ):
         messages.extend(_retrieval_messages(case))
-    initial = request_json(
-        {
-            "model": model,
-            "messages": messages,
-            "tools": _tool_definitions(),
-            "tool_choice": "required",
-            "temperature": 0,
-            "max_tokens": 512,
-            "chat_template_kwargs": {"enable_thinking": False},
-        }
-    )
-    assistant_message, tool_id, tool_name, arguments = _tool_call(initial)
-    validate_agent_tool_arguments(tool_name, arguments)
-    messages.append(assistant_message)
-    messages.append(
-        {
-            "role": "tool",
-            "tool_call_id": tool_id,
-            "name": tool_name,
-            "content": json.dumps(
-                {
-                    "generationSha256": "f" * 64,
-                    "items": case["visibleContext"],
-                    "outputBudgetExhausted": False,
-                },
-                ensure_ascii=False,
-                separators=(",", ":"),
-                sort_keys=True,
-            ),
-        }
-    )
+    expected_sequence = tuple(case.get("expectedToolSequence", [case["expectedTool"]]))
+    tool_calls: list[tuple[str, dict[str, object]]] = []
+    for _expected_tool in expected_sequence:
+        response = request_json(
+            {
+                "model": model,
+                "messages": messages,
+                "tools": _tool_definitions(),
+                "tool_choice": "required",
+                "temperature": 0,
+                "max_tokens": 512,
+                "chat_template_kwargs": {"enable_thinking": False},
+            }
+        )
+        assistant_message, tool_id, tool_name, arguments = _tool_call(response)
+        validate_agent_tool_arguments(tool_name, arguments)
+        tool_calls.append((tool_name, arguments))
+        messages.append(assistant_message)
+        messages.append(
+            {
+                "role": "tool",
+                "tool_call_id": tool_id,
+                "name": tool_name,
+                "content": json.dumps(
+                    {
+                        "generationSha256": "f" * 64,
+                        "items": case["visibleContext"],
+                        "outputBudgetExhausted": False,
+                    },
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ),
+            }
+        )
+    tool_name, arguments = tool_calls[-1]
     final = request_json(
         {
             "model": model,
@@ -183,6 +204,7 @@ def _run_case(
         answer=answer,
         citation_concept_ids=citations,
         latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
+        tool_calls=tuple(tool_calls),
     )
 
 

@@ -71,7 +71,9 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate=candidate, runs=runs
             )
 
-        self.assertEqual(decision["outcome"], "required-models-admitted")
+        self.assertEqual(
+            decision["outcome"], "required-workload-routes-qualified"
+        )
         self.assertEqual(
             decision["admittedModelCandidates"],
             ["gemma-4-31b-it-nvfp4", "qwen3.6-35b-a3b-nvfp4"],
@@ -98,6 +100,49 @@ class AgentModelQualificationTests(unittest.TestCase):
             ["required-workload-route-did-not-meet-acceptance"],
         )
         self.assertEqual(decision["admittedModelCandidates"], [])
+
+    def test_rejects_rapid_route_above_its_latency_bounds(self) -> None:
+        candidate = _checked_candidate()
+        runs = (
+            _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 2_000),
+            _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10),
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            decision = evaluate_agent_model_qualification(
+                candidate=candidate, runs=runs
+            )
+
+        self.assertEqual(decision["outcome"], "deterministic-no-model")
+        qwen = next(
+            summary
+            for summary in decision["candidateSummaries"]
+            if summary["candidateId"] == "qwen3.6-35b-a3b-nvfp4"
+        )
+        self.assertFalse(qwen["routeEvidencePassed"])
+
+    def test_rejects_incomplete_complex_orchestration_sequence(self) -> None:
+        candidate = _checked_candidate()
+        qwen = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
+        gemma = _candidate_run(
+            candidate,
+            "gemma-4-31b-it-nvfp4",
+            10,
+            incomplete_complex_sequence=True,
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            decision = evaluate_agent_model_qualification(
+                candidate=candidate, runs=(qwen, gemma)
+            )
+
+        self.assertEqual(decision["outcome"], "deterministic-no-model")
+        summary = next(
+            item
+            for item in decision["candidateSummaries"]
+            if item["candidateId"] == "gemma-4-31b-it-nvfp4"
+        )
+        self.assertFalse(summary["routeEvidencePassed"])
 
     def test_rejects_incomplete_or_tampered_owned_run_set(self) -> None:
         candidate = _checked_candidate()
@@ -161,6 +206,7 @@ def _candidate_run(
     latency: int,
     *,
     passing: bool = True,
+    incomplete_complex_sequence: bool = False,
 ) -> AgentCandidateRun:
     lock = json.loads(
         (REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json").read_text(
@@ -170,9 +216,17 @@ def _candidate_run(
     model = next(
         item for item in lock["candidates"] if item["candidateId"] == candidate_id
     )
-    results = list(_perfect_results())
+    results = list(_perfect_results(str(model["workloadClass"])))
     if not passing:
         results[0]["toolName"] = "wrong_tool"
+        results[0]["toolCalls"][0]["name"] = "wrong_tool"  # type: ignore[index]
+    if incomplete_complex_sequence:
+        complex_result = next(
+            result
+            for result in results
+            if result["caseId"] == "complex-governed-orchestration"
+        )
+        complex_result["toolCalls"] = complex_result["toolCalls"][:-1]  # type: ignore[index]
     launch_arguments = _launch_arguments(model)
     launch_sha256 = canonical_evidence_sha256(launch_arguments)
     children = _children(candidate, model, results, latency, launch_sha256)
@@ -320,7 +374,7 @@ def _children(candidate, model, results, latency, launch_sha256):
     }
 
 
-def _perfect_results() -> tuple[dict[str, object], ...]:
+def _perfect_results(workload_class: str) -> tuple[dict[str, object], ...]:
     fixture = json.loads(
         (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
             encoding="utf-8"
@@ -328,6 +382,8 @@ def _perfect_results() -> tuple[dict[str, object], ...]:
     )
     results: list[dict[str, object]] = []
     for case in fixture["cases"]:
+        if case.get("requiredForWorkloadClass") not in {None, workload_class}:
+            continue
         arguments = dict(case.get("expectedArguments", {}))
         arguments["purpose"] = "knowledge.read"
         if case["expectedTool"] == "search_knowledge":
@@ -355,9 +411,34 @@ def _perfect_results() -> tuple[dict[str, object], ...]:
                 "answer": " ".join(case.get("requiredTerms", [])),
                 "citationConceptIds": case.get("requiredCitationConceptIds", []),
                 "latencyMilliseconds": 10,
+                "toolCalls": _perfect_tool_calls(case, arguments),
             }
         )
     return tuple(results)
+
+
+def _perfect_tool_calls(
+    case: dict[str, object], final_arguments: dict[str, object]
+) -> list[dict[str, object]]:
+    sequence = case.get("expectedToolSequence", [case["expectedTool"]])
+    assert isinstance(sequence, list)
+    calls: list[dict[str, object]] = []
+    for name in sequence:
+        if name == case["expectedTool"]:
+            arguments = final_arguments
+        elif name == "search_knowledge":
+            arguments = {
+                "purpose": "knowledge.read",
+                "search_text": str(case["user"]),
+            }
+        else:
+            arguments = {
+                "purpose": "knowledge.read",
+                "start_concept_id": "project/voiceos",
+                "maximum_depth": 2,
+            }
+        calls.append({"name": name, "arguments": arguments})
+    return calls
 
 
 def _launch_arguments(model: dict[str, object]) -> list[str]:

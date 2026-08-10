@@ -12,6 +12,121 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 class AgentModelFixtureRunnerTests(unittest.TestCase):
+    def test_runs_complex_orchestration_as_three_owned_tool_steps(self) -> None:
+        fixture = json.loads(
+            (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        cases = iter(fixture["cases"])
+        active: dict[str, object] | None = None
+
+        def request(payload: dict[str, object]) -> dict[str, object]:
+            nonlocal active
+            messages = payload["messages"]
+            assert isinstance(messages, list)
+            if "tools" in payload and active is None:
+                active = next(cases)
+            assert active is not None
+            case = active
+            if "tools" not in payload:
+                response = {
+                    "choices": [
+                        {
+                            "message": {
+                                "role": "assistant",
+                                "content": json.dumps(
+                                    {
+                                        "answer": " ".join(
+                                            case.get("requiredTerms", [])
+                                        ),
+                                        "citationConceptIds": case.get(
+                                            "requiredCitationConceptIds", []
+                                        ),
+                                    }
+                                ),
+                            }
+                        }
+                    ]
+                }
+                active = None
+                return response
+            sequence = case.get("expectedToolSequence", [case["expectedTool"]])
+            prior_calls = sum(
+                message.get("role") == "tool" for message in messages
+            )
+            if "expectedToolSequence" not in case:
+                prior_calls = 0
+            name = sequence[prior_calls]
+            if name == "search_knowledge":
+                arguments = {
+                    "purpose": "knowledge.read",
+                    "search_text": case["user"],
+                }
+            elif name == "browse_knowledge":
+                arguments = {"purpose": "knowledge.read"}
+            elif name == "traverse_knowledge":
+                arguments = {
+                    "purpose": "knowledge.read",
+                    "start_concept_id": case.get("expectedArguments", {}).get(
+                        "start_concept_id", "project/voiceos"
+                    ),
+                    "maximum_depth": case.get("expectedArguments", {}).get(
+                        "maximum_depth", 2
+                    ),
+                }
+            else:
+                arguments = {
+                    "purpose": "knowledge.read",
+                    "proposal_type": "summary",
+                    "proposed_content": " ".join(case.get("requiredTerms", [])),
+                    "source_citations": [
+                        {
+                            "concept_id": item["conceptId"],
+                            "source_revision": item["sourceRevision"],
+                            "content_sha256": item["contentSha256"],
+                            "char_start": item["charStart"],
+                            "char_end": item["charEnd"],
+                        }
+                        for item in case["visibleContext"]
+                    ],
+                }
+            arguments.update(case.get("expectedArguments", {}))
+            return _tool_response(name, arguments)
+
+        results = run_agent_model_fixtures(
+            REPOSITORY_ROOT,
+            model="synthetic",
+            workload_class="complex-orchestration",
+            request_json=request,
+        )
+        result = results[-1].record()
+
+        self.assertEqual(
+            [call["name"] for call in result["toolCalls"]],  # type: ignore[index]
+            ["search_knowledge", "traverse_knowledge", "propose_knowledge"],
+        )
+        score = score_agent_model_results(
+            REPOSITORY_ROOT,
+            tuple(item.record() for item in results),
+            workload_class="complex-orchestration",
+        )
+        self.assertTrue(
+            score.passed,
+            (
+                score,
+                tuple(
+                    (
+                        item.case_id,
+                        item.answer,
+                        item.citation_concept_ids,
+                        item.arguments,
+                    )
+                    for item in results
+                ),
+            ),
+        )
+
     def test_runs_tool_and_structured_answer_round_trip(self) -> None:
         fixture = json.loads(
             (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
@@ -93,10 +208,15 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             }
 
         results = run_agent_model_fixtures(
-            REPOSITORY_ROOT, model="synthetic", request_json=request
+            REPOSITORY_ROOT,
+            model="synthetic",
+            workload_class="rapid-automation",
+            request_json=request,
         )
         score = score_agent_model_results(
-            REPOSITORY_ROOT, tuple(item.record() for item in results)
+            REPOSITORY_ROOT,
+            tuple(item.record() for item in results),
+            workload_class="rapid-automation",
         )
 
         self.assertEqual(len(results), 12)
@@ -115,19 +235,26 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             return _answer_response()
 
         results = run_agent_model_fixtures(
-            REPOSITORY_ROOT, model="synthetic", request_json=request
+            REPOSITORY_ROOT,
+            model="synthetic",
+            workload_class="rapid-automation",
+            request_json=request,
         )
 
         self.assertTrue(results[0].invalid_structured_output)
         self.assertFalse(results[1].invalid_structured_output)
         score = score_agent_model_results(
-            REPOSITORY_ROOT, tuple(item.record() for item in results)
+            REPOSITORY_ROOT,
+            tuple(item.record() for item in results),
+            workload_class="rapid-automation",
         )
         self.assertGreaterEqual(score.invalid_structured_output_count, 1)
         self.assertFalse(score.passed)
 
 
-def _tool_response(name: str) -> dict[str, object]:
+def _tool_response(
+    name: str, arguments: dict[str, object] | None = None
+) -> dict[str, object]:
     return {
         "choices": [
             {
@@ -141,7 +268,8 @@ def _tool_response(name: str) -> dict[str, object]:
                             "function": {
                                 "name": name,
                                 "arguments": json.dumps(
-                                    {
+                                    arguments
+                                    or {
                                         "purpose": "knowledge.read",
                                         "search_text": "bounded test",
                                     }

@@ -17,6 +17,7 @@ _RESULT_KEYS = {
     "answer",
     "citationConceptIds",
     "latencyMilliseconds",
+    "toolCalls",
 }
 
 
@@ -34,7 +35,10 @@ class AgentModelScore:
 
 
 def score_agent_model_results(
-    repository_root: Path, results: tuple[object, ...]
+    repository_root: Path,
+    results: tuple[object, ...],
+    *,
+    workload_class: str,
 ) -> AgentModelScore:
     """Derive acceptance metrics from per-case outputs; trust no supplied aggregate."""
 
@@ -46,7 +50,11 @@ def score_agent_model_results(
         expected_sha256=acceptance.fixture_sha256,
         containment_root=repository_root,
     )
-    cases = fixture["cases"]
+    cases = [
+        case
+        for case in fixture["cases"]
+        if case.get("requiredForWorkloadClass") in {None, workload_class}
+    ]
     assert isinstance(cases, list)
     by_id = {case["caseId"]: case for case in cases}  # type: ignore[index]
     if not isinstance(results, tuple) or len(results) != len(by_id):
@@ -80,7 +88,13 @@ def score_agent_model_results(
     latencies: list[int] = []
     for case_id, case in by_id.items():
         result = result_by_id[case_id]
-        if result.get("toolName") == case.get("expectedTool"):
+        expected_sequence = case.get("expectedToolSequence", [case.get("expectedTool")])
+        tool_calls = result.get("toolCalls")
+        if (
+            isinstance(tool_calls, list)
+            and [call.get("name") for call in tool_calls if isinstance(call, dict)]
+            == expected_sequence
+        ):
             tool_pass += 1
         argument_checks += 1
         expected_arguments = dict(case.get("expectedArguments", {}))
@@ -88,8 +102,15 @@ def score_agent_model_results(
             expected_arguments["proposal_type"] = case["expectedProposalType"]
         arguments = result.get("arguments")
         try:
-            if isinstance(arguments, dict):
-                validate_agent_tool_arguments(str(result.get("toolName")), arguments)
+            if isinstance(arguments, dict) and isinstance(tool_calls, list):
+                for call in tool_calls:
+                    if not isinstance(call, dict) or set(call) != {"name", "arguments"}:
+                        raise ValueError("agent tool sequence differs from the contract")
+                    validate_agent_tool_arguments(
+                        str(call["name"]), call["arguments"]  # type: ignore[arg-type]
+                    )
+                if not tool_calls or tool_calls[-1].get("arguments") != arguments:
+                    raise ValueError("agent final tool arguments differ")
             else:
                 raise ValueError("agent tool arguments must be an object")
             if all(arguments.get(key) == value for key, value in expected_arguments.items()):
@@ -150,6 +171,8 @@ def _valid_result_types(result: dict[str, object]) -> bool:
         and isinstance(result["latencyMilliseconds"], int)
         and not isinstance(result["latencyMilliseconds"], bool)
         and result["latencyMilliseconds"] >= 0
+        and isinstance(result["toolCalls"], list)
+        and bool(result["toolCalls"])
     )
 
 

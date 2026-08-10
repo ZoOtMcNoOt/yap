@@ -27,10 +27,10 @@ class AgentModelAcceptanceTests(unittest.TestCase):
                 "rapid-automation": "qwen3.6-35b-a3b-nvfp4",
             },
         )
-        self.assertEqual(len(plan.case_ids), 12)
+        self.assertEqual(len(plan.case_ids), 13)
         self.assertEqual(
             plan.permitted_outcomes,
-            ("required-models-admitted", "deterministic-no-model"),
+            ("required-workload-routes-qualified", "deterministic-no-model"),
         )
 
 
