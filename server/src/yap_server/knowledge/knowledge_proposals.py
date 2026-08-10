@@ -334,7 +334,7 @@ def _proposal_input(
         if not isinstance(citation, ProposalCitation):
             raise ValueError("knowledge proposal citation differs from the contract")
         try:
-            ProposalCitation.model_validate(citation.model_dump(), strict=True)
+            ProposalCitation.model_validate(citation, strict=True)
         except ValueError as error:
             raise ValueError(
                 "knowledge proposal citation differs from the contract"

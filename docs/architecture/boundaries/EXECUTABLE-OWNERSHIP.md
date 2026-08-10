@@ -656,10 +656,12 @@ owner's state but may not recreate its transition logic.
   relabel arbitrary OKF provenance as reviewed. Meeting admission is derived
   from the owner-scoped authoritative job/result, exact-compares the stored
   normalized source/path/resource/provenance, and enforces the current
-  owner-only permission. Curated admission requires the fixed role on a
-  server-authenticated principal and derives its canonical compiled-source
-  manifest from the reviewed repository revision/path and complete generation;
-  production Git hosting/review remains a later repository/operations owner.
+  owner-only permission. Curated admission is one durable operation that
+  requires the fixed role on a server-authenticated principal and derives its
+  review identity and canonical compiled-source manifest from the repository
+  revision/path and complete generation; callers cannot mint a reusable review
+  token. Production Git hosting/review remains a later repository/operations
+  owner.
 - **Dependencies/events:** exact reviewed capture or curated repository source
   -> typed source admission -> deterministic OKF generation -> staged Postgres
   generation. Staging requires the durable admission identity in the same
@@ -718,7 +720,9 @@ owner's state but may not recreate its transition logic.
 - **Dependencies/events:** source admission -> staged complete generation ->
   atomic activation -> authorized query -> exact cited results. The next query
   sees a successor only after the prior pinned query releases its transaction.
-- **Failure/recovery:** incomplete/unadmitted generations cannot activate;
+- **Failure/recovery:** incomplete/unadmitted generations cannot activate. The
+  activation transaction revalidates the durable source-admission identity and
+  the complete persisted non-embedding projection before moving the pointer;
   stale-generation requests, hidden concepts/links, permission changes, and
   cross-tenant/owner reads fail non-disclosingly. Rollback and bounded prune
   operate under the same tenant lock.

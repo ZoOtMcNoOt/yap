@@ -22,27 +22,43 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 
 ## Focused checkpoint verification
 
-Core remediation commit `c332700597eac1cc6af3f68afb3e75fce0b6ec77`
-and its current documentation/test-contract descendant have the following
-focused, non-promotional verification:
+Remediation through commit `7c4fd57237ef41c9b0852bbae40adccf593ee114`
+and its current documentation/evidence descendant have the following focused,
+non-promotional verification. Commands are shown from their working directory;
+the Windows runs used the locked project environment and Python 3.12.
 
-- Locked Ruff across the server and owned-process supervisor: pass.
-- Current portable membership: 24 exact modules and 129 tests. The 128 tests
-  independent of the intentionally stale private-route lock passed, with three
-  platform/capability skips. The complete runner fails only the strict frozen
-  route-lock assertion until the newly required private qualification replaces
-  the Phase 9 predecessor; this is an expected fail-closed blocker, not a green
+- From `server`,
+  `uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py`
+  passed.
+- From `server`, with `PYTHONPATH=src`,
+  `uv run --locked python ../verification/run-governed-knowledge-portable-suite.py`
+  ran the exact 24-module/130-test membership: 126 passed, three declared
+  platform/capability skips, and one strict stale-route-lock failure. No other
+  failure or unexpected/expected-failure classification occurred. The lock
+  failure is the required fail-closed blocker until a fresh private
+  qualification replaces the Phase 9 predecessor; this is not a green
   checkpoint claim.
-- Compiler/tool/cancellation/RAG/evaluator focus: 39 tests passed with one
-  platform-only directory-link skip. This includes canonical generation
-  identity, authenticated curated review, strict nested MCP inputs, exact
+- From `server`, with `PYTHONPATH=src`,
+  `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
+  ran 40 tests: 39 passed and one Windows directory-link capability test
+  skipped. This covers canonical generation/profile/resource identity,
+  durable-write curated authorization, strict nested MCP inputs, exact
   database-worker cancellation acknowledgement, and shared evaluator/product
   tool bounds.
-- On the ARM64 qualification host, the locked PostgreSQL 17 / pgvector 0.8.6
-  runtime ran all 17 mandatory tests across four modules with zero skips. The
-  set includes autocommit generation pinning, reviewed/curated source
-  authority, durable-row rehashing, stage/activation tamper rejection,
-  permission-safe retrieval, proposals/retention, and terminology ownership.
+- From the repository root,
+  `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
+  enumerated 473 tracked regular surfaces: 250 at or above 350 lines and 223
+  from 250 through 349. A read-back comparison of the 350-line output against
+  `THRESHOLD-DISPOSITION.md` found all 250 exact paths and zero differences.
+- On the ARM64 qualification host at exact code commit
+  `7c4fd57237ef41c9b0852bbae40adccf593ee114`, the gate-owned locked PostgreSQL
+  17 / pgvector 0.8.6 runtime invoked, from `server` with `PYTHONPATH=src`,
+  `uv run --locked python ../verification/run-governed-knowledge-postgres-suite.py`.
+  All 17 mandatory tests across four modules passed with zero skips, expected
+  failures, or unexpected successes. The set includes autocommit generation
+  pinning, reviewed/curated source authority, durable-row rehashing,
+  stage/activation tamper rejection, permission-safe retrieval,
+  proposals/retention, and terminology ownership.
 - A separate focused owned-runtime diagnostic performed a real database process
   restart, recovered cited retrieval, rejected the stale generation, retrieved
   the successor, and proved complete teardown. It did not publish or consume
