@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "candidateLock": "agent-reasoning-candidates.lock.json",
   "fixtureFile": "agent-workload-fixtures.json",
-  "candidateLockSha256": "c9ead14a0a5cc444d7b0188a9d786239d0978b47b592e5e11047c6f97f169c01",
+  "candidateLockSha256": "384af0d5782dff41cbb9460f14728283f6b9779ab86be8a02f1aaeebaadbf2d3",
   "fixtureSha256": "5df28e626ec52336cccbd4c07e855efc0f5afab62fe5784cccb318a73d0c4db8",
   "minimumCaseCount": 12,
   "requiredCategories": ["authorization", "failure", "generation", "isolation", "proposal", "question-answering", "structured-tool", "terminology"],
@@ -31,7 +31,7 @@
     "ranking": [
       "concurrencyC8P95LatencyMilliseconds",
       "warmP95LatencyMilliseconds",
-      "incrementalUnifiedMemoryBytes",
+      "incrementalCgroupMemoryBytes",
       "candidateId"
     ]
   },

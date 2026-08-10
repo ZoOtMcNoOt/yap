@@ -3,11 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-import tempfile
+import unittest
 from unittest.mock import patch
 
-import pytest
-
+from yap_server.evaluation.agent_model_candidate_runner import (
+    AgentCandidateRun,
+    agent_evidence_sha256,
+)
 from yap_server.evaluation.agent_model_qualification import (
     evaluate_agent_model_qualification,
 )
@@ -31,114 +33,64 @@ INPUTS = tuple(
 )
 
 
-def test_selects_admitted_candidate_after_recomputing_every_threshold() -> None:
-    candidate = _checked_candidate()
-    with tempfile.TemporaryDirectory() as temporary:
-        evidence_root = Path(temporary)
-        paths = {}
-        paths["qwen3.6-35b-a3b-nvfp4"] = _write_candidate(
-            evidence_root,
-            candidate,
-            "qwen3.6-35b-a3b-nvfp4",
-            20,
+class AgentModelQualificationTests(unittest.TestCase):
+    def test_selects_only_after_recomputing_every_candidate(self) -> None:
+        candidate = _checked_candidate()
+        runs = (
+            _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20),
+            _candidate_run(candidate, "nemotron-3-nano-30b-a3b-nvfp4", 10),
         )
-        paths["nemotron-3-nano-30b-a3b-nvfp4"] = _write_candidate(
-            evidence_root,
-            candidate,
-            "nemotron-3-nano-30b-a3b-nvfp4",
-            10,
-        )
-        registry_sha256 = _write_registry(evidence_root, candidate, paths)
 
         with patch.object(CheckedCandidate, "verify_unchanged"):
             decision = evaluate_agent_model_qualification(
-                candidate=candidate,
-                evidence_root=evidence_root,
-                evidence_registry_sha256=registry_sha256,
+                candidate=candidate, runs=runs
             )
 
-    assert decision["outcome"] == "selected-candidate"
-    assert decision["selectedCandidateId"] == "nemotron-3-nano-30b-a3b-nvfp4"
-    assert len(decision["candidateSummaries"]) == 2
-    assert "results" not in json.dumps(decision)
-
-
-def test_keeps_deterministic_route_when_candidate_evidence_is_missing() -> None:
-    candidate = _checked_candidate()
-    with tempfile.TemporaryDirectory() as temporary:
-        evidence_root = Path(temporary)
-        registry_sha256 = _write_registry(evidence_root, candidate, {})
-        with patch.object(CheckedCandidate, "verify_unchanged"):
-            decision = evaluate_agent_model_qualification(
-                candidate=candidate,
-                evidence_root=evidence_root,
-                evidence_registry_sha256=registry_sha256,
-            )
-
-    assert decision["outcome"] == "deterministic-no-model"
-    assert decision["missingCandidateIds"] == [
-        "qwen3.6-35b-a3b-nvfp4",
-        "nemotron-3-nano-30b-a3b-nvfp4",
-    ]
-
-
-def test_keeps_deterministic_route_when_no_candidate_passes() -> None:
-    candidate = _checked_candidate()
-    with tempfile.TemporaryDirectory() as temporary:
-        evidence_root = Path(temporary)
-        paths = {}
-        paths["qwen3.6-35b-a3b-nvfp4"] = _write_candidate(
-            evidence_root,
-            candidate,
-            "qwen3.6-35b-a3b-nvfp4",
-            20,
-            passing=False,
+        self.assertEqual(decision["outcome"], "selected-candidate")
+        self.assertEqual(
+            decision["selectedCandidateId"], "nemotron-3-nano-30b-a3b-nvfp4"
         )
-        paths["nemotron-3-nano-30b-a3b-nvfp4"] = _write_candidate(
-            evidence_root,
-            candidate,
-            "nemotron-3-nano-30b-a3b-nvfp4",
-            20,
-            passing=False,
+        self.assertNotIn("results", json.dumps(decision))
+
+    def test_keeps_deterministic_route_when_no_candidate_passes(self) -> None:
+        candidate = _checked_candidate()
+        runs = (
+            _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20, passing=False),
+            _candidate_run(
+                candidate, "nemotron-3-nano-30b-a3b-nvfp4", 20, passing=False
+            ),
         )
-        registry_sha256 = _write_registry(evidence_root, candidate, paths)
 
         with patch.object(CheckedCandidate, "verify_unchanged"):
             decision = evaluate_agent_model_qualification(
-                candidate=candidate,
-                evidence_root=evidence_root,
-                evidence_registry_sha256=registry_sha256,
+                candidate=candidate, runs=runs
             )
 
-    assert decision["outcome"] == "deterministic-no-model"
-    assert decision["reasonCodes"] == ["no-candidate-met-acceptance"]
+        self.assertEqual(decision["outcome"], "deterministic-no-model")
+        self.assertEqual(decision["reasonCodes"], ["no-candidate-met-acceptance"])
 
-
-def test_rejects_tampered_candidate_evidence() -> None:
-    candidate = _checked_candidate()
-    with tempfile.TemporaryDirectory() as temporary:
-        evidence_root = Path(temporary)
-        paths = {}
-        path = _write_candidate(
-            evidence_root, candidate, "nemotron-3-nano-30b-a3b-nvfp4", 10
-        )
-        paths["nemotron-3-nano-30b-a3b-nvfp4"] = path
-        paths["qwen3.6-35b-a3b-nvfp4"] = _write_candidate(
-            evidence_root, candidate, "qwen3.6-35b-a3b-nvfp4", 20
-        )
-        registry_sha256 = _write_registry(evidence_root, candidate, paths)
-        value = json.loads(path.read_text(encoding="utf-8"))
-        value["revision"] = "0" * 40
-        path.write_text(json.dumps(value), encoding="utf-8")
-
+    def test_rejects_incomplete_or_tampered_owned_run_set(self) -> None:
+        candidate = _checked_candidate()
+        run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
         with (
             patch.object(CheckedCandidate, "verify_unchanged"),
-            pytest.raises(ValueError, match="out-of-band digest"),
+            self.assertRaisesRegex(ValueError, "incomplete"),
+        ):
+            evaluate_agent_model_qualification(candidate=candidate, runs=(run,))
+
+        tampered = AgentCandidateRun(
+            run.candidate_id,
+            {**run.evidence, "revision": "0" * 40},
+            run.runtime_receipt,
+            run.children,
+        )
+        other = _candidate_run(candidate, "nemotron-3-nano-30b-a3b-nvfp4", 10)
+        with (
+            patch.object(CheckedCandidate, "verify_unchanged"),
+            self.assertRaisesRegex(ValueError, "digest"),
         ):
             evaluate_agent_model_qualification(
-                candidate=candidate,
-                evidence_root=evidence_root,
-                evidence_registry_sha256=registry_sha256,
+                candidate=candidate, runs=(tampered, other)
             )
 
 
@@ -157,14 +109,13 @@ def _checked_candidate() -> CheckedCandidate:
     )
 
 
-def _write_candidate(
-    evidence_root: Path,
+def _candidate_run(
     candidate: CheckedCandidate,
     candidate_id: str,
     latency: int,
     *,
     passing: bool = True,
-) -> Path:
+) -> AgentCandidateRun:
     lock = json.loads(
         (REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json").read_text(
             encoding="utf-8"
@@ -176,12 +127,65 @@ def _write_candidate(
     results = list(_perfect_results())
     if not passing:
         results[0]["toolName"] = "wrong_tool"
-    launch_arguments_sha256 = canonical_evidence_sha256(_launch_arguments(model))
-    child_values = {
+    launch_arguments = _launch_arguments(model)
+    launch_sha256 = canonical_evidence_sha256(launch_arguments)
+    children = _children(candidate, model, results, latency, launch_sha256)
+    receipt = {
+        "schemaVersion": 1,
+        "checkedHead": candidate.checked_head,
+        "candidateId": candidate_id,
+        "model": model["model"],
+        "revision": model["revision"],
+        "runtime": lock["runtime"],
+        "imageId": "sha256:" + "9" * 64,
+        "quantization": model["quantization"],
+        "modelArtifactManifestSha256": model["artifactManifestSha256"],
+        "launchArguments": launch_arguments,
+        "launchArgumentsSha256": launch_sha256,
+        "childEvidenceSha256": {
+            name: agent_evidence_sha256(value) for name, value in children.items()
+        },
+        "teardown": {
+            "containerAbsent": True,
+            "listenerAbsent": True,
+            "ownedWorkersReaped": True,
+            "ownedCgroupEmpty": True,
+        },
+    }
+    evidence = bind_checked_candidate_evidence(
+        {
+            "schemaVersion": 1,
+            "candidateId": candidate_id,
+            "model": model["model"],
+            "revision": model["revision"],
+            "runtimeReceiptSha256": agent_evidence_sha256(receipt),
+            "results": results,
+            "runtimePressure": {
+                "coldLatencyMilliseconds": latency,
+                "warmLatencyMilliseconds": [latency] * 12,
+                "concurrencyLatencyMilliseconds": {
+                    "1": [latency],
+                    "2": [latency] * 2,
+                    "4": [latency] * 4,
+                    "8": [latency] * 8,
+                },
+                "baselineCgroupMemoryBytes": 100,
+                "peakCgroupMemoryBytes": 200,
+                "isolationLeakCount": 0,
+                "cancelledRequestCompletionCount": 0,
+            },
+        },
+        candidate,
+    )
+    return AgentCandidateRun(candidate_id, evidence, receipt, children)
+
+
+def _children(candidate, model, results, latency, launch_sha256):
+    return {
         "fixtures": {
             "schemaVersion": 1,
             "checkedHead": candidate.checked_head,
-            "candidateId": candidate_id,
+            "candidateId": model["candidateId"],
             "results": results,
         },
         "pressure": {
@@ -205,6 +209,8 @@ def _write_candidate(
             "engineActivityObserved": True,
             "engineIdleAfterCancellation": True,
             "recoverySucceeded": True,
+            "engineFinishReasons": _finish_reasons(abort=1),
+            "recoveryEngineFinishReasons": _finish_reasons(stop=1),
             "cancelledRequestCompletionCount": 0,
         },
         "resources": {
@@ -220,113 +226,11 @@ def _write_candidate(
             "checkedHead": candidate.checked_head,
             "containerId": "8" * 64,
             "imageId": "sha256:" + "9" * 64,
-            "modelArtifactManifestSha256": "b" * 64,
-            "launchArgumentsSha256": launch_arguments_sha256,
+            "modelArtifactManifestSha256": model["artifactManifestSha256"],
+            "launchArgumentsSha256": launch_sha256,
             "endpoint": "http://127.0.0.1:30000",
         },
     }
-    child_hashes = {}
-    for name, value in child_values.items():
-        path = (
-            evidence_root / "agent-model" / candidate_id / "children" / f"{name}.json"
-        )
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(value), encoding="utf-8")
-        child_hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
-    runtime_receipt = {
-        "schemaVersion": 1,
-        "checkedHead": candidate.checked_head,
-        "candidateId": candidate_id,
-        "model": model["model"],
-        "revision": model["revision"],
-        "runtime": lock["runtime"],
-        "imageId": "sha256:" + "9" * 64,
-        "quantization": model["quantization"],
-        "modelArtifactManifestSha256": "b" * 64,
-        "launchArguments": _launch_arguments(model),
-        "launchArgumentsSha256": launch_arguments_sha256,
-        "childEvidenceSha256": child_hashes,
-        "teardown": {
-            "containerAbsent": True,
-            "listenerAbsent": True,
-            "ownedWorkersReaped": True,
-        },
-    }
-    runtime_path = evidence_root / "agent-model" / candidate_id / "runtime-receipt.json"
-    runtime_path.parent.mkdir(parents=True, exist_ok=True)
-    runtime_path.write_text(json.dumps(runtime_receipt), encoding="utf-8")
-    runtime_sha256 = hashlib.sha256(runtime_path.read_bytes()).hexdigest()
-    evidence = bind_checked_candidate_evidence(
-        {
-            "schemaVersion": 1,
-            "candidateId": candidate_id,
-            "model": model["model"],
-            "revision": model["revision"],
-            "runtimeReceiptSha256": runtime_sha256,
-            "results": results,
-            "runtimePressure": {
-                "coldLatencyMilliseconds": latency,
-                "warmLatencyMilliseconds": [latency] * 12,
-                "concurrencyLatencyMilliseconds": {
-                    "1": [latency],
-                    "2": [latency] * 2,
-                    "4": [latency] * 4,
-                    "8": [latency] * 8,
-                },
-                "baselineUnifiedMemoryBytes": 100,
-                "peakUnifiedMemoryBytes": 200,
-                "isolationLeakCount": 0,
-                "cancelledRequestCompletionCount": 0,
-            },
-        },
-        candidate,
-    )
-    destination = evidence_root / "agent-model" / candidate_id / "results.json"
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(evidence), encoding="utf-8")
-    return destination
-
-
-def _write_registry(
-    evidence_root: Path,
-    candidate: CheckedCandidate,
-    result_paths: dict[str, Path],
-) -> str:
-    candidate_ids = (
-        "qwen3.6-35b-a3b-nvfp4",
-        "nemotron-3-nano-30b-a3b-nvfp4",
-    )
-    entries = []
-    for candidate_id in candidate_ids:
-        result_path = result_paths.get(candidate_id)
-        runtime_path = (
-            evidence_root / "agent-model" / candidate_id / "runtime-receipt.json"
-        )
-        entries.append(
-            {
-                "candidateId": candidate_id,
-                "resultSha256": (
-                    hashlib.sha256(result_path.read_bytes()).hexdigest()
-                    if result_path is not None
-                    else "0" * 64
-                ),
-                "runtimeReceiptSha256": (
-                    hashlib.sha256(runtime_path.read_bytes()).hexdigest()
-                    if runtime_path.exists()
-                    else "f" * 64
-                ),
-            }
-        )
-    value = {
-        "schemaVersion": 1,
-        "checkedHead": candidate.checked_head,
-        "inputs": dict(sorted(candidate.input_sha256.items())),
-        "candidates": entries,
-    }
-    destination = evidence_root / "agent-model" / "evidence-registry.json"
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(value), encoding="utf-8")
-    return hashlib.sha256(destination.read_bytes()).hexdigest()
 
 
 def _perfect_results() -> tuple[dict[str, object], ...]:
@@ -396,3 +300,17 @@ def _launch_arguments(model: dict[str, object]) -> list[str]:
     if str(model["candidateId"]).startswith("qwen3.6-"):
         arguments.append("--language-model-only")
     return arguments
+
+
+def _finish_reasons(*, stop: int = 0, abort: int = 0) -> dict[str, int]:
+    return {
+        "stop": stop,
+        "length": 0,
+        "abort": abort,
+        "error": 0,
+        "repetition": 0,
+    }
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -29,8 +29,8 @@ abstraction did not match the models:
   output parity, duplicated request scheduling already owned by Yap and the
   model runtime, and added a large backend/client/evidence surface without a
   demonstrated performance advantage.
-- SGLang is still useful for later agent/LLM workloads. It is not an ASR runtime
-  for either selected ASR model.
+- ADR 0029 later selected vLLM for agent/LLM workloads. Neither agent runtime is
+  an ASR route for the models governed by this ADR.
 
 One universal model server would therefore be a false simplification. The stable
 abstraction is Yap's provider-neutral job, route, result, admission, and
@@ -58,9 +58,9 @@ specific behind that seam.
    Its implementation-only backend, client, scheduling, parity, and benchmark
    machinery are removed. Private focused evidence remains historical evidence
    for the rejected candidate and is not published as product data.
-5. **SGLang remains the Phase 9 agent/LLM serving candidate.** Prefix caching and
-   structured generation apply to agent workloads, not to Cohere or Nemotron
-   audio decoding.
+5. **Amended by ADR 0029:** vLLM is the sole Phase 9 agent/LLM serving candidate.
+   Prefix caching and structured generation apply to agent workloads, not to
+   Cohere or Nemotron audio decoding.
 6. **Rust remains the target orchestration authority.** The current Python
    service preserves the same bounded contracts until that later migration is
    justified and gated; this ADR does not move model inference into Rust.

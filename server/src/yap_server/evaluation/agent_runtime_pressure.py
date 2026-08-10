@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import json
 import threading
 import time
-from typing import Callable, Protocol
+from typing import Callable, Mapping, Protocol
 
 from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
 
@@ -18,11 +18,17 @@ MemoryBytes = Callable[[], int]
 
 
 class RuntimeActivity(Protocol):
-    def wait_for_running_requests(
-        self, *, minimum: int, timeout_seconds: float
-    ) -> object: ...
+    def begin_cancellation(self, *, timeout_seconds: float) -> object: ...
 
-    def wait_for_idle(self, *, timeout_seconds: float) -> object: ...
+    def wait_until_running(self, *, timeout_seconds: float) -> None: ...
+
+    def after_cancellation(
+        self, token: object, *, timeout_seconds: float
+    ) -> tuple[object, Mapping[str, int]]: ...
+
+    def after_recovery(
+        self, token: object, *, timeout_seconds: float
+    ) -> Mapping[str, int]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +45,8 @@ class RuntimePressureResult:
     engine_activity_observed: bool
     engine_idle_after_cancellation: bool
     recovery_succeeded: bool
+    cancellation_engine_finish_reasons: Mapping[str, int]
+    recovery_engine_finish_reasons: Mapping[str, int]
     isolation_concurrent: bool
 
 
@@ -92,7 +100,11 @@ def run_agent_runtime_pressure(
             repetitions=int(tracks["prefixIsolationRepetitions"]),
             timeout_seconds=int(tracks["requestTimeoutSeconds"]),
         )
-        cancelled_completions = _cancelled_completions(
+        (
+            cancelled_completions,
+            cancellation_finish_reasons,
+            recovery_finish_reasons,
+        ) = _cancelled_completions(
             request,
             dispatched_request,
             runtime_activity=runtime_activity,
@@ -118,6 +130,8 @@ def run_agent_runtime_pressure(
         True,
         True,
         True,
+        cancellation_finish_reasons,
+        recovery_finish_reasons,
         True,
     )
 
@@ -130,8 +144,11 @@ def _timed(
 ) -> int:
     started = time.monotonic()
     result = request(prompt, cancellation)
-    if _answer(result) != expected:
-        raise ValueError("agent runtime returned the wrong marker")
+    observed = _answer(result)
+    if observed != expected:
+        raise ValueError(
+            f"agent runtime marker mismatch: expected {expected!r}, got {observed!r}"
+        )
     return max(0, round((time.monotonic() - started) * 1_000))
 
 
@@ -175,8 +192,8 @@ def _cancelled_completions(
     *,
     runtime_activity: RuntimeActivity,
     timeout_seconds: int,
-) -> int:
-    runtime_activity.wait_for_idle(timeout_seconds=timeout_seconds)
+) -> tuple[int, Mapping[str, int], Mapping[str, int]]:
+    metrics_token = runtime_activity.begin_cancellation(timeout_seconds=timeout_seconds)
     cancellation = threading.Event()
     dispatched = threading.Event()
     finished = threading.Event()
@@ -201,15 +218,15 @@ def _cancelled_completions(
     worker.start()
     if not dispatched.wait(timeout_seconds):
         raise TimeoutError("agent cancellation request was not dispatched")
-    runtime_activity.wait_for_running_requests(
-        minimum=1, timeout_seconds=timeout_seconds
-    )
+    runtime_activity.wait_until_running(timeout_seconds=timeout_seconds)
     cancellation.set()
     if not finished.wait(timeout_seconds):
         raise TimeoutError("cancelled agent request did not terminate")
     if failure is not None and not isinstance(failure, KnowledgeToolCancelled):
         raise RuntimeError("cancelled agent request failed incorrectly") from failure
-    runtime_activity.wait_for_idle(timeout_seconds=timeout_seconds)
+    recovery_token, cancellation_finish_reasons = runtime_activity.after_cancellation(
+        metrics_token, timeout_seconds=timeout_seconds
+    )
     recovery = _answer(
         recovery_request(
             "Return exactly CANCEL-RECOVERED.",
@@ -218,8 +235,10 @@ def _cancelled_completions(
     )
     if recovery != "CANCEL-RECOVERED":
         raise RuntimeError("agent runtime did not recover after cancellation")
-    runtime_activity.wait_for_idle(timeout_seconds=timeout_seconds)
-    return int(returned)
+    recovery_finish_reasons = runtime_activity.after_recovery(
+        recovery_token, timeout_seconds=timeout_seconds
+    )
+    return int(returned), cancellation_finish_reasons, recovery_finish_reasons
 
 
 def _answer(value: str) -> str:

@@ -8,7 +8,6 @@ import math
 import os
 from pathlib import Path
 import sys
-from typing import Mapping
 import re
 
 from yap_server.evaluation.provider_runtime_observations import (
@@ -17,6 +16,11 @@ from yap_server.evaluation.provider_runtime_observations import (
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
+from .agent_model_candidate_runner import (
+    AgentCandidateRun,
+    agent_evidence_sha256,
+    run_agent_model_candidate,
+)
 from .agent_model_evidence import write_new_agent_model_evidence
 from .agent_model_scoring import score_agent_model_results
 from .checked_candidate import (
@@ -47,8 +51,8 @@ _PRESSURE_KEYS = {
     "coldLatencyMilliseconds",
     "warmLatencyMilliseconds",
     "concurrencyLatencyMilliseconds",
-    "baselineUnifiedMemoryBytes",
-    "peakUnifiedMemoryBytes",
+    "baselineCgroupMemoryBytes",
+    "peakCgroupMemoryBytes",
     "isolationLeakCount",
     "cancelledRequestCompletionCount",
 }
@@ -57,90 +61,55 @@ _PRESSURE_KEYS = {
 def evaluate_agent_model_qualification(
     *,
     candidate: CheckedCandidate,
-    evidence_root: Path,
-    evidence_registry_sha256: str,
+    runs: tuple[AgentCandidateRun, ...],
 ) -> dict[str, object]:
-    """Recompute all candidate scores and emit a transcript-free decision."""
+    """Select only from model runs owned by this checked process."""
 
     acceptance = load_agent_model_acceptance(candidate.repository_root)
     models = _candidate_models(
         candidate.repository_root, acceptance.candidate_lock_sha256
     )
-    registry = _evidence_registry(
-        candidate,
-        evidence_root=evidence_root,
-        expected_sha256=evidence_registry_sha256,
-        candidate_ids=acceptance.candidate_ids,
-    )
+    run_by_id = {run.candidate_id: run for run in runs}
+    if len(run_by_id) != len(runs) or set(run_by_id) != set(acceptance.candidate_ids):
+        raise ValueError("agent model run set is incomplete")
     candidate.verify_unchanged()
-    summaries: list[dict[str, object]] = []
-    missing: list[str] = []
-    for candidate_id in acceptance.candidate_ids:
-        path = evidence_root / "agent-model" / candidate_id / "results.json"
-        if not path.exists():
-            missing.append(candidate_id)
-            continue
-        evidence, artifact_sha256 = read_json_object_with_identity(
-            path,
-            maximum_bytes=16_000_000,
-            field="agent model candidate evidence",
-            expected_sha256=registry[candidate_id]["resultSha256"],
-            containment_root=evidence_root,
+    summaries = [
+        _candidate_summary(
+            candidate,
+            run_by_id[candidate_id],
+            expected=models[candidate_id],
         )
-        summaries.append(
-            _candidate_summary(
-                candidate,
-                evidence,
-                artifact_sha256=artifact_sha256,
-                expected=models[candidate_id],
-                runtime_receipt_sha256=registry[candidate_id]["runtimeReceiptSha256"],
-                evidence_root=evidence_root,
-            )
-        )
-
-    if missing:
-        decision: dict[str, object] = {
-            "schemaVersion": 1,
-            "qualificationScope": "governed-agent-reasoning",
-            "outcome": "deterministic-no-model",
-            "selectedCandidateId": None,
-            "reasonCodes": ["candidate-evidence-incomplete"],
-            "missingCandidateIds": missing,
-            "candidateSummaries": summaries,
-        }
+        for candidate_id in acceptance.candidate_ids
+    ]
+    eligible = [summary for summary in summaries if summary["eligible"]]
+    if not eligible:
+        outcome = "deterministic-no-model"
+        selected_id = None
+        reasons = ["no-candidate-met-acceptance"]
     else:
-        eligible = [summary for summary in summaries if summary["eligible"]]
-        if not eligible:
-            outcome = "deterministic-no-model"
-            selected_id = None
-            reasons = ["no-candidate-met-acceptance"]
-        else:
-            selected = min(eligible, key=_ranking_key)
-            outcome = "selected-candidate"
-            selected_id = selected["candidateId"]
-            reasons = ["quality-thresholds-passed", "performance-ranking-selected"]
-        decision = {
-            "schemaVersion": 1,
-            "qualificationScope": "governed-agent-reasoning",
-            "outcome": outcome,
-            "selectedCandidateId": selected_id,
-            "reasonCodes": reasons,
-            "missingCandidateIds": [],
-            "candidateSummaries": summaries,
-        }
+        selected = min(eligible, key=_ranking_key)
+        outcome = "selected-candidate"
+        selected_id = selected["candidateId"]
+        reasons = ["quality-thresholds-passed", "performance-ranking-selected"]
+    decision = {
+        "schemaVersion": 1,
+        "qualificationScope": "governed-agent-reasoning",
+        "outcome": outcome,
+        "selectedCandidateId": selected_id,
+        "reasonCodes": reasons,
+        "candidateSummaries": summaries,
+    }
     candidate.verify_unchanged()
     return bind_checked_candidate_evidence(decision, candidate)
 
 
 def _candidate_summary(
     candidate: CheckedCandidate,
-    evidence: dict[str, object],
+    run: AgentCandidateRun,
     *,
-    artifact_sha256: str,
     expected: dict[str, object],
-    runtime_receipt_sha256: str,
-    evidence_root: Path,
 ) -> dict[str, object]:
+    evidence = run.evidence
     if set(evidence) != _EVIDENCE_KEYS or evidence["schemaVersion"] != 1:
         raise ValueError("agent model candidate evidence differs from the contract")
     supplied_hash = evidence["evidenceSha256"]
@@ -161,13 +130,14 @@ def _candidate_summary(
         or evidence["revision"] != expected["revision"]
     ):
         raise ValueError("agent model candidate identity differs")
+    runtime_receipt_sha256 = agent_evidence_sha256(run.runtime_receipt)
     if evidence["runtimeReceiptSha256"] != runtime_receipt_sha256:
         raise ValueError("agent model runtime receipt binding differs")
-    children = _runtime_receipt(
+    _validate_runtime_receipt(
         candidate,
         expected=expected,
-        evidence_root=evidence_root,
-        expected_sha256=runtime_receipt_sha256,
+        receipt=run.runtime_receipt,
+        children=run.children,
     )
     results = evidence["results"]
     if not isinstance(results, list):
@@ -175,7 +145,7 @@ def _candidate_summary(
     score = score_agent_model_results(candidate.repository_root, tuple(results))
     pressure = _runtime_pressure(evidence["runtimePressure"])
     _verify_runtime_children(
-        children,
+        run.children,
         checked_head=candidate.checked_head,
         evidence_results=results,
         pressure=pressure,
@@ -187,7 +157,7 @@ def _candidate_summary(
     )
     return {
         "candidateId": expected["candidateId"],
-        "artifactSha256": artifact_sha256,
+        "artifactSha256": agent_evidence_sha256(evidence),
         "eligible": eligible,
         "toolSelectionAccuracy": score.tool_selection_accuracy,
         "structuredArgumentAccuracy": score.structured_argument_accuracy,
@@ -199,9 +169,9 @@ def _candidate_summary(
             pressure["concurrencyLatencyMilliseconds"]["8"]
         ),
         "warmP95LatencyMilliseconds": _p95(pressure["warmLatencyMilliseconds"]),
-        "incrementalUnifiedMemoryBytes": max(
+        "incrementalCgroupMemoryBytes": max(
             0,
-            pressure["peakUnifiedMemoryBytes"] - pressure["baselineUnifiedMemoryBytes"],
+            pressure["peakCgroupMemoryBytes"] - pressure["baselineCgroupMemoryBytes"],
         ),
     }
 
@@ -211,8 +181,8 @@ def _runtime_pressure(value: object) -> dict[str, object]:
         raise ValueError("agent runtime pressure evidence differs from the contract")
     scalar_fields = (
         "coldLatencyMilliseconds",
-        "baselineUnifiedMemoryBytes",
-        "peakUnifiedMemoryBytes",
+        "baselineCgroupMemoryBytes",
+        "peakCgroupMemoryBytes",
         "isolationLeakCount",
         "cancelledRequestCompletionCount",
     )
@@ -228,7 +198,7 @@ def _runtime_pressure(value: object) -> dict[str, object]:
         for level, count in expected_counts.items()
     ):
         raise ValueError("agent runtime concurrency evidence is invalid")
-    if value["peakUnifiedMemoryBytes"] < value["baselineUnifiedMemoryBytes"]:
+    if value["peakCgroupMemoryBytes"] < value["baselineCgroupMemoryBytes"]:
         raise ValueError("agent runtime memory evidence is invalid")
     return value
 
@@ -248,73 +218,14 @@ def _candidate_models(
     return {str(value["candidateId"]): value for value in candidates}
 
 
-def _evidence_registry(
-    candidate: CheckedCandidate,
-    *,
-    evidence_root: Path,
-    expected_sha256: str,
-    candidate_ids: tuple[str, ...],
-) -> dict[str, dict[str, str]]:
-    if not _SHA256.fullmatch(expected_sha256):
-        raise ValueError("agent evidence registry SHA-256 is invalid")
-    value, _identity = read_json_object_with_identity(
-        evidence_root / "agent-model" / "evidence-registry.json",
-        maximum_bytes=64_000,
-        field="agent model evidence registry",
-        expected_sha256=expected_sha256,
-        containment_root=evidence_root,
-    )
-    if set(value) != {"schemaVersion", "checkedHead", "inputs", "candidates"}:
-        raise ValueError("agent evidence registry differs from the contract")
-    if (
-        value["schemaVersion"] != 1
-        or value["checkedHead"] != candidate.checked_head
-        or value["inputs"] != dict(sorted(candidate.input_sha256.items()))
-        or not isinstance(value["candidates"], list)
-    ):
-        raise ValueError("agent evidence registry binding differs")
-    admitted: dict[str, dict[str, str]] = {}
-    for item in value["candidates"]:
-        if not isinstance(item, dict) or set(item) != {
-            "candidateId",
-            "resultSha256",
-            "runtimeReceiptSha256",
-        }:
-            raise ValueError("agent evidence registry entry is invalid")
-        candidate_id = item["candidateId"]
-        if (
-            not isinstance(candidate_id, str)
-            or candidate_id in admitted
-            or not _SHA256.fullmatch(str(item["resultSha256"]))
-            or not _SHA256.fullmatch(str(item["runtimeReceiptSha256"]))
-        ):
-            raise ValueError("agent evidence registry identity is invalid")
-        admitted[candidate_id] = {
-            "resultSha256": str(item["resultSha256"]),
-            "runtimeReceiptSha256": str(item["runtimeReceiptSha256"]),
-        }
-    if set(admitted) != set(candidate_ids):
-        raise ValueError("agent evidence registry candidate set is incomplete")
-    return admitted
-
-
-def _runtime_receipt(
+def _validate_runtime_receipt(
     candidate: CheckedCandidate,
     *,
     expected: dict[str, object],
-    evidence_root: Path,
-    expected_sha256: str,
-) -> dict[str, dict[str, object]]:
-    value, _identity = read_json_object_with_identity(
-        evidence_root
-        / "agent-model"
-        / str(expected["candidateId"])
-        / "runtime-receipt.json",
-        maximum_bytes=256_000,
-        field="agent model runtime receipt",
-        expected_sha256=expected_sha256,
-        containment_root=evidence_root,
-    )
+    receipt: dict[str, object],
+    children: dict[str, dict[str, object]],
+) -> None:
+    value = receipt
     required = {
         "schemaVersion",
         "checkedHead",
@@ -347,7 +258,7 @@ def _runtime_receipt(
             "python": "3.12",
             "vllm": "0.22.1+7b9cb5b7.dev",
         }
-        or not _SHA256.fullmatch(str(value["modelArtifactManifestSha256"]))
+        or value["modelArtifactManifestSha256"] != expected["artifactManifestSha256"]
         or not isinstance(value["imageId"], str)
         or not re.fullmatch(r"sha256:[0-9a-f]{64}", value["imageId"])
         or value["launchArguments"] != _expected_launch_arguments(expected)
@@ -366,23 +277,13 @@ def _runtime_receipt(
             "containerAbsent": True,
             "listenerAbsent": True,
             "ownedWorkersReaped": True,
+            "ownedCgroupEmpty": True,
         }
     ):
         raise ValueError("agent runtime receipt identity is invalid")
-    children: dict[str, dict[str, object]] = {}
     for name, digest in value["childEvidenceSha256"].items():
-        child, _child_identity = read_json_object_with_identity(
-            evidence_root
-            / "agent-model"
-            / str(expected["candidateId"])
-            / "children"
-            / f"{name}.json",
-            maximum_bytes=16_000_000 if name == "fixtures" else 256_000,
-            field=f"agent model {name} evidence",
-            expected_sha256=str(digest),
-            containment_root=evidence_root,
-        )
-        children[str(name)] = child
+        if agent_evidence_sha256(children[str(name)]) != digest:
+            raise ValueError("agent runtime child evidence digest differs")
     lifecycle = children["lifecycle"]
     if (
         lifecycle.get("imageId") != value["imageId"]
@@ -391,7 +292,6 @@ def _runtime_receipt(
         or lifecycle.get("launchArgumentsSha256") != value["launchArgumentsSha256"]
     ):
         raise ValueError("agent runtime lifecycle binding differs")
-    return children
 
 
 def _verify_runtime_children(
@@ -439,10 +339,35 @@ def _verify_runtime_children(
             "engineActivityObserved": True,
             "engineIdleAfterCancellation": True,
             "recoverySucceeded": True,
+            "engineFinishReasons": cancellation["engineFinishReasons"],
+            "recoveryEngineFinishReasons": {
+                "stop": 1,
+                "length": 0,
+                "abort": 0,
+                "error": 0,
+                "repetition": 0,
+            },
             "cancelledRequestCompletionCount": pressure[
                 "cancelledRequestCompletionCount"
             ],
         }
+        or cancellation["engineFinishReasons"]
+        not in (
+            {
+                "stop": 0,
+                "length": 0,
+                "abort": 0,
+                "error": 0,
+                "repetition": 0,
+            },
+            {
+                "stop": 0,
+                "length": 0,
+                "abort": 1,
+                "error": 0,
+                "repetition": 0,
+            },
+        )
         or set(resources)
         != {
             "schemaVersion",
@@ -454,8 +379,8 @@ def _verify_runtime_children(
         }
         or resources["schemaVersion"] != 1
         or resources["measurementBoundary"] != "owned-vllm-cgroup-v2"
-        or resources["baselineMemoryBytes"] != pressure["baselineUnifiedMemoryBytes"]
-        or resources["peakMemoryBytes"] != pressure["peakUnifiedMemoryBytes"]
+        or resources["baselineMemoryBytes"] != pressure["baselineCgroupMemoryBytes"]
+        or resources["peakMemoryBytes"] != pressure["peakCgroupMemoryBytes"]
         or not _positive_int(resources["sampleCount"])
         or set(lifecycle)
         != {
@@ -514,7 +439,7 @@ def _ranking_key(summary: dict[str, object]) -> tuple[int, int, int, str]:
     return (
         int(summary["concurrencyC8P95LatencyMilliseconds"]),
         int(summary["warmP95LatencyMilliseconds"]),
-        int(summary["incrementalUnifiedMemoryBytes"]),
+        int(summary["incrementalCgroupMemoryBytes"]),
         str(summary["candidateId"]),
     )
 
@@ -537,8 +462,8 @@ def _nonnegative_int(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value >= 0
 
 
-def _evidence_root(repository_root: Path, environ: Mapping[str, str]) -> Path:
-    raw = environ.get("YAP_EVAL_CACHE", "").strip()
+def _evidence_root(repository_root: Path) -> Path:
+    raw = os.environ.get("YAP_EVAL_CACHE", "").strip()
     if not raw:
         raise ValueError("YAP_EVAL_CACHE is required")
     root = Path(raw).resolve(strict=True)
@@ -560,13 +485,29 @@ def main(argv: list[str] | None = None) -> int:
         checked_head=arguments.checked_head,
         input_paths=tuple(repository_root / path for path in _INPUTS),
     )
-    evidence_root = _evidence_root(repository_root, os.environ)
-    registry_sha256 = os.environ.get("YAP_EVAL_AGENT_EVIDENCE_REGISTRY_SHA256", "")
+    evidence_root = _evidence_root(repository_root)
+    acceptance = load_agent_model_acceptance(repository_root)
+    runs = tuple(
+        run_agent_model_candidate(
+            checked_candidate=candidate,
+            candidate_id=candidate_id,
+        )
+        for candidate_id in acceptance.candidate_ids
+    )
     decision = evaluate_agent_model_qualification(
         candidate=candidate,
-        evidence_root=evidence_root,
-        evidence_registry_sha256=registry_sha256,
+        runs=runs,
     )
+    for run in runs:
+        directory = evidence_root / "agent-model" / run.candidate_id
+        for name, child in run.children.items():
+            write_new_agent_model_evidence(
+                directory / "children" / f"{name}.json", child
+            )
+        write_new_agent_model_evidence(
+            directory / "runtime-receipt.json", run.runtime_receipt
+        )
+        write_new_agent_model_evidence(directory / "results.json", run.evidence)
     write_new_agent_model_evidence(
         evidence_root / "agent-model" / "qualification.json", decision
     )

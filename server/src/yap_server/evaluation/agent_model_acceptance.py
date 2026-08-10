@@ -129,6 +129,7 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
             "candidateId",
             "model",
             "revision",
+            "artifactManifestSha256",
             "quantization",
             "toolCallParser",
             "license",
@@ -137,6 +138,7 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
             "candidateId",
             "model",
             "revision",
+            "artifactManifestSha256",
             "quantization",
             "toolCallParser",
             "reasoningParser",
@@ -151,6 +153,10 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
             candidate["revision"]
         ):
             raise ValueError("agent candidate revision is invalid")
+        if not isinstance(
+            candidate["artifactManifestSha256"], str
+        ) or not _SHA256.fullmatch(candidate["artifactManifestSha256"]):
+            raise ValueError("agent candidate artifact manifest is invalid")
         if not isinstance(candidate["source"], str) or not candidate[
             "source"
         ].startswith("https://huggingface.co/"):
@@ -260,7 +266,7 @@ def _selection_policy(value: object) -> dict[str, object]:
         "ranking": [
             "concurrencyC8P95LatencyMilliseconds",
             "warmP95LatencyMilliseconds",
-            "incrementalUnifiedMemoryBytes",
+            "incrementalCgroupMemoryBytes",
             "candidateId",
         ],
     }

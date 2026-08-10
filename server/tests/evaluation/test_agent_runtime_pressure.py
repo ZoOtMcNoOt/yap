@@ -4,8 +4,7 @@ import threading
 from pathlib import Path
 import json
 import re
-
-import pytest
+import unittest
 
 from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
 from yap_server.evaluation.agent_runtime_pressure import run_agent_runtime_pressure
@@ -14,11 +13,29 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 class _RuntimeActivity:
-    def wait_for_running_requests(self, *, minimum: int, timeout_seconds: float):
-        assert minimum == 1
+    def begin_cancellation(self, *, timeout_seconds: float):
+        return object()
 
-    def wait_for_idle(self, *, timeout_seconds: float):
+    def wait_until_running(self, *, timeout_seconds: float):
         return None
+
+    def after_cancellation(self, token: object, *, timeout_seconds: float):
+        return object(), {
+            "stop": 0,
+            "length": 0,
+            "abort": 1,
+            "error": 0,
+            "repetition": 0,
+        }
+
+    def after_recovery(self, token: object, *, timeout_seconds: float):
+        return {
+            "stop": 1,
+            "length": 0,
+            "abort": 0,
+            "error": 0,
+            "repetition": 0,
+        }
 
 
 def test_runs_every_frozen_pressure_track() -> None:
@@ -103,7 +120,7 @@ def test_rejects_unrelated_cancellation_failure() -> None:
         dispatched.set()
         return request(prompt, cancellation)
 
-    with pytest.raises(RuntimeError, match="failed incorrectly"):
+    with unittest.TestCase().assertRaisesRegex(RuntimeError, "failed incorrectly"):
         run_agent_runtime_pressure(
             REPOSITORY_ROOT,
             request=request,
@@ -115,7 +132,7 @@ def test_rejects_unrelated_cancellation_failure() -> None:
 
 def test_requires_observed_engine_activity_before_cancellation() -> None:
     class MissingActivity(_RuntimeActivity):
-        def wait_for_running_requests(self, *, minimum: int, timeout_seconds: float):
+        def wait_until_running(self, *, timeout_seconds: float):
             raise TimeoutError("no engine activity")
 
     def request(prompt: str, cancellation: threading.Event) -> str:
@@ -129,7 +146,7 @@ def test_requires_observed_engine_activity_before_cancellation() -> None:
             return _answer("BRAVO-2M4")
         return _answer(_expected_marker(prompt))
 
-    with pytest.raises(TimeoutError, match="no engine activity"):
+    with unittest.TestCase().assertRaisesRegex(TimeoutError, "no engine activity"):
         run_agent_runtime_pressure(
             REPOSITORY_ROOT,
             request=request,

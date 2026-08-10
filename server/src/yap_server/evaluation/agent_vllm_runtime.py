@@ -162,7 +162,10 @@ class OwnedAgentVllmRuntime:
         container_absent = not self._container_exists()
         listener_absent = _listener_is_absent(_PORT)
         workers_reaped = not Path(f"/proc/{started.process_id}").exists()
-        if not (container_absent and listener_absent and workers_reaped):
+        cgroup_empty = _cgroup_is_empty(started.cgroup_path)
+        if not (
+            container_absent and listener_absent and workers_reaped and cgroup_empty
+        ):
             raise RuntimeError("agent runtime teardown did not complete")
         return {
             "schemaVersion": 1,
@@ -181,6 +184,7 @@ class OwnedAgentVllmRuntime:
                 "containerAbsent": container_absent,
                 "listenerAbsent": listener_absent,
                 "ownedWorkersReaped": workers_reaped,
+                "ownedCgroupEmpty": cgroup_empty,
             },
         }
 
@@ -246,7 +250,9 @@ class OwnedAgentVllmRuntime:
                 record["sha256"] = _file_sha256(resolved)
             records.append(record)
             required.discard(path.name)
-        if required or not any(record["path"].endswith(".safetensors") for record in records):
+        if required or not any(
+            record["path"].endswith(".safetensors") for record in records
+        ):
             raise ValueError("agent model snapshot is incomplete")
         identity = {
             "schemaVersion": 1,
@@ -254,12 +260,13 @@ class OwnedAgentVllmRuntime:
             "revision": revision,
             "artifacts": records,
         }
-        return model_root, snapshot, canonical_evidence_sha256(identity)
+        observed_manifest = canonical_evidence_sha256(identity)
+        if observed_manifest != self._candidate.get("artifactManifestSha256"):
+            raise ValueError("agent model artifacts differ from the checked manifest")
+        return model_root, snapshot, observed_manifest
 
     def _launch_arguments(self, snapshot: Path) -> list[str]:
-        relative = snapshot.relative_to(
-            self._home / ".cache" / "huggingface" / "hub"
-        )
+        relative = snapshot.relative_to(self._home / ".cache" / "huggingface" / "hub")
         container_snapshot = "/model-cache/" + "/".join(relative.parts[1:])
         arguments = [
             "vllm",
@@ -322,7 +329,9 @@ class OwnedAgentVllmRuntime:
         lines = [line for line in membership.splitlines() if line.startswith("0::")]
         if len(lines) != 1:
             raise ValueError("agent runtime cgroup membership is invalid")
-        cgroup = (Path("/sys/fs/cgroup") / lines[0][3:].lstrip("/")).resolve(strict=True)
+        cgroup = (Path("/sys/fs/cgroup") / lines[0][3:].lstrip("/")).resolve(
+            strict=True
+        )
         if Path("/sys/fs/cgroup").resolve(strict=True) not in cgroup.parents:
             raise ValueError("agent runtime cgroup escaped its hierarchy")
         return process_id, cgroup
@@ -375,7 +384,9 @@ class OwnedAgentVllmRuntime:
         )
 
 
-def _single_inspection(completed: subprocess.CompletedProcess[str]) -> dict[str, object]:
+def _single_inspection(
+    completed: subprocess.CompletedProcess[str],
+) -> dict[str, object]:
     try:
         value = json.loads(completed.stdout)
     except (json.JSONDecodeError, TypeError) as error:
@@ -404,6 +415,14 @@ def _listener_is_absent(port: int) -> bool:
             return False
     except OSError:
         return True
+
+
+def _cgroup_is_empty(path: Path) -> bool:
+    try:
+        contents = (path / "cgroup.procs").read_text(encoding="ascii")
+    except FileNotFoundError:
+        return True
+    return not contents.split()
 
 
 __all__ = ["OwnedAgentVllmRuntime", "StartedAgentVllmRuntime"]
