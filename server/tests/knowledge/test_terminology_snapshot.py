@@ -98,13 +98,8 @@ class TerminologySnapshotTests(unittest.TestCase):
                 glossary[0].document, encoding="utf-8"
             )
             (root / "permissions").mkdir()
-            (root / "permissions" / "glossary.yml").write_text(
-                """path_prefix: jargon_glossary/
-audience: {users: [{tenant_id: tenant-a, subject_id: alice}]}
-purposes: [knowledge.read]
-classification: internal
-denials: {users: []}
-""",
+            (root / glossary[0].permission_relative_path).write_text(
+                glossary[0].permission_document,
                 encoding="utf-8",
             )
             generation = compile_okf_bundle(
@@ -113,6 +108,11 @@ denials: {users: []}
                 source_revision="terminology-revision-8",
             )
         self.assertEqual(generation.concepts[0].frontmatter["type"], "Term")
+        self.assertEqual(generation.permissions[0].classification, "internal")
+        self.assertEqual(
+            generation.permissions[0].audience,
+            (PrincipalKey("tenant-a", "alice"),),
+        )
 
     def test_rejects_equal_precedence_conflicts_and_unsupported_provider_context(
         self,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from pathlib import PurePosixPath
 import re
 
@@ -43,6 +44,8 @@ class TerminologyNormalization:
 class RenderedGlossaryConcept:
     relative_path: PurePosixPath
     document: str
+    permission_relative_path: PurePosixPath
+    permission_document: str
 
 
 def compile_provider_terminology(
@@ -119,6 +122,8 @@ def render_glossary_concepts(
 
     rendered: list[RenderedGlossaryConcept] = []
     for record in snapshot.entries:
+        projection_id = hashlib.sha256(record.record_id.encode("utf-8")).hexdigest()
+        concept_path = f"jargon_glossary/{projection_id}"
         frontmatter = {
             "type": "Term",
             "title": record.canonical_form,
@@ -141,11 +146,29 @@ def render_glossary_concepts(
         }
         yaml_body = yaml.safe_dump(frontmatter, sort_keys=True, allow_unicode=True)
         document = f"---\n{yaml_body}---\n# {record.canonical_form}\n"
+        permission = {
+            "path_prefix": f"{concept_path}/",
+            "audience": {
+                "users": [
+                    {
+                        "tenant_id": snapshot.tenant_id,
+                        "subject_id": snapshot.subject_id,
+                    }
+                ]
+            },
+            "purposes": ["knowledge.read"],
+            "classification": record.sensitivity,
+            "denials": {"users": []},
+        }
         rendered.append(
             RenderedGlossaryConcept(
-                relative_path=PurePosixPath("jargon_glossary")
-                / f"{record.record_id}.md",
+                relative_path=PurePosixPath(f"{concept_path}.md"),
                 document=document,
+                permission_relative_path=PurePosixPath("permissions")
+                / f"jargon-glossary-{projection_id}.yml",
+                permission_document=yaml.safe_dump(
+                    permission, sort_keys=True, allow_unicode=True
+                ),
             )
         )
     return tuple(rendered)
