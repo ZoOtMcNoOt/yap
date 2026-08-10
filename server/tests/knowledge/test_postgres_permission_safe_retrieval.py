@@ -102,6 +102,28 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
                 agent_capabilities=capabilities,
                 search_text="zircon hidden",
             )
+            wrong_owner = search_postgres_knowledge_lexical(
+                connection,
+                principal=PrincipalKey(tenant_id, "bob"),
+                purpose="knowledge.read",
+                agent_capabilities=capabilities,
+                search_text="approved roadmap",
+            )
+            wrong_purpose = search_postgres_knowledge_lexical(
+                connection,
+                principal=alice,
+                purpose="knowledge.write",
+                agent_capabilities=capabilities,
+                search_text="approved roadmap",
+            )
+            with self.assertRaisesRegex(LookupError, "no active knowledge generation"):
+                search_postgres_knowledge_lexical(
+                    connection,
+                    principal=PrincipalKey(f"other-{tenant_id}", "alice"),
+                    purpose="knowledge.read",
+                    agent_capabilities=capabilities,
+                    search_text="approved roadmap",
+                )
             vector = search_postgres_knowledge_vector(
                 connection,
                 principal=alice,
@@ -161,6 +183,8 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
         self.assertEqual(len(visible.results), 1)
         self.assertEqual(visible.results[0].text, "Approved roadmap work is ready.")
         self.assertEqual(hidden.results, ())
+        self.assertEqual(wrong_owner.results, ())
+        self.assertEqual(wrong_purpose.results, ())
         self.assertEqual(
             tuple(item.concept_id for item in vector.results), ("projects/voiceos",)
         )
