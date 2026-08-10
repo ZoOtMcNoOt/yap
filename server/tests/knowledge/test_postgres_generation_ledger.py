@@ -124,8 +124,6 @@ def _embed_and_activate(connection, generation) -> None:
         connection,
         tenant_id=generation.tenant_id,
         generation_sha256=generation.generation_sha256,
-        embedding_model_id="synthetic-test",
-        embedding_model_revision="revision-1",
     )
 
 

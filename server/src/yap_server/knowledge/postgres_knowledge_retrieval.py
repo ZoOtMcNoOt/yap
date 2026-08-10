@@ -98,8 +98,6 @@ def search_postgres_knowledge_vector(
     purpose: str,
     agent_capabilities: frozenset[str],
     query_embedding: tuple[float, ...],
-    embedding_model_id: str,
-    embedding_model_revision: str,
     maximum_results: int = 10,
     expected_generation_sha256: str | None = None,
 ) -> tuple[PostgresKnowledgeSearchResult, ...]:
@@ -117,8 +115,6 @@ def search_postgres_knowledge_vector(
         connection,
         query,
         vector,
-        embedding_model_id,
-        embedding_model_revision,
         maximum_results,
     )
 
@@ -131,8 +127,6 @@ def search_postgres_knowledge_hybrid(
     agent_capabilities: frozenset[str],
     search_text: str,
     query_embedding: tuple[float, ...],
-    embedding_model_id: str,
-    embedding_model_revision: str,
     maximum_results: int = 10,
     expected_generation_sha256: str | None = None,
 ) -> tuple[PostgresKnowledgeSearchResult, ...]:
@@ -152,8 +146,6 @@ def search_postgres_knowledge_hybrid(
         connection,
         query,
         vector,
-        embedding_model_id,
-        embedding_model_revision,
         candidate_limit,
     )
     ranked: dict[tuple[str, int], PostgresKnowledgeSearchResult] = {}
@@ -221,8 +213,6 @@ def _vector_results(
     connection: Connection[object],
     query: AuthorizedKnowledgeQuery,
     vector: str,
-    model_id: str,
-    model_revision: str,
     maximum_results: int,
 ) -> tuple[PostgresKnowledgeSearchResult, ...]:
     if not query.visible_concept_ids:
@@ -242,8 +232,7 @@ def _vector_results(
             AND b.generation_sha256 = h.generation_sha256
            WHERE h.tenant_id = %s AND h.generation_sha256 = %s
              AND h.concept_id = ANY(%s)
-             AND h.embedding_model_id = %s
-             AND h.embedding_model_revision = %s
+             AND h.embedding IS NOT NULL
              AND NOT EXISTS (
                 SELECT 1 FROM jsonb_array_elements_text(h.linked_concept_ids) link
                 WHERE NOT (link = ANY(%s))
@@ -255,8 +244,6 @@ def _vector_results(
             query.tenant_id,
             query.generation_sha256,
             visible,
-            model_id,
-            model_revision,
             visible,
             maximum_results,
         ),

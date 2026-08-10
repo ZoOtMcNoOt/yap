@@ -89,8 +89,6 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 connection,
                 tenant_id=tenant_id,
                 generation_sha256=generation.generation_sha256,
-                embedding_model_id="synthetic-test",
-                embedding_model_revision="revision-1",
             )
             results = search_postgres_knowledge_lexical(
                 connection,

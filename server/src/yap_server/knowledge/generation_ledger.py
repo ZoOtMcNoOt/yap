@@ -37,6 +37,8 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                 chunk_count integer NOT NULL CHECK (chunk_count >= 0),
                 relationship_count integer NOT NULL CHECK (relationship_count >= 0),
                 permission_count integer NOT NULL CHECK (permission_count > 0),
+                embedding_model_id text,
+                embedding_model_revision text,
                 created_at timestamptz NOT NULL DEFAULT transaction_timestamp(),
                 PRIMARY KEY (tenant_id, generation_sha256)
             )"""
@@ -384,6 +386,22 @@ def store_generation_embeddings(
                     chunk_id,
                 ),
             )
+        connection.execute(
+            """UPDATE yap_knowledge_builds
+               SET embedding_model_id = %s, embedding_model_revision = %s
+               WHERE tenant_id = %s AND generation_sha256 = %s
+                 AND embedding_model_id IS NULL
+                 AND embedding_model_revision IS NULL""",
+            (model_id, model_revision, tenant_id, generation_sha256),
+        )
+        build_identity = connection.execute(
+            """SELECT embedding_model_id, embedding_model_revision
+               FROM yap_knowledge_builds
+               WHERE tenant_id = %s AND generation_sha256 = %s""",
+            (tenant_id, generation_sha256),
+        ).fetchone()
+        if build_identity != (model_id, model_revision):
+            raise ValueError("knowledge generation embedding identity is immutable")
 
 
 def activate_complete_generation(
@@ -391,13 +409,9 @@ def activate_complete_generation(
     *,
     tenant_id: str,
     generation_sha256: str,
-    embedding_model_id: str,
-    embedding_model_revision: str,
 ) -> KnowledgeGenerationDescriptor:
     """Atomically expose a complete relational and vector generation."""
 
-    model_id = identity(embedding_model_id, "embedding_model_id")
-    model_revision = identity(embedding_model_revision, "embedding_model_revision")
     with connection.transaction():
         connection.execute(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (tenant_id,)
@@ -405,13 +419,16 @@ def activate_complete_generation(
         row = connection.execute(
             """SELECT tenant_id, generation_sha256, source_revision,
                       okf_version, concept_count, permission_count,
-                      chunk_count, relationship_count
+                      chunk_count, relationship_count,
+                      embedding_model_id, embedding_model_revision
                FROM yap_knowledge_builds
                WHERE tenant_id = %s AND generation_sha256 = %s""",
             (tenant_id, generation_sha256),
         ).fetchone()
         if row is None:
             raise LookupError("staged knowledge generation does not exist")
+        if row[8] is None or row[9] is None:
+            raise ValueError("staged knowledge embedding projection is absent")
         actual = connection.execute(
             """SELECT
                 (SELECT count(*) FROM yap_knowledge_concepts
@@ -438,8 +455,8 @@ def activate_complete_generation(
                 generation_sha256,
                 tenant_id,
                 generation_sha256,
-                model_id,
-                model_revision,
+                row[8],
+                row[9],
             ),
         ).fetchone()
         expected = (row[4], row[5], row[6], row[7], row[6])

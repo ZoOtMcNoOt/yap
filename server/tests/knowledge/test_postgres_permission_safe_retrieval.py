@@ -64,8 +64,6 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
                 connection,
                 tenant_id=tenant_id,
                 generation_sha256=generation.generation_sha256,
-                embedding_model_id="synthetic-test",
-                embedding_model_revision="revision-1",
             )
             hybrid = search_postgres_knowledge_hybrid(
                 connection,
@@ -75,8 +73,6 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
                 | frozenset({"knowledge.search.hybrid"}),
                 search_text="approved roadmap",
                 query_embedding=(1.0,) + (0.0,) * 767,
-                embedding_model_id="synthetic-test",
-                embedding_model_revision="revision-1",
                 maximum_results=1,
             )
             relationships = traverse_postgres_knowledge_relationships(
@@ -113,8 +109,6 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
                 agent_capabilities=capabilities
                 | frozenset({"knowledge.search.vector"}),
                 query_embedding=(1.0,) + (0.0,) * 767,
-                embedding_model_id="synthetic-test",
-                embedding_model_revision="revision-1",
                 maximum_results=1,
             )
             with self.assertRaisesRegex(ValueError, "stale"):
@@ -142,8 +136,6 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
                 connection,
                 tenant_id=tenant_id,
                 generation_sha256=revoked_generation.generation_sha256,
-                embedding_model_id="synthetic-test",
-                embedding_model_revision="revision-1",
             )
             after_revocation = search_postgres_knowledge_lexical(
                 connection,
