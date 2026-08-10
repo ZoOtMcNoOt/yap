@@ -18,6 +18,10 @@ from .knowledge_tool_contract import KnowledgeToolCancelled, SearchKnowledgeRequ
 ReasoningFunction = Callable[[str, threading.Event], str]
 
 
+class ReasoningRetryableError(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
 class GovernedRagResult:
     answer: str
@@ -115,7 +119,7 @@ class GovernedRagAgent:
                 )
                 _validate_reasoned_answer(parsed, retrieval.items, terminology_exact_forms)
                 break
-            except ValueError:
+            except (ValueError, ReasoningRetryableError):
                 parsed = None
         if parsed is None:
             raise ValueError("reasoning model did not produce an admissible answer")
@@ -220,4 +224,9 @@ def _validate_reasoned_answer(
         raise ValueError("reasoning output changed governed terminology")
 
 
-__all__ = ["GovernedRagAgent", "GovernedRagResult", "ReasoningFunction"]
+__all__ = [
+    "GovernedRagAgent",
+    "GovernedRagResult",
+    "ReasoningFunction",
+    "ReasoningRetryableError",
+]
