@@ -168,12 +168,15 @@ def _candidate_summary(
     )
     warm_p95 = _p95(pressure["warmLatencyMilliseconds"])
     c8_p95 = _p95(pressure["concurrencyLatencyMilliseconds"]["8"])
+    fixture_p95 = _p95(score.latency_milliseconds)
     route_evidence_passed = _route_evidence_passed(
         route_policy,
         workload_class=str(expected["workloadClass"]),
         results=results,
+        fixture_p95=fixture_p95,
         warm_p95=warm_p95,
         c8_p95=c8_p95,
+        route_specific_evidence_passed=score.route_specific_evidence_passed,
     )
     eligible = (
         score.passed
@@ -194,6 +197,7 @@ def _candidate_summary(
         "isolationLeakCount": score.isolation_leak_count,
         "invalidStructuredOutputCount": score.invalid_structured_output_count,
         "concurrencyC8P95LatencyMilliseconds": c8_p95,
+        "fixtureP95LatencyMilliseconds": fixture_p95,
         "warmP95LatencyMilliseconds": warm_p95,
         "incrementalCgroupMemoryBytes": max(
             0,
@@ -207,19 +211,23 @@ def _route_evidence_passed(
     *,
     workload_class: str,
     results: list[object],
+    fixture_p95: int,
     warm_p95: int,
     c8_p95: int,
+    route_specific_evidence_passed: bool,
 ) -> bool:
     if not isinstance(policy, dict):
         raise ValueError("agent route evidence policy is invalid")
     if workload_class == "rapid-automation":
         return (
+            fixture_p95 <= policy["maximumFixtureP95LatencyMilliseconds"]
+            and
             warm_p95 <= policy["maximumWarmP95LatencyMilliseconds"]
             and c8_p95 <= policy["maximumC8P95LatencyMilliseconds"]
         )
     if workload_class == "complex-orchestration":
         required = policy["requiredMultiStepCaseId"]
-        return any(
+        return route_specific_evidence_passed and any(
             isinstance(result, dict)
             and result.get("caseId") == required
             and [
@@ -574,7 +582,12 @@ def _expected_launch_arguments(expected: dict[str, object]) -> list[str]:
 
 
 def _p95(values: object) -> int:
-    assert isinstance(values, list)
+    if (
+        not isinstance(values, (list, tuple))
+        or not values
+        or not all(_nonnegative_int(value) for value in values)
+    ):
+        raise ValueError("agent latency evidence is invalid")
     ordered = sorted(values)
     return ordered[math.ceil(len(ordered) * 0.95) - 1]
 

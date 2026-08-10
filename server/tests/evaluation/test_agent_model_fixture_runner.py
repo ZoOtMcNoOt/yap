@@ -4,7 +4,10 @@ import json
 from pathlib import Path
 import unittest
 
-from yap_server.evaluation.agent_model_fixture_runner import run_agent_model_fixtures
+from yap_server.evaluation.agent_model_fixture_runner import (
+    _step_visible_context,
+    run_agent_model_fixtures,
+)
 from yap_server.evaluation.agent_model_scoring import score_agent_model_results
 
 
@@ -12,6 +15,32 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 class AgentModelFixtureRunnerTests(unittest.TestCase):
+    def test_withholds_context_from_semantically_wrong_orchestration_step(self) -> None:
+        fixture = json.loads(
+            (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        case = next(
+            item
+            for item in fixture["cases"]
+            if item["caseId"] == "complex-governed-orchestration"
+        )
+
+        self.assertEqual(
+            _step_visible_context(
+                case,
+                step_index=1,
+                tool_name="traverse_knowledge",
+                arguments={
+                    "purpose": "knowledge.read",
+                    "start_concept_id": "unrelated/concept",
+                    "maximum_depth": 2,
+                },
+            ),
+            [],
+        )
+
     def test_runs_complex_orchestration_as_three_owned_tool_steps(self) -> None:
         fixture = json.loads(
             (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
@@ -58,6 +87,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             if "expectedToolSequence" not in case:
                 prior_calls = 0
             name = sequence[prior_calls]
+            expected_calls = case.get("expectedToolCalls")
             if name == "search_knowledge":
                 arguments = {
                     "purpose": "knowledge.read",
@@ -91,6 +121,10 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                         for item in case["visibleContext"]
                     ],
                 }
+            if isinstance(expected_calls, list):
+                expected_call = expected_calls[prior_calls]
+                assert isinstance(expected_call, dict)
+                arguments.update(expected_call["expectedArguments"])
             arguments.update(case.get("expectedArguments", {}))
             return _tool_response(name, arguments)
 

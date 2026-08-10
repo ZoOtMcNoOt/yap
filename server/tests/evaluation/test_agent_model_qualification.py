@@ -121,6 +121,33 @@ class AgentModelQualificationTests(unittest.TestCase):
         )
         self.assertFalse(qwen["routeEvidencePassed"])
 
+    def test_rejects_slow_rapid_fixture_when_marker_pressure_is_fast(self) -> None:
+        candidate = _checked_candidate()
+        runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                fixture_latency=4_000,
+            ),
+            _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10),
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            decision = evaluate_agent_model_qualification(
+                candidate=candidate, runs=runs
+            )
+
+        self.assertEqual(decision["outcome"], "deterministic-no-model")
+        qwen = next(
+            summary
+            for summary in decision["candidateSummaries"]
+            if summary["candidateId"] == "qwen3.6-35b-a3b-nvfp4"
+        )
+        self.assertEqual(qwen["warmP95LatencyMilliseconds"], 20)
+        self.assertEqual(qwen["fixtureP95LatencyMilliseconds"], 4_000)
+        self.assertFalse(qwen["routeEvidencePassed"])
+
     def test_rejects_incomplete_complex_orchestration_sequence(self) -> None:
         candidate = _checked_candidate()
         qwen = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
@@ -129,6 +156,29 @@ class AgentModelQualificationTests(unittest.TestCase):
             "gemma-4-31b-it-nvfp4",
             10,
             incomplete_complex_sequence=True,
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            decision = evaluate_agent_model_qualification(
+                candidate=candidate, runs=(qwen, gemma)
+            )
+
+        self.assertEqual(decision["outcome"], "deterministic-no-model")
+        summary = next(
+            item
+            for item in decision["candidateSummaries"]
+            if item["candidateId"] == "gemma-4-31b-it-nvfp4"
+        )
+        self.assertFalse(summary["routeEvidencePassed"])
+
+    def test_rejects_semantically_wrong_complex_intermediate_call(self) -> None:
+        candidate = _checked_candidate()
+        qwen = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
+        gemma = _candidate_run(
+            candidate,
+            "gemma-4-31b-it-nvfp4",
+            10,
+            wrong_complex_traversal=True,
         )
 
         with patch.object(CheckedCandidate, "verify_unchanged"):
@@ -207,6 +257,8 @@ def _candidate_run(
     *,
     passing: bool = True,
     incomplete_complex_sequence: bool = False,
+    wrong_complex_traversal: bool = False,
+    fixture_latency: int = 10,
 ) -> AgentCandidateRun:
     lock = json.loads(
         (REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json").read_text(
@@ -227,6 +279,16 @@ def _candidate_run(
             if result["caseId"] == "complex-governed-orchestration"
         )
         complex_result["toolCalls"] = complex_result["toolCalls"][:-1]  # type: ignore[index]
+    if wrong_complex_traversal:
+        complex_result = next(
+            result
+            for result in results
+            if result["caseId"] == "complex-governed-orchestration"
+        )
+        traversal = complex_result["toolCalls"][1]["arguments"]  # type: ignore[index]
+        traversal["start_concept_id"] = "unrelated/concept"
+    for result in results:
+        result["latencyMilliseconds"] = fixture_latency
     launch_arguments = _launch_arguments(model)
     launch_sha256 = canonical_evidence_sha256(launch_arguments)
     children = _children(candidate, model, results, latency, launch_sha256)
@@ -423,9 +485,12 @@ def _perfect_tool_calls(
     sequence = case.get("expectedToolSequence", [case["expectedTool"]])
     assert isinstance(sequence, list)
     calls: list[dict[str, object]] = []
-    for name in sequence:
+    expected_calls = case.get("expectedToolCalls")
+    for index, name in enumerate(sequence):
         if name == case["expectedTool"]:
             arguments = final_arguments
+        elif isinstance(expected_calls, list):
+            arguments = dict(expected_calls[index]["expectedArguments"])
         elif name == "search_knowledge":
             arguments = {
                 "purpose": "knowledge.read",

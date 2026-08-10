@@ -134,7 +134,7 @@ def _run_case(
         messages.extend(_retrieval_messages(case))
     expected_sequence = tuple(case.get("expectedToolSequence", [case["expectedTool"]]))
     tool_calls: list[tuple[str, dict[str, object]]] = []
-    for _expected_tool in expected_sequence:
+    for step_index, _expected_tool in enumerate(expected_sequence):
         response = request_json(
             {
                 "model": model,
@@ -158,7 +158,12 @@ def _run_case(
                 "content": json.dumps(
                     {
                         "generationSha256": "f" * 64,
-                        "items": case["visibleContext"],
+                        "items": _step_visible_context(
+                            case,
+                            step_index=step_index,
+                            tool_name=tool_name,
+                            arguments=arguments,
+                        ),
                         "outputBudgetExhausted": False,
                     },
                     ensure_ascii=False,
@@ -206,6 +211,29 @@ def _run_case(
         latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
         tool_calls=tuple(tool_calls),
     )
+
+
+def _step_visible_context(
+    case: dict[str, object],
+    *,
+    step_index: int,
+    tool_name: str,
+    arguments: dict[str, object],
+) -> object:
+    expected_calls = case.get("expectedToolCalls")
+    if expected_calls is None:
+        return case["visibleContext"]
+    if not isinstance(expected_calls, list) or step_index >= len(expected_calls):
+        raise ValueError("agent expected tool calls are invalid")
+    expected = expected_calls[step_index]
+    if not isinstance(expected, dict) or expected.get("name") != tool_name:
+        return []
+    required = expected.get("expectedArguments")
+    if not isinstance(required, dict) or not all(
+        arguments.get(key) == value for key, value in required.items()
+    ):
+        return []
+    return case["visibleContext"]
 
 
 def _retrieval_messages(case: dict[str, object]) -> list[dict[str, object]]:

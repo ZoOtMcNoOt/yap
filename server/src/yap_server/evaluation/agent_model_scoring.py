@@ -31,6 +31,7 @@ class AgentModelScore:
     isolation_leak_count: int
     invalid_structured_output_count: int
     latency_milliseconds: tuple[int, ...]
+    route_specific_evidence_passed: bool
     passed: bool
 
 
@@ -86,6 +87,7 @@ def score_agent_model_results(
     terminology_pass = 0
     leaks = 0
     latencies: list[int] = []
+    route_specific_evidence_passed = True
     for case_id, case in by_id.items():
         result = result_by_id[case_id]
         expected_sequence = case.get("expectedToolSequence", [case.get("expectedTool")])
@@ -111,6 +113,12 @@ def score_agent_model_results(
                     )
                 if not tool_calls or tool_calls[-1].get("arguments") != arguments:
                     raise ValueError("agent final tool arguments differ")
+                expected_calls = case.get("expectedToolCalls")
+                if expected_calls is not None and not _tool_calls_match_expected(
+                    tool_calls, expected_calls
+                ):
+                    route_specific_evidence_passed = False
+                    raise ValueError("agent multi-step arguments differ")
             else:
                 raise ValueError("agent tool arguments must be an object")
             if all(arguments.get(key) == value for key, value in expected_arguments.items()):
@@ -148,6 +156,7 @@ def score_agent_model_results(
         isolation_leak_count=leaks,
         invalid_structured_output_count=invalid,
         latency_milliseconds=tuple(latencies),
+        route_specific_evidence_passed=route_specific_evidence_passed,
         passed=False,
     )
     passed = (
@@ -159,6 +168,24 @@ def score_agent_model_results(
         and metrics.invalid_structured_output_count == 0
     )
     return replace(metrics, passed=passed)
+
+
+def _tool_calls_match_expected(tool_calls: list[object], expected_calls: object) -> bool:
+    if not isinstance(expected_calls, list) or len(tool_calls) != len(expected_calls):
+        return False
+    for call, expected in zip(tool_calls, expected_calls, strict=True):
+        if not isinstance(call, dict) or not isinstance(expected, dict):
+            return False
+        arguments = call.get("arguments")
+        required = expected.get("expectedArguments")
+        if (
+            call.get("name") != expected.get("name")
+            or not isinstance(arguments, dict)
+            or not isinstance(required, dict)
+            or not all(arguments.get(key) == value for key, value in required.items())
+        ):
+            return False
+    return True
 
 
 def _valid_result_types(result: dict[str, object]) -> bool:

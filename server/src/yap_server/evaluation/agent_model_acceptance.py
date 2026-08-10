@@ -228,6 +228,20 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
             or sequence[-1] != case.get("expectedTool")
         ):
             raise ValueError("agent multi-step workload is invalid")
+        expected_calls = case.get("expectedToolCalls")
+        if sequence is not None and (
+            not isinstance(expected_calls, list)
+            or [call.get("name") for call in expected_calls if isinstance(call, dict)]
+            != sequence
+            or any(
+                not isinstance(call, dict)
+                or set(call) != {"name", "expectedArguments"}
+                or not isinstance(call["expectedArguments"], dict)
+                or not call["expectedArguments"]
+                for call in expected_calls
+            )
+        ):
+            raise ValueError("agent multi-step expected calls are invalid")
     if (
         len(set(case_ids)) != len(case_ids)
         or not isolation_counts
@@ -316,6 +330,7 @@ def _route_evidence(
     expected = {
         "rapid-automation": {
             "candidateId": "qwen3.6-35b-a3b-nvfp4",
+            "maximumFixtureP95LatencyMilliseconds": 3_000,
             "maximumWarmP95LatencyMilliseconds": 750,
             "maximumC8P95LatencyMilliseconds": 1_500,
         },

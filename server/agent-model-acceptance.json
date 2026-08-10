@@ -3,7 +3,7 @@
   "candidateLock": "agent-reasoning-candidates.lock.json",
   "fixtureFile": "agent-workload-fixtures.json",
   "candidateLockSha256": "2e2c183e1a0eab8f1f5f2d9cc4db6c996a708365a7d8d43c3448a628e90a1cf2",
-  "fixtureSha256": "928635ae497578cb30d61389f58c1a8409d41ff20cf5d85d67247edb9a6e5bd6",
+  "fixtureSha256": "e531bab396fa6c0ee497058e9c90d28c27cdf2e5d650fe19501d39c3fec36a5e",
   "minimumCaseCount": 12,
   "requiredCategories": ["authorization", "failure", "generation", "isolation", "proposal", "question-answering", "structured-tool", "terminology"],
   "thresholds": {
@@ -36,6 +36,7 @@
   "routeEvidence": {
     "rapid-automation": {
       "candidateId": "qwen3.6-35b-a3b-nvfp4",
+      "maximumFixtureP95LatencyMilliseconds": 3000,
       "maximumWarmP95LatencyMilliseconds": 750,
       "maximumC8P95LatencyMilliseconds": 1500
     },

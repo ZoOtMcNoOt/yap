@@ -118,9 +118,14 @@
       "caseId": "complex-governed-orchestration",
       "category": "structured-tool",
       "requiredForWorkloadClass": "complex-orchestration",
-      "user": "First search governed knowledge for the VoiceOS release dependency, then traverse relationships from project/voiceos to depth two, then store a cited summary proposal. Perform those three tool steps in that order.",
+      "user": "First search governed knowledge using the exact query VoiceOS release dependency, then traverse relationships from project/voiceos to depth two, then store a cited summary proposal. Perform those three tool steps in that order.",
       "visibleContext": [{"conceptId":"project/voiceos","text":"VoiceOS release depends on the reviewed permission ledger.","sourceRevision":"rev-h","contentSha256":"3333333333333333333333333333333333333333333333333333333333333333","charStart":0,"charEnd":58}],
       "expectedToolSequence": ["search_knowledge", "traverse_knowledge", "propose_knowledge"],
+      "expectedToolCalls": [
+        {"name":"search_knowledge","expectedArguments":{"purpose":"knowledge.read","search_text":"VoiceOS release dependency"}},
+        {"name":"traverse_knowledge","expectedArguments":{"purpose":"knowledge.read","start_concept_id":"project/voiceos","maximum_depth":2}},
+        {"name":"propose_knowledge","expectedArguments":{"purpose":"knowledge.read","proposal_type":"summary"}}
+      ],
       "expectedTool": "propose_knowledge",
       "expectedProposalType": "summary",
       "requiredTerms": ["VoiceOS", "permission ledger"],
