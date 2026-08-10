@@ -79,6 +79,9 @@ class VllmReasoningClientTests(unittest.TestCase):
         )
         self.assertEqual(_Handler.observed["model"], "selected/model")
         self.assertEqual(_Handler.observed["max_tokens"], 100)
+        self.assertEqual(
+            _Handler.observed["chat_template_kwargs"], {"enable_thinking": False}
+        )
 
     def test_rejects_cancelled_and_retryable_requests(self) -> None:
         cancelled = threading.Event()
@@ -90,7 +93,9 @@ class VllmReasoningClientTests(unittest.TestCase):
         with self.assertRaises(ReasoningRetryableError):
             self.client("governed prompt", threading.Event())
 
-    def test_fails_closed_when_transport_does_not_acknowledge_cancellation(self) -> None:
+    def test_fails_closed_when_transport_does_not_acknowledge_cancellation(
+        self,
+    ) -> None:
         _Handler.delay_seconds = 2.0
         cancellation = threading.Event()
         outcome: list[BaseException] = []

@@ -23,6 +23,9 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
 
         def request(payload: dict[str, object]) -> dict[str, object]:
             nonlocal active
+            self.assertEqual(
+                payload["chat_template_kwargs"], {"enable_thinking": False}
+            )
             if "tools" in payload:
                 active = next(cases)
                 arguments = {

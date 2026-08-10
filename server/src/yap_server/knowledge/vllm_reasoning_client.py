@@ -81,6 +81,7 @@ class VllmReasoningClient:
                     ],
                     "temperature": 0,
                     "max_tokens": self._maximum_output_tokens,
+                    "chat_template_kwargs": {"enable_thinking": False},
                     "response_format": {
                         "type": "json_schema",
                         "json_schema": {
@@ -178,9 +179,19 @@ def _response_content(body: bytes) -> str:
         value = json.loads(body)
         choices = value["choices"]
         content = choices[0]["message"]["content"]
-    except (UnicodeDecodeError, json.JSONDecodeError, KeyError, IndexError, TypeError) as error:
+    except (
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        KeyError,
+        IndexError,
+        TypeError,
+    ) as error:
         raise ValueError("vLLM response differs from the contract") from error
-    if not isinstance(choices, list) or len(choices) != 1 or not isinstance(content, str):
+    if (
+        not isinstance(choices, list)
+        or len(choices) != 1
+        or not isinstance(content, str)
+    ):
         raise ValueError("vLLM response differs from the contract")
     return content
 

@@ -13,6 +13,14 @@ from yap_server.evaluation.agent_runtime_pressure import run_agent_runtime_press
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
+class _RuntimeActivity:
+    def wait_for_running_requests(self, *, minimum: int, timeout_seconds: float):
+        assert minimum == 1
+
+    def wait_for_idle(self, *, timeout_seconds: float):
+        return None
+
+
 def test_runs_every_frozen_pressure_track() -> None:
     prompts: list[str] = []
 
@@ -39,6 +47,7 @@ def test_runs_every_frozen_pressure_track() -> None:
         request=request,
         dispatched_request=dispatched_request,
         memory_bytes=lambda: 123,
+        runtime_activity=_RuntimeActivity(),
     )
 
     assert len(result.warm_latency_milliseconds) == 12
@@ -50,7 +59,7 @@ def test_runs_every_frozen_pressure_track() -> None:
     assert result.peak_memory_bytes == 123
     assert result.isolation_leak_count == 0
     assert result.cancelled_request_completion_count == 0
-    assert len(prompts) == 1 + 12 + 1 + 2 + 4 + 8 + 8 + 1
+    assert len(prompts) == 1 + 12 + 1 + 2 + 4 + 8 + 8 + 1 + 1
 
 
 def test_detects_cross_request_marker_leak() -> None:
@@ -72,6 +81,7 @@ def test_detects_cross_request_marker_leak() -> None:
             dispatched.set() or request(prompt, cancellation)
         ),
         memory_bytes=lambda: 0,
+        runtime_activity=_RuntimeActivity(),
     )
 
     assert result.isolation_leak_count == 4
@@ -99,6 +109,35 @@ def test_rejects_unrelated_cancellation_failure() -> None:
             request=request,
             dispatched_request=dispatched_request,
             memory_bytes=lambda: 0,
+            runtime_activity=_RuntimeActivity(),
+        )
+
+
+def test_requires_observed_engine_activity_before_cancellation() -> None:
+    class MissingActivity(_RuntimeActivity):
+        def wait_for_running_requests(self, *, minimum: int, timeout_seconds: float):
+            raise TimeoutError("no engine activity")
+
+    def request(prompt: str, cancellation: threading.Event) -> str:
+        if "until cancelled" in prompt:
+            cancellation.wait(1)
+        if cancellation.is_set():
+            raise KnowledgeToolCancelled("cancelled")
+        if "ALPHA-7Q9" in prompt:
+            return _answer("ALPHA-7Q9")
+        if "BRAVO-2M4" in prompt:
+            return _answer("BRAVO-2M4")
+        return _answer(_expected_marker(prompt))
+
+    with pytest.raises(TimeoutError, match="no engine activity"):
+        run_agent_runtime_pressure(
+            REPOSITORY_ROOT,
+            request=request,
+            dispatched_request=lambda prompt, cancellation, dispatched: (
+                dispatched.set() or request(prompt, cancellation)
+            ),
+            memory_bytes=lambda: 0,
+            runtime_activity=MissingActivity(),
         )
 
 

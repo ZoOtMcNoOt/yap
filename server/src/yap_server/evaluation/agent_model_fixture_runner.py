@@ -124,6 +124,7 @@ def _run_case(
             "tool_choice": "required",
             "temperature": 0,
             "max_tokens": 512,
+            "chat_template_kwargs": {"enable_thinking": False},
         }
     )
     assistant_message, tool_id, tool_name, arguments = _tool_call(initial)
@@ -152,6 +153,7 @@ def _run_case(
             "messages": messages,
             "temperature": 0,
             "max_tokens": 512,
+            "chat_template_kwargs": {"enable_thinking": False},
             "response_format": {
                 "type": "json_schema",
                 "json_schema": {

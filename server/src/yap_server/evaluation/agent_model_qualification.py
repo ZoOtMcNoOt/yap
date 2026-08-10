@@ -63,7 +63,9 @@ def evaluate_agent_model_qualification(
     """Recompute all candidate scores and emit a transcript-free decision."""
 
     acceptance = load_agent_model_acceptance(candidate.repository_root)
-    models = _candidate_models(candidate.repository_root, acceptance.candidate_lock_sha256)
+    models = _candidate_models(
+        candidate.repository_root, acceptance.candidate_lock_sha256
+    )
     registry = _evidence_registry(
         candidate,
         evidence_root=evidence_root,
@@ -161,7 +163,7 @@ def _candidate_summary(
         raise ValueError("agent model candidate identity differs")
     if evidence["runtimeReceiptSha256"] != runtime_receipt_sha256:
         raise ValueError("agent model runtime receipt binding differs")
-    _runtime_receipt(
+    children = _runtime_receipt(
         candidate,
         expected=expected,
         evidence_root=evidence_root,
@@ -172,6 +174,12 @@ def _candidate_summary(
         raise ValueError("agent model candidate results are invalid")
     score = score_agent_model_results(candidate.repository_root, tuple(results))
     pressure = _runtime_pressure(evidence["runtimePressure"])
+    _verify_runtime_children(
+        children,
+        checked_head=candidate.checked_head,
+        evidence_results=results,
+        pressure=pressure,
+    )
     eligible = (
         score.passed
         and pressure["isolationLeakCount"] == 0
@@ -193,8 +201,7 @@ def _candidate_summary(
         "warmP95LatencyMilliseconds": _p95(pressure["warmLatencyMilliseconds"]),
         "incrementalUnifiedMemoryBytes": max(
             0,
-            pressure["peakUnifiedMemoryBytes"]
-            - pressure["baselineUnifiedMemoryBytes"],
+            pressure["peakUnifiedMemoryBytes"] - pressure["baselineUnifiedMemoryBytes"],
         ),
     }
 
@@ -226,7 +233,9 @@ def _runtime_pressure(value: object) -> dict[str, object]:
     return value
 
 
-def _candidate_models(repository_root: Path, expected_sha256: str) -> dict[str, dict[str, object]]:
+def _candidate_models(
+    repository_root: Path, expected_sha256: str
+) -> dict[str, dict[str, object]]:
     lock, _identity = read_json_object_with_identity(
         repository_root / "server" / "agent-reasoning-candidates.lock.json",
         maximum_bytes=64_000,
@@ -295,7 +304,7 @@ def _runtime_receipt(
     expected: dict[str, object],
     evidence_root: Path,
     expected_sha256: str,
-) -> None:
+) -> dict[str, dict[str, object]]:
     value, _identity = read_json_object_with_identity(
         evidence_root
         / "agent-model"
@@ -360,6 +369,116 @@ def _runtime_receipt(
         }
     ):
         raise ValueError("agent runtime receipt identity is invalid")
+    children: dict[str, dict[str, object]] = {}
+    for name, digest in value["childEvidenceSha256"].items():
+        child, _child_identity = read_json_object_with_identity(
+            evidence_root
+            / "agent-model"
+            / str(expected["candidateId"])
+            / "children"
+            / f"{name}.json",
+            maximum_bytes=16_000_000 if name == "fixtures" else 256_000,
+            field=f"agent model {name} evidence",
+            expected_sha256=str(digest),
+            containment_root=evidence_root,
+        )
+        children[str(name)] = child
+    lifecycle = children["lifecycle"]
+    if (
+        lifecycle.get("imageId") != value["imageId"]
+        or lifecycle.get("modelArtifactManifestSha256")
+        != value["modelArtifactManifestSha256"]
+        or lifecycle.get("launchArgumentsSha256") != value["launchArgumentsSha256"]
+    ):
+        raise ValueError("agent runtime lifecycle binding differs")
+    return children
+
+
+def _verify_runtime_children(
+    children: dict[str, dict[str, object]],
+    *,
+    checked_head: str,
+    evidence_results: object,
+    pressure: dict[str, object],
+) -> None:
+    if any(child.get("checkedHead") != checked_head for child in children.values()):
+        raise ValueError("agent runtime child checked head differs")
+    fixtures = children["fixtures"]
+    pressure_child = children["pressure"]
+    cancellation = children["cancellation"]
+    resources = children["resources"]
+    lifecycle = children["lifecycle"]
+    if (
+        set(fixtures) != {"schemaVersion", "checkedHead", "candidateId", "results"}
+        or fixtures["schemaVersion"] != 1
+        or fixtures["results"] != evidence_results
+        or set(pressure_child)
+        != {
+            "schemaVersion",
+            "checkedHead",
+            "coldLatencyMilliseconds",
+            "warmLatencyMilliseconds",
+            "concurrencyLatencyMilliseconds",
+            "isolationLeakCount",
+            "isolationConcurrent",
+        }
+        or pressure_child["schemaVersion"] != 1
+        or pressure_child["isolationConcurrent"] is not True
+        or pressure_child["coldLatencyMilliseconds"]
+        != pressure["coldLatencyMilliseconds"]
+        or pressure_child["warmLatencyMilliseconds"]
+        != pressure["warmLatencyMilliseconds"]
+        or pressure_child["concurrencyLatencyMilliseconds"]
+        != pressure["concurrencyLatencyMilliseconds"]
+        or pressure_child["isolationLeakCount"] != pressure["isolationLeakCount"]
+        or cancellation
+        != {
+            "schemaVersion": 1,
+            "checkedHead": checked_head,
+            "requestDispatched": True,
+            "engineActivityObserved": True,
+            "engineIdleAfterCancellation": True,
+            "recoverySucceeded": True,
+            "cancelledRequestCompletionCount": pressure[
+                "cancelledRequestCompletionCount"
+            ],
+        }
+        or set(resources)
+        != {
+            "schemaVersion",
+            "checkedHead",
+            "measurementBoundary",
+            "baselineMemoryBytes",
+            "peakMemoryBytes",
+            "sampleCount",
+        }
+        or resources["schemaVersion"] != 1
+        or resources["measurementBoundary"] != "owned-vllm-cgroup-v2"
+        or resources["baselineMemoryBytes"] != pressure["baselineUnifiedMemoryBytes"]
+        or resources["peakMemoryBytes"] != pressure["peakUnifiedMemoryBytes"]
+        or not _positive_int(resources["sampleCount"])
+        or set(lifecycle)
+        != {
+            "schemaVersion",
+            "checkedHead",
+            "containerId",
+            "imageId",
+            "modelArtifactManifestSha256",
+            "launchArgumentsSha256",
+            "endpoint",
+        }
+        or lifecycle["schemaVersion"] != 1
+        or not re.fullmatch(r"[0-9a-f]{64}", str(lifecycle["containerId"]))
+        or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(lifecycle["imageId"]))
+        or not _SHA256.fullmatch(str(lifecycle["modelArtifactManifestSha256"]))
+        or not _SHA256.fullmatch(str(lifecycle["launchArgumentsSha256"]))
+        or lifecycle["endpoint"] != "http://127.0.0.1:30000"
+    ):
+        raise ValueError("agent runtime child evidence differs from the contract")
+
+
+def _positive_int(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
 def _expected_launch_arguments(expected: dict[str, object]) -> list[str]:
@@ -407,8 +526,10 @@ def _p95(values: object) -> int:
 
 
 def _latencies(value: object, count: int) -> bool:
-    return isinstance(value, list) and len(value) == count and all(
-        _nonnegative_int(item) for item in value
+    return (
+        isinstance(value, list)
+        and len(value) == count
+        and all(_nonnegative_int(item) for item in value)
     )
 
 

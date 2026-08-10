@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import json
 import threading
 import time
-from typing import Callable
+from typing import Callable, Protocol
 
 from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
 
@@ -15,6 +15,14 @@ from .agent_model_acceptance import load_agent_model_acceptance
 Request = Callable[[str, threading.Event], str]
 DispatchedRequest = Callable[[str, threading.Event, threading.Event], str]
 MemoryBytes = Callable[[], int]
+
+
+class RuntimeActivity(Protocol):
+    def wait_for_running_requests(
+        self, *, minimum: int, timeout_seconds: float
+    ) -> object: ...
+
+    def wait_for_idle(self, *, timeout_seconds: float) -> object: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +36,9 @@ class RuntimePressureResult:
     cancelled_request_completion_count: int
     memory_sample_count: int
     cancellation_dispatched: bool
+    engine_activity_observed: bool
+    engine_idle_after_cancellation: bool
+    recovery_succeeded: bool
     isolation_concurrent: bool
 
 
@@ -37,6 +48,7 @@ def run_agent_runtime_pressure(
     request: Request,
     dispatched_request: DispatchedRequest,
     memory_bytes: MemoryBytes,
+    runtime_activity: RuntimeActivity,
 ) -> RuntimePressureResult:
     """Exercise the frozen pressure tracks without trusting server summaries."""
 
@@ -52,7 +64,9 @@ def run_agent_runtime_pressure(
         except BaseException as error:
             sampling_failure.append(error)
 
-    sampler = threading.Thread(target=sample, name="yap-agent-memory-sampler", daemon=True)
+    sampler = threading.Thread(
+        target=sample, name="yap-agent-memory-sampler", daemon=True
+    )
     sampler.start()
     try:
         cancel = threading.Event()
@@ -79,7 +93,9 @@ def run_agent_runtime_pressure(
             timeout_seconds=int(tracks["requestTimeoutSeconds"]),
         )
         cancelled_completions = _cancelled_completions(
+            request,
             dispatched_request,
+            runtime_activity=runtime_activity,
             timeout_seconds=int(tracks["requestTimeoutSeconds"]),
         )
     finally:
@@ -98,6 +114,9 @@ def run_agent_runtime_pressure(
         leaks,
         cancelled_completions,
         len(samples),
+        True,
+        True,
+        True,
         True,
         True,
     )
@@ -151,8 +170,13 @@ def _isolation_leaks(
 
 
 def _cancelled_completions(
-    request: DispatchedRequest, *, timeout_seconds: int
+    recovery_request: Request,
+    request: DispatchedRequest,
+    *,
+    runtime_activity: RuntimeActivity,
+    timeout_seconds: int,
 ) -> int:
+    runtime_activity.wait_for_idle(timeout_seconds=timeout_seconds)
     cancellation = threading.Event()
     dispatched = threading.Event()
     finished = threading.Event()
@@ -177,11 +201,24 @@ def _cancelled_completions(
     worker.start()
     if not dispatched.wait(timeout_seconds):
         raise TimeoutError("agent cancellation request was not dispatched")
+    runtime_activity.wait_for_running_requests(
+        minimum=1, timeout_seconds=timeout_seconds
+    )
     cancellation.set()
     if not finished.wait(timeout_seconds):
         raise TimeoutError("cancelled agent request did not terminate")
     if failure is not None and not isinstance(failure, KnowledgeToolCancelled):
         raise RuntimeError("cancelled agent request failed incorrectly") from failure
+    runtime_activity.wait_for_idle(timeout_seconds=timeout_seconds)
+    recovery = _answer(
+        recovery_request(
+            "Return exactly CANCEL-RECOVERED.",
+            threading.Event(),
+        )
+    )
+    if recovery != "CANCEL-RECOVERED":
+        raise RuntimeError("agent runtime did not recover after cancellation")
+    runtime_activity.wait_for_idle(timeout_seconds=timeout_seconds)
     return int(returned)
 
 

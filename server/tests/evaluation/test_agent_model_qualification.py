@@ -78,7 +78,7 @@ def test_keeps_deterministic_route_when_candidate_evidence_is_missing() -> None:
     assert decision["outcome"] == "deterministic-no-model"
     assert decision["missingCandidateIds"] == [
         "qwen3.6-35b-a3b-nvfp4",
-        "nemotron-3-nano-30b-a3b-nvfp4"
+        "nemotron-3-nano-30b-a3b-nvfp4",
     ]
 
 
@@ -173,6 +173,66 @@ def _write_candidate(
     model = next(
         item for item in lock["candidates"] if item["candidateId"] == candidate_id
     )
+    results = list(_perfect_results())
+    if not passing:
+        results[0]["toolName"] = "wrong_tool"
+    launch_arguments_sha256 = canonical_evidence_sha256(_launch_arguments(model))
+    child_values = {
+        "fixtures": {
+            "schemaVersion": 1,
+            "checkedHead": candidate.checked_head,
+            "candidateId": candidate_id,
+            "results": results,
+        },
+        "pressure": {
+            "schemaVersion": 1,
+            "checkedHead": candidate.checked_head,
+            "coldLatencyMilliseconds": latency,
+            "warmLatencyMilliseconds": [latency] * 12,
+            "concurrencyLatencyMilliseconds": {
+                "1": [latency],
+                "2": [latency] * 2,
+                "4": [latency] * 4,
+                "8": [latency] * 8,
+            },
+            "isolationLeakCount": 0,
+            "isolationConcurrent": True,
+        },
+        "cancellation": {
+            "schemaVersion": 1,
+            "checkedHead": candidate.checked_head,
+            "requestDispatched": True,
+            "engineActivityObserved": True,
+            "engineIdleAfterCancellation": True,
+            "recoverySucceeded": True,
+            "cancelledRequestCompletionCount": 0,
+        },
+        "resources": {
+            "schemaVersion": 1,
+            "checkedHead": candidate.checked_head,
+            "measurementBoundary": "owned-vllm-cgroup-v2",
+            "baselineMemoryBytes": 100,
+            "peakMemoryBytes": 200,
+            "sampleCount": 10,
+        },
+        "lifecycle": {
+            "schemaVersion": 1,
+            "checkedHead": candidate.checked_head,
+            "containerId": "8" * 64,
+            "imageId": "sha256:" + "9" * 64,
+            "modelArtifactManifestSha256": "b" * 64,
+            "launchArgumentsSha256": launch_arguments_sha256,
+            "endpoint": "http://127.0.0.1:30000",
+        },
+    }
+    child_hashes = {}
+    for name, value in child_values.items():
+        path = (
+            evidence_root / "agent-model" / candidate_id / "children" / f"{name}.json"
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(value), encoding="utf-8")
+        child_hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
     runtime_receipt = {
         "schemaVersion": 1,
         "checkedHead": candidate.checked_head,
@@ -184,32 +244,18 @@ def _write_candidate(
         "quantization": model["quantization"],
         "modelArtifactManifestSha256": "b" * 64,
         "launchArguments": _launch_arguments(model),
-        "launchArgumentsSha256": "",
-        "childEvidenceSha256": {
-            "fixtures": "1" * 64,
-            "pressure": "2" * 64,
-            "cancellation": "3" * 64,
-            "resources": "4" * 64,
-            "lifecycle": "5" * 64,
-        },
+        "launchArgumentsSha256": launch_arguments_sha256,
+        "childEvidenceSha256": child_hashes,
         "teardown": {
             "containerAbsent": True,
             "listenerAbsent": True,
             "ownedWorkersReaped": True,
         },
     }
-    runtime_receipt["launchArgumentsSha256"] = canonical_evidence_sha256(
-        runtime_receipt["launchArguments"]
-    )
-    runtime_path = (
-        evidence_root / "agent-model" / candidate_id / "runtime-receipt.json"
-    )
-    runtime_path.parent.mkdir(parents=True)
+    runtime_path = evidence_root / "agent-model" / candidate_id / "runtime-receipt.json"
+    runtime_path.parent.mkdir(parents=True, exist_ok=True)
     runtime_path.write_text(json.dumps(runtime_receipt), encoding="utf-8")
     runtime_sha256 = hashlib.sha256(runtime_path.read_bytes()).hexdigest()
-    results = list(_perfect_results())
-    if not passing:
-        results[0]["toolName"] = "wrong_tool"
     evidence = bind_checked_candidate_evidence(
         {
             "schemaVersion": 1,

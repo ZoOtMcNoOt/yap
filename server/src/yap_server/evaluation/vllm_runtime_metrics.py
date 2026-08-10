@@ -286,6 +286,18 @@ class VllmRuntimeMetricsClient:
                 raise TimeoutError("vLLM running-request observation timed out")
             time.sleep(0.02)
 
+    def wait_for_idle(self, *, timeout_seconds: float) -> VllmMetricsSnapshot:
+        if timeout_seconds <= 0:
+            raise ValueError("vLLM idle wait is invalid")
+        deadline = time.monotonic() + timeout_seconds
+        while True:
+            snapshot = self.snapshot()
+            if not snapshot.running_requests and not snapshot.waiting_requests:
+                return snapshot
+            if time.monotonic() >= deadline:
+                raise TimeoutError("vLLM idle observation timed out")
+            time.sleep(0.02)
+
 
 def parse_vllm_runtime_metrics(text: str) -> VllmMetricsSnapshot:
     if not isinstance(text, str) or not text:

@@ -21,6 +21,7 @@ from .agent_model_fixture_runner import run_agent_model_fixtures
 from .agent_model_scoring import score_agent_model_results
 from .agent_runtime_pressure import run_agent_runtime_pressure
 from .agent_vllm_runtime import OwnedAgentVllmRuntime
+from .vllm_runtime_metrics import VllmRuntimeMetricsClient
 
 
 def main() -> int:
@@ -96,10 +97,9 @@ def main() -> int:
             request=reasoning_client,
             dispatched_request=reasoning_client.request,
             memory_bytes=started.memory_bytes,
+            runtime_activity=VllmRuntimeMetricsClient(endpoint),
         )
-        child_root = (
-            evidence_root / "agent-model" / arguments.candidate_id / "children"
-        )
+        child_root = evidence_root / "agent-model" / arguments.candidate_id / "children"
         children = {
             "fixtures": {
                 "schemaVersion": 1,
@@ -123,6 +123,9 @@ def main() -> int:
                 "schemaVersion": 1,
                 "checkedHead": arguments.checked_head,
                 "requestDispatched": pressure.cancellation_dispatched,
+                "engineActivityObserved": pressure.engine_activity_observed,
+                "engineIdleAfterCancellation": pressure.engine_idle_after_cancellation,
+                "recoverySucceeded": pressure.recovery_succeeded,
                 "cancelledRequestCompletionCount": pressure.cancelled_request_completion_count,
             },
             "resources": {
@@ -156,10 +159,7 @@ def main() -> int:
         owned_runtime.abort()
         raise
     receipt_path = (
-        evidence_root
-        / "agent-model"
-        / arguments.candidate_id
-        / "runtime-receipt.json"
+        evidence_root / "agent-model" / arguments.candidate_id / "runtime-receipt.json"
     )
     write_new_agent_model_evidence(receipt_path, receipt)
     runtime_receipt_sha256 = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
