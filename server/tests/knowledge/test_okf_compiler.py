@@ -48,6 +48,7 @@ provenance:
   source_revision: result-7
 producer_extension:
   retained: true
+redirects: [projects/voiceos-old]
 ---
 # VoiceOS
 
@@ -88,6 +89,7 @@ denials: {users: []}
         self.assertEqual(concept.concept_id, "projects/voiceos")
         self.assertEqual(concept.frontmatter["producer_extension"], {"retained": True})
         self.assertEqual(concept.broken_links, ("decisions/release",))
+        self.assertEqual(concept.redirect_history, ("projects/voiceos-old",))
 
     def test_compiles_tenant_scoped_permissions_and_filters_before_return(self) -> None:
         with TemporaryDirectory() as directory:

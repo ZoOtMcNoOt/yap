@@ -24,9 +24,33 @@ def validate_concept_profile(
             raise ValueError(f"OKF concept {path.as_posix()} {field} is invalid")
     if value["yap_schema"] != 1:
         raise ValueError(f"OKF concept {path.as_posix()} yap_schema is unsupported")
-    if not isinstance(value["provenance"], dict) or not value["provenance"]:
+    provenance = value["provenance"]
+    if (
+        not isinstance(provenance, dict)
+        or not {"source", "source_revision"}.issubset(provenance)
+        or not isinstance(provenance["source"], str)
+        or not provenance["source"].strip()
+        or provenance["source"] != provenance["source"].strip()
+        or not isinstance(provenance["source_revision"], (str, int))
+        or isinstance(provenance["source_revision"], bool)
+        or not str(provenance["source_revision"])
+        or str(provenance["source_revision"]).strip()
+        != str(provenance["source_revision"])
+    ):
         raise ValueError(f"OKF concept {path.as_posix()} provenance is invalid")
-    if not isinstance(value["timestamp"], (str, datetime)):
+    timestamp = value["timestamp"]
+    if isinstance(timestamp, str):
+        try:
+            parsed_timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        except ValueError as error:
+            raise ValueError(
+                f"OKF concept {path.as_posix()} timestamp is invalid"
+            ) from error
+    elif isinstance(timestamp, datetime):
+        parsed_timestamp = timestamp
+    else:
+        raise ValueError(f"OKF concept {path.as_posix()} timestamp is invalid")
+    if parsed_timestamp.tzinfo is None:
         raise ValueError(f"OKF concept {path.as_posix()} timestamp is invalid")
     resource = value["resource"]
     if not isinstance(resource, str):
@@ -46,6 +70,28 @@ def validate_concept_profile(
     if resource in resources:
         raise ValueError(f"OKF concept {path.as_posix()} duplicates a resource")
     resources.add(resource)
+
+
+def concept_redirects(value: dict[str, object], path: Path) -> tuple[str, ...]:
+    redirects = value.get("redirects", [])
+    if not isinstance(redirects, list) or len(redirects) > 1_000:
+        raise ValueError(f"OKF concept {path.as_posix()} redirects are invalid")
+    values: list[str] = []
+    for redirect in redirects:
+        if not isinstance(redirect, str) or not redirect or "\\" in redirect:
+            raise ValueError(f"OKF concept {path.as_posix()} redirect is invalid")
+        pure = PurePosixPath(redirect.removeprefix("/"))
+        if (
+            pure.is_absolute()
+            or ".." in pure.parts
+            or pure.suffix.casefold() == ".md"
+            or pure.name.casefold() in {"index", "log"}
+        ):
+            raise ValueError(f"OKF concept {path.as_posix()} redirect is invalid")
+        values.append(pure.as_posix())
+    if len(set(values)) != len(values):
+        raise ValueError(f"OKF concept {path.as_posix()} redirects are duplicated")
+    return tuple(sorted(values))
 
 
 def concept_links(source_path: Path, markdown: str) -> tuple[str, ...]:

@@ -65,6 +65,7 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                 body text NOT NULL,
                 links jsonb NOT NULL,
                 broken_links jsonb NOT NULL,
+                redirect_history jsonb NOT NULL,
                 PRIMARY KEY (tenant_id, generation_sha256, concept_id),
                 FOREIGN KEY (tenant_id, generation_sha256)
                     REFERENCES yap_knowledge_builds ON DELETE CASCADE,
@@ -241,8 +242,8 @@ def stage_compiled_generation(
                 """INSERT INTO yap_knowledge_concepts (
                     tenant_id, generation_sha256, concept_id, source_path,
                     content_sha256, permission_path_prefix, frontmatter, body,
-                    links, broken_links
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    links, broken_links, redirect_history
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (
                     generation.tenant_id,
                     generation.generation_sha256,
@@ -254,6 +255,7 @@ def stage_compiled_generation(
                     concept.body,
                     Jsonb(list(concept.links)),
                     Jsonb(list(concept.broken_links)),
+                    Jsonb(list(concept.redirect_history)),
                 ),
             )
         for chunk in generation.chunks:

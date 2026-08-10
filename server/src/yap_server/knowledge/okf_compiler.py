@@ -8,6 +8,7 @@ from typing import Mapping
 
 from .okf_profile import (
     concept_links,
+    concept_redirects,
     freeze,
     identity,
     json_value,
@@ -42,6 +43,7 @@ class CompiledConcept:
     body: str
     links: tuple[str, ...]
     broken_links: tuple[str, ...]
+    redirect_history: tuple[str, ...]
     permission_path_prefix: str
 
 
@@ -95,6 +97,7 @@ def compile_okf_bundle(
     chunks: list[CompiledChunk] = []
     relationships: list[CompiledRelationship] = []
     resources: set[str] = set()
+    redirect_owners: dict[str, str] = {}
     canonical_records: list[dict[str, object]] = []
     for path in sorted(concept_paths, key=lambda item: item.as_posix()):
         frontmatter, markdown, source = documents[path]
@@ -104,6 +107,13 @@ def compile_okf_bundle(
         broken_links = tuple(
             link for link in links if Path(f"{link}.md") not in concept_paths
         )
+        redirects = concept_redirects(frontmatter, path)
+        for redirect in redirects:
+            owner = redirect_owners.setdefault(
+                redirect, path.with_suffix("").as_posix()
+            )
+            if owner != path.with_suffix("").as_posix():
+                raise ValueError("OKF redirect is claimed by multiple concepts")
         canonical_frontmatter = json_value(frontmatter, "frontmatter")
         assert isinstance(canonical_frontmatter, dict)
         record = {
@@ -114,6 +124,7 @@ def compile_okf_bundle(
             "body": markdown,
             "links": list(links),
             "brokenLinks": list(broken_links),
+            "redirectHistory": list(redirects),
             "permissionPathPrefix": permission.path_prefix,
         }
         canonical_records.append(record)
@@ -142,9 +153,14 @@ def compile_okf_bundle(
                 body=markdown,
                 links=links,
                 broken_links=broken_links,
+                redirect_history=redirects,
                 permission_path_prefix=permission.path_prefix,
             )
         )
+
+    current_ids = {item.concept_id for item in concepts}
+    if current_ids.intersection(redirect_owners):
+        raise ValueError("OKF redirect collides with a current concept")
 
     generation = {
         "schemaVersion": 1,
