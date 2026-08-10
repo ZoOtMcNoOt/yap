@@ -97,6 +97,63 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         self.assertEqual(len(results), 12)
         self.assertTrue(score.passed)
 
+    def test_records_malformed_model_output_and_continues(self) -> None:
+        calls = 0
+
+        def request(payload: dict[str, object]) -> dict[str, object]:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                return {"choices": []}
+            if "tools" in payload:
+                return _tool_response("search_knowledge")
+            return _answer_response()
+
+        results = run_agent_model_fixtures(
+            REPOSITORY_ROOT, model="synthetic", request_json=request
+        )
+
+        self.assertTrue(results[0].invalid_structured_output)
+        self.assertFalse(results[1].invalid_structured_output)
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(item.record() for item in results)
+        )
+        self.assertGreaterEqual(score.invalid_structured_output_count, 1)
+        self.assertFalse(score.passed)
+
+
+def _tool_response(name: str) -> dict[str, object]:
+    return {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": "call-1",
+                            "type": "function",
+                            "function": {"name": name, "arguments": "{}"},
+                        }
+                    ],
+                }
+            }
+        ]
+    }
+
+
+def _answer_response() -> dict[str, object]:
+    return {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": '{"answer":"unavailable","citationConceptIds":[]}',
+                }
+            }
+        ]
+    }
+
 
 if __name__ == "__main__":
     unittest.main()

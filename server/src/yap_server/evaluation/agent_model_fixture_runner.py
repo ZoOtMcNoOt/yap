@@ -22,9 +22,10 @@ class AgentFixtureResult:
     answer: str
     citation_concept_ids: tuple[str, ...]
     latency_milliseconds: int
+    invalid_structured_output: bool = False
 
     def record(self) -> dict[str, object]:
-        return {
+        record: dict[str, object] = {
             "caseId": self.case_id,
             "toolName": self.tool_name,
             "arguments": self.arguments,
@@ -32,6 +33,9 @@ class AgentFixtureResult:
             "citationConceptIds": list(self.citation_concept_ids),
             "latencyMilliseconds": self.latency_milliseconds,
         }
+        if self.invalid_structured_output:
+            record["invalidStructuredOutput"] = True
+        return record
 
 
 def run_agent_model_fixtures(
@@ -55,7 +59,7 @@ def run_agent_model_fixtures(
     if not isinstance(system_prompt, str) or not isinstance(cases, list):
         raise ValueError("agent workload fixture is invalid")
     return tuple(
-        _run_case(
+        _run_case_safely(
             case,
             model=model,
             system_prompt=system_prompt,
@@ -63,6 +67,35 @@ def run_agent_model_fixtures(
         )
         for case in cases
     )
+
+
+def _run_case_safely(
+    case: object,
+    *,
+    model: str,
+    system_prompt: str,
+    request_json: JsonRequest,
+) -> AgentFixtureResult:
+    started = time.monotonic()
+    try:
+        return _run_case(
+            case,
+            model=model,
+            system_prompt=system_prompt,
+            request_json=request_json,
+        )
+    except ValueError:
+        if not isinstance(case, dict) or not isinstance(case.get("caseId"), str):
+            raise
+        return AgentFixtureResult(
+            case_id=case["caseId"],
+            tool_name="",
+            arguments={},
+            answer="",
+            citation_concept_ids=(),
+            latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
+            invalid_structured_output=True,
+        )
 
 
 def _run_case(
@@ -182,8 +215,10 @@ def _final_answer(response: dict[str, object]) -> tuple[str, tuple[str, ...]]:
         raise ValueError("agent final response differs from the contract")
     answer = value["answer"]
     citations = value["citationConceptIds"]
-    if not isinstance(answer, str) or not isinstance(citations, list) or not all(
-        isinstance(item, str) for item in citations
+    if (
+        not isinstance(answer, str)
+        or not isinstance(citations, list)
+        or not all(isinstance(item, str) for item in citations)
     ):
         raise ValueError("agent final response fields are invalid")
     return answer, tuple(citations)
@@ -191,7 +226,11 @@ def _final_answer(response: dict[str, object]) -> tuple[str, tuple[str, ...]]:
 
 def _message(response: dict[str, object]) -> dict[str, object]:
     choices = response.get("choices")
-    if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
+    if (
+        not isinstance(choices, list)
+        or len(choices) != 1
+        or not isinstance(choices[0], dict)
+    ):
         raise ValueError("agent response choices are invalid")
     message = choices[0].get("message")
     if not isinstance(message, dict):
@@ -237,7 +276,10 @@ def _tool_definitions() -> list[dict[str, object]]:
             "Store a cited noncanonical proposal.",
             {
                 **common,
-                "proposal_type": {"type": "string", "enum": ["summary", "relationship"]},
+                "proposal_type": {
+                    "type": "string",
+                    "enum": ["summary", "relationship"],
+                },
                 "proposed_content": {"type": "string"},
                 "source_citations": {
                     "type": "array",
@@ -250,7 +292,13 @@ def _tool_definitions() -> list[dict[str, object]]:
                             "char_start": {"type": "integer"},
                             "char_end": {"type": "integer"},
                         },
-                        "required": ["concept_id", "source_revision", "content_sha256", "char_start", "char_end"],
+                        "required": [
+                            "concept_id",
+                            "source_revision",
+                            "content_sha256",
+                            "char_start",
+                            "char_end",
+                        ],
                         "additionalProperties": False,
                     },
                 },
