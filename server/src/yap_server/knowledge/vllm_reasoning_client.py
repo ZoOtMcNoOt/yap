@@ -5,23 +5,22 @@ import json
 import queue
 import socket
 import threading
+import time
 from urllib.parse import urlsplit
 
 from .governed_rag_agent import ReasoningRetryableError
 from .knowledge_tool_contract import KnowledgeToolCancelled
 
 
-class VllmReasoningClient:
-    """Call one server-selected vLLM model over a bounded loopback connection."""
+class BoundedVllmJsonClient:
+    """Exchange bounded JSON with one loopback vLLM endpoint."""
 
     def __init__(
         self,
         *,
         endpoint: str,
-        model: str,
         timeout_seconds: int,
         maximum_response_bytes: int,
-        maximum_output_tokens: int,
     ) -> None:
         parsed = urlsplit(endpoint)
         if (
@@ -33,75 +32,34 @@ class VllmReasoningClient:
             or parsed.port is None
         ):
             raise ValueError("vLLM endpoint must be explicit loopback HTTP")
-        if not model or len(model) > 256 or model.strip() != model:
-            raise ValueError("vLLM model identity is invalid")
         if not 1 <= timeout_seconds <= 300:
             raise ValueError("vLLM timeout is invalid")
         if not 1 <= maximum_response_bytes <= 4_000_000:
             raise ValueError("vLLM response bound is invalid")
-        if not 1 <= maximum_output_tokens <= 4_096:
-            raise ValueError("vLLM output token bound is invalid")
         self._host = parsed.hostname
         self._port = parsed.port
-        self._model = model
         self._timeout_seconds = timeout_seconds
         self._maximum_response_bytes = maximum_response_bytes
-        self._maximum_output_tokens = maximum_output_tokens
-
-    def __call__(self, prompt: str, cancellation: threading.Event) -> str:
-        return self.request(prompt, cancellation, dispatched=None)
 
     def request(
         self,
-        prompt: str,
+        payload: dict[str, object],
         cancellation: threading.Event,
-        dispatched: threading.Event | None,
-    ) -> str:
-        if not isinstance(prompt, str) or not prompt:
-            raise ValueError("vLLM prompt is invalid")
+        dispatched: threading.Event | None = None,
+    ) -> dict[str, object]:
+        if not isinstance(payload, dict) or not payload:
+            raise ValueError("vLLM request payload is invalid")
         if cancellation.is_set():
             raise KnowledgeToolCancelled("vLLM reasoning was cancelled")
         connection = http.client.HTTPConnection(
             self._host, self._port, timeout=self._timeout_seconds
         )
-        outcome: queue.Queue[str | BaseException] = queue.Queue(maxsize=1)
+        outcome: queue.Queue[dict[str, object] | BaseException] = queue.Queue(
+            maxsize=1
+        )
         try:
             body = json.dumps(
-                {
-                    "model": self._model,
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": (
-                                "Use only supplied governed context. Return the exact "
-                                "requested JSON structure without extra text."
-                            ),
-                        },
-                        {"role": "user", "content": prompt},
-                    ],
-                    "temperature": 0,
-                    "max_tokens": self._maximum_output_tokens,
-                    "chat_template_kwargs": {"enable_thinking": False},
-                    "response_format": {
-                        "type": "json_schema",
-                        "json_schema": {
-                            "name": "governed_answer",
-                            "strict": True,
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "answer": {"type": "string"},
-                                    "citationConceptIds": {
-                                        "type": "array",
-                                        "items": {"type": "string"},
-                                    },
-                                },
-                                "required": ["answer", "citationConceptIds"],
-                                "additionalProperties": False,
-                            },
-                        },
-                    },
-                },
+                payload,
                 ensure_ascii=False,
                 separators=(",", ":"),
             ).encode("utf-8")
@@ -117,8 +75,16 @@ class VllmReasoningClient:
                 daemon=True,
             )
             worker.start()
+            deadline = time.monotonic() + self._timeout_seconds
             while worker.is_alive():
-                if cancellation.wait(0.01):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    _close_connection(connection)
+                    worker.join(timeout=1.0)
+                    if worker.is_alive():
+                        raise RuntimeError("vLLM reasoning transport did not stop")
+                    raise ReasoningRetryableError("vLLM reasoning timed out")
+                if cancellation.wait(min(0.01, remaining)):
                     _close_connection(connection)
                     worker.join(timeout=1.0)
                     if worker.is_alive():
@@ -136,11 +102,88 @@ class VllmReasoningClient:
             _close_connection(connection)
 
 
+class VllmReasoningClient:
+    """Call one server-selected vLLM model over a bounded loopback connection."""
+
+    def __init__(
+        self,
+        *,
+        endpoint: str,
+        model: str,
+        timeout_seconds: int,
+        maximum_response_bytes: int,
+        maximum_output_tokens: int,
+    ) -> None:
+        if not model or len(model) > 256 or model.strip() != model:
+            raise ValueError("vLLM model identity is invalid")
+        if not 1 <= maximum_output_tokens <= 4_096:
+            raise ValueError("vLLM output token bound is invalid")
+        self._transport = BoundedVllmJsonClient(
+            endpoint=endpoint,
+            timeout_seconds=timeout_seconds,
+            maximum_response_bytes=maximum_response_bytes,
+        )
+        self._model = model
+        self._maximum_output_tokens = maximum_output_tokens
+
+    def __call__(self, prompt: str, cancellation: threading.Event) -> str:
+        return self.request(prompt, cancellation, dispatched=None)
+
+    def request(
+        self,
+        prompt: str,
+        cancellation: threading.Event,
+        dispatched: threading.Event | None,
+    ) -> str:
+        if not isinstance(prompt, str) or not prompt:
+            raise ValueError("vLLM prompt is invalid")
+        response = self._transport.request(
+            {
+                "model": self._model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "Use only supplied governed context. Return the exact "
+                            "requested JSON structure without extra text."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0,
+                "max_tokens": self._maximum_output_tokens,
+                "chat_template_kwargs": {"enable_thinking": False},
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "governed_answer",
+                        "strict": True,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "answer": {"type": "string"},
+                                "citationConceptIds": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                },
+                            },
+                            "required": ["answer", "citationConceptIds"],
+                            "additionalProperties": False,
+                        },
+                    },
+                },
+            },
+            cancellation,
+            dispatched,
+        )
+        return _response_content(response)
+
+
 def _request(
     connection: http.client.HTTPConnection,
     body: bytes,
     maximum_response_bytes: int,
-    outcome: queue.Queue[str | BaseException],
+    outcome: queue.Queue[dict[str, object] | BaseException],
     dispatched: threading.Event | None,
 ) -> None:
     try:
@@ -160,7 +203,7 @@ def _request(
             raise RuntimeError("vLLM reasoning request was rejected")
         if len(response_body) > maximum_response_bytes:
             raise ValueError("vLLM response exceeds its byte bound")
-        outcome.put_nowait(_response_content(response_body))
+        outcome.put_nowait(_response_json(response_body))
     except BaseException as error:
         outcome.put_nowait(error)
 
@@ -174,18 +217,21 @@ def _close_connection(connection: http.client.HTTPConnection) -> None:
     connection.close()
 
 
-def _response_content(body: bytes) -> str:
+def _response_json(body: bytes) -> dict[str, object]:
     try:
         value = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("vLLM response differs from the contract") from error
+    if not isinstance(value, dict):
+        raise ValueError("vLLM response differs from the contract")
+    return value
+
+
+def _response_content(value: dict[str, object]) -> str:
+    try:
         choices = value["choices"]
         content = choices[0]["message"]["content"]
-    except (
-        UnicodeDecodeError,
-        json.JSONDecodeError,
-        KeyError,
-        IndexError,
-        TypeError,
-    ) as error:
+    except (KeyError, IndexError, TypeError) as error:
         raise ValueError("vLLM response differs from the contract") from error
     if (
         not isinstance(choices, list)
@@ -196,4 +242,4 @@ def _response_content(body: bytes) -> str:
     return content
 
 
-__all__ = ["VllmReasoningClient"]
+__all__ = ["BoundedVllmJsonClient", "VllmReasoningClient"]

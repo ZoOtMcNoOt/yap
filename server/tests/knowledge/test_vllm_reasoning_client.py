@@ -11,10 +11,19 @@ from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
 from yap_server.knowledge.vllm_reasoning_client import VllmReasoningClient
 
 
+class _Server(ThreadingHTTPServer):
+    daemon_threads = True
+
+    def handle_error(self, request: object, client_address: object) -> None:
+        pass
+
+
 class _Handler(BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
     status = 200
     observed: dict[str, object] | None = None
     delay_seconds = 0.0
+    trickle_seconds = 0.0
 
     def do_POST(self) -> None:
         length = int(self.headers["Content-Length"])
@@ -41,7 +50,13 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         try:
-            self.wfile.write(body)
+            if type(self).trickle_seconds:
+                for byte in body:
+                    self.wfile.write(bytes((byte,)))
+                    self.wfile.flush()
+                    time.sleep(type(self).trickle_seconds)
+            else:
+                self.wfile.write(body)
         except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError):
             pass
 
@@ -54,7 +69,8 @@ class VllmReasoningClientTests(unittest.TestCase):
         _Handler.status = 200
         _Handler.observed = None
         _Handler.delay_seconds = 0.0
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
+        _Handler.trickle_seconds = 0.0
+        self.server = _Server(("127.0.0.1", 0), _Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.client = VllmReasoningClient(
@@ -115,6 +131,22 @@ class VllmReasoningClientTests(unittest.TestCase):
         self.assertFalse(request.is_alive())
         self.assertIsInstance(outcome[0], RuntimeError)
         self.assertIn("transport did not stop", str(outcome[0]))
+
+    def test_request_timeout_is_a_total_wall_clock_deadline(self) -> None:
+        _Handler.trickle_seconds = 0.02
+        client = VllmReasoningClient(
+            endpoint=f"http://127.0.0.1:{self.server.server_port}",
+            model="selected/model",
+            timeout_seconds=1,
+            maximum_response_bytes=10_000,
+            maximum_output_tokens=100,
+        )
+        started = time.monotonic()
+
+        with self.assertRaises(ReasoningRetryableError):
+            client("governed prompt", threading.Event())
+
+        self.assertLess(time.monotonic() - started, 1.75)
 
 
 if __name__ == "__main__":

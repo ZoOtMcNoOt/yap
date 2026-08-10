@@ -26,6 +26,7 @@ from .agent_model_candidate_runner import (
 )
 from .agent_model_evidence import write_new_agent_model_evidence
 from .agent_model_scoring import score_agent_model_results
+from .agent_vllm_runtime import build_agent_vllm_launch_arguments
 from .checked_candidate import (
     CheckedCandidate,
     admit_checked_candidate,
@@ -298,7 +299,8 @@ def _failed_candidate_summary(
     runtime = failure["runtime"]
     if not isinstance(runtime, dict) or (
         runtime.get("modelArtifactManifestSha256") != expected["artifactManifestSha256"]
-        or runtime.get("launchArguments") != _expected_launch_arguments(expected)
+        or runtime.get("launchArguments")
+        != build_agent_vllm_launch_arguments(expected)
         or canonical_evidence_sha256(runtime.get("launchArguments"))
         != runtime.get("launchArgumentsSha256")
         or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(runtime.get("imageId")))
@@ -407,7 +409,7 @@ def _validate_runtime_receipt(
         or value["modelArtifactManifestSha256"] != expected["artifactManifestSha256"]
         or not isinstance(value["imageId"], str)
         or not re.fullmatch(r"sha256:[0-9a-f]{64}", value["imageId"])
-        or value["launchArguments"] != _expected_launch_arguments(expected)
+        or value["launchArguments"] != build_agent_vllm_launch_arguments(expected)
         or canonical_evidence_sha256(value["launchArguments"])
         != value["launchArgumentsSha256"]
         or not _SHA256.fullmatch(str(value["launchArgumentsSha256"]))
@@ -550,35 +552,6 @@ def _verify_runtime_children(
 
 def _positive_int(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
-
-
-def _expected_launch_arguments(expected: dict[str, object]) -> list[str]:
-    arguments = [
-        "vllm",
-        "serve",
-        f"/model-cache/snapshots/{expected['revision']}",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "30000",
-        "--served-model-name",
-        str(expected["model"]),
-        "--reasoning-parser",
-        str(expected["reasoningParser"]),
-        "--enable-auto-tool-choice",
-        "--tool-call-parser",
-        str(expected["toolCallParser"]),
-        "--max-model-len",
-        "8192",
-        "--gpu-memory-utilization",
-        "0.70",
-        "--enable-prefix-caching",
-        "--generation-config",
-        "vllm",
-    ]
-    if str(expected["candidateId"]).startswith("qwen3.6-"):
-        arguments.append("--language-model-only")
-    return arguments
 
 
 def _p95(values: object) -> int:

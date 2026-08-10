@@ -29,7 +29,6 @@
       "artifactManifestSha256": "bfcd3157f601d1a1cbd72c0af0f3df28d4174209d47975463d36b06248e22b99",
       "quantization": "modelopt_fp4",
       "toolCallParser": "gemma4",
-      "reasoningParser": "gemma4",
       "license": "Apache-2.0",
       "source": "https://huggingface.co/nvidia/Gemma-4-31B-IT-NVFP4"
     }

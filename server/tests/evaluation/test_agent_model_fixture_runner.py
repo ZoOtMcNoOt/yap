@@ -15,6 +15,30 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 class AgentModelFixtureRunnerTests(unittest.TestCase):
+    def test_terminology_workloads_request_a_noncanonical_proposal(self) -> None:
+        fixture = json.loads(
+            (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        terminology_cases = [
+            case for case in fixture["cases"] if case["category"] == "terminology"
+        ]
+
+        self.assertEqual(len(terminology_cases), 2)
+        for case in terminology_cases:
+            with self.subTest(case=case["caseId"]):
+                self.assertEqual(case["expectedTool"], "propose_knowledge")
+                self.assertIn("propose_knowledge", case["user"])
+                self.assertTrue(
+                    any(
+                        phrase in case["user"].lower()
+                        for phrase in ("noncanonical", "no canónica")
+                    )
+                )
+                for term in case["requiredTerms"]:
+                    self.assertIn(term, case["user"])
+
     def test_withholds_context_from_semantically_wrong_orchestration_step(self) -> None:
         fixture = json.loads(
             (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(

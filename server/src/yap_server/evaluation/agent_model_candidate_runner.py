@@ -4,10 +4,12 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
-import urllib.error
-import urllib.request
+import threading
 
-from yap_server.knowledge.vllm_reasoning_client import VllmReasoningClient
+from yap_server.knowledge.vllm_reasoning_client import (
+    BoundedVllmJsonClient,
+    VllmReasoningClient,
+)
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
@@ -77,29 +79,15 @@ def run_agent_model_candidate(
             ),
         )
 
+    fixture_client = BoundedVllmJsonClient(
+        endpoint=endpoint,
+        timeout_seconds=request_timeout_seconds,
+        maximum_response_bytes=4_000_000,
+    )
+    request_cancellation = threading.Event()
+
     def request_json(payload: dict[str, object]) -> dict[str, object]:
-        request = urllib.request.Request(
-            endpoint + "/v1/chat/completions",
-            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(
-                request, timeout=request_timeout_seconds
-            ) as response:
-                body = response.read(4_000_001)
-        except (urllib.error.URLError, TimeoutError) as error:
-            raise RuntimeError("agent model endpoint request failed") from error
-        if len(body) > 4_000_000:
-            raise ValueError("agent model response exceeds its byte bound")
-        try:
-            value = json.loads(body)
-        except (UnicodeDecodeError, json.JSONDecodeError) as error:
-            raise ValueError("agent model response is not valid JSON") from error
-        if not isinstance(value, dict):
-            raise ValueError("agent model response must be an object")
-        return value
+        return fixture_client.request(payload, request_cancellation)
 
     try:
         stage = "fixtures"

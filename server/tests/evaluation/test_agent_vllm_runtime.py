@@ -9,10 +9,33 @@ from unittest.mock import patch
 from yap_server.evaluation.agent_vllm_runtime import (
     OwnedAgentVllmRuntime,
     StartedAgentVllmRuntime,
+    build_agent_vllm_launch_arguments,
 )
 
 
 class AgentVllmRuntimeTests(unittest.TestCase):
+    def test_builds_route_specific_gpu_launch_contracts(self) -> None:
+        qwen = build_agent_vllm_launch_arguments(
+            _candidate("qwen3.6-35b-a3b-nvfp4", reasoning_parser="qwen3")
+        )
+        gemma = build_agent_vllm_launch_arguments(
+            _candidate("gemma-4-31b-it-nvfp4")
+        )
+
+        self.assertNotIn("--generation-config", qwen)
+        self.assertNotIn("--generation-config", gemma)
+        self.assertIn("--reasoning-parser", qwen)
+        self.assertNotIn("--reasoning-parser", gemma)
+        self.assertEqual(qwen[qwen.index("--moe-backend") + 1], "marlin")
+        self.assertEqual(qwen[qwen.index("--attention-backend") + 1], "flashinfer")
+        self.assertEqual(qwen[qwen.index("--load-format") + 1], "fastsafetensors")
+        self.assertIn("--speculative-config", qwen)
+        self.assertEqual(
+            gemma[gemma.index("--safetensors-load-strategy") + 1], "prefetch"
+        )
+        self.assertIn("--language-model-only", qwen)
+        self.assertIn("--language-model-only", gemma)
+
     def test_teardown_rejects_surviving_owned_cgroup_process(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             cgroup = Path(temporary)
@@ -120,6 +143,20 @@ def _children() -> dict[str, str]:
             "lifecycle",
         )
     }
+
+
+def _candidate(
+    candidate_id: str, *, reasoning_parser: str | None = None
+) -> dict[str, object]:
+    candidate: dict[str, object] = {
+        "candidateId": candidate_id,
+        "model": f"model/{candidate_id}",
+        "revision": "b" * 40,
+        "toolCallParser": "qwen3_xml" if candidate_id.startswith("qwen") else "gemma4",
+    }
+    if reasoning_parser is not None:
+        candidate["reasoningParser"] = reasoning_parser
+    return candidate
 
 
 if __name__ == "__main__":

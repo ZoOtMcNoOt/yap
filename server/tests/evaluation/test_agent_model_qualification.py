@@ -15,6 +15,9 @@ from yap_server.evaluation.agent_model_candidate_runner import (
 from yap_server.evaluation.agent_model_qualification import (
     evaluate_agent_model_qualification,
 )
+from yap_server.evaluation.agent_vllm_runtime import (
+    build_agent_vllm_launch_arguments,
+)
 from yap_server.evaluation.checked_candidate import (
     CheckedCandidate,
     bind_checked_candidate_evidence,
@@ -507,32 +510,7 @@ def _perfect_tool_calls(
 
 
 def _launch_arguments(model: dict[str, object]) -> list[str]:
-    arguments = [
-        "vllm",
-        "serve",
-        f"/model-cache/snapshots/{model['revision']}",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "30000",
-        "--served-model-name",
-        str(model["model"]),
-        "--reasoning-parser",
-        str(model["reasoningParser"]),
-        "--enable-auto-tool-choice",
-        "--tool-call-parser",
-        str(model["toolCallParser"]),
-        "--max-model-len",
-        "8192",
-        "--gpu-memory-utilization",
-        "0.70",
-        "--enable-prefix-caching",
-        "--generation-config",
-        "vllm",
-    ]
-    if str(model["candidateId"]).startswith("qwen3.6-"):
-        arguments.append("--language-model-only")
-    return arguments
+    return build_agent_vllm_launch_arguments(model)
 
 
 def _finish_reasons(*, stop: int = 0, abort: int = 0) -> dict[str, int]:

@@ -41,7 +41,7 @@
     {
       "caseId": "terminology-preservation-en",
       "category": "terminology",
-      "user": "Summarize the note while preserving exact terminology.",
+      "user": "Call propose_knowledge to store a noncanonical summary of the supplied note while preserving TAVI, Evolut FX, and 0.5 mg exactly.",
       "visibleContext": [{"conceptId":"glossary/tavi","text":"Use TAVI and Evolut FX exactly; do not rewrite dosage 0.5 mg.","sourceRevision":"rev-c","contentSha256":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","charStart":0,"charEnd":59}],
       "expectedTool": "propose_knowledge",
       "expectedProposalType": "summary",
@@ -51,7 +51,7 @@
     {
       "caseId": "terminology-preservation-es",
       "category": "terminology",
-      "user": "Resume la nota y conserva literalmente los términos indicados.",
+      "user": "Llama a propose_knowledge para guardar una propuesta no canónica de la nota y conserva TAVI, Evolut FX y 0,5 mg exactamente.",
       "visibleContext": [{"conceptId":"glossary/es","text":"Conservar exactamente TAVI, Evolut FX y 0,5 mg.","sourceRevision":"rev-d","contentSha256":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","charStart":0,"charEnd":46}],
       "expectedTool": "propose_knowledge",
       "expectedProposalType": "summary",
