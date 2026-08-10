@@ -267,6 +267,15 @@ class OwnedPostgresKnowledgeRuntimeTests(unittest.TestCase):
         self.assertEqual(launch[launch.index("--cpus") + 1], "2")
         self.assertEqual(launch[launch.index("--pids-limit") + 1], "256")
         self.assertEqual(launch[-1], _IMAGE_ID)
+        readiness = next(
+            command
+            for command in runner.commands
+            if command[:4]
+            == ["docker", "exec", postgres_runtime._CONTAINER_NAME, "sh"]
+        )
+        self.assertIn("--host 127.0.0.1", readiness[-1])
+        self.assertIn('PGPASSWORD="$POSTGRES_PASSWORD"', readiness[-1])
+        self.assertNotIn(runner.password, readiness[-1])
         self.assertEqual(started.host_port, 35432)
         self.assertTrue(all(restart.values()))
         self.assertTrue(all(teardown.values()))
@@ -532,10 +541,12 @@ class _FakeDockerRunner:
                 command, stdout=json.dumps([self._container_inspection()])
             )
         if command[:3] == ["docker", "exec", postgres_runtime._CONTAINER_NAME]:
-            if command[3] == "pg_isready":
+            if command[3] == "sh":
                 self.readiness_polled = True
                 return _completed(
-                    command, returncode=1 if self.exit_before_ready else 0
+                    command,
+                    returncode=1 if self.exit_before_ready else 0,
+                    stdout="" if self.exit_before_ready else "1\n",
                 )
             if command[3] == "dpkg-query":
                 return _completed(command, stdout="17.10-1.pgdg12+1")

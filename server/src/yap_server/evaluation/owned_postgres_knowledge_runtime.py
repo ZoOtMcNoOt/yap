@@ -429,16 +429,20 @@ class OwnedPostgresKnowledgeRuntime:
                     "docker",
                     "exec",
                     _CONTAINER_NAME,
-                    "pg_isready",
-                    "--username",
-                    _DATABASE_USER,
-                    "--dbname",
-                    _DATABASE_NAME,
+                    "sh",
+                    "-eu",
+                    "-c",
+                    (
+                        'PGPASSWORD="$POSTGRES_PASSWORD" exec psql '
+                        '--host 127.0.0.1 --username "$POSTGRES_USER" '
+                        '--dbname "$POSTGRES_DB" --no-password --tuples-only '
+                        '--no-align --command "SELECT 1"'
+                    ),
                 ],
                 check=False,
                 timeout=5,
             )
-            if ready.returncode == 0:
+            if ready.returncode == 0 and ready.stdout.strip() == "1":
                 return
             if not self._container_exists():
                 raise RuntimeError("knowledge database exited before readiness")
