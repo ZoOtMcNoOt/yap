@@ -30,6 +30,7 @@ class StartedAgentVllmRuntime:
     image_id: str
     model_artifact_manifest_sha256: str
     launch_arguments_sha256: str
+    launch_arguments: tuple[str, ...]
     cgroup_path: Path
     process_id: int
 
@@ -125,6 +126,7 @@ class OwnedAgentVllmRuntime:
             image_id=image_id,
             model_artifact_manifest_sha256=artifact_sha256,
             launch_arguments_sha256=argument_sha256,
+            launch_arguments=tuple(arguments),
             cgroup_path=cgroup_path,
             process_id=process_id,
         )
@@ -169,7 +171,10 @@ class OwnedAgentVllmRuntime:
             "model": self._candidate["model"],
             "revision": self._candidate["revision"],
             "runtime": self._runtime,
+            "imageId": started.image_id,
+            "quantization": self._candidate["quantization"],
             "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,
+            "launchArguments": list(started.launch_arguments),
             "launchArgumentsSha256": started.launch_arguments_sha256,
             "childEvidenceSha256": dict(sorted(child_evidence_sha256.items())),
             "teardown": {

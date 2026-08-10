@@ -313,7 +313,10 @@ def _runtime_receipt(
         "model",
         "revision",
         "runtime",
+        "imageId",
+        "quantization",
         "modelArtifactManifestSha256",
+        "launchArguments",
         "launchArgumentsSha256",
         "childEvidenceSha256",
         "teardown",
@@ -325,6 +328,7 @@ def _runtime_receipt(
         or value["candidateId"] != expected["candidateId"]
         or value["model"] != expected["model"]
         or value["revision"] != expected["revision"]
+        or value["quantization"] != expected["quantization"]
         or value["runtime"]
         != {
             "engine": "vllm",
@@ -335,6 +339,11 @@ def _runtime_receipt(
             "vllm": "0.22.1+7b9cb5b7.dev",
         }
         or not _SHA256.fullmatch(str(value["modelArtifactManifestSha256"]))
+        or not isinstance(value["imageId"], str)
+        or not re.fullmatch(r"sha256:[0-9a-f]{64}", value["imageId"])
+        or value["launchArguments"] != _expected_launch_arguments(expected)
+        or canonical_evidence_sha256(value["launchArguments"])
+        != value["launchArgumentsSha256"]
         or not _SHA256.fullmatch(str(value["launchArgumentsSha256"]))
         or not isinstance(value["childEvidenceSha256"], dict)
         or set(value["childEvidenceSha256"])
@@ -351,6 +360,35 @@ def _runtime_receipt(
         }
     ):
         raise ValueError("agent runtime receipt identity is invalid")
+
+
+def _expected_launch_arguments(expected: dict[str, object]) -> list[str]:
+    arguments = [
+        "vllm",
+        "serve",
+        f"/model-cache/snapshots/{expected['revision']}",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "30000",
+        "--served-model-name",
+        str(expected["model"]),
+        "--reasoning-parser",
+        str(expected["reasoningParser"]),
+        "--enable-auto-tool-choice",
+        "--tool-call-parser",
+        str(expected["toolCallParser"]),
+        "--max-model-len",
+        "8192",
+        "--gpu-memory-utilization",
+        "0.70",
+        "--enable-prefix-caching",
+        "--generation-config",
+        "vllm",
+    ]
+    if str(expected["candidateId"]).startswith("qwen3.6-"):
+        arguments.append("--language-model-only")
+    return arguments
 
 
 def _ranking_key(summary: dict[str, object]) -> tuple[int, int, int, str]:

@@ -15,6 +15,9 @@ from yap_server.evaluation.checked_candidate import (
     CheckedCandidate,
     bind_checked_candidate_evidence,
 )
+from yap_server.evaluation.provider_runtime_observations import (
+    canonical_evidence_sha256,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -177,8 +180,11 @@ def _write_candidate(
         "model": model["model"],
         "revision": model["revision"],
         "runtime": lock["runtime"],
+        "imageId": "sha256:" + "9" * 64,
+        "quantization": model["quantization"],
         "modelArtifactManifestSha256": "b" * 64,
-        "launchArgumentsSha256": "c" * 64,
+        "launchArguments": _launch_arguments(model),
+        "launchArgumentsSha256": "",
         "childEvidenceSha256": {
             "fixtures": "1" * 64,
             "pressure": "2" * 64,
@@ -192,6 +198,9 @@ def _write_candidate(
             "ownedWorkersReaped": True,
         },
     }
+    runtime_receipt["launchArgumentsSha256"] = canonical_evidence_sha256(
+        runtime_receipt["launchArguments"]
+    )
     runtime_path = (
         evidence_root / "agent-model" / candidate_id / "runtime-receipt.json"
     )
@@ -312,3 +321,32 @@ def _perfect_results() -> tuple[dict[str, object], ...]:
             }
         )
     return tuple(results)
+
+
+def _launch_arguments(model: dict[str, object]) -> list[str]:
+    arguments = [
+        "vllm",
+        "serve",
+        f"/model-cache/snapshots/{model['revision']}",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "30000",
+        "--served-model-name",
+        str(model["model"]),
+        "--reasoning-parser",
+        str(model["reasoningParser"]),
+        "--enable-auto-tool-choice",
+        "--tool-call-parser",
+        str(model["toolCallParser"]),
+        "--max-model-len",
+        "8192",
+        "--gpu-memory-utilization",
+        "0.70",
+        "--enable-prefix-caching",
+        "--generation-config",
+        "vllm",
+    ]
+    if str(model["candidateId"]).startswith("qwen3.6-"):
+        arguments.append("--language-model-only")
+    return arguments
