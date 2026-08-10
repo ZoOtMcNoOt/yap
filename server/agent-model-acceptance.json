@@ -33,5 +33,5 @@
       "rapid-automation": "qwen3.6-35b-a3b-nvfp4"
     }
   },
-  "permittedOutcomes": ["workload-routes-qualified", "deterministic-no-model"]
+  "permittedOutcomes": ["required-models-admitted", "deterministic-no-model"]
 }

@@ -95,8 +95,8 @@ def evaluate_agent_model_qualification(
         selected_routes = {}
         reasons = ["required-workload-route-did-not-meet-acceptance"]
     else:
-        outcome = "workload-routes-qualified"
-        reasons = ["every-required-workload-route-passed"]
+        outcome = "required-models-admitted"
+        reasons = ["every-required-model-passed-common-admission"]
     decision = {
         "schemaVersion": 1,
         "qualificationScope": "governed-agent-reasoning",
@@ -607,7 +607,7 @@ def main(argv: list[str] | None = None) -> int:
         shutil.rmtree(staging, ignore_errors=True)
         raise
     print(json.dumps(decision, sort_keys=True, separators=(",", ":")))
-    return 0 if decision["outcome"] == "workload-routes-qualified" else 1
+    return 0 if decision["outcome"] == "required-models-admitted" else 1
 
 
 def _fsync_evidence_tree(root: Path) -> None:

@@ -9,11 +9,11 @@
 The Voice OS frame previously named SGLang for agent inference because prefix
 caching, structured outputs, and high-concurrency scheduling fit Yap's governed
 agent workload. Phase 9 first compared Qwen 3.6 35B-A3B NVFP4 and Nemotron 3
-Nano NVFP4 as universal candidates on one DGX Spark. Exact private evidence
-showed that a single-winner comparison obscured two materially different
-workloads. The product owner subsequently approved Qwen 3.6 for rapid,
-high-volume automation and Gemma 4 31B IT for complex orchestration where
-strict multi-step tool behavior matters.
+Nano NVFP4 as universal candidates on one DGX Spark. The product owner then
+rejected a universal-winner policy and assigned Qwen 3.6 to rapid automation
+and Gemma 4 31B IT to complex orchestration. This is a frozen product routing
+hypothesis, not a claim that the current common admission fixtures prove either
+model superior for its assigned workload.
 
 The exact Qwen checkpoint failed to load in pinned SGLang 26.06 because its
 W4A16/FP8 block layout was unsupported. The same immutable checkpoint loaded
@@ -36,14 +36,17 @@ supervision target. The locked runtime is:
 Qwen and Gemma are both required workload routes, not interchangeable fallback
 models and not competitors for one universal winner. Qwen owns
 `rapid-automation`; Gemma owns `complex-orchestration`. A route is advertised
-only if both exact checkpoints pass their frozen workloads through an owned,
+only if both exact checkpoints pass the common frozen admission workload
+through an owned,
 receipt-bound runtime. Candidate evidence binds the
 exact image, model revision and artifact manifest, quantization, parser flags,
 launch arguments, checked head, cgroup observations, concurrent prefix
 isolation, in-flight cancellation, and teardown. Sequential Phase 9
-qualification proves each route independently. Simultaneous residency and
-sustained mixed-route capacity remain Phase 10 claims and require their own
-measured evidence.
+qualification proves common safety, structured-output, isolation, cancellation,
+and lifecycle admission independently. Route-specific rapid-throughput and
+multi-step orchestration evidence remains required before Phase 9 closure.
+Simultaneous residency and sustained mixed-route capacity remain Phase 10
+claims and require their own measured evidence.
 
 Rust/Yap owns authentication, authorization, retrieval, tool policy, request
 admission, cancellation intent, audit, and publication. vLLM owns model

@@ -30,7 +30,7 @@ class AgentModelAcceptanceTests(unittest.TestCase):
         self.assertEqual(len(plan.case_ids), 12)
         self.assertEqual(
             plan.permitted_outcomes,
-            ("workload-routes-qualified", "deterministic-no-model"),
+            ("required-models-admitted", "deterministic-no-model"),
         )
 
 

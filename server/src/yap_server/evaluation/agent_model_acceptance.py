@@ -84,7 +84,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
     selection_policy = _selection_policy(plan["selectionPolicy"], candidate_routes)
     required_routes = dict(selection_policy["requiredRoutes"])
     outcomes = plan["permittedOutcomes"]
-    if outcomes != ["workload-routes-qualified", "deterministic-no-model"]:
+    if outcomes != ["required-models-admitted", "deterministic-no-model"]:
         raise ValueError("agent model outcomes differ from the contract")
     return AgentModelAcceptance(
         plan_hash,

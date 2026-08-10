@@ -101,6 +101,9 @@ never compile permissions, grant access, or promote their own output.
 - [ ] Prove Rust/Yap selects an explicit workload class and never silently
   reroutes a failed request between models. Keep simultaneous residency and
   sustained mixed-route capacity as Phase 10 evidence.
+- [ ] Treat the assignment as a frozen product hypothesis until a Qwen rapid
+  latency/throughput track and a Gemma multi-step orchestration track pass.
+  Common admission evidence alone must not be reported as specialization proof.
 - [ ] Promote no model without workload-specific evidence; keep a deterministic
   no-model path for compiler, authorization, retrieval, and citations.
 - [ ] Benchmark the Postgres/pgvector baseline first. Implement Neo4j only if it

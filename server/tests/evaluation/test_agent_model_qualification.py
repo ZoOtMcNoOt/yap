@@ -71,7 +71,7 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate=candidate, runs=runs
             )
 
-        self.assertEqual(decision["outcome"], "workload-routes-qualified")
+        self.assertEqual(decision["outcome"], "required-models-admitted")
         self.assertEqual(
             decision["selectedRoutes"],
             {
