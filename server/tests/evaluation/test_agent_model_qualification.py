@@ -315,6 +315,7 @@ def _candidate_run(
             "listenerAbsent": True,
             "ownedWorkersReaped": True,
             "ownedCgroupEmpty": True,
+            "sameLabelOwnersAbsent": True,
         },
     }
     evidence = bind_checked_candidate_evidence(
@@ -378,6 +379,7 @@ def _failed_run(
                     "listenerAbsent": True,
                     "ownedWorkersReaped": True,
                     "ownedCgroupEmpty": True,
+                    "sameLabelOwnersAbsent": True,
                 },
             },
         },

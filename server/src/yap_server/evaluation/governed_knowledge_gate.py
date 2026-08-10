@@ -11,8 +11,8 @@ import subprocess
 import sys
 from typing import Callable, Mapping, Sequence
 
-from yap_server.evaluation.agent_model_evidence import (
-    write_new_agent_model_evidence,
+from yap_server.evaluation.private_json_evidence import (
+    write_new_private_json_evidence,
 )
 from yap_server.evaluation.agent_route_qualification_evidence import (
     admit_agent_route_qualification,
@@ -39,7 +39,7 @@ _EXPECTED_DATABASE_MODULES = (
     "tests.knowledge.test_reviewed_meeting_postgres_route",
     "tests.knowledge.test_terminology_ledger",
 )
-_EXPECTED_DATABASE_TEST_COUNT = 9
+_EXPECTED_DATABASE_TEST_COUNT = 14
 _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
 )
@@ -54,20 +54,22 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.evaluation.test_agent_vllm_runtime",
     "tests.evaluation.test_checked_candidate",
     "tests.evaluation.test_governed_knowledge_gate",
+    "tests.evaluation.test_owned_postgres_knowledge_runtime",
+    "tests.evaluation.test_private_json_evidence",
     "tests.evaluation.test_provider_runtime_observations",
     "tests.evaluation.test_vllm_runtime_metrics",
     "tests.knowledge.test_agent_reasoning_routes",
+    "tests.knowledge.test_cancellable_database_operation",
     "tests.knowledge.test_governed_answer_protocol",
     "tests.knowledge.test_governed_knowledge_mcp",
     "tests.knowledge.test_governed_rag_agent",
     "tests.knowledge.test_okf_compiler",
-    "tests.knowledge.test_permission_safe_retrieval",
     "tests.knowledge.test_reviewed_meeting_knowledge",
     "tests.knowledge.test_terminology_authorization",
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 109
+_EXPECTED_PORTABLE_TEST_COUNT = 125
 
 
 def evaluate_governed_knowledge_gate(
@@ -277,7 +279,7 @@ def evaluate_governed_knowledge_gate(
         },
         candidate,
     )
-    write_new_agent_model_evidence(receipt_path, receipt)
+    write_new_private_json_evidence(receipt_path, receipt)
     return receipt
 
 

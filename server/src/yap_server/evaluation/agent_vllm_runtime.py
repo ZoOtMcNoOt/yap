@@ -150,6 +150,15 @@ class StartedAgentVllmRuntime:
         return value
 
 
+@dataclass(frozen=True, slots=True)
+class _PendingAgentVllmRuntime:
+    image_id: str
+    model_root: Path
+    model_artifact_manifest_sha256: str
+    launch_arguments_sha256: str
+    launch_arguments: tuple[str, ...]
+
+
 class OwnedAgentVllmRuntime:
     """Own one exact digest/model/container lifecycle for private qualification."""
 
@@ -170,9 +179,12 @@ class OwnedAgentVllmRuntime:
         self._runner = runner
         self._home = (home or Path.home()).resolve(strict=True)
         self._started: StartedAgentVllmRuntime | None = None
+        self._pending: _PendingAgentVllmRuntime | None = None
+        self._container_created = False
+        self._created_container_id: str | None = None
 
     def start(self, *, timeout_seconds: int) -> StartedAgentVllmRuntime:
-        if self._started is not None:
+        if self._started is not None or self._pending is not None:
             raise RuntimeError("agent runtime is already started")
         if not 1 <= timeout_seconds <= 900:
             raise ValueError("agent runtime startup timeout is invalid")
@@ -182,6 +194,13 @@ class OwnedAgentVllmRuntime:
         model_root, snapshot, artifact_sha256 = self._verified_model_snapshot()
         arguments = self._launch_arguments(snapshot)
         argument_sha256 = canonical_evidence_sha256(arguments)
+        self._pending = _PendingAgentVllmRuntime(
+            image_id=image_id,
+            model_root=model_root,
+            model_artifact_manifest_sha256=artifact_sha256,
+            launch_arguments_sha256=argument_sha256,
+            launch_arguments=tuple(arguments),
+        )
         completed = self._run(
             [
                 "docker",
@@ -189,6 +208,8 @@ class OwnedAgentVllmRuntime:
                 "-d",
                 "--name",
                 _CONTAINER_NAME,
+                "--pull",
+                "never",
                 "--label",
                 "io.yap.owner=private-inference",
                 "--label",
@@ -213,31 +234,15 @@ class OwnedAgentVllmRuntime:
             ]
         )
         container_id = completed.stdout.strip()
-        if not re.fullmatch(r"[0-9a-f]{64}", container_id):
-            self._remove_failed_container()
-            raise RuntimeError("agent runtime container identity is invalid")
-        try:
-            inspection = self._inspect_container()
-            process_id, cgroup_path = self._verify_container(
-                inspection,
-                image_id=image_id,
-                arguments=arguments,
-            )
-        except BaseException:
-            self._remove_failed_container()
-            raise
-        started = StartedAgentVllmRuntime(
-            endpoint=f"http://127.0.0.1:{_PORT}",
-            container_name=_CONTAINER_NAME,
-            container_id=container_id,
-            image_id=image_id,
-            model_artifact_manifest_sha256=artifact_sha256,
-            launch_arguments_sha256=argument_sha256,
-            launch_arguments=tuple(arguments),
-            cgroup_path=cgroup_path,
-            process_id=process_id,
+        self._container_created = True
+        if re.fullmatch(r"[0-9a-f]{64}", container_id):
+            self._created_container_id = container_id
+        started, inspection = self._observe_started_container(
+            self._created_container_id or _CONTAINER_NAME
         )
-        self._started = started
+        if container_id != started.container_id:
+            raise RuntimeError("agent runtime container identity is invalid")
+        self._verify_container_policy(inspection, started=started)
         self._wait_ready(timeout_seconds)
         return started
 
@@ -262,19 +267,24 @@ class OwnedAgentVllmRuntime:
         ):
             raise ValueError("agent runtime child evidence is incomplete")
         self._run(
-            ["docker", "stop", "--time", str(timeout_seconds), _CONTAINER_NAME],
+            ["docker", "stop", "--time", str(timeout_seconds), started.container_id],
             timeout=timeout_seconds + 10,
         )
-        self._run(["docker", "rm", _CONTAINER_NAME])
-        container_absent = not self._container_exists()
+        self._run(["docker", "rm", started.container_id])
+        container_absent = not self._container_exists(started.container_id)
         listener_absent = _listener_is_absent(_PORT)
         workers_reaped = not Path(f"/proc/{started.process_id}").exists()
         cgroup_empty = _cgroup_is_empty(started.cgroup_path)
+        label_owners_absent = self._same_label_owners_absent()
         if not (
-            container_absent and listener_absent and workers_reaped and cgroup_empty
+            container_absent
+            and listener_absent
+            and workers_reaped
+            and cgroup_empty
+            and label_owners_absent
         ):
             raise RuntimeError("agent runtime teardown did not complete")
-        self._started = None
+        self._clear_identity()
         return {
             "schemaVersion": 1,
             "checkedHead": self._checked_head,
@@ -293,30 +303,52 @@ class OwnedAgentVllmRuntime:
                 "listenerAbsent": listener_absent,
                 "ownedWorkersReaped": workers_reaped,
                 "ownedCgroupEmpty": cgroup_empty,
+                "sameLabelOwnersAbsent": label_owners_absent,
             },
         }
 
     def contain_failed_run(self, *, timeout_seconds: int) -> dict[str, object]:
         """Stop a verified runtime and prove containment after candidate rejection."""
 
+        observation_error: BaseException | None = None
+        if self._started is None and self._container_created:
+            try:
+                self._observe_started_container(
+                    self._created_container_id or _CONTAINER_NAME
+                )
+            except BaseException as error:
+                observation_error = error
         started = self._started
-        if started is None:
-            raise RuntimeError("failed agent runtime was not identity-verified")
+        target = self._created_container_id or _CONTAINER_NAME
         self._run(
-            ["docker", "stop", "--time", str(timeout_seconds), _CONTAINER_NAME],
+            ["docker", "stop", "--time", str(timeout_seconds), target],
             check=False,
             timeout=timeout_seconds + 10,
         )
-        self._run(["docker", "rm", "--force", _CONTAINER_NAME], check=False)
+        self._run(["docker", "rm", "--force", target], check=False)
+        identity_unobserved = self._container_created and started is None
         teardown = {
-            "containerAbsent": not self._container_exists(),
+            "containerAbsent": not self._container_exists(target),
             "listenerAbsent": _listener_is_absent(_PORT),
-            "ownedWorkersReaped": not Path(f"/proc/{started.process_id}").exists(),
-            "ownedCgroupEmpty": _cgroup_is_empty(started.cgroup_path),
+            "ownedWorkersReaped": (
+                True
+                if started is None
+                else not Path(f"/proc/{started.process_id}").exists()
+            ),
+            "ownedCgroupEmpty": (
+                True if started is None else _cgroup_is_empty(started.cgroup_path)
+            ),
+            "sameLabelOwnersAbsent": self._same_label_owners_absent(),
         }
         if not all(teardown.values()):
             raise RuntimeError("failed agent runtime containment did not complete")
-        self._started = None
+        if identity_unobserved:
+            raise RuntimeError(
+                "created agent runtime identity could not be observed for containment"
+            ) from observation_error
+        if started is None:
+            raise RuntimeError("failed agent runtime was not created")
+        self._clear_identity()
         return {
             "imageId": started.image_id,
             "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,
@@ -394,46 +426,82 @@ class OwnedAgentVllmRuntime:
             raise ValueError("agent model snapshot revision differs")
         return build_agent_vllm_launch_arguments(self._candidate)
 
-    def _inspect_container(self) -> dict[str, object]:
+    def _inspect_container(self, target: str) -> dict[str, object]:
         return _single_inspection(
-            self._run(["docker", "container", "inspect", _CONTAINER_NAME])
+            self._run(["docker", "container", "inspect", target])
         )
 
-    def _verify_container(
-        self,
-        inspection: dict[str, object],
-        *,
-        image_id: str,
-        arguments: list[str],
-    ) -> tuple[int, Path]:
+    def _observe_started_container(
+        self, target: str
+    ) -> tuple[StartedAgentVllmRuntime, dict[str, object]]:
+        pending = self._pending
+        if pending is None:
+            raise RuntimeError("agent runtime launch identity is unavailable")
+        inspection = self._inspect_container(target)
         state = inspection.get("State")
-        config = inspection.get("Config")
-        labels = config.get("Labels") if isinstance(config, dict) else None
+        container_id = inspection.get("Id")
         process_id = state.get("Pid") if isinstance(state, dict) else None
         if (
-            inspection.get("Image") != image_id
+            not isinstance(container_id, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", container_id)
+            or (
+                self._created_container_id is not None
+                and container_id != self._created_container_id
+            )
             or not isinstance(state, dict)
             or state.get("Running") is not True
             or isinstance(process_id, bool)
             or not isinstance(process_id, int)
             or process_id < 2
+        ):
+            raise ValueError("agent runtime observed identity differs")
+        self._created_container_id = container_id
+        cgroup_path = _owned_cgroup_path(process_id)
+        started = StartedAgentVllmRuntime(
+            endpoint=f"http://127.0.0.1:{_PORT}",
+            container_name=_CONTAINER_NAME,
+            container_id=container_id,
+            image_id=pending.image_id,
+            model_artifact_manifest_sha256=(
+                pending.model_artifact_manifest_sha256
+            ),
+            launch_arguments_sha256=pending.launch_arguments_sha256,
+            launch_arguments=pending.launch_arguments,
+            cgroup_path=cgroup_path,
+            process_id=process_id,
+        )
+        self._started = started
+        return started, inspection
+
+    def _verify_container_policy(
+        self,
+        inspection: dict[str, object],
+        *,
+        started: StartedAgentVllmRuntime,
+    ) -> None:
+        config = inspection.get("Config")
+        labels = config.get("Labels") if isinstance(config, dict) else None
+        environment = config.get("Env") if isinstance(config, dict) else None
+        host_config = inspection.get("HostConfig")
+        mounts = inspection.get("Mounts")
+        pending = self._pending
+        if (
+            pending is None
+            or inspection.get("Id") != started.container_id
+            or inspection.get("Name") != f"/{_CONTAINER_NAME}"
+            or inspection.get("Image") != started.image_id
             or not isinstance(config, dict)
-            or config.get("Cmd") != arguments
+            or config.get("Cmd") != list(started.launch_arguments)
+            or config.get("User") != "1000:1000"
+            or not isinstance(environment, list)
+            or "HOME=/tmp" not in environment
             or not isinstance(labels, dict)
             or labels.get("io.yap.owner") != "private-inference"
             or labels.get("io.yap.revision") != self._checked_head
+            or not _exact_vllm_host_policy(host_config)
+            or not _exact_read_only_model_mount(mounts, pending.model_root)
         ):
             raise ValueError("agent runtime container ownership differs")
-        membership = Path(f"/proc/{process_id}/cgroup").read_text(encoding="ascii")
-        lines = [line for line in membership.splitlines() if line.startswith("0::")]
-        if len(lines) != 1:
-            raise ValueError("agent runtime cgroup membership is invalid")
-        cgroup = (Path("/sys/fs/cgroup") / lines[0][3:].lstrip("/")).resolve(
-            strict=True
-        )
-        if Path("/sys/fs/cgroup").resolve(strict=True) not in cgroup.parents:
-            raise ValueError("agent runtime cgroup escaped its hierarchy")
-        return process_id, cgroup
 
     def _wait_ready(self, timeout_seconds: int) -> None:
         deadline = time.monotonic() + timeout_seconds
@@ -446,24 +514,43 @@ class OwnedAgentVllmRuntime:
                         return
             except (urllib.error.URLError, TimeoutError):
                 pass
-            if not self._container_exists():
+            if not self._container_exists(self._created_container_id or _CONTAINER_NAME):
                 raise RuntimeError("agent runtime exited before readiness")
             time.sleep(0.25)
         raise TimeoutError("agent runtime readiness timed out")
 
     def _assert_container_absent(self) -> None:
-        if self._container_exists():
+        if self._container_exists(_CONTAINER_NAME):
             raise RuntimeError("agent runtime container already exists")
 
-    def _container_exists(self) -> bool:
+    def _container_exists(self, target: str) -> bool:
         completed = self._run(
-            ["docker", "container", "inspect", _CONTAINER_NAME],
+            ["docker", "container", "inspect", target],
             check=False,
         )
         return completed.returncode == 0
 
-    def _remove_failed_container(self) -> None:
-        self._run(["docker", "rm", "--force", _CONTAINER_NAME], check=False)
+    def _same_label_owners_absent(self) -> bool:
+        completed = self._run(
+            [
+                "docker",
+                "ps",
+                "--all",
+                "--quiet",
+                "--filter",
+                "label=io.yap.owner=private-inference",
+                "--filter",
+                f"label=io.yap.revision={self._checked_head}",
+            ],
+            check=False,
+        )
+        return completed.returncode == 0 and not completed.stdout.strip()
+
+    def _clear_identity(self) -> None:
+        self._started = None
+        self._pending = None
+        self._container_created = False
+        self._created_container_id = None
 
     def _run(
         self,
@@ -501,6 +588,70 @@ def _file_sha256(path: Path) -> str:
         for chunk in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _owned_cgroup_path(process_id: int) -> Path:
+    membership = Path(f"/proc/{process_id}/cgroup").read_text(encoding="ascii")
+    lines = [line for line in membership.splitlines() if line.startswith("0::")]
+    if len(lines) != 1:
+        raise ValueError("agent runtime cgroup membership is invalid")
+    hierarchy = Path("/sys/fs/cgroup").resolve(strict=True)
+    cgroup = (hierarchy / lines[0][3:].lstrip("/")).resolve(strict=True)
+    if hierarchy not in cgroup.parents:
+        raise ValueError("agent runtime cgroup escaped its hierarchy")
+    return cgroup
+
+
+def _exact_vllm_host_policy(value: object) -> bool:
+    if not isinstance(value, dict):
+        return False
+    ulimits = value.get("Ulimits")
+    requests = value.get("DeviceRequests")
+    expected_ulimits = {
+        ("memlock", -1, -1),
+        ("stack", 67_108_864, 67_108_864),
+    }
+    observed_ulimits = (
+        {
+            (item.get("Name"), item.get("Soft"), item.get("Hard"))
+            for item in ulimits
+            if isinstance(item, dict)
+        }
+        if isinstance(ulimits, list)
+        else set()
+    )
+    if (
+        value.get("NetworkMode") != "host"
+        or value.get("IpcMode") != "host"
+        or observed_ulimits != expected_ulimits
+        or not isinstance(requests, list)
+        or len(requests) != 1
+        or not isinstance(requests[0], dict)
+        or requests[0].get("Count") != -1
+    ):
+        return False
+    capabilities = requests[0].get("Capabilities")
+    return (
+        isinstance(capabilities, list)
+        and len(capabilities) == 1
+        and capabilities[0] == ["gpu"]
+    )
+
+
+def _exact_read_only_model_mount(value: object, model_root: Path) -> bool:
+    if not isinstance(value, list) or len(value) != 1 or not isinstance(value[0], dict):
+        return False
+    mount = value[0]
+    try:
+        source = Path(str(mount.get("Source"))).resolve(strict=True)
+    except (OSError, RuntimeError):
+        return False
+    return (
+        mount.get("Type") == "bind"
+        and mount.get("Destination") == "/model-cache"
+        and mount.get("RW") is False
+        and source == model_root
+    )
 
 
 def _assert_listener_absent(port: int) -> None:

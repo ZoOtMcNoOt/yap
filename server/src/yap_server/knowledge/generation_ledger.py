@@ -7,6 +7,11 @@ import math
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
+from .knowledge_source_admission import (
+    install_knowledge_source_admission_schema,
+    require_knowledge_source_admission,
+)
+from .knowledge_proposals import install_knowledge_proposal_schema
 from .okf_compiler import CompiledKnowledgeGeneration
 from .okf_profile import identity
 from .permission_policy import permission_record
@@ -25,12 +30,14 @@ class KnowledgeGenerationDescriptor:
 def install_knowledge_schema(connection: Connection[object]) -> None:
     """Install the durable knowledge-generation schema used by production and tests."""
 
+    install_knowledge_source_admission_schema(connection)
     with connection.transaction():
         connection.execute("CREATE EXTENSION IF NOT EXISTS vector")
         connection.execute(
             """CREATE TABLE IF NOT EXISTS yap_knowledge_builds (
                 tenant_id text NOT NULL,
                 generation_sha256 text NOT NULL,
+                source_admission_sha256 text NOT NULL,
                 source_revision text NOT NULL,
                 okf_version text NOT NULL,
                 concept_count integer NOT NULL CHECK (concept_count >= 0),
@@ -40,7 +47,9 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                 embedding_model_id text,
                 embedding_model_revision text,
                 created_at timestamptz NOT NULL DEFAULT transaction_timestamp(),
-                PRIMARY KEY (tenant_id, generation_sha256)
+                PRIMARY KEY (tenant_id, generation_sha256),
+                FOREIGN KEY (tenant_id, source_admission_sha256)
+                    REFERENCES yap_knowledge_source_admissions
             )"""
         )
         connection.execute(
@@ -171,38 +180,39 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                 activated_at timestamptz NOT NULL DEFAULT transaction_timestamp()
             )"""
         )
-        connection.execute(
-            """CREATE TABLE IF NOT EXISTS yap_knowledge_generation_holds (
-                tenant_id text NOT NULL,
-                generation_sha256 text NOT NULL,
-                hold_type text NOT NULL,
-                hold_id text NOT NULL,
-                created_at timestamptz NOT NULL DEFAULT transaction_timestamp(),
-                PRIMARY KEY (tenant_id, generation_sha256, hold_type, hold_id),
-                FOREIGN KEY (tenant_id, generation_sha256)
-                    REFERENCES yap_knowledge_builds
-            )"""
-        )
+        install_knowledge_proposal_schema(connection)
 
 
 def stage_compiled_generation(
-    connection: Connection[object], generation: CompiledKnowledgeGeneration
+    connection: Connection[object],
+    generation: CompiledKnowledgeGeneration,
+    *,
+    source_admission_sha256: str,
 ) -> KnowledgeGenerationDescriptor:
     """Stage one immutable generation without making it queryable."""
 
     with connection.transaction():
+        require_knowledge_source_admission(
+            connection,
+            tenant_id=generation.tenant_id,
+            admission_sha256=source_admission_sha256,
+            generation_sha256=generation.generation_sha256,
+            source_revision=generation.source_revision,
+        )
         connection.execute(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
             (generation.tenant_id,),
         )
         connection.execute(
             """INSERT INTO yap_knowledge_builds (
-                tenant_id, generation_sha256, source_revision, okf_version,
+                tenant_id, generation_sha256, source_admission_sha256,
+                source_revision, okf_version,
                 concept_count, chunk_count, relationship_count, permission_count
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
             (
                 generation.tenant_id,
                 generation.generation_sha256,
+                source_admission_sha256,
                 generation.source_revision,
                 generation.okf_version,
                 len(generation.concepts),
@@ -559,9 +569,10 @@ def prune_inactive_generations(
                 AND a.generation_sha256 = b.generation_sha256
                WHERE b.tenant_id = %s AND a.generation_sha256 IS NULL
                  AND NOT EXISTS (
-                    SELECT 1 FROM yap_knowledge_generation_holds h
-                    WHERE h.tenant_id = b.tenant_id
-                      AND h.generation_sha256 = b.generation_sha256
+                    SELECT 1 FROM yap_knowledge_proposals p
+                    WHERE p.tenant_id = b.tenant_id
+                      AND p.generation_sha256 = b.generation_sha256
+                      AND p.status = 'proposed'
                  )
                ORDER BY b.created_at DESC, b.generation_sha256 DESC
                OFFSET %s""",

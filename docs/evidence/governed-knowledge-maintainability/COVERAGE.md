@@ -3,7 +3,7 @@
 **Merged implementation base:**
 `ae81ff067c73a64528eecc14403765562726f2fe`
 
-**Inventory anchor:** `3ce9909d7ba172a48139814336b2cd41ff89e1df`
+**Inventory and review anchor:** `e2fff1f5b087cc05a549588ea41aae71a6806024`
 
 **Inventory date:** 2026-08-10
 
@@ -80,9 +80,9 @@ each is cohesive, generated/machine-maintained, historical, or needs repair.
 
 ## Executable ownership and dependency map
 
-The detailed pre-Phase-9 workflow map remains
+The detailed workflow map is
 [Executable Ownership and Trust Boundaries](../../architecture/boundaries/EXECUTABLE-OWNERSHIP.md).
-This checkpoint must reconcile it with the owners below before closure.
+This checkpoint reconciles it through the merged Phase 9 owners below.
 
 | Workflow or durable truth | Current owner | Required dependency direction |
 | --- | --- | --- |
@@ -127,14 +127,53 @@ in isolation:
 
 | Area | Breadth review | Deep review | Disposition |
 | --- | --- | --- | --- |
-| Desktop UI/native/local lifecycle | Pending | Pending | Pending reviewer evidence |
-| Durable client/server batch and preprocessing | Pending | Pending | Pending reviewer evidence |
-| Identity/authorization/WSS | Pending | Pending | Pending reviewer evidence |
-| Meeting evidence | Pending | Pending | Pending reviewer evidence |
-| Knowledge/terminology/retrieval | Pending | Pending | Pending reviewer evidence |
-| Agent runtime/evidence | Pending | Pending | Pending reviewer evidence |
-| Packaging/CI/gates/provenance | Pending | Pending | Pending reviewer evidence |
-| Docs/ADRs/plans/runbooks/status | Pending | Pending | Pending reviewer evidence |
+| Desktop UI/native/local lifecycle | Complete across three lenses | Risk/threshold owners sampled; no Phase 9 desktop delta | No P0-P2; retain inherited local/offline boundary evidence |
+| Durable client/server batch and preprocessing | Complete across three lenses | Job scheduling/result/cancel/restart owners | No P0-P2; retain `jobs/service.py` with aggregate-root cohesion justification |
+| Identity/authorization/WSS | Complete across three lenses | Identity durable owner and adjacent trust seams | KAP-06 removes the obsolete development-schema migration; no tenant/subject/revocation defect found |
+| Meeting evidence | Complete across three lenses | Result revision -> reviewed capture -> source admission -> compilation | KAP-02/KAP-03 remediations implemented; real Postgres gate and re-review remain |
+| Knowledge/terminology/retrieval | Complete across three lenses | Generation, permissions, retrieval, terminology, proposal, SQL lifecycle | KAP-01 through KAP-05 remediations implemented; real Postgres gate and re-review remain |
+| Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-05 and ARCH-03 remediations implemented; protected changes require one fresh private qualification; no fallback defect found |
+| Packaging/CI/gates/provenance | Complete across three lenses | Locks, licenses, receipt boundaries, exact-head hosted workflow | No P0-P2; private/public evidence separation remains sound |
+| Docs/ADRs/plans/runbooks/status | Complete across three lenses | Current/normative taxonomy and ownership navigation | Ownership/current docs reconciled and mixed test owner split; independent re-review remains |
 
-The final version records all dispositions, every retained >350-line cohesion
-justification, actual LOC removed, and the thirty-minute comprehension result.
+## Deletion and consolidation result
+
+The checkpoint removed 546 lines of known duplicated or obsolete authority
+before counting replacements: 286 lines of in-memory permission/retrieval code
+and its duplicate behavioral test, 244 lines of evaluator-owned tool schemas and
+validators, and 16 lines of obsolete identity-schema migration. The generic
+proposal-hold table and mutation path were also deleted; unresolved proposals
+now carry their own retention meaning and an authorized discard is the one
+current disposition. The model-specific evidence publisher was removed and its
+bounded behavior moved to a functional shared owner. New source-admission,
+containment, cancellation, and adversarial tests make the overall checkpoint
+net additive; no LOC-reduction claim is made for those correctness repairs.
+
+## Retained cohesion decisions
+
+| Surface | Lines after remediation | Concrete owner justification |
+| --- | ---: | --- |
+| `server/src/yap_server/jobs/service.py` | 1,401 | One `RLock` protects the server job aggregate: scheduling, cancellation, result publication, and recovery must not acquire a second state owner. Extract only pure policies if a future change establishes a real seam. |
+| `server/src/yap_server/knowledge/generation_ledger.py` | 654 | One Postgres transaction owner installs/stages/embeds/activates/rolls back/prunes generations and the active pointer under one tenant lock. Splitting mutations would obscure atomicity. |
+| `server/src/yap_server/knowledge/postgres_knowledge_retrieval.py` | 360 | One query-family owner shares the same authorized generation/result/citation projection across tree, lexical, vector, and hybrid reads. |
+| `server/src/yap_server/evaluation/owned_postgres_knowledge_runtime.py` | 753 | One lifecycle state machine owns immutable image/container/network/volume/start/restart/readiness/containment/teardown identity; decomposition would split failure containment. |
+| `server/src/yap_server/evaluation/governed_knowledge_gate.py` | 569 | One aggregate decision composes exact candidate admission, portable/Ruff/Postgres/restart children, teardown, and create-once publication. Child lifecycle and evidence validators remain separate modules. |
+| `server/src/yap_server/evaluation/agent_route_qualification_evidence.py` | 476 | One private-tree admission boundary verifies exact membership, hashes, permissions, semantic summaries, predecessor identity, and protected drift without importing raw output into public evidence. |
+| `server/src/yap_server/evaluation/agent_model_qualification.py` | 678 | One fail-closed route decision recomputes both owned candidate results, route-specific evidence, runtime children, and atomic tree publication. Runtime execution remains separately owned. |
+| `server/src/yap_server/evaluation/agent_vllm_runtime.py` | 678 | One repaired lifecycle state machine retains pending/observed immutable identities through launch-policy validation, readiness, cgroup observation, containment, and exact teardown. |
+| `server/src/yap_server/evaluation/agent_model_fixture_runner.py` | 415 | Conversation sequencing and tool/result rounds remain one evaluation driver after the duplicate product-tool schema authority was removed. |
+| `server/tests/evaluation/test_owned_postgres_knowledge_runtime.py` | 497 | One fake Docker lifecycle test owner covers start/restart/rebind/partial-observation/containment/teardown; aggregate-gate contracts were split into their own 293-line module. |
+
+## Thirty-minute comprehension assessment
+
+**Result: pass within the allotted window.** Starting from the ownership map, a
+senior-engineer navigation read-back located (1) the authoritative reviewed
+meeting result and source-admission rows, (2) terminology and generation active
+pointer writers, (3) the shared-lock permission/retrieval transaction, (4)
+proposal disposition and audit, (5) explicit model-route selection and the
+vLLM/Postgres lifecycle owners, (6) private/public evidence publication, and
+(7) their portable versus required-real-Postgres tests without relying on
+tribal naming. The test split and functional private-evidence name removed the
+two ambiguous navigation points found during discovery. Production supervision,
+capacity, external networking, and deployment are visibly outside these owners
+and remain Phase 10/IT handoffs.

@@ -5,12 +5,15 @@ import json
 from pathlib import Path
 import time
 from typing import Callable
-import re
 
 from yap_server.knowledge.governed_answer_protocol import (
     FINAL_RESPONSE_PROTOCOLS,
     governed_answer_request_fields,
     read_governed_answer,
+)
+from yap_server.knowledge.knowledge_tool_contract import (
+    governed_agent_tool_definitions,
+    validate_governed_agent_tool_arguments,
 )
 from yap_server.private_artifact import read_json_object_with_identity
 
@@ -18,7 +21,6 @@ from .agent_model_acceptance import load_agent_model_acceptance
 
 
 JsonRequest = Callable[[dict[str, object]], dict[str, object]]
-_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,7 +133,7 @@ def warm_agent_model_fixture_runtime(
                     ),
                 },
             ],
-            "tools": _tool_definitions(),
+            "tools": governed_agent_tool_definitions(),
             "tool_choice": "required",
             "parallel_tool_calls": False,
             "temperature": 0,
@@ -224,7 +226,7 @@ def _run_case(
         messages.extend(_retrieval_messages(case))
     expected_sequence = tuple(case.get("expectedToolSequence", [case["expectedTool"]]))
     expected_arguments = case.get("expectedArguments", {})
-    tools = _tool_definitions(
+    tools = governed_agent_tool_definitions(
         require_generation_sha256=(
             isinstance(expected_arguments, dict)
             and "expected_generation_sha256" in expected_arguments
@@ -245,7 +247,7 @@ def _run_case(
             }
         )
         assistant_message, tool_id, tool_name, arguments = _tool_call(response)
-        validate_agent_tool_arguments(tool_name, arguments)
+        validate_governed_agent_tool_arguments(tool_name, arguments)
         tool_calls.append((tool_name, arguments))
         messages.append(assistant_message)
         messages.append(
@@ -407,246 +409,7 @@ def _message(response: dict[str, object]) -> dict[str, object]:
     return message
 
 
-def _tool_definitions(
-    *, require_generation_sha256: bool = False
-) -> list[dict[str, object]]:
-    generation_required = (
-        ["expected_generation_sha256"] if require_generation_sha256 else []
-    )
-    common = {
-        "purpose": {
-            "type": "string",
-            "enum": ["knowledge.read"],
-            "description": "Always use the authorized knowledge.read purpose.",
-        },
-        "expected_generation_sha256": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$",
-            "description": (
-                "Copy the exact generation SHA-256 supplied by the user; omit it "
-                "only when the user did not supply one."
-            ),
-        },
-    }
-    return [
-        _tool(
-            "search_knowledge",
-            (
-                "Search permission-filtered text. Use only for a requested text "
-                "search, never for browsing, relationship traversal, or proposals."
-            ),
-            {
-                **common,
-                "search_text": {
-                    "type": "string",
-                    "description": "The user's requested search text.",
-                },
-                "maximum_results": {"type": "integer", "minimum": 1, "maximum": 10},
-            },
-            ["purpose", "search_text", *generation_required],
-        ),
-        _tool(
-            "browse_knowledge",
-            (
-                "List visible knowledge concepts or areas. Do not use for text "
-                "search, relationship traversal, or proposals."
-            ),
-            common,
-            ["purpose", *generation_required],
-        ),
-        _tool(
-            "traverse_knowledge",
-            (
-                "Follow visible typed relationships from one concept. Do not use "
-                "for text search, area browsing, or proposals."
-            ),
-            {
-                **common,
-                "start_concept_id": {
-                    "type": "string",
-                    "description": "Exact concept ID where traversal starts.",
-                },
-                "maximum_depth": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 4,
-                    "description": "Exact requested relationship depth.",
-                },
-                "maximum_results": {"type": "integer", "minimum": 1, "maximum": 50},
-            },
-            ["purpose", "start_concept_id", *generation_required],
-        ),
-        _tool(
-            "propose_knowledge",
-            (
-                "Store a cited noncanonical proposal from supplied evidence. Use "
-                "only when the user asks to create or store a proposal."
-            ),
-            {
-                **common,
-                "proposal_type": {
-                    "type": "string",
-                    "enum": ["summary", "relationship"],
-                },
-                "proposed_content": {"type": "string"},
-                "source_citations": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "concept_id": {"type": "string"},
-                            "source_revision": {"type": "string"},
-                            "content_sha256": {"type": "string"},
-                            "char_start": {"type": "integer"},
-                            "char_end": {"type": "integer"},
-                        },
-                        "required": [
-                            "concept_id",
-                            "source_revision",
-                            "content_sha256",
-                            "char_start",
-                            "char_end",
-                        ],
-                        "additionalProperties": False,
-                    },
-                },
-            },
-            [
-                "purpose",
-                "proposal_type",
-                "proposed_content",
-                "source_citations",
-                *generation_required,
-            ],
-        ),
-    ]
-
-
-def validate_agent_tool_arguments(name: str, arguments: dict[str, object]) -> None:
-    """Apply the exact frozen product-tool bounds to model-authored arguments."""
-
-    if not isinstance(arguments, dict):
-        raise ValueError("agent tool arguments must be an object")
-    common = {"purpose", "expected_generation_sha256"}
-    required: set[str]
-    allowed: set[str]
-    if name == "search_knowledge":
-        required = {"purpose", "search_text"}
-        allowed = common | {"search_text", "maximum_results"}
-        _bounded_text(arguments.get("search_text"), "search text", 4_096)
-        _optional_integer(arguments.get("maximum_results"), 1, 10)
-    elif name == "browse_knowledge":
-        required = {"purpose"}
-        allowed = common
-    elif name == "traverse_knowledge":
-        required = {"purpose", "start_concept_id"}
-        allowed = common | {"start_concept_id", "maximum_depth", "maximum_results"}
-        _bounded_text(arguments.get("start_concept_id"), "start concept ID", 512)
-        _optional_integer(arguments.get("maximum_depth"), 1, 4)
-        _optional_integer(arguments.get("maximum_results"), 1, 50)
-    elif name == "propose_knowledge":
-        required = {
-            "purpose",
-            "proposal_type",
-            "proposed_content",
-            "source_citations",
-        }
-        allowed = common | required
-        if arguments.get("proposal_type") not in {"summary", "relationship"}:
-            raise ValueError("agent proposal type is invalid")
-        _bounded_text(arguments.get("proposed_content"), "proposed content", 100_000)
-        _validate_citations(arguments.get("source_citations"))
-    else:
-        raise ValueError("agent selected an unknown tool")
-    if set(arguments) - allowed or not required <= set(arguments):
-        raise ValueError("agent tool arguments differ from the contract")
-    if arguments.get("purpose") != "knowledge.read":
-        raise ValueError("agent tool purpose is invalid")
-    if "expected_generation_sha256" in arguments:
-        generation = arguments["expected_generation_sha256"]
-        if not isinstance(generation, str) or not _SHA256.fullmatch(generation):
-            raise ValueError("agent expected generation is invalid")
-
-
-def _validate_citations(value: object) -> None:
-    if not isinstance(value, list) or not value or len(value) > 100:
-        raise ValueError("agent proposal citations are invalid")
-    identities: set[tuple[object, ...]] = set()
-    for citation in value:
-        if not isinstance(citation, dict) or set(citation) != {
-            "concept_id",
-            "source_revision",
-            "content_sha256",
-            "char_start",
-            "char_end",
-        }:
-            raise ValueError("agent proposal citation differs from the contract")
-        _bounded_text(citation["concept_id"], "citation concept ID", 512)
-        _bounded_text(citation["source_revision"], "citation revision", 512)
-        digest = citation["content_sha256"]
-        start = citation["char_start"]
-        end = citation["char_end"]
-        if not isinstance(digest, str) or not _SHA256.fullmatch(digest):
-            raise ValueError("agent proposal citation digest is invalid")
-        if (
-            isinstance(start, bool)
-            or not isinstance(start, int)
-            or isinstance(end, bool)
-            or not isinstance(end, int)
-            or start < 0
-            or end <= start
-        ):
-            raise ValueError("agent proposal citation span is invalid")
-        identity = tuple(citation[key] for key in sorted(citation))
-        if identity in identities:
-            raise ValueError("agent proposal citation is duplicated")
-        identities.add(identity)
-
-
-def _bounded_text(value: object, field: str, maximum: int) -> str:
-    if (
-        not isinstance(value, str)
-        or not value
-        or len(value) > maximum
-        or value.strip() != value
-    ):
-        raise ValueError(f"agent {field} is invalid")
-    return value
-
-
-def _optional_integer(value: object, minimum: int, maximum: int) -> None:
-    if value is not None and (
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or not minimum <= value <= maximum
-    ):
-        raise ValueError("agent tool integer bound is invalid")
-
-
-def _tool(
-    name: str,
-    description: str,
-    properties: dict[str, object],
-    required: list[str],
-) -> dict[str, object]:
-    return {
-        "type": "function",
-        "function": {
-            "name": name,
-            "description": description,
-            "strict": True,
-            "parameters": {
-                "type": "object",
-                "properties": properties,
-                "required": required,
-                "additionalProperties": False,
-            },
-        },
-    }
-
-
 __all__ = [
     "AgentFixtureResult",
     "run_agent_model_fixtures",
-    "validate_agent_tool_arguments",
 ]

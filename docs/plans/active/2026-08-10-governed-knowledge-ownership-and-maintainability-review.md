@@ -118,8 +118,10 @@ knowledge.
 - [x] Inventory changed production modules, tests, dependencies, locks,
   fixtures, runtime/gate owners, documents, and Git state from the merged base;
   inventory the earlier active system as required by the whole-codebase scope.
-- [ ] Run the three read-only antagonistic reviews and adjudicate a public-safe
-  findings register.
+- [x] Run exactly three read-only antagonistic reviews at anchor
+  `e2fff1f5b087cc05a549588ea41aae71a6806024` and adjudicate the deduplicated
+  public-safe findings register. The result contains no P0, four P1, eleven P2,
+  and bounded P3 observations.
 - [ ] Resolve every P0-P2 correctness, security, privacy, authorization,
   provenance, race, cancellation, resource, lifecycle, naming, architecture,
   and maintainability finding.

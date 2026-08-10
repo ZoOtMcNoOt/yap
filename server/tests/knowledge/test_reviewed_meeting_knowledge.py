@@ -5,7 +5,6 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from yap_server.auth.principal import PrincipalKey
-from yap_server.knowledge.knowledge_retrieval import search_compiled_knowledge
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.reviewed_meeting_knowledge import (
     KnowledgeSourceReview,
@@ -17,7 +16,7 @@ from tests.jobs.service_fixtures import _published_result
 
 
 class ReviewedMeetingKnowledgeTests(unittest.TestCase):
-    def test_authoritative_reviewed_result_compiles_to_cited_retrieval(self) -> None:
+    def test_authoritative_reviewed_result_compiles_with_review_identity(self) -> None:
         job = {
             "sessionId": "session-1",
             "captureManifest": {"sha256": "a" * 64},
@@ -25,6 +24,8 @@ class ReviewedMeetingKnowledgeTests(unittest.TestCase):
         result = _published_result(job)
         review = KnowledgeSourceReview(
             reviewer=PrincipalKey("tenant-a", "alice"),
+            job_id="job-1",
+            title="Architecture review",
             reviewed_at_utc="2026-08-09T13:00:00Z",
             result_revision_sha256=result_revision_sha256(result),
             decision="accepted",
@@ -32,10 +33,8 @@ class ReviewedMeetingKnowledgeTests(unittest.TestCase):
         concept = render_reviewed_meeting_concept(
             result,
             projection=job,
-            job_id="job-1",
             tenant_id="tenant-a",
             owner=PrincipalKey("tenant-a", "alice"),
-            title="Architecture review",
             review=review,
         )
 
@@ -63,15 +62,12 @@ denials: {users: []}
                 source_revision="commit-a",
             )
 
-        results = search_compiled_knowledge(
-            generation,
-            principal=PrincipalKey("tenant-a", "alice"),
-            purpose="knowledge.read",
-            query="crash safe transcript",
+        self.assertEqual(len(generation.concepts), 1)
+        self.assertEqual(generation.concepts[0].concept_id, "meetings/job-1")
+        self.assertIn(
+            "crash-safe private transcript",
+            " ".join(chunk.text for chunk in generation.chunks).casefold(),
         )
-
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].concept_id, "meetings/job-1")
         self.assertEqual(
             generation.concepts[0].frontmatter["provenance"]["result_sha256"],
             review.result_revision_sha256,
@@ -83,6 +79,8 @@ denials: {users: []}
 
         unauthorized_review = KnowledgeSourceReview(
             reviewer=PrincipalKey("tenant-a", "bob"),
+            job_id="job-1",
+            title="Architecture review",
             reviewed_at_utc="2026-08-09T13:00:00Z",
             result_revision_sha256=result_revision_sha256(result),
             decision="accepted",
@@ -91,10 +89,8 @@ denials: {users: []}
             render_reviewed_meeting_concept(
                 result,
                 projection=job,
-                job_id="job-1",
                 tenant_id="tenant-a",
                 owner=PrincipalKey("tenant-a", "alice"),
-                title="Architecture review",
                 review=unauthorized_review,
             )
 

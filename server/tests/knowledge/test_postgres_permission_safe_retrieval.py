@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import threading
+import time
 import unittest
 from uuid import uuid4
 
@@ -12,8 +14,12 @@ from yap_server.auth.principal import PrincipalKey
 from yap_server.knowledge.generation_ledger import (
     activate_complete_generation,
     install_knowledge_schema,
+    prune_inactive_generations,
     stage_compiled_generation,
     store_generation_embeddings,
+)
+from yap_server.knowledge.knowledge_source_admission import (
+    admit_curated_knowledge_generation,
 )
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
@@ -25,6 +31,7 @@ from yap_server.knowledge.postgres_knowledge_retrieval import (
 from yap_server.knowledge.postgres_relationship_retrieval import (
     traverse_postgres_knowledge_relationships,
 )
+from yap_server.knowledge.postgres_permission_view import authorize_knowledge_query
 
 
 POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
@@ -45,7 +52,7 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
         capabilities = frozenset({"knowledge.tree", "knowledge.search.lexical"})
         with psycopg.connect(POSTGRES_DSN) as connection:
             install_knowledge_schema(connection)
-            stage_compiled_generation(connection, generation)
+            _stage_reviewed_generation(connection, generation)
             embeddings = {
                 item.chunk_id: ((1.0,) + (0.0,) * 767)
                 if item.concept_id == "projects/voiceos"
@@ -95,6 +102,24 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
                 agent_capabilities=capabilities,
                 search_text="approved roadmap",
             )
+            self.assertEqual(
+                search_postgres_knowledge_lexical(
+                    connection,
+                    principal=alice,
+                    purpose="knowledge.read",
+                    agent_capabilities=capabilities,
+                    search_text="a" * 1_024,
+                ).results,
+                (),
+            )
+            with self.assertRaisesRegex(ValueError, "search text"):
+                search_postgres_knowledge_lexical(
+                    connection,
+                    principal=alice,
+                    purpose="knowledge.read",
+                    agent_capabilities=capabilities,
+                    search_text="a" * 1_025,
+                )
             hidden = search_postgres_knowledge_lexical(
                 connection,
                 principal=alice,
@@ -142,7 +167,7 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
                     search_text="roadmap",
                     expected_generation_sha256="0" * 64,
                 )
-            stage_compiled_generation(connection, revoked_generation)
+            _stage_reviewed_generation(connection, revoked_generation)
             store_generation_embeddings(
                 connection,
                 tenant_id=tenant_id,
@@ -205,8 +230,124 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
             + repr(relationships),
         )
 
+    def test_query_pins_generation_until_retrieval_transaction_finishes(self) -> None:
+        tenant_id = f"tenant-{uuid4().hex}"
+        with TemporaryDirectory() as first_directory, TemporaryDirectory() as second_directory:
+            first = _generation(
+                Path(first_directory),
+                tenant_id,
+                subject="alice",
+                source_revision="commit-a",
+            )
+            second = _generation(
+                Path(second_directory),
+                tenant_id,
+                subject="alice",
+                source_revision="commit-b",
+            )
+        principal = PrincipalKey(tenant_id, "alice")
+        capabilities = frozenset({"knowledge.search.lexical"})
+        writer_started = threading.Event()
+        writer_finished = threading.Event()
+        writer_errors: list[BaseException] = []
+        writer_pid: list[int] = []
 
-def _generation(root: Path, tenant_id: str, *, subject: str):
+        with psycopg.connect(POSTGRES_DSN) as setup:
+            install_knowledge_schema(setup)
+            for generation in (first, second):
+                _stage_reviewed_generation(setup, generation)
+                store_generation_embeddings(
+                    setup,
+                    tenant_id=tenant_id,
+                    generation_sha256=generation.generation_sha256,
+                    embedding_model_id="synthetic-test",
+                    embedding_model_revision="revision-1",
+                    embeddings={
+                        item.chunk_id: (1.0,) + (0.0,) * 767
+                        for item in generation.chunks
+                    },
+                )
+            activate_complete_generation(
+                setup,
+                tenant_id=tenant_id,
+                generation_sha256=first.generation_sha256,
+            )
+
+        def activate_and_prune() -> None:
+            try:
+                with psycopg.connect(POSTGRES_DSN) as writer:
+                    writer_pid.append(
+                        int(writer.execute("SELECT pg_backend_pid()").fetchone()[0])
+                    )
+                    writer_started.set()
+                    activate_complete_generation(
+                        writer,
+                        tenant_id=tenant_id,
+                        generation_sha256=second.generation_sha256,
+                    )
+                    prune_inactive_generations(
+                        writer, tenant_id=tenant_id, retain=0
+                    )
+            except BaseException as error:
+                writer_errors.append(error)
+            finally:
+                writer_finished.set()
+
+        with psycopg.connect(POSTGRES_DSN) as reader:
+            with reader.transaction():
+                admitted = authorize_knowledge_query(
+                    reader,
+                    principal=principal,
+                    purpose="knowledge.read",
+                    agent_capabilities=capabilities,
+                    required_capability="knowledge.search.lexical",
+                )
+                writer = threading.Thread(target=activate_and_prune)
+                writer.start()
+                self.assertTrue(writer_started.wait(2))
+                _wait_for_advisory_lock_wait(writer_pid[0])
+                self.assertFalse(writer_finished.is_set())
+                result = search_postgres_knowledge_lexical(
+                    reader,
+                    principal=principal,
+                    purpose="knowledge.read",
+                    agent_capabilities=capabilities,
+                    search_text="approved roadmap",
+                )
+                self.assertEqual(result.generation_sha256, admitted.generation_sha256)
+                self.assertEqual(result.generation_sha256, first.generation_sha256)
+            writer.join(5)
+
+        self.assertFalse(writer.is_alive())
+        self.assertFalse(writer_errors)
+        with psycopg.connect(POSTGRES_DSN) as verification:
+            current = search_postgres_knowledge_lexical(
+                verification,
+                principal=principal,
+                purpose="knowledge.read",
+                agent_capabilities=capabilities,
+                search_text="approved roadmap",
+            )
+            self.assertEqual(current.generation_sha256, second.generation_sha256)
+            verification.rollback()
+            verification.execute(
+                "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            verification.execute(
+                "DELETE FROM yap_knowledge_builds WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            verification.commit()
+
+
+def _generation(
+    root: Path,
+    tenant_id: str,
+    *,
+    subject: str,
+    source_revision: str = "commit-a",
+):
     (root / "index.md").write_text(
         "---\nokf_version: '0.1'\n---\n# Knowledge\n", encoding="utf-8"
     )
@@ -247,7 +388,42 @@ def _generation(root: Path, tenant_id: str, *, subject: str):
     _permission(root, tenant_id, "projects", "projects/", subject)
     _permission(root, tenant_id, "decisions", "decisions/", subject)
     _permission(root, tenant_id, "secret", "secret/", "charlie")
-    return compile_okf_bundle(root, tenant_id=tenant_id, source_revision="commit-a")
+    return compile_okf_bundle(
+        root, tenant_id=tenant_id, source_revision=source_revision
+    )
+
+
+def _wait_for_advisory_lock_wait(process_id: int) -> None:
+    deadline = time.monotonic() + 2
+    with psycopg.connect(POSTGRES_DSN, autocommit=True) as observer:
+        while time.monotonic() < deadline:
+            waiting = observer.execute(
+                """SELECT EXISTS (
+                       SELECT 1 FROM pg_locks
+                       WHERE pid = %s AND locktype = 'advisory' AND NOT granted
+                   )""",
+                (process_id,),
+            ).fetchone()[0]
+            if waiting:
+                return
+            time.sleep(0.01)
+    raise AssertionError("generation writer did not wait for the query lock")
+
+
+def _stage_reviewed_generation(connection, generation) -> None:
+    admission = admit_curated_knowledge_generation(
+        connection,
+        reviewer=PrincipalKey(generation.tenant_id, "synthetic-curator"),
+        repository_revision=generation.source_revision,
+        source_path="tests/fixtures/permission-safe-okf",
+        source_manifest_sha256="b" * 64,
+        generation=generation,
+    )
+    stage_compiled_generation(
+        connection,
+        generation,
+        source_admission_sha256=admission.admission_sha256,
+    )
 
 
 def _concept(tenant_id: str, kind: str, title: str, resource: str, body: str) -> str:

@@ -36,6 +36,10 @@ def authorize_knowledge_query(
         raise PermissionError("agent capability does not authorize knowledge query")
     if not purpose or purpose.strip() != purpose or len(purpose) > 128:
         raise ValueError("knowledge purpose is invalid")
+    connection.execute(
+        "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 0))",
+        (principal.tenant_id,),
+    )
     active = connection.execute(
         """SELECT generation_sha256 FROM yap_knowledge_active_builds
            WHERE tenant_id = %s""",

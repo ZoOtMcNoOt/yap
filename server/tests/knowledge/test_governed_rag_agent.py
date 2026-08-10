@@ -8,10 +8,10 @@ from yap_server.auth.principal import PrincipalKey
 from yap_server.knowledge.agent_reasoning_routes import (
     AgentReasoningRoutes,
     AgentWorkloadClass,
+    ReasoningRetryableError,
 )
 from yap_server.knowledge.governed_rag_agent import (
     GovernedRagAgent,
-    ReasoningRetryableError,
 )
 from yap_server.knowledge.knowledge_proposals import KnowledgeProposal
 from yap_server.knowledge.knowledge_tool_contract import (
@@ -63,6 +63,27 @@ class _Proposals:
 
 
 class GovernedRagAgentTests(unittest.TestCase):
+    def test_question_uses_the_executing_search_boundary(self) -> None:
+        agent = GovernedRagAgent(
+            tools=_Tools(()),  # type: ignore[arg-type]
+            proposals=_Proposals(),  # type: ignore[arg-type]
+            reasoning_routes=_routes(lambda prompt, cancellation: "{}"),
+            maximum_prompt_characters=10_000,
+            maximum_output_characters=2_000,
+            read_terminology_snapshot=_snapshot_reader,
+        )
+        with self.assertRaisesRegex(ValueError, "RAG question"):
+            agent.answer(
+                object(),  # type: ignore[arg-type]
+                principal=PrincipalKey("tenant-1", "person-1"),
+                agent_id="librarian",
+                purpose="knowledge.read",
+                question="a" * 1_025,
+                job_id="job-1",
+                workload_class=AgentWorkloadClass.RAPID_AUTOMATION,
+                cancellation=threading.Event(),
+            )
+
     def test_retries_invalid_output_then_stores_cited_terminology_safe_proposal(
         self,
     ) -> None:

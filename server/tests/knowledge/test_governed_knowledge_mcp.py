@@ -9,12 +9,16 @@ from mcp import Client
 
 from yap_server.auth.principal import PrincipalKey
 from yap_server.knowledge.governed_knowledge_mcp import (
+    _run_acknowledged_database_call,
     create_governed_knowledge_mcp_server,
 )
 from yap_server.knowledge.knowledge_proposals import KnowledgeProposal
 from yap_server.knowledge.knowledge_tool_contract import (
+    KnowledgeToolCancellationFailed,
+    KnowledgeToolCancelled,
     KnowledgeToolResponse,
     SearchKnowledgeRequest,
+    governed_agent_tool_definitions,
 )
 
 
@@ -59,6 +63,43 @@ class _RecordingProposals:
 
 
 class GovernedKnowledgeMcpTests(unittest.TestCase):
+    def test_mcp_schema_uses_the_frozen_product_tool_bounds(self) -> None:
+        anyio.run(self._exercise_schema_bounds)
+
+    async def _exercise_schema_bounds(self) -> None:
+        server = create_governed_knowledge_mcp_server(
+            tools=_RecordingTools(),  # type: ignore[arg-type]
+            proposals=_RecordingProposals(),  # type: ignore[arg-type]
+            connection_factory=lambda: nullcontext(object()),  # type: ignore[arg-type]
+            principal=PrincipalKey("tenant-1", "person-1"),
+            agent_id="meeting-agent",
+        )
+        expected = {
+            item["function"]["name"]: item["function"]["parameters"]
+            for item in governed_agent_tool_definitions()
+        }
+        async with Client(server, raise_exceptions=True) as client:
+            listed = {item.name: item.input_schema for item in (await client.list_tools()).tools}
+
+        for name in expected:
+            self.assertEqual(set(listed[name]["properties"]), set(expected[name]["properties"]))
+        self.assertEqual(
+            listed["search_knowledge"]["properties"]["search_text"]["maxLength"],
+            expected["search_knowledge"]["properties"]["search_text"]["maxLength"],
+        )
+        self.assertEqual(
+            listed["search_knowledge"]["properties"]["maximum_results"]["maximum"],
+            expected["search_knowledge"]["properties"]["maximum_results"]["maximum"],
+        )
+        self.assertEqual(
+            listed["traverse_knowledge"]["properties"]["maximum_depth"]["maximum"],
+            expected["traverse_knowledge"]["properties"]["maximum_depth"]["maximum"],
+        )
+        self.assertEqual(
+            listed["propose_knowledge"]["properties"]["proposed_content"]["maxLength"],
+            expected["propose_knowledge"]["properties"]["proposed_content"]["maxLength"],
+        )
+
     def test_in_process_tools_bind_identity_outside_model_arguments(self) -> None:
         anyio.run(self._exercise_server)
 
@@ -84,12 +125,12 @@ class GovernedKnowledgeMcpTests(unittest.TestCase):
 
             result = await client.call_tool(
                 "search_knowledge",
-                {"purpose": "meeting", "search_text": "cardiac"},
+                {"purpose": "knowledge.read", "search_text": "cardiac"},
             )
             proposal_result = await client.call_tool(
                 "propose_knowledge",
                 {
-                    "purpose": "meeting",
+                    "purpose": "knowledge.read",
                     "proposal_type": "summary",
                     "proposed_content": "Cited summary.",
                     "source_citations": [
@@ -115,9 +156,68 @@ class GovernedKnowledgeMcpTests(unittest.TestCase):
         self.assertEqual(used_agent, "meeting-agent")
         self.assertEqual(
             request,
-            SearchKnowledgeRequest(purpose="meeting", search_text="cardiac"),
+            SearchKnowledgeRequest(purpose="knowledge.read", search_text="cardiac"),
         )
         self.assertIsInstance(cancellation, threading.Event)
+
+    def test_async_cancellation_waits_for_database_worker_exit(self) -> None:
+        anyio.run(self._exercise_acknowledged_cancellation)
+
+    async def _exercise_acknowledged_cancellation(self) -> None:
+        started = threading.Event()
+        exited = threading.Event()
+        scopes: list[anyio.CancelScope] = []
+        outcomes: list[str] = []
+
+        def execute(cancellation: threading.Event) -> None:
+            started.set()
+            cancellation.wait()
+            exited.set()
+            raise KnowledgeToolCancelled("cancelled")
+
+        async def call() -> None:
+            with anyio.CancelScope() as scope:
+                scopes.append(scope)
+                try:
+                    await _run_acknowledged_database_call(execute)
+                except anyio.get_cancelled_exc_class():
+                    outcomes.append("cancelled")
+
+        async with anyio.create_task_group() as tasks:
+            tasks.start_soon(call)
+            await anyio.to_thread.run_sync(started.wait)
+            scopes[0].cancel()
+
+        self.assertEqual(outcomes, ["cancelled"])
+        self.assertTrue(exited.is_set())
+
+    def test_async_cancellation_surfaces_database_cancellation_failure(self) -> None:
+        anyio.run(self._exercise_failed_cancellation)
+
+    async def _exercise_failed_cancellation(self) -> None:
+        started = threading.Event()
+        scopes: list[anyio.CancelScope] = []
+        outcomes: list[str] = []
+
+        def execute(cancellation: threading.Event) -> None:
+            started.set()
+            cancellation.wait()
+            raise KnowledgeToolCancellationFailed("cancel failed")
+
+        async def call() -> None:
+            with anyio.CancelScope() as scope:
+                scopes.append(scope)
+                try:
+                    await _run_acknowledged_database_call(execute)
+                except KnowledgeToolCancellationFailed:
+                    outcomes.append("failed")
+
+        async with anyio.create_task_group() as tasks:
+            tasks.start_soon(call)
+            await anyio.to_thread.run_sync(started.wait)
+            scopes[0].cancel()
+
+        self.assertEqual(outcomes, ["failed"])
 
 
 if __name__ == "__main__":

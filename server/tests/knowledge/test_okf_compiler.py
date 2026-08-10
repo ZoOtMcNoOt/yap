@@ -6,7 +6,6 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
-from yap_server.knowledge.permission_view import build_permission_filtered_view
 from yap_server.auth.principal import PrincipalKey
 
 
@@ -91,7 +90,7 @@ denials: {users: []}
         self.assertEqual(concept.broken_links, ("decisions/release",))
         self.assertEqual(concept.redirect_history, ("projects/voiceos-old",))
 
-    def test_compiles_tenant_scoped_permissions_and_filters_before_return(self) -> None:
+    def test_compiles_tenant_scoped_permissions(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "index.md").write_text(
@@ -132,21 +131,12 @@ denials: {users: []}
                 source_revision="commit-a",
             )
 
-        alice = build_permission_filtered_view(
-            generation,
-            principal=PrincipalKey("tenant-a", "alice"),
-            purpose="knowledge.read",
-        )
-        bob = build_permission_filtered_view(
-            generation,
-            principal=PrincipalKey("tenant-a", "bob"),
-            purpose="knowledge.read",
-        )
-        self.assertEqual(
-            tuple(item.concept_id for item in alice.concepts), ("projects/voiceos",)
-        )
-        self.assertEqual(bob.concepts, ())
-        self.assertNotEqual(alice.permission_hash, bob.permission_hash)
+        self.assertEqual(len(generation.permissions), 1)
+        permission = generation.permissions[0]
+        self.assertEqual(permission.path_prefix, "projects/")
+        self.assertEqual(permission.audience, (PrincipalKey("tenant-a", "alice"),))
+        self.assertEqual(permission.denials, ())
+        self.assertEqual(permission.purposes, ("knowledge.read",))
 
     def test_rejects_duplicate_yaml_keys_instead_of_silently_overwriting(self) -> None:
         with TemporaryDirectory() as directory:

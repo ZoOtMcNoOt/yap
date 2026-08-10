@@ -48,7 +48,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | **Target local runtimes** | Today only the in-process sherpa live recognizer exists. If the deferred solo LLM and evidence workers ship, keep their lifecycle bounded and release them by measured idle/resource policy. |
 | **Local ASR dependency** | Pin artifacts; verify hashes; profile chunk/latency; CI smoke tests. |
 | **Wispr comparison on v1** | Keep hotkeys and safe cross-app delivery client-owned and regression-tested; use clipboard delivery today, and require proof of exact-field authority before any future direct insertion. |
-| **OKF/agents before core STT** | Core transcription and History shipped first. The active Phase 9 candidate stays asynchronous and cannot disable local controls. |
+| **OKF/agents before core STT** | Core transcription and History shipped first. The merged Phase 9 knowledge layer remains asynchronous and cannot disable local controls; it is not a supervised production service. |
 
 ### Verdict
 
@@ -82,7 +82,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | LLM | No shipped local LLM; development Polish currently calls Ollama | Privately qualified Qwen/Gemma vLLM evaluation routes; supervised multi-tenant service remains Phase 10 |
 | Diarization | Optional local `Unknown` / `Speaker N`; no durable profiles | One Tiron joint speaker-attributed server route with source-time epoch reconciliation; evidence-gated promotion (ADR 0020/0027) |
 | Identity | Per-transcript contact labels only; no biometric matching | Provider-neutral OIDC verification with Entra policy; approved native token adapter and explicit voice enrollment remain gated (ADR 0016/0020) |
-| Knowledge base | Transcript History remains local; no local knowledge service ships | Active monorepo candidate has deterministic Google OKF compilation, Postgres permissions/relationships, pgvector retrieval, and governed RAG/MCP. Separate `yap-knowledge` Git hosting and production operations remain Phase 10; Neo4j requires a measured baseline gap. |
+| Knowledge base | Transcript History remains local; no local knowledge service ships | The merged monorepo baseline has deterministic Google OKF compilation, Postgres permissions/relationships, pgvector retrieval, and governed RAG/MCP. Separate `yap-knowledge` Git hosting and production operations remain Phase 10; Neo4j requires a measured baseline gap. |
 | Network | None required for live fallback; server required for official recordings | LAN/VPN to the GB-class server node; future HTTP/3 secure edge with HTTP/2 or HTTP/1.1 fallback |
 
 The **client shell** (`yap-desktop`) is identical in both profiles. Mic capture, track-aware preparation, explicit gaps, bounded sink fan-out, streaming recording, hotkey, overlay UI, local Nemotron fallback, durable imported-job ownership, and connector health/capability/retry state are implemented. The merged Phase 5 path adds strict admission and extraction of already-canonical mono PCM16/16 kHz WAV input, durable loopback HTTP batch upload/drain, cancellation, verified result publication, and History projection; its one-time complete local/native/server/GB10 gate and hosted exact-head checks passed before merge. Phase 7 added provider-neutral OIDC verification with Entra policy, token-derived owner isolation, purpose authorization that is implemented but wired to no caller, authenticated bounded private WebSocket admission on a separate internal port, and a qualified native lower handshake without changing local/offline ownership. The desktop has a narrow native token-provider seam but no approved production adapter. A local-first discovery helper repeatedly probes only the fixed numeric-loopback health origin while no origin is configured, offers a verified server without connecting, and leaves local setup independent of server and auth failures. General media decoding/resampling, Opus, live server ASR, managed LAN/enterprise or live-endpoint discovery, external same-origin WSS/TLS/HTTP3, real enterprise identity-policy conformance, persistent service deployment, and external application networking remain deferred. Server unavailability queues or blocks larger recordings instead of silently producing official-looking transcripts from the fallback.
@@ -130,7 +130,7 @@ flowchart TB
     User["User"]
 
     subgraph Yap["Yap — Tauri + React"]
-        UI["Transcribe · Live · History<br/>Polish dev-only · governed KB agents Phase 9 candidate"]
+        UI["Transcribe · Live · History<br/>Polish dev-only · governed KB agents merged baseline"]
     end
 
     Orch["RuntimeOrchestrator<br/>Nemotron + server health/batch state now<br/>WSS/auth + bounded LLM deferred"]
@@ -156,10 +156,10 @@ flowchart TB
         L3n["Anonymous speaker timeline · result revisions<br/>Tiron source-time epoch route"]
     end
 
-    L4["L4 — Google OKF compilation · Phase 9 candidate"]
-    L5["L5 — governed answers/proposals · Phase 9 candidate"]
-    L6["L6 — governed MCP + vector/relationship retrieval · Phase 9 candidate"]
-    L7["L7 — cited KB answers · Phase 9 candidate"]
+    L4["L4 — Google OKF compilation · merged Phase 9 baseline"]
+    L5["L5 — governed answers/proposals · merged Phase 9 baseline"]
+    L6["L6 — governed MCP + vector/relationship retrieval · merged Phase 9 baseline"]
+    L7["L7 — cited KB answers · merged Phase 9 baseline"]
 
     User --> UI --> Orch
     Orch --> Sidecars
@@ -508,7 +508,7 @@ Everything from the original 7-layer flowchart and master spec is represented be
 | **L3** Anonymous local speaker evidence | ✅ Reconciled | ADR 0020 | Contracts permit `Unknown` / `Speaker N`; no production speaker model is wired |
 | **L3** Server diarization + identity | ✅ Reconciled | ADR 0016, ADR 0020 | Revisioned reconciliation; names require active purpose grants and provenance |
 | **L3** Word-to-speaker timeline | ✅ Reconciled | ADR 0020 | Model-derived boundaries with result revision and confidence |
-| **L3** OKF parser | ✅ Reconciled | ADR 0017/0022 | Pinned Google OKF/Yap profile compiler executes in the active Phase 9 candidate |
+| **L3** OKF parser | ✅ Reconciled | ADR 0017/0022 | Pinned Google OKF/Yap profile compiler executes in the merged Phase 9 baseline; production service operations remain Phase 10 |
 | **L3** Worker isolation | ✅ Reconciled | ADR 0020 | Optional client evidence and server reconciliation are independent from capture/ASR |
 | **L4** knowledge_base dirs | ✅ | § Process layout | + `team_knowledge/` in long-term OKF |
 | **L5** Student, Curator, Watcher loop | ✅ | § Agents | Three-strike + git opt-in |
@@ -855,8 +855,8 @@ persistent production service. General media conversion,
   live ASR, managed LAN/enterprise and live-endpoint discovery, approved production token acquisition,
   persistent supervision, production mixed-load capacity and database
   operations, secure transport edge, and the separate `yap-knowledge` repository
-  below are deferred. The Phase 9 compiler and Postgres/pgvector candidate now
-  execute inside the staged monorepo.
+  below are deferred. The merged Phase 9 compiler and Postgres/pgvector baseline
+  executes inside the monorepo.
 
 ```
 yap-desktop (Tauri) — thin client shell
@@ -872,9 +872,9 @@ yap-server (GB-class server node, org LAN/VPN)
   ├─ Cohere Transformers worker [current comparison/rollback baseline]
   ├─ Nemotron NeMo service      [Phase 6 candidate] server streaming; separate gate
   ├─ Nemotron Transformers      [current correctness reference]
-  ├─ vLLM agent/LLM plane       [Phase 9 candidate] qualified Qwen/Gemma workload routes; not a production service
+  ├─ vLLM agent/LLM plane       [Phase 9 merged evaluation baseline] qualified Qwen/Gemma workload routes; not a production service
   ├─ Diarization service        authoritative model-selected reconciliation (ADR 0020)
-  ├─ KB compiler service        [Phase 9 candidate] Lane 1 + Google OKF Lane 2 → Postgres/pgvector (ADR 0017/0022)
+  ├─ KB compiler service        [Phase 9 merged baseline] Lane 1 + Google OKF Lane 2 → Postgres/pgvector (ADR 0017/0022)
   ├─ Identity DB (Postgres)     (tid, oid) → purpose-authorized versioned voice profile (ADR 0016/0020)
   ├─ Redis                      [Phase 10/IT handoff] optional cache, never permission authority
   ├─ Neo4j                      [optional] disposable GraphRAG challenger; promote only by benchmark
@@ -1015,7 +1015,7 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 | **6** Preprocessing | Versioned provider/language/timing catalog; primary/per-job decision; advisory VAD/chunks; bounded LID; pinned reference fixed/dynamic routes; fail-closed word timing; durable stages; Cohere vLLM lifecycle/capacity evidence; and a separate Nemotron NeMo streaming gate—not authenticated or persistent supervised production capacity | [ADR 0024](adr/0024-global-language-routing.md); [ADR 0025](adr/0025-provider-specific-asr-serving.md); preprocessing spec; [completed Phase 6 plan](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md); OpenAPI/result contracts |
 | **7** Identity/access | Provider-neutral OIDC validation with Entra policy, fail-closed native token-provider seam, replacement of the fixed development owner, purpose grants that are implemented but called by nothing, tenant-scoped identity DB, and authenticated private live admission; production adapter and enterprise conformance require separate approval | [ADR 0016](adr/0016-auth-identity-bridge.md); sign-in/access UX |
 | **8** Meeting evidence | Anonymous local labels, pinned Tiron eight-window/eight-global baseline, one integrated source-time epoch route with request-scoped reconciliation, frozen messy-meeting public/independent evidence, attendance/window/global-roster pressure, timestamped result revisions, server reconciliation, deliberate voice-enrollment UX and profile lifecycle | [ADR 0020](adr/0020-meeting-capture-diarization-authority.md); [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md); [source-aware design](specs/source-aware-diarization.md) |
-| **9** Knowledge/agents | Google OKF profile, immutable terminology, deterministic compiler, Postgres/pgvector relationship/vector baseline, governed RAG/MCP, and qualified Qwen/Gemma vLLM workload routes | Complete zero-skip Postgres/restart/private-route-evidence gate passed at `a4f34678...`; exact-head hosted review, PR, and merge remain. Another projection requires a measured baseline gap. |
+| **9** Knowledge/agents | Google OKF profile, immutable terminology, deterministic compiler, Postgres/pgvector relationship/vector baseline, governed RAG/MCP, and qualified Qwen/Gemma vLLM workload routes | Complete zero-skip Postgres/restart/private-route-evidence gate passed at `a4f34678...`; PR #152 merged the reviewed exact head as `ae81ff067...`. The post-phase maintainability checkpoint is in review. Production supervision/capacity remains Phase 10, and another projection requires a measured baseline gap. |
 | **10** Enterprise/release | Persistent supervised model services, warm/multi-worker and mixed-load capacity promotion, observability, Zscaler/corp access, HTTP/3 secure-edge benchmark/promotion, packaging, repo split | ADR 0021 transport evidence; capacity/SLO evidence; CI/CD migration; cross-repo link update |
 
 ---

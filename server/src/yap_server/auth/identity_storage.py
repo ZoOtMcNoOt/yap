@@ -33,7 +33,7 @@ def create_identity_schema(connection: sqlite3.Connection) -> None:
 
 def _create_identity_schema(connection: sqlite3.Connection) -> None:
     user_version = int(connection.execute("PRAGMA user_version").fetchone()[0])
-    if user_version not in {0, 1, SCHEMA_VERSION}:
+    if user_version not in {0, SCHEMA_VERSION}:
         raise ValueError("identity repository schema is unsupported")
     connection.execute(
         """
@@ -50,21 +50,6 @@ def _create_identity_schema(connection: sqlite3.Connection) -> None:
         )
         """
     )
-    if user_version == 1:
-        connection.execute(
-            """
-            ALTER TABLE principal_identity
-            ADD COLUMN access_disabled INTEGER NOT NULL DEFAULT 0
-                CHECK (access_disabled IN (0, 1))
-            """
-        )
-        connection.execute(
-            """
-            UPDATE principal_identity
-            SET access_disabled = 1
-            WHERE access_revoked_after_unix > 0
-            """
-        )
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS purpose_grant_revision (

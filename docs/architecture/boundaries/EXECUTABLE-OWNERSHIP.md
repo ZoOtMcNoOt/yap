@@ -1,21 +1,14 @@
 # Executable Ownership and Trust Boundaries
 
-This map records the executable ownership baseline through the merged Phase 8
-Preview and the exact-head-gated meeting-transcription maintainability repair.
-Phase
-8 reviewed head `ec4e4ab46234c35555136a75da530c6d73a042d8` passed hosted checks
-and merged through PR #142 as
-`4201c5e7f1674dc0b15e76241bc308c49a5719bb`. Historical candidate `fb0985e7...`
-passed before documentation-only successor `e22368fc...` exposed
-`GHSA-mwp4-54f8-5fhr`. Patched development-only `ip-address` 10.3.1 candidate
-`393710999b53a4bd1b00639e30c0fec88b152530` passed multi-lens review, the
-canonical native build, receipt-bound image preflight, real lifecycle, one
-complete 18-child matrix, receipt validation, and required CI and CodeQL jobs.
-PR #143 merged the reviewed closure as
-`8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. Paths are relative to the
-repository root; later
-implementation must update this map only after its behavior is executable and
-verified.
+This map records the executable ownership baseline through merged Phase 9.
+Phase 8's meeting route and maintainability repair merged through PRs #142 and
+#143. Phase 9's reviewed knowledge and agent baseline passed its exact-head
+private and aggregate gates, then merged through PR #152 as
+`ae81ff067c73a64528eecc14403765562726f2fe`. The current post-phase
+maintainability checkpoint maps the executable owners that merge introduced;
+it does not promote the evaluation runtimes into supervised production
+services. Paths are relative to the repository root. Later implementation must
+update this map only after its behavior is executable and verified.
 
 ## Dependency direction
 
@@ -626,8 +619,8 @@ owner's state but may not recreate its transition logic.
   only through the explicit evaluation image/mount boundary.
 - **Identity-provider evidence:** a version-and-digest-pinned mock OIDC provider
   and owner-flow harness exercise real discovery, JWKS, signed-token, ownership,
-  and revocation behavior. Focused local checks are green; hosted Docker
-  execution remains part of the open full phase gate.
+  and revocation behavior. The applicable hosted execution evidence is recorded
+  with the merged phase that consumed it.
 - **Checked-runtime boundary:** pre-admission preparation owns digest-pinned
   Dockerfile execution and emits a private receipt only after a second
   clean-head check. The frozen private plan owns each receipt hash. Admitted
@@ -646,6 +639,154 @@ owner's state but may not recreate its transition logic.
   CLI, policy, process, cache, Git-fixture, and contract modules have one-way
   dependencies.
 
+### 20. Reviewed knowledge-source admission and OKF compilation
+
+- **Entry point:** `knowledge/reviewed_capture_ledger.py` for reviewed meeting
+  results, `knowledge/knowledge_source_admission.py` for admitted Lane 1/Lane 2
+  sources, and `knowledge/okf_compiler.py` for deterministic compilation.
+- **Authoritative owner:** the recording job/result ledger owns the exact
+  immutable meeting result; the reviewed-capture ledger owns its reviewed
+  normalized source; the source-admission ledger owns the exact source-to-build
+  authority. The compiler owns only the deterministic projection.
+- **Persisted state:** reviewed capture identities and source-admission records
+  bind tenant, owner or reviewer, source kind/path, source revision, content or
+  manifest hash, and the compiled generation hash.
+- **Trust boundary:** a caller cannot supply a raw job owner/result descriptor or
+  relabel arbitrary OKF provenance as reviewed. Meeting admission is derived
+  from the owner-scoped authoritative job/result; curated admission requires a
+  reviewed repository revision/path/manifest identity.
+- **Dependencies/events:** exact reviewed capture or curated repository source
+  -> typed source admission -> deterministic OKF generation -> staged Postgres
+  generation. Staging requires the durable admission identity in the same
+  database transaction.
+- **Failure/recovery:** inserts return and read back the durable row. Only an
+  exact retry is idempotent; review replay, changed title/content/provenance,
+  cross-owner use, or an unobserved conflict fails closed.
+- **Cancellation:** database cancellation rolls back admission/staging; no
+  compiled projection becomes authority without the committed admission row.
+- **Duplicate owner:** none. Provenance text is descriptive; the admission row
+  is the sole authority to stage a generation.
+
+### 21. Terminology records, snapshots, and job bindings
+
+- **Entry point:** `knowledge/terminology_ledger.py` and
+  `knowledge/terminology_snapshot.py`.
+- **Authoritative owner:** the terminology ledger owns tenant-scoped immutable
+  records, frozen snapshots, and owner-scoped job bindings. Projection helpers
+  derive decoder hints, normalization constraints, glossary concepts, and exact
+  forms without becoming writers.
+- **Persisted state:** terminology records, canonical snapshot payloads/hashes,
+  and `(tenant, subject, job)` bindings.
+- **Trust boundary:** server-derived principal/team/organization authorization
+  selects visible records; request data cannot grant itself membership or
+  management authority. Reads and bindings enforce tenant, subject, and job
+  ownership.
+- **Dependencies/events:** authorized terminology mutation -> deterministic
+  tenant snapshot -> immutable job binding -> compiler and governed-agent
+  projections consume the same snapshot identity.
+- **Failure/recovery:** invalid scope, forged membership, cross-owner lookup,
+  stale or malformed snapshot material, and conflicting job binding fail closed.
+  Exact persisted identities survive reconnect.
+- **Cancellation:** transactions either publish one complete record/binding or
+  roll back.
+- **Duplicate owner:** none; model-specific hint formats are projections of the
+  model-independent ledger.
+
+### 22. Knowledge generations and permission-safe retrieval
+
+- **Entry point:** `knowledge/generation_ledger.py`,
+  `knowledge/postgres_permission_view.py`,
+  `knowledge/postgres_knowledge_retrieval.py`, and
+  `knowledge/postgres_relationship_retrieval.py`.
+- **Authoritative owner:** the generation ledger owns staged builds, embeddings,
+  validation, the active pointer, activation history, rollback, and retention.
+  The Postgres permission view owns query authorization; the retrieval modules
+  own lexical/vector/hybrid/tree/relationship reads against that exact view.
+- **Persisted state:** admitted builds, concepts, chunks, relationships,
+  permissions, audiences/denials/purposes, embeddings, active build, and
+  activation history.
+- **Trust boundary:** principal, purpose, capability, tenant, generation, and
+  permission-hash checks run before any text/relationship is returned. A shared
+  tenant transaction lock pins the active generation through authorization,
+  retrieval, proposal/audit publication, and commit; activation and pruning use
+  the exclusive counterpart.
+- **Dependencies/events:** source admission -> staged complete generation ->
+  atomic activation -> authorized query -> exact cited results. The next query
+  sees a successor only after the prior pinned query releases its transaction.
+- **Failure/recovery:** incomplete/unadmitted generations cannot activate;
+  stale-generation requests, hidden concepts/links, permission changes, and
+  cross-tenant/owner reads fail non-disclosingly. Rollback and bounded prune
+  operate under the same tenant lock.
+- **Cancellation:** connection cancellation/rollback releases the shared lock;
+  no partial response or audit success is committed.
+- **Duplicate owner:** none. The former in-memory permission/search
+  implementations are removed; behavioral authority is Postgres-only.
+
+### 23. Governed tools, proposals, RAG, MCP, and route selection
+
+- **Entry point:** `knowledge/knowledge_tool_contract.py`,
+  `knowledge/governed_knowledge_tools.py`,
+  `knowledge/governed_rag_agent.py`,
+  `knowledge/governed_knowledge_mcp.py`, and
+  `knowledge/agent_reasoning_routes.py`.
+- **Authoritative owner:** the tool contract owns names, bounds, request
+  validation, and model-facing schemas. Governed tools own permission-safe
+  execution; the RAG agent owns the cited answer workflow; MCP is a thin async
+  adapter over the same authority. The route selector maps one explicit workload
+  class to one configured model and never substitutes another route.
+- **Persisted state:** immutable proposal/citation records and content-free tool
+  audit identities. Proposed items are noncanonical; authorized discard is the
+  sole current disposition and atomically releases generation retention.
+- **Trust boundary:** token-derived principal, agent capability, purpose,
+  permission view, visible citations, job terminology snapshot, and exact tool
+  bounds are revalidated at every transition. Neither MCP nor model output gains
+  raw repository, SQL, vector-index, credential, or private-evidence authority.
+- **Dependencies/events:** explicit route -> bounded tool calls -> authorized
+  Postgres results -> cited answer or immutable proposal -> audit. Unresolved
+  proposals keep their cited generation reviewable; discarded proposals do not.
+- **Failure/recovery:** invalid tools/arguments/citations, route failure,
+  authorization change, cancellation failure, and model transport errors fail
+  closed without cross-route fallback or late proposal/audit success.
+- **Cancellation:** the async MCP adapter signals cancellation and waits through
+  shielded cleanup for the database operation, cancellation watcher, and
+  connection context to finish.
+- **Duplicate owner:** none. MCP and qualification consume the shared production
+  tool contract rather than maintaining independent schemas.
+
+### 24. Agent qualification and aggregate governed-knowledge gate
+
+- **Entry point:** `evaluation/agent_model_qualification.py` and
+  `evaluation/governed_knowledge_gate.py`.
+- **Authoritative owner:** `evaluation/agent_vllm_runtime.py` owns each immutable
+  evaluation container/model lifecycle; the model qualifier owns the frozen
+  route decision; `evaluation/owned_postgres_knowledge_runtime.py` owns the
+  disposable database lifecycle; the aggregate gate composes those admitted
+  results with the exact portable, Ruff, Postgres, restart, and teardown checks.
+- **Persisted state:** create-once owner-private evidence outside Git. Public
+  repository state contains only frozen contracts, immutable runtime/model
+  identities, and public-safe hashes/outcomes.
+- **Trust boundary:** clean exact HEAD, protected input hashes, immutable Docker
+  image/container/model identity, bounded loopback endpoints, private artifact
+  admission, child hashes, and exact teardown. Raw prompts, outputs,
+  measurements, credentials, DSNs, rows, and private paths never enter public
+  receipts.
+- **Dependencies/events:** one owned Qwen run and one owned Gemma run -> private
+  route decision -> semantic private-tree admission -> owned Postgres gate ->
+  exact-head hosted checks.
+- **Failure/recovery:** pre-admission and started identities remain observable
+  until exact container/listener/PID/cgroup cleanup; partial evidence is never
+  published. Protected producer/runtime/tool changes invalidate predecessor
+  evidence and require one fresh private qualification.
+- **Cancellation:** candidate and database runtimes prove cancellation,
+  recovery, containment, and teardown before a decision or receipt is admitted.
+- **Duplicate owner:** none. `private_json_evidence.py` owns the narrow
+  create-once JSON publication primitive used by both gates.
+
+Production process supervision, simultaneous model residency, sustained
+mixed-owner capacity/SLOs, external transport, enterprise identity/networking,
+backup/restore, and deployment remain Phase 10 or explicit IT handoffs; the
+evaluation lifecycles above are not production services.
+
 ## Persistent-state owners
 
 | State | Owner | Projection/consumer |
@@ -658,6 +799,14 @@ owner's state but may not recreate its transition logic.
 | Local model artifacts/settings | native STT model/settings owners | live runtime and setup UI |
 | Server job/chunk/result lifecycle | server store/service/artifact owners | HTTP status/result projections |
 | Server principal/access/purpose revisions | server identity repository | HTTP and private-live admission; purpose authorization |
+| Reviewed meeting captures | reviewed-capture ledger | source admission and deterministic compilation |
+| Reviewed Lane 1/Lane 2 source admissions | knowledge-source admission ledger | generation staging |
+| Terminology records/snapshots/job bindings | terminology ledger | compiler, ASR projections, governed agents |
+| Knowledge builds, active pointer, permissions, embeddings, and activation history | Postgres generation ledger | permission view and retrieval |
+| Permission-safe cited retrieval | Postgres permission/retrieval owners | governed tools, RAG, MCP |
+| Governed proposals and tool audit identities | proposal and audit ledgers | review workflow and generation retention |
+| Agent workload route selection | explicit server route selector | governed RAG invocation |
+| Private route and aggregate gate evidence | evaluation lifecycle and gate owners | public-safe hashes/outcomes only |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

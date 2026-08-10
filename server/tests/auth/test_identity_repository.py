@@ -164,83 +164,23 @@ class IdentityRepositoryTests(unittest.TestCase):
         self.assertEqual(self.repository.principal(self.user.key), denied_before)
         self.assertEqual(self.repository.audit_events(), denied_events)
 
-    def test_version_one_repository_migrates_to_durable_disabled_access(self) -> None:
+    def test_obsolete_repository_schema_fails_closed_without_mutation(self) -> None:
         self.repository.close()
         with closing(sqlite3.connect(self.path)) as connection:
             connection.executescript(
                 """
-                DROP TABLE IF EXISTS authorization_audit;
-                DROP TABLE IF EXISTS purpose_grant_revision;
-                DROP TABLE IF EXISTS principal_identity;
-                CREATE TABLE principal_identity (
-                    tenant_id TEXT NOT NULL,
-                    subject_id TEXT NOT NULL,
-                    display_name_snapshot TEXT,
-                    created_at_utc TEXT NOT NULL,
-                    last_seen_at_utc TEXT NOT NULL,
-                    access_revoked_after_unix INTEGER NOT NULL DEFAULT 0,
-                    PRIMARY KEY (tenant_id, subject_id)
-                );
+                CREATE TABLE obsolete_identity_state (value TEXT NOT NULL);
+                INSERT INTO obsolete_identity_state VALUES ('preserve-for-reset');
                 PRAGMA user_version = 1;
                 """
             )
-            connection.executemany(
-                """
-                INSERT INTO principal_identity (
-                    tenant_id,
-                    subject_id,
-                    display_name_snapshot,
-                    created_at_utc,
-                    last_seen_at_utc,
-                    access_revoked_after_unix
-                ) VALUES (?, ?, NULL, ?, ?, ?)
-                """,
-                [
-                    (
-                        TENANT_ID,
-                        SUBJECT_ID,
-                        "2026-07-25T12:00:00Z",
-                        "2026-07-25T12:00:00Z",
-                        100,
-                    ),
-                    (
-                        TENANT_ID,
-                        ADMIN_ID,
-                        "2026-07-25T12:00:00Z",
-                        "2026-07-25T12:00:00Z",
-                        0,
-                    ),
-                ],
-            )
             connection.commit()
-        self.repository = SqliteIdentityRepository(self.path, clock=self.clock)
-        with closing(sqlite3.connect(self.path)) as connection:
-            version = connection.execute("PRAGMA user_version").fetchone()[0]
-            columns = {
-                row[1]
-                for row in connection.execute("PRAGMA table_info(principal_identity)")
-            }
-            disabled = dict(
-                connection.execute(
-                    "SELECT subject_id, access_disabled FROM principal_identity"
-                )
-            )
-        self.assertEqual(version, 2)
-        self.assertIn("access_disabled", columns)
-        self.assertEqual(disabled, {SUBJECT_ID: 1, ADMIN_ID: 0})
-        newer = _principal(issued_at_unix=int(self.clock().timestamp()) + 100)
-        self.assertFalse(self.repository.access_is_allowed(newer))
-        self.repository.restore_access(
-            self.admin,
-            newer.key,
-            administrator_roles=ADMINISTRATOR_ROLES,
-        )
-        self.clock.advance()
-        self.assertTrue(
-            self.repository.access_is_allowed(
-                _principal(issued_at_unix=int(self.clock().timestamp()))
-            )
-        )
+        original = self.path.read_bytes()
+
+        with self.assertRaisesRegex(ValueError, "schema is unsupported"):
+            SqliteIdentityRepository(self.path, clock=self.clock)
+
+        self.assertEqual(self.path.read_bytes(), original)
 
     def test_purpose_grant_and_revocation_are_separate_revisioned_controls(
         self,

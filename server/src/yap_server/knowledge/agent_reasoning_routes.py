@@ -9,6 +9,10 @@ from typing import Callable
 ReasoningFunction = Callable[[str, threading.Event], str]
 
 
+class ReasoningRetryableError(RuntimeError):
+    """The selected reasoning transport may be retried within its fixed bound."""
+
+
 class AgentWorkloadClass(StrEnum):
     RAPID_AUTOMATION = "rapid-automation"
     COMPLEX_ORCHESTRATION = "complex-orchestration"
@@ -36,4 +40,8 @@ class AgentReasoningRoutes:
         return route(prompt, cancellation)
 
 
-__all__ = ["AgentReasoningRoutes", "AgentWorkloadClass"]
+__all__ = [
+    "AgentReasoningRoutes",
+    "AgentWorkloadClass",
+    "ReasoningRetryableError",
+]

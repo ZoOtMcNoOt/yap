@@ -9,11 +9,19 @@ from psycopg import Connection
 
 from yap_server.auth.principal import PrincipalKey
 
-from .agent_reasoning_routes import AgentReasoningRoutes, AgentWorkloadClass
+from .agent_reasoning_routes import (
+    AgentReasoningRoutes,
+    AgentWorkloadClass,
+    ReasoningRetryableError,
+)
 from .governed_knowledge_proposals import GovernedKnowledgeProposals
 from .governed_knowledge_tools import GovernedKnowledgeTools
 from .knowledge_proposals import KnowledgeProposal, ProposalCitation
-from .knowledge_tool_contract import KnowledgeToolCancelled, SearchKnowledgeRequest
+from .knowledge_tool_contract import (
+    KnowledgeToolCancelled,
+    SearchKnowledgeRequest,
+    validate_search_text,
+)
 from .terminology_ledger import read_job_terminology_snapshot
 from .terminology_snapshot import TerminologySnapshot
 
@@ -21,10 +29,6 @@ from .terminology_snapshot import TerminologySnapshot
 TerminologySnapshotReader = Callable[
     [Connection[object], PrincipalKey, str], TerminologySnapshot
 ]
-
-
-class ReasoningRetryableError(RuntimeError):
-    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,13 +83,10 @@ class GovernedRagAgent:
         cancellation: threading.Event,
         expected_generation_sha256: str | None = None,
     ) -> GovernedRagResult:
-        if (
-            not isinstance(question, str)
-            or not question
-            or question.strip() != question
-            or len(question) > 4_096
-        ):
-            raise ValueError("RAG question is invalid")
+        try:
+            validate_search_text(question)
+        except ValueError as error:
+            raise ValueError("RAG question is invalid") from error
         terminology = self._read_terminology_snapshot(connection, principal, job_id)
         if (
             terminology.tenant_id != principal.tenant_id
@@ -249,6 +250,5 @@ def _validate_reasoned_answer(
 __all__ = [
     "GovernedRagAgent",
     "GovernedRagResult",
-    "ReasoningRetryableError",
     "TerminologySnapshotReader",
 ]

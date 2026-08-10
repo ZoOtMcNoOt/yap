@@ -24,7 +24,7 @@ from .agent_model_candidate_runner import (
     agent_evidence_sha256,
     run_agent_model_candidate,
 )
-from .agent_model_evidence import write_new_agent_model_evidence
+from .private_json_evidence import write_new_private_json_evidence
 from .agent_model_scoring import score_agent_model_results
 from .agent_vllm_runtime import build_agent_vllm_launch_arguments
 from .checked_candidate import (
@@ -310,6 +310,7 @@ def _failed_candidate_summary(
             "listenerAbsent": True,
             "ownedWorkersReaped": True,
             "ownedCgroupEmpty": True,
+            "sameLabelOwnersAbsent": True,
         }
     ):
         raise ValueError("failed agent runtime containment differs")
@@ -426,6 +427,7 @@ def _validate_runtime_receipt(
             "listenerAbsent": True,
             "ownedWorkersReaped": True,
             "ownedCgroupEmpty": True,
+            "sameLabelOwnersAbsent": True,
         }
     ):
         raise ValueError("agent runtime receipt identity is invalid")
@@ -625,17 +627,17 @@ def main(argv: list[str] | None = None) -> int:
         for run in runs:
             directory = staging / run.candidate_id
             if isinstance(run, FailedAgentCandidateRun):
-                write_new_agent_model_evidence(directory / "failure.json", run.failure)
+                write_new_private_json_evidence(directory / "failure.json", run.failure)
                 continue
             for name, child in run.children.items():
-                write_new_agent_model_evidence(
+                write_new_private_json_evidence(
                     directory / "children" / f"{name}.json", child
                 )
-            write_new_agent_model_evidence(
+            write_new_private_json_evidence(
                 directory / "runtime-receipt.json", run.runtime_receipt
             )
-            write_new_agent_model_evidence(directory / "results.json", run.evidence)
-        write_new_agent_model_evidence(staging / "qualification.json", decision)
+            write_new_private_json_evidence(directory / "results.json", run.evidence)
+        write_new_private_json_evidence(staging / "qualification.json", decision)
         _fsync_evidence_tree(staging)
         os.replace(staging, evidence_destination)
         _fsync_directory(evidence_root)

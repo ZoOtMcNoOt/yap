@@ -10,6 +10,7 @@ from uuid import uuid4
 import psycopg
 
 from yap_server.auth.principal import PrincipalKey
+from yap_server.jobs.ownership import PrincipalRecordingJobs
 from yap_server.knowledge.agent_reasoning_routes import (
     AgentReasoningRoutes,
     AgentWorkloadClass,
@@ -41,6 +42,9 @@ from yap_server.knowledge.knowledge_proposals import (
     ProposalCitation,
     install_knowledge_proposal_schema,
 )
+from yap_server.knowledge.knowledge_source_admission import (
+    admit_reviewed_capture_generation,
+)
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
     search_postgres_knowledge_lexical,
@@ -48,6 +52,7 @@ from yap_server.knowledge.postgres_knowledge_retrieval import (
 from yap_server.knowledge.reviewed_capture_ledger import (
     append_reviewed_meeting_capture,
     install_reviewed_capture_schema,
+    read_reviewed_capture,
 )
 from yap_server.knowledge.reviewed_meeting_knowledge import (
     KnowledgeSourceReview,
@@ -74,6 +79,8 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
         result = _published_result(job)
         review = KnowledgeSourceReview(
             reviewer=owner,
+            job_id=job_id,
+            title="Architecture review",
             reviewed_at_utc="2026-08-09T13:00:00Z",
             result_revision_sha256=result_revision_sha256(result),
             decision="accepted",
@@ -82,11 +89,7 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
             install_reviewed_capture_schema(connection)
             capture = append_reviewed_meeting_capture(
                 connection,
-                result,
-                projection=job,
-                job_id=job_id,
-                owner=owner,
-                title="Architecture review",
+                PrincipalRecordingJobs(_ResultService(job, result), owner),
                 review=review,
             )
             with TemporaryDirectory() as directory:
@@ -100,7 +103,24 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                     source_revision=capture.capture_sha256,
                 )
             install_knowledge_schema(connection)
-            stage_compiled_generation(connection, generation)
+            with self.assertRaisesRegex(LookupError, "does not exist"):
+                admit_reviewed_capture_generation(
+                    connection,
+                    principal=PrincipalKey(tenant_id, f"bob-{suffix}"),
+                    capture_sha256=capture.capture_sha256,
+                    generation=generation,
+                )
+            source_admission = admit_reviewed_capture_generation(
+                connection,
+                principal=owner,
+                capture_sha256=capture.capture_sha256,
+                generation=generation,
+            )
+            stage_compiled_generation(
+                connection,
+                generation,
+                source_admission_sha256=source_admission.admission_sha256,
+            )
             store_generation_embeddings(
                 connection,
                 tenant_id=tenant_id,
@@ -292,10 +312,6 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 (tenant_id,),
             )
             connection.execute(
-                "DELETE FROM yap_knowledge_generation_holds WHERE tenant_id = %s",
-                (tenant_id,),
-            )
-            connection.execute(
                 "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
                 (tenant_id,),
             )
@@ -352,6 +368,129 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
             generation.concepts[0].frontmatter["provenance"]["review_sha256"],
             review.review_sha256,
         )
+
+    def test_reviewed_capture_is_exactly_idempotent_and_restart_readable(self) -> None:
+        suffix = uuid4().hex
+        tenant_id = f"tenant-{suffix}"
+        owner = PrincipalKey(tenant_id, f"alice-{suffix}")
+        job_id = f"job-{suffix}"
+        job = {
+            "sessionId": f"session-{suffix}",
+            "captureManifest": {"sha256": "a" * 64},
+        }
+        result = _published_result(job)
+        review = KnowledgeSourceReview(
+            reviewer=owner,
+            job_id=job_id,
+            title="Architecture review",
+            reviewed_at_utc="2026-08-09T13:00:00Z",
+            result_revision_sha256=result_revision_sha256(result),
+            decision="accepted",
+        )
+        jobs = PrincipalRecordingJobs(_ResultService(job, result), owner)
+        with psycopg.connect(POSTGRES_DSN) as connection:
+            install_reviewed_capture_schema(connection)
+            first = append_reviewed_meeting_capture(
+                connection, jobs, review=review
+            )
+            retry = append_reviewed_meeting_capture(
+                connection, jobs, review=review
+            )
+            connection.commit()
+        with psycopg.connect(POSTGRES_DSN) as restarted:
+            persisted = read_reviewed_capture(
+                restarted, principal=owner, capture_sha256=first.capture_sha256
+            )
+            restarted.execute(
+                "DELETE FROM yap_knowledge_reviewed_captures WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            restarted.commit()
+
+        self.assertEqual(retry, first)
+        self.assertEqual(persisted, first)
+
+    def test_reviewed_capture_rejects_conflicting_authority_and_storage(self) -> None:
+        suffix = uuid4().hex
+        tenant_id = f"tenant-{suffix}"
+        owner = PrincipalKey(tenant_id, f"alice-{suffix}")
+        job_id = f"job-{suffix}"
+        job = {
+            "sessionId": f"session-{suffix}",
+            "captureManifest": {"sha256": "a" * 64},
+        }
+        result = _published_result(job)
+        review = KnowledgeSourceReview(
+            reviewer=owner,
+            job_id=job_id,
+            title="Architecture review",
+            reviewed_at_utc="2026-08-09T13:00:00Z",
+            result_revision_sha256=result_revision_sha256(result),
+            decision="accepted",
+        )
+        jobs = PrincipalRecordingJobs(_ResultService(job, result), owner)
+        with psycopg.connect(POSTGRES_DSN) as connection:
+            install_reviewed_capture_schema(connection)
+            stored = append_reviewed_meeting_capture(
+                connection, jobs, review=review
+            )
+            conflicting_title = KnowledgeSourceReview(
+                reviewer=owner,
+                job_id=job_id,
+                title="A different title",
+                reviewed_at_utc="2026-08-09T14:00:00Z",
+                result_revision_sha256=result_revision_sha256(result),
+                decision="accepted",
+            )
+            with self.assertRaises(psycopg.errors.UniqueViolation):
+                append_reviewed_meeting_capture(
+                    connection, jobs, review=conflicting_title
+                )
+            connection.rollback()
+            with self.assertRaisesRegex(PermissionError, "owning principal"):
+                append_reviewed_meeting_capture(
+                    connection,
+                    PrincipalRecordingJobs(
+                        _ResultService(job, result),
+                        PrincipalKey(tenant_id, f"bob-{suffix}"),
+                    ),
+                    review=review,
+                )
+            connection.execute(
+                """UPDATE yap_knowledge_reviewed_captures
+                   SET normalized_okf = normalized_okf || %s
+                   WHERE tenant_id = %s AND capture_sha256 = %s""",
+                ("\nmutated", tenant_id, stored.capture_sha256),
+            )
+            connection.commit()
+            with self.assertRaisesRegex(ValueError, "differs from stored"):
+                append_reviewed_meeting_capture(
+                    connection, jobs, review=review
+                )
+            connection.rollback()
+            connection.execute(
+                "DELETE FROM yap_knowledge_reviewed_captures WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.commit()
+
+
+class _ResultService:
+    def __init__(self, job: dict[str, object], result: dict[str, object]) -> None:
+        self._job = job
+        self._result = result
+
+    def get(self, job_id: str, *, owner: PrincipalKey) -> dict[str, object]:
+        if not job_id or not owner.subject_id:
+            raise AssertionError("owned job lookup was not bound")
+        return dict(self._job)
+
+    def get_result(
+        self, job_id: str, *, owner: PrincipalKey
+    ) -> dict[str, object]:
+        if not job_id or not owner.subject_id:
+            raise AssertionError("owned result lookup was not bound")
+        return dict(self._result)
 
 
 def _bundle(

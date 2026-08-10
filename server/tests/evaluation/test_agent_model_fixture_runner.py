@@ -6,11 +6,14 @@ import unittest
 
 from yap_server.evaluation.agent_model_fixture_runner import (
     _step_visible_context,
-    _tool_definitions,
     run_agent_model_fixtures,
     warm_agent_model_fixture_runtime,
 )
 from yap_server.evaluation.agent_model_scoring import score_agent_model_results
+from yap_server.knowledge.knowledge_tool_contract import (
+    governed_agent_tool_definitions,
+    validate_governed_agent_tool_arguments,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -47,7 +50,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         self.assertIs(requests[1]["parallel_tool_calls"], False)
 
     def test_requires_a_caller_supplied_generation_identity(self) -> None:
-        tools = _tool_definitions(require_generation_sha256=True)
+        tools = governed_agent_tool_definitions(require_generation_sha256=True)
 
         for tool in tools:
             parameters = tool["function"]["parameters"]
@@ -55,6 +58,25 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             self.assertEqual(
                 parameters["properties"]["expected_generation_sha256"]["type"],
                 "string",
+            )
+
+    def test_search_schema_and_validator_share_the_production_boundary(self) -> None:
+        definitions = governed_agent_tool_definitions()
+        search = next(
+            item
+            for item in definitions
+            if item["function"]["name"] == "search_knowledge"
+        )
+        search_schema = search["function"]["parameters"]["properties"]["search_text"]
+        self.assertEqual(search_schema["maxLength"], 1_024)
+        validate_governed_agent_tool_arguments(
+            "search_knowledge",
+            {"purpose": "knowledge.read", "search_text": "a" * 1_024},
+        )
+        with self.assertRaisesRegex(ValueError, "search text"):
+            validate_governed_agent_tool_arguments(
+                "search_knowledge",
+                {"purpose": "knowledge.read", "search_text": "a" * 1_025},
             )
 
     def test_terminology_workloads_request_a_noncanonical_proposal(self) -> None:

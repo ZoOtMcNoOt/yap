@@ -6,6 +6,13 @@ from psycopg import Connection
 
 from yap_server.auth.principal import PrincipalKey
 
+from .knowledge_tool_contract import (
+    MAX_CONCEPT_ID_CHARACTERS,
+    MAX_STORAGE_RESULTS,
+    MAX_TRAVERSAL_DEPTH,
+    validate_bounded_text,
+    validate_integer,
+)
 from .postgres_permission_view import authorize_knowledge_query
 
 
@@ -46,12 +53,23 @@ def traverse_postgres_knowledge_relationships(
     maximum_results: int = 50,
     expected_generation_sha256: str | None = None,
 ) -> PostgresRelationshipTraversal:
-    if not isinstance(start_concept_id, str) or not start_concept_id:
-        raise ValueError("knowledge traversal start is invalid")
-    if isinstance(maximum_depth, bool) or not 1 <= maximum_depth <= 4:
-        raise ValueError("knowledge traversal depth is invalid")
-    if isinstance(maximum_results, bool) or not 1 <= maximum_results <= 100:
-        raise ValueError("knowledge traversal result limit is invalid")
+    validate_bounded_text(
+        start_concept_id,
+        field="knowledge traversal start",
+        maximum=MAX_CONCEPT_ID_CHARACTERS,
+    )
+    validate_integer(
+        maximum_depth,
+        minimum=1,
+        maximum=MAX_TRAVERSAL_DEPTH,
+        field="knowledge traversal depth",
+    )
+    validate_integer(
+        maximum_results,
+        minimum=1,
+        maximum=MAX_STORAGE_RESULTS,
+        field="knowledge traversal result limit",
+    )
     query = authorize_knowledge_query(
         connection,
         principal=principal,

@@ -7,7 +7,9 @@ from pathlib import Path
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
-from .agent_model_fixture_runner import validate_agent_tool_arguments
+from yap_server.knowledge.knowledge_tool_contract import (
+    validate_governed_agent_tool_arguments,
+)
 
 
 _RESULT_KEYS = {
@@ -108,7 +110,7 @@ def score_agent_model_results(
                 for call in tool_calls:
                     if not isinstance(call, dict) or set(call) != {"name", "arguments"}:
                         raise ValueError("agent tool sequence differs from the contract")
-                    validate_agent_tool_arguments(
+                    validate_governed_agent_tool_arguments(
                         str(call["name"]), call["arguments"]  # type: ignore[arg-type]
                     )
                 if not tool_calls or tool_calls[-1].get("arguments") != arguments:

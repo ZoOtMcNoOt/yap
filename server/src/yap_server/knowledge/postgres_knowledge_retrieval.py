@@ -8,7 +8,11 @@ from psycopg import Connection
 from yap_server.auth.principal import PrincipalKey
 
 from .generation_ledger import serialize_embedding_vector
-from .permission_view import PermissionFilteredConcept
+from .knowledge_tool_contract import (
+    MAX_STORAGE_RESULTS,
+    validate_integer,
+    validate_search_text,
+)
 from .postgres_permission_view import (
     AuthorizedKnowledgeQuery,
     authorize_knowledge_query,
@@ -16,6 +20,14 @@ from .postgres_permission_view import (
 
 
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresKnowledgeConcept:
+    concept_id: str
+    type: str
+    title: str
+    resource: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,7 +52,7 @@ class PostgresKnowledgeTree:
     generation_sha256: str
     permission_hash: str
     authorization_hash: str
-    concepts: tuple[PermissionFilteredConcept, ...]
+    concepts: tuple[PostgresKnowledgeConcept, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,7 +103,7 @@ def list_postgres_knowledge_tree(
         query.generation_sha256,
         query.permission_hash,
         query.authorization_hash,
-        tuple(PermissionFilteredConcept(*row) for row in rows),
+        tuple(PostgresKnowledgeConcept(*row) for row in rows),
     )
 
 
@@ -323,27 +335,21 @@ def _search_response(
 
 
 def _search_input(search_text: str, maximum_results: int) -> None:
-    if (
-        not isinstance(search_text, str)
-        or not search_text
-        or search_text.strip() != search_text
-        or len(search_text) > 1_024
-        or not _TOKEN.search(search_text)
-    ):
-        raise ValueError("knowledge query is invalid")
+    validate_search_text(search_text)
     _result_limit(maximum_results)
 
 
 def _result_limit(maximum_results: int) -> None:
-    if (
-        isinstance(maximum_results, bool)
-        or not isinstance(maximum_results, int)
-        or not 1 <= maximum_results <= 100
-    ):
-        raise ValueError("knowledge result limit is invalid")
+    validate_integer(
+        maximum_results,
+        minimum=1,
+        maximum=MAX_STORAGE_RESULTS,
+        field="knowledge result limit",
+    )
 
 
 __all__ = [
+    "PostgresKnowledgeConcept",
     "PostgresKnowledgeSearchResult",
     "PostgresKnowledgeSearch",
     "PostgresKnowledgeTree",
