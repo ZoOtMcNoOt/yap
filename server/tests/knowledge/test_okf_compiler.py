@@ -197,6 +197,13 @@ class OkfCompilerTests(unittest.TestCase):
                 generation,
                 concepts=(replace(first, content_sha256="not-a-sha256"), second),
             ),
+            replace(
+                generation,
+                concepts=(
+                    first,
+                    replace(second, source_path=r"decisions\release.md"),
+                ),
+            ),
         )
         for mutation in invalid:
             rehashed = replace(

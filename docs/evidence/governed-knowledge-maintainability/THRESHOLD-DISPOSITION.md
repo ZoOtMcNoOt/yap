@@ -70,7 +70,7 @@ Each line contains up to two independent entries in the form
   388 DESKTOP-TEST         desktop/tests/wdio/target-client-language-routing-hardware.js ||   465 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md
   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md ||   372 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md
   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md ||   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md
-  438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   822 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
+  438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   826 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
   953 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||   896 CURRENT-DOC          docs/CURRENT-STATUS.md
   997 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
@@ -105,7 +105,7 @@ Each line contains up to two independent entries in the form
   746 JOBS                 server/src/yap_server/jobs/job_store.py ||   595 JOBS                 server/src/yap_server/jobs/runtime.py
  1401 JOBS                 server/src/yap_server/jobs/service.py ||   809 KNOWLEDGE            server/src/yap_server/knowledge/generation_ledger.py
   358 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_proposals.py ||   377 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_source_admission.py
-  501 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_tool_contract.py ||   374 KNOWLEDGE            server/src/yap_server/knowledge/okf_compiler.py
+  501 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_tool_contract.py ||   387 KNOWLEDGE            server/src/yap_server/knowledge/okf_compiler.py
   404 KNOWLEDGE            server/src/yap_server/knowledge/postgres_knowledge_retrieval.py ||   594 LID                  server/src/yap_server/lid/component_lock.py
   445 LID                  server/src/yap_server/lid/container_runtime.py ||   505 LID                  server/src/yap_server/lid/materialization.py
   397 LID                  server/src/yap_server/lid/policy.py ||   490 LID                  server/src/yap_server/lid/worker_contract.py
@@ -131,7 +131,7 @@ Each line contains up to two independent entries in the form
   681 TEST-JOBS            server/tests/jobs/test_service_contract.py ||   462 TEST-JOBS            server/tests/jobs/test_service_meeting_result.py
   681 TEST-JOBS            server/tests/jobs/test_service_processing.py ||   399 TEST-JOBS            server/tests/jobs/test_service_restart_admission.py
   390 TEST-JOBS            server/tests/jobs/test_service_result_recovery.py ||   705 TEST-JOBS            server/tests/jobs/test_service_retention.py
-  537 TEST-KNOWLEDGE       server/tests/knowledge/test_okf_compiler.py ||   802 TEST-KNOWLEDGE       server/tests/knowledge/test_postgres_generation_ledger.py
+  544 TEST-KNOWLEDGE       server/tests/knowledge/test_okf_compiler.py ||   802 TEST-KNOWLEDGE       server/tests/knowledge/test_postgres_generation_ledger.py
   484 TEST-KNOWLEDGE       server/tests/knowledge/test_postgres_permission_safe_retrieval.py ||   768 TEST-KNOWLEDGE       server/tests/knowledge/test_reviewed_meeting_postgres_route.py
   437 TEST-RUNTIME         server/tests/lid/test_container_runtime.py ||   374 TEST-RUNTIME         server/tests/lid/test_service.py
   904 TEST-RUNTIME         server/tests/live/test_websocket_server.py ||   428 TEST-RUNTIME         server/tests/model_pools/test_batch_pool.py

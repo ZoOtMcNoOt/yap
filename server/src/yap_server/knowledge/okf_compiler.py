@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Mapping
 
 from .okf_profile import (
@@ -238,13 +238,13 @@ def validate_compiled_generation(value: CompiledKnowledgeGeneration) -> None:
     concept_ids = tuple(item.concept_id for item in value.concepts)
     if concept_ids != tuple(sorted(concept_ids)) or len(set(concept_ids)) != len(concept_ids):
         raise ValueError("compiled generation concepts are not canonical")
-    concept_paths = {Path(item.source_path) for item in value.concepts}
+    concept_paths = {_compiled_source_path(item.source_path) for item in value.concepts}
     expected_chunks: list[CompiledChunk] = []
     expected_relationships: list[CompiledRelationship] = []
     redirect_owners: dict[str, str] = {}
     resources: set[str] = set()
     for concept in value.concepts:
-        path = Path(concept.source_path)
+        path = _compiled_source_path(concept.source_path)
         if (
             path.is_absolute()
             or path.suffix.casefold() != ".md"
@@ -262,7 +262,7 @@ def validate_compiled_generation(value: CompiledKnowledgeGeneration) -> None:
         permission = effective_permission(path, value.permissions)
         links = concept_links(path, concept.body)
         broken_links = tuple(
-            link for link in links if Path(f"{link}.md") not in concept_paths
+            link for link in links if PurePosixPath(f"{link}.md") not in concept_paths
         )
         redirects = concept_redirects(frontmatter, path)
         for redirect in redirects:
@@ -300,6 +300,19 @@ def validate_compiled_generation(value: CompiledKnowledgeGeneration) -> None:
         raise ValueError("compiled relationship projection differs from its concepts")
     if compiled_generation_sha256(value) != value.generation_sha256:
         raise ValueError("compiled generation digest differs from its projections")
+
+
+def _compiled_source_path(value: object) -> PurePosixPath:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise ValueError("compiled concept path identity is invalid")
+    path = PurePosixPath(value)
+    if (
+        path.is_absolute()
+        or path.as_posix() != value
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
+        raise ValueError("compiled concept path identity is invalid")
+    return path
 
 
 def concept_record(value: CompiledConcept) -> dict[str, object]:
