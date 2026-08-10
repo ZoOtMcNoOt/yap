@@ -829,7 +829,7 @@ Selecting one exact result serializes a latest-wins native detail read and then
 performs the full speaker hash, parse, canonical-content, and source-binding
 verification before rendering bounded pages with canonical turn IDs.
 
-## Active governed-knowledge and agent candidate
+## Merged governed-knowledge and agent baseline
 
 Phase 9 now compiles bounded reviewed meeting/document sources into a
 deterministic Google OKF profile, immutable terminology snapshot, and staged
@@ -842,7 +842,7 @@ model output cannot grant permission or become canonical. MCP exposes the same
 governed tool boundary rather than repository, SQL, vector-index, or private
 evidence access.
 
-The candidate uses Postgres/pgvector as its sole Phase 9 projection. Redis,
+The merged baseline uses Postgres/pgvector as its sole Phase 9 projection. Redis,
 object storage, and Neo4j are not speculative dependencies: a later addition
 requires measured need and its own lifecycle, permission, and operations gate.
 Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` passed the complete
@@ -862,6 +862,17 @@ Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
 merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
 The separate post-Phase-9 maintainability checkpoint is active; production
 service integration remains Phase 10.
+
+At remediation anchor `c332700597eac1cc6af3f68afb3e75fce0b6ec77`, each
+exported knowledge query/traversal/proposal owns the transaction that holds the
+tenant shared lock from active-generation authorization through response or
+write completion. Reviewed meeting admission exact-compares the stored source,
+path, resource, provenance, and owner-only permission; authenticated curated
+review derives a canonical compiled-source manifest. Staging and activation
+recompute the complete compiled/persisted generation identity. MCP cancellation
+does not return while its database worker or connection context survives, and
+the strict product tool/citation schema is shared with route evaluation. These
+are checkpoint repairs, not production serving or a new model claim.
 
 ## Persistence and recovery
 

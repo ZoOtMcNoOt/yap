@@ -650,11 +650,16 @@ owner's state but may not recreate its transition logic.
   authority. The compiler owns only the deterministic projection.
 - **Persisted state:** reviewed capture identities and source-admission records
   bind tenant, owner or reviewer, source kind/path, source revision, content or
-  manifest hash, and the compiled generation hash.
+  derived manifest hash, review-authority hash, and the compiled generation
+  hash.
 - **Trust boundary:** a caller cannot supply a raw job owner/result descriptor or
   relabel arbitrary OKF provenance as reviewed. Meeting admission is derived
-  from the owner-scoped authoritative job/result; curated admission requires a
-  reviewed repository revision/path/manifest identity.
+  from the owner-scoped authoritative job/result, exact-compares the stored
+  normalized source/path/resource/provenance, and enforces the current
+  owner-only permission. Curated admission requires the fixed role on a
+  server-authenticated principal and derives its canonical compiled-source
+  manifest from the reviewed repository revision/path and complete generation;
+  production Git hosting/review remains a later repository/operations owner.
 - **Dependencies/events:** exact reviewed capture or curated repository source
   -> typed source admission -> deterministic OKF generation -> staged Postgres
   generation. Staging requires the durable admission identity in the same

@@ -159,7 +159,9 @@ The following rules are mandatory:
 - A synthetic directory ancestor may be shown only to preserve navigation to an allowed descendant; it exposes no hidden sibling names, counts, descriptions, or metadata.
 - Cross-tenant traversal fails closed even if identifiers collide.
 - Agent artifacts inherit the strictest effective permissions of every source: audience intersection, denial union, and most-restrictive classification.
-- Revocation invalidates query caches and makes stale projection generations ineligible immediately through the active permission ledger.
+- Phase 9 has no query cache. Revocation and generation change are observed
+  immediately through the active permission ledger; any future cache must add
+  separately gated invalidation rather than becoming permission authority.
 
 Any graph algorithm or vector procedure operates only on an authorized induced view or returns candidates that undergo the same final authorization check.
 
@@ -213,6 +215,14 @@ teardown proofs. No measured baseline gap justified adding Neo4j. Exact
 hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
 merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`;
 this is not a production database-operations claim.
+
+The post-Phase-9 maintainability checkpoint repairs the lifetime and integrity
+proofs behind this decision: each exported retrieval/traversal/proposal owns the
+transaction holding the tenant shared lock, while activation holds the existing
+exclusive lock and reconstructs/re-hashes every persisted non-embedding
+projection before advancing the active pointer. Focused real-Postgres race and
+tamper tests are green; checkpoint merge and its one final aggregate gate remain
+open.
 
 ## Consequences
 

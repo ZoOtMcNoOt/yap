@@ -988,9 +988,10 @@ privacy review and ADR.
 and the completed
 [meeting-transcription production qualification](plans/completed/2026-08-03-meeting-transcription-production-qualification.md)
 are closed. The one complete Phase 9 gate under ADRs 0017/0022/0028/0029 passed
-at exact candidate `a4f34678...`. Merge only after exact-head hosted review,
-complete the separate post-Phase-9 checkpoint, then continue Phase 10 in
-documented order.
+at exact candidate `a4f34678...`, and PR #152 merged the hosted-green Phase 9
+head. Complete and merge the separate post-Phase-9 maintainability checkpoint
+after its own exact-head hosted review, then continue Phase 10 in documented
+order.
 Live ASR,
 managed LAN/enterprise and
 live-endpoint discovery, external

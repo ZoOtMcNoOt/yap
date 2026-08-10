@@ -164,6 +164,17 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
         reference = route_evidence.load_agent_route_qualification_reference(
             REPOSITORY_ROOT
         )
+        reference = replace(
+            reference,
+            input_sha256={
+                path: hashlib.sha256((REPOSITORY_ROOT / path).read_bytes()).hexdigest()
+                for path in reference.input_sha256
+            },
+            dependency_sha256={
+                path: hashlib.sha256((REPOSITORY_ROOT / path).read_bytes()).hexdigest()
+                for path in reference.dependency_sha256
+            },
+        )
 
         def runner(command, **_kwargs):
             if "merge-base" in command:

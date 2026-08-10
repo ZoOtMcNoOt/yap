@@ -120,8 +120,11 @@ knowledge.
   inventory the earlier active system as required by the whole-codebase scope.
 - [x] Run exactly three read-only antagonistic reviews at anchor
   `e2fff1f5b087cc05a549588ea41aae71a6806024` and adjudicate the deduplicated
-  public-safe findings register. The result contains no P0, four P1, eleven P2,
-  and bounded P3 observations.
+  public-safe findings register. Initial discovery contained no P0, four P1,
+  eleven P2, and bounded P3 observations. Remediation re-review upgraded the
+  source-admission defect to P1 and found the separate canonical-generation
+  integrity P1, so the accepted register now contains six P1 and ten P2 without
+  expanding the checkpoint into Phase 10.
 - [ ] Resolve every P0-P2 correctness, security, privacy, authorization,
   provenance, race, cancellation, resource, lifecycle, naming, architecture,
   and maintainability finding.

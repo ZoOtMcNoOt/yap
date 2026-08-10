@@ -127,11 +127,11 @@ in isolation:
 
 | Area | Breadth review | Deep review | Disposition |
 | --- | --- | --- | --- |
-| Desktop UI/native/local lifecycle | Complete across three lenses | Risk/threshold owners sampled; no Phase 9 desktop delta | No P0-P2; retain inherited local/offline boundary evidence |
+| Desktop UI/native/local lifecycle | Complete across three lenses | Critical workflows and every threshold-triggered owner dispositioned; no Phase 9 desktop delta | No P0-P2; retain inherited local/offline boundary evidence |
 | Durable client/server batch and preprocessing | Complete across three lenses | Job scheduling/result/cancel/restart owners | No P0-P2; retain `jobs/service.py` with aggregate-root cohesion justification |
 | Identity/authorization/WSS | Complete across three lenses | Identity durable owner and adjacent trust seams | KAP-06 removes the obsolete development-schema migration; no tenant/subject/revocation defect found |
-| Meeting evidence | Complete across three lenses | Result revision -> reviewed capture -> source admission -> compilation | KAP-02/KAP-03 remediations implemented; real Postgres gate and re-review remain |
-| Knowledge/terminology/retrieval | Complete across three lenses | Generation, permissions, retrieval, terminology, proposal, SQL lifecycle | KAP-01 through KAP-05 remediations implemented; real Postgres gate and re-review remain |
+| Meeting evidence | Complete across three lenses | Result revision -> reviewed capture -> source admission -> compilation | KAP-02/KAP-03 remediations implemented; 17-test real-Postgres focus passed; final re-review/gate remain |
+| Knowledge/terminology/retrieval | Complete across three lenses | Generation, permissions, retrieval, terminology, proposal, SQL lifecycle | KAP-01 through KAP-07 remediations implemented; 17-test real-Postgres focus and restart diagnostic passed; final re-review/gate remain |
 | Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-05 and ARCH-03 remediations implemented; protected changes require one fresh private qualification; no fallback defect found |
 | Packaging/CI/gates/provenance | Complete across three lenses | Locks, licenses, receipt boundaries, exact-head hosted workflow | No P0-P2; private/public evidence separation remains sound |
 | Docs/ADRs/plans/runbooks/status | Complete across three lenses | Current/normative taxonomy and ownership navigation | Ownership/current docs reconciled and mixed test owner split; independent re-review remains |
@@ -151,18 +151,70 @@ net additive; no LOC-reduction claim is made for those correctness repairs.
 
 ## Retained cohesion decisions
 
+### Complete threshold disposition
+
+At the current remediation tree, the text/source inventory contains 468
+hand-written surfaces at or above 250 physical lines: 249 at or above 350 and
+219 from 250 through 349. The three reviews deep-traced the latter group through
+the same workflow owners and found no additional mixed authority. The mutually
+exclusive rows below classify every one of the 249 decomposition-triggering
+surfaces; generated OpenAPI, dependency locks/inventories, media, model
+artifacts, caches, and build output remain excluded rather than disguised as
+hand-written cohesion decisions.
+
+| Exact path group | >=350 files | Disposition and concrete cohesion reason |
+| --- | ---: | --- |
+| `.github/workflows/*` | 2 | Retain the CI and release dependency DAGs as the two hosted policy owners. Jobs are already named by functional gate; extracting YAML fragments would hide exact-head ordering without removing authority. |
+| `desktop/src-tauri/migrations/*` | 1 | Retain the single current job-ledger schema as one atomic durable-state definition; obsolete migration branches are forbidden and were removed where found. |
+| `desktop/src-tauri/src/**` | 79 | Retain along existing functional module boundaries: app activation, audio session/coordinator, commands, job drain/ledger/remote state, language/live runtime, connector/auth, and model adapters each own one state machine or transaction family. Inline tests remain beside their private Rust owners. No second capture/job/identity/runtime writer or Phase 9 desktop delta was found. |
+| `desktop/src-tauri/tests/*` | 2 | Retain the two integration owners for audio foundation and model-download lifecycle; each crosses native components deliberately and owns no production state. |
+| `desktop/src/*` | 4 | Retain the application composer, live-overlay views, shared sidebar primitive, and settings-control hook as separate UI owners; native projected state remains authoritative. |
+| `desktop/tests/**` | 14 | Retain each functional E2E, WDIO, release-contract, inventory, or runner configuration owner. These are scenario/gate compositions, not production authority; the mixed gate contracts already use named child boundaries. |
+| Current/normative `docs/**` excluding completed/archived plans and research | 16 | Retain each ADR, current architecture/status, active decision queue, runbook, spec, and Voice OS document by taxonomy/decision owner. Stale current-state claims are repaired; these files are not executable modules. |
+| `docs/plans/{archived,completed}/**` and `docs/research/**` | 11 | Retain as immutable historical delivery/evidence records. Rewriting or splitting them would damage provenance; current truth lives in current/normative documents. |
+| `infra/**` | 5 | Retain each process-group, supervisor, loopback proxy, resident lifecycle, and setup owner because containment must remain end to end within its script/process boundary. |
+| `server/README.md` | 1 | Retain the server runbook as the single operator navigation surface; executable gates and source modules remain authoritative. |
+| `server/src/yap_server/auth/**` | 3 | Retain identity repository, token validation, and OIDC metadata as separate trust-boundary owners. The obsolete identity migration was deleted; no caller-chosen tenant/subject path remains. |
+| `server/src/yap_server/evaluation/**` | 31 | Retain each named acceptance, corpus/review, scorer, runtime observation, lifecycle, qualification, and aggregate-decision owner. The vLLM lifecycle was repaired rather than split across containment owners; duplicate product-tool schemas and misleading evidence publication ownership were removed. |
+| `server/src/yap_server/jobs/**` | 5 | Retain completion/store/runtime plus the single locked service aggregate. The 1,401-line service owns one `RLock`; pure policies may move only when they do not create a second job-state authority. |
+| `server/src/yap_server/knowledge/**` | 6 | Retain generation ledger, source admission, tool contract, compiler, proposal, and Postgres retrieval by transaction/protocol boundary. Canonical hashes, owner/source admission, shared-lock queries, and proposal disposition are now explicit; individual high-change surfaces are itemized below. |
+| `server/src/yap_server/lid/**` | 5 | Retain component lock, runtime/materialization, policy, and worker contract as the bounded acoustic-LID artifact/runtime decision family; selection and durable job state remain outside it. |
+| `server/src/yap_server/live/**` | 2 | Retain protocol and WebSocket server as separate contract/admission owners; neither owns ASR jobs, identity, or external production transport. |
+| `server/src/yap_server/meeting_transcription/**` | 3 | Retain container worker, immutable result-revision authority, and runtime provenance as distinct meeting execution/evidence owners; speaker naming remains outside scope. |
+| `server/src/yap_server/pools/**` | 12 | Retain provider-neutral pool contracts and provider-specific engine/client/service/scheduler boundaries. Each large file owns one runtime or request protocol; no universal fallback/router was reintroduced. |
+| `server/tests/{auth,capabilities,contract}/**` | 5 | Retain by trust/contract owner; these suites intentionally enumerate adversarial token, metadata, catalog, and public-contract cases. |
+| `server/tests/evaluation/**` | 10 | Retain one suite per corpus/runtime/qualification/evidence owner. Aggregate-gate and owned-Postgres lifecycle tests were split; the affected route/lifecycle suites are itemized below. |
+| `server/tests/infra/**` | 4 | Retain end-to-end process/proxy/lifecycle harnesses because their failure cases span subprocess boundaries while production owners stay in `infra/`. |
+| `server/tests/jobs/**` | 8 | Retain suites by runtime, commit admission, contract, meeting result, processing, restart, recovery, and retention workflow. They share fixtures, not production state. |
+| `server/tests/knowledge/**` | 4 | Retain the compiler and three real-Postgres integration owners. Each is itemized below and the database lane requires every test with zero skips. |
+| `server/tests/{lid,live,model_pools,pools}/**` | 8 | Retain by component/runtime owner; these are bounded lifecycle, protocol, scheduler, and client integration suites inherited from reviewed earlier phases. |
+| `verification/**` | 8 | Retain each functional aggregate runner, hosted-closure, private-evidence, product-checkpoint, meeting-evidence, OIDC-owner, and checkout verifier. They compose existing children and publish no product state. |
+
+This grouped inventory is exhaustive for the threshold at this tree, while the
+following individual decisions make the most coupled or changed owners directly
+navigable.
+
 | Surface | Lines after remediation | Concrete owner justification |
 | --- | ---: | --- |
 | `server/src/yap_server/jobs/service.py` | 1,401 | One `RLock` protects the server job aggregate: scheduling, cancellation, result publication, and recovery must not acquire a second state owner. Extract only pure policies if a future change establishes a real seam. |
-| `server/src/yap_server/knowledge/generation_ledger.py` | 654 | One Postgres transaction owner installs/stages/embeds/activates/rolls back/prunes generations and the active pointer under one tenant lock. Splitting mutations would obscure atomicity. |
-| `server/src/yap_server/knowledge/postgres_knowledge_retrieval.py` | 360 | One query-family owner shares the same authorized generation/result/citation projection across tree, lexical, vector, and hybrid reads. |
+| `server/src/yap_server/knowledge/generation_ledger.py` | 801 | One Postgres transaction owner installs/stages/embeds/rehashes/activates/rolls back/prunes generations and the active pointer under one tenant lock. Splitting mutations would obscure atomicity. |
+| `server/src/yap_server/knowledge/knowledge_source_admission.py` | 434 | One admission owner binds authenticated review authority, immutable source identity, canonical generation identity, durable idempotency, and restart read-back. Reviewed capture rendering and compilation remain separate owners. |
+| `server/src/yap_server/knowledge/knowledge_tool_contract.py` | 499 | One product protocol owner defines strict request/citation types, bounds, schemas, response DTOs, and cancellation errors consumed by MCP, RAG, storage, and evaluation. Splitting schemas from validation caused the defect removed here. |
+| `server/src/yap_server/knowledge/postgres_knowledge_retrieval.py` | 404 | One query-family owner shares the same transaction-pinned authorized generation/result/citation projection across tree, lexical, vector, and hybrid reads. |
 | `server/src/yap_server/evaluation/owned_postgres_knowledge_runtime.py` | 753 | One lifecycle state machine owns immutable image/container/network/volume/start/restart/readiness/containment/teardown identity; decomposition would split failure containment. |
 | `server/src/yap_server/evaluation/governed_knowledge_gate.py` | 569 | One aggregate decision composes exact candidate admission, portable/Ruff/Postgres/restart children, teardown, and create-once publication. Child lifecycle and evidence validators remain separate modules. |
-| `server/src/yap_server/evaluation/agent_route_qualification_evidence.py` | 476 | One private-tree admission boundary verifies exact membership, hashes, permissions, semantic summaries, predecessor identity, and protected drift without importing raw output into public evidence. |
+| `server/src/yap_server/evaluation/agent_route_qualification_evidence.py` | 438 | One private-tree admission boundary verifies exact membership, hashes, permissions, semantic summaries, predecessor identity, and protected drift without importing raw output into public evidence. The obsolete one-file transition allowance is deleted. |
 | `server/src/yap_server/evaluation/agent_model_qualification.py` | 678 | One fail-closed route decision recomputes both owned candidate results, route-specific evidence, runtime children, and atomic tree publication. Runtime execution remains separately owned. |
 | `server/src/yap_server/evaluation/agent_vllm_runtime.py` | 678 | One repaired lifecycle state machine retains pending/observed immutable identities through launch-policy validation, readiness, cgroup observation, containment, and exact teardown. |
 | `server/src/yap_server/evaluation/agent_model_fixture_runner.py` | 415 | Conversation sequencing and tool/result rounds remain one evaluation driver after the duplicate product-tool schema authority was removed. |
-| `server/tests/evaluation/test_owned_postgres_knowledge_runtime.py` | 497 | One fake Docker lifecycle test owner covers start/restart/rebind/partial-observation/containment/teardown; aggregate-gate contracts were split into their own 293-line module. |
+| `server/tests/evaluation/test_owned_postgres_knowledge_runtime.py` | 495 | One fake Docker lifecycle test owner covers start/restart/rebind/partial-observation/containment/teardown; aggregate-gate contracts remain in their separate functional module. |
+| `server/tests/evaluation/test_agent_model_qualification.py` | 529 | One fail-closed decision test owner covers full admission, route-specific failure, tamper, latency, and exceptional containment cases against the same qualification seam. |
+| `server/tests/evaluation/test_agent_model_fixture_runner.py` | 460 | One conversation-driver test owner covers tool/result sequencing, semantic context withholding, warmups, contract parity, and malformed-response continuation. |
+| `server/tests/evaluation/test_agent_vllm_runtime.py` | 450 | One immutable vLLM lifecycle test owner covers launch policy, partial-start identity, name replacement, containment retry, cgroup/listener/PID teardown, and exact model artifacts. |
+| `server/tests/knowledge/test_okf_compiler.py` | 458 | One compiler-contract test owner covers pinned conformance, permission/source projection, canonical hashes, relationship authority, linked-directory rejection, and curator admission identity. |
+| `server/tests/knowledge/test_postgres_generation_ledger.py` | 780 | One real-Postgres generation lifecycle test owner covers stage/embedding/activation/rollback/retention, exact admission, persisted tamper, proposal disposition, and reconnect semantics under the tenant lock. |
+| `server/tests/knowledge/test_postgres_permission_safe_retrieval.py` | 489 | One real-Postgres permission/retrieval test owner covers hidden concepts/links, lexical/vector/hybrid output, revocation, and the two-connection generation-pin race. |
+| `server/tests/knowledge/test_reviewed_meeting_postgres_route.py` | 768 | One end-to-end meeting-result-to-reviewed-source-to-cited-retrieval owner covers durable replay, cross-owner/path/content/policy attacks, read rehashing, proposal/audit, cancellation, and cleanup. |
 
 ## Thirty-minute comprehension assessment
 
