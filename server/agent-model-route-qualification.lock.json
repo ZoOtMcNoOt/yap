@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "checkedHead": "36350d449735a4daea6546e16759f28f6f15631a",
+  "outcome": "required-workload-routes-qualified",
+  "evidenceSha256": "ca5a3f712ff737b92cc0d17979e5cd5b00e3034c880729e290a6f6ba255ca951",
+  "artifactSha256": {
+    "qualification.json": "1069c52eaa297240440f25f0b34aa93663df912ad32999c5cfd48709542f25db",
+    "qwen3.6-35b-a3b-nvfp4/results.json": "f89550ef81729fcc236880bbff0e3db7952c2b64ad8cc3b3f568944c30e062c0",
+    "qwen3.6-35b-a3b-nvfp4/runtime-receipt.json": "45fe133af030f1d7cacdaff06ee7230497f6586707386aef0e87871a11d85e2c",
+    "qwen3.6-35b-a3b-nvfp4/children/cancellation.json": "dffca04b3e6a3e24a2e12ae667748815365d41adfecac71d6e5bb105216a02a7",
+    "qwen3.6-35b-a3b-nvfp4/children/fixtures.json": "ebdf52c5d4616bdcea76185cc6b51e0899eb12066a3dee5038ba072282603ff0",
+    "qwen3.6-35b-a3b-nvfp4/children/lifecycle.json": "3d2fa161b24f7efcd6c62b7a548cecfa56e9102b3f5bc20cde75c0ae84607dd1",
+    "qwen3.6-35b-a3b-nvfp4/children/pressure.json": "51794372a23955905b36fc839789b32e93226e1923e2fd91f4933e623fce20dd",
+    "qwen3.6-35b-a3b-nvfp4/children/resources.json": "a8244b837e29aca295916fa036f218893b810e59d67c0370ed41ff9bd707234b",
+    "gemma-4-31b-it-nvfp4/results.json": "1a0b9ba1f21b127734464c9b33ff3e816eba5570d855392d8f9a6b9b47282837",
+    "gemma-4-31b-it-nvfp4/runtime-receipt.json": "da788209e11778f915f75ad9330be75bf7b85123567ccc677f9fc38ae45f6029",
+    "gemma-4-31b-it-nvfp4/children/cancellation.json": "dffca04b3e6a3e24a2e12ae667748815365d41adfecac71d6e5bb105216a02a7",
+    "gemma-4-31b-it-nvfp4/children/fixtures.json": "8e535fada5e37e69da4f7f02f230795fc1ededb19cfcc3a2c7fd89298d3b100b",
+    "gemma-4-31b-it-nvfp4/children/lifecycle.json": "fb63c30a266a5eaa06d7119370d96dcfb47d675defa5cacb1c4b9e9914eb77b8",
+    "gemma-4-31b-it-nvfp4/children/pressure.json": "8d63706c22010dcfb0fb530191a40d43bf1f517d3297d3176ab1983536758d68",
+    "gemma-4-31b-it-nvfp4/children/resources.json": "5265d2a09870d320e4ea0e664e1250151ce008f0afc73ba8482798d7e99e62f1"
+  },
+  "inputSha256": {
+    "server/agent-model-acceptance.json": "df5fcb073d02223a532e1b3076b12730bb3e35415a2a7cf27a42153c1b6068a5",
+    "server/agent-reasoning-candidates.lock.json": "c95fb9ff5d11956f527f3be84c9f35da5e47b1e9077c272ff79ac5ca4ad2ea30",
+    "server/agent-workload-fixtures.json": "517a28f8f70d59bee1ee1c7dc7e4b27ed2a9d6bb61df57f80bcb67db631f70fb"
+  },
+  "dependencySha256": {
+    "server/pyproject.toml": "80cf62a703d27b3d40cdf8df980f22b7d68cdc39680fed7cd9dcfa309f096052",
+    "server/uv.lock": "e714610ed1dffc95f8280fa8952af6ce3cd7ea7599bfff200ba818b852da7746"
+  }
+}

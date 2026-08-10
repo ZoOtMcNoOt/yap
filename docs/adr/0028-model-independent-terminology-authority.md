@@ -106,6 +106,15 @@ text, variants, prompts, or transcript content.
 - concurrent job/session revision pinning;
 - redacted audit and failure output.
 
+The active Phase 9 candidate implements these boundaries through a
+server-derived immutable authorization context, owner-scoped append-only ledger,
+job-bound snapshot identity, four deterministic projections, and governed-agent
+snapshot consumption. Focused tests cover forged membership/admin claims,
+cross-owner and cross-tenant access, precedence/conflicts/tombstones, stale or
+wrong-owner job snapshots, projection bounds, revocation, and redacted evidence.
+The one complete Phase 9 gate and merge remain pending; this is not a production
+retention, administration, or enterprise-directory claim.
+
 Enterprise group resolution, administrator policy, retention periods, and
 production audit export remain IT/security handoffs. Their absence does not
 authorize Yap-native credentials or caller-selected ownership.

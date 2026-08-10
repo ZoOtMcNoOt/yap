@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import psycopg
 
+from yap_server.auth.principal import PrincipalKey
 from yap_server.knowledge.generation_ledger import (
     activate_complete_generation,
     install_knowledge_schema,
@@ -18,6 +19,9 @@ from yap_server.knowledge.generation_ledger import (
     store_generation_embeddings,
 )
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
+from yap_server.knowledge.postgres_knowledge_retrieval import (
+    search_postgres_knowledge_lexical,
+)
 
 
 POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
@@ -117,7 +121,9 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                 self.assertNotIn(generations[0].generation_sha256, removed)
                 self.assertNotIn(generations[1].generation_sha256, removed)
                 active = read_active_generation(connection, tenant_id=tenant_id)
-                self.assertEqual(active.generation_sha256, generations[0].generation_sha256)
+                self.assertEqual(
+                    active.generation_sha256, generations[0].generation_sha256
+                )
                 history = connection.execute(
                     """SELECT reason FROM yap_knowledge_activation_history
                        WHERE tenant_id = %s ORDER BY activation_id""",
@@ -137,6 +143,100 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                 )
                 connection.execute(
                     "DELETE FROM yap_knowledge_generation_holds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.commit()
+
+    def test_active_generation_survives_reconnect_and_successor_stays_current(
+        self,
+    ) -> None:
+        tenant_id = f"test-{uuid4()}"
+        with TemporaryDirectory() as directory:
+            root = _bundle(Path(directory), tenant_id)
+            first = compile_okf_bundle(
+                root,
+                tenant_id=tenant_id,
+                source_revision="revision-before-reconnect",
+            )
+            second = compile_okf_bundle(
+                root,
+                tenant_id=tenant_id,
+                source_revision="revision-after-reconnect",
+            )
+
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                install_knowledge_schema(connection)
+                stage_compiled_generation(connection, first)
+                _embed_and_activate(connection, first)
+
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                restored = read_active_generation(connection, tenant_id=tenant_id)
+                self.assertEqual(restored.generation_sha256, first.generation_sha256)
+                restored_search = search_postgres_knowledge_lexical(
+                    connection,
+                    principal=PrincipalKey(tenant_id, "alice"),
+                    purpose="knowledge.read",
+                    agent_capabilities=frozenset({"knowledge.search.lexical"}),
+                    search_text="generation promotion atomic",
+                    expected_generation_sha256=first.generation_sha256,
+                )
+                self.assertEqual(
+                    restored_search.generation_sha256, first.generation_sha256
+                )
+                self.assertEqual(len(restored_search.results), 1)
+                self.assertEqual(
+                    restored_search.results[0].concept_id, "project/voiceos"
+                )
+                self.assertEqual(
+                    restored_search.results[0].generation_sha256,
+                    first.generation_sha256,
+                )
+                stage_compiled_generation(connection, second)
+                _embed_and_activate(connection, second)
+
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                current = read_active_generation(connection, tenant_id=tenant_id)
+                self.assertEqual(current.generation_sha256, second.generation_sha256)
+                with self.assertRaisesRegex(ValueError, "stale"):
+                    search_postgres_knowledge_lexical(
+                        connection,
+                        principal=PrincipalKey(tenant_id, "alice"),
+                        purpose="knowledge.read",
+                        agent_capabilities=frozenset({"knowledge.search.lexical"}),
+                        search_text="generation promotion atomic",
+                        expected_generation_sha256=first.generation_sha256,
+                    )
+                current_search = search_postgres_knowledge_lexical(
+                    connection,
+                    principal=PrincipalKey(tenant_id, "alice"),
+                    purpose="knowledge.read",
+                    agent_capabilities=frozenset({"knowledge.search.lexical"}),
+                    search_text="generation promotion atomic",
+                    expected_generation_sha256=second.generation_sha256,
+                )
+                self.assertEqual(
+                    current_search.generation_sha256, second.generation_sha256
+                )
+                self.assertEqual(len(current_search.results), 1)
+                history = connection.execute(
+                    """SELECT generation_sha256 FROM yap_knowledge_activation_history
+                       WHERE tenant_id = %s ORDER BY activation_id""",
+                    (tenant_id,),
+                ).fetchall()
+                self.assertEqual(
+                    [row[0] for row in history],
+                    [first.generation_sha256, second.generation_sha256],
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_activation_history WHERE tenant_id = %s",
                     (tenant_id,),
                 )
                 connection.execute(

@@ -8,6 +8,7 @@ closure `10618e9d292e6810d6fee7defd7adc4902ecb2ed`.
 - [ADR 0017](../../adr/0017-knowledge-base-compiler.md)
 - [ADR 0022](../../adr/0022-google-okf-permission-safe-projections.md)
 - [ADR 0016](../../adr/0016-auth-identity-bridge.md)
+- [ADR 0028](../../adr/0028-model-independent-terminology-authority.md)
 - [ADR 0029](../../adr/0029-vllm-agent-reasoning-runtime.md)
 - [Voice OS architecture](../../VOICE-OS-ARCHITECTURE.md)
 - [Roadmap](../../roadmap/ROADMAP.md)
@@ -29,108 +30,136 @@ never compile permissions, grant access, or promote their own output.
 
 ### 1. Canonical source and compiler
 
-- [ ] Add pinned OKF v0.1 conformance fixtures without copying upstream code.
-- [ ] Validate UTF-8 Markdown concepts, root and directory reserved files,
+- [x] Add pinned OKF v0.1 conformance fixtures without copying upstream code.
+- [x] Validate UTF-8 Markdown concepts, root and directory reserved files,
   required non-empty `type`, supported links, broken-link diagnostics, unknown
   types, and lossless unknown frontmatter fields.
-- [ ] Validate the Yap profile: title, stable tenant-scoped `yap://` resource,
+- [x] Validate the Yap profile: title, stable tenant-scoped `yap://` resource,
   timestamp, schema version, provenance, relationships, and redirect history.
-- [ ] Compile deterministic concepts, chunks, relationships, permissions,
+- [x] Compile deterministic concepts, chunks, relationships, permissions,
   provenance, diagnostics, and content hashes from a bounded source tree.
-- [ ] Reject duplicate resources, path escapes, symlink/junction escapes,
+- [x] Reject duplicate resources, path escapes, symlink/junction escapes,
   cross-tenant resources, malformed principals, unsupported schema versions,
   and conflicting permission policies.
 
 ### 2. Canonical terminology
 
-- [ ] Amend the accepted architecture with one model-independent terminology
+- [x] Amend the accepted architecture with one model-independent terminology
   domain covering personal, team, and organization scope; locale; owner;
   sensitivity; precedence; versioning; deletion; audit; and conflicts.
-- [ ] Freeze one immutable terminology snapshot per job/session.
-- [ ] Compile bounded provider hints, deterministic exact-form normalization,
+- [x] Freeze one immutable terminology snapshot per job/session.
+- [x] Compile bounded provider hints, deterministic exact-form normalization,
   grammar-model preservation constraints, and permission-safe OKF glossary
   concepts from the same snapshot.
-- [ ] Keep raw transcript evidence immutable and every correction reversible.
+- [x] Keep raw transcript evidence immutable and every correction reversible.
 
 ### 3. Durable compiled ledger and atomic generations
 
-- [ ] Add Postgres migrations for tenants, builds, active generation,
-  concepts/resources, permissions, lineage, audit, chunks, typed relationships,
-  terminology, Lane 1 immutable captures, and pgvector embeddings.
-- [ ] Compile a non-active generation, validate it completely, then atomically
+- [x] Add Postgres schemas for generation state, concepts/resources,
+  permissions, lineage, audit, chunks, typed relationships, terminology, Lane 1
+  immutable captures, and pgvector embeddings. Tenant and subject identities
+  remain token-derived rather than duplicated in a Yap-owned credential table.
+- [x] Compile a non-active generation, validate it completely, then atomically
   promote only the Postgres active-generation pointer.
-- [ ] Prove failure injection leaves the prior generation active; implement
+- [x] Prove failure injection leaves the prior generation active; implement
   rollback, revocation, bounded retention, orphan cleanup, and deterministic
   full rebuild.
-- [ ] Make Redis optional and disposable; a miss falls back to Postgres, never
-  raw policy files. Keep object storage behind the immutable blob interface and
-  leave enterprise lifecycle configuration as an explicit handoff.
+- [x] Keep Postgres/pgvector as the only Phase 9 knowledge projection. Do not add
+  Redis or object storage without a measured need. Production caching, immutable
+  blob lifecycle, backup, and retention remain explicit Phase 10/IT handoffs;
+  no cache may become a policy source of truth.
 
 ### 4. Permission-safe retrieval
 
-- [ ] Expose Yap-owned parameterized tree, lexical/metadata, pgvector, hybrid,
+- [x] Expose Yap-owned parameterized tree, lexical/metadata, pgvector, hybrid,
   and bounded multi-hop query interfaces.
-- [ ] Bind every query to token-derived tenant/subject, purpose, agent
+- [x] Bind every query to token-derived tenant/subject, purpose, agent
   capability, active generation, and permission hash for its lifetime.
-- [ ] Filter before retrieval where supported and recheck every result against
+- [x] Filter before retrieval where supported and recheck every result against
   the compiled ledger before return.
-- [ ] Prevent hidden names, paths, resources, types, counts, degrees, backlinks,
+- [x] Prevent hidden names, paths, resources, types, counts, degrees, backlinks,
   snippets, scores, edges, and inferred relationships from leaking.
-- [ ] Return exact source revision and span citations with every result.
+- [x] Return exact source revision and span citations with every result.
 
 ### 5. Governed agents, RAG, and MCP
 
-- [ ] Give agents only the governed retrieval and proposal interfaces—never
+- [x] Give agents only the governed retrieval and proposal interfaces—never
   repository, SQL, vector-index, permission-file, or private-evidence access.
-- [ ] Validate bounded structured tool inputs/outputs, prompt/context/output
+- [x] Validate bounded structured tool inputs/outputs, prompt/context/output
   budgets, cancellation, retries, audit events, and redacted observability.
-- [ ] Keep generated summaries and relationships immutable proposals with exact
+- [x] Keep generated summaries and relationships immutable proposals with exact
   provenance and strictest-source permission inheritance until accepted.
-- [ ] Expose the same governed tool contract through MCP without broadening
+- [x] Expose the same governed tool contract through MCP without broadening
   authority or logging sensitive content.
 
 ### 6. Model and projection evidence
 
-- [ ] Freeze licensed representative terminology, question-answering,
+- [x] Freeze licensed representative terminology, question-answering,
   structured-tool, and multi-user isolation fixtures before model output.
-- [ ] Qualify the required vLLM workload routes: Qwen 3.6 35B-A3B NVFP4 for
+- [x] Qualify the required vLLM workload routes: Qwen 3.6 35B-A3B NVFP4 for
   rapid automation and Gemma 4 31B IT NVFP4 for complex orchestration. Bind
   task quality, citation fidelity, structured-output validity, terminology
   preservation, prefix-cache isolation, latency, concurrency, memory, license,
   cancellation, and teardown to each exact route.
-- [ ] Prove Rust/Yap selects an explicit workload class and never silently
+- [x] Prove Yap's Python server route selector selects an explicit workload class and never silently
   reroutes a failed request between models. Keep simultaneous residency and
-  sustained mixed-route capacity as Phase 10 evidence.
-- [ ] Treat the assignment as a frozen product hypothesis until a Qwen rapid
-  latency/throughput track and a Gemma multi-step orchestration track pass.
-  Common admission evidence alone must not be reported as specialization proof.
-- [ ] Promote no model without workload-specific evidence; keep a deterministic
-  no-model path for compiler, authorization, retrieval, and citations.
-- [ ] Benchmark the Postgres/pgvector baseline first. Implement Neo4j only if it
-  clears the predefined multi-hop quality, isolation, operations, licensing,
+  sustained mixed-route capacity plus Rust-owned production orchestration as
+  Phase 10 evidence.
+- [x] Require the Qwen rapid latency/concurrency track and the Gemma exact
+  semantic multi-step orchestration track in addition to common admission.
+  Exact private qualification head
+  `36350d449735a4daea6546e16759f28f6f15631a` returned
+  `required-workload-routes-qualified`; the committed lock records only its
+  public-safe identity and the full gate independently admits the private tree.
+- [x] Preserve a deterministic no-model path for compiler, authorization,
+  retrieval, and citations. Route qualification does not advertise or
+  production-promote either model.
+- [x] Retain the executing Postgres/pgvector baseline. Neo4j was not admitted
+  because no measured baseline gap justified a second projection; a later
+  challenger requires the predefined quality, isolation, operations, licensing,
   resource, rebuild, and cost gates.
 
 ### 7. Integrated product route
 
-- [ ] Prove `authoritative meeting result -> reviewed OKF document -> compiled
+- [x] Prove `authoritative meeting result -> reviewed OKF document -> compiled
   generation -> permission-filtered retrieval -> cited answer/proposal`.
-- [ ] Prove personal/team/organization terminology ownership and revocation.
-- [ ] Prove cross-tenant, cross-owner, stale-generation, purpose, cancellation,
-  restart, partial-publication, and cache-invalidation failure paths.
-- [ ] Preserve local/offline controls when the knowledge or agent server is
-  unavailable; do not silently route content or acquire credentials.
+- [x] Prove personal/team/organization terminology ownership and revocation.
+- [x] Prove cross-tenant, cross-owner, stale-generation, purpose, cancellation,
+  reconnect, and partial-publication failure paths. Phase 9 ships no cache, so
+  cache invalidation is non-applicable; any future cache requires its own gate.
+- [ ] Prove a real Postgres process restart preserves cited retrieval, rejects
+  the stale generation after successor activation, and leaves no owned runtime
+  residue. The one complete gate owns this evidence.
+- [x] Preserve local/offline controls when the knowledge or agent server is
+  unavailable; do not silently route content or acquire credentials. Phase 9
+  changes no desktop dependency path from reviewed Phase 8 baseline
+  `10618e9d292e6810d6fee7defd7adc4902ecb2ed`; the complete gate proves that
+  unchanged boundary rather than rerunning unrelated native suites.
 
 ## Evidence and closure
 
 - Use focused tests while each vertical slice changes.
 - Keep source corpora, prompts, retrieved content, transcripts, credentials,
   tokens, and private evaluation output outside Git and hosted artifacts.
-- Complete one bounded adversarial review of permission, compiler, retrieval,
+- [x] Complete one bounded adversarial review of permission, compiler, retrieval,
   tool, concurrency, provenance, privacy, and maintainability boundaries.
 - Freeze one exact candidate only after implementation, tests, documentation,
   provenance, and accepted findings are complete.
-- Run the complete applicable local/native/server/Postgres/pgvector/vLLM/GB10
-  Phase 9 matrix exactly once against that candidate.
+- Run the complete Phase 9 matrix exactly once from `server/` with:
+
+  ```text
+  uv run --locked python -m yap_server.evaluation.governed_knowledge_gate \
+    --repository-root <absolute-clean-checkout> \
+    --checked-head <full-lowercase-head> \
+    --agent-route-evidence-root <absolute-private-agent-model-tree> \
+    --receipt-path <new-absolute-outside-repo-json>
+  ```
+
+  The command owns the locked Python 3.12 portable suite, Ruff, an immutable
+  loopback-only Postgres/pgvector runtime, the mandatory zero-skip database
+  modules, a real database restart/retrieval probe, exact teardown, and
+  hash-bound semantic admission of the already-consumed private GB10 route
+  evidence while publishing only public-safe hashes and outcomes.
 - Reconcile ADR scores and all architecture/status claims only from evidence.
 - Open one focused PR and merge only a reviewed hosted-green exact head.
 - Complete the separate post-Phase-9 architecture checkpoint before Phase 10.

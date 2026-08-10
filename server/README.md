@@ -431,6 +431,39 @@ for enterprise inputs and the
 [integrated identity and access gate](../docs/runbooks/integrated-identity-access-gate.md)
 for candidate and hosted closure.
 
+## Governed knowledge candidate and complete gate
+
+The active Phase 9 candidate compiles reviewed sources into deterministic Google
+OKF concepts and immutable terminology snapshots, stages atomic
+Postgres/pgvector generations, filters retrieval through server-derived
+principal/purpose/generation authority, and exposes the same bounded cited
+answer/proposal tools to the governed agent and MCP adapters. Postgres/pgvector
+is the only current projection. Redis, object storage, Neo4j, production
+supervision, and enterprise deployment are not implicit dependencies.
+
+The complete gate must run once from a clean Linux/ARM64 candidate with the
+already-qualified private Qwen/Gemma tree available outside Git:
+
+```bash
+umask 077
+uv run --locked python -m yap_server.evaluation.governed_knowledge_gate \
+  --repository-root /absolute/path/to/clean/yap \
+  --checked-head <full-lowercase-git-sha> \
+  --agent-route-evidence-root /absolute/private/agent-model \
+  --receipt-path /absolute/private/governed-knowledge-gate.json
+```
+
+The command admits the exact hash-locked private model evidence without copying
+raw outputs or measurements, runs the locked Python 3.12 portable suite and
+Ruff, launches the immutable ARM64 Postgres/pgvector image on an owned internal
+network with a loopback-only host port, requires every mandatory database test
+with zero skips, restarts the actual database process, verifies cited retrieval
+and stale-generation rejection after recovery, and proves container, listener,
+PID, network, and volume teardown. The destination receipt must be new and
+outside the repository. It contains only checked identities and public-safe
+counts/booleans; never commit the private evidence tree, DSN, password, model
+output, or database content.
+
 ## Local checks
 
 ```powershell

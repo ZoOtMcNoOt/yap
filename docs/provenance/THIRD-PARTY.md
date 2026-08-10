@@ -105,6 +105,25 @@ that approval.
   code enter only through the separate opt-in evaluation image or an explicit
   private qualification source mount.
 
+## Phase 9 agent evaluation runtime
+
+The Phase 9 agent gate uses the immutable ARM64 NVIDIA vLLM 26.06 image digest,
+Python 3.12, and reported vLLM revision recorded in
+`server/agent-reasoning-candidates.lock.json`. It evaluates two Apache-2.0
+checkpoints at exact Hugging Face revisions and artifact-manifest hashes:
+
+- `nvidia/Qwen3.6-35B-A3B-NVFP4` for `rapid-automation`;
+- `nvidia/Gemma-4-31B-IT-NVFP4` for `complex-orchestration`.
+
+The lock also freezes quantization, tool/reasoning parser identities, final
+response protocols, and Gemma's chat-template path. That template is supplied
+by and provenance-bound to the digest-pinned vLLM image; Yap does not copy it.
+Model artifacts and raw qualification output remain in owner-private external
+caches and are not bundled, mirrored, committed, or exposed in hosted
+artifacts. The synthetic workload manifest records its own CC0 provenance. An
+exact-head private route qualification is evaluation evidence, not permission
+to redistribute either model or advertise a production service.
+
 ## Evaluation-only candidates not incorporated
 
 These immutable upstream identities were inspected or executed only inside the

@@ -289,10 +289,15 @@ Triton Python-backend experiment remains historical negative evidence because pa
 preserving execution serialized model calls without a demonstrated throughput
 gain. ADR 0029 selects vLLM as the sole Phase 9 agent/LLM runtime. Its required
 assigned workload candidates are Qwen 3.6 NVFP4 for rapid automation and Gemma
-4 31B IT NVFP4 for complex orchestration; the assignment is unpromoted pending
-route-specific proof, and neither silently substitutes for the other.
-Persistent supervised
-production deployment remains Phase 10 work.
+4 31B IT NVFP4 for complex orchestration. Exact private qualification head
+`36350d449735a4daea6546e16759f28f6f15631a` passed both frozen route-specific
+tracks, and neither route silently substitutes for the other. Qwen uses
+`qwen3_xml` tools, `qwen3` reasoning, and JSON-schema final answers; Gemma uses
+`gemma4` tools, no reasoning parser, and a forced-answer tool with the exact chat
+template provenance-bound inside the digest-pinned vLLM image. These are
+qualified evaluation routes, not advertised production services. Sequential
+qualification does not prove simultaneous residency or sustained mixed-route
+capacity. Persistent supervised production deployment remains Phase 10 work.
 
 Source-exact focused GB10 smokes at executable commit
 `fcccf21e785b116b92cd8e46150a36b9b5ee91db` additionally ran each full locked
@@ -824,6 +829,30 @@ Selecting one exact result serializes a latest-wins native detail read and then
 performs the full speaker hash, parse, canonical-content, and source-binding
 verification before rendering bounded pages with canonical turn IDs.
 
+## Active governed-knowledge and agent candidate
+
+Phase 9 now compiles bounded reviewed meeting/document sources into a
+deterministic Google OKF profile, immutable terminology snapshot, and staged
+Postgres/pgvector generation. The active pointer is promoted only after full
+validation. Retrieval derives tenant, subject, purpose, capability, generation,
+and permission identity on the server, filters before return, rechecks every
+result, and emits exact citations without disclosing hidden resources or graph
+shape. Generated answers and relationships remain bounded, cited proposals;
+model output cannot grant permission or become canonical. MCP exposes the same
+governed tool boundary rather than repository, SQL, vector-index, or private
+evidence access.
+
+The candidate uses Postgres/pgvector as its sole Phase 9 projection. Redis,
+object storage, and Neo4j are not speculative dependencies: a later addition
+requires measured need and its own lifecycle, permission, and operations gate.
+The complete Phase 9 gate owns the exact ARM64 Postgres/pgvector container on an
+internal network with a loopback-only host binding, requires all database tests
+without skips, restarts the real database process, verifies retrieval and stale
+generation rejection after recovery, then proves teardown. It also admits the
+exact private Qwen/Gemma qualification tree by committed hashes without copying
+raw model output into Git or the public aggregate. The complete gate has not yet
+been consumed; production service integration remains Phase 10.
+
 ## Persistence and recovery
 
 | Durable boundary | Recovery invariant |
@@ -836,6 +865,7 @@ verification before rendering bounded pages with canonical turn IDs.
 | Connector configuration | Bounded no-follow regular-file admission precedes schema validation; one save lease spans confirmation, publication, approval, generation change, and applied-state projection. |
 | Server job/chunk/result state | Schema 6 retains bounded ASR/alignment/result-publication attempts. Idempotency survives restart; interrupted processing and retry admission remain explicit without rewriting completed result authority. |
 | Server identity repository | The provider-neutral repository owns principal, access-revocation, purpose-control, and redacted audit records. The SQLite adapter persists focused development/restart evidence; production topology, encryption, backup/deletion, retention/export, and administrative access remain external approvals. |
+| Knowledge generation ledger | Postgres owns staged and active immutable knowledge generations, permission and relationship projections, terminology snapshots, reviewed capture bindings, proposals, and redacted audit identities. A cache is not a permission authority. Phase 10 owns production backup, retention, encryption, monitoring, and operational topology. |
 | Deletion intent/quarantine | Destructive work revalidates identity and resumes without following replacement paths. |
 
 ## Trust boundaries and limits

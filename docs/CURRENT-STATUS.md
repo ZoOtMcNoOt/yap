@@ -1,6 +1,6 @@
 # Current Status
 
-**As of:** 2026-08-09
+**As of:** 2026-08-10
 
 **Most recent merged closure:** PR #150 merged the Phase 8 qualification as
 `599a0d0b` from exact hosted-green head
@@ -49,6 +49,18 @@ independently adjudicated holdout were unconfigured, it recorded
 No image preparation or GPU inference was admissible, and the catalogs remain
 unchanged.
 
+Phase 9 is now an implemented candidate on
+`feat/governed-knowledge-retrieval`. Its deterministic OKF compiler,
+model-independent terminology snapshots, Postgres/pgvector generations,
+permission-filtered retrieval, governed proposal/RAG/MCP interfaces, and
+explicit Qwen/Gemma workload router execute under focused tests. Exact private
+GB10 qualification head `36350d449735a4daea6546e16759f28f6f15631a`
+returned `required-workload-routes-qualified` for both locked vLLM routes. Raw
+outputs and measurements remain private. The one complete Phase 9 matrix,
+exact-head hosted review, PR, merge, and post-phase checkpoint remain open; no
+production agent service, simultaneous model residency, or sustained
+mixed-route capacity is claimed.
+
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
 another document disagrees.
@@ -74,7 +86,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Post-Phase-7 local-first closure | Implemented and locally gated | On-device setup and recovery no longer await optional server/auth refresh. The fixed numeric-loopback offer retries safely after launch, requires explicit connection approval, never scans the LAN, and stops after configuration or durable dismissal. Server and sign-in controls remain optional and progressively disclosed; no production SSO provider or enterprise configuration is invented. |
 | Phase 8: meeting evidence | Closed as unadvertised baseline | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron for the sole server meeting route. PR #144 merged exact 30-second source-time epochs, request-scoped ECAPA reconciliation, canonical `speaker-1` through `speaker-64` identities, typed capacity records, strict `Unknown`, and one-speaker plain-text History projection. Exact qualification candidate `3ddb930...` recorded `unadvertised-baseline` because the required private holdout was unconfigured. Tiron remains explicit Preview and absent from the default catalog; Phase 8 adds no fallback pipeline. |
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
-| Phase 9 | Next | Begin the pinned Google OKF compiler and permission-safe retrieval slice under ADRs 0017/0022. |
+| Phase 9 | Active candidate awaiting its single complete gate | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Production service integration and Phase 10 capacity remain unproved. |
 | Phase 10 | Planned | Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
@@ -449,8 +461,10 @@ candidate is promoted by this dirty-head result.
   remain correctness references. A pinned resident NeMo candidate now executes
   behind its own authenticated numeric-loopback adapter and checked launcher,
   but is not selected and does not implement client-facing live transport. None
-  is advertised as persistent supervised production capacity, and SGLang
-  remains reserved for later agent workloads.
+  is advertised as persistent supervised production capacity. ADR 0029 removes
+  SGLang from the executing agent path and uses vLLM for the qualified Qwen
+  rapid-automation and Gemma complex-orchestration evaluation routes. Nemotron
+  remains separately governed ASR technology, not an agent candidate.
 - The non-production evaluation package locks FLEURS `es-419` source identity,
   validates its private corpus boundary, runs the exact Cohere fixed-language
   route in true batches, publishes per-case evidence only to owner-restricted
@@ -694,7 +708,8 @@ publication boundaries retain ownership.
 - Tiron production qualification closed as `unadvertised-baseline` because the
   independent private holdout was unconfigured. The source-time larger-roster
   reconciliation and anonymous speaker-result publication execute, but Tiron
-  remains explicit Preview and absent from the default catalog. Phase 9 is next.
+  remains explicit Preview and absent from the default catalog. Phase 9 is an
+  implemented candidate awaiting its single complete gate.
 - Private security scans, scan identifiers, host paths, and detailed private
   findings are not repository or PR material.
 
@@ -856,12 +871,14 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Begin Phase 9 with the deterministic Google OKF validation/compiler and
-   permission-safe retrieval slice under ADRs 0017/0022.
+1. Freeze the reviewed Phase 9 candidate, run its single complete
+   Python/Ruff/Postgres/pgvector/restart/private-route-evidence gate, then close
+   the focused PR only on a hosted-green exact head.
 2. Keep Tiron absent from the default catalog at the recorded
    `unadvertised-baseline`; the source-time implementation remains the sole
    server meeting path.
-3. Continue Phase 10 only after Phase 9 and keep the full security scan at
+3. Complete the separate post-Phase-9 architecture checkpoint before Phase 10
+   and keep the full security scan at
    the Phase 10 enterprise gate.
 4. Leave Entra registration, production SSO/provider approval, Conditional
    Access, DNS, certificates, ZPA, firewall, and deployment policy as explicit

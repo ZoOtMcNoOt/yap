@@ -83,8 +83,8 @@ independently validated outside Git. Final reviewed head
 hosted policy and final adversarial read-back, and
 [PR #67](https://github.com/mcnatg1/yap/pull/67) merged as
 `87c8654250cba8b9eafa5007bf719c52e4749cdf`.
-Authenticated owner derivation remains Phase 7. Phase 9 introduces actual
-vLLM agent/LLM workloads under ADR 0029. Persistent supervision of the selected vLLM and NeMo
+Authenticated owner derivation remains Phase 7. Phase 9 now has executable
+vLLM Qwen/Gemma agent workload routes under ADR 0029. Persistent supervision of vLLM and NeMo
 services, production multi-worker/mixed-load capacity promotion, production
 observability, and external deployment remain Phase 10.
 
@@ -136,7 +136,29 @@ then recorded `unadvertised-baseline` because the required independent private
 holdout was unconfigured. No runtime/image gate was admissible, neither catalog
 changed, and no second server meeting pipeline is planned. PR #150 passed all
 hosted checks at exact head `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`
-and merged the closure as `599a0d0b`. Phase 8 is closed; Phase 9 is next.
+and merged the closure as `599a0d0b`. Phase 8 is closed. Phase 9 is an
+implemented candidate awaiting its one complete gate, hosted exact-head review,
+PR, and merge.
+
+## Active phase: governed knowledge and agents (Phase 9)
+
+The active branch now contains the pinned Google OKF compiler, immutable
+model-independent terminology snapshots, atomic Postgres/pgvector generations,
+permission-filtered cited retrieval, governed proposals/RAG/MCP, and explicit
+no-fallback workload routing. Exact private GB10 head
+`36350d449735a4daea6546e16759f28f6f15631a` qualified the locked Qwen rapid and
+Gemma complex routes on the checked vLLM evaluation runtime. That is
+route-specific evaluation evidence, not production service promotion.
+
+The remaining phase boundary is deliberately small: freeze the reviewed
+candidate, run the canonical Python/Ruff/Postgres/pgvector/restart/private-route
+matrix once, obtain hosted-green exact-head review, merge the focused PR, then
+run the separate post-Phase-9 architecture checkpoint. Postgres remains the
+only current knowledge projection; Redis, object storage, and Neo4j require a
+measured need and a later authorized gate. Persistent supervision, simultaneous
+model residency, sustained mixed-user capacity/SLOs, external serving,
+observability, enterprise networking, and deployment remain Phase 10 or IT
+handoffs.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 

@@ -15,6 +15,7 @@ Current work:
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
 - [VoiceOS/Yap decision, evidence, and future-work queue](active/2026-07-17-voiceos-decision-evidence-queue.md)
 - [Integrated MVP validation and delivery control](active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
+- [Governed knowledge and agents](active/2026-08-09-governed-knowledge-and-agents.md)
 
 Queued work (activate only in roadmap order): none.
 
