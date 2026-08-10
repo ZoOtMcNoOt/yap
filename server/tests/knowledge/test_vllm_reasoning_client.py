@@ -29,18 +29,39 @@ class _Handler(BaseHTTPRequestHandler):
         length = int(self.headers["Content-Length"])
         type(self).observed = json.loads(self.rfile.read(length))
         time.sleep(type(self).delay_seconds)
-        body = json.dumps(
-            {
-                "choices": [
+        if "tools" in type(self).observed:
+            message = {
+                "content": None,
+                "tool_calls": [
                     {
-                        "message": {
-                            "content": json.dumps(
+                        "id": "answer-1",
+                        "type": "function",
+                        "function": {
+                            "name": "return_governed_answer",
+                            "arguments": json.dumps(
                                 {
                                     "answer": "Bound answer.",
                                     "citationConceptIds": ["concept-1"],
                                 }
-                            )
-                        }
+                            ),
+                        },
+                    }
+                ],
+            }
+        else:
+            message = {
+                "content": json.dumps(
+                    {
+                        "answer": "Bound answer.",
+                        "citationConceptIds": ["concept-1"],
+                    }
+                )
+            }
+        body = json.dumps(
+            {
+                "choices": [
+                    {
+                        "message": message,
                     }
                 ]
             }
@@ -79,6 +100,7 @@ class VllmReasoningClientTests(unittest.TestCase):
             timeout_seconds=2,
             maximum_response_bytes=10_000,
             maximum_output_tokens=100,
+            final_response_protocol="json-schema",
         )
 
     def tearDown(self) -> None:
@@ -97,6 +119,32 @@ class VllmReasoningClientTests(unittest.TestCase):
         self.assertEqual(_Handler.observed["max_tokens"], 100)
         self.assertEqual(
             _Handler.observed["chat_template_kwargs"], {"enable_thinking": False}
+        )
+        self.assertIn("response_format", _Handler.observed)
+
+    def test_uses_forced_answer_tool_for_native_gemma_structure(self) -> None:
+        client = VllmReasoningClient(
+            endpoint=f"http://127.0.0.1:{self.server.server_port}",
+            model="selected/model",
+            timeout_seconds=2,
+            maximum_response_bytes=10_000,
+            maximum_output_tokens=100,
+            final_response_protocol="forced-answer-tool",
+        )
+
+        content = client("governed prompt", threading.Event())
+
+        self.assertEqual(
+            json.loads(content),
+            {"answer": "Bound answer.", "citationConceptIds": ["concept-1"]},
+        )
+        self.assertNotIn("response_format", _Handler.observed)
+        self.assertEqual(
+            _Handler.observed["tool_choice"],
+            {
+                "type": "function",
+                "function": {"name": "return_governed_answer"},
+            },
         )
 
     def test_rejects_cancelled_and_retryable_requests(self) -> None:
@@ -140,6 +188,7 @@ class VllmReasoningClientTests(unittest.TestCase):
             timeout_seconds=1,
             maximum_response_bytes=10_000,
             maximum_output_tokens=100,
+            final_response_protocol="json-schema",
         )
         started = time.monotonic()
 

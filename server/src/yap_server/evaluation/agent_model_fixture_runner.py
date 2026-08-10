@@ -7,6 +7,11 @@ import time
 from typing import Callable
 import re
 
+from yap_server.knowledge.governed_answer_protocol import (
+    FINAL_RESPONSE_PROTOCOLS,
+    governed_answer_request_fields,
+    read_governed_answer,
+)
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .agent_model_acceptance import load_agent_model_acceptance
@@ -51,6 +56,7 @@ def run_agent_model_fixtures(
     model: str,
     workload_class: str,
     maximum_output_tokens: int,
+    final_response_protocol: str,
     request_json: JsonRequest,
 ) -> tuple[AgentFixtureResult, ...]:
     """Run frozen cases through one OpenAI-compatible reasoning endpoint."""
@@ -71,6 +77,8 @@ def run_agent_model_fixtures(
         acceptance.runtime_tracks["maximumOutputTokens"]
     ):
         raise ValueError("agent fixture output bound is invalid")
+    if final_response_protocol not in FINAL_RESPONSE_PROTOCOLS:
+        raise ValueError("agent fixture final response protocol is invalid")
     selected_cases = [
         case
         for case in cases
@@ -83,6 +91,7 @@ def run_agent_model_fixtures(
             model=model,
             system_prompt=system_prompt,
             maximum_output_tokens=maximum_output_tokens,
+            final_response_protocol=final_response_protocol,
             request_json=request_json,
         )
         for case in selected_cases
@@ -93,12 +102,14 @@ def warm_agent_model_fixture_runtime(
     *,
     model: str,
     maximum_output_tokens: int,
+    final_response_protocol: str,
     request_json: JsonRequest,
 ) -> None:
     """Compile the exact tool and structured-output shapes before measurement."""
 
     if not model or not 1 <= maximum_output_tokens <= 4_096:
         raise ValueError("agent fixture warmup contract is invalid")
+    warmup_output_tokens = min(maximum_output_tokens, 64)
     request_json(
         {
             "model": model,
@@ -118,29 +129,30 @@ def warm_agent_model_fixture_runtime(
             "tools": _tool_definitions(),
             "tool_choice": "required",
             "temperature": 0,
-            "max_tokens": maximum_output_tokens,
+            "max_tokens": warmup_output_tokens,
             "chat_template_kwargs": {"enable_thinking": False},
         }
     )
-    request_json(
-        {
-            "model": model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "Return the requested JSON structure only.",
-                },
-                {
-                    "role": "user",
-                    "content": "Return WARMUP_READY with no citations.",
-                },
-            ],
-            "temperature": 0,
-            "max_tokens": maximum_output_tokens,
-            "chat_template_kwargs": {"enable_thinking": False},
-            "response_format": _governed_answer_response_format(),
-        }
+    final_payload: dict[str, object] = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "Return the requested answer structure only.",
+            },
+            {
+                "role": "user",
+                "content": "Return WARMUP_READY with no citations.",
+            },
+        ],
+        "temperature": 0,
+        "max_tokens": warmup_output_tokens,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    final_payload.update(
+        governed_answer_request_fields(final_response_protocol)
     )
+    request_json(final_payload)
 
 
 def _run_case_safely(
@@ -149,6 +161,7 @@ def _run_case_safely(
     model: str,
     system_prompt: str,
     maximum_output_tokens: int,
+    final_response_protocol: str,
     request_json: JsonRequest,
 ) -> AgentFixtureResult:
     started = time.monotonic()
@@ -158,6 +171,7 @@ def _run_case_safely(
             model=model,
             system_prompt=system_prompt,
             maximum_output_tokens=maximum_output_tokens,
+            final_response_protocol=final_response_protocol,
             request_json=request_json,
         )
     except RuntimeError as error:
@@ -187,6 +201,7 @@ def _run_case(
     model: str,
     system_prompt: str,
     maximum_output_tokens: int,
+    final_response_protocol: str,
     request_json: JsonRequest,
 ) -> AgentFixtureResult:
     if not isinstance(case, dict):
@@ -242,17 +257,18 @@ def _run_case(
             }
         )
     tool_name, arguments = tool_calls[-1]
-    final = request_json(
-        {
-            "model": model,
-            "messages": messages,
-            "temperature": 0,
-            "max_tokens": maximum_output_tokens,
-            "chat_template_kwargs": {"enable_thinking": False},
-            "response_format": _governed_answer_response_format(),
-        }
+    final_payload: dict[str, object] = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0,
+        "max_tokens": maximum_output_tokens,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    final_payload.update(
+        governed_answer_request_fields(final_response_protocol)
     )
-    answer, citations = _final_answer(final)
+    final = request_json(final_payload)
+    answer, citations = read_governed_answer(final, final_response_protocol)
     return AgentFixtureResult(
         case_id=str(case["caseId"]),
         tool_name=tool_name,
@@ -352,27 +368,6 @@ def _tool_call(
     return message, call["id"], name, arguments
 
 
-def _final_answer(response: dict[str, object]) -> tuple[str, tuple[str, ...]]:
-    content = _message(response).get("content")
-    if not isinstance(content, str):
-        raise ValueError("agent final response content is invalid")
-    try:
-        value = json.loads(content)
-    except json.JSONDecodeError as error:
-        raise ValueError("agent final response is not valid JSON") from error
-    if not isinstance(value, dict) or set(value) != {"answer", "citationConceptIds"}:
-        raise ValueError("agent final response differs from the contract")
-    answer = value["answer"]
-    citations = value["citationConceptIds"]
-    if (
-        not isinstance(answer, str)
-        or not isinstance(citations, list)
-        or not all(isinstance(item, str) for item in citations)
-    ):
-        raise ValueError("agent final response fields are invalid")
-    return answer, tuple(citations)
-
-
 def _message(response: dict[str, object]) -> dict[str, object]:
     choices = response.get("choices")
     if (
@@ -385,28 +380,6 @@ def _message(response: dict[str, object]) -> dict[str, object]:
     if not isinstance(message, dict):
         raise ValueError("agent response message is invalid")
     return message
-
-
-def _governed_answer_response_format() -> dict[str, object]:
-    return {
-        "type": "json_schema",
-        "json_schema": {
-            "name": "governed_answer",
-            "strict": True,
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "answer": {"type": "string"},
-                    "citationConceptIds": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                },
-                "required": ["answer", "citationConceptIds"],
-                "additionalProperties": False,
-            },
-        },
-    }
 
 
 def _tool_definitions() -> list[dict[str, object]]:

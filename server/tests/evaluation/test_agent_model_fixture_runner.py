@@ -26,14 +26,22 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         warm_agent_model_fixture_runtime(
             model="synthetic",
             maximum_output_tokens=256,
+            final_response_protocol="forced-answer-tool",
             request_json=request,
         )
 
         self.assertEqual(len(requests), 2)
-        self.assertEqual([item["max_tokens"] for item in requests], [256, 256])
+        self.assertEqual([item["max_tokens"] for item in requests], [64, 64])
         self.assertIn("tools", requests[0])
-        self.assertNotIn("tools", requests[1])
-        self.assertIn("response_format", requests[1])
+        self.assertIn("tools", requests[1])
+        self.assertNotIn("response_format", requests[1])
+        self.assertEqual(
+            requests[1]["tool_choice"],
+            {
+                "type": "function",
+                "function": {"name": "return_governed_answer"},
+            },
+        )
 
     def test_terminology_workloads_request_a_noncanonical_proposal(self) -> None:
         fixture = json.loads(
@@ -177,6 +185,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             model="synthetic",
             workload_class="complex-orchestration",
             maximum_output_tokens=256,
+            final_response_protocol="json-schema",
             request_json=request,
         )
         result = results[-1].record()
@@ -221,6 +230,19 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             self.assertEqual(
                 payload["chat_template_kwargs"], {"enable_thinking": False}
             )
+            if payload.get("tool_choice") == {
+                "type": "function",
+                "function": {"name": "return_governed_answer"},
+            }:
+                assert active is not None
+                answer = {
+                    "answer": " ".join(active.get("requiredTerms", [])),
+                    "citationConceptIds": active.get(
+                        "requiredCitationConceptIds", []
+                    ),
+                }
+                active = None
+                return _tool_response("return_governed_answer", answer)
             if "tools" in payload:
                 active = next(cases)
                 arguments = {
@@ -292,6 +314,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             model="synthetic",
             workload_class="rapid-automation",
             maximum_output_tokens=512,
+            final_response_protocol="forced-answer-tool",
             request_json=request,
         )
         score = score_agent_model_results(
@@ -320,6 +343,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             model="synthetic",
             workload_class="rapid-automation",
             maximum_output_tokens=512,
+            final_response_protocol="json-schema",
             request_json=request,
         )
 
@@ -345,6 +369,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 model="synthetic",
                 workload_class="rapid-automation",
                 maximum_output_tokens=512,
+                final_response_protocol="json-schema",
                 request_json=request,
             )
 

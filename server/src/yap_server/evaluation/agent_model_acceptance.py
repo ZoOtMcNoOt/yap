@@ -141,6 +141,7 @@ def _candidate_lock(value: dict[str, object]) -> dict[str, str]:
             "workloadClass",
             "quantization",
             "toolCallParser",
+            "finalResponseProtocol",
             "license",
             "source",
         } <= set(candidate) <= {
@@ -152,6 +153,8 @@ def _candidate_lock(value: dict[str, object]) -> dict[str, str]:
             "quantization",
             "toolCallParser",
             "reasoningParser",
+            "finalResponseProtocol",
+            "chatTemplate",
             "license",
             "source",
         }:
@@ -174,6 +177,21 @@ def _candidate_lock(value: dict[str, object]) -> dict[str, str]:
         workload_class = candidate["workloadClass"]
         if workload_class not in {"rapid-automation", "complex-orchestration"}:
             raise ValueError("agent candidate workload class is invalid")
+        if candidate_id == "qwen3.6-35b-a3b-nvfp4":
+            if (
+                candidate.get("finalResponseProtocol") != "json-schema"
+                or "chatTemplate" in candidate
+            ):
+                raise ValueError("Qwen final response protocol is invalid")
+        elif candidate_id == "gemma-4-31b-it-nvfp4":
+            if (
+                candidate.get("finalResponseProtocol") != "forced-answer-tool"
+                or candidate.get("chatTemplate")
+                != "/opt/vllm/vllm-src/examples/tool_chat_template_gemma4.jinja"
+            ):
+                raise ValueError("Gemma final response protocol is invalid")
+        else:
+            raise ValueError("agent candidate ID is invalid")
         if candidate_id in identities or workload_class in identities.values():
             raise ValueError("agent candidate is duplicated")
         identities[candidate_id] = str(workload_class)

@@ -9,6 +9,11 @@ import time
 from urllib.parse import urlsplit
 
 from .governed_rag_agent import ReasoningRetryableError
+from .governed_answer_protocol import (
+    FINAL_RESPONSE_PROTOCOLS,
+    governed_answer_json,
+    governed_answer_request_fields,
+)
 from .knowledge_tool_contract import KnowledgeToolCancelled
 
 
@@ -113,11 +118,14 @@ class VllmReasoningClient:
         timeout_seconds: int,
         maximum_response_bytes: int,
         maximum_output_tokens: int,
+        final_response_protocol: str,
     ) -> None:
         if not model or len(model) > 256 or model.strip() != model:
             raise ValueError("vLLM model identity is invalid")
         if not 1 <= maximum_output_tokens <= 4_096:
             raise ValueError("vLLM output token bound is invalid")
+        if final_response_protocol not in FINAL_RESPONSE_PROTOCOLS:
+            raise ValueError("vLLM final response protocol is invalid")
         self._transport = BoundedVllmJsonClient(
             endpoint=endpoint,
             timeout_seconds=timeout_seconds,
@@ -125,6 +133,7 @@ class VllmReasoningClient:
         )
         self._model = model
         self._maximum_output_tokens = maximum_output_tokens
+        self._final_response_protocol = final_response_protocol
 
     def __call__(self, prompt: str, cancellation: threading.Event) -> str:
         return self.request(prompt, cancellation, dispatched=None)
@@ -137,46 +146,31 @@ class VllmReasoningClient:
     ) -> str:
         if not isinstance(prompt, str) or not prompt:
             raise ValueError("vLLM prompt is invalid")
-        response = self._transport.request(
-            {
-                "model": self._model,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": (
-                            "Use only supplied governed context. Return the exact "
-                            "requested JSON structure without extra text."
-                        ),
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                "temperature": 0,
-                "max_tokens": self._maximum_output_tokens,
-                "chat_template_kwargs": {"enable_thinking": False},
-                "response_format": {
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "governed_answer",
-                        "strict": True,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "answer": {"type": "string"},
-                                "citationConceptIds": {
-                                    "type": "array",
-                                    "items": {"type": "string"},
-                                },
-                            },
-                            "required": ["answer", "citationConceptIds"],
-                            "additionalProperties": False,
-                        },
-                    },
+        payload: dict[str, object] = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "Use only supplied governed context. Return the exact "
+                        "requested answer structure without extra text."
+                    ),
                 },
-            },
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0,
+            "max_tokens": self._maximum_output_tokens,
+            "chat_template_kwargs": {"enable_thinking": False},
+        }
+        payload.update(
+            governed_answer_request_fields(self._final_response_protocol)
+        )
+        response = self._transport.request(
+            payload,
             cancellation,
             dispatched,
         )
-        return _response_content(response)
+        return governed_answer_json(response, self._final_response_protocol)
 
 
 def _request(
@@ -225,21 +219,6 @@ def _response_json(body: bytes) -> dict[str, object]:
     if not isinstance(value, dict):
         raise ValueError("vLLM response differs from the contract")
     return value
-
-
-def _response_content(value: dict[str, object]) -> str:
-    try:
-        choices = value["choices"]
-        content = choices[0]["message"]["content"]
-    except (KeyError, IndexError, TypeError) as error:
-        raise ValueError("vLLM response differs from the contract") from error
-    if (
-        not isinstance(choices, list)
-        or len(choices) != 1
-        or not isinstance(content, str)
-    ):
-        raise ValueError("vLLM response differs from the contract")
-    return content
 
 
 __all__ = ["BoundedVllmJsonClient", "VllmReasoningClient"]

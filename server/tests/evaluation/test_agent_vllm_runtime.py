@@ -33,6 +33,11 @@ class AgentVllmRuntimeTests(unittest.TestCase):
         self.assertEqual(
             gemma[gemma.index("--load-format") + 1], "fastsafetensors"
         )
+        self.assertEqual(
+            gemma[gemma.index("--chat-template") + 1],
+            "/opt/vllm/vllm-src/examples/tool_chat_template_gemma4.jinja",
+        )
+        self.assertNotIn("--chat-template", qwen)
         self.assertIn("--language-model-only", qwen)
         self.assertIn("--language-model-only", gemma)
 
@@ -153,7 +158,14 @@ def _candidate(
         "model": f"model/{candidate_id}",
         "revision": "b" * 40,
         "toolCallParser": "qwen3_xml" if candidate_id.startswith("qwen") else "gemma4",
+        "finalResponseProtocol": (
+            "json-schema" if candidate_id.startswith("qwen") else "forced-answer-tool"
+        ),
     }
+    if candidate_id.startswith("gemma"):
+        candidate["chatTemplate"] = (
+            "/opt/vllm/vllm-src/examples/tool_chat_template_gemma4.jinja"
+        )
     if reasoning_parser is not None:
         candidate["reasoningParser"] = reasoning_parser
     return candidate

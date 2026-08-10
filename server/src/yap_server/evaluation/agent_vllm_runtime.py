@@ -31,6 +31,7 @@ def build_agent_vllm_launch_arguments(
     revision = str(candidate.get("revision", ""))
     model = str(candidate.get("model", ""))
     tool_parser = str(candidate.get("toolCallParser", ""))
+    final_response_protocol = str(candidate.get("finalResponseProtocol", ""))
     if (
         candidate_id
         not in {"qwen3.6-35b-a3b-nvfp4", "gemma-4-31b-it-nvfp4"}
@@ -52,11 +53,23 @@ def build_agent_vllm_launch_arguments(
     ]
     if candidate_id == "qwen3.6-35b-a3b-nvfp4":
         reasoning_parser = candidate.get("reasoningParser")
-        if reasoning_parser != "qwen3":
+        if (
+            reasoning_parser != "qwen3"
+            or final_response_protocol != "json-schema"
+            or "chatTemplate" in candidate
+        ):
             raise ValueError("Qwen reasoning parser is invalid")
         arguments.extend(["--reasoning-parser", reasoning_parser])
-    elif "reasoningParser" in candidate:
-        raise ValueError("Gemma thinking parser is not admitted")
+    else:
+        chat_template = candidate.get("chatTemplate")
+        if (
+            "reasoningParser" in candidate
+            or final_response_protocol != "forced-answer-tool"
+            or chat_template
+            != "/opt/vllm/vllm-src/examples/tool_chat_template_gemma4.jinja"
+        ):
+            raise ValueError("Gemma response protocol is invalid")
+        arguments.extend(["--chat-template", chat_template])
     arguments.extend(
         [
             "--enable-auto-tool-choice",

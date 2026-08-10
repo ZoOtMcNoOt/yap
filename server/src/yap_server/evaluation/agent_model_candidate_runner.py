@@ -60,6 +60,7 @@ def run_agent_model_candidate(
         )
     )
     maximum_output_tokens = int(route_policy["maximumOutputTokens"])
+    final_response_protocol = str(model_candidate["finalResponseProtocol"])
     owned_runtime = OwnedAgentVllmRuntime(
         checked_head=checked_candidate.checked_head,
         runtime=runtime_lock,
@@ -97,6 +98,7 @@ def run_agent_model_candidate(
         warm_agent_model_fixture_runtime(
             model=str(model_candidate["model"]),
             maximum_output_tokens=maximum_output_tokens,
+            final_response_protocol=final_response_protocol,
             request_json=request_json,
         )
         stage = "fixtures"
@@ -107,6 +109,7 @@ def run_agent_model_candidate(
                 model=str(model_candidate["model"]),
                 workload_class=workload_class,
                 maximum_output_tokens=maximum_output_tokens,
+                final_response_protocol=final_response_protocol,
                 request_json=request_json,
             )
         )
@@ -118,6 +121,7 @@ def run_agent_model_candidate(
             timeout_seconds=request_timeout_seconds,
             maximum_response_bytes=4_000_000,
             maximum_output_tokens=maximum_output_tokens,
+            final_response_protocol=final_response_protocol,
         )
         pressure = run_agent_runtime_pressure(
             repository_root,
