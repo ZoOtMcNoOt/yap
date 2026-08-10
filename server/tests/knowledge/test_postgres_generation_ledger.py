@@ -11,7 +11,9 @@ import psycopg
 from yap_server.knowledge.generation_ledger import (
     activate_complete_generation,
     install_knowledge_schema,
+    prune_inactive_generations,
     read_active_generation,
+    rollback_to_generation,
     stage_compiled_generation,
     store_generation_embeddings,
 )
@@ -68,6 +70,62 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                 connection.execute("DROP FUNCTION yap_test_reject_generation()")
                 connection.execute(
                     "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.commit()
+
+    def test_rollback_and_retention_preserve_active_generation(self) -> None:
+        tenant_id = f"test-{uuid4()}"
+        with TemporaryDirectory() as directory:
+            root = _bundle(Path(directory), tenant_id)
+            generations = tuple(
+                compile_okf_bundle(
+                    root,
+                    tenant_id=tenant_id,
+                    source_revision=f"revision-{index}",
+                )
+                for index in range(1, 4)
+            )
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                install_knowledge_schema(connection)
+                for generation in generations:
+                    stage_compiled_generation(connection, generation)
+                    _embed_and_activate(connection, generation)
+
+                restored = rollback_to_generation(
+                    connection,
+                    tenant_id=tenant_id,
+                    generation_sha256=generations[0].generation_sha256,
+                )
+                self.assertEqual(
+                    restored.generation_sha256, generations[0].generation_sha256
+                )
+                removed = prune_inactive_generations(
+                    connection, tenant_id=tenant_id, retain=1
+                )
+                self.assertEqual(len(removed), 1)
+                self.assertNotIn(generations[0].generation_sha256, removed)
+                active = read_active_generation(connection, tenant_id=tenant_id)
+                self.assertEqual(active.generation_sha256, generations[0].generation_sha256)
+                history = connection.execute(
+                    """SELECT reason FROM yap_knowledge_activation_history
+                       WHERE tenant_id = %s ORDER BY activation_id""",
+                    (tenant_id,),
+                ).fetchall()
+                self.assertEqual(
+                    tuple(row[0] for row in history),
+                    ("publish", "publish", "publish", "rollback"),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
+                    (tenant_id,),
+                )
+                connection.execute(
+                    "DELETE FROM yap_knowledge_activation_history WHERE tenant_id = %s",
                     (tenant_id,),
                 )
                 connection.execute(

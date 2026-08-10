@@ -161,6 +161,16 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                     REFERENCES yap_knowledge_builds
             )"""
         )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS yap_knowledge_activation_history (
+                activation_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                tenant_id text NOT NULL,
+                generation_sha256 text NOT NULL,
+                previous_generation_sha256 text,
+                reason text NOT NULL CHECK (reason IN ('publish', 'rollback')),
+                activated_at timestamptz NOT NULL DEFAULT transaction_timestamp()
+            )"""
+        )
 
 
 def stage_compiled_generation(
@@ -412,6 +422,38 @@ def activate_complete_generation(
 ) -> KnowledgeGenerationDescriptor:
     """Atomically expose a complete relational and vector generation."""
 
+    return _activate_complete_generation(
+        connection,
+        tenant_id=tenant_id,
+        generation_sha256=generation_sha256,
+        reason="publish",
+    )
+
+
+def rollback_to_generation(
+    connection: Connection[object],
+    *,
+    tenant_id: str,
+    generation_sha256: str,
+) -> KnowledgeGenerationDescriptor:
+    """Atomically restore one retained, fully validated generation."""
+
+    return _activate_complete_generation(
+        connection,
+        tenant_id=tenant_id,
+        generation_sha256=generation_sha256,
+        reason="rollback",
+    )
+
+
+def _activate_complete_generation(
+    connection: Connection[object],
+    *,
+    tenant_id: str,
+    generation_sha256: str,
+    reason: str,
+) -> KnowledgeGenerationDescriptor:
+
     with connection.transaction():
         connection.execute(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (tenant_id,)
@@ -462,6 +504,12 @@ def activate_complete_generation(
         expected = (row[4], row[5], row[6], row[7], row[6])
         if actual != expected:
             raise ValueError("staged knowledge projections are incomplete")
+        previous = connection.execute(
+            """SELECT generation_sha256 FROM yap_knowledge_active_builds
+               WHERE tenant_id = %s""",
+            (tenant_id,),
+        ).fetchone()
+        previous_sha256 = None if previous is None else str(previous[0])
         connection.execute(
             """INSERT INTO yap_knowledge_active_builds
                 (tenant_id, generation_sha256)
@@ -471,7 +519,45 @@ def activate_complete_generation(
                     activated_at = transaction_timestamp()""",
             (tenant_id, generation_sha256),
         )
+        connection.execute(
+            """INSERT INTO yap_knowledge_activation_history (
+                   tenant_id, generation_sha256, previous_generation_sha256, reason
+               ) VALUES (%s, %s, %s, %s)""",
+            (tenant_id, generation_sha256, previous_sha256, reason),
+        )
     return KnowledgeGenerationDescriptor(*row[:6])
+
+
+def prune_inactive_generations(
+    connection: Connection[object], *, tenant_id: str, retain: int
+) -> tuple[str, ...]:
+    """Delete oldest inactive generations while retaining a bounded recent set."""
+
+    if isinstance(retain, bool) or not isinstance(retain, int) or retain < 0:
+        raise ValueError("knowledge generation retention bound is invalid")
+    with connection.transaction():
+        connection.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (tenant_id,)
+        )
+        rows = connection.execute(
+            """SELECT b.generation_sha256
+               FROM yap_knowledge_builds b
+               LEFT JOIN yap_knowledge_active_builds a
+                 ON a.tenant_id = b.tenant_id
+                AND a.generation_sha256 = b.generation_sha256
+               WHERE b.tenant_id = %s AND a.generation_sha256 IS NULL
+               ORDER BY b.created_at DESC, b.generation_sha256 DESC
+               OFFSET %s""",
+            (tenant_id, retain),
+        ).fetchall()
+        removed = tuple(str(row[0]) for row in rows)
+        if removed:
+            connection.execute(
+                """DELETE FROM yap_knowledge_builds
+                   WHERE tenant_id = %s AND generation_sha256 = ANY(%s)""",
+                (tenant_id, list(removed)),
+            )
+    return removed
 
 
 def read_active_generation(
@@ -532,6 +618,8 @@ __all__ = [
     "activate_complete_generation",
     "install_knowledge_schema",
     "read_active_generation",
+    "prune_inactive_generations",
+    "rollback_to_generation",
     "serialize_embedding_vector",
     "stage_compiled_generation",
     "store_generation_embeddings",
