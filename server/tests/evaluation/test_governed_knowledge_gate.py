@@ -46,6 +46,26 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "did not pass"):
             gate._validate_database_test_result(result, runtime)
 
+    def test_portable_result_freezes_phase_scoped_modules_without_skips(self) -> None:
+        suite = unittest.defaultTestLoader.loadTestsFromNames(
+            list(gate._EXPECTED_PORTABLE_MODULES)
+        )
+        self.assertEqual(suite.countTestCases(), gate._EXPECTED_PORTABLE_TEST_COUNT)
+        result = {
+            "expectedFailures": 0,
+            "modules": list(gate._EXPECTED_PORTABLE_MODULES),
+            "schemaVersion": 1,
+            "skipped": 0,
+            "testsRun": gate._EXPECTED_PORTABLE_TEST_COUNT,
+            "unexpectedSuccesses": 0,
+        }
+        gate._validate_portable_test_result(result)
+        for field in ("expectedFailures", "skipped", "unexpectedSuccesses"):
+            with self.subTest(field=field):
+                failed = {**result, field: 1}
+                with self.assertRaisesRegex(ValueError, "did not pass"):
+                    gate._validate_portable_test_result(failed)
+
     def test_portable_identity_requires_the_database_runtime_packages(self) -> None:
         portable = runpy.run_path(
             str(REPOSITORY_ROOT / "verification/run-portable-server-suite.py")

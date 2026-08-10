@@ -43,6 +43,31 @@ _EXPECTED_DATABASE_TEST_COUNT = 9
 _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
 )
+_EXPECTED_PORTABLE_MODULES = (
+    "tests.evaluation.test_agent_model_acceptance",
+    "tests.evaluation.test_agent_model_fixture_runner",
+    "tests.evaluation.test_agent_model_qualification",
+    "tests.evaluation.test_agent_model_scoring",
+    "tests.evaluation.test_agent_route_qualification_evidence",
+    "tests.evaluation.test_agent_runtime_pressure",
+    "tests.evaluation.test_agent_vllm_metrics",
+    "tests.evaluation.test_agent_vllm_runtime",
+    "tests.evaluation.test_checked_candidate",
+    "tests.evaluation.test_governed_knowledge_gate",
+    "tests.evaluation.test_provider_runtime_observations",
+    "tests.evaluation.test_vllm_runtime_metrics",
+    "tests.knowledge.test_agent_reasoning_routes",
+    "tests.knowledge.test_governed_answer_protocol",
+    "tests.knowledge.test_governed_knowledge_mcp",
+    "tests.knowledge.test_governed_rag_agent",
+    "tests.knowledge.test_okf_compiler",
+    "tests.knowledge.test_permission_safe_retrieval",
+    "tests.knowledge.test_reviewed_meeting_knowledge",
+    "tests.knowledge.test_terminology_authorization",
+    "tests.knowledge.test_terminology_snapshot",
+    "tests.knowledge.test_vllm_reasoning_client",
+)
+_EXPECTED_PORTABLE_TEST_COUNT = 103
 
 
 def evaluate_governed_knowledge_gate(
@@ -63,6 +88,7 @@ def evaluate_governed_knowledge_gate(
         server_root / "pyproject.toml",
         server_root / "uv.lock",
         verification_root / "run-portable-server-suite.py",
+        verification_root / "run-governed-knowledge-portable-suite.py",
         verification_root / "run-governed-knowledge-postgres-suite.py",
         verification_root / "run-governed-knowledge-restart-probe.py",
     )
@@ -115,14 +141,21 @@ def evaluate_governed_knowledge_gate(
         _validate_python_identity(
             python_identity, candidate.input_sha256["server/uv.lock"]
         )
-        _run_command(
-            [sys.executable, str(verification_root / "run-portable-server-suite.py")],
+        portable_result = _run_json_command(
+            [
+                sys.executable,
+                str(
+                    verification_root
+                    / "run-governed-knowledge-portable-suite.py"
+                ),
+            ],
             cwd=server_root,
             environment=database_environment,
             runner=runner,
-            label="portable server suite",
+            label="governed knowledge portable suite",
             timeout=1_800,
         )
+        _validate_portable_test_result(portable_result)
         _run_command(
             [
                 sys.executable,
@@ -229,7 +262,9 @@ def evaluate_governed_knowledge_gate(
             "server": {
                 "lockSha256": python_identity["lockSha256"],
                 "python": python_identity["python"],
+                "portableTestModules": portable_result["modules"],
                 "portableSuitePassed": True,
+                "portableTestsRun": portable_result["testsRun"],
                 "ruffPassed": True,
             },
             "teardown": teardown,
@@ -300,6 +335,27 @@ def _validate_database_test_result(
         or not value["postgresVersion"].startswith(postgres_prefix)
     ):
         raise ValueError("governed knowledge Postgres result did not pass")
+
+
+def _validate_portable_test_result(value: Mapping[str, object]) -> None:
+    if (
+        set(value)
+        != {
+            "expectedFailures",
+            "modules",
+            "schemaVersion",
+            "skipped",
+            "testsRun",
+            "unexpectedSuccesses",
+        }
+        or value["schemaVersion"] != 1
+        or value["expectedFailures"] != 0
+        or value["modules"] != list(_EXPECTED_PORTABLE_MODULES)
+        or value["testsRun"] != _EXPECTED_PORTABLE_TEST_COUNT
+        or value["skipped"] != 0
+        or value["unexpectedSuccesses"] != 0
+    ):
+        raise ValueError("governed knowledge portable result did not pass")
 
 
 def _validate_restart_seed(value: Mapping[str, object]) -> None:

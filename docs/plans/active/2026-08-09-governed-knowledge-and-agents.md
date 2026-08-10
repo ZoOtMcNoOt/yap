@@ -155,7 +155,8 @@ never compile permissions, grant access, or promote their own output.
     --receipt-path <new-absolute-outside-repo-json>
   ```
 
-  The command owns the locked Python 3.12 portable suite, Ruff, an immutable
+  The command owns the locked Python 3.12 Phase 9 portable suite, server-wide
+  Ruff, an immutable
   Postgres/pgvector runtime with loopback-only host publication, the mandatory
   zero-skip database modules, a real database restart/retrieval probe, exact teardown, and
   hash-bound semantic admission of the already-consumed private GB10 route
