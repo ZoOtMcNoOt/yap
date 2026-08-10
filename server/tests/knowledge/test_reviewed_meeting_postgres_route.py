@@ -27,6 +27,11 @@ from yap_server.knowledge.knowledge_tool_contract import (
     KnowledgeToolCancelled,
     SearchKnowledgeRequest,
 )
+from yap_server.knowledge.knowledge_proposals import (
+    ProposalCitation,
+    install_knowledge_proposal_schema,
+    store_knowledge_proposal,
+)
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
     search_postgres_knowledge_lexical,
@@ -109,6 +114,31 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 agent_capabilities=frozenset({"knowledge.search.lexical"}),
                 search_text="crash safe transcript",
             )
+            install_knowledge_proposal_schema(connection)
+            source = results.results[0]
+            proposal = store_knowledge_proposal(
+                connection,
+                principal=owner,
+                purpose="knowledge.read",
+                agent_id="librarian",
+                agent_capabilities=frozenset({"knowledge.propose"}),
+                proposal_type="summary",
+                proposed_content="The reviewed meeting records crash safety.",
+                source_citations=(
+                    ProposalCitation(
+                        source.concept_id,
+                        source.source_revision,
+                        source.content_sha256,
+                        source.char_start,
+                        source.char_end,
+                    ),
+                ),
+            )
+            proposal_policy = connection.execute(
+                """SELECT inherited_policy FROM yap_knowledge_proposals
+                   WHERE tenant_id = %s AND proposal_id = %s""",
+                (tenant_id, proposal.proposal_id),
+            ).fetchone()[0]
             install_knowledge_tool_audit_schema(connection)
             tools = GovernedKnowledgeTools(
                 (
@@ -180,6 +210,10 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 (tenant_id,),
             ).fetchall()
             connection.execute(
+                "DELETE FROM yap_knowledge_proposals WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.execute(
                 "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
                 (tenant_id,),
             )
@@ -198,6 +232,9 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
             connection.commit()
 
         self.assertEqual(len(results.results), 1)
+        self.assertEqual(proposal.status, "proposed")
+        self.assertFalse(proposal_policy["canonical"])
+        self.assertEqual(proposal_policy["classification"], "confidential")
         self.assertEqual(results.results[0].source_revision, capture.capture_sha256)
         self.assertEqual(results.results[0].concept_id, f"meetings/{job_id}")
         self.assertEqual(tool_result.items[0].text, results.results[0].text)

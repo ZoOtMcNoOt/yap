@@ -40,6 +40,7 @@ _SUPPORTED_CAPABILITIES = frozenset(
         "knowledge.search.vector",
         "knowledge.search.hybrid",
         "knowledge.relationship.traverse",
+        "knowledge.propose",
     }
 )
 
