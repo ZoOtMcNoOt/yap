@@ -8,6 +8,7 @@ from pathlib import Path
 import runpy
 import subprocess
 import sys
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
@@ -103,6 +104,27 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
                 self.assertEqual(sys.path[0], str(server_root))
         finally:
             os.chdir(previous_cwd)
+
+    def test_restart_probe_separates_concept_and_resource_identity(self) -> None:
+        restart_probe = runpy.run_path(
+            str(
+                REPOSITORY_ROOT
+                / "verification/run-governed-knowledge-restart-probe.py"
+            )
+        )
+        with TemporaryDirectory() as directory:
+            generation = restart_probe["_generation"](
+                Path(directory),
+                tenant_id="tenant-a",
+                source_revision="restart-contract",
+                body="Persistence sentinel is available.",
+            )
+
+        self.assertEqual(generation.concepts[0].concept_id, "projects/restart-probe")
+        self.assertEqual(
+            generation.concepts[0].frontmatter["resource"],
+            "yap://tenant/tenant-a/project/restart-probe",
+        )
 
     def test_agent_route_drift_contract_covers_all_transitive_owners(self) -> None:
         protected = (

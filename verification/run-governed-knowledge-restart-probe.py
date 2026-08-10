@@ -27,7 +27,8 @@ from yap_server.knowledge.postgres_knowledge_retrieval import (
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _SUBJECT_ID = "restart-probe"
-_CONCEPT_ID = "project/restart-probe"
+_CONCEPT_ID = "projects/restart-probe"
+_RESOURCE_ID = "project/restart-probe"
 _CAPABILITIES = frozenset({"knowledge.search.lexical"})
 
 
@@ -129,7 +130,7 @@ def _generation(
         f"""---
 type: Project
 title: Restart Probe
-resource: yap://tenant/{tenant_id}/{_CONCEPT_ID}
+resource: yap://tenant/{tenant_id}/{_RESOURCE_ID}
 timestamp: 2026-08-10T12:00:00Z
 yap_schema: 1
 provenance: {{source: synthetic-gate, source_revision: {source_revision}}}
