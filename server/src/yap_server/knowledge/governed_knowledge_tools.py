@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Callable
-import re
 
 from psycopg import Connection
 from psycopg.errors import QueryCanceled
 
 from yap_server.auth.principal import PrincipalKey
 
+from .cancellable_database_operation import run_cancellable_database_operation
+from .knowledge_agent_authority import KnowledgeAgentAuthority
 from .knowledge_tool_audit import record_knowledge_tool_audit
 from .knowledge_tool_contract import (
     BrowseKnowledgeRequest,
@@ -32,29 +32,11 @@ from .postgres_relationship_retrieval import (
 )
 
 
-_PROFILE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
-_SUPPORTED_CAPABILITIES = frozenset(
-    {
-        "knowledge.tree",
-        "knowledge.search.lexical",
-        "knowledge.search.vector",
-        "knowledge.search.hybrid",
-        "knowledge.relationship.traverse",
-        "knowledge.propose",
-    }
-)
-
-
 class GovernedKnowledgeTools:
     """Expose bounded governed queries while keeping storage authority private."""
 
-    def __init__(self, profiles: tuple[KnowledgeAgentProfile, ...]) -> None:
-        if not isinstance(profiles, tuple):
-            raise TypeError("knowledge agent profiles must be immutable")
-        validated = {_profile(item).agent_id: item for item in profiles}
-        if len(validated) != len(profiles):
-            raise ValueError("knowledge agent profile is duplicated")
-        self._profiles = validated
+    def __init__(self, authority: KnowledgeAgentAuthority) -> None:
+        self._authority = authority
 
     def execute(
         self,
@@ -67,17 +49,15 @@ class GovernedKnowledgeTools:
     ) -> KnowledgeToolResponse:
         started = time.monotonic()
         operation = _operation_name(request)
-        profile = self._profiles.get(agent_id)
-        if profile is None:
+        try:
+            profile = self._authority.authorize(
+                agent_id=agent_id, purpose=request.purpose
+            )
+        except PermissionError:
             _record_failure(
                 connection, principal, agent_id, operation, "denied", started
             )
-            raise PermissionError("knowledge agent profile is not authorized")
-        if request.purpose not in profile.purposes:
-            _record_failure(
-                connection, principal, agent_id, operation, "denied", started
-            )
-            raise PermissionError("knowledge purpose is not authorized for agent")
+            raise
         if cancellation.is_set():
             _record_failure(
                 connection, principal, agent_id, operation, "cancelled", started
@@ -89,7 +69,7 @@ class GovernedKnowledgeTools:
                     "SELECT set_config('statement_timeout', %s, true)",
                     (str(profile.statement_timeout_milliseconds),),
                 )
-                response = _run_cancellable(
+                response = run_cancellable_database_operation(
                     connection,
                     cancellation,
                     lambda: self._execute_query(
@@ -270,49 +250,6 @@ def _bounded_items(
         used += size
         output.append(item)
     return tuple(output), False
-
-
-def _run_cancellable(
-    connection: Connection[object],
-    cancellation: threading.Event,
-    operation: Callable[[], KnowledgeToolResponse],
-) -> KnowledgeToolResponse:
-    completed = threading.Event()
-
-    def cancel_when_requested() -> None:
-        while not completed.wait(0.01):
-            if cancellation.is_set():
-                connection.cancel_safe(timeout=1.0)
-                return
-
-    watcher = threading.Thread(target=cancel_when_requested, daemon=True)
-    watcher.start()
-    try:
-        return operation()
-    finally:
-        completed.set()
-        watcher.join(timeout=1.0)
-
-
-def _profile(value: KnowledgeAgentProfile) -> KnowledgeAgentProfile:
-    if (
-        not _PROFILE_ID.fullmatch(value.agent_id)
-        or not isinstance(value.capabilities, frozenset)
-        or not value.capabilities
-        or not value.capabilities <= _SUPPORTED_CAPABILITIES
-        or not isinstance(value.purposes, frozenset)
-        or not value.purposes
-        or len(value.purposes) > 32
-        or any(not _PROFILE_ID.fullmatch(item) for item in value.purposes)
-    ):
-        raise ValueError("knowledge agent profile is invalid")
-    if not 1 <= value.maximum_results <= 100:
-        raise ValueError("knowledge agent result bound is invalid")
-    if not 1 <= value.maximum_output_characters <= 1_000_000:
-        raise ValueError("knowledge agent output bound is invalid")
-    if not 1 <= value.statement_timeout_milliseconds <= 300_000:
-        raise ValueError("knowledge agent timeout is invalid")
-    return value
 
 
 def _record_failure(

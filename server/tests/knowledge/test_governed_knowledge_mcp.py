@@ -11,6 +11,7 @@ from yap_server.auth.principal import PrincipalKey
 from yap_server.knowledge.governed_knowledge_mcp import (
     create_governed_knowledge_mcp_server,
 )
+from yap_server.knowledge.knowledge_proposals import KnowledgeProposal
 from yap_server.knowledge.knowledge_tool_contract import (
     KnowledgeToolResponse,
     SearchKnowledgeRequest,
@@ -41,6 +42,22 @@ class _RecordingTools:
         )
 
 
+class _RecordingProposals:
+    def propose(self, connection: object, **kwargs: object) -> KnowledgeProposal:
+        return KnowledgeProposal(
+            tenant_id="tenant-1",
+            proposal_id="d" * 64,
+            generation_sha256="a" * 64,
+            proposal_type=str(kwargs["proposal_type"]),
+            proposed_content=str(kwargs["proposed_content"]),
+            source_citations=tuple(kwargs["source_citations"]),  # type: ignore[arg-type]
+            inherited_permission_sha256="e" * 64,
+            permission_hash="b" * 64,
+            authorization_hash="c" * 64,
+            status="proposed",
+        )
+
+
 class GovernedKnowledgeMcpTests(unittest.TestCase):
     def test_in_process_tools_bind_identity_outside_model_arguments(self) -> None:
         anyio.run(self._exercise_server)
@@ -51,6 +68,7 @@ class GovernedKnowledgeMcpTests(unittest.TestCase):
         principal = PrincipalKey("tenant-1", "person-1")
         server = create_governed_knowledge_mcp_server(
             tools=tools,  # type: ignore[arg-type]
+            proposals=_RecordingProposals(),  # type: ignore[arg-type]
             connection_factory=lambda: nullcontext(connection),  # type: ignore[arg-type]
             principal=principal,
             agent_id="meeting-agent",
@@ -58,19 +76,38 @@ class GovernedKnowledgeMcpTests(unittest.TestCase):
 
         async with Client(server, raise_exceptions=True) as client:
             listed = await client.list_tools()
-            search = next(tool for tool in listed.tools if tool.name == "search_knowledge")
-            properties = search.input_schema["properties"]
-            self.assertNotIn("tenant_id", properties)
-            self.assertNotIn("subject_id", properties)
-            self.assertNotIn("agent_id", properties)
+            for tool in listed.tools:
+                properties = tool.input_schema["properties"]
+                self.assertNotIn("tenant_id", properties)
+                self.assertNotIn("subject_id", properties)
+                self.assertNotIn("agent_id", properties)
 
             result = await client.call_tool(
                 "search_knowledge",
                 {"purpose": "meeting", "search_text": "cardiac"},
             )
+            proposal_result = await client.call_tool(
+                "propose_knowledge",
+                {
+                    "purpose": "meeting",
+                    "proposal_type": "summary",
+                    "proposed_content": "Cited summary.",
+                    "source_citations": [
+                        {
+                            "concept_id": "meeting-1",
+                            "source_revision": "revision-1",
+                            "content_sha256": "f" * 64,
+                            "char_start": 0,
+                            "char_end": 5,
+                        }
+                    ],
+                },
+            )
 
         self.assertFalse(result.is_error, result.content)
         self.assertEqual(result.structured_content["generation_sha256"], "a" * 64)
+        self.assertFalse(proposal_result.is_error, proposal_result.content)
+        self.assertEqual(proposal_result.structured_content["status"], "proposed")
         self.assertEqual(len(tools.calls), 1)
         used_connection, used_principal, used_agent, request, cancellation = tools.calls[0]
         self.assertIs(used_connection, connection)

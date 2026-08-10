@@ -10,6 +10,7 @@ from uuid import uuid4
 import psycopg
 
 from yap_server.auth.principal import PrincipalKey
+from yap_server.knowledge.knowledge_agent_authority import KnowledgeAgentAuthority
 from yap_server.knowledge.generation_ledger import (
     activate_complete_generation,
     install_knowledge_schema,
@@ -18,6 +19,9 @@ from yap_server.knowledge.generation_ledger import (
 )
 from yap_server.knowledge.governed_knowledge_tools import (
     GovernedKnowledgeTools,
+)
+from yap_server.knowledge.governed_knowledge_proposals import (
+    GovernedKnowledgeProposals,
 )
 from yap_server.knowledge.knowledge_tool_audit import (
     install_knowledge_tool_audit_schema,
@@ -30,7 +34,6 @@ from yap_server.knowledge.knowledge_tool_contract import (
 from yap_server.knowledge.knowledge_proposals import (
     ProposalCitation,
     install_knowledge_proposal_schema,
-    store_knowledge_proposal,
 )
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
@@ -115,13 +118,27 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 search_text="crash safe transcript",
             )
             install_knowledge_proposal_schema(connection)
+            install_knowledge_tool_audit_schema(connection)
             source = results.results[0]
-            proposal = store_knowledge_proposal(
+            proposal_service = GovernedKnowledgeProposals(
+                KnowledgeAgentAuthority(
+                    (
+                        KnowledgeAgentProfile(
+                            agent_id="proposal-agent",
+                            capabilities=frozenset({"knowledge.propose"}),
+                            purposes=frozenset({"knowledge.read"}),
+                            maximum_results=5,
+                            maximum_output_characters=2_000,
+                            statement_timeout_milliseconds=5_000,
+                        ),
+                    )
+                )
+            )
+            proposal = proposal_service.propose(
                 connection,
                 principal=owner,
                 purpose="knowledge.read",
-                agent_id="librarian",
-                agent_capabilities=frozenset({"knowledge.propose"}),
+                agent_id="proposal-agent",
                 proposal_type="summary",
                 proposed_content="The reviewed meeting records crash safety.",
                 source_citations=(
@@ -133,15 +150,17 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                         source.char_end,
                     ),
                 ),
+                expected_generation_sha256=generation.generation_sha256,
+                cancellation=threading.Event(),
             )
             proposal_policy = connection.execute(
                 """SELECT inherited_policy FROM yap_knowledge_proposals
                    WHERE tenant_id = %s AND proposal_id = %s""",
                 (tenant_id, proposal.proposal_id),
             ).fetchone()[0]
-            install_knowledge_tool_audit_schema(connection)
             tools = GovernedKnowledgeTools(
-                (
+                KnowledgeAgentAuthority(
+                    (
                     KnowledgeAgentProfile(
                         agent_id="librarian",
                         capabilities=frozenset({"knowledge.search.lexical"}),
@@ -150,6 +169,7 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                         maximum_output_characters=2_000,
                         statement_timeout_milliseconds=5_000,
                     ),
+                    )
                 )
             )
             tool_result = tools.execute(
@@ -163,7 +183,8 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 cancellation=threading.Event(),
             )
             tiny_tools = GovernedKnowledgeTools(
-                (
+                KnowledgeAgentAuthority(
+                    (
                     KnowledgeAgentProfile(
                         agent_id="bounded-librarian",
                         capabilities=frozenset({"knowledge.search.lexical"}),
@@ -172,6 +193,7 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                         maximum_output_characters=1,
                         statement_timeout_milliseconds=5_000,
                     ),
+                    )
                 )
             )
             bounded_result = tiny_tools.execute(
@@ -188,7 +210,8 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 """SELECT operation, outcome, result_count, generation_sha256,
                           permission_hash, authorization_hash
                    FROM yap_knowledge_tool_audit
-                   WHERE tenant_id = %s AND agent_id = 'librarian'""",
+                   WHERE tenant_id = %s AND agent_id = 'librarian'
+                     AND operation = 'search'""",
                 (tenant_id,),
             ).fetchone()
             cancelled = threading.Event()
@@ -255,6 +278,7 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
         self.assertEqual(
             audit_outcomes,
             [
+                ("succeeded", proposal.generation_sha256),
                 ("succeeded", tool_result.generation_sha256),
                 ("succeeded", bounded_result.generation_sha256),
                 ("cancelled", None),

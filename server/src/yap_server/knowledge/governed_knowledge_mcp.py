@@ -12,6 +12,8 @@ from psycopg import Connection
 from yap_server.auth.principal import PrincipalKey
 
 from .governed_knowledge_tools import GovernedKnowledgeTools
+from .governed_knowledge_proposals import GovernedKnowledgeProposals
+from .knowledge_proposals import ProposalCitation
 from .knowledge_tool_contract import (
     BrowseKnowledgeRequest,
     KnowledgeToolRequest,
@@ -26,6 +28,7 @@ ConnectionFactory = Callable[[], AbstractContextManager[Connection[object]]]
 def create_governed_knowledge_mcp_server(
     *,
     tools: GovernedKnowledgeTools,
+    proposals: GovernedKnowledgeProposals,
     connection_factory: ConnectionFactory,
     principal: PrincipalKey,
     agent_id: str,
@@ -50,6 +53,37 @@ def create_governed_knowledge_mcp_server(
                     principal=principal,
                     agent_id=agent_id,
                     request=request,
+                    cancellation=cancellation,
+                )
+                return asdict(response)
+
+        try:
+            return await anyio.to_thread.run_sync(execute, abandon_on_cancel=True)
+        except BaseException:
+            cancellation.set()
+            raise
+
+    async def propose(
+        *,
+        purpose: str,
+        proposal_type: str,
+        proposed_content: str,
+        source_citations: list[ProposalCitation],
+        expected_generation_sha256: str | None,
+    ) -> dict[str, object]:
+        cancellation = threading.Event()
+
+        def execute() -> dict[str, object]:
+            with connection_factory() as connection:
+                response = proposals.propose(
+                    connection,
+                    principal=principal,
+                    agent_id=agent_id,
+                    purpose=purpose,
+                    proposal_type=proposal_type,
+                    proposed_content=proposed_content,
+                    source_citations=tuple(source_citations),
+                    expected_generation_sha256=expected_generation_sha256,
                     cancellation=cancellation,
                 )
                 return asdict(response)
@@ -104,6 +138,22 @@ def create_governed_knowledge_mcp_server(
                 maximum_results=maximum_results,
                 expected_generation_sha256=expected_generation_sha256,
             )
+        )
+
+    @server.tool(name="propose_knowledge", structured_output=True)
+    async def propose_knowledge(
+        purpose: str,
+        proposal_type: str,
+        proposed_content: str,
+        source_citations: list[ProposalCitation],
+        expected_generation_sha256: str | None = None,
+    ) -> dict[str, object]:
+        return await propose(
+            purpose=purpose,
+            proposal_type=proposal_type,
+            proposed_content=proposed_content,
+            source_citations=source_citations,
+            expected_generation_sha256=expected_generation_sha256,
         )
 
     return server

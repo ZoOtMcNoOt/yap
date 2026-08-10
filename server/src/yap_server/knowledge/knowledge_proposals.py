@@ -40,6 +40,8 @@ class KnowledgeProposal:
     proposed_content: str
     source_citations: tuple[ProposalCitation, ...]
     inherited_permission_sha256: str
+    permission_hash: str
+    authorization_hash: str
     status: str
 
 
@@ -143,7 +145,8 @@ def store_knowledge_proposal(
                    proposer_subject_id, proposer_agent_id, proposal_type,
                    proposed_content, source_citations, inherited_policy,
                    inherited_permission_sha256, status
-               ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'proposed')""",
+               ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'proposed')
+               ON CONFLICT (tenant_id, proposal_id) DO NOTHING""",
             (
                 principal.tenant_id,
                 proposal_id,
@@ -165,6 +168,8 @@ def store_knowledge_proposal(
         proposed_content,
         source_citations,
         inherited_hash,
+        authorized.permission_hash,
+        authorized.authorization_hash,
         "proposed",
     )
 
