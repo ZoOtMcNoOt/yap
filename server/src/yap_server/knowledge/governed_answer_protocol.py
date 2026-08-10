@@ -43,6 +43,7 @@ def governed_answer_request_fields(protocol: str) -> dict[str, object]:
             "type": "function",
             "function": {"name": _ANSWER_TOOL_NAME},
         },
+        "parallel_tool_calls": False,
     }
 
 

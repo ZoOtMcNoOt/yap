@@ -6,6 +6,7 @@ import unittest
 
 from yap_server.evaluation.agent_model_fixture_runner import (
     _step_visible_context,
+    _tool_definitions,
     run_agent_model_fixtures,
     warm_agent_model_fixture_runtime,
 )
@@ -33,6 +34,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         self.assertEqual(len(requests), 2)
         self.assertEqual([item["max_tokens"] for item in requests], [64, 64])
         self.assertIn("tools", requests[0])
+        self.assertIs(requests[0]["parallel_tool_calls"], False)
         self.assertIn("tools", requests[1])
         self.assertNotIn("response_format", requests[1])
         self.assertEqual(
@@ -42,6 +44,18 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 "function": {"name": "return_governed_answer"},
             },
         )
+        self.assertIs(requests[1]["parallel_tool_calls"], False)
+
+    def test_requires_a_caller_supplied_generation_identity(self) -> None:
+        tools = _tool_definitions(require_generation_sha256=True)
+
+        for tool in tools:
+            parameters = tool["function"]["parameters"]
+            self.assertIn("expected_generation_sha256", parameters["required"])
+            self.assertEqual(
+                parameters["properties"]["expected_generation_sha256"]["type"],
+                "string",
+            )
 
     def test_terminology_workloads_request_a_noncanonical_proposal(self) -> None:
         fixture = json.loads(

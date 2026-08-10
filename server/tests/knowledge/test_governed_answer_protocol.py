@@ -15,6 +15,7 @@ class GovernedAnswerProtocolTests(unittest.TestCase):
         fields = governed_answer_request_fields("forced-answer-tool")
 
         self.assertNotIn("response_format", fields)
+        self.assertIs(fields["parallel_tool_calls"], False)
         self.assertEqual(
             fields["tool_choice"],
             {

@@ -128,6 +128,7 @@ def warm_agent_model_fixture_runtime(
             ],
             "tools": _tool_definitions(),
             "tool_choice": "required",
+            "parallel_tool_calls": False,
             "temperature": 0,
             "max_tokens": warmup_output_tokens,
             "chat_template_kwargs": {"enable_thinking": False},
@@ -217,14 +218,22 @@ def _run_case(
     ):
         messages.extend(_retrieval_messages(case))
     expected_sequence = tuple(case.get("expectedToolSequence", [case["expectedTool"]]))
+    expected_arguments = case.get("expectedArguments", {})
+    tools = _tool_definitions(
+        require_generation_sha256=(
+            isinstance(expected_arguments, dict)
+            and "expected_generation_sha256" in expected_arguments
+        )
+    )
     tool_calls: list[tuple[str, dict[str, object]]] = []
     for step_index, _expected_tool in enumerate(expected_sequence):
         response = request_json(
             {
                 "model": model,
                 "messages": messages,
-                "tools": _tool_definitions(),
+                "tools": tools,
                 "tool_choice": "required",
+                "parallel_tool_calls": False,
                 "temperature": 0,
                 "max_tokens": maximum_output_tokens,
                 "chat_template_kwargs": {"enable_thinking": False},
@@ -256,6 +265,17 @@ def _run_case(
                 ),
             }
         )
+        if step_index + 1 < len(expected_sequence):
+            messages.append(
+                {
+                    "role": "system",
+                    "content": (
+                        "The preceding tool call is complete. Select exactly one "
+                        "not-yet-completed tool required by the original user "
+                        "request. Never repeat a completed tool."
+                    ),
+                }
+            )
     tool_name, arguments = tool_calls[-1]
     final_payload: dict[str, object] = {
         "model": model,
@@ -382,7 +402,12 @@ def _message(response: dict[str, object]) -> dict[str, object]:
     return message
 
 
-def _tool_definitions() -> list[dict[str, object]]:
+def _tool_definitions(
+    *, require_generation_sha256: bool = False
+) -> list[dict[str, object]]:
+    generation_required = (
+        ["expected_generation_sha256"] if require_generation_sha256 else []
+    )
     common = {
         "purpose": {
             "type": "string",
@@ -390,7 +415,8 @@ def _tool_definitions() -> list[dict[str, object]]:
             "description": "Always use the authorized knowledge.read purpose.",
         },
         "expected_generation_sha256": {
-            "type": ["string", "null"],
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
             "description": (
                 "Copy the exact generation SHA-256 supplied by the user; omit it "
                 "only when the user did not supply one."
@@ -412,7 +438,7 @@ def _tool_definitions() -> list[dict[str, object]]:
                 },
                 "maximum_results": {"type": "integer", "minimum": 1, "maximum": 10},
             },
-            ["purpose", "search_text"],
+            ["purpose", "search_text", *generation_required],
         ),
         _tool(
             "browse_knowledge",
@@ -421,7 +447,7 @@ def _tool_definitions() -> list[dict[str, object]]:
                 "search, relationship traversal, or proposals."
             ),
             common,
-            ["purpose"],
+            ["purpose", *generation_required],
         ),
         _tool(
             "traverse_knowledge",
@@ -443,7 +469,7 @@ def _tool_definitions() -> list[dict[str, object]]:
                 },
                 "maximum_results": {"type": "integer", "minimum": 1, "maximum": 50},
             },
-            ["purpose", "start_concept_id"],
+            ["purpose", "start_concept_id", *generation_required],
         ),
         _tool(
             "propose_knowledge",
@@ -480,7 +506,13 @@ def _tool_definitions() -> list[dict[str, object]]:
                     },
                 },
             },
-            ["purpose", "proposal_type", "proposed_content", "source_citations"],
+            [
+                "purpose",
+                "proposal_type",
+                "proposed_content",
+                "source_citations",
+                *generation_required,
+            ],
         ),
     ]
 
@@ -525,11 +557,10 @@ def validate_agent_tool_arguments(name: str, arguments: dict[str, object]) -> No
         raise ValueError("agent tool arguments differ from the contract")
     if arguments.get("purpose") != "knowledge.read":
         raise ValueError("agent tool purpose is invalid")
-    generation = arguments.get("expected_generation_sha256")
-    if generation is not None and (
-        not isinstance(generation, str) or not _SHA256.fullmatch(generation)
-    ):
-        raise ValueError("agent expected generation is invalid")
+    if "expected_generation_sha256" in arguments:
+        generation = arguments["expected_generation_sha256"]
+        if not isinstance(generation, str) or not _SHA256.fullmatch(generation):
+            raise ValueError("agent expected generation is invalid")
 
 
 def _validate_citations(value: object) -> None:
