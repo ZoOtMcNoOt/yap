@@ -28,16 +28,15 @@ INPUTS = tuple(
 )
 
 
-def test_selects_fastest_candidate_after_recomputing_every_threshold() -> None:
+def test_selects_admitted_candidate_after_recomputing_every_threshold() -> None:
     candidate = _checked_candidate()
     with tempfile.TemporaryDirectory() as temporary:
         evidence_root = Path(temporary)
-        _write_candidate(evidence_root, candidate, "qwen3.6-35b-a3b-nvfp4", 10)
         _write_candidate(
             evidence_root,
             candidate,
             "nemotron-3-nano-30b-a3b-nvfp4",
-            20,
+            10,
         )
 
         with patch.object(CheckedCandidate, "verify_unchanged"):
@@ -47,7 +46,12 @@ def test_selects_fastest_candidate_after_recomputing_every_threshold() -> None:
             )
 
     assert decision["outcome"] == "selected-candidate"
-    assert decision["selectedCandidateId"] == "qwen3.6-35b-a3b-nvfp4"
+    assert decision["selectedCandidateId"] == "nemotron-3-nano-30b-a3b-nvfp4"
+    assert decision["candidateSummaries"][0] == {
+        "candidateId": "qwen3.6-35b-a3b-nvfp4",
+        "eligible": False,
+        "rejectionReasonCode": "sglang-w4afp8-block-shape-unsupported",
+    }
     assert "results" not in json.dumps(decision)
 
 
@@ -55,8 +59,6 @@ def test_keeps_deterministic_route_when_candidate_evidence_is_missing() -> None:
     candidate = _checked_candidate()
     with tempfile.TemporaryDirectory() as temporary:
         evidence_root = Path(temporary)
-        _write_candidate(evidence_root, candidate, "qwen3.6-35b-a3b-nvfp4", 10)
-
         with patch.object(CheckedCandidate, "verify_unchanged"):
             decision = evaluate_agent_model_qualification(
                 candidate=candidate,
@@ -73,13 +75,6 @@ def test_keeps_deterministic_route_when_no_candidate_passes() -> None:
     candidate = _checked_candidate()
     with tempfile.TemporaryDirectory() as temporary:
         evidence_root = Path(temporary)
-        _write_candidate(
-            evidence_root,
-            candidate,
-            "qwen3.6-35b-a3b-nvfp4",
-            10,
-            passing=False,
-        )
         _write_candidate(
             evidence_root,
             candidate,
@@ -103,7 +98,7 @@ def test_rejects_tampered_candidate_evidence() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         evidence_root = Path(temporary)
         path = _write_candidate(
-            evidence_root, candidate, "qwen3.6-35b-a3b-nvfp4", 10
+            evidence_root, candidate, "nemotron-3-nano-30b-a3b-nvfp4", 10
         )
         value = json.loads(path.read_text(encoding="utf-8"))
         value["revision"] = "0" * 40

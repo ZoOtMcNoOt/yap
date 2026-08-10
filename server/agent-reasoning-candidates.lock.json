@@ -16,6 +16,8 @@
       "quantization": "w4afp8",
       "toolCallParser": "qwen",
       "reasoningParser": "qwen3",
+      "evaluationStatus": "runtime-incompatible",
+      "reasonCode": "sglang-w4afp8-block-shape-unsupported",
       "license": "Apache-2.0",
       "source": "https://huggingface.co/nvidia/Qwen3.6-35B-A3B-NVFP4"
     },
@@ -26,6 +28,7 @@
       "quantization": "modelopt_fp4",
       "toolCallParser": "qwen3_coder",
       "reasoningParser": "nemotron_3",
+      "evaluationStatus": "workload-candidate",
       "license": "NVIDIA-Nemotron-Open-Model-License",
       "source": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4"
     }

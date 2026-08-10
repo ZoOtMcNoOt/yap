@@ -15,10 +15,11 @@ class AgentModelAcceptanceTests(unittest.TestCase):
 
         self.assertEqual(
             plan.candidate_ids,
-            (
-                "qwen3.6-35b-a3b-nvfp4",
-                "nemotron-3-nano-30b-a3b-nvfp4",
-            ),
+            ("nemotron-3-nano-30b-a3b-nvfp4",),
+        )
+        self.assertEqual(
+            plan.rejected_candidate_ids,
+            ("qwen3.6-35b-a3b-nvfp4",),
         )
         self.assertEqual(len(plan.case_ids), 12)
         self.assertEqual(

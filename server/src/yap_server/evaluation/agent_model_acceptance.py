@@ -30,6 +30,7 @@ class AgentModelAcceptance:
     candidate_lock_sha256: str
     fixture_sha256: str
     candidate_ids: tuple[str, ...]
+    rejected_candidate_ids: tuple[str, ...]
     case_ids: tuple[str, ...]
     permitted_outcomes: tuple[str, ...]
     runtime_tracks: dict[str, object]
@@ -64,7 +65,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         expected_sha256=fixture_hash,
         containment_root=repository_root,
     )
-    candidate_ids = _candidate_lock(lock)
+    candidate_ids, rejected_candidate_ids = _candidate_lock(lock)
     case_ids, categories = _fixtures(fixtures)
     minimum = plan["minimumCaseCount"]
     required_categories = plan["requiredCategories"]
@@ -88,6 +89,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         observed_lock_hash,
         observed_fixture_hash,
         candidate_ids,
+        rejected_candidate_ids,
         case_ids,
         tuple(outcomes),
         runtime_tracks,
@@ -95,7 +97,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
     )
 
 
-def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
+def _candidate_lock(value: dict[str, object]) -> tuple[tuple[str, ...], tuple[str, ...]]:
     if (
         set(value) != {"schemaVersion", "runtime", "candidates"}
         or value["schemaVersion"] != 1
@@ -124,6 +126,8 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
     if not isinstance(candidates, list) or len(candidates) != 2:
         raise ValueError("agent candidate set is invalid")
     identities: list[str] = []
+    admitted: list[str] = []
+    rejected: list[str] = []
     for candidate in candidates:
         if not isinstance(candidate, dict) or not {
             "candidateId",
@@ -131,6 +135,7 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
             "revision",
             "quantization",
             "toolCallParser",
+            "evaluationStatus",
             "license",
             "source",
         } <= set(candidate) <= {
@@ -140,6 +145,8 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
             "quantization",
             "toolCallParser",
             "reasoningParser",
+            "evaluationStatus",
+            "reasonCode",
             "license",
             "source",
         }:
@@ -156,9 +163,22 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
         ].startswith("https://huggingface.co/"):
             raise ValueError("agent candidate provenance is invalid")
         identities.append(candidate_id)
+        status = candidate["evaluationStatus"]
+        if status == "workload-candidate" and "reasonCode" not in candidate:
+            admitted.append(candidate_id)
+        elif (
+            status == "runtime-incompatible"
+            and candidate.get("reasonCode")
+            == "sglang-w4afp8-block-shape-unsupported"
+        ):
+            rejected.append(candidate_id)
+        else:
+            raise ValueError("agent candidate evaluation status is invalid")
     if len(set(identities)) != len(identities):
         raise ValueError("agent candidate is duplicated")
-    return tuple(identities)
+    if not admitted or not rejected:
+        raise ValueError("agent candidate comparison is incomplete")
+    return tuple(admitted), tuple(rejected)
 
 
 def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:

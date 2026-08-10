@@ -61,7 +61,14 @@ def evaluate_agent_model_qualification(
     acceptance = load_agent_model_acceptance(candidate.repository_root)
     models = _candidate_models(candidate.repository_root, acceptance.candidate_lock_sha256)
     candidate.verify_unchanged()
-    summaries: list[dict[str, object]] = []
+    summaries: list[dict[str, object]] = [
+        {
+            "candidateId": candidate_id,
+            "eligible": False,
+            "rejectionReasonCode": str(models[candidate_id]["reasonCode"]),
+        }
+        for candidate_id in acceptance.rejected_candidate_ids
+    ]
     missing: list[str] = []
     for candidate_id in acceptance.candidate_ids:
         path = evidence_root / "agent-model" / candidate_id / "results.json"
