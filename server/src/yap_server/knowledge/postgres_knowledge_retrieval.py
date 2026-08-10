@@ -35,6 +35,22 @@ class PostgresKnowledgeSearchResult:
     vector_distance: float | None
 
 
+@dataclass(frozen=True, slots=True)
+class PostgresKnowledgeTree:
+    generation_sha256: str
+    permission_hash: str
+    authorization_hash: str
+    concepts: tuple[PermissionFilteredConcept, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresKnowledgeSearch:
+    generation_sha256: str
+    permission_hash: str
+    authorization_hash: str
+    results: tuple[PostgresKnowledgeSearchResult, ...]
+
+
 def list_postgres_knowledge_tree(
     connection: Connection[object],
     *,
@@ -42,7 +58,7 @@ def list_postgres_knowledge_tree(
     purpose: str,
     agent_capabilities: frozenset[str],
     expected_generation_sha256: str | None = None,
-) -> tuple[PermissionFilteredConcept, ...]:
+) -> PostgresKnowledgeTree:
     query = authorize_knowledge_query(
         connection,
         principal=principal,
@@ -52,7 +68,12 @@ def list_postgres_knowledge_tree(
         expected_generation_sha256=expected_generation_sha256,
     )
     if not query.visible_concept_ids:
-        return ()
+        return PostgresKnowledgeTree(
+            query.generation_sha256,
+            query.permission_hash,
+            query.authorization_hash,
+            (),
+        )
     rows = connection.execute(
         """SELECT concept_id, frontmatter->>'type', frontmatter->>'title',
                   frontmatter->>'resource'
@@ -66,7 +87,12 @@ def list_postgres_knowledge_tree(
             list(query.visible_concept_ids),
         ),
     ).fetchall()
-    return tuple(PermissionFilteredConcept(*row) for row in rows)
+    return PostgresKnowledgeTree(
+        query.generation_sha256,
+        query.permission_hash,
+        query.authorization_hash,
+        tuple(PermissionFilteredConcept(*row) for row in rows),
+    )
 
 
 def search_postgres_knowledge_lexical(
@@ -78,7 +104,7 @@ def search_postgres_knowledge_lexical(
     search_text: str,
     maximum_results: int = 10,
     expected_generation_sha256: str | None = None,
-) -> tuple[PostgresKnowledgeSearchResult, ...]:
+) -> PostgresKnowledgeSearch:
     _search_input(search_text, maximum_results)
     query = authorize_knowledge_query(
         connection,
@@ -88,7 +114,9 @@ def search_postgres_knowledge_lexical(
         required_capability="knowledge.search.lexical",
         expected_generation_sha256=expected_generation_sha256,
     )
-    return _lexical_results(connection, query, search_text, maximum_results)
+    return _search_response(
+        query, _lexical_results(connection, query, search_text, maximum_results)
+    )
 
 
 def search_postgres_knowledge_vector(
@@ -100,7 +128,7 @@ def search_postgres_knowledge_vector(
     query_embedding: tuple[float, ...],
     maximum_results: int = 10,
     expected_generation_sha256: str | None = None,
-) -> tuple[PostgresKnowledgeSearchResult, ...]:
+) -> PostgresKnowledgeSearch:
     _result_limit(maximum_results)
     vector = serialize_embedding_vector(query_embedding)
     query = authorize_knowledge_query(
@@ -111,11 +139,14 @@ def search_postgres_knowledge_vector(
         required_capability="knowledge.search.vector",
         expected_generation_sha256=expected_generation_sha256,
     )
-    return _vector_results(
-        connection,
+    return _search_response(
         query,
-        vector,
-        maximum_results,
+        _vector_results(
+            connection,
+            query,
+            vector,
+            maximum_results,
+        ),
     )
 
 
@@ -129,7 +160,7 @@ def search_postgres_knowledge_hybrid(
     query_embedding: tuple[float, ...],
     maximum_results: int = 10,
     expected_generation_sha256: str | None = None,
-) -> tuple[PostgresKnowledgeSearchResult, ...]:
+) -> PostgresKnowledgeSearch:
     _search_input(search_text, maximum_results)
     vector = serialize_embedding_vector(query_embedding)
     query = authorize_knowledge_query(
@@ -162,7 +193,10 @@ def search_postgres_knowledge_hybrid(
             else:
                 ranked[key] = replace(existing, vector_distance=result.vector_distance)
     ordered = sorted(scores, key=lambda key: (-scores[key], key))[:maximum_results]
-    return tuple(replace(ranked[key], retrieval_score=scores[key]) for key in ordered)
+    return _search_response(
+        query,
+        tuple(replace(ranked[key], retrieval_score=scores[key]) for key in ordered),
+    )
 
 
 def _lexical_results(
@@ -276,6 +310,18 @@ def _search_result(
     )
 
 
+def _search_response(
+    query: AuthorizedKnowledgeQuery,
+    results: tuple[PostgresKnowledgeSearchResult, ...],
+) -> PostgresKnowledgeSearch:
+    return PostgresKnowledgeSearch(
+        query.generation_sha256,
+        query.permission_hash,
+        query.authorization_hash,
+        results,
+    )
+
+
 def _search_input(search_text: str, maximum_results: int) -> None:
     if (
         not isinstance(search_text, str)
@@ -299,6 +345,8 @@ def _result_limit(maximum_results: int) -> None:
 
 __all__ = [
     "PostgresKnowledgeSearchResult",
+    "PostgresKnowledgeSearch",
+    "PostgresKnowledgeTree",
     "list_postgres_knowledge_tree",
     "search_postgres_knowledge_hybrid",
     "search_postgres_knowledge_lexical",

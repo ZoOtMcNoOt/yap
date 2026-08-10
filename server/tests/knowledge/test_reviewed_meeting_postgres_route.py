@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import threading
 import unittest
 from uuid import uuid4
 
@@ -14,6 +15,17 @@ from yap_server.knowledge.generation_ledger import (
     install_knowledge_schema,
     stage_compiled_generation,
     store_generation_embeddings,
+)
+from yap_server.knowledge.governed_knowledge_tools import (
+    GovernedKnowledgeTools,
+)
+from yap_server.knowledge.knowledge_tool_audit import (
+    install_knowledge_tool_audit_schema,
+)
+from yap_server.knowledge.knowledge_tool_contract import (
+    KnowledgeAgentProfile,
+    KnowledgeToolCancelled,
+    SearchKnowledgeRequest,
 )
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
@@ -97,6 +109,76 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 agent_capabilities=frozenset({"knowledge.search.lexical"}),
                 search_text="crash safe transcript",
             )
+            install_knowledge_tool_audit_schema(connection)
+            tools = GovernedKnowledgeTools(
+                (
+                    KnowledgeAgentProfile(
+                        agent_id="librarian",
+                        capabilities=frozenset({"knowledge.search.lexical"}),
+                        purposes=frozenset({"knowledge.read"}),
+                        maximum_results=5,
+                        maximum_output_characters=2_000,
+                        statement_timeout_milliseconds=5_000,
+                    ),
+                )
+            )
+            tool_result = tools.execute(
+                connection,
+                principal=owner,
+                agent_id="librarian",
+                request=SearchKnowledgeRequest(
+                    purpose="knowledge.read",
+                    search_text="crash safe transcript",
+                ),
+                cancellation=threading.Event(),
+            )
+            tiny_tools = GovernedKnowledgeTools(
+                (
+                    KnowledgeAgentProfile(
+                        agent_id="bounded-librarian",
+                        capabilities=frozenset({"knowledge.search.lexical"}),
+                        purposes=frozenset({"knowledge.read"}),
+                        maximum_results=5,
+                        maximum_output_characters=1,
+                        statement_timeout_milliseconds=5_000,
+                    ),
+                )
+            )
+            bounded_result = tiny_tools.execute(
+                connection,
+                principal=owner,
+                agent_id="bounded-librarian",
+                request=SearchKnowledgeRequest(
+                    purpose="knowledge.read",
+                    search_text="crash safe transcript",
+                ),
+                cancellation=threading.Event(),
+            )
+            audit = connection.execute(
+                """SELECT operation, outcome, result_count, generation_sha256,
+                          permission_hash, authorization_hash
+                   FROM yap_knowledge_tool_audit
+                   WHERE tenant_id = %s AND agent_id = 'librarian'""",
+                (tenant_id,),
+            ).fetchone()
+            cancelled = threading.Event()
+            cancelled.set()
+            with self.assertRaises(KnowledgeToolCancelled):
+                tools.execute(
+                    connection,
+                    principal=owner,
+                    agent_id="librarian",
+                    request=SearchKnowledgeRequest(
+                        purpose="knowledge.read",
+                        search_text="crash safe transcript",
+                    ),
+                    cancellation=cancelled,
+                )
+            audit_outcomes = connection.execute(
+                """SELECT outcome, generation_sha256 FROM yap_knowledge_tool_audit
+                   WHERE tenant_id = %s ORDER BY audit_id""",
+                (tenant_id,),
+            ).fetchall()
             connection.execute(
                 "DELETE FROM yap_knowledge_active_builds WHERE tenant_id = %s",
                 (tenant_id,),
@@ -109,11 +191,38 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 "DELETE FROM yap_knowledge_reviewed_captures WHERE tenant_id = %s",
                 (tenant_id,),
             )
+            connection.execute(
+                "DELETE FROM yap_knowledge_tool_audit WHERE tenant_id = %s",
+                (tenant_id,),
+            )
             connection.commit()
 
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].source_revision, capture.capture_sha256)
-        self.assertEqual(results[0].concept_id, f"meetings/{job_id}")
+        self.assertEqual(len(results.results), 1)
+        self.assertEqual(results.results[0].source_revision, capture.capture_sha256)
+        self.assertEqual(results.results[0].concept_id, f"meetings/{job_id}")
+        self.assertEqual(tool_result.items[0].text, results.results[0].text)
+        self.assertEqual(bounded_result.items, ())
+        self.assertTrue(bounded_result.output_budget_exhausted)
+        self.assertEqual(
+            audit,
+            (
+                "search",
+                "succeeded",
+                1,
+                tool_result.generation_sha256,
+                tool_result.permission_hash,
+                tool_result.authorization_hash,
+            ),
+        )
+        self.assertNotIn("crash safe transcript", repr(audit).casefold())
+        self.assertEqual(
+            audit_outcomes,
+            [
+                ("succeeded", tool_result.generation_sha256),
+                ("succeeded", bounded_result.generation_sha256),
+                ("cancelled", None),
+            ],
+        )
         self.assertEqual(
             generation.concepts[0].frontmatter["provenance"]["review_sha256"],
             review.review_sha256,

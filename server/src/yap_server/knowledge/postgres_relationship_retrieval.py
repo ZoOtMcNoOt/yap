@@ -27,6 +27,14 @@ class KnowledgeRelationshipResult:
     authorization_hash: str
 
 
+@dataclass(frozen=True, slots=True)
+class PostgresRelationshipTraversal:
+    generation_sha256: str
+    permission_hash: str
+    authorization_hash: str
+    relationships: tuple[KnowledgeRelationshipResult, ...]
+
+
 def traverse_postgres_knowledge_relationships(
     connection: Connection[object],
     *,
@@ -37,7 +45,7 @@ def traverse_postgres_knowledge_relationships(
     maximum_depth: int = 2,
     maximum_results: int = 50,
     expected_generation_sha256: str | None = None,
-) -> tuple[KnowledgeRelationshipResult, ...]:
+) -> PostgresRelationshipTraversal:
     if not isinstance(start_concept_id, str) or not start_concept_id:
         raise ValueError("knowledge traversal start is invalid")
     if isinstance(maximum_depth, bool) or not 1 <= maximum_depth <= 4:
@@ -53,7 +61,12 @@ def traverse_postgres_knowledge_relationships(
         expected_generation_sha256=expected_generation_sha256,
     )
     if start_concept_id not in query.visible_concept_ids:
-        return ()
+        return PostgresRelationshipTraversal(
+            query.generation_sha256,
+            query.permission_hash,
+            query.authorization_hash,
+            (),
+        )
     visible = list(query.visible_concept_ids)
     rows = connection.execute(
         """WITH RECURSIVE walk AS (
@@ -109,18 +122,24 @@ def traverse_postgres_knowledge_relationships(
             maximum_results,
         ),
     ).fetchall()
-    return tuple(
-        KnowledgeRelationshipResult(
-            *row,
-            generation_sha256=query.generation_sha256,
-            permission_hash=query.permission_hash,
-            authorization_hash=query.authorization_hash,
-        )
-        for row in rows
+    return PostgresRelationshipTraversal(
+        query.generation_sha256,
+        query.permission_hash,
+        query.authorization_hash,
+        tuple(
+            KnowledgeRelationshipResult(
+                *row,
+                generation_sha256=query.generation_sha256,
+                permission_hash=query.permission_hash,
+                authorization_hash=query.authorization_hash,
+            )
+            for row in rows
+        ),
     )
 
 
 __all__ = [
     "KnowledgeRelationshipResult",
+    "PostgresRelationshipTraversal",
     "traverse_postgres_knowledge_relationships",
 ]

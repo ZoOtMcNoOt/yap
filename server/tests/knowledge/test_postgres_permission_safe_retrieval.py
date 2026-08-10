@@ -155,20 +155,22 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
             connection.commit()
 
         self.assertEqual(
-            tuple(item.concept_id for item in tree),
+            tuple(item.concept_id for item in tree.concepts),
             ("decisions/public", "projects/voiceos"),
         )
-        self.assertEqual(len(visible), 1)
-        self.assertEqual(visible[0].text, "Approved roadmap work is ready.")
-        self.assertEqual(hidden, ())
+        self.assertEqual(len(visible.results), 1)
+        self.assertEqual(visible.results[0].text, "Approved roadmap work is ready.")
+        self.assertEqual(hidden.results, ())
         self.assertEqual(
-            tuple(item.concept_id for item in vector), ("projects/voiceos",)
+            tuple(item.concept_id for item in vector.results), ("projects/voiceos",)
         )
-        self.assertEqual(vector[0].permission_hash, visible[0].permission_hash)
-        self.assertEqual(hybrid[0].concept_id, "projects/voiceos")
-        self.assertEqual(after_revocation, ())
-        self.assertEqual(len(relationships), 1)
-        self.assertEqual(relationships[0].target_concept_id, "decisions/public")
+        self.assertEqual(vector.permission_hash, visible.permission_hash)
+        self.assertEqual(hybrid.results[0].concept_id, "projects/voiceos")
+        self.assertEqual(after_revocation.results, ())
+        self.assertEqual(len(relationships.relationships), 1)
+        self.assertEqual(
+            relationships.relationships[0].target_concept_id, "decisions/public"
+        )
         self.assertNotIn(
             "secret",
             repr(tree)
