@@ -81,6 +81,23 @@ denials: {users: []}
             review.review_sha256,
         )
 
+        unauthorized_review = KnowledgeSourceReview(
+            reviewer=PrincipalKey("tenant-a", "bob"),
+            reviewed_at_utc="2026-08-09T13:00:00Z",
+            result_revision_sha256=result_revision_sha256(result),
+            decision="accepted",
+        )
+        with self.assertRaisesRegex(PermissionError, "owning principal"):
+            render_reviewed_meeting_concept(
+                result,
+                projection=job,
+                job_id="job-1",
+                tenant_id="tenant-a",
+                owner=PrincipalKey("tenant-a", "alice"),
+                title="Architecture review",
+                review=unauthorized_review,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

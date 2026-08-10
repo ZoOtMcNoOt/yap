@@ -63,6 +63,8 @@ def render_reviewed_meeting_concept(
     identifier(tenant_id, 128, "knowledge meeting tenant ID")
     if owner.tenant_id != tenant_id or review.reviewer.tenant_id != tenant_id:
         raise ValueError("knowledge meeting authority crosses tenants")
+    if review.reviewer != owner:
+        raise PermissionError("meeting result review requires the owning principal")
     if (
         not isinstance(title, str)
         or not title.strip()
