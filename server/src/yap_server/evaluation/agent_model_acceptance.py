@@ -30,6 +30,7 @@ class AgentModelAcceptance:
     candidate_lock_sha256: str
     fixture_sha256: str
     candidate_ids: tuple[str, ...]
+    required_routes: dict[str, str]
     case_ids: tuple[str, ...]
     permitted_outcomes: tuple[str, ...]
     runtime_tracks: dict[str, object]
@@ -44,7 +45,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         field="agent model acceptance plan",
         containment_root=repository_root,
     )
-    if set(plan) != _PLAN_KEYS or plan["schemaVersion"] != 1:
+    if set(plan) != _PLAN_KEYS or plan["schemaVersion"] != 2:
         raise ValueError("agent model acceptance plan differs from the contract")
     lock_name = _file_name(plan["candidateLock"], "candidate lock")
     fixture_name = _file_name(plan["fixtureFile"], "fixture file")
@@ -64,7 +65,8 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         expected_sha256=fixture_hash,
         containment_root=repository_root,
     )
-    candidate_ids = _candidate_lock(lock)
+    candidate_routes = _candidate_lock(lock)
+    candidate_ids = tuple(candidate_routes)
     case_ids, categories = _fixtures(fixtures)
     minimum = plan["minimumCaseCount"]
     required_categories = plan["requiredCategories"]
@@ -79,15 +81,17 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         raise ValueError("agent workload coverage is incomplete")
     _thresholds(plan["thresholds"])
     runtime_tracks = _runtime_tracks(plan["runtimeTracks"])
-    selection_policy = _selection_policy(plan["selectionPolicy"])
+    selection_policy = _selection_policy(plan["selectionPolicy"], candidate_routes)
+    required_routes = dict(selection_policy["requiredRoutes"])
     outcomes = plan["permittedOutcomes"]
-    if outcomes != ["selected-candidate", "deterministic-no-model"]:
+    if outcomes != ["workload-routes-qualified", "deterministic-no-model"]:
         raise ValueError("agent model outcomes differ from the contract")
     return AgentModelAcceptance(
         plan_hash,
         observed_lock_hash,
         observed_fixture_hash,
         candidate_ids,
+        required_routes,
         case_ids,
         tuple(outcomes),
         runtime_tracks,
@@ -95,10 +99,10 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
     )
 
 
-def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
+def _candidate_lock(value: dict[str, object]) -> dict[str, str]:
     if (
         set(value) != {"schemaVersion", "runtime", "candidates"}
-        or value["schemaVersion"] != 1
+        or value["schemaVersion"] != 2
     ):
         raise ValueError("agent reasoning candidate lock differs from the contract")
     runtime = value["runtime"]
@@ -123,13 +127,14 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
     candidates = value["candidates"]
     if not isinstance(candidates, list) or len(candidates) != 2:
         raise ValueError("agent candidate set is invalid")
-    identities: list[str] = []
+    identities: dict[str, str] = {}
     for candidate in candidates:
         if not isinstance(candidate, dict) or not {
             "candidateId",
             "model",
             "revision",
             "artifactManifestSha256",
+            "workloadClass",
             "quantization",
             "toolCallParser",
             "license",
@@ -139,6 +144,7 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
             "model",
             "revision",
             "artifactManifestSha256",
+            "workloadClass",
             "quantization",
             "toolCallParser",
             "reasoningParser",
@@ -161,10 +167,15 @@ def _candidate_lock(value: dict[str, object]) -> tuple[str, ...]:
             "source"
         ].startswith("https://huggingface.co/"):
             raise ValueError("agent candidate provenance is invalid")
-        identities.append(candidate_id)
-    if len(set(identities)) != len(identities):
+        workload_class = candidate["workloadClass"]
+        if workload_class not in {"rapid-automation", "complex-orchestration"}:
+            raise ValueError("agent candidate workload class is invalid")
+        if candidate_id in identities or workload_class in identities.values():
+            raise ValueError("agent candidate is duplicated")
+        identities[candidate_id] = str(workload_class)
+    if set(identities.values()) != {"rapid-automation", "complex-orchestration"}:
         raise ValueError("agent candidate is duplicated")
-    return tuple(identities)
+    return identities
 
 
 def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
@@ -260,18 +271,23 @@ def _runtime_tracks(value: object) -> dict[str, object]:
     return dict(value)
 
 
-def _selection_policy(value: object) -> dict[str, object]:
+def _selection_policy(
+    value: object, candidate_routes: dict[str, str]
+) -> dict[str, object]:
     expected = {
         "requireEveryCandidate": True,
-        "ranking": [
-            "concurrencyC8P95LatencyMilliseconds",
-            "warmP95LatencyMilliseconds",
-            "incrementalCgroupMemoryBytes",
-            "candidateId",
-        ],
+        "requiredRoutes": {
+            "complex-orchestration": "gemma-4-31b-it-nvfp4",
+            "rapid-automation": "qwen3.6-35b-a3b-nvfp4",
+        },
     }
     if value != expected:
         raise ValueError("agent model selection policy differs from the contract")
+    if {
+        candidate_id: workload_class
+        for workload_class, candidate_id in expected["requiredRoutes"].items()
+    } != candidate_routes:
+        raise ValueError("agent route policy differs from candidate ownership")
     return dict(value)
 
 

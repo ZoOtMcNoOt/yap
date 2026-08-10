@@ -59,11 +59,11 @@ class AgentModelQualificationTests(unittest.TestCase):
         self.assertIs(raised.exception, error)
         runtime.contain_failed_run.assert_called_once_with(timeout_seconds=7)
 
-    def test_selects_only_after_recomputing_every_candidate(self) -> None:
+    def test_qualifies_only_after_recomputing_every_required_route(self) -> None:
         candidate = _checked_candidate()
         runs = (
             _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20),
-            _candidate_run(candidate, "nemotron-3-nano-30b-a3b-nvfp4", 10),
+            _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10),
         )
 
         with patch.object(CheckedCandidate, "verify_unchanged"):
@@ -71,9 +71,13 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate=candidate, runs=runs
             )
 
-        self.assertEqual(decision["outcome"], "selected-candidate")
+        self.assertEqual(decision["outcome"], "workload-routes-qualified")
         self.assertEqual(
-            decision["selectedCandidateId"], "nemotron-3-nano-30b-a3b-nvfp4"
+            decision["selectedRoutes"],
+            {
+                "complex-orchestration": "gemma-4-31b-it-nvfp4",
+                "rapid-automation": "qwen3.6-35b-a3b-nvfp4",
+            },
         )
         self.assertNotIn("results", json.dumps(decision))
 
@@ -82,7 +86,7 @@ class AgentModelQualificationTests(unittest.TestCase):
         runs = (
             _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20, passing=False),
             _candidate_run(
-                candidate, "nemotron-3-nano-30b-a3b-nvfp4", 20, passing=False
+                candidate, "gemma-4-31b-it-nvfp4", 20, passing=False
             ),
         )
 
@@ -92,7 +96,11 @@ class AgentModelQualificationTests(unittest.TestCase):
             )
 
         self.assertEqual(decision["outcome"], "deterministic-no-model")
-        self.assertEqual(decision["reasonCodes"], ["no-candidate-met-acceptance"])
+        self.assertEqual(
+            decision["reasonCodes"],
+            ["required-workload-route-did-not-meet-acceptance"],
+        )
+        self.assertEqual(decision["selectedRoutes"], {})
 
     def test_rejects_incomplete_or_tampered_owned_run_set(self) -> None:
         candidate = _checked_candidate()
@@ -109,7 +117,7 @@ class AgentModelQualificationTests(unittest.TestCase):
             run.runtime_receipt,
             run.children,
         )
-        other = _candidate_run(candidate, "nemotron-3-nano-30b-a3b-nvfp4", 10)
+        other = _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10)
         with (
             patch.object(CheckedCandidate, "verify_unchanged"),
             self.assertRaisesRegex(ValueError, "digest"),
@@ -118,17 +126,17 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate=candidate, runs=(tampered, other)
             )
 
-    def test_records_contained_failure_and_can_select_other_candidate(self) -> None:
+    def test_contained_failure_prevents_partial_route_qualification(self) -> None:
         candidate = _checked_candidate()
         failed = _failed_run(candidate, "qwen3.6-35b-a3b-nvfp4")
-        completed = _candidate_run(candidate, "nemotron-3-nano-30b-a3b-nvfp4", 10)
+        completed = _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10)
 
         with patch.object(CheckedCandidate, "verify_unchanged"):
             decision = evaluate_agent_model_qualification(
                 candidate=candidate, runs=(failed, completed)
             )
 
-        self.assertEqual(decision["outcome"], "selected-candidate")
+        self.assertEqual(decision["outcome"], "deterministic-no-model")
         self.assertEqual(
             decision["candidateSummaries"][0]["disposition"],
             "contained-candidate-rejection",

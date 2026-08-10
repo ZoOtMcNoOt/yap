@@ -8,8 +8,12 @@
 
 The Voice OS frame previously named SGLang for agent inference because prefix
 caching, structured outputs, and high-concurrency scheduling fit Yap's governed
-agent workload. Phase 9 froze Qwen 3.6 35B-A3B NVFP4 and Nemotron 3 Nano NVFP4
-as workload candidates on one DGX Spark.
+agent workload. Phase 9 first compared Qwen 3.6 35B-A3B NVFP4 and Nemotron 3
+Nano NVFP4 as universal candidates on one DGX Spark. Exact private evidence
+showed that a single-winner comparison obscured two materially different
+workloads. The product owner subsequently approved Qwen 3.6 for rapid,
+high-volume automation and Gemma 4 31B IT for complex orchestration where
+strict multi-step tool behavior matters.
 
 The exact Qwen checkpoint failed to load in pinned SGLang 26.06 because its
 W4A16/FP8 block layout was unsupported. The same immutable checkpoint loaded
@@ -29,12 +33,17 @@ supervision target. The locked runtime is:
 - Python 3.12;
 - reported vLLM `0.22.1+7b9cb5b7.dev`.
 
-Qwen and Nemotron remain model candidates until the same frozen Yap workload
-passes through an owned, receipt-bound runtime. Candidate evidence binds the
+Qwen and Gemma are both required workload routes, not interchangeable fallback
+models and not competitors for one universal winner. Qwen owns
+`rapid-automation`; Gemma owns `complex-orchestration`. A route is advertised
+only if both exact checkpoints pass their frozen workloads through an owned,
+receipt-bound runtime. Candidate evidence binds the
 exact image, model revision and artifact manifest, quantization, parser flags,
 launch arguments, checked head, cgroup observations, concurrent prefix
-isolation, in-flight cancellation, and teardown. The final selector accepts
-only independently hash-anchored private evidence.
+isolation, in-flight cancellation, and teardown. Sequential Phase 9
+qualification proves each route independently. Simultaneous residency and
+sustained mixed-route capacity remain Phase 10 claims and require their own
+measured evidence.
 
 Rust/Yap owns authentication, authorization, retrieval, tool policy, request
 admission, cancellation intent, audit, and publication. vLLM owns model
@@ -49,6 +58,13 @@ vLLM and SGLang production planes for speculative optionality.
 
 - Qwen follows its validated DGX Spark runtime instead of preserving an
   incompatible architectural prediction.
+- Gemma uses NVIDIA's Apache-2.0 ModelOpt NVFP4 checkpoint and vLLM's native
+  Gemma 4 tool/reasoning parser for the complex-orchestration route.
+- Nemotron is removed from the agent-model set; it remains unrelated ASR
+  technology where separately governed and is not retained as a speculative
+  third agent route.
+- Rust selects the explicit workload class before inference. Runtime failure
+  never silently reroutes a request to the other model.
 - Agent and ASR contracts remain separate even though both can use vLLM.
 - Promotion depends on Yap quality, latency, concurrency, isolation, memory,
   cancellation, and teardown evidence—not headline TPS.

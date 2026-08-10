@@ -5,6 +5,10 @@ import threading
 import unittest
 
 from yap_server.auth.principal import PrincipalKey
+from yap_server.knowledge.agent_reasoning_routes import (
+    AgentReasoningRoutes,
+    AgentWorkloadClass,
+)
 from yap_server.knowledge.governed_rag_agent import (
     GovernedRagAgent,
     ReasoningRetryableError,
@@ -19,6 +23,13 @@ from yap_server.knowledge.terminology_snapshot import (
     TerminologyRecord,
     freeze_terminology_snapshot,
 )
+
+
+def _routes(reason):
+    return AgentReasoningRoutes(
+        rapid_automation=reason,
+        complex_orchestration=reason,
+    )
 
 
 class _Tools:
@@ -70,7 +81,7 @@ class GovernedRagAgentTests(unittest.TestCase):
         agent = GovernedRagAgent(
             tools=_Tools((_item(),)),  # type: ignore[arg-type]
             proposals=proposals,  # type: ignore[arg-type]
-            reason=lambda prompt, cancellation: next(outputs),
+            reasoning_routes=_routes(lambda prompt, cancellation: next(outputs)),
             maximum_prompt_characters=10_000,
             maximum_output_characters=2_000,
             read_terminology_snapshot=_snapshot_reader,
@@ -83,6 +94,7 @@ class GovernedRagAgentTests(unittest.TestCase):
             purpose="knowledge.read",
             question="TAVI publication",
             job_id="job-1",
+            workload_class=AgentWorkloadClass.COMPLEX_ORCHESTRATION,
             cancellation=threading.Event(),
         )
 
@@ -101,7 +113,7 @@ class GovernedRagAgentTests(unittest.TestCase):
         agent = GovernedRagAgent(
             tools=_Tools(()),  # type: ignore[arg-type]
             proposals=_Proposals(),  # type: ignore[arg-type]
-            reason=reason,
+            reasoning_routes=_routes(reason),
             maximum_prompt_characters=10_000,
             maximum_output_characters=2_000,
             read_terminology_snapshot=_snapshot_reader,
@@ -113,6 +125,7 @@ class GovernedRagAgentTests(unittest.TestCase):
             purpose="knowledge.read",
             question="unknown evidence",
             job_id="job-1",
+            workload_class=AgentWorkloadClass.COMPLEX_ORCHESTRATION,
             cancellation=threading.Event(),
         )
 
@@ -127,7 +140,7 @@ class GovernedRagAgentTests(unittest.TestCase):
         agent = GovernedRagAgent(
             tools=_Tools((_item(),)),  # type: ignore[arg-type]
             proposals=_Proposals(),  # type: ignore[arg-type]
-            reason=lambda prompt, cancellation: output,
+            reasoning_routes=_routes(lambda prompt, cancellation: output),
             maximum_prompt_characters=10_000,
             maximum_output_characters=2_000,
             read_terminology_snapshot=_snapshot_reader,
@@ -140,6 +153,7 @@ class GovernedRagAgentTests(unittest.TestCase):
                 purpose="knowledge.read",
                 question="TAVI publication",
                 job_id="job-1",
+                workload_class=AgentWorkloadClass.COMPLEX_ORCHESTRATION,
                 cancellation=threading.Event(),
             )
 
@@ -155,7 +169,7 @@ class GovernedRagAgentTests(unittest.TestCase):
         agent = GovernedRagAgent(
             tools=_Tools((_item(),)),  # type: ignore[arg-type]
             proposals=proposals,  # type: ignore[arg-type]
-            reason=unavailable,
+            reasoning_routes=_routes(unavailable),
             maximum_prompt_characters=10_000,
             maximum_output_characters=2_000,
             read_terminology_snapshot=_snapshot_reader,
@@ -169,6 +183,7 @@ class GovernedRagAgentTests(unittest.TestCase):
                 purpose="knowledge.read",
                 question="TAVI publication",
                 job_id="job-1",
+                workload_class=AgentWorkloadClass.COMPLEX_ORCHESTRATION,
                 cancellation=threading.Event(),
             )
 
@@ -179,7 +194,7 @@ class GovernedRagAgentTests(unittest.TestCase):
         agent = GovernedRagAgent(
             tools=_Tools((_item(),)),  # type: ignore[arg-type]
             proposals=_Proposals(),  # type: ignore[arg-type]
-            reason=lambda prompt, cancellation: "{}",
+            reasoning_routes=_routes(lambda prompt, cancellation: "{}"),
             maximum_prompt_characters=10_000,
             maximum_output_characters=2_000,
             read_terminology_snapshot=lambda connection, principal, job_id: _snapshot(
@@ -194,6 +209,7 @@ class GovernedRagAgentTests(unittest.TestCase):
                 purpose="knowledge.read",
                 question="TAVI publication",
                 job_id="job-1",
+                workload_class=AgentWorkloadClass.COMPLEX_ORCHESTRATION,
                 cancellation=threading.Event(),
             )
 

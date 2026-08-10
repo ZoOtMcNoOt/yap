@@ -1,4 +1,4 @@
-"""Select one agent model only from complete, checked private evidence."""
+"""Qualify workload-specific agent routes from complete checked evidence."""
 
 from __future__ import annotations
 
@@ -84,21 +84,24 @@ def evaluate_agent_model_qualification(
         )
         for candidate_id in acceptance.candidate_ids
     ]
-    eligible = [summary for summary in summaries if summary["eligible"]]
-    if not eligible:
+    summary_by_id = {str(summary["candidateId"]): summary for summary in summaries}
+    selected_routes = {
+        workload_class: candidate_id
+        for workload_class, candidate_id in acceptance.required_routes.items()
+        if summary_by_id[candidate_id]["eligible"]
+    }
+    if selected_routes != acceptance.required_routes:
         outcome = "deterministic-no-model"
-        selected_id = None
-        reasons = ["no-candidate-met-acceptance"]
+        selected_routes = {}
+        reasons = ["required-workload-route-did-not-meet-acceptance"]
     else:
-        selected = min(eligible, key=_ranking_key)
-        outcome = "selected-candidate"
-        selected_id = selected["candidateId"]
-        reasons = ["quality-thresholds-passed", "performance-ranking-selected"]
+        outcome = "workload-routes-qualified"
+        reasons = ["every-required-workload-route-passed"]
     decision = {
         "schemaVersion": 1,
         "qualificationScope": "governed-agent-reasoning",
         "outcome": outcome,
-        "selectedCandidateId": selected_id,
+        "selectedRoutes": dict(sorted(selected_routes.items())),
         "reasonCodes": reasons,
         "candidateSummaries": summaries,
     }
@@ -162,6 +165,7 @@ def _candidate_summary(
     )
     return {
         "candidateId": expected["candidateId"],
+        "workloadClass": expected["workloadClass"],
         "artifactSha256": agent_evidence_sha256(evidence),
         "eligible": eligible,
         "toolSelectionAccuracy": score.tool_selection_accuracy,
@@ -252,6 +256,7 @@ def _failed_candidate_summary(
         raise ValueError("failed agent runtime containment differs")
     return {
         "candidateId": expected["candidateId"],
+        "workloadClass": expected["workloadClass"],
         "artifactSha256": agent_evidence_sha256(failure),
         "eligible": False,
         "disposition": "contained-candidate-rejection",
@@ -518,15 +523,6 @@ def _expected_launch_arguments(expected: dict[str, object]) -> list[str]:
     return arguments
 
 
-def _ranking_key(summary: dict[str, object]) -> tuple[int, int, int, str]:
-    return (
-        int(summary["concurrencyC8P95LatencyMilliseconds"]),
-        int(summary["warmP95LatencyMilliseconds"]),
-        int(summary["incrementalCgroupMemoryBytes"]),
-        str(summary["candidateId"]),
-    )
-
-
 def _p95(values: object) -> int:
     assert isinstance(values, list)
     ordered = sorted(values)
@@ -558,7 +554,9 @@ def _evidence_root(repository_root: Path) -> Path:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Select the checked agent model")
+    parser = argparse.ArgumentParser(
+        description="Qualify the checked agent workload routes"
+    )
     parser.add_argument("--repository-root", type=Path, required=True)
     parser.add_argument("--checked-head", required=True)
     arguments = parser.parse_args(argv)
@@ -609,7 +607,7 @@ def main(argv: list[str] | None = None) -> int:
         shutil.rmtree(staging, ignore_errors=True)
         raise
     print(json.dumps(decision, sort_keys=True, separators=(",", ":")))
-    return 0 if decision["outcome"] == "selected-candidate" else 1
+    return 0 if decision["outcome"] == "workload-routes-qualified" else 1
 
 
 def _fsync_evidence_tree(root: Path) -> None:

@@ -93,9 +93,14 @@ never compile permissions, grant access, or promote their own output.
 
 - [ ] Freeze licensed representative terminology, question-answering,
   structured-tool, and multi-user isolation fixtures before model output.
-- [ ] Compare vLLM-compatible candidates for task quality, citation fidelity,
-  structured-output validity, terminology preservation, prefix-cache isolation,
-  latency, concurrency, memory, license, cancellation, and teardown.
+- [ ] Qualify the required vLLM workload routes: Qwen 3.6 35B-A3B NVFP4 for
+  rapid automation and Gemma 4 31B IT NVFP4 for complex orchestration. Bind
+  task quality, citation fidelity, structured-output validity, terminology
+  preservation, prefix-cache isolation, latency, concurrency, memory, license,
+  cancellation, and teardown to each exact route.
+- [ ] Prove Rust/Yap selects an explicit workload class and never silently
+  reroutes a failed request between models. Keep simultaneous residency and
+  sustained mixed-route capacity as Phase 10 evidence.
 - [ ] Promote no model without workload-specific evidence; keep a deterministic
   no-model path for compiler, authorization, retrieval, and citations.
 - [ ] Benchmark the Postgres/pgvector baseline first. Implement Neo4j only if it

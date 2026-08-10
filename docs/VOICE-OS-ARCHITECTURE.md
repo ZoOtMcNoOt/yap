@@ -19,7 +19,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 
 > **2026-07-08 — Local model reset:** Yap keeps one local live/offline fallback model: Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. Client-side fusion routing is rejected; model routing belongs on the server.
 
-> **ADR precedence:** ADR 0014-0029 define the current thin-client, server, local-fallback, meeting-processing, transport-evolution, knowledge-projection, bounded-priority, language/timing, provider-specific serving, meeting-ASR, terminology, and agent-runtime direction. ADR 0020 supersedes conflicting diarization details in ADR 0004 and ADR 0015. ADR 0021 keeps HTTP/3 evidence-gated. ADR 0022 owns permission-safe OKF/Postgres/pgvector projections. ADR 0023 owns bounded priority. ADRs 0024-0027 own language, provider ASR, AmberNet preflight, and Tiron Preview behavior. ADR 0028 owns model-independent terminology. ADR 0029 selects vLLM for evidence-gated agent inference after exact GB10 compatibility evidence; Rust remains the orchestration target. The desktop owns capture, deterministic preprocessing, recording, hotkey/UI, local live fallback, optional anonymous speaker evidence, and future transport packaging. The server owns official long-recording STT, authoritative meeting reconciliation, purpose-authorized named identity, team storage, KB compilation, and agent workloads.
+> **ADR precedence:** ADR 0014-0029 define the current thin-client, server, local-fallback, meeting-processing, transport-evolution, knowledge-projection, bounded-priority, language/timing, provider-specific serving, meeting-ASR, terminology, and agent-runtime direction. ADR 0020 supersedes conflicting diarization details in ADR 0004 and ADR 0015. ADR 0021 keeps HTTP/3 evidence-gated. ADR 0022 owns permission-safe OKF/Postgres/pgvector projections. ADR 0023 owns bounded priority. ADRs 0024-0027 own language, provider ASR, AmberNet preflight, and Tiron Preview behavior. ADR 0028 owns model-independent terminology. ADR 0029 selects vLLM for evidence-gated agent inference, with Qwen 3.6 NVFP4 owning rapid automation and Gemma 4 31B IT NVFP4 owning complex orchestration; Rust remains the supervision target. The desktop owns capture, deterministic preprocessing, recording, hotkey/UI, local live fallback, optional anonymous speaker evidence, and future transport packaging. The server owns official long-recording STT, authoritative meeting reconciliation, purpose-authorized named identity, team storage, KB compilation, and agent workloads.
 
 ---
 
@@ -193,8 +193,10 @@ loopback only through a manually selected SSH forward. Fixed-loopback discovery
 and authenticated REST/private-WebSocket admission exist; live ASR, persistent
 supervision, and the managed enterprise edge remain deferred. The accepted performance topology is provider-specific: Cohere batch
 uses a digest-pinned vLLM candidate, Nemotron keeps a Transformers correctness
-reference and evaluates NeMo for server streaming, vLLM serves later
-agent/LLM workloads under ADR 0029, and Rust remains the orchestration target. The vLLM
+reference and evaluates NeMo for server streaming. Under ADR 0029, vLLM serves
+two explicit agent workload routes—Qwen 3.6 NVFP4 for rapid automation and
+Gemma 4 31B IT NVFP4 for complex orchestration—without silent cross-route
+fallback, and Rust remains the supervision target. The vLLM
 adapter/image/loopback launcher and the resident NeMo worker/service/image/
 launcher execute under focused tests but remain unselected until their separate
 frozen GB10 lifecycle and workload gates. Both foreground launchers require an

@@ -9,6 +9,7 @@ from psycopg import Connection
 
 from yap_server.auth.principal import PrincipalKey
 
+from .agent_reasoning_routes import AgentReasoningRoutes, AgentWorkloadClass
 from .governed_knowledge_proposals import GovernedKnowledgeProposals
 from .governed_knowledge_tools import GovernedKnowledgeTools
 from .knowledge_proposals import KnowledgeProposal, ProposalCitation
@@ -17,7 +18,6 @@ from .terminology_ledger import read_job_terminology_snapshot
 from .terminology_snapshot import TerminologySnapshot
 
 
-ReasoningFunction = Callable[[str, threading.Event], str]
 TerminologySnapshotReader = Callable[
     [Connection[object], PrincipalKey, str], TerminologySnapshot
 ]
@@ -44,7 +44,7 @@ class GovernedRagAgent:
         *,
         tools: GovernedKnowledgeTools,
         proposals: GovernedKnowledgeProposals,
-        reason: ReasoningFunction,
+        reasoning_routes: AgentReasoningRoutes,
         maximum_prompt_characters: int,
         maximum_output_characters: int,
         maximum_attempts: int = 2,
@@ -58,7 +58,7 @@ class GovernedRagAgent:
             raise ValueError("RAG output bound is invalid")
         self._tools = tools
         self._proposals = proposals
-        self._reason = reason
+        self._reasoning_routes = reasoning_routes
         self._maximum_prompt_characters = maximum_prompt_characters
         self._maximum_output_characters = maximum_output_characters
         self._maximum_attempts = maximum_attempts
@@ -75,6 +75,7 @@ class GovernedRagAgent:
         purpose: str,
         question: str,
         job_id: str,
+        workload_class: AgentWorkloadClass,
         cancellation: threading.Event,
         expected_generation_sha256: str | None = None,
     ) -> GovernedRagResult:
@@ -122,7 +123,9 @@ class GovernedRagAgent:
                 raise KnowledgeToolCancelled("RAG request was cancelled")
             try:
                 parsed = _reasoned_answer(
-                    self._reason(prompt, cancellation),
+                    self._reasoning_routes.reason(
+                        workload_class, prompt, cancellation
+                    ),
                     self._maximum_output_characters,
                 )
                 _validate_reasoned_answer(parsed, retrieval.items, terminology_exact_forms)
@@ -246,7 +249,6 @@ def _validate_reasoned_answer(
 __all__ = [
     "GovernedRagAgent",
     "GovernedRagResult",
-    "ReasoningFunction",
     "ReasoningRetryableError",
     "TerminologySnapshotReader",
 ]

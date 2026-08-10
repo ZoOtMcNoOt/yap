@@ -10,6 +10,10 @@ from uuid import uuid4
 import psycopg
 
 from yap_server.auth.principal import PrincipalKey
+from yap_server.knowledge.agent_reasoning_routes import (
+    AgentReasoningRoutes,
+    AgentWorkloadClass,
+)
 from yap_server.knowledge.knowledge_agent_authority import KnowledgeAgentAuthority
 from yap_server.knowledge.generation_ledger import (
     activate_complete_generation,
@@ -200,9 +204,15 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                         )
                     )
                 ),
-                reason=lambda _prompt, _cancellation: (
-                    '{"answer":"The reviewed meeting records crash safety.",'
-                    f'"citationConceptIds":["meetings/{job_id}"]}}'
+                reasoning_routes=AgentReasoningRoutes(
+                    rapid_automation=lambda _prompt, _cancellation: (
+                        '{"answer":"The reviewed meeting records crash safety.",'
+                        f'"citationConceptIds":["meetings/{job_id}"]}}'
+                    ),
+                    complex_orchestration=lambda _prompt, _cancellation: (
+                        '{"answer":"The reviewed meeting records crash safety.",'
+                        f'"citationConceptIds":["meetings/{job_id}"]}}'
+                    ),
                 ),
                 maximum_prompt_characters=20_000,
                 maximum_output_characters=2_000,
@@ -223,6 +233,7 @@ class ReviewedMeetingPostgresRouteTests(unittest.TestCase):
                 purpose="knowledge.read",
                 question="crash safe transcript",
                 job_id="reviewed-meeting-job",
+                workload_class=AgentWorkloadClass.COMPLEX_ORCHESTRATION,
                 expected_generation_sha256=generation.generation_sha256,
                 cancellation=threading.Event(),
             )

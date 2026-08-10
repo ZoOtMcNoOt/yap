@@ -17,13 +17,20 @@ class AgentModelAcceptanceTests(unittest.TestCase):
             plan.candidate_ids,
             (
                 "qwen3.6-35b-a3b-nvfp4",
-                "nemotron-3-nano-30b-a3b-nvfp4",
+                "gemma-4-31b-it-nvfp4",
             ),
+        )
+        self.assertEqual(
+            plan.required_routes,
+            {
+                "complex-orchestration": "gemma-4-31b-it-nvfp4",
+                "rapid-automation": "qwen3.6-35b-a3b-nvfp4",
+            },
         )
         self.assertEqual(len(plan.case_ids), 12)
         self.assertEqual(
             plan.permitted_outcomes,
-            ("selected-candidate", "deterministic-no-model"),
+            ("workload-routes-qualified", "deterministic-no-model"),
         )
 
 
