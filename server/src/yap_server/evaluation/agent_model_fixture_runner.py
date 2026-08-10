@@ -384,40 +384,73 @@ def _message(response: dict[str, object]) -> dict[str, object]:
 
 def _tool_definitions() -> list[dict[str, object]]:
     common = {
-        "purpose": {"type": "string", "enum": ["knowledge.read"]},
-        "expected_generation_sha256": {"type": ["string", "null"]},
+        "purpose": {
+            "type": "string",
+            "enum": ["knowledge.read"],
+            "description": "Always use the authorized knowledge.read purpose.",
+        },
+        "expected_generation_sha256": {
+            "type": ["string", "null"],
+            "description": (
+                "Copy the exact generation SHA-256 supplied by the user; omit it "
+                "only when the user did not supply one."
+            ),
+        },
     }
     return [
         _tool(
             "search_knowledge",
-            "Search permission-filtered knowledge.",
+            (
+                "Search permission-filtered text. Use only for a requested text "
+                "search, never for browsing, relationship traversal, or proposals."
+            ),
             {
                 **common,
-                "search_text": {"type": "string"},
+                "search_text": {
+                    "type": "string",
+                    "description": "The user's requested search text.",
+                },
                 "maximum_results": {"type": "integer", "minimum": 1, "maximum": 10},
             },
             ["purpose", "search_text"],
         ),
         _tool(
             "browse_knowledge",
-            "Browse visible knowledge concepts.",
+            (
+                "List visible knowledge concepts or areas. Do not use for text "
+                "search, relationship traversal, or proposals."
+            ),
             common,
             ["purpose"],
         ),
         _tool(
             "traverse_knowledge",
-            "Traverse visible typed relationships.",
+            (
+                "Follow visible typed relationships from one concept. Do not use "
+                "for text search, area browsing, or proposals."
+            ),
             {
                 **common,
-                "start_concept_id": {"type": "string"},
-                "maximum_depth": {"type": "integer", "minimum": 1, "maximum": 4},
+                "start_concept_id": {
+                    "type": "string",
+                    "description": "Exact concept ID where traversal starts.",
+                },
+                "maximum_depth": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 4,
+                    "description": "Exact requested relationship depth.",
+                },
                 "maximum_results": {"type": "integer", "minimum": 1, "maximum": 50},
             },
             ["purpose", "start_concept_id"],
         ),
         _tool(
             "propose_knowledge",
-            "Store a cited noncanonical proposal.",
+            (
+                "Store a cited noncanonical proposal from supplied evidence. Use "
+                "only when the user asks to create or store a proposal."
+            ),
             {
                 **common,
                 "proposal_type": {
