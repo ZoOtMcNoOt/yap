@@ -11,6 +11,19 @@ from yap_server.knowledge.governed_answer_protocol import (
 
 
 class GovernedAnswerProtocolTests(unittest.TestCase):
+    def test_keeps_qwen_schema_lean_and_gemma_tool_descriptive(self) -> None:
+        qwen = governed_answer_request_fields("json-schema")
+        gemma = governed_answer_request_fields("forced-answer-tool")
+
+        qwen_properties = qwen["response_format"]["json_schema"]["schema"][  # type: ignore[index]
+            "properties"
+        ]
+        gemma_properties = gemma["tools"][0]["function"]["parameters"][  # type: ignore[index]
+            "properties"
+        ]
+        self.assertNotIn("description", qwen_properties["answer"])
+        self.assertIn("description", gemma_properties["answer"])
+
     def test_forces_one_native_answer_tool(self) -> None:
         fields = governed_answer_request_fields("forced-answer-tool")
 

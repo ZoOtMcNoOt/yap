@@ -203,11 +203,20 @@ def _candidate_lock(value: dict[str, object]) -> dict[str, str]:
 def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
     if (
         set(value)
-        != {"schemaVersion", "license", "provenance", "sharedSystemPrompt", "cases"}
-        or value["schemaVersion"] != 1
+        != {"schemaVersion", "license", "provenance", "systemPrompts", "cases"}
+        or value["schemaVersion"] != 2
         or value["license"] != "CC0-1.0"
     ):
         raise ValueError("agent workload fixture differs from the contract")
+    prompts = value["systemPrompts"]
+    if (
+        not isinstance(prompts, dict)
+        or set(prompts) != {"rapid-automation", "complex-orchestration"}
+        or not all(
+            isinstance(prompt, str) and bool(prompt) for prompt in prompts.values()
+        )
+    ):
+        raise ValueError("agent workload prompts are invalid")
     cases = value["cases"]
     if not isinstance(cases, list):
         raise ValueError("agent workload cases are invalid")
@@ -360,9 +369,11 @@ def _route_evidence(
             "requiredMultiStepCaseId": "complex-governed-orchestration",
         },
     }
-    if value != expected or {
-        route: policy["candidateId"] for route, policy in expected.items()
-    } != required_routes:
+    if (
+        value != expected
+        or {route: policy["candidateId"] for route, policy in expected.items()}
+        != required_routes
+    ):
         raise ValueError("agent route evidence policy differs from the contract")
     return dict(value)
 

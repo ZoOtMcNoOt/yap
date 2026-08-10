@@ -69,10 +69,15 @@ def run_agent_model_fixtures(
         expected_sha256=acceptance.fixture_sha256,
         containment_root=repository_root,
     )
-    system_prompt = fixture["sharedSystemPrompt"]
+    system_prompts = fixture["systemPrompts"]
     cases = fixture["cases"]
-    if not isinstance(system_prompt, str) or not isinstance(cases, list):
+    if (
+        not isinstance(system_prompts, dict)
+        or not isinstance(system_prompts.get(workload_class), str)
+        or not isinstance(cases, list)
+    ):
         raise ValueError("agent workload fixture is invalid")
+    system_prompt = system_prompts[workload_class]
     if not 1 <= maximum_output_tokens <= int(
         acceptance.runtime_tracks["maximumOutputTokens"]
     ):
