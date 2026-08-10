@@ -233,10 +233,12 @@ class OwnedAgentVllmRuntime:
                 "blobIdentity": resolved.name,
                 "size": size,
             }
-            if size <= 2_000_000:
-                record["sha256"] = hashlib.sha256(resolved.read_bytes()).hexdigest()
-            elif not _SHA256.fullmatch(resolved.name):
-                raise ValueError("large agent model artifact lacks a SHA-256 identity")
+            if path.name.endswith(".safetensors"):
+                if not _SHA256.fullmatch(resolved.name):
+                    raise ValueError("model weight lacks a SHA-256 blob identity")
+                record["sha256"] = resolved.name
+            else:
+                record["sha256"] = _file_sha256(resolved)
             records.append(record)
             required.discard(path.name)
         if required or not any(record["path"].endswith(".safetensors") for record in records):
@@ -376,6 +378,14 @@ def _single_inspection(completed: subprocess.CompletedProcess[str]) -> dict[str,
     if not isinstance(value, list) or len(value) != 1 or not isinstance(value[0], dict):
         raise ValueError("Docker inspection is ambiguous")
     return value[0]
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _assert_listener_absent(port: int) -> None:
