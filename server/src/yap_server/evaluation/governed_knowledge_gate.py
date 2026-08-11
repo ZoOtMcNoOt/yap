@@ -32,7 +32,7 @@ from yap_server.evaluation.owned_postgres_knowledge_runtime import (
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_LOCAL_OFFLINE_DESKTOP_BASE_HEAD = "10618e9d292e6810d6fee7defd7adc4902ecb2ed"
+_LOCAL_OFFLINE_DESKTOP_BASE_HEAD = "4f194c2d0a9fde619c7d9793ec19fdd1feffc203"
 _EXPECTED_DATABASE_MODULES = (
     "tests.knowledge.test_postgres_generation_ledger",
     "tests.knowledge.test_postgres_permission_safe_retrieval",
