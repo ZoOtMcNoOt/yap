@@ -185,7 +185,7 @@ run_private_container_with_loopback_proxy \
   --log-opt max-file=3 \
   --stop-timeout 10 \
   --tmpfs "/tmp:rw,nosuid,nodev,exec,size=$profile_tmpfs_bytes,mode=1777" \
-  --device nvidia.com/gpu=all \
+  --gpus all \
   --env HF_HUB_OFFLINE=1 \
   --env TRANSFORMERS_OFFLINE=1 \
   --env HF_HUB_DISABLE_TELEMETRY=1 \

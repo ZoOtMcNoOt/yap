@@ -60,7 +60,7 @@ class AgentVllmServerContractTests(unittest.TestCase):
             '--cpus "$profile_cpu_count"',
             '--pids-limit "$profile_pids_limit"',
             '--shm-size "$profile_shm_bytes"',
-            "nvidia.com/gpu=all",
+            "--gpus all",
             "--read-only",
             "--cap-drop ALL",
             "no-new-privileges",

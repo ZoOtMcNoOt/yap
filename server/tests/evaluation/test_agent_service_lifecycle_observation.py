@@ -79,9 +79,7 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
                         elif mutation == "snapshot-mount":
                             changed["Mounts"][0]["Source"] = str(snapshot)
                         elif mutation == "gpu":
-                            changed["HostConfig"]["DeviceRequests"][0][
-                                "DeviceIDs"
-                            ] = ["nvidia.com/gpu=0"]
+                            changed["HostConfig"]["DeviceRequests"][0]["Count"] = 1
                         else:
                             changed["Mounts"][0]["RW"] = True
                         with self.assertRaises((RuntimeError, ValueError)):
@@ -177,11 +175,11 @@ def _inspection(
             ],
             "DeviceRequests": [
                 {
-                    "Driver": "cdi",
-                    "Count": 0,
-                    "DeviceIDs": ["nvidia.com/gpu=all"],
-                    "Capabilities": None,
-                    "Options": None,
+                    "Driver": "",
+                    "Count": -1,
+                    "DeviceIDs": None,
+                    "Capabilities": [["gpu"]],
+                    "Options": {},
                 }
             ],
             "Tmpfs": {

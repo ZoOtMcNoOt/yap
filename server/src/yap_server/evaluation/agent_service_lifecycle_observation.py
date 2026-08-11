@@ -204,11 +204,11 @@ def _exact_host_policy(
         and requests
         == [
             {
-                "Driver": "cdi",
-                "Count": 0,
-                "DeviceIDs": ["nvidia.com/gpu=all"],
-                "Capabilities": None,
-                "Options": None,
+                "Driver": "",
+                "Count": -1,
+                "DeviceIDs": None,
+                "Capabilities": [["gpu"]],
+                "Options": {},
             }
         ]
         and isinstance(tmpfs, dict)
