@@ -139,7 +139,7 @@ hosted checks at exact head `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`
 and merged the closure as `599a0d0b`. Phase 8 is closed. Phase 9 passed its
 complete gate and merged through hosted-green PR #152 as `ae81ff06`.
 
-## Active checkpoint: governed-knowledge ownership and maintainability
+## Merged checkpoint: governed-knowledge ownership and maintainability
 
 Merged Phase 9 contains the pinned Google OKF compiler, immutable
 model-independent terminology snapshots, atomic Postgres/pgvector generations,
@@ -187,6 +187,25 @@ supervision, simultaneous model residency, sustained mixed-user capacity/SLOs,
 external serving, observability, enterprise networking, and deployment remain
 Phase 10 or IT handoffs.
 
+## Active Phase 10 slice: supervised provider lifecycle
+
+The active [Phase 10 plan](../plans/active/2026-08-11-phase-10-supervised-provider-services.md)
+starts with one hardware-independent lifecycle owner rather than a model or TPS
+claim. The unmerged Slice 10.1 candidate places one Rust supervisor inside a
+systemd-owned cgroup, supervises exactly one existing foreground launcher,
+requires numeric-loopback health plus exact served-model identity, bounds child
+restart and stop/reap, and publishes only private typed state counters. The
+launcher keeps container/proxy/image/teardown authority; Rust never calls
+Docker and never substitutes another route.
+
+Local contracts are green. The dedicated Linux lifecycle lane, exact-head PR,
+and merge remain open. Slice 10.2 may bind the already qualified Qwen rapid and
+Gemma complex profiles only after Slice 10.1 merges. Authenticated admission,
+simultaneous residency, sustained mixed-owner route-specific capacity and
+p95/p99 SLO evidence, observability, rollback, external serving, and IT-owned
+deployment remain later slices or handoffs. No generic TPS or production
+promotion follows from the lifecycle candidate.
+
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 
 The
@@ -225,7 +244,7 @@ native provider remain IT-authorized follow-ups rather than Phase 8 work.
 | 7 | Identity and access | Provider-neutral OIDC validation with Entra policy, a native token-provider seam whose production adapter requires separate approval, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants and authorization/revocation/audit records that are implemented but reachable only from tests, and authenticated bounded private live admission without a live ASR or external edge claim. |
 | 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron historical whole-meeting reproduction, one integrated source-time epoch route with bounded request-scoped speaker reconciliation for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/session/window pressure, and later purpose-authorized naming. A failed Tiron gate leaves the sole server meeting route unpromoted. |
 | 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and vLLM-backed compatible reasoning/tool-output models. |
-| 10 | Enterprise and release | Yap-owned Rust orchestration integration, authenticated external batch and WSS/live transport, supervised provider-specific ASR runtimes plus vLLM agent/LLM services, bounded multi-owner mixed-load capacity/SLO evidence, and observability instrumentation; plus IT-managed production hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
+| 10 | Enterprise and release | The active [supervised-provider plan](../plans/active/2026-08-11-phase-10-supervised-provider-services.md) starts with one hardware-independent Rust-owned provider lifecycle under a systemd cgroup, then layers qualified agent service profiles, authenticated integration, mixed-owner capacity/SLO evidence, observability, IT-managed hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
 
 Accepted ADRs remain requirements even when no premature implementation exists.
 Do not treat an unchecked historical plan box as current backlog.

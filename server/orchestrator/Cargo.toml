@@ -1,0 +1,32 @@
+[package]
+name = "yap-server-orchestrator"
+version = "0.1.0"
+description = "Rust-owned Yap provider service lifecycle."
+edition = "2021"
+rust-version = "1.96"
+
+[features]
+test-fixture = []
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[[bin]]
+name = "yap-provider-supervisor"
+path = "src/main.rs"
+
+[[bin]]
+name = "yap-supervised-service-fixture"
+path = "src/bin/yap-supervised-service-fixture.rs"
+test = false
+required-features = ["test-fixture"]
+
+[[test]]
+name = "supervised_service"
+path = "tests/supervised_service.rs"
+required-features = ["test-fixture"]

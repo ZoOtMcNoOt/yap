@@ -154,11 +154,12 @@ net additive; no LOC-reduction claim is made for those correctness repairs.
 
 ### Complete threshold disposition
 
-At the current remediation tree, the inventory contains 477 in-scope tracked
-source, text, policy, and provenance surfaces at or above 250 physical lines: 252 at or
-above 350 and 225 from 250 through 349. The three reviews deep-traced them
+At the current Phase 10 Slice 10.1 candidate tree, the inventory contains 480
+in-scope tracked source, text, policy, and provenance surfaces at or above 250
+physical lines: 253 at or above 350 and 227 from 250 through 349. The completed
+checkpoint reviews deep-traced the inherited surfaces
 through the same workflow owners and found no additional mixed authority. The
-mutually exclusive rows below classify every one of the 252
+mutually exclusive rows below classify every one of the 253
 decomposition-triggering surfaces. The exact path/line/disposition read-back is
 recorded in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md); generated
 OpenAPI, the package lock, dependency-inventory JSON, media, model artifacts,
@@ -177,6 +178,7 @@ decisions.
 | `docs/plans/{archived,completed}/**` and `docs/research/**` | 11 | Retain as immutable historical delivery/evidence records. Rewriting or splitting them would damage provenance; current truth lives in current/normative documents. |
 | `infra/**` | 5 | Retain each process-group, supervisor, loopback proxy, resident lifecycle, and setup owner because containment must remain end to end within its script/process boundary. |
 | `server/README.md` | 1 | Retain the server runbook as the single operator navigation surface; executable gates and source modules remain authoritative. |
+| `server/orchestrator/**` | 1 | Retain the hardware-independent service integration suite as one end-to-end lifecycle contract: it deliberately composes process launch, loopback readiness, bounded restart/backoff, shutdown/reap, private state, and the feature-gated fixture while production concerns remain split across functional Rust modules. |
 | `server/src/yap_server/auth/**` | 3 | Retain identity repository, token validation, and OIDC metadata as separate trust-boundary owners. The obsolete identity migration was deleted; no caller-chosen tenant/subject path remains. |
 | `server/src/yap_server/evaluation/**` | 31 | Retain each named acceptance, corpus/review, scorer, runtime observation, lifecycle, qualification, and aggregate-decision owner. The vLLM lifecycle was repaired rather than split across containment owners; duplicate product-tool schemas and misleading evidence publication ownership were removed; bounded final decoding remains inside the conversation driver. |
 | `server/src/yap_server/jobs/**` | 5 | Retain completion/store/runtime plus the single locked service aggregate. The 1,401-line service owns one `RLock`; pure policies may move only when they do not create a second job-state authority. |

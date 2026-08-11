@@ -2,7 +2,8 @@
 
 This document describes the merged executable Phase 1–9 system after the
 meeting-transcription ownership, source-time reconciliation, and explicit
-production-qualification decision. Phase 7
+production-qualification decision. The active Phase 10 Slice 10.1 candidate is
+called out separately below and is not part of that merged baseline. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -901,6 +902,20 @@ passed every required CI and CodeQL lane and merged through PR #153 as
 `ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`. Production service integration
 remains Phase 10.
 
+The unmerged Phase 10 Slice 10.1 candidate adds one
+`yap-provider-supervisor` Rust process per explicit workload service. systemd
+owns the outer cgroup and abnormal-supervisor restart; Rust owns one canonical
+foreground launcher, numeric-loopback `/health`, exact single-model
+`/v1/models` readiness, bounded child restart/backoff, terminal reap, and a
+boot-scoped owner-private lifecycle snapshot. The existing launcher remains
+the sole container, private proxy, immutable image/model, and teardown owner.
+Neither layer selects another route on failure. The candidate is
+hardware-independent and locally verified; its dedicated Linux lifecycle lane,
+exact-head PR, and merge remain pending. It does not configure or enable Qwen,
+Gemma, Cohere, Nemotron, or Tiron; connect an application route; or prove
+simultaneous residency, throughput, p95/p99, fairness, capacity, observability,
+or production deployment.
+
 At remediation anchor `c332700597eac1cc6af3f68afb3e75fce0b6ec77`, each
 exported knowledge query/traversal/proposal owns the transaction that holds the
 tenant shared lock from active-generation authorization through response or
@@ -925,6 +940,7 @@ are checkpoint repairs, not production serving or a new model claim.
 | Server job/chunk/result state | Schema 6 retains bounded ASR/alignment/result-publication attempts. Idempotency survives restart; interrupted processing and retry admission remain explicit without rewriting completed result authority. |
 | Server identity repository | The provider-neutral repository owns principal, access-revocation, purpose-control, and redacted audit records. The SQLite adapter persists focused development/restart evidence; production topology, encryption, backup/deletion, retention/export, and administrative access remain external approvals. |
 | Knowledge generation ledger | Postgres owns staged and active immutable knowledge generations, permission and relationship projections, terminology snapshots, reviewed capture bindings, proposals, and redacted audit identities. A cache is not a permission authority. Phase 10 owns production backup, retention, encryption, monitoring, and operational topology. |
+| Boot-scoped provider lifecycle snapshot | One Rust supervisor atomically publishes bounded state/counters for its one launcher under the systemd-created private runtime directory. It is an operational projection, not durable application truth, provider quality evidence, or a capacity metric. |
 | Deletion intent/quarantine | Destructive work revalidates identity and resumes without following replacement paths. |
 
 ## Trust boundaries and limits

@@ -540,6 +540,29 @@ SLO, capacity, or generic TPS claim. Final hosted head
 CodeQL lane and merged through PR #153 as
 `ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`.
 
+## Phase 10 supervised-provider lifecycle candidate
+
+`orchestrator/` now owns the hardware-independent first production-lifecycle
+layer defined by ADR 0030. One `yap-provider-supervisor` process accepts one
+explicit workload route, one numeric-loopback endpoint, one exact served-model
+identity, one private state destination, and one absolute canonical foreground
+launcher. It never selects a fallback route or calls Docker. The existing
+launcher remains the sole container/private-proxy/image/teardown owner.
+
+The supervisor publishes typed lifecycle state, requires `/health` plus an
+exact single-model `/v1/models` response, bounds child restarts to the fixed
+three-in-60-second policy, and does not report a clean stop until its launcher
+is reaped. The test-only provider fixture is feature-gated out of default
+builds. A rendered hardened systemd template owns the outer cgroup and only
+restarts abnormal supervisor crashes; it does not duplicate Rust's child
+restart policy.
+
+This slice does not bind the qualified Qwen/Gemma production launch profiles,
+enable a service instance, connect an application route, prove simultaneous
+residency, or publish capacity/latency SLO evidence. Build, installation,
+configuration, state, and verification details are in the
+[provider supervisor runbook](../docs/runbooks/provider-supervisor-service.md).
+
 ## Local checks
 
 ```powershell

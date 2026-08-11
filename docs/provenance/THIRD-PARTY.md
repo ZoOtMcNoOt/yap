@@ -56,6 +56,12 @@ that approval.
 - Rust crates are declared in `desktop/src-tauri/Cargo.toml` and frozen by
   `desktop/src-tauri/Cargo.lock`; the normal Windows dependency graph must
   exactly match the same inventory, and bundled SQLite notice text is shipped.
+- The Phase 10 Rust provider supervisor has a separate minimal graph declared
+  in `server/orchestrator/Cargo.toml` and checksum-frozen by its `Cargo.lock`.
+  Its locked registry metadata declares only permissive MIT, Apache-2.0,
+  Unicode-3.0, Unlicense, and LLVM-exception alternatives. It is not part of
+  the packaged desktop inventory. A distributed server artifact still requires
+  an exact SBOM and notice bundle at the later release/deployment gate.
 - Desktop model/runtime artifacts are pinned separately in
   `desktop/model-artifacts.lock.json`. Silero remains an explicit non-bundled
   install. The selected AmberNet 1.12.0 acoustic-language detector is a

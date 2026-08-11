@@ -82,6 +82,7 @@ export const workflowPaths = Object.freeze([
 
 export const exactCacheKeys = Object.freeze({
   cargo: "cargo-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('desktop/src-tauri/Cargo.lock') }}",
+  serverOrchestratorCargo: "cargo-server-orchestrator-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('server/orchestrator/Cargo.lock') }}",
   playwright: "playwright-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('desktop/pnpm-lock.yaml') }}",
   pnpm: "pnpm-store-v11-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('desktop/pnpm-lock.yaml') }}",
 });
@@ -91,6 +92,7 @@ export const expectedCacheFamilies = Object.freeze({
     frontend: Object.freeze(["playwright", "pnpm"]),
     "native-wdio": Object.freeze(["cargo", "pnpm"]),
     rust: Object.freeze(["cargo"]),
+    "server-orchestrator": Object.freeze(["serverOrchestratorCargo"]),
   }),
   ".github/workflows/nsis-smoke.yml": Object.freeze({
     "nsis-bundle-smoke": Object.freeze(["cargo", "pnpm"]),
