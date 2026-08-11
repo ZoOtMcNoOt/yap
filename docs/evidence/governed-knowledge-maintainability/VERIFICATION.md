@@ -372,6 +372,9 @@ outside Git and hosted artifacts.
 
 ## Hosted closure
 
-Pending exact-head PR checks and merge. Production supervision, simultaneous
-model residency, sustained mixed-owner capacity/SLOs, enterprise networking,
-and deployment remain Phase 10 or explicit IT/security handoffs.
+Final exact head `84c22ec9935af824ca1b47d046e18003ec2c7883` passed frontend,
+Rust, server, mock OIDC, required hardware-independent native WDIO, and every
+CodeQL lane. PR #153 merged it as
+`ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`. Production supervision,
+simultaneous model residency, sustained mixed-owner capacity/SLOs, enterprise
+networking, and deployment remain Phase 10 or explicit IT/security handoffs.

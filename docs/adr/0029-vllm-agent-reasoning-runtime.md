@@ -112,7 +112,10 @@ and passed semantic admission. Separate aggregate head `22c3f369...` then
 returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
 `8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`,
 including the exact portable/Ruff/Postgres/restart/teardown composition. This
-does not promote a production service or capacity/SLO result.
+does not promote a production service or capacity/SLO result. Final hosted
+head `84c22ec9935af824ca1b47d046e18003ec2c7883` passed every required CI and
+CodeQL lane and merged through PR #153 as
+`ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`.
 
 Yap's server boundary owns authentication, authorization, retrieval, tool
 policy, request admission, cancellation intent, audit, and publication. The

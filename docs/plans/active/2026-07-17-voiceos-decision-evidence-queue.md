@@ -890,7 +890,7 @@ unconfigured.
   knowledge gate. Exact hosted-green head `fa26caaf...` merged through PR #152
   as `ae81ff06...`; this is not production service promotion. The separate
   ownership and maintainability checkpoint gate passed at `22c3f369...`;
-  hosted review and merge remain before Phase 10.
+  final hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`.
 
 ### Phase 10 — Production services, security, and enterprise handoff
 

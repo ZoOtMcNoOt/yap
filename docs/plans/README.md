@@ -15,12 +15,12 @@ Current work:
 - [CI actions and cache hardening](active/2026-07-13-ci-actions-cache-hardening.md)
 - [VoiceOS/Yap decision, evidence, and future-work queue](active/2026-07-17-voiceos-decision-evidence-queue.md)
 - [Integrated MVP validation and delivery control](active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
-- [Governed knowledge ownership and maintainability review](active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
 
 Queued work (activate only in roadmap order): none.
 
 Recently completed:
 
+- [Governed knowledge ownership and maintainability review](completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
 - [Meeting transcription production qualification](completed/2026-08-03-meeting-transcription-production-qualification.md)
 - [Meeting transcription ownership and maintainability review](completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
 - [Governed knowledge and agents](completed/2026-08-09-governed-knowledge-and-agents.md)

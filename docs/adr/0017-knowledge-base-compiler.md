@@ -339,8 +339,9 @@ and generation identity executable rather than documentary: reviewed meeting
 sources are exact-compared to stored immutable bytes and owner-only policy,
 curated review is bound to an authenticated fixed role and a derived canonical
 manifest, and staging/activation recompute the complete compiled/persisted
-generation before it can become active. The checkpoint remains unmerged until
-its own exact-head review and gate close.
+generation before it can become active. The checkpoint remained unmerged until
+its own exact-head review and gate closed. That closure is now complete: final
+hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`.
 
 ## Open questions
 

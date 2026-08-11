@@ -188,8 +188,8 @@ never compile permissions, grant access, or promote their own output.
   Exact head `fa26caaf7e3ea4e20f27b390355dff80bee2464f` passed frontend,
   server, Rust, required hardware-independent native WDIO, mock OIDC, and all
   CodeQL lanes before PR #152 merged as `ae81ff067c73a64528eecc14403765562726f2fe`.
-- [x] Hand the separate post-Phase-9 checkpoint to the active
-  [governed-knowledge ownership and maintainability review](../active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
+- [x] Hand the separate post-Phase-9 checkpoint to the now-completed
+  [governed-knowledge ownership and maintainability review](2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
   before Phase 10. That checkpoint is a separate reviewed change and does not
   keep this delivery phase open.
 

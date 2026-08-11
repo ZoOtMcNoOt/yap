@@ -1,6 +1,8 @@
 # Governed knowledge ownership and maintainability review
 
-**Status:** Active on `feat/governed-knowledge-maintainability`.
+**Status:** Completed and merged through
+[PR #153](https://github.com/mcnatg1/yap/pull/153) as
+`ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`.
 
 **Base:** merged governed-knowledge delivery
 `ae81ff067c73a64528eecc14403765562726f2fe` from
@@ -178,8 +180,11 @@ knowledge.
   tests across four modules, real restart/recovered retrieval/stale-generation
   rejection/successor retrieval, the unchanged desktop dependency boundary,
   all six teardown predicates, and zero owner/name residue.
-- [ ] Open one focused PR, require green hosted checks on its exact head, and
-  merge before Phase 10 begins.
+- [x] Open one focused PR, require green hosted checks on exact head
+  `84c22ec9935af824ca1b47d046e18003ec2c7883`, and merge through PR #153 as
+  `ca151b1b45be3b98e4c56c6ea2b89446eeaa8814` before Phase 10 begins. The final
+  hosted rollup passed frontend, Rust, server, mock OIDC, required native WDIO,
+  and every CodeQL lane.
 
 ## Explicit exclusions and handoffs
 
