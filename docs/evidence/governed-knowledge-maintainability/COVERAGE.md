@@ -135,7 +135,7 @@ in isolation:
 | Knowledge/terminology/retrieval | Complete across three lenses | Generation, permissions, retrieval, terminology, proposal, SQL lifecycle | KAP-01 through KAP-07 remediations implemented; 17-test real-Postgres focus, restart diagnostic, independent re-review, and exact aggregate gate passed |
 | Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-11 and ARCH-03 remediations implemented; the self-protecting admission owner admitted the fresh exact-head Qwen/Gemma tree, and aggregate head `22c3f369...` passed; no fallback defect found |
 | Packaging/CI/gates/provenance | Complete across three lenses | Locks, licenses, receipt boundaries, exact-head hosted workflow | No P0-P2; private/public evidence separation remains sound |
-| Docs/ADRs/plans/runbooks/status | Complete across three lenses | Current/normative taxonomy and ownership navigation | Ownership/current docs reconciled, mixed test owner split, independent re-review, and gate reconciliation passed; hosted merge remains |
+| Docs/ADRs/plans/runbooks/status | Complete across three lenses | Current/normative taxonomy and ownership navigation | Ownership/current docs reconciled, mixed test owner split, independent re-review, gate reconciliation passed, and hosted head `84c22ec9...` merged through PR #153 |
 
 ## Deletion and consolidation result
 

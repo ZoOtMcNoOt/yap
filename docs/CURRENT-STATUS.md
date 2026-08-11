@@ -1,10 +1,13 @@
 # Current Status
 
-**As of:** 2026-08-10
+**As of:** 2026-08-11
 
-**Most recent merged closure:** [PR #152](https://github.com/mcnatg1/yap/pull/152)
-merged Phase 9 as `ae81ff067c73a64528eecc14403765562726f2fe` from exact
-hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`. PR #150
+**Most recent merged closure:** [PR #153](https://github.com/mcnatg1/yap/pull/153)
+merged the post-Phase-9 maintainability checkpoint as
+`ca151b1b45be3b98e4c56c6ea2b89446eeaa8814` from exact hosted-green head
+`84c22ec9935af824ca1b47d046e18003ec2c7883`. PR #152 previously merged
+Phase 9 as `ae81ff067c73a64528eecc14403765562726f2fe` from exact hosted-green head
+`fa26caaf7e3ea4e20f27b390355dff80bee2464f`. PR #150
 previously merged the Phase 8 qualification as `599a0d0b` from exact
 hosted-green head `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`. PR #144
 previously merged the
@@ -15,24 +18,13 @@ CodeQL check for [PR #142](https://github.com/mcnatg1/yap/pull/142), which
 merged the Phase 8 Tiron meeting-transcription Preview as
 `4201c5e7f1674dc0b15e76241bc308c49a5719bb`.
 
-**Most recent merged checkpoint candidate:** exact patched head
-`393710999b53a4bd1b00639e30c0fec88b152530` passed the canonical native
-build, receipt-bound request-time image and server preflight, real
-desktop-to-GB10 History and cancellation lifecycle with independent teardown,
-its single complete 18-child checkpoint matrix, independent candidate-receipt
-validation, and all required CI and CodeQL jobs. Historical documentation-only
-successor `e22368fcf90410228c6be8da3d69cd177e0b106c` exposed high-severity
-`GHSA-mwp4-54f8-5fhr` in the development-only WDIO/Puppeteer chain and did not
-close; exact `ip-address` 10.3.1 now patches that advisory without an exception.
-The functionally named
-[meeting-transcription ownership and maintainability review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-completed and merged without adding Phase 9 behavior or requalifying the model.
-Focused implementation and
-multi-lens review keep durable meeting-result decoding independent from the active
-worker profile, enforce current schemas and result-companion policy, remove
-evaluation code from the request-time Tiron image, serialize publication with
-cancellation, bound History detail work, and defer full speaker-companion
-verification until the exact result is selected.
+**Most recent merged checkpoint candidate:** exact aggregate head
+`22c3f3698a6b5c5ff592e74f3a0f0e144778c9c5` passed the governed-knowledge
+maintainability gate after exact private route qualification and semantic
+admission. Final hosted head `84c22ec9935af824ca1b47d046e18003ec2c7883`
+passed frontend, Rust, server, mock OIDC, required native WDIO, and every
+CodeQL lane before PR #153 merged it as
+`ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`.
 
 The historical Phase 8 Preview qualification remains bound to application/runtime head
 `1c69b61cf2902c9cfda50c6158168890974f969f`, immutable ARM64 image
@@ -71,7 +63,7 @@ and exact teardown. Exact hosted-green head
 `fa26caaf7e3ea4e20f27b390355dff80bee2464f` then merged through PR #152 as
 `ae81ff067c73a64528eecc14403765562726f2fe`. Raw outputs, measurements,
 credentials, database content, and private paths remain private. The separate
-post-Phase-9 maintainability checkpoint is active. A prior private run at
+post-Phase-9 maintainability checkpoint is merged and closed. A prior private run at
 exact head `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` completed both owned
 lifecycles and teardown but returned `deterministic-no-model`; public-safe
 evidence SHA-256
@@ -106,8 +98,11 @@ It ran 152 portable tests across 25 modules, Ruff, and 17 zero-skip Postgres
 tests across four modules on locked PostgreSQL 17 / pgvector 0.8.6 ARM64;
 proved real restart/recovered retrieval/stale-generation rejection/successor
 retrieval; preserved the unchanged desktop dependency boundary; and proved all
-six teardown predicates with zero owned residue. Hosted PR checks and merge
-remain open. These frozen evaluation bounds are not a production p95/p99 SLO,
+six teardown predicates with zero owned residue. Final hosted head
+`84c22ec9935af824ca1b47d046e18003ec2c7883` passed frontend, Rust, server,
+mock OIDC, required native WDIO, and every CodeQL lane; PR #153 merged it as
+`ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`. These frozen evaluation bounds
+are not a production p95/p99 SLO,
 generic TPS claim, production agent service, simultaneous-residency result, or
 sustained mixed-route capacity proof.
 
@@ -137,7 +132,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 8: meeting evidence | Closed as unadvertised baseline | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron for the sole server meeting route. PR #144 merged exact 30-second source-time epochs, request-scoped ECAPA reconciliation, canonical `speaker-1` through `speaker-64` identities, typed capacity records, strict `Unknown`, and one-speaker plain-text History projection. Exact qualification candidate `3ddb930...` recorded `unadvertised-baseline` because the required private holdout was unconfigured. Tiron remains explicit Preview and absent from the default catalog; Phase 8 adds no fallback pipeline. |
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
-| Post-Phase-9 maintainability checkpoint | Active; gate passed | The [governed-knowledge ownership and maintainability review](plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) has resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Hosted PR checks and merge are pending. No Phase 10 behavior is added. |
+| Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
 | Phase 10 | Planned | Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
@@ -922,8 +917,8 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Obtain green hosted checks and merge the gate-passed post-Phase-9
-   architecture and maintainability checkpoint before Phase 10.
+1. Begin Phase 10 from its smallest supervised-service slice, preserving the
+   merged local/offline controls and explicit IT/security handoffs.
 2. Keep Tiron absent from the default catalog at the recorded
    `unadvertised-baseline`; the source-time implementation remains the sole
    server meeting path.

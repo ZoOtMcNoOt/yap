@@ -480,7 +480,7 @@ merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
 These facts do not promote a production agent service, simultaneous model
 residency, or sustained mixed-route capacity.
 
-The active maintainability checkpoint must not reuse that historical route
+The completed maintainability checkpoint did not reuse that historical route
 tree. Reviewed executable head
 `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` freezes acceptance schema 4,
 exactly two evaluation-only final structural-decoding attempts, one exact
@@ -535,7 +535,10 @@ real restart/recovered-retrieval/stale-generation/successor path. The receipt
 records the unchanged desktop dependency boundary and all six teardown
 predicates; independent name/owner read-back found zero container, network, or
 volume residue. This remains checkpoint evidence, not a production p95/p99
-SLO, capacity, or generic TPS claim. Hosted review and merge remain open.
+SLO, capacity, or generic TPS claim. Final hosted head
+`84c22ec9935af824ca1b47d046e18003ec2c7883` passed every required CI and
+CodeQL lane and merged through PR #153 as
+`ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`.
 
 ## Local checks
 

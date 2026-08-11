@@ -860,7 +860,7 @@ also semantically admitted the exact hash-locked private Qwen/Gemma
 qualification tree without copying raw model output or measurements into Git.
 Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
 merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
-The separate post-Phase-9 maintainability checkpoint is active. Exact
+The separate post-Phase-9 maintainability checkpoint is merged and closed. Exact
 `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` completed both private runtime
 lifecycles and exact teardown but is terminal rejected evidence with outcome
 `deterministic-no-model` and public-safe evidence SHA-256
@@ -896,7 +896,10 @@ evidence SHA-256
 The gate composed the 25-module/152-test portable contract, Ruff, the
 four-module/17-test zero-skip database contract, real Postgres restart/retrieval/stale/
 successor proof, unchanged desktop boundary, and exact teardown with zero
-residue. Production service integration remains Phase 10.
+residue. Final hosted head `84c22ec9935af824ca1b47d046e18003ec2c7883`
+passed every required CI and CodeQL lane and merged through PR #153 as
+`ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`. Production service integration
+remains Phase 10.
 
 At remediation anchor `c332700597eac1cc6af3f68afb3e75fce0b6ec77`, each
 exported knowledge query/traversal/proposal owns the transaction that holds the

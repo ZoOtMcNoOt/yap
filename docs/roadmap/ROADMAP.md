@@ -155,8 +155,8 @@ Python/Ruff/Postgres/pgvector/restart/private-route matrix with outcome
 `4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
 Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
 merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
-The active [post-Phase-9 checkpoint](../plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
-reviews executable ownership and maintainability before Phase 10. Reviewed
+The completed [post-Phase-9 checkpoint](../plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
+reviewed executable ownership and maintainability before Phase 10. Reviewed
 executable head `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` resolves the
 accepted findings, freezes two evaluation-only final structural-decoding
 attempts without retrying or replaying tools, binds one synthetic cited proposal
@@ -177,7 +177,9 @@ and passed hash-bound semantic admission. Exact aggregate head `22c3f369...`
 then returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
 `8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`,
 152 portable tests, Ruff, 17 zero-skip database tests, real restart/recovery,
-and exact teardown with zero residue. Hosted review and merge remain open. The
+and exact teardown with zero residue. Final hosted head `84c22ec9...` passed
+all required CI and CodeQL lanes and merged through PR #153 as
+`ca151b1b...`. The
 split workload bounds are not production SLO/capacity or generic TPS evidence. Postgres
 remains the only current knowledge projection; Redis, object storage, and
 Neo4j require a measured need and a later authorized gate. Persistent

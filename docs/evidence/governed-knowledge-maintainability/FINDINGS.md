@@ -24,7 +24,12 @@ justification, deferred to a named phase, or blocked by an external owner.
 
 ## Discovery register
 
-| ID | Severity | Lens | Owner/workflow | Evidence and failure scenario | Disposition | Verification |
+The disposition column is frozen at exact aggregate gate head `22c3f369...`,
+when hosted merge was still pending. Final hosted head `84c22ec9...` later
+passed every required CI and CodeQL lane and merged through PR #153 as
+`ca151b1b...`.
+
+| ID | Severity | Lens | Owner/workflow | Evidence and failure scenario | Disposition at gate freeze | Verification |
 | --- | --- | --- | --- | --- | --- | --- |
 | KAP-01 | P1 | Knowledge authority/persistence | Active generation and permission-safe queries | `postgres_permission_view.py` read the active generation before later retrieval statements without holding the tenant advisory lock shared against activation/pruning. The first repair still depended on callers opening a transaction, so autocommit released the lock immediately. | Implemented; focused real-Postgres proof and independent re-review green; aggregate gate passed at `22c3f369...`; hosted merge pending | Every exported retrieval/traversal/proposal operation now owns one transaction from shared-lock authorization through response/write completion. A two-connection autocommit barrier proves activation/pruning waits and the next query sees G2. |
 | KAP-02 | P1 | Knowledge authority/persistence | Authoritative result -> reviewed capture | The review omitted job/title identity, and append accepted those values again while returning an unobserved descriptor after `ON CONFLICT DO NOTHING`. Durable reads also trusted stored hash labels without rehashing payload/normalized bytes. | Implemented; focused real-Postgres proof and independent re-review green; aggregate gate passed at `22c3f369...`; hosted merge pending | Review identity now binds job/title/result; append derives the owner-scoped authoritative job/result, uses `RETURNING`, and admits only exact stored retry. Every retry/read recomputes result, normalized-source, and capture identities. Cross-owner/replayed/tampered/restart-read regressions pass in the required database lane. |
