@@ -43,8 +43,9 @@ project environment and Python 3.12.
   checkpoint claim.
 - From `server`, with `PYTHONPATH=src`, the focused agent acceptance, fixture,
   qualification, scoring, route-artifact, pressure, vLLM metric/runtime,
-  governed-answer, and reasoning-client modules ran 60 tests: 59 passed and
-  one Windows POSIX-permission test was declared inapplicable. This verifies
+  reasoning-route, governed-answer, and reasoning-client modules ran 60 tests:
+  59 passed and one Windows POSIX-permission test was declared inapplicable.
+  This verifies
   that denied-resource wording is not confused with an emitted forbidden
   tool, the route maximum output bounds remain unchanged, the one concise
   stale-generation case has a stricter frozen per-case bound, empty-result
