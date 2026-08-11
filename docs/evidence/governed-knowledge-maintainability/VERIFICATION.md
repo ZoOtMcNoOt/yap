@@ -25,7 +25,7 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 The source-admission and lifecycle remediation was completed at
 `8e3ece5a3580ec29116c05f31b045a5748c143b8`. The route-qualification
 remediation is frozen at
-`da598a8522efee6070ba19f2016b5cc107feffaa`; its current documentation-only
+`37a578d76ab7e1fbdd14784d82b9330dd8f8a00e`; its current documentation-only
 descendant has the following focused, non-promotional verification. Commands
 are shown from their working directory; the Windows runs used the locked
 project environment and Python 3.12.
@@ -46,9 +46,10 @@ project environment and Python 3.12.
   governed-answer, and reasoning-client modules ran 56 tests: 55 passed and
   one Windows POSIX-permission test was declared inapplicable. This verifies
   that denied-resource wording is not confused with an emitted forbidden
-  tool, the route-specific output bounds remain frozen, empty-result prompts
-  are explicit and every empty visible result is exact-answer scored, and the
-  strict evidence/lifecycle contracts remain intact.
+  tool, the route maximum output bounds remain unchanged, the one concise
+  stale-generation case has a stricter frozen per-case bound, empty-result
+  prompts are explicit and every empty visible result is exact-answer scored,
+  and the strict evidence/lifecycle contracts remain intact.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
   ran 42 tests: 41 passed and one Windows directory-link capability test
@@ -82,27 +83,37 @@ fresh private model qualification and the final aggregate matrix.
 
 ## Rejected qualification evidence
 
-The one fresh private route qualification at exact head
-`0cd9a9f88123f1f4fd1caaf42e03dce02658bfd6` completed both owned model
-lifecycles and exact teardown, then correctly returned `deterministic-no-model`
-with public-safe evidence SHA-256
+Two fresh private route qualifications are retained as rejected evidence and
+cannot be used for admission. At exact head
+`0cd9a9f88123f1f4fd1caaf42e03dce02658bfd6`, the owned lifecycles and exact
+teardown completed before the decision returned `deterministic-no-model` with
+public-safe evidence SHA-256
 `0beaa4d04ccef663e89b215b97b14edbb7fd786c2c354179d896cb0ca65794b5`.
-It is retained as rejected private evidence and cannot be used for admission.
-The follow-up remediation keeps every latency and correctness threshold intact;
-it narrows forbidden-tool scoring to actual emitted tool identities, makes
-empty-result and prompt-injection answers exact, and assigns smaller output
-bounds to the rapid route and larger structured-answer bounds to the complex
-route. No raw model output, private measurement, log, or private artifact
-location is published here.
+At exact head `4473123e24c59eb1d929e8612fb9b38817c55a14`, both owned
+lifecycles and exact teardown again completed before the decision returned
+`deterministic-no-model` with public-safe evidence SHA-256
+`1a5f8069d193b1ba53e188f312d564167068b19e6f35580986404abfdd540a83`.
+
+The first follow-up made denied-resource, injection, and empty-result policy
+answers exact without changing any acceptance threshold. The second run exposed
+two remaining fixture-contract defects: one cited question did not match its
+supplied evidence, and the stale-generation case did not freeze a concise
+search/output contract. The current remediation aligns the cited question and
+exact answer, pins the stale-generation purpose, search text, and generation
+identity, and applies a 128-token cap only to that case while preserving the
+reviewed 256-token rapid-route maximum and every latency/correctness threshold.
+No raw model output, private measurement, log, or private artifact location is
+published here.
 
 ## Complete checkpoint gate
 
-Not yet consumed. The rejected `0cd9a9f8...` run is terminal for that exact
-candidate. Protected tool/runtime inputs changed at `da598a85...`, so the old
-Phase 9 evidence and the rejected run are both intentionally inadmissible. One
-new qualification is required only after the three reviewers approve this
-exact remediation head; the aggregate checkpoint matrix remains a separate
-one-shot gate after the new public-safe route lock is frozen.
+Not yet consumed. The rejected `0cd9a9f8...` and `4473123e...` runs are terminal
+for their exact candidates. Protected fixture/evaluator inputs changed at
+`37a578d7...`, so the old Phase 9 evidence and both rejected runs are
+intentionally inadmissible. One new qualification is required only after the
+three reviewers approve this exact remediation head; the aggregate checkpoint
+matrix remains a separate one-shot gate after the new public-safe route lock is
+frozen.
 
 ## Hosted closure
 
