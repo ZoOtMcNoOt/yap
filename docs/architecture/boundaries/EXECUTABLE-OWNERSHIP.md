@@ -786,7 +786,9 @@ owner's state but may not recreate its transition logic.
   route decision -> semantic private-tree admission -> owned Postgres gate ->
   exact-head hosted checks. Each case completes every tool step once before its
   final response; only a structurally undecodable final answer may receive one
-  additional request against the unchanged conversation/tool result.
+  additional request against the unchanged conversation/tool result. One
+  synthetic rapid cited-proposal case freezes the complete product-valid call;
+  terminology and complex proposal cases retain open-ended grounding evidence.
 - **Failure/recovery:** pre-admission and started identities remain observable
   until exact container/listener/PID/cgroup cleanup; partial evidence is never
   published. Protected producer/runtime/tool changes invalidate predecessor

@@ -43,7 +43,15 @@ transport failures, or well-formed semantic failures. Acceptance is schema 3;
 its SHA-256 is
 `3183378dbfab756dda8b25564ef1cb04a2d0bb8692f9ba00b9a2d95d72ee06a8`.
 Successful candidate and fixture-child evidence are schema 2. The resulting
-candidate has the following focused, non-promotional verification. Commands are
+qualification exposed one still-implicit cited-proposal tool contract. Reviewed
+executable head `4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` now freezes that one
+synthetic rapid-automation request as a complete production-valid JSON argument
+object without adding tool retry or changing any threshold, route cap, model, or
+runtime. Its fixture SHA-256 is
+`ac033eb4d0f877b7d87bc17b9027b0f5c2ef4a0a7f7beb24d21959a504c8a347`;
+the resulting acceptance SHA-256 is
+`461a7b6f6fcc41ca42adcc2a9add885ae61598a0c8197e38609304bf756bc8a3`.
+The candidate has the following focused, non-promotional verification. Commands are
 shown from their working directory; the Windows runs used the locked project
 environment and Python 3.12.
 
@@ -64,16 +72,16 @@ environment and Python 3.12.
   private admission and the aggregate gate remain blocked until replacement
   qualification. None of these focused results is a complete checkpoint-gate
   claim.
-- At exact head `518f7848...`, the same portable command loaded the exact
-  25-module/141-test current membership: 137 passed, three declared
+- At exact head `4cb73aee...`, the same portable command loaded the exact
+  25-module/142-test current membership: 138 passed, three declared
   platform/capability skips, and only the strict stale-route-lock contract
   failed. That failure is required before replacement qualification because
-  the reviewed retry and evidence-schema inputs intentionally differ from the
-  historical public lock.
+  the reviewed retry, cited-proposal, evidence-schema, and protected gate inputs
+  intentionally differ from the historical public lock.
 - From `server`, with `PYTHONPATH=src`, the focused agent acceptance, fixture,
   qualification, scoring, route-artifact, pressure, vLLM metric/runtime,
   final-response-retry, reasoning-route, governed-answer, and reasoning-client
-  modules ran 67 tests: 66 passed and one Windows POSIX-permission test was
+  modules ran 68 tests: 67 passed and one Windows POSIX-permission test was
   declared inapplicable.
   This verifies
   that denied-resource wording is not confused with an emitted forbidden
@@ -88,20 +96,23 @@ environment and Python 3.12.
   be present in governed `proposed_content` rather than only the final answer,
   and only an undecodable final answer receives one bounded retry. The retry
   retains completed tool evidence, never re-executes a tool, and records the
-  exact per-case request count and full elapsed time. The strict
+  exact per-case request count and full elapsed time. The cited-summary proposal
+  additionally binds one exact production-valid argument and citation object;
+  omission, mutation, or an extra control withholds context and fails scoring.
+  The strict
   evidence/lifecycle contracts remain intact.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
-  ran 44 tests: 43 passed and one Windows directory-link capability test
+  ran 45 tests: 44 passed and one Windows directory-link capability test
   skipped. This covers canonical POSIX path/generation/profile/resource identity,
   durable-write curated authorization, strict nested MCP inputs, exact
   database-worker cancellation acknowledgement, and shared evaluator/product
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 475 tracked regular surfaces: 250 at or above 350 lines and 225
+  enumerated 476 tracked regular surfaces: 251 at or above 350 lines and 225
   from 250 through 349. A read-back comparison of the 350-line output against
-  `THRESHOLD-DISPOSITION.md` found all 250 exact paths and zero differences.
+  `THRESHOLD-DISPOSITION.md` found all 251 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
   `8e3ece5a3580ec29116c05f31b045a5748c143b8`, the gate-owned locked PostgreSQL
   17 / pgvector 0.8.6 runtime invoked, from `server` with `PYTHONPATH=src`,
@@ -123,7 +134,7 @@ rule for the final aggregate matrix.
 
 ## Rejected qualification evidence
 
-Four fresh private route qualifications are retained as rejected evidence and
+Five fresh private route qualifications are retained as rejected evidence and
 cannot be used for admission. At exact head
 `0cd9a9f88123f1f4fd1caaf42e03dce02658bfd6`, the owned lifecycles and exact
 teardown completed before the decision returned `deterministic-no-model` with
@@ -157,6 +168,17 @@ response for the cited-summary-proposal case. The overall qualification was
 therefore rejected. This immutable run is terminal and inadmissible; no raw
 model output, measurement, log, or private artifact location is published.
 
+At exact head `518f78482b4f62f7e2397219e96ed27cd1d3e2fb`, both owned
+lifecycles and exact teardown completed before the decision again returned
+`deterministic-no-model`, with public-safe evidence SHA-256
+`92fc6573586c2b645dc34de6e0266b47cced8ccfe7cc5c42c06447c6e143a457`.
+The complex candidate remained eligible. The rapid candidate produced one
+structurally invalid cited-summary-proposal tool response before dispatch; its
+warm and concurrency route bounds passed while the complete fixture bound did
+not. The overall qualification was therefore rejected. This immutable run is
+terminal and inadmissible; no raw model output, measurement, log, or private
+artifact location is published.
+
 The first follow-up made denied-resource, injection, and empty-result policy
 answers exact without changing any acceptance threshold. The second run exposed
 two remaining fixture-contract defects: one cited question did not match its
@@ -176,6 +198,10 @@ the product's bound of two without claiming identical retry semantics. Tool
 selection, arguments, transport failures, and structurally valid semantic
 failures remain single-attempt evidence. No raw model output, private
 measurement, log, or private artifact location is published here.
+The latest repair leaves that no-tool-retry rule intact and instead makes the
+one bounded cited-summary proposal request the exact complete JSON call already
+required by its visible evidence and product-owned tool schema. The remaining
+terminology and complex proposal cases stay open-ended.
 
 One later publication attempt at exact head
 `f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3` returned a qualifying model
@@ -205,17 +231,17 @@ drift. Commit `b8452f807ae6e2353a99f4d95c952e8103414709` places all four in the
 protected route set and proves a diff naming any one is rejected. That stronger
 self-protecting admission code intentionally makes the `f7fc37e3...` reference
 historical for later descendants; no compatibility exception is carried. One
-fresh qualification at reviewed executable head `518f7848...` is required
+fresh qualification at reviewed executable head `4cb73aee...` is required
 before the aggregate gate.
 
 ## Complete checkpoint gate
 
 Not yet consumed. The rejected `0cd9a9f8...`, `4473123e...`, `cb5ae95b...`,
-and `7f0f060e...` runs and the permission-invalid publication attempt are
+`7f0f060e...`, and `518f7848...` runs and the permission-invalid publication attempt are
 terminal and inadmissible. The fresh
 `f7fc37e3...` private tree is semantically admitted for that exact head and its
-pre-protection descendants. The new admission-protection, lexical-fixture,
-bounded-final-decoding, and evidence-schema changes are protected route inputs,
+pre-protection descendants. The new admission-protection, lexical/proposal-fixture,
+bounded-final-decoding, gate-count, and evidence-schema changes are protected route inputs,
 so the current descendant rejects reuse and requires a fresh private
 qualification. The aggregate checkpoint matrix remains a separate one-shot
 gate after that replacement lock is frozen.

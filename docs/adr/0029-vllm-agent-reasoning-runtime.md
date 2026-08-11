@@ -71,8 +71,11 @@ fixture-child evidence use schema 2 and bind the exact per-case model-request
 count. This shares the product's two-attempt upper bound but is not a claim that
 evaluation and production retry the same failure classes. Because these are
 protected route inputs, exact reviewed head
-`518f78482b4f62f7e2397219e96ed27cd1d3e2fb` requires a replacement private
-qualification before the aggregate checkpoint gate.
+`4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` additionally freezes the one
+synthetic cited-summary proposal as a complete product-valid JSON tool call.
+The exact `518f7848...` qualification is terminal and rejected; a replacement
+private qualification is required before the aggregate checkpoint gate. No
+tool-call retry, acceptance threshold, route cap, model, or runtime changed.
 
 Yap's server boundary owns authentication, authorization, retrieval, tool
 policy, request admission, cancellation intent, audit, and publication. The

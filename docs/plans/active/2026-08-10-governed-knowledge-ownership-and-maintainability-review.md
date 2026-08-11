@@ -126,12 +126,13 @@ knowledge.
   integrity P1. Final pre-gate review then found the route-admission
   self-protection P1. The first protected-head qualification then exposed one
   bounded lexical-contract P2, and the next run exposed one bounded
-  final-response-decoding P2. The accepted register now contains seven P1 and
-  twelve P2 without expanding the checkpoint into Phase 10. That terminal
-  route qualification at exact head
-  `7f0f060e89951fd528dd229f96785cdbbe8617ea` returned
+  final-response-decoding P2. The next exact-head run exposed one bounded
+  cited-proposal-contract P2. The accepted register now contains seven P1 and
+  thirteen P2 without expanding the checkpoint into Phase 10. That latest
+  terminal route qualification at exact head
+  `518f78482b4f62f7e2397219e96ed27cd1d3e2fb` returned
   `deterministic-no-model` with public-safe evidence SHA-256
-  `409896c50de57efce0719c04a0bcda565be79d5b2462b0495143fe8164987c0d`;
+  `92fc6573586c2b645dc34de6e0266b47cced8ccfe7cc5c42c06447c6e143a457`;
   it remains rejected and inadmissible.
 - [x] Resolve every P0-P2 correctness, security, privacy, authorization,
   provenance, race, cancellation, resource, lifecycle, naming, architecture,
@@ -145,11 +146,11 @@ knowledge.
 - [x] Reconcile the executable ownership map, ADR implementation status,
   current status, roadmap, runbooks, and Voice OS summaries without silently
   changing the approved long-term target.
-- [x] Use focused verification for each repair; freeze reviewed executable
-  candidate `518f78482b4f62f7e2397219e96ed27cd1d3e2fb` only after code,
-  tests, provenance, documentation, and three-lens review are clean. The public
-  route lock remains deliberately stale until a new qualification binds this
-  protected input set.
+- [x] Use focused verification for each repair; freeze reviewed executable candidate
+  `4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` only after code, tests,
+  provenance, accepted findings, and three-lens review are clean; reconcile the
+  resulting public-safe evidence in the documentation-only successor. The public
+  route lock remains deliberately stale until a new qualification binds this protected input set.
 - [ ] Run the complete applicable checkpoint matrix exactly once, preserving
   any still-valid immutable private predecessor evidence by explicit identity
   rather than rerunning unrelated model research.

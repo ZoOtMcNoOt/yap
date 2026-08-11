@@ -479,10 +479,14 @@ residency, or sustained mixed-route capacity.
 
 The active maintainability checkpoint must not reuse that historical route
 tree. Reviewed executable head
-`518f78482b4f62f7e2397219e96ed27cd1d3e2fb` freezes acceptance schema 3 and
-exactly two evaluation-only final structural-decoding attempts; its current
+`4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` freezes acceptance schema 3,
+exactly two evaluation-only final structural-decoding attempts, and one exact
+product-valid cited-proposal tool call; its current
 acceptance SHA-256 is
-`3183378dbfab756dda8b25564ef1cb04a2d0bb8692f9ba00b9a2d95d72ee06a8`.
+`461a7b6f6fcc41ca42adcc2a9add885ae61598a0c8197e38609304bf756bc8a3`.
+The exact `518f7848...` private qualification is terminal and rejected with
+public-safe evidence SHA-256
+`92fc6573586c2b645dc34de6e0266b47cced8ccfe7cc5c42c06447c6e143a457`.
 The committed public route lock intentionally names an older acceptance input,
 so strict portable verification fails closed until one fresh private
 qualification is semantically admitted and a replacement public-safe lock is

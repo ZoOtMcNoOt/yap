@@ -861,12 +861,14 @@ qualification tree without copying raw model output or measurements into Git.
 Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
 merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
 The separate post-Phase-9 maintainability checkpoint is active. Reviewed
-executable head `518f78482b4f62f7e2397219e96ed27cd1d3e2fb` keeps the same
+executable head `4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` keeps the same
 Qwen/Gemma routes, runtime, route output maxima, and quality/latency thresholds while
-bounding evaluation-only final structural decoding to two attempts. Completed
+bounding evaluation-only final structural decoding to two attempts and freezing
+one synthetic cited proposal as a complete product-valid JSON tool call. Completed
 tool calls are never retried or replayed; tool/argument/transport failures and
 well-formed semantic failures remain single-attempt evidence. The current
-public route lock is deliberately stale for this protected input set, so a
+public route lock is deliberately stale for this protected input set. The exact
+`518f7848...` qualification is terminal and rejected; therefore a
 replacement private qualification and the separate aggregate checkpoint gate
 remain pending. Production service integration remains Phase 10.
 
