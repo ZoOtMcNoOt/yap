@@ -154,9 +154,9 @@ net additive; no LOC-reduction claim is made for those correctness repairs.
 
 ### Complete threshold disposition
 
-At the current remediation tree, the inventory contains 473 in-scope tracked
+At the current remediation tree, the inventory contains 474 in-scope tracked
 source, text, policy, and provenance surfaces at or above 250 physical lines: 250 at or
-above 350 and 223 from 250 through 349. The three reviews deep-traced them
+above 350 and 224 from 250 through 349. The three reviews deep-traced them
 through the same workflow owners and found no additional mixed authority. The
 mutually exclusive rows below classify every one of the 250
 decomposition-triggering surfaces. The exact path/line/disposition read-back is
