@@ -72,26 +72,31 @@ and exact teardown. Exact hosted-green head
 `ae81ff067c73a64528eecc14403765562726f2fe`. Raw outputs, measurements,
 credentials, database content, and private paths remain private. The separate
 post-Phase-9 maintainability checkpoint is active. Its latest private run at
-exact head `518f78482b4f62f7e2397219e96ed27cd1d3e2fb` completed both owned
+exact head `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` completed both owned
 lifecycles and teardown but returned `deterministic-no-model`; public-safe
 evidence SHA-256
-`92fc6573586c2b645dc34de6e0266b47cced8ccfe7cc5c42c06447c6e143a457`
-is retained only as terminal rejected evidence. Gemma remained eligible, while
-Qwen produced one structurally invalid cited-proposal tool response before
-dispatch. Reviewed executable head
-`96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` retains the complete synthetic
-proposal contract and two evaluation-only final structural-decoding attempts,
-then binds each route to its compatible exact vLLM runtime. Qwen rapid
-automation uses the pinned 26.07 base plus XGrammar 0.2.1 overlay with strict
-tool guidance; Gemma complex orchestration remains on exact upstream 26.06.
-The candidate lock SHA-256 is
-`3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013`, and
-the acceptance SHA-256 is
-`19e45aec7d4cd0fafe98da0c8ece4ff023eea0fdec6844f6d7c0801fb07c6f5d`.
-Focused public checks and runtime read-back passed. The historical route lock
-is deliberately stale; replacement private qualification, aggregate checkpoint
-gate, PR, and merge remain open. No production agent service, simultaneous
-model residency, or sustained mixed-route capacity is claimed.
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`
+is retained only as terminal rejected evidence. Gemma remained eligible. Qwen
+passed every frozen semantic contract plus its common, warm, and C8 route
+bounds, but the single aggregate fixture latency policy treated citation-rich
+structured proposals like common governed reads and caused rejection.
+Reviewed executable head
+`a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` retains the complete synthetic
+proposal contract, two evaluation-only final structural-decoding attempts, and
+the candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes. Its
+schema-4 acceptance keeps Qwen's route maximum at 256 tokens, applies 160 only
+to the three proposal fixtures, and separates three-second common from
+ten-second proposal qualification bounds; Gemma remains at 512. Every
+correctness threshold, warm/C8 bound, model, route, runtime, and no-tool-retry
+rule remains unchanged. Candidate-lock SHA-256 is
+`3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013`;
+acceptance SHA-256 is
+`d2b422afa2da8c36da1920b0c32da9c5425f4b73718b55b0bf8cb136d3d7a773`.
+Focused public checks passed. The historical route lock is deliberately stale;
+replacement private qualification, aggregate checkpoint gate, PR, and merge
+remain open. These frozen evaluation bounds are not a production p95/p99 SLO,
+generic TPS claim, production agent service, simultaneous-residency result, or
+sustained mixed-route capacity proof.
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -119,7 +124,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 8: meeting evidence | Closed as unadvertised baseline | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron for the sole server meeting route. PR #144 merged exact 30-second source-time epochs, request-scoped ECAPA reconciliation, canonical `speaker-1` through `speaker-64` identities, typed capacity records, strict `Unknown`, and one-speaker plain-text History projection. Exact qualification candidate `3ddb930...` recorded `unadvertised-baseline` because the required private holdout was unconfigured. Tiron remains explicit Preview and absent from the default catalog; Phase 8 adds no fallback pipeline. |
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
-| Post-Phase-9 maintainability checkpoint | Active | The [governed-knowledge ownership and maintainability review](plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) has resolved its accepted public findings at reviewed executable head `96897d2f...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, and candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes. The exact `518f7848...` route qualification remains terminal and rejected; replacement private qualification, aggregate gate, hosted PR checks, and merge are pending. No Phase 10 behavior is added. |
+| Post-Phase-9 maintainability checkpoint | Active | The [governed-knowledge ownership and maintainability review](plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) has resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The exact `96897d2f...` route qualification remains terminal and rejected; replacement private qualification, aggregate gate, hosted PR checks, and merge are pending. No Phase 10 behavior is added. |
 | Phase 10 | Planned | Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`

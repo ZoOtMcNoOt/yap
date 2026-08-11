@@ -479,15 +479,19 @@ residency, or sustained mixed-route capacity.
 
 The active maintainability checkpoint must not reuse that historical route
 tree. Reviewed executable head
-`96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` freezes acceptance schema 3,
+`a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` freezes acceptance schema 4,
 exactly two evaluation-only final structural-decoding attempts, one exact
 product-valid cited-proposal tool call, and candidate-specific runtime
 identities. Qwen uses a pinned NVIDIA vLLM 26.07 ARM64 base plus XGrammar 0.2.1
 overlay with strict tool guidance; Gemma uses exact upstream NVIDIA vLLM 26.06
-ARM64. Candidate lock SHA-256 is
+ARM64. Qwen keeps its 256-token route maximum, caps only the three frozen
+proposal fixtures at 160, and applies separate three-second common and
+ten-second proposal qualification bounds; Gemma remains 512. Correctness,
+warm/C8, model, route, runtime, and no-tool-retry contracts are unchanged.
+Candidate lock SHA-256 is
 `3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013`;
 acceptance SHA-256 is
-`19e45aec7d4cd0fafe98da0c8ece4ff023eea0fdec6844f6d7c0801fb07c6f5d`.
+`d2b422afa2da8c36da1920b0c32da9c5425f4b73718b55b0bf8cb136d3d7a773`.
 The Qwen Dockerfile, build script, third-party notice, dependency identities,
 platform, and exact observed image are protected qualification inputs; this is
 a pinned evaluation build contract, not a byte-identical rebuild claim.
@@ -500,9 +504,14 @@ bash runtime/agent-vllm/build-qwen-vllm-runtime.sh
 The build is source- and input-pinned, performs no registry pull, and must be
 read back against the candidate lock before use. A qualification receipt binds
 the observed image ID; rebuilding does not authorize substituting a new ID.
-The exact `518f7848...` private qualification is terminal and rejected with
+The exact `96897d2f...` private qualification is terminal and rejected with
 public-safe evidence SHA-256
-`92fc6573586c2b645dc34de6e0266b47cced8ccfe7cc5c42c06447c6e143a457`.
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
+Gemma remained eligible and Qwen passed its semantic, common, warm, and C8
+checks, but the obsolete aggregate fixture bound rejected the proposal
+workflow. Raw output, measurements, logs, and private locations remain outside
+Git. The new split bounds are frozen route-evaluation controls, not production
+p95/p99 SLO, capacity, or generic TPS evidence.
 The committed public route lock intentionally names an older acceptance input,
 so strict portable verification fails closed until one fresh private
 qualification is semantically admitted and a replacement public-safe lock is

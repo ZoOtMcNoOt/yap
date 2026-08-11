@@ -70,8 +70,8 @@ Each line contains up to two independent entries in the form
   388 DESKTOP-TEST         desktop/tests/wdio/target-client-language-routing-hardware.js ||   465 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md
   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md ||   372 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md
   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md ||   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md
-  438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   840 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
-  967 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||   915 CURRENT-DOC          docs/CURRENT-STATUS.md
+  438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   845 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
+  977 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||   920 CURRENT-DOC          docs/CURRENT-STATUS.md
   997 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md ||   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md
@@ -83,11 +83,11 @@ Each line contains up to two independent entries in the form
   582 CURRENT-DOC          docs/specs/testing-strategy.md ||  1188 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md
   696 INFRA                infra/yap-server-node/owned-process-group.sh ||   989 INFRA                infra/yap-server-node/owned-process-supervisor.py
   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
-  504 INFRA                infra/yap-server-node/setup-server.sh ||   590 SERVER-RUNBOOK       server/README.md
+  504 INFRA                infra/yap-server-node/setup-server.sh ||   599 SERVER-RUNBOOK       server/README.md
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
-  414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   578 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
-  478 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   690 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
-  445 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py ||   716 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py
+  414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   585 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
+  483 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   715 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
+  450 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py ||   716 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py
   506 EVALUATION           server/src/yap_server/evaluation/ami_meeting_lock.py ||  1396 EVALUATION           server/src/yap_server/evaluation/corpus_manifest.py
   612 EVALUATION           server/src/yap_server/evaluation/duration_tracks.py ||   399 EVALUATION           server/src/yap_server/evaluation/european_parliament_speech_source.py
   350 EVALUATION           server/src/yap_server/evaluation/fleurs_cohere_comparator.py ||   797 EVALUATION           server/src/yap_server/evaluation/fleurs_corpus.py
@@ -120,8 +120,8 @@ Each line contains up to two independent entries in the form
   575 POOLS                server/src/yap_server/pools/vllm_transcription_client.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py ||   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py
   520 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py ||   352 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py
-  395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   742 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
-  692 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py
+  395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   754 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
+  748 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py
   647 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py ||  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py
   495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py ||   388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py
   552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py ||   358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py

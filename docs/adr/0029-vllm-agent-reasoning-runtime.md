@@ -72,9 +72,9 @@ merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
 Simultaneous residency and sustained mixed-route capacity remain Phase 10
 claims and require their own measured evidence.
 
-The post-Phase-9 maintainability candidate keeps the same models, routes,
-output-token maxima, and quality/latency thresholds while making final
-structured decoding explicitly bounded. Acceptance schema 3 freezes exactly
+The post-Phase-9 maintainability candidate keeps the same models, routes, and
+route output-token maxima while making final structured decoding explicitly
+bounded. Acceptance schema 3 first froze exactly
 two final-response attempts. The evaluation driver may retry only a final
 response that cannot be decoded into the governed answer contract; it never
 retries or replays a tool call, tool arguments, transport failure, or a
@@ -90,9 +90,20 @@ read-back then proved that one shared image was not a valid contract for both
 routes. Exact executable head
 `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` binds the candidate-specific
 runtimes above, removes the strict-guidance-disable path, and protects the
-Dockerfile/build/notice inputs. Focused public contracts pass; a complete
-replacement private qualification is required before the aggregate checkpoint
-gate. No tool-call retry, acceptance threshold, route cap, or model changed.
+Dockerfile/build/notice inputs. Its terminal qualification returned
+`deterministic-no-model` with public-safe evidence SHA-256
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
+Gemma remained eligible and Qwen passed its semantic, common, warm, and C8
+checks; the single aggregate fixture bound rejected the citation-rich proposal
+workflow. Exact executable head
+`a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` adopts acceptance schema 4:
+Qwen keeps its 256-token route maximum, its three frozen proposal fixtures use
+160, and common three-second and proposal ten-second qualification bounds are
+evaluated separately. Gemma remains 512. All correctness, warm/C8, model,
+route, runtime, and no-tool-retry contracts remain unchanged. These are
+evaluation-route controls, not a production p95/p99 SLO or TPS claim. Focused
+public contracts pass; a complete replacement private qualification is required
+before the aggregate checkpoint gate.
 
 Yap's server boundary owns authentication, authorization, retrieval, tool
 policy, request admission, cancellation intent, audit, and publication. The

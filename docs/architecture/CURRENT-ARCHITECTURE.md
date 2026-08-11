@@ -860,10 +860,16 @@ also semantically admitted the exact hash-locked private Qwen/Gemma
 qualification tree without copying raw model output or measurements into Git.
 Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
 merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
-The separate post-Phase-9 maintainability checkpoint is active. Reviewed
-executable head `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` keeps the same
-Qwen/Gemma routes, route output maxima, and quality/latency thresholds while
-binding each candidate to its compatible exact runtime. Qwen uses the pinned
+The separate post-Phase-9 maintainability checkpoint is active. Exact
+`96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` completed both private runtime
+lifecycles and exact teardown but is terminal rejected evidence with outcome
+`deterministic-no-model` and public-safe evidence SHA-256
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
+Gemma remained eligible and Qwen passed its semantic, common, warm, and C8
+checks; a single aggregate fixture bound conflated common reads with the
+citation-rich proposal workflow. Reviewed executable head
+`a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` keeps the same Qwen/Gemma routes
+while binding each candidate to its compatible exact runtime. Qwen uses the pinned
 NVIDIA vLLM 26.07 ARM64 base plus an XGrammar 0.2.1 overlay and strict tool
 guidance; Gemma uses the exact upstream NVIDIA vLLM 26.06 ARM64 image. The
 acceptance lock binds the route mapping, observed image identity, platform,
@@ -872,8 +878,12 @@ candidate bounds evaluation-only final structural decoding to two attempts and
 freezes one synthetic cited proposal as a complete product-valid JSON tool call.
 Completed tool calls are never retried or replayed; tool/argument/transport
 failures and well-formed semantic failures remain single-attempt evidence. The
-current public route lock is deliberately stale for this protected input set.
-The exact `518f7848...` qualification is terminal and rejected; therefore a
+schema-4 policy keeps Qwen's route maximum at 256 tokens, applies 160 only to
+the three frozen proposal fixtures, and evaluates three-second common and
+ten-second proposal qualification bounds separately. Gemma remains at 512;
+correctness, warm/C8, model, route, and runtime contracts are unchanged. These
+are evaluation-route bounds, not a production SLO or TPS claim. The current
+public route lock is deliberately stale for this protected input set; therefore a
 replacement private qualification and the separate aggregate checkpoint gate
 remain pending. Production service integration remains Phase 10.
 

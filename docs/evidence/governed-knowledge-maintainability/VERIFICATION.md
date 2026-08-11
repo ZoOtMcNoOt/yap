@@ -56,13 +56,33 @@ frozen routes. Exact executable head
 `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` binds Qwen rapid automation to
 the pinned NVIDIA vLLM 26.07 ARM64 base plus XGrammar 0.2.1 overlay and strict
 tool guidance, while Gemma complex orchestration remains on exact upstream
-NVIDIA vLLM 26.06 ARM64. It changes no model, route, route cap, output bound,
-quality/latency threshold, or tool-retry policy. Candidate-lock SHA-256 is
+NVIDIA vLLM 26.06 ARM64. Candidate-lock SHA-256 is
 `3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013`;
-acceptance SHA-256 is
+its schema-3 acceptance SHA-256 was
 `19e45aec7d4cd0fafe98da0c8ece4ff023eea0fdec6844f6d7c0801fb07c6f5d`;
 fixture SHA-256 remains
 `ac033eb4d0f877b7d87bc17b9027b0f5c2ef4a0a7f7beb24d21959a504c8a347`.
+The resulting exact-head qualification was terminal and rejected even though
+Qwen passed the frozen semantic, common rapid, warm, and C8 checks and Gemma
+remained eligible: the single aggregate fixture latency policy still treated
+citation-rich structured proposals like common governed reads. Controlled,
+contained diagnostics kept raw output and measurements private and established
+that 160 tokens was the lowest tested proposal cap preserving every frozen
+semantic contract; a cap alone did not make proposal serialization a
+three-second workflow.
+
+Exact executable head `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` therefore
+changes only the evaluation policy that conflated those workloads. Acceptance
+schema 4 keeps Qwen's route maximum at 256 tokens, applies 160 only to the three
+frozen proposal fixtures, evaluates common fixtures at three seconds and
+proposal fixtures at ten seconds, and retains the 750-ms warm and 1,500-ms C8
+bounds. Gemma remains at 512 tokens. Models, runtime identities, route
+assignment, correctness thresholds, tool behavior, and final-response attempts
+are unchanged. Qualification decisions now use schema 2 so the split summary
+cannot be mistaken for the obsolete aggregate field. Acceptance SHA-256 is
+`d2b422afa2da8c36da1920b0c32da9c5425f4b73718b55b0bf8cb136d3d7a773`.
+These are workload-route qualification bounds, not a production p95/p99 SLO,
+capacity result, or generic TPS claim.
 The candidate has the following focused, non-promotional verification. Commands are
 shown from their working directory; the Windows runs used the locked project
 environment and Python 3.12.
@@ -90,22 +110,22 @@ environment and Python 3.12.
   failed. That failure is required before replacement qualification because
   the reviewed retry, cited-proposal, evidence-schema, and protected gate inputs
   intentionally differ from the historical public lock.
-- At exact head `96897d2f...`, the same portable command loaded the exact
-  25-module/151-test membership: 147 passed, three declared
+- At exact head `a76ed9b0...`, the same portable command loaded the exact
+  25-module/152-test membership: 148 passed, three declared
   platform/capability skips, and only the strict stale-route-lock contract
-  errored. The historical schema-2 route lock cannot admit the current schema-3
-  candidate/runtime contract, so that error is the required prequalification
-  state. Server-wide Ruff passed.
+  errored. The historical schema-2 route lock cannot admit the current schema-4
+  acceptance and schema-2 qualification-decision contract, so that error is
+  the required prequalification state. Server-wide Ruff passed.
 - From `server`, with `PYTHONPATH=src`, the current acceptance, qualification,
-  vLLM-runtime, and private-route-admission contract modules ran 36 tests:
-  35 passed and one Windows POSIX-permission test was declared inapplicable.
+  vLLM-runtime, and private-route-admission contract modules ran 37 tests:
+  36 passed and one Windows POSIX-permission test was declared inapplicable.
   They bind the complete per-route runtime mapping, exact platform/image/runtime
   identities, Qwen Dockerfile/build/notice/dependency inputs, enabled strict
-  guidance, and stale-lock rejection.
+  guidance, split common/proposal route policy, and stale-lock rejection.
 - From `server`, with `PYTHONPATH=src`, the focused agent acceptance, fixture,
   qualification, scoring, route-artifact, pressure, vLLM metric/runtime,
   final-response-retry, reasoning-route, governed-answer, and reasoning-client
-  modules ran 68 tests: 67 passed and one Windows POSIX-permission test was
+  modules ran 78 tests: 77 passed and one Windows POSIX-permission test was
   declared inapplicable.
   This verifies
   that denied-resource wording is not confused with an emitted forbidden
@@ -158,7 +178,7 @@ rule for the final aggregate matrix.
 
 ## Rejected qualification evidence
 
-Five fresh private route qualifications are retained as rejected evidence and
+Six fresh private route qualifications are retained as rejected evidence and
 cannot be used for admission. At exact head
 `0cd9a9f88123f1f4fd1caaf42e03dce02658bfd6`, the owned lifecycles and exact
 teardown completed before the decision returned `deterministic-no-model` with
@@ -203,6 +223,18 @@ not. The overall qualification was therefore rejected. This immutable run is
 terminal and inadmissible; no raw model output, measurement, log, or private
 artifact location is published.
 
+At exact head `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99`, both owned
+lifecycles and exact teardown completed before the decision again returned
+`deterministic-no-model`, with public-safe evidence SHA-256
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
+The complex candidate remained eligible. The rapid candidate passed every
+frozen semantic/tool/argument/citation/terminology/isolation/structured-output
+check plus its common, warm, and C8 route bounds, but the single aggregate
+fixture latency bound failed on the citation-rich proposal workflow. This
+immutable run is terminal and inadmissible. Only those public-safe booleans are
+recorded; no raw model output, measurement, log, or private artifact location
+is published.
+
 The first follow-up made denied-resource, injection, and empty-result policy
 answers exact without changing any acceptance threshold. The second run exposed
 two remaining fixture-contract defects: one cited question did not match its
@@ -232,6 +264,12 @@ Gemma. Strict tool guidance is enabled and cannot be overridden off. The
 derived Qwen image is bound by its checked Dockerfile, build script, notice,
 wheel/source identities, platform, and exact observed image; this is not a
 claim that independent builds have the same Docker image ID.
+The subsequent policy repair at `a76ed9b0...` keeps those exact runtimes and all
+semantic thresholds, but separates common and proposal latency evidence. Qwen
+proposal fixtures use the lowest tested semantically passing 160-token cap,
+while its route maximum remains 256; Gemma remains 512. The three-second common
+and ten-second proposal bounds are qualification controls for these frozen
+workloads, not production service or capacity evidence.
 
 One later publication attempt at exact head
 `f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3` returned a qualifying model
@@ -261,17 +299,18 @@ drift. Commit `b8452f807ae6e2353a99f4d95c952e8103414709` places all four in the
 protected route set and proves a diff naming any one is rejected. That stronger
 self-protecting admission code intentionally makes the `f7fc37e3...` reference
 historical for later descendants; no compatibility exception is carried. One
-fresh qualification at reviewed executable head `96897d2f...` is required
+fresh qualification at reviewed executable head `a76ed9b0...` is required
 before the aggregate gate.
 
 ## Complete checkpoint gate
 
 Not yet consumed. The rejected `0cd9a9f8...`, `4473123e...`, `cb5ae95b...`,
-`7f0f060e...`, and `518f7848...` runs and the permission-invalid publication attempt are
+`7f0f060e...`, `518f7848...`, and `96897d2f...` runs and the permission-invalid publication attempt are
 terminal and inadmissible. The fresh
 `f7fc37e3...` private tree is semantically admitted for that exact head and its
 pre-protection descendants. The new admission-protection, lexical/proposal-fixture,
-bounded-final-decoding, route-specific runtime, gate-count, and evidence-schema
+bounded-final-decoding, route-specific runtime, common/proposal policy,
+gate-count, and evidence-schema
 changes are protected route inputs,
 so the current descendant rejects reuse and requires a fresh private
 qualification. The aggregate checkpoint matrix remains a separate one-shot

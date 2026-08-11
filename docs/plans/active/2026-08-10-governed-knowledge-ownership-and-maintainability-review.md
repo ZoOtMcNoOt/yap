@@ -129,14 +129,17 @@ knowledge.
   final-response-decoding P2. The next exact-head run exposed one bounded
   cited-proposal-contract P2. Runtime read-back then exposed one route-runtime
   identity P2: Qwen requires strict 26.07 plus the pinned XGrammar 0.2.1
-  overlay, while Gemma remains on exact 26.06. The accepted register now
-  contains seven P1 and fourteen P2 without expanding the checkpoint into
-  Phase 10. The latest terminal
-  terminal route qualification at exact head
-  `518f78482b4f62f7e2397219e96ed27cd1d3e2fb` returned
+  overlay, while Gemma remains on exact 26.06. The next exact-head run exposed
+  one route-latency-policy P2: a single three-second aggregate fixture bound
+  conflated common reads with citation-rich structured proposals. The accepted
+  register now contains seven P1 and fifteen P2 without expanding the
+  checkpoint into Phase 10. The latest terminal route qualification at exact
+  head `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` returned
   `deterministic-no-model` with public-safe evidence SHA-256
-  `92fc6573586c2b645dc34de6e0266b47cced8ccfe7cc5c42c06447c6e143a457`;
-  it remains rejected and inadmissible.
+  `929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`;
+  it remains rejected and inadmissible. Gemma stayed eligible and Qwen passed
+  semantic, common, warm, and C8 checks; the aggregate proposal-workflow bound
+  caused rejection. No raw output or measurement is published.
 - [x] Resolve every P0-P2 correctness, security, privacy, authorization,
   provenance, race, cancellation, resource, lifecycle, naming, architecture,
   and maintainability finding.
@@ -150,13 +153,17 @@ knowledge.
   current status, roadmap, runbooks, and Voice OS summaries without silently
   changing the approved long-term target.
 - [x] Use focused verification for each repair; freeze reviewed executable candidate
-  `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` only after code, tests,
+  `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` only after code, tests,
   provenance, accepted findings, and three-lens review are clean; reconcile the
   resulting public-safe evidence in the documentation-only successor. The public
   route lock remains deliberately stale until a new qualification binds the
-  route-specific runtime identities and this protected input set.
+  route-specific runtime identities, split common/proposal policy, and this
+  protected input set. Acceptance schema 4 keeps Qwen's route maximum at 256,
+  caps only its three proposal fixtures at 160, separates three-second common
+  and ten-second proposal qualification bounds, and leaves Gemma at 512 plus
+  every correctness, warm, C8, runtime, model, and no-tool-retry contract.
 - [ ] Run one complete fresh private Qwen/Gemma qualification at exact clean
-  reviewed head `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99`. Publish a replacement
+  reviewed head `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef`. Publish a replacement
   public-safe schema-3 route lock only if both required routes qualify; a
   rejected tree remains terminal and the historical lock remains stale.
 - [ ] After successful semantic admission of that replacement tree, run the

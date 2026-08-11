@@ -157,15 +157,19 @@ Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
 merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
 The active [post-Phase-9 checkpoint](../plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
 reviews executable ownership and maintainability before Phase 10. Reviewed
-executable head `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` resolves the
+executable head `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` resolves the
 accepted findings, freezes two evaluation-only final structural-decoding
 attempts without retrying or replaying tools, binds one synthetic cited proposal
-to a complete product-valid JSON call, and assigns Qwen to pinned vLLM 26.07
-plus XGrammar 0.2.1 while Gemma remains on exact upstream vLLM 26.06. The exact
-`518f7848...` qualification is terminal and rejected. Protected
-acceptance/runtime/evidence inputs intentionally make the current public route
-lock stale; replacement private qualification and the aggregate checkpoint
-gate remain open. Postgres
+to a complete product-valid JSON call, assigns Qwen to pinned vLLM 26.07 plus
+XGrammar 0.2.1 while Gemma remains on exact upstream vLLM 26.06, and separates
+common and proposal rapid-route qualification bounds without changing either
+route's maximum. Exact `96897d2f...` is terminal rejected evidence with
+public-safe SHA-256
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
+Protected acceptance/runtime/evidence inputs intentionally make the current
+public route lock stale; replacement private qualification and the aggregate
+checkpoint gate remain open. The split workload bounds are not production
+SLO/capacity or generic TPS evidence. Postgres
 remains the only current knowledge projection; Redis, object storage, and
 Neo4j require a measured need and a later authorized gate. Persistent
 supervision, simultaneous model residency, sustained mixed-user capacity/SLOs,

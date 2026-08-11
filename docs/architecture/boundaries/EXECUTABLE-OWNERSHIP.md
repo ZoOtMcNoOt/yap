@@ -770,8 +770,9 @@ owner's state but may not recreate its transition logic.
   evaluation container/model lifecycle; `agent-reasoning-candidates.lock.json`
   owns the exact route-to-runtime mapping; the model qualifier owns the frozen
   route decision; `evaluation/agent_model_acceptance.py` owns the exact runtime
-  recipe/input hashes and two-attempt final-response bound; the fixture runner
-  owns conversation/tool sequencing and final structural decoding;
+  recipe/input hashes, two-attempt final-response bound, and route-specific
+  common/proposal latency and output policy; the fixture runner owns
+  conversation/tool sequencing, per-case output bounds, and final structural decoding;
   `evaluation/owned_postgres_knowledge_runtime.py`
   owns the disposable database lifecycle; the aggregate gate composes those
   admitted results with the exact portable, Ruff, Postgres, restart, and
@@ -794,6 +795,10 @@ owner's state but may not recreate its transition logic.
   additional request against the unchanged conversation/tool result. One
   synthetic rapid cited-proposal case freezes the complete product-valid call;
   terminology and complex proposal cases retain open-ended grounding evidence.
+  The rapid route keeps its 256-token maximum, caps its three frozen proposal
+  fixtures at 160, and evaluates common and proposal latency separately; Gemma
+  remains at 512. Those are evaluation-route bounds rather than a production
+  service SLO or capacity claim.
 - **Failure/recovery:** pre-admission and started identities remain observable
   until exact container/listener/PID/cgroup cleanup; partial evidence is never
   published. Protected producer/runtime/tool changes invalidate predecessor
