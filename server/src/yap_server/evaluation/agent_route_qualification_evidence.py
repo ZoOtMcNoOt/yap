@@ -312,6 +312,11 @@ def _validate_qualification_tree(
                 run,
                 expected=expected,
                 route_policy=acceptance.route_evidence[str(expected["workloadClass"])],
+                proposal_fixture_case_ids=tuple(
+                    acceptance.route_evidence["rapid-automation"][
+                        "proposalFixtureCaseIds"
+                    ]
+                ),
             )
         )
     qualification = artifacts["qualification.json"]
@@ -319,7 +324,7 @@ def _validate_qualification_tree(
     unhashed = dict(qualification)
     unhashed.pop("evidenceSha256", None)
     expected = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "qualificationScope": "governed-agent-reasoning",
         "outcome": "required-workload-routes-qualified",
         "admittedModelCandidates": sorted(_REQUIRED_CANDIDATES),

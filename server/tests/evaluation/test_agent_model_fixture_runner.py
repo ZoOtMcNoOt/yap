@@ -190,7 +190,6 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             json.dumps(proposal["expectedArguments"], separators=(",", ":")),
             proposal["user"],
         )
-
         missing = by_id["missing-evidence-refusal"]
         self.assertEqual(missing["expectedAnswer"], "Evidence is unavailable.")
 
@@ -392,6 +391,9 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 active = next(cases)
             assert active is not None
             case = active
+            self.assertEqual(
+                payload["max_tokens"], case.get("maximumOutputTokens", 512)
+            )
             if "tools" not in payload:
                 case_id = str(case["caseId"])
                 final_attempts[case_id] = final_attempts.get(case_id, 0) + 1
@@ -476,7 +478,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             REPOSITORY_ROOT,
             model="synthetic",
             workload_class="complex-orchestration",
-            maximum_output_tokens=256,
+            maximum_output_tokens=512,
             final_response_protocol="json-schema",
             request_json=request,
         )
@@ -517,6 +519,16 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         )
         cases = iter(fixture["cases"])
         active: dict[str, object] | None = None
+        proposal_case_ids = {
+            "cited-summary-proposal",
+            "terminology-preservation-en",
+            "terminology-preservation-es",
+        }
+
+        def expected_output_tokens(case: dict[str, object]) -> int:
+            if "maximumOutputTokens" in case:
+                return int(case["maximumOutputTokens"])
+            return 160 if case["caseId"] in proposal_case_ids else 256
 
         def request(payload: dict[str, object]) -> dict[str, object]:
             nonlocal active
@@ -529,7 +541,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             }:
                 assert active is not None
                 self.assertEqual(
-                    payload["max_tokens"], active.get("maximumOutputTokens", 512)
+                    payload["max_tokens"], expected_output_tokens(active)
                 )
                 answer = {
                     "answer": active.get(
@@ -545,7 +557,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             if "tools" in payload:
                 active = next(cases)
                 self.assertEqual(
-                    payload["max_tokens"], active.get("maximumOutputTokens", 512)
+                    payload["max_tokens"], expected_output_tokens(active)
                 )
                 arguments = {
                     "purpose": "knowledge.read",
@@ -597,7 +609,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 }
             assert active is not None
             self.assertEqual(
-                payload["max_tokens"], active.get("maximumOutputTokens", 512)
+                payload["max_tokens"], expected_output_tokens(active)
             )
             return {
                 "choices": [
@@ -624,7 +636,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             REPOSITORY_ROOT,
             model="synthetic",
             workload_class="rapid-automation",
-            maximum_output_tokens=512,
+            maximum_output_tokens=256,
             final_response_protocol="forced-answer-tool",
             request_json=request,
         )
@@ -659,7 +671,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             REPOSITORY_ROOT,
             model="synthetic",
             workload_class="rapid-automation",
-            maximum_output_tokens=512,
+            maximum_output_tokens=256,
             final_response_protocol="json-schema",
             request_json=request,
         )
@@ -686,7 +698,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 REPOSITORY_ROOT,
                 model="synthetic",
                 workload_class="rapid-automation",
-                maximum_output_tokens=512,
+                maximum_output_tokens=256,
                 final_response_protocol="json-schema",
                 request_json=request,
             )

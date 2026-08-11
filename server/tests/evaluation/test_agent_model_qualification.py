@@ -30,6 +30,11 @@ from yap_server.evaluation.provider_runtime_observations import (
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+PROPOSAL_CASE_IDS = {
+    "cited-summary-proposal",
+    "terminology-preservation-en",
+    "terminology-preservation-es",
+}
 INPUTS = tuple(
     REPOSITORY_ROOT / relative
     for relative in (
@@ -82,6 +87,7 @@ class AgentModelQualificationTests(unittest.TestCase):
         self.assertEqual(
             decision["outcome"], "required-workload-routes-qualified"
         )
+        self.assertEqual(decision["schemaVersion"], 2)
         self.assertEqual(
             decision["admittedModelCandidates"],
             ["gemma-4-31b-it-nvfp4", "qwen3.6-35b-a3b-nvfp4"],
@@ -136,7 +142,7 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate,
                 "qwen3.6-35b-a3b-nvfp4",
                 20,
-                fixture_latency=4_000,
+                fixture_latency_overrides={"lexical-cited-answer": 4_000},
             ),
             _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10),
         )
@@ -153,8 +159,55 @@ class AgentModelQualificationTests(unittest.TestCase):
             if summary["candidateId"] == "qwen3.6-35b-a3b-nvfp4"
         )
         self.assertEqual(qwen["warmP95LatencyMilliseconds"], 20)
-        self.assertEqual(qwen["fixtureP95LatencyMilliseconds"], 4_000)
+        self.assertEqual(qwen["commonFixtureP95LatencyMilliseconds"], 4_000)
+        self.assertEqual(qwen["proposalFixtureP95LatencyMilliseconds"], 10)
         self.assertFalse(qwen["routeEvidencePassed"])
+
+    def test_applies_a_distinct_bounded_proposal_workflow_latency(self) -> None:
+        candidate = _checked_candidate()
+        passing_runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                fixture_latency_overrides={
+                    case_id: 10_000 for case_id in PROPOSAL_CASE_IDS
+                },
+            ),
+            _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10),
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            passing = evaluate_agent_model_qualification(
+                candidate=candidate, runs=passing_runs
+            )
+
+        self.assertEqual(passing["outcome"], "required-workload-routes-qualified")
+        qwen = next(
+            summary
+            for summary in passing["candidateSummaries"]
+            if summary["candidateId"] == "qwen3.6-35b-a3b-nvfp4"
+        )
+        self.assertEqual(qwen["commonFixtureP95LatencyMilliseconds"], 10)
+        self.assertEqual(qwen["proposalFixtureP95LatencyMilliseconds"], 10_000)
+        self.assertTrue(qwen["routeEvidencePassed"])
+
+        failing_runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                fixture_latency_overrides={
+                    case_id: 10_001 for case_id in PROPOSAL_CASE_IDS
+                },
+            ),
+            passing_runs[1],
+        )
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            failing = evaluate_agent_model_qualification(
+                candidate=candidate, runs=failing_runs
+            )
+        self.assertEqual(failing["outcome"], "deterministic-no-model")
 
     def test_rejects_incomplete_complex_orchestration_sequence(self) -> None:
         candidate = _checked_candidate()
@@ -393,6 +446,7 @@ def _candidate_run(
     complex_extra_control: tuple[int, str, object] | None = None,
     wrong_proposal_case: str | None = None,
     fixture_latency: int = 10,
+    fixture_latency_overrides: dict[str, int] | None = None,
 ) -> AgentCandidateRun:
     lock = json.loads(
         (REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json").read_text(
@@ -439,7 +493,9 @@ def _candidate_run(
             "Unrelated cafeteria menu."
         )
     for result in results:
-        result["latencyMilliseconds"] = fixture_latency
+        result["latencyMilliseconds"] = (fixture_latency_overrides or {}).get(
+            str(result["caseId"]), fixture_latency
+        )
     launch_arguments = _launch_arguments(model)
     launch_sha256 = canonical_evidence_sha256(launch_arguments)
     children = _children(

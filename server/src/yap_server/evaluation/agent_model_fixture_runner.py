@@ -85,10 +85,9 @@ def run_agent_model_fixtures(
     ):
         raise ValueError("agent workload fixture is invalid")
     system_prompt = system_prompts[workload_class]
-    if not 1 <= maximum_output_tokens <= int(
-        acceptance.runtime_tracks["maximumOutputTokens"]
-    ):
-        raise ValueError("agent fixture output bound is invalid")
+    route_policy = acceptance.route_evidence[workload_class]
+    if maximum_output_tokens != int(route_policy["maximumOutputTokens"]):
+        raise ValueError("agent fixture route output bound is invalid")
     if final_response_protocol not in FINAL_RESPONSE_PROTOCOLS:
         raise ValueError("agent fixture final response protocol is invalid")
     selected_cases = [
@@ -97,12 +96,18 @@ def run_agent_model_fixtures(
         if isinstance(case, dict)
         and case.get("requiredForWorkloadClass") in {None, workload_class}
     ]
+    proposal_case_ids = set(route_policy.get("proposalFixtureCaseIds", []))
+    proposal_output_tokens = route_policy.get("maximumProposalOutputTokens")
     return tuple(
         _run_case_safely(
             case,
             model=model,
             system_prompt=system_prompt,
-            maximum_output_tokens=maximum_output_tokens,
+            maximum_output_tokens=(
+                int(proposal_output_tokens)
+                if case["caseId"] in proposal_case_ids
+                else maximum_output_tokens
+            ),
             maximum_final_response_attempts=int(
                 acceptance.runtime_tracks["maximumFinalResponseAttempts"]
             ),

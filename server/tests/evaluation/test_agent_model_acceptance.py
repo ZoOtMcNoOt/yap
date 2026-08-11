@@ -160,6 +160,12 @@ class AgentModelAcceptanceTests(unittest.TestCase):
             _candidate_lock(candidate_lock)
 
     def test_loads_frozen_candidate_runtime_and_workload_identity(self) -> None:
+        acceptance = json.loads(
+            (
+                REPOSITORY_ROOT / "server" / "agent-model-acceptance.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(acceptance["schemaVersion"], 4)
         plan = load_agent_model_acceptance(REPOSITORY_ROOT)
 
         self.assertEqual(
@@ -189,6 +195,23 @@ class AgentModelAcceptanceTests(unittest.TestCase):
         )
         self.assertEqual(
             plan.route_evidence["rapid-automation"]["maximumOutputTokens"], 256
+        )
+        self.assertEqual(
+            plan.route_evidence["rapid-automation"],
+            {
+                "candidateId": "qwen3.6-35b-a3b-nvfp4",
+                "maximumOutputTokens": 256,
+                "maximumProposalOutputTokens": 160,
+                "maximumCommonFixtureP95LatencyMilliseconds": 3_000,
+                "maximumProposalFixtureP95LatencyMilliseconds": 10_000,
+                "proposalFixtureCaseIds": [
+                    "cited-summary-proposal",
+                    "terminology-preservation-en",
+                    "terminology-preservation-es",
+                ],
+                "maximumWarmP95LatencyMilliseconds": 750,
+                "maximumC8P95LatencyMilliseconds": 1_500,
+            },
         )
         self.assertEqual(
             plan.route_evidence["complex-orchestration"]["maximumOutputTokens"],

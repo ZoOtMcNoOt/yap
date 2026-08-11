@@ -98,7 +98,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         field="agent model acceptance plan",
         containment_root=repository_root,
     )
-    if set(plan) != _PLAN_KEYS or plan["schemaVersion"] != 3:
+    if set(plan) != _PLAN_KEYS or plan["schemaVersion"] != 4:
         raise ValueError("agent model acceptance plan differs from the contract")
     lock_name = _file_name(plan["candidateLock"], "candidate lock")
     fixture_name = _file_name(plan["fixtureFile"], "fixture file")
@@ -539,7 +539,14 @@ def _route_evidence(
         "rapid-automation": {
             "candidateId": "qwen3.6-35b-a3b-nvfp4",
             "maximumOutputTokens": 256,
-            "maximumFixtureP95LatencyMilliseconds": 3_000,
+            "maximumProposalOutputTokens": 160,
+            "maximumCommonFixtureP95LatencyMilliseconds": 3_000,
+            "maximumProposalFixtureP95LatencyMilliseconds": 10_000,
+            "proposalFixtureCaseIds": [
+                "cited-summary-proposal",
+                "terminology-preservation-en",
+                "terminology-preservation-es",
+            ],
             "maximumWarmP95LatencyMilliseconds": 750,
             "maximumC8P95LatencyMilliseconds": 1_500,
         },

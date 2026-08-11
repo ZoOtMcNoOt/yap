@@ -88,6 +88,11 @@ def evaluate_agent_model_qualification(
             route_policy=acceptance.route_evidence[
                 str(models[candidate_id]["workloadClass"])
             ],
+            proposal_fixture_case_ids=tuple(
+                acceptance.route_evidence["rapid-automation"][
+                    "proposalFixtureCaseIds"
+                ]
+            ),
         )
         for candidate_id in acceptance.candidate_ids
     ]
@@ -105,7 +110,7 @@ def evaluate_agent_model_qualification(
         outcome = "required-workload-routes-qualified"
         reasons = ["every-required-workload-route-passed-frozen-evidence"]
     decision = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "qualificationScope": "governed-agent-reasoning",
         "outcome": outcome,
         "admittedModelCandidates": sorted(admitted_candidates),
@@ -122,6 +127,7 @@ def _candidate_summary(
     *,
     expected: dict[str, object],
     route_policy: object,
+    proposal_fixture_case_ids: tuple[str, ...],
 ) -> dict[str, object]:
     if isinstance(run, FailedAgentCandidateRun):
         return _failed_candidate_summary(candidate, run, expected=expected)
@@ -172,12 +178,27 @@ def _candidate_summary(
     )
     warm_p95 = _p95(pressure["warmLatencyMilliseconds"])
     c8_p95 = _p95(pressure["concurrencyLatencyMilliseconds"]["8"])
-    fixture_p95 = _p95(score.latency_milliseconds)
+    latency_by_case = {
+        str(result["caseId"]): int(result["latencyMilliseconds"])
+        for result in results
+        if isinstance(result, dict)
+    }
+    proposal_fixture_p95 = _p95(
+        tuple(latency_by_case[case_id] for case_id in proposal_fixture_case_ids)
+    )
+    common_fixture_p95 = _p95(
+        tuple(
+            latency
+            for case_id, latency in latency_by_case.items()
+            if case_id not in proposal_fixture_case_ids
+        )
+    )
     route_evidence_passed = _route_evidence_passed(
         route_policy,
         workload_class=str(expected["workloadClass"]),
         results=results,
-        fixture_p95=fixture_p95,
+        common_fixture_p95=common_fixture_p95,
+        proposal_fixture_p95=proposal_fixture_p95,
         warm_p95=warm_p95,
         c8_p95=c8_p95,
         route_specific_evidence_passed=score.route_specific_evidence_passed,
@@ -201,7 +222,8 @@ def _candidate_summary(
         "isolationLeakCount": score.isolation_leak_count,
         "invalidStructuredOutputCount": score.invalid_structured_output_count,
         "concurrencyC8P95LatencyMilliseconds": c8_p95,
-        "fixtureP95LatencyMilliseconds": fixture_p95,
+        "commonFixtureP95LatencyMilliseconds": common_fixture_p95,
+        "proposalFixtureP95LatencyMilliseconds": proposal_fixture_p95,
         "warmP95LatencyMilliseconds": warm_p95,
         "incrementalCgroupMemoryBytes": max(
             0,
@@ -215,7 +237,8 @@ def _route_evidence_passed(
     *,
     workload_class: str,
     results: list[object],
-    fixture_p95: int,
+    common_fixture_p95: int,
+    proposal_fixture_p95: int,
     warm_p95: int,
     c8_p95: int,
     route_specific_evidence_passed: bool,
@@ -224,9 +247,11 @@ def _route_evidence_passed(
         raise ValueError("agent route evidence policy is invalid")
     if workload_class == "rapid-automation":
         return (
-            fixture_p95 <= policy["maximumFixtureP95LatencyMilliseconds"]
-            and
-            warm_p95 <= policy["maximumWarmP95LatencyMilliseconds"]
+            common_fixture_p95
+            <= policy["maximumCommonFixtureP95LatencyMilliseconds"]
+            and proposal_fixture_p95
+            <= policy["maximumProposalFixtureP95LatencyMilliseconds"]
+            and warm_p95 <= policy["maximumWarmP95LatencyMilliseconds"]
             and c8_p95 <= policy["maximumC8P95LatencyMilliseconds"]
         )
     if workload_class == "complex-orchestration":
