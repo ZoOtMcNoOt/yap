@@ -127,8 +127,11 @@ knowledge.
   self-protection P1. The first protected-head qualification then exposed one
   bounded lexical-contract P2, and the next run exposed one bounded
   final-response-decoding P2. The next exact-head run exposed one bounded
-  cited-proposal-contract P2. The accepted register now contains seven P1 and
-  thirteen P2 without expanding the checkpoint into Phase 10. That latest
+  cited-proposal-contract P2. Runtime read-back then exposed one route-runtime
+  identity P2: Qwen requires strict 26.07 plus the pinned XGrammar 0.2.1
+  overlay, while Gemma remains on exact 26.06. The accepted register now
+  contains seven P1 and fourteen P2 without expanding the checkpoint into
+  Phase 10. The latest terminal
   terminal route qualification at exact head
   `518f78482b4f62f7e2397219e96ed27cd1d3e2fb` returned
   `deterministic-no-model` with public-safe evidence SHA-256
@@ -147,13 +150,19 @@ knowledge.
   current status, roadmap, runbooks, and Voice OS summaries without silently
   changing the approved long-term target.
 - [x] Use focused verification for each repair; freeze reviewed executable candidate
-  `4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` only after code, tests,
+  `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` only after code, tests,
   provenance, accepted findings, and three-lens review are clean; reconcile the
   resulting public-safe evidence in the documentation-only successor. The public
-  route lock remains deliberately stale until a new qualification binds this protected input set.
-- [ ] Run the complete applicable checkpoint matrix exactly once, preserving
-  any still-valid immutable private predecessor evidence by explicit identity
-  rather than rerunning unrelated model research.
+  route lock remains deliberately stale until a new qualification binds the
+  route-specific runtime identities and this protected input set.
+- [ ] Run one complete fresh private Qwen/Gemma qualification at exact clean
+  reviewed head `96897d2f77f16457a9da2b87af8a9bf4c9ad2b99`. Publish a replacement
+  public-safe schema-3 route lock only if both required routes qualify; a
+  rejected tree remains terminal and the historical lock remains stale.
+- [ ] After successful semantic admission of that replacement tree, run the
+  complete applicable aggregate checkpoint matrix exactly once. Preserve any
+  still-valid immutable non-route predecessor evidence by explicit identity
+  rather than rerunning unrelated research.
 - [ ] Open one focused PR, require green hosted checks on its exact head, and
   merge before Phase 10 begins.
 

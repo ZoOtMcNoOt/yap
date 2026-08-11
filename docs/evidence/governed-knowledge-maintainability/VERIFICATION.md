@@ -51,6 +51,18 @@ runtime. Its fixture SHA-256 is
 `ac033eb4d0f877b7d87bc17b9027b0f5c2ef4a0a7f7beb24d21959a504c8a347`;
 the resulting acceptance SHA-256 is
 `461a7b6f6fcc41ca42adcc2a9add885ae61598a0c8197e38609304bf756bc8a3`.
+Runtime read-back then proved that one shared vLLM image was not valid for both
+frozen routes. Exact executable head
+`96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` binds Qwen rapid automation to
+the pinned NVIDIA vLLM 26.07 ARM64 base plus XGrammar 0.2.1 overlay and strict
+tool guidance, while Gemma complex orchestration remains on exact upstream
+NVIDIA vLLM 26.06 ARM64. It changes no model, route, route cap, output bound,
+quality/latency threshold, or tool-retry policy. Candidate-lock SHA-256 is
+`3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013`;
+acceptance SHA-256 is
+`19e45aec7d4cd0fafe98da0c8ece4ff023eea0fdec6844f6d7c0801fb07c6f5d`;
+fixture SHA-256 remains
+`ac033eb4d0f877b7d87bc17b9027b0f5c2ef4a0a7f7beb24d21959a504c8a347`.
 The candidate has the following focused, non-promotional verification. Commands are
 shown from their working directory; the Windows runs used the locked project
 environment and Python 3.12.
@@ -73,11 +85,23 @@ environment and Python 3.12.
   qualification. None of these focused results is a complete checkpoint-gate
   claim.
 - At exact head `4cb73aee...`, the same portable command loaded the exact
-  25-module/142-test current membership: 138 passed, three declared
+  then-current 25-module/142-test membership: 138 passed, three declared
   platform/capability skips, and only the strict stale-route-lock contract
   failed. That failure is required before replacement qualification because
   the reviewed retry, cited-proposal, evidence-schema, and protected gate inputs
   intentionally differ from the historical public lock.
+- At exact head `96897d2f...`, the same portable command loaded the exact
+  25-module/151-test membership: 147 passed, three declared
+  platform/capability skips, and only the strict stale-route-lock contract
+  errored. The historical schema-2 route lock cannot admit the current schema-3
+  candidate/runtime contract, so that error is the required prequalification
+  state. Server-wide Ruff passed.
+- From `server`, with `PYTHONPATH=src`, the current acceptance, qualification,
+  vLLM-runtime, and private-route-admission contract modules ran 36 tests:
+  35 passed and one Windows POSIX-permission test was declared inapplicable.
+  They bind the complete per-route runtime mapping, exact platform/image/runtime
+  identities, Qwen Dockerfile/build/notice/dependency inputs, enabled strict
+  guidance, and stale-lock rejection.
 - From `server`, with `PYTHONPATH=src`, the focused agent acceptance, fixture,
   qualification, scoring, route-artifact, pressure, vLLM metric/runtime,
   final-response-retry, reasoning-route, governed-answer, and reasoning-client
@@ -110,7 +134,7 @@ environment and Python 3.12.
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 476 tracked regular surfaces: 251 at or above 350 lines and 225
+  enumerated 477 tracked regular surfaces: 251 at or above 350 lines and 226
   from 250 through 349. A read-back comparison of the 350-line output against
   `THRESHOLD-DISPOSITION.md` found all 251 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
@@ -198,10 +222,16 @@ the product's bound of two without claiming identical retry semantics. Tool
 selection, arguments, transport failures, and structurally valid semantic
 failures remain single-attempt evidence. No raw model output, private
 measurement, log, or private artifact location is published here.
-The latest repair leaves that no-tool-retry rule intact and instead makes the
+The cited-proposal repair leaves that no-tool-retry rule intact and instead makes the
 one bounded cited-summary proposal request the exact complete JSON call already
 required by its visible evidence and product-owned tool schema. The remaining
 terminology and complex proposal cases stay open-ended.
+The current runtime repair then assigns each route its compatible exact vLLM
+identity: pinned 26.07 plus XGrammar 0.2.1 for Qwen and exact upstream 26.06 for
+Gemma. Strict tool guidance is enabled and cannot be overridden off. The
+derived Qwen image is bound by its checked Dockerfile, build script, notice,
+wheel/source identities, platform, and exact observed image; this is not a
+claim that independent builds have the same Docker image ID.
 
 One later publication attempt at exact head
 `f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3` returned a qualifying model
@@ -231,7 +261,7 @@ drift. Commit `b8452f807ae6e2353a99f4d95c952e8103414709` places all four in the
 protected route set and proves a diff naming any one is rejected. That stronger
 self-protecting admission code intentionally makes the `f7fc37e3...` reference
 historical for later descendants; no compatibility exception is carried. One
-fresh qualification at reviewed executable head `4cb73aee...` is required
+fresh qualification at reviewed executable head `96897d2f...` is required
 before the aggregate gate.
 
 ## Complete checkpoint gate
@@ -241,7 +271,8 @@ Not yet consumed. The rejected `0cd9a9f8...`, `4473123e...`, `cb5ae95b...`,
 terminal and inadmissible. The fresh
 `f7fc37e3...` private tree is semantically admitted for that exact head and its
 pre-protection descendants. The new admission-protection, lexical/proposal-fixture,
-bounded-final-decoding, gate-count, and evidence-schema changes are protected route inputs,
+bounded-final-decoding, route-specific runtime, gate-count, and evidence-schema
+changes are protected route inputs,
 so the current descendant rejects reuse and requires a fresh private
 qualification. The aggregate checkpoint matrix remains a separate one-shot
 gate after that replacement lock is frozen.

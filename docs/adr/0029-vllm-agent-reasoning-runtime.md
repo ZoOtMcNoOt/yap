@@ -25,13 +25,25 @@ tokens per second, are not Yap workload evidence.
 
 ## Decision
 
-Yap uses vLLM as the sole Phase 9 agent-model serving candidate and Phase 10
-supervision target. The locked runtime is:
+Yap uses vLLM as the sole agent-model serving engine; runtime identity is
+route-specific rather than a universal image:
 
-- `nvcr.io/nvidia/vllm:26.06-py3`;
-- ARM64 digest `sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e`;
-- Python 3.12;
-- reported vLLM `0.22.1+7b9cb5b7.dev`.
+- Qwen rapid automation uses a local evaluation image derived from exact ARM64
+  NVIDIA vLLM 26.07 manifest
+  `sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2`,
+  reported vLLM `0.24.0+092c4842.nv26.7.59534043`, plus the exact
+  XGrammar 0.2.1 ARM64 wheel and source identity frozen in the candidate lock.
+  The overlay supplies the required strict tool-choice API; strict guidance may
+  not be disabled.
+- Gemma complex orchestration uses exact ARM64 NVIDIA vLLM 26.06 manifest
+  `sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e`
+  with reported vLLM `0.22.1+7b9cb5b7.dev` and XGrammar 0.2.0.
+
+Both runtimes are Linux/ARM64 and Python 3.12. The derived Qwen image is bound
+by its Dockerfile, build script, notice, dependency wheel/source hashes, and
+the exact observed image identity used for qualification. This is a pinned
+evaluation build contract, not a claim that independent builds produce the
+same Docker image ID.
 
 Qwen and Gemma are both required workload routes, not interchangeable fallback
 models and not competitors for one universal winner. The frozen assignment is
@@ -61,7 +73,7 @@ Simultaneous residency and sustained mixed-route capacity remain Phase 10
 claims and require their own measured evidence.
 
 The post-Phase-9 maintainability candidate keeps the same models, routes,
-runtime, output-token maxima, and quality/latency thresholds while making final
+output-token maxima, and quality/latency thresholds while making final
 structured decoding explicitly bounded. Acceptance schema 3 freezes exactly
 two final-response attempts. The evaluation driver may retry only a final
 response that cannot be decoded into the governed answer contract; it never
@@ -71,11 +83,16 @@ fixture-child evidence use schema 2 and bind the exact per-case model-request
 count. This shares the product's two-attempt upper bound but is not a claim that
 evaluation and production retry the same failure classes. Because these are
 protected route inputs, exact reviewed head
-`4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` additionally freezes the one
+`4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` additionally froze the one
 synthetic cited-summary proposal as a complete product-valid JSON tool call.
-The exact `518f7848...` qualification is terminal and rejected; a replacement
-private qualification is required before the aggregate checkpoint gate. No
-tool-call retry, acceptance threshold, route cap, model, or runtime changed.
+The exact `518f7848...` qualification is terminal and rejected. Runtime
+read-back then proved that one shared image was not a valid contract for both
+routes. Exact executable head
+`96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` binds the candidate-specific
+runtimes above, removes the strict-guidance-disable path, and protects the
+Dockerfile/build/notice inputs. Focused public contracts pass; a complete
+replacement private qualification is required before the aggregate checkpoint
+gate. No tool-call retry, acceptance threshold, route cap, or model changed.
 
 Yap's server boundary owns authentication, authorization, retrieval, tool
 policy, request admission, cancellation intent, audit, and publication. The
@@ -92,6 +109,8 @@ vLLM and SGLang production planes for speculative optionality.
 
 - Qwen follows its validated DGX Spark runtime instead of preserving an
   incompatible architectural prediction.
+- Qwen and Gemma do not share a container image merely for operational
+  uniformity; each route must read back its exact frozen runtime identity.
 - Qwen uses the `qwen3_xml` tool parser, `qwen3` reasoning parser, and
   `json-schema` final-response protocol.
 - Gemma uses NVIDIA's Apache-2.0 ModelOpt NVFP4 checkpoint, the `gemma4` tool

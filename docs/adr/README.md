@@ -54,7 +54,8 @@ one Tiron source-time epoch route; a failed promotion gate remains explicit
 rather than invoking a duplicate diarization fallback.
 ADR 0028 makes terminology a model-independent, owner-scoped, immutable job
 authority. ADR 0029 removes SGLang from the executing path and assigns Qwen 3.6
-rapid automation plus Gemma 4 complex orchestration to vLLM. Exact private head
+rapid automation plus Gemma 4 complex orchestration to route-specific vLLM
+runtimes rather than one universal image. Exact private head
 `36350d449735a4daea6546e16759f28f6f15631a` qualified those two workload routes;
 exact aggregate candidate `a4f34678ea9980379b18266d40d3347b818ac57e`
 then admitted the hash-locked private tree and passed the complete Phase 9 gate

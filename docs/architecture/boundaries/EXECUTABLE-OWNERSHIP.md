@@ -767,22 +767,27 @@ owner's state but may not recreate its transition logic.
 - **Entry point:** `evaluation/agent_model_qualification.py` and
   `evaluation/governed_knowledge_gate.py`.
 - **Authoritative owner:** `evaluation/agent_vllm_runtime.py` owns each immutable
-  evaluation container/model lifecycle; the model qualifier owns the frozen
-  route decision; `evaluation/agent_model_acceptance.py` owns the exact
-  two-attempt final-response bound; the fixture runner owns conversation/tool
-  sequencing and final structural decoding; `evaluation/owned_postgres_knowledge_runtime.py`
+  evaluation container/model lifecycle; `agent-reasoning-candidates.lock.json`
+  owns the exact route-to-runtime mapping; the model qualifier owns the frozen
+  route decision; `evaluation/agent_model_acceptance.py` owns the exact runtime
+  recipe/input hashes and two-attempt final-response bound; the fixture runner
+  owns conversation/tool sequencing and final structural decoding;
+  `evaluation/owned_postgres_knowledge_runtime.py`
   owns the disposable database lifecycle; the aggregate gate composes those
   admitted results with the exact portable, Ruff, Postgres, restart, and
   teardown checks.
 - **Persisted state:** create-once owner-private evidence outside Git. Public
   repository state contains only frozen contracts, immutable runtime/model
   identities, and public-safe hashes/outcomes.
-- **Trust boundary:** clean exact HEAD, protected input hashes, immutable Docker
-  image/container/model identity, bounded loopback endpoints, private artifact
-  admission, child hashes, and exact teardown. Raw prompts, outputs,
+- **Trust boundary:** clean exact HEAD, protected input hashes, route-specific
+  Dockerfile/build/notice/dependency identities, exact observed immutable
+  Docker image/container/model identity, bounded loopback endpoints, private
+  artifact admission, child hashes, and exact teardown. Qwen and Gemma never
+  inherit one shared runtime assumption or silently fall back. Raw prompts, outputs,
   measurements, credentials, DSNs, rows, and private paths never enter public
   receipts.
-- **Dependencies/events:** one owned Qwen run and one owned Gemma run -> private
+- **Dependencies/events:** one owned Qwen 26.07+XGrammar 0.2.1 run and one owned
+  Gemma 26.06 run -> private
   route decision -> semantic private-tree admission -> owned Postgres gate ->
   exact-head hosted checks. Each case completes every tool step once before its
   final response; only a structurally undecodable final answer may receive one

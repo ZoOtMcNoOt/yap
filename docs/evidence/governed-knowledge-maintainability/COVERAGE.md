@@ -71,8 +71,8 @@ out above rather than treated as refactor candidates.
 | Documentation | 103 | 33,237 |
 | Root/configuration/provenance text | 49 | 19,801 |
 
-The reproducible threshold screen finds 476 tracked regular source, text, and
-policy surfaces at or above 250 lines: 251 at or above 350 and 225 from 250
+The reproducible threshold screen finds 477 tracked regular source, text, and
+policy surfaces at or above 250 lines: 251 at or above 350 and 226 from 250
 through 349. The exact extension set, five excluded generated/dependency
 artifacts, disposition rules, and current output are owned by
 `verification/list-maintainability-threshold-surfaces.ps1`. Review
@@ -133,7 +133,7 @@ in isolation:
 | Identity/authorization/WSS | Complete across three lenses | Identity durable owner and adjacent trust seams | KAP-06 removes the obsolete development-schema migration; no tenant/subject/revocation defect found |
 | Meeting evidence | Complete across three lenses | Result revision -> reviewed capture -> source admission -> compilation | KAP-02/KAP-03 remediations implemented; 17-test real-Postgres focus and independent re-review passed; aggregate gate remains |
 | Knowledge/terminology/retrieval | Complete across three lenses | Generation, permissions, retrieval, terminology, proposal, SQL lifecycle | KAP-01 through KAP-07 remediations implemented; 17-test real-Postgres focus, restart diagnostic, and independent re-review passed; aggregate gate remains |
-| Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-09 and ARCH-03 remediations implemented; prior exact-head qualification/admission passed, while the self-protecting admission owner and corrected lexical/proposal/final-response contracts intentionally require one replacement qualification; no fallback defect found; aggregate gate remains |
+| Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-10 and ARCH-03 remediations implemented; the self-protecting admission owner, corrected lexical/proposal/final-response contracts, and route-specific runtime identities intentionally require one replacement qualification; no fallback defect found; aggregate gate remains |
 | Packaging/CI/gates/provenance | Complete across three lenses | Locks, licenses, receipt boundaries, exact-head hosted workflow | No P0-P2; private/public evidence separation remains sound |
 | Docs/ADRs/plans/runbooks/status | Complete across three lenses | Current/normative taxonomy and ownership navigation | Ownership/current docs reconciled, mixed test owner split, and independent re-review passed; final gate reconciliation remains |
 
@@ -154,9 +154,9 @@ net additive; no LOC-reduction claim is made for those correctness repairs.
 
 ### Complete threshold disposition
 
-At the current remediation tree, the inventory contains 476 in-scope tracked
+At the current remediation tree, the inventory contains 477 in-scope tracked
 source, text, policy, and provenance surfaces at or above 250 physical lines: 251 at or
-above 350 and 225 from 250 through 349. The three reviews deep-traced them
+above 350 and 226 from 250 through 349. The three reviews deep-traced them
 through the same workflow owners and found no additional mixed authority. The
 mutually exclusive rows below classify every one of the 251
 decomposition-triggering surfaces. The exact path/line/disposition read-back is
@@ -208,18 +208,18 @@ navigable.
 | `server/src/yap_server/knowledge/postgres_knowledge_retrieval.py` | 404 | One query-family owner shares the same transaction-pinned authorized generation/result/citation projection across tree, lexical, vector, and hybrid reads. |
 | `server/src/yap_server/evaluation/owned_postgres_knowledge_runtime.py` | 753 | One lifecycle state machine owns immutable image/container/network/volume/start/restart/readiness/containment/teardown identity; decomposition would split failure containment. |
 | `server/src/yap_server/evaluation/governed_knowledge_gate.py` | 570 | One aggregate decision composes exact candidate admission, portable/Ruff/Postgres/restart children, teardown, and create-once publication. Child lifecycle and evidence validators remain separate modules. |
-| `server/src/yap_server/evaluation/agent_route_qualification_evidence.py` | 442 | One private-tree admission boundary verifies exact membership, hashes, permissions, semantic summaries, predecessor identity, and protected drift without importing raw output into public evidence. The obsolete one-file transition allowance is deleted. |
-| `server/src/yap_server/evaluation/agent_model_qualification.py` | 678 | One fail-closed route decision recomputes both owned candidate results, route-specific evidence, runtime children, and atomic tree publication. Runtime execution remains separately owned. |
-| `server/src/yap_server/evaluation/agent_vllm_runtime.py` | 678 | One repaired lifecycle state machine retains pending/observed immutable identities through launch-policy validation, readiness, cgroup observation, containment, and exact teardown. |
-| `server/src/yap_server/evaluation/agent_model_acceptance.py` | 530 | One frozen acceptance reader validates exact candidate, fixture, runtime-track, route-threshold, final-response-attempt, and exact cited-proposal policy through the shared product tool contract. Splitting schema checks from this owner would recreate divergent admission. |
+| `server/src/yap_server/evaluation/agent_route_qualification_evidence.py` | 445 | One private-tree admission boundary verifies exact membership, hashes, permissions, semantic summaries, predecessor identity, protected drift, and route-specific build inputs without importing raw output into public evidence. The obsolete one-file transition allowance is deleted. |
+| `server/src/yap_server/evaluation/agent_model_qualification.py` | 690 | One fail-closed route decision recomputes both owned candidate results, route-specific runtime evidence, protected build inputs, runtime children, and atomic tree publication. Runtime execution remains separately owned. |
+| `server/src/yap_server/evaluation/agent_vllm_runtime.py` | 716 | One repaired lifecycle state machine retains pending/observed immutable identities through route-specific image/platform/launch-policy validation, readiness, cgroup observation, containment, and exact teardown. |
+| `server/src/yap_server/evaluation/agent_model_acceptance.py` | 578 | One frozen acceptance reader validates exact candidate, fixture, route-to-runtime mapping, build/provenance inputs, route thresholds, final-response attempts, and exact cited-proposal policy through the shared product tool contract. Splitting schema checks from this owner would recreate divergent admission. |
 | `server/src/yap_server/evaluation/agent_model_fixture_runner.py` | 478 | Conversation sequencing, tool/result rounds, and bounded final structural decoding remain one evaluation driver after the duplicate product-tool schema authority was removed. Completed tools sit outside the retry loop. |
 | `server/src/yap_server/evaluation/agent_model_scoring.py` | 334 | One scorer recomputes route quality from frozen cases, exact tool/argument/citation/term behavior, and bounded per-case request evidence; it trusts no supplied aggregate. |
 | `server/tests/evaluation/test_owned_postgres_knowledge_runtime.py` | 495 | One fake Docker lifecycle test owner covers start/restart/rebind/partial-observation/containment/teardown; aggregate-gate contracts remain in their separate functional module. |
-| `server/tests/evaluation/test_agent_model_qualification.py` | 646 | One fail-closed decision test owner covers full admission, evidence-schema rejection, route-specific failure, tamper, latency, and exceptional containment cases against the same qualification seam. |
+| `server/tests/evaluation/test_agent_model_qualification.py` | 692 | One fail-closed decision test owner covers full admission, evidence-schema rejection, route-specific runtime/failure, protected-build-input tamper, latency, and exceptional containment cases against the same qualification seam. |
 | `server/tests/evaluation/test_agent_model_fixture_runner.py` | 742 | One conversation-driver test owner covers tool/result sequencing, exact cited-proposal and semantic context withholding, warmups, contract parity, malformed tool-response continuation, and complex no-replay behavior. |
 | `server/tests/evaluation/test_agent_model_scoring.py` | 354 | One scorer test owner independently rejects malformed or semantically different tool, argument, citation, terminology, request-count, and proposal evidence without trusting aggregates. |
 | `server/tests/evaluation/test_agent_model_final_response_retry.py` | 269 | One narrow retry-contract test owner covers the observed proposal fixture, both final-response protocols, exhaustion, exact citation retention, semantic non-retry, request counting, latency, and no tool replay. It owns no product state. |
-| `server/tests/evaluation/test_agent_vllm_runtime.py` | 450 | One immutable vLLM lifecycle test owner covers launch policy, partial-start identity, name replacement, containment retry, cgroup/listener/PID teardown, and exact model artifacts. |
+| `server/tests/evaluation/test_agent_vllm_runtime.py` | 647 | One immutable vLLM lifecycle test owner covers route-specific image/platform/build labels, strict tool guidance, launch policy, partial-start identity, name replacement, containment retry, cgroup/listener/PID teardown, and exact model artifacts. |
 | `server/tests/knowledge/test_okf_compiler.py` | 544 | One compiler-contract test owner covers pinned conformance, permission/source projection, canonical hashes and POSIX paths, relationship authority, linked-directory rejection, and authenticated curator admission identity. |
 | `server/tests/knowledge/test_postgres_generation_ledger.py` | 802 | One real-Postgres generation lifecycle test owner covers stage/embedding/activation/rollback/retention, exact admission, persisted tamper, proposal disposition, and reconnect semantics under the tenant lock. |
 | `server/tests/knowledge/test_postgres_permission_safe_retrieval.py` | 484 | One real-Postgres permission/retrieval test owner covers hidden concepts/links, lexical/vector/hybrid output, revocation, and the two-connection generation-pin race. |

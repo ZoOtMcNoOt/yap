@@ -79,14 +79,19 @@ evidence SHA-256
 is retained only as terminal rejected evidence. Gemma remained eligible, while
 Qwen produced one structurally invalid cited-proposal tool response before
 dispatch. Reviewed executable head
-`4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` now freezes that one synthetic
-proposal as a complete product-valid JSON call while retaining two
-evaluation-only final structural-decoding attempts, preserving completed tool
-calls, and leaving semantic/tool/transport failures non-retryable. Exact
-focused public checks and three-lens review passed, while the stale route lock,
-replacement private qualification, aggregate checkpoint gate, PR, and merge remain open. No
-production agent service, simultaneous model residency, or sustained
-mixed-route capacity is claimed.
+`96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` retains the complete synthetic
+proposal contract and two evaluation-only final structural-decoding attempts,
+then binds each route to its compatible exact vLLM runtime. Qwen rapid
+automation uses the pinned 26.07 base plus XGrammar 0.2.1 overlay with strict
+tool guidance; Gemma complex orchestration remains on exact upstream 26.06.
+The candidate lock SHA-256 is
+`3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013`, and
+the acceptance SHA-256 is
+`19e45aec7d4cd0fafe98da0c8ece4ff023eea0fdec6844f6d7c0801fb07c6f5d`.
+Focused public checks and runtime read-back passed. The historical route lock
+is deliberately stale; replacement private qualification, aggregate checkpoint
+gate, PR, and merge remain open. No production agent service, simultaneous
+model residency, or sustained mixed-route capacity is claimed.
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -114,7 +119,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 8: meeting evidence | Closed as unadvertised baseline | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron for the sole server meeting route. PR #144 merged exact 30-second source-time epochs, request-scoped ECAPA reconciliation, canonical `speaker-1` through `speaker-64` identities, typed capacity records, strict `Unknown`, and one-speaker plain-text History projection. Exact qualification candidate `3ddb930...` recorded `unadvertised-baseline` because the required private holdout was unconfigured. Tiron remains explicit Preview and absent from the default catalog; Phase 8 adds no fallback pipeline. |
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
-| Post-Phase-9 maintainability checkpoint | Active | The [governed-knowledge ownership and maintainability review](plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) has resolved its accepted public findings at reviewed executable head `4cb73aee...`, including bounded final structural decoding without tool replay and one exact cited-proposal fixture contract. The exact `518f7848...` route qualification remains terminal and rejected; replacement private qualification, aggregate gate, hosted PR checks, and merge are pending. No Phase 10 behavior is added. |
+| Post-Phase-9 maintainability checkpoint | Active | The [governed-knowledge ownership and maintainability review](plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) has resolved its accepted public findings at reviewed executable head `96897d2f...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, and candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes. The exact `518f7848...` route qualification remains terminal and rejected; replacement private qualification, aggregate gate, hosted PR checks, and merge are pending. No Phase 10 behavior is added. |
 | Phase 10 | Planned | Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`

@@ -107,17 +107,29 @@ that approval.
 
 ## Phase 9 agent evaluation runtime
 
-The Phase 9 agent gate uses the immutable ARM64 NVIDIA vLLM 26.06 image digest,
-Python 3.12, and reported vLLM revision recorded in
-`server/agent-reasoning-candidates.lock.json`. It evaluates two Apache-2.0
-checkpoints at exact Hugging Face revisions and artifact-manifest hashes:
+The agent-evaluation lock assigns one exact Linux/ARM64 Python 3.12 vLLM
+runtime to each route. It evaluates two Apache-2.0 checkpoints at exact Hugging
+Face revisions and artifact-manifest hashes:
 
 - `nvidia/Qwen3.6-35B-A3B-NVFP4` for `rapid-automation`;
 - `nvidia/Gemma-4-31B-IT-NVFP4` for `complex-orchestration`.
 
+Gemma uses the upstream NVIDIA vLLM 26.06 manifest
+`sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e`.
+Qwen uses a local evaluation image derived from NVIDIA vLLM 26.07 manifest
+`sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2`
+with the Apache-2.0 XGrammar 0.2.1 ARM64 wheel
+`xgrammar-0.2.1-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl`
+(SHA-256 `9e8dd9853958a263b4015ce79133a0ff4eaa9d22ef781fb2350c7dfc40c2c012`,
+source revision `5b4e9ce9e72524037ae24ecd831b9b6604d2eb48`). The tracked Dockerfile,
+build script, and `server/runtime/agent-vllm/THIRD_PARTY_NOTICES.md` bind that
+overlay; the exact observed local image identity used by qualification is also
+locked. The image is evaluation-only, is not registry-published or bundled,
+and the repository does not claim independently rebuilt Docker IDs are equal.
+
 The lock also freezes quantization, tool/reasoning parser identities, final
 response protocols, and Gemma's chat-template path. That template is supplied
-by and provenance-bound to the digest-pinned vLLM image; Yap does not copy it.
+by and provenance-bound to the digest-pinned Gemma runtime; Yap does not copy it.
 Model artifacts and raw qualification output remain in owner-private external
 caches and are not bundled, mirrored, committed, or exposed in hosted
 artifacts. The synthetic workload manifest records its own CC0 provenance. An
