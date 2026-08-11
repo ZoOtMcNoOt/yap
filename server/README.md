@@ -446,12 +446,15 @@ already-qualified private Qwen/Gemma tree available outside Git:
 
 ```bash
 umask 077
-uv run --locked python -m yap_server.evaluation.governed_knowledge_gate \
+uv run --locked --all-extras python -m yap_server.evaluation.governed_knowledge_gate \
   --repository-root /absolute/path/to/clean/yap \
   --checked-head <full-lowercase-git-sha> \
   --agent-route-evidence-root /absolute/private/agent-model \
   --receipt-path /absolute/private/governed-knowledge-gate.json
 ```
+
+`--all-extras` materializes the locked evaluation and test packages before the
+gate-owned runtime-identity check; omitting it on a clean host fails closed.
 
 The command admits the exact hash-locked private model evidence without copying
 raw outputs or measurements, runs the locked Python 3.12 Phase 9 portable suite

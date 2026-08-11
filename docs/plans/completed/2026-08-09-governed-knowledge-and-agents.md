@@ -158,7 +158,7 @@ never compile permissions, grant access, or promote their own output.
 - [x] Run the complete Phase 9 matrix exactly once from `server/` with:
 
   ```text
-  uv run --locked python -m yap_server.evaluation.governed_knowledge_gate \
+  uv run --locked --all-extras python -m yap_server.evaluation.governed_knowledge_gate \
     --repository-root <absolute-clean-checkout> \
     --checked-head <full-lowercase-head> \
     --agent-route-evidence-root <absolute-private-agent-model-tree> \

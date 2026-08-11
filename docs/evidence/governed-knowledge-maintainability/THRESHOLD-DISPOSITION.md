@@ -84,7 +84,7 @@ Each line contains up to two independent entries in the form
   582 CURRENT-DOC          docs/specs/testing-strategy.md ||  1188 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md
   696 INFRA                infra/yap-server-node/owned-process-group.sh ||   989 INFRA                infra/yap-server-node/owned-process-supervisor.py
   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
-  504 INFRA                infra/yap-server-node/setup-server.sh ||   608 SERVER-RUNBOOK       server/README.md
+  504 INFRA                infra/yap-server-node/setup-server.sh ||   611 SERVER-RUNBOOK       server/README.md
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
   414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   585 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
   483 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   715 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
