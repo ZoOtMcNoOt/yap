@@ -235,6 +235,7 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
             case.get("visibleContext"), list
         ):
             raise ValueError("agent workload content is invalid")
+        _validate_visible_context(case["visibleContext"])
         case_ids.append(case_id)
         categories.add(category)
         pair = case.get("isolationPair")
@@ -269,6 +270,11 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
             )
         ):
             raise ValueError("agent multi-step expected calls are invalid")
+        expected_arguments = case.get("expectedArguments")
+        if expected_arguments is not None and (
+            not isinstance(expected_arguments, dict) or not expected_arguments
+        ):
+            raise ValueError("agent expected arguments are invalid")
         expected_answer = case.get("expectedAnswer")
         if expected_answer is not None and (
             not isinstance(expected_answer, str)
@@ -292,6 +298,41 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
     ):
         raise ValueError("agent workload identities are incomplete")
     return tuple(case_ids), categories
+
+
+def _validate_visible_context(value: object) -> None:
+    if not isinstance(value, list):
+        raise ValueError("agent visible context is invalid")
+    expected_keys = {
+        "conceptId",
+        "text",
+        "sourceRevision",
+        "contentSha256",
+        "charStart",
+        "charEnd",
+    }
+    for item in value:
+        if not isinstance(item, dict) or set(item) != expected_keys:
+            raise ValueError("agent visible context is invalid")
+        if not all(
+            isinstance(item[field], str) and bool(item[field])
+            for field in ("conceptId", "text", "sourceRevision")
+        ) or not isinstance(item["contentSha256"], str) or _SHA256.fullmatch(
+            item["contentSha256"]
+        ) is None:
+            raise ValueError("agent visible context identity is invalid")
+        start = item["charStart"]
+        end = item["charEnd"]
+        if (
+            isinstance(start, bool)
+            or not isinstance(start, int)
+            or isinstance(end, bool)
+            or not isinstance(end, int)
+            or start < 0
+            or end <= start
+            or end - start != len(str(item["text"]))
+        ):
+            raise ValueError("agent visible context span is invalid")
 
 
 def _thresholds(value: object) -> None:

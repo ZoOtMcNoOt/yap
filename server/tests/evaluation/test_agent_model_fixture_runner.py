@@ -144,6 +144,10 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             lexical["expectedAnswer"],
             "The publication pointer changes only after every projection validates.",
         )
+        self.assertEqual(
+            lexical["expectedArguments"],
+            {"purpose": "knowledge.read", "search_text": "publication pointer"},
+        )
 
         missing = by_id["missing-evidence-refusal"]
         self.assertEqual(missing["expectedAnswer"], "Evidence is unavailable.")
@@ -178,7 +182,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 prompt,
             )
 
-    def test_withholds_context_from_semantically_wrong_orchestration_step(self) -> None:
+    def test_withholds_context_from_semantically_wrong_tool_calls(self) -> None:
         fixture = json.loads(
             (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
                 encoding="utf-8"
@@ -202,6 +206,33 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 },
             ),
             [],
+        )
+
+        lexical = next(
+            item
+            for item in fixture["cases"]
+            if item["caseId"] == "lexical-cited-answer"
+        )
+        self.assertEqual(
+            _step_visible_context(
+                lexical,
+                step_index=0,
+                tool_name="search_knowledge",
+                arguments={
+                    "purpose": "knowledge.read",
+                    "search_text": "completely unrelated banana",
+                },
+            ),
+            [],
+        )
+        self.assertEqual(
+            _step_visible_context(
+                lexical,
+                step_index=0,
+                tool_name="search_knowledge",
+                arguments=lexical["expectedArguments"],
+            ),
+            lexical["visibleContext"],
         )
 
     def test_runs_complex_orchestration_as_three_owned_tool_steps(self) -> None:

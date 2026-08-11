@@ -323,6 +323,11 @@ def _step_visible_context(
 ) -> object:
     expected_calls = case.get("expectedToolCalls")
     if expected_calls is None:
+        required = case.get("expectedArguments", {})
+        if tool_name != case.get("expectedTool") or not isinstance(required, dict):
+            return []
+        if not all(arguments.get(key) == value for key, value in required.items()):
+            return []
         return case["visibleContext"]
     if not isinstance(expected_calls, list) or step_index >= len(expected_calls):
         raise ValueError("agent expected tool calls are invalid")

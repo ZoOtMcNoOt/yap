@@ -54,6 +54,17 @@ class AgentModelAcceptanceTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
+        visible_case = next(case for case in fixtures["cases"] if case["visibleContext"])
+        visible_case["visibleContext"][0]["charEnd"] -= 1
+        with self.assertRaisesRegex(ValueError, "visible context span"):
+            _fixtures(fixtures)
+        visible_case["visibleContext"][0]["charEnd"] += 1
+        digest = visible_case["visibleContext"][0]["contentSha256"]
+        visible_case["visibleContext"][0]["contentSha256"] = int("1" * 64)
+        with self.assertRaisesRegex(ValueError, "visible context identity"):
+            _fixtures(fixtures)
+        visible_case["visibleContext"][0]["contentSha256"] = digest
+
         empty_case = next(
             case for case in fixtures["cases"] if case["visibleContext"] == []
         )

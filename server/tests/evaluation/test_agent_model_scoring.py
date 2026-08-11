@@ -119,6 +119,27 @@ class AgentModelScoringTests(unittest.TestCase):
 
     def test_rejects_extra_tool_argument_and_fabricated_citation(self) -> None:
         results = list(_perfect_results())
+        lexical = next(
+            result for result in results if result["caseId"] == "lexical-cited-answer"
+        )
+        expected_arguments = dict(lexical["arguments"])  # type: ignore[arg-type]
+        lexical["arguments"] = {
+            **expected_arguments,
+            "search_text": "completely unrelated banana",
+        }
+        lexical["toolCalls"] = [
+            {"name": "search_knowledge", "arguments": lexical["arguments"]}
+        ]
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(results), workload_class="rapid-automation"
+        )
+        self.assertLess(score.structured_argument_accuracy, 1.0)
+        self.assertFalse(score.passed)
+
+        lexical["arguments"] = expected_arguments
+        lexical["toolCalls"] = [
+            {"name": "search_knowledge", "arguments": expected_arguments}
+        ]
         results[0]["arguments"] = {
             **results[0]["arguments"],  # type: ignore[dict-item]
             "raw_repository": True,
