@@ -101,9 +101,15 @@ Qwen keeps its 256-token route maximum, its three frozen proposal fixtures use
 160, and common three-second and proposal ten-second qualification bounds are
 evaluated separately. Gemma remains 512. All correctness, warm/C8, model,
 route, runtime, and no-tool-retry contracts remain unchanged. These are
-evaluation-route controls, not a production p95/p99 SLO or TPS claim. Focused
-public contracts pass; a complete replacement private qualification is required
-before the aggregate checkpoint gate.
+evaluation-route controls, not a production p95/p99 SLO or TPS claim. The fresh
+qualification at exact head `a76ed9b0...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`.
+Both routes were eligible and exact teardown left zero residue. Public schema-3
+lock commit `2cf1e92c...` has SHA-256
+`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
+and passed semantic admission. The aggregate checkpoint gate remains separate
+and unconsumed.
 
 Yap's server boundary owns authentication, authorization, retrieval, tool
 policy, request admission, cancellation intent, audit, and publication. The

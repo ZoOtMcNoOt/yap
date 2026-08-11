@@ -72,7 +72,7 @@ out above rather than treated as refactor candidates.
 | Root/configuration/provenance text | 49 | 19,801 |
 
 The reproducible threshold screen finds 477 tracked regular source, text, and
-policy surfaces at or above 250 lines: 251 at or above 350 and 226 from 250
+policy surfaces at or above 250 lines: 252 at or above 350 and 225 from 250
 through 349. The exact extension set, five excluded generated/dependency
 artifacts, disposition rules, and current output are owned by
 `verification/list-maintainability-threshold-surfaces.ps1`. Review
@@ -133,7 +133,7 @@ in isolation:
 | Identity/authorization/WSS | Complete across three lenses | Identity durable owner and adjacent trust seams | KAP-06 removes the obsolete development-schema migration; no tenant/subject/revocation defect found |
 | Meeting evidence | Complete across three lenses | Result revision -> reviewed capture -> source admission -> compilation | KAP-02/KAP-03 remediations implemented; 17-test real-Postgres focus and independent re-review passed; aggregate gate remains |
 | Knowledge/terminology/retrieval | Complete across three lenses | Generation, permissions, retrieval, terminology, proposal, SQL lifecycle | KAP-01 through KAP-07 remediations implemented; 17-test real-Postgres focus, restart diagnostic, and independent re-review passed; aggregate gate remains |
-| Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-11 and ARCH-03 remediations implemented; the self-protecting admission owner, corrected lexical/proposal/final-response contracts, route-specific runtime identities, and split common/proposal latency policy intentionally require one replacement qualification; no fallback defect found; aggregate gate remains |
+| Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-11 and ARCH-03 remediations implemented; the self-protecting admission owner semantically admitted the fresh exact-head Qwen/Gemma tree through schema-3 public lock commit `2cf1e92c...`; no fallback defect found; aggregate gate remains |
 | Packaging/CI/gates/provenance | Complete across three lenses | Locks, licenses, receipt boundaries, exact-head hosted workflow | No P0-P2; private/public evidence separation remains sound |
 | Docs/ADRs/plans/runbooks/status | Complete across three lenses | Current/normative taxonomy and ownership navigation | Ownership/current docs reconciled, mixed test owner split, and independent re-review passed; final gate reconciliation remains |
 
@@ -155,10 +155,10 @@ net additive; no LOC-reduction claim is made for those correctness repairs.
 ### Complete threshold disposition
 
 At the current remediation tree, the inventory contains 477 in-scope tracked
-source, text, policy, and provenance surfaces at or above 250 physical lines: 251 at or
-above 350 and 226 from 250 through 349. The three reviews deep-traced them
+source, text, policy, and provenance surfaces at or above 250 physical lines: 252 at or
+above 350 and 225 from 250 through 349. The three reviews deep-traced them
 through the same workflow owners and found no additional mixed authority. The
-mutually exclusive rows below classify every one of the 251
+mutually exclusive rows below classify every one of the 252
 decomposition-triggering surfaces. The exact path/line/disposition read-back is
 recorded in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md); generated
 OpenAPI, the package lock, dependency-inventory JSON, media, model artifacts,

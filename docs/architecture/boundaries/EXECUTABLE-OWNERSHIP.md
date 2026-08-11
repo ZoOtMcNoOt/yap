@@ -779,7 +779,11 @@ owner's state but may not recreate its transition logic.
   teardown checks.
 - **Persisted state:** create-once owner-private evidence outside Git. Public
   repository state contains only frozen contracts, immutable runtime/model
-  identities, and public-safe hashes/outcomes.
+  identities, and public-safe hashes/outcomes. Exact qualification head
+  `a76ed9b0...` returned `required-workload-routes-qualified`; schema-3 lock
+  commit `2cf1e92c...` binds its exact artifact/input/dependency hashes and has
+  passed semantic admission. The aggregate gate remains a separate owner and
+  is not implied by route admission.
 - **Trust boundary:** clean exact HEAD, protected input hashes, route-specific
   Dockerfile/build/notice/dependency identities, exact observed immutable
   Docker image/container/model identity, bounded loopback endpoints, private

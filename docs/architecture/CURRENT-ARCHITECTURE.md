@@ -882,10 +882,16 @@ schema-4 policy keeps Qwen's route maximum at 256 tokens, applies 160 only to
 the three frozen proposal fixtures, and evaluates three-second common and
 ten-second proposal qualification bounds separately. Gemma remains at 512;
 correctness, warm/C8, model, route, and runtime contracts are unchanged. These
-are evaluation-route bounds, not a production SLO or TPS claim. The current
-public route lock is deliberately stale for this protected input set; therefore a
-replacement private qualification and the separate aggregate checkpoint gate
-remain pending. Production service integration remains Phase 10.
+are evaluation-route bounds, not a production SLO or TPS claim. The fresh
+qualification at exact head `a76ed9b0...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`;
+both routes were eligible and exact teardown left zero owned residue. Schema-3
+public lock commit `2cf1e92c...` has SHA-256
+`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
+and passed the production semantic-admission validator. The separate aggregate
+checkpoint gate remains unconsumed. Production service integration remains
+Phase 10.
 
 At remediation anchor `c332700597eac1cc6af3f68afb3e75fce0b6ec77`, each
 exported knowledge query/traversal/proposal owns the transaction that holds the

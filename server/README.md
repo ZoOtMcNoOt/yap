@@ -512,10 +512,19 @@ checks, but the obsolete aggregate fixture bound rejected the proposal
 workflow. Raw output, measurements, logs, and private locations remain outside
 Git. The new split bounds are frozen route-evaluation controls, not production
 p95/p99 SLO, capacity, or generic TPS evidence.
-The committed public route lock intentionally names an older acceptance input,
-so strict portable verification fails closed until one fresh private
-qualification is semantically admitted and a replacement public-safe lock is
-committed. Only then may the separate aggregate checkpoint gate run.
+Fresh exact-head qualification at `a76ed9b0...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`.
+Both locked candidates were eligible and passed their semantic and
+route-specific evidence contracts; both lifecycles reported exact teardown and
+zero owned runtime residue. Schema-3 public lock commit `2cf1e92c...` has
+raw-file SHA-256
+`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
+and passed hash-bound semantic admission against the owner-private tree. Raw
+outputs, measurements, logs, private locations, and runtime credentials remain
+outside Git. The separate aggregate checkpoint gate may now run once; it has
+not yet been consumed. This qualification remains evaluation evidence, not a
+production p95/p99 SLO, capacity, or generic TPS claim.
 
 ## Local checks
 

@@ -83,6 +83,19 @@ cannot be mistaken for the obsolete aggregate field. Acceptance SHA-256 is
 `d2b422afa2da8c36da1920b0c32da9c5425f4b73718b55b0bf8cb136d3d7a773`.
 These are workload-route qualification bounds, not a production p95/p99 SLO,
 capacity result, or generic TPS claim.
+The fresh create-once qualification at that exact clean executable head then
+returned `required-workload-routes-qualified` with public-safe evidence SHA-256
+`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`.
+Both required candidates were eligible; both semantic and route-evidence
+checks passed; both five-part runtime teardowns passed; and the owner-label
+read-back found zero residue. Public lock commit
+`2cf1e92c821c0d8f5b20c911f66f9a58b54b3ec7` freezes schema 3 with SHA-256
+`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`.
+At that exact clean descendant, the production semantic-admission owner
+rechecked ancestry, protected drift, modes, tree membership, every artifact
+digest, both candidate summaries, the canonical decision, dependencies, and
+teardown successfully. Raw output, measurements, logs, and the private tree
+location remain outside Git.
 The candidate has the following focused, non-promotional verification. Commands are
 shown from their working directory; the Windows runs used the locked project
 environment and Python 3.12.
@@ -101,8 +114,8 @@ environment and Python 3.12.
   expected failure, or unexpected success. The portable suite does not consume
   private route artifacts. Current admission-protection commit `b8452f80...`
   separately passed its focused route and admission-contract sets plus Ruff, but actual
-  private admission and the aggregate gate remain blocked until replacement
-  qualification. None of these focused results is a complete checkpoint-gate
+  private admission and the aggregate gate were blocked at that point until a
+  replacement qualification. None of these focused results is a complete checkpoint-gate
   claim.
 - At exact head `4cb73aee...`, the same portable command loaded the exact
   then-current 25-module/142-test membership: 138 passed, three declared
@@ -116,6 +129,11 @@ environment and Python 3.12.
   errored. The historical schema-2 route lock cannot admit the current schema-4
   acceptance and schema-2 qualification-decision contract, so that error is
   the required prequalification state. Server-wide Ruff passed.
+- At exact public-lock head `2cf1e92c...`, the same exact 25-module/152-test
+  suite ran green: 149 passed and the same three declared skips, with zero
+  failures, expected failures, or unexpected successes. The 16 focused
+  route-admission/gate contracts also passed with their one declared POSIX
+  permission skip, and server-wide Ruff remained green.
 - From `server`, with `PYTHONPATH=src`, the current acceptance, qualification,
   vLLM-runtime, and private-route-admission contract modules ran 37 tests:
   36 passed and one Windows POSIX-permission test was declared inapplicable.
@@ -154,9 +172,9 @@ environment and Python 3.12.
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 477 tracked regular surfaces: 251 at or above 350 lines and 226
+  enumerated 477 tracked regular surfaces: 252 at or above 350 lines and 225
   from 250 through 349. A read-back comparison of the 350-line output against
-  `THRESHOLD-DISPOSITION.md` found all 251 exact paths and zero differences.
+  `THRESHOLD-DISPOSITION.md` found all 252 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
   `8e3ece5a3580ec29116c05f31b045a5748c143b8`, the gate-owned locked PostgreSQL
   17 / pgvector 0.8.6 runtime invoked, from `server` with `PYTHONPATH=src`,
@@ -293,14 +311,26 @@ The committed lock contains only public-safe hashes and the outcome; raw model
 output, measurements, logs, and the private artifact location remain outside
 Git.
 
+That historical admission is not the current checkpoint authority. The fresh
+qualification at exact executable head
+`a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`.
+Both frozen workload routes were eligible and passed semantic, route, runtime,
+cancellation/recovery, and teardown checks. Public schema-3 lock commit
+`2cf1e92c821c0d8f5b20c911f66f9a58b54b3ec7` binds the exact private tree,
+six protected model/runtime inputs, and two dependency locks; its SHA-256 is
+`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`.
+The production semantic validator admitted it on the exact clean lock commit.
+
 Subsequent adversarial review found that the semantic admission owner, gate
 caller, and their contract tests were not themselves protected from descendant
 drift. Commit `b8452f807ae6e2353a99f4d95c952e8103414709` places all four in the
 protected route set and proves a diff naming any one is rejected. That stronger
 self-protecting admission code intentionally makes the `f7fc37e3...` reference
-historical for later descendants; no compatibility exception is carried. One
-fresh qualification at reviewed executable head `a76ed9b0...` is required
-before the aggregate gate.
+historical for later descendants; no compatibility exception is carried. The
+fresh `a76ed9b0...` tree and `2cf1e92c...` public lock now satisfy that stronger
+contract. The aggregate gate remains separate and unconsumed.
 
 ## Complete checkpoint gate
 
@@ -311,10 +341,10 @@ terminal and inadmissible. The fresh
 pre-protection descendants. The new admission-protection, lexical/proposal-fixture,
 bounded-final-decoding, route-specific runtime, common/proposal policy,
 gate-count, and evidence-schema
-changes are protected route inputs,
-so the current descendant rejects reuse and requires a fresh private
-qualification. The aggregate checkpoint matrix remains a separate one-shot
-gate after that replacement lock is frozen.
+changes are protected route inputs, so only the fresh `a76ed9b0...` tree is
+current. Commit `2cf1e92c...` publishes its semantically admitted public lock.
+The aggregate checkpoint matrix remains a separate one-shot gate and has not
+yet been consumed.
 
 ## Hosted closure
 

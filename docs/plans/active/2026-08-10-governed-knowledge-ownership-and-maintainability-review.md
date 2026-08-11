@@ -155,17 +155,20 @@ knowledge.
 - [x] Use focused verification for each repair; freeze reviewed executable candidate
   `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` only after code, tests,
   provenance, accepted findings, and three-lens review are clean; reconcile the
-  resulting public-safe evidence in the documentation-only successor. The public
-  route lock remains deliberately stale until a new qualification binds the
-  route-specific runtime identities, split common/proposal policy, and this
-  protected input set. Acceptance schema 4 keeps Qwen's route maximum at 256,
+  resulting public-safe evidence in the documentation-only successor.
+  Acceptance schema 4 keeps Qwen's route maximum at 256,
   caps only its three proposal fixtures at 160, separates three-second common
   and ten-second proposal qualification bounds, and leaves Gemma at 512 plus
   every correctness, warm, C8, runtime, model, and no-tool-retry contract.
-- [ ] Run one complete fresh private Qwen/Gemma qualification at exact clean
-  reviewed head `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef`. Publish a replacement
-  public-safe schema-3 route lock only if both required routes qualify; a
-  rejected tree remains terminal and the historical lock remains stale.
+- [x] Run one complete fresh private Qwen/Gemma qualification at exact clean
+  reviewed head `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef`. It returned
+  `required-workload-routes-qualified` with public-safe evidence SHA-256
+  `4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`.
+  Both routes were eligible, both semantic and route checks passed, both exact
+  teardowns passed, and zero owned residue remained. Commit
+  `2cf1e92c821c0d8f5b20c911f66f9a58b54b3ec7` publishes the schema-3 lock with
+  SHA-256 `b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`;
+  the production semantic-admission owner accepted it at that exact clean head.
 - [ ] After successful semantic admission of that replacement tree, run the
   complete applicable aggregate checkpoint matrix exactly once. Preserve any
   still-valid immutable non-route predecessor evidence by explicit identity
