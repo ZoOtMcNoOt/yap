@@ -189,7 +189,11 @@ export function assertTrustedMainOnlyCacheSaves(workflow, workflowPath) {
       .map((step, index) => ({ index, step }))
       .filter(({ step }) => step.uses === reviewedActions.cacheSave);
     const maySave = workflowPath === ".github/workflows/ci.yml"
-      && (jobName === "frontend" || jobName === "rust");
+      && (
+        jobName === "frontend"
+        || jobName === "rust"
+        || jobName === "server-orchestrator"
+      );
 
     if (!maySave) {
       assert.equal(saves.length, 0, `${workflowPath} ${jobName} must be restore-only`);

@@ -64,6 +64,7 @@ availability.
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
 - [VoiceOS/Yap decision, evidence, and future-work queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 - [Integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
+- [Phase 10 supervised provider services](plans/active/2026-08-11-phase-10-supervised-provider-services.md)
 
 ### Queued
 
@@ -99,6 +100,7 @@ instructions. Detailed historical task reports live under
 ## Operations, research, security, and provenance
 
 - [Server-node setup](runbooks/yap-server-node-setup.md)
+- [Provider supervisor service](runbooks/provider-supervisor-service.md)
 - [Dependency audit policy](runbooks/dependency-audit-policy.md)
 - [Repository housekeeping](runbooks/repo-housekeeping.md)
 - [Target-client language-routing qualification](runbooks/target-client-language-routing-qualification.md)

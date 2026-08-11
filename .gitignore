@@ -34,6 +34,7 @@ server/logs/
 server/models/
 server/volumes/
 server/.runtime/
+server/orchestrator/target/
 
 *.gguf
 *.safetensors

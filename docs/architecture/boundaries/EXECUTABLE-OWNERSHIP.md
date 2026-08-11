@@ -816,10 +816,51 @@ owner's state but may not recreate its transition logic.
 - **Duplicate owner:** none. `private_json_evidence.py` owns the narrow
   create-once JSON publication primitive used by both gates.
 
+### 25. Rust-supervised provider lifecycle
+
+- **Entry point:** `server/orchestrator/src/main.rs`, with lifecycle composition
+  in `supervisor.rs`; the outer host entry point is
+  `infra/yap-server-node/yap-provider-supervisor@.service.in`.
+- **Authoritative owner:** systemd owns the outer cgroup and abnormal
+  supervisor restart. One Rust supervisor owns exactly one configured
+  foreground launcher process, numeric-loopback readiness, exact served-model
+  identity, bounded child restart/backoff, stop/reap, and the typed lifecycle
+  snapshot. The existing launcher remains the sole container, private proxy,
+  immutable image/model, and teardown owner. Rust never calls Docker.
+- **State:** one boot-scoped, atomically replaced, owner-private JSON snapshot
+  containing only route identity, lifecycle state, process generation, and
+  bounded start/restart/failure/readiness counters. It is an operational
+  projection, not durable application state or performance evidence.
+- **Trust boundary:** the command line requires one supported service identity,
+  canonical numeric-loopback HTTP authority, one exact model identity, one
+  absolute canonical regular launcher, one absolute private state destination,
+  and an explicit `--` launcher-argument boundary. Readiness requires HTTP 200
+  from `/health` plus exactly one matching `/v1/models` entry; PID/listener
+  presence, hostnames, extra models, and fallback routes are insufficient.
+- **Dependencies/events:** systemd -> Rust supervisor -> one foreground launcher
+  -> launcher-owned container/proxy -> exact health/model read-back. Provider
+  profiles and application admission are not part of Slice 10.1.
+- **Failure/recovery:** startup has a fixed deadline; three consecutive ready
+  probe failures retire the child; the supervisor permits at most three
+  restarts in 60 seconds with fixed 1/2/4-second backoff. Exhaustion publishes
+  `failed`. Normal stop publishes `stopping`, signals the launcher, force-kills
+  only after the fixed grace period, proves reap, and then publishes `stopped`.
+  systemd uses `Restart=on-abnormal`, so it does not relabel an ordinary
+  fail-closed supervisor exit or duplicate Rust's child restart policy.
+- **Cancellation:** Unix `SIGINT`/`SIGTERM` and Windows console termination
+  signals converge on the same bounded stop/reap path. A shutdown received
+  during restart backoff terminates cleanly without launching another child.
+- **Duplicate owner:** none. Rust does not reconstruct launcher/container
+  policy, and systemd does not own child restart. Later provider profiles,
+  authenticated queues, and capacity evidence must consume this lifecycle
+  owner rather than introduce another health/restart state machine.
+
 Production process supervision, simultaneous model residency, sustained
 mixed-owner capacity/SLOs, external transport, enterprise identity/networking,
 backup/restore, and deployment remain Phase 10 or explicit IT handoffs; the
-evaluation lifecycles above are not production services.
+evaluation lifecycles above are not production services. Slice 10.1 implements
+only the hardware-independent lifecycle owner; its hosted proof and merge, and
+all provider-specific production layers, remain open.
 
 ## Persistent-state owners
 
@@ -841,6 +882,7 @@ evaluation lifecycles above are not production services.
 | Governed proposals and tool audit identities | proposal and audit ledgers | review workflow and generation retention |
 | Agent workload route selection | explicit server route selector | governed RAG invocation |
 | Private route and aggregate gate evidence | evaluation lifecycle and gate owners | public-safe hashes/outcomes only |
+| Boot-scoped provider lifecycle snapshot | one Rust provider supervisor | systemd/operators; not durable application truth |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

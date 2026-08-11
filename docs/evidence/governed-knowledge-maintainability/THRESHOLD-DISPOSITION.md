@@ -9,14 +9,14 @@ The inventory includes the repository's tracked source, text, policy, and
 provenance contract extensions and excludes only the two tracked OpenAPI products, the
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
-hand-maintained policy. At this tree the complete 250-line inventory is 477
-files: 252 listed below at 350 or more lines and 225 from 250 through 349.
+hand-maintained policy. At this tree the complete 250-line inventory is 480
+files: 253 listed below at 350 or more lines and 227 from 250 through 349.
 
 Each line contains up to two independent entries in the form
 `physical-lines disposition exact-path`.
 
 ```text
-  806 CI                   .github/workflows/ci.yml ||   431 CI                   .github/workflows/release.yml
+  941 CI                   .github/workflows/ci.yml ||   431 CI                   .github/workflows/release.yml
   390 NATIVE-MIGRATION     desktop/src-tauri/migrations/0001_current_job_ledger.sql ||   393 NATIVE-SOURCE        desktop/src-tauri/src/app.rs
   639 NATIVE-SOURCE        desktop/src-tauri/src/app/instance_activation.rs ||   840 NATIVE-SOURCE        desktop/src-tauri/src/app/tests.rs
   387 NATIVE-SOURCE        desktop/src-tauri/src/audio/coordinator/sink.rs ||   360 NATIVE-SOURCE        desktop/src-tauri/src/audio/coordinator/tests/lifecycle.rs
@@ -63,15 +63,15 @@ Each line contains up to two independent entries in the form
   518 DESKTOP-TEST         desktop/tests/e2e/live-overlay.spec.ts ||   390 DESKTOP-TEST         desktop/tests/scripts/release-contract/bounded-command-windows-job.contract.mjs
  1052 DESKTOP-TEST         desktop/tests/scripts/release-contract/github-hosted-checkout.contract.mjs ||  3253 DESKTOP-TEST         desktop/tests/scripts/release-contract/integrated-gate.contract.mjs
   393 DESKTOP-TEST         desktop/tests/scripts/release-contract/windows-command-job-protocol.contract.mjs ||   431 DESKTOP-TEST         desktop/tests/scripts/release-contract/windows-installer.contract.mjs
-  565 DESKTOP-TEST         desktop/tests/scripts/release-contract/workflow.contract.mjs ||   549 DESKTOP-TEST         desktop/tests/scripts/shipped-dependency-inventory.mjs
+  630 DESKTOP-TEST         desktop/tests/scripts/release-contract/workflow.contract.mjs ||   549 DESKTOP-TEST         desktop/tests/scripts/shipped-dependency-inventory.mjs
   526 DESKTOP-TEST         desktop/tests/wdio.target-client-language-routing.conf.ts ||   479 DESKTOP-TEST         desktop/tests/wdio/live-overlay-window-fixture.js
   415 DESKTOP-TEST         desktop/tests/wdio/live-overlay.hardware.spec.js ||   472 DESKTOP-TEST         desktop/tests/wdio/live-overlay.spec.js
   859 DESKTOP-TEST         desktop/tests/wdio/private-server-asr.gate.spec.js ||   488 DESKTOP-TEST         desktop/tests/wdio/smoke.spec.js
   388 DESKTOP-TEST         desktop/tests/wdio/target-client-language-routing-hardware.js ||   465 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md
   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md ||   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md
   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md ||   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md
-  438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   851 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
-  991 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||   928 CURRENT-DOC          docs/CURRENT-STATUS.md
+  438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   893 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
+ 1007 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||   942 CURRENT-DOC          docs/CURRENT-STATUS.md
   380 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
   998 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
@@ -81,10 +81,11 @@ Each line contains up to two independent entries in the form
   923 HISTORICAL-DOC       docs/research/2026-07-16-dynamic-language-detection-evaluation.md ||   913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md
   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md ||   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md
  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md ||   554 CURRENT-DOC          docs/specs/source-aware-diarization.md
-  582 CURRENT-DOC          docs/specs/testing-strategy.md ||  1188 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md
+  582 CURRENT-DOC          docs/specs/testing-strategy.md ||  1195 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md
   696 INFRA                infra/yap-server-node/owned-process-group.sh ||   989 INFRA                infra/yap-server-node/owned-process-supervisor.py
   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
-  504 INFRA                infra/yap-server-node/setup-server.sh ||   622 SERVER-RUNBOOK       server/README.md
+  504 INFRA                infra/yap-server-node/setup-server.sh ||   645 SERVER-RUNBOOK       server/README.md
+  373 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
   414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   585 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
   483 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   715 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py

@@ -13,6 +13,7 @@ import {
   workflowSteps,
 } from "./workflow-access.mjs";
 import {
+  exactCacheKeys,
   pnpmStoreBindingScriptPath,
   reviewedActions,
   workflowPaths,
@@ -386,6 +387,70 @@ test("server CI uses the reviewed exact uv environment and lock-bound cache", as
   assert.equal(
     normalizedRunBody(populateCache.run),
     "uv sync --locked --exact --extra evaluation --extra test --python (Get-Command python.exe).Source --no-python-downloads",
+  );
+});
+
+test("server orchestrator CI owns the locked Linux lifecycle closure", async () => {
+  const ci = await readWorkflow(".github/workflows/ci.yml");
+  const { job, steps } = workflowSteps(ci, "server-orchestrator");
+  const checkout = steps.find((step) => step.uses === reviewedActions.checkout);
+  const setupRust = steps.find((step) => step.uses === reviewedActions.setupRust);
+  const restore = steps.find((step) => step.uses === reviewedActions.cacheRestore);
+  const initialGuard = steps.find(
+    (step) => step.name === "Verify exact GitHub-hosted checkout",
+  );
+  const finalGuard = steps.find(
+    (step) => step.name === "Verify exact GitHub-hosted checkout remained unchanged",
+  );
+
+  assert.equal(job.name, "Server orchestrator (Linux lifecycle)");
+  assert.equal(job["runs-on"], "ubuntu-latest");
+  assert.equal(job["timeout-minutes"], 15);
+  assert.equal(job.defaults?.run?.shell, "pwsh");
+  assert.deepEqual(checkout?.with, {
+    "persist-credentials": false,
+    ref: "${{ github.event.pull_request.head.sha || github.sha }}",
+  });
+  assert.deepEqual(setupRust?.with, {
+    toolchain: "1.96.0",
+    components: "clippy, rustfmt",
+  });
+  assert.equal(restore?.with?.key, exactCacheKeys.serverOrchestratorCargo);
+  assert.match(initialGuard?.run ?? "", /-ExpectedRunnerOs Linux/);
+  assert.match(finalGuard?.run ?? "", /-ExpectedRunnerOs Linux/);
+
+  const exactCommands = new Map(
+    steps
+      .filter((step) => step.name && step.run)
+      .map((step) => [step.name, normalizedRunBody(step.run)]),
+  );
+  assert.equal(
+    exactCommands.get("Check server-orchestrator formatting"),
+    "cargo fmt --all --check",
+  );
+  assert.equal(
+    exactCommands.get("Lint every server-orchestrator target"),
+    "cargo clippy --locked --all-targets --all-features -- -D warnings",
+  );
+  assert.equal(
+    exactCommands.get("Run default server-orchestrator contracts"),
+    "cargo test --locked",
+  );
+  assert.equal(
+    exactCommands.get("Run Linux child lifecycle contracts"),
+    "cargo test --locked --features test-fixture --test supervised_service -- --test-threads=1",
+  );
+  assert.equal(
+    exactCommands.get("Verify service installer and systemd boundary contracts"),
+    [
+      "bash -n infra/yap-server-node/install-provider-supervisor-service.sh",
+      "cd server",
+      "python3 -m unittest tests.infra.test_provider_supervisor_service",
+    ].join("\n"),
+  );
+  assert.doesNotMatch(
+    steps.map((step) => String(step.run ?? "")).join("\n"),
+    /\bdocker\b/i,
   );
 });
 
