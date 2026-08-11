@@ -25,7 +25,7 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 The source-admission and lifecycle remediation was completed at
 `8e3ece5a3580ec29116c05f31b045a5748c143b8`. The route-qualification
 remediation is frozen at
-`a62a18916a57d914ee74d3f876ee18418e226ffb`; its current documentation-only
+`c61b660a77a7b9fd6d48a44d919f738bd53050b4`; its current documentation-only
 descendant has the following focused, non-promotional verification. Commands
 are shown from their working directory; the Windows runs used the locked
 project environment and Python 3.12.
@@ -47,7 +47,8 @@ project environment and Python 3.12.
   one Windows POSIX-permission test was declared inapplicable. This verifies
   that denied-resource wording is not confused with an emitted forbidden
   tool, the route-specific output bounds remain frozen, empty-result prompts
-  are explicit, and the strict evidence/lifecycle contracts remain intact.
+  are explicit and exact-answer scored, and the strict evidence/lifecycle
+  contracts remain intact.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
   ran 42 tests: 41 passed and one Windows directory-link capability test
@@ -89,15 +90,15 @@ with public-safe evidence SHA-256
 It is retained as rejected private evidence and cannot be used for admission.
 The follow-up remediation keeps every latency and correctness threshold intact;
 it narrows forbidden-tool scoring to actual emitted tool identities, makes
-empty-result instructions explicit, and assigns smaller output bounds to the
-rapid route and larger structured-answer bounds to the complex route. No raw
-model output, private measurement, log, or private artifact location is
-published here.
+empty-result and prompt-injection answers exact, and assigns smaller output
+bounds to the rapid route and larger structured-answer bounds to the complex
+route. No raw model output, private measurement, log, or private artifact
+location is published here.
 
 ## Complete checkpoint gate
 
 Not yet consumed. The rejected `0cd9a9f8...` run is terminal for that exact
-candidate. Protected tool/runtime inputs changed at `a62a1891...`, so the old
+candidate. Protected tool/runtime inputs changed at `c61b660a...`, so the old
 Phase 9 evidence and the rejected run are both intentionally inadmissible. One
 new qualification is required only after the three reviewers approve this
 exact remediation head; the aggregate checkpoint matrix remains a separate
