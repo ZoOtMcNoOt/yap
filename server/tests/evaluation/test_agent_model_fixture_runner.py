@@ -123,6 +123,16 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         self.assertIn("Evidence is unavailable.", bounded["user"])
         self.assertEqual(bounded["expectedAnswer"], "Evidence is unavailable.")
 
+        relationship = by_id["relationship-traversal"]
+        self.assertEqual(
+            relationship["expectedArguments"],
+            {
+                "purpose": "knowledge.read",
+                "start_concept_id": "project/voiceos",
+                "maximum_depth": 2,
+            },
+        )
+
         stale = by_id["stale-generation-binding"]
         self.assertIn("Evidence is unavailable.", stale["user"])
         self.assertEqual(stale["requiredTerms"], ["unavailable"])
@@ -221,6 +231,18 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 arguments={
                     "purpose": "knowledge.read",
                     "search_text": "completely unrelated banana",
+                },
+            ),
+            [],
+        )
+        self.assertEqual(
+            _step_visible_context(
+                lexical,
+                step_index=0,
+                tool_name="search_knowledge",
+                arguments={
+                    **lexical["expectedArguments"],
+                    "expected_generation_sha256": "e" * 64,
                 },
             ),
             [],

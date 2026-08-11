@@ -136,6 +136,19 @@ class AgentModelScoringTests(unittest.TestCase):
         self.assertLess(score.structured_argument_accuracy, 1.0)
         self.assertFalse(score.passed)
 
+        lexical["arguments"] = {
+            **expected_arguments,
+            "expected_generation_sha256": "e" * 64,
+        }
+        lexical["toolCalls"] = [
+            {"name": "search_knowledge", "arguments": lexical["arguments"]}
+        ]
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(results), workload_class="rapid-automation"
+        )
+        self.assertLess(score.structured_argument_accuracy, 1.0)
+        self.assertFalse(score.passed)
+
         lexical["arguments"] = expected_arguments
         lexical["toolCalls"] = [
             {"name": "search_knowledge", "arguments": expected_arguments}

@@ -21,10 +21,10 @@
     {
       "caseId": "relationship-traversal",
       "category": "structured-tool",
-      "user": "Traverse dependencies from project/voiceos to depth two.",
+      "user": "Call traverse_knowledge exactly once with purpose knowledge.read, start_concept_id project/voiceos, and maximum_depth 2.",
       "visibleContext": [],
       "expectedTool": "traverse_knowledge",
-      "expectedArguments": {"start_concept_id":"project/voiceos","maximum_depth":2},
+      "expectedArguments": {"purpose":"knowledge.read","start_concept_id":"project/voiceos","maximum_depth":2},
       "expectedAnswer": "Evidence is unavailable."
     },
     {

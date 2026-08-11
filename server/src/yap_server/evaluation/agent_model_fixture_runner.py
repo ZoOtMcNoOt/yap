@@ -323,10 +323,12 @@ def _step_visible_context(
 ) -> object:
     expected_calls = case.get("expectedToolCalls")
     if expected_calls is None:
-        required = case.get("expectedArguments", {})
-        if tool_name != case.get("expectedTool") or not isinstance(required, dict):
+        required = case.get("expectedArguments")
+        if tool_name != case.get("expectedTool"):
             return []
-        if not all(arguments.get(key) == value for key, value in required.items()):
+        if required is not None and (
+            not isinstance(required, dict) or arguments != required
+        ):
             return []
         return case["visibleContext"]
     if not isinstance(expected_calls, list) or step_index >= len(expected_calls):

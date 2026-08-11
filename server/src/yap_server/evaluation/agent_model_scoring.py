@@ -101,7 +101,8 @@ def score_agent_model_results(
         ):
             tool_pass += 1
         argument_checks += 1
-        expected_arguments = dict(case.get("expectedArguments", {}))
+        frozen_expected_arguments = case.get("expectedArguments")
+        expected_arguments = dict(frozen_expected_arguments or {})
         if "expectedProposalType" in case:
             expected_arguments["proposal_type"] = case["expectedProposalType"]
         arguments = result.get("arguments")
@@ -123,7 +124,15 @@ def score_agent_model_results(
                     raise ValueError("agent multi-step arguments differ")
             else:
                 raise ValueError("agent tool arguments must be an object")
-            if all(arguments.get(key) == value for key, value in expected_arguments.items()):
+            arguments_match = (
+                arguments == expected_arguments
+                if frozen_expected_arguments is not None
+                else all(
+                    arguments.get(key) == value
+                    for key, value in expected_arguments.items()
+                )
+            )
+            if arguments_match:
                 argument_pass += 1
         except ValueError:
             pass
