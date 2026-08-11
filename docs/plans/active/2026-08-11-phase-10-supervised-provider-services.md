@@ -1,6 +1,6 @@
 # Phase 10 supervised provider services
 
-**Status:** Active on `feat/phase10-supervised-service`.
+**Status:** Active; Slice 10.1 merged through PR #155, Slice 10.2 next.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -10,6 +10,11 @@
 [ADR 0025](../../adr/0025-provider-specific-asr-serving.md),
 [ADR 0029](../../adr/0029-vllm-agent-reasoning-runtime.md), and
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md).
+
+**Slice 10.1 evidence:** exact hosted-green head
+`1a487db840578d8e415fd2e5a51b1909af4b7041` passed the dedicated Linux
+lifecycle lane and every required repository CI/CodeQL lane. PR #155 merged it
+as `e2d82b89532addb26fda73f652ae4f68b2127ef7`.
 
 ## Objective
 
@@ -111,11 +116,11 @@ claim simultaneous model residency, or publish a capacity/SLO result.
 - [x] Unexpected exit restarts only within the fixed bound; exhaustion fails.
 - [x] Stop proves the exact child is reaped and publishes terminal state.
 - [x] State counters are bounded, atomic, owner-private, and secret-free.
-- [ ] Focused Rust, unit-contract, formatting, lint, and Linux lifecycle tests
+- [x] Focused Rust, unit-contract, formatting, lint, and Linux lifecycle tests
   pass on one exact clean head.
 - [x] Current architecture, ownership, runbook, status, ADR index/status, and
   threshold evidence are reconciled without claiming later Phase 10 layers.
-- [ ] One focused PR passes all required exact-head hosted checks and merges
+- [x] One focused PR passes all required exact-head hosted checks and merges
   before Slice 10.2 begins.
 
 ## Explicit exclusions

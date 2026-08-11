@@ -1,6 +1,6 @@
 # ADR 0030: Rust-supervised provider service lifecycle
 
-**Status:** Accepted target; Slice 10.1 local candidate implemented, hosted review pending
+**Status:** Accepted; Slice 10.1 merged, later production slices pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md),
@@ -83,6 +83,11 @@ than adding a second container owner. This option is selected.
 - Production token throughput will be measured per workload route alongside
   correctness, p95/p99 latency, memory ceilings, fairness, overload behavior,
   and recovery. No generic TPS target is promoted from framework marketing.
+- Exact hosted-green head `1a487db840578d8e415fd2e5a51b1909af4b7041`
+  passed the dedicated Linux lifecycle lane and every required repository check;
+  PR #155 merged Slice 10.1 as
+  `e2d82b89532addb26fda73f652ae4f68b2127ef7`. This is lifecycle evidence,
+  not provider promotion or capacity evidence.
 
 ## Action items
 

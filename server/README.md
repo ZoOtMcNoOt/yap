@@ -540,7 +540,7 @@ SLO, capacity, or generic TPS claim. Final hosted head
 CodeQL lane and merged through PR #153 as
 `ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`.
 
-## Phase 10 supervised-provider lifecycle candidate
+## Phase 10 supervised-provider lifecycle baseline
 
 `orchestrator/` now owns the hardware-independent first production-lifecycle
 layer defined by ADR 0030. One `yap-provider-supervisor` process accepts one
@@ -556,6 +556,11 @@ is reaped. The test-only provider fixture is feature-gated out of default
 builds. A rendered hardened systemd template owns the outer cgroup and only
 restarts abnormal supervisor crashes; it does not duplicate Rust's child
 restart policy.
+
+Exact hosted-green head `1a487db840578d8e415fd2e5a51b1909af4b7041`
+passed the dedicated Linux lifecycle lane, every required repository CI and
+CodeQL lane, and the native WDIO smoke. PR #155 merged Slice 10.1 as
+`e2d82b89532addb26fda73f652ae4f68b2127ef7`.
 
 This slice does not bind the qualified Qwen/Gemma production launch profiles,
 enable a service instance, connect an application route, prove simultaneous

@@ -65,7 +65,7 @@ network, ownership-token, proxy-state, and API-key inputs. Those values are
 inherited by the launcher; credentials are never placed in `ExecStart`, the
 Rust command arguments, or the state snapshot. Slice 10.2 owns the exact
 Qwen/Gemma production profiles, so no instance should be enabled from the
-Slice 10.1 candidate alone.
+merged Slice 10.1 baseline alone.
 
 ## Readiness, restart, and state
 

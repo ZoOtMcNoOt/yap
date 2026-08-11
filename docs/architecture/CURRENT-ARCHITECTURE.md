@@ -1,9 +1,10 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–9 system after the
-meeting-transcription ownership, source-time reconciliation, and explicit
-production-qualification decision. The active Phase 10 Slice 10.1 candidate is
-called out separately below and is not part of that merged baseline. Phase 7
+This document describes the merged executable Phase 1–9 system plus the
+hardware-independent Phase 10 Slice 10.1 supervised-provider lifecycle after
+the meeting-transcription ownership, source-time reconciliation, and explicit
+production-qualification decision. Later Phase 10 slices remain called out
+separately below and are not part of that merged baseline. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -902,19 +903,20 @@ passed every required CI and CodeQL lane and merged through PR #153 as
 `ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`. Production service integration
 remains Phase 10.
 
-The unmerged Phase 10 Slice 10.1 candidate adds one
+Merged Phase 10 Slice 10.1 adds one
 `yap-provider-supervisor` Rust process per explicit workload service. systemd
 owns the outer cgroup and abnormal-supervisor restart; Rust owns one canonical
 foreground launcher, numeric-loopback `/health`, exact single-model
 `/v1/models` readiness, bounded child restart/backoff, terminal reap, and a
 boot-scoped owner-private lifecycle snapshot. The existing launcher remains
 the sole container, private proxy, immutable image/model, and teardown owner.
-Neither layer selects another route on failure. The candidate is
-hardware-independent and locally verified; its dedicated Linux lifecycle lane,
-exact-head PR, and merge remain pending. It does not configure or enable Qwen,
-Gemma, Cohere, Nemotron, or Tiron; connect an application route; or prove
-simultaneous residency, throughput, p95/p99, fairness, capacity, observability,
-or production deployment.
+Neither layer selects another route on failure. Exact hosted-green head
+`1a487db840578d8e415fd2e5a51b1909af4b7041` passed the dedicated Linux
+lifecycle lane and every required repository check before PR #155 merged it as
+`e2d82b89532addb26fda73f652ae4f68b2127ef7`. This baseline does not configure
+or enable Qwen, Gemma, Cohere, Nemotron, or Tiron; connect an application route;
+or prove simultaneous residency, throughput, p95/p99, fairness, capacity,
+observability, or production deployment.
 
 At remediation anchor `c332700597eac1cc6af3f68afb3e75fce0b6ec77`, each
 exported knowledge query/traversal/proposal owns the transaction that holds the
