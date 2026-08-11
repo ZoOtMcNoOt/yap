@@ -122,6 +122,14 @@ test("hosted Windows runtime profiles name only exact product runtime checks", (
       "./tests/wdio.required.conf.ts",
     ],
   );
+  assert.equal(
+    resolveHostedWindowsRuntimeProfile("server-connector").naturalDescendantDrainMs,
+    5_000,
+  );
+  assert.equal(
+    resolveHostedWindowsRuntimeProfile("native-wdio").naturalDescendantDrainMs,
+    30_000,
+  );
   assert.throws(
     () => resolveHostedWindowsRuntimeProfile("compiler-build"),
     /profile must be/,
@@ -169,6 +177,7 @@ test("hosted Windows runtime wrapper requires complete empty-Job evidence", {
       cwd: repositoryRoot,
       label: "Hosted successful-runtime fixture",
       logName: "fixture.log",
+      naturalDescendantDrainMs: 5_000,
       timeoutMs: 15_000,
     }),
   });
@@ -215,6 +224,7 @@ test("hosted Windows runtime wrapper requires complete empty-Job evidence", {
   assert.equal(invocation.environment.GITHUB_TOKEN, undefined);
   assert.equal(invocation.environment.YAP_CHECKED_HEAD, checkedHead);
   assert.equal(invocation.maximumLogBytes, 16 * 1024 * 1024);
+  assert.equal(invocation.naturalDescendantDrainMs, 5_000);
   assert.equal(existsSync(invocation.expectedLogDirectory), false);
   assert.equal(
     marker,
@@ -236,6 +246,7 @@ test("hosted Windows runtime wrapper rejects and cleans a non-listening retained
       cwd: repositoryRoot,
       label: "Hosted retained-descendant fixture",
       logName: "fixture.log",
+      naturalDescendantDrainMs: 5_000,
       timeoutMs: 15_000,
     }),
   });

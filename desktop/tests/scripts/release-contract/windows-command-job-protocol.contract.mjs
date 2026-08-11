@@ -5,6 +5,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
@@ -300,7 +301,11 @@ test("Windows Job supervisor rejects a changed launch specification", {
       },
       root,
       process.env,
+      30_000,
     );
+    const launchSpec = JSON.parse(readFileSync(protocol.launchSpecPath, "utf8"));
+    assert.equal(launchSpec.schemaVersion, 2);
+    assert.equal(launchSpec.naturalDescendantDrainMs, 30_000);
     appendFileSync(protocol.launchSpecPath, " ");
     const result = spawnSync(
       protocol.invocation.executable,

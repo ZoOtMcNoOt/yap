@@ -97,11 +97,16 @@ export function executeBoundedCommand({
   logPath,
   expectedLogDirectory,
   maximumLogBytes,
+  naturalDescendantDrainMs = 5_000,
   timeoutMs,
 }) {
   requireCondition(
     Number.isSafeInteger(maximumLogBytes) && maximumLogBytes > 0,
     "Command-log byte limit must be one positive safe integer.",
+  );
+  requireCondition(
+    Number.isSafeInteger(naturalDescendantDrainMs) && naturalDescendantDrainMs >= 1_000 && naturalDescendantDrainMs <= 30_000,
+    "Natural descendant drain must be 1,000-30,000 milliseconds.",
   );
   requireCondition(
     Number.isSafeInteger(timeoutMs) && timeoutMs > 0,
@@ -120,6 +125,7 @@ export function executeBoundedCommand({
         invocation,
         path.normalize(realpathSync.native(expectedLogDirectory)),
         environment,
+        naturalDescendantDrainMs,
       );
       invocation = windowsProtocol.invocation;
     }

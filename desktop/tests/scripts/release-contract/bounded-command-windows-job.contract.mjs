@@ -103,7 +103,7 @@ test("bounded Windows commands allow owned descendants to drain naturally", {
     const result = await executeBoundedCommand({
       command: ownedPowerShellChildCommand(
         readyPath,
-        "Start-Sleep -Milliseconds 3000;"
+        "Start-Sleep -Milliseconds 6000;"
           + ` [IO.File]::WriteAllText('${escapedCompletionPath}', 'completed')`,
       ),
       cwd: repoRoot,
@@ -112,6 +112,7 @@ test("bounded Windows commands allow owned descendants to drain naturally", {
       logPath: path.join(commandLogDirectory, "natural-descendant-drain.log"),
       expectedLogDirectory: commandLogDirectory,
       maximumLogBytes: 1_024,
+      naturalDescendantDrainMs: 8_000,
       timeoutMs: 15_000,
     });
     assert.equal(result.exitCode, 0);
@@ -126,8 +127,8 @@ test("bounded Windows commands allow owned descendants to drain naturally", {
       "naturally draining descendants must settle within the focused contract bound",
     );
     assert.ok(
-      elapsedMilliseconds >= 2_000,
-      "the fixture must cross the former two-second drain boundary",
+      elapsedMilliseconds >= 5_000,
+      "the fixture must prove the command-specific drain budget crosses the default boundary",
     );
     const childProcessId = Number.parseInt(readFileSync(readyPath, "utf8"), 10);
     assert.equal(readFileSync(completionPath, "utf8"), "completed");

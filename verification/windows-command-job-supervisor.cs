@@ -34,9 +34,6 @@ namespace Yap.Verification
         private const uint WaitTimeout = 258;
         private const uint Infinite = 0xffffffff;
         private const uint ForcedTerminationExitCode = 0xe0000001;
-        // Toolchain children such as rustdoc can outlive a successful root command
-        // briefly while Windows finishes process and Job accounting.
-        private const int NaturalDescendantDrainMilliseconds = 5_000;
         private static readonly IntPtr InvalidHandleValue = new IntPtr(-1);
 
         public static int Run(
@@ -49,6 +46,7 @@ namespace Yap.Verification
             string environmentSha256,
             string launchNonce,
             string launchSpecSha256,
+            int naturalDescendantDrainMilliseconds,
             int cleanupTimeoutMilliseconds)
         {
             IntPtr jobHandle = IntPtr.Zero;
@@ -84,6 +82,7 @@ namespace Yap.Verification
                     environmentSha256,
                     launchNonce,
                     launchSpecSha256,
+                    naturalDescendantDrainMilliseconds,
                     cleanupTimeoutMilliseconds);
                 standardInput = OpenInheritedNullInput();
                 standardOutput = DuplicateInheritedStandardHandle(StdOutputHandle);
@@ -227,7 +226,7 @@ namespace Yap.Verification
                         && rootExitObservedAt.HasValue
                         && finalActiveProcessCount > 0
                         && elapsed.ElapsedMilliseconds - rootExitObservedAt.Value
-                            >= NaturalDescendantDrainMilliseconds)
+                            >= naturalDescendantDrainMilliseconds)
                     {
                         retainedProcessNames = QueryActiveProcessNames(jobHandle);
                         retainedDescendantDetected = true;
