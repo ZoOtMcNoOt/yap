@@ -6,7 +6,10 @@ from pathlib import Path
 
 from yap_server.private_artifact import read_json_object_with_identity
 
-from .agent_model_acceptance import load_agent_model_acceptance
+from .agent_model_acceptance import (
+    load_agent_model_acceptance,
+    tool_call_matches_frozen_expectation,
+)
 from yap_server.knowledge.knowledge_tool_contract import (
     validate_governed_agent_tool_arguments,
 )
@@ -202,19 +205,10 @@ def score_agent_model_results(
 def _tool_calls_match_expected(tool_calls: list[object], expected_calls: object) -> bool:
     if not isinstance(expected_calls, list) or len(tool_calls) != len(expected_calls):
         return False
-    for call, expected in zip(tool_calls, expected_calls, strict=True):
-        if not isinstance(call, dict) or not isinstance(expected, dict):
-            return False
-        arguments = call.get("arguments")
-        required = expected.get("expectedArguments")
-        if (
-            call.get("name") != expected.get("name")
-            or not isinstance(arguments, dict)
-            or not isinstance(required, dict)
-            or not all(arguments.get(key) == value for key, value in required.items())
-        ):
-            return False
-    return True
+    return all(
+        tool_call_matches_frozen_expectation(call, expected)
+        for call, expected in zip(tool_calls, expected_calls, strict=True)
+    )
 
 
 def _valid_result_types(result: dict[str, object]) -> bool:

@@ -132,7 +132,7 @@
       "caseId": "complex-governed-orchestration",
       "category": "structured-tool",
       "requiredForWorkloadClass": "complex-orchestration",
-      "user": "First search governed knowledge using the exact query VoiceOS release dependency, then traverse relationships from project/voiceos to depth two, then store a cited summary proposal. Perform those three tool steps in that order.",
+      "user": "Call search_knowledge exactly once with only purpose knowledge.read and search_text VoiceOS release dependency. Then call traverse_knowledge exactly once with only purpose knowledge.read, start_concept_id project/voiceos, and maximum_depth 2. Then call propose_knowledge exactly once with purpose knowledge.read and proposal_type summary plus the required proposed_content and source_citations. Do not add generation or result controls. Perform these three steps in order.",
       "visibleContext": [{"conceptId":"project/voiceos","text":"VoiceOS release depends on the reviewed permission ledger.","sourceRevision":"rev-h","contentSha256":"3333333333333333333333333333333333333333333333333333333333333333","charStart":0,"charEnd":58}],
       "expectedToolSequence": ["search_knowledge", "traverse_knowledge", "propose_knowledge"],
       "expectedToolCalls": [

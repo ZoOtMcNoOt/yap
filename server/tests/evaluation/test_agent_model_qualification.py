@@ -197,6 +197,33 @@ class AgentModelQualificationTests(unittest.TestCase):
         )
         self.assertFalse(summary["routeEvidencePassed"])
 
+        extra_controls = (
+            (0, "expected_generation_sha256", "e" * 64),
+            (0, "maximum_results", 1),
+            (1, "expected_generation_sha256", "e" * 64),
+            (1, "maximum_results", 1),
+            (2, "expected_generation_sha256", "e" * 64),
+        )
+        for step_index, field, value in extra_controls:
+            with self.subTest(step=step_index, extra=field):
+                gemma = _candidate_run(
+                    candidate,
+                    "gemma-4-31b-it-nvfp4",
+                    10,
+                    complex_extra_control=(step_index, field, value),
+                )
+                with patch.object(CheckedCandidate, "verify_unchanged"):
+                    decision = evaluate_agent_model_qualification(
+                        candidate=candidate, runs=(qwen, gemma)
+                    )
+                summary = next(
+                    item
+                    for item in decision["candidateSummaries"]
+                    if item["candidateId"] == "gemma-4-31b-it-nvfp4"
+                )
+                self.assertEqual(decision["outcome"], "deterministic-no-model")
+                self.assertFalse(summary["routeEvidencePassed"])
+
     def test_rejects_incomplete_or_tampered_owned_run_set(self) -> None:
         candidate = _checked_candidate()
         run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
@@ -261,6 +288,7 @@ def _candidate_run(
     passing: bool = True,
     incomplete_complex_sequence: bool = False,
     wrong_complex_traversal: bool = False,
+    complex_extra_control: tuple[int, str, object] | None = None,
     fixture_latency: int = 10,
 ) -> AgentCandidateRun:
     lock = json.loads(
@@ -290,6 +318,15 @@ def _candidate_run(
         )
         traversal = complex_result["toolCalls"][1]["arguments"]  # type: ignore[index]
         traversal["start_concept_id"] = "unrelated/concept"
+    if complex_extra_control is not None:
+        complex_result = next(
+            result
+            for result in results
+            if result["caseId"] == "complex-governed-orchestration"
+        )
+        step_index, field, value = complex_extra_control
+        arguments = complex_result["toolCalls"][step_index]["arguments"]  # type: ignore[index]
+        arguments[field] = value
     for result in results:
         result["latencyMilliseconds"] = fixture_latency
     launch_arguments = _launch_arguments(model)

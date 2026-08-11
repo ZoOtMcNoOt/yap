@@ -3,7 +3,7 @@
   "candidateLock": "agent-reasoning-candidates.lock.json",
   "fixtureFile": "agent-workload-fixtures.json",
   "candidateLockSha256": "c95fb9ff5d11956f527f3be84c9f35da5e47b1e9077c272ff79ac5ca4ad2ea30",
-  "fixtureSha256": "cc9300306c47ca62abd9422a6b58e1a360be226dbd32df4faacdab76826d597c",
+  "fixtureSha256": "14a8748b39b83c92e19906b05bd87712d9f50d1f9b2980c8bb8f1b8bdccc759b",
   "minimumCaseCount": 12,
   "requiredCategories": ["authorization", "failure", "generation", "isolation", "proposal", "question-answering", "structured-tool", "terminology"],
   "thresholds": {

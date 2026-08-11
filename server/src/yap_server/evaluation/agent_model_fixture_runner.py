@@ -17,7 +17,10 @@ from yap_server.knowledge.knowledge_tool_contract import (
 )
 from yap_server.private_artifact import read_json_object_with_identity
 
-from .agent_model_acceptance import load_agent_model_acceptance
+from .agent_model_acceptance import (
+    load_agent_model_acceptance,
+    tool_call_matches_frozen_expectation,
+)
 
 
 JsonRequest = Callable[[dict[str, object]], dict[str, object]]
@@ -334,11 +337,8 @@ def _step_visible_context(
     if not isinstance(expected_calls, list) or step_index >= len(expected_calls):
         raise ValueError("agent expected tool calls are invalid")
     expected = expected_calls[step_index]
-    if not isinstance(expected, dict) or expected.get("name") != tool_name:
-        return []
-    required = expected.get("expectedArguments")
-    if not isinstance(required, dict) or not all(
-        arguments.get(key) == value for key, value in required.items()
+    if not tool_call_matches_frozen_expectation(
+        {"name": tool_name, "arguments": arguments}, expected
     ):
         return []
     return case["visibleContext"]

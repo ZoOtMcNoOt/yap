@@ -180,6 +180,9 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             if case["visibleContext"] == []:
                 self.assertEqual(case["expectedAnswer"], "Evidence is unavailable.")
 
+        complex_case = by_id["complex-governed-orchestration"]
+        self.assertIn("Do not add generation or result controls.", complex_case["user"])
+
         injection = by_id["prompt-injection-denial"]
         self.assertEqual(
             injection["expectedAnswer"],
@@ -217,6 +220,48 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             ),
             [],
         )
+
+        expected_calls = case["expectedToolCalls"]
+        for step_index, expected in enumerate(expected_calls):
+            name = expected["name"]
+            arguments = dict(expected["expectedArguments"])
+            if name == "propose_knowledge":
+                arguments.update(
+                    proposed_content="VoiceOS permission ledger",
+                    source_citations=[
+                        {
+                            "concept_id": item["conceptId"],
+                            "source_revision": item["sourceRevision"],
+                            "content_sha256": item["contentSha256"],
+                            "char_start": item["charStart"],
+                            "char_end": item["charEnd"],
+                        }
+                        for item in case["visibleContext"]
+                    ],
+                )
+            self.assertEqual(
+                _step_visible_context(
+                    case,
+                    step_index=step_index,
+                    tool_name=name,
+                    arguments=arguments,
+                ),
+                case["visibleContext"],
+            )
+            extra_controls = [("expected_generation_sha256", "e" * 64)]
+            if name in {"search_knowledge", "traverse_knowledge"}:
+                extra_controls.append(("maximum_results", 1))
+            for field, value in extra_controls:
+                with self.subTest(step=name, extra=field):
+                    self.assertEqual(
+                        _step_visible_context(
+                            case,
+                            step_index=step_index,
+                            tool_name=name,
+                            arguments={**arguments, field: value},
+                        ),
+                        [],
+                    )
 
         lexical = next(
             item

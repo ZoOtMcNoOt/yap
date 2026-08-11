@@ -9,6 +9,9 @@ from yap_server.private_artifact import read_json_object_with_identity
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
+_DYNAMIC_EXPECTED_TOOL_ARGUMENTS = {
+    "propose_knowledge": {"proposed_content", "source_citations"},
+}
 _PLAN_KEYS = {
     "schemaVersion",
     "candidateLock",
@@ -333,6 +336,32 @@ def _validate_visible_context(value: object) -> None:
             or end - start != len(str(item["text"]))
         ):
             raise ValueError("agent visible context span is invalid")
+
+
+def tool_call_matches_frozen_expectation(call: object, expected: object) -> bool:
+    """Match one recorded tool call to the complete frozen evaluation contract."""
+
+    if (
+        not isinstance(call, dict)
+        or set(call) != {"name", "arguments"}
+        or not isinstance(expected, dict)
+        or set(expected) != {"name", "expectedArguments"}
+    ):
+        return False
+    name = expected["name"]
+    arguments = call["arguments"]
+    required = expected["expectedArguments"]
+    if (
+        not isinstance(name, str)
+        or call["name"] != name
+        or not isinstance(arguments, dict)
+        or not isinstance(required, dict)
+    ):
+        return False
+    dynamic = _DYNAMIC_EXPECTED_TOOL_ARGUMENTS.get(name, set())
+    return set(arguments) == set(required) | dynamic and all(
+        arguments.get(key) == value for key, value in required.items()
+    )
 
 
 def _thresholds(value: object) -> None:
