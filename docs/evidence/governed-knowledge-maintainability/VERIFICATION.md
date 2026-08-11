@@ -25,10 +25,13 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 The source-admission and lifecycle remediation was completed at
 `8e3ece5a3580ec29116c05f31b045a5748c143b8`. The route-qualification
 remediation is frozen at
-`531132bf5f6186da2f7ce2588eb43279611581dc`; its current documentation-only
-descendant has the following focused, non-promotional verification. Commands
-are shown from their working directory; the Windows runs used the locked
-project environment and Python 3.12.
+`531132bf5f6186da2f7ce2588eb43279611581dc`. The reviewed qualification head
+`f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3` was its documentation-only
+descendant. Public lock/CI commit `e15c152966e7144acac784e49282fed05b2730c5`
+and the current documentation descendant extend it without changing protected
+route inputs. The resulting candidate has the following focused,
+non-promotional verification. Commands are shown from their working directory;
+the Windows runs used the locked project environment and Python 3.12.
 
 - From `server`,
   `uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py`
