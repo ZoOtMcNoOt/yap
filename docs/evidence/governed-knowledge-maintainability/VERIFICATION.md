@@ -28,10 +28,14 @@ remediation is frozen at
 `531132bf5f6186da2f7ce2588eb43279611581dc`. The reviewed qualification head
 `f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3` was its documentation-only
 descendant. Public lock/CI commit `e15c152966e7144acac784e49282fed05b2730c5`
-and the current documentation descendant extend it without changing protected
-route inputs. The resulting candidate has the following focused,
-non-promotional verification. Commands are shown from their working directory;
-the Windows runs used the locked project environment and Python 3.12.
+and documentation commit `e106b442bfa607b34c50efe66163a2539a703387`
+extended it without changing protected route inputs. Admission-protection
+commit `b8452f807ae6e2353a99f4d95c952e8103414709` then deliberately changed
+protected route inputs; the current documentation descendant records the
+required replacement qualification. The resulting candidate has the following
+focused, non-promotional verification. Commands are shown from their working
+directory; the Windows runs used the locked project environment and Python
+3.12.
 
 - From `server`,
   `uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py`
@@ -41,10 +45,15 @@ the Windows runs used the locked project environment and Python 3.12.
   initially ran the exact 24-module/134-test membership with 130 passed, three
   declared platform/capability skips, and the one required stale-route-lock
   failure. After the fresh admitted qualification was frozen in the public-safe
-  lock at `e15c152966e7144acac784e49282fed05b2730c5`, the same exact suite ran
+  lock at `e15c152966e7144acac784e49282fed05b2730c5`, that pre-protection
+  candidate and documentation successor `e106b442...` ran the same exact suite
   green: 131 passed and the same three declared skips, with no failure,
-  expected failure, or unexpected success. This is focused verification, not a
-  complete checkpoint-gate claim.
+  expected failure, or unexpected success. The portable suite does not consume
+  private route artifacts. Current admission-protection commit `b8452f80...`
+  separately passed its focused 60-test and 16-test sets plus Ruff, but actual
+  private admission and the aggregate gate remain blocked until replacement
+  qualification. None of these focused results is a complete checkpoint-gate
+  claim.
 - From `server`, with `PYTHONPATH=src`, the focused agent acceptance, fixture,
   qualification, scoring, route-artifact, pressure, vLLM metric/runtime,
   reasoning-route, governed-answer, and reasoning-client modules ran 60 tests:
