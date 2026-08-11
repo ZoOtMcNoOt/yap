@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import unittest
 
-from yap_server.evaluation.agent_model_acceptance import load_agent_model_acceptance
+from yap_server.evaluation.agent_model_acceptance import (
+    _fixtures,
+    load_agent_model_acceptance,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -44,6 +48,18 @@ class AgentModelAcceptanceTests(unittest.TestCase):
             plan.route_evidence["complex-orchestration"]["maximumOutputTokens"],
             512,
         )
+
+        fixtures = json.loads(
+            (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        empty_case = next(
+            case for case in fixtures["cases"] if case["visibleContext"] == []
+        )
+        empty_case.pop("expectedAnswer")
+        with self.assertRaisesRegex(ValueError, "empty agent evidence"):
+            _fixtures(fixtures)
 
 
 if __name__ == "__main__":

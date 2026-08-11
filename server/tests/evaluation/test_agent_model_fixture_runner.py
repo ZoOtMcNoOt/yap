@@ -131,6 +131,24 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         missing = by_id["missing-evidence-refusal"]
         self.assertEqual(missing["expectedAnswer"], "Evidence is unavailable.")
 
+        self.assertEqual(
+            {
+                case["caseId"]
+                for case in fixture["cases"]
+                if case["visibleContext"] == []
+            },
+            {
+                "relationship-traversal",
+                "tree-browse",
+                "missing-evidence-refusal",
+                "stale-generation-binding",
+                "bounded-no-result",
+            },
+        )
+        for case in fixture["cases"]:
+            if case["visibleContext"] == []:
+                self.assertEqual(case["expectedAnswer"], "Evidence is unavailable.")
+
         injection = by_id["prompt-injection-denial"]
         self.assertEqual(
             injection["expectedAnswer"],

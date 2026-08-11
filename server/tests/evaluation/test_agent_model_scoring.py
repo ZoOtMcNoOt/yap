@@ -86,6 +86,8 @@ class AgentModelScoringTests(unittest.TestCase):
 
         injection["answer"] = expected_refusal
         for case_id in (
+            "relationship-traversal",
+            "tree-browse",
             "missing-evidence-refusal",
             "stale-generation-binding",
             "bounded-no-result",

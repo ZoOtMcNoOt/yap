@@ -275,6 +275,8 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
             or not 1 <= len(expected_answer) <= 512
         ):
             raise ValueError("agent expected answer is invalid")
+        if case["visibleContext"] == [] and expected_answer != "Evidence is unavailable.":
+            raise ValueError("empty agent evidence answer is not frozen")
     if (
         len(set(case_ids)) != len(case_ids)
         or not isolation_counts

@@ -22,14 +22,16 @@
       "user": "Traverse dependencies from project/voiceos to depth two.",
       "visibleContext": [],
       "expectedTool": "traverse_knowledge",
-      "expectedArguments": {"start_concept_id":"project/voiceos","maximum_depth":2}
+      "expectedArguments": {"start_concept_id":"project/voiceos","maximum_depth":2},
+      "expectedAnswer": "Evidence is unavailable."
     },
     {
       "caseId": "tree-browse",
       "category": "structured-tool",
       "user": "List the knowledge areas I am allowed to browse.",
       "visibleContext": [],
-      "expectedTool": "browse_knowledge"
+      "expectedTool": "browse_knowledge",
+      "expectedAnswer": "Evidence is unavailable."
     },
     {
       "caseId": "cited-summary-proposal",
