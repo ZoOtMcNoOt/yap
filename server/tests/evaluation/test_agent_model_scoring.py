@@ -106,6 +106,17 @@ class AgentModelScoringTests(unittest.TestCase):
                 self.assertFalse(score.passed)
                 result["answer"] = "Evidence is unavailable."
 
+        lexical = next(
+            item for item in results if item["caseId"] == "lexical-cited-answer"
+        )
+        expected_lexical = str(lexical["answer"])
+        lexical["answer"] = expected_lexical + " Unreviewed extra claim."
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(results), workload_class="rapid-automation"
+        )
+        self.assertEqual(score.isolation_leak_count, 1)
+        self.assertFalse(score.passed)
+
     def test_rejects_extra_tool_argument_and_fabricated_citation(self) -> None:
         results = list(_perfect_results())
         results[0]["arguments"] = {

@@ -275,6 +275,13 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
             or not 1 <= len(expected_answer) <= 512
         ):
             raise ValueError("agent expected answer is invalid")
+        maximum_output_tokens = case.get("maximumOutputTokens")
+        if maximum_output_tokens is not None and (
+            isinstance(maximum_output_tokens, bool)
+            or not isinstance(maximum_output_tokens, int)
+            or not 1 <= maximum_output_tokens <= 4_096
+        ):
+            raise ValueError("agent workload case output bound is invalid")
         if case["visibleContext"] == [] and expected_answer != "Evidence is unavailable.":
             raise ValueError("empty agent evidence answer is not frozen")
     if (

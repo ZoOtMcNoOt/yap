@@ -127,6 +127,23 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         self.assertIn("Evidence is unavailable.", stale["user"])
         self.assertEqual(stale["requiredTerms"], ["unavailable"])
         self.assertEqual(stale["expectedAnswer"], "Evidence is unavailable.")
+        self.assertEqual(stale["maximumOutputTokens"], 128)
+        self.assertEqual(
+            stale["expectedArguments"],
+            {
+                "purpose": "knowledge.read",
+                "search_text": "release",
+                "expected_generation_sha256": "f" * 64,
+            },
+        )
+
+        lexical = by_id["lexical-cited-answer"]
+        self.assertIn("publication pointer", lexical["user"])
+        self.assertNotIn("crash safety", lexical["user"])
+        self.assertEqual(
+            lexical["expectedAnswer"],
+            "The publication pointer changes only after every projection validates.",
+        )
 
         missing = by_id["missing-evidence-refusal"]
         self.assertEqual(missing["expectedAnswer"], "Evidence is unavailable.")
@@ -321,7 +338,6 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
 
         def request(payload: dict[str, object]) -> dict[str, object]:
             nonlocal active
-            self.assertEqual(payload["max_tokens"], 512)
             self.assertEqual(
                 payload["chat_template_kwargs"], {"enable_thinking": False}
             )
@@ -330,6 +346,9 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 "function": {"name": "return_governed_answer"},
             }:
                 assert active is not None
+                self.assertEqual(
+                    payload["max_tokens"], active.get("maximumOutputTokens", 512)
+                )
                 answer = {
                     "answer": active.get(
                         "expectedAnswer",
@@ -343,6 +362,9 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 return _tool_response("return_governed_answer", answer)
             if "tools" in payload:
                 active = next(cases)
+                self.assertEqual(
+                    payload["max_tokens"], active.get("maximumOutputTokens", 512)
+                )
                 arguments = {
                     "purpose": "knowledge.read",
                     **active.get("expectedArguments", {}),
@@ -389,6 +411,9 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                     ]
                 }
             assert active is not None
+            self.assertEqual(
+                payload["max_tokens"], active.get("maximumOutputTokens", 512)
+            )
             return {
                 "choices": [
                     {

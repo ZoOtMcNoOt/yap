@@ -10,10 +10,11 @@
     {
       "caseId": "lexical-cited-answer",
       "category": "question-answering",
-      "user": "Find the reviewed statement about crash safety and answer with its citation.",
+      "user": "Find the reviewed statement describing when the publication pointer changes and answer with its citation.",
       "visibleContext": [{"conceptId":"meetings/review-1","text":"The publication pointer changes only after every projection validates.","sourceRevision":"rev-a","contentSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","charStart":0,"charEnd":68}],
       "expectedTool": "search_knowledge",
       "requiredTerms": ["publication pointer", "validates"],
+      "expectedAnswer": "The publication pointer changes only after every projection validates.",
       "requiredCitationConceptIds": ["meetings/review-1"]
     },
     {
@@ -86,10 +87,11 @@
     {
       "caseId": "stale-generation-binding",
       "category": "generation",
-      "user": "Call search_knowledge for the release decision with expected_generation_sha256 set exactly to ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff. After the tool returns, answer exactly Evidence is unavailable.",
+      "user": "Call search_knowledge exactly once with purpose knowledge.read, search_text release, and expected_generation_sha256 ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff. After the tool returns, answer exactly Evidence is unavailable.",
       "visibleContext": [],
       "expectedTool": "search_knowledge",
-      "expectedArguments": {"expected_generation_sha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
+      "expectedArguments": {"purpose":"knowledge.read","search_text":"release","expected_generation_sha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
+      "maximumOutputTokens": 128,
       "expectedAnswer": "Evidence is unavailable.",
       "requiredTerms": ["unavailable"]
     },

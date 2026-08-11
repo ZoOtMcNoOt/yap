@@ -61,6 +61,11 @@ class AgentModelAcceptanceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "empty agent evidence"):
             _fixtures(fixtures)
 
+        empty_case["expectedAnswer"] = "Evidence is unavailable."
+        empty_case["maximumOutputTokens"] = True
+        with self.assertRaisesRegex(ValueError, "case output bound"):
+            _fixtures(fixtures)
+
 
 if __name__ == "__main__":
     unittest.main()

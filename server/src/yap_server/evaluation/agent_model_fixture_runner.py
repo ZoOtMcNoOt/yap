@@ -214,6 +214,13 @@ def _run_case(
 ) -> AgentFixtureResult:
     if not isinstance(case, dict):
         raise ValueError("agent workload case is invalid")
+    case_output_tokens = case.get("maximumOutputTokens", maximum_output_tokens)
+    if (
+        isinstance(case_output_tokens, bool)
+        or not isinstance(case_output_tokens, int)
+        or not 1 <= case_output_tokens <= maximum_output_tokens
+    ):
+        raise ValueError("agent workload case output bound is invalid")
     started = time.monotonic()
     messages: list[dict[str, object]] = [
         {"role": "system", "content": system_prompt},
@@ -242,7 +249,7 @@ def _run_case(
                 "tool_choice": "required",
                 "parallel_tool_calls": False,
                 "temperature": 0,
-                "max_tokens": maximum_output_tokens,
+                "max_tokens": case_output_tokens,
                 "chat_template_kwargs": {"enable_thinking": False},
             }
         )
@@ -288,7 +295,7 @@ def _run_case(
         "model": model,
         "messages": messages,
         "temperature": 0,
-        "max_tokens": maximum_output_tokens,
+        "max_tokens": case_output_tokens,
         "chat_template_kwargs": {"enable_thinking": False},
     }
     final_payload.update(
