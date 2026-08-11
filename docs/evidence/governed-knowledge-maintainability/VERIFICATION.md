@@ -25,7 +25,7 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 The source-admission and lifecycle remediation was completed at
 `8e3ece5a3580ec29116c05f31b045a5748c143b8`. The route-qualification
 remediation is frozen at
-`d2ae72dce03870893ca5bf2dd3bc93978f8158af`; its current documentation-only
+`9a8b28a646fb3b48b7d93938c9a863519f8a9c71`; its current documentation-only
 descendant has the following focused, non-promotional verification. Commands
 are shown from their working directory; the Windows runs used the locked
 project environment and Python 3.12.
@@ -50,8 +50,10 @@ project environment and Python 3.12.
   stale-generation case has a stricter frozen per-case bound, empty-result
   prompts are explicit and every empty visible result is exact-answer scored,
   cited retrieval requires its complete frozen argument map with no extra
-  generation or result controls, every visible citation span covers its complete
-  supplied text, and the strict evidence/lifecycle contracts remain intact.
+  generation or result controls, multi-step calls allow only their frozen
+  controls plus the required dynamic proposal content/citations, every visible
+  citation span covers its complete supplied text, and the strict
+  evidence/lifecycle contracts remain intact.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
   ran 42 tests: 41 passed and one Windows directory-link capability test
@@ -104,15 +106,16 @@ search/output contract. The current remediation aligns the cited question and
 exact answer, freezes its governed purpose/query and exact citation span, pins
 the stale-generation purpose, search text, and generation identity, and applies
 a 128-token cap only to that case while preserving the reviewed 256-token
-rapid-route maximum and every latency/correctness threshold. No raw model
-output, private measurement, log, or private artifact location is published
-here.
+rapid-route maximum and every latency/correctness threshold. The complex route
+now rejects unrequested generation/result controls on every step while retaining
+only the required dynamic proposal content and citations. No raw model output,
+private measurement, log, or private artifact location is published here.
 
 ## Complete checkpoint gate
 
 Not yet consumed. The rejected `0cd9a9f8...` and `4473123e...` runs are terminal
 for their exact candidates. Protected fixture/evaluator inputs changed at
-`d2ae72dc...`, so the old Phase 9 evidence and both rejected runs are
+`9a8b28a6...`, so the old Phase 9 evidence and both rejected runs are
 intentionally inadmissible. One new qualification is required only after the
 three reviewers approve this exact remediation head; the aggregate checkpoint
 matrix remains a separate one-shot gate after the new public-safe route lock is
