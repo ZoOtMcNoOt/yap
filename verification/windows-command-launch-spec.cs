@@ -18,6 +18,7 @@ namespace Yap.Verification
             string environmentSha256,
             string launchNonce,
             string launchSpecSha256,
+            int naturalDescendantDrainMilliseconds,
             int cleanupTimeoutMilliseconds)
         {
             if (string.IsNullOrEmpty(executablePath)
@@ -50,6 +51,12 @@ namespace Yap.Verification
             ValidateLowerHex(environmentSha256, "environment SHA-256");
             ValidateLowerHex(launchNonce, "launch nonce");
             ValidateLowerHex(launchSpecSha256, "launch-specification SHA-256");
+            if (naturalDescendantDrainMilliseconds < 1_000
+                || naturalDescendantDrainMilliseconds > 30_000)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(naturalDescendantDrainMilliseconds));
+            }
             if (cleanupTimeoutMilliseconds < 1_000 || cleanupTimeoutMilliseconds > 10_000)
                 throw new ArgumentOutOfRangeException(nameof(cleanupTimeoutMilliseconds));
         }

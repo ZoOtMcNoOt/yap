@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "profileId": "complex-orchestration",
+  "service": "complex-orchestration",
+  "endpoint": "http://127.0.0.1:18101",
+  "containerName": "yap-agent-gemma-complex",
+  "candidateLockSha256": "3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013",
+  "candidateId": "gemma-4-31b-it-nvfp4",
+  "runtimeId": "gemma-vllm-26.06",
+  "expectedModel": "nvidia/Gemma-4-31B-IT-NVFP4",
+  "modelRevision": "4135a98a9b728a548947683219633b25682223ac",
+  "modelArtifactManifestSha256": "bfcd3157f601d1a1cbd72c0af0f3df28d4174209d47975463d36b06248e22b99",
+  "toolCallParser": "gemma4",
+  "finalResponseProtocol": "forced-answer-tool",
+  "chatTemplate": "/opt/vllm/vllm-src/examples/tool_chat_template_gemma4.jinja",
+  "containerPort": 8000,
+  "maximumModelLength": 8192,
+  "maximumSequences": 8,
+  "maximumBatchedTokens": 8192,
+  "gpuMemoryUtilization": "0.70",
+  "loadFormat": "fastsafetensors",
+  "resources": {
+    "memoryBytes": 103079215104,
+    "memorySwapBytes": 103079215104,
+    "cpuCount": 16,
+    "pidsLimit": 4096,
+    "shmBytes": 17179869184,
+    "tmpfsBytes": 8589934592
+  }
+}

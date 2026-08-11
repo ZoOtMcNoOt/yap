@@ -66,7 +66,7 @@ fn route_service_identity_never_falls_back() {
 
 #[test]
 fn lifecycle_tracks_ready_restart_and_exact_counts() {
-    let mut tracker = LifecycleTracker::new(ProviderService::RapidAutomation);
+    let mut tracker = new_tracker(ProviderService::RapidAutomation);
     assert_eq!(tracker.snapshot().state, LifecycleState::Starting);
     assert_eq!(tracker.snapshot().process_generation, 0);
 
@@ -95,7 +95,7 @@ fn lifecycle_tracks_ready_restart_and_exact_counts() {
 
 #[test]
 fn restart_window_exhausts_and_later_recovers() {
-    let mut tracker = LifecycleTracker::new(ProviderService::ComplexOrchestration);
+    let mut tracker = new_tracker(ProviderService::ComplexOrchestration);
     tracker.record_start().unwrap();
     tracker.record_ready().unwrap();
 
@@ -114,7 +114,7 @@ fn restart_window_exhausts_and_later_recovers() {
     assert_eq!(tracker.snapshot().state, LifecycleState::Failed);
     assert_eq!(tracker.snapshot().restart_count, 3);
 
-    let mut recovered = LifecycleTracker::new(ProviderService::ComplexOrchestration);
+    let mut recovered = new_tracker(ProviderService::ComplexOrchestration);
     recovered.record_start().unwrap();
     recovered.record_ready().unwrap();
     for observed_at in [1, 2, 3] {
@@ -133,7 +133,7 @@ fn restart_window_exhausts_and_later_recovers() {
 
 #[test]
 fn stop_state_is_terminal_and_cannot_restart() {
-    let mut tracker = LifecycleTracker::new(ProviderService::RapidAutomation);
+    let mut tracker = new_tracker(ProviderService::RapidAutomation);
     tracker.record_start().unwrap();
     tracker.record_ready().unwrap();
     tracker.record_stopping().unwrap();
@@ -149,7 +149,7 @@ fn stop_state_is_terminal_and_cannot_restart() {
 
 #[test]
 fn snapshot_schema_is_exact_and_secret_free() {
-    let mut tracker = LifecycleTracker::new(ProviderService::RapidAutomation);
+    let mut tracker = new_tracker(ProviderService::RapidAutomation);
     tracker.record_start().unwrap();
     tracker.record_ready().unwrap();
     let value = serde_json::to_value(tracker.snapshot()).unwrap();
@@ -159,7 +159,10 @@ fn snapshot_schema_is_exact_and_secret_free() {
         keys,
         BTreeSet::from([
             "consecutiveFailureCount".to_owned(),
+            "candidateLockSha256".to_owned(),
             "processGeneration".to_owned(),
+            "profileId".to_owned(),
+            "profileSha256".to_owned(),
             "readinessTransitionCount".to_owned(),
             "restartCount".to_owned(),
             "schemaVersion".to_owned(),
@@ -188,7 +191,7 @@ fn private_snapshot_write_is_atomic_regular_and_owner_private() {
     fs::create_dir(&root).unwrap();
     set_private_directory_permissions(&root);
     let path = root.join("service-state.json");
-    let mut tracker = LifecycleTracker::new(ProviderService::RapidAutomation);
+    let mut tracker = new_tracker(ProviderService::RapidAutomation);
     tracker.record_start().unwrap();
     write_private_snapshot(&path, tracker.snapshot()).unwrap();
 
@@ -218,6 +221,15 @@ fn unique_temp_directory() -> PathBuf {
         "yap-orchestrator-contract-{}-{nonce}",
         std::process::id()
     ))
+}
+
+fn new_tracker(service: ProviderService) -> LifecycleTracker {
+    LifecycleTracker::new(
+        service,
+        service.as_str().to_owned(),
+        "1".repeat(64),
+        "2".repeat(64),
+    )
 }
 
 #[cfg(unix)]

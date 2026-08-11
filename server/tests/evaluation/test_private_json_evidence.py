@@ -37,6 +37,20 @@ class PrivateJsonEvidenceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "must be new"):
                 write_new_private_json_evidence(linked / "evidence.json", {})
 
+    @unittest.skipUnless(os.name == "posix", "POSIX permission proof")
+    def test_creates_every_nested_parent_owner_private(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "candidate" / "children" / "evidence.json"
+            previous_umask = os.umask(0o002)
+            try:
+                write_new_private_json_evidence(path, {})
+            finally:
+                os.umask(previous_umask)
+
+            self.assertEqual(path.parent.parent.stat().st_mode & 0o777, 0o700)
+            self.assertEqual(path.parent.stat().st_mode & 0o777, 0o700)
+
 
 if __name__ == "__main__":
     unittest.main()

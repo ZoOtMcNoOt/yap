@@ -64,6 +64,15 @@ with public-safe evidence SHA-256
 Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
 merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`;
 production supervision and capacity remain Phase 10.
+ADR 0030 makes systemd plus one Rust supervisor the production provider
+lifecycle boundary. ADR 0031 defines the complete eight-agent roster as bounded
+product workflows across that supervised private-server route while preserving
+raw/local controls and prohibiting renderer-owned provider access or silent
+cross-route fallback. The current unmerged Slice 10.2 candidate binds the exact
+Qwen/Gemma profiles and has passed sequential lifecycle, fresh private route
+qualification, and aggregate governed gates; hosted merge, warm simultaneous
+residency, authenticated owner-fair admission, and the roster workflows remain
+open.
 
 ## Applicability and precedence
 
@@ -71,7 +80,7 @@ Use ADRs in this order:
 
 1. A `Superseded` decision is historical and never authorizes implementation.
 2. A later explicit `Amends` or `Supersedes` clause wins over an earlier conflicting detail.
-3. ADRs 0014–0029 define the canonical client/server architecture and phase map. Earlier ADRs remain authoritative only for the principles or deployment profile their status names.
+3. ADRs 0014–0031 define the canonical client/server architecture and phase map. Earlier ADRs remain authoritative only for the principles or deployment profile their status names.
 4. [Current architecture](../architecture/CURRENT-ARCHITECTURE.md),
    [current status](../CURRENT-STATUS.md), and the
    [roadmap](../roadmap/ROADMAP.md) are readable syntheses; they cannot silently
@@ -114,6 +123,7 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0028](0028-model-independent-terminology-authority.md) | Model-independent terminology authority and frozen projections | Accepted; merged Phase 9 has server-derived ownership, immutable job snapshots, bounded projections, revocation, governed-agent consumption, and a passed complete gate; production UI and operations remain open |
 | [0029](0029-vllm-agent-reasoning-runtime.md) | vLLM agent reasoning runtime on DGX Spark | Accepted; exact-head private Qwen rapid/Gemma complex route qualification and aggregate Phase 9 admission passed and merged through PR #152; the post-Phase-9 checkpoint gate passed at `22c3f369...` and hosted head `84c22ec9...` merged through PR #153; production serving, simultaneous residency, and sustained capacity remain Phase 10 |
 | [0030](0030-rust-supervised-provider-service-lifecycle.md) | Rust-supervised provider service lifecycle | Accepted Phase 10 target; merged Slice 10.1 implements the hardware-independent systemd/Rust/foreground-launcher boundary through PR #155; provider profiles, application integration, and capacity remain later slices |
+| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; complete roster implementation, qualification, capacity, and production promotion remain pending |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

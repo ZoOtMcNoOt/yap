@@ -37,6 +37,8 @@ from .checked_candidate import (
 _INPUTS = (
     Path("server/agent-model-acceptance.json"),
     Path("server/agent-reasoning-candidates.lock.json"),
+    Path("server/agent-service-profiles/rapid-automation.json"),
+    Path("server/agent-service-profiles/complex-orchestration.json"),
     Path("server/agent-workload-fixtures.json"),
     Path("server/runtime/agent-vllm/Dockerfile"),
     Path("server/runtime/agent-vllm/build-qwen-vllm-runtime.sh"),

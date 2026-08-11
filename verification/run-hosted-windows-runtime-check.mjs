@@ -42,6 +42,7 @@ export const HOSTED_WINDOWS_RUNTIME_PROFILES = Object.freeze({
     cwd: repositoryRoot,
     label: "Hosted server-connector runtime",
     logName: "server-connector.log",
+    naturalDescendantDrainMs: 5_000,
     timeoutMs: 15 * 60 * 1_000,
   }),
   "authenticated-server-connector": Object.freeze({
@@ -60,6 +61,7 @@ export const HOSTED_WINDOWS_RUNTIME_PROFILES = Object.freeze({
     cwd: repositoryRoot,
     label: "Hosted authenticated server-connector runtime",
     logName: "authenticated-server-connector.log",
+    naturalDescendantDrainMs: 5_000,
     timeoutMs: 15 * 60 * 1_000,
   }),
   "native-wdio": Object.freeze({
@@ -73,6 +75,9 @@ export const HOSTED_WINDOWS_RUNTIME_PROFILES = Object.freeze({
     cwd: desktopRoot,
     label: "Hosted native WDIO runtime",
     logName: "native-wdio.log",
+    // A successful Tauri/WDIO root can exit before Windows finishes draining
+    // its owned WebView2 subprocesses. The Job must still become exactly empty.
+    naturalDescendantDrainMs: 30_000,
     timeoutMs: 30 * 60 * 1_000,
   }),
 });
@@ -129,6 +134,9 @@ function validateProfile(profile, profileName) {
       && profile.label.length > 0
       && typeof profile.logName === "string"
       && /^[a-z0-9-]+\.log$/.test(profile.logName)
+      && Number.isSafeInteger(profile.naturalDescendantDrainMs)
+      && profile.naturalDescendantDrainMs >= 1_000
+      && profile.naturalDescendantDrainMs <= 30_000
       && Number.isSafeInteger(profile.timeoutMs)
       && profile.timeoutMs > 0,
     `Hosted Windows runtime profile ${profileName} is invalid.`,
@@ -286,6 +294,7 @@ export async function runHostedWindowsRuntimeCheck({
       logPath: path.join(runDirectory, profile.logName),
       expectedLogDirectory: runDirectory,
       maximumLogBytes: INTEGRATED_GATE_BYTE_LIMITS.commandLogBytes,
+      naturalDescendantDrainMs: profile.naturalDescendantDrainMs,
       timeoutMs: profile.timeoutMs,
     });
     requireCompletedContainment(result, profileName);

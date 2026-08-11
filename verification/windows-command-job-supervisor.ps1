@@ -133,6 +133,9 @@ if ($observedLaunchSpecSha256 -cne $LaunchSpecSha256) {
 }
 $launchSpec = [Text.UTF8Encoding]::new($false, $true).GetString($launchBytes) |
     ConvertFrom-Json
+if ([int] $launchSpec.schemaVersion -ne 2) {
+    throw 'The Windows command launch specification schema was not supported.'
+}
 if ([string] $launchSpec.launchNonce -cne $LaunchNonce) {
     throw 'The Windows command launch nonce did not match its invocation.'
 }
@@ -148,6 +151,7 @@ $wrapperExitCode = [Yap.Verification.WindowsCommandJobSupervisor]::Run(
     $environmentSha256,
     $LaunchNonce,
     $LaunchSpecSha256,
+    [int] $launchSpec.naturalDescendantDrainMs,
     $CleanupTimeoutMilliseconds
 )
 exit $wrapperExitCode

@@ -32,7 +32,7 @@ from yap_server.evaluation.owned_postgres_knowledge_runtime import (
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_LOCAL_OFFLINE_DESKTOP_BASE_HEAD = "10618e9d292e6810d6fee7defd7adc4902ecb2ed"
+_LOCAL_OFFLINE_DESKTOP_BASE_HEAD = "4f194c2d0a9fde619c7d9793ec19fdd1feffc203"
 _EXPECTED_DATABASE_MODULES = (
     "tests.knowledge.test_postgres_generation_ledger",
     "tests.knowledge.test_postgres_permission_safe_retrieval",
@@ -51,6 +51,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.evaluation.test_agent_model_scoring",
     "tests.evaluation.test_agent_route_qualification_evidence",
     "tests.evaluation.test_agent_runtime_pressure",
+    "tests.evaluation.test_agent_service_lifecycle_runtime",
     "tests.evaluation.test_agent_vllm_metrics",
     "tests.evaluation.test_agent_vllm_runtime",
     "tests.evaluation.test_checked_candidate",
@@ -70,7 +71,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 152
+_EXPECTED_PORTABLE_TEST_COUNT = 157
 
 
 def evaluate_governed_knowledge_gate(

@@ -133,7 +133,14 @@ export function createWindowsSupervisorInvocation(
   invocation,
   expectedLogDirectory,
   environment,
+  naturalDescendantDrainMs = 5_000,
 ) {
+  requireCondition(
+    Number.isSafeInteger(naturalDescendantDrainMs)
+      && naturalDescendantDrainMs >= 1_000
+      && naturalDescendantDrainMs <= 30_000,
+    "Natural descendant drain must be one safe integer from 1,000 through 30,000 milliseconds.",
+  );
   const pwshPath = resolveWindowsCommand("pwsh.exe", invocation.cwd);
   const sourcePaths = supervisorSourceFileNames.map((fileName) => (
     verifiedRegularFile(
@@ -173,11 +180,12 @@ export function createWindowsSupervisorInvocation(
   );
   const launchSpecBytes = Buffer.from(
     `${JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: 2,
       executablePath: invocation.executable,
       arguments: invocation.args,
       workingDirectory: invocation.cwd,
       launchNonce,
+      naturalDescendantDrainMs,
     })}\n`,
     "utf8",
   );

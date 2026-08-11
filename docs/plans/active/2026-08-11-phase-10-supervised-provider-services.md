@@ -1,6 +1,8 @@
 # Phase 10 supervised provider services
 
-**Status:** Active; Slice 10.1 merged through PR #155, Slice 10.2 next.
+**Status:** Active; Slice 10.1 merged through PR #155; Slice 10.2 exact-head
+lifecycle, private qualification, and aggregate evidence passed with hosted
+review/merge pending.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -9,12 +11,26 @@
 **Applied decisions:** [ADR 0014](../../adr/0014-server-tier-compute-topology.md),
 [ADR 0025](../../adr/0025-provider-specific-asr-serving.md),
 [ADR 0029](../../adr/0029-vllm-agent-reasoning-runtime.md), and
-[ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md).
+[ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md), with
+the complete product roster applied by
+[ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md).
 
 **Slice 10.1 evidence:** exact hosted-green head
 `1a487db840578d8e415fd2e5a51b1909af4b7041` passed the dedicated Linux
 lifecycle lane and every required repository CI/CodeQL lane. PR #155 merged it
 as `e2d82b89532addb26fda73f652ae4f68b2127ef7`.
+
+**Slice 10.2 candidate evidence:** exact lifecycle head `4b103c1b...` passed
+both sequential route lifecycles with evidence SHA-256 `9b6a34f6...`; exact
+private qualification head `4d623212...` returned
+`required-workload-routes-qualified` with evidence SHA-256 `4a856f3e...`; and
+public-lock successor `0471b158...` returned
+`governed-knowledge-gate-passed` with evidence SHA-256 `008d748b...`. The
+aggregate composed 157 portable tests across 26 modules, Ruff, 17 zero-skip
+Postgres tests across four modules, real restart/retrieval/stale/successor
+proof, unchanged desktop scope, and exact teardown. Hosted review and merge
+remain open. This evidence is sequential and makes no simultaneous-residency,
+multi-user capacity, SLO, or production claim.
 
 ## Objective
 
@@ -81,9 +97,16 @@ claim simultaneous model residency, or publish a capacity/SLO result.
 
 - Make Rust own route admission, bounded queues, cancellation, and typed
   readiness/backpressure for authenticated `(tenant, subject)` work.
+- Keep both selected route services warm for admitted multi-user work; requests
+  never launch or swap a model. If simultaneous evidence cannot fit one target
+  node, deploy the two exact services to separate owned nodes.
 - Keep Python ownership of authorization, governed retrieval/tools, audit, and
   publication behind versioned bounded adapters.
 - Preserve explicit Qwen rapid/Gemma complex selection with no fallback.
+- Deliver the bounded admission and service adapters consumed by the eight
+  workflows in the
+  [complete-roster plan](2026-08-11-eight-agent-voice-os-delivery.md); this
+  infrastructure is not itself evidence that any persona has shipped.
 
 ### Slice 10.4 — simultaneous residency and capacity promotion
 

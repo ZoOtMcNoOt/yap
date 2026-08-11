@@ -837,9 +837,10 @@ owner's state but may not recreate its transition logic.
   and an explicit `--` launcher-argument boundary. Readiness requires HTTP 200
   from `/health` plus exactly one matching `/v1/models` entry; PID/listener
   presence, hostnames, extra models, and fallback routes are insufficient.
-- **Dependencies/events:** systemd -> Rust supervisor -> one foreground launcher
-  -> launcher-owned container/proxy -> exact health/model read-back. Provider
-  profiles and application admission are not part of Slice 10.1.
+- **Dependencies/events:** systemd -> Rust supervisor -> one exact profile -> one
+  foreground launcher -> launcher-owned container/proxy -> exact health/model
+  read-back. Slice 10.2 supplies immutable Qwen rapid and Gemma complex profiles
+  to separate instances; application admission remains a later owner.
 - **Failure/recovery:** startup has a fixed deadline; three consecutive ready
   probe failures retire the child; the supervisor permits at most three
   restarts in 60 seconds with fixed 1/2/4-second backoff. Exhaustion publishes
@@ -851,16 +852,21 @@ owner's state but may not recreate its transition logic.
   signals converge on the same bounded stop/reap path. A shutdown received
   during restart backoff terminates cleanly without launching another child.
 - **Duplicate owner:** none. Rust does not reconstruct launcher/container
-  policy, and systemd does not own child restart. Later provider profiles,
-  authenticated queues, and capacity evidence must consume this lifecycle
-  owner rather than introduce another health/restart state machine.
+  policy, and systemd does not own child restart. Authenticated queues and
+  capacity evidence must consume these exact-profile lifecycle owners rather
+  than introduce another health/restart state machine.
 
-Production process supervision, simultaneous model residency, sustained
+Exact Slice 10.2 lifecycle head `4b103c1b...` passed sequential Qwen/Gemma
+start/readiness/restart/stop and zero-residue teardown; qualification head
+`4d623212...` qualified both routes; and aggregate head `0471b158...` passed the
+governed gate. Hosted review and merge remain open. Production process
+supervision, simultaneous warm model residency, sustained
 mixed-owner capacity/SLOs, external transport, enterprise identity/networking,
 backup/restore, and deployment remain Phase 10 or explicit IT handoffs; the
-evaluation lifecycles above are not production services. Slice 10.1 implements
-only the hardware-independent lifecycle owner; its hosted proof and merge, and
-all provider-specific production layers, remain open.
+sequential lifecycle evidence above is not production-service or capacity
+evidence. The next admission owner must keep both services warm, bound requests
+without launching/swapping models, and use separate owned nodes if one node
+cannot pass simultaneous-residency evidence.
 
 ## Persistent-state owners
 

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::OrchestratorError;
 
-const SNAPSHOT_SCHEMA_VERSION: u8 = 1;
+const SNAPSHOT_SCHEMA_VERSION: u8 = 2;
 const MAXIMUM_RESTARTS_PER_WINDOW: usize = 3;
 const RESTART_WINDOW: Duration = Duration::from_secs(60);
 const RESTART_BACKOFFS: [Duration; MAXIMUM_RESTARTS_PER_WINDOW] = [
@@ -56,6 +56,9 @@ pub enum LifecycleState {
 pub struct ServiceSnapshot {
     pub schema_version: u8,
     pub service: ProviderService,
+    pub profile_id: String,
+    pub profile_sha256: String,
+    pub candidate_lock_sha256: String,
     pub state: LifecycleState,
     pub process_generation: u64,
     pub start_count: u64,
@@ -77,11 +80,19 @@ pub struct LifecycleTracker {
 }
 
 impl LifecycleTracker {
-    pub fn new(service: ProviderService) -> Self {
+    pub fn new(
+        service: ProviderService,
+        profile_id: String,
+        profile_sha256: String,
+        candidate_lock_sha256: String,
+    ) -> Self {
         Self {
             snapshot: ServiceSnapshot {
                 schema_version: SNAPSHOT_SCHEMA_VERSION,
                 service,
+                profile_id,
+                profile_sha256,
+                candidate_lock_sha256,
                 state: LifecycleState::Starting,
                 process_generation: 0,
                 start_count: 0,
