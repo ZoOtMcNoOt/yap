@@ -50,7 +50,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         field="agent model acceptance plan",
         containment_root=repository_root,
     )
-    if set(plan) != _PLAN_KEYS or plan["schemaVersion"] != 2:
+    if set(plan) != _PLAN_KEYS or plan["schemaVersion"] != 3:
         raise ValueError("agent model acceptance plan differs from the contract")
     lock_name = _file_name(plan["candidateLock"], "candidate lock")
     fixture_name = _file_name(plan["fixtureFile"], "fixture file")
@@ -386,6 +386,7 @@ def _runtime_tracks(value: object) -> dict[str, object]:
         "prefixIsolationRepetitions",
         "maximumContextTokens",
         "maximumOutputTokens",
+        "maximumFinalResponseAttempts",
         "requestTimeoutSeconds",
         "startupTimeoutSeconds",
         "teardownTimeoutSeconds",
@@ -396,6 +397,13 @@ def _runtime_tracks(value: object) -> dict[str, object]:
         or value["prefixIsolationRepetitions"] != 4
     ):
         raise ValueError("agent runtime pressure tracks are incomplete")
+    final_attempts = value["maximumFinalResponseAttempts"]
+    if (
+        isinstance(final_attempts, bool)
+        or not isinstance(final_attempts, int)
+        or final_attempts != 2
+    ):
+        raise ValueError("agent final response attempts differ from the contract")
     numeric = {
         "coldRequests": (1, 8),
         "warmRequests": (1, 100),

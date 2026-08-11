@@ -123,7 +123,7 @@ def _candidate_summary(
     if isinstance(run, FailedAgentCandidateRun):
         return _failed_candidate_summary(candidate, run, expected=expected)
     evidence = run.evidence
-    if set(evidence) != _EVIDENCE_KEYS or evidence["schemaVersion"] != 1:
+    if set(evidence) != _EVIDENCE_KEYS or evidence["schemaVersion"] != 2:
         raise ValueError("agent model candidate evidence differs from the contract")
     supplied_hash = evidence["evidenceSha256"]
     unhashed = dict(evidence)
@@ -460,7 +460,7 @@ def _verify_runtime_children(
     lifecycle = children["lifecycle"]
     if (
         set(fixtures) != {"schemaVersion", "checkedHead", "candidateId", "results"}
-        or fixtures["schemaVersion"] != 1
+        or fixtures["schemaVersion"] != 2
         or fixtures["results"] != evidence_results
         or set(pressure_child)
         != {

@@ -21,6 +21,7 @@ _RESULT_KEYS = {
     "answer",
     "citationConceptIds",
     "latencyMilliseconds",
+    "modelRequestCount",
     "toolCalls",
 }
 
@@ -76,7 +77,29 @@ def score_agent_model_results(
             or case_id in result_by_id
         ):
             raise ValueError("agent model result identity is invalid")
-        if set(result) != _RESULT_KEYS or not _valid_result_types(result):
+        case = by_id.get(str(case_id), {})
+        expected_sequence = case.get("expectedToolSequence", [case.get("expectedTool")])
+        baseline_requests = (
+            len(expected_sequence) + 1 if isinstance(expected_sequence, list) else 0
+        )
+        maximum_requests = baseline_requests + int(
+            acceptance.runtime_tracks["maximumFinalResponseAttempts"]
+        ) - 1
+        model_request_count = result.get("modelRequestCount")
+        valid_request_count = (
+            isinstance(model_request_count, int)
+            and not isinstance(model_request_count, bool)
+            and (
+                1 <= model_request_count <= maximum_requests
+                if result.get("invalidStructuredOutput") is True
+                else baseline_requests <= model_request_count <= maximum_requests
+            )
+        )
+        if (
+            set(result) != _RESULT_KEYS
+            or not _valid_result_types(result)
+            or not valid_request_count
+        ):
             invalid += 1
         result_by_id[case_id] = result
     if set(result_by_id) != set(by_id):
@@ -220,6 +243,9 @@ def _valid_result_types(result: dict[str, object]) -> bool:
         and isinstance(result["latencyMilliseconds"], int)
         and not isinstance(result["latencyMilliseconds"], bool)
         and result["latencyMilliseconds"] >= 0
+        and isinstance(result["modelRequestCount"], int)
+        and not isinstance(result["modelRequestCount"], bool)
+        and result["modelRequestCount"] > 0
         and isinstance(result["toolCalls"], list)
         and bool(result["toolCalls"])
     )

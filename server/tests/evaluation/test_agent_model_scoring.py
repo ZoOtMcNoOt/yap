@@ -211,6 +211,60 @@ class AgentModelScoringTests(unittest.TestCase):
                 self.assertLess(score.terminology_preservation, 1.0)
                 self.assertFalse(score.passed)
 
+    def test_requires_bounded_model_request_evidence(self) -> None:
+        cases = (
+            ("baseline", 2, True),
+            ("bounded-final-retry", 3, True),
+            ("below-baseline", 1, False),
+            ("above-maximum", 4, False),
+            ("boolean", True, False),
+        )
+        for label, count, expected_pass in cases:
+            with self.subTest(label=label):
+                results = list(_perfect_results())
+                lexical = next(
+                    result
+                    for result in results
+                    if result["caseId"] == "lexical-cited-answer"
+                )
+                lexical["modelRequestCount"] = count
+                score = score_agent_model_results(
+                    REPOSITORY_ROOT,
+                    tuple(results),
+                    workload_class="rapid-automation",
+                )
+                self.assertIs(score.passed, expected_pass)
+                self.assertEqual(
+                    score.invalid_structured_output_count,
+                    0 if expected_pass else 1,
+                )
+
+        missing = list(_perfect_results())
+        missing[0].pop("modelRequestCount")
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(missing), workload_class="rapid-automation"
+        )
+        self.assertFalse(score.passed)
+        self.assertEqual(score.invalid_structured_output_count, 1)
+
+        for count in (4, 5):
+            with self.subTest(complex_count=count):
+                complex_results = list(
+                    _perfect_results(workload_class="complex-orchestration")
+                )
+                complex_case = next(
+                    result
+                    for result in complex_results
+                    if result["caseId"] == "complex-governed-orchestration"
+                )
+                complex_case["modelRequestCount"] = count
+                score = score_agent_model_results(
+                    REPOSITORY_ROOT,
+                    tuple(complex_results),
+                    workload_class="complex-orchestration",
+                )
+                self.assertTrue(score.passed)
+
 
 def _perfect_results(
     *, workload_class: str = "rapid-automation"
@@ -244,6 +298,7 @@ def _perfect_results(
         answer = case.get(
             "expectedAnswer", " ".join(case.get("requiredTerms", []))
         )
+        tool_calls = _perfect_tool_calls(case, arguments)
         results.append(
             {
                 "caseId": case["caseId"],
@@ -252,10 +307,29 @@ def _perfect_results(
                 "answer": answer,
                 "citationConceptIds": case.get("requiredCitationConceptIds", []),
                 "latencyMilliseconds": 10,
-                "toolCalls": [{"name": case["expectedTool"], "arguments": arguments}],
+                "modelRequestCount": len(tool_calls) + 1,
+                "toolCalls": tool_calls,
             }
         )
     return tuple(results)
+
+
+def _perfect_tool_calls(
+    case: dict[str, object], final_arguments: dict[str, object]
+) -> list[dict[str, object]]:
+    sequence = case.get("expectedToolSequence", [case["expectedTool"]])
+    assert isinstance(sequence, list)
+    expected_calls = case.get("expectedToolCalls")
+    calls: list[dict[str, object]] = []
+    for index, name in enumerate(sequence):
+        if name == case["expectedTool"]:
+            arguments = final_arguments
+        elif isinstance(expected_calls, list):
+            arguments = dict(expected_calls[index]["expectedArguments"])
+        else:
+            raise AssertionError("multi-step fixture lacks expected calls")
+        calls.append({"name": name, "arguments": arguments})
+    return calls
 
 
 if __name__ == "__main__":

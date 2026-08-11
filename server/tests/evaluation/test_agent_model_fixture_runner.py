@@ -326,9 +326,11 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         )
         cases = iter(fixture["cases"])
         active: dict[str, object] | None = None
+        final_attempts: dict[str, int] = {}
+        complex_tool_requests = 0
 
         def request(payload: dict[str, object]) -> dict[str, object]:
-            nonlocal active
+            nonlocal active, complex_tool_requests
             messages = payload["messages"]
             assert isinstance(messages, list)
             if "tools" in payload and active is None:
@@ -336,6 +338,13 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             assert active is not None
             case = active
             if "tools" not in payload:
+                case_id = str(case["caseId"])
+                final_attempts[case_id] = final_attempts.get(case_id, 0) + 1
+                if (
+                    case_id == "complex-governed-orchestration"
+                    and final_attempts[case_id] == 1
+                ):
+                    return {"choices": []}
                 response = {
                     "choices": [
                         {
@@ -358,6 +367,8 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 }
                 active = None
                 return response
+            if case["caseId"] == "complex-governed-orchestration":
+                complex_tool_requests += 1
             sequence = case.get("expectedToolSequence", [case["expectedTool"]])
             prior_calls = sum(
                 message.get("role") == "tool" for message in messages
@@ -420,6 +431,8 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             [call["name"] for call in result["toolCalls"]],  # type: ignore[index]
             ["search_knowledge", "traverse_knowledge", "propose_knowledge"],
         )
+        self.assertEqual(result["modelRequestCount"], 5)
+        self.assertEqual(complex_tool_requests, 3)
         score = score_agent_model_results(
             REPOSITORY_ROOT,
             tuple(item.record() for item in results),
@@ -564,6 +577,12 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         )
 
         self.assertEqual(len(results), 12)
+        self.assertTrue(
+            all(
+                result.model_request_count == len(result.tool_calls) + 1
+                for result in results
+            )
+        )
         self.assertTrue(score.passed)
 
     def test_records_malformed_model_output_and_continues(self) -> None:
@@ -588,6 +607,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         )
 
         self.assertTrue(results[0].invalid_structured_output)
+        self.assertEqual(results[0].model_request_count, 1)
         self.assertFalse(results[1].invalid_structured_output)
         score = score_agent_model_results(
             REPOSITORY_ROOT,

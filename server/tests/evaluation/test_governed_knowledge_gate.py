@@ -142,6 +142,7 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
             "server/pyproject.toml",
             "server/uv.lock",
             "server/agent-workload-fixtures.json",
+            "server/tests/evaluation/test_agent_model_final_response_retry.py",
             "server/tests/evaluation/test_agent_model_qualification.py",
             "server/tests/evaluation/test_agent_route_qualification_evidence.py",
             "server/tests/evaluation/test_governed_knowledge_gate.py",

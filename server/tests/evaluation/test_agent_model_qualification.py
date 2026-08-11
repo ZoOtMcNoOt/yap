@@ -13,6 +13,7 @@ from yap_server.evaluation.agent_model_candidate_runner import (
     agent_evidence_sha256,
 )
 from yap_server.evaluation.agent_model_qualification import (
+    _verify_runtime_children,
     evaluate_agent_model_qualification,
 )
 from yap_server.evaluation.agent_vllm_runtime import (
@@ -295,6 +296,40 @@ class AgentModelQualificationTests(unittest.TestCase):
             "contained-candidate-rejection",
         )
 
+    def test_rejects_obsolete_success_and_fixture_evidence_schemas(self) -> None:
+        candidate = _checked_candidate()
+        run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
+        other = _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10)
+        obsolete_evidence = dict(run.evidence)
+        obsolete_evidence.pop("evidenceSha256")
+        obsolete_evidence["schemaVersion"] = 1
+        obsolete_evidence["evidenceSha256"] = canonical_evidence_sha256(
+            obsolete_evidence
+        )
+        obsolete = AgentCandidateRun(
+            run.candidate_id,
+            obsolete_evidence,
+            run.runtime_receipt,
+            run.children,
+        )
+        with (
+            patch.object(CheckedCandidate, "verify_unchanged"),
+            self.assertRaisesRegex(ValueError, "candidate evidence"),
+        ):
+            evaluate_agent_model_qualification(candidate=candidate, runs=(obsolete, other))
+
+        children = {
+            **run.children,
+            "fixtures": {**run.children["fixtures"], "schemaVersion": 1},
+        }
+        with self.assertRaisesRegex(ValueError, "child evidence"):
+            _verify_runtime_children(
+                children,
+                checked_head=candidate.checked_head,
+                evidence_results=run.evidence["results"],
+                pressure=run.evidence["runtimePressure"],
+            )
+
 
 def _checked_candidate() -> CheckedCandidate:
     identities = {
@@ -396,7 +431,7 @@ def _candidate_run(
     }
     evidence = bind_checked_candidate_evidence(
         {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "candidateId": candidate_id,
             "model": model["model"],
             "revision": model["revision"],
@@ -467,7 +502,7 @@ def _failed_run(
 def _children(candidate, model, results, latency, launch_sha256):
     return {
         "fixtures": {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "checkedHead": candidate.checked_head,
             "candidateId": model["candidateId"],
             "results": results,
@@ -556,6 +591,10 @@ def _perfect_results(workload_class: str) -> tuple[dict[str, object], ...]:
                 ),
                 "citationConceptIds": case.get("requiredCitationConceptIds", []),
                 "latencyMilliseconds": 10,
+                "modelRequestCount": len(
+                    case.get("expectedToolSequence", [case["expectedTool"]])
+                )
+                + 1,
                 "toolCalls": _perfect_tool_calls(case, arguments),
             }
         )

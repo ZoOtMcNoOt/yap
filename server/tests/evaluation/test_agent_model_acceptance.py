@@ -6,6 +6,7 @@ import unittest
 
 from yap_server.evaluation.agent_model_acceptance import (
     _fixtures,
+    _runtime_tracks,
     load_agent_model_acceptance,
 )
 
@@ -37,6 +38,7 @@ class AgentModelAcceptanceTests(unittest.TestCase):
             ("required-workload-routes-qualified", "deterministic-no-model"),
         )
         self.assertEqual(plan.runtime_tracks["requestTimeoutSeconds"], 30)
+        self.assertEqual(plan.runtime_tracks["maximumFinalResponseAttempts"], 2)
         self.assertEqual(
             plan.route_evidence["complex-orchestration"]["requestTimeoutSeconds"],
             60,
@@ -76,6 +78,15 @@ class AgentModelAcceptanceTests(unittest.TestCase):
         empty_case["maximumOutputTokens"] = True
         with self.assertRaisesRegex(ValueError, "case output bound"):
             _fixtures(fixtures)
+
+    def test_freezes_two_final_response_attempts(self) -> None:
+        tracks = load_agent_model_acceptance(REPOSITORY_ROOT).runtime_tracks
+
+        for invalid in (True, 1, 2.0, 3):
+            with self.subTest(invalid=invalid):
+                changed = {**tracks, "maximumFinalResponseAttempts": invalid}
+                with self.assertRaisesRegex(ValueError, "final response attempts"):
+                    _runtime_tracks(changed)
 
 
 if __name__ == "__main__":

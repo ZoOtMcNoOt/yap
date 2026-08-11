@@ -45,6 +45,7 @@ _EXPECTED_PORTABLE_PACKAGES = frozenset(
 )
 _EXPECTED_PORTABLE_MODULES = (
     "tests.evaluation.test_agent_model_acceptance",
+    "tests.evaluation.test_agent_model_final_response_retry",
     "tests.evaluation.test_agent_model_fixture_runner",
     "tests.evaluation.test_agent_model_qualification",
     "tests.evaluation.test_agent_model_scoring",
@@ -69,7 +70,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 134
+_EXPECTED_PORTABLE_TEST_COUNT = 141
 
 
 def evaluate_governed_knowledge_gate(

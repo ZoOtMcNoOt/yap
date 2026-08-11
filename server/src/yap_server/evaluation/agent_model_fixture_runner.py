@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import time
@@ -34,6 +34,7 @@ class AgentFixtureResult:
     answer: str
     citation_concept_ids: tuple[str, ...]
     latency_milliseconds: int
+    model_request_count: int
     tool_calls: tuple[tuple[str, dict[str, object]], ...]
     invalid_structured_output: bool = False
 
@@ -45,6 +46,7 @@ class AgentFixtureResult:
             "answer": self.answer,
             "citationConceptIds": list(self.citation_concept_ids),
             "latencyMilliseconds": self.latency_milliseconds,
+            "modelRequestCount": self.model_request_count,
             "toolCalls": [
                 {"name": name, "arguments": arguments}
                 for name, arguments in self.tool_calls
@@ -101,6 +103,9 @@ def run_agent_model_fixtures(
             model=model,
             system_prompt=system_prompt,
             maximum_output_tokens=maximum_output_tokens,
+            maximum_final_response_attempts=int(
+                acceptance.runtime_tracks["maximumFinalResponseAttempts"]
+            ),
             final_response_protocol=final_response_protocol,
             request_json=request_json,
         )
@@ -172,18 +177,27 @@ def _run_case_safely(
     model: str,
     system_prompt: str,
     maximum_output_tokens: int,
+    maximum_final_response_attempts: int,
     final_response_protocol: str,
     request_json: JsonRequest,
 ) -> AgentFixtureResult:
     started = time.monotonic()
+    model_request_count = 0
+
+    def counted_request(payload: dict[str, object]) -> dict[str, object]:
+        nonlocal model_request_count
+        model_request_count += 1
+        return request_json(payload)
+
     try:
-        return _run_case(
+        result = _run_case(
             case,
             model=model,
             system_prompt=system_prompt,
             maximum_output_tokens=maximum_output_tokens,
+            maximum_final_response_attempts=maximum_final_response_attempts,
             final_response_protocol=final_response_protocol,
-            request_json=request_json,
+            request_json=counted_request,
         )
     except RuntimeError as error:
         if not isinstance(case, dict) or not isinstance(case.get("caseId"), str):
@@ -191,19 +205,25 @@ def _run_case_safely(
         raise RuntimeError(
             f"agent workload case {case['caseId']} failed"
         ) from error
-    except ValueError:
+    except _InvalidModelToolResponse:
         if not isinstance(case, dict) or not isinstance(case.get("caseId"), str):
             raise
-        return AgentFixtureResult(
+        result = AgentFixtureResult(
             case_id=case["caseId"],
             tool_name="",
             arguments={},
             answer="",
             citation_concept_ids=(),
-            latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
+            latency_milliseconds=0,
+            model_request_count=0,
             tool_calls=(),
             invalid_structured_output=True,
         )
+    return replace(
+        result,
+        latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
+        model_request_count=model_request_count,
+    )
 
 
 def _run_case(
@@ -212,6 +232,7 @@ def _run_case(
     model: str,
     system_prompt: str,
     maximum_output_tokens: int,
+    maximum_final_response_attempts: int,
     final_response_protocol: str,
     request_json: JsonRequest,
 ) -> AgentFixtureResult:
@@ -224,7 +245,8 @@ def _run_case(
         or not 1 <= case_output_tokens <= maximum_output_tokens
     ):
         raise ValueError("agent workload case output bound is invalid")
-    started = time.monotonic()
+    if maximum_final_response_attempts != 2:
+        raise ValueError("agent final response attempts differ from the contract")
     messages: list[dict[str, object]] = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": case["user"]},
@@ -256,8 +278,11 @@ def _run_case(
                 "chat_template_kwargs": {"enable_thinking": False},
             }
         )
-        assistant_message, tool_id, tool_name, arguments = _tool_call(response)
-        validate_governed_agent_tool_arguments(tool_name, arguments)
+        try:
+            assistant_message, tool_id, tool_name, arguments = _tool_call(response)
+            validate_governed_agent_tool_arguments(tool_name, arguments)
+        except ValueError as error:
+            raise _InvalidModelToolResponse from error
         tool_calls.append((tool_name, arguments))
         messages.append(assistant_message)
         messages.append(
@@ -304,17 +329,41 @@ def _run_case(
     final_payload.update(
         governed_answer_request_fields(final_response_protocol)
     )
-    final = request_json(final_payload)
-    answer, citations = read_governed_answer(final, final_response_protocol)
+    for attempt in range(maximum_final_response_attempts):
+        final = request_json(final_payload)
+        try:
+            answer, citations = read_governed_answer(
+                final, final_response_protocol
+            )
+        except ValueError:
+            if attempt + 1 < maximum_final_response_attempts:
+                continue
+            return AgentFixtureResult(
+                case_id=str(case["caseId"]),
+                tool_name=tool_name,
+                arguments=arguments,
+                answer="",
+                citation_concept_ids=(),
+                latency_milliseconds=0,
+                model_request_count=0,
+                tool_calls=tuple(tool_calls),
+                invalid_structured_output=True,
+            )
+        break
     return AgentFixtureResult(
         case_id=str(case["caseId"]),
         tool_name=tool_name,
         arguments=arguments,
         answer=answer,
         citation_concept_ids=citations,
-        latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
+        latency_milliseconds=0,
+        model_request_count=0,
         tool_calls=tuple(tool_calls),
     )
+
+
+class _InvalidModelToolResponse(ValueError):
+    """A model-produced tool envelope or argument object is structurally invalid."""
 
 
 def _step_visible_context(

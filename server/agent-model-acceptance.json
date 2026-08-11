@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "candidateLock": "agent-reasoning-candidates.lock.json",
   "fixtureFile": "agent-workload-fixtures.json",
   "candidateLockSha256": "c95fb9ff5d11956f527f3be84c9f35da5e47b1e9077c272ff79ac5ca4ad2ea30",
@@ -22,6 +22,7 @@
     "prefixIsolationRepetitions": 4,
     "maximumContextTokens": 8192,
     "maximumOutputTokens": 512,
+    "maximumFinalResponseAttempts": 2,
     "requestTimeoutSeconds": 30,
     "startupTimeoutSeconds": 600,
     "teardownTimeoutSeconds": 30

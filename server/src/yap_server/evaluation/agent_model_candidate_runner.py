@@ -163,7 +163,7 @@ def run_agent_model_candidate(
     checked_candidate.verify_unchanged()
     evidence = bind_checked_candidate_evidence(
         {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "candidateId": candidate_id,
             "model": model_candidate["model"],
             "revision": model_candidate["revision"],
@@ -235,7 +235,7 @@ def agent_evidence_sha256(value: object) -> str:
 def _children(*, checked_head, candidate_id, records, pressure, started):
     return {
         "fixtures": {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "checkedHead": checked_head,
             "candidateId": candidate_id,
             "results": list(records),
