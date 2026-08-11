@@ -111,6 +111,13 @@ profile_launch_arguments=("${profile_values[@]:17}")
 if [ "$profile_id" != "$profile_service" ]; then
   die "agent vLLM service profile identity differs"
 fi
+model_root_canonical="$(realpath -e -- "$YAP_AGENT_MODEL_SNAPSHOT/../..")" \
+  || die "agent vLLM model repository must resolve exactly"
+if [ -L "$model_root_canonical" ] \
+  || [ ! -d "$model_root_canonical" ] \
+  || [ "$YAP_AGENT_MODEL_SNAPSHOT" != "$model_root_canonical/snapshots/$profile_model_revision" ]; then
+  die "agent vLLM snapshot is outside its exact model repository"
+fi
 
 network_identity="$(
   docker network inspect \
@@ -184,6 +191,6 @@ run_private_container_with_loopback_proxy \
   --env HF_HUB_DISABLE_TELEMETRY=1 \
   --env DO_NOT_TRACK=1 \
   --env HOME=/tmp \
-  --mount "type=bind,src=$YAP_AGENT_MODEL_SNAPSHOT,dst=/model-cache,readonly" \
+  --mount "type=bind,src=$model_root_canonical,dst=/model-cache,readonly" \
   "$profile_image_id" \
   "${profile_launch_arguments[@]}"

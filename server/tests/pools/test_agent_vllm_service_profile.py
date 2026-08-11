@@ -67,7 +67,14 @@ class AgentVllmServiceProfileTests(unittest.TestCase):
             with self.subTest(profile=path.name):
                 profile = self._load(path)
                 arguments = profile.launch_arguments
-                self.assertEqual(arguments[:3], ("vllm", "serve", "/model-cache"))
+                self.assertEqual(
+                    arguments[:3],
+                    (
+                        "vllm",
+                        "serve",
+                        f"/model-cache/snapshots/{profile.model_revision}",
+                    ),
+                )
                 self.assertEqual(_option(arguments, "--host"), "0.0.0.0")
                 self.assertEqual(
                     _option(arguments, "--port"), str(profile.container_port)

@@ -67,6 +67,8 @@ class AgentVllmServerContractTests(unittest.TestCase):
             "HF_HUB_OFFLINE=1",
             "TRANSFORMERS_OFFLINE=1",
             "HOME=/tmp",
+            "model_root_canonical",
+            'snapshots/$profile_model_revision',
             "dst=/model-cache,readonly",
         ):
             self.assertIn(expected, self.script)

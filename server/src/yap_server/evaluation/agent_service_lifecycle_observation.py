@@ -219,6 +219,7 @@ def _exact_host_policy(
 
 
 def _exact_model_mount(mounts: list[object], model_snapshot: Path) -> bool:
+    model_root = model_snapshot.resolve(strict=True).parent.parent.resolve(strict=True)
     matches = [
         value
         for value in mounts
@@ -227,7 +228,7 @@ def _exact_model_mount(mounts: list[object], model_snapshot: Path) -> bool:
     return len(mounts) == 1 and len(matches) == 1 and (
         matches[0].get("Type") == "bind"
         and matches[0].get("RW") is False
-        and matches[0].get("Source") == str(model_snapshot.resolve(strict=True))
+        and matches[0].get("Source") == str(model_root)
     )
 
 

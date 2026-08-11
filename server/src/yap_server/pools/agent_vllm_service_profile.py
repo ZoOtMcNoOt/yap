@@ -248,7 +248,7 @@ def load_agent_vllm_service_profile(
     )
     launch_arguments = build_qualified_agent_vllm_launch_arguments(
         candidate,
-        model_path="/model-cache",
+        model_path=f"/model-cache/snapshots/{model_revision}",
         host="0.0.0.0",
         port=container_port,
     )

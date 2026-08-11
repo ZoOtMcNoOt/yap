@@ -44,7 +44,9 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
 
     def test_container_policy_requires_exact_identity_resources_and_attachment(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            snapshot = Path(temporary).resolve()
+            model_root = Path(temporary) / "models--nvidia--Qwen"
+            snapshot = model_root / "snapshots" / self.profile.model_revision
+            snapshot.mkdir(parents=True)
             inspection = _inspection(self.profile, snapshot)
             with (
                 patch.object(os, "getuid", create=True, return_value=1000),
@@ -58,7 +60,13 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
                     network_name=NETWORK_NAME,
                     model_snapshot=snapshot,
                 )
-                for mutation in ("id", "memory", "network", "mount"):
+                for mutation in (
+                    "id",
+                    "memory",
+                    "network",
+                    "mount",
+                    "snapshot-mount",
+                ):
                     with self.subTest(mutation=mutation):
                         changed = copy.deepcopy(inspection)
                         if mutation == "id":
@@ -67,6 +75,8 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
                             changed["HostConfig"]["Memory"] = 1
                         elif mutation == "network":
                             changed["NetworkSettings"]["Networks"]["unexpected"] = {}
+                        elif mutation == "snapshot-mount":
+                            changed["Mounts"][0]["Source"] = str(snapshot)
                         else:
                             changed["Mounts"][0]["RW"] = True
                         with self.assertRaises((RuntimeError, ValueError)):
@@ -177,7 +187,7 @@ def _inspection(
         "Mounts": [
             {
                 "Type": "bind",
-                "Source": str(snapshot),
+                "Source": str(snapshot.parent.parent.resolve(strict=True)),
                 "Destination": "/model-cache",
                 "RW": False,
             }
