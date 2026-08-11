@@ -31,11 +31,15 @@ descendant. Public lock/CI commit `e15c152966e7144acac784e49282fed05b2730c5`
 and documentation commit `e106b442bfa607b34c50efe66163a2539a703387`
 extended it without changing protected route inputs. Admission-protection
 commit `b8452f807ae6e2353a99f4d95c952e8103414709` then deliberately changed
-protected route inputs; the current documentation descendant records the
-required replacement qualification. The resulting candidate has the following
-focused, non-promotional verification. Commands are shown from their working
-directory; the Windows runs used the locked project environment and Python
-3.12.
+protected route inputs. Executable repair
+`4cb9123ec21fada1f0fca865909d7bfd7ada34e7` subsequently froze the exact
+bounded lexical result control exposed by the first protected-head run, with
+fixture SHA-256
+`723032aa381e30a6060d6636667410a075441ed5e1c5ad12628f0797105c3a2f`.
+The current documentation descendant records the required replacement
+qualification. The resulting candidate has the following focused,
+non-promotional verification. Commands are shown from their working directory;
+the Windows runs used the locked project environment and Python 3.12.
 
 - From `server`,
   `uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py`
@@ -50,7 +54,7 @@ directory; the Windows runs used the locked project environment and Python
   green: 131 passed and the same three declared skips, with no failure,
   expected failure, or unexpected success. The portable suite does not consume
   private route artifacts. Current admission-protection commit `b8452f80...`
-  separately passed its focused 60-test and 16-test sets plus Ruff, but actual
+  separately passed its focused route and admission-contract sets plus Ruff, but actual
   private admission and the aggregate gate remain blocked until replacement
   qualification. None of these focused results is a complete checkpoint-gate
   claim.
@@ -63,8 +67,9 @@ directory; the Windows runs used the locked project environment and Python
   tool, the route maximum output bounds remain unchanged, the one concise
   stale-generation case has a stricter frozen per-case bound, empty-result
   prompts are explicit and every empty visible result is exact-answer scored,
-  cited retrieval requires its complete frozen argument map with no extra
-  generation or result controls, multi-step calls allow only their frozen
+  cited retrieval requires its complete frozen argument map, including the
+  one-result bound, with no extra generation or result controls, multi-step
+  calls allow only their frozen
   controls plus the required dynamic proposal content/citations, every visible
   citation span covers its complete supplied text, proposal terminology must
   be present in governed `proposed_content` rather than only the final answer,
@@ -103,7 +108,7 @@ rule for the final aggregate matrix.
 
 ## Rejected qualification evidence
 
-Two fresh private route qualifications are retained as rejected evidence and
+Three fresh private route qualifications are retained as rejected evidence and
 cannot be used for admission. At exact head
 `0cd9a9f88123f1f4fd1caaf42e03dce02658bfd6`, the owned lifecycles and exact
 teardown completed before the decision returned `deterministic-no-model` with
@@ -113,6 +118,19 @@ At exact head `4473123e24c59eb1d929e8612fb9b38817c55a14`, both owned
 lifecycles and exact teardown again completed before the decision returned
 `deterministic-no-model` with public-safe evidence SHA-256
 `1a5f8069d193b1ba53e188f312d564167068b19e6f35580986404abfdd540a83`.
+
+At the first protected-admission head
+`cb5ae95bd1dcd0a7c1c3d12d6471ba511ecbf152`, both isolated GPU lifecycles
+and exact teardown completed before the decision returned
+`deterministic-no-model` with public-safe evidence SHA-256
+`867289335c3383f592eb8e62d6d916a52e455e8854e5b967b5539d1d19cbf4dc`.
+The complex-orchestration candidate and every frozen rapid latency bound
+passed, but the rapid candidate's otherwise correct lexical call supplied the
+valid product-owned `maximum_results: 1` control that the frozen expected
+argument map had omitted. Exact context withholding therefore denied the
+cited evidence and correctly prevented qualification. No private measurement
+or model output is published by that qualitative diagnosis. The immutable run
+is terminal and inadmissible.
 
 The first follow-up made denied-resource, injection, and empty-result policy
 answers exact without changing any acceptance threshold. The second run exposed
@@ -124,8 +142,11 @@ the stale-generation purpose, search text, and generation identity, and applies
 a 128-token cap only to that case while preserving the reviewed 256-token
 rapid-route maximum and every latency/correctness threshold. The complex route
 now rejects unrequested generation/result controls on every step while retaining
-only the required dynamic proposal content and citations. No raw model output,
-private measurement, log, or private artifact location is published here.
+only the required dynamic proposal content and citations. The protected-head
+follow-up then froze `maximum_results: 1` in both the lexical instruction and
+its complete expected argument map; omission, alteration, or any extra
+generation control still fails closed. No raw model output, private
+measurement, log, or private artifact location is published here.
 
 One later publication attempt at exact head
 `f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3` returned a qualifying model
@@ -155,18 +176,19 @@ drift. Commit `b8452f807ae6e2353a99f4d95c952e8103414709` places all four in the
 protected route set and proves a diff naming any one is rejected. That stronger
 self-protecting admission code intentionally makes the `f7fc37e3...` reference
 historical for later descendants; no compatibility exception is carried. One
-fresh qualification at the protected reviewed head is required before the
-aggregate gate.
+fresh qualification at reviewed executable head `4cb9123e...` is required
+before the aggregate gate.
 
 ## Complete checkpoint gate
 
-Not yet consumed. The rejected `0cd9a9f8...` and `4473123e...` runs and the
-permission-invalid publication attempt are terminal and inadmissible. The fresh
+Not yet consumed. The rejected `0cd9a9f8...`, `4473123e...`, and
+`cb5ae95b...` runs and the permission-invalid publication attempt are terminal
+and inadmissible. The fresh
 `f7fc37e3...` private tree is semantically admitted for that exact head and its
-pre-protection descendants. The new admission-protection change is itself a
-protected route input, so the current descendant rejects reuse and requires a
-fresh private qualification. The aggregate checkpoint matrix remains a
-separate one-shot gate after that replacement lock is frozen.
+pre-protection descendants. The new admission-protection and lexical-fixture
+changes are protected route inputs, so the current descendant rejects reuse
+and requires a fresh private qualification. The aggregate checkpoint matrix
+remains a separate one-shot gate after that replacement lock is frozen.
 
 ## Hosted closure
 

@@ -124,8 +124,9 @@ knowledge.
   eleven P2, and bounded P3 observations. Remediation re-review upgraded the
   source-admission defect to P1 and found the separate canonical-generation
   integrity P1. Final pre-gate review then found the route-admission
-  self-protection P1, so the accepted register now contains seven P1 and ten P2
-  without expanding the checkpoint into Phase 10.
+  self-protection P1. The first protected-head qualification then exposed one
+  bounded lexical-contract P2, so the accepted register now contains seven P1
+  and eleven P2 without expanding the checkpoint into Phase 10.
 - [ ] Resolve every P0-P2 correctness, security, privacy, authorization,
   provenance, race, cancellation, resource, lifecycle, naming, architecture,
   and maintainability finding.
