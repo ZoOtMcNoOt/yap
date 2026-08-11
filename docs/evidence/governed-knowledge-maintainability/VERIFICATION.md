@@ -36,10 +36,16 @@ protected route inputs. Executable repair
 bounded lexical result control exposed by the first protected-head run, with
 fixture SHA-256
 `723032aa381e30a6060d6636667410a075441ed5e1c5ad12628f0797105c3a2f`.
-The current documentation descendant records the required replacement
-qualification. The resulting candidate has the following focused,
-non-promotional verification. Commands are shown from their working directory;
-the Windows runs used the locked project environment and Python 3.12.
+Reviewed executable head
+`518f78482b4f62f7e2397219e96ed27cd1d3e2fb` then bounded only final-answer
+structural decoding to two attempts, without retrying or replaying tool calls,
+transport failures, or well-formed semantic failures. Acceptance is schema 3;
+its SHA-256 is
+`3183378dbfab756dda8b25564ef1cb04a2d0bb8692f9ba00b9a2d95d72ee06a8`.
+Successful candidate and fixture-child evidence are schema 2. The resulting
+candidate has the following focused, non-promotional verification. Commands are
+shown from their working directory; the Windows runs used the locked project
+environment and Python 3.12.
 
 - From `server`,
   `uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py`
@@ -58,10 +64,17 @@ the Windows runs used the locked project environment and Python 3.12.
   private admission and the aggregate gate remain blocked until replacement
   qualification. None of these focused results is a complete checkpoint-gate
   claim.
+- At exact head `518f7848...`, the same portable command loaded the exact
+  25-module/141-test current membership: 137 passed, three declared
+  platform/capability skips, and only the strict stale-route-lock contract
+  failed. That failure is required before replacement qualification because
+  the reviewed retry and evidence-schema inputs intentionally differ from the
+  historical public lock.
 - From `server`, with `PYTHONPATH=src`, the focused agent acceptance, fixture,
   qualification, scoring, route-artifact, pressure, vLLM metric/runtime,
-  reasoning-route, governed-answer, and reasoning-client modules ran 60 tests:
-  59 passed and one Windows POSIX-permission test was declared inapplicable.
+  final-response-retry, reasoning-route, governed-answer, and reasoning-client
+  modules ran 67 tests: 66 passed and one Windows POSIX-permission test was
+  declared inapplicable.
   This verifies
   that denied-resource wording is not confused with an emitted forbidden
   tool, the route maximum output bounds remain unchanged, the one concise
@@ -73,18 +86,20 @@ the Windows runs used the locked project environment and Python 3.12.
   controls plus the required dynamic proposal content/citations, every visible
   citation span covers its complete supplied text, proposal terminology must
   be present in governed `proposed_content` rather than only the final answer,
-  and the strict
+  and only an undecodable final answer receives one bounded retry. The retry
+  retains completed tool evidence, never re-executes a tool, and records the
+  exact per-case request count and full elapsed time. The strict
   evidence/lifecycle contracts remain intact.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
-  ran 43 tests: 42 passed and one Windows directory-link capability test
+  ran 44 tests: 43 passed and one Windows directory-link capability test
   skipped. This covers canonical POSIX path/generation/profile/resource identity,
   durable-write curated authorization, strict nested MCP inputs, exact
   database-worker cancellation acknowledgement, and shared evaluator/product
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 474 tracked regular surfaces: 250 at or above 350 lines and 224
+  enumerated 475 tracked regular surfaces: 250 at or above 350 lines and 225
   from 250 through 349. A read-back comparison of the 350-line output against
   `THRESHOLD-DISPOSITION.md` found all 250 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
@@ -108,7 +123,7 @@ rule for the final aggregate matrix.
 
 ## Rejected qualification evidence
 
-Three fresh private route qualifications are retained as rejected evidence and
+Four fresh private route qualifications are retained as rejected evidence and
 cannot be used for admission. At exact head
 `0cd9a9f88123f1f4fd1caaf42e03dce02658bfd6`, the owned lifecycles and exact
 teardown completed before the decision returned `deterministic-no-model` with
@@ -132,6 +147,16 @@ cited evidence and correctly prevented qualification. No private measurement
 or model output is published by that qualitative diagnosis. The immutable run
 is terminal and inadmissible.
 
+At exact head `7f0f060e89951fd528dd229f96785cdbbe8617ea`, both owned
+lifecycles and exact teardown completed before the decision again returned
+`deterministic-no-model`, with public-safe evidence SHA-256
+`409896c50de57efce0719c04a0bcda565be79d5b2462b0495143fe8164987c0d`.
+The complex candidate remained eligible and the frozen rapid latency route
+bounds passed, but the rapid candidate produced one structurally invalid final
+response for the cited-summary-proposal case. The overall qualification was
+therefore rejected. This immutable run is terminal and inadmissible; no raw
+model output, measurement, log, or private artifact location is published.
+
 The first follow-up made denied-resource, injection, and empty-result policy
 answers exact without changing any acceptance threshold. The second run exposed
 two remaining fixture-contract defects: one cited question did not match its
@@ -145,7 +170,11 @@ now rejects unrequested generation/result controls on every step while retaining
 only the required dynamic proposal content and citations. The protected-head
 follow-up then froze `maximum_results: 1` in both the lexical instruction and
 its complete expected argument map; omission, alteration, or any extra
-generation control still fails closed. No raw model output, private
+generation control still fails closed. The current repair adds one second
+attempt only when the final response cannot be structurally decoded, matching
+the product's bound of two without claiming identical retry semantics. Tool
+selection, arguments, transport failures, and structurally valid semantic
+failures remain single-attempt evidence. No raw model output, private
 measurement, log, or private artifact location is published here.
 
 One later publication attempt at exact head
@@ -176,19 +205,20 @@ drift. Commit `b8452f807ae6e2353a99f4d95c952e8103414709` places all four in the
 protected route set and proves a diff naming any one is rejected. That stronger
 self-protecting admission code intentionally makes the `f7fc37e3...` reference
 historical for later descendants; no compatibility exception is carried. One
-fresh qualification at reviewed executable head `4cb9123e...` is required
+fresh qualification at reviewed executable head `518f7848...` is required
 before the aggregate gate.
 
 ## Complete checkpoint gate
 
-Not yet consumed. The rejected `0cd9a9f8...`, `4473123e...`, and
-`cb5ae95b...` runs and the permission-invalid publication attempt are terminal
-and inadmissible. The fresh
+Not yet consumed. The rejected `0cd9a9f8...`, `4473123e...`, `cb5ae95b...`,
+and `7f0f060e...` runs and the permission-invalid publication attempt are
+terminal and inadmissible. The fresh
 `f7fc37e3...` private tree is semantically admitted for that exact head and its
-pre-protection descendants. The new admission-protection and lexical-fixture
-changes are protected route inputs, so the current descendant rejects reuse
-and requires a fresh private qualification. The aggregate checkpoint matrix
-remains a separate one-shot gate after that replacement lock is frozen.
+pre-protection descendants. The new admission-protection, lexical-fixture,
+bounded-final-decoding, and evidence-schema changes are protected route inputs,
+so the current descendant rejects reuse and requires a fresh private
+qualification. The aggregate checkpoint matrix remains a separate one-shot
+gate after that replacement lock is frozen.
 
 ## Hosted closure
 

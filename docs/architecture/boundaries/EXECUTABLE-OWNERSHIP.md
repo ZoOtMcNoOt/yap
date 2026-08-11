@@ -768,9 +768,12 @@ owner's state but may not recreate its transition logic.
   `evaluation/governed_knowledge_gate.py`.
 - **Authoritative owner:** `evaluation/agent_vllm_runtime.py` owns each immutable
   evaluation container/model lifecycle; the model qualifier owns the frozen
-  route decision; `evaluation/owned_postgres_knowledge_runtime.py` owns the
-  disposable database lifecycle; the aggregate gate composes those admitted
-  results with the exact portable, Ruff, Postgres, restart, and teardown checks.
+  route decision; `evaluation/agent_model_acceptance.py` owns the exact
+  two-attempt final-response bound; the fixture runner owns conversation/tool
+  sequencing and final structural decoding; `evaluation/owned_postgres_knowledge_runtime.py`
+  owns the disposable database lifecycle; the aggregate gate composes those
+  admitted results with the exact portable, Ruff, Postgres, restart, and
+  teardown checks.
 - **Persisted state:** create-once owner-private evidence outside Git. Public
   repository state contains only frozen contracts, immutable runtime/model
   identities, and public-safe hashes/outcomes.
@@ -781,11 +784,15 @@ owner's state but may not recreate its transition logic.
   receipts.
 - **Dependencies/events:** one owned Qwen run and one owned Gemma run -> private
   route decision -> semantic private-tree admission -> owned Postgres gate ->
-  exact-head hosted checks.
+  exact-head hosted checks. Each case completes every tool step once before its
+  final response; only a structurally undecodable final answer may receive one
+  additional request against the unchanged conversation/tool result.
 - **Failure/recovery:** pre-admission and started identities remain observable
   until exact container/listener/PID/cgroup cleanup; partial evidence is never
   published. Protected producer/runtime/tool changes invalidate predecessor
-  evidence and require one fresh private qualification.
+  evidence and require one fresh private qualification. Tool/argument/transport
+  errors and well-formed semantic failures do not enter the final decoder retry;
+  request count and elapsed time span the complete case.
 - **Cancellation:** candidate and database runtimes prove cancellation,
   recovery, containment, and teardown before a decision or receipt is admitted.
 - **Duplicate owner:** none. `private_json_evidence.py` owns the narrow

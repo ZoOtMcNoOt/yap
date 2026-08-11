@@ -1,6 +1,6 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–8 system after the
+This document describes the merged executable Phase 1–9 system after the
 meeting-transcription ownership, source-time reconciliation, and explicit
 production-qualification decision. Phase 7
 implements provider-neutral
@@ -860,8 +860,15 @@ also semantically admitted the exact hash-locked private Qwen/Gemma
 qualification tree without copying raw model output or measurements into Git.
 Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
 merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
-The separate post-Phase-9 maintainability checkpoint is active; production
-service integration remains Phase 10.
+The separate post-Phase-9 maintainability checkpoint is active. Reviewed
+executable head `518f78482b4f62f7e2397219e96ed27cd1d3e2fb` keeps the same
+Qwen/Gemma routes, runtime, route output maxima, and quality/latency thresholds while
+bounding evaluation-only final structural decoding to two attempts. Completed
+tool calls are never retried or replayed; tool/argument/transport failures and
+well-formed semantic failures remain single-attempt evidence. The current
+public route lock is deliberately stale for this protected input set, so a
+replacement private qualification and the separate aggregate checkpoint gate
+remain pending. Production service integration remains Phase 10.
 
 At remediation anchor `c332700597eac1cc6af3f68afb3e75fce0b6ec77`, each
 exported knowledge query/traversal/proposal owns the transaction that holds the

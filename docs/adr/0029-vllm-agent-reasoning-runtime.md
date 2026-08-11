@@ -60,6 +60,20 @@ merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
 Simultaneous residency and sustained mixed-route capacity remain Phase 10
 claims and require their own measured evidence.
 
+The post-Phase-9 maintainability candidate keeps the same models, routes,
+runtime, output-token maxima, and quality/latency thresholds while making final
+structured decoding explicitly bounded. Acceptance schema 3 freezes exactly
+two final-response attempts. The evaluation driver may retry only a final
+response that cannot be decoded into the governed answer contract; it never
+retries or replays a tool call, tool arguments, transport failure, or a
+structurally valid but semantically wrong answer. Successful candidate and
+fixture-child evidence use schema 2 and bind the exact per-case model-request
+count. This shares the product's two-attempt upper bound but is not a claim that
+evaluation and production retry the same failure classes. Because these are
+protected route inputs, exact reviewed head
+`518f78482b4f62f7e2397219e96ed27cd1d3e2fb` requires a replacement private
+qualification before the aggregate checkpoint gate.
+
 Yap's server boundary owns authentication, authorization, retrieval, tool
 policy, request admission, cancellation intent, audit, and publication. The
 current explicit workload selector is Python; Rust-owned production
@@ -92,6 +106,10 @@ vLLM and SGLang production planes for speculative optionality.
 - Agent and ASR contracts remain separate even though both can use vLLM.
 - Workload-route qualification depends on Yap quality, latency, concurrency,
   isolation, memory, cancellation, and teardown evidence—not headline TPS.
+- Completed evaluation tools remain immutable across the one allowed final
+  structural retry; cumulative request count and elapsed time cover both
+  attempts, while semantic failures remain scorer failures rather than retry
+  opportunities.
 - Production advertisement still requires supervised service integration and
   the Phase 10 capacity, observability, recovery, and deployment gates.
 - Persistent supervision and sustained mixed-user capacity remain Phase 10.

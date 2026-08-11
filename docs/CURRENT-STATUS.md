@@ -71,8 +71,18 @@ and exact teardown. Exact hosted-green head
 `fa26caaf7e3ea4e20f27b390355dff80bee2464f` then merged through PR #152 as
 `ae81ff067c73a64528eecc14403765562726f2fe`. Raw outputs, measurements,
 credentials, database content, and private paths remain private. The separate
-post-Phase-9 maintainability checkpoint is active; no production agent service,
-simultaneous model residency, or sustained mixed-route capacity is claimed.
+post-Phase-9 maintainability checkpoint is active. Its private run at exact head
+`7f0f060e89951fd528dd229f96785cdbbe8617ea` completed both owned lifecycles
+and teardown but returned `deterministic-no-model`; public-safe evidence SHA-256
+`409896c50de57efce0719c04a0bcda565be79d5b2462b0495143fe8164987c0d`
+is retained only as terminal rejected evidence. Reviewed executable head
+`518f78482b4f62f7e2397219e96ed27cd1d3e2fb` now freezes two evaluation-only
+final structural-decoding attempts, preserves completed tool calls, and leaves
+semantic/tool/transport failures non-retryable. Its exact focused public checks
+and three-lens review passed, while the stale route lock, replacement private
+qualification, aggregate checkpoint gate, PR, and merge remain open. No
+production agent service, simultaneous model residency, or sustained
+mixed-route capacity is claimed.
 
 This document is the canonical human-readable status summary. Executable code,
 machine-readable contracts, focused tests, and observed runtime behavior win if
@@ -100,7 +110,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Phase 8: meeting evidence | Closed as unadvertised baseline | [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md) selects pinned Tiron for the sole server meeting route. PR #144 merged exact 30-second source-time epochs, request-scoped ECAPA reconciliation, canonical `speaker-1` through `speaker-64` identities, typed capacity records, strict `Unknown`, and one-speaker plain-text History projection. Exact qualification candidate `3ddb930...` recorded `unadvertised-baseline` because the required private holdout was unconfigured. Tiron remains explicit Preview and absent from the default catalog; Phase 8 adds no fallback pipeline. |
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
-| Post-Phase-9 maintainability checkpoint | Active | The [governed-knowledge ownership and maintainability review](plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) is auditing executable authority, persistence, runtime/evidence ownership, human maintainability, and documentation truth without adding Phase 10 behavior. |
+| Post-Phase-9 maintainability checkpoint | Active | The [governed-knowledge ownership and maintainability review](plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) has resolved its accepted public findings at reviewed executable head `518f7848...`, including bounded final structural decoding without tool replay. The exact `7f0f060e...` route qualification remains terminal and rejected; replacement private qualification, aggregate gate, hosted PR checks, and merge are pending. No Phase 10 behavior is added. |
 | Phase 10 | Planned | Enterprise infrastructure remains an explicit IT/security handoff. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`

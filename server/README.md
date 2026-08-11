@@ -477,6 +477,17 @@ merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
 These facts do not promote a production agent service, simultaneous model
 residency, or sustained mixed-route capacity.
 
+The active maintainability checkpoint must not reuse that historical route
+tree. Reviewed executable head
+`518f78482b4f62f7e2397219e96ed27cd1d3e2fb` freezes acceptance schema 3 and
+exactly two evaluation-only final structural-decoding attempts; its current
+acceptance SHA-256 is
+`3183378dbfab756dda8b25564ef1cb04a2d0bb8692f9ba00b9a2d95d72ee06a8`.
+The committed public route lock intentionally names an older acceptance input,
+so strict portable verification fails closed until one fresh private
+qualification is semantically admitted and a replacement public-safe lock is
+committed. Only then may the separate aggregate checkpoint gate run.
+
 ## Local checks
 
 ```powershell

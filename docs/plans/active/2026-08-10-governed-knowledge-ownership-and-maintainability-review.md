@@ -125,9 +125,15 @@ knowledge.
   source-admission defect to P1 and found the separate canonical-generation
   integrity P1. Final pre-gate review then found the route-admission
   self-protection P1. The first protected-head qualification then exposed one
-  bounded lexical-contract P2, so the accepted register now contains seven P1
-  and eleven P2 without expanding the checkpoint into Phase 10.
-- [ ] Resolve every P0-P2 correctness, security, privacy, authorization,
+  bounded lexical-contract P2, and the next run exposed one bounded
+  final-response-decoding P2. The accepted register now contains seven P1 and
+  twelve P2 without expanding the checkpoint into Phase 10. That terminal
+  route qualification at exact head
+  `7f0f060e89951fd528dd229f96785cdbbe8617ea` returned
+  `deterministic-no-model` with public-safe evidence SHA-256
+  `409896c50de57efce0719c04a0bcda565be79d5b2462b0495143fe8164987c0d`;
+  it remains rejected and inadmissible.
+- [x] Resolve every P0-P2 correctness, security, privacy, authorization,
   provenance, race, cancellation, resource, lifecycle, naming, architecture,
   and maintainability finding.
 - [x] Remove duplicate/dead/speculative machinery and decompose only mixed
@@ -139,8 +145,11 @@ knowledge.
 - [x] Reconcile the executable ownership map, ADR implementation status,
   current status, roadmap, runbooks, and Voice OS summaries without silently
   changing the approved long-term target.
-- [ ] Use focused verification for each repair; freeze one exact candidate only
-  after code, tests, provenance, documentation, and three-lens review are clean.
+- [x] Use focused verification for each repair; freeze reviewed executable
+  candidate `518f78482b4f62f7e2397219e96ed27cd1d3e2fb` only after code,
+  tests, provenance, documentation, and three-lens review are clean. The public
+  route lock remains deliberately stale until a new qualification binds this
+  protected input set.
 - [ ] Run the complete applicable checkpoint matrix exactly once, preserving
   any still-valid immutable private predecessor evidence by explicit identity
   rather than rerunning unrelated model research.
