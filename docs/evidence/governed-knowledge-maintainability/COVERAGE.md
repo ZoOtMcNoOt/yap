@@ -71,8 +71,8 @@ out above rather than treated as refactor candidates.
 | Documentation | 103 | 33,237 |
 | Root/configuration/provenance text | 49 | 19,801 |
 
-The reproducible threshold screen finds 473 tracked regular source, text, and
-policy surfaces at or above 250 lines: 250 at or above 350 and 223 from 250
+The reproducible threshold screen finds 474 tracked regular source, text, and
+policy surfaces at or above 250 lines: 250 at or above 350 and 224 from 250
 through 349. The exact extension set, five excluded generated/dependency
 artifacts, disposition rules, and current output are owned by
 `verification/list-maintainability-threshold-surfaces.ps1`. Review
@@ -133,7 +133,7 @@ in isolation:
 | Identity/authorization/WSS | Complete across three lenses | Identity durable owner and adjacent trust seams | KAP-06 removes the obsolete development-schema migration; no tenant/subject/revocation defect found |
 | Meeting evidence | Complete across three lenses | Result revision -> reviewed capture -> source admission -> compilation | KAP-02/KAP-03 remediations implemented; 17-test real-Postgres focus and independent re-review passed; aggregate gate remains |
 | Knowledge/terminology/retrieval | Complete across three lenses | Generation, permissions, retrieval, terminology, proposal, SQL lifecycle | KAP-01 through KAP-07 remediations implemented; 17-test real-Postgres focus, restart diagnostic, and independent re-review passed; aggregate gate remains |
-| Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-05 and ARCH-03 remediations implemented; fresh exact-head private qualification and semantic admission passed; no fallback defect found; aggregate gate remains |
+| Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-06 and ARCH-03 remediations implemented; prior exact-head qualification/admission passed, while the new self-protecting admission owner intentionally requires one replacement qualification; no fallback defect found; aggregate gate remains |
 | Packaging/CI/gates/provenance | Complete across three lenses | Locks, licenses, receipt boundaries, exact-head hosted workflow | No P0-P2; private/public evidence separation remains sound |
 | Docs/ADRs/plans/runbooks/status | Complete across three lenses | Current/normative taxonomy and ownership navigation | Ownership/current docs reconciled, mixed test owner split, and independent re-review passed; final gate reconciliation remains |
 

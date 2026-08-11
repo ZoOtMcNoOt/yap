@@ -123,9 +123,10 @@ knowledge.
   public-safe findings register. Initial discovery contained no P0, four P1,
   eleven P2, and bounded P3 observations. Remediation re-review upgraded the
   source-admission defect to P1 and found the separate canonical-generation
-  integrity P1, so the accepted register now contains six P1 and ten P2 without
-  expanding the checkpoint into Phase 10.
-- [x] Resolve every P0-P2 correctness, security, privacy, authorization,
+  integrity P1. Final pre-gate review then found the route-admission
+  self-protection P1, so the accepted register now contains seven P1 and ten P2
+  without expanding the checkpoint into Phase 10.
+- [ ] Resolve every P0-P2 correctness, security, privacy, authorization,
   provenance, race, cancellation, resource, lifecycle, naming, architecture,
   and maintainability finding.
 - [x] Remove duplicate/dead/speculative machinery and decompose only mixed
@@ -137,7 +138,7 @@ knowledge.
 - [x] Reconcile the executable ownership map, ADR implementation status,
   current status, roadmap, runbooks, and Voice OS summaries without silently
   changing the approved long-term target.
-- [x] Use focused verification for each repair; freeze one exact candidate only
+- [ ] Use focused verification for each repair; freeze one exact candidate only
   after code, tests, provenance, documentation, and three-lens review are clean.
 - [ ] Run the complete applicable checkpoint matrix exactly once, preserving
   any still-valid immutable private predecessor evidence by explicit identity

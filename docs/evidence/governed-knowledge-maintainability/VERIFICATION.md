@@ -140,14 +140,24 @@ The committed lock contains only public-safe hashes and the outcome; raw model
 output, measurements, logs, and the private artifact location remain outside
 Git.
 
+Subsequent adversarial review found that the semantic admission owner, gate
+caller, and their contract tests were not themselves protected from descendant
+drift. Commit `b8452f807ae6e2353a99f4d95c952e8103414709` places all four in the
+protected route set and proves a diff naming any one is rejected. That stronger
+self-protecting admission code intentionally makes the `f7fc37e3...` reference
+historical for later descendants; no compatibility exception is carried. One
+fresh qualification at the protected reviewed head is required before the
+aggregate gate.
+
 ## Complete checkpoint gate
 
 Not yet consumed. The rejected `0cd9a9f8...` and `4473123e...` runs and the
 permission-invalid publication attempt are terminal and inadmissible. The fresh
-`f7fc37e3...` private tree is semantically admitted and frozen by its
-public-safe lock. The aggregate checkpoint matrix remains a separate one-shot
-gate on a reviewed clean descendant that has not changed any protected route
-input.
+`f7fc37e3...` private tree is semantically admitted for that exact head and its
+pre-protection descendants. The new admission-protection change is itself a
+protected route input, so the current descendant rejects reuse and requires a
+fresh private qualification. The aggregate checkpoint matrix remains a
+separate one-shot gate after that replacement lock is frozen.
 
 ## Hosted closure
 
