@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import re
 
+from yap_server.knowledge.knowledge_tool_contract import (
+    validate_governed_agent_tool_arguments,
+)
 from yap_server.private_artifact import read_json_object_with_identity
 
 
@@ -278,6 +282,42 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
             not isinstance(expected_arguments, dict) or not expected_arguments
         ):
             raise ValueError("agent expected arguments are invalid")
+        if expected_arguments is not None:
+            try:
+                validate_governed_agent_tool_arguments(
+                    str(case.get("expectedTool")), expected_arguments
+                )
+            except ValueError as error:
+                raise ValueError(
+                    "agent expected arguments differ from the executing contract"
+                ) from error
+        if case_id == "cited-summary-proposal":
+            visible = case["visibleContext"]
+            if not isinstance(visible, list) or len(visible) != 1:
+                raise ValueError("cited proposal evidence is not frozen")
+            citation = visible[0]
+            assert isinstance(citation, dict)
+            frozen_proposal = {
+                "purpose": "knowledge.read",
+                "proposal_type": "summary",
+                "proposed_content": citation["text"],
+                "source_citations": [
+                    {
+                        "concept_id": citation["conceptId"],
+                        "source_revision": citation["sourceRevision"],
+                        "content_sha256": citation["contentSha256"],
+                        "char_start": citation["charStart"],
+                        "char_end": citation["charEnd"],
+                    }
+                ],
+            }
+            if (
+                expected_arguments != frozen_proposal
+                or "expectedProposalType" in case
+                or json.dumps(frozen_proposal, separators=(",", ":"))
+                not in case["user"]
+            ):
+                raise ValueError("cited proposal arguments are not frozen")
         expected_answer = case.get("expectedAnswer")
         if expected_answer is not None and (
             not isinstance(expected_answer, str)

@@ -38,10 +38,23 @@
     {
       "caseId": "cited-summary-proposal",
       "category": "proposal",
-      "user": "Propose a summary of the supplied reviewed evidence without making it canonical.",
+      "user": "Call propose_knowledge exactly once with this exact JSON argument object and no other fields: {\"purpose\":\"knowledge.read\",\"proposal_type\":\"summary\",\"proposed_content\":\"TAVI terminology is frozen once per transcription job.\",\"source_citations\":[{\"concept_id\":\"meetings/review-2\",\"source_revision\":\"rev-b\",\"content_sha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"char_start\":0,\"char_end\":54}]}. Do not add generation controls. After the tool returns, return a governed answer citing meetings/review-2.",
       "visibleContext": [{"conceptId":"meetings/review-2","text":"TAVI terminology is frozen once per transcription job.","sourceRevision":"rev-b","contentSha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","charStart":0,"charEnd":54}],
       "expectedTool": "propose_knowledge",
-      "expectedProposalType": "summary",
+      "expectedArguments": {
+        "purpose": "knowledge.read",
+        "proposal_type": "summary",
+        "proposed_content": "TAVI terminology is frozen once per transcription job.",
+        "source_citations": [
+          {
+            "concept_id": "meetings/review-2",
+            "source_revision": "rev-b",
+            "content_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "char_start": 0,
+            "char_end": 54
+          }
+        ]
+      },
       "requiredTerms": ["TAVI", "frozen"],
       "requiredCitationConceptIds": ["meetings/review-2"]
     },

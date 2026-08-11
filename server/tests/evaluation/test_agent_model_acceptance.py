@@ -79,6 +79,20 @@ class AgentModelAcceptanceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "case output bound"):
             _fixtures(fixtures)
 
+        empty_case["maximumOutputTokens"] = 128
+        proposal_case = next(
+            case
+            for case in fixtures["cases"]
+            if case["caseId"] == "cited-summary-proposal"
+        )
+        source_citations = proposal_case["expectedArguments"].pop("source_citations")
+        with self.assertRaisesRegex(ValueError, "expected arguments"):
+            _fixtures(fixtures)
+        proposal_case["expectedArguments"]["source_citations"] = source_citations
+        proposal_case["expectedArguments"]["proposal_type"] = "relationship"
+        with self.assertRaisesRegex(ValueError, "cited proposal"):
+            _fixtures(fixtures)
+
     def test_freezes_two_final_response_attempts(self) -> None:
         tracks = load_agent_model_acceptance(REPOSITORY_ROOT).runtime_tracks
 

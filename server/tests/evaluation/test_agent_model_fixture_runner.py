@@ -163,6 +163,34 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             },
         )
 
+        proposal = by_id["cited-summary-proposal"]
+        self.assertIn("Call propose_knowledge exactly once", proposal["user"])
+        self.assertIn("Do not add generation controls.", proposal["user"])
+        self.assertEqual(
+            proposal["expectedArguments"],
+            {
+                "purpose": "knowledge.read",
+                "proposal_type": "summary",
+                "proposed_content": (
+                    "TAVI terminology is frozen once per transcription job."
+                ),
+                "source_citations": [
+                    {
+                        "concept_id": "meetings/review-2",
+                        "source_revision": "rev-b",
+                        "content_sha256": "b" * 64,
+                        "char_start": 0,
+                        "char_end": 54,
+                    }
+                ],
+            },
+        )
+        self.assertNotIn("expectedProposalType", proposal)
+        self.assertIn(
+            json.dumps(proposal["expectedArguments"], separators=(",", ":")),
+            proposal["user"],
+        )
+
         missing = by_id["missing-evidence-refusal"]
         self.assertEqual(missing["expectedAnswer"], "Evidence is unavailable.")
 
@@ -316,6 +344,33 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 arguments=lexical["expectedArguments"],
             ),
             lexical["visibleContext"],
+        )
+
+        proposal = next(
+            item
+            for item in fixture["cases"]
+            if item["caseId"] == "cited-summary-proposal"
+        )
+        self.assertEqual(
+            _step_visible_context(
+                proposal,
+                step_index=0,
+                tool_name="propose_knowledge",
+                arguments=proposal["expectedArguments"],
+            ),
+            proposal["visibleContext"],
+        )
+        self.assertEqual(
+            _step_visible_context(
+                proposal,
+                step_index=0,
+                tool_name="propose_knowledge",
+                arguments={
+                    **proposal["expectedArguments"],
+                    "expected_generation_sha256": "e" * 64,
+                },
+            ),
+            [],
         )
 
     def test_runs_complex_orchestration_as_three_owned_tool_steps(self) -> None:
@@ -498,7 +553,10 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 }
                 if active["expectedTool"] == "search_knowledge":
                     arguments.setdefault("search_text", active["user"])
-                if "expectedProposalType" in active:
+                if (
+                    "expectedProposalType" in active
+                    and "expectedArguments" not in active
+                ):
                     arguments.update(
                         {
                             "proposal_type": active["expectedProposalType"],

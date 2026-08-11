@@ -237,24 +237,9 @@ def _fixture_case(case_id: str) -> dict[str, object]:
 
 
 def _proposal_arguments(case: dict[str, object]) -> dict[str, object]:
-    visible = case["visibleContext"]
-    assert isinstance(visible, list)
-    fields = {
-        "conceptId": "concept_id",
-        "sourceRevision": "source_revision",
-        "contentSha256": "content_sha256",
-        "charStart": "char_start",
-        "charEnd": "char_end",
-    }
-    return {
-        "purpose": "knowledge.read",
-        "proposal_type": case["expectedProposalType"],
-        "proposed_content": " ".join(case["requiredTerms"]),
-        "source_citations": [
-            {target: item[source] for source, target in fields.items()}
-            for item in visible
-        ],
-    }
+    expected = case["expectedArguments"]
+    assert isinstance(expected, dict)
+    return dict(expected)
 
 
 def _tool_response(name: str, arguments: object) -> dict[str, object]:

@@ -70,7 +70,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 141
+_EXPECTED_PORTABLE_TEST_COUNT = 142
 
 
 def evaluate_governed_knowledge_gate(

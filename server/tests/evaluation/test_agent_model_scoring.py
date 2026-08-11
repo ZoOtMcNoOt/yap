@@ -185,6 +185,24 @@ class AgentModelScoringTests(unittest.TestCase):
         self.assertLess(score.citation_fidelity, 1.0)
         self.assertFalse(score.passed)
 
+    def test_requires_the_complete_frozen_cited_proposal(self) -> None:
+        results = list(_perfect_results())
+        proposal = next(
+            result for result in results if result["caseId"] == "cited-summary-proposal"
+        )
+        proposal["arguments"]["proposed_content"] = (  # type: ignore[index]
+            "TAVI terminology remains frozen once per transcription job."
+        )
+
+        score = score_agent_model_results(
+            REPOSITORY_ROOT, tuple(results), workload_class="rapid-automation"
+        )
+
+        self.assertLess(score.structured_argument_accuracy, 1.0)
+        self.assertEqual(score.terminology_preservation, 1.0)
+        self.assertEqual(score.citation_fidelity, 1.0)
+        self.assertFalse(score.passed)
+
     def test_requires_terms_in_the_governed_proposal_not_only_the_answer(self) -> None:
         cases = (
             ("rapid-automation", "cited-summary-proposal"),
@@ -282,7 +300,7 @@ def _perfect_results(
         arguments["purpose"] = "knowledge.read"
         if case["expectedTool"] == "search_knowledge":
             arguments.setdefault("search_text", case["user"])
-        if "expectedProposalType" in case:
+        if "expectedProposalType" in case and "expectedArguments" not in case:
             arguments["proposal_type"] = case["expectedProposalType"]
             arguments["proposed_content"] = " ".join(case.get("requiredTerms", []))
             arguments["source_citations"] = [
