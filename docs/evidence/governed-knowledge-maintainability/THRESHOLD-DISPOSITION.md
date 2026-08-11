@@ -9,8 +9,8 @@ The inventory includes the repository's tracked source, text, policy, and
 provenance contract extensions and excludes only the two tracked OpenAPI products, the
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
-hand-maintained policy. At this tree the complete 250-line inventory is 473
-files: 250 listed below at 350 or more lines and 223 from 250 through 349.
+hand-maintained policy. At this tree the complete 250-line inventory is 474
+files: 250 listed below at 350 or more lines and 224 from 250 through 349.
 
 Each line contains up to two independent entries in the form
 `physical-lines disposition exact-path`.
@@ -121,7 +121,7 @@ Each line contains up to two independent entries in the form
   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py ||   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py
   520 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py ||   352 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py
   395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   648 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
-  568 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   450 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py
+  607 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   450 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py
  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py ||   495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py
   388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py ||   552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py
   358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py ||   580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py

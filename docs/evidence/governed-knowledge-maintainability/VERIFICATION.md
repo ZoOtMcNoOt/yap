@@ -25,7 +25,7 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 The source-admission and lifecycle remediation was completed at
 `8e3ece5a3580ec29116c05f31b045a5748c143b8`. The route-qualification
 remediation is frozen at
-`9a8b28a646fb3b48b7d93938c9a863519f8a9c71`; its current documentation-only
+`531132bf5f6186da2f7ce2588eb43279611581dc`; its current documentation-only
 descendant has the following focused, non-promotional verification. Commands
 are shown from their working directory; the Windows runs used the locked
 project environment and Python 3.12.
@@ -35,7 +35,7 @@ project environment and Python 3.12.
   passed.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python ../verification/run-governed-knowledge-portable-suite.py`
-  ran the exact 24-module/132-test membership: 128 passed, three declared
+  ran the exact 24-module/134-test membership: 130 passed, three declared
   platform/capability skips, and one strict stale-route-lock failure. No other
   failure or unexpected/expected-failure classification occurred. The lock
   failure is the required fail-closed blocker until a fresh private
@@ -43,7 +43,7 @@ project environment and Python 3.12.
   checkpoint claim.
 - From `server`, with `PYTHONPATH=src`, the focused agent acceptance, fixture,
   qualification, scoring, route-artifact, pressure, vLLM metric/runtime,
-  governed-answer, and reasoning-client modules ran 56 tests: 55 passed and
+  governed-answer, and reasoning-client modules ran 60 tests: 59 passed and
   one Windows POSIX-permission test was declared inapplicable. This verifies
   that denied-resource wording is not confused with an emitted forbidden
   tool, the route maximum output bounds remain unchanged, the one concise
@@ -52,18 +52,20 @@ project environment and Python 3.12.
   cited retrieval requires its complete frozen argument map with no extra
   generation or result controls, multi-step calls allow only their frozen
   controls plus the required dynamic proposal content/citations, every visible
-  citation span covers its complete supplied text, and the strict
+  citation span covers its complete supplied text, proposal terminology must
+  be present in governed `proposed_content` rather than only the final answer,
+  and the strict
   evidence/lifecycle contracts remain intact.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
-  ran 42 tests: 41 passed and one Windows directory-link capability test
+  ran 43 tests: 42 passed and one Windows directory-link capability test
   skipped. This covers canonical POSIX path/generation/profile/resource identity,
   durable-write curated authorization, strict nested MCP inputs, exact
   database-worker cancellation acknowledgement, and shared evaluator/product
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 473 tracked regular surfaces: 250 at or above 350 lines and 223
+  enumerated 474 tracked regular surfaces: 250 at or above 350 lines and 224
   from 250 through 349. A read-back comparison of the 350-line output against
   `THRESHOLD-DISPOSITION.md` found all 250 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
@@ -115,7 +117,7 @@ private measurement, log, or private artifact location is published here.
 
 Not yet consumed. The rejected `0cd9a9f8...` and `4473123e...` runs are terminal
 for their exact candidates. Protected fixture/evaluator inputs changed at
-`9a8b28a6...`, so the old Phase 9 evidence and both rejected runs are
+`531132bf...`, so the old Phase 9 evidence and both rejected runs are
 intentionally inadmissible. One new qualification is required only after the
 three reviewers approve this exact remediation head; the aggregate checkpoint
 matrix remains a separate one-shot gate after the new public-safe route lock is
