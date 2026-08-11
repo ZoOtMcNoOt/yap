@@ -190,7 +190,10 @@ def _exact_host_policy(
         and value.get("PortBindings") in (None, {})
         and value.get("CapDrop") == ["ALL"]
         and value.get("SecurityOpt")
-        in (["no-new-privileges"], ["no-new-privileges:true"])
+        in (
+            ["no-new-privileges", "label=disable"],
+            ["no-new-privileges:true", "label=disable"],
+        )
         and value.get("Memory") == profile.resources.memory_bytes
         and value.get("MemorySwap") == profile.resources.memory_swap_bytes
         and value.get("NanoCpus") == profile.resources.cpu_count * 1_000_000_000

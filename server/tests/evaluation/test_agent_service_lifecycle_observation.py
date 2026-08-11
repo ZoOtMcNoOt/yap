@@ -67,6 +67,7 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
                     "mount",
                     "snapshot-mount",
                     "gpu",
+                    "security",
                 ):
                     with self.subTest(mutation=mutation):
                         changed = copy.deepcopy(inspection)
@@ -80,6 +81,8 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
                             changed["Mounts"][0]["Source"] = str(snapshot)
                         elif mutation == "gpu":
                             changed["HostConfig"]["DeviceRequests"][0]["Count"] = 1
+                        elif mutation == "security":
+                            changed["HostConfig"]["SecurityOpt"].append("unconfined")
                         else:
                             changed["Mounts"][0]["RW"] = True
                         with self.assertRaises((RuntimeError, ValueError)):
@@ -159,7 +162,7 @@ def _inspection(
             "PublishAllPorts": False,
             "PortBindings": None,
             "CapDrop": ["ALL"],
-            "SecurityOpt": ["no-new-privileges"],
+            "SecurityOpt": ["no-new-privileges", "label=disable"],
             "Memory": profile.resources.memory_bytes,
             "MemorySwap": profile.resources.memory_swap_bytes,
             "NanoCpus": profile.resources.cpu_count * 1_000_000_000,
