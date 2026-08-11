@@ -156,7 +156,11 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         )
         self.assertEqual(
             lexical["expectedArguments"],
-            {"purpose": "knowledge.read", "search_text": "publication pointer"},
+            {
+                "purpose": "knowledge.read",
+                "search_text": "publication pointer",
+                "maximum_results": 1,
+            },
         )
 
         missing = by_id["missing-evidence-refusal"]
@@ -276,6 +280,18 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 arguments={
                     "purpose": "knowledge.read",
                     "search_text": "completely unrelated banana",
+                },
+            ),
+            [],
+        )
+        self.assertEqual(
+            _step_visible_context(
+                lexical,
+                step_index=0,
+                tool_name="search_knowledge",
+                arguments={
+                    "purpose": "knowledge.read",
+                    "search_text": "publication pointer",
                 },
             ),
             [],

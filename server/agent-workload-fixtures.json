@@ -10,10 +10,10 @@
     {
       "caseId": "lexical-cited-answer",
       "category": "question-answering",
-      "user": "Call search_knowledge exactly once with purpose knowledge.read and search_text publication pointer. After the tool returns, answer only with the reviewed statement and its citation.",
+      "user": "Call search_knowledge exactly once with purpose knowledge.read, search_text publication pointer, and maximum_results 1. After the tool returns, answer only with the reviewed statement and its citation.",
       "visibleContext": [{"conceptId":"meetings/review-1","text":"The publication pointer changes only after every projection validates.","sourceRevision":"rev-a","contentSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","charStart":0,"charEnd":70}],
       "expectedTool": "search_knowledge",
-      "expectedArguments": {"purpose":"knowledge.read","search_text":"publication pointer"},
+      "expectedArguments": {"purpose":"knowledge.read","search_text":"publication pointer","maximum_results":1},
       "requiredTerms": ["publication pointer", "validates"],
       "expectedAnswer": "The publication pointer changes only after every projection validates.",
       "requiredCitationConceptIds": ["meetings/review-1"]
