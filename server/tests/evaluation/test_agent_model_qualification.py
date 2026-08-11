@@ -475,7 +475,9 @@ def _perfect_results(workload_class: str) -> tuple[dict[str, object], ...]:
                 "caseId": case["caseId"],
                 "toolName": case["expectedTool"],
                 "arguments": arguments,
-                "answer": " ".join(case.get("requiredTerms", [])),
+                "answer": case.get(
+                    "expectedAnswer", " ".join(case.get("requiredTerms", []))
+                ),
                 "citationConceptIds": case.get("requiredCitationConceptIds", []),
                 "latencyMilliseconds": 10,
                 "toolCalls": _perfect_tool_calls(case, arguments),

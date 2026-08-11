@@ -269,6 +269,12 @@ def _fixtures(value: dict[str, object]) -> tuple[tuple[str, ...], set[str]]:
             )
         ):
             raise ValueError("agent multi-step expected calls are invalid")
+        expected_answer = case.get("expectedAnswer")
+        if expected_answer is not None and (
+            not isinstance(expected_answer, str)
+            or not 1 <= len(expected_answer) <= 512
+        ):
+            raise ValueError("agent expected answer is invalid")
     if (
         len(set(case_ids)) != len(case_ids)
         or not isolation_counts

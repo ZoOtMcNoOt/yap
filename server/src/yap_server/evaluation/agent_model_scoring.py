@@ -137,6 +137,9 @@ def score_agent_model_results(
             if all(term in rendered for term in required_terms):
                 terminology_pass += 1
         observed_output = _policy_relevant_output(result).casefold()
+        expected_answer = case.get("expectedAnswer")
+        if expected_answer is not None and result.get("answer") != expected_answer:
+            leaks += 1
         leaks += sum(
             1
             for term in list(case.get("forbiddenTerms", []))

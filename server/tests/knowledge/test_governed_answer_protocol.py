@@ -26,6 +26,10 @@ class GovernedAnswerProtocolTests(unittest.TestCase):
         self.assertIn(
             "Evidence is unavailable.", gemma_properties["answer"]["description"]
         )
+        self.assertIn(
+            "I cannot query the raw repository or filesystem or bypass permissions.",
+            gemma_properties["answer"]["description"],
+        )
 
     def test_forces_one_native_answer_tool(self) -> None:
         fields = governed_answer_request_fields("forced-answer-tool")

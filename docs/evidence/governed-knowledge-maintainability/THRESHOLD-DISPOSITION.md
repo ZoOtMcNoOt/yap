@@ -85,7 +85,7 @@ Each line contains up to two independent entries in the form
   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
   504 INFRA                infra/yap-server-node/setup-server.sh ||   559 SERVER-RUNBOOK       server/README.md
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
-  414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   397 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
+  414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   403 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
   415 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   678 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
   438 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py ||   678 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py
   506 EVALUATION           server/src/yap_server/evaluation/ami_meeting_lock.py ||  1396 EVALUATION           server/src/yap_server/evaluation/corpus_manifest.py
@@ -120,8 +120,8 @@ Each line contains up to two independent entries in the form
   575 POOLS                server/src/yap_server/pools/vllm_transcription_client.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py ||   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py
   520 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py ||   352 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py
-  395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   483 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
-  529 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   450 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py
+  395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   507 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
+  531 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   450 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py
  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py ||   495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py
   388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py ||   552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py
   358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py ||   580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py
