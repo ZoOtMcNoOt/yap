@@ -50,7 +50,7 @@ project environment and Python 3.12.
   are explicit, and the strict evidence/lifecycle contracts remain intact.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
-  ran 40 tests: 39 passed and one Windows directory-link capability test
+  ran 42 tests: 41 passed and one Windows directory-link capability test
   skipped. This covers canonical POSIX path/generation/profile/resource identity,
   durable-write curated authorization, strict nested MCP inputs, exact
   database-worker cancellation acknowledgement, and shared evaluator/product
