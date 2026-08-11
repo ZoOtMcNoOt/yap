@@ -163,7 +163,7 @@ def run_agent_model_candidate(
     checked_candidate.verify_unchanged()
     evidence = bind_checked_candidate_evidence(
         {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "candidateId": candidate_id,
             "model": model_candidate["model"],
             "revision": model_candidate["revision"],
@@ -235,7 +235,7 @@ def agent_evidence_sha256(value: object) -> str:
 def _children(*, checked_head, candidate_id, records, pressure, started):
     return {
         "fixtures": {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "checkedHead": checked_head,
             "candidateId": candidate_id,
             "results": list(records),
@@ -301,10 +301,15 @@ def _candidate_lock(
     matches = [item for item in candidates if item["candidateId"] == candidate_id]
     if len(matches) != 1:
         raise ValueError("agent model candidate is not admitted")
-    runtime = lock["runtime"]
-    if not isinstance(runtime, dict):
+    runtimes = lock.get("runtimes")
+    runtime_id = matches[0].get("runtimeId")
+    if (
+        not isinstance(runtimes, dict)
+        or not isinstance(runtime_id, str)
+        or not isinstance(runtimes.get(runtime_id), dict)
+    ):
         raise ValueError("agent runtime lock is invalid")
-    return runtime, matches[0]
+    return runtimes[runtime_id], matches[0]
 
 
 __all__ = [

@@ -431,9 +431,9 @@ for enterprise inputs and the
 [integrated identity and access gate](../docs/runbooks/integrated-identity-access-gate.md)
 for candidate and hosted closure.
 
-## Governed knowledge candidate and complete gate
+## Governed knowledge runtime and complete gate
 
-The active Phase 9 candidate compiles reviewed sources into deterministic Google
+The merged Phase 9 runtime compiles reviewed sources into deterministic Google
 OKF concepts and immutable terminology snapshots, stages atomic
 Postgres/pgvector generations, filters retrieval through server-derived
 principal/purpose/generation authority, and exposes the same bounded cited
@@ -446,12 +446,15 @@ already-qualified private Qwen/Gemma tree available outside Git:
 
 ```bash
 umask 077
-uv run --locked python -m yap_server.evaluation.governed_knowledge_gate \
+uv run --locked --all-extras python -m yap_server.evaluation.governed_knowledge_gate \
   --repository-root /absolute/path/to/clean/yap \
   --checked-head <full-lowercase-git-sha> \
   --agent-route-evidence-root /absolute/private/agent-model \
   --receipt-path /absolute/private/governed-knowledge-gate.json
 ```
+
+`--all-extras` materializes the locked evaluation and test packages before the
+gate-owned runtime-identity check; omitting it on a clean host fails closed.
 
 The command admits the exact hash-locked private model evidence without copying
 raw outputs or measurements, runs the locked Python 3.12 Phase 9 portable suite
@@ -472,8 +475,67 @@ It ran 109 portable tests across 22 modules, Ruff, nine mandatory Postgres tests
 across four modules with zero skips on locked PostgreSQL 17 / pgvector 0.8.6,
 and the real restart/recovery/stale-
 generation/successor path, then proved exact teardown and zero owned residue.
-Hosted review and merge remain open. These facts do not promote a production
-agent service, simultaneous model residency, or sustained mixed-route capacity.
+Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
+These facts do not promote a production agent service, simultaneous model
+residency, or sustained mixed-route capacity.
+
+The active maintainability checkpoint must not reuse that historical route
+tree. Reviewed executable head
+`a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` freezes acceptance schema 4,
+exactly two evaluation-only final structural-decoding attempts, one exact
+product-valid cited-proposal tool call, and candidate-specific runtime
+identities. Qwen uses a pinned NVIDIA vLLM 26.07 ARM64 base plus XGrammar 0.2.1
+overlay with strict tool guidance; Gemma uses exact upstream NVIDIA vLLM 26.06
+ARM64. Qwen keeps its 256-token route maximum, caps only the three frozen
+proposal fixtures at 160, and applies separate three-second common and
+ten-second proposal qualification bounds; Gemma remains 512. Correctness,
+warm/C8, model, route, runtime, and no-tool-retry contracts are unchanged.
+Candidate lock SHA-256 is
+`3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013`;
+acceptance SHA-256 is
+`d2b422afa2da8c36da1920b0c32da9c5425f4b73718b55b0bf8cb136d3d7a773`.
+The Qwen Dockerfile, build script, third-party notice, dependency identities,
+platform, and exact observed image are protected qualification inputs; this is
+a pinned evaluation build contract, not a byte-identical rebuild claim.
+Prepare that exact local evaluation image from `server` with:
+
+```bash
+bash runtime/agent-vllm/build-qwen-vllm-runtime.sh
+```
+
+The build is source- and input-pinned, performs no registry pull, and must be
+read back against the candidate lock before use. A qualification receipt binds
+the observed image ID; rebuilding does not authorize substituting a new ID.
+The exact `96897d2f...` private qualification is terminal and rejected with
+public-safe evidence SHA-256
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
+Gemma remained eligible and Qwen passed its semantic, common, warm, and C8
+checks, but the obsolete aggregate fixture bound rejected the proposal
+workflow. Raw output, measurements, logs, and private locations remain outside
+Git. The new split bounds are frozen route-evaluation controls, not production
+p95/p99 SLO, capacity, or generic TPS evidence.
+Fresh exact-head qualification at `a76ed9b0...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`.
+Both locked candidates were eligible and passed their semantic and
+route-specific evidence contracts; both lifecycles reported exact teardown and
+zero owned runtime residue. Schema-3 public lock commit `2cf1e92c...` has
+raw-file SHA-256
+`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
+and passed hash-bound semantic admission against the owner-private tree. Raw
+outputs, measurements, logs, private locations, and runtime credentials remain
+outside Git. Exact aggregate candidate
+`22c3f3698a6b5c5ff592e74f3a0f0e144778c9c5` returned
+`governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`.
+It ran 152 portable tests across 25 modules, Ruff, 17 zero-skip Postgres tests
+across four modules on locked PostgreSQL 17 / pgvector 0.8.6 ARM64, and the
+real restart/recovered-retrieval/stale-generation/successor path. The receipt
+records the unchanged desktop dependency boundary and all six teardown
+predicates; independent name/owner read-back found zero container, network, or
+volume residue. This remains checkpoint evidence, not a production p95/p99
+SLO, capacity, or generic TPS claim. Hosted review and merge remain open.
 
 ## Local checks
 

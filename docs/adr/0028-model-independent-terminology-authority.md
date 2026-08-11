@@ -106,14 +106,16 @@ text, variants, prompts, or transcript content.
 - concurrent job/session revision pinning;
 - redacted audit and failure output.
 
-The active Phase 9 candidate implements these boundaries through a
+Merged Phase 9 implements these boundaries through a
 server-derived immutable authorization context, owner-scoped append-only ledger,
 job-bound snapshot identity, four deterministic projections, and governed-agent
 snapshot consumption. Focused tests cover forged membership/admin claims,
 cross-owner and cross-tenant access, precedence/conflicts/tombstones, stale or
 wrong-owner job snapshots, projection bounds, revocation, and redacted evidence.
 Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` passed the one complete
-Phase 9 gate. Hosted review and merge remain pending; this is not a production
+Phase 9 gate. Exact hosted-green head
+`fa26caaf7e3ea4e20f27b390355dff80bee2464f` merged through PR #152 as
+`ae81ff067c73a64528eecc14403765562726f2fe`; this is not a production
 retention, administration, or enterprise-directory claim.
 
 Enterprise group resolution, administrator policy, retention periods, and

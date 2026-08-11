@@ -6,6 +6,9 @@ development checks from a one-time phase/checkpoint gate.
 
 Current architecture-review evidence:
 
+- [Governed-knowledge maintainability coverage](governed-knowledge-maintainability/COVERAGE.md)
+- [Governed-knowledge maintainability findings](governed-knowledge-maintainability/FINDINGS.md)
+- [Governed-knowledge maintainability verification](governed-knowledge-maintainability/VERIFICATION.md)
 - [Executable ownership findings](executable-ownership-review/FINDINGS.md)
 - [Reviewed file inventory](executable-ownership-review/FILE-INVENTORY.md)
 - [Checked-head verification](executable-ownership-review/VERIFICATION.md)

@@ -6,9 +6,12 @@ import queue
 import socket
 import threading
 import time
-from urllib.parse import urlsplit
 
-from .governed_rag_agent import ReasoningRetryableError
+from yap_server.pools.authenticated_loopback_http import (
+    parse_numeric_loopback_http_endpoint,
+)
+
+from .agent_reasoning_routes import ReasoningRetryableError
 from .governed_answer_protocol import (
     FINAL_RESPONSE_PROTOCOLS,
     governed_answer_json,
@@ -27,22 +30,16 @@ class BoundedVllmJsonClient:
         timeout_seconds: int,
         maximum_response_bytes: int,
     ) -> None:
-        parsed = urlsplit(endpoint)
-        if (
-            parsed.scheme != "http"
-            or parsed.hostname not in {"127.0.0.1", "localhost"}
-            or parsed.path not in {"", "/"}
-            or parsed.query
-            or parsed.fragment
-            or parsed.port is None
-        ):
-            raise ValueError("vLLM endpoint must be explicit loopback HTTP")
+        host, port = parse_numeric_loopback_http_endpoint(
+            endpoint,
+            component="vLLM reasoning",
+        )
         if not 1 <= timeout_seconds <= 300:
             raise ValueError("vLLM timeout is invalid")
         if not 1 <= maximum_response_bytes <= 4_000_000:
             raise ValueError("vLLM response bound is invalid")
-        self._host = parsed.hostname
-        self._port = parsed.port
+        self._host = host
+        self._port = port
         self._timeout_seconds = timeout_seconds
         self._maximum_response_bytes = maximum_response_bytes
 

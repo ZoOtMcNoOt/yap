@@ -25,13 +25,25 @@ tokens per second, are not Yap workload evidence.
 
 ## Decision
 
-Yap uses vLLM as the sole Phase 9 agent-model serving candidate and Phase 10
-supervision target. The locked runtime is:
+Yap uses vLLM as the sole agent-model serving engine; runtime identity is
+route-specific rather than a universal image:
 
-- `nvcr.io/nvidia/vllm:26.06-py3`;
-- ARM64 digest `sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e`;
-- Python 3.12;
-- reported vLLM `0.22.1+7b9cb5b7.dev`.
+- Qwen rapid automation uses a local evaluation image derived from exact ARM64
+  NVIDIA vLLM 26.07 manifest
+  `sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2`,
+  reported vLLM `0.24.0+092c4842.nv26.7.59534043`, plus the exact
+  XGrammar 0.2.1 ARM64 wheel and source identity frozen in the candidate lock.
+  The overlay supplies the required strict tool-choice API; strict guidance may
+  not be disabled.
+- Gemma complex orchestration uses exact ARM64 NVIDIA vLLM 26.06 manifest
+  `sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e`
+  with reported vLLM `0.22.1+7b9cb5b7.dev` and XGrammar 0.2.0.
+
+Both runtimes are Linux/ARM64 and Python 3.12. The derived Qwen image is bound
+by its Dockerfile, build script, notice, dependency wheel/source hashes, and
+the exact observed image identity used for qualification. This is a pinned
+evaluation build contract, not a claim that independent builds produce the
+same Docker image ID.
 
 Qwen and Gemma are both required workload routes, not interchangeable fallback
 models and not competitors for one universal winner. The frozen assignment is
@@ -55,8 +67,52 @@ passed the complete knowledge gate with outcome
 `governed-knowledge-gate-passed` and public-safe evidence SHA-256
 `4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
 This is aggregate gate admission, not production service promotion.
+Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
 Simultaneous residency and sustained mixed-route capacity remain Phase 10
 claims and require their own measured evidence.
+
+The post-Phase-9 maintainability candidate keeps the same models, routes, and
+route output-token maxima while making final structured decoding explicitly
+bounded. Acceptance schema 3 first froze exactly
+two final-response attempts. The evaluation driver may retry only a final
+response that cannot be decoded into the governed answer contract; it never
+retries or replays a tool call, tool arguments, transport failure, or a
+structurally valid but semantically wrong answer. Successful candidate and
+fixture-child evidence use schema 2 and bind the exact per-case model-request
+count. This shares the product's two-attempt upper bound but is not a claim that
+evaluation and production retry the same failure classes. Because these are
+protected route inputs, exact reviewed head
+`4cb73aee2cb0da730337cd7f91c7d16cf6ab7e76` additionally froze the one
+synthetic cited-summary proposal as a complete product-valid JSON tool call.
+The exact `518f7848...` qualification is terminal and rejected. Runtime
+read-back then proved that one shared image was not a valid contract for both
+routes. Exact executable head
+`96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` binds the candidate-specific
+runtimes above, removes the strict-guidance-disable path, and protects the
+Dockerfile/build/notice inputs. Its terminal qualification returned
+`deterministic-no-model` with public-safe evidence SHA-256
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
+Gemma remained eligible and Qwen passed its semantic, common, warm, and C8
+checks; the single aggregate fixture bound rejected the citation-rich proposal
+workflow. Exact executable head
+`a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` adopts acceptance schema 4:
+Qwen keeps its 256-token route maximum, its three frozen proposal fixtures use
+160, and common three-second and proposal ten-second qualification bounds are
+evaluated separately. Gemma remains 512. All correctness, warm/C8, model,
+route, runtime, and no-tool-retry contracts remain unchanged. These are
+evaluation-route controls, not a production p95/p99 SLO or TPS claim. The fresh
+qualification at exact head `a76ed9b0...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`.
+Both routes were eligible and exact teardown left zero residue. Public schema-3
+lock commit `2cf1e92c...` has SHA-256
+`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
+and passed semantic admission. Separate aggregate head `22c3f369...` then
+returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`,
+including the exact portable/Ruff/Postgres/restart/teardown composition. This
+does not promote a production service or capacity/SLO result.
 
 Yap's server boundary owns authentication, authorization, retrieval, tool
 policy, request admission, cancellation intent, audit, and publication. The
@@ -73,6 +129,8 @@ vLLM and SGLang production planes for speculative optionality.
 
 - Qwen follows its validated DGX Spark runtime instead of preserving an
   incompatible architectural prediction.
+- Qwen and Gemma do not share a container image merely for operational
+  uniformity; each route must read back its exact frozen runtime identity.
 - Qwen uses the `qwen3_xml` tool parser, `qwen3` reasoning parser, and
   `json-schema` final-response protocol.
 - Gemma uses NVIDIA's Apache-2.0 ModelOpt NVFP4 checkpoint, the `gemma4` tool
@@ -90,6 +148,10 @@ vLLM and SGLang production planes for speculative optionality.
 - Agent and ASR contracts remain separate even though both can use vLLM.
 - Workload-route qualification depends on Yap quality, latency, concurrency,
   isolation, memory, cancellation, and teardown evidence—not headline TPS.
+- Completed evaluation tools remain immutable across the one allowed final
+  structural retry; cumulative request count and elapsed time cover both
+  attempts, while semantic failures remain scorer failures rather than retry
+  opportunities.
 - Production advertisement still requires supervised service integration and
   the Phase 10 capacity, observability, recovery, and deployment gates.
 - Persistent supervision and sustained mixed-user capacity remain Phase 10.

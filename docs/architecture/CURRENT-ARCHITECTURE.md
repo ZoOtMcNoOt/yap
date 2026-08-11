@@ -1,6 +1,6 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–8 system after the
+This document describes the merged executable Phase 1–9 system after the
 meeting-transcription ownership, source-time reconciliation, and explicit
 production-qualification decision. Phase 7
 implements provider-neutral
@@ -829,7 +829,7 @@ Selecting one exact result serializes a latest-wins native detail read and then
 performs the full speaker hash, parse, canonical-content, and source-binding
 verification before rendering bounded pages with canonical turn IDs.
 
-## Active governed-knowledge and agent candidate
+## Merged governed-knowledge and agent baseline
 
 Phase 9 now compiles bounded reviewed meeting/document sources into a
 deterministic Google OKF profile, immutable terminology snapshot, and staged
@@ -842,7 +842,7 @@ model output cannot grant permission or become canonical. MCP exposes the same
 governed tool boundary rather than repository, SQL, vector-index, or private
 evidence access.
 
-The candidate uses Postgres/pgvector as its sole Phase 9 projection. Redis,
+The merged baseline uses Postgres/pgvector as its sole Phase 9 projection. Redis,
 object storage, and Neo4j are not speculative dependencies: a later addition
 requires measured need and its own lifecycle, permission, and operations gate.
 Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` passed the complete
@@ -858,8 +858,56 @@ stale generation after successor activation, retrieved the successor, and
 proved container, listener, PID, network, and volume teardown. The aggregate
 also semantically admitted the exact hash-locked private Qwen/Gemma
 qualification tree without copying raw model output or measurements into Git.
-Hosted review and merge remain open; production service integration remains
-Phase 10.
+Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
+The separate post-Phase-9 maintainability checkpoint is active. Exact
+`96897d2f77f16457a9da2b87af8a9bf4c9ad2b99` completed both private runtime
+lifecycles and exact teardown but is terminal rejected evidence with outcome
+`deterministic-no-model` and public-safe evidence SHA-256
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
+Gemma remained eligible and Qwen passed its semantic, common, warm, and C8
+checks; a single aggregate fixture bound conflated common reads with the
+citation-rich proposal workflow. Reviewed executable head
+`a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` keeps the same Qwen/Gemma routes
+while binding each candidate to its compatible exact runtime. Qwen uses the pinned
+NVIDIA vLLM 26.07 ARM64 base plus an XGrammar 0.2.1 overlay and strict tool
+guidance; Gemma uses the exact upstream NVIDIA vLLM 26.06 ARM64 image. The
+acceptance lock binds the route mapping, observed image identity, platform,
+Dockerfile, build script, third-party notice, and dependency hashes. The same
+candidate bounds evaluation-only final structural decoding to two attempts and
+freezes one synthetic cited proposal as a complete product-valid JSON tool call.
+Completed tool calls are never retried or replayed; tool/argument/transport
+failures and well-formed semantic failures remain single-attempt evidence. The
+schema-4 policy keeps Qwen's route maximum at 256 tokens, applies 160 only to
+the three frozen proposal fixtures, and evaluates three-second common and
+ten-second proposal qualification bounds separately. Gemma remains at 512;
+correctness, warm/C8, model, route, and runtime contracts are unchanged. These
+are evaluation-route bounds, not a production SLO or TPS claim. The fresh
+qualification at exact head `a76ed9b0...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`;
+both routes were eligible and exact teardown left zero owned residue. Schema-3
+public lock commit `2cf1e92c...` has SHA-256
+`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
+and passed the production semantic-admission validator. Exact aggregate head
+`22c3f369...` then returned `governed-knowledge-gate-passed` with public-safe
+evidence SHA-256
+`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`.
+The gate composed the 25-module/152-test portable contract, Ruff, the
+four-module/17-test zero-skip database contract, real Postgres restart/retrieval/stale/
+successor proof, unchanged desktop boundary, and exact teardown with zero
+residue. Production service integration remains Phase 10.
+
+At remediation anchor `c332700597eac1cc6af3f68afb3e75fce0b6ec77`, each
+exported knowledge query/traversal/proposal owns the transaction that holds the
+tenant shared lock from active-generation authorization through response or
+write completion. Reviewed meeting admission exact-compares the stored source,
+path, resource, provenance, and owner-only permission; authenticated curated
+review derives a canonical compiled-source manifest. Staging and activation
+recompute the complete compiled/persisted generation identity. MCP cancellation
+does not return while its database worker or connection context survives, and
+the strict product tool/citation schema is shared with route evaluation. These
+are checkpoint repairs, not production serving or a new model claim.
 
 ## Persistence and recovery
 

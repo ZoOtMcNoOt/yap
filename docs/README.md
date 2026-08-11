@@ -64,7 +64,8 @@ availability.
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
 - [VoiceOS/Yap decision, evidence, and future-work queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 - [Integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
-- [Governed knowledge and agents](plans/active/2026-08-09-governed-knowledge-and-agents.md)
+- [Governed knowledge ownership and maintainability review](plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
+- [Completed governed knowledge and agents delivery](plans/completed/2026-08-09-governed-knowledge-and-agents.md)
 
 ### Queued
 

@@ -8,9 +8,12 @@ import unittest
 from unittest.mock import patch
 
 from yap_server.knowledge import vllm_reasoning_client
-from yap_server.knowledge.governed_rag_agent import ReasoningRetryableError
+from yap_server.knowledge.agent_reasoning_routes import ReasoningRetryableError
 from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
-from yap_server.knowledge.vllm_reasoning_client import VllmReasoningClient
+from yap_server.knowledge.vllm_reasoning_client import (
+    BoundedVllmJsonClient,
+    VllmReasoningClient,
+)
 
 
 class _Server(ThreadingHTTPServer):
@@ -88,6 +91,30 @@ class _Handler(BaseHTTPRequestHandler):
 
 
 class VllmReasoningClientTests(unittest.TestCase):
+    def test_transport_requires_numeric_loopback_authority(self) -> None:
+        for endpoint in (
+            "http://localhost:8000",
+            "http://user@127.0.0.1:8000",
+            "http://127.0.0.1:8000/",
+            "http://127.0.0.1:8000?query=1",
+            "http://127.0.0.1:8000#fragment",
+            "http://192.0.2.1:8000",
+            "http://127.0.0.1:0",
+        ):
+            with self.subTest(endpoint=endpoint), self.assertRaises(ValueError):
+                BoundedVllmJsonClient(
+                    endpoint=endpoint,
+                    timeout_seconds=1,
+                    maximum_response_bytes=1,
+                )
+        for endpoint in ("http://127.0.0.1:8000", "http://[::1]:8000"):
+            with self.subTest(endpoint=endpoint):
+                BoundedVllmJsonClient(
+                    endpoint=endpoint,
+                    timeout_seconds=1,
+                    maximum_response_bytes=1,
+                )
+
     def setUp(self) -> None:
         _Handler.status = 200
         _Handler.observed = None

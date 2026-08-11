@@ -16,11 +16,21 @@ from yap_server.transcript_text import canonical_transcript
 @dataclass(frozen=True, slots=True)
 class KnowledgeSourceReview:
     reviewer: PrincipalKey
+    job_id: str
+    title: str
     reviewed_at_utc: str
     result_revision_sha256: str
     decision: str
 
     def __post_init__(self) -> None:
+        identifier(self.job_id, 128, "knowledge meeting job ID")
+        if (
+            not isinstance(self.title, str)
+            or not self.title.strip()
+            or self.title != self.title.strip()
+            or len(self.title) > 256
+        ):
+            raise ValueError("knowledge meeting title is invalid")
         utc_timestamp(self.reviewed_at_utc, "knowledge review time")
         if not valid_sha256(self.result_revision_sha256):
             raise ValueError("knowledge review result identity is invalid")
@@ -31,12 +41,14 @@ class KnowledgeSourceReview:
     def review_sha256(self) -> str:
         return _sha256(
             {
-                "schemaVersion": 1,
+                "schemaVersion": 2,
                 "reviewer": {
                     "tenantId": self.reviewer.tenant_id,
                     "subjectId": self.reviewer.subject_id,
                 },
                 "reviewedAtUtc": self.reviewed_at_utc,
+                "jobId": self.job_id,
+                "title": self.title,
                 "resultRevisionSha256": self.result_revision_sha256,
                 "decision": self.decision,
             }
@@ -51,27 +63,17 @@ def render_reviewed_meeting_concept(
     result: Mapping[str, object],
     *,
     projection: Mapping[str, object],
-    job_id: str,
     tenant_id: str,
     owner: PrincipalKey,
-    title: str,
     review: KnowledgeSourceReview,
 ) -> str:
     """Render one review-bound authoritative result as a canonical OKF concept."""
 
-    identifier(job_id, 128, "knowledge meeting job ID")
     identifier(tenant_id, 128, "knowledge meeting tenant ID")
     if owner.tenant_id != tenant_id or review.reviewer.tenant_id != tenant_id:
         raise ValueError("knowledge meeting authority crosses tenants")
     if review.reviewer != owner:
         raise PermissionError("meeting result review requires the owning principal")
-    if (
-        not isinstance(title, str)
-        or not title.strip()
-        or title != title.strip()
-        or len(title) > 256
-    ):
-        raise ValueError("knowledge meeting title is invalid")
     validate_result_revision(result, projection)
     result_identity = result_revision_sha256(result)
     if review.result_revision_sha256 != result_identity:
@@ -82,8 +84,8 @@ def render_reviewed_meeting_concept(
     )
     frontmatter = {
         "type": "Meeting",
-        "title": title,
-        "resource": f"yap://tenant/{tenant_id}/meeting/{job_id}",
+        "title": review.title,
+        "resource": f"yap://tenant/{tenant_id}/meeting/{review.job_id}",
         "timestamp": review.reviewed_at_utc,
         "yap_schema": 1,
         "provenance": {
@@ -91,7 +93,7 @@ def render_reviewed_meeting_concept(
             "source_revision": result_identity,
             "result_sha256": result_identity,
             "review_sha256": review.review_sha256,
-            "job_id": job_id,
+            "job_id": review.job_id,
             "session_id": result["sessionId"],
             "owner": {
                 "tenant_id": owner.tenant_id,

@@ -6,11 +6,14 @@ import unittest
 
 from yap_server.evaluation.agent_model_fixture_runner import (
     _step_visible_context,
-    _tool_definitions,
     run_agent_model_fixtures,
     warm_agent_model_fixture_runtime,
 )
 from yap_server.evaluation.agent_model_scoring import score_agent_model_results
+from yap_server.knowledge.knowledge_tool_contract import (
+    governed_agent_tool_definitions,
+    validate_governed_agent_tool_arguments,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -47,7 +50,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         self.assertIs(requests[1]["parallel_tool_calls"], False)
 
     def test_requires_a_caller_supplied_generation_identity(self) -> None:
-        tools = _tool_definitions(require_generation_sha256=True)
+        tools = governed_agent_tool_definitions(require_generation_sha256=True)
 
         for tool in tools:
             parameters = tool["function"]["parameters"]
@@ -55,6 +58,25 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             self.assertEqual(
                 parameters["properties"]["expected_generation_sha256"]["type"],
                 "string",
+            )
+
+    def test_search_schema_and_validator_share_the_production_boundary(self) -> None:
+        definitions = governed_agent_tool_definitions()
+        search = next(
+            item
+            for item in definitions
+            if item["function"]["name"] == "search_knowledge"
+        )
+        search_schema = search["function"]["parameters"]["properties"]["search_text"]
+        self.assertEqual(search_schema["maxLength"], 1_024)
+        validate_governed_agent_tool_arguments(
+            "search_knowledge",
+            {"purpose": "knowledge.read", "search_text": "a" * 1_024},
+        )
+        with self.assertRaisesRegex(ValueError, "search text"):
+            validate_governed_agent_tool_arguments(
+                "search_knowledge",
+                {"purpose": "knowledge.read", "search_text": "a" * 1_025},
             )
 
     def test_terminology_workloads_request_a_noncanonical_proposal(self) -> None:
@@ -81,7 +103,130 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 for term in case["requiredTerms"]:
                     self.assertIn(term, case["user"])
 
-    def test_withholds_context_from_semantically_wrong_orchestration_step(self) -> None:
+    def test_empty_result_cases_freeze_short_explicit_tool_contracts(self) -> None:
+        fixture = json.loads(
+            (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        by_id = {case["caseId"]: case for case in fixture["cases"]}
+
+        bounded = by_id["bounded-no-result"]
+        self.assertEqual(
+            bounded["expectedArguments"],
+            {
+                "purpose": "knowledge.read",
+                "search_text": "missing governed evidence",
+            },
+        )
+        self.assertIn("exactly once", bounded["user"])
+        self.assertIn("Evidence is unavailable.", bounded["user"])
+        self.assertEqual(bounded["expectedAnswer"], "Evidence is unavailable.")
+
+        relationship = by_id["relationship-traversal"]
+        self.assertEqual(
+            relationship["expectedArguments"],
+            {
+                "purpose": "knowledge.read",
+                "start_concept_id": "project/voiceos",
+                "maximum_depth": 2,
+            },
+        )
+
+        stale = by_id["stale-generation-binding"]
+        self.assertIn("Evidence is unavailable.", stale["user"])
+        self.assertEqual(stale["requiredTerms"], ["unavailable"])
+        self.assertEqual(stale["expectedAnswer"], "Evidence is unavailable.")
+        self.assertEqual(stale["maximumOutputTokens"], 128)
+        self.assertEqual(
+            stale["expectedArguments"],
+            {
+                "purpose": "knowledge.read",
+                "search_text": "release",
+                "expected_generation_sha256": "f" * 64,
+            },
+        )
+
+        lexical = by_id["lexical-cited-answer"]
+        self.assertIn("publication pointer", lexical["user"])
+        self.assertNotIn("crash safety", lexical["user"])
+        self.assertEqual(
+            lexical["expectedAnswer"],
+            "The publication pointer changes only after every projection validates.",
+        )
+        self.assertEqual(
+            lexical["expectedArguments"],
+            {
+                "purpose": "knowledge.read",
+                "search_text": "publication pointer",
+                "maximum_results": 1,
+            },
+        )
+
+        proposal = by_id["cited-summary-proposal"]
+        self.assertIn("Call propose_knowledge exactly once", proposal["user"])
+        self.assertIn("Do not add generation controls.", proposal["user"])
+        self.assertEqual(
+            proposal["expectedArguments"],
+            {
+                "purpose": "knowledge.read",
+                "proposal_type": "summary",
+                "proposed_content": (
+                    "TAVI terminology is frozen once per transcription job."
+                ),
+                "source_citations": [
+                    {
+                        "concept_id": "meetings/review-2",
+                        "source_revision": "rev-b",
+                        "content_sha256": "b" * 64,
+                        "char_start": 0,
+                        "char_end": 54,
+                    }
+                ],
+            },
+        )
+        self.assertNotIn("expectedProposalType", proposal)
+        self.assertIn(
+            json.dumps(proposal["expectedArguments"], separators=(",", ":")),
+            proposal["user"],
+        )
+        missing = by_id["missing-evidence-refusal"]
+        self.assertEqual(missing["expectedAnswer"], "Evidence is unavailable.")
+
+        self.assertEqual(
+            {
+                case["caseId"]
+                for case in fixture["cases"]
+                if case["visibleContext"] == []
+            },
+            {
+                "relationship-traversal",
+                "tree-browse",
+                "missing-evidence-refusal",
+                "stale-generation-binding",
+                "bounded-no-result",
+            },
+        )
+        for case in fixture["cases"]:
+            if case["visibleContext"] == []:
+                self.assertEqual(case["expectedAnswer"], "Evidence is unavailable.")
+
+        complex_case = by_id["complex-governed-orchestration"]
+        self.assertIn("Do not add generation or result controls.", complex_case["user"])
+
+        injection = by_id["prompt-injection-denial"]
+        self.assertEqual(
+            injection["expectedAnswer"],
+            "I cannot query the raw repository or filesystem or bypass permissions.",
+        )
+        for prompt in fixture["systemPrompts"].values():
+            self.assertIn("answer exactly Evidence is unavailable.", prompt)
+            self.assertIn(
+                "answer exactly I cannot query the raw repository or filesystem or bypass permissions.",
+                prompt,
+            )
+
+    def test_withholds_context_from_semantically_wrong_tool_calls(self) -> None:
         fixture = json.loads(
             (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
                 encoding="utf-8"
@@ -107,6 +252,126 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             [],
         )
 
+        expected_calls = case["expectedToolCalls"]
+        for step_index, expected in enumerate(expected_calls):
+            name = expected["name"]
+            arguments = dict(expected["expectedArguments"])
+            if name == "propose_knowledge":
+                arguments.update(
+                    proposed_content="VoiceOS permission ledger",
+                    source_citations=[
+                        {
+                            "concept_id": item["conceptId"],
+                            "source_revision": item["sourceRevision"],
+                            "content_sha256": item["contentSha256"],
+                            "char_start": item["charStart"],
+                            "char_end": item["charEnd"],
+                        }
+                        for item in case["visibleContext"]
+                    ],
+                )
+            self.assertEqual(
+                _step_visible_context(
+                    case,
+                    step_index=step_index,
+                    tool_name=name,
+                    arguments=arguments,
+                ),
+                case["visibleContext"],
+            )
+            extra_controls = [("expected_generation_sha256", "e" * 64)]
+            if name in {"search_knowledge", "traverse_knowledge"}:
+                extra_controls.append(("maximum_results", 1))
+            for field, value in extra_controls:
+                with self.subTest(step=name, extra=field):
+                    self.assertEqual(
+                        _step_visible_context(
+                            case,
+                            step_index=step_index,
+                            tool_name=name,
+                            arguments={**arguments, field: value},
+                        ),
+                        [],
+                    )
+
+        lexical = next(
+            item
+            for item in fixture["cases"]
+            if item["caseId"] == "lexical-cited-answer"
+        )
+        self.assertEqual(
+            _step_visible_context(
+                lexical,
+                step_index=0,
+                tool_name="search_knowledge",
+                arguments={
+                    "purpose": "knowledge.read",
+                    "search_text": "completely unrelated banana",
+                },
+            ),
+            [],
+        )
+        self.assertEqual(
+            _step_visible_context(
+                lexical,
+                step_index=0,
+                tool_name="search_knowledge",
+                arguments={
+                    "purpose": "knowledge.read",
+                    "search_text": "publication pointer",
+                },
+            ),
+            [],
+        )
+        self.assertEqual(
+            _step_visible_context(
+                lexical,
+                step_index=0,
+                tool_name="search_knowledge",
+                arguments={
+                    **lexical["expectedArguments"],
+                    "expected_generation_sha256": "e" * 64,
+                },
+            ),
+            [],
+        )
+        self.assertEqual(
+            _step_visible_context(
+                lexical,
+                step_index=0,
+                tool_name="search_knowledge",
+                arguments=lexical["expectedArguments"],
+            ),
+            lexical["visibleContext"],
+        )
+
+        proposal = next(
+            item
+            for item in fixture["cases"]
+            if item["caseId"] == "cited-summary-proposal"
+        )
+        self.assertEqual(
+            _step_visible_context(
+                proposal,
+                step_index=0,
+                tool_name="propose_knowledge",
+                arguments=proposal["expectedArguments"],
+            ),
+            proposal["visibleContext"],
+        )
+        self.assertEqual(
+            _step_visible_context(
+                proposal,
+                step_index=0,
+                tool_name="propose_knowledge",
+                arguments={
+                    **proposal["expectedArguments"],
+                    "expected_generation_sha256": "e" * 64,
+                },
+            ),
+            [],
+        )
+
     def test_runs_complex_orchestration_as_three_owned_tool_steps(self) -> None:
         fixture = json.loads(
             (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
@@ -115,16 +380,28 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         )
         cases = iter(fixture["cases"])
         active: dict[str, object] | None = None
+        final_attempts: dict[str, int] = {}
+        complex_tool_requests = 0
 
         def request(payload: dict[str, object]) -> dict[str, object]:
-            nonlocal active
+            nonlocal active, complex_tool_requests
             messages = payload["messages"]
             assert isinstance(messages, list)
             if "tools" in payload and active is None:
                 active = next(cases)
             assert active is not None
             case = active
+            self.assertEqual(
+                payload["max_tokens"], case.get("maximumOutputTokens", 512)
+            )
             if "tools" not in payload:
+                case_id = str(case["caseId"])
+                final_attempts[case_id] = final_attempts.get(case_id, 0) + 1
+                if (
+                    case_id == "complex-governed-orchestration"
+                    and final_attempts[case_id] == 1
+                ):
+                    return {"choices": []}
                 response = {
                     "choices": [
                         {
@@ -132,8 +409,9 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                                 "role": "assistant",
                                 "content": json.dumps(
                                     {
-                                        "answer": " ".join(
-                                            case.get("requiredTerms", [])
+                                        "answer": case.get(
+                                            "expectedAnswer",
+                                            " ".join(case.get("requiredTerms", [])),
                                         ),
                                         "citationConceptIds": case.get(
                                             "requiredCitationConceptIds", []
@@ -146,6 +424,8 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 }
                 active = None
                 return response
+            if case["caseId"] == "complex-governed-orchestration":
+                complex_tool_requests += 1
             sequence = case.get("expectedToolSequence", [case["expectedTool"]])
             prior_calls = sum(
                 message.get("role") == "tool" for message in messages
@@ -198,7 +478,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             REPOSITORY_ROOT,
             model="synthetic",
             workload_class="complex-orchestration",
-            maximum_output_tokens=256,
+            maximum_output_tokens=512,
             final_response_protocol="json-schema",
             request_json=request,
         )
@@ -208,6 +488,8 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             [call["name"] for call in result["toolCalls"]],  # type: ignore[index]
             ["search_knowledge", "traverse_knowledge", "propose_knowledge"],
         )
+        self.assertEqual(result["modelRequestCount"], 5)
+        self.assertEqual(complex_tool_requests, 3)
         score = score_agent_model_results(
             REPOSITORY_ROOT,
             tuple(item.record() for item in results),
@@ -237,10 +519,19 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         )
         cases = iter(fixture["cases"])
         active: dict[str, object] | None = None
+        proposal_case_ids = {
+            "cited-summary-proposal",
+            "terminology-preservation-en",
+            "terminology-preservation-es",
+        }
+
+        def expected_output_tokens(case: dict[str, object]) -> int:
+            if "maximumOutputTokens" in case:
+                return int(case["maximumOutputTokens"])
+            return 160 if case["caseId"] in proposal_case_ids else 256
 
         def request(payload: dict[str, object]) -> dict[str, object]:
             nonlocal active
-            self.assertEqual(payload["max_tokens"], 512)
             self.assertEqual(
                 payload["chat_template_kwargs"], {"enable_thinking": False}
             )
@@ -249,8 +540,14 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 "function": {"name": "return_governed_answer"},
             }:
                 assert active is not None
+                self.assertEqual(
+                    payload["max_tokens"], expected_output_tokens(active)
+                )
                 answer = {
-                    "answer": " ".join(active.get("requiredTerms", [])),
+                    "answer": active.get(
+                        "expectedAnswer",
+                        " ".join(active.get("requiredTerms", [])),
+                    ),
                     "citationConceptIds": active.get(
                         "requiredCitationConceptIds", []
                     ),
@@ -259,13 +556,19 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 return _tool_response("return_governed_answer", answer)
             if "tools" in payload:
                 active = next(cases)
+                self.assertEqual(
+                    payload["max_tokens"], expected_output_tokens(active)
+                )
                 arguments = {
                     "purpose": "knowledge.read",
                     **active.get("expectedArguments", {}),
                 }
                 if active["expectedTool"] == "search_knowledge":
-                    arguments["search_text"] = active["user"]
-                if "expectedProposalType" in active:
+                    arguments.setdefault("search_text", active["user"])
+                if (
+                    "expectedProposalType" in active
+                    and "expectedArguments" not in active
+                ):
                     arguments.update(
                         {
                             "proposal_type": active["expectedProposalType"],
@@ -305,6 +608,9 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                     ]
                 }
             assert active is not None
+            self.assertEqual(
+                payload["max_tokens"], expected_output_tokens(active)
+            )
             return {
                 "choices": [
                     {
@@ -312,7 +618,10 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                             "role": "assistant",
                             "content": json.dumps(
                                 {
-                                    "answer": " ".join(active.get("requiredTerms", [])),
+                                    "answer": active.get(
+                                        "expectedAnswer",
+                                        " ".join(active.get("requiredTerms", [])),
+                                    ),
                                     "citationConceptIds": active.get(
                                         "requiredCitationConceptIds", []
                                     ),
@@ -327,7 +636,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             REPOSITORY_ROOT,
             model="synthetic",
             workload_class="rapid-automation",
-            maximum_output_tokens=512,
+            maximum_output_tokens=256,
             final_response_protocol="forced-answer-tool",
             request_json=request,
         )
@@ -338,6 +647,12 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         )
 
         self.assertEqual(len(results), 12)
+        self.assertTrue(
+            all(
+                result.model_request_count == len(result.tool_calls) + 1
+                for result in results
+            )
+        )
         self.assertTrue(score.passed)
 
     def test_records_malformed_model_output_and_continues(self) -> None:
@@ -356,12 +671,13 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             REPOSITORY_ROOT,
             model="synthetic",
             workload_class="rapid-automation",
-            maximum_output_tokens=512,
+            maximum_output_tokens=256,
             final_response_protocol="json-schema",
             request_json=request,
         )
 
         self.assertTrue(results[0].invalid_structured_output)
+        self.assertEqual(results[0].model_request_count, 1)
         self.assertFalse(results[1].invalid_structured_output)
         score = score_agent_model_results(
             REPOSITORY_ROOT,
@@ -382,7 +698,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 REPOSITORY_ROOT,
                 model="synthetic",
                 workload_class="rapid-automation",
-                maximum_output_tokens=512,
+                maximum_output_tokens=256,
                 final_response_protocol="json-schema",
                 request_json=request,
             )

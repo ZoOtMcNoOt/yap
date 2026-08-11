@@ -6,7 +6,14 @@ from psycopg import Connection
 
 from yap_server.auth.principal import PrincipalKey
 
-from .postgres_permission_view import authorize_knowledge_query
+from .knowledge_tool_contract import (
+    MAX_CONCEPT_ID_CHARACTERS,
+    MAX_STORAGE_RESULTS,
+    MAX_TRAVERSAL_DEPTH,
+    validate_bounded_text,
+    validate_integer,
+)
+from .postgres_permission_view import _authorize_knowledge_query
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,13 +53,48 @@ def traverse_postgres_knowledge_relationships(
     maximum_results: int = 50,
     expected_generation_sha256: str | None = None,
 ) -> PostgresRelationshipTraversal:
-    if not isinstance(start_concept_id, str) or not start_concept_id:
-        raise ValueError("knowledge traversal start is invalid")
-    if isinstance(maximum_depth, bool) or not 1 <= maximum_depth <= 4:
-        raise ValueError("knowledge traversal depth is invalid")
-    if isinstance(maximum_results, bool) or not 1 <= maximum_results <= 100:
-        raise ValueError("knowledge traversal result limit is invalid")
-    query = authorize_knowledge_query(
+    with connection.transaction():
+        return _traverse_postgres_knowledge_relationships(
+            connection,
+            principal=principal,
+            purpose=purpose,
+            agent_capabilities=agent_capabilities,
+            start_concept_id=start_concept_id,
+            maximum_depth=maximum_depth,
+            maximum_results=maximum_results,
+            expected_generation_sha256=expected_generation_sha256,
+        )
+
+
+def _traverse_postgres_knowledge_relationships(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    purpose: str,
+    agent_capabilities: frozenset[str],
+    start_concept_id: str,
+    maximum_depth: int,
+    maximum_results: int,
+    expected_generation_sha256: str | None,
+) -> PostgresRelationshipTraversal:
+    validate_bounded_text(
+        start_concept_id,
+        field="knowledge traversal start",
+        maximum=MAX_CONCEPT_ID_CHARACTERS,
+    )
+    validate_integer(
+        maximum_depth,
+        minimum=1,
+        maximum=MAX_TRAVERSAL_DEPTH,
+        field="knowledge traversal depth",
+    )
+    validate_integer(
+        maximum_results,
+        minimum=1,
+        maximum=MAX_STORAGE_RESULTS,
+        field="knowledge traversal result limit",
+    )
+    query = _authorize_knowledge_query(
         connection,
         principal=principal,
         purpose=purpose,

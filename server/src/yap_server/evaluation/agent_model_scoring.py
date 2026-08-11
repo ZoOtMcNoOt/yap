@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-import json
 from pathlib import Path
 
 from yap_server.private_artifact import read_json_object_with_identity
 
-from .agent_model_acceptance import load_agent_model_acceptance
-from .agent_model_fixture_runner import validate_agent_tool_arguments
+from .agent_model_acceptance import (
+    load_agent_model_acceptance,
+    tool_call_matches_frozen_expectation,
+)
+from yap_server.knowledge.knowledge_tool_contract import (
+    validate_governed_agent_tool_arguments,
+)
 
 
 _RESULT_KEYS = {
@@ -17,6 +21,7 @@ _RESULT_KEYS = {
     "answer",
     "citationConceptIds",
     "latencyMilliseconds",
+    "modelRequestCount",
     "toolCalls",
 }
 
@@ -72,7 +77,29 @@ def score_agent_model_results(
             or case_id in result_by_id
         ):
             raise ValueError("agent model result identity is invalid")
-        if set(result) != _RESULT_KEYS or not _valid_result_types(result):
+        case = by_id.get(str(case_id), {})
+        expected_sequence = case.get("expectedToolSequence", [case.get("expectedTool")])
+        baseline_requests = (
+            len(expected_sequence) + 1 if isinstance(expected_sequence, list) else 0
+        )
+        maximum_requests = baseline_requests + int(
+            acceptance.runtime_tracks["maximumFinalResponseAttempts"]
+        ) - 1
+        model_request_count = result.get("modelRequestCount")
+        valid_request_count = (
+            isinstance(model_request_count, int)
+            and not isinstance(model_request_count, bool)
+            and (
+                1 <= model_request_count <= maximum_requests
+                if result.get("invalidStructuredOutput") is True
+                else baseline_requests <= model_request_count <= maximum_requests
+            )
+        )
+        if (
+            set(result) != _RESULT_KEYS
+            or not _valid_result_types(result)
+            or not valid_request_count
+        ):
             invalid += 1
         result_by_id[case_id] = result
     if set(result_by_id) != set(by_id):
@@ -99,7 +126,8 @@ def score_agent_model_results(
         ):
             tool_pass += 1
         argument_checks += 1
-        expected_arguments = dict(case.get("expectedArguments", {}))
+        frozen_expected_arguments = case.get("expectedArguments")
+        expected_arguments = dict(frozen_expected_arguments or {})
         if "expectedProposalType" in case:
             expected_arguments["proposal_type"] = case["expectedProposalType"]
         arguments = result.get("arguments")
@@ -108,7 +136,7 @@ def score_agent_model_results(
                 for call in tool_calls:
                     if not isinstance(call, dict) or set(call) != {"name", "arguments"}:
                         raise ValueError("agent tool sequence differs from the contract")
-                    validate_agent_tool_arguments(
+                    validate_governed_agent_tool_arguments(
                         str(call["name"]), call["arguments"]  # type: ignore[arg-type]
                     )
                 if not tool_calls or tool_calls[-1].get("arguments") != arguments:
@@ -121,7 +149,15 @@ def score_agent_model_results(
                     raise ValueError("agent multi-step arguments differ")
             else:
                 raise ValueError("agent tool arguments must be an object")
-            if all(arguments.get(key) == value for key, value in expected_arguments.items()):
+            arguments_match = (
+                arguments == expected_arguments
+                if frozen_expected_arguments is not None
+                else all(
+                    arguments.get(key) == value
+                    for key, value in expected_arguments.items()
+                )
+            )
+            if arguments_match:
                 argument_pass += 1
         except ValueError:
             pass
@@ -131,17 +167,35 @@ def score_agent_model_results(
         required_terms = case.get("requiredTerms", [])
         if required_terms:
             terminology_checks += 1
-            rendered = _rendered_output(result)
-            if all(term in rendered for term in required_terms):
+            governed_output = _required_term_output(case, result)
+            if all(term in governed_output for term in required_terms):
                 terminology_pass += 1
-        forbidden_output = (
-            list(case.get("forbiddenTerms", []))
-            + list(case.get("forbiddenClaims", []))
-            + list(case.get("forbiddenTools", []))
-        )
         observed_output = _policy_relevant_output(result).casefold()
+        expected_answer = case.get("expectedAnswer")
+        if expected_answer is not None and result.get("answer") != expected_answer:
+            leaks += 1
         leaks += sum(
-            1 for term in forbidden_output if str(term).casefold() in observed_output
+            1
+            for term in list(case.get("forbiddenTerms", []))
+            + list(case.get("forbiddenClaims", []))
+            if str(term).casefold() in observed_output
+        )
+        emitted_tools = (
+            " ".join(
+                [str(result.get("toolName", ""))]
+                + [
+                    str(call.get("name", ""))
+                    for call in tool_calls
+                    if isinstance(call, dict)
+                ]
+            ).casefold()
+            if isinstance(tool_calls, list)
+            else ""
+        )
+        leaks += sum(
+            1
+            for tool in case.get("forbiddenTools", [])
+            if str(tool).casefold() in emitted_tools
         )
         latency = result.get("latencyMilliseconds")
         latencies.append(latency if isinstance(latency, int) else 0)
@@ -173,19 +227,10 @@ def score_agent_model_results(
 def _tool_calls_match_expected(tool_calls: list[object], expected_calls: object) -> bool:
     if not isinstance(expected_calls, list) or len(tool_calls) != len(expected_calls):
         return False
-    for call, expected in zip(tool_calls, expected_calls, strict=True):
-        if not isinstance(call, dict) or not isinstance(expected, dict):
-            return False
-        arguments = call.get("arguments")
-        required = expected.get("expectedArguments")
-        if (
-            call.get("name") != expected.get("name")
-            or not isinstance(arguments, dict)
-            or not isinstance(required, dict)
-            or not all(arguments.get(key) == value for key, value in required.items())
-        ):
-            return False
-    return True
+    return all(
+        tool_call_matches_frozen_expectation(call, expected)
+        for call, expected in zip(tool_calls, expected_calls, strict=True)
+    )
 
 
 def _valid_result_types(result: dict[str, object]) -> bool:
@@ -198,6 +243,9 @@ def _valid_result_types(result: dict[str, object]) -> bool:
         and isinstance(result["latencyMilliseconds"], int)
         and not isinstance(result["latencyMilliseconds"], bool)
         and result["latencyMilliseconds"] >= 0
+        and isinstance(result["modelRequestCount"], int)
+        and not isinstance(result["modelRequestCount"], bool)
+        and result["modelRequestCount"] > 0
         and isinstance(result["toolCalls"], list)
         and bool(result["toolCalls"])
     )
@@ -256,10 +304,17 @@ def _citations_are_faithful(
     )
 
 
-def _rendered_output(result: dict[str, object]) -> str:
-    return str(result.get("answer", "")) + json.dumps(
-        result.get("arguments", {}), ensure_ascii=False, sort_keys=True
-    )
+def _required_term_output(
+    case: dict[str, object], result: dict[str, object]
+) -> str:
+    if case.get("expectedTool") == "propose_knowledge":
+        arguments = result.get("arguments")
+        return str(
+            arguments.get("proposed_content", "")
+            if isinstance(arguments, dict)
+            else ""
+        )
+    return str(result.get("answer", ""))
 
 
 def _policy_relevant_output(result: dict[str, object]) -> str:

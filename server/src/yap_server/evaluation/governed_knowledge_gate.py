@@ -11,8 +11,8 @@ import subprocess
 import sys
 from typing import Callable, Mapping, Sequence
 
-from yap_server.evaluation.agent_model_evidence import (
-    write_new_agent_model_evidence,
+from yap_server.evaluation.private_json_evidence import (
+    write_new_private_json_evidence,
 )
 from yap_server.evaluation.agent_route_qualification_evidence import (
     admit_agent_route_qualification,
@@ -32,19 +32,20 @@ from yap_server.evaluation.owned_postgres_knowledge_runtime import (
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_PHASE9_DESKTOP_BASE_HEAD = "10618e9d292e6810d6fee7defd7adc4902ecb2ed"
+_LOCAL_OFFLINE_DESKTOP_BASE_HEAD = "10618e9d292e6810d6fee7defd7adc4902ecb2ed"
 _EXPECTED_DATABASE_MODULES = (
     "tests.knowledge.test_postgres_generation_ledger",
     "tests.knowledge.test_postgres_permission_safe_retrieval",
     "tests.knowledge.test_reviewed_meeting_postgres_route",
     "tests.knowledge.test_terminology_ledger",
 )
-_EXPECTED_DATABASE_TEST_COUNT = 9
+_EXPECTED_DATABASE_TEST_COUNT = 17
 _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
 )
 _EXPECTED_PORTABLE_MODULES = (
     "tests.evaluation.test_agent_model_acceptance",
+    "tests.evaluation.test_agent_model_final_response_retry",
     "tests.evaluation.test_agent_model_fixture_runner",
     "tests.evaluation.test_agent_model_qualification",
     "tests.evaluation.test_agent_model_scoring",
@@ -54,20 +55,22 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.evaluation.test_agent_vllm_runtime",
     "tests.evaluation.test_checked_candidate",
     "tests.evaluation.test_governed_knowledge_gate",
+    "tests.evaluation.test_owned_postgres_knowledge_runtime",
+    "tests.evaluation.test_private_json_evidence",
     "tests.evaluation.test_provider_runtime_observations",
     "tests.evaluation.test_vllm_runtime_metrics",
     "tests.knowledge.test_agent_reasoning_routes",
+    "tests.knowledge.test_cancellable_database_operation",
     "tests.knowledge.test_governed_answer_protocol",
     "tests.knowledge.test_governed_knowledge_mcp",
     "tests.knowledge.test_governed_rag_agent",
     "tests.knowledge.test_okf_compiler",
-    "tests.knowledge.test_permission_safe_retrieval",
     "tests.knowledge.test_reviewed_meeting_knowledge",
     "tests.knowledge.test_terminology_authorization",
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 109
+_EXPECTED_PORTABLE_TEST_COUNT = 152
 
 
 def evaluate_governed_knowledge_gate(
@@ -277,7 +280,7 @@ def evaluate_governed_knowledge_gate(
         },
         candidate,
     )
-    write_new_agent_model_evidence(receipt_path, receipt)
+    write_new_private_json_evidence(receipt_path, receipt)
     return receipt
 
 
@@ -289,18 +292,18 @@ def verify_local_offline_dependency_boundary(
 ) -> dict[str, object]:
     ancestor = _git(
         repository_root,
-        ("merge-base", "--is-ancestor", _PHASE9_DESKTOP_BASE_HEAD, checked_head),
+        ("merge-base", "--is-ancestor", _LOCAL_OFFLINE_DESKTOP_BASE_HEAD, checked_head),
         runner=runner,
         check=False,
     )
     if ancestor.returncode != 0:
-        raise ValueError("Phase 9 desktop dependency baseline is not an ancestor")
+        raise ValueError("local/offline desktop dependency baseline is not an ancestor")
     changed = _git(
         repository_root,
         (
             "diff",
             "--name-only",
-            f"{_PHASE9_DESKTOP_BASE_HEAD}..{checked_head}",
+            f"{_LOCAL_OFFLINE_DESKTOP_BASE_HEAD}..{checked_head}",
             "--",
             "desktop",
         ),
@@ -308,10 +311,10 @@ def verify_local_offline_dependency_boundary(
     ).stdout.splitlines()
     if changed:
         raise ValueError(
-            "Phase 9 changed the local/offline desktop dependency boundary"
+            "governed knowledge changed the local/offline desktop dependency boundary"
         )
     return {
-        "baselineHead": _PHASE9_DESKTOP_BASE_HEAD,
+        "baselineHead": _LOCAL_OFFLINE_DESKTOP_BASE_HEAD,
         "desktopChanged": False,
         "evidenceKind": "unchanged-desktop-dependency-boundary",
     }

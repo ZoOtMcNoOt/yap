@@ -24,7 +24,7 @@ from .agent_model_candidate_runner import (
     agent_evidence_sha256,
     run_agent_model_candidate,
 )
-from .agent_model_evidence import write_new_agent_model_evidence
+from .private_json_evidence import write_new_private_json_evidence
 from .agent_model_scoring import score_agent_model_results
 from .agent_vllm_runtime import build_agent_vllm_launch_arguments
 from .checked_candidate import (
@@ -38,6 +38,9 @@ _INPUTS = (
     Path("server/agent-model-acceptance.json"),
     Path("server/agent-reasoning-candidates.lock.json"),
     Path("server/agent-workload-fixtures.json"),
+    Path("server/runtime/agent-vllm/Dockerfile"),
+    Path("server/runtime/agent-vllm/build-qwen-vllm-runtime.sh"),
+    Path("server/runtime/agent-vllm/THIRD_PARTY_NOTICES.md"),
 )
 _EVIDENCE_KEYS = {
     "schemaVersion",
@@ -85,6 +88,11 @@ def evaluate_agent_model_qualification(
             route_policy=acceptance.route_evidence[
                 str(models[candidate_id]["workloadClass"])
             ],
+            proposal_fixture_case_ids=tuple(
+                acceptance.route_evidence["rapid-automation"][
+                    "proposalFixtureCaseIds"
+                ]
+            ),
         )
         for candidate_id in acceptance.candidate_ids
     ]
@@ -102,7 +110,7 @@ def evaluate_agent_model_qualification(
         outcome = "required-workload-routes-qualified"
         reasons = ["every-required-workload-route-passed-frozen-evidence"]
     decision = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "qualificationScope": "governed-agent-reasoning",
         "outcome": outcome,
         "admittedModelCandidates": sorted(admitted_candidates),
@@ -119,11 +127,12 @@ def _candidate_summary(
     *,
     expected: dict[str, object],
     route_policy: object,
+    proposal_fixture_case_ids: tuple[str, ...],
 ) -> dict[str, object]:
     if isinstance(run, FailedAgentCandidateRun):
         return _failed_candidate_summary(candidate, run, expected=expected)
     evidence = run.evidence
-    if set(evidence) != _EVIDENCE_KEYS or evidence["schemaVersion"] != 1:
+    if set(evidence) != _EVIDENCE_KEYS or evidence["schemaVersion"] != 2:
         raise ValueError("agent model candidate evidence differs from the contract")
     supplied_hash = evidence["evidenceSha256"]
     unhashed = dict(evidence)
@@ -169,12 +178,27 @@ def _candidate_summary(
     )
     warm_p95 = _p95(pressure["warmLatencyMilliseconds"])
     c8_p95 = _p95(pressure["concurrencyLatencyMilliseconds"]["8"])
-    fixture_p95 = _p95(score.latency_milliseconds)
+    latency_by_case = {
+        str(result["caseId"]): int(result["latencyMilliseconds"])
+        for result in results
+        if isinstance(result, dict)
+    }
+    proposal_fixture_p95 = _p95(
+        tuple(latency_by_case[case_id] for case_id in proposal_fixture_case_ids)
+    )
+    common_fixture_p95 = _p95(
+        tuple(
+            latency
+            for case_id, latency in latency_by_case.items()
+            if case_id not in proposal_fixture_case_ids
+        )
+    )
     route_evidence_passed = _route_evidence_passed(
         route_policy,
         workload_class=str(expected["workloadClass"]),
         results=results,
-        fixture_p95=fixture_p95,
+        common_fixture_p95=common_fixture_p95,
+        proposal_fixture_p95=proposal_fixture_p95,
         warm_p95=warm_p95,
         c8_p95=c8_p95,
         route_specific_evidence_passed=score.route_specific_evidence_passed,
@@ -198,7 +222,8 @@ def _candidate_summary(
         "isolationLeakCount": score.isolation_leak_count,
         "invalidStructuredOutputCount": score.invalid_structured_output_count,
         "concurrencyC8P95LatencyMilliseconds": c8_p95,
-        "fixtureP95LatencyMilliseconds": fixture_p95,
+        "commonFixtureP95LatencyMilliseconds": common_fixture_p95,
+        "proposalFixtureP95LatencyMilliseconds": proposal_fixture_p95,
         "warmP95LatencyMilliseconds": warm_p95,
         "incrementalCgroupMemoryBytes": max(
             0,
@@ -212,7 +237,8 @@ def _route_evidence_passed(
     *,
     workload_class: str,
     results: list[object],
-    fixture_p95: int,
+    common_fixture_p95: int,
+    proposal_fixture_p95: int,
     warm_p95: int,
     c8_p95: int,
     route_specific_evidence_passed: bool,
@@ -221,9 +247,11 @@ def _route_evidence_passed(
         raise ValueError("agent route evidence policy is invalid")
     if workload_class == "rapid-automation":
         return (
-            fixture_p95 <= policy["maximumFixtureP95LatencyMilliseconds"]
-            and
-            warm_p95 <= policy["maximumWarmP95LatencyMilliseconds"]
+            common_fixture_p95
+            <= policy["maximumCommonFixtureP95LatencyMilliseconds"]
+            and proposal_fixture_p95
+            <= policy["maximumProposalFixtureP95LatencyMilliseconds"]
+            and warm_p95 <= policy["maximumWarmP95LatencyMilliseconds"]
             and c8_p95 <= policy["maximumC8P95LatencyMilliseconds"]
         )
     if workload_class == "complex-orchestration":
@@ -297,19 +325,23 @@ def _failed_candidate_summary(
     ):
         raise ValueError("agent candidate failure identity is invalid")
     runtime = failure["runtime"]
-    if not isinstance(runtime, dict) or (
+    expected_runtime = expected.get("_runtime")
+    if not isinstance(runtime, dict) or not isinstance(expected_runtime, dict):
+        raise ValueError("failed agent runtime containment differs")
+    if (
         runtime.get("modelArtifactManifestSha256") != expected["artifactManifestSha256"]
         or runtime.get("launchArguments")
         != build_agent_vllm_launch_arguments(expected)
         or canonical_evidence_sha256(runtime.get("launchArguments"))
         != runtime.get("launchArgumentsSha256")
-        or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(runtime.get("imageId")))
+        or runtime.get("imageId") != expected_runtime.get("observedImageId")
         or runtime.get("teardown")
         != {
             "containerAbsent": True,
             "listenerAbsent": True,
             "ownedWorkersReaped": True,
             "ownedCgroupEmpty": True,
+            "sameLabelOwnersAbsent": True,
         }
     ):
         raise ValueError("failed agent runtime containment differs")
@@ -362,8 +394,18 @@ def _candidate_models(
         containment_root=repository_root,
     )
     candidates = lock["candidates"]
-    assert isinstance(candidates, list)
-    return {str(value["candidateId"]): value for value in candidates}
+    runtimes = lock["runtimes"]
+    if not isinstance(candidates, list) or not isinstance(runtimes, dict):
+        raise ValueError("agent candidate runtime lock is invalid")
+    models: dict[str, dict[str, object]] = {}
+    for value in candidates:
+        if not isinstance(value, dict):
+            raise ValueError("agent candidate runtime lock is invalid")
+        runtime = runtimes.get(value.get("runtimeId"))
+        if not isinstance(runtime, dict):
+            raise ValueError("agent candidate runtime lock is invalid")
+        models[str(value["candidateId"])] = {**value, "_runtime": runtime}
+    return models
 
 
 def _validate_runtime_receipt(
@@ -386,33 +428,29 @@ def _validate_runtime_receipt(
         "modelArtifactManifestSha256",
         "launchArguments",
         "launchArgumentsSha256",
+        "toolCallStructuralGuidanceEnabled",
         "childEvidenceSha256",
         "teardown",
     }
     if set(value) != required or value["schemaVersion"] != 1:
         raise ValueError("agent runtime receipt differs from the contract")
+    expected_runtime = expected.get("_runtime")
+    if not isinstance(expected_runtime, dict):
+        raise ValueError("agent runtime receipt identity is invalid")
     if (
         value["checkedHead"] != candidate.checked_head
         or value["candidateId"] != expected["candidateId"]
         or value["model"] != expected["model"]
         or value["revision"] != expected["revision"]
         or value["quantization"] != expected["quantization"]
-        or value["runtime"]
-        != {
-            "engine": "vllm",
-            "image": "nvcr.io/nvidia/vllm:26.06-py3",
-            "digest": "sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e",
-            "platform": "linux/arm64",
-            "python": "3.12",
-            "vllm": "0.22.1+7b9cb5b7.dev",
-        }
+        or value["runtime"] != expected_runtime
         or value["modelArtifactManifestSha256"] != expected["artifactManifestSha256"]
-        or not isinstance(value["imageId"], str)
-        or not re.fullmatch(r"sha256:[0-9a-f]{64}", value["imageId"])
+        or value["imageId"] != expected_runtime.get("observedImageId")
         or value["launchArguments"] != build_agent_vllm_launch_arguments(expected)
         or canonical_evidence_sha256(value["launchArguments"])
         != value["launchArgumentsSha256"]
         or not _SHA256.fullmatch(str(value["launchArgumentsSha256"]))
+        or value["toolCallStructuralGuidanceEnabled"] is not True
         or not isinstance(value["childEvidenceSha256"], dict)
         or set(value["childEvidenceSha256"])
         != {"fixtures", "pressure", "cancellation", "resources", "lifecycle"}
@@ -426,6 +464,7 @@ def _validate_runtime_receipt(
             "listenerAbsent": True,
             "ownedWorkersReaped": True,
             "ownedCgroupEmpty": True,
+            "sameLabelOwnersAbsent": True,
         }
     ):
         raise ValueError("agent runtime receipt identity is invalid")
@@ -458,7 +497,7 @@ def _verify_runtime_children(
     lifecycle = children["lifecycle"]
     if (
         set(fixtures) != {"schemaVersion", "checkedHead", "candidateId", "results"}
-        or fixtures["schemaVersion"] != 1
+        or fixtures["schemaVersion"] != 2
         or fixtures["results"] != evidence_results
         or set(pressure_child)
         != {
@@ -625,17 +664,17 @@ def main(argv: list[str] | None = None) -> int:
         for run in runs:
             directory = staging / run.candidate_id
             if isinstance(run, FailedAgentCandidateRun):
-                write_new_agent_model_evidence(directory / "failure.json", run.failure)
+                write_new_private_json_evidence(directory / "failure.json", run.failure)
                 continue
             for name, child in run.children.items():
-                write_new_agent_model_evidence(
+                write_new_private_json_evidence(
                     directory / "children" / f"{name}.json", child
                 )
-            write_new_agent_model_evidence(
+            write_new_private_json_evidence(
                 directory / "runtime-receipt.json", run.runtime_receipt
             )
-            write_new_agent_model_evidence(directory / "results.json", run.evidence)
-        write_new_agent_model_evidence(staging / "qualification.json", decision)
+            write_new_private_json_evidence(directory / "results.json", run.evidence)
+        write_new_private_json_evidence(staging / "qualification.json", decision)
         _fsync_evidence_tree(staging)
         os.replace(staging, evidence_destination)
         _fsync_directory(evidence_root)

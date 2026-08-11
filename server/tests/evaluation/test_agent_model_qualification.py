@@ -13,6 +13,8 @@ from yap_server.evaluation.agent_model_candidate_runner import (
     agent_evidence_sha256,
 )
 from yap_server.evaluation.agent_model_qualification import (
+    _validate_runtime_receipt,
+    _verify_runtime_children,
     evaluate_agent_model_qualification,
 )
 from yap_server.evaluation.agent_vllm_runtime import (
@@ -28,12 +30,20 @@ from yap_server.evaluation.provider_runtime_observations import (
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+PROPOSAL_CASE_IDS = {
+    "cited-summary-proposal",
+    "terminology-preservation-en",
+    "terminology-preservation-es",
+}
 INPUTS = tuple(
-    REPOSITORY_ROOT / "server" / name
-    for name in (
-        "agent-model-acceptance.json",
-        "agent-reasoning-candidates.lock.json",
-        "agent-workload-fixtures.json",
+    REPOSITORY_ROOT / relative
+    for relative in (
+        "server/agent-model-acceptance.json",
+        "server/agent-reasoning-candidates.lock.json",
+        "server/agent-workload-fixtures.json",
+        "server/runtime/agent-vllm/Dockerfile",
+        "server/runtime/agent-vllm/build-qwen-vllm-runtime.sh",
+        "server/runtime/agent-vllm/THIRD_PARTY_NOTICES.md",
     )
 )
 
@@ -77,6 +87,7 @@ class AgentModelQualificationTests(unittest.TestCase):
         self.assertEqual(
             decision["outcome"], "required-workload-routes-qualified"
         )
+        self.assertEqual(decision["schemaVersion"], 2)
         self.assertEqual(
             decision["admittedModelCandidates"],
             ["gemma-4-31b-it-nvfp4", "qwen3.6-35b-a3b-nvfp4"],
@@ -131,7 +142,7 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate,
                 "qwen3.6-35b-a3b-nvfp4",
                 20,
-                fixture_latency=4_000,
+                fixture_latency_overrides={"lexical-cited-answer": 4_000},
             ),
             _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10),
         )
@@ -148,8 +159,55 @@ class AgentModelQualificationTests(unittest.TestCase):
             if summary["candidateId"] == "qwen3.6-35b-a3b-nvfp4"
         )
         self.assertEqual(qwen["warmP95LatencyMilliseconds"], 20)
-        self.assertEqual(qwen["fixtureP95LatencyMilliseconds"], 4_000)
+        self.assertEqual(qwen["commonFixtureP95LatencyMilliseconds"], 4_000)
+        self.assertEqual(qwen["proposalFixtureP95LatencyMilliseconds"], 10)
         self.assertFalse(qwen["routeEvidencePassed"])
+
+    def test_applies_a_distinct_bounded_proposal_workflow_latency(self) -> None:
+        candidate = _checked_candidate()
+        passing_runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                fixture_latency_overrides={
+                    case_id: 10_000 for case_id in PROPOSAL_CASE_IDS
+                },
+            ),
+            _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10),
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            passing = evaluate_agent_model_qualification(
+                candidate=candidate, runs=passing_runs
+            )
+
+        self.assertEqual(passing["outcome"], "required-workload-routes-qualified")
+        qwen = next(
+            summary
+            for summary in passing["candidateSummaries"]
+            if summary["candidateId"] == "qwen3.6-35b-a3b-nvfp4"
+        )
+        self.assertEqual(qwen["commonFixtureP95LatencyMilliseconds"], 10)
+        self.assertEqual(qwen["proposalFixtureP95LatencyMilliseconds"], 10_000)
+        self.assertTrue(qwen["routeEvidencePassed"])
+
+        failing_runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                fixture_latency_overrides={
+                    case_id: 10_001 for case_id in PROPOSAL_CASE_IDS
+                },
+            ),
+            passing_runs[1],
+        )
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            failing = evaluate_agent_model_qualification(
+                candidate=candidate, runs=failing_runs
+            )
+        self.assertEqual(failing["outcome"], "deterministic-no-model")
 
     def test_rejects_incomplete_complex_orchestration_sequence(self) -> None:
         candidate = _checked_candidate()
@@ -197,6 +255,64 @@ class AgentModelQualificationTests(unittest.TestCase):
         )
         self.assertFalse(summary["routeEvidencePassed"])
 
+        extra_controls = (
+            (0, "expected_generation_sha256", "e" * 64),
+            (0, "maximum_results", 1),
+            (1, "expected_generation_sha256", "e" * 64),
+            (1, "maximum_results", 1),
+            (2, "expected_generation_sha256", "e" * 64),
+        )
+        for step_index, field, value in extra_controls:
+            with self.subTest(step=step_index, extra=field):
+                gemma = _candidate_run(
+                    candidate,
+                    "gemma-4-31b-it-nvfp4",
+                    10,
+                    complex_extra_control=(step_index, field, value),
+                )
+                with patch.object(CheckedCandidate, "verify_unchanged"):
+                    decision = evaluate_agent_model_qualification(
+                        candidate=candidate, runs=(qwen, gemma)
+                    )
+                summary = next(
+                    item
+                    for item in decision["candidateSummaries"]
+                    if item["candidateId"] == "gemma-4-31b-it-nvfp4"
+                )
+                self.assertEqual(decision["outcome"], "deterministic-no-model")
+                self.assertFalse(summary["routeEvidencePassed"])
+
+    def test_rejects_correct_answers_backing_unrelated_proposals(self) -> None:
+        candidate = _checked_candidate()
+        runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                wrong_proposal_case="terminology-preservation-en",
+            ),
+            _candidate_run(
+                candidate,
+                "gemma-4-31b-it-nvfp4",
+                10,
+                wrong_proposal_case="complex-governed-orchestration",
+            ),
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            decision = evaluate_agent_model_qualification(
+                candidate=candidate, runs=runs
+            )
+
+        self.assertEqual(decision["outcome"], "deterministic-no-model")
+        self.assertEqual(decision["admittedModelCandidates"], [])
+        self.assertTrue(
+            all(
+                summary["terminologyPreservation"] < 1.0
+                for summary in decision["candidateSummaries"]
+            )
+        )
+
     def test_rejects_incomplete_or_tampered_owned_run_set(self) -> None:
         candidate = _checked_candidate()
         run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
@@ -221,6 +337,38 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate=candidate, runs=(tampered, other)
             )
 
+    def test_rejects_runtime_with_disabled_structural_guidance_override(self) -> None:
+        candidate = _checked_candidate()
+        run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
+        lock = json.loads(
+            (
+                REPOSITORY_ROOT
+                / "server"
+                / "agent-reasoning-candidates.lock.json"
+            ).read_text(encoding="utf-8")
+        )
+        candidate_lock = next(
+            item
+            for item in lock["candidates"]
+            if item["candidateId"] == run.candidate_id
+        )
+        expected = {
+            **candidate_lock,
+            "_runtime": lock["runtimes"][candidate_lock["runtimeId"]],
+        }
+        receipt = {
+            **run.runtime_receipt,
+            "toolCallStructuralGuidanceEnabled": False,
+        }
+
+        with self.assertRaisesRegex(ValueError, "runtime receipt"):
+            _validate_runtime_receipt(
+                candidate,
+                expected=expected,
+                receipt=receipt,
+                children=run.children,
+            )
+
     def test_contained_failure_prevents_partial_route_qualification(self) -> None:
         candidate = _checked_candidate()
         failed = _failed_run(candidate, "qwen3.6-35b-a3b-nvfp4")
@@ -236,6 +384,40 @@ class AgentModelQualificationTests(unittest.TestCase):
             decision["candidateSummaries"][0]["disposition"],
             "contained-candidate-rejection",
         )
+
+    def test_rejects_obsolete_success_and_fixture_evidence_schemas(self) -> None:
+        candidate = _checked_candidate()
+        run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
+        other = _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10)
+        obsolete_evidence = dict(run.evidence)
+        obsolete_evidence.pop("evidenceSha256")
+        obsolete_evidence["schemaVersion"] = 1
+        obsolete_evidence["evidenceSha256"] = canonical_evidence_sha256(
+            obsolete_evidence
+        )
+        obsolete = AgentCandidateRun(
+            run.candidate_id,
+            obsolete_evidence,
+            run.runtime_receipt,
+            run.children,
+        )
+        with (
+            patch.object(CheckedCandidate, "verify_unchanged"),
+            self.assertRaisesRegex(ValueError, "candidate evidence"),
+        ):
+            evaluate_agent_model_qualification(candidate=candidate, runs=(obsolete, other))
+
+        children = {
+            **run.children,
+            "fixtures": {**run.children["fixtures"], "schemaVersion": 1},
+        }
+        with self.assertRaisesRegex(ValueError, "child evidence"):
+            _verify_runtime_children(
+                children,
+                checked_head=candidate.checked_head,
+                evidence_results=run.evidence["results"],
+                pressure=run.evidence["runtimePressure"],
+            )
 
 
 def _checked_candidate() -> CheckedCandidate:
@@ -261,7 +443,10 @@ def _candidate_run(
     passing: bool = True,
     incomplete_complex_sequence: bool = False,
     wrong_complex_traversal: bool = False,
+    complex_extra_control: tuple[int, str, object] | None = None,
+    wrong_proposal_case: str | None = None,
     fixture_latency: int = 10,
+    fixture_latency_overrides: dict[str, int] | None = None,
 ) -> AgentCandidateRun:
     lock = json.loads(
         (REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json").read_text(
@@ -271,6 +456,7 @@ def _candidate_run(
     model = next(
         item for item in lock["candidates"] if item["candidateId"] == candidate_id
     )
+    runtime = lock["runtimes"][model["runtimeId"]]
     results = list(_perfect_results(str(model["workloadClass"])))
     if not passing:
         results[0]["toolName"] = "wrong_tool"
@@ -290,23 +476,49 @@ def _candidate_run(
         )
         traversal = complex_result["toolCalls"][1]["arguments"]  # type: ignore[index]
         traversal["start_concept_id"] = "unrelated/concept"
+    if complex_extra_control is not None:
+        complex_result = next(
+            result
+            for result in results
+            if result["caseId"] == "complex-governed-orchestration"
+        )
+        step_index, field, value = complex_extra_control
+        arguments = complex_result["toolCalls"][step_index]["arguments"]  # type: ignore[index]
+        arguments[field] = value
+    if wrong_proposal_case is not None:
+        proposal_result = next(
+            result for result in results if result["caseId"] == wrong_proposal_case
+        )
+        proposal_result["arguments"]["proposed_content"] = (  # type: ignore[index]
+            "Unrelated cafeteria menu."
+        )
     for result in results:
-        result["latencyMilliseconds"] = fixture_latency
+        result["latencyMilliseconds"] = (fixture_latency_overrides or {}).get(
+            str(result["caseId"]), fixture_latency
+        )
     launch_arguments = _launch_arguments(model)
     launch_sha256 = canonical_evidence_sha256(launch_arguments)
-    children = _children(candidate, model, results, latency, launch_sha256)
+    children = _children(
+        candidate,
+        model,
+        results,
+        latency,
+        launch_sha256,
+        runtime["observedImageId"],
+    )
     receipt = {
         "schemaVersion": 1,
         "checkedHead": candidate.checked_head,
         "candidateId": candidate_id,
         "model": model["model"],
         "revision": model["revision"],
-        "runtime": lock["runtime"],
-        "imageId": "sha256:" + "9" * 64,
+        "runtime": runtime,
+        "imageId": runtime["observedImageId"],
         "quantization": model["quantization"],
         "modelArtifactManifestSha256": model["artifactManifestSha256"],
         "launchArguments": launch_arguments,
         "launchArgumentsSha256": launch_sha256,
+        "toolCallStructuralGuidanceEnabled": True,
         "childEvidenceSha256": {
             name: agent_evidence_sha256(value) for name, value in children.items()
         },
@@ -315,11 +527,12 @@ def _candidate_run(
             "listenerAbsent": True,
             "ownedWorkersReaped": True,
             "ownedCgroupEmpty": True,
+            "sameLabelOwnersAbsent": True,
         },
     }
     evidence = bind_checked_candidate_evidence(
         {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "candidateId": candidate_id,
             "model": model["model"],
             "revision": model["revision"],
@@ -356,6 +569,7 @@ def _failed_run(
     model = next(
         item for item in lock["candidates"] if item["candidateId"] == candidate_id
     )
+    runtime = lock["runtimes"][model["runtimeId"]]
     launch_arguments = _launch_arguments(model)
     failure = bind_checked_candidate_evidence(
         {
@@ -369,7 +583,7 @@ def _failed_run(
             "errorType": "ValueError",
             "diagnostic": "synthetic pressure rejection",
             "runtime": {
-                "imageId": "sha256:" + "9" * 64,
+                "imageId": runtime["observedImageId"],
                 "modelArtifactManifestSha256": model["artifactManifestSha256"],
                 "launchArguments": launch_arguments,
                 "launchArgumentsSha256": canonical_evidence_sha256(launch_arguments),
@@ -378,6 +592,7 @@ def _failed_run(
                     "listenerAbsent": True,
                     "ownedWorkersReaped": True,
                     "ownedCgroupEmpty": True,
+                    "sameLabelOwnersAbsent": True,
                 },
             },
         },
@@ -386,10 +601,10 @@ def _failed_run(
     return FailedAgentCandidateRun(candidate_id, failure)
 
 
-def _children(candidate, model, results, latency, launch_sha256):
+def _children(candidate, model, results, latency, launch_sha256, image_id):
     return {
         "fixtures": {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "checkedHead": candidate.checked_head,
             "candidateId": model["candidateId"],
             "results": results,
@@ -431,7 +646,7 @@ def _children(candidate, model, results, latency, launch_sha256):
             "schemaVersion": 1,
             "checkedHead": candidate.checked_head,
             "containerId": "8" * 64,
-            "imageId": "sha256:" + "9" * 64,
+            "imageId": image_id,
             "modelArtifactManifestSha256": model["artifactManifestSha256"],
             "launchArgumentsSha256": launch_sha256,
             "endpoint": "http://127.0.0.1:30000",
@@ -452,8 +667,8 @@ def _perfect_results(workload_class: str) -> tuple[dict[str, object], ...]:
         arguments = dict(case.get("expectedArguments", {}))
         arguments["purpose"] = "knowledge.read"
         if case["expectedTool"] == "search_knowledge":
-            arguments["search_text"] = case["user"]
-        if "expectedProposalType" in case:
+            arguments.setdefault("search_text", case["user"])
+        if "expectedProposalType" in case and "expectedArguments" not in case:
             arguments.update(
                 proposal_type=case["expectedProposalType"],
                 proposed_content=" ".join(case.get("requiredTerms", [])),
@@ -473,9 +688,15 @@ def _perfect_results(workload_class: str) -> tuple[dict[str, object], ...]:
                 "caseId": case["caseId"],
                 "toolName": case["expectedTool"],
                 "arguments": arguments,
-                "answer": " ".join(case.get("requiredTerms", [])),
+                "answer": case.get(
+                    "expectedAnswer", " ".join(case.get("requiredTerms", []))
+                ),
                 "citationConceptIds": case.get("requiredCitationConceptIds", []),
                 "latencyMilliseconds": 10,
+                "modelRequestCount": len(
+                    case.get("expectedToolSequence", [case["expectedTool"]])
+                )
+                + 1,
                 "toolCalls": _perfect_tool_calls(case, arguments),
             }
         )

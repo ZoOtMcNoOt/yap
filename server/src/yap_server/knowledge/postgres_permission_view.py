@@ -5,6 +5,7 @@ import hashlib
 import json
 
 from psycopg import Connection
+from psycopg.pq import TransactionStatus
 
 from yap_server.auth.principal import PrincipalKey
 
@@ -21,7 +22,7 @@ class AuthorizedKnowledgeQuery:
     visible_concept_ids: frozenset[str]
 
 
-def authorize_knowledge_query(
+def _authorize_knowledge_query(
     connection: Connection[object],
     *,
     principal: PrincipalKey,
@@ -32,10 +33,16 @@ def authorize_knowledge_query(
 ) -> AuthorizedKnowledgeQuery:
     """Bind one query to the active compiled allowlist before retrieval."""
 
+    if connection.info.transaction_status is TransactionStatus.IDLE:
+        raise RuntimeError("knowledge authorization requires an owned transaction")
     if required_capability not in agent_capabilities:
         raise PermissionError("agent capability does not authorize knowledge query")
     if not purpose or purpose.strip() != purpose or len(purpose) > 128:
         raise ValueError("knowledge purpose is invalid")
+    connection.execute(
+        "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 0))",
+        (principal.tenant_id,),
+    )
     active = connection.execute(
         """SELECT generation_sha256 FROM yap_knowledge_active_builds
            WHERE tenant_id = %s""",
@@ -117,4 +124,4 @@ def authorize_knowledge_query(
     )
 
 
-__all__ = ["AuthorizedKnowledgeQuery", "authorize_knowledge_query"]
+__all__ = ["AuthorizedKnowledgeQuery"]

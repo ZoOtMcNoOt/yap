@@ -560,7 +560,7 @@ jobs:
       - name: Fetch frozen agent-route evidence baseline
         working-directory: ${{ github.workspace }}
         run: |
-          $Reference = '36350d449735a4daea6546e16759f28f6f15631a'
+          $Reference = 'f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3'
           git.exe fetch --no-tags --depth=1 origin $Reference
           if ($LASTEXITCODE -ne 0) {
             throw 'The frozen agent-route evidence baseline could not be fetched.'

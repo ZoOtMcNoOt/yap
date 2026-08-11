@@ -1,7 +1,14 @@
 # Governed knowledge and agents
 
-**Status:** Active on `feat/governed-knowledge-retrieval` from reviewed Phase 8
-closure `10618e9d292e6810d6fee7defd7adc4902ecb2ed`.
+**Status:** Completed, reviewed, gated, and merged. Exact hosted-green head
+`fa26caaf7e3ea4e20f27b390355dff80bee2464f` merged through
+[PR #152](https://github.com/mcnatg1/yap/pull/152) as
+`ae81ff067c73a64528eecc14403765562726f2fe`.
+
+**Branch:** `feat/governed-knowledge-retrieval`
+
+**Base:** reviewed Phase 8 closure
+`10618e9d292e6810d6fee7defd7adc4902ecb2ed`.
 
 ## Authority
 
@@ -151,7 +158,7 @@ never compile permissions, grant access, or promote their own output.
 - [x] Run the complete Phase 9 matrix exactly once from `server/` with:
 
   ```text
-  uv run --locked python -m yap_server.evaluation.governed_knowledge_gate \
+  uv run --locked --all-extras python -m yap_server.evaluation.governed_knowledge_gate \
     --repository-root <absolute-clean-checkout> \
     --checked-head <full-lowercase-head> \
     --agent-route-evidence-root <absolute-private-agent-model-tree> \
@@ -177,9 +184,14 @@ never compile permissions, grant access, or promote their own output.
 - [x] Reconcile ADR scores and architecture/status claims from the complete
   local gate evidence. ADRs 0017, 0022, 0028, and 0029 remain
   evidence-conservative at 150.
-- [ ] Open one focused PR and merge only a reviewed hosted-green exact head.
-- [ ] Complete the separate post-Phase-9 architecture checkpoint after merge
-  and before Phase 10.
+- [x] Open one focused PR and merge only a reviewed hosted-green exact head.
+  Exact head `fa26caaf7e3ea4e20f27b390355dff80bee2464f` passed frontend,
+  server, Rust, required hardware-independent native WDIO, mock OIDC, and all
+  CodeQL lanes before PR #152 merged as `ae81ff067c73a64528eecc14403765562726f2fe`.
+- [x] Hand the separate post-Phase-9 checkpoint to the active
+  [governed-knowledge ownership and maintainability review](../active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
+  before Phase 10. That checkpoint is a separate reviewed change and does not
+  keep this delivery phase open.
 
 ## Explicit exclusions and handoffs
 

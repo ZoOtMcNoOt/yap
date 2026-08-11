@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import AbstractContextManager
 from dataclasses import asdict
 import threading
-from typing import Callable
+from typing import Callable, TypeVar
 
 import anyio
 from mcp.server import MCPServer
@@ -13,16 +13,27 @@ from yap_server.auth.principal import PrincipalKey
 
 from .governed_knowledge_tools import GovernedKnowledgeTools
 from .governed_knowledge_proposals import GovernedKnowledgeProposals
-from .knowledge_proposals import ProposalCitation
 from .knowledge_tool_contract import (
     BrowseKnowledgeRequest,
+    ConceptId,
+    GenerationSha256,
     KnowledgeToolRequest,
+    KnowledgeToolCancellationFailed,
+    KnowledgePurpose,
+    ProposalContent,
+    ProposalCitations,
+    ProposalType,
+    SearchResultLimit,
+    SearchText,
     SearchKnowledgeRequest,
+    TraversalDepth,
+    TraversalResultLimit,
     TraverseKnowledgeRequest,
 )
 
 
 ConnectionFactory = Callable[[], AbstractContextManager[Connection[object]]]
+ResultT = TypeVar("ResultT")
 
 
 def create_governed_knowledge_mcp_server(
@@ -44,9 +55,7 @@ def create_governed_knowledge_mcp_server(
     )
 
     async def invoke(request: KnowledgeToolRequest) -> dict[str, object]:
-        cancellation = threading.Event()
-
-        def execute() -> dict[str, object]:
+        def execute(cancellation: threading.Event) -> dict[str, object]:
             with connection_factory() as connection:
                 response = tools.execute(
                     connection,
@@ -57,23 +66,17 @@ def create_governed_knowledge_mcp_server(
                 )
                 return asdict(response)
 
-        try:
-            return await anyio.to_thread.run_sync(execute, abandon_on_cancel=True)
-        except BaseException:
-            cancellation.set()
-            raise
+        return await _run_acknowledged_database_call(execute)
 
     async def propose(
         *,
-        purpose: str,
-        proposal_type: str,
-        proposed_content: str,
-        source_citations: list[ProposalCitation],
-        expected_generation_sha256: str | None,
+        purpose: KnowledgePurpose,
+        proposal_type: ProposalType,
+        proposed_content: ProposalContent,
+        source_citations: ProposalCitations,
+        expected_generation_sha256: GenerationSha256 | None,
     ) -> dict[str, object]:
-        cancellation = threading.Event()
-
-        def execute() -> dict[str, object]:
+        def execute(cancellation: threading.Event) -> dict[str, object]:
             with connection_factory() as connection:
                 response = proposals.propose(
                     connection,
@@ -86,20 +89,20 @@ def create_governed_knowledge_mcp_server(
                     expected_generation_sha256=expected_generation_sha256,
                     cancellation=cancellation,
                 )
-                return asdict(response)
+                materialized = asdict(response)
+                materialized["source_citations"] = [
+                    item.model_dump(mode="json") for item in response.source_citations
+                ]
+                return materialized
 
-        try:
-            return await anyio.to_thread.run_sync(execute, abandon_on_cancel=True)
-        except BaseException:
-            cancellation.set()
-            raise
+        return await _run_acknowledged_database_call(execute)
 
     @server.tool(name="search_knowledge", structured_output=True)
     async def search_knowledge(
-        purpose: str,
-        search_text: str,
-        maximum_results: int = 10,
-        expected_generation_sha256: str | None = None,
+        purpose: KnowledgePurpose,
+        search_text: SearchText,
+        maximum_results: SearchResultLimit = 10,
+        expected_generation_sha256: GenerationSha256 | None = None,
     ) -> dict[str, object]:
         return await invoke(
             SearchKnowledgeRequest(
@@ -112,8 +115,8 @@ def create_governed_knowledge_mcp_server(
 
     @server.tool(name="browse_knowledge", structured_output=True)
     async def browse_knowledge(
-        purpose: str,
-        expected_generation_sha256: str | None = None,
+        purpose: KnowledgePurpose,
+        expected_generation_sha256: GenerationSha256 | None = None,
     ) -> dict[str, object]:
         return await invoke(
             BrowseKnowledgeRequest(
@@ -124,11 +127,11 @@ def create_governed_knowledge_mcp_server(
 
     @server.tool(name="traverse_knowledge", structured_output=True)
     async def traverse_knowledge(
-        purpose: str,
-        start_concept_id: str,
-        maximum_depth: int = 2,
-        maximum_results: int = 50,
-        expected_generation_sha256: str | None = None,
+        purpose: KnowledgePurpose,
+        start_concept_id: ConceptId,
+        maximum_depth: TraversalDepth = 2,
+        maximum_results: TraversalResultLimit = 50,
+        expected_generation_sha256: GenerationSha256 | None = None,
     ) -> dict[str, object]:
         return await invoke(
             TraverseKnowledgeRequest(
@@ -142,11 +145,11 @@ def create_governed_knowledge_mcp_server(
 
     @server.tool(name="propose_knowledge", structured_output=True)
     async def propose_knowledge(
-        purpose: str,
-        proposal_type: str,
-        proposed_content: str,
-        source_citations: list[ProposalCitation],
-        expected_generation_sha256: str | None = None,
+        purpose: KnowledgePurpose,
+        proposal_type: ProposalType,
+        proposed_content: ProposalContent,
+        source_citations: ProposalCitations,
+        expected_generation_sha256: GenerationSha256 | None = None,
     ) -> dict[str, object]:
         return await propose(
             purpose=purpose,
@@ -157,6 +160,42 @@ def create_governed_knowledge_mcp_server(
         )
 
     return server
+
+
+async def _run_acknowledged_database_call(
+    execute: Callable[[threading.Event], ResultT],
+) -> ResultT:
+    cancellation = threading.Event()
+    finished = threading.Event()
+    outcome: list[ResultT | BaseException] = []
+
+    def run() -> None:
+        try:
+            outcome.append(execute(cancellation))
+        except BaseException as error:
+            outcome.append(error)
+        finally:
+            finished.set()
+
+    try:
+        await anyio.to_thread.run_sync(run, abandon_on_cancel=True)
+    except BaseException as cancellation_error:
+        cancellation.set()
+        with anyio.CancelScope(shield=True):
+            await anyio.to_thread.run_sync(
+                finished.wait,
+                abandon_on_cancel=False,
+            )
+        if len(outcome) == 1 and isinstance(
+            outcome[0], KnowledgeToolCancellationFailed
+        ):
+            raise outcome[0] from cancellation_error
+        raise
+    if len(outcome) != 1:
+        raise RuntimeError("knowledge database worker did not produce one outcome")
+    if isinstance(outcome[0], BaseException):
+        raise outcome[0]
+    return outcome[0]
 
 
 __all__ = ["ConnectionFactory", "create_governed_knowledge_mcp_server"]

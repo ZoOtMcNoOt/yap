@@ -136,13 +136,12 @@ then recorded `unadvertised-baseline` because the required independent private
 holdout was unconfigured. No runtime/image gate was admissible, neither catalog
 changed, and no second server meeting pipeline is planned. PR #150 passed all
 hosted checks at exact head `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`
-and merged the closure as `599a0d0b`. Phase 8 is closed. Phase 9 is an
-implemented candidate whose complete local gate passed; hosted exact-head
-review, PR, and merge remain open.
+and merged the closure as `599a0d0b`. Phase 8 is closed. Phase 9 passed its
+complete gate and merged through hosted-green PR #152 as `ae81ff06`.
 
-## Active phase: governed knowledge and agents (Phase 9)
+## Active checkpoint: governed-knowledge ownership and maintainability
 
-The active branch now contains the pinned Google OKF compiler, immutable
+Merged Phase 9 contains the pinned Google OKF compiler, immutable
 model-independent terminology snapshots, atomic Postgres/pgvector generations,
 permission-filtered cited retrieval, governed proposals/RAG/MCP, and explicit
 no-fallback workload routing. Exact private GB10 head
@@ -154,13 +153,37 @@ Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` passed the canonical
 Python/Ruff/Postgres/pgvector/restart/private-route matrix with outcome
 `governed-knowledge-gate-passed` and public-safe evidence SHA-256
 `4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
-The remaining phase boundary is deliberately small: obtain hosted-green
-exact-head review, merge the focused PR, then run the separate post-Phase-9
-architecture checkpoint. Postgres remains the only current knowledge
-projection; Redis, object storage, and Neo4j require a measured need and a
-later authorized gate. Persistent supervision, simultaneous model residency,
-sustained mixed-user capacity/SLOs, external serving, observability, enterprise
-networking, and deployment remain Phase 10 or IT handoffs.
+Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
+The active [post-Phase-9 checkpoint](../plans/active/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
+reviews executable ownership and maintainability before Phase 10. Reviewed
+executable head `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` resolves the
+accepted findings, freezes two evaluation-only final structural-decoding
+attempts without retrying or replaying tools, binds one synthetic cited proposal
+to a complete product-valid JSON call, assigns Qwen to pinned vLLM 26.07 plus
+XGrammar 0.2.1 while Gemma remains on exact upstream vLLM 26.06, and separates
+common and proposal rapid-route qualification bounds without changing either
+route's maximum. Exact `96897d2f...` is terminal rejected evidence with
+public-safe SHA-256
+`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
+Fresh exact-head qualification at `a76ed9b0...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`;
+both locked routes were eligible and passed their semantic and route-specific
+evidence contracts with exact teardown and zero owned runtime residue. The
+schema-3 public lock committed at `2cf1e92c...` has raw-file SHA-256
+`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
+and passed hash-bound semantic admission. Exact aggregate head `22c3f369...`
+then returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`,
+152 portable tests, Ruff, 17 zero-skip database tests, real restart/recovery,
+and exact teardown with zero residue. Hosted review and merge remain open. The
+split workload bounds are not production SLO/capacity or generic TPS evidence. Postgres
+remains the only current knowledge projection; Redis, object storage, and
+Neo4j require a measured need and a later authorized gate. Persistent
+supervision, simultaneous model residency, sustained mixed-user capacity/SLOs,
+external serving, observability, enterprise networking, and deployment remain
+Phase 10 or IT handoffs.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 

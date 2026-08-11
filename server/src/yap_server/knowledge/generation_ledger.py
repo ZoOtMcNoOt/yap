@@ -7,9 +7,24 @@ import math
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
-from .okf_compiler import CompiledKnowledgeGeneration
-from .okf_profile import identity
-from .permission_policy import permission_record
+from yap_server.auth.principal import PrincipalKey
+
+from .knowledge_source_admission import (
+    install_knowledge_source_admission_schema,
+    require_knowledge_source_admission,
+)
+from .knowledge_proposals import install_knowledge_proposal_schema
+from .okf_compiler import (
+    CompiledConcept,
+    CompiledKnowledgeGeneration,
+    validate_compiled_generation,
+)
+from .okf_profile import freeze, identity
+from .okf_projection import CompiledChunk, CompiledRelationship
+from .permission_policy import (
+    compiled_permission_from_record,
+    permission_record,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,12 +40,14 @@ class KnowledgeGenerationDescriptor:
 def install_knowledge_schema(connection: Connection[object]) -> None:
     """Install the durable knowledge-generation schema used by production and tests."""
 
+    install_knowledge_source_admission_schema(connection)
     with connection.transaction():
         connection.execute("CREATE EXTENSION IF NOT EXISTS vector")
         connection.execute(
             """CREATE TABLE IF NOT EXISTS yap_knowledge_builds (
                 tenant_id text NOT NULL,
                 generation_sha256 text NOT NULL,
+                source_admission_sha256 text NOT NULL,
                 source_revision text NOT NULL,
                 okf_version text NOT NULL,
                 concept_count integer NOT NULL CHECK (concept_count >= 0),
@@ -40,7 +57,9 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                 embedding_model_id text,
                 embedding_model_revision text,
                 created_at timestamptz NOT NULL DEFAULT transaction_timestamp(),
-                PRIMARY KEY (tenant_id, generation_sha256)
+                PRIMARY KEY (tenant_id, generation_sha256),
+                FOREIGN KEY (tenant_id, source_admission_sha256)
+                    REFERENCES yap_knowledge_source_admissions
             )"""
         )
         connection.execute(
@@ -171,38 +190,40 @@ def install_knowledge_schema(connection: Connection[object]) -> None:
                 activated_at timestamptz NOT NULL DEFAULT transaction_timestamp()
             )"""
         )
-        connection.execute(
-            """CREATE TABLE IF NOT EXISTS yap_knowledge_generation_holds (
-                tenant_id text NOT NULL,
-                generation_sha256 text NOT NULL,
-                hold_type text NOT NULL,
-                hold_id text NOT NULL,
-                created_at timestamptz NOT NULL DEFAULT transaction_timestamp(),
-                PRIMARY KEY (tenant_id, generation_sha256, hold_type, hold_id),
-                FOREIGN KEY (tenant_id, generation_sha256)
-                    REFERENCES yap_knowledge_builds
-            )"""
-        )
+        install_knowledge_proposal_schema(connection)
 
 
 def stage_compiled_generation(
-    connection: Connection[object], generation: CompiledKnowledgeGeneration
+    connection: Connection[object],
+    generation: CompiledKnowledgeGeneration,
+    *,
+    source_admission_sha256: str,
 ) -> KnowledgeGenerationDescriptor:
     """Stage one immutable generation without making it queryable."""
 
     with connection.transaction():
+        validate_compiled_generation(generation)
+        require_knowledge_source_admission(
+            connection,
+            tenant_id=generation.tenant_id,
+            admission_sha256=source_admission_sha256,
+            generation_sha256=generation.generation_sha256,
+            source_revision=generation.source_revision,
+        )
         connection.execute(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
             (generation.tenant_id,),
         )
         connection.execute(
             """INSERT INTO yap_knowledge_builds (
-                tenant_id, generation_sha256, source_revision, okf_version,
+                tenant_id, generation_sha256, source_admission_sha256,
+                source_revision, okf_version,
                 concept_count, chunk_count, relationship_count, permission_count
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
             (
                 generation.tenant_id,
                 generation.generation_sha256,
+                source_admission_sha256,
                 generation.source_revision,
                 generation.okf_version,
                 len(generation.concepts),
@@ -474,7 +495,8 @@ def _activate_complete_generation(
             """SELECT tenant_id, generation_sha256, source_revision,
                       okf_version, concept_count, permission_count,
                       chunk_count, relationship_count,
-                      embedding_model_id, embedding_model_revision
+                      embedding_model_id, embedding_model_revision,
+                      source_admission_sha256
                FROM yap_knowledge_builds
                WHERE tenant_id = %s AND generation_sha256 = %s""",
             (tenant_id, generation_sha256),
@@ -516,6 +538,21 @@ def _activate_complete_generation(
         expected = (row[4], row[5], row[6], row[7], row[6])
         if actual != expected:
             raise ValueError("staged knowledge projections are incomplete")
+        persisted = _load_persisted_generation(
+            connection,
+            tenant_id=tenant_id,
+            generation_sha256=generation_sha256,
+            source_revision=str(row[2]),
+            okf_version=str(row[3]),
+        )
+        validate_compiled_generation(persisted)
+        require_knowledge_source_admission(
+            connection,
+            tenant_id=tenant_id,
+            admission_sha256=str(row[10]),
+            generation_sha256=generation_sha256,
+            source_revision=str(row[2]),
+        )
         previous = connection.execute(
             """SELECT generation_sha256 FROM yap_knowledge_active_builds
                WHERE tenant_id = %s""",
@@ -540,6 +577,134 @@ def _activate_complete_generation(
     return KnowledgeGenerationDescriptor(*row[:6])
 
 
+def _load_persisted_generation(
+    connection: Connection[object],
+    *,
+    tenant_id: str,
+    generation_sha256: str,
+    source_revision: str,
+    okf_version: str,
+) -> CompiledKnowledgeGeneration:
+    permissions = []
+    for path_prefix, stored_sha256, policy in connection.execute(
+        """SELECT path_prefix, permission_sha256, policy
+           FROM yap_knowledge_permissions
+           WHERE tenant_id = %s AND generation_sha256 = %s
+           ORDER BY path_prefix""",
+        (tenant_id, generation_sha256),
+    ).fetchall():
+        permission = compiled_permission_from_record(dict(policy), tenant_id=tenant_id)
+        if permission.path_prefix != path_prefix or permission.permission_sha256 != stored_sha256:
+            raise ValueError("stored permission identity differs from its policy")
+        audience = tuple(
+            PrincipalKey(tenant_id, row[0])
+            for row in connection.execute(
+                """SELECT subject_id FROM yap_knowledge_permission_audience
+                   WHERE tenant_id = %s AND generation_sha256 = %s
+                     AND path_prefix = %s ORDER BY subject_id""",
+                (tenant_id, generation_sha256, path_prefix),
+            ).fetchall()
+        )
+        denials = tuple(
+            PrincipalKey(tenant_id, row[0])
+            for row in connection.execute(
+                """SELECT subject_id FROM yap_knowledge_permission_denials
+                   WHERE tenant_id = %s AND generation_sha256 = %s
+                     AND path_prefix = %s ORDER BY subject_id""",
+                (tenant_id, generation_sha256, path_prefix),
+            ).fetchall()
+        )
+        purposes = tuple(
+            row[0]
+            for row in connection.execute(
+                """SELECT purpose FROM yap_knowledge_permission_purposes
+                   WHERE tenant_id = %s AND generation_sha256 = %s
+                     AND path_prefix = %s ORDER BY purpose""",
+                (tenant_id, generation_sha256, path_prefix),
+            ).fetchall()
+        )
+        if (
+            permission.audience != audience
+            or permission.denials != denials
+            or permission.purposes != purposes
+        ):
+            raise ValueError("stored permission projection differs from its policy")
+        permissions.append(permission)
+
+    concepts = tuple(
+        CompiledConcept(
+            concept_id=row[0],
+            source_path=row[1],
+            content_sha256=row[2],
+            permission_path_prefix=row[3],
+            frontmatter=freeze(dict(row[4])),
+            body=row[5],
+            links=tuple(row[6]),
+            broken_links=tuple(row[7]),
+            redirect_history=tuple(row[8]),
+        )
+        for row in connection.execute(
+            """SELECT concept_id, source_path, content_sha256,
+                      permission_path_prefix, frontmatter, body, links,
+                      broken_links, redirect_history
+               FROM yap_knowledge_concepts
+               WHERE tenant_id = %s AND generation_sha256 = %s
+               ORDER BY concept_id""",
+            (tenant_id, generation_sha256),
+        ).fetchall()
+    )
+    chunks = tuple(
+        CompiledChunk(
+            concept_id=row[0],
+            chunk_id=row[1],
+            permission_sha256=row[2],
+            char_start=row[3],
+            char_end=row[4],
+            text=row[5],
+            linked_concept_ids=tuple(row[6]),
+        )
+        for row in connection.execute(
+            """SELECT concept_id, chunk_id, permission_sha256, char_start,
+                      char_end, body, linked_concept_ids
+               FROM yap_knowledge_chunks
+               WHERE tenant_id = %s AND generation_sha256 = %s
+               ORDER BY concept_id, char_start, char_end, chunk_id""",
+            (tenant_id, generation_sha256),
+        ).fetchall()
+    )
+    relationships = tuple(
+        CompiledRelationship(
+            relationship_id=row[0],
+            source_concept_id=row[1],
+            target_concept_id=row[2],
+            relationship_type=row[3],
+            authority=row[4],
+            source_char_start=row[5],
+            source_char_end=row[6],
+            canonical=row[7],
+        )
+        for row in connection.execute(
+            """SELECT relationship_id, source_concept_id, target_concept_id,
+                      relationship_type, authority, source_char_start,
+                      source_char_end, canonical
+               FROM yap_knowledge_relationships
+               WHERE tenant_id = %s AND generation_sha256 = %s
+               ORDER BY source_concept_id, relationship_id""",
+            (tenant_id, generation_sha256),
+        ).fetchall()
+    )
+    return CompiledKnowledgeGeneration(
+        tenant_id=tenant_id,
+        source_revision=source_revision,
+        okf_version=okf_version,
+        concepts=concepts,
+        chunks=chunks,
+        relationships=relationships,
+        permissions=tuple(permissions),
+        generation_sha256=generation_sha256,
+    )
+
+
 def prune_inactive_generations(
     connection: Connection[object], *, tenant_id: str, retain: int
 ) -> tuple[str, ...]:
@@ -559,9 +724,10 @@ def prune_inactive_generations(
                 AND a.generation_sha256 = b.generation_sha256
                WHERE b.tenant_id = %s AND a.generation_sha256 IS NULL
                  AND NOT EXISTS (
-                    SELECT 1 FROM yap_knowledge_generation_holds h
-                    WHERE h.tenant_id = b.tenant_id
-                      AND h.generation_sha256 = b.generation_sha256
+                    SELECT 1 FROM yap_knowledge_proposals p
+                    WHERE p.tenant_id = b.tenant_id
+                      AND p.generation_sha256 = b.generation_sha256
+                      AND p.status = 'proposed'
                  )
                ORDER BY b.created_at DESC, b.generation_sha256 DESC
                OFFSET %s""",

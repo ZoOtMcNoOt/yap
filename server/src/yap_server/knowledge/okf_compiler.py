@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Mapping
 
 from .okf_profile import (
@@ -29,8 +29,10 @@ from .okf_projection import (
 from .permission_policy import (
     CompiledPermission,
     compile_permissions,
+    compiled_permission_sha256,
     effective_permission,
     permission_record,
+    validate_compiled_permission,
 )
 
 
@@ -98,7 +100,6 @@ def compile_okf_bundle(
     relationships: list[CompiledRelationship] = []
     resources: set[str] = set()
     redirect_owners: dict[str, str] = {}
-    canonical_records: list[dict[str, object]] = []
     for path in sorted(concept_paths, key=lambda item: item.as_posix()):
         frontmatter, markdown, source = documents[path]
         validate_concept_profile(frontmatter, tenant, path, resources)
@@ -127,7 +128,6 @@ def compile_okf_bundle(
             "redirectHistory": list(redirects),
             "permissionPathPrefix": permission.path_prefix,
         }
-        canonical_records.append(record)
         chunks.extend(
             compile_chunks(
                 concept_id=record["conceptId"],
@@ -162,25 +162,7 @@ def compile_okf_bundle(
     if current_ids.intersection(redirect_owners):
         raise ValueError("OKF redirect collides with a current concept")
 
-    generation = {
-        "schemaVersion": 1,
-        "okfVersion": "0.1",
-        "tenantId": tenant,
-        "sourceRevision": revision,
-        "concepts": canonical_records,
-        "chunks": [chunk_record(item) for item in chunks],
-        "relationships": [relationship_record(item) for item in relationships],
-        "permissions": [permission_record(item) for item in permissions],
-    }
-    generation_sha256 = hashlib.sha256(
-        json.dumps(
-            generation,
-            ensure_ascii=False,
-            separators=(",", ":"),
-            sort_keys=True,
-        ).encode("utf-8")
-    ).hexdigest()
-    return CompiledKnowledgeGeneration(
+    generation = CompiledKnowledgeGeneration(
         tenant_id=tenant,
         source_revision=revision,
         okf_version="0.1",
@@ -188,8 +170,180 @@ def compile_okf_bundle(
         chunks=tuple(chunks),
         relationships=tuple(relationships),
         permissions=permissions,
-        generation_sha256=generation_sha256,
+        generation_sha256="",
     )
+    generation = replace(
+        generation,
+        generation_sha256=compiled_generation_sha256(generation),
+    )
+    validate_compiled_generation(generation)
+    return generation
+
+
+def compiled_generation_record(
+    value: CompiledKnowledgeGeneration,
+) -> dict[str, object]:
+    """Return the canonical immutable identity record for one generation."""
+
+    return {
+        "schemaVersion": 1,
+        "okfVersion": value.okf_version,
+        "tenantId": value.tenant_id,
+        "sourceRevision": value.source_revision,
+        "concepts": [concept_record(item) for item in value.concepts],
+        "chunks": [chunk_record(item) for item in value.chunks],
+        "relationships": [relationship_record(item) for item in value.relationships],
+        "permissions": [permission_record(item) for item in value.permissions],
+    }
+
+
+def compiled_generation_sha256(value: CompiledKnowledgeGeneration) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            compiled_generation_record(value),
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def validate_compiled_generation(value: CompiledKnowledgeGeneration) -> None:
+    """Recompute every deterministic projection and the aggregate identity."""
+
+    if not isinstance(value, CompiledKnowledgeGeneration):
+        raise TypeError("compiled generation has an invalid type")
+    tenant = identity(value.tenant_id, "tenant_id")
+    identity(value.source_revision, "source_revision")
+    if value.okf_version != "0.1":
+        raise ValueError("compiled generation OKF version is invalid")
+    for field, items in (
+        ("concepts", value.concepts),
+        ("chunks", value.chunks),
+        ("relationships", value.relationships),
+        ("permissions", value.permissions),
+    ):
+        if not isinstance(items, tuple):
+            raise TypeError(f"compiled generation {field} must be immutable")
+
+    if tuple(sorted(value.permissions, key=lambda item: item.path_prefix)) != value.permissions:
+        raise ValueError("compiled generation permissions are not canonical")
+    if len({item.path_prefix for item in value.permissions}) != len(value.permissions):
+        raise ValueError("compiled generation permissions are duplicated")
+    for permission in value.permissions:
+        validate_compiled_permission(permission, tenant_id=tenant)
+        if compiled_permission_sha256(permission) != permission.permission_sha256:
+            raise ValueError("compiled generation permission identity differs")
+
+    concept_ids = tuple(item.concept_id for item in value.concepts)
+    if concept_ids != tuple(sorted(concept_ids)) or len(set(concept_ids)) != len(concept_ids):
+        raise ValueError("compiled generation concepts are not canonical")
+    concept_paths = {_compiled_source_path(item.source_path) for item in value.concepts}
+    expected_chunks: list[CompiledChunk] = []
+    expected_relationships: list[CompiledRelationship] = []
+    redirect_owners: dict[str, str] = {}
+    resources: set[str] = set()
+    for concept in value.concepts:
+        path = _compiled_source_path(concept.source_path)
+        if (
+            path.is_absolute()
+            or path.suffix.casefold() != ".md"
+            or path.with_suffix("").as_posix() != concept.concept_id
+        ):
+            raise ValueError("compiled concept path identity is invalid")
+        frontmatter = _canonical_mapping(concept.frontmatter, "compiled frontmatter")
+        validate_concept_profile(frontmatter, tenant, path, resources)
+        if (
+            not isinstance(concept.content_sha256, str)
+            or len(concept.content_sha256) != 64
+            or any(character not in "0123456789abcdef" for character in concept.content_sha256)
+        ):
+            raise ValueError("compiled concept content identity is invalid")
+        permission = effective_permission(path, value.permissions)
+        links = concept_links(path, concept.body)
+        broken_links = tuple(
+            link for link in links if PurePosixPath(f"{link}.md") not in concept_paths
+        )
+        redirects = concept_redirects(frontmatter, path)
+        for redirect in redirects:
+            owner = redirect_owners.setdefault(redirect, concept.concept_id)
+            if owner != concept.concept_id:
+                raise ValueError("compiled redirect is claimed by multiple concepts")
+        if (
+            concept.links != links
+            or concept.broken_links != broken_links
+            or concept.redirect_history != redirects
+            or concept.permission_path_prefix != permission.path_prefix
+        ):
+            raise ValueError("compiled concept projection differs from its source")
+        expected_chunks.extend(
+            compile_chunks(
+                concept_id=concept.concept_id,
+                source_path=concept.source_path,
+                body=concept.body,
+                permission_sha256=permission.permission_sha256,
+            )
+        )
+        expected_relationships.extend(
+            compile_relationships(
+                concept_id=concept.concept_id,
+                source_path=concept.source_path,
+                body=concept.body,
+                frontmatter=frontmatter,
+            )
+        )
+    if set(concept_ids).intersection(redirect_owners):
+        raise ValueError("compiled redirect collides with a current concept")
+    if tuple(expected_chunks) != value.chunks:
+        raise ValueError("compiled chunk projection differs from its concepts")
+    if tuple(expected_relationships) != value.relationships:
+        raise ValueError("compiled relationship projection differs from its concepts")
+    if compiled_generation_sha256(value) != value.generation_sha256:
+        raise ValueError("compiled generation digest differs from its projections")
+
+
+def _compiled_source_path(value: object) -> PurePosixPath:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise ValueError("compiled concept path identity is invalid")
+    path = PurePosixPath(value)
+    if (
+        path.is_absolute()
+        or path.as_posix() != value
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
+        raise ValueError("compiled concept path identity is invalid")
+    return path
+
+
+def concept_record(value: CompiledConcept) -> dict[str, object]:
+    return {
+        "conceptId": value.concept_id,
+        "sourcePath": value.source_path,
+        "contentSha256": value.content_sha256,
+        "frontmatter": _canonical_mapping(value.frontmatter, "compiled frontmatter"),
+        "body": value.body,
+        "links": list(value.links),
+        "brokenLinks": list(value.broken_links),
+        "redirectHistory": list(value.redirect_history),
+        "permissionPathPrefix": value.permission_path_prefix,
+    }
+
+
+def _canonical_mapping(value: object, field: str) -> dict[str, object]:
+    materialized = _materialize_json(value, field)
+    if not isinstance(materialized, dict):
+        raise ValueError(f"{field} must be an object")
+    return materialized
+
+
+def _materialize_json(value: object, field: str) -> object:
+    if isinstance(value, Mapping):
+        if any(not isinstance(key, str) for key in value):
+            raise ValueError(f"{field} has a non-text key")
+        return {key: _materialize_json(item, field) for key, item in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [_materialize_json(item, field) for item in value]
+    return json_value(value, field)
 
 
 def chunk_record(value: CompiledChunk) -> dict[str, object]:
@@ -224,6 +378,10 @@ __all__ = [
     "CompiledPermission",
     "CompiledRelationship",
     "chunk_record",
+    "compiled_generation_record",
+    "compiled_generation_sha256",
     "compile_okf_bundle",
+    "concept_record",
     "relationship_record",
+    "validate_compiled_generation",
 ]

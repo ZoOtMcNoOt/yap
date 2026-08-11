@@ -42,6 +42,9 @@ _MODEL_INPUT_PATHS = (
     "server/agent-model-acceptance.json",
     "server/agent-reasoning-candidates.lock.json",
     "server/agent-workload-fixtures.json",
+    "server/runtime/agent-vllm/Dockerfile",
+    "server/runtime/agent-vllm/build-qwen-vllm-runtime.sh",
+    "server/runtime/agent-vllm/THIRD_PARTY_NOTICES.md",
 )
 _MODEL_DEPENDENCY_PATHS = (
     "server/pyproject.toml",
@@ -69,6 +72,9 @@ _PROTECTED_ROUTE_PATHS = frozenset(
         *_MODEL_INPUT_PATHS,
         *_MODEL_DEPENDENCY_PATHS,
         "server/src/yap_server/private_artifact.py",
+        "server/src/yap_server/evaluation/agent_route_qualification_evidence.py",
+        "server/src/yap_server/evaluation/governed_knowledge_gate.py",
+        "server/src/yap_server/evaluation/private_json_evidence.py",
         "server/src/yap_server/evaluation/checked_candidate.py",
         "server/src/yap_server/evaluation/provider_runtime_observations.py",
         "server/src/yap_server/evaluation/vllm_runtime_metrics.py",
@@ -79,6 +85,8 @@ _PROTECTED_ROUTE_PATHS = frozenset(
         "server/src/yap_server/knowledge/knowledge_tool_contract.py",
         "server/src/yap_server/knowledge/vllm_reasoning_client.py",
         "server/tests/evaluation/test_vllm_runtime_metrics.py",
+        "server/tests/evaluation/test_agent_route_qualification_evidence.py",
+        "server/tests/evaluation/test_governed_knowledge_gate.py",
         "server/tests/knowledge/test_agent_reasoning_routes.py",
         "server/tests/knowledge/test_governed_answer_protocol.py",
         "server/tests/knowledge/test_governed_knowledge_mcp.py",
@@ -86,13 +94,6 @@ _PROTECTED_ROUTE_PATHS = frozenset(
         "server/tests/knowledge/test_vllm_reasoning_client.py",
     }
 )
-_ALLOWED_PROTECTED_TRANSITIONS = {
-    "server/tests/knowledge/test_vllm_reasoning_client.py": (
-        "36350d449735a4daea6546e16759f28f6f15631a",
-        "94efadb054ade4e73e0957e2f7e71ff4ecae4ba2e3f26282761f90d0290e5a13",
-        "4a727fa889508a28c68bbf8476784e23ad2b1edbb186ad07b242a71355fa6eb8",
-    )
-}
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,7 +139,7 @@ def load_agent_route_qualification_reference(
     dependencies = value["dependencySha256"]
     artifacts = value["artifactSha256"]
     if (
-        value["schemaVersion"] != 2
+        value["schemaVersion"] != 3
         or not isinstance(value["checkedHead"], str)
         or _SHA40.fullmatch(value["checkedHead"]) is None
         or value["outcome"] != "required-workload-routes-qualified"
@@ -257,40 +258,8 @@ def _verify_unchanged_route_inputs(
         runner=runner,
     ).stdout.splitlines()
     for path in changed:
-        if is_agent_route_evidence_path(path) and not _is_allowed_protected_transition(
-            repository_root,
-            path=path,
-            reference=reference,
-            runner=runner,
-        ):
+        if is_agent_route_evidence_path(path):
             raise ValueError("agent route qualification implementation changed")
-
-
-def _is_allowed_protected_transition(
-    repository_root: Path,
-    *,
-    path: str,
-    reference: AgentRouteQualificationReference,
-    runner: GitRunner,
-) -> bool:
-    transition = _ALLOWED_PROTECTED_TRANSITIONS.get(path)
-    if transition is None or reference.checked_head != transition[0]:
-        return False
-    historic = _git(
-        repository_root,
-        ("show", f"{reference.checked_head}:{path}"),
-        runner=runner,
-    ).stdout.encode("utf-8")
-    current = read_bounded_regular_file(
-        repository_root / path,
-        maximum_bytes=1024 * 1024,
-        field="agent route qualification reviewed test transition",
-        containment_root=repository_root,
-    )
-    return (
-        hashlib.sha256(historic).hexdigest() == transition[1]
-        and hashlib.sha256(current).hexdigest() == transition[2]
-    )
 
 
 def _validate_qualification_tree(
@@ -343,6 +312,11 @@ def _validate_qualification_tree(
                 run,
                 expected=expected,
                 route_policy=acceptance.route_evidence[str(expected["workloadClass"])],
+                proposal_fixture_case_ids=tuple(
+                    acceptance.route_evidence["rapid-automation"][
+                        "proposalFixtureCaseIds"
+                    ]
+                ),
             )
         )
     qualification = artifacts["qualification.json"]
@@ -350,7 +324,7 @@ def _validate_qualification_tree(
     unhashed = dict(qualification)
     unhashed.pop("evidenceSha256", None)
     expected = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "qualificationScope": "governed-agent-reasoning",
         "outcome": "required-workload-routes-qualified",
         "admittedModelCandidates": sorted(_REQUIRED_CANDIDATES),

@@ -1,24 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import time
 from typing import Callable
-import re
 
 from yap_server.knowledge.governed_answer_protocol import (
     FINAL_RESPONSE_PROTOCOLS,
     governed_answer_request_fields,
     read_governed_answer,
 )
+from yap_server.knowledge.knowledge_tool_contract import (
+    governed_agent_tool_definitions,
+    validate_governed_agent_tool_arguments,
+)
 from yap_server.private_artifact import read_json_object_with_identity
 
-from .agent_model_acceptance import load_agent_model_acceptance
+from .agent_model_acceptance import (
+    load_agent_model_acceptance,
+    tool_call_matches_frozen_expectation,
+)
 
 
 JsonRequest = Callable[[dict[str, object]], dict[str, object]]
-_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +34,7 @@ class AgentFixtureResult:
     answer: str
     citation_concept_ids: tuple[str, ...]
     latency_milliseconds: int
+    model_request_count: int
     tool_calls: tuple[tuple[str, dict[str, object]], ...]
     invalid_structured_output: bool = False
 
@@ -40,6 +46,7 @@ class AgentFixtureResult:
             "answer": self.answer,
             "citationConceptIds": list(self.citation_concept_ids),
             "latencyMilliseconds": self.latency_milliseconds,
+            "modelRequestCount": self.model_request_count,
             "toolCalls": [
                 {"name": name, "arguments": arguments}
                 for name, arguments in self.tool_calls
@@ -78,10 +85,9 @@ def run_agent_model_fixtures(
     ):
         raise ValueError("agent workload fixture is invalid")
     system_prompt = system_prompts[workload_class]
-    if not 1 <= maximum_output_tokens <= int(
-        acceptance.runtime_tracks["maximumOutputTokens"]
-    ):
-        raise ValueError("agent fixture output bound is invalid")
+    route_policy = acceptance.route_evidence[workload_class]
+    if maximum_output_tokens != int(route_policy["maximumOutputTokens"]):
+        raise ValueError("agent fixture route output bound is invalid")
     if final_response_protocol not in FINAL_RESPONSE_PROTOCOLS:
         raise ValueError("agent fixture final response protocol is invalid")
     selected_cases = [
@@ -90,12 +96,21 @@ def run_agent_model_fixtures(
         if isinstance(case, dict)
         and case.get("requiredForWorkloadClass") in {None, workload_class}
     ]
+    proposal_case_ids = set(route_policy.get("proposalFixtureCaseIds", []))
+    proposal_output_tokens = route_policy.get("maximumProposalOutputTokens")
     return tuple(
         _run_case_safely(
             case,
             model=model,
             system_prompt=system_prompt,
-            maximum_output_tokens=maximum_output_tokens,
+            maximum_output_tokens=(
+                int(proposal_output_tokens)
+                if case["caseId"] in proposal_case_ids
+                else maximum_output_tokens
+            ),
+            maximum_final_response_attempts=int(
+                acceptance.runtime_tracks["maximumFinalResponseAttempts"]
+            ),
             final_response_protocol=final_response_protocol,
             request_json=request_json,
         )
@@ -131,7 +146,7 @@ def warm_agent_model_fixture_runtime(
                     ),
                 },
             ],
-            "tools": _tool_definitions(),
+            "tools": governed_agent_tool_definitions(),
             "tool_choice": "required",
             "parallel_tool_calls": False,
             "temperature": 0,
@@ -167,18 +182,27 @@ def _run_case_safely(
     model: str,
     system_prompt: str,
     maximum_output_tokens: int,
+    maximum_final_response_attempts: int,
     final_response_protocol: str,
     request_json: JsonRequest,
 ) -> AgentFixtureResult:
     started = time.monotonic()
+    model_request_count = 0
+
+    def counted_request(payload: dict[str, object]) -> dict[str, object]:
+        nonlocal model_request_count
+        model_request_count += 1
+        return request_json(payload)
+
     try:
-        return _run_case(
+        result = _run_case(
             case,
             model=model,
             system_prompt=system_prompt,
             maximum_output_tokens=maximum_output_tokens,
+            maximum_final_response_attempts=maximum_final_response_attempts,
             final_response_protocol=final_response_protocol,
-            request_json=request_json,
+            request_json=counted_request,
         )
     except RuntimeError as error:
         if not isinstance(case, dict) or not isinstance(case.get("caseId"), str):
@@ -186,19 +210,25 @@ def _run_case_safely(
         raise RuntimeError(
             f"agent workload case {case['caseId']} failed"
         ) from error
-    except ValueError:
+    except _InvalidModelToolResponse:
         if not isinstance(case, dict) or not isinstance(case.get("caseId"), str):
             raise
-        return AgentFixtureResult(
+        result = AgentFixtureResult(
             case_id=case["caseId"],
             tool_name="",
             arguments={},
             answer="",
             citation_concept_ids=(),
-            latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
+            latency_milliseconds=0,
+            model_request_count=0,
             tool_calls=(),
             invalid_structured_output=True,
         )
+    return replace(
+        result,
+        latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
+        model_request_count=model_request_count,
+    )
 
 
 def _run_case(
@@ -207,12 +237,21 @@ def _run_case(
     model: str,
     system_prompt: str,
     maximum_output_tokens: int,
+    maximum_final_response_attempts: int,
     final_response_protocol: str,
     request_json: JsonRequest,
 ) -> AgentFixtureResult:
     if not isinstance(case, dict):
         raise ValueError("agent workload case is invalid")
-    started = time.monotonic()
+    case_output_tokens = case.get("maximumOutputTokens", maximum_output_tokens)
+    if (
+        isinstance(case_output_tokens, bool)
+        or not isinstance(case_output_tokens, int)
+        or not 1 <= case_output_tokens <= maximum_output_tokens
+    ):
+        raise ValueError("agent workload case output bound is invalid")
+    if maximum_final_response_attempts != 2:
+        raise ValueError("agent final response attempts differ from the contract")
     messages: list[dict[str, object]] = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": case["user"]},
@@ -224,7 +263,7 @@ def _run_case(
         messages.extend(_retrieval_messages(case))
     expected_sequence = tuple(case.get("expectedToolSequence", [case["expectedTool"]]))
     expected_arguments = case.get("expectedArguments", {})
-    tools = _tool_definitions(
+    tools = governed_agent_tool_definitions(
         require_generation_sha256=(
             isinstance(expected_arguments, dict)
             and "expected_generation_sha256" in expected_arguments
@@ -240,12 +279,15 @@ def _run_case(
                 "tool_choice": "required",
                 "parallel_tool_calls": False,
                 "temperature": 0,
-                "max_tokens": maximum_output_tokens,
+                "max_tokens": case_output_tokens,
                 "chat_template_kwargs": {"enable_thinking": False},
             }
         )
-        assistant_message, tool_id, tool_name, arguments = _tool_call(response)
-        validate_agent_tool_arguments(tool_name, arguments)
+        try:
+            assistant_message, tool_id, tool_name, arguments = _tool_call(response)
+            validate_governed_agent_tool_arguments(tool_name, arguments)
+        except ValueError as error:
+            raise _InvalidModelToolResponse from error
         tool_calls.append((tool_name, arguments))
         messages.append(assistant_message)
         messages.append(
@@ -286,23 +328,47 @@ def _run_case(
         "model": model,
         "messages": messages,
         "temperature": 0,
-        "max_tokens": maximum_output_tokens,
+        "max_tokens": case_output_tokens,
         "chat_template_kwargs": {"enable_thinking": False},
     }
     final_payload.update(
         governed_answer_request_fields(final_response_protocol)
     )
-    final = request_json(final_payload)
-    answer, citations = read_governed_answer(final, final_response_protocol)
+    for attempt in range(maximum_final_response_attempts):
+        final = request_json(final_payload)
+        try:
+            answer, citations = read_governed_answer(
+                final, final_response_protocol
+            )
+        except ValueError:
+            if attempt + 1 < maximum_final_response_attempts:
+                continue
+            return AgentFixtureResult(
+                case_id=str(case["caseId"]),
+                tool_name=tool_name,
+                arguments=arguments,
+                answer="",
+                citation_concept_ids=(),
+                latency_milliseconds=0,
+                model_request_count=0,
+                tool_calls=tuple(tool_calls),
+                invalid_structured_output=True,
+            )
+        break
     return AgentFixtureResult(
         case_id=str(case["caseId"]),
         tool_name=tool_name,
         arguments=arguments,
         answer=answer,
         citation_concept_ids=citations,
-        latency_milliseconds=max(0, round((time.monotonic() - started) * 1_000)),
+        latency_milliseconds=0,
+        model_request_count=0,
         tool_calls=tuple(tool_calls),
     )
+
+
+class _InvalidModelToolResponse(ValueError):
+    """A model-produced tool envelope or argument object is structurally invalid."""
 
 
 def _step_visible_context(
@@ -314,15 +380,19 @@ def _step_visible_context(
 ) -> object:
     expected_calls = case.get("expectedToolCalls")
     if expected_calls is None:
+        required = case.get("expectedArguments")
+        if tool_name != case.get("expectedTool"):
+            return []
+        if required is not None and (
+            not isinstance(required, dict) or arguments != required
+        ):
+            return []
         return case["visibleContext"]
     if not isinstance(expected_calls, list) or step_index >= len(expected_calls):
         raise ValueError("agent expected tool calls are invalid")
     expected = expected_calls[step_index]
-    if not isinstance(expected, dict) or expected.get("name") != tool_name:
-        return []
-    required = expected.get("expectedArguments")
-    if not isinstance(required, dict) or not all(
-        arguments.get(key) == value for key, value in required.items()
+    if not tool_call_matches_frozen_expectation(
+        {"name": tool_name, "arguments": arguments}, expected
     ):
         return []
     return case["visibleContext"]
@@ -407,246 +477,7 @@ def _message(response: dict[str, object]) -> dict[str, object]:
     return message
 
 
-def _tool_definitions(
-    *, require_generation_sha256: bool = False
-) -> list[dict[str, object]]:
-    generation_required = (
-        ["expected_generation_sha256"] if require_generation_sha256 else []
-    )
-    common = {
-        "purpose": {
-            "type": "string",
-            "enum": ["knowledge.read"],
-            "description": "Always use the authorized knowledge.read purpose.",
-        },
-        "expected_generation_sha256": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$",
-            "description": (
-                "Copy the exact generation SHA-256 supplied by the user; omit it "
-                "only when the user did not supply one."
-            ),
-        },
-    }
-    return [
-        _tool(
-            "search_knowledge",
-            (
-                "Search permission-filtered text. Use only for a requested text "
-                "search, never for browsing, relationship traversal, or proposals."
-            ),
-            {
-                **common,
-                "search_text": {
-                    "type": "string",
-                    "description": "The user's requested search text.",
-                },
-                "maximum_results": {"type": "integer", "minimum": 1, "maximum": 10},
-            },
-            ["purpose", "search_text", *generation_required],
-        ),
-        _tool(
-            "browse_knowledge",
-            (
-                "List visible knowledge concepts or areas. Do not use for text "
-                "search, relationship traversal, or proposals."
-            ),
-            common,
-            ["purpose", *generation_required],
-        ),
-        _tool(
-            "traverse_knowledge",
-            (
-                "Follow visible typed relationships from one concept. Do not use "
-                "for text search, area browsing, or proposals."
-            ),
-            {
-                **common,
-                "start_concept_id": {
-                    "type": "string",
-                    "description": "Exact concept ID where traversal starts.",
-                },
-                "maximum_depth": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 4,
-                    "description": "Exact requested relationship depth.",
-                },
-                "maximum_results": {"type": "integer", "minimum": 1, "maximum": 50},
-            },
-            ["purpose", "start_concept_id", *generation_required],
-        ),
-        _tool(
-            "propose_knowledge",
-            (
-                "Store a cited noncanonical proposal from supplied evidence. Use "
-                "only when the user asks to create or store a proposal."
-            ),
-            {
-                **common,
-                "proposal_type": {
-                    "type": "string",
-                    "enum": ["summary", "relationship"],
-                },
-                "proposed_content": {"type": "string"},
-                "source_citations": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "concept_id": {"type": "string"},
-                            "source_revision": {"type": "string"},
-                            "content_sha256": {"type": "string"},
-                            "char_start": {"type": "integer"},
-                            "char_end": {"type": "integer"},
-                        },
-                        "required": [
-                            "concept_id",
-                            "source_revision",
-                            "content_sha256",
-                            "char_start",
-                            "char_end",
-                        ],
-                        "additionalProperties": False,
-                    },
-                },
-            },
-            [
-                "purpose",
-                "proposal_type",
-                "proposed_content",
-                "source_citations",
-                *generation_required,
-            ],
-        ),
-    ]
-
-
-def validate_agent_tool_arguments(name: str, arguments: dict[str, object]) -> None:
-    """Apply the exact frozen product-tool bounds to model-authored arguments."""
-
-    if not isinstance(arguments, dict):
-        raise ValueError("agent tool arguments must be an object")
-    common = {"purpose", "expected_generation_sha256"}
-    required: set[str]
-    allowed: set[str]
-    if name == "search_knowledge":
-        required = {"purpose", "search_text"}
-        allowed = common | {"search_text", "maximum_results"}
-        _bounded_text(arguments.get("search_text"), "search text", 4_096)
-        _optional_integer(arguments.get("maximum_results"), 1, 10)
-    elif name == "browse_knowledge":
-        required = {"purpose"}
-        allowed = common
-    elif name == "traverse_knowledge":
-        required = {"purpose", "start_concept_id"}
-        allowed = common | {"start_concept_id", "maximum_depth", "maximum_results"}
-        _bounded_text(arguments.get("start_concept_id"), "start concept ID", 512)
-        _optional_integer(arguments.get("maximum_depth"), 1, 4)
-        _optional_integer(arguments.get("maximum_results"), 1, 50)
-    elif name == "propose_knowledge":
-        required = {
-            "purpose",
-            "proposal_type",
-            "proposed_content",
-            "source_citations",
-        }
-        allowed = common | required
-        if arguments.get("proposal_type") not in {"summary", "relationship"}:
-            raise ValueError("agent proposal type is invalid")
-        _bounded_text(arguments.get("proposed_content"), "proposed content", 100_000)
-        _validate_citations(arguments.get("source_citations"))
-    else:
-        raise ValueError("agent selected an unknown tool")
-    if set(arguments) - allowed or not required <= set(arguments):
-        raise ValueError("agent tool arguments differ from the contract")
-    if arguments.get("purpose") != "knowledge.read":
-        raise ValueError("agent tool purpose is invalid")
-    if "expected_generation_sha256" in arguments:
-        generation = arguments["expected_generation_sha256"]
-        if not isinstance(generation, str) or not _SHA256.fullmatch(generation):
-            raise ValueError("agent expected generation is invalid")
-
-
-def _validate_citations(value: object) -> None:
-    if not isinstance(value, list) or not value or len(value) > 100:
-        raise ValueError("agent proposal citations are invalid")
-    identities: set[tuple[object, ...]] = set()
-    for citation in value:
-        if not isinstance(citation, dict) or set(citation) != {
-            "concept_id",
-            "source_revision",
-            "content_sha256",
-            "char_start",
-            "char_end",
-        }:
-            raise ValueError("agent proposal citation differs from the contract")
-        _bounded_text(citation["concept_id"], "citation concept ID", 512)
-        _bounded_text(citation["source_revision"], "citation revision", 512)
-        digest = citation["content_sha256"]
-        start = citation["char_start"]
-        end = citation["char_end"]
-        if not isinstance(digest, str) or not _SHA256.fullmatch(digest):
-            raise ValueError("agent proposal citation digest is invalid")
-        if (
-            isinstance(start, bool)
-            or not isinstance(start, int)
-            or isinstance(end, bool)
-            or not isinstance(end, int)
-            or start < 0
-            or end <= start
-        ):
-            raise ValueError("agent proposal citation span is invalid")
-        identity = tuple(citation[key] for key in sorted(citation))
-        if identity in identities:
-            raise ValueError("agent proposal citation is duplicated")
-        identities.add(identity)
-
-
-def _bounded_text(value: object, field: str, maximum: int) -> str:
-    if (
-        not isinstance(value, str)
-        or not value
-        or len(value) > maximum
-        or value.strip() != value
-    ):
-        raise ValueError(f"agent {field} is invalid")
-    return value
-
-
-def _optional_integer(value: object, minimum: int, maximum: int) -> None:
-    if value is not None and (
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or not minimum <= value <= maximum
-    ):
-        raise ValueError("agent tool integer bound is invalid")
-
-
-def _tool(
-    name: str,
-    description: str,
-    properties: dict[str, object],
-    required: list[str],
-) -> dict[str, object]:
-    return {
-        "type": "function",
-        "function": {
-            "name": name,
-            "description": description,
-            "strict": True,
-            "parameters": {
-                "type": "object",
-                "properties": properties,
-                "required": required,
-                "additionalProperties": False,
-            },
-        },
-    }
-
-
 __all__ = [
     "AgentFixtureResult",
     "run_agent_model_fixtures",
-    "validate_agent_tool_arguments",
 ]

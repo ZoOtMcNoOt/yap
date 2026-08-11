@@ -288,17 +288,24 @@ dependencies.
 path_prefix: meetings/2026-Q3/
 audience:
   users:
-    - alice@org.com
-    - bob@org.com
-  groups:
-    - engineering
+    - tenant_id: tenant-a
+      subject_id: alice
+    - tenant_id: tenant-a
+      subject_id: bob
 classification: internal
+purposes:
+  - knowledge.read
 denials:
   users:
-    - contractor-x@org.com
+    - tenant_id: tenant-a
+      subject_id: contractor-x
 ```
 
-The compiler resolves permission-file names inside the configured tenant and expands group membership from Entra ID (ADR 0016) to tenant-scoped `(tenant_id, subject_id)` principal keys at compile time. Group IDs are tenant-scoped as well. Unresolved or cross-tenant principals fail closed.
+The executing compiler accepts only explicit tenant-scoped
+`(tenant_id, subject_id)` principal keys. Any future group expansion belongs to
+the server identity/policy owner before compilation; the compiler does not call
+Entra or accept names/emails as permission authority. Duplicated, unresolved,
+or cross-tenant principals fail closed.
 
 ### Canonical Phase 9 deliverables
 
@@ -323,7 +330,17 @@ The compiler resolves permission-file names inside the configured tenant and exp
   passed the one complete Phase 9 gate: it restarted the real owned Postgres
   process, recovered cited retrieval, rejected the stale generation after
   successor activation, retrieved the successor, and proved exact teardown.
-  Hosted review and merge remain open.
+  Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
+  merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
+  Production database operations remain Phase 10/IT handoffs.
+
+The post-Phase-9 maintainability checkpoint additionally makes source admission
+and generation identity executable rather than documentary: reviewed meeting
+sources are exact-compared to stored immutable bytes and owner-only policy,
+curated review is bound to an authenticated fixed role and a derived canonical
+manifest, and staging/activation recompute the complete compiled/persisted
+generation before it can become active. The checkpoint remains unmerged until
+its own exact-head review and gate close.
 
 ## Open questions
 

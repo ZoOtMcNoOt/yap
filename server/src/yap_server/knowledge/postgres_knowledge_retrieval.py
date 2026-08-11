@@ -8,14 +8,26 @@ from psycopg import Connection
 from yap_server.auth.principal import PrincipalKey
 
 from .generation_ledger import serialize_embedding_vector
-from .permission_view import PermissionFilteredConcept
+from .knowledge_tool_contract import (
+    MAX_STORAGE_RESULTS,
+    validate_integer,
+    validate_search_text,
+)
 from .postgres_permission_view import (
     AuthorizedKnowledgeQuery,
-    authorize_knowledge_query,
+    _authorize_knowledge_query,
 )
 
 
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresKnowledgeConcept:
+    concept_id: str
+    type: str
+    title: str
+    resource: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,7 +52,7 @@ class PostgresKnowledgeTree:
     generation_sha256: str
     permission_hash: str
     authorization_hash: str
-    concepts: tuple[PermissionFilteredConcept, ...]
+    concepts: tuple[PostgresKnowledgeConcept, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,7 +71,25 @@ def list_postgres_knowledge_tree(
     agent_capabilities: frozenset[str],
     expected_generation_sha256: str | None = None,
 ) -> PostgresKnowledgeTree:
-    query = authorize_knowledge_query(
+    with connection.transaction():
+        return _list_postgres_knowledge_tree(
+            connection,
+            principal=principal,
+            purpose=purpose,
+            agent_capabilities=agent_capabilities,
+            expected_generation_sha256=expected_generation_sha256,
+        )
+
+
+def _list_postgres_knowledge_tree(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    purpose: str,
+    agent_capabilities: frozenset[str],
+    expected_generation_sha256: str | None,
+) -> PostgresKnowledgeTree:
+    query = _authorize_knowledge_query(
         connection,
         principal=principal,
         purpose=purpose,
@@ -91,7 +121,7 @@ def list_postgres_knowledge_tree(
         query.generation_sha256,
         query.permission_hash,
         query.authorization_hash,
-        tuple(PermissionFilteredConcept(*row) for row in rows),
+        tuple(PostgresKnowledgeConcept(*row) for row in rows),
     )
 
 
@@ -105,18 +135,19 @@ def search_postgres_knowledge_lexical(
     maximum_results: int = 10,
     expected_generation_sha256: str | None = None,
 ) -> PostgresKnowledgeSearch:
-    _search_input(search_text, maximum_results)
-    query = authorize_knowledge_query(
-        connection,
-        principal=principal,
-        purpose=purpose,
-        agent_capabilities=agent_capabilities,
-        required_capability="knowledge.search.lexical",
-        expected_generation_sha256=expected_generation_sha256,
-    )
-    return _search_response(
-        query, _lexical_results(connection, query, search_text, maximum_results)
-    )
+    with connection.transaction():
+        _search_input(search_text, maximum_results)
+        query = _authorize_knowledge_query(
+            connection,
+            principal=principal,
+            purpose=purpose,
+            agent_capabilities=agent_capabilities,
+            required_capability="knowledge.search.lexical",
+            expected_generation_sha256=expected_generation_sha256,
+        )
+        return _search_response(
+            query, _lexical_results(connection, query, search_text, maximum_results)
+        )
 
 
 def search_postgres_knowledge_vector(
@@ -129,25 +160,26 @@ def search_postgres_knowledge_vector(
     maximum_results: int = 10,
     expected_generation_sha256: str | None = None,
 ) -> PostgresKnowledgeSearch:
-    _result_limit(maximum_results)
-    vector = serialize_embedding_vector(query_embedding)
-    query = authorize_knowledge_query(
-        connection,
-        principal=principal,
-        purpose=purpose,
-        agent_capabilities=agent_capabilities,
-        required_capability="knowledge.search.vector",
-        expected_generation_sha256=expected_generation_sha256,
-    )
-    return _search_response(
-        query,
-        _vector_results(
+    with connection.transaction():
+        _result_limit(maximum_results)
+        vector = serialize_embedding_vector(query_embedding)
+        query = _authorize_knowledge_query(
             connection,
+            principal=principal,
+            purpose=purpose,
+            agent_capabilities=agent_capabilities,
+            required_capability="knowledge.search.vector",
+            expected_generation_sha256=expected_generation_sha256,
+        )
+        return _search_response(
             query,
-            vector,
-            maximum_results,
-        ),
-    )
+            _vector_results(
+                connection,
+                query,
+                vector,
+                maximum_results,
+            ),
+        )
 
 
 def search_postgres_knowledge_hybrid(
@@ -161,9 +193,33 @@ def search_postgres_knowledge_hybrid(
     maximum_results: int = 10,
     expected_generation_sha256: str | None = None,
 ) -> PostgresKnowledgeSearch:
+    with connection.transaction():
+        return _search_postgres_knowledge_hybrid(
+            connection,
+            principal=principal,
+            purpose=purpose,
+            agent_capabilities=agent_capabilities,
+            search_text=search_text,
+            query_embedding=query_embedding,
+            maximum_results=maximum_results,
+            expected_generation_sha256=expected_generation_sha256,
+        )
+
+
+def _search_postgres_knowledge_hybrid(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    purpose: str,
+    agent_capabilities: frozenset[str],
+    search_text: str,
+    query_embedding: tuple[float, ...],
+    maximum_results: int,
+    expected_generation_sha256: str | None,
+) -> PostgresKnowledgeSearch:
     _search_input(search_text, maximum_results)
     vector = serialize_embedding_vector(query_embedding)
-    query = authorize_knowledge_query(
+    query = _authorize_knowledge_query(
         connection,
         principal=principal,
         purpose=purpose,
@@ -323,27 +379,21 @@ def _search_response(
 
 
 def _search_input(search_text: str, maximum_results: int) -> None:
-    if (
-        not isinstance(search_text, str)
-        or not search_text
-        or search_text.strip() != search_text
-        or len(search_text) > 1_024
-        or not _TOKEN.search(search_text)
-    ):
-        raise ValueError("knowledge query is invalid")
+    validate_search_text(search_text)
     _result_limit(maximum_results)
 
 
 def _result_limit(maximum_results: int) -> None:
-    if (
-        isinstance(maximum_results, bool)
-        or not isinstance(maximum_results, int)
-        or not 1 <= maximum_results <= 100
-    ):
-        raise ValueError("knowledge result limit is invalid")
+    validate_integer(
+        maximum_results,
+        minimum=1,
+        maximum=MAX_STORAGE_RESULTS,
+        field="knowledge result limit",
+    )
 
 
 __all__ = [
+    "PostgresKnowledgeConcept",
     "PostgresKnowledgeSearchResult",
     "PostgresKnowledgeSearch",
     "PostgresKnowledgeTree",

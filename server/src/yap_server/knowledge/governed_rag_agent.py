@@ -9,11 +9,20 @@ from psycopg import Connection
 
 from yap_server.auth.principal import PrincipalKey
 
-from .agent_reasoning_routes import AgentReasoningRoutes, AgentWorkloadClass
+from .agent_reasoning_routes import (
+    AgentReasoningRoutes,
+    AgentWorkloadClass,
+    ReasoningRetryableError,
+)
 from .governed_knowledge_proposals import GovernedKnowledgeProposals
 from .governed_knowledge_tools import GovernedKnowledgeTools
-from .knowledge_proposals import KnowledgeProposal, ProposalCitation
-from .knowledge_tool_contract import KnowledgeToolCancelled, SearchKnowledgeRequest
+from .knowledge_proposals import KnowledgeProposal
+from .knowledge_tool_contract import (
+    KnowledgeToolCancelled,
+    ProposalCitation,
+    SearchKnowledgeRequest,
+    validate_search_text,
+)
 from .terminology_ledger import read_job_terminology_snapshot
 from .terminology_snapshot import TerminologySnapshot
 
@@ -21,10 +30,6 @@ from .terminology_snapshot import TerminologySnapshot
 TerminologySnapshotReader = Callable[
     [Connection[object], PrincipalKey, str], TerminologySnapshot
 ]
-
-
-class ReasoningRetryableError(RuntimeError):
-    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,13 +84,10 @@ class GovernedRagAgent:
         cancellation: threading.Event,
         expected_generation_sha256: str | None = None,
     ) -> GovernedRagResult:
-        if (
-            not isinstance(question, str)
-            or not question
-            or question.strip() != question
-            or len(question) > 4_096
-        ):
-            raise ValueError("RAG question is invalid")
+        try:
+            validate_search_text(question)
+        except ValueError as error:
+            raise ValueError("RAG question is invalid") from error
         terminology = self._read_terminology_snapshot(connection, principal, job_id)
         if (
             terminology.tenant_id != principal.tenant_id
@@ -138,11 +140,11 @@ class GovernedRagAgent:
         by_concept = {item.citation.concept_id: item for item in retrieval.items}
         citations = tuple(
             ProposalCitation(
-                concept_id,
-                by_concept[concept_id].citation.source_revision,
-                by_concept[concept_id].citation.content_sha256,
-                int(by_concept[concept_id].citation.char_start),
-                int(by_concept[concept_id].citation.char_end),
+                concept_id=concept_id,
+                source_revision=by_concept[concept_id].citation.source_revision,
+                content_sha256=by_concept[concept_id].citation.content_sha256,
+                char_start=int(by_concept[concept_id].citation.char_start),
+                char_end=int(by_concept[concept_id].citation.char_end),
             )
             for concept_id in citation_ids
         )
@@ -249,6 +251,5 @@ def _validate_reasoned_answer(
 __all__ = [
     "GovernedRagAgent",
     "GovernedRagResult",
-    "ReasoningRetryableError",
     "TerminologySnapshotReader",
 ]
