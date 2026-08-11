@@ -185,8 +185,36 @@ class AgentModelScoringTests(unittest.TestCase):
         self.assertLess(score.citation_fidelity, 1.0)
         self.assertFalse(score.passed)
 
+    def test_requires_terms_in_the_governed_proposal_not_only_the_answer(self) -> None:
+        cases = (
+            ("rapid-automation", "cited-summary-proposal"),
+            ("rapid-automation", "terminology-preservation-en"),
+            ("rapid-automation", "terminology-preservation-es"),
+            ("complex-orchestration", "complex-governed-orchestration"),
+        )
+        for workload_class, case_id in cases:
+            with self.subTest(workload_class=workload_class, case_id=case_id):
+                results = list(_perfect_results(workload_class=workload_class))
+                proposal = next(
+                    result for result in results if result["caseId"] == case_id
+                )
+                proposal["arguments"]["proposed_content"] = (  # type: ignore[index]
+                    "Unrelated cafeteria menu."
+                )
 
-def _perfect_results() -> tuple[dict[str, object], ...]:
+                score = score_agent_model_results(
+                    REPOSITORY_ROOT,
+                    tuple(results),
+                    workload_class=workload_class,
+                )
+
+                self.assertLess(score.terminology_preservation, 1.0)
+                self.assertFalse(score.passed)
+
+
+def _perfect_results(
+    *, workload_class: str = "rapid-automation"
+) -> tuple[dict[str, object], ...]:
     fixture = json.loads(
         (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
             encoding="utf-8"
@@ -194,7 +222,7 @@ def _perfect_results() -> tuple[dict[str, object], ...]:
     )
     results: list[dict[str, object]] = []
     for case in fixture["cases"]:
-        if case.get("requiredForWorkloadClass") is not None:
+        if case.get("requiredForWorkloadClass") not in {None, workload_class}:
             continue
         arguments = dict(case.get("expectedArguments", {}))
         arguments["purpose"] = "knowledge.read"

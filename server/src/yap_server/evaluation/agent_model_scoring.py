@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-import json
 from pathlib import Path
 
 from yap_server.private_artifact import read_json_object_with_identity
@@ -145,8 +144,8 @@ def score_agent_model_results(
         required_terms = case.get("requiredTerms", [])
         if required_terms:
             terminology_checks += 1
-            rendered = _rendered_output(result)
-            if all(term in rendered for term in required_terms):
+            governed_output = _required_term_output(case, result)
+            if all(term in governed_output for term in required_terms):
                 terminology_pass += 1
         observed_output = _policy_relevant_output(result).casefold()
         expected_answer = case.get("expectedAnswer")
@@ -279,10 +278,17 @@ def _citations_are_faithful(
     )
 
 
-def _rendered_output(result: dict[str, object]) -> str:
-    return str(result.get("answer", "")) + json.dumps(
-        result.get("arguments", {}), ensure_ascii=False, sort_keys=True
-    )
+def _required_term_output(
+    case: dict[str, object], result: dict[str, object]
+) -> str:
+    if case.get("expectedTool") == "propose_knowledge":
+        arguments = result.get("arguments")
+        return str(
+            arguments.get("proposed_content", "")
+            if isinstance(arguments, dict)
+            else ""
+        )
+    return str(result.get("answer", ""))
 
 
 def _policy_relevant_output(result: dict[str, object]) -> str:

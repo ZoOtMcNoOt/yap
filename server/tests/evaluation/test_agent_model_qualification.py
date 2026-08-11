@@ -224,6 +224,37 @@ class AgentModelQualificationTests(unittest.TestCase):
                 self.assertEqual(decision["outcome"], "deterministic-no-model")
                 self.assertFalse(summary["routeEvidencePassed"])
 
+    def test_rejects_correct_answers_backing_unrelated_proposals(self) -> None:
+        candidate = _checked_candidate()
+        runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                wrong_proposal_case="terminology-preservation-en",
+            ),
+            _candidate_run(
+                candidate,
+                "gemma-4-31b-it-nvfp4",
+                10,
+                wrong_proposal_case="complex-governed-orchestration",
+            ),
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            decision = evaluate_agent_model_qualification(
+                candidate=candidate, runs=runs
+            )
+
+        self.assertEqual(decision["outcome"], "deterministic-no-model")
+        self.assertEqual(decision["admittedModelCandidates"], [])
+        self.assertTrue(
+            all(
+                summary["terminologyPreservation"] < 1.0
+                for summary in decision["candidateSummaries"]
+            )
+        )
+
     def test_rejects_incomplete_or_tampered_owned_run_set(self) -> None:
         candidate = _checked_candidate()
         run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
@@ -289,6 +320,7 @@ def _candidate_run(
     incomplete_complex_sequence: bool = False,
     wrong_complex_traversal: bool = False,
     complex_extra_control: tuple[int, str, object] | None = None,
+    wrong_proposal_case: str | None = None,
     fixture_latency: int = 10,
 ) -> AgentCandidateRun:
     lock = json.loads(
@@ -327,6 +359,13 @@ def _candidate_run(
         step_index, field, value = complex_extra_control
         arguments = complex_result["toolCalls"][step_index]["arguments"]  # type: ignore[index]
         arguments[field] = value
+    if wrong_proposal_case is not None:
+        proposal_result = next(
+            result for result in results if result["caseId"] == wrong_proposal_case
+        )
+        proposal_result["arguments"]["proposed_content"] = (  # type: ignore[index]
+            "Unrelated cafeteria menu."
+        )
     for result in results:
         result["latencyMilliseconds"] = fixture_latency
     launch_arguments = _launch_arguments(model)
