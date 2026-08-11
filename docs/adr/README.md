@@ -68,7 +68,11 @@ ADR 0030 makes systemd plus one Rust supervisor the production provider
 lifecycle boundary. ADR 0031 defines the complete eight-agent roster as bounded
 product workflows across that supervised private-server route while preserving
 raw/local controls and prohibiting renderer-owned provider access or silent
-cross-route fallback.
+cross-route fallback. The current unmerged Slice 10.2 candidate binds the exact
+Qwen/Gemma profiles and has passed sequential lifecycle, fresh private route
+qualification, and aggregate governed gates; hosted merge, warm simultaneous
+residency, authenticated owner-fair admission, and the roster workflows remain
+open.
 
 ## Applicability and precedence
 
@@ -76,7 +80,7 @@ Use ADRs in this order:
 
 1. A `Superseded` decision is historical and never authorizes implementation.
 2. A later explicit `Amends` or `Supersedes` clause wins over an earlier conflicting detail.
-3. ADRs 0014–0029 define the canonical client/server architecture and phase map. Earlier ADRs remain authoritative only for the principles or deployment profile their status names.
+3. ADRs 0014–0031 define the canonical client/server architecture and phase map. Earlier ADRs remain authoritative only for the principles or deployment profile their status names.
 4. [Current architecture](../architecture/CURRENT-ARCHITECTURE.md),
    [current status](../CURRENT-STATUS.md), and the
    [roadmap](../roadmap/ROADMAP.md) are readable syntheses; they cannot silently

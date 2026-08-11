@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; implementation and promotion evidence pending
+**Status:** Accepted target; service profiles gated, roster implementation and promotion pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -15,10 +15,12 @@
 The product architecture names eight agents, but the merged system does not yet
 deliver that complete roster. Phase 9 merged the governed knowledge, tool,
 retrieval, terminology, and two qualified reasoning-route foundations. Phase 10
-Slice 10.1 merged a Rust-supervised provider lifecycle. The desktop still has a
-development-only Polish prototype that sends an unrestricted transcript to a
-renderer-owned Ollama endpoint, and most named agent personas remain documented
-targets rather than executing product workflows.
+Slice 10.1 merged a Rust-supervised provider lifecycle. The current unmerged
+Slice 10.2 candidate binds and independently gates the exact Qwen rapid and
+Gemma complex profiles, but does not yet admit application work. The desktop
+still has a development-only Polish prototype that sends an unrestricted
+transcript to a renderer-owned Ollama endpoint, and most named agent personas
+remain documented targets rather than executing product workflows.
 
 Calling the foundations "the agent team" would be incorrect. Conversely,
 implementing eight unrelated prompts would duplicate authority, bypass
@@ -57,18 +59,22 @@ product workflow, not an autonomous identity and not a generic chat agent.
 3. Qwen rapid automation and Gemma complex orchestration run as distinct
    supervised services. A route failure is returned as that route's typed
    failure; there is no cross-route model fallback.
-4. Every LLM-backed workflow uses structured, bounded, source-referenced input
+4. Both route services remain warm for multi-user work. Request handling never
+   launches or swaps a model. Bounded owner-fair admission is required before
+   use, and separate owned service nodes are required if one node cannot satisfy
+   simultaneous-residency evidence.
+5. Every LLM-backed workflow uses structured, bounded, source-referenced input
    and output. A prompt alone is never the correctness boundary.
-5. Raw audio, raw ASR, reviewed source records, and active knowledge authority
+6. Raw audio, raw ASR, reviewed source records, and active knowledge authority
    are immutable inputs. Agent output is a new revision, proposal, question,
    answer, or finding; it never silently rewrites source truth.
-6. Authentication and organization identity terminate in the native/server
+7. Authentication and organization identity terminate in the native/server
    boundary. The renderer never receives a bearer token or calls a provider
    directly.
-7. Agent timeouts, cancellation, invalid output, provider unavailability, and
+8. Agent timeouts, cancellation, invalid output, provider unavailability, and
    overload degrade only the requested enrichment. Local capture and controls
    remain available.
-8. Every result binds tenant, subject, purpose, source identities, model route,
+9. Every result binds tenant, subject, purpose, source identities, model route,
    model/runtime revision, request identity, and audit outcome without storing
    secrets or exposing private prompts and outputs in public evidence.
 
@@ -115,6 +121,13 @@ deletion, hallucination, source-coverage, and p95 latency evidence. Other
 LLM-backed agents retain their route-specific tool/citation/correctness gates.
 No generic TPS, simultaneous-residency, production-service, enterprise-network,
 or deployment claim is authorized without its later exact-head evidence.
+
+Slice 10.2 exact lifecycle head `4b103c1b...` passed both sequential route
+lifecycles, exact qualification head `4d623212...` qualified both routes, and
+public-lock successor `0471b158...` passed the aggregate governed gate. Hosted
+review/merge, warm simultaneous residency, authenticated admission, the eight
+product workflows, sustained multi-owner capacity, and production promotion
+remain open.
 
 ## Consequences
 

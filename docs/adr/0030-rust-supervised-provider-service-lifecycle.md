@@ -1,6 +1,6 @@
 # ADR 0030: Rust-supervised provider service lifecycle
 
-**Status:** Accepted; Slice 10.1 merged, later production slices pending
+**Status:** Accepted; Slice 10.1 merged, Slice 10.2 gated with hosted merge pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md),
@@ -44,9 +44,11 @@ rapid-route failure remains a rapid-route failure, and a complex-route failure
 remains a complex-route failure.
 
 The first Phase 10 slice implements this lifecycle with a hardware-independent
-fixture. Provider-specific production launch profiles, simultaneous residency,
-multi-owner admission/fairness, application-route integration, sustained
-capacity, p95/p99 SLOs, and deployment promotion remain later evidence layers.
+fixture. Slice 10.2 binds immutable Qwen rapid and Gemma complex profiles to
+separate supervised instances and proves their sequential lifecycles plus fresh
+route qualification. Simultaneous warm residency, multi-owner admission and
+fairness, application-route integration, sustained capacity, p95/p99 SLOs, and
+deployment promotion remain later evidence layers.
 
 ## Options considered
 
@@ -88,14 +90,26 @@ than adding a second container owner. This option is selected.
   PR #155 merged Slice 10.1 as
   `e2d82b89532addb26fda73f652ae4f68b2127ef7`. This is lifecycle evidence,
   not provider promotion or capacity evidence.
+- Exact Slice 10.2 lifecycle head
+  `4b103c1bd8b393b7cabf6d219071fa8ba37bda09` passed sequential Qwen and
+  Gemma start/readiness/restart/stop plus zero-residue teardown with public-safe
+  evidence SHA-256
+  `9b6a34f6d4f099123894212bbabda79463b73c1a954bbd04a71a7dfb1d88f27d`.
+  Exact qualification head `4d6232123520dd85202f7095c156c766c7dd2ee0`
+  returned `required-workload-routes-qualified`; public-lock successor
+  `0471b158ac34f97c0f2be7323433470fe5de7fa4` passed the aggregate gate.
+  Hosted review and merge remain open, and this is not simultaneous-residency
+  or capacity evidence.
 
 ## Action items
 
 - [x] Implement and focused-test the single-service Rust lifecycle owner.
 - [x] Add a hardened systemd unit template and exact configuration validation.
-- [ ] Bind the qualified Qwen rapid and Gemma complex launch profiles without
+- [x] Bind the qualified Qwen rapid and Gemma complex launch profiles without
   cross-route fallback.
 - [ ] Integrate typed readiness/backpressure with the authenticated server
   application boundary.
+- [ ] Keep both exact services warm behind bounded owner-fair admission; never
+  launch or swap a model in request handling.
 - [ ] Run simultaneous-residency and sustained mixed-owner capacity/SLO gates
   before production advertisement.

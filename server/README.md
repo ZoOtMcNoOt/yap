@@ -551,9 +551,10 @@ launcher remains the sole container/private-proxy/image/teardown owner.
 
 The supervisor publishes typed lifecycle state, requires `/health` plus an
 exact single-model `/v1/models` response, bounds child restarts to the fixed
-three-in-60-second policy, and does not report a clean stop until its launcher
-is reaped. The test-only provider fixture is feature-gated out of default
-builds. A rendered hardened systemd template owns the outer cgroup and only
+three-in-60-second policy, and does not report a clean stop until the complete
+owned launcher process group is absent. The test-only provider fixture is
+feature-gated out of default builds. A rendered hardened systemd template owns
+the outer cgroup and only
 restarts abnormal supervisor crashes; it does not duplicate Rust's child
 restart policy.
 
@@ -562,9 +563,28 @@ passed the dedicated Linux lifecycle lane, every required repository CI and
 CodeQL lane, and the native WDIO smoke. PR #155 merged Slice 10.1 as
 `e2d82b89532addb26fda73f652ae4f68b2127ef7`.
 
-This slice does not bind the qualified Qwen/Gemma production launch profiles,
-enable a service instance, connect an application route, prove simultaneous
-residency, or publish capacity/latency SLO evidence. Build, installation,
+Slice 10.2 now binds the exact Qwen rapid and Gemma complex profiles to separate
+supervised instances. Exact lifecycle head
+`4b103c1bd8b393b7cabf6d219071fa8ba37bda09` passed sequential
+start/readiness/restart/stop and exact teardown for both routes with public-safe
+evidence SHA-256
+`9b6a34f6d4f099123894212bbabda79463b73c1a954bbd04a71a7dfb1d88f27d`.
+Exact private qualification head
+`4d6232123520dd85202f7095c156c766c7dd2ee0` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4a856f3e4fcdb3ed8bb79310646cbd8df5c12533ce91f5049190daa7379ca8d8`;
+public-lock successor `0471b158ac34f97c0f2be7323433470fe5de7fa4`
+then returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`008d748bfe88b5eb68b2c8abbecd682e0a4aceb6634872ead077e0993a2455b2`.
+The aggregate ran 157 portable tests across 26 modules, Ruff, and 17 zero-skip
+Postgres tests across four modules, then proved restart/retrieval and exact
+teardown. The focused PR and hosted checks remain open.
+
+The intended multi-user topology keeps both exact route services warm behind
+bounded fair admission; requests never cold-start or swap models. Neither
+service is enabled or connected to an application route yet, and this
+sequential evidence does not prove simultaneous residency, sustained capacity,
+fairness, production p95/p99, or deployment. Build, installation,
 configuration, state, and verification details are in the
 [provider supervisor runbook](../docs/runbooks/provider-supervisor-service.md).
 

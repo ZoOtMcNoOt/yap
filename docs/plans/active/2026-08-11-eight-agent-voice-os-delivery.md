@@ -1,7 +1,7 @@
 # Complete eight-agent Voice OS delivery
 
-**Status:** Active; Slice A implementation candidate assembled, exact-head
-private lifecycle/qualification and later slices pending.
+**Status:** Active; Slice A exact-head lifecycle, private qualification, and
+aggregate evidence passed; hosted review/merge and later slices pending.
 
 **Branch:** `feat/phase10-agent-service-profiles` for the first executable
 slice. Later slices use focused branches and merge only after their exact heads
@@ -33,6 +33,11 @@ production, capacity, and enterprise claims evidence-gated.
   knowledge, authorization, tools, audit, and publication. The native desktop
   connector owns credentials; the renderer owns none.
 - Qwen rapid and Gemma complex remain explicit separate routes with no fallback.
+- The multi-user target keeps both route services warm behind bounded fair
+  admission; request handling never cold-starts a model. Enabling both services
+  still requires simultaneous-residency and sustained-capacity evidence. If one
+  node cannot satisfy that evidence, the routes use separate owned service nodes
+  rather than swapping models or silently falling back.
 - Raw ASR and reviewed sources are never overwritten by agent output.
 - Remote failure never disables local capture, playback, raw transcript access,
   export, deletion, or offline controls.
@@ -52,14 +57,34 @@ production, capacity, and enterprise claims evidence-gated.
   admitted exact profile plus private runtime inputs and reuses the existing
   immutable container/loopback-proxy owner.
 - [x] Install two explicit systemd instances without enabling or starting them.
-- [ ] Prove identity mismatch, changed profile bytes, port/name collision,
+- [x] Prove identity mismatch, changed profile bytes, port/name collision,
   startup, cancellation, restart, and zero-residue teardown without requiring a
   GPU for the portable contract lane.
+
+Exact lifecycle head `4b103c1bd8b393b7cabf6d219071fa8ba37bda09`
+passed both sequential Qwen/Gemma start/readiness/restart/stop lifecycles with
+public-safe evidence SHA-256
+`9b6a34f6d4f099123894212bbabda79463b73c1a954bbd04a71a7dfb1d88f27d`.
+Exact private qualification head
+`4d6232123520dd85202f7095c156c766c7dd2ee0` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`4a856f3e4fcdb3ed8bb79310646cbd8df5c12533ce91f5049190daa7379ca8d8`.
+Public-lock successor `0471b158ac34f97c0f2be7323433470fe5de7fa4`
+then returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`008d748bfe88b5eb68b2c8abbecd682e0a4aceb6634872ead077e0993a2455b2`.
+The gate ran 157 portable tests across 26 modules, Ruff, and 17 zero-skip
+Postgres tests across four modules; proved real restart/retrieval/stale-
+generation/successor behavior; preserved the unchanged desktop boundary; and
+proved all teardown predicates. This is sequential lifecycle and semantic
+evidence, not simultaneous residency, multi-user capacity, or production
+promotion.
 
 ## Slice B — authenticated admission and adapters
 
 - [ ] Add typed agent-work requests bound to tenant, subject, purpose, role,
   source identity, route, deadline, and cancellation token.
+- [ ] Admit work only to already-warm route services; model startup and swapping
+  are lifecycle/operations concerns, never per-request behavior.
 - [ ] Implement HOT, INTERACTIVE, BACKGROUND_IO, BACKGROUND_LLM, and IDLE_ONLY
   admission with bounded queues, fair owner limits, typed overload, and no route
   substitution.

@@ -187,7 +187,7 @@ supervision, simultaneous model residency, sustained mixed-user capacity/SLOs,
 external serving, observability, enterprise networking, and deployment remain
 Phase 10 or IT handoffs.
 
-## Active Phase 10 slice: supervised provider lifecycle
+## Active Phase 10 slice: exact supervised agent services
 
 The active [Phase 10 plan](../plans/active/2026-08-11-phase-10-supervised-provider-services.md)
 starts with one hardware-independent lifecycle owner rather than a model or TPS
@@ -201,12 +201,25 @@ Docker and never substitutes another route.
 Exact hosted-green head `1a487db840578d8e415fd2e5a51b1909af4b7041`
 passed the dedicated Linux lifecycle lane and every required repository check;
 PR #155 merged it as `e2d82b89532addb26fda73f652ae4f68b2127ef7`.
-Slice 10.2 may now bind the already qualified Qwen rapid and Gemma complex
-profiles to separate instances. Authenticated admission,
-simultaneous residency, sustained mixed-owner route-specific capacity and
-p95/p99 SLO evidence, observability, rollback, external serving, and IT-owned
-deployment remain later slices or handoffs. No generic TPS or production
-promotion follows from the lifecycle baseline.
+The current unmerged Slice 10.2 candidate now binds the qualified Qwen rapid and
+Gemma complex profiles to separate instances. Exact lifecycle head
+`4b103c1b...` passed both sequential route lifecycles with public-safe evidence
+SHA-256 `9b6a34f6...`; exact qualification head `4d623212...` returned
+`required-workload-routes-qualified` with evidence SHA-256 `4a856f3e...`; and
+public-lock successor `0471b158...` returned
+`governed-knowledge-gate-passed` with evidence SHA-256 `008d748b...`. The
+aggregate ran 157 portable tests across 26 modules, Ruff, 17 zero-skip Postgres
+tests across four modules, real restart/retrieval/stale/successor proof,
+unchanged desktop scope, and exact teardown. Hosted review and merge remain
+open.
+
+The next slice keeps both exact services warm behind authenticated bounded
+owner-fair admission; requests do not launch or swap models. Simultaneous
+residency, sustained mixed-owner route-specific capacity and p95/p99 evidence,
+observability, rollback, external serving, and IT-owned deployment remain later
+gates or handoffs. If one node cannot satisfy simultaneous evidence, the routes
+use separate owned nodes rather than model fallback or per-request swapping. No
+generic TPS or production promotion follows from the sequential lifecycle gate.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 

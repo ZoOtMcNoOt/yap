@@ -1,10 +1,11 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–9 system plus the
-hardware-independent Phase 10 Slice 10.1 supervised-provider lifecycle after
-the meeting-transcription ownership, source-time reconciliation, and explicit
-production-qualification decision. Later Phase 10 slices remain called out
-separately below and are not part of that merged baseline. Phase 7
+This document describes the merged executable Phase 1–9 system plus the merged
+hardware-independent Phase 10 Slice 10.1 supervised-provider lifecycle. The
+current unmerged Slice 10.2 candidate binds exact Qwen/Gemma profiles and has
+passed its private lifecycle, route-qualification, and aggregate gates; hosted
+review and merge remain open. Later Phase 10 slices remain called out separately
+below and are not part of the merged baseline. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -917,6 +918,30 @@ lifecycle lane and every required repository check before PR #155 merged it as
 or enable Qwen, Gemma, Cohere, Nemotron, or Tiron; connect an application route;
 or prove simultaneous residency, throughput, p95/p99, fairness, capacity,
 observability, or production deployment.
+
+The current Slice 10.2 candidate consumes that owner through two immutable
+profiles: Qwen rapid automation and Gemma complex orchestration. Exact lifecycle
+head `4b103c1bd8b393b7cabf6d219071fa8ba37bda09` passed sequential
+start/readiness/restart/stop plus zero-residue teardown for both routes with
+public-safe evidence SHA-256
+`9b6a34f6d4f099123894212bbabda79463b73c1a954bbd04a71a7dfb1d88f27d`.
+Exact qualification head `4d6232123520dd85202f7095c156c766c7dd2ee0`
+returned `required-workload-routes-qualified` with evidence SHA-256
+`4a856f3e4fcdb3ed8bb79310646cbd8df5c12533ce91f5049190daa7379ca8d8`.
+Public-lock successor `0471b158ac34f97c0f2be7323433470fe5de7fa4`
+then returned `governed-knowledge-gate-passed` with evidence SHA-256
+`008d748bfe88b5eb68b2c8abbecd682e0a4aceb6634872ead077e0993a2455b2`,
+157 portable tests across 26 modules, Ruff, 17 zero-skip Postgres tests across
+four modules, real restart/retrieval/stale/successor proof, unchanged desktop
+scope, and exact teardown. Hosted review and merge remain open.
+
+The intended multi-user topology keeps both exact route services warm behind
+bounded owner-fair admission; request handling never launches or swaps a model.
+That topology is not enabled yet. Simultaneous residency, sustained multi-owner
+capacity/fairness, production p95/p99, authenticated application integration,
+observability, and deployment remain later gates. If one node cannot satisfy
+the simultaneous evidence, the exact services require separate owned nodes,
+not fallback or per-request model swapping.
 
 At remediation anchor `c332700597eac1cc6af3f68afb3e75fce0b6ec77`, each
 exported knowledge query/traversal/proposal owns the transaction that holds the
