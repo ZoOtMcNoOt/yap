@@ -2,6 +2,8 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+# shellcheck source=owned-process-group.sh
+source "$script_dir/owned-process-group.sh"
 # shellcheck source=private-container-loopback-proxy.sh
 source "$script_dir/private-container-loopback-proxy.sh"
 

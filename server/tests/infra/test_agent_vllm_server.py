@@ -74,6 +74,18 @@ class AgentVllmServerContractTests(unittest.TestCase):
         self.assertNotIn("--network host", self.script)
         self.assertNotIn("nohup", self.script)
 
+    def test_launcher_loads_process_ownership_before_the_proxy_that_uses_it(
+        self,
+    ) -> None:
+        process_group_source = 'source "$script_dir/owned-process-group.sh"'
+        proxy_source = 'source "$script_dir/private-container-loopback-proxy.sh"'
+        self.assertIn(process_group_source, self.script)
+        self.assertIn(proxy_source, self.script)
+        self.assertLess(
+            self.script.index(process_group_source),
+            self.script.index(proxy_source),
+        )
+
     def test_launcher_keeps_provider_credentials_out_of_arguments_and_files(self) -> None:
         for forbidden in (
             "--api-key",
