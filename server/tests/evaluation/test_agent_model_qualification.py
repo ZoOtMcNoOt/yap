@@ -31,11 +31,14 @@ from yap_server.evaluation.provider_runtime_observations import (
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 INPUTS = tuple(
-    REPOSITORY_ROOT / "server" / name
-    for name in (
-        "agent-model-acceptance.json",
-        "agent-reasoning-candidates.lock.json",
-        "agent-workload-fixtures.json",
+    REPOSITORY_ROOT / relative
+    for relative in (
+        "server/agent-model-acceptance.json",
+        "server/agent-reasoning-candidates.lock.json",
+        "server/agent-workload-fixtures.json",
+        "server/runtime/agent-vllm/Dockerfile",
+        "server/runtime/agent-vllm/build-qwen-vllm-runtime.sh",
+        "server/runtime/agent-vllm/THIRD_PARTY_NOTICES.md",
     )
 )
 
@@ -281,7 +284,7 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate=candidate, runs=(tampered, other)
             )
 
-    def test_rejects_runtime_without_structural_guidance_boundary(self) -> None:
+    def test_rejects_runtime_with_disabled_structural_guidance_override(self) -> None:
         candidate = _checked_candidate()
         run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
         lock = json.loads(
@@ -291,14 +294,18 @@ class AgentModelQualificationTests(unittest.TestCase):
                 / "agent-reasoning-candidates.lock.json"
             ).read_text(encoding="utf-8")
         )
-        expected = next(
+        candidate_lock = next(
             item
             for item in lock["candidates"]
             if item["candidateId"] == run.candidate_id
         )
+        expected = {
+            **candidate_lock,
+            "_runtime": lock["runtimes"][candidate_lock["runtimeId"]],
+        }
         receipt = {
             **run.runtime_receipt,
-            "toolCallStructuralGuidanceDisabled": False,
+            "toolCallStructuralGuidanceEnabled": False,
         }
 
         with self.assertRaisesRegex(ValueError, "runtime receipt"):
@@ -395,6 +402,7 @@ def _candidate_run(
     model = next(
         item for item in lock["candidates"] if item["candidateId"] == candidate_id
     )
+    runtime = lock["runtimes"][model["runtimeId"]]
     results = list(_perfect_results(str(model["workloadClass"])))
     if not passing:
         results[0]["toolName"] = "wrong_tool"
@@ -434,20 +442,27 @@ def _candidate_run(
         result["latencyMilliseconds"] = fixture_latency
     launch_arguments = _launch_arguments(model)
     launch_sha256 = canonical_evidence_sha256(launch_arguments)
-    children = _children(candidate, model, results, latency, launch_sha256)
+    children = _children(
+        candidate,
+        model,
+        results,
+        latency,
+        launch_sha256,
+        runtime["observedImageId"],
+    )
     receipt = {
         "schemaVersion": 1,
         "checkedHead": candidate.checked_head,
         "candidateId": candidate_id,
         "model": model["model"],
         "revision": model["revision"],
-        "runtime": lock["runtime"],
-        "imageId": "sha256:" + "9" * 64,
+        "runtime": runtime,
+        "imageId": runtime["observedImageId"],
         "quantization": model["quantization"],
         "modelArtifactManifestSha256": model["artifactManifestSha256"],
         "launchArguments": launch_arguments,
         "launchArgumentsSha256": launch_sha256,
-        "toolCallStructuralGuidanceDisabled": True,
+        "toolCallStructuralGuidanceEnabled": True,
         "childEvidenceSha256": {
             name: agent_evidence_sha256(value) for name, value in children.items()
         },
@@ -498,6 +513,7 @@ def _failed_run(
     model = next(
         item for item in lock["candidates"] if item["candidateId"] == candidate_id
     )
+    runtime = lock["runtimes"][model["runtimeId"]]
     launch_arguments = _launch_arguments(model)
     failure = bind_checked_candidate_evidence(
         {
@@ -511,7 +527,7 @@ def _failed_run(
             "errorType": "ValueError",
             "diagnostic": "synthetic pressure rejection",
             "runtime": {
-                "imageId": "sha256:" + "9" * 64,
+                "imageId": runtime["observedImageId"],
                 "modelArtifactManifestSha256": model["artifactManifestSha256"],
                 "launchArguments": launch_arguments,
                 "launchArgumentsSha256": canonical_evidence_sha256(launch_arguments),
@@ -529,7 +545,7 @@ def _failed_run(
     return FailedAgentCandidateRun(candidate_id, failure)
 
 
-def _children(candidate, model, results, latency, launch_sha256):
+def _children(candidate, model, results, latency, launch_sha256, image_id):
     return {
         "fixtures": {
             "schemaVersion": 2,
@@ -574,7 +590,7 @@ def _children(candidate, model, results, latency, launch_sha256):
             "schemaVersion": 1,
             "checkedHead": candidate.checked_head,
             "containerId": "8" * 64,
-            "imageId": "sha256:" + "9" * 64,
+            "imageId": image_id,
             "modelArtifactManifestSha256": model["artifactManifestSha256"],
             "launchArgumentsSha256": launch_sha256,
             "endpoint": "http://127.0.0.1:30000",

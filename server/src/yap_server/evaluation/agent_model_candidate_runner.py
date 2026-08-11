@@ -301,10 +301,15 @@ def _candidate_lock(
     matches = [item for item in candidates if item["candidateId"] == candidate_id]
     if len(matches) != 1:
         raise ValueError("agent model candidate is not admitted")
-    runtime = lock["runtime"]
-    if not isinstance(runtime, dict):
+    runtimes = lock.get("runtimes")
+    runtime_id = matches[0].get("runtimeId")
+    if (
+        not isinstance(runtimes, dict)
+        or not isinstance(runtime_id, str)
+        or not isinstance(runtimes.get(runtime_id), dict)
+    ):
         raise ValueError("agent runtime lock is invalid")
-    return runtime, matches[0]
+    return runtimes[runtime_id], matches[0]
 
 
 __all__ = [

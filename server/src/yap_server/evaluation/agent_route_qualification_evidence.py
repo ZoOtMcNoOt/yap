@@ -42,6 +42,9 @@ _MODEL_INPUT_PATHS = (
     "server/agent-model-acceptance.json",
     "server/agent-reasoning-candidates.lock.json",
     "server/agent-workload-fixtures.json",
+    "server/runtime/agent-vllm/Dockerfile",
+    "server/runtime/agent-vllm/build-qwen-vllm-runtime.sh",
+    "server/runtime/agent-vllm/THIRD_PARTY_NOTICES.md",
 )
 _MODEL_DEPENDENCY_PATHS = (
     "server/pyproject.toml",
@@ -136,7 +139,7 @@ def load_agent_route_qualification_reference(
     dependencies = value["dependencySha256"]
     artifacts = value["artifactSha256"]
     if (
-        value["schemaVersion"] != 2
+        value["schemaVersion"] != 3
         or not isinstance(value["checkedHead"], str)
         or _SHA40.fullmatch(value["checkedHead"]) is None
         or value["outcome"] != "required-workload-routes-qualified"

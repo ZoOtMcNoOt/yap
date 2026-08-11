@@ -20,7 +20,6 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _IMAGE_SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 _CONTAINER_NAME = "yap-agent-vllm"
 _PORT = 30000
-_DISABLE_STRICT_TOOL_CALLING = "VLLM_ENFORCE_STRICT_TOOL_CALLING=0"
 
 
 def build_agent_vllm_launch_arguments(
@@ -228,8 +227,6 @@ class OwnedAgentVllmRuntime:
                 "host",
                 "--env",
                 "HOME=/tmp",
-                "--env",
-                _DISABLE_STRICT_TOOL_CALLING,
                 "--volume",
                 f"{model_root}:/model-cache:ro",
                 image_id,
@@ -300,7 +297,7 @@ class OwnedAgentVllmRuntime:
             "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,
             "launchArguments": list(started.launch_arguments),
             "launchArgumentsSha256": started.launch_arguments_sha256,
-            "toolCallStructuralGuidanceDisabled": True,
+            "toolCallStructuralGuidanceEnabled": True,
             "childEvidenceSha256": dict(sorted(child_evidence_sha256.items())),
             "teardown": {
                 "containerAbsent": container_absent,
@@ -363,17 +360,49 @@ class OwnedAgentVllmRuntime:
 
     def _verified_image_id(self) -> str:
         image = str(self._runtime.get("image", ""))
-        digest = str(self._runtime.get("digest", ""))
         inspected = _single_inspection(self._run(["docker", "image", "inspect", image]))
         image_id = inspected.get("Id")
+        expected_image_id = self._runtime.get("observedImageId")
         repo_digests = inspected.get("RepoDigests")
-        if (
-            inspected.get("Architecture") != "arm64"
-            or not isinstance(image_id, str)
-            or not _IMAGE_SHA256.fullmatch(image_id)
-            or not isinstance(repo_digests, list)
-            or not any(str(value).endswith(f"@{digest}") for value in repo_digests)
+        provenance = self._runtime.get("provenance")
+        if not (
+            inspected.get("Os") == "linux"
+            and inspected.get("Architecture") == "arm64"
+            and isinstance(image_id, str)
+            and _IMAGE_SHA256.fullmatch(image_id)
+            and image_id == expected_image_id
+            and isinstance(provenance, dict)
         ):
+            raise ValueError("agent runtime image differs from its lock")
+        kind = provenance.get("kind")
+        if kind == "upstream-manifest":
+            manifest_digest = self._runtime.get("manifestDigest")
+            if (
+                not isinstance(manifest_digest, str)
+                or _IMAGE_SHA256.fullmatch(manifest_digest) is None
+                or not isinstance(repo_digests, list)
+                or not any(
+                    str(value).endswith(f"@{manifest_digest}")
+                    for value in repo_digests
+                )
+            ):
+                raise ValueError("agent runtime image differs from its lock")
+        elif kind == "xgrammar-wheel-overlay":
+            config = inspected.get("Config")
+            labels = config.get("Labels") if isinstance(config, dict) else None
+            if (
+                repo_digests not in (None, [])
+                or not isinstance(labels, dict)
+                or labels.get("io.yap.base-manifest-digest")
+                != provenance.get("baseManifestDigest")
+                or labels.get("io.yap.xgrammar-version")
+                != self._runtime.get("xgrammar")
+                or labels.get("io.yap.xgrammar-wheel-sha256")
+                != provenance.get("wheelSha256")
+                or labels.get("io.yap.runtime") != "agent-vllm"
+            ):
+                raise ValueError("agent runtime image differs from its lock")
+        else:
             raise ValueError("agent runtime image differs from its lock")
         return image_id
 
@@ -499,13 +528,11 @@ class OwnedAgentVllmRuntime:
             or config.get("User") != "1000:1000"
             or not isinstance(environment, list)
             or "HOME=/tmp" not in environment
-            or [
-                value
-                for value in environment
-                if isinstance(value, str)
+            or any(
+                isinstance(value, str)
                 and value.startswith("VLLM_ENFORCE_STRICT_TOOL_CALLING=")
-            ]
-            != [_DISABLE_STRICT_TOOL_CALLING]
+                for value in environment
+            )
             or not isinstance(labels, dict)
             or labels.get("io.yap.owner") != "private-inference"
             or labels.get("io.yap.revision") != self._checked_head

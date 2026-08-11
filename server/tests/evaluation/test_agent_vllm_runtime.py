@@ -130,22 +130,20 @@ class AgentVllmRuntimeTests(unittest.TestCase):
         self.assertEqual(started.container_id, runner.container_id)
         launch = next(command for command in runner.commands if command[:2] == ["docker", "run"])
         self.assertIn(["--pull", "never"], [launch[index : index + 2] for index in range(len(launch) - 1)])
-        self.assertIn(
-            ["--env", "VLLM_ENFORCE_STRICT_TOOL_CALLING=0"],
-            [launch[index : index + 2] for index in range(len(launch) - 1)],
+        self.assertNotIn(
+            "VLLM_ENFORCE_STRICT_TOOL_CALLING=0",
+            launch,
         )
-        self.assertTrue(receipt["toolCallStructuralGuidanceDisabled"])
+        self.assertTrue(receipt["toolCallStructuralGuidanceEnabled"])
         self.assertTrue(receipt["teardown"]["sameLabelOwnersAbsent"])  # type: ignore[index]
 
-    def test_start_rejects_missing_structural_guidance_policy(self) -> None:
+    def test_start_rejects_disabled_structural_guidance_policy(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             cgroup = root / "cgroup"
             cgroup.mkdir()
             (cgroup / "cgroup.procs").write_text("", encoding="ascii")
-            runner = _AgentDockerRunner(
-                root, structural_guidance_disabled=False
-            )
+            runner = _AgentDockerRunner(root, structural_guidance_override="0")
             runtime = _startable_runtime(root, runner)
             with (
                 patch(
@@ -166,6 +164,137 @@ class AgentVllmRuntimeTests(unittest.TestCase):
                 evidence = runtime.contain_failed_run(timeout_seconds=1)
 
         self.assertTrue(all(evidence["teardown"].values()))  # type: ignore[union-attr]
+
+    def test_verifies_upstream_manifest_runtime_identity(self) -> None:
+        image_id = "sha256:" + "1" * 64
+        manifest_digest = "sha256:" + "2" * 64
+        runtime = OwnedAgentVllmRuntime(
+            checked_head="a" * 40,
+            runtime={
+                "engine": "vllm",
+                "image": "nvcr.io/nvidia/vllm:26.06-py3",
+                "manifestDigest": manifest_digest,
+                "observedImageId": image_id,
+                "platform": "linux/arm64",
+                "python": "3.12",
+                "vllm": "0.22.1+7b9cb5b7.dev",
+                "xgrammar": "0.2.0",
+                "provenance": {"kind": "upstream-manifest"},
+            },
+            candidate=_candidate("gemma-4-31b-it-nvfp4"),
+            runner=_ImageInspectRunner(
+                {
+                    "Os": "linux",
+                    "Architecture": "arm64",
+                    "Id": image_id,
+                    "RepoDigests": [
+                        f"nvcr.io/nvidia/vllm@{manifest_digest}"
+                    ],
+                    "Config": {"Labels": {}},
+                }
+            ),
+        )
+
+        self.assertEqual(runtime._verified_image_id(), image_id)
+
+    def test_verifies_derived_runtime_identity_and_overlay_provenance(self) -> None:
+        image_id = "sha256:" + "3" * 64
+        runtime = OwnedAgentVllmRuntime(
+            checked_head="a" * 40,
+            runtime={
+                "engine": "vllm",
+                "image": "yap-agent-vllm:qwen-26.07-xgrammar-0.2.1",
+                "observedImageId": image_id,
+                "platform": "linux/arm64",
+                "python": "3.12",
+                "vllm": "0.24.0+092c4842.nv26.7.59534043",
+                "xgrammar": "0.2.1",
+                "provenance": {
+                    "kind": "xgrammar-wheel-overlay",
+                    "baseImage": "nvcr.io/nvidia/vllm:26.07-py3",
+                    "baseManifestDigest": "sha256:" + "4" * 64,
+                    "dockerfile": "runtime/agent-vllm/Dockerfile",
+                    "dockerfileSha256": "5" * 64,
+                    "buildScript": "runtime/agent-vllm/build-qwen-vllm-runtime.sh",
+                    "buildScriptSha256": "8" * 64,
+                    "notice": "runtime/agent-vllm/THIRD_PARTY_NOTICES.md",
+                    "noticeSha256": "9" * 64,
+                    "wheel": "xgrammar.whl",
+                    "wheelSha256": "6" * 64,
+                    "sourceRevision": "7" * 40,
+                    "license": "Apache-2.0",
+                },
+            },
+            candidate=_candidate("qwen3.6-35b-a3b-nvfp4", reasoning_parser="qwen3"),
+            runner=_ImageInspectRunner(
+                {
+                    "Os": "linux",
+                    "Architecture": "arm64",
+                    "Id": image_id,
+                    "RepoDigests": [],
+                    "Config": {
+                        "Labels": {
+                            "io.yap.base-manifest-digest": "sha256:" + "4" * 64,
+                            "io.yap.xgrammar-version": "0.2.1",
+                            "io.yap.xgrammar-wheel-sha256": "6" * 64,
+                            "io.yap.runtime": "agent-vllm",
+                        }
+                    },
+                }
+            ),
+        )
+
+        self.assertEqual(runtime._verified_image_id(), image_id)
+
+    def test_rejects_derived_runtime_with_wrong_overlay_label(self) -> None:
+        image_id = "sha256:" + "3" * 64
+        runtime = OwnedAgentVllmRuntime(
+            checked_head="a" * 40,
+            runtime={
+                "engine": "vllm",
+                "image": "yap-agent-vllm:qwen-26.07-xgrammar-0.2.1",
+                "observedImageId": image_id,
+                "platform": "linux/arm64",
+                "python": "3.12",
+                "vllm": "0.24.0+092c4842.nv26.7.59534043",
+                "xgrammar": "0.2.1",
+                "provenance": {
+                    "kind": "xgrammar-wheel-overlay",
+                    "baseImage": "nvcr.io/nvidia/vllm:26.07-py3",
+                    "baseManifestDigest": "sha256:" + "4" * 64,
+                    "dockerfile": "runtime/agent-vllm/Dockerfile",
+                    "dockerfileSha256": "5" * 64,
+                    "buildScript": "runtime/agent-vllm/build-qwen-vllm-runtime.sh",
+                    "buildScriptSha256": "8" * 64,
+                    "notice": "runtime/agent-vllm/THIRD_PARTY_NOTICES.md",
+                    "noticeSha256": "9" * 64,
+                    "wheel": "xgrammar.whl",
+                    "wheelSha256": "6" * 64,
+                    "sourceRevision": "7" * 40,
+                    "license": "Apache-2.0",
+                },
+            },
+            candidate=_candidate("qwen3.6-35b-a3b-nvfp4", reasoning_parser="qwen3"),
+            runner=_ImageInspectRunner(
+                {
+                    "Os": "linux",
+                    "Architecture": "arm64",
+                    "Id": image_id,
+                    "RepoDigests": [],
+                    "Config": {
+                        "Labels": {
+                            "io.yap.base-manifest-digest": "sha256:" + "4" * 64,
+                            "io.yap.xgrammar-version": "0.2.0",
+                            "io.yap.xgrammar-wheel-sha256": "6" * 64,
+                            "io.yap.runtime": "agent-vllm",
+                        }
+                    },
+                }
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "differs from its lock"):
+            runtime._verified_image_id()
 
     def test_mismatched_inspection_identity_cannot_report_containment(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -366,7 +495,7 @@ class _AgentDockerRunner:
         returned_identity: str | None = None,
         user: str = "1000:1000",
         failed_removals: int = 0,
-        structural_guidance_disabled: bool = True,
+        structural_guidance_override: str | None = None,
     ) -> None:
         self.container_id = "c" * 64
         self.inspected_id = inspected_id or self.container_id
@@ -374,7 +503,7 @@ class _AgentDockerRunner:
         self.model_root = model_root / "model"
         self.user = user
         self.failed_removals = failed_removals
-        self.structural_guidance_disabled = structural_guidance_disabled
+        self.structural_guidance_override = structural_guidance_override
         self.launched = False
         self.exists = False
         self.replacement_owner = False
@@ -422,8 +551,11 @@ class _AgentDockerRunner:
                 "Env": [
                     "HOME=/tmp",
                     *(
-                        ["VLLM_ENFORCE_STRICT_TOOL_CALLING=0"]
-                        if self.structural_guidance_disabled
+                        [
+                            "VLLM_ENFORCE_STRICT_TOOL_CALLING="
+                            + self.structural_guidance_override
+                        ]
+                        if self.structural_guidance_override is not None
                         else []
                     ),
                 ],
@@ -454,6 +586,27 @@ class _AgentDockerRunner:
                 }
             ],
         }
+
+
+class _ImageInspectRunner:
+    def __init__(self, inspection: dict[str, object]) -> None:
+        self.inspection = inspection
+
+    def __call__(self, command, **kwargs):
+        completed = subprocess.CompletedProcess(
+            list(command),
+            0,
+            json.dumps([self.inspection]),
+            "",
+        )
+        if kwargs.get("check") and completed.returncode:
+            raise subprocess.CalledProcessError(
+                completed.returncode,
+                command,
+                completed.stdout,
+                completed.stderr,
+            )
+        return completed
 
 
 def _children() -> dict[str, str]:

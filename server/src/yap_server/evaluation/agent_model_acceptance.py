@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -29,6 +30,49 @@ _PLAN_KEYS = {
     "selectionPolicy",
     "routeEvidence",
     "permittedOutcomes",
+}
+_QWEN_RUNTIME_ID = "qwen-vllm-26.07-xgrammar-0.2.1"
+_GEMMA_RUNTIME_ID = "gemma-vllm-26.06"
+_APPROVED_AGENT_RUNTIMES = {
+    _QWEN_RUNTIME_ID: {
+        "engine": "vllm",
+        "image": "yap-agent-vllm:qwen-26.07-xgrammar-0.2.1",
+        "observedImageId": "sha256:cbbe822b63b6e3d7fd4d18ac727108d84b06974f6e1632ea4ea85df2b18d27cb",
+        "platform": "linux/arm64",
+        "python": "3.12",
+        "vllm": "0.24.0+092c4842.nv26.7.59534043",
+        "xgrammar": "0.2.1",
+        "provenance": {
+            "kind": "xgrammar-wheel-overlay",
+            "baseImage": "nvcr.io/nvidia/vllm:26.07-py3",
+            "baseManifestDigest": "sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2",
+            "dockerfile": "runtime/agent-vllm/Dockerfile",
+            "dockerfileSha256": "943433baeefef0e167b5a8d27b744b305ba2f32f47841d43f53f2d27625af264",
+            "buildScript": "runtime/agent-vllm/build-qwen-vllm-runtime.sh",
+            "buildScriptSha256": "6a7feff232485d43f4b2ec550ef050cd7ec1595d4d4f056d623bef4da8b1b6cb",
+            "notice": "runtime/agent-vllm/THIRD_PARTY_NOTICES.md",
+            "noticeSha256": "8c13a052aa3a1f5f77918617490bfdb37509a5252d684283a724ec965d0b25c8",
+            "wheel": "xgrammar-0.2.1-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+            "wheelSha256": "9e8dd9853958a263b4015ce79133a0ff4eaa9d22ef781fb2350c7dfc40c2c012",
+            "sourceRevision": "5b4e9ce9e72524037ae24ecd831b9b6604d2eb48",
+            "license": "Apache-2.0",
+        },
+    },
+    _GEMMA_RUNTIME_ID: {
+        "engine": "vllm",
+        "image": "nvcr.io/nvidia/vllm:26.06-py3",
+        "manifestDigest": "sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e",
+        "observedImageId": "sha256:59f44d868668552a6d63a5fa3425fa8d63591bf0b9cc1eba1dc0624371068af7",
+        "platform": "linux/arm64",
+        "python": "3.12",
+        "vllm": "0.22.1+7b9cb5b7.dev",
+        "xgrammar": "0.2.0",
+        "provenance": {"kind": "upstream-manifest"},
+    },
+}
+_RUNTIME_BY_CANDIDATE = {
+    "qwen3.6-35b-a3b-nvfp4": _QWEN_RUNTIME_ID,
+    "gemma-4-31b-it-nvfp4": _GEMMA_RUNTIME_ID,
 }
 
 
@@ -74,7 +118,7 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
         expected_sha256=fixture_hash,
         containment_root=repository_root,
     )
-    candidate_routes = _candidate_lock(lock)
+    candidate_routes = _candidate_lock(lock, server_root=server_root)
     candidate_ids = tuple(candidate_routes)
     case_ids, categories = _fixtures(fixtures)
     minimum = plan["minimumCaseCount"]
@@ -110,31 +154,31 @@ def load_agent_model_acceptance(repository_root: Path) -> AgentModelAcceptance:
     )
 
 
-def _candidate_lock(value: dict[str, object]) -> dict[str, str]:
+def _candidate_lock(
+    value: dict[str, object], *, server_root: Path | None = None
+) -> dict[str, str]:
     if (
-        set(value) != {"schemaVersion", "runtime", "candidates"}
-        or value["schemaVersion"] != 2
+        set(value) != {"schemaVersion", "runtimes", "candidates"}
+        or value["schemaVersion"] != 3
     ):
         raise ValueError("agent reasoning candidate lock differs from the contract")
-    runtime = value["runtime"]
-    if not isinstance(runtime, dict) or set(runtime) != {
-        "engine",
-        "image",
-        "digest",
-        "platform",
-        "python",
-        "vllm",
-    }:
-        raise ValueError("agent runtime lock is invalid")
-    if runtime != {
-        "engine": "vllm",
-        "image": "nvcr.io/nvidia/vllm:26.07-py3",
-        "digest": "sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2",
-        "platform": "linux/arm64",
-        "python": "3.12",
-        "vllm": "0.24.0+092c4842.nv26.7.59534043",
-    }:
-        raise ValueError("agent runtime identity is not the approved GB10 image")
+    runtimes = value["runtimes"]
+    if runtimes != _APPROVED_AGENT_RUNTIMES:
+        raise ValueError("agent route runtime identities differ from the contract")
+    if server_root is not None:
+        provenance = _APPROVED_AGENT_RUNTIMES[_QWEN_RUNTIME_ID]["provenance"]
+        assert isinstance(provenance, dict)
+        resolved_server_root = server_root.resolve(strict=True)
+        for path_field, digest_field in (
+            ("dockerfile", "dockerfileSha256"),
+            ("buildScript", "buildScriptSha256"),
+            ("notice", "noticeSha256"),
+        ):
+            path = (server_root / str(provenance[path_field])).resolve(strict=True)
+            if resolved_server_root not in path.parents:
+                raise ValueError("agent route runtime build input escaped the server root")
+            if hashlib.sha256(path.read_bytes()).hexdigest() != provenance[digest_field]:
+                raise ValueError("agent route runtime build input differs")
     candidates = value["candidates"]
     if not isinstance(candidates, list) or len(candidates) != 2:
         raise ValueError("agent candidate set is invalid")
@@ -142,6 +186,7 @@ def _candidate_lock(value: dict[str, object]) -> dict[str, str]:
     for candidate in candidates:
         if not isinstance(candidate, dict) or not {
             "candidateId",
+            "runtimeId",
             "model",
             "revision",
             "artifactManifestSha256",
@@ -153,6 +198,7 @@ def _candidate_lock(value: dict[str, object]) -> dict[str, str]:
             "source",
         } <= set(candidate) <= {
             "candidateId",
+            "runtimeId",
             "model",
             "revision",
             "artifactManifestSha256",
@@ -169,6 +215,8 @@ def _candidate_lock(value: dict[str, object]) -> dict[str, str]:
         candidate_id = candidate["candidateId"]
         if not isinstance(candidate_id, str) or not candidate_id:
             raise ValueError("agent candidate ID is invalid")
+        if candidate.get("runtimeId") != _RUNTIME_BY_CANDIDATE.get(candidate_id):
+            raise ValueError("agent candidate route runtime differs")
         if not isinstance(candidate["revision"], str) or not _REVISION.fullmatch(
             candidate["revision"]
         ):

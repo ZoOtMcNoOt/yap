@@ -38,6 +38,9 @@ _INPUTS = (
     Path("server/agent-model-acceptance.json"),
     Path("server/agent-reasoning-candidates.lock.json"),
     Path("server/agent-workload-fixtures.json"),
+    Path("server/runtime/agent-vllm/Dockerfile"),
+    Path("server/runtime/agent-vllm/build-qwen-vllm-runtime.sh"),
+    Path("server/runtime/agent-vllm/THIRD_PARTY_NOTICES.md"),
 )
 _EVIDENCE_KEYS = {
     "schemaVersion",
@@ -297,13 +300,16 @@ def _failed_candidate_summary(
     ):
         raise ValueError("agent candidate failure identity is invalid")
     runtime = failure["runtime"]
-    if not isinstance(runtime, dict) or (
+    expected_runtime = expected.get("_runtime")
+    if not isinstance(runtime, dict) or not isinstance(expected_runtime, dict):
+        raise ValueError("failed agent runtime containment differs")
+    if (
         runtime.get("modelArtifactManifestSha256") != expected["artifactManifestSha256"]
         or runtime.get("launchArguments")
         != build_agent_vllm_launch_arguments(expected)
         or canonical_evidence_sha256(runtime.get("launchArguments"))
         != runtime.get("launchArgumentsSha256")
-        or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(runtime.get("imageId")))
+        or runtime.get("imageId") != expected_runtime.get("observedImageId")
         or runtime.get("teardown")
         != {
             "containerAbsent": True,
@@ -363,8 +369,18 @@ def _candidate_models(
         containment_root=repository_root,
     )
     candidates = lock["candidates"]
-    assert isinstance(candidates, list)
-    return {str(value["candidateId"]): value for value in candidates}
+    runtimes = lock["runtimes"]
+    if not isinstance(candidates, list) or not isinstance(runtimes, dict):
+        raise ValueError("agent candidate runtime lock is invalid")
+    models: dict[str, dict[str, object]] = {}
+    for value in candidates:
+        if not isinstance(value, dict):
+            raise ValueError("agent candidate runtime lock is invalid")
+        runtime = runtimes.get(value.get("runtimeId"))
+        if not isinstance(runtime, dict):
+            raise ValueError("agent candidate runtime lock is invalid")
+        models[str(value["candidateId"])] = {**value, "_runtime": runtime}
+    return models
 
 
 def _validate_runtime_receipt(
@@ -387,35 +403,29 @@ def _validate_runtime_receipt(
         "modelArtifactManifestSha256",
         "launchArguments",
         "launchArgumentsSha256",
-        "toolCallStructuralGuidanceDisabled",
+        "toolCallStructuralGuidanceEnabled",
         "childEvidenceSha256",
         "teardown",
     }
     if set(value) != required or value["schemaVersion"] != 1:
         raise ValueError("agent runtime receipt differs from the contract")
+    expected_runtime = expected.get("_runtime")
+    if not isinstance(expected_runtime, dict):
+        raise ValueError("agent runtime receipt identity is invalid")
     if (
         value["checkedHead"] != candidate.checked_head
         or value["candidateId"] != expected["candidateId"]
         or value["model"] != expected["model"]
         or value["revision"] != expected["revision"]
         or value["quantization"] != expected["quantization"]
-        or value["runtime"]
-        != {
-            "engine": "vllm",
-            "image": "nvcr.io/nvidia/vllm:26.07-py3",
-            "digest": "sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2",
-            "platform": "linux/arm64",
-            "python": "3.12",
-            "vllm": "0.24.0+092c4842.nv26.7.59534043",
-        }
+        or value["runtime"] != expected_runtime
         or value["modelArtifactManifestSha256"] != expected["artifactManifestSha256"]
-        or not isinstance(value["imageId"], str)
-        or not re.fullmatch(r"sha256:[0-9a-f]{64}", value["imageId"])
+        or value["imageId"] != expected_runtime.get("observedImageId")
         or value["launchArguments"] != build_agent_vllm_launch_arguments(expected)
         or canonical_evidence_sha256(value["launchArguments"])
         != value["launchArgumentsSha256"]
         or not _SHA256.fullmatch(str(value["launchArgumentsSha256"]))
-        or value["toolCallStructuralGuidanceDisabled"] is not True
+        or value["toolCallStructuralGuidanceEnabled"] is not True
         or not isinstance(value["childEvidenceSha256"], dict)
         or set(value["childEvidenceSha256"])
         != {"fixtures", "pressure", "cancellation", "resources", "lifecycle"}

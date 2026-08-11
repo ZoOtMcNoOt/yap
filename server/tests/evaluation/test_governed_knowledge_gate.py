@@ -142,6 +142,9 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
             "server/pyproject.toml",
             "server/uv.lock",
             "server/agent-workload-fixtures.json",
+            "server/runtime/agent-vllm/Dockerfile",
+            "server/runtime/agent-vllm/build-qwen-vllm-runtime.sh",
+            "server/runtime/agent-vllm/THIRD_PARTY_NOTICES.md",
             "server/tests/evaluation/test_agent_model_final_response_retry.py",
             "server/tests/evaluation/test_agent_model_qualification.py",
             "server/tests/evaluation/test_agent_route_qualification_evidence.py",
@@ -157,20 +160,7 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
                 self.assertTrue(route_evidence.is_agent_route_evidence_path(path))
 
     def test_agent_route_reference_rejects_protected_descendant_changes(self) -> None:
-        reference = route_evidence.load_agent_route_qualification_reference(
-            REPOSITORY_ROOT
-        )
-        reference = replace(
-            reference,
-            input_sha256={
-                path: hashlib.sha256((REPOSITORY_ROOT / path).read_bytes()).hexdigest()
-                for path in reference.input_sha256
-            },
-            dependency_sha256={
-                path: hashlib.sha256((REPOSITORY_ROOT / path).read_bytes()).hexdigest()
-                for path in reference.dependency_sha256
-            },
-        )
+        reference = _current_route_reference()
 
         changed_paths = (
             "server/src/yap_server/evaluation/provider_runtime_observations.py",
@@ -197,9 +187,7 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
                     )
 
     def test_agent_route_reference_rejects_dependency_hash_change(self) -> None:
-        reference = route_evidence.load_agent_route_qualification_reference(
-            REPOSITORY_ROOT
-        )
+        reference = _current_route_reference()
         reference = replace(
             reference,
             dependency_sha256={
@@ -265,6 +253,26 @@ def _database_result() -> dict[str, object]:
         "skipped": 0,
         "testsRun": gate._EXPECTED_DATABASE_TEST_COUNT,
     }
+
+
+def _current_route_reference() -> route_evidence.AgentRouteQualificationReference:
+    inputs = {
+        path: hashlib.sha256((REPOSITORY_ROOT / path).read_bytes()).hexdigest()
+        for path in route_evidence._MODEL_INPUT_PATHS
+    }
+    dependencies = {
+        path: hashlib.sha256((REPOSITORY_ROOT / path).read_bytes()).hexdigest()
+        for path in route_evidence._MODEL_DEPENDENCY_PATHS
+    }
+    return route_evidence.AgentRouteQualificationReference(
+        checked_head=_HEAD,
+        outcome="required-workload-routes-qualified",
+        evidence_sha256="d" * 64,
+        input_sha256=inputs,
+        dependency_sha256=dependencies,
+        artifact_sha256={},
+        lock_sha256="e" * 64,
+    )
 
 
 def _completed(command, *, returncode=0, stdout="", stderr=""):
