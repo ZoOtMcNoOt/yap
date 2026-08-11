@@ -1,11 +1,12 @@
 # ADR 0006: Silero VAD, agent profiles, and runtime state machine
 
 **Date:** 2026-06-30
-**Status:** Accepted runtime/VAD principles; active routing and Phase 6 preprocessing are amended by ADR 0014, ADR 0019, ADR 0020, and ADR 0024
+**Status:** Accepted runtime/VAD principles; active routing, Phase 6 preprocessing, and the complete agent roster are amended by ADR 0014, ADR 0019, ADR 0020, ADR 0024, and ADR 0031
 **Builds on:** [ADR 0004](0004-background-diarization-okf-agents.md), [ADR 0005](0005-llama-server-agents.md)
 **Amended by:** [ADR 0014](0014-server-tier-compute-topology.md) and [ADR 0019](0019-local-streaming-model-selection.md) — heavy model residency moves to the **server-side workload router** in the team profile. The current client does not keep an umbrella `RuntimeOrchestrator`: connector generations/state live in `server_connector`, durable batch transitions in `jobs`, and local live lifecycle in `live`, with shared projection enums under `runtime`. This split is the accepted "or equivalent" implementation of the orchestration responsibility. The old local `moonshine XOR cohere` state machine is historical context.
 **Amended by:** [ADR 0020](0020-meeting-capture-diarization-authority.md) - VAD remains useful for endpointing and advisory segment hints, but it is not authoritative for meeting reprocessing. Speaker work runs through an independent bounded sink and may re-evaluate activity from retained audio.
 **Amended by:** [ADR 0024](0024-global-language-routing.md) - Phase 6 now executes pinned Silero VAD over imported canonical WAV sources as bounded advisory source-time evidence. The live-microphone VAD/chunker remains a separate unimplemented target, and VAD never becomes deletion or transcription authority.
+**Amended by:** [ADR 0031](0031-eight-agent-voice-os-roster.md) - all eight named workflows are now in delivery scope through the authenticated private-server architecture. The historical Scribe-only v1 flag and local llama-server routing do not define the current team implementation; raw/local controls remain available when the server route is absent.
 
 ## Context
 

@@ -9,8 +9,8 @@ The inventory includes the repository's tracked source, text, policy, and
 provenance contract extensions and excludes only the two tracked OpenAPI products, the
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
-hand-maintained policy. At this tree the complete 250-line inventory is 480
-files: 253 listed below at 350 or more lines and 227 from 250 through 349.
+hand-maintained policy. At this tree the complete 250-line inventory is 488
+files: 256 listed below at 350 or more lines and 232 from 250 through 349.
 
 Each line contains up to two independent entries in the form
 `physical-lines disposition exact-path`.
@@ -85,15 +85,16 @@ Each line contains up to two independent entries in the form
   696 INFRA                infra/yap-server-node/owned-process-group.sh ||   989 INFRA                infra/yap-server-node/owned-process-supervisor.py
   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
   504 INFRA                infra/yap-server-node/setup-server.sh ||   650 SERVER-RUNBOOK       server/README.md
-  373 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
+  384 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
   414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   585 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
-  483 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   715 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
-  450 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py ||   716 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py
+  483 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   717 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
+  492 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py ||   373 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_observation.py
+  562 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_runtime.py ||   626 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py
   506 EVALUATION           server/src/yap_server/evaluation/ami_meeting_lock.py ||  1396 EVALUATION           server/src/yap_server/evaluation/corpus_manifest.py
   612 EVALUATION           server/src/yap_server/evaluation/duration_tracks.py ||   399 EVALUATION           server/src/yap_server/evaluation/european_parliament_speech_source.py
   350 EVALUATION           server/src/yap_server/evaluation/fleurs_cohere_comparator.py ||   797 EVALUATION           server/src/yap_server/evaluation/fleurs_corpus.py
-  570 EVALUATION           server/src/yap_server/evaluation/governed_knowledge_gate.py ||   427 EVALUATION           server/src/yap_server/evaluation/human_reference_adjudication.py
+  571 EVALUATION           server/src/yap_server/evaluation/governed_knowledge_gate.py ||   427 EVALUATION           server/src/yap_server/evaluation/human_reference_adjudication.py
   672 EVALUATION           server/src/yap_server/evaluation/manifest_scoring.py ||   703 EVALUATION           server/src/yap_server/evaluation/meeting_acceptance_plan.py
   753 EVALUATION           server/src/yap_server/evaluation/owned_postgres_knowledge_runtime.py ||   719 EVALUATION           server/src/yap_server/evaluation/provider_cancellation_qualification.py
   619 EVALUATION           server/src/yap_server/evaluation/provider_capacity_qualification.py ||   669 EVALUATION           server/src/yap_server/evaluation/provider_duration_suite.py
@@ -113,21 +114,22 @@ Each line contains up to two independent entries in the form
   397 LID                  server/src/yap_server/lid/policy.py ||   490 LID                  server/src/yap_server/lid/worker_contract.py
  1173 LIVE                 server/src/yap_server/live/protocol.py ||   586 LIVE                 server/src/yap_server/live/websocket_server.py
   491 MEETING              server/src/yap_server/meeting_transcription/container_worker.py ||   764 MEETING              server/src/yap_server/meeting_transcription/result_revisions.py
-  692 MEETING              server/src/yap_server/meeting_transcription/runtime_provenance.py ||   381 POOLS                server/src/yap_server/pools/batch_asr.py
-  484 POOLS                server/src/yap_server/pools/checked_runtime_image.py ||   730 POOLS                server/src/yap_server/pools/cohere_engine.py
-  427 POOLS                server/src/yap_server/pools/nemo_stream_scheduler.py ||   665 POOLS                server/src/yap_server/pools/nemotron_engine.py
-  529 POOLS                server/src/yap_server/pools/nemotron_nemo_client.py ||   470 POOLS                server/src/yap_server/pools/nemotron_nemo_pipeline.py
-  488 POOLS                server/src/yap_server/pools/nemotron_nemo_service.py ||   418 POOLS                server/src/yap_server/pools/nemotron_nemo_streaming.py
-  378 POOLS                server/src/yap_server/pools/provider_worker_factory.py ||   513 POOLS                server/src/yap_server/pools/utterance_plan.py
-  575 POOLS                server/src/yap_server/pools/vllm_transcription_client.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
-  407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py ||   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py
-  520 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py ||   352 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py
-  395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   754 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
-  748 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py
-  647 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py ||  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py
-  495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py ||   388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py
-  552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py ||   358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py
-  580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py ||   966 TEST-INFRA           server/tests/infra/test_mock_oidc_harness.py
+  692 MEETING              server/src/yap_server/meeting_transcription/runtime_provenance.py ||   372 POOLS                server/src/yap_server/pools/agent_vllm_service_profile.py
+  381 POOLS                server/src/yap_server/pools/batch_asr.py ||   484 POOLS                server/src/yap_server/pools/checked_runtime_image.py
+  730 POOLS                server/src/yap_server/pools/cohere_engine.py ||   427 POOLS                server/src/yap_server/pools/nemo_stream_scheduler.py
+  665 POOLS                server/src/yap_server/pools/nemotron_engine.py ||   531 POOLS                server/src/yap_server/pools/nemotron_nemo_client.py
+  470 POOLS                server/src/yap_server/pools/nemotron_nemo_pipeline.py ||   488 POOLS                server/src/yap_server/pools/nemotron_nemo_service.py
+  418 POOLS                server/src/yap_server/pools/nemotron_nemo_streaming.py ||   378 POOLS                server/src/yap_server/pools/provider_worker_factory.py
+  513 POOLS                server/src/yap_server/pools/utterance_plan.py ||   577 POOLS                server/src/yap_server/pools/vllm_transcription_client.py
+  426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py ||   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py
+  453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py ||   520 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py
+  352 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py ||   395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py
+  754 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py ||   750 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py
+  354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py ||   647 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py
+ 1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py ||   495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py
+  388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py ||   552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py
+  358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py ||   580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py
+  966 TEST-INFRA           server/tests/infra/test_mock_oidc_harness.py
   898 TEST-INFRA           server/tests/infra/test_owned_process_supervisor.py ||  1458 TEST-INFRA           server/tests/infra/test_private_container_loopback_proxy_behavior.py
   801 TEST-INFRA           server/tests/infra/test_resident_provider_lifecycle_gate.py ||  1048 TEST-JOBS            server/tests/jobs/test_runtime.py
   646 TEST-JOBS            server/tests/jobs/test_service_commit_admission.py ||   681 TEST-JOBS            server/tests/jobs/test_service_contract.py

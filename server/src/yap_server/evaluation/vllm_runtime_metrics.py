@@ -7,7 +7,7 @@ import re
 import time
 from typing import Callable, Mapping
 
-from yap_server.pools.authenticated_loopback_http import (
+from yap_server.pools.numeric_loopback_endpoint import (
     parse_numeric_loopback_http_endpoint,
 )
 from yap_server.pools.batch_contract import WorkerExecutionError

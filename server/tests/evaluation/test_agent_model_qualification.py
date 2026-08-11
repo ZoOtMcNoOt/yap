@@ -40,6 +40,8 @@ INPUTS = tuple(
     for relative in (
         "server/agent-model-acceptance.json",
         "server/agent-reasoning-candidates.lock.json",
+        "server/agent-service-profiles/rapid-automation.json",
+        "server/agent-service-profiles/complex-orchestration.json",
         "server/agent-workload-fixtures.json",
         "server/runtime/agent-vllm/Dockerfile",
         "server/runtime/agent-vllm/build-qwen-vllm-runtime.sh",

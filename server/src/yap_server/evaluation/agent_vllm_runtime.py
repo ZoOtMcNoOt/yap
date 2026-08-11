@@ -13,6 +13,9 @@ import urllib.error
 import urllib.request
 
 from .provider_runtime_observations import canonical_evidence_sha256
+from yap_server.pools.agent_vllm_launch_contract import (
+    build_qualified_agent_vllm_launch_arguments,
+)
 
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
@@ -26,108 +29,15 @@ def build_agent_vllm_launch_arguments(
     candidate: dict[str, object],
 ) -> list[str]:
     """Build the exact checked vLLM command for one admitted workload route."""
-
-    candidate_id = str(candidate.get("candidateId", ""))
     revision = str(candidate.get("revision", ""))
-    model = str(candidate.get("model", ""))
-    tool_parser = str(candidate.get("toolCallParser", ""))
-    final_response_protocol = str(candidate.get("finalResponseProtocol", ""))
-    if (
-        candidate_id
-        not in {"qwen3.6-35b-a3b-nvfp4", "gemma-4-31b-it-nvfp4"}
-        or not re.fullmatch(r"[0-9a-f]{40}", revision)
-        or not model
-        or not tool_parser
-    ):
-        raise ValueError("agent vLLM launch candidate is invalid")
-    arguments = [
-        "vllm",
-        "serve",
-        f"/model-cache/snapshots/{revision}",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        str(_PORT),
-        "--served-model-name",
-        model,
-    ]
-    if candidate_id == "qwen3.6-35b-a3b-nvfp4":
-        reasoning_parser = candidate.get("reasoningParser")
-        if (
-            reasoning_parser != "qwen3"
-            or final_response_protocol != "json-schema"
-            or "chatTemplate" in candidate
-        ):
-            raise ValueError("Qwen reasoning parser is invalid")
-        arguments.extend(["--reasoning-parser", reasoning_parser])
-    else:
-        chat_template = candidate.get("chatTemplate")
-        if (
-            "reasoningParser" in candidate
-            or final_response_protocol != "forced-answer-tool"
-            or chat_template
-            != "/opt/vllm/vllm-src/examples/tool_chat_template_gemma4.jinja"
-        ):
-            raise ValueError("Gemma response protocol is invalid")
-        arguments.extend(["--chat-template", chat_template])
-    arguments.extend(
-        [
-            "--enable-auto-tool-choice",
-            "--tool-call-parser",
-            tool_parser,
-            "--max-model-len",
-            "8192",
-            "--tensor-parallel-size",
-            "1",
-            "--kv-cache-dtype",
-            "fp8",
-            "--enable-prefix-caching",
-            "--enable-chunked-prefill",
-            "--async-scheduling",
-            "--language-model-only",
-        ]
+    return list(
+        build_qualified_agent_vllm_launch_arguments(
+            candidate,
+            model_path=f"/model-cache/snapshots/{revision}",
+            host="127.0.0.1",
+            port=_PORT,
+        )
     )
-    if candidate_id == "qwen3.6-35b-a3b-nvfp4":
-        arguments.extend(
-            [
-                "--attention-backend",
-                "flashinfer",
-                "--moe-backend",
-                "marlin",
-                "--gpu-memory-utilization",
-                "0.40",
-                "--max-num-seqs",
-                "4",
-                "--max-num-batched-tokens",
-                "8192",
-                "--speculative-config",
-                json.dumps(
-                    {
-                        "method": "mtp",
-                        "moe_backend": "triton",
-                        "num_speculative_tokens": 3,
-                    },
-                    separators=(",", ":"),
-                    sort_keys=True,
-                ),
-                "--load-format",
-                "fastsafetensors",
-            ]
-        )
-    else:
-        arguments.extend(
-            [
-                "--gpu-memory-utilization",
-                "0.70",
-                "--max-num-seqs",
-                "8",
-                "--max-num-batched-tokens",
-                "8192",
-                "--load-format",
-                "fastsafetensors",
-            ]
-        )
-    return arguments
 
 
 @dataclass(frozen=True, slots=True)

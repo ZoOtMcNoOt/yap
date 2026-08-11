@@ -15,8 +15,9 @@ RuntimeDirectoryMode=0700
 UMask=0077
 ExecStart=/usr/local/libexec/yap-provider-supervisor \
   --service %i \
-  --endpoint ${YAP_PROVIDER_ENDPOINT} \
-  --expected-model ${YAP_PROVIDER_MODEL} \
+  --profile ${YAP_PROVIDER_PROFILE} \
+  --profile-sha256 ${YAP_PROVIDER_PROFILE_SHA256} \
+  --candidate-lock ${YAP_PROVIDER_CANDIDATE_LOCK} \
   --state-path /run/yap-provider-%i/service-state.json \
   --launcher ${YAP_PROVIDER_LAUNCHER} \
   --

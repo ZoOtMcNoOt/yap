@@ -51,6 +51,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.evaluation.test_agent_model_scoring",
     "tests.evaluation.test_agent_route_qualification_evidence",
     "tests.evaluation.test_agent_runtime_pressure",
+    "tests.evaluation.test_agent_service_lifecycle_runtime",
     "tests.evaluation.test_agent_vllm_metrics",
     "tests.evaluation.test_agent_vllm_runtime",
     "tests.evaluation.test_checked_candidate",
@@ -70,7 +71,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 152
+_EXPECTED_PORTABLE_TEST_COUNT = 155
 
 
 def evaluate_governed_knowledge_gate(

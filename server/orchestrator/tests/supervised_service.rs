@@ -9,7 +9,7 @@ use tokio::sync::oneshot;
 use tokio::time::{sleep, timeout};
 use yap_server_orchestrator::{
     run_supervised_service, CommandSpec, LifecycleState, NumericLoopbackEndpoint, ProviderService,
-    ServiceSnapshot, SupervisedServiceConfig,
+    ServiceProfileIdentity, ServiceSnapshot, SupervisedServiceConfig,
 };
 
 const MODEL: &str = "nvidia/Qwen3.6-35B-A3B-NVFP4";
@@ -27,6 +27,10 @@ async fn service_becomes_ready_and_stops_after_reaping_one_child() {
 
     let ready = wait_for_state(&state_path, LifecycleState::Ready).await;
     assert_eq!(ready.process_generation, 1);
+    assert_eq!(ready.schema_version, 2);
+    assert_eq!(ready.profile_id, "rapid-automation");
+    assert_eq!(ready.profile_sha256, "1".repeat(64));
+    assert_eq!(ready.candidate_lock_sha256, "2".repeat(64));
     assert_eq!(ready.start_count, 1);
     assert_eq!(ready.readiness_transition_count, 1);
     shutdown_sender.send(()).unwrap();
@@ -262,10 +266,17 @@ impl TestFixture {
         if self.ignore_termination {
             arguments.push(OsString::from("--ignore-termination"));
         }
-        SupervisedServiceConfig::new(
+        let identity = ServiceProfileIdentity::new(
             ProviderService::RapidAutomation,
             NumericLoopbackEndpoint::parse(&format!("http://127.0.0.1:{}", self.port)).unwrap(),
             MODEL.to_owned(),
+            "rapid-automation".to_owned(),
+            "1".repeat(64),
+            "2".repeat(64),
+        )
+        .unwrap();
+        SupervisedServiceConfig::new(
+            identity,
             self.state_path.clone(),
             CommandSpec::new(self.launcher_path.clone(), arguments).unwrap(),
         )

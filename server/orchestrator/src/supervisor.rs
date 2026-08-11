@@ -37,7 +37,12 @@ where
     F: Future<Output = ()> + Send,
 {
     let lifecycle_started_at = Instant::now();
-    let mut tracker = LifecycleTracker::new(config.service());
+    let mut tracker = LifecycleTracker::new(
+        config.service(),
+        config.profile_id().to_owned(),
+        config.profile_sha256().to_owned(),
+        config.candidate_lock_sha256().to_owned(),
+    );
     tokio::pin!(shutdown);
 
     loop {

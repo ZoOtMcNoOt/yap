@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from ipaddress import ip_address
 import json
 from typing import Protocol
-from urllib.parse import urlsplit
 
 from yap_server.pools.batch_contract import WorkerExecutionError
 
@@ -39,41 +37,6 @@ class LoopbackHttpResponseStatusError(WorkerExecutionError):
     def __init__(self, *, component: str, status: int) -> None:
         self.status = status
         super().__init__(f"{component} request returned an unexpected status")
-
-
-def parse_numeric_loopback_http_endpoint(
-    endpoint: str,
-    *,
-    component: str,
-) -> tuple[str, int]:
-    try:
-        parsed = urlsplit(endpoint)
-        port = parsed.port
-    except (AttributeError, ValueError) as error:
-        raise ValueError(f"{component} endpoint is invalid") from error
-    if (
-        parsed.scheme != "http"
-        or parsed.username is not None
-        or parsed.password is not None
-        or parsed.path not in ("",)
-        or parsed.query
-        or parsed.fragment
-        or parsed.hostname is None
-        or port is None
-        or port == 0
-    ):
-        raise ValueError(
-            f"{component} endpoint must be one numeric loopback HTTP authority"
-        )
-    try:
-        address = ip_address(parsed.hostname)
-    except ValueError as error:
-        raise ValueError(
-            f"{component} endpoint host must be a numeric IP address"
-        ) from error
-    if not address.is_loopback:
-        raise ValueError(f"{component} endpoint must use a loopback address")
-    return str(address), port
 
 
 def validate_private_api_key(api_key: str, *, component: str) -> None:

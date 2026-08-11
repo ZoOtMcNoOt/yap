@@ -2,9 +2,9 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::endpoint::NumericLoopbackEndpoint;
 use crate::error::OrchestratorError;
 use crate::lifecycle::ProviderService;
+use crate::service_profile::{load_service_profile, ServiceProfileIdentity};
 use crate::state_snapshot::validate_snapshot_path;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -108,48 +108,47 @@ fn require_executable_launcher(_metadata: &fs::Metadata) -> Result<(), Orchestra
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct SupervisedServiceConfig {
-    service: ProviderService,
-    endpoint: NumericLoopbackEndpoint,
-    expected_model: String,
+    profile: ServiceProfileIdentity,
     state_path: PathBuf,
     command: CommandSpec,
 }
 
 impl SupervisedServiceConfig {
     pub fn new(
-        service: ProviderService,
-        endpoint: NumericLoopbackEndpoint,
-        expected_model: String,
+        profile: ServiceProfileIdentity,
         state_path: PathBuf,
         command: CommandSpec,
     ) -> Result<Self, OrchestratorError> {
-        if expected_model.is_empty()
-            || expected_model.len() > 256
-            || expected_model.trim() != expected_model
-            || expected_model.chars().any(char::is_control)
-        {
-            return Err(OrchestratorError::new("provider model identity is invalid"));
-        }
         let state_path = validate_snapshot_path(state_path)?;
         Ok(Self {
-            service,
-            endpoint,
-            expected_model,
+            profile,
             state_path,
             command,
         })
     }
 
     pub fn service(&self) -> ProviderService {
-        self.service
+        self.profile.service()
     }
 
-    pub fn endpoint(&self) -> NumericLoopbackEndpoint {
-        self.endpoint
+    pub fn endpoint(&self) -> crate::endpoint::NumericLoopbackEndpoint {
+        self.profile.endpoint()
     }
 
     pub fn expected_model(&self) -> &str {
-        &self.expected_model
+        self.profile.expected_model()
+    }
+
+    pub fn profile_id(&self) -> &str {
+        self.profile.profile_id()
+    }
+
+    pub fn profile_sha256(&self) -> &str {
+        self.profile.profile_sha256()
+    }
+
+    pub fn candidate_lock_sha256(&self) -> &str {
+        self.profile.candidate_lock_sha256()
     }
 
     pub fn state_path(&self) -> &Path {
@@ -169,8 +168,9 @@ where
 {
     let mut values = arguments.into_iter();
     let mut service = None;
-    let mut endpoint = None;
-    let mut expected_model = None;
+    let mut profile = None;
+    let mut profile_sha256 = None;
+    let mut candidate_lock = None;
     let mut state_path = None;
     let mut launcher = None;
     let mut launcher_arguments = Vec::new();
@@ -192,8 +192,13 @@ where
             .ok_or_else(|| OrchestratorError::new("supervisor control value is missing"))?;
         match flag {
             "--service" => set_once(&mut service, value, "provider service")?,
-            "--endpoint" => set_once(&mut endpoint, value, "provider endpoint")?,
-            "--expected-model" => set_once(&mut expected_model, value, "provider model identity")?,
+            "--profile" => set_once(&mut profile, value, "provider service profile")?,
+            "--profile-sha256" => set_once(
+                &mut profile_sha256,
+                value,
+                "provider service profile digest",
+            )?,
+            "--candidate-lock" => set_once(&mut candidate_lock, value, "agent candidate lock")?,
             "--state-path" => set_once(&mut state_path, value, "service state destination")?,
             "--launcher" => set_once(&mut launcher, value, "provider launcher")?,
             _ => {
@@ -211,9 +216,19 @@ where
     }
     let service_value = require_text(service, "provider service")?;
     let service = ProviderService::parse(&service_value)?;
-    let endpoint_value = require_text(endpoint, "provider endpoint")?;
-    let endpoint = NumericLoopbackEndpoint::parse(&endpoint_value)?;
-    let expected_model = require_text(expected_model, "provider model identity")?;
+    let profile_path = PathBuf::from(
+        profile.ok_or_else(|| OrchestratorError::new("provider service profile is required"))?,
+    );
+    let profile_sha256 = require_text(profile_sha256, "provider service profile digest")?;
+    let candidate_lock_path = PathBuf::from(
+        candidate_lock.ok_or_else(|| OrchestratorError::new("agent candidate lock is required"))?,
+    );
+    let identity = load_service_profile(
+        &profile_path,
+        &profile_sha256,
+        &candidate_lock_path,
+        service,
+    )?;
     let state_path = PathBuf::from(
         state_path
             .ok_or_else(|| OrchestratorError::new("service state destination is required"))?,
@@ -221,12 +236,19 @@ where
     let launcher = PathBuf::from(
         launcher.ok_or_else(|| OrchestratorError::new("provider launcher is required"))?,
     );
+    let mut bound_launcher_arguments = vec![
+        OsString::from("--profile"),
+        profile_path.into_os_string(),
+        OsString::from("--profile-sha256"),
+        OsString::from(&profile_sha256),
+        OsString::from("--candidate-lock"),
+        candidate_lock_path.into_os_string(),
+    ];
+    bound_launcher_arguments.append(&mut launcher_arguments);
     SupervisedServiceConfig::new(
-        service,
-        endpoint,
-        expected_model,
+        identity,
         state_path,
-        CommandSpec::new(launcher, launcher_arguments)?,
+        CommandSpec::new(launcher, bound_launcher_arguments)?,
     )
 }
 

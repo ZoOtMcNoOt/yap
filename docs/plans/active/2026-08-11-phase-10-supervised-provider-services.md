@@ -1,6 +1,7 @@
 # Phase 10 supervised provider services
 
-**Status:** Active; Slice 10.1 merged through PR #155, Slice 10.2 next.
+**Status:** Active; Slice 10.1 merged through PR #155, Slice 10.2 implementation
+candidate assembled with private exact-head evidence pending.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -9,7 +10,9 @@
 **Applied decisions:** [ADR 0014](../../adr/0014-server-tier-compute-topology.md),
 [ADR 0025](../../adr/0025-provider-specific-asr-serving.md),
 [ADR 0029](../../adr/0029-vllm-agent-reasoning-runtime.md), and
-[ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md).
+[ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md), with
+the complete product roster applied by
+[ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md).
 
 **Slice 10.1 evidence:** exact hosted-green head
 `1a487db840578d8e415fd2e5a51b1909af4b7041` passed the dedicated Linux
@@ -84,6 +87,10 @@ claim simultaneous model residency, or publish a capacity/SLO result.
 - Keep Python ownership of authorization, governed retrieval/tools, audit, and
   publication behind versioned bounded adapters.
 - Preserve explicit Qwen rapid/Gemma complex selection with no fallback.
+- Deliver the bounded admission and service adapters consumed by the eight
+  workflows in the
+  [complete-roster plan](2026-08-11-eight-agent-voice-os-delivery.md); this
+  infrastructure is not itself evidence that any persona has shipped.
 
 ### Slice 10.4 — simultaneous residency and capacity promotion
 
