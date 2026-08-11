@@ -102,6 +102,49 @@ class AgentServiceLifecycleRuntimeTests(unittest.TestCase):
         self.assertEqual(process_absent.call_args_list, [call(111), call(222)])
         self.assertFalse(teardown["ownedProcessAbsent"])
 
+    def test_teardown_waits_for_delayed_process_reaping_without_weakening_failure(
+        self,
+    ) -> None:
+        profile = load_agent_vllm_service_profile(
+            PROFILE_PATH,
+            CANDIDATE_LOCK,
+            expected_profile_sha256=hashlib.sha256(PROFILE_PATH.read_bytes()).hexdigest(),
+        )
+        runtime = AgentServiceLifecycleRuntime(
+            repository_root=REPOSITORY_ROOT,
+            checked_head="a" * 40,
+            supervisor_binary=Path("supervisor"),
+            private_root=Path("private"),
+        )
+        pending = {
+            "containerAbsent": True,
+            "listenerAbsent": True,
+            "ownedProcessAbsent": False,
+            "sameLabelOwnersAbsent": True,
+        }
+        complete = {**pending, "ownedProcessAbsent": True}
+        with (
+            patch.object(runtime, "_teardown_state", side_effect=(pending, complete)),
+            patch.object(runtime, "_sleep") as sleep,
+        ):
+            observed = runtime._wait_teardown(
+                profile,
+                "network",
+                "b" * 64,
+                timeout_seconds=1,
+            )
+        self.assertEqual(observed, complete)
+        sleep.assert_called_once_with(0.1)
+
+        with patch.object(runtime, "_teardown_state", return_value=pending):
+            observed = runtime._wait_teardown(
+                profile,
+                "network",
+                "b" * 64,
+                timeout_seconds=0,
+            )
+        self.assertEqual(observed, pending)
+
     def test_supervisor_receives_only_bounded_runtime_environment(self) -> None:
         profile = load_agent_vllm_service_profile(
             PROFILE_PATH,

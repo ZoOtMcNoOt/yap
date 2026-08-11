@@ -190,7 +190,12 @@ class AgentServiceLifecycleRuntime:
                 minimum_generation=int(second_state["processGeneration"]),
                 timeout_seconds=10,
             )
-            teardown = self._teardown_state(profile, network_name, owner_token)
+            teardown = self._wait_teardown(
+                profile,
+                network_name,
+                owner_token,
+                timeout_seconds=10,
+            )
             if not all(teardown.values()):
                 raise RuntimeError("agent service teardown did not complete")
             self._remove_network(network_name)
@@ -426,6 +431,21 @@ class AgentServiceLifecycleRuntime:
             ),
             "sameLabelOwnersAbsent": not self._same_label_owner_ids(),
         }
+
+    def _wait_teardown(
+        self,
+        profile: AgentVllmServiceProfile,
+        network_name: str,
+        owner_token: str,
+        *,
+        timeout_seconds: int,
+    ) -> dict[str, bool]:
+        deadline = time.monotonic() + timeout_seconds
+        while True:
+            teardown = self._teardown_state(profile, network_name, owner_token)
+            if all(teardown.values()) or time.monotonic() >= deadline:
+                return teardown
+            self._sleep(0.1)
 
     def _observe_proxy_process(self) -> int:
         group_file = self._proxy_group_file
