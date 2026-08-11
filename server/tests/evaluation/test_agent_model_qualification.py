@@ -13,6 +13,7 @@ from yap_server.evaluation.agent_model_candidate_runner import (
     agent_evidence_sha256,
 )
 from yap_server.evaluation.agent_model_qualification import (
+    _validate_runtime_receipt,
     _verify_runtime_children,
     evaluate_agent_model_qualification,
 )
@@ -280,6 +281,34 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate=candidate, runs=(tampered, other)
             )
 
+    def test_rejects_runtime_without_structural_guidance_boundary(self) -> None:
+        candidate = _checked_candidate()
+        run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
+        lock = json.loads(
+            (
+                REPOSITORY_ROOT
+                / "server"
+                / "agent-reasoning-candidates.lock.json"
+            ).read_text(encoding="utf-8")
+        )
+        expected = next(
+            item
+            for item in lock["candidates"]
+            if item["candidateId"] == run.candidate_id
+        )
+        receipt = {
+            **run.runtime_receipt,
+            "toolCallStructuralGuidanceDisabled": False,
+        }
+
+        with self.assertRaisesRegex(ValueError, "runtime receipt"):
+            _validate_runtime_receipt(
+                candidate,
+                expected=expected,
+                receipt=receipt,
+                children=run.children,
+            )
+
     def test_contained_failure_prevents_partial_route_qualification(self) -> None:
         candidate = _checked_candidate()
         failed = _failed_run(candidate, "qwen3.6-35b-a3b-nvfp4")
@@ -418,6 +447,7 @@ def _candidate_run(
         "modelArtifactManifestSha256": model["artifactManifestSha256"],
         "launchArguments": launch_arguments,
         "launchArgumentsSha256": launch_sha256,
+        "toolCallStructuralGuidanceDisabled": True,
         "childEvidenceSha256": {
             name: agent_evidence_sha256(value) for name, value in children.items()
         },

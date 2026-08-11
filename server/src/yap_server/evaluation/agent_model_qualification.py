@@ -387,6 +387,7 @@ def _validate_runtime_receipt(
         "modelArtifactManifestSha256",
         "launchArguments",
         "launchArgumentsSha256",
+        "toolCallStructuralGuidanceDisabled",
         "childEvidenceSha256",
         "teardown",
     }
@@ -414,6 +415,7 @@ def _validate_runtime_receipt(
         or canonical_evidence_sha256(value["launchArguments"])
         != value["launchArgumentsSha256"]
         or not _SHA256.fullmatch(str(value["launchArgumentsSha256"]))
+        or value["toolCallStructuralGuidanceDisabled"] is not True
         or not isinstance(value["childEvidenceSha256"], dict)
         or set(value["childEvidenceSha256"])
         != {"fixtures", "pressure", "cancellation", "resources", "lifecycle"}

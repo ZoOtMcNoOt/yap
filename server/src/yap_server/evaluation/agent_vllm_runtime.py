@@ -20,6 +20,7 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _IMAGE_SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 _CONTAINER_NAME = "yap-agent-vllm"
 _PORT = 30000
+_DISABLE_STRICT_TOOL_CALLING = "VLLM_ENFORCE_STRICT_TOOL_CALLING=0"
 
 
 def build_agent_vllm_launch_arguments(
@@ -227,6 +228,8 @@ class OwnedAgentVllmRuntime:
                 "host",
                 "--env",
                 "HOME=/tmp",
+                "--env",
+                _DISABLE_STRICT_TOOL_CALLING,
                 "--volume",
                 f"{model_root}:/model-cache:ro",
                 image_id,
@@ -297,6 +300,7 @@ class OwnedAgentVllmRuntime:
             "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,
             "launchArguments": list(started.launch_arguments),
             "launchArgumentsSha256": started.launch_arguments_sha256,
+            "toolCallStructuralGuidanceDisabled": True,
             "childEvidenceSha256": dict(sorted(child_evidence_sha256.items())),
             "teardown": {
                 "containerAbsent": container_absent,
@@ -495,6 +499,13 @@ class OwnedAgentVllmRuntime:
             or config.get("User") != "1000:1000"
             or not isinstance(environment, list)
             or "HOME=/tmp" not in environment
+            or [
+                value
+                for value in environment
+                if isinstance(value, str)
+                and value.startswith("VLLM_ENFORCE_STRICT_TOOL_CALLING=")
+            ]
+            != [_DISABLE_STRICT_TOOL_CALLING]
             or not isinstance(labels, dict)
             or labels.get("io.yap.owner") != "private-inference"
             or labels.get("io.yap.revision") != self._checked_head

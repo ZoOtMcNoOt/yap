@@ -130,7 +130,42 @@ class AgentVllmRuntimeTests(unittest.TestCase):
         self.assertEqual(started.container_id, runner.container_id)
         launch = next(command for command in runner.commands if command[:2] == ["docker", "run"])
         self.assertIn(["--pull", "never"], [launch[index : index + 2] for index in range(len(launch) - 1)])
+        self.assertIn(
+            ["--env", "VLLM_ENFORCE_STRICT_TOOL_CALLING=0"],
+            [launch[index : index + 2] for index in range(len(launch) - 1)],
+        )
+        self.assertTrue(receipt["toolCallStructuralGuidanceDisabled"])
         self.assertTrue(receipt["teardown"]["sameLabelOwnersAbsent"])  # type: ignore[index]
+
+    def test_start_rejects_missing_structural_guidance_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cgroup = root / "cgroup"
+            cgroup.mkdir()
+            (cgroup / "cgroup.procs").write_text("", encoding="ascii")
+            runner = _AgentDockerRunner(
+                root, structural_guidance_disabled=False
+            )
+            runtime = _startable_runtime(root, runner)
+            with (
+                patch(
+                    "yap_server.evaluation.agent_vllm_runtime._owned_cgroup_path",
+                    return_value=cgroup,
+                ),
+                patch(
+                    "yap_server.evaluation.agent_vllm_runtime._listener_is_absent",
+                    return_value=True,
+                ),
+                self.assertRaisesRegex(ValueError, "ownership"),
+            ):
+                runtime.start(timeout_seconds=1)
+            with patch(
+                "yap_server.evaluation.agent_vllm_runtime._listener_is_absent",
+                return_value=True,
+            ):
+                evidence = runtime.contain_failed_run(timeout_seconds=1)
+
+        self.assertTrue(all(evidence["teardown"].values()))  # type: ignore[union-attr]
 
     def test_mismatched_inspection_identity_cannot_report_containment(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -331,6 +366,7 @@ class _AgentDockerRunner:
         returned_identity: str | None = None,
         user: str = "1000:1000",
         failed_removals: int = 0,
+        structural_guidance_disabled: bool = True,
     ) -> None:
         self.container_id = "c" * 64
         self.inspected_id = inspected_id or self.container_id
@@ -338,6 +374,7 @@ class _AgentDockerRunner:
         self.model_root = model_root / "model"
         self.user = user
         self.failed_removals = failed_removals
+        self.structural_guidance_disabled = structural_guidance_disabled
         self.launched = False
         self.exists = False
         self.replacement_owner = False
@@ -382,7 +419,14 @@ class _AgentDockerRunner:
             "Config": {
                 "Cmd": ["vllm", "serve"],
                 "User": self.user,
-                "Env": ["HOME=/tmp"],
+                "Env": [
+                    "HOME=/tmp",
+                    *(
+                        ["VLLM_ENFORCE_STRICT_TOOL_CALLING=0"]
+                        if self.structural_guidance_disabled
+                        else []
+                    ),
+                ],
                 "Labels": {
                     "io.yap.owner": "private-inference",
                     "io.yap.revision": "a" * 40,
