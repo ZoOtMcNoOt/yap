@@ -204,6 +204,35 @@ async fn ignored_graceful_stop_is_forced_and_reaped_before_stopped() {
     fixture.cleanup();
 }
 
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn shutdown_reaps_an_ignored_descendant_in_the_owned_process_group() {
+    let fixture = TestFixture::new(None, MODEL).with_ignored_descendant();
+    let descendant_path = fixture.descendant_path.clone();
+    let (shutdown_sender, shutdown_receiver) = oneshot::channel();
+    let state_path = fixture.state_path.clone();
+    let task = tokio::spawn(run_supervised_service(fixture.config(), async move {
+        let _ = shutdown_receiver.await;
+    }));
+
+    wait_for_state(&state_path, LifecycleState::Ready).await;
+    let descendant = fs::read_to_string(&descendant_path)
+        .unwrap()
+        .trim()
+        .parse::<u32>()
+        .unwrap();
+    shutdown_sender.send(()).unwrap();
+    timeout(Duration::from_secs(20), task)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+
+    wait_for_process_absence(descendant).await;
+    assert_eq!(read_snapshot(&state_path).state, LifecycleState::Stopped);
+    fixture.cleanup();
+}
+
 struct TestFixture {
     root: PathBuf,
     state_path: PathBuf,
@@ -213,6 +242,8 @@ struct TestFixture {
     exit_after_milliseconds: Option<u64>,
     unhealthy_endpoint: bool,
     ignore_termination: bool,
+    spawn_ignored_descendant: bool,
+    descendant_path: PathBuf,
     launcher_path: PathBuf,
 }
 
@@ -229,6 +260,8 @@ impl TestFixture {
             exit_after_milliseconds,
             unhealthy_endpoint: false,
             ignore_termination: false,
+            spawn_ignored_descendant: false,
+            descendant_path: root.join("descendant.pid"),
             launcher_path: PathBuf::from(env!("CARGO_BIN_EXE_yap-supervised-service-fixture")),
             root,
         }
@@ -242,6 +275,12 @@ impl TestFixture {
     #[cfg(unix)]
     fn with_ignored_termination(mut self) -> Self {
         self.ignore_termination = true;
+        self
+    }
+
+    #[cfg(unix)]
+    fn with_ignored_descendant(mut self) -> Self {
+        self.spawn_ignored_descendant = true;
         self
     }
 
@@ -265,6 +304,12 @@ impl TestFixture {
         }
         if self.ignore_termination {
             arguments.push(OsString::from("--ignore-termination"));
+        }
+        if self.spawn_ignored_descendant {
+            arguments.extend([
+                OsString::from("--ignored-descendant-pid-file"),
+                self.descendant_path.as_os_str().to_owned(),
+            ]);
         }
         let identity = ServiceProfileIdentity::new(
             ProviderService::RapidAutomation,
@@ -304,6 +349,18 @@ impl TestFixture {
         }
         if self.launcher_path.starts_with(&self.root) && self.launcher_path.exists() {
             let _ = fs::remove_file(&self.launcher_path);
+        }
+        #[cfg(unix)]
+        if self.descendant_path.exists() {
+            if let Some(process_id) = fs::read_to_string(&self.descendant_path)
+                .ok()
+                .and_then(|value| value.trim().parse::<i32>().ok())
+            {
+                unsafe {
+                    libc::kill(process_id, libc::SIGKILL);
+                }
+            }
+            let _ = fs::remove_file(&self.descendant_path);
         }
         let _ = fs::remove_dir(&self.root);
     }
@@ -347,6 +404,17 @@ async fn wait_for_generation(path: &Path, expected: u64) -> ServiceSnapshot {
     })
     .await
     .unwrap()
+}
+
+#[cfg(unix)]
+async fn wait_for_process_absence(process_id: u32) {
+    timeout(Duration::from_secs(5), async {
+        while Path::new(&format!("/proc/{process_id}")).exists() {
+            sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .unwrap();
 }
 
 fn read_snapshot(path: &Path) -> ServiceSnapshot {

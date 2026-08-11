@@ -10,7 +10,7 @@ provenance contract extensions and excludes only the two tracked OpenAPI product
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
 hand-maintained policy. At this tree the complete 250-line inventory is 488
-files: 256 listed below at 350 or more lines and 232 from 250 through 349.
+files: 257 listed below at 350 or more lines and 231 from 250 through 349.
 
 Each line contains up to two independent entries in the form
 `physical-lines disposition exact-path`.
@@ -85,7 +85,7 @@ Each line contains up to two independent entries in the form
   696 INFRA                infra/yap-server-node/owned-process-group.sh ||   989 INFRA                infra/yap-server-node/owned-process-supervisor.py
   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
   504 INFRA                infra/yap-server-node/setup-server.sh ||   650 SERVER-RUNBOOK       server/README.md
-  384 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
+  463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs ||   452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
   414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   585 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
   483 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   717 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py

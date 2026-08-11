@@ -29,6 +29,28 @@ enum RestartOutcome {
     Exhausted,
 }
 
+struct ProviderChild {
+    process: Child,
+    #[cfg(unix)]
+    process_group_id: u32,
+    #[cfg(unix)]
+    process_group_contained: bool,
+}
+
+#[cfg(unix)]
+impl Drop for ProviderChild {
+    fn drop(&mut self) {
+        if !self.process_group_contained {
+            let process_group = i32::try_from(self.process_group_id).unwrap_or_default();
+            if process_group > 0 {
+                unsafe {
+                    libc::kill(-process_group, libc::SIGKILL);
+                }
+            }
+        }
+    }
+}
+
 pub async fn run_supervised_service<F>(
     config: SupervisedServiceConfig,
     shutdown: F,
@@ -132,7 +154,7 @@ where
     }
 }
 
-fn spawn_provider_child(command_spec: &CommandSpec) -> Result<Child, OrchestratorError> {
+fn spawn_provider_child(command_spec: &CommandSpec) -> Result<ProviderChild, OrchestratorError> {
     command_spec.validate_for_spawn()?;
     let mut command = Command::new(command_spec.program());
     command
@@ -142,9 +164,24 @@ fn spawn_provider_child(command_spec: &CommandSpec) -> Result<Child, Orchestrato
         .stderr(std::process::Stdio::inherit())
         .kill_on_drop(true);
     configure_child_process_group(&mut command);
-    command
+    let process = command
         .spawn()
-        .map_err(|_| OrchestratorError::new("provider launcher could not be started"))
+        .map_err(|_| OrchestratorError::new("provider launcher could not be started"))?;
+    #[cfg(unix)]
+    {
+        let process_group_id = process.id().ok_or_else(|| {
+            OrchestratorError::new("provider launcher identity is unavailable after start")
+        })?;
+        Ok(ProviderChild {
+            process,
+            process_group_id,
+            process_group_contained: false,
+        })
+    }
+    #[cfg(not(unix))]
+    {
+        Ok(ProviderChild { process })
+    }
 }
 
 #[cfg(unix)]
@@ -158,7 +195,7 @@ fn configure_child_process_group(_command: &mut Command) {}
 
 async fn wait_for_readiness<F>(
     config: &SupervisedServiceConfig,
-    child: &mut Child,
+    child: &mut ProviderChild,
     shutdown: &mut std::pin::Pin<&mut F>,
 ) -> Result<RuntimeObservation, OrchestratorError>
 where
@@ -171,8 +208,9 @@ where
     loop {
         tokio::select! {
             _ = &mut *shutdown => return Ok(RuntimeObservation::Shutdown),
-            status = child.wait() => {
+            status = child.process.wait() => {
                 status.map_err(|_| OrchestratorError::new("provider launcher could not be reaped"))?;
+                terminate_and_reap(child).await?;
                 return Ok(RuntimeObservation::Lost);
             }
             _ = &mut deadline => {
@@ -190,7 +228,7 @@ where
 
 async fn monitor_ready_service<F>(
     config: &SupervisedServiceConfig,
-    child: &mut Child,
+    child: &mut ProviderChild,
     shutdown: &mut std::pin::Pin<&mut F>,
 ) -> Result<RuntimeObservation, OrchestratorError>
 where
@@ -203,8 +241,9 @@ where
     loop {
         tokio::select! {
             _ = &mut *shutdown => return Ok(RuntimeObservation::Shutdown),
-            status = child.wait() => {
+            status = child.process.wait() => {
                 status.map_err(|_| OrchestratorError::new("provider launcher could not be reaped"))?;
+                terminate_and_reap(child).await?;
                 return Ok(RuntimeObservation::Lost);
             }
             _ = interval.tick() => {
@@ -252,7 +291,7 @@ where
 async fn stop_child(
     config: &SupervisedServiceConfig,
     tracker: &mut LifecycleTracker,
-    child: &mut Child,
+    child: &mut ProviderChild,
 ) -> Result<(), OrchestratorError> {
     tracker.record_stopping()?;
     let state_result = write_private_snapshot(config.state_path(), tracker.snapshot());
@@ -275,23 +314,39 @@ fn stop_without_child(
     Ok(())
 }
 
-async fn terminate_and_reap(child: &mut Child) -> Result<(), OrchestratorError> {
+async fn terminate_and_reap(child: &mut ProviderChild) -> Result<(), OrchestratorError> {
+    #[cfg(unix)]
+    {
+        return terminate_process_group_and_reap(child).await;
+    }
+    #[cfg(not(unix))]
+    {
+        terminate_single_process_and_reap(child).await
+    }
+}
+
+#[cfg(not(unix))]
+async fn terminate_single_process_and_reap(
+    child: &mut ProviderChild,
+) -> Result<(), OrchestratorError> {
     if child
+        .process
         .try_wait()
         .map_err(|_| OrchestratorError::new("provider launcher status could not be read"))?
         .is_some()
     {
         return Ok(());
     }
-    request_graceful_termination(child)?;
-    if let Ok(wait_result) = timeout(GRACEFUL_STOP_TIMEOUT, child.wait()).await {
+    request_graceful_termination(&mut child.process)?;
+    if let Ok(wait_result) = timeout(GRACEFUL_STOP_TIMEOUT, child.process.wait()).await {
         wait_result.map_err(|_| OrchestratorError::new("provider launcher could not be reaped"))?;
         return Ok(());
     }
     child
+        .process
         .start_kill()
         .map_err(|_| OrchestratorError::new("provider launcher could not be killed"))?;
-    timeout(FORCED_STOP_TIMEOUT, child.wait())
+    timeout(FORCED_STOP_TIMEOUT, child.process.wait())
         .await
         .map_err(|_| OrchestratorError::new("provider launcher did not exit after kill"))?
         .map_err(|_| OrchestratorError::new("provider launcher could not be reaped"))?;
@@ -299,11 +354,77 @@ async fn terminate_and_reap(child: &mut Child) -> Result<(), OrchestratorError> 
 }
 
 #[cfg(unix)]
-fn request_graceful_termination(child: &mut Child) -> Result<(), OrchestratorError> {
-    let process_id = child
-        .id()
-        .ok_or_else(|| OrchestratorError::new("provider launcher identity is unavailable"))?;
-    let result = unsafe { libc::kill(process_id as i32, libc::SIGTERM) };
+async fn terminate_process_group_and_reap(
+    child: &mut ProviderChild,
+) -> Result<(), OrchestratorError> {
+    let process_group_id = child.process_group_id;
+    let mut child_reaped = child
+        .process
+        .try_wait()
+        .map_err(|_| OrchestratorError::new("provider launcher status could not be read"))?
+        .is_some();
+    if !process_group_exists(process_group_id)? {
+        if !child_reaped {
+            child
+                .process
+                .wait()
+                .await
+                .map_err(|_| OrchestratorError::new("provider launcher could not be reaped"))?;
+        }
+        child.process_group_contained = true;
+        return Ok(());
+    }
+    signal_process_group(process_group_id, libc::SIGTERM)?;
+    let graceful_deadline = Instant::now() + GRACEFUL_STOP_TIMEOUT;
+    loop {
+        if !child_reaped {
+            child_reaped = child
+                .process
+                .try_wait()
+                .map_err(|_| OrchestratorError::new("provider launcher could not be reaped"))?
+                .is_some();
+        }
+        if !process_group_exists(process_group_id)? {
+            if !child_reaped {
+                child
+                    .process
+                    .wait()
+                    .await
+                    .map_err(|_| OrchestratorError::new("provider launcher could not be reaped"))?;
+            }
+            child.process_group_contained = true;
+            return Ok(());
+        }
+        if Instant::now() >= graceful_deadline {
+            break;
+        }
+        sleep(Duration::from_millis(50)).await;
+    }
+    signal_process_group(process_group_id, libc::SIGKILL)?;
+    if !child_reaped {
+        timeout(FORCED_STOP_TIMEOUT, child.process.wait())
+            .await
+            .map_err(|_| OrchestratorError::new("provider launcher did not exit after kill"))?
+            .map_err(|_| OrchestratorError::new("provider launcher could not be reaped"))?;
+    }
+    let forced_deadline = Instant::now() + FORCED_STOP_TIMEOUT;
+    while process_group_exists(process_group_id)? {
+        if Instant::now() >= forced_deadline {
+            return Err(OrchestratorError::new(
+                "provider launcher process group remained after kill",
+            ));
+        }
+        sleep(Duration::from_millis(50)).await;
+    }
+    child.process_group_contained = true;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn signal_process_group(process_id: u32, signal: i32) -> Result<(), OrchestratorError> {
+    let process_group = i32::try_from(process_id)
+        .map_err(|_| OrchestratorError::new("provider launcher identity is invalid"))?;
+    let result = unsafe { libc::kill(-process_group, signal) };
     if result == 0 {
         return Ok(());
     }
@@ -314,6 +435,24 @@ fn request_graceful_termination(child: &mut Child) -> Result<(), OrchestratorErr
     Err(OrchestratorError::new(
         "provider launcher could not be terminated",
     ))
+}
+
+#[cfg(unix)]
+fn process_group_exists(process_id: u32) -> Result<bool, OrchestratorError> {
+    let process_group = i32::try_from(process_id)
+        .map_err(|_| OrchestratorError::new("provider launcher identity is invalid"))?;
+    let result = unsafe { libc::kill(-process_group, 0) };
+    if result == 0 {
+        return Ok(true);
+    }
+    let error = std::io::Error::last_os_error();
+    match error.raw_os_error() {
+        Some(libc::ESRCH) => Ok(false),
+        Some(libc::EPERM) => Ok(true),
+        _ => Err(OrchestratorError::new(
+            "provider launcher process group could not be inspected",
+        )),
+    }
 }
 
 #[cfg(not(unix))]

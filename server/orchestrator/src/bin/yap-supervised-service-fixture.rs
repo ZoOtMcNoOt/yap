@@ -2,7 +2,7 @@ use std::env;
 use std::fs::OpenOptions;
 use std::io::{ErrorKind, Read, Write};
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener, TcpStream};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -13,11 +13,15 @@ struct Arguments {
     exit_after: Option<Duration>,
     unhealthy: bool,
     ignore_termination: bool,
+    ignored_descendant_pid_file: Option<PathBuf>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments = parse_arguments()?;
     configure_termination(arguments.ignore_termination)?;
+    if let Some(path) = arguments.ignored_descendant_pid_file.as_ref() {
+        spawn_ignored_descendant(path)?;
+    }
     let mut counter = OpenOptions::new()
         .create(true)
         .append(true)
@@ -88,6 +92,7 @@ fn parse_arguments() -> Result<Arguments, Box<dyn std::error::Error>> {
     let mut exit_after = None;
     let mut unhealthy = false;
     let mut ignore_termination = false;
+    let mut ignored_descendant_pid_file = None;
     while let Some(flag) = values.next() {
         match flag.to_str() {
             Some("--port") => {
@@ -123,6 +128,14 @@ fn parse_arguments() -> Result<Arguments, Box<dyn std::error::Error>> {
             }
             Some("--unhealthy") => unhealthy = true,
             Some("--ignore-termination") => ignore_termination = true,
+            Some("--ignored-descendant-pid-file") => {
+                ignored_descendant_pid_file = Some(
+                    values
+                        .next()
+                        .map(PathBuf::from)
+                        .ok_or("fixture descendant PID path is missing")?,
+                );
+            }
             _ => return Err("fixture argument is invalid".into()),
         }
     }
@@ -133,7 +146,33 @@ fn parse_arguments() -> Result<Arguments, Box<dyn std::error::Error>> {
         exit_after,
         unhealthy,
         ignore_termination,
+        ignored_descendant_pid_file,
     })
+}
+
+#[cfg(unix)]
+fn spawn_ignored_descendant(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    let process_id = unsafe { libc::fork() };
+    if process_id < 0 {
+        return Err(std::io::Error::last_os_error().into());
+    }
+    if process_id == 0 {
+        unsafe {
+            libc::signal(libc::SIGTERM, libc::SIG_IGN);
+            libc::signal(libc::SIGHUP, libc::SIG_IGN);
+            libc::signal(libc::SIGINT, libc::SIG_IGN);
+            loop {
+                libc::pause();
+            }
+        }
+    }
+    std::fs::write(path, format!("{process_id}\n"))?;
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn spawn_ignored_descendant(_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    Err("ignored descendant fixture requires Unix".into())
 }
 
 #[cfg(unix)]
