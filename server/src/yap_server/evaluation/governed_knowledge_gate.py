@@ -44,6 +44,7 @@ _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
 )
 _EXPECTED_PORTABLE_MODULES = (
+    "tests.agents.test_agent_admission_client",
     "tests.evaluation.test_agent_model_acceptance",
     "tests.evaluation.test_agent_model_final_response_retry",
     "tests.evaluation.test_agent_model_fixture_runner",
@@ -60,6 +61,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.evaluation.test_private_json_evidence",
     "tests.evaluation.test_provider_runtime_observations",
     "tests.evaluation.test_vllm_runtime_metrics",
+    "tests.infra.test_agent_admission_service",
     "tests.knowledge.test_agent_reasoning_routes",
     "tests.knowledge.test_cancellable_database_operation",
     "tests.knowledge.test_governed_answer_protocol",
@@ -71,7 +73,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 157
+_EXPECTED_PORTABLE_TEST_COUNT = 165
 
 
 def evaluate_governed_knowledge_gate(

@@ -5,8 +5,8 @@ use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use yap_server_orchestrator::{
-    write_private_snapshot, LifecycleState, LifecycleTracker, NumericLoopbackEndpoint,
-    ProviderService, RestartDecision,
+    read_private_snapshot, write_private_snapshot, LifecycleState, LifecycleTracker,
+    NumericLoopbackEndpoint, ProviderService, RestartDecision,
 };
 
 #[test]
@@ -194,12 +194,17 @@ fn private_snapshot_write_is_atomic_regular_and_owner_private() {
     let mut tracker = new_tracker(ProviderService::RapidAutomation);
     tracker.record_start().unwrap();
     write_private_snapshot(&path, tracker.snapshot()).unwrap();
+    let canonical_path = path.canonicalize().unwrap();
 
     let first: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
     assert_eq!(first["state"], "starting");
     assert_eq!(first["processGeneration"], 1);
     assert!(fs::symlink_metadata(&path).unwrap().file_type().is_file());
     assert_owner_private_file(&path);
+    assert_eq!(
+        read_private_snapshot(&canonical_path).unwrap(),
+        tracker.snapshot().clone()
+    );
 
     tracker.record_ready().unwrap();
     write_private_snapshot(&path, tracker.snapshot()).unwrap();
@@ -207,6 +212,35 @@ fn private_snapshot_write_is_atomic_regular_and_owner_private() {
     assert_eq!(second["state"], "ready");
     assert_eq!(second["readinessTransitionCount"], 1);
     assert_owner_private_file(&path);
+    assert_eq!(
+        read_private_snapshot(&canonical_path).unwrap(),
+        tracker.snapshot().clone()
+    );
+
+    fs::remove_file(&path).unwrap();
+    fs::remove_dir(&root).unwrap();
+}
+
+#[test]
+fn private_snapshot_read_rejects_unknown_or_incomplete_bytes() {
+    let root = unique_temp_directory();
+    fs::create_dir(&root).unwrap();
+    set_private_directory_permissions(&root);
+    let path = root.join("service-state.json");
+    let mut tracker = new_tracker(ProviderService::RapidAutomation);
+    tracker.record_start().unwrap();
+    write_private_snapshot(&path, tracker.snapshot()).unwrap();
+    let canonical_path = path.canonicalize().unwrap();
+
+    let mut value = serde_json::to_value(tracker.snapshot()).unwrap();
+    value["automaticFallback"] = serde_json::Value::Bool(true);
+    let mut bytes = serde_json::to_vec(&value).unwrap();
+    bytes.push(b'\n');
+    fs::write(&path, bytes).unwrap();
+    assert!(read_private_snapshot(&canonical_path).is_err());
+
+    fs::write(&path, serde_json::to_vec(tracker.snapshot()).unwrap()).unwrap();
+    assert!(read_private_snapshot(&canonical_path).is_err());
 
     fs::remove_file(&path).unwrap();
     fs::remove_dir(&root).unwrap();

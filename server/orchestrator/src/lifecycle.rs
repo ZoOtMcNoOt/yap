@@ -53,6 +53,7 @@ pub enum LifecycleState {
 
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
 pub struct ServiceSnapshot {
     pub schema_version: u8,
     pub service: ProviderService,
