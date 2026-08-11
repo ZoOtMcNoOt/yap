@@ -25,7 +25,7 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 The source-admission and lifecycle remediation was completed at
 `8e3ece5a3580ec29116c05f31b045a5748c143b8`. The route-qualification
 remediation is frozen at
-`f07e8cb5f9165bc78fce8b5bc0a0da813da55540`; its current documentation-only
+`d2ae72dce03870893ca5bf2dd3bc93978f8158af`; its current documentation-only
 descendant has the following focused, non-promotional verification. Commands
 are shown from their working directory; the Windows runs used the locked
 project environment and Python 3.12.
@@ -49,9 +49,9 @@ project environment and Python 3.12.
   tool, the route maximum output bounds remain unchanged, the one concise
   stale-generation case has a stricter frozen per-case bound, empty-result
   prompts are explicit and every empty visible result is exact-answer scored,
-  cited retrieval requires its exact frozen query, every visible citation span
-  covers its complete supplied text, and the strict evidence/lifecycle
-  contracts remain intact.
+  cited retrieval requires its complete frozen argument map with no extra
+  generation or result controls, every visible citation span covers its complete
+  supplied text, and the strict evidence/lifecycle contracts remain intact.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
   ran 42 tests: 41 passed and one Windows directory-link capability test
@@ -112,7 +112,7 @@ here.
 
 Not yet consumed. The rejected `0cd9a9f8...` and `4473123e...` runs are terminal
 for their exact candidates. Protected fixture/evaluator inputs changed at
-`f07e8cb5...`, so the old Phase 9 evidence and both rejected runs are
+`d2ae72dc...`, so the old Phase 9 evidence and both rejected runs are
 intentionally inadmissible. One new qualification is required only after the
 three reviewers approve this exact remediation head; the aggregate checkpoint
 matrix remains a separate one-shot gate after the new public-safe route lock is
