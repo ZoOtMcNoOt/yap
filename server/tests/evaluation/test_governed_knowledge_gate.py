@@ -130,6 +130,8 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
     def test_agent_route_drift_contract_covers_all_transitive_owners(self) -> None:
         protected = (
             "server/src/yap_server/evaluation/agent_vllm_runtime.py",
+            "server/src/yap_server/evaluation/agent_route_qualification_evidence.py",
+            "server/src/yap_server/evaluation/governed_knowledge_gate.py",
             "server/src/yap_server/evaluation/vllm_runtime_metrics.py",
             "server/src/yap_server/evaluation/provider_runtime_observations.py",
             "server/src/yap_server/evaluation/private_json_evidence.py",
@@ -141,6 +143,8 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
             "server/uv.lock",
             "server/agent-workload-fixtures.json",
             "server/tests/evaluation/test_agent_model_qualification.py",
+            "server/tests/evaluation/test_agent_route_qualification_evidence.py",
+            "server/tests/evaluation/test_governed_knowledge_gate.py",
             "server/tests/evaluation/test_agent_runtime_pressure.py",
             "server/tests/evaluation/test_agent_vllm_runtime.py",
             "server/tests/evaluation/test_vllm_runtime_metrics.py",
@@ -150,16 +154,6 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
         for path in protected:
             with self.subTest(path=path):
                 self.assertTrue(route_evidence.is_agent_route_evidence_path(path))
-        self.assertFalse(
-            route_evidence.is_agent_route_evidence_path(
-                "server/src/yap_server/evaluation/governed_knowledge_gate.py"
-            )
-        )
-        self.assertFalse(
-            route_evidence.is_agent_route_evidence_path(
-                "server/tests/evaluation/test_agent_route_qualification_evidence.py"
-            )
-        )
 
     def test_agent_route_reference_rejects_protected_descendant_changes(self) -> None:
         reference = route_evidence.load_agent_route_qualification_reference(
@@ -177,26 +171,29 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
             },
         )
 
-        def runner(command, **_kwargs):
-            if "merge-base" in command:
-                return _completed(command)
-            if "diff" in command:
-                return _completed(
-                    command,
-                    stdout=(
-                        "server/src/yap_server/evaluation/"
-                        "provider_runtime_observations.py\n"
-                    ),
-                )
-            raise AssertionError(command)
+        changed_paths = (
+            "server/src/yap_server/evaluation/provider_runtime_observations.py",
+            "server/src/yap_server/evaluation/agent_route_qualification_evidence.py",
+            "server/src/yap_server/evaluation/governed_knowledge_gate.py",
+            "server/tests/evaluation/test_agent_route_qualification_evidence.py",
+            "server/tests/evaluation/test_governed_knowledge_gate.py",
+        )
+        for changed_path in changed_paths:
+            with self.subTest(changed_path=changed_path):
+                def runner(command, **_kwargs):
+                    if "merge-base" in command:
+                        return _completed(command)
+                    if "diff" in command:
+                        return _completed(command, stdout=f"{changed_path}\n")
+                    raise AssertionError(command)
 
-        with self.assertRaisesRegex(ValueError, "implementation changed"):
-            route_evidence._verify_unchanged_route_inputs(
-                REPOSITORY_ROOT,
-                checked_head="4" * 40,
-                reference=reference,
-                runner=runner,
-            )
+                with self.assertRaisesRegex(ValueError, "implementation changed"):
+                    route_evidence._verify_unchanged_route_inputs(
+                        REPOSITORY_ROOT,
+                        checked_head="4" * 40,
+                        reference=reference,
+                        runner=runner,
+                    )
 
     def test_agent_route_reference_rejects_dependency_hash_change(self) -> None:
         reference = route_evidence.load_agent_route_qualification_reference(
