@@ -22,23 +22,32 @@ publishing private output. This is inherited evidence, not a checkpoint gate.
 
 ## Focused checkpoint verification
 
-Executable remediation commit
-`8e3ece5a3580ec29116c05f31b045a5748c143b8` and its current
-documentation-only descendant have the following focused, non-promotional
-verification. Commands are shown from their working directory; the Windows
-runs used the locked project environment and Python 3.12.
+The source-admission and lifecycle remediation was completed at
+`8e3ece5a3580ec29116c05f31b045a5748c143b8`. The route-qualification
+remediation is frozen at
+`a62a18916a57d914ee74d3f876ee18418e226ffb`; its current documentation-only
+descendant has the following focused, non-promotional verification. Commands
+are shown from their working directory; the Windows runs used the locked
+project environment and Python 3.12.
 
 - From `server`,
   `uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py`
   passed.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python ../verification/run-governed-knowledge-portable-suite.py`
-  ran the exact 24-module/130-test membership: 126 passed, three declared
+  ran the exact 24-module/132-test membership: 128 passed, three declared
   platform/capability skips, and one strict stale-route-lock failure. No other
   failure or unexpected/expected-failure classification occurred. The lock
   failure is the required fail-closed blocker until a fresh private
   qualification replaces the Phase 9 predecessor; this is not a green
   checkpoint claim.
+- From `server`, with `PYTHONPATH=src`, the focused agent acceptance, fixture,
+  qualification, scoring, route-artifact, pressure, vLLM metric/runtime,
+  governed-answer, and reasoning-client modules ran 56 tests: 55 passed and
+  one Windows POSIX-permission test was declared inapplicable. This verifies
+  that denied-resource wording is not confused with an emitted forbidden
+  tool, the route-specific output bounds remain frozen, empty-result prompts
+  are explicit, and the strict evidence/lifecycle contracts remain intact.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python -m unittest tests.knowledge.test_okf_compiler tests.knowledge.test_cancellable_database_operation tests.knowledge.test_governed_knowledge_mcp tests.knowledge.test_governed_rag_agent tests.evaluation.test_agent_model_fixture_runner tests.evaluation.test_agent_model_scoring`
   ran 40 tests: 39 passed and one Windows directory-link capability test
@@ -70,13 +79,29 @@ runs used the locked project environment and Python 3.12.
 These checks validate the repair seams while preserving the one-spend rule for
 fresh private model qualification and the final aggregate matrix.
 
+## Rejected qualification evidence
+
+The one fresh private route qualification at exact head
+`0cd9a9f88123f1f4fd1caaf42e03dce02658bfd6` completed both owned model
+lifecycles and exact teardown, then correctly returned `deterministic-no-model`
+with public-safe evidence SHA-256
+`0beaa4d04ccef663e89b215b97b14edbb7fd786c2c354179d896cb0ca65794b5`.
+It is retained as rejected private evidence and cannot be used for admission.
+The follow-up remediation keeps every latency and correctness threshold intact;
+it narrows forbidden-tool scoring to actual emitted tool identities, makes
+empty-result instructions explicit, and assigns smaller output bounds to the
+rapid route and larger structured-answer bounds to the complex route. No raw
+model output, private measurement, log, or private artifact location is
+published here.
+
 ## Complete checkpoint gate
 
-Not yet consumed. Freeze exactly one candidate only after the three reviews,
-accepted P0-P2 repairs, documentation reconciliation, provenance checks, and
-comprehension assessment are complete. Protected tool/runtime/dependency inputs
-changed, so the old Phase 9 private route evidence is intentionally inadmissible
-and one fresh qualification is required at the final reviewed code head.
+Not yet consumed. The rejected `0cd9a9f8...` run is terminal for that exact
+candidate. Protected tool/runtime inputs changed at `a62a1891...`, so the old
+Phase 9 evidence and the rejected run are both intentionally inadmissible. One
+new qualification is required only after the three reviewers approve this
+exact remediation head; the aggregate checkpoint matrix remains a separate
+one-shot gate after the new public-safe route lock is frozen.
 
 ## Hosted closure
 
