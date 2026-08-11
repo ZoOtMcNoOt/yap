@@ -38,11 +38,11 @@ class AgentModelAcceptanceTests(unittest.TestCase):
             60,
         )
         self.assertEqual(
-            plan.route_evidence["rapid-automation"]["maximumOutputTokens"], 512
+            plan.route_evidence["rapid-automation"]["maximumOutputTokens"], 256
         )
         self.assertEqual(
             plan.route_evidence["complex-orchestration"]["maximumOutputTokens"],
-            256,
+            512,
         )
 
 

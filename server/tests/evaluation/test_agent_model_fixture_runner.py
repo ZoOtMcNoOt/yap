@@ -103,6 +103,29 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 for term in case["requiredTerms"]:
                     self.assertIn(term, case["user"])
 
+    def test_empty_result_cases_freeze_short_explicit_tool_contracts(self) -> None:
+        fixture = json.loads(
+            (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        by_id = {case["caseId"]: case for case in fixture["cases"]}
+
+        bounded = by_id["bounded-no-result"]
+        self.assertEqual(
+            bounded["expectedArguments"],
+            {
+                "purpose": "knowledge.read",
+                "search_text": "missing governed evidence",
+            },
+        )
+        self.assertIn("exactly once", bounded["user"])
+        self.assertIn("Evidence is unavailable.", bounded["user"])
+
+        stale = by_id["stale-generation-binding"]
+        self.assertIn("Evidence is unavailable.", stale["user"])
+        self.assertEqual(stale["requiredTerms"], ["unavailable"])
+
     def test_withholds_context_from_semantically_wrong_orchestration_step(self) -> None:
         fixture = json.loads(
             (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
@@ -286,7 +309,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                     **active.get("expectedArguments", {}),
                 }
                 if active["expectedTool"] == "search_knowledge":
-                    arguments["search_text"] = active["user"]
+                    arguments.setdefault("search_text", active["user"])
                 if "expectedProposalType" in active:
                     arguments.update(
                         {

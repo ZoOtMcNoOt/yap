@@ -120,7 +120,7 @@ Each line contains up to two independent entries in the form
   575 POOLS                server/src/yap_server/pools/vllm_transcription_client.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py ||   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py
   520 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py ||   352 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py
-  395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   460 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
+  395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   483 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
   529 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   450 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py
  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py ||   495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py
   388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py ||   552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py

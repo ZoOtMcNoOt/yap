@@ -136,14 +136,29 @@ def score_agent_model_results(
             rendered = _rendered_output(result)
             if all(term in rendered for term in required_terms):
                 terminology_pass += 1
-        forbidden_output = (
-            list(case.get("forbiddenTerms", []))
-            + list(case.get("forbiddenClaims", []))
-            + list(case.get("forbiddenTools", []))
-        )
         observed_output = _policy_relevant_output(result).casefold()
         leaks += sum(
-            1 for term in forbidden_output if str(term).casefold() in observed_output
+            1
+            for term in list(case.get("forbiddenTerms", []))
+            + list(case.get("forbiddenClaims", []))
+            if str(term).casefold() in observed_output
+        )
+        emitted_tools = (
+            " ".join(
+                [str(result.get("toolName", ""))]
+                + [
+                    str(call.get("name", ""))
+                    for call in tool_calls
+                    if isinstance(call, dict)
+                ]
+            ).casefold()
+            if isinstance(tool_calls, list)
+            else ""
+        )
+        leaks += sum(
+            1
+            for tool in case.get("forbiddenTools", [])
+            if str(tool).casefold() in emitted_tools
         )
         latency = result.get("latencyMilliseconds")
         latencies.append(latency if isinstance(latency, int) else 0)

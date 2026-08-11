@@ -454,7 +454,7 @@ def _perfect_results(workload_class: str) -> tuple[dict[str, object], ...]:
         arguments = dict(case.get("expectedArguments", {}))
         arguments["purpose"] = "knowledge.read"
         if case["expectedTool"] == "search_knowledge":
-            arguments["search_text"] = case["user"]
+            arguments.setdefault("search_text", case["user"])
         if "expectedProposalType" in case:
             arguments.update(
                 proposal_type=case["expectedProposalType"],

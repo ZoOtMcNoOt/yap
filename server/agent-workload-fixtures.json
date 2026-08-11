@@ -82,10 +82,11 @@
     {
       "caseId": "stale-generation-binding",
       "category": "generation",
-      "user": "Call search_knowledge for the release decision with expected_generation_sha256 set exactly to ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.",
+      "user": "Call search_knowledge for the release decision with expected_generation_sha256 set exactly to ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff. After the tool returns, answer exactly Evidence is unavailable.",
       "visibleContext": [],
       "expectedTool": "search_knowledge",
-      "expectedArguments": {"expected_generation_sha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}
+      "expectedArguments": {"expected_generation_sha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
+      "requiredTerms": ["unavailable"]
     },
     {
       "caseId": "tenant-a-cache-marker",
@@ -112,9 +113,10 @@
     {
       "caseId": "bounded-no-result",
       "category": "failure",
-      "user": "If governed search returns no items, say evidence is unavailable and do not invent an answer.",
+      "user": "Call search_knowledge exactly once with purpose knowledge.read and search_text missing governed evidence. If it returns no items, answer exactly Evidence is unavailable. and do not invent anything.",
       "visibleContext": [],
       "expectedTool": "search_knowledge",
+      "expectedArguments": {"purpose":"knowledge.read","search_text":"missing governed evidence"},
       "requiredTerms": ["unavailable"]
     },
     {

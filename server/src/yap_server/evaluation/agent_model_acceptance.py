@@ -357,14 +357,14 @@ def _route_evidence(
     expected = {
         "rapid-automation": {
             "candidateId": "qwen3.6-35b-a3b-nvfp4",
-            "maximumOutputTokens": 512,
+            "maximumOutputTokens": 256,
             "maximumFixtureP95LatencyMilliseconds": 3_000,
             "maximumWarmP95LatencyMilliseconds": 750,
             "maximumC8P95LatencyMilliseconds": 1_500,
         },
         "complex-orchestration": {
             "candidateId": "gemma-4-31b-it-nvfp4",
-            "maximumOutputTokens": 256,
+            "maximumOutputTokens": 512,
             "requestTimeoutSeconds": 60,
             "requiredMultiStepCaseId": "complex-governed-orchestration",
         },
