@@ -131,11 +131,11 @@ in isolation:
 | Desktop UI/native/local lifecycle | Complete across three lenses | Critical workflows and every threshold-triggered owner dispositioned; no Phase 9 desktop delta | No P0-P2; retain inherited local/offline boundary evidence |
 | Durable client/server batch and preprocessing | Complete across three lenses | Job scheduling/result/cancel/restart owners | No P0-P2; retain `jobs/service.py` with aggregate-root cohesion justification |
 | Identity/authorization/WSS | Complete across three lenses | Identity durable owner and adjacent trust seams | KAP-06 removes the obsolete development-schema migration; no tenant/subject/revocation defect found |
-| Meeting evidence | Complete across three lenses | Result revision -> reviewed capture -> source admission -> compilation | KAP-02/KAP-03 remediations implemented; 17-test real-Postgres focus passed; final re-review/gate remain |
-| Knowledge/terminology/retrieval | Complete across three lenses | Generation, permissions, retrieval, terminology, proposal, SQL lifecycle | KAP-01 through KAP-07 remediations implemented; 17-test real-Postgres focus and restart diagnostic passed; final re-review/gate remain |
-| Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-05 and ARCH-03 remediations implemented; protected changes require one fresh private qualification; no fallback defect found |
+| Meeting evidence | Complete across three lenses | Result revision -> reviewed capture -> source admission -> compilation | KAP-02/KAP-03 remediations implemented; 17-test real-Postgres focus and independent re-review passed; aggregate gate remains |
+| Knowledge/terminology/retrieval | Complete across three lenses | Generation, permissions, retrieval, terminology, proposal, SQL lifecycle | KAP-01 through KAP-07 remediations implemented; 17-test real-Postgres focus, restart diagnostic, and independent re-review passed; aggregate gate remains |
+| Agent runtime/evidence | Complete across three lenses | Tool/RAG/MCP, route selection, vLLM lifecycle, qualification, private admission | AR-01 through AR-05 and ARCH-03 remediations implemented; fresh exact-head private qualification and semantic admission passed; no fallback defect found; aggregate gate remains |
 | Packaging/CI/gates/provenance | Complete across three lenses | Locks, licenses, receipt boundaries, exact-head hosted workflow | No P0-P2; private/public evidence separation remains sound |
-| Docs/ADRs/plans/runbooks/status | Complete across three lenses | Current/normative taxonomy and ownership navigation | Ownership/current docs reconciled and mixed test owner split; independent re-review remains |
+| Docs/ADRs/plans/runbooks/status | Complete across three lenses | Current/normative taxonomy and ownership navigation | Ownership/current docs reconciled, mixed test owner split, and independent re-review passed; final gate reconciliation remains |
 
 ## Deletion and consolidation result
 

@@ -125,19 +125,19 @@ knowledge.
   source-admission defect to P1 and found the separate canonical-generation
   integrity P1, so the accepted register now contains six P1 and ten P2 without
   expanding the checkpoint into Phase 10.
-- [ ] Resolve every P0-P2 correctness, security, privacy, authorization,
+- [x] Resolve every P0-P2 correctness, security, privacy, authorization,
   provenance, race, cancellation, resource, lifecycle, naming, architecture,
   and maintainability finding.
-- [ ] Remove duplicate/dead/speculative machinery and decompose only mixed
+- [x] Remove duplicate/dead/speculative machinery and decompose only mixed
   owners or unjustified oversized surfaces; do not create a generic evidence or
   repository framework.
-- [ ] Record every reviewed area's disposition, LOC baseline/removal result,
+- [x] Record every reviewed area's disposition, LOC baseline/removal result,
   cohesion justification, failure-scenario coverage, and the thirty-minute
   comprehension assessment in a public-safe checkpoint record.
-- [ ] Reconcile the executable ownership map, ADR implementation status,
+- [x] Reconcile the executable ownership map, ADR implementation status,
   current status, roadmap, runbooks, and Voice OS summaries without silently
   changing the approved long-term target.
-- [ ] Use focused verification for each repair; freeze one exact candidate only
+- [x] Use focused verification for each repair; freeze one exact candidate only
   after code, tests, provenance, documentation, and three-lens review are clean.
 - [ ] Run the complete applicable checkpoint matrix exactly once, preserving
   any still-valid immutable private predecessor evidence by explicit identity

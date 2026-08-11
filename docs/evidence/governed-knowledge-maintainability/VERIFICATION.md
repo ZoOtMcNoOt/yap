@@ -35,12 +35,13 @@ project environment and Python 3.12.
   passed.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python ../verification/run-governed-knowledge-portable-suite.py`
-  ran the exact 24-module/134-test membership: 130 passed, three declared
-  platform/capability skips, and one strict stale-route-lock failure. No other
-  failure or unexpected/expected-failure classification occurred. The lock
-  failure is the required fail-closed blocker until a fresh private
-  qualification replaces the Phase 9 predecessor; this is not a green
-  checkpoint claim.
+  initially ran the exact 24-module/134-test membership with 130 passed, three
+  declared platform/capability skips, and the one required stale-route-lock
+  failure. After the fresh admitted qualification was frozen in the public-safe
+  lock at `e15c152966e7144acac784e49282fed05b2730c5`, the same exact suite ran
+  green: 131 passed and the same three declared skips, with no failure,
+  expected failure, or unexpected success. This is focused verification, not a
+  complete checkpoint-gate claim.
 - From `server`, with `PYTHONPATH=src`, the focused agent acceptance, fixture,
   qualification, scoring, route-artifact, pressure, vLLM metric/runtime,
   reasoning-route, governed-answer, and reasoning-client modules ran 60 tests:
@@ -85,8 +86,8 @@ project environment and Python 3.12.
   listener, process, same-label owner, network, and volume teardown. It did not
   publish or consume the complete checkpoint gate.
 
-These checks validate the repair seams while preserving the one-spend rule for
-fresh private model qualification and the final aggregate matrix.
+These checks validate the repair seams while preserving the separate one-spend
+rule for the final aggregate matrix.
 
 ## Rejected qualification evidence
 
@@ -114,15 +115,36 @@ now rejects unrequested generation/result controls on every step while retaining
 only the required dynamic proposal content and citations. No raw model output,
 private measurement, log, or private artifact location is published here.
 
+One later publication attempt at exact head
+`f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3` returned a qualifying model
+decision but failed the private-tree permission admission because nested
+directories inherited a permissive launcher umask. That tree remains unchanged
+and inadmissible; no public lock was minted from it. The external launcher was
+then corrected to set owner-private creation mode inside the detached process,
+without changing repository code, fixtures, models, or thresholds.
+
+## Admitted checkpoint route qualification
+
+The fresh create-once qualification at exact clean head
+`f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3` returned
+`required-workload-routes-qualified`. The repository's semantic admission
+validator then verified exact private modes and tree membership, every artifact
+digest, both recomputed candidate summaries, checked inputs and dependencies,
+runtime identity, cancellation/recovery, and teardown. The public-safe evidence
+SHA-256 is
+`24037bf66094bf97045e05aaa71a87880ca268dcdef5498b388dcff4b966c869`.
+The committed lock contains only public-safe hashes and the outcome; raw model
+output, measurements, logs, and the private artifact location remain outside
+Git.
+
 ## Complete checkpoint gate
 
-Not yet consumed. The rejected `0cd9a9f8...` and `4473123e...` runs are terminal
-for their exact candidates. Protected fixture/evaluator inputs changed at
-`531132bf...`, so the old Phase 9 evidence and both rejected runs are
-intentionally inadmissible. One new qualification is required only after the
-three reviewers approve this exact remediation head; the aggregate checkpoint
-matrix remains a separate one-shot gate after the new public-safe route lock is
-frozen.
+Not yet consumed. The rejected `0cd9a9f8...` and `4473123e...` runs and the
+permission-invalid publication attempt are terminal and inadmissible. The fresh
+`f7fc37e3...` private tree is semantically admitted and frozen by its
+public-safe lock. The aggregate checkpoint matrix remains a separate one-shot
+gate on a reviewed clean descendant that has not changed any protected route
+input.
 
 ## Hosted closure
 
