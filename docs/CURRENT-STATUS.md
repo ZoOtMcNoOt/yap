@@ -2,8 +2,12 @@
 
 **As of:** 2026-08-11
 
-**Most recent merged closure:** [PR #154](https://github.com/mcnatg1/yap/pull/154)
-merged the post-Phase-9 documentation reconciliation as
+**Most recent merged closure:** [PR #155](https://github.com/mcnatg1/yap/pull/155)
+merged the hardware-independent Phase 10 Slice 10.1 supervised-provider
+lifecycle as `e2d82b89532addb26fda73f652ae4f68b2127ef7` from exact
+hosted-green head `1a487db840578d8e415fd2e5a51b1909af4b7041`.
+[PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
+post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after
 [PR #153](https://github.com/mcnatg1/yap/pull/153) merged the executable
 maintainability checkpoint as `ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`
@@ -109,13 +113,16 @@ are not a production p95/p99 SLO,
 generic TPS claim, production agent service, simultaneous-residency result, or
 sustained mixed-route capacity proof.
 
-Phase 10 Slice 10.1 is now an unmerged implementation candidate. A new
+Phase 10 Slice 10.1 is now a merged hardware-independent baseline. A new
 `server/orchestrator` Rust binary owns one explicit provider-launcher lifecycle,
 numeric-loopback health plus exact model-identity readiness, bounded child
 restart, terminal reap, and an owner-private state snapshot. A hardened systemd
 template owns the outer cgroup; the existing foreground launcher remains the
-sole container/proxy/image/teardown owner. Local contracts are green, while the
-Linux hosted lifecycle, exact-head PR, merge, provider-specific Qwen/Gemma
+sole container/proxy/image/teardown owner. Exact head
+`1a487db840578d8e415fd2e5a51b1909af4b7041` passed the dedicated hosted Linux
+lifecycle lane, every repository CI and CodeQL lane, and the required native
+WDIO smoke before PR #155 merged it as
+`e2d82b89532addb26fda73f652ae4f68b2127ef7`. Provider-specific Qwen/Gemma
 profiles, application integration, simultaneous residency, capacity/SLOs, and
 production deployment remain open. No service instance or model is promoted.
 
@@ -146,7 +153,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Active Slice 10.1 candidate | The unmerged hardware-independent candidate adds one Rust-owned provider-launcher lifecycle under a systemd-owned cgroup, exact loopback/model readiness, bounded restart/stop, and private state counters. It does not enable a provider, connect an application route, prove capacity/SLOs, or replace explicit IT/security handoffs. |
+| Phase 10 | Slice 10.1 merged; Slice 10.2 next | The merged hardware-independent baseline adds one Rust-owned provider-launcher lifecycle under a systemd-owned cgroup, exact loopback/model readiness, bounded restart/stop, and private state counters. Exact hosted-green head `1a487db8...` merged through PR #155 as `e2d82b89...`. It does not enable a provider, connect an application route, prove capacity/SLOs, or replace explicit IT/security handoffs. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -930,9 +937,10 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Freeze, pass hosted Linux and repository checks for, and merge the focused
-   Phase 10 Slice 10.1 supervised-service candidate. Begin provider-specific
-   Slice 10.2 only from that exact merged head.
+1. Begin provider-specific Slice 10.2 from merged Slice 10.1 head
+   `e2d82b89532addb26fda73f652ae4f68b2127ef7`: bind the qualified Qwen rapid
+   and Gemma complex profiles to separate supervised instances without
+   enabling an application route or claiming capacity.
 2. Keep Tiron absent from the default catalog at the recorded
    `unadvertised-baseline`; the source-time implementation remains the sole
    server meeting path.

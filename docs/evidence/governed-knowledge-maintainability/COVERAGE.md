@@ -154,7 +154,7 @@ net additive; no LOC-reduction claim is made for those correctness repairs.
 
 ### Complete threshold disposition
 
-At the current Phase 10 Slice 10.1 candidate tree, the inventory contains 480
+At the merged Phase 10 Slice 10.1 baseline tree, the inventory contains 480
 in-scope tracked source, text, policy, and provenance surfaces at or above 250
 physical lines: 253 at or above 350 and 227 from 250 through 349. The completed
 checkpoint reviews deep-traced the inherited surfaces

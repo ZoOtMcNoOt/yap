@@ -191,20 +191,22 @@ Phase 10 or IT handoffs.
 
 The active [Phase 10 plan](../plans/active/2026-08-11-phase-10-supervised-provider-services.md)
 starts with one hardware-independent lifecycle owner rather than a model or TPS
-claim. The unmerged Slice 10.1 candidate places one Rust supervisor inside a
+claim. Merged Slice 10.1 places one Rust supervisor inside a
 systemd-owned cgroup, supervises exactly one existing foreground launcher,
 requires numeric-loopback health plus exact served-model identity, bounds child
 restart and stop/reap, and publishes only private typed state counters. The
 launcher keeps container/proxy/image/teardown authority; Rust never calls
 Docker and never substitutes another route.
 
-Local contracts are green. The dedicated Linux lifecycle lane, exact-head PR,
-and merge remain open. Slice 10.2 may bind the already qualified Qwen rapid and
-Gemma complex profiles only after Slice 10.1 merges. Authenticated admission,
+Exact hosted-green head `1a487db840578d8e415fd2e5a51b1909af4b7041`
+passed the dedicated Linux lifecycle lane and every required repository check;
+PR #155 merged it as `e2d82b89532addb26fda73f652ae4f68b2127ef7`.
+Slice 10.2 may now bind the already qualified Qwen rapid and Gemma complex
+profiles to separate instances. Authenticated admission,
 simultaneous residency, sustained mixed-owner route-specific capacity and
 p95/p99 SLO evidence, observability, rollback, external serving, and IT-owned
 deployment remain later slices or handoffs. No generic TPS or production
-promotion follows from the lifecycle candidate.
+promotion follows from the lifecycle baseline.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 
