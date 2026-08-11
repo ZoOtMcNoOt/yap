@@ -66,6 +66,7 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
                     "network",
                     "mount",
                     "snapshot-mount",
+                    "gpu",
                 ):
                     with self.subTest(mutation=mutation):
                         changed = copy.deepcopy(inspection)
@@ -77,6 +78,10 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
                             changed["NetworkSettings"]["Networks"]["unexpected"] = {}
                         elif mutation == "snapshot-mount":
                             changed["Mounts"][0]["Source"] = str(snapshot)
+                        elif mutation == "gpu":
+                            changed["HostConfig"]["DeviceRequests"][0][
+                                "DeviceIDs"
+                            ] = ["nvidia.com/gpu=0"]
                         else:
                             changed["Mounts"][0]["RW"] = True
                         with self.assertRaises((RuntimeError, ValueError)):
@@ -170,7 +175,15 @@ def _inspection(
                     "Hard": 67_108_864,
                 },
             ],
-            "DeviceRequests": [{"Count": -1, "Capabilities": [["gpu"]]}],
+            "DeviceRequests": [
+                {
+                    "Driver": "cdi",
+                    "Count": 0,
+                    "DeviceIDs": ["nvidia.com/gpu=all"],
+                    "Capabilities": None,
+                    "Options": None,
+                }
+            ],
             "Tmpfs": {
                 "/tmp": (
                     "rw,nosuid,nodev,exec,"

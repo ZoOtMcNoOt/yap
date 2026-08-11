@@ -201,11 +201,16 @@ def _exact_host_policy(
             ("memlock", -1, -1),
             ("stack", 67_108_864, 67_108_864),
         }
-        and isinstance(requests, list)
-        and len(requests) == 1
-        and isinstance(requests[0], dict)
-        and requests[0].get("Count") == -1
-        and requests[0].get("Capabilities") == [["gpu"]]
+        and requests
+        == [
+            {
+                "Driver": "cdi",
+                "Count": 0,
+                "DeviceIDs": ["nvidia.com/gpu=all"],
+                "Capabilities": None,
+                "Options": None,
+            }
+        ]
         and isinstance(tmpfs, dict)
         and set(tmpfs) == {"/tmp"}
         and isinstance(tmpfs["/tmp"], str)
