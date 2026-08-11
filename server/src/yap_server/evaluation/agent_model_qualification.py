@@ -401,11 +401,11 @@ def _validate_runtime_receipt(
         or value["runtime"]
         != {
             "engine": "vllm",
-            "image": "nvcr.io/nvidia/vllm:26.06-py3",
-            "digest": "sha256:bebcf9576b1720214319ee5c7ee4f7661954cbbf59ed3fcd188cd79a67f1967e",
+            "image": "nvcr.io/nvidia/vllm:26.07-py3",
+            "digest": "sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2",
             "platform": "linux/arm64",
             "python": "3.12",
-            "vllm": "0.22.1+7b9cb5b7.dev",
+            "vllm": "0.24.0+092c4842.nv26.7.59534043",
         }
         or value["modelArtifactManifestSha256"] != expected["artifactManifestSha256"]
         or not isinstance(value["imageId"], str)

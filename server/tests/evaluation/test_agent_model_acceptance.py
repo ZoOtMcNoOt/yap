@@ -15,6 +15,27 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 class AgentModelAcceptanceTests(unittest.TestCase):
+    def test_freezes_nvidia_vllm_2607_arm64_runtime(self) -> None:
+        candidate_lock = json.loads(
+            (
+                REPOSITORY_ROOT
+                / "server"
+                / "agent-reasoning-candidates.lock.json"
+            ).read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(
+            candidate_lock["runtime"],
+            {
+                "engine": "vllm",
+                "image": "nvcr.io/nvidia/vllm:26.07-py3",
+                "digest": "sha256:1de8e6bfdb4c81c1f31a806cc9b13b5c6352714a7cec87f4d24964bcc91159b2",
+                "platform": "linux/arm64",
+                "python": "3.12",
+                "vllm": "0.24.0+092c4842.nv26.7.59534043",
+            },
+        )
+
     def test_loads_frozen_candidate_runtime_and_workload_identity(self) -> None:
         plan = load_agent_model_acceptance(REPOSITORY_ROOT)
 
