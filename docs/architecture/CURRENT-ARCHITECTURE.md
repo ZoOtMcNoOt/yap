@@ -889,9 +889,14 @@ qualification at exact head `a76ed9b0...` returned
 both routes were eligible and exact teardown left zero owned residue. Schema-3
 public lock commit `2cf1e92c...` has SHA-256
 `b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
-and passed the production semantic-admission validator. The separate aggregate
-checkpoint gate remains unconsumed. Production service integration remains
-Phase 10.
+and passed the production semantic-admission validator. Exact aggregate head
+`22c3f369...` then returned `governed-knowledge-gate-passed` with public-safe
+evidence SHA-256
+`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`.
+The gate composed the 25-module/152-test portable contract, Ruff, the
+four-module/17-test zero-skip database contract, real Postgres restart/retrieval/stale/
+successor proof, unchanged desktop boundary, and exact teardown with zero
+residue. Production service integration remains Phase 10.
 
 At remediation anchor `c332700597eac1cc6af3f68afb3e75fce0b6ec77`, each
 exported knowledge query/traversal/proposal owns the transaction that holds the

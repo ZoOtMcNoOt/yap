@@ -889,7 +889,8 @@ unconfigured.
   admitted the hash-locked private route tree and passed the complete Phase 9
   knowledge gate. Exact hosted-green head `fa26caaf...` merged through PR #152
   as `ae81ff06...`; this is not production service promotion. The separate
-  ownership and maintainability checkpoint remains active before Phase 10.
+  ownership and maintainability checkpoint gate passed at `22c3f369...`;
+  hosted review and merge remain before Phase 10.
 
 ### Phase 10 — Production services, security, and enterprise handoff
 

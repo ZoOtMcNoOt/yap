@@ -525,9 +525,17 @@ raw-file SHA-256
 `b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
 and passed hash-bound semantic admission against the owner-private tree. Raw
 outputs, measurements, logs, private locations, and runtime credentials remain
-outside Git. The separate aggregate checkpoint gate may now run once; it has
-not yet been consumed. This qualification remains evaluation evidence, not a
-production p95/p99 SLO, capacity, or generic TPS claim.
+outside Git. Exact aggregate candidate
+`22c3f3698a6b5c5ff592e74f3a0f0e144778c9c5` returned
+`governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`.
+It ran 152 portable tests across 25 modules, Ruff, 17 zero-skip Postgres tests
+across four modules on locked PostgreSQL 17 / pgvector 0.8.6 ARM64, and the
+real restart/recovered-retrieval/stale-generation/successor path. The receipt
+records the unchanged desktop dependency boundary and all six teardown
+predicates; independent name/owner read-back found zero container, network, or
+volume residue. This remains checkpoint evidence, not a production p95/p99
+SLO, capacity, or generic TPS claim. Hosted review and merge remain open.
 
 ## Local checks
 

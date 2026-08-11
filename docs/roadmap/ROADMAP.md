@@ -173,9 +173,12 @@ both locked routes were eligible and passed their semantic and route-specific
 evidence contracts with exact teardown and zero owned runtime residue. The
 schema-3 public lock committed at `2cf1e92c...` has raw-file SHA-256
 `b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
-and passed hash-bound semantic admission. The separate aggregate checkpoint
-gate remains open. The split workload bounds are not production SLO/capacity
-or generic TPS evidence. Postgres
+and passed hash-bound semantic admission. Exact aggregate head `22c3f369...`
+then returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`,
+152 portable tests, Ruff, 17 zero-skip database tests, real restart/recovery,
+and exact teardown with zero residue. Hosted review and merge remain open. The
+split workload bounds are not production SLO/capacity or generic TPS evidence. Postgres
 remains the only current knowledge projection; Redis, object storage, and
 Neo4j require a measured need and a later authorized gate. Persistent
 supervision, simultaneous model residency, sustained mixed-user capacity/SLOs,

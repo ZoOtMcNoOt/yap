@@ -108,8 +108,11 @@ qualification at exact head `a76ed9b0...` returned
 Both routes were eligible and exact teardown left zero residue. Public schema-3
 lock commit `2cf1e92c...` has SHA-256
 `b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
-and passed semantic admission. The aggregate checkpoint gate remains separate
-and unconsumed.
+and passed semantic admission. Separate aggregate head `22c3f369...` then
+returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`,
+including the exact portable/Ruff/Postgres/restart/teardown composition. This
+does not promote a production service or capacity/SLO result.
 
 Yap's server boundary owns authentication, authorization, retrieval, tool
 policy, request admission, cancellation intent, audit, and publication. The

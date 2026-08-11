@@ -782,8 +782,10 @@ owner's state but may not recreate its transition logic.
   identities, and public-safe hashes/outcomes. Exact qualification head
   `a76ed9b0...` returned `required-workload-routes-qualified`; schema-3 lock
   commit `2cf1e92c...` binds its exact artifact/input/dependency hashes and has
-  passed semantic admission. The aggregate gate remains a separate owner and
-  is not implied by route admission.
+  passed semantic admission. Separate aggregate head `22c3f369...` owns the
+  create-once `governed-knowledge-gate-passed` receipt with evidence SHA-256
+  `8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`;
+  route admission alone does not imply that result.
 - **Trust boundary:** clean exact HEAD, protected input hashes, route-specific
   Dockerfile/build/notice/dependency identities, exact observed immutable
   Docker image/container/model identity, bounded loopback endpoints, private

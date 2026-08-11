@@ -169,10 +169,15 @@ knowledge.
   `2cf1e92c821c0d8f5b20c911f66f9a58b54b3ec7` publishes the schema-3 lock with
   SHA-256 `b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`;
   the production semantic-admission owner accepted it at that exact clean head.
-- [ ] After successful semantic admission of that replacement tree, run the
-  complete applicable aggregate checkpoint matrix exactly once. Preserve any
-  still-valid immutable non-route predecessor evidence by explicit identity
-  rather than rerunning unrelated research.
+- [x] After successful semantic admission of that replacement tree, run the
+  complete applicable aggregate checkpoint matrix exactly once. Exact candidate
+  `22c3f3698a6b5c5ff592e74f3a0f0e144778c9c5` returned
+  `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+  `8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`.
+  It passed 152 portable tests across 25 modules, Ruff, 17 zero-skip Postgres
+  tests across four modules, real restart/recovered retrieval/stale-generation
+  rejection/successor retrieval, the unchanged desktop dependency boundary,
+  all six teardown predicates, and zero owner/name residue.
 - [ ] Open one focused PR, require green hosted checks on its exact head, and
   merge before Phase 10 begins.
 

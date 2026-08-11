@@ -330,21 +330,45 @@ protected route set and proves a diff naming any one is rejected. That stronger
 self-protecting admission code intentionally makes the `f7fc37e3...` reference
 historical for later descendants; no compatibility exception is carried. The
 fresh `a76ed9b0...` tree and `2cf1e92c...` public lock now satisfy that stronger
-contract. The aggregate gate remains separate and unconsumed.
+contract. The aggregate gate remained a separate proof and was consumed only
+after the public lock and documentation launcher were frozen.
 
 ## Complete checkpoint gate
 
-Not yet consumed. The rejected `0cd9a9f8...`, `4473123e...`, `cb5ae95b...`,
-`7f0f060e...`, `518f7848...`, and `96897d2f...` runs and the permission-invalid publication attempt are
-terminal and inadmissible. The fresh
-`f7fc37e3...` private tree is semantically admitted for that exact head and its
-pre-protection descendants. The new admission-protection, lexical/proposal-fixture,
-bounded-final-decoding, route-specific runtime, common/proposal policy,
-gate-count, and evidence-schema
-changes are protected route inputs, so only the fresh `a76ed9b0...` tree is
-current. Commit `2cf1e92c...` publishes its semantically admitted public lock.
-The aggregate checkpoint matrix remains a separate one-shot gate and has not
-yet been consumed.
+The rejected `0cd9a9f8...`, `4473123e...`, `cb5ae95b...`, `7f0f060e...`,
+`518f7848...`, and `96897d2f...` route runs and the permission-invalid
+publication attempt remain terminal and inadmissible. Only the fresh
+`a76ed9b0...` private tree is current, and commit `2cf1e92c...` publishes its
+semantically admitted public lock.
+
+An initial clean aggregate invocation at `dc9c9da2...` failed closed at the
+portable runtime-identity check because a clean default `uv` environment did
+not materialize the locked evaluation and test extras. It published no receipt,
+teardown removed the owned database runtime, and independent read-back found
+zero container, network, or volume residue. The canonical launcher now uses
+`uv run --locked --all-extras`; no product code, route contract, model,
+threshold, or private evidence changed for that correction.
+
+Exact aggregate candidate
+`22c3f3698a6b5c5ff592e74f3a0f0e144778c9c5` then returned
+`governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`.
+The gate admitted the exact `a76ed9b0...` route tree and schema-3 lock; ran 152
+portable tests across 25 modules with 149 passes and three declared platform/
+capability skips; ran server-wide Ruff; and ran all 17 mandatory Postgres tests
+across four modules with zero skips, expected failures, or unexpected
+successes on locked PostgreSQL 17 / pgvector 0.8.6 ARM64. It restarted the real
+database process, retained container identity, re-observed the loopback binding,
+recovered cited retrieval, rejected the stale generation, and retrieved its
+successor. The unchanged desktop dependency boundary and all six teardown
+predicates passed; independent name and owner-label queries found zero residue.
+
+Independent receipt read-back proved canonical newline JSON, recomputed the
+embedded evidence SHA exactly, matched all eight candidate input hashes to the
+clean exact-head checkout, required owner-only file/parent modes, and found no
+absolute path, DSN, password, bearer material, or private key. Raw model output,
+measurements, logs, database content, credentials, and private locations remain
+outside Git and hosted artifacts.
 
 ## Hosted closure
 
