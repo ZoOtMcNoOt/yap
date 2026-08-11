@@ -1,7 +1,7 @@
 # Provider supervisor service
 
 This runbook covers the merged Phase 10 Slice 10.1 lifecycle boundary and the
-gated, unmerged Slice 10.2 rapid/complex profile installation contract.
+merged Slice 10.2 rapid/complex profile installation contract.
 Installing files does not promote a model, create an application route, expose
 a network service, or authorize a production deployment. Each profile must pass
 its exact-head private lifecycle gate before an instance is enabled.
@@ -157,7 +157,8 @@ syntax, exact-head cleanliness, and the systemd boundary contracts. These are
 lifecycle checks. Slice 10.2's private exact-head sequential
 launch/readiness/restart/stop/zero-residue check passed both profiles at
 `4b103c1b...`; fresh qualification passed at `4d623212...`; and aggregate gate
-head `0471b158...` passed. Hosted review and merge remain open.
+head `0471b158...` passed. Hosted-green head `6d1400cc...` merged through PR
+#157 as `cac8989b...`.
 Neither lane is simultaneous-residency, provider quality, capacity,
 latency-SLO, application-route, or production-deployment evidence.
 
@@ -189,10 +190,12 @@ boolean lifecycle/teardown facts, and explicit `false` capacity and
 simultaneous-residency claims. Logs, process identities, owner tokens, model
 paths, and private measurements stay under the private evidence root.
 
-The next multi-user layer keeps both exact services warm behind bounded
-owner-fair admission. A request never starts or swaps a model. If a single node
-cannot pass simultaneous-residency and sustained-capacity evidence, deploy the
-two services to separate owned nodes rather than introduce fallback or swapping.
+The admission layer at exact local head `9b14beff...` keeps both exact services
+warm behind bounded owner-fair admission. A request never starts or swaps a
+model. It is documented separately in the
+[agent admission runbook](agent-admission-service.md). If a single node cannot
+pass simultaneous-residency and sustained-capacity evidence, deploy the two
+services to separate owned nodes rather than introduce fallback or swapping.
 
 `server/orchestrator/Cargo.lock` freezes every registry checksum. The Slice
 10.1 graph uses the existing permissive Rust ecosystem boundary (MIT,

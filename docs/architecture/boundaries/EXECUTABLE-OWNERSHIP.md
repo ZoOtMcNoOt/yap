@@ -839,8 +839,9 @@ owner's state but may not recreate its transition logic.
   presence, hostnames, extra models, and fallback routes are insufficient.
 - **Dependencies/events:** systemd -> Rust supervisor -> one exact profile -> one
   foreground launcher -> launcher-owned container/proxy -> exact health/model
-  read-back. Slice 10.2 supplies immutable Qwen rapid and Gemma complex profiles
-  to separate instances; application admission remains a later owner.
+  read-back. Merged Slice 10.2 supplies immutable Qwen rapid and Gemma complex
+  profiles to separate instances; the separate admission owner below consumes
+  their state without changing lifecycle authority.
 - **Failure/recovery:** startup has a fixed deadline; three consecutive ready
   probe failures retire the child; the supervisor permits at most three
   restarts in 60 seconds with fixed 1/2/4-second backoff. Exhaustion publishes
@@ -859,14 +860,53 @@ owner's state but may not recreate its transition logic.
 Exact Slice 10.2 lifecycle head `4b103c1b...` passed sequential Qwen/Gemma
 start/readiness/restart/stop and zero-residue teardown; qualification head
 `4d623212...` qualified both routes; and aggregate head `0471b158...` passed the
-governed gate. Hosted review and merge remain open. Production process
+governed gate. Hosted-green head `6d1400cc...` merged through PR #157 as
+`cac8989b...`. Production process
 supervision, simultaneous warm model residency, sustained
 mixed-owner capacity/SLOs, external transport, enterprise identity/networking,
 backup/restore, and deployment remain Phase 10 or explicit IT handoffs; the
 sequential lifecycle evidence above is not production-service or capacity
-evidence. The next admission owner must keep both services warm, bound requests
-without launching/swapping models, and use separate owned nodes if one node
-cannot pass simultaneous-residency evidence.
+evidence.
+
+### 26. Multi-user agent admission
+
+- **Entry point:** `server/orchestrator/src/bin/yap-agent-admission-broker.rs`,
+  with the state machine in `agent_admission.rs`; Python enters only through
+  `yap_server/agents/admission_client.py` and its strict protocol owner.
+- **Authoritative owner:** one Rust scheduler owns role/purpose/route/class
+  binding, provider readiness generations, global/per-owner queue limits,
+  owner round robin, weighted priority, idle-only exclusion, queue-inclusive
+  deadlines, terminal retention, and token-bound completion/cancellation.
+  Python supplies an already-authenticated tenant/subject and later owns the
+  authorized workflow; it does not own scheduling or provider readiness.
+- **State:** bounded in-memory pending, active, and terminal lease state. The
+  broker deliberately does not auto-restart after losing that state. Its
+  systemd unit creates a 0700 runtime directory and 0600 Unix socket, never
+  starts provider units, and is installed without enable/start.
+- **Trust boundary:** strict one-line JSON up to 16 KiB; exact schema and role
+  binding; source SHA, request ID, cancellation token, deadline and provider
+  generation validation; same-UID owner-private socket read-back; no bearer,
+  client ID, scope, provider credential, prompt, or output crosses the internal
+  protocol.
+- **Dependencies/events:** exact provider lifecycle snapshots -> generation-
+  bound admission -> role-owned Python work -> token-bound completion or
+  acknowledged cancellation. A route is unavailable unless its exact already-
+  warm snapshot is ready; admission never launches or swaps a model.
+- **Failure/recovery:** queue/owner overload, unavailable providers, deadlines,
+  cancellation, and non-disclosing token failures are typed. Provider unready
+  or generation change fails queued work and requests cancellation of active
+  work without releasing capacity before acknowledgement. Broker failure keeps
+  new admission closed for operator containment rather than reconstructing
+  leases it cannot prove.
+- **Duplicate owner:** none. Provider supervisors remain lifecycle owners;
+  role workflows remain domain owners; the broker only owns admission.
+
+Exact executable head `9b14beff...` passes Windows and Linux Rust format,
+all-target lint/tests, the Linux private-socket lifecycle, the exact 165-test
+portable matrix across 28 modules, and Ruff. No native HTTP endpoint or role
+workflow consumes the broker yet. Simultaneous residency, sustained capacity,
+hosted review, fresh protected-route qualification, and production promotion
+remain open.
 
 ## Persistent-state owners
 
@@ -889,6 +929,7 @@ cannot pass simultaneous-residency evidence.
 | Agent workload route selection | explicit server route selector | governed RAG invocation |
 | Private route and aggregate gate evidence | evaluation lifecycle and gate owners | public-safe hashes/outcomes only |
 | Boot-scoped provider lifecycle snapshot | one Rust provider supervisor | systemd/operators; not durable application truth |
+| Boot-scoped agent admission leases | Rust agent admission broker | authenticated Python role workflows; not durable application truth |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

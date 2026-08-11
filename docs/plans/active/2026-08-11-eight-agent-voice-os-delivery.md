@@ -1,14 +1,16 @@
 # Complete eight-agent Voice OS delivery
 
-**Status:** Active; Slice A exact-head lifecycle, private qualification, and
-aggregate evidence passed; hosted review/merge and later slices pending.
+**Status:** Active; Slice A merged through PR #157. Slice B's bounded admission
+core is implemented and locally verified at exact executable head
+`9b14beffd0643cfe09cc2ba501669f01b5be775d`; hosted review, application
+integration, and later slices remain open.
 
-**Branch:** `feat/phase10-agent-service-profiles` for the first executable
-slice. Later slices use focused branches and merge only after their exact heads
-are reviewed and hosted-green.
+**Branch:** `feat/phase10-agent-admission` for Slice B. Later slices use focused
+branches and merge only after their exact heads are reviewed and hosted-green.
 
-**Base:** merged Phase 10 Slice 10.1 and documentation closure at
-`4f194c2d0a9fde619c7d9793ec19fdd1feffc203`.
+**Base:** merged Slice A / Phase 10 Slice 10.2 at
+`cac8989b762ada02d6196aad6bbcbc37f2d1a339` from hosted-green head
+`6d1400ccdf481333840700b51f516c813960272b` and PR #157.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -81,17 +83,35 @@ promotion.
 
 ## Slice B — authenticated admission and adapters
 
-- [ ] Add typed agent-work requests bound to tenant, subject, purpose, role,
+- [x] Add typed agent-work requests bound to tenant, subject, purpose, role,
   source identity, route, deadline, and cancellation token.
-- [ ] Admit work only to already-warm route services; model startup and swapping
+- [x] Admit work only to already-warm route services; model startup and swapping
   are lifecycle/operations concerns, never per-request behavior.
-- [ ] Implement HOT, INTERACTIVE, BACKGROUND_IO, BACKGROUND_LLM, and IDLE_ONLY
+- [x] Implement HOT, INTERACTIVE, BACKGROUND_IO, BACKGROUND_LLM, and IDLE_ONLY
   admission with bounded queues, fair owner limits, typed overload, and no route
   substitution.
 - [ ] Add bounded native-to-server and Rust-to-Python adapters; keep bearer
-  tokens and provider credentials out of the renderer and Python domain payloads.
+  tokens and provider credentials out of the renderer and Python domain
+  payloads. The owner-private Rust-to-Python adapter is complete; the native
+  HTTP integration remains part of the first role slice.
 - [ ] Prove cancellation acknowledgement, deadline inclusion of queue time,
   provider restart/unready behavior, owner fairness, and local-control survival.
+
+Exact executable head `9b14beffd0643cfe09cc2ba501669f01b5be775d`
+implements the eight-role request map, one conservative active slot per route,
+a 64-request global pending bound, a four-active-plus-pending per-owner bound,
+owner round-robin scheduling, weighted class admission, idle-only exclusion,
+queue-inclusive deadlines, token-bound completion/cancellation, provider-
+generation disruption, and a private Unix-socket broker. The broker never
+starts either provider, never swaps or substitutes a route, never replaces an
+existing socket owner, and does not automatically restart after losing its
+in-memory lease state. Windows and Linux Rust format/lint/all-target tests, the
+Linux socket lifecycle, the exact 165-test portable matrix across 28 modules,
+and Ruff pass locally. These checks prove the admission substrate, not an
+exposed workflow, simultaneous residency, sustained capacity, or production
+availability. Because the new admission owners are protected route inputs, the
+previous public route lock is intentionally stale and a fresh private
+qualification is required before a later aggregate gate.
 
 ## Slice C — Scribe
 

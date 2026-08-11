@@ -2,16 +2,15 @@
 
 **As of:** 2026-08-11
 
-**Most recent merged closure:** [PR #155](https://github.com/mcnatg1/yap/pull/155)
-merged the hardware-independent Phase 10 Slice 10.1 supervised-provider
-lifecycle as `e2d82b89532addb26fda73f652ae4f68b2127ef7` from exact
-hosted-green head `1a487db840578d8e415fd2e5a51b1909af4b7041`.
-The current unmerged Slice 10.2 candidate now binds exact supervised Qwen rapid
-and Gemma complex profiles. Exact lifecycle head `4b103c1b...` passed both
-sequential start/readiness/restart/teardown paths; exact qualification head
-`4d623212...` returned `required-workload-routes-qualified`; and public-lock
-successor `0471b158...` returned `governed-knowledge-gate-passed`. Hosted review
-and merge remain open, and no service is enabled or promoted.
+**Most recent merged closure:** [PR #157](https://github.com/mcnatg1/yap/pull/157)
+merged Phase 10 Slice 10.2 as
+`cac8989b762ada02d6196aad6bbcbc37f2d1a339` from exact hosted-green head
+`6d1400ccdf481333840700b51f516c813960272b`. It binds the exact supervised
+Qwen rapid and Gemma complex profiles after sequential lifecycle, fresh private
+qualification, and aggregate gate evidence. The current unmerged Slice 10.3
+admission core is locally verified at exact executable head
+`9b14beffd0643cfe09cc2ba501669f01b5be775d`; no service is enabled, no product
+workflow consumes it, and no capacity or production promotion is claimed.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after
@@ -119,8 +118,8 @@ are not a production p95/p99 SLO,
 generic TPS claim, production agent service, simultaneous-residency result, or
 sustained mixed-route capacity proof.
 
-Phase 10 Slice 10.1 is a merged hardware-independent baseline. The current
-Slice 10.2 candidate adds immutable Qwen rapid and Gemma complex service
+Phase 10 Slices 10.1 and 10.2 are merged. Slice 10.2 adds immutable Qwen rapid
+and Gemma complex service
 profiles, a hardened exact-profile launcher, two explicit supervised instances,
 process-group-complete shutdown, sequential private lifecycle proof, and a
 fresh two-route semantic qualification. Exact lifecycle head
@@ -135,16 +134,25 @@ with evidence SHA-256
 `008d748bfe88b5eb68b2c8abbecd682e0a4aceb6634872ead077e0993a2455b2`.
 That gate ran 157 portable tests across 26 modules, Ruff, 17 zero-skip Postgres
 tests across four modules, real restart/retrieval/stale/successor checks,
-unchanged desktop scope, and exact teardown. Hosted review and merge remain
-open.
+unchanged desktop scope, and exact teardown. Hosted-green head `6d1400cc...`
+merged through PR #157 as `cac8989b...`.
 
 The intended multi-user service topology keeps both routes warm behind bounded
-fair admission; requests do not launch or swap models. Simultaneous residency,
-sustained multi-owner capacity/fairness, production p95/p99, authenticated
-application integration, and deployment remain unproved. If one node cannot
-meet the simultaneous evidence, the exact routes require separate owned nodes,
-not fallback or swapping. A new
-`server/orchestrator` Rust binary owns one explicit provider-launcher lifecycle,
+fair admission; requests do not launch or swap models. Exact admission-core
+head `9b14beff...` now implements all eight role bindings, conservative one-
+active-per-route admission, a 64-request global pending bound, a four-request
+active-plus-pending owner bound, owner round robin, weighted HOT/INTERACTIVE/
+BACKGROUND/IDLE scheduling, queue-inclusive deadlines, token-bound completion
+and cancellation acknowledgement, provider-generation disruption, strict
+private Unix transport, and a bounded Python adapter. Its service never starts
+the provider units and fails closed instead of automatically restarting after
+loss of its in-memory leases. Windows/Linux Rust checks, the Linux socket
+lifecycle, the exact 165-test portable matrix across 28 modules, and Ruff pass
+locally. Simultaneous residency, sustained capacity/fairness, production
+p95/p99, native HTTP integration, and deployment remain unproved. If one node
+cannot meet the simultaneous evidence, the exact routes require separate owned
+nodes, not fallback or swapping. The merged `server/orchestrator` provider
+supervisor owns one explicit provider-launcher lifecycle,
 numeric-loopback health plus exact model-identity readiness, bounded child
 restart, terminal reap, and an owner-private state snapshot. A hardened systemd
 template owns the outer cgroup; the existing foreground launcher remains the
@@ -184,7 +192,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Slice 10.1 merged; Slice 10.2 gated, hosted merge pending | The merged hardware-independent baseline adds one Rust-owned provider-launcher lifecycle under a systemd-owned cgroup. The current Slice 10.2 candidate binds exact Qwen/Gemma profiles, proves both sequential lifecycles and fresh private route qualification, and passes the aggregate gate at `0471b158...`. It does not enable a provider, connect an application route, prove warm simultaneous residency or multi-user capacity/SLOs, or replace explicit IT/security handoffs. |
+| Phase 10 | Slices 10.1/10.2 merged; Slice 10.3 admission core locally verified | The merged baseline owns supervised exact Qwen/Gemma service lifecycles. Exact admission head `9b14beff...` adds bounded owner-fair multi-user scheduling and private Rust-to-Python transport, but no workflow or native endpoint consumes it. Fresh route qualification, hosted review, simultaneous residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -968,14 +976,15 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Begin provider-specific Slice 10.2 from merged Slice 10.1 head
-   `e2d82b89532addb26fda73f652ae4f68b2127ef7`: bind the qualified Qwen rapid
-   and Gemma complex profiles to separate supervised instances without
-   enabling an application route or claiming capacity.
-2. Keep Tiron absent from the default catalog at the recorded
+1. Complete hosted review and merge of exact bounded-admission head
+   `9b14beff...`, then run the required fresh protected-route qualification
+   before any aggregate gate. Do not enable the broker or claim capacity.
+2. Implement the first complete product workflow, Scribe, through authenticated
+   native/server integration while preserving raw ASR and local controls.
+3. Keep Tiron absent from the default catalog at the recorded
    `unadvertised-baseline`; the source-time implementation remains the sole
    server meeting path.
-3. Keep the full security scan at the Phase 10 enterprise gate.
-4. Leave Entra registration, production SSO/provider approval, Conditional
+4. Keep the full security scan at the Phase 10 enterprise gate.
+5. Leave Entra registration, production SSO/provider approval, Conditional
    Access, DNS, certificates, ZPA, firewall, and deployment policy as explicit
    IT/security handoffs rather than developer-invented infrastructure.

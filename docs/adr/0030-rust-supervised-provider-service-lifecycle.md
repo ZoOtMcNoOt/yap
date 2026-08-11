@@ -1,6 +1,6 @@
 # ADR 0030: Rust-supervised provider service lifecycle
 
-**Status:** Accepted; Slice 10.1 merged, Slice 10.2 gated with hosted merge pending
+**Status:** Accepted; Slices 10.1 and 10.2 merged, Slice 10.3 admission core locally verified
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md),
@@ -46,9 +46,10 @@ remains a complex-route failure.
 The first Phase 10 slice implements this lifecycle with a hardware-independent
 fixture. Slice 10.2 binds immutable Qwen rapid and Gemma complex profiles to
 separate supervised instances and proves their sequential lifecycles plus fresh
-route qualification. Simultaneous warm residency, multi-owner admission and
-fairness, application-route integration, sustained capacity, p95/p99 SLOs, and
-deployment promotion remain later evidence layers.
+route qualification. Slice 10.3 now has a locally verified Rust admission core
+with strict private Python transport, but application-route integration is not
+yet present. Simultaneous warm residency, sustained multi-owner capacity,
+p95/p99 SLOs, and deployment promotion remain later evidence layers.
 
 ## Options considered
 
@@ -98,8 +99,14 @@ than adding a second container owner. This option is selected.
   Exact qualification head `4d6232123520dd85202f7095c156c766c7dd2ee0`
   returned `required-workload-routes-qualified`; public-lock successor
   `0471b158ac34f97c0f2be7323433470fe5de7fa4` passed the aggregate gate.
-  Hosted review and merge remain open, and this is not simultaneous-residency
-  or capacity evidence.
+  Hosted-green head `6d1400cc...` merged through PR #157 as `cac8989b...`.
+  This is not simultaneous-residency or capacity evidence.
+- Exact admission-core head `9b14beff...` implements bounded role/owner queues,
+  queue-inclusive deadlines, token-bound cancellation acknowledgement,
+  provider-generation disruption, typed overload, and an owner-private Unix
+  broker. It is locally verified and intentionally does not auto-start either
+  provider or auto-restart after losing lease state. No product workflow uses
+  it yet, and its protected changes require fresh private qualification.
 
 ## Action items
 
