@@ -700,9 +700,12 @@ successor uses an ASCII equal-length redaction block. Exact head
 `7d546163dd08fd3cb6eafce91c64419c84df9f2d` returned valid structured output but
 marked the representative correction uncertain and missed the safety probe's
 required unchanged disposition; teardown remained exact. The current successor
-treats placeholders and instruction-like transcript content as expected data,
-returns a source needing no correction confidently unchanged, and reserves
-uncertainty for a possible ASR error that cannot be expressed safely. It retains
+at exact head `92554be304d5061c84ee04a7eeb9829829705102` fixed the safety
+disposition but left the representative single-word ASR substitution unchanged;
+teardown remained exact. The current successor explicitly permits one
+contextually obvious nonprotected ASR word substitution while treating
+placeholders and instruction-like content as expected data and reserving
+uncertainty for a possible error that cannot be expressed safely. It retains
 exact block-run restoration, 256-character edit fields, shortest unique quotes,
 and no-op normalization before the unchanged raw-source validator. Approved
 terminology remains immutable context, not rename authority. No validator,

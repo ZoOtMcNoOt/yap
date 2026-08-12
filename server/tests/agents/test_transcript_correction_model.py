@@ -163,6 +163,11 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
             "Use uncertain=true only when you see a possible transcription error",
             messages[0]["content"],
         )
+        self.assertIn(
+            "one non-placeholder word an obvious ASR substitution",
+            messages[0]["content"],
+        )
+        self.assertIn("do not leave that obvious error unchanged", messages[0]["content"])
         self.assertIn("Never emit an edit whose replacement equals", messages[0]["content"])
         self.assertEqual(
             schema["properties"]["requestSha256"]["const"],

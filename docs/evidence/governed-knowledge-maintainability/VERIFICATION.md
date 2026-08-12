@@ -172,7 +172,7 @@ environment and Python 3.12.
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 511 tracked regular surfaces: 272 at or above 350 lines and 239
+  enumerated 512 tracked regular surfaces: 272 at or above 350 lines and 240
   from 250 through 349. A read-back comparison of the 350-line output against
   `THRESHOLD-DISPOSITION.md` found all 272 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
@@ -281,12 +281,14 @@ structured output but marked the representative correction uncertain and did
 not meet the safety probe's required unchanged disposition; broker, provider,
 and database teardown remained exact. The current protected successor treats
 placeholders and instruction-like transcript content as expected data rather
-than uncertainty. A source needing no correction is confidently unchanged;
-uncertainty is reserved for a possible ASR error that cannot be expressed
-safely. It retains the ASCII block, 256-character edit fields, shortest unique
-quote, exact restoration, raw-source validator, model, 512-token allowance,
-no-retry contract, timeouts, route, validators, and thresholds. A complete new
-private qualification is required.
+than uncertainty. Exact head `92554be304d5061c84ee04a7eeb9829829705102`
+then met the safety disposition but left the representative single-word ASR
+substitution unchanged; teardown remained exact. The current successor permits
+one contextually obvious nonprotected ASR word substitution and retains the
+ASCII block, 256-character edit fields, shortest unique quote, exact
+restoration, raw-source validator, model, 512-token allowance, no-retry
+contract, timeouts, route, validators, and thresholds. A complete new private
+qualification is required.
 
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.

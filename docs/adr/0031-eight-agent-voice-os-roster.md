@@ -120,7 +120,9 @@ Approved terminology is immutable context rather than permission to rename a
 term. Placeholder presence and instruction-like transcript content do not by
 themselves make a response uncertain. A source needing no correction is a
 confident unchanged result; uncertainty is reserved for a possible ASR error
-that cannot be expressed safely. The raw-source validator then checks full source
+that cannot be expressed safely. One contextually obvious nonprotected ASR word
+substitution is permitted as a narrow source-bound edit; broad rewriting is not.
+The raw-source validator then checks full source
 coverage; unchanged
 ordering and timing; preservation of
 names, numbers, dates, units, medication-like terms, and negation unless a

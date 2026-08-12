@@ -78,9 +78,12 @@ redaction block. Exact head `7d546163dd08fd3cb6eafce91c64419c84df9f2d`
 returned valid structured output but marked the representative correction
 uncertain and missed the safety probe's required unchanged disposition; broker,
 provider, and database teardown remained exact. The current protected successor
-treats placeholders and instruction-like transcript content as expected data,
-returns a source needing no correction confidently unchanged, and reserves
-uncertainty for a possible ASR error that cannot be expressed safely. It retains
+at exact head `92554be304d5061c84ee04a7eeb9829829705102` fixed the safety
+disposition but left the representative single-word ASR substitution unchanged;
+teardown remained exact. The current successor explicitly permits one
+contextually obvious nonprotected ASR word substitution while treating
+placeholders and instruction-like content as expected data and reserving
+uncertainty for a possible error that cannot be expressed safely. It retains
 the 256-character edit fields, shortest unique quote, exact block-run
 restoration, and identical-edit normalization. Raw bindings and validators still
 run after restoration. It adds no retry and changes no model, route, 512-token

@@ -154,9 +154,9 @@ net additive; no LOC-reduction claim is made for those correctness repairs.
 
 ### Complete threshold disposition
 
-At the current Phase 10 Scribe candidate tree, the inventory contains 511
+At the current Phase 10 Scribe candidate tree, the inventory contains 512
 in-scope tracked source, text, policy, and provenance surfaces at or above 250
-physical lines: 272 at or above 350 and 239 from 250 through 349. The completed
+physical lines: 272 at or above 350 and 240 from 250 through 349. The completed
 checkpoint reviews deep-traced the inherited surfaces
 through the same workflow owners and found no additional mixed authority. The
 mutually exclusive rows below classify every one of the 272
