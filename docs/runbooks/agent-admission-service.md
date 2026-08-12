@@ -4,8 +4,10 @@ This runbook covers the bounded multi-user admission substrate implemented at
 exact protected head `7bd93dc624e6d8651dffc710026ca144909b2399` and
 admitted by exact public-lock/aggregate head
 `135cc2ba8534f41d91ff52cd6b6d366460c7b60f`. It is not yet an enabled
-product service: hosted review, native/server workflow integration,
-simultaneous residency, and sustained capacity evidence remain open.
+production service: hosted-green head `cf1e69a4...` merged it through PR #158 as
+`84d95842...`, and the Scribe candidate now consumes it in an authenticated
+native/server workflow. Scribe qualification, simultaneous residency, sustained
+capacity, and production operations evidence remain open.
 
 ## Ownership and safety boundary
 
@@ -117,7 +119,7 @@ evidence.
 
 Do not enable or start the admission unit until all of these are true:
 
-1. PR #158 has passed hosted exact-head review;
+1. PR #158 has passed hosted exact-head review and merged (complete);
 2. the selected provider topology has passed simultaneous-residency evidence;
 3. the authenticated Python workflow owns cancellation through final worker
    termination and can prove no work survives a released lease; and

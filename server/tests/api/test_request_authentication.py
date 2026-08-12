@@ -69,6 +69,7 @@ class RequestAuthenticationTests(HealthServerTestCase):
                 "batchJobs": False,
                 "liveStreaming": False,
                 "jobStatus": False,
+                "transcriptCorrection": False,
             },
         )
         self.assertEqual(self.authenticator.headers, [])

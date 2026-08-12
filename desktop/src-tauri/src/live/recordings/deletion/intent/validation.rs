@@ -173,10 +173,15 @@ fn is_deletion_artifact_for_session(
         || name == format!("{stem}.commit.json")
         || name == format!("{stem}.commit.json.part")
         || name == format!("{stem}.txt")
-        || name == format!("{stem}.polished.txt")
         || name
             .strip_prefix(&format!("{stem}.transcript.r"))
             .and_then(|value| value.strip_suffix(".json"))
+            .and_then(|value| value.parse::<u64>().ok())
+            .is_some_and(|revision| revision > 0)
+        || name
+            .strip_prefix(&format!("{stem}.transcript-correction.r"))
+            .and_then(|value| value.strip_suffix(".json"))
+            .filter(|value| value.len() == 20 && value.bytes().all(|byte| byte.is_ascii_digit()))
             .and_then(|value| value.parse::<u64>().ok())
             .is_some_and(|revision| revision > 0)
 }

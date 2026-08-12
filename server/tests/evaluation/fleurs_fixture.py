@@ -19,12 +19,14 @@ def build_fleurs_release(
     second_member_name: str = "test/200.wav",
     first_samples: tuple[float, ...] | None = None,
     second_samples: tuple[float, ...] | None = None,
+    first_transcription: str = "Uno.",
+    first_normalized: str = "uno",
 ) -> tuple[Path, Path, Path]:
     first = first_samples if first_samples is not None else (0.0,) * 160
     second = second_samples if second_samples is not None else (0.0,) * 320
     metadata_path = root / "test.tsv"
     metadata_path.write_text(
-        f"1\t100.wav\tUno.\tuno\tu n o |\t{len(first)}\tFEMALE\n"
+        f"1\t100.wav\t{first_transcription}\t{first_normalized}\tu n o |\t{len(first)}\tFEMALE\n"
         f"1\t200.wav\tDos.\tdos\td o s |\t{len(second)}\tMALE\n",
         encoding="utf-8",
     )

@@ -29,6 +29,7 @@ export type ServerCapabilities = {
   batchJobs: boolean;
   liveStreaming: boolean;
   jobStatus: boolean;
+  transcriptCorrection: boolean;
 };
 
 export type AsrExecutionMode =

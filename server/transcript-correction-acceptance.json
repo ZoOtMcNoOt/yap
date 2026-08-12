@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "qualificationScope": "scribe-transcript-correction",
+  "minimumCaseCount": 24,
+  "minimumRealAsrCaseCount": 16,
+  "minimumEnglishRealAsrCaseCount": 8,
+  "minimumSpanishRealAsrCaseCount": 8,
+  "minimumSafetyProbeCaseCount": 8,
+  "minimumOwnerCount": 8,
+  "concurrentRequestCount": 8,
+  "maximumP95LatencyMilliseconds": 30000,
+  "minimumRelativeWordErrorReduction": 0.1,
+  "minimumExpectedDispositionRate": 0.9,
+  "maximumUncertainRate": 0.35,
+  "maximumRegressedCaseCount": 0,
+  "maximumInsertionIncreaseCount": 0,
+  "maximumDeletionIncreaseCount": 0,
+  "maximumCriticalTokenMissIncreaseCount": 0,
+  "maximumTerminalFailureCount": 0
+}

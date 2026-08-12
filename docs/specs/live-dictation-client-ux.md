@@ -12,6 +12,14 @@
 
 > **2026-07-08 implemented local-fallback baseline:** The local live-transcription path uses one local model: Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. It keeps native punctuation, uses 1120 ms chunks until smaller chunks profile under real-time, and saves local live WAV/TXT output into Home history. Rust Silero ONNX, `vad_segments` chunk manifests, Opus/server WSS, Scribe, and diarization remain follow-on work.
 
+> **2026-08-12 Scribe amendment:** The current Scribe candidate is a manual
+> correction workflow for finalized trusted transcripts, not an automatic live-
+> token rewrite. It uses authenticated native/server ownership, a warm rapid
+> route, structured source-bound edits, visible diff, and a separate accepted
+> revision while preserving raw ASR. Automatic live correction remains a
+> separately gated future feature; the historical 400 ms/Ollama design below is
+> not current executable authority.
+
 > **2026-07-09 historical injection amendment (superseded 2026-07-14):** This revision allowed Windows live completion to capture a stop-time external target and use Unicode `SendInput`, with a clipboard fallback. It remains recorded as implementation history but is not current authority.
 
 > **2026-07-13 convergence implementation:** The client now reuses one `live-overlay` window and sends only semantic surfaces to Rust. Rust owns the production native bounds, anchors the top edge, and applies a rounded Windows region so transparent corner pixels are not interactive. **2026-08-01:** those bounds are now FreeFlow's, ported from `Sources/RecordingOverlay.swift` — a 38pt pill rounded on its bottom two corners only, `92` bare, `150` while recording hands-free, `180×96` expanded, and a failure pill sized to its message and clamped to `180–420`. `overlay_window.rs::frame` is the transcription and holds the reasoning. Settings no longer accept typed chord strings. Shipped defaults are `Ctrl+Shift+Space` for dictation and `Ctrl+Shift+Alt+V` for paste-last.

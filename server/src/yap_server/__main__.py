@@ -2,6 +2,10 @@ import logging
 import os
 import signal
 
+from yap_server.agents.transcript_correction_runtime import (
+    TranscriptCorrectionRuntime,
+    build_transcript_correction_runtime,
+)
 from yap_server.api.app import serve
 from yap_server.auth import (
     RequestAuthorizationRuntime,
@@ -48,10 +52,24 @@ def _close_runtime_or_fail_stop(runtime: BatchRuntime) -> None:
         _fail_stop_worker_containment()
 
 
+def _close_transcript_correction_runtime_or_fail_stop(
+    runtime: TranscriptCorrectionRuntime,
+) -> None:
+    try:
+        run_cleanup_before_deadline(
+            runtime.close,
+            timeout_seconds=_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+            thread_name="yap-server-scribe-cleanup",
+        )
+    except BaseException:
+        _fail_stop_worker_containment()
+
+
 def _close_owned_resources(
     live_transport: PrivateLiveWebSocketServer | None,
     runtime: BatchRuntime | None,
     authorization_runtime: RequestAuthorizationRuntime | None,
+    transcript_correction_runtime: TranscriptCorrectionRuntime | None = None,
 ) -> BaseException | None:
     cleanup_error: BaseException | None = None
     if live_transport is not None:
@@ -59,6 +77,10 @@ def _close_owned_resources(
             live_transport.close()
         except BaseException as error:
             cleanup_error = error
+    if transcript_correction_runtime is not None:
+        _close_transcript_correction_runtime_or_fail_stop(
+            transcript_correction_runtime
+        )
     if runtime is not None:
         _close_runtime_or_fail_stop(runtime)
     if authorization_runtime is not None:
@@ -76,6 +98,7 @@ def main() -> None:
     if hasattr(signal, "SIGBREAK"):
         signal.signal(signal.SIGBREAK, _raise_keyboard_interrupt)
     runtime: BatchRuntime | None = None
+    transcript_correction_runtime: TranscriptCorrectionRuntime | None = None
     authorization_runtime: RequestAuthorizationRuntime | None = None
     live_transport: PrivateLiveWebSocketServer | None = None
     try:
@@ -87,6 +110,10 @@ def main() -> None:
             token_authenticator,
         )
         request_authenticator = authorization_runtime.authenticator
+        transcript_correction_runtime = build_transcript_correction_runtime(
+            os.environ,
+            authenticated_team_mode=settings.authentication.required,
+        )
         runtime = build_batch_runtime(
             development_principal=(
                 DEVELOPMENT_JOB_OWNER
@@ -104,6 +131,7 @@ def main() -> None:
             live_transport,
             runtime,
             authorization_runtime,
+            transcript_correction_runtime,
         )
         if cleanup_error is not None:
             raise SystemExit("Yap private server startup cleanup failed.") from None
@@ -115,6 +143,7 @@ def main() -> None:
             live_transport,
             runtime,
             authorization_runtime,
+            transcript_correction_runtime,
         )
         raise SystemExit("Yap private server startup failed.") from None
 
@@ -129,6 +158,11 @@ def main() -> None:
             asr_capabilities=(
                 runtime.asr_capabilities if runtime is not None else None
             ),
+            transcript_correction_service=(
+                transcript_correction_runtime.service
+                if transcript_correction_runtime is not None
+                else None
+            ),
         )
     except KeyboardInterrupt:
         return
@@ -139,6 +173,7 @@ def main() -> None:
             live_transport,
             runtime,
             authorization_runtime,
+            transcript_correction_runtime,
         )
         if cleanup_error is not None:
             raise RuntimeError("Yap private server cleanup failed.") from cleanup_error

@@ -15,6 +15,7 @@ pub(crate) mod lid;
 mod demo_access_token_provider;
 mod native_access_token_provider;
 mod state;
+pub(crate) mod transcript_correction;
 #[cfg(windows)]
 mod wam_access_token_provider;
 
@@ -26,9 +27,12 @@ pub use boundary::ServerConnectorBoundary;
 pub use capabilities::AsrCapabilityCatalog;
 pub(crate) use capabilities::LidPreflightCapability;
 pub(crate) use capability_snapshot::LastKnownAsrCapabilities;
+#[cfg(test)]
+pub(crate) use core::transcript_correction_connection_lease_for_test;
 pub use core::ServerConnector;
 pub(crate) use core::{
     AsrCatalogDispatchProof, BatchConnectionLease, CurrentAsrCatalog, LidPreflightDispatchProof,
+    TranscriptCorrectionConnectionLease,
 };
 pub(crate) use desktop::{
     current_asr_capabilities, last_known_asr_capabilities, with_current_asr_capabilities,

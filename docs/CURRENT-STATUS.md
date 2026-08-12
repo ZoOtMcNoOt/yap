@@ -1,23 +1,27 @@
 # Current Status
 
-**As of:** 2026-08-11
+**As of:** 2026-08-12
 
-**Most recent merged closure:** [PR #157](https://github.com/mcnatg1/yap/pull/157)
-merged Phase 10 Slice 10.2 as
-`cac8989b762ada02d6196aad6bbcbc37f2d1a339` from exact hosted-green head
-`6d1400ccdf481333840700b51f516c813960272b`. It binds the exact supervised
-Qwen rapid and Gemma complex profiles after sequential lifecycle, fresh private
-qualification, and aggregate gate evidence. The current unmerged Slice 10.3
-admission substrate passed replacement protected-route qualification at exact
-executable head `7bd93dc624e6d8651dffc710026ca144909b2399` with public-safe
-evidence SHA-256
-`a75500c344eaa7546695ab1e7415466c031ccf394620ed442ca618ea1ede8c06`.
-Public-lock successor `135cc2ba8534f41d91ff52cd6b6d366460c7b60f` then passed
-the aggregate governed-knowledge gate with public-safe evidence SHA-256
-`350c13a5569cfc7237174d1f7e2132857ffb3aaf28b6afd2eca03aa1999aea79`.
-PR #158 remains under hosted review; no service is enabled, no product workflow
-consumes the broker, and no simultaneous-capacity or production promotion is
-claimed.
+**Most recent merged closure:** [PR #158](https://github.com/mcnatg1/yap/pull/158)
+merged Phase 10 Slice 10.3 as
+`84d95842950860e3f8d5cc70895aaae9243abe9c` from exact hosted-green head
+`cf1e69a45be15e6663d096f486d0363726638382`; all 12 required hosted checks
+passed. Its protected admission head `7bd93dc624e6d8651dffc710026ca144909b2399`
+and public-lock/gate head `135cc2ba8534f41d91ff52cd6b6d366460c7b60f`
+retain their exact qualified evidence. The broker admits authenticated work only
+to already-warm Qwen/Gemma services with bounded owner-fair queues; it does not
+start, swap, or silently substitute a model.
+
+The current Scribe candidate is the first product workflow to consume that
+merged boundary. It replaces renderer-owned Ollama polishing with authenticated
+native/server transcript correction over finalized source-hashed segments,
+structured source-bound edits, a separate immutable accepted revision, visible
+diff, manual publication, exact cancellation, and raw-ASR fallback. Its public
+matrix is green: 1,178 portable server tests with 30 declared platform skips,
+Ruff, 367 desktop unit tests, production TypeScript/Vite build, 41 Playwright
+scenarios, and both Rust workspaces with formatting, tests, and strict Clippy.
+Private bilingual/multi-owner Scribe qualification, aggregate gate admission,
+hosted review, and merge remain open; no production capacity or SLO is claimed.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after
@@ -207,7 +211,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Slices 10.1/10.2 merged; Slice 10.3 gated and under hosted review | The merged baseline owns supervised exact Qwen/Gemma service lifecycles. Exact protected head `7bd93dc6...` adds bounded owner-fair multi-user scheduling and private Rust-to-Python transport; exact public-lock/gate head `135cc2ba...` qualified both routes and passed the 169-test/17-database-test aggregate with real restart and exact teardown. No workflow or native endpoint consumes it. Hosted review, simultaneous residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
+| Phase 10 | Slices 10.1–10.3 merged; Scribe candidate implemented and publicly green | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...` after all 12 hosted checks passed. The current Scribe candidate consumes only the already-warm rapid route through authenticated native/server adapters, preserves raw ASR, and publishes only a user-accepted immutable correction revision. Private bilingual/multi-owner qualification, aggregate gate, hosted merge, simultaneous residency, sustained capacity/SLOs, production operations, the other seven roles, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -991,15 +995,19 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Complete hosted review and merge of PR #158 without rerunning or relabeling
-   the exact `7bd93dc6...` qualification or `135cc2ba...` aggregate gate.
-   Do not enable the broker or claim capacity from this bounded-admission proof.
-2. Implement the first complete product workflow, Scribe, through authenticated
-   native/server integration while preserving raw ASR and local controls.
-3. Keep Tiron absent from the default catalog at the recorded
+1. Freeze the current Scribe implementation on one clean exact head, run its one
+   bilingual/multi-owner private qualification against the already-warm rapid
+   service, admit the exact source evidence, and run the aggregate Scribe gate.
+2. Reconcile only public-safe evidence, obtain hosted-green exact-head review,
+   and merge the focused Scribe PR without claiming simultaneous residency,
+   sustained capacity, or production availability.
+3. Deliver Archivist, Student, Curator, Librarian, Analyst, Coordinator, and
+   Auditor as the remaining bounded role slices; do not substitute an eight-
+   prompt facade for their source, permission, persistence, and failure owners.
+4. Keep Tiron absent from the default catalog at the recorded
    `unadvertised-baseline`; the source-time implementation remains the sole
    server meeting path.
-4. Keep the full security scan at the Phase 10 enterprise gate.
-5. Leave Entra registration, production SSO/provider approval, Conditional
+5. Keep the full security scan at the Phase 10 enterprise gate.
+6. Leave Entra registration, production SSO/provider approval, Conditional
    Access, DNS, certificates, ZPA, firewall, and deployment policy as explicit
    IT/security handoffs rather than developer-invented infrastructure.

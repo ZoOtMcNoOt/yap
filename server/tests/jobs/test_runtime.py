@@ -917,6 +917,7 @@ class ServerMainTests(unittest.TestCase):
             job_service=runtime.service,
             lid_preflight_service=runtime.lid_preflight_service,
             asr_capabilities=runtime.asr_capabilities,
+            transcript_correction_service=None,
         )
         self.assertTrue(runtime.closed)
 

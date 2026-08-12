@@ -1,11 +1,12 @@
 # Spec: Local LLM Sidecar
 
-**Status:** Deferred, non-normative design draft; not an active plan or current
-runtime claim. Revalidate it before implementation.
+**Status:** Historical deferred solo/local design; not an active plan or current
+runtime claim. ADR 0031 replaces its team Scribe path with authenticated server
+correction. Revalidate any future local LLM as a separate product slice.
 **Decision basis:** [ADR 0005](../adr/0005-llama-server-agents.md), [ADR 0006](../adr/0006-silero-agents-state-machine.md) (HOT/background mutex)
-**Scope:** Explore moving Polish off the external Ollama dependency onto a
-bundled `llama-server` sidecar and a possible shared LLM client for later
-approved Scribe/agent work.
+**Scope:** Historical exploration of moving Polish off the external Ollama
+dependency. The Ollama implementation and its renderer-owned client have now
+been deleted; raw ASR is the current local Scribe fallback, not this sidecar.
 
 The [local STT fallback](local-live-fallback-sidecar.md) now runs in-process.
 Its model-integrity and shutdown invariants are relevant, but it does not supply
@@ -41,7 +42,7 @@ quality, licensing, memory, packaging, lifecycle, and current ownership.
 
 ## 2. Current state
 
-`desktop/src/polish.ts` calls Ollama directly:
+The deleted historical `desktop/src/polish.ts` called Ollama directly:
 
 ```
 POST http://127.0.0.1:11434/api/chat

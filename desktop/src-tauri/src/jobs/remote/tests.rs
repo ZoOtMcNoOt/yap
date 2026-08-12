@@ -11,9 +11,10 @@ use crate::{
         RecordingLanguageDecision,
     },
     server_connector::batch::{
-        AlignmentOutcome, AlignmentStatus, AlignmentUnavailableReason, LanguageDecision,
-        LanguageSegment, LanguageSegmentReason, LanguageSegmentStatus, ModelRevision,
-        ServerLanguageSpanEvidence, TranscriptResultRevision, MAX_VAD_INTERVALS,
+        AlignedWord, AlignedWordAttribution, AlignmentOutcome, AlignmentStatus,
+        AlignmentUnavailableReason, LanguageDecision, LanguageSegment, LanguageSegmentReason,
+        LanguageSegmentStatus, ModelRevision, ServerLanguageSpanEvidence, TranscriptResultRevision,
+        MAX_VAD_INTERVALS,
     },
 };
 
@@ -704,11 +705,30 @@ fn published_remote_transcript_is_reopened_only_through_its_result_revision() {
         language_segments: None,
         language_span_evidence: None,
         alignment: AlignmentOutcome {
-            status: AlignmentStatus::Unavailable,
-            reason: Some(AlignmentUnavailableReason::RuntimeFailed),
-            component_revision: "cohere-attention-alignment-candidate-v1".into(),
+            status: AlignmentStatus::Available,
+            reason: None,
+            component_revision: "cohere-attention-en-v1".into(),
         },
-        aligned_words: Vec::new(),
+        aligned_words: vec![
+            AlignedWord {
+                word_index: 0,
+                text: "Private".into(),
+                start_ms: 80,
+                end_ms: 320,
+                turn_id: None,
+                attribution: AlignedWordAttribution::Unknown,
+                confidence: None,
+            },
+            AlignedWord {
+                word_index: 1,
+                text: "result.".into(),
+                start_ms: 320,
+                end_ms: 620,
+                turn_id: None,
+                attribution: AlignedWordAttribution::Unknown,
+                confidence: None,
+            },
+        ],
         model_provenance: vec![ModelRevision {
             model_id: "CohereLabs/cohere-transcribe-03-2026".into(),
             revision: "b1eacc2686a3d08ceaae5f24a88b1d519620bc09".into(),
@@ -720,6 +740,11 @@ fn published_remote_transcript_is_reopened_only_through_its_result_revision() {
     let reopened = read_published_remote_result_bundle(&output, &spool).unwrap();
     assert_eq!(reopened.text, "Private result.\n");
     assert_eq!(reopened.result, result);
+    let correction =
+        crate::jobs::read_published_remote_transcript_correction_source_from_dir(&output, &spool)
+            .expect("aligned published transcript should be correctable");
+    assert_eq!(correction.text, "Private result.");
+    assert_eq!((correction.start_ms, correction.end_ms), (80, 620));
 
     let mut future_shape = serde_json::to_value(&result).unwrap();
     future_shape

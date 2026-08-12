@@ -449,6 +449,35 @@ class ContractTests(unittest.TestCase):
             with self.subTest(template=template, concrete_path=concrete_path):
                 self.assertEqual(allowed_methods(concrete_path), expected_methods)
 
+    def test_transcript_correction_contract_keeps_authority_server_owned(self) -> None:
+        document = contract_schema.load_json(http_contract.OPENAPI_PATH)
+        schemas = document["components"]["schemas"]
+        request = schemas["TranscriptCorrectionRequest"]
+        result = schemas["TranscriptCorrectionJobView"]
+
+        self.assertEqual(
+            set(request["required"]),
+            {
+                "schemaVersion",
+                "sourceRevisionSha256",
+                "sourceSha256",
+                "segments",
+            },
+        )
+        self.assertTrue(
+            {
+                "approvedTerminology",
+                "terminologySnapshotSha256",
+                "tenantId",
+                "subjectId",
+            }.isdisjoint(request["properties"])
+        )
+        self.assertIn("terminologySnapshotSha256", result["required"])
+        self.assertEqual(
+            result["properties"]["terminologySnapshotSha256"]["pattern"],
+            "^[0-9a-f]{64}$",
+        )
+
     def test_lid_openapi_freezes_executing_bounds_and_typed_errors(self) -> None:
         document = contract_schema.load_json(http_contract.OPENAPI_PATH)
         schemas = document["components"]["schemas"]

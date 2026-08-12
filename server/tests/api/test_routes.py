@@ -21,6 +21,7 @@ class HealthRoutingTests(HealthServerTestCase):
                     "batchJobs": False,
                     "liveStreaming": False,
                     "jobStatus": False,
+                    "transcriptCorrection": False,
                 },
             },
         )
@@ -95,6 +96,20 @@ class HealthRoutingTests(HealthServerTestCase):
                     code="NOT_IMPLEMENTED",
                     message="This route is unavailable in the active runtime profile.",
                 )
+
+    def test_unconfigured_transcript_correction_fails_closed(self) -> None:
+        status, headers, body = self._request(
+            "/v1/transcript-corrections",
+            method="POST",
+        )
+        self.assert_error(
+            status,
+            headers,
+            body,
+            expected_status=501,
+            code="NOT_IMPLEMENTED",
+            message="Transcript correction is not configured.",
+        )
 
     def test_unconfigured_lid_preflight_fails_closed(self) -> None:
         routes = (

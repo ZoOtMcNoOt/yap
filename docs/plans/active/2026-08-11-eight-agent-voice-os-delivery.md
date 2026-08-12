@@ -1,17 +1,17 @@
 # Complete eight-agent Voice OS delivery
 
-**Status:** Active; Slice A merged through PR #157. Slice B's bounded admission
-substrate passed replacement route qualification at exact protected head
-`7bd93dc624e6d8651dffc710026ca144909b2399` and the aggregate gate at
-exact public-lock head `135cc2ba8534f41d91ff52cd6b6d366460c7b60f`.
-PR #158 hosted review, application integration, and later slices remain open.
+**Status:** Active; Slice A merged through PR #157 and Slice B merged through
+PR #158 as `84d95842950860e3f8d5cc70895aaae9243abe9c`. Slice C Scribe
+implementation and its public matrix are complete; private bilingual/multi-owner
+qualification, aggregate gate, hosted merge, and later role slices remain open.
 
-**Branch:** `feat/phase10-agent-admission` for Slice B. Later slices use focused
-branches and merge only after their exact heads are reviewed and hosted-green.
+**Current branch:** `agent/phase10-scribe-transcript-correction` for Slice C.
+Later slices use focused branches and merge only after their exact heads are
+reviewed and hosted-green.
 
-**Base:** merged Slice A / Phase 10 Slice 10.2 at
-`cac8989b762ada02d6196aad6bbcbc37f2d1a339` from hosted-green head
-`6d1400ccdf481333840700b51f516c813960272b` and PR #157.
+**Base:** merged Slice B / Phase 10 Slice 10.3 at
+`84d95842950860e3f8d5cc70895aaae9243abe9c` from hosted-green head
+`cf1e69a45be15e6663d096f486d0363726638382` and PR #158.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -91,15 +91,14 @@ promotion.
 - [x] Implement HOT, INTERACTIVE, BACKGROUND_IO, BACKGROUND_LLM, and IDLE_ONLY
   admission with bounded queues, fair owner limits, typed overload, and no route
   substitution.
-- [ ] Add bounded native-to-server and Rust-to-Python adapters; keep bearer
+- [x] Add bounded native-to-server and Rust-to-Python adapters; keep bearer
   tokens and provider credentials out of the renderer and Python domain
-  payloads. The owner-private Rust-to-Python adapter is complete; the native
-  HTTP integration remains part of the first role slice.
+  payloads. Slice C supplies the authenticated native HTTP integration.
 - [x] Prove cancellation acknowledgement, deadline inclusion of queue time,
   provider restart/unready behavior, and owner fairness at the broker boundary.
-- [ ] Prove local-control survival through the first authenticated native/server
-  role workflow; the aggregate gate currently proves only an unchanged desktop
-  dependency boundary.
+- [x] Prove local-control survival through the first authenticated native/server
+  role workflow in unit, native, and Playwright coverage. Private Scribe and
+  aggregate admission remain separate unchecked evidence below.
 
 Exact protected executable head
 `7bd93dc624e6d8651dffc710026ca144909b2399`
@@ -130,17 +129,30 @@ measurements, and private location remain unpublished.
 
 ## Slice C — Scribe
 
-- [ ] Replace unrestricted whole-transcript polishing with finalized,
+- [x] Replace unrestricted whole-transcript polishing with finalized,
   source-hashed segment input and structured edit output.
-- [ ] Validate source coverage, edit bounds, ordering/timing, terminology, names,
+- [x] Validate source coverage, edit bounds, ordering/timing, terminology, names,
   numbers, dates, units, medication-like terms, negation, deletion, and invented
   content before accepting a correction.
-- [ ] Save a separate immutable correction revision and show a visible diff;
+- [x] Save a separate immutable correction revision and show a visible diff;
   preserve and export raw ASR.
-- [ ] Remove the development renderer-to-Ollama path when the authenticated
+- [x] Remove the development renderer-to-Ollama path when the authenticated
   native/server Scribe route is complete.
 - [ ] Qualify representative real ASR mistakes for correction benefit,
   preservation, hallucination/deletion, uncertainty, timeout, and p95 latency.
+
+The implementation consumes only the merged already-warm rapid route. It adds
+authenticated asynchronous POST/status/cancel APIs, strict source/terminology/
+model validation, queue-inclusive 60-second completion, 64 server in-flight and
+256 retained-terminal bounds, trusted native source re-read before publication,
+one separately revisioned user acceptance, and a manual visible-diff UI. Old
+timingless raw transcripts are deliberately ineligible. The public matrix passes
+1,178 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
+the production build, 41 browser scenarios, and both Rust workspaces with strict
+lint. The private corpus freezes 24 bilingual/safety cases across eight distinct
+owners and real ASR source evidence; its raw inputs, outputs, measurements, and
+paths remain outside Git. This paragraph records implementation readiness, not a
+qualification or production-capacity result.
 
 ## Slice D — source and review agents
 

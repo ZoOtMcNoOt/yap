@@ -22,6 +22,27 @@ from yap_server.evaluation.resident_provider_resource_sampler import (
 CHECKED_HEAD = "a" * 40
 
 
+def _wait_for_sample_count(
+    output: Path,
+    *,
+    minimum: int,
+    outcome: dict[str, object],
+) -> None:
+    deadline = time.monotonic() + 2
+    while True:
+        if "error" in outcome:
+            raise AssertionError("resource sampler failed while collecting") from outcome[
+                "error"
+            ]
+        if output.exists() and output.read_bytes().count(b"\n") >= minimum:
+            return
+        if time.monotonic() >= deadline:
+            raise AssertionError(
+                f"resource sampler did not collect {minimum} samples"
+            )
+        time.sleep(0.005)
+
+
 def _write_runtime_files(root: Path) -> tuple[Path, Path]:
     proc_root = root / "proc"
     cgroup_root = root / "sys" / "fs" / "cgroup"
@@ -157,9 +178,9 @@ class ResidentProviderResourceSamplerTests(unittest.TestCase):
                     self.fail("resource sampler did not become ready")
                 time.sleep(0.005)
             (control / "workload-start").touch()
-            time.sleep(0.08)
+            _wait_for_sample_count(output, minimum=8, outcome=outcome)
             (control / "workload-end").touch()
-            time.sleep(0.03)
+            _wait_for_sample_count(output, minimum=10, outcome=outcome)
             (control / "stop").touch()
             worker.join(timeout=2)
 

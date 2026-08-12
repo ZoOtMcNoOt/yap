@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; service profiles merged, bounded admission candidate implemented, roster workflows and promotion pending
+**Status:** Accepted target; service profiles and bounded admission merged, Scribe candidate implemented, remaining workflows and promotion pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -16,13 +16,19 @@ The product architecture names eight agents, but the merged system does not yet
 deliver that complete roster. Phase 9 merged the governed knowledge, tool,
 retrieval, terminology, and two qualified reasoning-route foundations. Phase 10
 Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
-Gemma complex profiles. Exact protected head `7bd93dc6...` now implements a
-bounded admission substrate and exact public-lock head `135cc2ba...` passed its
-replacement route qualification and aggregate gate, but no application
-workflow consumes it yet. The desktop
-still has a development-only Polish prototype that sends an unrestricted
-transcript to a renderer-owned Ollama endpoint, and most named agent personas
-remain documented targets rather than executing product workflows.
+Gemma complex profiles. Exact protected head `7bd93dc6...` implements the
+bounded admission substrate, exact public-lock head `135cc2ba...` passed its
+replacement route qualification and aggregate gate, and PR #158 merged that
+substrate as `84d95842...` after all 12 hosted checks passed.
+
+The current Scribe candidate is the first application workflow to consume the
+merged owner. It removes the development renderer-to-Ollama Polish prototype
+and replaces unrestricted rewriting with authenticated source-hashed finalized
+segments, structured edits, server-bound terminology, native-owned immutable
+publication, visible diff, and raw-ASR fallback. Its public matrix is green;
+private bilingual/multi-owner qualification and aggregate admission remain
+pending. The other seven named roles remain documented targets rather than
+executing product workflows.
 
 Calling the foundations "the agent team" would be incorrect. Conversely,
 implementing eight unrelated prompts would duplicate authority, bypass
@@ -133,11 +139,15 @@ hosted-green head `6d1400cc...` merged through PR #157. Bounded admission head
 public-lock successor `135cc2ba...` passed the aggregate gate with public-safe
 evidence SHA-256
 `350c13a5569cfc7237174d1f7e2132857ffb3aaf28b6afd2eca03aa1999aea79`.
-It remains unmerged, disabled, and unintegrated while PR #158 is under hosted
-review. Warm
-simultaneous residency, authenticated product endpoints, the eight
-product workflows, sustained multi-owner capacity, and production promotion
-remain open.
+Hosted-green head `cf1e69a4...` merged the bounded admission slice through PR
+#158 as `84d95842...`. The current Scribe candidate now supplies one
+authenticated rapid-route product endpoint and native/UI workflow without
+enabling a service or changing the model lifecycle. Its 24-case planned private
+qualification uses English and Spanish real-ASR source evidence, eight distinct
+owners, safety fallbacks, exact no-invention preservation, correction benefit,
+and queue-inclusive latency. That qualification has not yet been consumed.
+Warm simultaneous residency, the other seven product workflows, sustained
+multi-owner capacity, and production promotion remain open.
 
 ## Consequences
 
@@ -145,8 +155,8 @@ remain open.
   shipped from a prompt or persona name alone.
 - Existing Phase 9 knowledge owners are reused rather than reimplemented for
   each agent.
-- The development renderer-to-Ollama Polish path must be removed when Scribe's
-  authenticated native/server path replaces it; it is not a fallback.
+- The development renderer-to-Ollama Polish path is removed by the Scribe
+  candidate. It is not retained as a fallback or compatibility path.
 - Scribe remains useful during remote failure because raw ASR is preserved and
   returned unchanged, not because another unqualified model is selected.
 - Full delivery requires multiple reviewed exact-head slices and private

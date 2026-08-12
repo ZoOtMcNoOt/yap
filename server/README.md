@@ -594,7 +594,9 @@ route. Its owner-private Unix socket carries no bearer or provider credential.
 The broker is installed without enable/start, never starts provider units, and
 deliberately uses `Restart=no`: after losing in-memory lease state, an operator
 must first contain any external workers before starting a new scheduler. No
-service is enabled or connected to a native/server product route yet.
+service is enabled by installation. Hosted-green head `cf1e69a4...` passed all
+12 required checks and PR #158 merged the bounded admission slice as
+`84d95842...`.
 Replacement private qualification admitted both routes with public-safe
 evidence SHA-256
 `a75500c344eaa7546695ab1e7415466c031ccf394620ed442ca618ea1ede8c06`.
@@ -608,6 +610,44 @@ capacity/fairness, production p95/p99, or deployment. Build, installation,
 configuration, state, and verification details are in the
 [provider supervisor runbook](../docs/runbooks/provider-supervisor-service.md)
 and [agent admission runbook](../docs/runbooks/agent-admission-service.md).
+
+## Scribe transcript-correction candidate
+
+The first product consumer of the broker is the authenticated asynchronous
+Scribe route:
+
+- `POST /v1/transcript-corrections` admits one bounded correction and returns
+  `202` with its typed queued/running/terminal projection.
+- `GET /v1/transcript-corrections/{requestId}` reads only the authenticated
+  owner-scoped projection.
+- `DELETE /v1/transcript-corrections/{requestId}` requests token-bound
+  cancellation and does not release scheduler capacity before acknowledgement.
+
+The request contains only finalized ordered segments with immutable source,
+revision, segment, timing, and language identity. Python binds one authorized
+terminology snapshot and submits Scribe HOT work to the already-warm rapid route;
+it never starts, swaps, or falls back to another model. Structured edits are
+rejected unless they preserve coverage, order, timing, names, numbers, dates,
+units, medication-like terms, negation, and unsupported-content boundaries. A
+valid no-op, uncertainty, invalid output, overload, unavailable provider,
+deadline, and cancellation are distinct outcomes.
+
+Native code owns trusted source reads and user-accepted publication. It re-reads
+the source before publication and writes a separate hash-chained correction
+revision only after the user reviews the raw/corrected diff. Raw ASR remains
+authoritative and exportable. The renderer receives no bearer and cannot call a
+provider directly. The removed Ollama Polish implementation is not a fallback.
+
+The public candidate passes 1,178 portable server tests with 30 declared
+platform skips, Ruff, 367 desktop unit tests, production build, 41 browser
+scenarios, and both Rust workspaces with strict lint. Its private qualification
+is deliberately separate: 24 bilingual/safety cases, eight distinct owners,
+real-ASR source evidence, one warm rapid-provider generation, correction
+benefit, zero protected-fact regression/invention/deletion, bounded fallback,
+queue-inclusive latency, and exact teardown. No private corpus, output,
+measurement, credential, or filesystem path belongs in Git or hosted logs.
+Until that exact qualification and aggregate gate pass, Scribe is an
+unpromoted candidate rather than production availability or capacity evidence.
 
 ## Local checks
 

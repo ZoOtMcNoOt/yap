@@ -172,9 +172,9 @@ environment and Python 3.12.
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 494 tracked regular surfaces: 259 at or above 350 lines and 235
+  enumerated 508 tracked regular surfaces: 272 at or above 350 lines and 236
   from 250 through 349. A read-back comparison of the 350-line output against
-  `THRESHOLD-DISPOSITION.md` found all 259 exact paths and zero differences.
+  `THRESHOLD-DISPOSITION.md` found all 272 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
   `8e3ece5a3580ec29116c05f31b045a5748c143b8`, the gate-owned locked PostgreSQL
   17 / pgvector 0.8.6 runtime invoked, from `server` with `PYTHONPATH=src`,
@@ -190,6 +190,31 @@ environment and Python 3.12.
   the stale generation, retrieved the successor, and proved container,
   listener, process, same-label owner, network, and volume teardown. It did not
   publish or consume the complete checkpoint gate.
+
+### Phase 10 Scribe prequalification public read-back
+
+- `./verification/test-portable-python-server.ps1` ran 1,178 tests with 30
+  declared platform/capability skips and no failures. The exact Scribe source-
+  evidence, qualification, service, API, terminology, and contract owners are in
+  that discovery.
+- From `server`, the exact CI Ruff command covering `.` plus the owned-process
+  supervisor passed.
+- From `desktop`, `pnpm test` passed 367 tests across 58 files, `pnpm build`
+  passed, and `pnpm test:e2e` passed all 41 Chromium scenarios, including the
+  source-change/cancel/immutable-publication correction workflow.
+- `desktop/src-tauri` passed Rust formatting, locked tests, and strict all-target
+  Clippy. `server/orchestrator` passed formatting, locked all-target/all-feature
+  tests, and strict all-target/all-feature Clippy.
+- The focused Scribe source-admission/qualification/gate/service set ran 39
+  tests with one declared platform skip and no failure. Public source locks bind
+  only release, plan, model, membership, and evidence hashes; transcript content,
+  model output, measurements, credentials, and private locations remain outside
+  Git.
+
+These are implementation checks before the one private bilingual/multi-owner
+qualification. They do not claim a qualifying Scribe outcome, simultaneous GPU
+execution, sustained capacity, a production SLO, hosted merge, or delivery of
+the other seven roles.
 
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.

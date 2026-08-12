@@ -1,14 +1,14 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–9 system plus merged
-Phase 10 Slices 10.1 and 10.2: the supervised-provider lifecycle and immutable
-Qwen/Gemma service profiles. Their hosted closure merged through PRs #155 and
-#157. Exact protected head `7bd93dc6...` adds a bounded owner-fair admission
-substrate for already-warm services; exact public-lock head `135cc2ba...` passed
-replacement route qualification and the aggregate gate, but no product
-workflow consumes it yet.
-Later Phase 10 slices remain called out separately below and are not part of the
-merged baseline. Phase 7
+This document describes the merged executable Phase 1–9 system plus Phase 10
+Slices 10.1–10.3: the supervised-provider lifecycle, immutable Qwen/Gemma
+profiles, and bounded owner-fair admission for already-warm services. Their
+hosted closures merged through PRs #155, #157, and #158; the admission merge is
+`84d95842950860e3f8d5cc70895aaae9243abe9c`. The current Scribe
+candidate is the first authenticated native/server workflow to consume that
+merged boundary, but its private qualification, aggregate gate, hosted review,
+and merge remain open. Later Phase 10 roles and capacity/operations layers are
+not part of the merged baseline. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -953,9 +953,31 @@ exact routes with public-safe evidence SHA-256 `a75500c3...`; public-lock and
 aggregate head `135cc2ba...` then passed semantic admission, 169 portable tests
 across 28 modules, Ruff, 17 zero-skip Postgres tests across four modules, real
 restart/retrieval/stale/successor proof, unchanged desktop dependency scope,
-and exact teardown with public-safe evidence SHA-256 `350c13a5...`.
-Simultaneous residency, sustained multi-owner
-capacity/fairness, production p95/p99, native/server workflow integration,
+and exact teardown with public-safe evidence SHA-256 `350c13a5...`. Hosted-green
+head `cf1e69a4...` passed all 12 required checks and merged through PR #158 as
+`84d95842...`.
+
+The Scribe candidate adds an asynchronous authenticated transcript-correction
+workflow on top of that merged scheduler. Native code reads only trusted
+finalized live or remote transcript sources, carries immutable source/revision/
+segment hashes and exact timing/language, acquires one connector credential
+lease, and exposes no bearer to React. Python binds the work to the Scribe rapid
+route and one server-authorized immutable terminology snapshot, then accepts
+only structured source-bound edits. Validation preserves ordering, timing,
+coverage, names, numbers, dates, units, medication-like tokens, negation, and
+unsupported-content boundaries. A valid no-op is distinct from an invalid or
+uncertain response. The user sees the raw/corrected diff and explicitly
+publishes a separate hash-chained correction revision; raw ASR remains the
+authoritative export and fallback. Cancellation, source change, deadline,
+provider loss, malformed output, and server unavailability cannot publish a
+correction or disable local controls.
+
+The current multi-user contract is one warm Qwen rapid lane with owner-fair
+queueing, not eight parallel GPU sequences: one active request per route, 64
+global pending, four active-plus-pending per owner, round-robin owners, and a
+queue-inclusive 60-second Scribe deadline. Private qualification synchronizes
+eight distinct owners through that warm generation. Simultaneous route
+residency, sustained multi-owner capacity/fairness, production p95/p99,
 observability, and deployment remain later gates. If one node cannot satisfy
 the simultaneous evidence, the exact services require separate owned nodes,
 not fallback or per-request model swapping.
@@ -985,6 +1007,7 @@ are checkpoint repairs, not production serving or a new model claim.
 | Server identity repository | The provider-neutral repository owns principal, access-revocation, purpose-control, and redacted audit records. The SQLite adapter persists focused development/restart evidence; production topology, encryption, backup/deletion, retention/export, and administrative access remain external approvals. |
 | Knowledge generation ledger | Postgres owns staged and active immutable knowledge generations, permission and relationship projections, terminology snapshots, reviewed capture bindings, proposals, and redacted audit identities. A cache is not a permission authority. Phase 10 owns production backup, retention, encryption, monitoring, and operational topology. |
 | Boot-scoped provider lifecycle snapshot | One Rust supervisor atomically publishes bounded state/counters for its one launcher under the systemd-created private runtime directory. It is an operational projection, not durable application truth, provider quality evidence, or a capacity metric. |
+| Accepted transcript-correction revision | The native Scribe revision owner publishes a hash-chained user-accepted derivative beside the trusted live source or inside its owned remote spool. Raw transcript remains authoritative; the renderer is read-only. |
 | Deletion intent/quarantine | Destructive work revalidates identity and resumes without following replacement paths. |
 
 ## Trust boundaries and limits

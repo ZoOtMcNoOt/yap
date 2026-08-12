@@ -41,7 +41,6 @@ fn session_from_yap_artifact(name: &str) -> Option<crate::audio::session::Sessio
         ".deletion.v1.json",
         ".commit.json",
         ".capture.json",
-        ".polished.txt",
         ".wav",
         ".txt",
     ]

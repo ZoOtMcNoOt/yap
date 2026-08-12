@@ -72,6 +72,33 @@ class FleursCorpusTests(unittest.TestCase):
             "cdec7d5980706c7f354b89a4a4d31949b65c100f",
         )
 
+    def test_repository_lock_freezes_exact_en_us_test_release(self) -> None:
+        lock = load_fleurs_release_lock(
+            Path(__file__).resolve().parents[2] / "fleurs-en-us-test.lock.json"
+        )
+
+        self.assertEqual(lock.dataset_id, "google/fleurs")
+        self.assertEqual(lock.dataset_revision, FLEURS_REVISION)
+        self.assertEqual(lock.dataset_config, "en_us")
+        self.assertEqual(lock.locale_bcp47, "en-US")
+        self.assertEqual(lock.split, "test")
+        self.assertEqual(lock.expected_case_count, 647)
+        self.assertEqual(lock.license_id, "CC-BY-4.0")
+        self.assertEqual(lock.audio_archive.size, 289_851_356)
+        self.assertEqual(
+            lock.audio_archive.sha256,
+            "d9c2e37b41aacd41bc283554a0a82b5476b36887049774ecb2819dcaaa55a356",
+        )
+        self.assertEqual(lock.metadata.size, 367_864)
+        self.assertEqual(
+            lock.metadata.sha256,
+            "74c046239374deeb60fa63f258f907388093a32bcaa3140965f70ef05c79f7ca",
+        )
+        self.assertEqual(
+            lock.metadata.git_blob_oid,
+            "bcd7e3e4ecb8ad2a4d9754fc6be14dd6d3364b54",
+        )
+
     def test_inspection_accepts_matching_release_without_exposing_references(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             lock_path, archive_path, metadata_path = build_fleurs_release(
@@ -93,6 +120,21 @@ class FleursCorpusTests(unittest.TestCase):
         self.assertEqual(inspection.maximum_duration_samples, 320)
         self.assertNotIn("Uno", repr(inspection))
         self.assertNotIn("Dos", repr(inspection))
+
+    def test_inspection_treats_literal_quotes_as_tsv_text(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            lock_path, archive_path, metadata_path = build_fleurs_release(
+                Path(temporary),
+                first_transcription='He said "one".',
+                first_normalized='he said "one"',
+            )
+            inspection = inspect_fleurs_release(
+                lock=load_fleurs_release_lock(lock_path),
+                archive_path=archive_path,
+                metadata_path=metadata_path,
+                environ={"YAP_EVAL_CACHE": temporary},
+            )
+        self.assertEqual(inspection.case_count, 2)
 
     def test_inspection_rejects_changed_source_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

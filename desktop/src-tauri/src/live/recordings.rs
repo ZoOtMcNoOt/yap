@@ -19,6 +19,7 @@ mod transcripts;
 use artifacts::committed_session_output_path;
 pub(crate) use artifacts::{
     canonical_committed_live_path_from_dir, open_committed_live_transcript_from_dir,
+    read_committed_live_transcript_correction_source_from_dir,
 };
 pub(crate) use catalog::{list_history_sources, recordings_dir};
 #[cfg(test)]
@@ -46,13 +47,14 @@ pub(crate) use save::save_stop_result;
 use save::*;
 
 pub(crate) use transcripts::{
-    completed_transcript_text, is_primary_live_transcript_path, is_transcript_path,
-    stable_existing_path_string, transcript_text, unix_millis_now,
+    clean_transcript_text, completed_transcript_text, is_primary_live_transcript_path,
+    is_transcript_path, stable_existing_path_string, transcript_text, unix_millis_now,
 };
 #[cfg(test)]
 use transcripts::{
     has_valid_transcript_revision, partial_text_path, stable_path_string, transcript_revision_path,
-    write_transcript_revision_with_barrier, TranscriptRevisionPublicationBarrier,
+    write_transcript_revision_with_barrier, TranscriptRevisionPublication,
+    TranscriptRevisionPublicationBarrier,
 };
 use transcripts::{
     system_time_to_unix_millis, transcript_artifact_names, write_new_text_file,

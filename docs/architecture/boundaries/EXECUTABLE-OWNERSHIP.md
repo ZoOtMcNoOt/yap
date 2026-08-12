@@ -907,9 +907,47 @@ portable matrix across 28 modules, and Ruff. Its replacement private
 qualification admitted both routes; public-lock/aggregate head `135cc2ba...`
 passed semantic admission, the portable and 17-test Postgres matrices, real
 restart/retrieval/stale/successor proof, unchanged desktop dependency scope,
-and exact teardown. No native HTTP endpoint or role workflow consumes the
-broker yet. Simultaneous residency, sustained capacity, hosted review, and
-production promotion remain open.
+and exact teardown. Hosted-green head `cf1e69a4...` merged the substrate through
+PR #158 as `84d95842...`. The Scribe candidate below is its first product
+consumer. Simultaneous residency, sustained capacity, and production promotion
+remain open.
+
+### 27. Scribe transcript correction
+
+- **Entry point:** native commands in `desktop/src-tauri/src/transcript_correction/`
+  and the authenticated connector in
+  `desktop/src-tauri/src/server_connector/transcript_correction.rs`; server HTTP
+  composition enters through
+  `yap_server/api/transcript_correction_requests.py` and
+  `yap_server/agents/transcript_correction_service.py`.
+- **Authoritative owner:** native source readers own which finalized live/remote
+  transcript may be corrected and native revision code owns user-accepted
+  publication. The Python correction contract owns bounded structured edits and
+  semantic preservation. The Rust admission broker remains the sole queue/
+  readiness/deadline/cancellation owner; the renderer owns presentation only.
+- **Persisted state:** raw transcript and its timing/language revision remain
+  immutable. A user acceptance publishes a separate hash-chained correction
+  revision beside the live source or inside the owned remote job spool. Server
+  request/terminal state is bounded in memory; terminology snapshots remain in
+  their existing Postgres ledger. Model output is never source truth.
+- **Trust boundary:** native revalidates the trusted source before submission
+  and again before publication; the server requires exact ordered segment
+  hashes, source/revision identity, timestamps, language, owner/purpose, one
+  immutable terminology snapshot, and a validated rapid-route response. The
+  renderer receives neither bearer material nor arbitrary filesystem authority.
+- **Dependencies/events:** finalized transcript -> native authenticated lease ->
+  asynchronous POST/status/cancel -> Scribe HOT admission on the already-warm
+  rapid route -> validated raw/corrected preview -> explicit native publication.
+  Meeting notes/summaries are different workflows and do not enter this owner.
+- **Failure/recovery:** overload, unavailable provider, queue-inclusive deadline,
+  cancellation, source change, invalid/uncertain output, and unsupported old
+  timingless transcripts return a typed non-publication outcome. Raw ASR,
+  playback, export, deletion, capture, and other local controls remain usable.
+- **Cancellation:** UI cleanup or source change requests server cancellation;
+  the server keeps capacity owned until Rust acknowledges the terminal token.
+  No cancelled, failed, or stale request can publish a correction revision.
+- **Duplicate owner:** none. The deleted renderer/Ollama Polish implementation is
+  not retained as a fallback or compatibility path.
 
 ## Persistent-state owners
 
@@ -933,6 +971,7 @@ production promotion remain open.
 | Private route and aggregate gate evidence | evaluation lifecycle and gate owners | public-safe hashes/outcomes only |
 | Boot-scoped provider lifecycle snapshot | one Rust provider supervisor | systemd/operators; not durable application truth |
 | Boot-scoped agent admission leases | Rust agent admission broker | authenticated Python role workflows; not durable application truth |
+| Accepted transcript-correction revisions | native Scribe revision owner | React diff/history projection; raw transcript remains authoritative |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

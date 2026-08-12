@@ -39,7 +39,7 @@ _EXPECTED_DATABASE_MODULES = (
     "tests.knowledge.test_reviewed_meeting_postgres_route",
     "tests.knowledge.test_terminology_ledger",
 )
-_EXPECTED_DATABASE_TEST_COUNT = 17
+_EXPECTED_DATABASE_TEST_COUNT = 19
 _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
 )

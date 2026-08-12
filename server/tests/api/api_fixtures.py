@@ -72,6 +72,7 @@ def meeting_import_job_request() -> dict[str, object]:
 class HealthServerTestCase(unittest.TestCase):
     asr_capabilities: dict[str, object] | None = None
     lid_preflight_service: object | None = None
+    transcript_correction_service: object | None = None
     request_authenticator: object | None = None
     server_settings = ServerSettings(
         host="127.0.0.1",
@@ -86,10 +87,14 @@ class HealthServerTestCase(unittest.TestCase):
             logger=self.logger,
             asr_capabilities=self.asr_capabilities,
             lid_preflight_service=self.lid_preflight_service,
+            transcript_correction_service=self.transcript_correction_service,
             request_authenticator=self.request_authenticator,
         )
         self.assertIsInstance(self.server, HTTPServer)
-        if self.lid_preflight_service is None:
+        if (
+            self.lid_preflight_service is None
+            and self.transcript_correction_service is None
+        ):
             self.assertNotIsInstance(self.server, ThreadingHTTPServer)
         else:
             self.assertIsInstance(self.server, ThreadingHTTPServer)

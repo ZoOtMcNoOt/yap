@@ -329,6 +329,7 @@ class ContractTests(unittest.TestCase):
             batch_jobs=False,
             live_streaming=False,
             job_status=False,
+            transcript_correction=False,
         )
         view = HealthView(
             service="yap-server",
@@ -340,7 +341,12 @@ class ContractTests(unittest.TestCase):
 
         self.assertEqual(
             capabilities.to_wire(),
-            {"batchJobs": False, "liveStreaming": False, "jobStatus": False},
+            {
+                "batchJobs": False,
+                "liveStreaming": False,
+                "jobStatus": False,
+                "transcriptCorrection": False,
+            },
         )
         self.assertEqual(view.to_wire(), contract_schema.load_json(http_contract.EXAMPLES_ROOT / "health.ok.json"))
         self.assertFalse(hasattr(view, "__dict__"))

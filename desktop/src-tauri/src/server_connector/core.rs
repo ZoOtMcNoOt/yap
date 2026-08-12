@@ -11,7 +11,7 @@ use crate::{jobs::AsrCatalogBinding, runtime};
 use super::{
     batch, client, config,
     state::{self, ConnectorInner, SettingsDisposition},
-    AsrCapabilityCatalog, ServerConnectionSnapshot,
+    transcript_correction, AsrCapabilityCatalog, ServerConnectionSnapshot,
 };
 
 pub struct ServerConnector {
@@ -44,6 +44,40 @@ pub(crate) struct BatchConnectionLease {
     generation: u64,
     base_url: String,
     client: batch::BatchApiClient,
+}
+
+#[derive(Clone)]
+pub(crate) struct TranscriptCorrectionConnectionLease {
+    generation: u64,
+    base_url: String,
+    client: transcript_correction::TranscriptCorrectionApiClient,
+}
+
+#[cfg(test)]
+pub(crate) fn transcript_correction_connection_lease_for_test(
+) -> TranscriptCorrectionConnectionLease {
+    struct NoAccess;
+    impl super::authorization::ServerAccessTokenSource for NoAccess {
+        fn access(&self) -> super::authorization::AccessTokenFuture<'_> {
+            Box::pin(async { Ok(None) })
+        }
+    }
+
+    let authenticated = super::AuthenticatedRequestDispatcher::from_source(
+        client::bounded_client().expect("bounded test client"),
+        Arc::new(NoAccess),
+        super::authorization::AuthenticatedSession::new(),
+    );
+    let client = transcript_correction::TranscriptCorrectionApiClient::new(
+        authenticated,
+        "http://127.0.0.1:1",
+    )
+    .expect("fixed test correction origin");
+    TranscriptCorrectionConnectionLease {
+        generation: 1,
+        base_url: client.base_url_identity().to_owned(),
+        client,
+    }
 }
 
 pub(crate) struct AsrCapabilityLease {
@@ -125,6 +159,12 @@ impl AsrCapabilityLease {
 
 impl BatchConnectionLease {
     pub(crate) fn client(&self) -> &batch::BatchApiClient {
+        &self.client
+    }
+}
+
+impl TranscriptCorrectionConnectionLease {
+    pub(crate) fn client(&self) -> &transcript_correction::TranscriptCorrectionApiClient {
         &self.client
     }
 }
@@ -326,6 +366,38 @@ impl ServerConnector {
         }))
     }
 
+    pub(crate) fn transcript_correction_connection_lease(
+        &self,
+    ) -> Result<Option<TranscriptCorrectionConnectionLease>, String> {
+        let generation = self.generation.load(Ordering::Acquire);
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        if inner.generation() != generation
+            || snapshot.state != runtime::state::ServerConnectorState::Ready
+            || !snapshot.capabilities.transcript_correction
+        {
+            return Ok(None);
+        }
+        let Some(base_url) = inner.configured_base_url(generation) else {
+            return Ok(None);
+        };
+        let authenticated = self
+            .authenticated
+            .bind_current_transport(generation, &base_url)
+            .map_err(|_| {
+                "The server connection changed before transcript correction dispatch.".to_string()
+            })?;
+        let client =
+            transcript_correction::TranscriptCorrectionApiClient::new(authenticated, &base_url)
+                .map_err(|_| "The transcript correction server origin is invalid.".to_string())?;
+        let base_url = client.base_url_identity().to_owned();
+        Ok(Some(TranscriptCorrectionConnectionLease {
+            generation,
+            base_url,
+            client,
+        }))
+    }
+
     pub(crate) fn asr_capability_lease(&self) -> Option<AsrCapabilityLease> {
         let generation = self.generation.load(Ordering::Acquire);
         let inner = self.inner.lock().expect("server connector poisoned");
@@ -422,6 +494,27 @@ impl ServerConnector {
             && snapshot.capabilities.job_status;
         if !current {
             return Err("Server connection changed before the batch response could commit.".into());
+        }
+        Ok(commit())
+    }
+
+    pub(crate) fn with_current_transcript_correction_lease<T>(
+        &self,
+        lease: &TranscriptCorrectionConnectionLease,
+        commit: impl FnOnce() -> T,
+    ) -> Result<T, String> {
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        let current = self.generation.load(Ordering::Acquire) == lease.generation
+            && inner.generation() == lease.generation
+            && inner.configured_base_url(lease.generation).as_deref()
+                == Some(lease.base_url.as_str())
+            && snapshot.state == runtime::state::ServerConnectorState::Ready
+            && snapshot.capabilities.transcript_correction;
+        if !current {
+            return Err(
+                "Server connection changed before transcript correction could commit.".into(),
+            );
         }
         Ok(commit())
     }

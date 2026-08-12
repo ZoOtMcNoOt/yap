@@ -20,7 +20,7 @@ impl LiveRuntime {
         })
     }
 
-    pub(crate) fn stop_stream(&self) -> StreamFinishStatus {
+    pub(crate) fn stop_stream(&self) -> StreamFinishReport {
         let (finisher, adapter_status, shutdown_errors) = {
             let mut inner = self.inner.lock().expect("live runtime poisoned");
             let (shutdown_errors, adapter_status) = inner.stop_capture();
@@ -43,7 +43,7 @@ impl LiveRuntime {
                     .unwrap_or_else(|| StreamFinishStatus::NoStream.into())
             });
         let mut inner = self.inner.lock().expect("live runtime poisoned");
-        if let Some(evidence) = finish_report.language_evidence {
+        if let Some(evidence) = finish_report.language_evidence.clone() {
             if let Err(error) = inner.append_language_evidence(evidence) {
                 crate::diagnostics::log(&format!(
                     "live language evidence persistence failed code=recording_sink message={error}"
@@ -55,12 +55,13 @@ impl LiveRuntime {
         }
         self.active_session.store(0, Ordering::SeqCst);
         inner.mark_used();
-        finish_report.status
+        finish_report
     }
 
-    pub(crate) fn finish_stop(&self, stream: StreamFinishStatus) -> LiveStopResult {
+    pub(crate) fn finish_stop(&self, stream: StreamFinishReport) -> LiveStopResult {
         self.stop_completion.complete_with(|| LiveStopResult {
-            stream,
+            stream: stream.status,
+            transcript_segments: stream.transcript_segments,
             recording: self.finalize_recording(),
         })
     }

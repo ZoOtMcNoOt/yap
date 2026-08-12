@@ -94,15 +94,6 @@ fn transcript_reads_reject_external_text_files() {
             .unwrap_err(),
         "Only Yap-owned canonical live transcripts can be read."
     );
-    assert_eq!(
-        write_polished_text_at_from_dir(
-            transcript.display().to_string(),
-            "safe".into(),
-            &owned_dir,
-        )
-        .unwrap_err(),
-        "Only Yap-owned canonical live transcripts can be polished."
-    );
     std::fs::remove_dir_all(owned_dir).ok();
     std::fs::remove_dir_all(external_dir).ok();
 }
@@ -131,11 +122,6 @@ fn transcript_actions_reject_resolved_non_transcript_files() {
     assert_eq!(
         read_text_preview_at_from_dir(link.display().to_string(), 10, &dir).unwrap_err(),
         "Only transcript text files can be read."
-    );
-    assert_eq!(
-        write_polished_text_at_from_dir(link.display().to_string(), "safe".into(), &dir)
-            .unwrap_err(),
-        "Only transcript text files can be polished."
     );
     remove_reparse_point(&link).unwrap();
     std::fs::remove_dir_all(dir).ok();

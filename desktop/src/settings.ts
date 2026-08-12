@@ -120,10 +120,6 @@ export function removeAcousticLanguageDetector(): Promise<AcousticLanguageDetect
   return invoke<AcousticLanguageDetectorView>("acoustic_language_detector_remove");
 }
 
-export async function polishNumGpuLayers(): Promise<number> {
-  return invoke<number>("polish_num_gpu");
-}
-
 export async function listLocalComputeTargets(): Promise<LocalComputeTargetView[]> {
   return invoke<LocalComputeTargetView[]>("list_local_compute_targets");
 }

@@ -7,13 +7,10 @@ use std::{
 use serde::Serialize;
 use tokio::{sync::Semaphore, time::timeout_at};
 
-use crate::atomic_text::write as write_text_atomically;
-
 pub(super) const MAX_TRANSCRIPT_READ_BYTES: u64 = 2 * 1024 * 1024;
 pub(super) const MAX_HIDDEN_PRUNE_CANDIDATES: usize = 200;
 const MAX_CONCURRENT_TRANSCRIPT_READS: usize = 4;
 const TRANSCRIPT_READ_TIMEOUT: Duration = Duration::from_secs(8);
-const TRANSCRIPT_WRITE_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[derive(Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -175,30 +172,9 @@ pub(super) fn read_text_preview_at_from_dir(
     Ok(text.chars().take(max_chars).collect())
 }
 
-#[tauri::command]
-pub async fn write_polished_text(
-    window: tauri::WebviewWindow,
-    path: String,
-    text: String,
-) -> Result<String, String> {
-    super::ensure_main_window(&window)?;
-    run_bounded_transcript_io(
-        transcript_write_limiter(),
-        TRANSCRIPT_WRITE_TIMEOUT,
-        "Polished transcript write",
-        move || write_polished_text_at(path, text),
-    )
-    .await
-}
-
 fn transcript_read_limiter() -> Arc<Semaphore> {
     static LIMITER: OnceLock<Arc<Semaphore>> = OnceLock::new();
     Arc::clone(LIMITER.get_or_init(|| Arc::new(Semaphore::new(MAX_CONCURRENT_TRANSCRIPT_READS))))
-}
-
-fn transcript_write_limiter() -> Arc<Semaphore> {
-    static LIMITER: OnceLock<Arc<Semaphore>> = OnceLock::new();
-    Arc::clone(LIMITER.get_or_init(|| Arc::new(Semaphore::new(1))))
 }
 
 pub(super) async fn run_bounded_transcript_io<F>(
@@ -227,37 +203,6 @@ where
     }
 }
 
-pub(super) fn write_polished_text_at(path: String, text: String) -> Result<String, String> {
-    write_polished_text_at_from_dir(path, text, &crate::live::recordings::recordings_dir())
-}
-
-pub(super) fn write_polished_text_at_from_dir(
-    path: String,
-    text: String,
-    owned_dir: &std::path::Path,
-) -> Result<String, String> {
-    let path = std::path::PathBuf::from(path);
-    let path = owned_live_transcript_path_from_dir(&path, "polished", owned_dir)?;
-    let _source =
-        crate::live::recordings::open_committed_live_transcript_from_dir(&path, owned_dir)
-            .map_err(|_| {
-                "Only Yap-owned canonical live transcripts can be polished.".to_string()
-            })?;
-    let output = polished_path(&path)?;
-    write_text_atomically(&output, &text)
-        .map_err(|err| format!("Failed to save polished transcript: {err}"))?;
-    Ok(output.display().to_string())
-}
-
-pub(super) fn polished_path(path: &std::path::Path) -> Result<std::path::PathBuf, String> {
-    let stem = path
-        .file_stem()
-        .and_then(|stem| stem.to_str())
-        .ok_or_else(|| "Transcript path has no file name.".to_string())?;
-
-    Ok(path.with_file_name(format!("{stem}.polished.txt")))
-}
-
 fn canonical_existing_path(path: &std::path::Path) -> Result<std::path::PathBuf, String> {
     if !path.exists() {
         return Err("File no longer exists.".into());
@@ -278,16 +223,6 @@ fn canonical_transcript_path(
         return Err(format!("Only transcript text files can be {action}."));
     }
     Ok(path)
-}
-
-pub(super) fn owned_live_transcript_path_from_dir(
-    path: &std::path::Path,
-    action: &str,
-    owned_dir: &std::path::Path,
-) -> Result<std::path::PathBuf, String> {
-    let path = canonical_transcript_path(path, action)?;
-    crate::live::recordings::canonical_committed_live_path_from_dir(&path, owned_dir, true)
-        .map_err(|_| format!("Only Yap-owned canonical live transcripts can be {action}."))
 }
 
 pub(super) fn owned_live_transcript_file_from_dir(

@@ -466,6 +466,7 @@ mod authentication_projection_tests {
                 batch_jobs: true,
                 live_streaming: false,
                 job_status: true,
+                transcript_correction: true,
             },
         }
     }

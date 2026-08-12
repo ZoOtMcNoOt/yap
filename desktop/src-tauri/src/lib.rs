@@ -22,6 +22,7 @@ pub mod runtime;
 mod runtime_policy;
 pub mod server_connector;
 pub mod stt;
+mod transcript_correction;
 mod tray;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

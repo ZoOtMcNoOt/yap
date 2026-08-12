@@ -29,7 +29,6 @@ mod playback_registry;
 mod transcript_io;
 mod transcript_prune;
 mod transcript_read;
-mod transcript_write;
 
 #[cfg(unix)]
 fn create_reparse_point(target: &std::path::Path, link: &std::path::Path) -> std::io::Result<()> {

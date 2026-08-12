@@ -136,15 +136,6 @@ def bind_job_terminology_snapshot(
     """Freeze current terminology and bind it once to a durable job identity."""
 
     principal = authorization.principal
-    records = _read_tenant_records(connection, principal.tenant_id)
-    source_revision = _ledger_revision(records)
-    snapshot = freeze_terminology_snapshot(
-        records,
-        principal=principal,
-        team_ids=authorization.team_ids,
-        locale=locale,
-        source_revision=source_revision,
-    )
     with connection.transaction():
         connection.execute(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
@@ -159,19 +150,12 @@ def bind_job_terminology_snapshot(
             return read_job_terminology_snapshot(
                 connection, principal=principal, job_id=job_id
             )
-        connection.execute(
-            """INSERT INTO yap_terminology_snapshots (
-                tenant_id, snapshot_sha256, subject_id, source_revision, payload
-            ) VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (tenant_id, snapshot_sha256) DO NOTHING""",
-            (
-                snapshot.tenant_id,
-                snapshot.snapshot_sha256,
-                snapshot.subject_id,
-                snapshot.source_revision,
-                Jsonb(terminology_snapshot_payload(snapshot)),
-            ),
+        snapshot = _freeze_current_snapshot(
+            connection,
+            authorization=authorization,
+            locale=locale,
         )
+        _store_snapshot(connection, snapshot)
         connection.execute(
             """INSERT INTO yap_terminology_job_bindings
                 (tenant_id, subject_id, job_id, snapshot_sha256)
@@ -183,6 +167,24 @@ def bind_job_terminology_snapshot(
                 snapshot.snapshot_sha256,
             ),
         )
+    return snapshot
+
+
+def store_current_terminology_snapshot(
+    connection: Connection[object],
+    *,
+    authorization: TerminologyAuthorization,
+    locale: str,
+) -> TerminologySnapshot:
+    """Persist current authorized terms without minting a durable job binding."""
+
+    with connection.transaction():
+        snapshot = _freeze_current_snapshot(
+            connection,
+            authorization=authorization,
+            locale=locale,
+        )
+        _store_snapshot(connection, snapshot)
     return snapshot
 
 
@@ -234,6 +236,56 @@ def _read_tenant_records(
     )
 
 
+def _freeze_current_snapshot(
+    connection: Connection[object],
+    *,
+    authorization: TerminologyAuthorization,
+    locale: str,
+) -> TerminologySnapshot:
+    principal = authorization.principal
+    records = _read_tenant_records(connection, principal.tenant_id)
+    return freeze_terminology_snapshot(
+        records,
+        principal=principal,
+        team_ids=authorization.team_ids,
+        locale=locale,
+        source_revision=_ledger_revision(records),
+    )
+
+
+def _store_snapshot(
+    connection: Connection[object], snapshot: TerminologySnapshot
+) -> None:
+    payload = terminology_snapshot_payload(snapshot)
+    connection.execute(
+        """INSERT INTO yap_terminology_snapshots (
+            tenant_id, snapshot_sha256, subject_id, source_revision, payload
+        ) VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (tenant_id, snapshot_sha256) DO NOTHING""",
+        (
+            snapshot.tenant_id,
+            snapshot.snapshot_sha256,
+            snapshot.subject_id,
+            snapshot.source_revision,
+            Jsonb(payload),
+        ),
+    )
+    stored = connection.execute(
+        """SELECT subject_id, source_revision, payload
+           FROM yap_terminology_snapshots
+           WHERE tenant_id = %s AND snapshot_sha256 = %s""",
+        (snapshot.tenant_id, snapshot.snapshot_sha256),
+    ).fetchone()
+    if stored is None or tuple(stored[:2]) != (
+        snapshot.subject_id,
+        snapshot.source_revision,
+    ):
+        raise RuntimeError("terminology snapshot identity differs")
+    restored = restore_terminology_snapshot(stored[2])
+    if restored != snapshot:
+        raise RuntimeError("terminology snapshot payload differs")
+
+
 def _ledger_revision(records: tuple[TerminologyRecord, ...]) -> str:
     identity = [
         {
@@ -268,4 +320,5 @@ __all__ = [
     "bind_job_terminology_snapshot",
     "install_terminology_schema",
     "read_job_terminology_snapshot",
+    "store_current_terminology_snapshot",
 ]

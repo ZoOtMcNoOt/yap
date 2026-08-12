@@ -83,6 +83,7 @@ pub(crate) struct StartIntent(u64);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LiveStopResult {
     pub stream: StreamFinishStatus,
+    pub(crate) transcript_segments: Vec<super::transcript_segments::FinalizedTranscriptSegment>,
     pub recording: Result<Option<RecordingFinalizeResult>, String>,
 }
 

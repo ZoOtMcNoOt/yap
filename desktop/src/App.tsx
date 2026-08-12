@@ -9,7 +9,7 @@ import { LocalServerOfferBanner } from "@/components/app/local-server-offer-bann
 import { FirstRunTakeover } from "@/components/onboarding/first-run-takeover";
 import { DropHero } from "@/components/panels/drop-hero";
 import { HistoryPanel } from "@/components/panels/history-panel";
-import { PolishPanel } from "@/components/panels/polish-panel";
+import { TranscriptCorrectionPanel } from "@/components/panels/transcript-correction-panel";
 import { QueuePanel } from "@/components/panels/queue-panel";
 import { TranscriptPanel } from "@/components/panels/transcript-panel";
 import { WorkspaceHeader } from "@/components/panels/workspace-header";
@@ -50,8 +50,6 @@ export default function App() {
     forgetTranscriptText,
     loadTranscriptPreviewText,
     loadTranscriptText,
-    polishedText,
-    rememberPolishedText,
     transcriptText,
   } = useTranscriptText();
   const {
@@ -66,7 +64,6 @@ export default function App() {
     copyTranscript,
     openAppPath,
     revealPath,
-    savePolishedTranscript,
   } = useTranscriptFileActions(loadTranscriptText);
   const {
     captureNativeHistoryReconciliation,
@@ -104,7 +101,7 @@ export default function App() {
     workspaceView,
   } = useWorkspaceNavigation({
     onOpenDetails: () => void settingsRefreshRef.current(),
-    onOpenPolish: () => {
+    onOpenCorrection: () => {
       setStatus(isRecordingFinished(selectedItem?.status) ? "Transcript ready" : "Select a finished transcript first");
     },
   });
@@ -188,8 +185,8 @@ export default function App() {
   const workspace = workspaceCopy[workspaceView];
   const showQueue = workspaceView === "transcribe";
   const showHistory = workspaceView === "home";
-  const showTranscript = workspaceView === "transcribe" || workspaceView === "polish";
-  const showPolish = workspaceView === "polish";
+  const showTranscript = workspaceView === "transcribe" || workspaceView === "correct";
+  const showCorrection = workspaceView === "correct";
 
   useEffect(() => {
     if (settings.setupPromptRequest) showDetails();
@@ -269,17 +266,13 @@ export default function App() {
         />
       ) : null}
 
-      {showPolish ? (
-        <PolishPanel
+      {showCorrection ? (
+        <TranscriptCorrectionPanel
+          available={settings.serverSnapshot.state === "ready"
+            && settings.serverSnapshot.capabilities.transcriptCorrection}
           item={selectedItem}
           onOpenHelp={() => openWorkspace("help")}
-          onPolished={(outputPath, text) => {
-            rememberPolishedText(outputPath, text);
-            toast.success("Polished draft ready");
-          }}
-          onSave={savePolishedTranscript}
           originalText={selectedItem?.outputPath ? transcriptText[selectedItem.outputPath] : undefined}
-          polishedText={selectedItem?.outputPath ? polishedText[selectedItem.outputPath] : undefined}
         />
       ) : null}
     </>

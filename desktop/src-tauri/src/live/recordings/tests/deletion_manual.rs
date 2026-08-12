@@ -10,10 +10,45 @@ fn manual_saved_session_deletion_removes_bound_artifacts_and_intent() {
     let capture = recording.finalize().unwrap();
     let journal_name = format!("live-{session}.capture.journal.part");
     std::fs::write(dir.join(&journal_name), journal).unwrap();
-    save_finalized_capture_to_dir(&dir, &live_view(Some("delete me"), None), Some(capture))
-        .unwrap();
-    let polished = dir.join(format!("live-{session}.polished.txt"));
-    std::fs::write(&polished, "polished\n").unwrap();
+    save_finalized_capture_to_dir(
+        &dir,
+        &live_view(Some("delete me"), None),
+        Some(capture),
+        &[finalized_segment("delete me")],
+    )
+    .unwrap();
+    let transcript = dir.join(format!("live-{session}.txt"));
+    let source =
+        read_committed_live_transcript_correction_source_from_dir(&transcript, &dir).unwrap();
+    let correction = crate::transcript_correction::publish_transcript_correction_revision_for_test(
+        &crate::transcript_correction::TrustedTranscriptCorrectionSource {
+            kind: crate::transcript_correction::TranscriptCorrectionSourceKind::Live,
+            output_path: transcript,
+            source_revision_sha256: source.source_revision_sha256,
+            text: source.text,
+            segments: source
+                .segments
+                .into_iter()
+                .map(|segment| {
+                    crate::server_connector::transcript_correction::TranscriptCorrectionSegment::new(
+                        segment.segment_id,
+                        segment.start_character,
+                        segment.end_character,
+                        segment.start_milliseconds,
+                        segment.end_milliseconds,
+                        segment.language_bcp47,
+                        segment.text,
+                        segment.text_sha256,
+                    )
+                    .unwrap()
+                })
+                .collect(),
+        },
+        "agent-manual-delete",
+        &"c".repeat(64),
+        "Delete me.\n",
+    )
+    .unwrap();
 
     let saved = list_session_files_from_dir(&dir).unwrap().pop().unwrap();
     delete_saved_live_session_in_dir(
@@ -29,7 +64,12 @@ fn manual_saved_session_deletion_removes_bound_artifacts_and_intent() {
         format!("live-{session}.capture.json"),
         format!("live-{session}.txt"),
         format!("live-{session}.transcript.r1.json"),
-        format!("live-{session}.polished.txt"),
+        correction
+            .revision_path
+            .rsplit(std::path::MAIN_SEPARATOR)
+            .next()
+            .unwrap()
+            .to_string(),
         journal_name,
         format!("live-{session}.commit.json"),
         format!("live-{session}.deletion.v1.json"),
@@ -46,7 +86,8 @@ fn saved_delete_rejects_mismatched_expected_paths_without_mutation() {
     let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
     recording.append_pcm16(&[1, 0]).unwrap();
     let capture = recording.finalize().unwrap();
-    save_finalized_capture_to_dir(&dir, &live_view(Some("keep me"), None), Some(capture)).unwrap();
+    save_finalized_capture_to_dir(&dir, &live_view(Some("keep me"), None), Some(capture), &[])
+        .unwrap();
     let saved = list_session_files_from_dir(&dir).unwrap().pop().unwrap();
 
     assert!(delete_saved_live_session_in_dir(

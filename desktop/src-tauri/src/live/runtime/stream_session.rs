@@ -6,6 +6,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use crate::language::live_evidence::LiveLanguageEvidence;
+use crate::live::transcript_segments::FinalizedTranscriptSegment;
 
 use super::super::{
     language_router::LanguageAudioAction,
@@ -49,9 +50,10 @@ pub enum StreamFinishStatus {
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct StreamFinishReport {
-    pub(super) status: StreamFinishStatus,
+    pub(crate) status: StreamFinishStatus,
     pub(super) language_evidence: Option<LiveLanguageEvidence>,
     pub(super) processing: Option<StreamProcessingSummary>,
+    pub(super) transcript_segments: Vec<FinalizedTranscriptSegment>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -69,6 +71,7 @@ impl From<StreamFinishStatus> for StreamFinishReport {
             status,
             language_evidence: None,
             processing: None,
+            transcript_segments: Vec::new(),
         }
     }
 }
@@ -85,6 +88,8 @@ struct StreamWorker {
     active_stream_session: u64,
     engine_session_ready: bool,
     session_failed: bool,
+    finalized_segments: Vec<FinalizedTranscriptSegment>,
+    active_engine_start_sample: u64,
 }
 
 #[derive(Default)]
@@ -338,6 +343,8 @@ impl StreamWorker {
             active_stream_session: 0,
             engine_session_ready: false,
             session_failed: false,
+            finalized_segments: Vec::new(),
+            active_engine_start_sample: 0,
         }
     }
 
@@ -402,6 +409,8 @@ impl StreamWorker {
         self.active_stream_session = session;
         self.engine_session_ready = false;
         self.session_failed = false;
+        self.finalized_segments.clear();
+        self.active_engine_start_sample = 0;
         self.engine
             .reset_for_language(self.language.primary_language_bcp47())?;
         self.engine_session_ready = true;
@@ -471,21 +480,24 @@ impl StreamWorker {
         self.finish_engine(session);
         crate::stt::log_stt(&self.profile.summary());
         let processing = Some(self.profile.processing_summary());
+        let transcript_segments = std::mem::take(&mut self.finalized_segments);
         self.reset_after_session();
         StreamFinishReport {
             status: StreamFinishStatus::Completed,
             language_evidence: language.evidence,
             processing,
+            transcript_segments,
         }
     }
 
     fn finish_engine(&mut self, session: u64) {
         self.drain_buffer(true);
+        let language_bcp47 = self.engine.language_bcp47().to_owned();
         let started = Instant::now();
         let final_text = self.engine.finish();
         self.profile.decode_elapsed += started.elapsed();
         if let Some(text) = final_text {
-            self.emit_final(session, &text);
+            self.emit_final(session, &text, &language_bcp47);
         }
     }
 
@@ -504,6 +516,8 @@ impl StreamWorker {
         self.active_stream_session = 0;
         self.engine_session_ready = false;
         self.session_failed = false;
+        self.finalized_segments.clear();
+        self.active_engine_start_sample = 0;
     }
 
     fn apply_language_actions(
@@ -530,6 +544,7 @@ impl StreamWorker {
                         );
                     }
                     self.drain_buffer(true);
+                    let finalized_language = transition.from_language_bcp47.clone();
                     let started = Instant::now();
                     let switched = self
                         .engine
@@ -539,8 +554,9 @@ impl StreamWorker {
                     if let StreamLanguageTransition::Switched { finalized_text } = switched {
                         self.profile.language_switches += 1;
                         if let Some(text) = finalized_text {
-                            self.emit_segment_final(session, &text);
+                            self.emit_segment_final(session, &text, &finalized_language);
                         }
+                        self.active_engine_start_sample = self.profile.audio_samples as u64;
                     }
                 }
             }
@@ -554,6 +570,7 @@ impl StreamWorker {
             return Ok(());
         }
         self.drain_buffer(true);
+        let finalized_language = self.engine.language_bcp47().to_owned();
         let started = Instant::now();
         let transition = self
             .engine
@@ -563,8 +580,9 @@ impl StreamWorker {
         if let StreamLanguageTransition::Switched { finalized_text } = transition {
             self.profile.language_switches += 1;
             if let Some(text) = finalized_text {
-                self.emit_segment_final(session, &text);
+                self.emit_segment_final(session, &text, &finalized_language);
             }
+            self.active_engine_start_sample = self.profile.audio_samples as u64;
         }
         Ok(())
     }
@@ -608,21 +626,42 @@ impl StreamWorker {
         self.events.publish_partial(text);
     }
 
-    fn emit_final(&self, session: u64, text: &str) {
+    fn emit_final(&mut self, session: u64, text: &str, language_bcp47: &str) {
         if !active_session_matches(self.active_session.load(Ordering::SeqCst), session) {
             return;
         }
+        self.record_finalized_segment(text, language_bcp47);
         self.events.publish_final(text);
         std::thread::sleep(Duration::from_millis(180));
         self.events.return_to_listening();
     }
 
-    fn emit_segment_final(&self, session: u64, text: &str) {
+    fn emit_segment_final(&mut self, session: u64, text: &str, language_bcp47: &str) {
         if !active_session_matches(self.active_session.load(Ordering::SeqCst), session) {
             return;
         }
+        self.record_finalized_segment(text, language_bcp47);
         self.events.publish_final(text);
         self.events.return_to_listening();
+    }
+
+    fn record_finalized_segment(&mut self, text: &str, language_bcp47: &str) {
+        let text = text.trim();
+        let end_sample = self.profile.audio_samples as u64;
+        if text.is_empty() || end_sample <= self.active_engine_start_sample {
+            return;
+        }
+        let start_ms = self.active_engine_start_sample * 1_000 / u64::from(TARGET_SAMPLE_RATE);
+        let end_ms = end_sample * 1_000 / u64::from(TARGET_SAMPLE_RATE);
+        if end_ms <= start_ms {
+            return;
+        }
+        self.finalized_segments.push(FinalizedTranscriptSegment {
+            text: text.to_owned(),
+            start_ms,
+            end_ms,
+            language_bcp47: language_bcp47.to_owned(),
+        });
     }
 
     fn mark_language_degraded(&self) {

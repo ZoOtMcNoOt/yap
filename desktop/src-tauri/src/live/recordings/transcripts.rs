@@ -10,14 +10,15 @@ pub(crate) use paths::{
 };
 pub(super) use paths::{system_time_to_unix_millis, transcript_artifact_names};
 pub(super) use revision::{
-    has_valid_transcript_revision, highest_transcript_revision, write_transcript_revision,
+    has_valid_transcript_revision, highest_transcript_revision, transcript_revision_path,
+    write_transcript_revision,
 };
 #[cfg(test)]
 pub(super) use revision::{
-    transcript_revision_path, write_transcript_revision_with_barrier,
+    write_transcript_revision_with_barrier, TranscriptRevisionPublication,
     TranscriptRevisionPublicationBarrier,
 };
 #[cfg(test)]
 pub(super) use text::partial_text_path;
-pub(crate) use text::{completed_transcript_text, transcript_text};
+pub(crate) use text::{clean_transcript_text, completed_transcript_text, transcript_text};
 pub(super) use text::{write_new_text_file, write_new_text_file_with};

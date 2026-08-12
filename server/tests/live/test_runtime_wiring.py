@@ -145,6 +145,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             job_service=None,
             lid_preflight_service=None,
             asr_capabilities=None,
+            transcript_correction_service=None,
         )
 
     def test_non_entra_runtime_does_not_start_private_live_listener(self) -> None:

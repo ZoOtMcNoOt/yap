@@ -78,6 +78,14 @@ fn stop_persists_worker_language_evidence_before_recording_finalization() {
                 status: StreamFinishStatus::Completed,
                 language_evidence: Some(evidence),
                 processing: None,
+                transcript_segments: vec![
+                    crate::live::transcript_segments::FinalizedTranscriptSegment {
+                        text: "hello".into(),
+                        start_ms: 0,
+                        end_ms: 1,
+                        language_bcp47: "en-US".into(),
+                    },
+                ],
             })
             .unwrap();
         }
@@ -91,8 +99,12 @@ fn stop_persists_worker_language_evidence_before_recording_finalization() {
     }
     runtime.active_session.store(42, Ordering::SeqCst);
 
-    assert_eq!(runtime.stop_stream(), StreamFinishStatus::Completed);
-    let finalized = runtime.finalize_recording().unwrap().unwrap();
+    let report = runtime.stop_stream();
+    assert_eq!(report.status, StreamFinishStatus::Completed);
+    assert_eq!(report.transcript_segments[0].text, "hello");
+    let stop = runtime.finish_stop(report);
+    assert_eq!(stop.transcript_segments[0].end_ms, 1);
+    let finalized = stop.recording.unwrap().unwrap();
     assert_eq!(finalized.status, CaptureStatus::Complete);
     let sidecar: serde_json::Value = serde_json::from_slice(
         &std::fs::read(directory.join(format!("live-{session_id}.capture.json"))).unwrap(),

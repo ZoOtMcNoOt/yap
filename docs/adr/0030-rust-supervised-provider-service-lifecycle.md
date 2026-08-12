@@ -1,6 +1,6 @@
 # ADR 0030: Rust-supervised provider service lifecycle
 
-**Status:** Accepted; Slices 10.1 and 10.2 merged, Slice 10.3 admission substrate gated and under hosted review
+**Status:** Accepted; Slices 10.1–10.3 merged, Scribe consumer qualification and later production layers pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md),
@@ -46,9 +46,10 @@ remains a complex-route failure.
 The first Phase 10 slice implements this lifecycle with a hardware-independent
 fixture. Slice 10.2 binds immutable Qwen rapid and Gemma complex profiles to
 separate supervised instances and proves their sequential lifecycles plus fresh
-route qualification. Slice 10.3 now has a gated Rust admission core with strict
-private Python transport, but application-route integration is not
-yet present. Simultaneous warm residency, sustained multi-owner capacity,
+route qualification. Slice 10.3 now has a merged, gated Rust admission core with strict
+private Python transport; hosted-green head `cf1e69a4...` merged it through PR
+#158 as `84d95842...`. The current Scribe candidate is its first authenticated
+application consumer. Simultaneous warm residency, sustained multi-owner capacity,
 p95/p99 SLOs, and deployment promotion remain later evidence layers.
 
 ## Options considered
@@ -107,7 +108,8 @@ than adding a second container owner. This option is selected.
   broker. It is gated and intentionally does not auto-start either
   provider or auto-restart after losing lease state. Replacement qualification
   admitted both routes; public-lock/aggregate head `135cc2ba...` passed the
-  complete admission-slice gate. No product workflow uses it yet.
+  complete admission-slice gate, and PR #158 merged it. Scribe is the first
+  candidate consumer; its private qualification and merge remain pending.
 
 ## Action items
 

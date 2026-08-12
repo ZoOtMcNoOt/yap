@@ -4,6 +4,9 @@
 **Status:** Historical runtime decision; the active local live runtime is superseded by ADR 0019
 **Amended by:** [ADR 0019](0019-local-streaming-model-selection.md) — the committed local fallback pin is now Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. CrispASR remains historical runtime context and legacy helper code, not the active local live path.
 **Amended by:** [ADR 0014](0014-server-tier-compute-topology.md) — in the **team profile**, model residency and client/server routing move to the **server-side workload router**; the GPU pool can hold multiple models resident simultaneously. The on-prem GB-class server node is "our hardware, our network" — it is **not** a cloud service and does not conflict with local-first principles.
+**Amended by:** [ADR 0031](0031-eight-agent-voice-os-roster.md) — historical
+Ollama/Polish references are no longer executable. Team Scribe uses authenticated
+source-bound server correction; raw ASR remains the local failure result.
 **Supersedes:** Implementation details in [ADR 0001](0001-dual-stt-backends.md) (PyTorch `transcribe.py`, `moonshine-voice` ONNX, per-invocation subprocess, “no GGUF” rule). The product split from ADR 0001 remains: local streaming for live/offline fallback, server STT for larger recordings.
 
 ## Context
@@ -90,7 +93,7 @@ Quantization policy: **Q4_K as default** for the local fallback. The client does
 
 1. PR3 client fallback loads **Moonshine v2 tiny only**.
 2. Cohere residency is a server workload-router concern once the GB-class server connector lands.
-3. **Unload or idle-evict** local fallback sidecars after a configurable idle timeout (mirror llama-server / sidecar keep-warm semantics; today Ollama `keep_alive` in `desktop/src/polish.ts` until ADR 0005 migration).
+3. **Unload or idle-evict** local fallback sidecars after a configurable idle timeout (historical design mirrored the then-existing Ollama `keep_alive`; that renderer path is now deleted under ADR 0031).
 4. GGUF files live on disk under a stable cache dir; mmap + OS page cache make repeat loads fast even after process restart.
 
 ### Model cache location

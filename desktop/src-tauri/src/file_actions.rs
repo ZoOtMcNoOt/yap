@@ -3,17 +3,14 @@ use serde::Serialize;
 pub(crate) mod transcripts;
 
 #[cfg(test)]
-use crate::atomic_text::write as write_text_atomically;
-#[cfg(test)]
 use std::{sync::Arc, time::Duration};
 #[cfg(test)]
 use tokio::sync::Semaphore;
 #[cfg(test)]
 use transcripts::{
-    polished_path, read_text_file_at, read_text_file_at_from_dir, read_text_preview_at_from_dir,
+    read_text_file_at, read_text_file_at_from_dir, read_text_preview_at_from_dir,
     resolve_owned_live_transcript_paths_from_dir, run_bounded_transcript_io,
-    write_polished_text_at_from_dir, OwnedLiveTranscriptPathResolution,
-    MAX_HIDDEN_PRUNE_CANDIDATES, MAX_TRANSCRIPT_READ_BYTES,
+    OwnedLiveTranscriptPathResolution, MAX_HIDDEN_PRUNE_CANDIDATES, MAX_TRANSCRIPT_READ_BYTES,
 };
 
 #[derive(Debug, PartialEq, Eq, Serialize)]

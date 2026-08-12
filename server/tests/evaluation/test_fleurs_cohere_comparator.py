@@ -114,6 +114,26 @@ class FleursCohereComparatorTests(unittest.TestCase):
             [("screen", 20), ("full", 908)],
         )
 
+    def test_repository_english_plan_freezes_source_candidate_and_screen(self) -> None:
+        plan = load_fleurs_cohere_comparator_plan(
+            SERVER_ROOT / "fleurs-en-us-cohere-comparator.plan.json"
+        )
+
+        self.assertEqual(
+            plan.source_release_lock_sha256,
+            sha256_file(SERVER_ROOT / "fleurs-en-us-test.lock.json"),
+        )
+        self.assertEqual(plan.model_lock_sha256, sha256_file(MODEL_LOCK_PATH))
+        self.assertEqual(plan.evaluation_locale_bcp47, "en-US")
+        self.assertEqual(plan.provider_language, "en")
+        self.assertFalse(plan.promotion_eligible)
+        self.assertEqual(plan.batch_size, 8)
+        self.assertEqual(plan.warmup_cases, 1)
+        self.assertEqual(
+            [(selection.identifier, selection.case_count) for selection in plan.selections],
+            [("screen", 20), ("full", 647)],
+        )
+
     def test_screen_uses_one_warm_engine_and_writes_only_private_case_text(self) -> None:
         samples = (-1.0, -0.5, 0.0, 0.5, 1.0)
         with tempfile.TemporaryDirectory() as temporary:

@@ -187,7 +187,7 @@ supervision, simultaneous model residency, sustained mixed-user capacity/SLOs,
 external serving, observability, enterprise networking, and deployment remain
 Phase 10 or IT handoffs.
 
-## Active Phase 10 slice: exact supervised agent services
+## Active Phase 10 delivery: supervised services and complete agent workflows
 
 The active [Phase 10 plan](../plans/active/2026-08-11-phase-10-supervised-provider-services.md)
 starts with one hardware-independent lifecycle owner rather than a model or TPS
@@ -213,7 +213,7 @@ tests across four modules, real restart/retrieval/stale/successor proof,
 unchanged desktop scope, and exact teardown. Hosted-green head `6d1400cc...`
 merged through PR #157 as `cac8989b...`.
 
-Exact protected head `7bd93dc6...` implements the next bounded-admission
+Exact protected head `7bd93dc6...` implements the bounded-admission
 substrate: all eight role bindings, conservative per-route capacity, bounded
 global/per-owner queues, owner round robin, weighted work classes, idle-only
 exclusion, queue-inclusive deadlines, provider-generation disruption, and
@@ -224,9 +224,19 @@ in-memory lease state. Replacement private qualification admitted both routes
 with public-safe evidence SHA-256 `a75500c3...`; public-lock/aggregate head
 `135cc2ba...` passed the 169-test portable matrix, Ruff, the 17-test Postgres
 matrix, real restart/retrieval/stale/successor proof, unchanged desktop scope,
-and exact teardown with public-safe evidence SHA-256 `350c13a5...`.
-Native/server workflow integration remains open. Simultaneous
-residency, sustained mixed-owner route-specific capacity and p95/p99 evidence,
+and exact teardown with public-safe evidence SHA-256 `350c13a5...`. Hosted-green
+head `cf1e69a4...` passed all 12 required checks and PR #158 merged it as
+`84d95842...`.
+
+The current Scribe candidate is the first native/server workflow integration.
+It replaces the renderer/Ollama prototype with finalized source-hashed segment
+input, an authenticated asynchronous server route, structured source-bound
+edits, immutable terminology, semantic-preservation validation, explicit cancel,
+visible raw/corrected diff, and a separately accepted native revision. Raw ASR
+remains authoritative and all local controls survive remote failure. Its public
+matrix is green; private bilingual/multi-owner qualification, aggregate gate,
+hosted merge, and the other seven roles remain open. Simultaneous residency,
+sustained mixed-owner route-specific capacity and p95/p99 evidence,
 observability, rollback, external serving, and IT-owned deployment remain later
 gates or handoffs. If one node cannot satisfy simultaneous evidence, the routes
 use separate owned nodes rather than model fallback or per-request swapping. No

@@ -22,6 +22,15 @@ fn live_view(final_text: Option<&str>, partial_text: Option<&str>) -> live::stat
     }
 }
 
+fn finalized_segment(text: &str) -> crate::live::transcript_segments::FinalizedTranscriptSegment {
+    crate::live::transcript_segments::FinalizedTranscriptSegment {
+        text: text.to_owned(),
+        start_ms: 0,
+        end_ms: 1,
+        language_bcp47: "en-US".into(),
+    }
+}
+
 fn recover_session_for_test(
     dir: &Path,
     session_id: &SessionId,
@@ -142,6 +151,7 @@ fn assert_partial_capture_transcript(fault: CommitFaultPoint) {
         &dir,
         &live_view(Some("transcript survives"), None),
         Some(capture),
+        &[],
     )
     .unwrap()
     .unwrap();

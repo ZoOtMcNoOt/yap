@@ -5,6 +5,17 @@ use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use crate::audio::evidence::ModelRevision;
 use crate::audio::recording::{self, PublishedTranscriptReceipt};
 use crate::audio::results::{ResultAuthority, ResultStatus, TranscriptResultRevision};
+use crate::live::transcript_segments::{
+    bind_finalized_transcript_segments, FinalizedTranscriptSegment,
+};
+
+pub(in crate::live::recordings) struct TranscriptRevisionPublication<'a> {
+    pub(in crate::live::recordings) capture_sidecar_sha256: &'a str,
+    pub(in crate::live::recordings) transcript_receipt: &'a PublishedTranscriptReceipt,
+    pub(in crate::live::recordings) transcript: &'a str,
+    pub(in crate::live::recordings) status: ResultStatus,
+    pub(in crate::live::recordings) transcript_segments: &'a [FinalizedTranscriptSegment],
+}
 
 pub(in crate::live::recordings) fn write_transcript_revision(
     dir: &std::path::Path,
@@ -13,14 +24,18 @@ pub(in crate::live::recordings) fn write_transcript_revision(
     transcript_receipt: &PublishedTranscriptReceipt,
     transcript: &str,
     status: ResultStatus,
+    transcript_segments: &[FinalizedTranscriptSegment],
 ) -> Result<(), String> {
     write_transcript_revision_with_barrier(
         dir,
         session_id,
-        capture_sidecar_sha256,
-        transcript_receipt,
-        transcript,
-        status,
+        TranscriptRevisionPublication {
+            capture_sidecar_sha256,
+            transcript_receipt,
+            transcript,
+            status,
+            transcript_segments,
+        },
         |_| {},
     )
 }
@@ -34,15 +49,19 @@ pub(in crate::live::recordings) enum TranscriptRevisionPublicationBarrier {
 pub(in crate::live::recordings) fn write_transcript_revision_with_barrier<F>(
     dir: &std::path::Path,
     session_id: &crate::audio::session::SessionId,
-    capture_sidecar_sha256: &str,
-    transcript_receipt: &PublishedTranscriptReceipt,
-    transcript: &str,
-    status: ResultStatus,
+    publication: TranscriptRevisionPublication<'_>,
     mut publication_barrier: F,
 ) -> Result<(), String>
 where
     F: FnMut(TranscriptRevisionPublicationBarrier),
 {
+    let TranscriptRevisionPublication {
+        capture_sidecar_sha256,
+        transcript_receipt,
+        transcript,
+        status,
+        transcript_segments,
+    } = publication;
     let revision = next_transcript_revision(dir, session_id)?;
     let model = ModelRevision::new(crate::stt::nemotron::MODEL_ID, "local", "local")
         .map_err(|error| format!("Failed to describe local transcript model: {error}"))?;
@@ -78,7 +97,13 @@ where
     }
     .map_err(|error| format!("Failed to build transcript revision: {error}"))?;
     let path = transcript_revision_path(dir, session_id, revision);
-    let serialized = transcript_result_value(&result, capture_sidecar_sha256, transcript_receipt)?;
+    let serialized = transcript_result_value(
+        &result,
+        capture_sidecar_sha256,
+        transcript_receipt,
+        transcript,
+        transcript_segments,
+    )?;
     let (staging, mut file) = create_unique_transcript_revision_staging(dir, session_id, revision)?;
     let result = (|| {
         serde_json::to_writer(&mut file, &serialized)
@@ -228,6 +253,8 @@ pub(in crate::live::recordings) fn transcript_result_value(
     result: &TranscriptResultRevision,
     capture_sidecar_sha256: &str,
     transcript_receipt: &PublishedTranscriptReceipt,
+    transcript: &str,
+    transcript_segments: &[FinalizedTranscriptSegment],
 ) -> Result<serde_json::Value, String> {
     let mut value = serde_json::to_value(result)
         .map_err(|error| format!("Failed to serialize transcript revision: {error}"))?;
@@ -260,6 +287,14 @@ pub(in crate::live::recordings) fn transcript_result_value(
         "captureSidecarSha256".into(),
         serde_json::Value::from(capture_sidecar_sha256),
     );
+    let correction_segments = bind_finalized_transcript_segments(transcript, transcript_segments)?;
+    if !correction_segments.is_empty() {
+        object.insert(
+            "correctionSegments".into(),
+            serde_json::to_value(correction_segments)
+                .map_err(|error| format!("Failed to serialize correction segments: {error}"))?,
+        );
+    }
     Ok(value)
 }
 
