@@ -967,10 +967,12 @@ only structured source-bound edits. Response schema 2 gives the model no offset
 authority: it must quote the exact source substring, and the server derives the
 Unicode span only when the quote occurs exactly once in the bound segment.
 Before inference, a separate masking projection replaces protected source spans
-with equal-length opaque placeholders. It restores the original values only
-when each included placeholder remains exact, once, and ordered, and rejects
-partial, missing, duplicated, reordered, or invented placeholders. Approved
-terminology remains context rather than rename authority. The unchanged
+with equal-length visible redaction blocks. It restores the original values only
+when the response has the same block-run lengths and order, and rejects partial,
+missing, duplicated, reordered, or invented blocks. One strictly identical
+source/replacement edit normalizes to unchanged; no-op behavior cannot pass
+correction-quality thresholds. Approved terminology remains context rather than
+rename authority. The unchanged
 raw-source validation preserves ordering, timing, coverage, names, numbers,
 dates, units,
 medication-like tokens, negation, and unsupported-content boundaries. A valid

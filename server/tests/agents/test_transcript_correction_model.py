@@ -254,6 +254,39 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
 
         self.assertEqual(correction.corrected_text, "Um, The dosage is 25 mg.")
 
+    def test_model_exact_noop_edit_normalizes_to_unchanged(self) -> None:
+        request = _request()
+
+        def noop(payload: dict[str, object]) -> dict[str, object]:
+            messages = payload["messages"]
+            user = json.loads(messages[1]["content"])  # type: ignore[index]
+            segment = user["request"]["segments"][0]
+            result = {
+                "schemaVersion": 2,
+                "requestSha256": user["responseBinding"]["requestSha256"],
+                "sourceSha256": user["responseBinding"]["sourceSha256"],
+                "uncertain": False,
+                "edits": [
+                    {
+                        "segmentId": segment["segmentId"],
+                        "segmentSha256": segment["textSha256"],
+                        "sourceText": segment["text"],
+                        "replacementText": segment["text"],
+                    }
+                ],
+            }
+            return {"choices": [{"message": {"content": json.dumps(result)}}]}
+
+        model = TranscriptCorrectionModel(
+            transport=_Transport(noop),
+            model="nvidia/Qwen3.6-35B-A3B-NVFP4",
+            maximum_output_tokens=512,
+        )
+        correction = model.correct(request, cancellation=threading.Event())
+
+        self.assertEqual(correction.corrected_text, request.source_text)
+        self.assertEqual(correction.edits, ())
+
 
 if __name__ == "__main__":
     unittest.main()

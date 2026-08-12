@@ -75,7 +75,9 @@ class TranscriptCorrectionModel:
         parsed = restore_masked_transcript_correction_response(
             request,
             masked,
-            parse_transcript_correction_response(_response_content(response)),
+            parse_transcript_correction_response(
+                _without_exact_noop_edits(_response_content(response))
+            ),
         )
         return validate_transcript_correction(
             request,
@@ -168,6 +170,30 @@ def _response_content(response: object) -> dict[str, object]:
     if not isinstance(value, dict):
         raise ValueError("transcript correction model content is invalid")
     return value
+
+
+def _without_exact_noop_edits(value: dict[str, object]) -> dict[str, object]:
+    edits = value.get("edits")
+    if not isinstance(edits, list):
+        return value
+    expected_keys = {
+        "segmentId",
+        "segmentSha256",
+        "sourceText",
+        "replacementText",
+    }
+    retained = [
+        edit
+        for edit in edits
+        if not (
+            isinstance(edit, dict)
+            and set(edit) == expected_keys
+            and isinstance(edit.get("sourceText"), str)
+            and bool(edit["sourceText"])
+            and edit.get("replacementText") == edit["sourceText"]
+        )
+    ]
+    return value if len(retained) == len(edits) else {**value, "edits": retained}
 
 
 class _DuplicateKey(ValueError):

@@ -172,7 +172,7 @@ environment and Python 3.12.
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 510 tracked regular surfaces: 272 at or above 350 lines and 238
+  enumerated 511 tracked regular surfaces: 272 at or above 350 lines and 239
   from 250 through 349. A read-back comparison of the 350-line output against
   `THRESHOLD-DISPOSITION.md` found all 272 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
@@ -193,7 +193,7 @@ environment and Python 3.12.
 
 ### Phase 10 Scribe prequalification public read-back
 
-- `./verification/test-portable-python-server.ps1` ran 1,182 tests with 30
+- `./verification/test-portable-python-server.ps1` ran 1,183 tests with 30
   declared platform/capability skips and no failures. The exact Scribe source-
   evidence, qualification, service, API, terminology, and contract owners are in
   that discovery.
@@ -205,7 +205,7 @@ environment and Python 3.12.
 - `desktop/src-tauri` passed Rust formatting, locked tests, and strict all-target
   Clippy. `server/orchestrator` passed formatting, locked all-target/all-feature
   tests, and strict all-target/all-feature Clippy.
-- The focused Scribe request/model/runtime/service/qualification/gate set ran 60
+- The focused Scribe request/model/runtime/service/qualification/gate set ran 61
   tests with one declared platform skip and no failure. Public source locks bind
   only release, plan, model, membership, and evidence hashes; transcript content,
   model output, measurements, credentials, and private locations remain outside
@@ -270,13 +270,17 @@ published. Exact prompt-grounding successor
 bounded smoke retained the safety disposition and exact runtime/database
 teardown, but the real case repeated the unauthorized name edit and did not
 improve its frozen reference. Prompt-only preservation is therefore rejected as
-insufficient and remains non-promotional. The current protected successor masks
-each protected source span with an equal-length opaque placeholder before
-inference. It projects back to raw text only when every included placeholder is
-exact, occurs once, and remains ordered, then runs the unchanged raw-source
-validator. It retains the same model, response allowance, no-retry contract,
-timeouts, route, validators, and thresholds and requires a complete new private
-qualification.
+insufficient and remains non-promotional. Exact private-use masking head
+`b80fe0b46c8a511b93dd2c85f8ed053d24648663` retained exact broker, provider,
+and database teardown, but its bounded real response was an invalid replacement
+and the safety disposition did not pass. The current protected successor uses a
+visible equal-length redaction block and projects back to raw text only when the
+response preserves exact block-run lengths and order. A strictly identical
+source/replacement edit normalizes to unchanged; no-op-only output still fails
+correction and word-error thresholds. It then runs the unchanged raw-source
+validator and retains the same model, response allowance, no-retry contract,
+timeouts, route, validators, and thresholds. A complete new private qualification
+is required.
 
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.

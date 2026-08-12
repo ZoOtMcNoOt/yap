@@ -15,10 +15,21 @@ from .transcript_correction import (
 )
 
 
-_PRIVATE_CHARACTER_RANGES = (
-    (0xE000, 0xF8FF),
-    (0xF0000, 0xFFFFD),
-    (0x100000, 0x10FFFD),
+_VISIBLE_PLACEHOLDERS = (
+    "▰",
+    "◆",
+    "●",
+    "■",
+    "▲",
+    "★",
+    "♦",
+    "♣",
+    "♠",
+    "♥",
+    "¤",
+    "§",
+    "¶",
+    "※",
 )
 
 
@@ -60,6 +71,7 @@ class _MaskedSegment:
 class MaskedTranscriptCorrectionRequest:
     request: BoundTranscriptCorrectionRequest
     segments: tuple[_MaskedSegment, ...]
+    placeholder_character: str
     placeholders: tuple[str, ...]
 
 
@@ -70,26 +82,18 @@ def mask_transcript_correction_request(
     for span in protected_transcript_spans(request):
         spans_by_segment.setdefault(span.segment_id, []).append(span)
     occupied_source = request.source_text
-    used_placeholder_characters: set[str] = set()
+    placeholder_character = _new_placeholder_character(occupied_source)
     masked_segments: list[_MaskedSegment] = []
     placeholders: list[str] = []
     wire_segments: list[dict[str, object]] = []
     global_start = 0
-    fact_index = 0
     for segment in request.segments:
         raw_cursor = 0
         masked_cursor = 0
         parts: list[str] = []
         facts: list[_MaskedFact] = []
         for span in spans_by_segment.get(segment.segment_id, []):
-            placeholder_character = _new_placeholder_character(
-                fact_index,
-                occupied_source,
-                used_placeholder_characters,
-            )
-            used_placeholder_characters.add(placeholder_character)
             token = placeholder_character * len(span.text)
-            fact_index += 1
             plain = segment.text[raw_cursor : span.start_character]
             parts.extend((plain, token))
             masked_cursor += len(plain)
@@ -153,6 +157,7 @@ def mask_transcript_correction_request(
     return MaskedTranscriptCorrectionRequest(
         request=bind_transcript_correction_request(source, request.terminology),
         segments=tuple(masked_segments),
+        placeholder_character=placeholder_character,
         placeholders=tuple(placeholders),
     )
 
@@ -179,21 +184,32 @@ def restore_masked_transcript_correction_response(
         end = start + len(edit.source_text)
         raw_start = segment.raw_boundary(start)
         raw_end = segment.raw_boundary(end)
-        expected_tokens = tuple(
-            fact.token
+        expected_facts = tuple(
+            fact
             for fact in segment.facts
             if start <= fact.masked_start and fact.masked_end <= end
         )
-        observed_tokens = _tokens_in_order(
+        observed_runs = _placeholder_runs(
             edit.replacement_text,
-            masked.placeholders,
+            masked.placeholder_character,
         )
-        if observed_tokens != expected_tokens:
+        if tuple(length for _start, _end, length in observed_runs) != tuple(
+            len(fact.token) for fact in expected_facts
+        ):
             raise ValueError("transcript correction changed a protected placeholder")
-        replacement = edit.replacement_text
-        for fact in segment.facts:
-            replacement = replacement.replace(fact.token, fact.raw_text)
-        if any(token[0] in replacement for token in masked.placeholders):
+        replacement_parts: list[str] = []
+        replacement_cursor = 0
+        for fact, (run_start, run_end, _length) in zip(
+            expected_facts,
+            observed_runs,
+            strict=True,
+        ):
+            replacement_parts.append(edit.replacement_text[replacement_cursor:run_start])
+            replacement_parts.append(fact.raw_text)
+            replacement_cursor = run_end
+        replacement_parts.append(edit.replacement_text[replacement_cursor:])
+        replacement = "".join(replacement_parts)
+        if masked.placeholder_character in replacement:
             raise ValueError("transcript correction invented a protected placeholder")
         raw_edits.append(
             {
@@ -214,37 +230,33 @@ def restore_masked_transcript_correction_response(
     )
 
 
-def _new_placeholder_character(
-    index: int,
-    source: str,
-    used: set[str],
-) -> str:
-    offset = index
-    for start, end in _PRIVATE_CHARACTER_RANGES:
-        width = end - start + 1
-        if offset >= width:
-            offset -= width
-            continue
-        while start + offset <= end:
-            candidate = chr(start + offset)
-            if candidate not in source and candidate not in used:
-                return candidate
-            offset += 1
-        offset = 0
-    raise ValueError("transcript correction has too many protected facts")
+def _new_placeholder_character(source: str) -> str:
+    for candidate in _VISIBLE_PLACEHOLDERS:
+        if candidate not in source:
+            return candidate
+    for value in range(0xE000, 0xF900):
+        candidate = chr(value)
+        if candidate not in source:
+            return candidate
+    raise ValueError("transcript correction source exhausts protected placeholders")
 
 
-def _tokens_in_order(value: str, tokens: tuple[str, ...]) -> tuple[str, ...]:
-    occurrences: list[tuple[int, str]] = []
-    for token in tokens:
-        offset = 0
-        while True:
-            start = value.find(token, offset)
-            if start < 0:
-                break
-            occurrences.append((start, token))
-            offset = start + len(token)
-    return tuple(token for _, token in sorted(occurrences))
+def _placeholder_runs(
+    value: str,
+    placeholder: str,
+) -> tuple[tuple[int, int, int], ...]:
+    runs: list[tuple[int, int, int]] = []
+    start = 0
+    while True:
+        start = value.find(placeholder, start)
+        if start < 0:
+            break
+        end = start + 1
+        while end < len(value) and value[end] == placeholder:
+            end += 1
+        runs.append((start, end, end - start))
+        start = end
+    return tuple(runs)
 
 
 def _sha256_text(value: str) -> str:

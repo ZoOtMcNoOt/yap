@@ -9,8 +9,8 @@ The inventory includes the repository's tracked source, text, policy, and
 provenance contract extensions and excludes only the two tracked OpenAPI products, the
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
-hand-maintained policy. At this tree the complete 250-line inventory is 510
-files: 272 listed below at 350 or more lines and 238 from 250 through 349.
+hand-maintained policy. At this tree the complete 250-line inventory is 511
+files: 272 listed below at 350 or more lines and 239 from 250 through 349.
 
 Each line contains up to two independent entries in the form
 `physical-lines disposition exact-path`.
@@ -73,8 +73,8 @@ Each line contains up to two independent entries in the form
   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md ||   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md
   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md ||   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md
   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   982 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
- 1083 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1064 CURRENT-DOC          docs/CURRENT-STATUS.md
-  467 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1003 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
+ 1085 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1069 CURRENT-DOC          docs/CURRENT-STATUS.md
+  471 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1003 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md ||   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md
   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md ||   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md
   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md ||   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md
@@ -87,7 +87,7 @@ Each line contains up to two independent entries in the form
   989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
   350 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs ||   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs
-  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   782 SERVER-RUNBOOK       server/README.md
+  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   786 SERVER-RUNBOOK       server/README.md
   754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py ||  1027 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction.py
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
   414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   586 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
