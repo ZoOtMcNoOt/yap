@@ -16,7 +16,7 @@ _MODULES = (
     "tests.knowledge.test_reviewed_meeting_postgres_route",
     "tests.knowledge.test_terminology_ledger",
 )
-_EXPECTED_TEST_COUNT = 17
+_EXPECTED_TEST_COUNT = 19
 
 
 def _configure_server_test_imports() -> None:

@@ -61,7 +61,7 @@ export function useSettingsControl({
   const callbacksRef = useRef({ onStatusChange });
   callbacksRef.current = { onStatusChange };
 
-  const { refreshServerState, serverLabel, serverState } = useServerConnection();
+  const { refreshServerState, serverLabel, serverSnapshot, serverState } = useServerConnection();
   const primaryLanguage = usePrimaryLanguage();
   const liveLanguageRouting = useLiveLanguageRouting();
   const live = useLiveControl();
@@ -378,6 +378,7 @@ export function useSettingsControl({
     languageRouting: liveLanguageRouting,
     refresh,
     serverLabel,
+    serverSnapshot,
     serverState,
     setupPromptRequest,
     skipSetup,

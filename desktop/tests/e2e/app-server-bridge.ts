@@ -42,7 +42,12 @@ export async function installQueuedServerBridge(
     let callbackId = 0;
     let serverSnapshot = {
       apiVersion: null as string | null,
-      capabilities: { batchJobs: false, jobStatus: false, liveStreaming: false },
+      capabilities: {
+        batchJobs: false,
+        jobStatus: false,
+        liveStreaming: false,
+        transcriptCorrection: false,
+      },
       checkedAtMs: state === "offline" ? 1 : null,
       errorCode: state === "offline" ? "CONNECTION_FAILED" : null,
       retryAtMs: null,
@@ -213,7 +218,12 @@ export async function installQueuedServerBridge(
             if (serverSettingsState.enabled && serverSettingsState.baseUrl) {
               serverSnapshot = {
                 ...serverSnapshot,
-                capabilities: { batchJobs: true, jobStatus: true, liveStreaming: false },
+                capabilities: {
+                  batchJobs: true,
+                  jobStatus: true,
+                  liveStreaming: false,
+                  transcriptCorrection: false,
+                },
                 checkedAtMs: 1,
                 errorCode: null,
                 state: "ready",

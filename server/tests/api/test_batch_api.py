@@ -87,7 +87,12 @@ class BatchJobApiTests(BatchJobApiTestCase):
         self.assertEqual(status, 200)
         self.assertEqual(
             health_payload["capabilities"],
-            {"batchJobs": True, "liveStreaming": False, "jobStatus": True},
+            {
+                "batchJobs": True,
+                "liveStreaming": False,
+                "jobStatus": True,
+                "transcriptCorrection": False,
+            },
         )
 
         status, _, created = self._request(

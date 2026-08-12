@@ -18,7 +18,7 @@ pub(crate) fn completed_transcript_text(view: &live::state::LiveSessionView) -> 
         .filter(|text| !text.is_empty())
 }
 
-pub(in crate::live::recordings) fn clean_transcript_text(text: &str) -> String {
+pub(crate) fn clean_transcript_text(text: &str) -> String {
     if text.trim() == "No live transcript captured." {
         return "Transcript unavailable for this live recording.".into();
     }

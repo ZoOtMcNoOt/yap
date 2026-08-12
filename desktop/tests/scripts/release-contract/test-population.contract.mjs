@@ -41,6 +41,7 @@ const MINIMUM_TESTS_PER_SPEC = Object.freeze({
   "live-overlay.spec.ts": 13,
   "local-server-offer.spec.ts": 3,
   "playback-authorization.spec.ts": 4,
+  "transcript-correction.spec.ts": 1,
 });
 
 test("every e2e spec file is still discovered", () => {

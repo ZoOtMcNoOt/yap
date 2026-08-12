@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { rememberText } from "@/lib/text-cache";
 
 export function useTranscriptText() {
-  const [polishedText, setPolishedText] = useState<Record<string, string>>({});
   const [transcriptText, setTranscriptText] = useState<Record<string, string>>({});
 
   const clearTranscriptText = useCallback(() => {
@@ -32,17 +31,11 @@ export function useTranscriptText() {
     return invoke<string>("read_text_preview", { maxChars: 600, path });
   }, []);
 
-  const rememberPolishedText = useCallback((outputPath: string, text: string) => {
-    setPolishedText((current) => rememberText(current, outputPath, text));
-  }, []);
-
   return {
     clearTranscriptText,
     forgetTranscriptText,
     loadTranscriptPreviewText,
     loadTranscriptText,
-    polishedText,
-    rememberPolishedText,
     transcriptText,
   };
 }

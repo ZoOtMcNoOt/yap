@@ -82,7 +82,12 @@ describe("client workflow projections", () => {
       checkedAtMs: 10,
       retryAtMs: null,
       apiVersion: "1",
-      capabilities: { batchJobs: false, liveStreaming: false, jobStatus: false },
+      capabilities: {
+        batchJobs: false,
+        liveStreaming: false,
+        jobStatus: false,
+        transcriptCorrection: false,
+      },
       errorCode: null,
     };
 
@@ -135,7 +140,7 @@ describe("client workflow projections", () => {
 
   it("guards workspace event payloads at runtime", () => {
     expect(isWorkspaceView("home")).toBe(true);
-    expect(isWorkspaceView("polish")).toBe(true);
+    expect(isWorkspaceView("correct")).toBe(true);
     expect(isWorkspaceView("details")).toBe(false);
     expect(isWorkspaceView(undefined)).toBe(false);
   });

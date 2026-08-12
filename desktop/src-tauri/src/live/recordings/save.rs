@@ -12,7 +12,12 @@ pub(crate) fn save_stop_result(
     view: &live::state::LiveSessionView,
 ) -> Result<Option<SavedLiveSession>, String> {
     match &stop.recording {
-        Ok(capture) => save_finalized_capture_to_dir(&recordings_dir(), view, capture.clone()),
+        Ok(capture) => save_finalized_capture_to_dir(
+            &recordings_dir(),
+            view,
+            capture.clone(),
+            &stop.transcript_segments,
+        ),
         Err(error) => Err(error.clone()),
     }
 }
@@ -23,7 +28,7 @@ pub(super) fn save_session_files_to_dir(
     dir: &std::path::Path,
 ) -> Result<Option<SavedLiveSession>, String> {
     match live_runtime.finalize_recording() {
-        Ok(capture) => save_finalized_capture_to_dir(dir, view, capture),
+        Ok(capture) => save_finalized_capture_to_dir(dir, view, capture, &[]),
         Err(error) => {
             let (session_id, cached_error) =
                 live_runtime.recording_finalization_failure().ok_or(error)?;
@@ -71,11 +76,13 @@ pub(super) fn save_finalized_capture_to_dir(
     dir: &std::path::Path,
     view: &live::state::LiveSessionView,
     capture: Option<RecordingFinalizeResult>,
+    transcript_segments: &[crate::live::transcript_segments::FinalizedTranscriptSegment],
 ) -> Result<Option<SavedLiveSession>, String> {
     save_finalized_capture_to_dir_with_text_publisher(
         dir,
         view,
         capture,
+        transcript_segments,
         |source, destination, owned| {
             recording::publish_no_replace(source, destination, owned, "publish live transcript")
         },
@@ -105,13 +112,20 @@ pub(crate) fn save_finalized_capture_to_dir_for_test(
         transcription_degraded: false,
         error: None,
     };
-    save_finalized_capture_to_dir(dir, &view, Some(capture)).map(|_| ())
+    let segment = crate::live::transcript_segments::FinalizedTranscriptSegment {
+        text: text.to_owned(),
+        start_ms: 0,
+        end_ms: 1,
+        language_bcp47: "en-US".into(),
+    };
+    save_finalized_capture_to_dir(dir, &view, Some(capture), &[segment]).map(|_| ())
 }
 
 pub(super) fn save_finalized_capture_to_dir_with_text_publisher<P>(
     dir: &std::path::Path,
     view: &live::state::LiveSessionView,
     capture: Option<RecordingFinalizeResult>,
+    transcript_segments: &[crate::live::transcript_segments::FinalizedTranscriptSegment],
     publisher: P,
 ) -> Result<Option<SavedLiveSession>, String>
 where
@@ -169,6 +183,11 @@ where
             })
         })
         .and_then(|capture_sidecar_sha256| {
+            let correction_segments = if status == ResultStatus::Complete {
+                transcript_segments
+            } else {
+                &[]
+            };
             write_transcript_revision(
                 dir,
                 &capture.session_id,
@@ -176,6 +195,7 @@ where
                 &transcript_receipt,
                 &transcript,
                 status,
+                correction_segments,
             )
         })
         .err();

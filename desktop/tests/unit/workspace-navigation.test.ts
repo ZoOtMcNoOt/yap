@@ -12,11 +12,11 @@ function state(overrides: Partial<WorkspaceNavigationState> = {}): WorkspaceNavi
 }
 
 describe("workspace navigation", () => {
-  it("selects callbacks only for rail-driven details and polish", () => {
+  it("selects callbacks only for rail-driven details and correction", () => {
     expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "details" }))
       .toBe("refreshDetails");
-    expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "polish" }))
-      .toBe("openPolish");
+    expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "correct" }))
+      .toBe("openCorrection");
     expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "home" }))
       .toBeUndefined();
     expect(workspaceNavigationEffectForIntent({ type: "showDetails" })).toBeUndefined();
@@ -38,13 +38,13 @@ describe("workspace navigation", () => {
   it("restores the active rail to the current workspace when details closes", () => {
     expect(
       workspaceNavigationStateForAction(
-        state({ activeRail: "details", detailsOpen: true, workspaceView: "polish" }),
+        state({ activeRail: "details", detailsOpen: true, workspaceView: "correct" }),
         { type: "closeDetails" },
       ),
     ).toMatchObject({
-      activeRail: "polish",
+      activeRail: "correct",
       detailsOpen: false,
-      workspaceView: "polish",
+      workspaceView: "correct",
     });
   });
 
@@ -61,15 +61,15 @@ describe("workspace navigation", () => {
     });
   });
 
-  it("opens polish as a workspace", () => {
+  it("opens correction as a workspace", () => {
     expect(
       workspaceNavigationStateForAction(
         state({ activeRail: "home", workspaceView: "home" }),
-        { type: "openWorkspace", action: "polish" },
+        { type: "openWorkspace", action: "correct" },
       ),
     ).toMatchObject({
-      activeRail: "polish",
-      workspaceView: "polish",
+      activeRail: "correct",
+      workspaceView: "correct",
     });
   });
 

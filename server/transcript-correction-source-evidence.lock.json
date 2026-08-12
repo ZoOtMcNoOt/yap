@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "transcript-correction-source-evidence-lock",
+  "modelLockSha256": "895e454406ed87363607cc1539dde59db142643db3600806e493d037a24f5d19",
+  "sources": [
+    {
+      "languageBcp47": "en-US",
+      "evidenceSha256": "3ad2ba5ccafffc9a916cb2493ad6786363690ca528d1f7f61d2ba46a99c8f3f4",
+      "comparatorPlanSha256": "95501d65af267f28e6ca9827d839128963175e4845786ad9fdcf849d77d1b725",
+      "releaseLockSha256": "cd279a72b51e0e6bc557cfc570d72c92fe640bf96e89b7cfae04f8485e726d44",
+      "selectionId": "full",
+      "caseCount": 647
+    },
+    {
+      "languageBcp47": "es-419",
+      "evidenceSha256": "d06264e2b6313c09449dc53a051b693ea627f213e8f8ec1815b390b7cdc707da",
+      "comparatorPlanSha256": "713222287897e16c9aa9019712c13a83571dfd7de8aaf2e5ac0fcc8fd6c49956",
+      "releaseLockSha256": "9ddc7a9249672b7378dcc2f9024f74a9c08cfd5895479cc19bfba61960e3a635",
+      "selectionId": "full",
+      "caseCount": 908
+    }
+  ]
+}

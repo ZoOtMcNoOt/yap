@@ -94,7 +94,8 @@ pub(super) fn finalize_live_runtime_with_mode(
         .flatten();
 
     live::events::emit_session(&app, &saving);
-    let finish_status = live_runtime.stop_stream();
+    let finish_report = live_runtime.stop_stream();
+    let finish_status = finish_report.status;
     if finish_status.should_report() {
         crate::diagnostics::log(&format!(
             "live stream stop completed with {finish_status:?}"
@@ -111,7 +112,7 @@ pub(super) fn finalize_live_runtime_with_mode(
         |text| live.remember_completed_transcript(text),
         |text| live::injection::inject_text(&app, injection_target, text),
         || {
-            let stop = live_runtime.finish_stop(finish_status);
+            let stop = live_runtime.finish_stop(finish_report);
             live::recordings::save_stop_result(&stop, &before_stop)
         },
     );

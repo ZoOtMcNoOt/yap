@@ -110,7 +110,6 @@ pub(in crate::live::recordings) fn build_recoverable_deletion_intent(
         ".commit.json",
         ".wav",
         ".txt",
-        ".polished.txt",
     ] {
         let name = format!("live-{session_id}{suffix}");
         if regular_artifact_exists(dir, &name) {

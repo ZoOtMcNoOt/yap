@@ -18,8 +18,9 @@ pub(crate) use request::{
 };
 #[cfg(test)]
 pub(crate) use response::{
-    AlignmentOutcome, AlignmentUnavailableReason, LanguageDecision, LanguageSegment,
-    LanguageSegmentReason, ModelRevision, ServerLanguageSpanEvidence,
+    AlignedWord, AlignedWordAttribution, AlignmentOutcome, AlignmentUnavailableReason,
+    LanguageDecision, LanguageSegment, LanguageSegmentReason, ModelRevision,
+    ServerLanguageSpanEvidence,
 };
 pub(crate) use response::{
     AlignmentStatus, AnonymousSpeakerAttribution, ApiError, ChunkUploadReceipt,

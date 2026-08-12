@@ -6,6 +6,10 @@ from uuid import uuid4
 
 import psycopg
 
+from yap_server.agents.transcript_correction_terminology import (
+    PersonalOrganizationTerminologyMemberships,
+    PostgresTranscriptCorrectionTerminologyResolver,
+)
 from yap_server.auth.principal import AuthenticatedPrincipal, PrincipalKey
 from yap_server.knowledge.terminology_authorization import (
     resolve_terminology_authorization,
@@ -15,6 +19,7 @@ from yap_server.knowledge.terminology_ledger import (
     bind_job_terminology_snapshot,
     install_terminology_schema,
     read_job_terminology_snapshot,
+    store_current_terminology_snapshot,
 )
 from yap_server.knowledge.terminology_snapshot import TerminologyRecord
 
@@ -24,6 +29,69 @@ POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
 
 @unittest.skipUnless(POSTGRES_DSN, "YAP_TEST_POSTGRES_DSN is not configured")
 class TerminologyLedgerTests(unittest.TestCase):
+    def test_scribe_freezes_owner_specific_terms_before_shared_admission(self) -> None:
+        suffix = uuid4().hex
+        tenant_id = f"tenant-{suffix}"
+        alice = PrincipalKey(tenant_id, f"alice-{suffix}")
+        bob = PrincipalKey(tenant_id, f"bob-{suffix}")
+        with psycopg.connect(POSTGRES_DSN) as connection:
+            install_terminology_schema(connection)
+            append_terminology_record(
+                connection,
+                _record(tenant_id, alice.subject_id, 1, "AliceTerm"),
+                authorization=_authorization(alice),
+            )
+        resolver = PostgresTranscriptCorrectionTerminologyResolver(
+            connection_factory=lambda: psycopg.connect(POSTGRES_DSN),
+            memberships=PersonalOrganizationTerminologyMemberships(),
+        )
+
+        alice_terms = resolver.resolve(
+            principal=_authenticated(alice),
+            locale="en-US",
+        )
+        bob_terms = resolver.resolve(
+            principal=_authenticated(bob),
+            locale="en-US",
+        )
+        repeated_alice_terms = resolver.resolve(
+            principal=_authenticated(alice),
+            locale="en-US",
+        )
+
+        self.assertEqual(alice_terms.exact_forms, ("AliceTerm",))
+        self.assertEqual(bob_terms.exact_forms, ())
+        self.assertNotEqual(
+            alice_terms.snapshot_sha256,
+            bob_terms.snapshot_sha256,
+        )
+        self.assertEqual(repeated_alice_terms, alice_terms)
+        with psycopg.connect(POSTGRES_DSN) as connection:
+            binding_count = connection.execute(
+                """SELECT count(*) FROM yap_terminology_job_bindings
+                   WHERE tenant_id = %s""",
+                (tenant_id,),
+            ).fetchone()
+            snapshot_count = connection.execute(
+                """SELECT count(*) FROM yap_terminology_snapshots
+                   WHERE tenant_id = %s""",
+                (tenant_id,),
+            ).fetchone()
+            self.assertEqual(binding_count, (0,))
+            self.assertEqual(snapshot_count, (2,))
+            connection.execute(
+                "DELETE FROM yap_terminology_job_bindings WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.execute(
+                "DELETE FROM yap_terminology_snapshots WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.execute(
+                "DELETE FROM yap_terminology_records WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+
     def test_job_binding_remains_frozen_after_a_new_record_version(self) -> None:
         suffix = uuid4().hex
         tenant_id = f"tenant-{suffix}"
@@ -71,6 +139,36 @@ class TerminologyLedgerTests(unittest.TestCase):
             )
             connection.execute(
                 "DELETE FROM yap_terminology_records WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.commit()
+
+    def test_current_snapshot_rejects_conflicting_persisted_identity(self) -> None:
+        suffix = uuid4().hex
+        tenant_id = f"tenant-{suffix}"
+        principal = PrincipalKey(tenant_id, f"alice-{suffix}")
+        with psycopg.connect(POSTGRES_DSN) as connection:
+            install_terminology_schema(connection)
+            snapshot = store_current_terminology_snapshot(
+                connection,
+                authorization=_authorization(principal),
+                locale="en-US",
+            )
+            connection.execute(
+                """UPDATE yap_terminology_snapshots SET subject_id = %s
+                   WHERE tenant_id = %s AND snapshot_sha256 = %s""",
+                (f"mallory-{suffix}", tenant_id, snapshot.snapshot_sha256),
+            )
+            connection.commit()
+            with self.assertRaisesRegex(RuntimeError, "identity differs"):
+                store_current_terminology_snapshot(
+                    connection,
+                    authorization=_authorization(principal),
+                    locale="en-US",
+                )
+            connection.rollback()
+            connection.execute(
+                "DELETE FROM yap_terminology_snapshots WHERE tenant_id = %s",
                 (tenant_id,),
             )
             connection.commit()
@@ -177,16 +275,20 @@ class _Memberships:
 
 
 def _authorization(principal: PrincipalKey):
-    authenticated = AuthenticatedPrincipal(
-        principal.tenant_id,
-        principal.subject_id,
-        "test-client",
-        frozenset({"knowledge.read"}),
-    )
+    authenticated = _authenticated(principal)
     return resolve_terminology_authorization(
         authenticated,
         memberships=_Memberships(),
         administrator_roles=frozenset({"knowledge.admin"}),
+    )
+
+
+def _authenticated(principal: PrincipalKey) -> AuthenticatedPrincipal:
+    return AuthenticatedPrincipal(
+        principal.tenant_id,
+        principal.subject_id,
+        "test-client",
+        frozenset({"knowledge.read"}),
     )
 
 

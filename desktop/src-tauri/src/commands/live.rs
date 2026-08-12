@@ -356,7 +356,7 @@ pub(super) fn show_main_workspace(
 ) -> Result<(), String> {
     authorization::ensure_main_or_overlay(&window)?;
     match workspace.as_str() {
-        "home" | "transcribe" | "polish" => {
+        "home" | "transcribe" | "correct" => {
             live::actions::show_main_window(&app);
             let _ = app.emit_to(
                 authorization::MAIN_WINDOW_LABEL,

@@ -134,7 +134,8 @@ fn committed_capture_is_listed_only_after_manifest_validation() {
     let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
     recording.append_pcm16(&[1, 0]).unwrap();
     let capture = recording.finalize().unwrap();
-    save_finalized_capture_to_dir(&dir, &live_view(Some("hello"), None), Some(capture)).unwrap();
+    save_finalized_capture_to_dir(&dir, &live_view(Some("hello"), None), Some(capture), &[])
+        .unwrap();
 
     let sessions = list_session_files_from_dir(&dir).unwrap();
 
@@ -152,7 +153,8 @@ fn committed_history_exposes_its_hash_validated_commit_path() {
     let mut recording = StreamingRecording::create(&dir, session_id.clone()).unwrap();
     recording.append_pcm16(&[1, 0]).unwrap();
     let capture = recording.finalize().unwrap();
-    save_finalized_capture_to_dir(&dir, &live_view(Some("hello"), None), Some(capture)).unwrap();
+    save_finalized_capture_to_dir(&dir, &live_view(Some("hello"), None), Some(capture), &[])
+        .unwrap();
 
     let saved = list_session_files_from_dir(&dir).unwrap().pop().unwrap();
     let serialized = serde_json::to_value(saved).unwrap();
@@ -232,7 +234,8 @@ fn committed_history_falls_back_to_audio_when_its_transcript_is_linked() {
     let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
     recording.append_pcm16(&[1, 0]).unwrap();
     let capture = recording.finalize().unwrap();
-    save_finalized_capture_to_dir(&dir, &live_view(Some("hello"), None), Some(capture)).unwrap();
+    save_finalized_capture_to_dir(&dir, &live_view(Some("hello"), None), Some(capture), &[])
+        .unwrap();
     let outside = std::env::temp_dir().join(format!(
         "yap-linked-committed-transcript-target-{}",
         std::process::id()
@@ -277,6 +280,7 @@ fn canonical_paths_accept_only_the_hash_valid_committed_audio_and_transcript() {
         &dir,
         &live_view(Some("canonical text"), None),
         Some(capture),
+        &[],
     )
     .unwrap();
     let audio = dir.join(format!("live-{session}.wav"));
@@ -300,7 +304,7 @@ fn normal_history_scan_ignores_timestamp_transcripts_and_leaves_them_untouched()
     for name in [
         "live-205.txt",
         "live-205-1.txt",
-        "live-205.polished.txt",
+        "live-205.draft.txt",
         "live-not-a-time.txt",
         "live-205-extra-part.txt",
     ] {

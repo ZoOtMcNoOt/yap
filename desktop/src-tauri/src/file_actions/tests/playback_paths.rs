@@ -90,10 +90,6 @@ fn pre_release_owned_paths_are_rejected_by_every_native_action() {
 
     assert!(read_text_file_at_from_dir(transcript.display().to_string(), &dir).is_err());
     assert!(read_text_preview_at_from_dir(transcript.display().to_string(), 20, &dir).is_err());
-    assert!(
-        write_polished_text_at_from_dir(transcript.display().to_string(), "no".into(), &dir)
-            .is_err()
-    );
     assert!(openable_app_path_from(transcript.display().to_string(), &registry, &dir).is_err());
     assert!(openable_app_path_from(audio.display().to_string(), &registry, &dir).is_err());
     assert!(

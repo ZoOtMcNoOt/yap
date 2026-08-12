@@ -172,9 +172,9 @@ environment and Python 3.12.
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 494 tracked regular surfaces: 259 at or above 350 lines and 235
+  enumerated 512 tracked regular surfaces: 275 at or above 350 lines and 237
   from 250 through 349. A read-back comparison of the 350-line output against
-  `THRESHOLD-DISPOSITION.md` found all 259 exact paths and zero differences.
+  `THRESHOLD-DISPOSITION.md` found all 275 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
   `8e3ece5a3580ec29116c05f31b045a5748c143b8`, the gate-owned locked PostgreSQL
   17 / pgvector 0.8.6 runtime invoked, from `server` with `PYTHONPATH=src`,
@@ -190,6 +190,121 @@ environment and Python 3.12.
   the stale generation, retrieved the successor, and proved container,
   listener, process, same-label owner, network, and volume teardown. It did not
   publish or consume the complete checkpoint gate.
+
+### Phase 10 Scribe prequalification public read-back
+
+- `./verification/test-portable-python-server.ps1` ran 1,189 tests with 30
+  declared platform/capability skips and no failures. The exact Scribe source-
+  evidence, qualification, service, API, terminology, and contract owners are in
+  that discovery.
+- From `server`, the exact CI Ruff command covering `.` plus the owned-process
+  supervisor passed.
+- From `desktop`, `pnpm test` passed 367 tests across 58 files, `pnpm build`
+  passed, and `pnpm test:e2e` passed all 41 Chromium scenarios, including the
+  source-change/cancel/immutable-publication correction workflow.
+- `desktop/src-tauri` passed Rust formatting, locked tests, and strict all-target
+  Clippy. `server/orchestrator` passed formatting, locked all-target/all-feature
+  tests, and strict all-target/all-feature Clippy.
+- The focused Scribe request/model/runtime/service/qualification/gate set ran 67
+  tests with one declared platform skip and no failure. Public source locks bind
+  only release, plan, model, membership, and evidence hashes; transcript content,
+  model output, measurements, credentials, and private locations remain outside
+  Git.
+
+These are implementation checks before the one private bilingual/multi-owner
+qualification. They do not claim a qualifying Scribe outcome, simultaneous GPU
+execution, sustained capacity, a production SLO, hosted merge, or delivery of
+the other seven roles.
+
+Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` subsequently
+returned terminal `deterministic-no-scribe` with public-safe evidence SHA-256
+`80718c6c8ad2fedd6bec5300c99a2a0af8ae71473c2457313a79b9138f5d8415`.
+The 24-case/eight-owner/16-audio membership, unchanged warm generation and
+broker, zero terminal failures, and teardown checks held. The quality decision
+failed closed because the model response contract required a computed request
+digest without supplying it as an exact response binding, so all outputs were
+invalid and no correction was applied. The successor uses trusted dynamic
+JSON-schema constants for request/source identity and passed 53 focused
+contracts with one declared platform skip plus Ruff. It requires a new complete
+private qualification; the rejected tree is not mutated, resumed, or admitted.
+
+That binding repair ran at exact head
+`b89fd9f118b881d107cc2025b9b8a41e51b9db37` and also returned terminal
+`deterministic-no-scribe`, with public-safe evidence SHA-256
+`0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
+The warm-generation, eight-owner, broker, terminal, and teardown checks remained
+sound. Exact binding enabled valid unchanged responses, but edited structured
+responses reached Scribe's 256-token output ceiling before completing their JSON
+response. An owner-private diagnostic confirmed length termination without a
+fence or reasoning wrapper; no raw output, path, or private measurement is
+published here. Exact successor
+`21559371db2a869e2c8b7ae3cd589f80c189d0cd` changed only the Scribe-specific
+allowance to 512 tokens and also returned terminal `deterministic-no-scribe`,
+with public-safe evidence SHA-256
+`a103144c66940ff55d8390c227bc73e6379cbfa6f73a199a9818839adaf48e2b`.
+All 24 cases completed across eight owners and 16 unique real-audio inputs; the
+unchanged warm generation and broker, queue-inclusive latency, critical-token,
+no-insertion/deletion/regression, database teardown, and runtime teardown checks
+held. Complete edited JSON exposed model-authored source offsets that did not
+exactly bind the quoted source. No raw output, private count, path, or measurement
+is published here. The current protected successor uses response schema 2 and
+removes offset authority from the model. The server derives each Unicode span
+only from an exact quote that occurs once in its bound segment; missing or
+ambiguous quotes fail closed. It retains the same model, 512-token allowance,
+broker, no-tool-retry rule, 55-second model timeout, queue-inclusive deadline,
+validators, and thresholds, and requires a new complete qualification.
+
+Exact response-schema-v2 head
+`cbd7335a26bd7700106b331827756af19c34e38a` passed the complete public server,
+Ruff, release-contract, documentation-link, and threshold-read-back checks. A
+bounded two-case private smoke then proved the response schema, exact trusted
+bindings, unique source quote, server-derived Unicode span, bounded edit,
+owner-fair admission, and exact database/runtime containment paths. A real case
+chosen from the prior invalid-output set reached the protected-fact validator
+but proposed a name change that was neither exact approved terminology nor
+present in the frozen reference; the safety result also varied across repeated
+cold diagnostics. The validator rejected the unsafe name change and was not
+relaxed. No raw transcript, response, metric, credential, or private location is
+published. Exact prompt-grounding successor
+`e62d33e41d2d85154a07da1d7a1254ea642a5638` passed its public checks and its
+bounded smoke retained the safety disposition and exact runtime/database
+teardown, but the real case repeated the unauthorized name edit and did not
+improve its frozen reference. Prompt-only preservation is therefore rejected as
+insufficient and remains non-promotional. Exact private-use masking head
+`b80fe0b46c8a511b93dd2c85f8ed053d24648663` retained exact broker, provider,
+and database teardown, but its bounded real response was an invalid replacement
+and the safety disposition did not pass. Visible-block head
+`5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also proved exact teardown but
+returned malformed JSON and missed both bounded dispositions. The current
+ASCII-bound head `7d546163dd08fd3cb6eafce91c64419c84df9f2d` returned valid
+structured output but marked the representative correction uncertain and did
+not meet the safety probe's required unchanged disposition; broker, provider,
+and database teardown remained exact. The current protected successor treats
+placeholders and instruction-like transcript content as expected data rather
+than uncertainty. Exact head `92554be304d5061c84ee04a7eeb9829829705102`
+then met the safety disposition but left the representative single-word ASR
+substitution unchanged; teardown remained exact. Exact head
+`e3ab6b6af6c7757b987a6b8fcc4ef213c4706bc9` explicitly permitted that
+correction but also left it unchanged; safety and teardown passed. The current
+successor states that absent audio is expected and uses linguistic context for
+one obvious nonprotected ASR word substitution. Exact head
+`af1f79a7cfff050a4b87c7499082551ba7dde9e6` retained safety and teardown; a
+broader bounded diagnostic produced unchanged cases and one source-bound edit
+rejected only for excess unchanged context. Exact minimization head
+`6cf82239569760383dca88d0702d71b35f60e8ad` removed the coverage failure, but
+its three-case diagnostic produced no accepted correction: one proposal was
+outside the narrow lexical grammar and another's minimal source was repeated;
+safety and teardown passed. Exact head
+`33d9b4d0362689a58be0c16bf26de88ac55d56b2` also produced no accepted
+correction: two representatives were unchanged and the third quote, minimized
+against masked text, became ambiguous after raw protected values were restored.
+Safety and exact teardown passed. The current successor restores those values
+first, then retains the shortest whole-token context needed for raw-source
+uniqueness while retaining the
+ASCII block, 256-character edit fields, shortest unique quote, exact
+restoration, raw-source validator, model, 512-token allowance, no-retry
+contract, timeouts, route, validators, and thresholds. A complete new private
+qualification is required.
 
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.

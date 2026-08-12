@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; service profiles merged, bounded admission candidate implemented, roster workflows and promotion pending
+**Status:** Accepted target; service profiles and bounded admission merged, Scribe qualification passed, hosted merge, remaining workflows, and promotion pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -16,13 +16,21 @@ The product architecture names eight agents, but the merged system does not yet
 deliver that complete roster. Phase 9 merged the governed knowledge, tool,
 retrieval, terminology, and two qualified reasoning-route foundations. Phase 10
 Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
-Gemma complex profiles. Exact protected head `7bd93dc6...` now implements a
-bounded admission substrate and exact public-lock head `135cc2ba...` passed its
-replacement route qualification and aggregate gate, but no application
-workflow consumes it yet. The desktop
-still has a development-only Polish prototype that sends an unrestricted
-transcript to a renderer-owned Ollama endpoint, and most named agent personas
-remain documented targets rather than executing product workflows.
+Gemma complex profiles. Exact protected head `7bd93dc6...` implements the
+bounded admission substrate, exact public-lock head `135cc2ba...` passed its
+replacement route qualification and aggregate gate, and PR #158 merged that
+substrate as `84d95842...` after all 12 hosted checks passed.
+
+The exact-qualified Scribe candidate is the first application workflow to consume the
+merged owner. It removes the development renderer-to-Ollama Polish prototype
+and replaces unrestricted rewriting with authenticated source-hashed finalized
+segments, structured edits, server-bound terminology, native-owned immutable
+publication, visible diff, and raw-ASR fallback. Exact source-lock head
+`e5858424...` passed its complete 24-case bilingual/eight-owner private gate
+with public-safe semantic evidence SHA-256 `5e187ed4...`, correction benefit,
+one stable warm rapid generation, bounded raw fallback, and exact teardown.
+Hosted review/merge remain pending. The other seven named roles remain
+documented targets rather than executing product workflows.
 
 Calling the foundations "the agent team" would be incorrect. Conversely,
 implementing eight unrelated prompts would duplicate authority, bypass
@@ -101,8 +109,29 @@ purpose, source, generation, and permission checks after scheduling.
 
 Scribe is transcript correction, not summarization. The server receives only a
 bounded ordered set of finalized segments with immutable source hashes. It may
-return structured edit operations tied to those hashes and spans. The product
-validates full source coverage; unchanged ordering and timing; preservation of
+return structured edit operations tied to those hashes and exact source quotes.
+The model does not own character offsets: the server derives a Unicode span only
+when the quoted text occurs exactly once in the bound segment. Before inference,
+the product replaces protected source spans with equal-length ASCII redaction
+blocks. The model contract restricts each edit string to 256 characters and asks
+for the shortest unique quote. Projection restores the original values only when
+every included block run retains its exact length and order. A strictly identical
+source/replacement edit normalizes to unchanged; it cannot satisfy correction-
+quality thresholds. Model edit strings must first satisfy the exact 256-character
+and content bounds. After exact protected-block restoration, identical prefix/
+suffix context is reduced to the shortest whole-token quote that remains unique
+in the raw segment, so a broad quote cannot inflate the changed-source budget or
+bypass the same unique-source and preservation checks.
+Approved terminology is immutable context rather than permission to rename a
+term. Placeholder presence and instruction-like transcript content do not by
+themselves make a response uncertain. A source needing no correction is a
+confident unchanged result; uncertainty is reserved for a possible ASR error
+that cannot be expressed safely. One contextually obvious nonprotected ASR word
+substitution is permitted as a narrow source-bound edit; broad rewriting is not.
+The workload intentionally has no audio input; that absence is expected rather
+than an uncertainty condition. The raw-source validator then checks full source
+coverage; unchanged
+ordering and timing; preservation of
 names, numbers, dates, units, medication-like terms, and negation unless a
 source-bound edit explicitly proves the change; approved terminology use; and
 the absence of inserted unsupported content. A valid result is saved as a
@@ -133,11 +162,19 @@ hosted-green head `6d1400cc...` merged through PR #157. Bounded admission head
 public-lock successor `135cc2ba...` passed the aggregate gate with public-safe
 evidence SHA-256
 `350c13a5569cfc7237174d1f7e2132857ffb3aaf28b6afd2eca03aa1999aea79`.
-It remains unmerged, disabled, and unintegrated while PR #158 is under hosted
-review. Warm
-simultaneous residency, authenticated product endpoints, the eight
-product workflows, sustained multi-owner capacity, and production promotion
-remain open.
+Hosted-green head `cf1e69a4...` merged the bounded admission slice through PR
+#158 as `84d95842...`. The Scribe candidate now supplies one
+authenticated rapid-route product endpoint and native/UI workflow without
+enabling a service or changing the model lifecycle. Its 24-case private
+qualification uses English and Spanish real-ASR source evidence, eight distinct
+owners, safety fallbacks, exact no-invention preservation, correction benefit,
+and queue-inclusive latency. Exact source-lock head `e5858424...` then returned
+`scribe-transcript-correction-qualified` with public-safe semantic evidence
+SHA-256 `5e187ed4...`; all correction-benefit, preservation, raw-fallback,
+latency, warm-generation, broker, database, and teardown checks passed. The
+exact rejected attempts remain terminal evidence and were not reused.
+Warm simultaneous residency, the other seven product workflows, sustained
+multi-owner capacity, and production promotion remain open.
 
 ## Consequences
 
@@ -145,8 +182,8 @@ remain open.
   shipped from a prompt or persona name alone.
 - Existing Phase 9 knowledge owners are reused rather than reimplemented for
   each agent.
-- The development renderer-to-Ollama Polish path must be removed when Scribe's
-  authenticated native/server path replaces it; it is not a fallback.
+- The development renderer-to-Ollama Polish path is removed by the Scribe
+  candidate. It is not retained as a fallback or compatibility path.
 - Scribe remains useful during remote failure because raw ASR is preserved and
   returned unchanged, not because another unqualified model is selected.
 - Full delivery requires multiple reviewed exact-head slices and private

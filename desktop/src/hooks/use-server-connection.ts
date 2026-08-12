@@ -20,6 +20,7 @@ const initialServerSnapshot: ServerConnectionSnapshot = {
     batchJobs: false,
     liveStreaming: false,
     jobStatus: false,
+    transcriptCorrection: false,
   },
   errorCode: null,
 };

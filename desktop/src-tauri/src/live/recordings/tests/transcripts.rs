@@ -23,6 +23,71 @@ fn completed_transcript_text_never_promotes_a_partial() {
 }
 
 #[test]
+fn transcript_correction_source_binds_exact_committed_text_and_revision() {
+    let dir = test_dir("trusted-correction-source");
+    let session = SessionId::new("s-trusted-correction-source").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    recording.append_pcm16(&[1, 0]).unwrap();
+    let capture = recording.finalize().unwrap();
+    save_finalized_capture_to_dir(
+        &dir,
+        &live_view(Some("Dose is 25 mg."), None),
+        Some(capture),
+        &[finalized_segment("Dose is 25 mg.")],
+    )
+    .unwrap();
+    let transcript = dir.join(format!("live-{session}.txt"));
+
+    let source =
+        read_committed_live_transcript_correction_source_from_dir(&transcript, &dir).unwrap();
+    let revision_name = format!("live-{session}.transcript.r1.json");
+    let (_, expected_revision_sha256) =
+        recording::read_and_hash_regular_artifact(&dir, &revision_name).unwrap();
+    assert_eq!(source.text, "Dose is 25 mg.");
+    assert_eq!(source.segments.len(), 1);
+    assert_eq!(source.segments[0].start_milliseconds, 0);
+    assert_eq!(source.segments[0].end_milliseconds, 1);
+    assert_eq!(source.source_revision_sha256, expected_revision_sha256);
+
+    std::fs::write(&transcript, "Dose is 250 mg.\n").unwrap();
+    assert!(read_committed_live_transcript_correction_source_from_dir(&transcript, &dir).is_err());
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
+fn timingless_committed_history_remains_raw_and_deletable_but_not_correctable() {
+    let dir = test_dir("timingless-correction-source");
+    let session = SessionId::new("s-timingless-correction-source").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    recording.append_pcm16(&[1, 0]).unwrap();
+    let capture = recording.finalize().unwrap();
+    save_finalized_capture_to_dir(
+        &dir,
+        &live_view(Some("Raw remains available."), None),
+        Some(capture),
+        &[],
+    )
+    .unwrap();
+    let transcript = dir.join(format!("live-{session}.txt"));
+
+    let source =
+        read_committed_live_transcript_correction_source_from_dir(&transcript, &dir).unwrap();
+    assert_eq!(source.text, "Raw remains available.");
+    assert!(source.segments.is_empty());
+
+    let saved = list_session_files_from_dir(&dir).unwrap().pop().unwrap();
+    delete_saved_live_session_in_dir(
+        &dir,
+        session.to_string(),
+        saved.output_path,
+        saved.capture_commit_path.unwrap(),
+    )
+    .unwrap();
+    assert!(recording::scan_recordings(&dir).unwrap().is_empty());
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
 fn header_only_live_capture_without_text_is_discarded() {
     let dir = test_dir("discard-header-only-capture");
     let session = SessionId::new("s-header-only-capture").unwrap();
@@ -35,7 +100,8 @@ fn header_only_live_capture_without_text_is_discarded() {
         .unwrap()
         .manifest
         .contains_pcm_audio());
-    let saved = save_finalized_capture_to_dir(&dir, &live_view(None, None), Some(capture)).unwrap();
+    let saved =
+        save_finalized_capture_to_dir(&dir, &live_view(None, None), Some(capture), &[]).unwrap();
 
     assert!(saved.is_none());
     assert!(recording::scan_recordings(&dir).unwrap().is_empty());
@@ -54,6 +120,7 @@ fn header_only_live_capture_preserves_existing_text_without_fabricating_audio() 
         &dir,
         &live_view(Some("keep this transcript"), None),
         Some(capture),
+        &[],
     )
     .unwrap()
     .unwrap();
@@ -112,6 +179,7 @@ fn transcript_revision_rejects_a_linked_prior_revision_when_supported() {
         &transcript_receipt,
         "first",
         ResultStatus::Complete,
+        &[],
     )
     .unwrap();
     let outside =
@@ -134,6 +202,7 @@ fn transcript_revision_rejects_a_linked_prior_revision_when_supported() {
         &transcript_receipt,
         "second",
         ResultStatus::Complete,
+        &[],
     )
     .is_err());
     assert!(!transcript_revision_path(&dir, &session, 2).exists());
@@ -200,6 +269,7 @@ fn transcript_pre_link_replacement_keeps_the_attacker_staging_file_and_writes_no
         &dir,
         &live_view(Some("owned transcript"), None),
         Some(capture),
+        &[],
         |source, destination, owned| {
             let displaced = source.with_extension("displaced");
             std::fs::rename(source, &displaced).map_err(|error| error.to_string())?;
@@ -230,6 +300,7 @@ fn transcript_post_link_replacement_keeps_the_attacker_text_and_writes_no_revisi
         &dir,
         &live_view(Some("owned transcript"), None),
         Some(capture),
+        &[],
         |source, destination, owned| {
             recording::publish_no_replace_with_after_link_for_test(
                 source,
@@ -266,6 +337,7 @@ fn transcript_replacement_after_publication_preserves_independent_text_without_a
         &dir,
         &live_view(Some("owned transcript"), None),
         Some(capture),
+        &[],
         |source, destination, owned| {
             let published = recording::publish_no_replace(
                 source,
@@ -332,10 +404,13 @@ fn transcript_replacement_before_revision_publication_writes_no_revision() {
     let error = write_transcript_revision_with_barrier(
         &dir,
         &session,
-        &manifest.capture_sidecar_sha256,
-        &receipt,
-        "owned transcript",
-        ResultStatus::Complete,
+        TranscriptRevisionPublication {
+            capture_sidecar_sha256: &manifest.capture_sidecar_sha256,
+            transcript_receipt: &receipt,
+            transcript: "owned transcript",
+            status: ResultStatus::Complete,
+            transcript_segments: &[],
+        },
         |barrier| {
             if barrier == TranscriptRevisionPublicationBarrier::BeforePublication {
                 let displaced = transcript.with_extension("displaced");
@@ -373,10 +448,13 @@ fn transcript_replacement_after_revision_publication_is_not_selected_by_history(
     let error = write_transcript_revision_with_barrier(
         &dir,
         &session,
-        &manifest.capture_sidecar_sha256,
-        &receipt,
-        "owned transcript",
-        ResultStatus::Complete,
+        TranscriptRevisionPublication {
+            capture_sidecar_sha256: &manifest.capture_sidecar_sha256,
+            transcript_receipt: &receipt,
+            transcript: "owned transcript",
+            status: ResultStatus::Complete,
+            transcript_segments: &[],
+        },
         |barrier| {
             if barrier == TranscriptRevisionPublicationBarrier::AfterPublication {
                 let displaced = transcript.with_extension("displaced");
@@ -413,7 +491,7 @@ fn replaced_capture_sidecar_preserves_text_but_blocks_transcript_revision() {
     std::fs::write(&sidecar, b"attacker sidecar").unwrap();
 
     let saved =
-        save_finalized_capture_to_dir(&dir, &live_view(Some("survives"), None), Some(capture))
+        save_finalized_capture_to_dir(&dir, &live_view(Some("survives"), None), Some(capture), &[])
             .unwrap()
             .unwrap();
 
@@ -450,6 +528,7 @@ fn transcript_revisions_are_create_new_and_monotonic() {
         &transcript_receipt,
         "first",
         ResultStatus::Complete,
+        &[],
     )
     .unwrap();
     write_transcript_revision(
@@ -459,6 +538,7 @@ fn transcript_revisions_are_create_new_and_monotonic() {
         &transcript_receipt,
         "second",
         ResultStatus::Complete,
+        &[],
     )
     .unwrap();
 
@@ -491,6 +571,7 @@ fn highest_corrupt_revision_does_not_fall_back_to_a_valid_lower_revision() {
         &receipt,
         "first",
         ResultStatus::Complete,
+        &[],
     )
     .unwrap();
     write_transcript_revision(
@@ -500,6 +581,7 @@ fn highest_corrupt_revision_does_not_fall_back_to_a_valid_lower_revision() {
         &receipt,
         "second",
         ResultStatus::Complete,
+        &[],
     )
     .unwrap();
     std::fs::write(transcript_revision_path(&dir, &session, 2), "tampered").unwrap();

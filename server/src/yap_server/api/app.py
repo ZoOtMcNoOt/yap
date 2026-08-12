@@ -37,7 +37,13 @@ from .routes import (
     LID_PREFLIGHT_CANCEL_PATH,
     LID_PREFLIGHT_PATH,
     SUPPORTED_HTTP_VERSIONS,
+    TRANSCRIPT_CORRECTION_PATH,
+    TRANSCRIPT_CORRECTIONS_PATH,
     allowed_methods as methods_for_path,
+)
+from .transcript_correction_requests import (
+    TranscriptCorrectionRequestMixin,
+    TranscriptCorrectionServiceProtocol,
 )
 
 __all__ = ["MAX_CONCURRENT_REQUEST_THREADS", "create_server", "serve"]
@@ -47,6 +53,7 @@ _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 
 class _HealthRequestHandler(
+    TranscriptCorrectionRequestMixin,
     LidRequestMixin,
     JobRequestMixin,
     ResponseMixin,
@@ -63,6 +70,7 @@ class _HealthRequestHandler(
         request_authenticator: RequestAuthenticator,
         job_service: RecordingJobService | None,
         lid_preflight_service: LidPreflightServiceProtocol | None,
+        transcript_correction_service: TranscriptCorrectionServiceProtocol | None,
         asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
     ) -> None:
@@ -71,6 +79,7 @@ class _HealthRequestHandler(
         self._principal: AuthenticatedPrincipal | None = None
         self._job_service = job_service
         self._lid_preflight_service = lid_preflight_service
+        self._transcript_correction_service = transcript_correction_service
         self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
         self._request_logged = False
@@ -157,6 +166,9 @@ class _HealthRequestHandler(
                     authentication_required=(
                         self._request_authenticator.authentication_required
                     ),
+                    transcript_correction=(
+                        self._transcript_correction_service is not None
+                    ),
                 ),
             )
             return
@@ -188,6 +200,21 @@ class _HealthRequestHandler(
                 )
                 return
             self._dispatch_lid_request(path)
+            return
+
+        is_transcript_correction_route = (
+            path == TRANSCRIPT_CORRECTIONS_PATH
+            or TRANSCRIPT_CORRECTION_PATH.fullmatch(path) is not None
+        )
+        if is_transcript_correction_route:
+            if self._transcript_correction_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Transcript correction is not configured.",
+                )
+                return
+            self._dispatch_transcript_correction_request(path)
             return
 
         if self._job_service is not None and path != "/v1/live":
@@ -232,6 +259,7 @@ def create_server(
     request_authenticator: RequestAuthenticator | None = None,
     job_service: RecordingJobService | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
+    transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
     ensure_private_application_bind(settings.host)
@@ -266,11 +294,16 @@ def create_server(
         request_authenticator=active_authenticator,
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
+        transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     )
     server = server_type(
         settings.host,
-        threaded=(job_service is not None or lid_preflight_service is not None),
+        threaded=(
+            job_service is not None
+            or lid_preflight_service is not None
+            or transcript_correction_service is not None
+        ),
     )((settings.host, settings.port), handler)
     server._request_error_logger = request_logger
     if isinstance(server, ThreadingYapHTTPServer):
@@ -284,6 +317,7 @@ def serve(
     job_service: RecordingJobService | None = None,
     request_authenticator: RequestAuthenticator | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
+    transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
     with create_server(
@@ -291,6 +325,7 @@ def serve(
         request_authenticator=request_authenticator,
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
+        transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     ) as server:
         server.serve_forever()

@@ -124,7 +124,12 @@ test("history keeps committed review actions separate from recoverable capture a
           if (command === "server_connection_status") {
             return {
               apiVersion: "1",
-              capabilities: { batchJobs: false, jobStatus: false, liveStreaming: false },
+              capabilities: {
+                batchJobs: false,
+                jobStatus: false,
+                liveStreaming: false,
+                transcriptCorrection: false,
+              },
               checkedAtMs: 1,
               errorCode: null,
               retryAtMs: null,

@@ -1,4 +1,4 @@
-const workspaceViews = ["home", "transcribe", "polish"] as const;
+const workspaceViews = ["home", "transcribe", "correct"] as const;
 
 export type WorkspaceView = (typeof workspaceViews)[number];
 
@@ -13,9 +13,9 @@ export const workspaceCopy: Record<WorkspaceView, { title: string; description: 
     title: "Transcribe",
     description: "Add recordings to your organization's transcription queue.",
   },
-  polish: {
-    title: "Polish",
-    description: "Clean text.",
+  correct: {
+    title: "Transcript correction",
+    description: "Review source-bound corrections without changing raw ASR.",
   },
 };
 

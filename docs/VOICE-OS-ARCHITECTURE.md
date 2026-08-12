@@ -1,7 +1,7 @@
 # Yap & Voice OS — System Architecture
 
 **Status:** Living long-term Voice OS frame of reference; implementation-status
-snapshot last reconciled 2026-08-11
+snapshot last reconciled 2026-08-12
 
 > **Scope notice (2026-07-15):** This document remains the first-class readable
 > frame for the eventual Voice OS architecture. It intentionally combines the
@@ -19,7 +19,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 
 > **2026-07-08 — Local model reset:** Yap keeps one local live/offline fallback model: Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. Client-side fusion routing is rejected; model routing belongs on the server.
 
-> **ADR precedence:** ADR 0014-0031 define the current thin-client, server, local-fallback, meeting-processing, transport-evolution, knowledge-projection, bounded-priority, language/timing, provider-specific serving, meeting-ASR, terminology, agent-runtime, supervised-service, and eight-agent workflow direction. ADR 0020 supersedes conflicting diarization details in ADR 0004 and ADR 0015. ADR 0021 keeps HTTP/3 evidence-gated. ADR 0022 owns permission-safe OKF/Postgres/pgvector projections. ADR 0023 owns bounded priority. ADRs 0024-0027 own language, provider ASR, AmberNet preflight, and Tiron Preview behavior. ADR 0028 owns model-independent terminology. ADR 0029 selects vLLM for agent inference; exact private head `36350d449735a4daea6546e16759f28f6f15631a` qualified Qwen 3.6 NVFP4 for rapid automation and Gemma 4 31B IT NVFP4 for complex orchestration without promoting a production service. Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` then passed the complete Phase 9 knowledge gate and admitted that private evidence by hash-bound semantic validation. ADR 0030 makes systemd the outer cgroup owner and one Rust supervisor the owner of one provider-launcher lifecycle; Slice 10.1 merged through PR #155 without promoting a provider. ADR 0031 binds the eight role names to bounded product workflows, shared authorization/admission, and immutable-source outputs rather than independent prompts. The desktop owns capture, deterministic preprocessing, recording, hotkey/UI, local live fallback, optional anonymous speaker evidence, and future transport packaging. The server owns official long-recording STT, authoritative meeting reconciliation, purpose-authorized named identity, team storage, KB compilation, and agent workloads.
+> **ADR precedence:** ADR 0014-0031 define the current thin-client, server, local-fallback, meeting-processing, transport-evolution, knowledge-projection, bounded-priority, language/timing, provider-specific serving, meeting-ASR, terminology, agent-runtime, supervised-service, and eight-agent workflow direction. ADR 0020 supersedes conflicting diarization details in ADR 0004 and ADR 0015. ADR 0021 keeps HTTP/3 evidence-gated. ADR 0022 owns permission-safe OKF/Postgres/pgvector projections. ADR 0023 owns bounded priority. ADRs 0024-0027 own language, provider ASR, AmberNet preflight, and Tiron Preview behavior. ADR 0028 owns model-independent terminology. ADR 0029 selects vLLM for agent inference; exact private head `36350d449735a4daea6546e16759f28f6f15631a` qualified Qwen 3.6 NVFP4 for rapid automation and Gemma 4 31B IT NVFP4 for complex orchestration without promoting a production service. Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` then passed the complete Phase 9 knowledge gate and admitted that private evidence by hash-bound semantic validation. ADR 0030 makes systemd the outer cgroup owner and one Rust supervisor the owner of one provider-launcher lifecycle; Slice 10.1 merged through PR #155 without promoting a provider. ADR 0031 binds the eight role names to bounded product workflows, shared authorization/admission, and immutable-source outputs rather than independent prompts. PR #158 merged bounded already-warm owner-fair admission; exact Scribe head `e5858424...` removes renderer-owned Ollama, implements authenticated source-bound transcript correction, and passed its private qualification gate, while hosted merge remains pending. The desktop owns capture, deterministic preprocessing, recording, hotkey/UI, local live fallback, optional anonymous speaker evidence, and future transport packaging. The server owns official long-recording STT, authoritative meeting reconciliation, purpose-authorized named identity, team storage, KB compilation, and agent workloads.
 
 ---
 
@@ -34,10 +34,10 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | **Local-first (solo profile)** | Offline, privacy-max; no cloud STT lock-in for individual users. |
 | **On-prem GPU (team profile)** | The GB-class server node is org-owned hardware on an org-controlled LAN — "our hardware, our network." Not cloud. Moving batch work off the client is promising, but GB10 wall time and safe concurrency remain benchmark gates. |
 | **Critical path isolation** | Live stays fast; heavy work (diarization, OKF, agents) never blocks typing. |
-| **Right model per job** | Nemotron INT8 for local live/offline fallback; server router for official recordings/live; **LLM pool** for polish/agents — not one model for everything. |
+| **Right model per job** | Nemotron INT8 for local live/offline fallback; server router for official recordings/live; governed Qwen/Gemma routes for bounded correction/agents — not one model for everything. |
 | **Revisioned diarization** | Local results may use anonymous `Unknown` and `Speaker N`; server reconciliation may refine boundaries and attach purpose-authorized names. |
 | **Model-independent meeting authority** | Existing `sherpa-onnx` APIs provide the local anonymous baseline. Tiron is the selected server meeting baseline, while Yap contracts and frozen messy-meeting evidence control promotion and replacement. The product invokes Tiron on exact 30-second source epochs, preserves its eight-slot decode limit, and reconciles a bounded 32-target/64-ceiling session roster without a duplicate diarization fallback. |
-| **Graceful degradation** | Dual-track Scribe, quarantine folder, RAG confidence gates, offline fallback to local sidecar — production-minded. |
+| **Graceful degradation** | Revisioned Scribe, quarantine/failure states, RAG evidence gates, and raw/local controls when the server is unavailable — production-minded. |
 | **Recordings as moat** | Journalists/researchers already have files; Cohere batch (GPU-accelerated in team profile) is differentiated vs pure dictation apps. |
 
 ### Where it can go wrong
@@ -52,7 +52,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 
 ### Verdict
 
-- **Yap (batch + live EN + polish):** Strong product — ship this.
+- **Yap (batch + live EN + source-bound correction):** Strong product direction — ship each evidence-gated slice.
 - **Source-aware meeting diarization:** Good idea for meetings/interviews - canonical Phase 8 after track/timeline contracts are stable; never block dictation on it.
 - **Full agentic KB + MCP:** Ambitious second product layer — good *direction*, don’t block the live dictation path on it.
 
@@ -66,7 +66,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | Live language | Executing fallback applies the confirmed primary locale across Nemotron's exact 32 out-of-box locales. The Phase 6 branch implements one optional bounded resident acoustic-LID component, offline switching, and within-utterance source-time language spans under the same Rust live-runtime owner. Exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the no-server target-client channel and the complete Phase 6 matrix: 12/12 paced native cycles and all nine short-boundary cases completed without drops; the unattended release-mode UI run proved local fallback, cancellation recovery, save/delete, production quit, and complete teardown. The consumed representative natural-switch target failed, so the feature remains explicit, default-off Preview behavior. Longer physical-device and low-end battery/thermal certification remains default-on or Phase 10 work. | Multilingual server live follows the authenticated live-transport gate. Local switching remains a best-effort Preview unless new independently frozen evidence justifies a stronger quality tier. |
 | Batch language | Executing Phase 5: Cohere **14 languages**, explicit choice. The unpromoted Phase 6 branch adds the tiered catalog, guarded suggestions, explicit server Nemotron auto mode, and immutable per-segment label corrections under focused tests | Versioned model-agnostic catalog with per-segment provenance and append-only review revisions |
 | STT runtime | **Nemotron INT8 sherpa fallback** + gated Phase 5 loopback batch path; authenticated bounded private WebSocket admission and the native lower handshake now exist, but live ASR and the external secure edge remain deferred | Same client shell; heavier pools move server-side |
-| Polish | Development-only Ollama call today; bundled `llama-server` is deferred | Scribe + agents through a governed client/server LLM boundary |
+| Transcript correction | Renderer/Ollama Polish is removed. Exact Scribe head `e5858424...` passed authenticated native/server finalized-segment correction qualification with visible diff, separate accepted revision, raw fallback, and public-safe evidence SHA-256 `5e187ed4...`; hosted merge is pending. | Merge Scribe, then complete the remaining bounded agents through governed already-warm Qwen/Gemma routes |
 | Speakers | Plain dictation; optional anonymous meeting labels later | Revisioned diarization + purpose-authorized server identity + OKF |
 | Knowledge | Transcripts history (solo) / `yap-knowledge` Google OKF + compiler (team) | Permission-safe OKF graph/vector views + glossary agents + Q&A |
 
@@ -79,7 +79,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | Target | Individual users with local live fallback | Org teams on a shared GB-class server node |
 | STT (live) | Local Nemotron INT8 (`sherpa-onnx`) | Server streaming ASR pool (WSS) |
 | STT (batch) | Queue/block when offline; official larger recordings use the server path | Current Cohere batch route plus evidence-gated Cohere/vLLM and Nemotron/NeMo candidates |
-| LLM | No shipped local LLM; development Polish currently calls Ollama | Privately qualified Qwen/Gemma vLLM evaluation routes; supervised multi-tenant service remains Phase 10 |
+| LLM | No shipped local LLM; raw ASR remains the correction fallback | Supervised Qwen/Gemma profiles and owner-fair admission are merged; the Scribe consumer is exact-qualified but unmerged, and simultaneous residency plus sustained multi-user capacity remain open |
 | Diarization | Optional local `Unknown` / `Speaker N`; no durable profiles | One Tiron joint speaker-attributed server route with source-time epoch reconciliation; evidence-gated promotion (ADR 0020/0027) |
 | Identity | Per-transcript contact labels only; no biometric matching | Provider-neutral OIDC verification with Entra policy; approved native token adapter and explicit voice enrollment remain gated (ADR 0016/0020) |
 | Knowledge base | Transcript History remains local; no local knowledge service ships | The merged monorepo baseline has deterministic Google OKF compilation, Postgres permissions/relationships, pgvector retrieval, and governed RAG/MCP. Separate `yap-knowledge` Git hosting and production operations remain Phase 10; Neo4j requires a measured baseline gap. |
@@ -119,7 +119,7 @@ Details: [ADR 0001](adr/0001-dual-stt-backends.md) · [0002](adr/0002-crispasr-u
 
 Two views of the same target architecture - **high-level** for orientation, **low-level** for implementation. They include deferred components so each future boundary has a home; a node is current only when its label or the implementation-status sections below say so. Normative rules live in [ADR 0001–0029](adr/README.md); sections below expand each box.
 
-**Target read order:** UI → **RuntimeOrchestrator** → local fallback or server connector. **L3** never blocks L2. If the deferred local LLM product is activated, **Polish** and **Scribe** share **llama-server** via the mutex rules in [ADR 0006](adr/0006-silero-agents-state-machine.md). Today Polish is a development-only Ollama call and Scribe/llama-server are absent.
+**Target read order:** UI → **RuntimeOrchestrator** → local fallback or server connector. **L3** never blocks L2. The current manual Scribe candidate uses the authenticated already-warm rapid server route and preserves raw ASR on every failure. A future solo/local LLM product would require its own qualification and must not silently replace that team route; the renderer-owned Ollama Polish prototype is deleted.
 
 ### High-level overview
 
@@ -360,7 +360,7 @@ flowchart TB
     subgraph UI["Yap UI — Tauri + React"]
         Transcribe["Transcribe / queue panel"]
         LiveUI["Live EN panel"]
-        PolishUI["Polish panel · development-only Ollama today"]
+        PolishUI["Transcript correction · manual reviewed revision"]
         History["Transcripts history"]
         AgentsUI["KB Q&A · Phase 9"]
     end
@@ -386,7 +386,7 @@ flowchart TB
         AGC["DEFERRED optional WebRTC/AGC"]
         Silero["LIVE DEFERRED Silero VAD · Rust<br/>imported-file VAD executes separately"]
         MS["Nemotron INT8 · sherpa-onnx<br/>confirmed fixed locale"]
-        ScribeL["DEFERRED Scribe · llama-server<br/>≤ 400 ms · dual-track raw+polished"]
+        ScribeL["DEFERRED automatic live Scribe<br/>separate measured budget · raw fallback"]
         Ghost["Ghost / in-app preview · v1"]
         Injector["Windows clipboard delivery<br/>visible paste guidance"]
     end
@@ -398,7 +398,7 @@ flowchart TB
         COH["GB-class Cohere worker\ngated Phase 5 loopback batch path"]
         NEMO["PHASE 6 branch server Nemotron<br/>fixed broad/fast + auto tags"]
         Save["Verified server result → .txt/history"]
-        ScribeB["Dev Ollama today<br/>target governed Scribe deferred"]
+        ScribeB["Scribe candidate<br/>authenticated finalized correction · rapid route"]
     end
 
     subgraph Handoff["Handoff — non-blocking · never on L2 hot thread"]
@@ -508,7 +508,7 @@ Everything from the original 7-layer flowchart and master spec is represented be
 | **L2** VAD | ✅ Reconciled | Local audio spec, ADR 0006/0020/0024 | Imported canonical WAV advisory Silero VAD executes with complete source retention; live endpointing remains deferred |
 | **L2** Batch LangID | ✅ Reconciled | ADR 0003/0008/0024/0026 | **Off the live hot path**; the Phase 6 branch verifies one imported AmberNet 1.12.0 INT8 QDQ artifact and samples five strict six-second regions from start through exact tail before explicit user confirmation. Focused real-model/parity/contract tests and source-exact ARM64 resource/lifecycle evidence exist; exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the portable Python, Rust, connected-route, and complete Phase 6 matrix. Representative suggestion quality remains unpromoted. The prior SpeechBrain receipt is historical. |
 | **L2** ASR | ✅ Reconciled | ADR 0001–0002/0014/0019/0024/0025/0027 | **Nemotron local fallback**; **server router** for official recordings/live; explicit server Nemotron auto mode and provider-specific vLLM/NeMo candidate-safety gates execute. The separate Tiron meeting Preview also executes; no provider is production-promoted, and broader selection or replacement requires independent later evidence. |
-| **L2** Post-LLM (Llama 3 8B) | ✅ Reconciled | ADR 0005 | Deferred **llama-server** target; current development Polish uses Ollama |
+| **L2** Post-LLM / transcript correction | ✅ Reconciled | ADR 0005, ADR 0031 | The current Scribe candidate uses the authenticated already-warm Qwen rapid route, publishes only a manually accepted source-bound revision, and preserves raw ASR on failure. Any solo/local `llama-server` product remains separately deferred and unqualified; Ollama Polish is deleted. |
 | **L2** Ghost preview | ✅ | § L2 | In-app panel v1 |
 | **L2** Cross-app delivery | ✅ | ADR 0013 + `live/injection.rs` | Copy the completed transcript with a Yap-owned Windows clipboard operation and show visible paste guidance; synthesized input is disabled |
 | **L2** Bounded track handoff | ✅ Reconciled | Local audio spec, ADR 0020 | Independent sinks, content identity, and explicit gaps |
@@ -573,14 +573,16 @@ The following includes deferred components. Today the production coordinator
 wires recording and local Nemotron ASR. The merged Phase 6 imported-file path
 prepares and drains durable loopback batch jobs and can run explicitly installed
 Silero over canonical WAV as advisory source-time evidence. It does not run live
-Silero, llama-server/Scribe, speaker inference, live ASR or an external WSS
-edge, a promoted Nemotron NeMo live route, or the ADR 0029 vLLM agent plane. Cohere vLLM and resident NeMo adapters are
+Silero, automatic live Scribe, speaker inference, live ASR or an external WSS
+edge, or a promoted Nemotron NeMo live route. The separate manual Scribe
+candidate corrects finalized trusted transcripts through authenticated
+native/server ownership and the already-warm ADR 0029 rapid route. Cohere vLLM and resident NeMo adapters are
 gated development candidates rather than promoted persistent services.
 
 ```
 Mic → optional AGC → Silero VAD                         [deferred]
   → Nemotron INT8 (sherpa-onnx, confirmed primary locale) ← live tokens
-  → llama-server polish (Scribe) if <400ms budget   [deferred]
+  → optional automatic live correction              [deferred; separate gate]
   → ghost UI + clipboard delivery (Windows)        ← direct field insertion deferred
 
 Parallel (never blocks above):
@@ -683,20 +685,20 @@ Scoped profiles, mutex groups, and state rules: **[ADR 0006](adr/0006-silero-age
 
 | Agent | Layer | Trigger | Job | LLM? |
 |-------|-------|---------|-----|------|
-| **Scribe** | L2 | Raw STT tokens | Filler strip, grammar, jargon dict | llama-server |
-| **Archivist** | L3 | Chunk JSON ready | OKF markdown + YAML frontmatter | No |
-| **Student** | L5 | New conversation saved | Flag unknown terms/acronyms | Optional |
-| **Curator** | L5 | User defines term | Glossary card, wiki-links, refresh Scribe prompt | llama-server |
-| **Auditor** | L5 | Weekly / on bulk edit | Flag contradictions across notes | llama-server |
-| **Librarian** | L7 | User query | Hybrid retrieve → context pack | No |
-| **Analyst** | L7 | Context pack | Grounded answer + citations | llama-server |
-| **Coordinator** | L7 | New transcript | Extract action items → todos | llama-server |
+| **Scribe** | Product enrichment | User requests correction of finalized ASR | Source-bound correction revision and visible diff | Qwen rapid |
+| **Archivist** | Knowledge ingestion | Reviewed source admitted | Deterministic OKF compile/stage | No |
+| **Student** | Learning | User requests prompts for an admitted conversation | Bounded cited questions | Qwen rapid when needed |
+| **Curator** | Knowledge governance | User reviews an answer/proposal | Governed proposal only | Gemma complex |
+| **Auditor** | Review | Authorized manual or idle schedule | Source-cited findings, no mutation | Gemma complex, idle-only |
+| **Librarian** | Retrieval | Authenticated knowledge query | Permission-safe generation-pinned evidence pack | No |
+| **Analyst** | Answering | User asks from a Librarian pack | Bounded cited answer or unavailable | Qualified route by workload class |
+| **Coordinator** | Planning | User requests cross-conversation planning | Source-cited plan/proposal, no autonomous mutation | Gemma complex |
 
 ### Failure states (graceful degradation)
 
 | Agent | Risk | Fallback |
 |-------|------|----------|
-| **Scribe** | Hallucination / over-edit | **Dual-track** raw + polished; undo → raw; **>400ms → raw only** on live |
+| **Scribe** | Hallucination / over-edit / timeout | Reject invalid edits, publish nothing, keep raw ASR; accepted correction is a separate revision |
 | **Archivist** | Bad JSON / write fail | **`quarantine/`** — audio + text; worker continues |
 | **Student** | Notification spam | **Three-strike rule**; **Ignore forever** blacklist |
 | **Curator** | Broken wiki-links | **Opt-in git**; auto-commit before bulk edits; rollback |
@@ -710,13 +712,21 @@ Scoped profiles, mutex groups, and state rules: **[ADR 0006](adr/0006-silero-age
 
 ## Runtime orchestration (summary)
 
-**Target state-machine limits** — full decision in [ADR 0006](adr/0006-silero-agents-state-machine.md). The implemented Rust domain owners enforce the local Nemotron lifecycle, project connector health/capabilities/retries, and retain durable imported-job plus normalization/VAD stage attempts. The server owns durable ASR/alignment/result-publication attempts and verified result publication. Imported-file Silero executes; fixed-loopback server discovery, authenticated private WebSocket admission, and the native lower handshake exist, while live Silero, live server ASR, managed LAN/enterprise and live-endpoint discovery, the external WSS edge, LLM scheduling, and promoted NeMo/vLLM agent serving are not wired. The Cohere vLLM and resident NeMo candidates remain behind the existing bounded batch contract:
+**Current state-machine limits** — ADR 0031 amends the historical ADR 0006
+agent limits. The implemented Rust domain owners enforce the local Nemotron
+lifecycle and the merged server admission broker now owns already-warm route
+queueing, fairness, deadlines, and cancellation. The server owns durable ASR/
+alignment/result publication and the current Scribe candidate owns only
+finalized transcript correction. Live Silero, live server ASR, managed LAN/
+enterprise and live-endpoint discovery, the external WSS edge, automatic live
+Scribe, and promoted NeMo/vLLM production capacity remain unwired:
 
 | Rule | Limit |
 |------|--------|
 | Local STT loaded | Client fallback loads **Nemotron INT8 only**; server router owns fusion/routing |
-| Scribe (HOT) | **1** at a time; **400 ms** max |
-| Background LLM agents | **1 queued** (Student, Curator, Analyst, …) |
+| Scribe (HOT) | **1 active rapid request**; queue-inclusive **60 s** candidate deadline; raw ASR on failure |
+| Agent admission | **64 global pending**, **4 active-plus-pending per owner**, owner round robin; one active request per route |
+| Background LLM agents | Typed bounded work classes behind the same owner-fair broker; remaining workflows not yet delivered |
 | Speaker evidence | Optional, bounded, anonymous, and independently degradable |
 | Background agents during live | **Blocked** except Scribe |
 | Meeting workers | Load only for meeting work; release by measured idle/resource policy |
@@ -951,7 +961,7 @@ timeline
 | **7** | Merged and gated | Phase 7 merged as `66d314d7`; its adversarial checkpoint closed at `ef6d977`. The merged work has a provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` ownership, owner-scoped jobs/LID, authenticated bounded private WebSocket admission, and a qualified native lower handshake. The desktop has only a narrow native token-provider seam; no production adapter is approved. Exact application/runtime candidate `dc6359162fb16909d38f410cdb75c2729d83972f` passed the one complete private 25-cell matrix and independent receipt validation. Hosted CI exposed only runner-portability defects. Reviewed repairs through `c1d81fc085218cf91a4e370087bcc5927e5b1f70` change hosted/gate tooling, its contracts, and documentation—not shipped product/runtime or candidate-manifest behavior—so the passed candidate matrix remains authoritative. Purpose grants, revocation, and their audit records are implemented and unit-tested but reachable only from tests: nothing calls `IdentityAuthorizationService`, so `access_disabled` and grants can be changed only by editing `identity.sqlite` directly. The layer is not a shipped capability; a future purpose-authorized speaker reconciliation/naming workflow must expose or remove it under review. Real IT-provided Entra policy conformance remains open. |
 | **8** | Closed as unadvertised baseline | ADR 0020, ADR 0027, and the source-aware design are canonical. PR #144 merged exact 30-second Tiron epochs, request-scoped reuse of its ECAPA encoder, an eight-slot decode-window boundary, a 32-speaker session target, a 64-speaker ceiling, strict `Unknown`, and clean one-speaker History projection. The server has one meeting-inference path and no ASR-plus-diarization fallback. Exact candidate `3ddb930...` recorded `unadvertised-baseline` because the independent private holdout was unconfigured; Tiron remains explicit Preview and absent from the default catalog. |
 | **9** | Merged and gated | Google OKF conformance, deterministic compilation, immutable terminology snapshots, Postgres permission/relationship generations, pgvector retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and privately qualified Qwen rapid/Gemma complex vLLM routes execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. The separate maintainability checkpoint gate passed at exact head `22c3f369...`; final hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`. Postgres remains the sole projection because no measured gap justified Neo4j. Production supervision, simultaneous residency, sustained mixed-user capacity, and external serving remain Phase 10. |
-| **10** | Slices 10.1/10.2 merged; bounded admission gated and under hosted review | The merged baseline implements one systemd-contained, Rust-owned foreground provider-launcher lifecycle with exact loopback/model readiness, bounded restart/stop, private state counters, and immutable Qwen/Gemma service profiles. Exact hosted-green heads `1a487db8...` and `6d1400cc...` merged through PRs #155 and #157. Exact protected head `7bd93dc6...` adds bounded owner-fair admission for all eight role bindings over an owner-private Rust/Python boundary; public-lock/aggregate head `135cc2ba...` qualified both routes and passed the 169-test/17-database-test gate with real restart and teardown. No product workflow consumes it and the broker is not enabled. Native/server integration, warm simultaneous residency, mixed-load capacity promotion, observability, corporate access hardening, HTTP/3 edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
+| **10** | Slices 10.1–10.3 merged; Scribe qualification passed | The merged baseline implements one systemd-contained Rust provider-launcher lifecycle, immutable Qwen/Gemma profiles, and bounded owner-fair admission for all eight role bindings over an owner-private Rust/Python boundary. PRs #155/#157/#158 merged those layers; the admission merge is `84d95842...`. Exact Scribe head `e5858424...` is the first authenticated consumer and passed its 24-case bilingual/eight-owner private gate with public-safe semantic evidence SHA-256 `5e187ed4...`; raw ASR remains authoritative and only a user-accepted correction revision can publish. Hosted Scribe merge, the other seven roles, warm simultaneous residency, mixed-load capacity promotion, observability, corporate access hardening, HTTP/3 edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
 
 The client-convergence PR was an MVP prerequisite merged separately before this
 server-node change; it does not rename canonical Phase 4 or imply that the
@@ -1006,7 +1016,11 @@ lifecycle and every required repository check; PR #155 merged Slice 10.1 as
 `e2d82b89...`. Hosted-green head `6d1400cc...` then merged the exact provider
 profiles through PR #157 as `cac8989b...`. The bounded admission substrate
 passed replacement route qualification at `7bd93dc6...` and the aggregate gate
-at `135cc2ba...`; PR #158 hosted review and product workflows remain next.
+at `135cc2ba...`; hosted-green head `cf1e69a4...` merged it through PR #158 as
+`84d95842...`. Exact Scribe head `e5858424...` passed its bilingual/multi-owner
+private qualification gate with public-safe semantic evidence SHA-256
+`5e187ed4...`; hosted review/merge, simultaneous-capacity proof, and the
+remaining seven roles are next.
 Live ASR,
 managed LAN/enterprise and
 live-endpoint discovery, external
@@ -1032,7 +1046,7 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 | **7** Identity/access | Provider-neutral OIDC validation with Entra policy, fail-closed native token-provider seam, replacement of the fixed development owner, purpose grants that are implemented but called by nothing, tenant-scoped identity DB, and authenticated private live admission; production adapter and enterprise conformance require separate approval | [ADR 0016](adr/0016-auth-identity-bridge.md); sign-in/access UX |
 | **8** Meeting evidence | Anonymous local labels, pinned Tiron eight-window/eight-global baseline, one integrated source-time epoch route with request-scoped reconciliation, frozen messy-meeting public/independent evidence, attendance/window/global-roster pressure, timestamped result revisions, server reconciliation, deliberate voice-enrollment UX and profile lifecycle | [ADR 0020](adr/0020-meeting-capture-diarization-authority.md); [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md); [source-aware design](specs/source-aware-diarization.md) |
 | **9** Knowledge/agents | Google OKF profile, immutable terminology, deterministic compiler, Postgres/pgvector relationship/vector baseline, governed RAG/MCP, and qualified Qwen/Gemma vLLM workload routes | Complete zero-skip Postgres/restart/private-route-evidence gate passed at `a4f34678...`; PR #152 merged the reviewed exact head as `ae81ff067...`. The post-phase maintainability checkpoint gate passed at `22c3f369...`; hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`. Production supervision/capacity remains Phase 10, and another projection requires a measured baseline gap. |
-| **10** Enterprise/release | Merged Slice 10.1 begins with one systemd-contained Rust provider-launcher lifecycle; later slices add qualified service profiles, authenticated routing, simultaneous residency, warm/multi-worker and mixed-load capacity promotion, observability, Zscaler/corp access, HTTP/3 secure-edge benchmark/promotion, packaging, and repo split | [ADR 0030](adr/0030-rust-supervised-provider-service-lifecycle.md), the active Phase 10 plan, and merged PR #155 evidence; later route-specific capacity/SLO evidence; CI/CD migration; cross-repo link update |
+| **10** Enterprise/release | Slices 10.1–10.3 merged the systemd/Rust provider lifecycle, exact Qwen/Gemma profiles, and authenticated already-warm owner-fair admission. Exact Scribe head `e5858424...` passed its private qualification gate; hosted merge and seven roles remain before simultaneous residency, sustained mixed-load capacity promotion, observability, enterprise access, secure-edge evidence, packaging, and repo split. | [ADRs 0030](adr/0030-rust-supervised-provider-service-lifecycle.md) and [0031](adr/0031-eight-agent-voice-os-roster.md), the active Phase 10/roster plans, merged PRs #155/#157/#158, the [Scribe evidence](evidence/scribe-transcript-correction/VERIFICATION.md), later route-specific capacity/SLO evidence, CI/CD migration, and cross-repo link update. |
 
 ---
 

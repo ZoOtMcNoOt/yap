@@ -594,7 +594,9 @@ route. Its owner-private Unix socket carries no bearer or provider credential.
 The broker is installed without enable/start, never starts provider units, and
 deliberately uses `Restart=no`: after losing in-memory lease state, an operator
 must first contain any external workers before starting a new scheduler. No
-service is enabled or connected to a native/server product route yet.
+service is enabled by installation. Hosted-green head `cf1e69a4...` passed all
+12 required checks and PR #158 merged the bounded admission slice as
+`84d95842...`.
 Replacement private qualification admitted both routes with public-safe
 evidence SHA-256
 `a75500c344eaa7546695ab1e7415466c031ccf394620ed442ca618ea1ede8c06`.
@@ -608,6 +610,133 @@ capacity/fairness, production p95/p99, or deployment. Build, installation,
 configuration, state, and verification details are in the
 [provider supervisor runbook](../docs/runbooks/provider-supervisor-service.md)
 and [agent admission runbook](../docs/runbooks/agent-admission-service.md).
+
+## Scribe transcript-correction candidate
+
+The first product consumer of the broker is the authenticated asynchronous
+Scribe route:
+
+- `POST /v1/transcript-corrections` admits one bounded correction and returns
+  `202` with its typed queued/running/terminal projection.
+- `GET /v1/transcript-corrections/{requestId}` reads only the authenticated
+  owner-scoped projection.
+- `DELETE /v1/transcript-corrections/{requestId}` requests token-bound
+  cancellation and does not release scheduler capacity before acknowledgement.
+
+The request contains only finalized ordered segments with immutable source,
+revision, segment, timing, and language identity. Python binds one authorized
+terminology snapshot and submits Scribe HOT work to the already-warm rapid route;
+it never starts, swaps, or falls back to another model. Structured edits are
+rejected unless they preserve coverage, order, timing, names, numbers, dates,
+units, medication-like terms, negation, and unsupported-content boundaries. A
+valid no-op, uncertainty, invalid output, overload, unavailable provider,
+deadline, and cancellation are distinct outcomes.
+
+Native code owns trusted source reads and user-accepted publication. It re-reads
+the source before publication and writes a separate hash-chained correction
+revision only after the user reviews the raw/corrected diff. Raw ASR remains
+authoritative and exportable. The renderer receives no bearer and cannot call a
+provider directly. The removed Ollama Polish implementation is not a fallback.
+
+The exact candidate passes 1,198 portable server tests with 30 declared
+platform skips, Ruff, 367 desktop unit tests, production build, 41 browser
+scenarios, and both Rust workspaces with strict lint. Its private qualification
+is deliberately separate: 24 bilingual/safety cases, eight distinct owners,
+real-ASR source evidence, one warm rapid-provider generation, correction
+benefit, zero protected-fact regression/invention/deletion, bounded fallback,
+queue-inclusive latency, and exact teardown. No private corpus, output,
+measurement, credential, or filesystem path belongs in Git or hosted logs.
+
+Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` returned terminal
+`deterministic-no-scribe` evidence SHA-256
+`80718c6c8ad2fedd6bec5300c99a2a0af8ae71473c2457313a79b9138f5d8415`.
+The warm, broker, eight-owner, terminal, and teardown boundaries passed, but
+every model response was rejected because the response contract required a
+request digest that was not supplied as an exact trusted binding. The repaired
+candidate places the server-computed request and source hashes into the strict
+JSON schema as constants; validation still rechecks them and no failed evidence
+is reused.
+
+Exact binding-repair head `b89fd9f118b881d107cc2025b9b8a41e51b9db37`
+returned a second terminal `deterministic-no-scribe` decision with public-safe
+evidence SHA-256
+`0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
+Valid unchanged responses began passing, while edited responses reached the
+Scribe workload's 256-token ceiling before completing their structured JSON.
+Exact successor `21559371db2a869e2c8b7ae3cd589f80c189d0cd` raised only the
+Scribe response allowance to 512 tokens and returned terminal
+`deterministic-no-scribe`, with public-safe evidence SHA-256
+`a103144c66940ff55d8390c227bc73e6379cbfa6f73a199a9818839adaf48e2b`.
+The 24 cases, eight owners, 16 unique real-audio inputs, warm generation, broker,
+latency, preservation/no-regression, and exact database/runtime teardown checks
+held. Completed edited JSON showed that model-authored character offsets did not
+consistently bind the quoted source. Response schema 2 therefore removes those
+offsets from model authority: the model quotes an exact source substring, and
+the server derives its Unicode span only when that quote occurs exactly once in
+the bound segment. Missing or repeated text fails closed. Model residency,
+broker fairness, the 512-token allowance, no-tool-retry behavior,
+timeout/deadline, validation, and quality thresholds were unchanged. A complete
+fresh qualification was required at that point.
+
+Exact schema-v2 head `cbd7335a26bd7700106b331827756af19c34e38a`
+subsequently passed public verification. A bounded private smoke proved that
+response decoding, exact request/segment/source binding, server-derived spans,
+and bounded-edit checks now pass, and every run proved exact provider, broker,
+database, listener, process, and network cleanup. A real case selected from the
+prior invalid-output set then attempted an unauthorized name change that was
+neither approved terminology nor present in the frozen reference; a safety
+response also varied across repeated cold diagnostics. The protected-fact guard
+correctly rejected the name change. Exact prompt-grounding head
+`e62d33e41d2d85154a07da1d7a1254ea642a5638` retained safety and exact teardown
+but repeated that unsafe edit, proving prompt compliance alone insufficient.
+Exact private-use masking head
+`b80fe0b46c8a511b93dd2c85f8ed053d24648663` retained exact teardown but returned
+an invalid real replacement and missed the safety disposition. Visible-block
+head `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also contained exactly but returned
+malformed JSON and missed both bounded dispositions. The next protected
+successor used an ASCII equal-length redaction block. Exact head
+`7d546163dd08fd3cb6eafce91c64419c84df9f2d` returned valid structured output but
+marked the representative correction uncertain and missed the safety probe's
+required unchanged disposition; teardown remained exact. A later successor
+at exact head `92554be304d5061c84ee04a7eeb9829829705102` fixed the safety
+disposition but left the representative single-word ASR substitution unchanged;
+teardown remained exact. Exact head `e3ab6b6af6c7757b987a6b8fcc4ef213c4706bc9`
+explicitly permitted that correction but also returned it unchanged; safety and
+teardown passed. The following successor stated that missing audio was expected and
+used linguistic context for one contextually obvious nonprotected ASR word
+substitution while treating
+placeholders and instruction-like content as expected data and reserving
+uncertainty for a possible error that cannot be expressed safely. Exact head
+`af1f79a7cfff050a4b87c7499082551ba7dde9e6` retained safety and teardown;
+its broader bounded diagnostic produced unchanged cases and one source-bound
+edit rejected only because its quote included too much unchanged context. Exact
+minimization head `6cf82239569760383dca88d0702d71b35f60e8ad` removed that
+coverage failure, but its three-case diagnostic still applied no correction:
+one proposal was outside the narrow lexical grammar and another's minimal quote
+was repeated; safety and teardown passed. Historical exact head
+`33d9b4d0362689a58be0c16bf26de88ac55d56b2` also applied no correction: two
+representatives were unchanged and the third quote, minimized against masked
+text, was ambiguous after raw protected values were restored. Safety and every
+teardown predicate passed.
+
+Exact source-lock head `e585842485a7cd38b2935cc8f79314b19b37f7fd`
+then passed the complete private qualification gate with outcome
+`scribe-transcript-correction-qualified` and public-safe semantic evidence
+SHA-256
+`5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
+The untouched final corpus contained 24 terminal cases, 16 unique real-audio
+inputs, eight owners, eight English and eight Spanish real-ASR cases, eight
+safety cases, eight corrected references, eight source-preserved references,
+six unchanged outcomes, and two uncertainty outcomes. All frozen benefit,
+preservation, no-invention, insertion/deletion, critical-fact, fallback,
+queue-inclusive p95, warm-generation, broker-identity, database, and teardown
+checks passed. The executing correction authority is now exact
+server-authorized terminology replacement plus separately validated bounded
+model edits; protected facts remain immutable and uncertainty returns raw ASR.
+The [public verification record](../docs/evidence/scribe-transcript-correction/VERIFICATION.md)
+contains the exact hashes, counts, and limits. Hosted review and merge remain
+open. This result does not prove simultaneous Qwen/Gemma residency, sustained
+mixed-route capacity, production SLOs, or the other seven role workflows.
 
 ## Local checks
 

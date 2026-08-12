@@ -2,6 +2,7 @@ use std::{collections::HashSet, path::Path};
 
 use crate::audio::recording;
 
+use super::super::super::artifacts::read_committed_live_transcript_correction_source_from_dir;
 use super::super::super::transcripts::{
     has_valid_transcript_revision, highest_transcript_revision, transcript_artifact_names,
 };
@@ -94,9 +95,21 @@ pub(in crate::live::recordings) fn build_deletion_intent(
         for name in transcript_names {
             artifacts.push(admit_deletion_artifact(dir, &name)?);
         }
-        let polished = format!("live-{}.polished.txt", manifest.session_id);
-        if recording::is_regular_artifact(&dir.join(&polished)) {
-            artifacts.push(admit_deletion_artifact(dir, &polished)?);
+        let transcript_path = dir.join(format!("live-{}.txt", manifest.session_id));
+        let source =
+            read_committed_live_transcript_correction_source_from_dir(&transcript_path, dir)?;
+        for (name, expected_sha256) in
+            crate::transcript_correction::live_transcript_correction_artifacts_for_deletion(
+                &transcript_path,
+                source.source_revision_sha256,
+                source.text,
+            )?
+        {
+            let artifact = admit_deletion_artifact(dir, &name)?;
+            if artifact.sha256 != expected_sha256 {
+                return Err("transcript correction changed before deletion".into());
+            }
+            artifacts.push(artifact);
         }
     }
     let intent = DeletionIntent {

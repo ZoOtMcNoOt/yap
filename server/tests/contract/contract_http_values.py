@@ -14,6 +14,9 @@ HTTP_OPERATIONS = {
         "/v1/lid/preflights/{requestId}",
         "delete",
     ): "cancelLidPreflight",
+    ("/v1/transcript-corrections", "post"): "submitTranscriptCorrection",
+    ("/v1/transcript-corrections/{requestId}", "get"): "getTranscriptCorrection",
+    ("/v1/transcript-corrections/{requestId}", "delete"): "cancelTranscriptCorrection",
     ("/v1/jobs", "post"): "createJob",
     ("/v1/jobs/{jobId}", "get"): "getJob",
     ("/v1/jobs/{jobId}/result", "get"): "getJobResult",
@@ -42,6 +45,18 @@ OPERATION_RUNTIME = {
     ("/v1/lid/preflights/{requestId}", "delete"): (
         "Implemented only when the locked LID runtime verifies",
         "Active language-preflight cancellation",
+    ),
+    ("/v1/transcript-corrections", "post"): (
+        "Implemented only when the authenticated warm Scribe runtime verifies",
+        "Scribe transcript correction",
+    ),
+    ("/v1/transcript-corrections/{requestId}", "get"): (
+        "Implemented only when the authenticated warm Scribe runtime verifies",
+        "Scribe transcript correction",
+    ),
+    ("/v1/transcript-corrections/{requestId}", "delete"): (
+        "Implemented only when the authenticated warm Scribe runtime verifies",
+        "Scribe transcript correction",
     ),
     ("/v1/jobs", "post"): (
         "Implemented in the loopback batch runtime",
@@ -92,6 +107,10 @@ RUNTIME_PATH_EXAMPLES = {
     "/v1/asr/capabilities": "/v1/asr/capabilities",
     "/v1/lid/preflight": "/v1/lid/preflight",
     "/v1/lid/preflights/{requestId}": "/v1/lid/preflights/lid-request-01",
+    "/v1/transcript-corrections": "/v1/transcript-corrections",
+    "/v1/transcript-corrections/{requestId}": (
+        "/v1/transcript-corrections/scribe-request-01"
+    ),
     "/v1/jobs": "/v1/jobs",
     "/v1/jobs/{jobId}": "/v1/jobs/job-01",
     "/v1/jobs/{jobId}/result": "/v1/jobs/job-01/result",
@@ -155,6 +174,30 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
             "404": "#/components/schemas/LidPreflightNotFoundError",
             "501": "#/components/schemas/LidPreflightNotImplementedError",
         },
+    },
+    {
+        "path": "/v1/transcript-corrections",
+        "method": "post",
+        "request": (
+            "application/json",
+            "#/components/schemas/TranscriptCorrectionRequest",
+        ),
+        "success": {"202": "#/components/schemas/TranscriptCorrectionJobView"},
+        "errors": ["400", "401", "403", "429", "501", "503", "504"],
+    },
+    {
+        "path": "/v1/transcript-corrections/{requestId}",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/TranscriptCorrectionJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/transcript-corrections/{requestId}",
+        "method": "delete",
+        "request": None,
+        "success": {"202": "#/components/schemas/TranscriptCorrectionJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
     },
     {
         "path": "/v1/jobs",

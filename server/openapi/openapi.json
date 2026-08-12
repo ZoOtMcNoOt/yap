@@ -20,6 +20,10 @@
       "description": "Bounded assistive language preflight, available only when its locked runtime verifies."
     },
     {
+      "name": "agents",
+      "description": "Authenticated bounded product workflows over already-warm qualified agent routes."
+    },
+    {
       "name": "jobs",
       "description": "Implemented only by the optional loopback batch profile; unavailable in the default health-only profile."
     },
@@ -422,6 +426,141 @@
           },
           "503": {
             "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      }
+    },
+    "/v1/transcript-corrections": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Submit one source-bound transcript correction",
+        "description": "Freezes server-owned terminology for the authenticated principal, then submits bounded Scribe work to the already-warm rapid route. The request never carries owner or terminology authority and raw ASR is never overwritten.",
+        "operationId": "submitTranscriptCorrection",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Scribe runtime verifies",
+        "x-yap-runtime-owner": "Scribe transcript correction",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranscriptCorrectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The owner-bound request is queued or running.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptCorrectionJobView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "504": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/transcript-corrections/{requestId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TranscriptCorrectionRequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Read one owner-bound transcript correction",
+        "operationId": "getTranscriptCorrection",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Scribe runtime verifies",
+        "x-yap-runtime-owner": "Scribe transcript correction",
+        "responses": {
+          "200": {
+            "description": "The current bounded lifecycle projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptCorrectionJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Request cancellation of one owner-bound correction",
+        "description": "Returns only after the cancellation transition has been recorded; terminal acknowledgement remains visible through status polling.",
+        "operationId": "cancelTranscriptCorrection",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Scribe runtime verifies",
+        "x-yap-runtime-owner": "Scribe transcript correction",
+        "responses": {
+          "202": {
+            "description": "Cancellation was requested for the owned request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptCorrectionJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
           }
         }
       }
@@ -1152,6 +1291,19 @@
           "$ref": "#/components/schemas/ServerStageName"
         }
       }
+      ,
+      "TranscriptCorrectionRequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "description": "Opaque Scribe request identity scoped to the authenticated owner.",
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+        }
+      }
     },
     "responses": {
       "ApiErrorResponse": {
@@ -1238,6 +1390,152 @@
       }
     },
     "schemas": {
+      "TranscriptCorrectionSegment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "segmentId",
+          "startCharacter",
+          "endCharacter",
+          "startMilliseconds",
+          "endMilliseconds",
+          "languageBcp47",
+          "text",
+          "textSha256"
+        ],
+        "properties": {
+          "segmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          },
+          "startCharacter": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "endCharacter": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "startMilliseconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "endMilliseconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "languageBcp47": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 35
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32768
+          },
+          "textSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "TranscriptCorrectionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "sourceRevisionSha256",
+          "sourceSha256",
+          "segments"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "sourceRevisionSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "sourceSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "segments": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "items": {
+              "$ref": "#/components/schemas/TranscriptCorrectionSegment"
+            }
+          }
+        }
+      },
+      "TranscriptCorrectionJobView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "requestId",
+          "status",
+          "sourceRevisionSha256",
+          "sourceSha256",
+          "terminologySnapshotSha256",
+          "applied"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "cancellation-requested",
+              "cancelled",
+              "complete",
+              "failed"
+            ]
+          },
+          "sourceRevisionSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "sourceSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "terminologySnapshotSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "applied": {
+            "type": "boolean"
+          },
+          "correctedText": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32768
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          }
+        }
+      },
       "OpaqueIdentifier": {
         "type": "string",
         "minLength": 1,
@@ -3892,7 +4190,8 @@
         "required": [
           "batchJobs",
           "liveStreaming",
-          "jobStatus"
+          "jobStatus",
+          "transcriptCorrection"
         ],
         "properties": {
           "batchJobs": {
@@ -3906,6 +4205,10 @@
           "jobStatus": {
             "type": "boolean",
             "description": "True only when durable job status is implemented."
+          },
+          "transcriptCorrection": {
+            "type": "boolean",
+            "description": "True only when authenticated source-bound transcript correction is configured."
           }
         }
       },

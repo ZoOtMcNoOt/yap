@@ -7,12 +7,14 @@ class ServerCapabilities:
     batch_jobs: bool
     live_streaming: bool
     job_status: bool
+    transcript_correction: bool
 
     def to_wire(self) -> dict[str, bool]:
         return {
             "batchJobs": self.batch_jobs,
             "liveStreaming": self.live_streaming,
             "jobStatus": self.job_status,
+            "transcriptCorrection": self.transcript_correction,
         }
 
 

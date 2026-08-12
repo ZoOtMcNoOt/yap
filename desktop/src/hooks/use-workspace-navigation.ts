@@ -3,7 +3,6 @@ import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { isWorkspaceView, type RailAction, type WorkspaceView } from "@/lib/workspace";
-import { developmentPolishAvailable } from "@/lib/product-features";
 
 export type WorkspaceNavigationState = {
   activeRail: RailAction;
@@ -26,14 +25,14 @@ export type WorkspaceNavigationIntent =
   | { type: "openWorkspace"; action: RailAction }
   | { type: "showDetails" };
 
-export type WorkspaceNavigationEffect = "openPolish" | "refreshDetails";
+export type WorkspaceNavigationEffect = "openCorrection" | "refreshDetails";
 
 export function workspaceNavigationEffectForIntent(
   intent: WorkspaceNavigationIntent,
 ): WorkspaceNavigationEffect | undefined {
   if (intent.type === "showDetails") return undefined;
   if (intent.action === "details") return "refreshDetails";
-  if (intent.action === "polish") return "openPolish";
+  if (intent.action === "correct") return "openCorrection";
   return undefined;
 }
 
@@ -87,26 +86,25 @@ export function workspaceNavigationStateForAction(
 
 export function useWorkspaceNavigation({
   onOpenDetails,
-  onOpenPolish,
+  onOpenCorrection,
 }: {
   onOpenDetails: () => void;
-  onOpenPolish: () => void;
+  onOpenCorrection: () => void;
 }) {
   const [navigation, setNavigation] = useState(initialWorkspaceNavigationState);
   const onOpenDetailsRef = useRef(onOpenDetails);
-  const onOpenPolishRef = useRef(onOpenPolish);
+  const onOpenCorrectionRef = useRef(onOpenCorrection);
 
   useEffect(() => {
     onOpenDetailsRef.current = onOpenDetails;
-    onOpenPolishRef.current = onOpenPolish;
-  }, [onOpenDetails, onOpenPolish]);
+    onOpenCorrectionRef.current = onOpenCorrection;
+  }, [onOpenCorrection, onOpenDetails]);
 
   const openWorkspace = useCallback((action: RailAction) => {
-    if (action === "polish" && !developmentPolishAvailable) return;
     setNavigation((state) => workspaceNavigationStateForAction(state, { type: "openWorkspace", action }));
     const effect = workspaceNavigationEffectForIntent({ type: "openWorkspace", action });
     if (effect === "refreshDetails") onOpenDetailsRef.current();
-    if (effect === "openPolish") onOpenPolishRef.current();
+    if (effect === "openCorrection") onOpenCorrectionRef.current();
   }, []);
 
   const showDetails = useCallback(() => {

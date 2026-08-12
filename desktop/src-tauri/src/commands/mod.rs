@@ -20,6 +20,7 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         .manage(history::HistoryCatalogOwner::open_default())
         .manage(recording_jobs)
         .manage(remote_job_drain)
+        .manage(crate::transcript_correction::TranscriptCorrectionOwner::new())
         .manage(crate::server_connector::ServerConnector::new());
     builder.invoke_handler(tauri::generate_handler![
         setup::setup_status,
@@ -94,13 +95,15 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         live::delete_recoverable_live_session,
         live::delete_saved_live_session,
         live::show_main_workspace,
-        setup::polish_num_gpu,
         crate::file_actions::restore_recording_playback_path,
         crate::file_actions::release_recording_playback,
         crate::file_actions::transcripts::resolve_owned_live_transcript_paths,
         crate::file_actions::transcripts::read_text_file,
         crate::file_actions::transcripts::read_text_preview,
-        crate::file_actions::transcripts::write_polished_text,
+        crate::transcript_correction::start_transcript_correction,
+        crate::transcript_correction::transcript_correction_status,
+        crate::transcript_correction::cancel_transcript_correction,
+        crate::transcript_correction::publish_transcript_correction,
         crate::file_actions::open_app_path,
         crate::file_actions::reveal_app_path,
         #[cfg(feature = "wdio")]

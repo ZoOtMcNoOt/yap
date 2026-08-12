@@ -81,7 +81,7 @@ export function LiveOverlayHost() {
   return (
     <LiveOverlay
       onOpenScratch={() => void showMainWorkspace("home")}
-      onOpenTransform={() => void showMainWorkspace("polish")}
+      onOpenTransform={() => void showMainWorkspace("correct")}
       onRetry={() => void startToggleSession(previewMode, setView)}
       onStart={() => {
         void startToggleSession(previewMode, setView);

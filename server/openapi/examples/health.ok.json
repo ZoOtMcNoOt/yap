@@ -6,6 +6,7 @@
   "capabilities": {
     "batchJobs": false,
     "liveStreaming": false,
-    "jobStatus": false
+    "jobStatus": false,
+    "transcriptCorrection": false
   }
 }

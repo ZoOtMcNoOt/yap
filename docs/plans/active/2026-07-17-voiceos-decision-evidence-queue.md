@@ -894,8 +894,13 @@ unconfigured.
 
 ### Phase 10 — Production services, security, and enterprise handoff
 
-- Integrate supervised provider-specific ASR and vLLM agent/LLM services with Yap-owned
-  Rust orchestration, health, backpressure, cancellation, restart, and metrics.
+- PRs #155/#157/#158 merged Yap-owned Rust supervision, exact Qwen/Gemma
+  profiles, and already-warm owner-fair admission. The current Scribe candidate
+  adds the first authenticated consumer; private qualification/merge and seven
+  role workflows remain open.
+- Integrate the remaining provider-specific ASR and vLLM agent/LLM workflows
+  with Yap-owned Rust orchestration, health, backpressure, cancellation,
+  restart, and metrics.
 - Prove authenticated multi-owner live/batch fairness, sustained capacity,
   p95/p99 SLOs, GPU/CPU memory ceilings, overload behavior, and service recovery.
 - Run the next full-repository Codex Security scan privately, remediate confirmed

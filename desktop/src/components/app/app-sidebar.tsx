@@ -22,16 +22,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { RailAction } from "@/lib/workspace";
-import { developmentPolishAvailable } from "@/lib/product-features";
 
-const allMainNav: { action: RailAction; icon: ElementType; label: string }[] = [
+const mainNav: { action: RailAction; icon: ElementType; label: string }[] = [
   { action: "home", icon: Grid2X2, label: "Home" },
   { action: "transcribe", icon: Mic, label: "Transcribe" },
-  { action: "polish", icon: Sparkles, label: "Polish" },
+  { action: "correct", icon: Sparkles, label: "Correct" },
 ];
-const mainNav = allMainNav.filter(
-  ({ action }) => action !== "polish" || developmentPolishAvailable,
-);
 
 const footerNav: { action: RailAction; icon: ElementType; label: string }[] = [
   { action: "details", icon: Settings2, label: "Settings" },

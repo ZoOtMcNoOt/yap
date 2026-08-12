@@ -18,5 +18,6 @@ pub(crate) mod shortcut_runtime;
 mod source_audio;
 pub mod state;
 pub mod stream;
+pub(crate) mod transcript_segments;
 
 pub use state::LiveSessionState;

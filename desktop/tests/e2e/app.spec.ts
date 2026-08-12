@@ -19,12 +19,11 @@ test("browser preview keeps its startup status and auth labels", async ({ page }
   await expect(page.getByText("Tauri bridge", { exact: true })).toBeVisible();
 });
 
-test("production surface hides the development-only Polish workspace", async ({ page }) => {
+test("production surface exposes transcript correction without a renderer model path", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.locator('[data-sidebar="menu-button"]').filter({ hasText: /^Polish$/ }))
-    .toHaveCount(0);
-  await expect(page.getByText("Polish unavailable", { exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-sidebar="menu-button"]').filter({ hasText: /^Correct$/ }))
+    .toBeVisible();
 });
 
 test("Settings and Help remain one mutually exclusive modal surface", async ({ page }) => {

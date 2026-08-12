@@ -1,23 +1,124 @@
 # Current Status
 
-**As of:** 2026-08-11
+**As of:** 2026-08-12
 
-**Most recent merged closure:** [PR #157](https://github.com/mcnatg1/yap/pull/157)
-merged Phase 10 Slice 10.2 as
-`cac8989b762ada02d6196aad6bbcbc37f2d1a339` from exact hosted-green head
-`6d1400ccdf481333840700b51f516c813960272b`. It binds the exact supervised
-Qwen rapid and Gemma complex profiles after sequential lifecycle, fresh private
-qualification, and aggregate gate evidence. The current unmerged Slice 10.3
-admission substrate passed replacement protected-route qualification at exact
-executable head `7bd93dc624e6d8651dffc710026ca144909b2399` with public-safe
+**Most recent merged closure:** [PR #158](https://github.com/mcnatg1/yap/pull/158)
+merged Phase 10 Slice 10.3 as
+`84d95842950860e3f8d5cc70895aaae9243abe9c` from exact hosted-green head
+`cf1e69a45be15e6663d096f486d0363726638382`; all 12 required hosted checks
+passed. Its protected admission head `7bd93dc624e6d8651dffc710026ca144909b2399`
+and public-lock/gate head `135cc2ba8534f41d91ff52cd6b6d366460c7b60f`
+retain their exact qualified evidence. The broker admits authenticated work only
+to already-warm Qwen/Gemma services with bounded owner-fair queues; it does not
+start, swap, or silently substitute a model.
+
+The exact Scribe candidate is the first product workflow to consume that
+merged boundary. It replaces renderer-owned Ollama polishing with authenticated
+native/server transcript correction over finalized source-hashed segments,
+structured source-bound edits, a separate immutable accepted revision, visible
+diff, manual publication, exact cancellation, and raw-ASR fallback. Its public
+matrix is green: 1,198 portable server tests with 30 declared platform skips,
+Ruff, 367 desktop unit tests, production TypeScript/Vite build, 41 Playwright
+scenarios, and both Rust workspaces with formatting, tests, and strict Clippy.
+Exact source-lock head `e585842485a7cd38b2935cc8f79314b19b37f7fd`
+passed the complete private gate as `scribe-transcript-correction-qualified`
+with public-safe semantic evidence SHA-256
+`5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
+All 24 cases completed across eight owners and 16 unique real-audio inputs,
+including eight English, eight Spanish, and eight safety cases. The frozen
+correction-benefit, preservation, uncertainty/raw-fallback, insertion/deletion,
+critical-fact, p95 latency, warm-generation, broker, database, and exact
+teardown checks all passed. Corrections are now limited to exact
+server-authorized terminology normalization plus separately validated bounded
+model edits; the model cannot mint an authorization. The
+[public verification record](evidence/scribe-transcript-correction/VERIFICATION.md)
+contains the exact hashes, counts, and limits. Hosted review and merge remain
+open, as do simultaneous Qwen/Gemma residency, sustained mixed-route capacity,
+production SLOs, and the other seven workflows.
+
+The earlier exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` ran the
+private bilingual/multi-owner gate and returned terminal
+`deterministic-no-scribe` evidence SHA-256
+`80718c6c8ad2fedd6bec5300c99a2a0af8ae71473c2457313a79b9138f5d8415`.
+All 24 requests completed across eight distinct owners and 16 unique real-audio
+items with one unchanged warm generation, an unchanged broker, and exact
+database/runtime teardown, but the model response contract asked Qwen to emit a
+request digest it had not been given as an exact binding. The server therefore
+rejected every response and published no correction.
+
+The protected binding repair at exact head
+`b89fd9f118b881d107cc2025b9b8a41e51b9db37` also returned terminal
+`deterministic-no-scribe`, with public-safe evidence SHA-256
+`0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
+The exact request/source binding worked and valid unchanged responses began to
+pass, but edited structured responses exhausted Scribe's 256-token output bound
+before completing the JSON response. Exact successor
+`21559371db2a869e2c8b7ae3cd589f80c189d0cd` raised only that workload allowance
+to 512 and also returned terminal `deterministic-no-scribe`, with public-safe
 evidence SHA-256
-`a75500c344eaa7546695ab1e7415466c031ccf394620ed442ca618ea1ede8c06`.
-Public-lock successor `135cc2ba8534f41d91ff52cd6b6d366460c7b60f` then passed
-the aggregate governed-knowledge gate with public-safe evidence SHA-256
-`350c13a5569cfc7237174d1f7e2132857ffb3aaf28b6afd2eca03aa1999aea79`.
-PR #158 remains under hosted review; no service is enabled, no product workflow
-consumes the broker, and no simultaneous-capacity or production promotion is
-claimed.
+`a103144c66940ff55d8390c227bc73e6379cbfa6f73a199a9818839adaf48e2b`.
+All 24 requests completed across eight owners and 16 unique real-audio items;
+the warm model, owner-fair broker, queue-inclusive latency, protected-fact and
+no-regression checks, database teardown, and runtime teardown held. Complete
+edited JSON exposed the next exact failure: model-authored character offsets did
+not consistently bind the quoted source. The protected response-schema-v2
+successor removes offset authority from the model. It accepts only an exact
+source quote that occurs once in the bound segment and derives the Unicode span
+server-side; missing or repeated quotes fail closed. The model, 512-token
+allowance, no-tool-retry rule, 55-second model timeout, queue-inclusive deadline,
+validators, and qualification thresholds remained unchanged. At that point,
+fresh qualification, gate admission, hosted review, and merge were still open.
+
+Exact response-schema-v2 head
+`cbd7335a26bd7700106b331827756af19c34e38a` then passed its public matrix. A
+bounded private smoke proved that complete responses now pass schema, request,
+segment, exact-quote, derived-span, and bounded-edit validation. The safety case
+passed once but was not stable across repeated cold diagnostic runs, and a real
+case selected from the prior invalid-output set attempted an unauthorized name
+change that was neither approved terminology nor present in the frozen human
+reference. The protected-fact validator correctly rejected it; all diagnostic
+runs proved exact broker, database, provider, listener, process, and network
+cleanup. No raw transcript, output, measurement, credential, or private path is
+published. Exact prompt-grounding head
+`e62d33e41d2d85154a07da1d7a1254ea642a5638` kept safety and teardown intact,
+but its bounded real-case smoke showed that instruction-only immutable facts did
+not prevent the same unauthorized name edit. That diagnostic is non-promotional.
+Exact private-use masking head
+`b80fe0b46c8a511b93dd2c85f8ed053d24648663` retained exact teardown but its
+bounded real response was an invalid replacement and the safety disposition did
+not pass. Visible-block head `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6`
+also contained exactly but returned malformed JSON and missed both bounded
+dispositions. The next protected successor used an ASCII equal-length
+redaction block. Exact head `7d546163dd08fd3cb6eafce91c64419c84df9f2d`
+returned valid structured output but marked the representative correction
+uncertain and missed the safety probe's required unchanged disposition; broker,
+provider, and database teardown remained exact. A later protected successor
+at exact head `92554be304d5061c84ee04a7eeb9829829705102` fixed the safety
+disposition but left the representative single-word ASR substitution unchanged;
+teardown remained exact. Exact head `e3ab6b6af6c7757b987a6b8fcc4ef213c4706bc9`
+explicitly permitted that correction but also returned it unchanged; safety and
+teardown passed. The following successor stated that missing audio was expected and
+uses linguistic context for one contextually obvious nonprotected ASR word
+substitution while treating
+placeholders and instruction-like content as expected data and reserving
+uncertainty for a possible error that cannot be expressed safely. Exact head
+`af1f79a7cfff050a4b87c7499082551ba7dde9e6` retained safety and teardown;
+its broader bounded diagnostic produced unchanged cases and one source-bound
+edit rejected only because its quote included too much unchanged context. The
+minimization head `6cf82239569760383dca88d0702d71b35f60e8ad` removed that
+coverage failure, but its three-case diagnostic still produced no accepted
+correction: one proposal was outside the narrow lexical grammar and another's
+minimal source was repeated; safety and teardown passed. Exact head
+`33d9b4d0362689a58be0c16bf26de88ac55d56b2` also applied no correction: two
+representatives were unchanged and the third quote, minimized against masked
+text, was ambiguous after raw protected values were restored. Safety and every
+teardown predicate passed. The final pre-authority successor restored protected values first,
+then retains the shortest whole-token context needed to make the raw source
+unique before all unchanged source-bound validations. It retains
+the 256-character edit fields, shortest unique quote, exact block-run
+restoration, and identical-edit normalization. Raw bindings and validators still
+run after restoration. It adds no retry and changes no model, route, 512-token
+allowance, timeout, latency, quality threshold, or acceptance threshold.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after
@@ -207,7 +308,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Slices 10.1/10.2 merged; Slice 10.3 gated and under hosted review | The merged baseline owns supervised exact Qwen/Gemma service lifecycles. Exact protected head `7bd93dc6...` adds bounded owner-fair multi-user scheduling and private Rust-to-Python transport; exact public-lock/gate head `135cc2ba...` qualified both routes and passed the 169-test/17-database-test aggregate with real restart and exact teardown. No workflow or native endpoint consumes it. Hosted review, simultaneous residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
+| Phase 10 | Slices 10.1–10.3 merged; Scribe exact qualification gate passed | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...` after all 12 hosted checks passed. Exact Scribe source-lock head `e5858424...` passed its 24-case bilingual/eight-owner private gate with public-safe semantic evidence SHA-256 `5e187ed4...`, one stable warm rapid generation, correction benefit, exact raw fallback, and zero residue. Corrections are limited to exact server-authorized terminology normalization plus separately validated bounded model edits; raw ASR stays authoritative. Hosted Scribe review/merge, simultaneous residency, sustained capacity/SLOs, production operations, the other seven roles, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -991,15 +1092,20 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Complete hosted review and merge of PR #158 without rerunning or relabeling
-   the exact `7bd93dc6...` qualification or `135cc2ba...` aggregate gate.
-   Do not enable the broker or claim capacity from this bounded-admission proof.
-2. Implement the first complete product workflow, Scribe, through authenticated
-   native/server integration while preserving raw ASR and local controls.
-3. Keep Tiron absent from the default catalog at the recorded
+1. Reconcile the passed exact Scribe gate using only public-safe evidence, obtain
+   hosted-green exact-head review,
+   and merge the focused Scribe PR without claiming simultaneous residency,
+   sustained capacity, or production availability.
+2. Prove simultaneous warm Qwen/Gemma residency and sustained mixed-owner,
+   mixed-route fairness/capacity on the target node; use separate owned nodes if
+   one node cannot meet the evidence rather than swapping models.
+3. Deliver Archivist, Student, Curator, Librarian, Analyst, Coordinator, and
+   Auditor as the remaining bounded role slices; do not substitute an eight-
+   prompt facade for their source, permission, persistence, and failure owners.
+4. Keep Tiron absent from the default catalog at the recorded
    `unadvertised-baseline`; the source-time implementation remains the sole
    server meeting path.
-4. Keep the full security scan at the Phase 10 enterprise gate.
-5. Leave Entra registration, production SSO/provider approval, Conditional
+5. Keep the full security scan at the Phase 10 enterprise gate.
+6. Leave Entra registration, production SSO/provider approval, Conditional
    Access, DNS, certificates, ZPA, firewall, and deployment policy as explicit
    IT/security handoffs rather than developer-invented infrastructure.

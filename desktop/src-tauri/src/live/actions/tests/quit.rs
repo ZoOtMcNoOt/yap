@@ -1,6 +1,20 @@
 use std::cell::RefCell;
 
-use super::super::quit::{run_quit_with, QuitClaim, QuitCoordinator, QuitRunError};
+use super::super::quit::{
+    cancel_transcript_corrections_before_quit, run_quit_with, QuitClaim, QuitCoordinator,
+    QuitRunError,
+};
+
+#[test]
+fn transcript_correction_shutdown_enters_the_async_runtime_on_its_worker_thread() {
+    let owner = crate::transcript_correction::TranscriptCorrectionOwner::new();
+    let cancelled = std::thread::spawn(move || cancel_transcript_corrections_before_quit(&owner))
+        .join()
+        .expect("transcript correction shutdown worker panicked")
+        .expect("empty transcript correction owner failed shutdown");
+
+    assert_eq!(cancelled, 0);
+}
 
 #[test]
 fn quit_does_not_exit_when_finalization_fails() {

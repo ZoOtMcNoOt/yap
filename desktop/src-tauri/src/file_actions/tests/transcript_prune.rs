@@ -89,7 +89,7 @@ fn hidden_prune_rejects_untrusted_or_non_primary_paths() {
             external.join("live-s-102.txt").display().to_string(),
             nested.join("live-s-103.txt").display().to_string(),
             "live-s-104.txt".into(),
-            dir.join("live-105.polished.txt").display().to_string(),
+            dir.join("live-105.draft.txt").display().to_string(),
             dir.join("live-nope.txt").display().to_string(),
             dir.join("notes.txt").display().to_string(),
         ],

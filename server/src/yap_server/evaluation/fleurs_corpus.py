@@ -376,7 +376,14 @@ def _parse_metadata(body: bytes, *, expected_case_count: int) -> tuple[_FleursCa
     except UnicodeDecodeError as error:
         raise ValueError("FLEURS metadata is not UTF-8") from error
     try:
-        rows = list(csv.reader(io.StringIO(text), delimiter="\t", strict=True))
+        rows = list(
+            csv.reader(
+                io.StringIO(text),
+                delimiter="\t",
+                quoting=csv.QUOTE_NONE,
+                strict=True,
+            )
+        )
     except csv.Error as error:
         raise ValueError("FLEURS metadata is not valid TSV") from error
     if len(rows) != expected_case_count:

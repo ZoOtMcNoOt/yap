@@ -5,8 +5,8 @@ import {
   isHistoryBodySearchPending,
   projectHistorySearchDisplay,
 } from "@/components/history/history-search";
-import { isDevelopmentPolishAvailable } from "@/lib/product-features";
-import { createPolishOperationOwner, isPolishDraftCurrent } from "@/polish";
+import { visibleTranscriptChange } from "@/components/transcript-correction/transcript-correction-preview";
+import { transcriptCorrectionIsActive } from "@/transcript-correction";
 
 function cspSources(csp: string, directive: string) {
   const value = csp
@@ -47,62 +47,22 @@ describe("product surface contracts", () => {
     })).toBe(false);
   });
 
-  it("keeps the direct Ollama Polish path behind an explicit development-only seam", () => {
-    expect(isDevelopmentPolishAvailable({ explicitlyEnabled: true, isDevelopment: true }))
-      .toBe(true);
-    expect(isDevelopmentPolishAvailable({ explicitlyEnabled: true, isDevelopment: false }))
-      .toBe(false);
-    expect(isDevelopmentPolishAvailable({ explicitlyEnabled: false, isDevelopment: true }))
-      .toBe(false);
+  it("classifies only server-owned in-flight correction states as active", () => {
+    expect(transcriptCorrectionIsActive("queued")).toBe(true);
+    expect(transcriptCorrectionIsActive("running")).toBe(true);
+    expect(transcriptCorrectionIsActive("cancellation-requested")).toBe(true);
+    expect(transcriptCorrectionIsActive("cancelled")).toBe(false);
+    expect(transcriptCorrectionIsActive("complete")).toBe(false);
+    expect(transcriptCorrectionIsActive("failed")).toBe(false);
   });
 
-  it("withholds Copy and Save from running or stale Polish drafts", () => {
-    expect(isPolishDraftCurrent({
-      currentContext: "C:/one.txt\0light",
-      draftContext: "C:/one.txt\0light",
-      running: false,
-      text: "Current draft",
-    })).toBe(true);
-    expect(isPolishDraftCurrent({
-      currentContext: "C:/one.txt\0clean",
-      draftContext: "C:/one.txt\0light",
-      running: false,
-      text: "Stale draft",
-    })).toBe(false);
-    expect(isPolishDraftCurrent({
-      currentContext: "C:/one.txt\0light",
-      draftContext: "C:/one.txt\0light",
-      running: true,
-      text: "Running draft",
-    })).toBe(false);
-  });
-
-  it("keeps stale Polish saves from completing or finishing a newer draft", () => {
-    const owner = createPolishOperationOwner();
-    const firstRun = owner.startRun("C:/one.txt\0light");
-    expect(firstRun).toBeDefined();
-    const firstDraft = owner.acceptRun(firstRun!);
-    expect(firstDraft).toBeDefined();
-    expect(Object.isFrozen(firstDraft)).toBe(true);
-    expect(owner.finishRun(firstRun!)).toBe(true);
-
-    const staleSave = owner.startSave(firstDraft!);
-    expect(staleSave).toBeDefined();
-    expect(Object.isFrozen(staleSave)).toBe(true);
-    expect(owner.startRun("C:/one.txt\0light")).toBeUndefined();
-
-    owner.invalidate();
-    const secondRun = owner.startRun("C:/one.txt\0clean")!;
-    const secondDraft = owner.acceptRun(secondRun)!;
-    expect(owner.finishRun(secondRun)).toBe(true);
-    const currentSave = owner.startSave(secondDraft)!;
-
-    expect(owner.acceptSave(staleSave!)).toBe(false);
-    expect(owner.finishSave(staleSave!)).toBe(false);
-    expect(owner.isSaving()).toBe(true);
-    expect(owner.acceptSave(currentSave)).toBe(true);
-    expect(owner.finishSave(currentSave)).toBe(true);
-    expect(owner.isSaving()).toBe(false);
+  it("marks the exact changed region while preserving shared source text", () => {
+    expect(visibleTranscriptChange("Dose is twenty mg.", "Dose is 20 mg.")).toEqual({
+      before: "Dose is ",
+      original: "twenty",
+      corrected: "20",
+      after: " mg.",
+    });
   });
 
   it("allows only the loopback media owner and removes the asset protocol", () => {

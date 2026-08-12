@@ -32,6 +32,7 @@ class RequestLoggingTests(HealthServerTestCase):
                 "batchJobs": False,
                 "liveStreaming": False,
                 "jobStatus": False,
+                "transcriptCorrection": False,
             },
         }
         self.assertEqual(status, 200)

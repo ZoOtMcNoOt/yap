@@ -4,12 +4,6 @@ use tauri::Emitter;
 use tauri_plugin_dialog::DialogExt;
 
 #[tauri::command]
-pub(super) fn polish_num_gpu(window: tauri::WebviewWindow) -> Result<u32, String> {
-    authorization::ensure_main(&window)?;
-    Ok(stt::settings::polish_num_gpu_layers())
-}
-
-#[tauri::command]
 pub(super) fn setup_status(
     window: tauri::WebviewWindow,
     _state: tauri::State<'_, stt::dispatch::SttState>,

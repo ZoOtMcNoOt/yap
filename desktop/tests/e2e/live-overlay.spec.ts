@@ -138,7 +138,7 @@ test("focused Start dictating preserves native Enter activation", async ({ page 
 test("focused workspace controls preserve native Enter and Space activation", async ({ page }) => {
   for (const action of [
     { key: "Enter", label: "Open scratch", tabs: 2, workspace: "home" },
-    { key: "Space", label: "Open transform", tabs: 3, workspace: "polish" },
+    { key: "Space", label: "Open transform", tabs: 3, workspace: "correct" },
   ]) {
     await openOverlayPreview(page);
     await installInvokeCapture(page);

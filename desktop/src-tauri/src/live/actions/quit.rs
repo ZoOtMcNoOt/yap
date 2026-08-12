@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::{sync::Mutex, time::Duration};
 
 use tauri::Manager;
 
@@ -248,7 +248,7 @@ pub(crate) fn quit_from_app(app: &tauri::AppHandle) {
                 return;
             }
             let result = run_quit_with(
-                || finalize_live_before_quit(&worker_app),
+                || finalize_owned_work_before_quit(&worker_app),
                 || {
                     let lifecycle = worker_app.state::<crate::runtime::DesktopLifecycle>();
                     for error in lifecycle.shutdown() {
@@ -310,7 +310,7 @@ fn reopen_activation_after_abandoned_quit() -> Result<(), String> {
         .map_err(|error| format!("could not reopen the instance activation handoff: {error}"))
 }
 
-fn finalize_live_before_quit(app: &tauri::AppHandle) -> Result<(), String> {
+fn finalize_owned_work_before_quit(app: &tauri::AppHandle) -> Result<(), String> {
     let live = app.state::<live::LiveSessionState>();
     let live_runtime = app.state::<live::runtime::LiveRuntime>();
     live_runtime.cancel_pending_start();
@@ -324,7 +324,27 @@ fn finalize_live_before_quit(app: &tauri::AppHandle) -> Result<(), String> {
             CompletionMode::Quit,
         )
     });
-    outcome.save_error.map_or(Ok(()), Err)
+    outcome.save_error.map_or(Ok(()), Err)?;
+
+    let correction_owner = app.state::<crate::transcript_correction::TranscriptCorrectionOwner>();
+    if let Err(error) = cancel_transcript_corrections_before_quit(&correction_owner) {
+        crate::diagnostics::log(&format!(
+            "transcript correction shutdown cancellation was incomplete: {error}"
+        ));
+    }
+    Ok(())
+}
+
+pub(super) fn cancel_transcript_corrections_before_quit(
+    owner: &crate::transcript_correction::TranscriptCorrectionOwner,
+) -> Result<usize, String> {
+    tauri::async_runtime::block_on(async {
+        tokio::time::timeout(Duration::from_secs(5), owner.cancel_active_requests())
+            .await
+            .map_err(|_| {
+                "transcript correction shutdown cancellation exceeded its bounded wait".to_string()
+            })?
+    })
 }
 
 /// Show the pending shutdown failure and wait for the user to dismiss it.

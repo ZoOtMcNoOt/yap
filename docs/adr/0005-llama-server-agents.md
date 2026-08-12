@@ -1,15 +1,24 @@
 # ADR 0005: Bundled llama-server for LLM agents (CPU-first)
 
 **Date:** 2026-06-30
-**Status:** Accepted for the solo/local profile; team execution is amended by ADR 0014
+**Status:** Historical accepted solo/local target; no local LLM is shipped. Team
+Scribe execution is replaced by ADRs 0014, 0029, and 0031.
 **Builds on:** [ADR 0002](0002-crispasr-unified-stt-runtime.md) (sidecar pattern), [ADR 0004](0004-background-diarization-okf-agents.md) (Scribe agent, 400 ms bypass)
 **Amended by:** [ADR 0014](0014-server-tier-compute-topology.md) — in the **team profile**, `llama-server` moves to the **LLM pool on the GB-class server node** (`-ngl` not 0; GPU-accelerated Scribe, polish, and agents). The **solo/local-first profile** retains the bundled `llama-server` sidecar with `--n-gpu-layers 0` as specified in this ADR. The CPU-first rule is the compatibility baseline for the solo profile; it does not apply to the server pool.
+**Amended by:** [ADR 0031](0031-eight-agent-voice-os-roster.md) — the current
+team Scribe candidate uses authenticated finalized-segment correction through
+the already-warm Qwen rapid route. The renderer/Ollama implementation is deleted,
+and raw ASR is the fallback. Nothing in this ADR authorizes a local LLM without
+fresh quality, lifecycle, packaging, and resource evidence.
 
 ## Context
 
 Yap uses a local LLM for **Polish** (transcript cleanup) and will use the same stack for future **Voice OS agents** (Scribe on the live path, Student/Curator/Librarian/Analyst off the hot path).
 
-Today `desktop/src/polish.ts` calls **Ollama** at `http://127.0.0.1:11434/api/chat` with `keep_alive: "10m"` and **`num_gpu: 0`** (CPU-only polish).
+At the time of this ADR, `desktop/src/polish.ts` called **Ollama** at
+`http://127.0.0.1:11434/api/chat` with `keep_alive: "10m"` and **`num_gpu: 0`**.
+That file and renderer-owned provider route are now deleted by the ADR 0031
+Scribe candidate.
 
 We rejected relying on a **separate Ollama install** for shipped product UX. **Ollama uses llama.cpp under the hood** — bundling **`llama-server`** (llama.cpp’s OpenAI-compatible HTTP server) gives the same inference class with:
 
@@ -164,6 +173,6 @@ Reuse the same directory as the local STT weights (`YAP_MODELS_DIR` / `%APPDATA%
 
 ### References
 
-- Current Ollama polish: `desktop/src/polish.ts`
+- Historical Ollama polish (deleted): `desktop/src/polish.ts`
 - Architecture: [Current architecture](../architecture/CURRENT-ARCHITECTURE.md)
 - Agents: [ADR 0004](0004-background-diarization-okf-agents.md)

@@ -44,6 +44,48 @@ pub(crate) fn read_published_remote_transcript_text(
         .map(|bundle| bundle.text)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PublishedRemoteTranscriptCorrectionSource {
+    pub(crate) source_revision_sha256: String,
+    pub(crate) text: String,
+    pub(crate) language_bcp47: String,
+    pub(crate) start_ms: u64,
+    pub(crate) end_ms: u64,
+}
+
+pub(crate) fn read_published_remote_transcript_correction_source(
+    path: &std::path::Path,
+) -> Result<PublishedRemoteTranscriptCorrectionSource, String> {
+    read_published_remote_transcript_correction_source_from_dir(path, &remote_jobs_directory())
+}
+
+pub(crate) fn read_published_remote_transcript_correction_source_from_dir(
+    path: &std::path::Path,
+    spool_root: &std::path::Path,
+) -> Result<PublishedRemoteTranscriptCorrectionSource, String> {
+    let bundle = remote::read_published_remote_result_bundle(path, spool_root)?;
+    let language_bcp47 = bundle
+        .result
+        .language
+        .as_ref()
+        .map(|language| language.language_bcp47.clone())
+        .ok_or_else(|| "The published server transcript has no language identity.".to_string())?;
+    let first = bundle.result.aligned_words.first().ok_or_else(|| {
+        "The published server transcript has no finalized alignment timing.".to_string()
+    })?;
+    let last = bundle.result.aligned_words.last().ok_or_else(|| {
+        "The published server transcript has no finalized alignment timing.".to_string()
+    })?;
+    let text = bundle.result.transcript.clone();
+    Ok(PublishedRemoteTranscriptCorrectionSource {
+        source_revision_sha256: bundle.result_sha256,
+        text,
+        language_bcp47,
+        start_ms: first.start_ms,
+        end_ms: last.end_ms,
+    })
+}
+
 pub(crate) fn authorize_published_remote_transcript(
     path: &std::path::Path,
 ) -> Result<std::path::PathBuf, String> {

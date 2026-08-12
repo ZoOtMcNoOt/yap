@@ -29,13 +29,6 @@ fn compute_target_from_env_for_test(value: Option<&str>) -> LocalComputeTarget {
     compute_target_from_env_value(value).unwrap_or(LocalComputeTarget::Auto)
 }
 
-pub fn polish_num_gpu_layers() -> u32 {
-    match effective_compute_target() {
-        LocalComputeTarget::Cpu => 0,
-        LocalComputeTarget::Auto => 99,
-    }
-}
-
 pub fn settings_dir_from<F>(env: F) -> std::path::PathBuf
 where
     F: Fn(&str) -> Option<String>,

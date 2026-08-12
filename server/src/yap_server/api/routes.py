@@ -6,6 +6,10 @@ LID_PREFLIGHT_PATH = "/v1/lid/preflight"
 LID_PREFLIGHT_CANCEL_PATH = re.compile(
     rf"^/v1/lid/preflights/(?P<request_id>{_LID_REQUEST_ID})$"
 )
+TRANSCRIPT_CORRECTIONS_PATH = "/v1/transcript-corrections"
+TRANSCRIPT_CORRECTION_PATH = re.compile(
+    rf"^/v1/transcript-corrections/(?P<request_id>{_LID_REQUEST_ID})$"
+)
 JOB_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})$")
 RESULT_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/result$")
 SPEAKER_RESULT_PATH = re.compile(
@@ -35,6 +39,10 @@ def allowed_methods(path: str) -> frozenset[str] | None:
         return frozenset({"POST"})
     if LID_PREFLIGHT_CANCEL_PATH.fullmatch(path):
         return frozenset({"DELETE"})
+    if path == TRANSCRIPT_CORRECTIONS_PATH:
+        return frozenset({"POST"})
+    if TRANSCRIPT_CORRECTION_PATH.fullmatch(path):
+        return frozenset({"DELETE", "GET"})
     if path == "/v1/jobs":
         return frozenset({"POST"})
     if JOB_PATH.fullmatch(path):

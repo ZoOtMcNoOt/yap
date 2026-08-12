@@ -83,6 +83,13 @@ class TerminologySnapshotTests(unittest.TestCase):
         self.assertEqual(normalized.normalized_text, "TAVI planning")
         self.assertEqual(normalized.edits[0].replacement, "TAVI")
         self.assertEqual(grammar.exact_forms, ("TAVI",))
+        self.assertEqual(
+            grammar.authorized_replacements,
+            (
+                ("tavi", "TAVI"),
+                ("transcatheter aortic valve implantation", "TAVI"),
+            ),
+        )
         self.assertEqual(grammar.snapshot_sha256, snapshot.snapshot_sha256)
         self.assertEqual(len(glossary), 1)
         self.assertIn("type: Term", glossary[0].document)

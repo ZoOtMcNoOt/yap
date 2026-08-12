@@ -7,8 +7,13 @@ fn pending_deletion_resumes_after_audio_was_removed_before_a_crash() {
     let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
     recording.append_pcm16(&[1, 0]).unwrap();
     let capture = recording.finalize().unwrap();
-    save_finalized_capture_to_dir(&dir, &live_view(Some("resume me"), None), Some(capture))
-        .unwrap();
+    save_finalized_capture_to_dir(
+        &dir,
+        &live_view(Some("resume me"), None),
+        Some(capture),
+        &[],
+    )
+    .unwrap();
     let capture = recording::scan_recordings(&dir)
         .unwrap()
         .complete

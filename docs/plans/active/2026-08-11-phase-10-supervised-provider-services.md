@@ -1,11 +1,10 @@
 # Phase 10 supervised provider services
 
-**Status:** Active; Slice 10.1 merged through PR #155 and Slice 10.2 merged
-through PR #157. Slice 10.3's bounded admission substrate passed replacement
-qualification at exact protected head
-`7bd93dc624e6d8651dffc710026ca144909b2399` and the aggregate gate at
-`135cc2ba8534f41d91ff52cd6b6d366460c7b60f`; hosted review and application
-integration remain open.
+**Status:** Active; Slices 10.1, 10.2, and the bounded-admission foundation of
+Slice 10.3 merged through PRs #155, #157, and #158. The first authenticated
+application workflow, Scribe transcript correction, is implemented and passed
+its exact bilingual/eight-owner private qualification gate; hosted review and
+merge remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -112,16 +111,31 @@ claim simultaneous model residency, or publish a capacity/SLO result.
   [complete-roster plan](2026-08-11-eight-agent-voice-os-delivery.md); this
   infrastructure is not itself evidence that any persona has shipped.
 
-The current exact protected head `7bd93dc6...` supplies the Rust-owned request,
+Merged exact protected head `7bd93dc6...` supplies the Rust-owned request,
 priority, owner-fair queue, provider-generation, deadline, cancellation, Unix
 broker, and strict Python adapter foundation. It conservatively admits one
 active request per route and fails closed when its state owner fails. The unit
 does not start provider services and is installed without enable/start. Native
-HTTP endpoints and role execution are still absent, so Slice 10.3 is not yet
-complete. Replacement qualification admitted both routes; public-lock and
+HTTP product integration was absent at that head. Replacement qualification
+admitted both routes; public-lock and
 aggregate head `135cc2ba...` passed semantic admission, 169 portable tests,
 Ruff, 17 Postgres tests, real restart/retrieval/stale/successor proof, unchanged
-desktop scope, and exact teardown.
+desktop scope, and exact teardown. Hosted-green head `cf1e69a4...` then passed
+all 12 required checks and merged through PR #158 as `84d95842...`.
+
+The exact-qualified Scribe candidate is the first consumer of that merged admission
+owner. Native code acquires one authenticated connector lease, submits bounded
+finalized source-hashed segments to a Python HTTP workflow, and keeps bearer
+material out of the renderer and domain payload. Python binds the request to the
+rapid Scribe role, one immutable terminology snapshot, and one already-warm
+provider generation. One route-active slot, a 64-request global pending bound,
+a four-active-plus-pending per-owner bound, owner round robin, and queue-
+inclusive deadlines provide the current multi-user behavior. This is bounded
+fair scheduling, not simultaneous GPU execution or sustained-capacity evidence.
+Exact source-lock head `e5858424...` passed its 24-case bilingual/eight-owner
+private qualification gate with public-safe semantic evidence SHA-256
+`5e187ed4...`, one unchanged warm rapid generation, frozen correction benefit,
+raw fallback, and exact teardown. Hosted Scribe merge remains open.
 
 ### Slice 10.4 — simultaneous residency and capacity promotion
 
