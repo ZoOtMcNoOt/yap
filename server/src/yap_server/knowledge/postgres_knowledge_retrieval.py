@@ -10,6 +10,8 @@ from yap_server.auth.principal import PrincipalKey
 from .generation_ledger import serialize_embedding_vector
 from .knowledge_tool_contract import (
     MAX_STORAGE_RESULTS,
+    MAX_CONCEPT_ID_CHARACTERS,
+    validate_bounded_text,
     validate_integer,
     validate_search_text,
 )
@@ -61,6 +63,138 @@ class PostgresKnowledgeSearch:
     permission_hash: str
     authorization_hash: str
     results: tuple[PostgresKnowledgeSearchResult, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresKnowledgeEvidenceItem:
+    concept_id: str
+    source_revision: str
+    content_sha256: str
+    char_start: int
+    char_end: int
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresKnowledgeConceptEvidence:
+    generation_sha256: str
+    permission_hash: str
+    authorization_hash: str
+    concept_id: str
+    items: tuple[PostgresKnowledgeEvidenceItem, ...]
+    output_budget_exhausted: bool
+
+
+def read_postgres_knowledge_concept_evidence(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    purpose: str,
+    agent_capabilities: frozenset[str],
+    concept_id: str,
+    maximum_items: int = 10,
+    maximum_characters: int = 8_192,
+    expected_generation_sha256: str | None = None,
+) -> PostgresKnowledgeConceptEvidence:
+    """Read bounded visible chunks for one exact concept and active generation."""
+
+    validate_bounded_text(
+        concept_id,
+        field="knowledge evidence concept",
+        maximum=MAX_CONCEPT_ID_CHARACTERS,
+    )
+    validate_integer(
+        maximum_items,
+        minimum=1,
+        maximum=MAX_STORAGE_RESULTS,
+        field="knowledge evidence item limit",
+    )
+    validate_integer(
+        maximum_characters,
+        minimum=1,
+        maximum=1_000_000,
+        field="knowledge evidence character limit",
+    )
+    with connection.transaction():
+        query = _authorize_knowledge_query(
+            connection,
+            principal=principal,
+            purpose=purpose,
+            agent_capabilities=agent_capabilities,
+            required_capability="knowledge.search.lexical",
+            expected_generation_sha256=expected_generation_sha256,
+        )
+        if concept_id not in query.visible_concept_ids:
+            return PostgresKnowledgeConceptEvidence(
+                query.generation_sha256,
+                query.permission_hash,
+                query.authorization_hash,
+                concept_id,
+                (),
+                False,
+            )
+        rows = connection.execute(
+            """SELECT c.concept_id, b.source_revision, c.content_sha256,
+                      h.char_start, h.char_end, h.body
+               FROM yap_knowledge_chunks h
+               JOIN yap_knowledge_concepts c
+                 ON c.tenant_id = h.tenant_id
+                AND c.generation_sha256 = h.generation_sha256
+                AND c.concept_id = h.concept_id
+               JOIN yap_knowledge_builds b
+                 ON b.tenant_id = h.tenant_id
+                AND b.generation_sha256 = h.generation_sha256
+               WHERE h.tenant_id = %s AND h.generation_sha256 = %s
+                 AND h.concept_id = %s
+                 AND NOT EXISTS (
+                    SELECT 1
+                    FROM jsonb_array_elements_text(h.linked_concept_ids) link
+                    WHERE NOT (link = ANY(%s))
+                 )
+               ORDER BY h.char_start, h.chunk_id
+               LIMIT %s""",
+            (
+                query.tenant_id,
+                query.generation_sha256,
+                concept_id,
+                list(query.visible_concept_ids),
+                maximum_items + 1,
+            ),
+        ).fetchall()
+        output: list[PostgresKnowledgeEvidenceItem] = []
+        used = 0
+        exhausted = len(rows) > maximum_items
+        for row in rows[:maximum_items]:
+            item = PostgresKnowledgeEvidenceItem(
+                concept_id=str(row[0]),
+                source_revision=str(row[1]),
+                content_sha256=str(row[2]),
+                char_start=int(row[3]),
+                char_end=int(row[4]),
+                text=str(row[5]),
+            )
+            size = sum(
+                len(value)
+                for value in (
+                    item.concept_id,
+                    item.source_revision,
+                    item.content_sha256,
+                    item.text,
+                )
+            )
+            if used + size > maximum_characters:
+                exhausted = True
+                break
+            used += size
+            output.append(item)
+        return PostgresKnowledgeConceptEvidence(
+            query.generation_sha256,
+            query.permission_hash,
+            query.authorization_hash,
+            concept_id,
+            tuple(output),
+            exhausted,
+        )
 
 
 def list_postgres_knowledge_tree(
@@ -393,11 +527,14 @@ def _result_limit(maximum_results: int) -> None:
 
 
 __all__ = [
+    "PostgresKnowledgeConceptEvidence",
     "PostgresKnowledgeConcept",
+    "PostgresKnowledgeEvidenceItem",
     "PostgresKnowledgeSearchResult",
     "PostgresKnowledgeSearch",
     "PostgresKnowledgeTree",
     "list_postgres_knowledge_tree",
+    "read_postgres_knowledge_concept_evidence",
     "search_postgres_knowledge_hybrid",
     "search_postgres_knowledge_lexical",
     "search_postgres_knowledge_vector",
