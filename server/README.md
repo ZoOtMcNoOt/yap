@@ -737,9 +737,88 @@ checks passed. The executing correction authority is now exact
 server-authorized terminology replacement plus separately validated bounded
 model edits; protected facts remain immutable and uncertainty returns raw ASR.
 The [public verification record](../docs/evidence/scribe-transcript-correction/VERIFICATION.md)
-contains the exact hashes, counts, and limits. Hosted review and merge remain
-open. This result does not prove simultaneous Qwen/Gemma residency, sustained
-mixed-route capacity, production SLOs, or the other seven role workflows.
+contains the exact hashes, counts, and limits. Hosted review and merge closed
+through PR #164. This result does not prove simultaneous Qwen/Gemma residency, sustained
+mixed-route capacity, production SLOs, or completion of the remaining role workflows.
+
+## Student learning questions
+
+The Student core is an internal `BACKGROUND_LLM` consumer of the already-warm
+rapid route. Its runtime builder is enabled only in authenticated team mode;
+each invocation receives one server-derived principal. The workflow reads one
+owner-scoped, permission-safe admitted conversation generation, freezes its
+exact evidence/citation tuples, and returns bounded source-supported learning
+questions. Caller-authored source text, another owner's evidence, direct
+knowledge mutation, proposal writes, and generation activation are rejected.
+
+Student submits a bounded request through the same owner-fair broker. Its
+queue-inclusive deadline is 60 seconds and its model output cap is 512 tokens.
+It neither starts nor swaps a model. Student does not reduce the pinned full
+Qwen rapid profile: GPU-memory utilization remains `0.40`, with four maximum
+sequences and 8,192 maximum batched tokens. Invalid output, cancellation,
+deadline, provider loss, cross-owner access, stale source identity, and audit
+failure are terminal and publish no successful result.
+
+The current repair replaces caller-controlled target-question text with a
+bounded topic. The model sees only ordered evidence indexes and text and must
+return exactly one source subject, one evidence index, and one exact support
+quote. The server validates the index, binds the frozen evidence and complete
+citation identity, derives the support span, and alone renders the fixed
+learning-question template. The model cannot create citation identity, rewrite
+the selected subject, or write question wording. The focused set is green at
+34 total tests: 32 passed and two were declared database skips. The current
+successor also passed the complete portable server suite at 1,241 total tests:
+1,207 passed and 34 were declared skips. Exact head
+`428d6e48690621cc2242944c049e06ccfd2e45e2` then returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`f597cca728d261caad66d6629332c76ffd900bc78f6be20aa7bb0c849275ebe8`.
+All eight distinct owners completed with one grounded question each and zero
+terminal failures. The full warm profile, provider generation, broker,
+PostgreSQL restart/cross-owner/audit boundaries, and six-part teardown remained
+exact. This proves the bounded internal core, not product exposure or sustained
+capacity; hosted review and merge remain pending.
+
+Exact head `0970d74c7961a63bd1b2366bc0ecef6b5fc55714` returned terminal
+`deterministic-no-student` evidence with public-safe SHA-256
+`316631d593e51477d855ed146e2a5bea49eec236b0753655bdd4814a20a0cb99`.
+Seven of eight cases completed and one failed closed. The warm full profile,
+broker/wave, PostgreSQL boundaries, and teardown held. A bounded diagnostic
+showed a topic-derived subject absent from the selected exact quote/evidence;
+the server rejected it. The prompt now explicitly forbids that promotion and
+requires an exact contiguous subject-inside-quote-inside-evidence chain. No raw
+response or measurement is published, and the receipt is not reused.
+
+Exact head `476f7a9c38287f8c6ba08cd9be4a70addabe3069` returned terminal
+`deterministic-no-student` evidence with public-safe SHA-256
+`9c2f68ffe411d1333c6799158fa28db30ffa0ced6359eb9f291528ded4c0d0d4`.
+Six of eight cases completed and two failed closed. The unchanged full warm
+profile, provider generation, broker, synchronized eight-owner queue wave,
+PostgreSQL restart, cross-owner and audit boundaries, and exact teardown held.
+The receipt is inadmissible for the evidence-index successor and is not reused.
+
+Exact head `452c8b76a9a60681a962048caed12749e8bb80d0` originally returned
+`student-learning-questions-qualified` with public-safe SHA-256
+`3e1ddc61bf0c8d009a25b06ef261f0b6f7dcd8d7c1f58eeb666ba31e98420c41`,
+but post-gate adversarial review proved that it could publish an unsupported
+question premise beside an unrelated exact citation. Its corpus also embedded
+each target question in the caller-controlled focus. That receipt is terminal
+and inadmissible even though its warm-provider, broker, PostgreSQL restart,
+cross-owner, audit, and teardown observations remain historical facts.
+
+Exact predecessor `ffe9088573a1a8453a3cb529f1fc62c8ef9d7dda` remains terminal
+`deterministic-no-student` evidence with public-safe SHA-256
+`bc65dd55dc3c751caa340312fc6435beba5ba0c0d7a2fa43e323297cadf32c3d`.
+One case failed closed after altering a citation span. Neither historical run
+is reused. The current repair changes no model, full profile, output cap, retry
+behavior, queue bound, timeout, or acceptance threshold.
+
+The [public verification record](../docs/evidence/student-learning/VERIFICATION.md)
+contains the exact public-safe identities and limits. Student still has no HTTP
+endpoint, native adapter, renderer/UI workflow, hosted merge, or production
+promotion. A second owned GPU node/private route remains required before both
+unchanged full Qwen and Gemma services can be kept warm together. Student does
+not reduce the pinned full profile, and request-time model swapping remains
+prohibited.
 
 ## Local checks
 

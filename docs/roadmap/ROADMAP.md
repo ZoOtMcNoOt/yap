@@ -238,9 +238,16 @@ source-lock head `e5858424...` passed the 24-case bilingual/eight-owner private
 qualification gate with public-safe semantic evidence SHA-256 `5e187ed4...`,
 correction benefit, exact raw fallback, one stable warm rapid generation, and
 zero residue. Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164
-merged it as `ec3af506...`. Exact unmerged Archivist candidate `3ec9885e...`
-has focused portable/real-PostgreSQL evidence; Student, Curator, product
-exposure, and the other six roles remain open. One Spark cannot retain both
+merged it as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks
+and PR #165 merged the no-LLM Archivist core as `2a7ec819...`. Student's
+topic-copy prompt repair is complete-portable-test green on the unchanged full
+Qwen rapid profile at 1,241 tests (1,207 passed and 34 declared skips). Exact
+head `428d6e48...` then returned `student-learning-questions-qualified` with
+public-safe evidence SHA-256 `f597cca7...`; exact `0970d74c...` remains terminal
+`deterministic-no-student`. Student hosted
+review/product exposure and the five remaining workflows (Curator, Auditor,
+Librarian, Analyst, and Coordinator) remain open. One
+Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a
 second owned GPU node/private routing rather than throttling or model swapping.
 Sustained mixed-owner route-specific capacity and p95/p99 evidence,

@@ -10,8 +10,8 @@ from unittest import mock
 from yap_server.agents.transcript_correction_terminology import (
     PersonalOrganizationTerminologyMemberships,
     PostgresTranscriptCorrectionTerminologyResolver,
-    read_private_postgres_dsn,
 )
+from yap_server.private_postgres_connection import read_private_postgres_dsn
 from yap_server.agents.transcript_correction_service import (
     TranscriptCorrectionTerminologyUnavailable,
 )

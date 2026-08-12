@@ -19,6 +19,12 @@ _IMAGE_SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 _NAME = re.compile(r"^[a-z0-9][a-z0-9.-]{0,63}$")
 _CONTAINER_NAME = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,127}$")
 _MAX_DOCUMENT_BYTES = 1_048_576
+RAPID_AUTOMATION_PROFILE_SHA256 = (
+    "14712e6951802daaae323a3a7d69e78a8b3d5ac32ad52cbd0f546df327649da8"
+)
+COMPLEX_ORCHESTRATION_PROFILE_SHA256 = (
+    "cccc330793d1fb32989cf5822da00f96a02dd198dbb4229cd9f5d1c4ca0c3d1c"
+)
 _COMMON_PROFILE_KEYS = {
     "schemaVersion",
     "profileId",
@@ -275,6 +281,34 @@ def load_agent_vllm_service_profile(
     return loaded
 
 
+def load_rapid_agent_vllm_service_profile(
+    profile_path: Path,
+    candidate_lock_path: Path,
+) -> AgentVllmServiceProfile:
+    profile = load_agent_vllm_service_profile(
+        profile_path,
+        candidate_lock_path,
+        expected_profile_sha256=RAPID_AUTOMATION_PROFILE_SHA256,
+    )
+    if profile.profile_id != "rapid-automation":
+        raise ValueError("rapid automation service profile differs")
+    return profile
+
+
+def load_complex_agent_vllm_service_profile(
+    profile_path: Path,
+    candidate_lock_path: Path,
+) -> AgentVllmServiceProfile:
+    profile = load_agent_vllm_service_profile(
+        profile_path,
+        candidate_lock_path,
+        expected_profile_sha256=COMPLEX_ORCHESTRATION_PROFILE_SHA256,
+    )
+    if profile.profile_id != "complex-orchestration":
+        raise ValueError("complex orchestration service profile differs")
+    return profile
+
+
 def _resources(value: object) -> AgentContainerResources:
     if not isinstance(value, dict) or set(value) != _RESOURCE_KEYS:
         raise ValueError("agent service resource policy differs")
@@ -368,5 +402,9 @@ def _integer(
 __all__ = [
     "AgentContainerResources",
     "AgentVllmServiceProfile",
+    "COMPLEX_ORCHESTRATION_PROFILE_SHA256",
+    "RAPID_AUTOMATION_PROFILE_SHA256",
     "load_agent_vllm_service_profile",
+    "load_complex_agent_vllm_service_profile",
+    "load_rapid_agent_vllm_service_profile",
 ]

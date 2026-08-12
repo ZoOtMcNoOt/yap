@@ -1,9 +1,14 @@
 # Phase 10 supervised provider services
 
-**Status:** Active; Slices 10.1, 10.2, the bounded-admission foundation, and
-Scribe transcript correction merged through PRs #155, #157, #158, and #164.
-The no-LLM Archivist core is focused-green; later workflows, simultaneous
-full-profile capacity, and production promotion remain open.
+**Status:** Active; Slices 10.1, 10.2, the bounded-admission foundation, Scribe
+transcript correction, and the no-LLM Archivist core merged through PRs #155,
+#157, #158, #164, and #165. Student's topic-copy prompt repair is
+complete-portable-test green and privately qualified at exact `428d6e48...` on
+the unchanged full Qwen profile, with public-safe evidence SHA-256
+`f597cca7...`. Exact `0970d74c...` remains terminal
+`deterministic-no-student`. Hosted
+merge/product exposure, later workflows, simultaneous full-profile capacity,
+and production promotion remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from

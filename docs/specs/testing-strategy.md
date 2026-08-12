@@ -499,16 +499,20 @@ The supported-load callback test runs 48 kHz stereo capture converted to the req
 
 ## 4. CI matrix (pinned native runtimes)
 
-The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/sherpa path and `llama-server` per OS.
+The active native-runtime CI requirement is the pinned Nemotron/sherpa path.
+The `llama-server` columns below preserve the historical solo/local design only;
+they are not current team Scribe acceptance criteria. Team correction and agent
+routes are instead qualified against their exact authenticated server profiles.
 
-| OS | Nemotron live smoke | llama-server smoke | E2E |
+| OS | Nemotron live smoke | Historical local LLM study | E2E |
 |----|----------------|--------------------|-----|
-| Windows x64 | ✅ profiler + fixture | ✅ 1 completion | ✅ |
-| macOS arm64 | ✅ | ✅ | ✅ |
-| macOS x64 | if retained | if retained | — |
-| Linux x64 | best-effort | best-effort | — |
+| Windows x64 | ✅ profiler + fixture | not active | ✅ |
+| macOS arm64 | ✅ | not active | ✅ |
+| macOS x64 | if retained | not active | — |
+| Linux x64 | best-effort | not active | — |
 
-- Versions pinned in `desktop/src-tauri/src/stt/nemotron.rs` and `desktop/llama-model.txt` (+ llama.cpp build hash).
+- Nemotron versions are pinned in the executing native/runtime lock owners. A
+  future local LLM product would require its own new lock and gate.
 - Smoke = run `nemotron_profile` against one fixture, assert non-empty output + real-time factor under gate. Catches breaking changes on upgrade ([ADR 0019](../adr/0019-local-streaming-model-selection.md)).
 
 ---
@@ -524,8 +528,8 @@ The risk is **native runtimes**, not app logic. CI must run the pinned Nemotron/
 | 6 Preprocessing | versioned provider/language/timing catalog; primary/per-job choice; mixed-session rejection; track-aware content IDs; exact gaps; bounded windows; advisory VAD/source preservation; verify-only AmberNet five-region strict-agreement/manual gate including exact long-tail selection; fixed/dynamic routing; durable stage restart/cancel/retry; fail-closed aligned words; model/license locks; AMD64/ARM64 frontend parity plus checked-head GB10 resource/accuracy/teardown evidence |
 | 7 Identity/access | Yap API token audience, `(tid, oid)` isolation, consent and withdrawal, profile-version compatibility |
 | 8 Meeting evidence | local one/two/overlap/short/noisy anonymous evidence; pinned Tiron historical eight-window/eight-global reproduction; one integrated source-time epoch route; messy-meeting public comparators plus independent holdout; 1–8 and over-capacity window pressure; >15-attendee/small-active-subset and 9/16/32-talker cross-epoch cases; stable result revisions; bounded clusters; no local names or persistent embeddings |
-| 9 Knowledge/agents | Google OKF conformance, permission-safe projection, citation-required Analyst, three-strike Student, RAG confidence floor |
-| 10 Enterprise/release | authenticated multi-owner fairness/no-starvation; bounded overload/backpressure; cancellation and timeout isolation; restart recovery; fixed worker/memory ceilings; sustained mixed live/batch p50/p95 latency, throughput, and queue-age evidence on GB10; approved network/policy evidence; deployment rollback; publication governance; repo-boundary checks |
+| 9 Knowledge/agents | Google OKF conformance, permission-safe projection, exact cited answers and governed tools, RAG confidence floor |
+| 10 Enterprise/release | authenticated multi-owner fairness/no-starvation; bounded overload/backpressure; cancellation and timeout isolation; restart recovery; fixed worker/memory ceilings; source-bound roster-workflow qualification; sustained mixed live/batch p50/p95 latency, throughput, and queue-age evidence on GB10; approved network/policy evidence; deployment rollback; publication governance; repo-boundary checks |
 
 ---
 

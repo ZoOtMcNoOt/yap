@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; service profiles, bounded admission, and Scribe merged; Archivist core focused-green; remaining workflows and promotion pending
+**Status:** Accepted target; service profiles, bounded admission, Scribe, and Archivist merged; Student privately qualified and awaiting hosted merge; remaining workflows and promotion pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -30,10 +30,16 @@ publication, visible diff, and raw-ASR fallback. Exact source-lock head
 with public-safe semantic evidence SHA-256 `5e187ed4...`, correction benefit,
 one stable warm rapid generation, bounded raw fallback, and exact teardown.
 Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged it as
-`ec3af506...`. Exact unmerged Archivist candidate `3ec9885e...` now supplies the
-no-LLM reviewed-source compilation/staging core with focused portable and real
-PostgreSQL evidence. Student, Curator, product exposure, and the other six named
-roles remain pending.
+`ec3af506...`. Hosted-green head `e1899db7...` then passed all 12 checks and PR
+#165 merged the no-LLM Archivist reviewed-source compilation/staging core as
+`2a7ec819...`. Student's bounded learning-question workflow now has a
+complete-portable-test-green topic-copy prompt repair on the already-warm full Qwen
+rapid route. Exact `428d6e48...` returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`f597cca7...`; exact predecessor `0970d74c...` remains terminal
+`deterministic-no-student`. Hosted merge and product exposure remain open.
+The five remaining workflows—Curator, Auditor, Librarian, Analyst, and
+Coordinator—remain pending.
 
 Calling the foundations "the agent team" would be incorrect. Conversely,
 implementing eight unrelated prompts would duplicate authority, bypass
@@ -177,12 +183,49 @@ SHA-256 `5e187ed4...`; all correction-benefit, preservation, raw-fallback,
 latency, warm-generation, broker, database, and teardown checks passed. The
 exact rejected attempts remain terminal evidence and were not reused.
 Hosted-green head `bc9a88bc...` then merged Scribe through PR #164 as
-`ec3af506...`. Exact unmerged Archivist candidate `3ec9885e...` consumes only a
+`ec3af506...`. Exact Archivist source candidate `3ec9885e...` consumes only a
 durable owner-scoped reviewed capture, compiles/stages deterministically without
 an LLM or activation, and passed focused portable plus real PostgreSQL
-restart/idempotency/cross-owner/cancellation/teardown evidence. Warm simultaneous
-residency, Student/Curator and the other six product workflows, sustained
-multi-owner capacity, and production promotion remain open.
+restart/idempotency/cross-owner/cancellation/teardown evidence. Hosted-green
+head `e1899db7...` merged it through PR #165 as `2a7ec819...`.
+
+Exact Student candidate `452c8b76...` originally returned
+`student-learning-questions-qualified` with public-safe semantic evidence
+SHA-256 `3e1ddc61...`. It recorded one synchronized eight-owner wave, unchanged
+warm-provider generation and broker identity, real PostgreSQL restart/cross-
+owner/audit proof, exact teardown, and the unchanged full Qwen rapid profile.
+Post-gate adversarial review then proved that caller-controlled focus text could
+provide the target question and that an unsupported premise could pass beside
+an unrelated exact citation. That receipt is terminal and inadmissible.
+
+The repaired contract accepts bounded topic text as untrusted context. The
+model sees ordered evidence indexes and text and returns exactly one source
+subject, evidence index, and support quote; the server selects the frozen
+evidence object, binds its complete citation, derives the span, and alone
+renders the fixed question template. The prompt now requires an exact
+contiguous subject-inside-quote-inside-evidence chain and forbids promoting
+topic text that does not occur there. The repair is complete-portable-test green and retains
+`0.40` GPU-memory utilization,
+four maximum sequences, 8,192 maximum batched tokens, and a 512-token Student
+output cap. It adds no request-time launch, model swap, source mutation,
+proposal write, knowledge activation, retry, or threshold relaxation. Exact
+predecessor `0970d74c...` ran 1,241 portable tests (1,207 passed and 34
+declared skips) but then returned terminal `deterministic-no-student` with
+public-safe evidence SHA-256 `316631d5...`: seven of eight cases completed,
+and one unsupported subject failed closed. Its evidence is not reused. The
+earlier `ffe90885...` failure is also terminal and not reused. Exact
+`428d6e48...` then passed private qualification with public-safe evidence
+SHA-256 `f597cca7...`: all eight owners completed with one grounded question
+each and zero terminal failures; the unchanged full warm profile and broker,
+PostgreSQL restart/cross-owner/durable audits, and six-part teardown held. This
+does not prove product exposure or sustained capacity. Exact
+`476f7a9c...` returned terminal `deterministic-no-student` with public-safe
+evidence SHA-256 `9c2f68ff...`; six of eight cases completed while the warm
+provider/broker, queue wave, database boundaries, and teardown held. Hosted
+merge, product exposure, warm simultaneous two-route
+residency, the five remaining workflows (Curator, Auditor, Librarian, Analyst,
+and Coordinator), sustained multi-owner capacity,
+and production promotion remain open.
 
 ## Consequences
 

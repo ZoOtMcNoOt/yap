@@ -896,9 +896,14 @@ unconfigured.
 
 - PRs #155/#157/#158 merged Yap-owned Rust supervision, exact Qwen/Gemma
   profiles, and already-warm owner-fair admission. Qualified Scribe is the first
-  authenticated consumer and merged through PR #164 as `ec3af506...`. Exact
-  unmerged Archivist head `3ec9885e...` is focused-green; Student, Curator,
-  product exposure, and the other six role workflows remain open.
+  authenticated consumer and merged through PR #164 as `ec3af506...`. PR #165
+  merged the no-LLM Archivist core as `2a7ec819...`. Student's source-grounding
+  topic-copy prompt repair is complete-portable-test green and privately
+  qualified at exact `428d6e48...` on the unchanged full Qwen rapid profile,
+  with public-safe evidence SHA-256 `f597cca7...`. Exact `0970d74c...` remains
+  terminal `deterministic-no-student`. Student hosted merge/product exposure and the five
+  remaining workflows (Curator, Auditor, Librarian, Analyst, and Coordinator)
+  remain open.
 - Integrate the remaining provider-specific ASR and vLLM agent/LLM workflows
   with Yap-owned Rust orchestration, health, backpressure, cancellation,
   restart, and metrics.

@@ -1,19 +1,21 @@
 # Complete eight-agent Voice OS delivery
 
 **Status:** Active; Slices A and B merged through PRs #157/#158. Slice C Scribe
-merged through PR #164 as `ec3af506da68bbb7a0ce855369dd09c8a791742d`
-after its exact bilingual/multi-owner qualification gate and all 12 hosted
-checks passed. The Archivist core in Slice D is implemented and focused-green;
-Student, Curator, shared product integration, simultaneous-capacity evidence,
-and later role slices remain open.
+merged through PR #164. Slice D Archivist merged through PR #165 as
+`2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`. Student's topic-copy prompt
+repair is privately qualified at exact `428d6e48...` on the unchanged full Qwen
+rapid profile; hosted review/merge,
+Curator, shared product
+integration, simultaneous-capacity evidence, and later role slices remain
+open.
 
-**Current branch:** `agent/phase10-archivist` for the first Slice D workflow.
+**Current branch:** `agent/phase10-student` for the second Slice D workflow.
 Later slices use focused branches and merge only after their exact heads are
 reviewed and hosted-green.
 
-**Base:** merged Scribe slice at
-`ec3af506da68bbb7a0ce855369dd09c8a791742d` from hosted-green head
-`bc9a88bc3d3ee3fd767dbfee1497b6bc61733ce6` and PR #164.
+**Base:** merged Archivist slice at
+`2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9` from hosted-green head
+`e1899db7312643a32ae67cfdf196aa3c1d40a298` and PR #165.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -172,7 +174,8 @@ bounded and uncertainty returns raw ASR. See the
 Hosted-green head `bc9a88bc3d3ee3fd767dbfee1497b6bc61733ce6`
 passed all 12 required checks and PR #164 merged Scribe as
 `ec3af506da68bbb7a0ce855369dd09c8a791742d`. Production/capacity promotion
-and the other seven workflows remain open.
+remained open; Archivist later merged and Student's first nominally green
+receipt was invalidated by adversarial review as recorded below.
 
 Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` is terminal
 rejected evidence, not a resumable attempt. Its public-safe decision SHA-256 is
@@ -260,7 +263,7 @@ successor is the exact qualified head recorded above.
 - [ ] Prove restart read-back, duplicate/idempotent transitions, cross-owner
   rejection, cancellation, invalid output, and no-success-after-failure audit.
 
-Exact Archivist candidate `3ec9885ee902926f3f7672d2438e1da23c18c284`
+Exact Archivist source candidate `3ec9885ee902926f3f7672d2438e1da23c18c284`
 adds a dedicated BACKGROUND_IO workflow with no LLM. It reads only an
 owner-scoped durable reviewed capture, compiles in an owner-private temporary
 workspace, re-reads the source before one admission/staging transaction, and
@@ -270,9 +273,68 @@ content fails closed. The complete 1,207-test portable server suite passed with
 32 declared platform/database skips, focused Archivist tests passed, Ruff and
 diff checks passed, and two real PostgreSQL tests proved exact retry/restart
 read-back, cross-owner rejection, pre-cancel no-write behavior, zero active
-generation, and all six owned-runtime teardown predicates. This is focused
-workflow evidence, not hosted merge, product endpoint/UI, or aggregate Slice D
-closure. See the [public verification record](../../evidence/archivist-ingestion/VERIFICATION.md).
+generation, and all six owned-runtime teardown predicates. Hosted-green head
+`e1899db7312643a32ae67cfdf196aa3c1d40a298` then passed all 12 required checks
+and PR #165 merged Archivist as
+`2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`. This is a merged internal core,
+not a product endpoint/UI or aggregate Slice D closure. See the
+[public verification record](../../evidence/archivist-ingestion/VERIFICATION.md).
+
+Student adds one internal BACKGROUND_LLM workflow on the already-warm rapid
+route. It reads one owner-scoped, permission-safe admitted conversation
+generation and asks the unchanged full Qwen profile for bounded learning
+questions. The repaired contract accepts bounded topic text as untrusted
+context. The model sees ordered evidence indexes and text and returns exactly
+one source subject, evidence index, and support quote. The server binds the
+frozen evidence and complete citation identity, derives its span, and alone
+renders the fixed question template. The model cannot write question wording,
+source, proposals, or knowledge. The prompt explicitly rejects topic-derived
+subjects absent from the selected quote/evidence. The current focused set runs
+34 total tests: 32 pass and two are declared database skips. The protected
+successor also passed 1,241 portable tests (1,207 passed and 34 declared skips).
+
+Exact head `452c8b76a9a60681a962048caed12749e8bb80d0` originally returned
+`student-learning-questions-qualified` with public-safe semantic evidence
+SHA-256 `3e1ddc61...`, but adversarial review proved that its focus could supply
+a target question and that an unsupported premise could pass beside an
+unrelated exact citation. That receipt is terminal and inadmissible. The
+current repair retained the full rapid profile (GPU-memory utilization `0.40`,
+four maximum sequences, 8,192 maximum batched tokens) and a 512-token Student
+output cap; no model launch, swap, substitute, resource reduction, retry, or
+threshold relaxation was added. Exact head `428d6e48...` passed private
+qualification before hosted merge or product exposure. See the
+[public verification record](../../evidence/student-learning/VERIFICATION.md).
+
+The earlier predecessor `ffe9088573a1a8453a3cb529f1fc62c8ef9d7dda` is terminal
+`deterministic-no-student` evidence with public-safe SHA-256
+`bc65dd55dc3c751caa340312fc6435beba5ba0c0d7a2fa43e323297cadf32c3d`.
+Seven cases completed and one failed closed after altering a citation span.
+No failed or invalidated evidence is reused.
+
+Exact head `476f7a9c38287f8c6ba08cd9be4a70addabe3069` returned terminal
+`deterministic-no-student` with public-safe evidence SHA-256
+`9c2f68ffe411d1333c6799158fa28db30ffa0ced6359eb9f291528ded4c0d0d4`.
+Six of eight cases completed and two failed closed while the unchanged warm
+profile/provider, broker, synchronized eight-owner wave, PostgreSQL boundaries,
+and exact teardown held. It is inadmissible for the protected evidence-index
+successor and is not reused.
+
+Exact head `0970d74c7961a63bd1b2366bc0ecef6b5fc55714` returned terminal
+`deterministic-no-student` with public-safe evidence SHA-256
+`316631d593e51477d855ed146e2a5bea49eec236b0753655bdd4814a20a0cb99`.
+Seven of eight cases completed and one unsupported topic-derived subject failed
+closed while the full warm profile, broker/wave, PostgreSQL boundaries, and
+teardown held. No raw output or measurement is published, and the receipt is
+not reused.
+
+Exact head `428d6e48690621cc2242944c049e06ccfd2e45e2` returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`f597cca728d261caad66d6629332c76ffd900bc78f6be20aa7bb0c849275ebe8`.
+All eight distinct owners completed with one grounded question each and zero
+terminal failures. The unchanged full warm profile, provider generation,
+admission broker, synchronized eight-owner queue wave, PostgreSQL
+restart/cross-owner/durable audits, and exact six-part teardown held. This is
+internal-core qualification, not product exposure or sustained capacity.
 
 ## Slice E — knowledge and coordination agents
 

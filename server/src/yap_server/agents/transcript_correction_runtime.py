@@ -7,7 +7,10 @@ from typing import Mapping
 from yap_server.knowledge.vllm_reasoning_client import BoundedVllmJsonClient
 from yap_server.pools.agent_vllm_service_profile import (
     AgentVllmServiceProfile,
-    load_agent_vllm_service_profile,
+    load_rapid_agent_vllm_service_profile,
+)
+from yap_server.private_postgres_connection import (
+    private_postgres_connection_factory,
 )
 
 from .admission_client import AgentAdmissionClient
@@ -17,7 +20,6 @@ from .transcript_correction_service import TranscriptCorrectionService
 from .transcript_correction_terminology import (
     PersonalOrganizationTerminologyMemberships,
     PostgresTranscriptCorrectionTerminologyResolver,
-    postgres_connection_factory_from_private_dsn,
 )
 
 
@@ -35,9 +37,6 @@ TRANSCRIPT_CORRECTION_KNOWLEDGE_DSN_FILE = (
 
 _WARM_QWEN = "warm_qwen"
 _DISABLED = "disabled"
-_RAPID_PROFILE_SHA256 = (
-    "14712e6951802daaae323a3a7d69e78a8b3d5ac32ad52cbd0f546df327649da8"
-)
 _MODEL_TIMEOUT_SECONDS = 55
 _MAXIMUM_RESPONSE_BYTES = 1_048_576
 _MAXIMUM_OUTPUT_TOKENS = 512
@@ -121,7 +120,7 @@ def build_transcript_correction_runtime(
         maximum_output_tokens=_MAXIMUM_OUTPUT_TOKENS,
     )
     terminology = PostgresTranscriptCorrectionTerminologyResolver(
-        connection_factory=postgres_connection_factory_from_private_dsn(
+        connection_factory=private_postgres_connection_factory(
             knowledge_dsn_path
         ),
         memberships=PersonalOrganizationTerminologyMemberships(),
@@ -147,13 +146,10 @@ def load_transcript_correction_service_profile(
 ) -> AgentVllmServiceProfile:
     """Load the one qualified already-warm route Scribe is allowed to use."""
 
-    profile = load_agent_vllm_service_profile(
+    profile = load_rapid_agent_vllm_service_profile(
         profile_path,
         candidate_lock_path,
-        expected_profile_sha256=_RAPID_PROFILE_SHA256,
     )
-    if profile.profile_id != "rapid-automation":
-        raise ValueError("transcript correction requires the rapid automation route")
     return profile
 
 

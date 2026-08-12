@@ -32,6 +32,7 @@ describe("dependency audit retry policy", () => {
 
     expect(workspace.auditConfig).toBeUndefined();
     expect(workspace.overrides).toMatchObject({
+      "@puppeteer/browsers": "3.2.0",
       "brace-expansion@1": "1.1.18",
       "brace-expansion@2": "2.1.4",
       postcss: "8.5.23",

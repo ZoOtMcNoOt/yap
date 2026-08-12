@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "qualificationScope": "student-learning-questions",
+  "minimumCaseCount": 8,
+  "minimumOwnerCount": 8,
+  "concurrentRequestCount": 8,
+  "minimumQuestionsPerCase": 1,
+  "maximumQuestionsPerCase": 1,
+  "minimumRequiredTermCoverageRate": 1.0,
+  "maximumForbiddenTermHitCount": 0,
+  "maximumOutputBudgetExhaustedCount": 0,
+  "maximumTerminalFailureCount": 0,
+  "maximumP95LatencyMilliseconds": 30000
+}

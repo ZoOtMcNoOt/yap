@@ -10,10 +10,15 @@ native/server workflow to consume that merged boundary and passed its complete
 private qualification gate with public-safe semantic evidence SHA-256
 `5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
 Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged Scribe
-as `ec3af506...`. Exact unmerged Archivist candidate `3ec9885e...` is the first
-remaining role core and has focused portable/real-PostgreSQL evidence. Later
-Phase 10 roles, product exposure, and capacity/operations layers are not part
-of the merged baseline. Phase 7
+as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks and PR
+#165 merged the no-LLM Archivist ingestion core as `2a7ec819...`. The current
+Student topic-copy prompt repair is complete-portable-test green and privately
+qualified at exact head `428d6e48...` on the unchanged full Qwen rapid profile,
+with public-safe evidence SHA-256 `f597cca7...`. Hosted merge and product
+exposure remain open; exact predecessor `0970d74c...` remains terminal
+`deterministic-no-student` evidence.
+Later Phase 10 roles and capacity/operations layers are not part of the merged
+baseline. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -1007,12 +1012,69 @@ one unchanged warm rapid generation, broker identity, database teardown, and
 zero owned residue. See the
 [public verification record](../evidence/scribe-transcript-correction/VERIFICATION.md).
 
+The merged Archivist core is the no-LLM source-admission workflow. It accepts
+only one authenticated owner-scoped durable reviewed-capture identity, re-reads
+that exact source, compiles deterministic OKF projections in an owner-private
+temporary workspace, and commits source admission plus one staged generation
+in one transaction. It neither embeds nor activates knowledge. Exact retry is
+idempotent only when the durable admission and complete persisted non-embedding
+generation still match. Exact source candidate `3ec9885e...` passed the complete
+portable server suite plus real PostgreSQL retry/restart/cross-owner/cancel and
+zero-residue checks; hosted-green head `e1899db7...` passed all 12 checks and PR
+#165 merged the core as `2a7ec819...`. It has no HTTP/native/UI exposure.
+
+The unmerged Student core is a separate BACKGROUND_LLM workflow on the rapid
+route. It reads one authenticated owner-scoped permission-safe conversation
+generation, accepts only bounded topic text, and requests bounded learning
+questions. The model sees ordered evidence indexes and text and returns exactly
+one source subject, one evidence index, and one exact support quote. The server
+validates the index, binds the frozen evidence and complete citation identity,
+derives the support span, and alone renders the fixed question template. It
+cannot mutate the source, write proposals, or activate knowledge.
+
+Exact candidate `476f7a9c...` returned terminal `deterministic-no-student`
+with public-safe evidence SHA-256 `9c2f68ff...`. Six of eight cases completed
+and two failed closed while the unchanged warm-provider/profile, broker,
+synchronized eight-owner queue wave, PostgreSQL restart/cross-owner/audit
+checks, and exact teardown held. The evidence-index successor changes protected
+inputs, so that receipt is inadmissible and not reused.
+
+Exact successor `0970d74c...` also returned terminal
+`deterministic-no-student` with public-safe evidence SHA-256
+`316631d5...`: seven of eight cases completed, one failed closed, and the
+warm-profile, broker, queue-wave, database, and teardown evidence held. A
+bounded diagnostic found a topic-derived source subject absent from the
+selected quote/evidence; the server rejected it. The current prompt explicitly
+forbids that promotion and requires the exact contiguous subject/quote/evidence
+chain. The receipt is terminal and not reused.
+
+Exact candidate `452c8b76...` originally returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`3e1ddc61...`, but post-gate adversarial review proved that its caller-controlled
+focus could supply a target question and that an unrelated exact citation could
+authorize an unsupported premise. That receipt is terminal and inadmissible.
+The current focused set runs 34 total tests: 32 pass and two are declared
+database skips. The current prompt/test successor also passed 1,241 portable
+tests (1,207 passed and 34 declared skips). The
+workload still preserves the full Qwen rapid profile (`0.40` GPU-memory
+utilization, four maximum sequences, 8,192 maximum batched tokens) and a
+512-token Student output cap; neither the workflow nor its gate launches,
+swaps, substitutes, or reduces a model. Exact head `428d6e48...` returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`f597cca7...`: all eight owners completed, the unchanged warm profile and broker
+held, PostgreSQL restart/cross-owner/durable audits were exact, and six-part
+teardown completed. Hosted merge remains open. See the
+[public verification record](../evidence/student-learning/VERIFICATION.md).
+
 The current multi-user contract is one warm Qwen rapid lane with owner-fair
 queueing, not eight parallel GPU sequences: one active request per route, 64
-global pending, four active-plus-pending per owner, round-robin owners, and a
-queue-inclusive 60-second Scribe deadline. Private qualification synchronizes
-eight distinct owners through that warm generation. Simultaneous route
-residency, sustained multi-owner capacity/fairness, production p95/p99,
+global pending, four active-plus-pending per owner, round-robin owners, and
+queue-inclusive workflow deadlines. Private Scribe and exact `428d6e48...`
+Student qualification each synchronized eight distinct owners through that
+warm generation; neither proves eight parallel GPU executions or sustained
+capacity.
+Simultaneous route residency, sustained multi-owner capacity/fairness,
+production p95/p99,
 observability, and deployment remain later gates. If one node cannot satisfy
 the simultaneous evidence, the exact services require separate owned nodes,
 not fallback or per-request model swapping.

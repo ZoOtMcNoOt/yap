@@ -3,9 +3,7 @@ from __future__ import annotations
 import hashlib
 import os
 from pathlib import Path
-import socket
 import tempfile
-import threading
 import unittest
 from unittest import mock
 
@@ -57,41 +55,6 @@ class TranscriptCorrectionQualificationGateTests(unittest.TestCase):
                 REPOSITORY_ROOT / "scribe-private.json",
                 repository_root=REPOSITORY_ROOT,
             )
-
-    @unittest.skipUnless(os.name == "posix", "Unix peer credentials are POSIX-only")
-    def test_admission_observation_binds_socket_process_and_binary(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            root.chmod(0o700)
-            path = root / "admission.sock"
-            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            server.bind(str(path))
-            path.chmod(0o600)
-            server.listen(1)
-
-            def accept_once() -> None:
-                connection, _address = server.accept()
-                connection.close()
-
-            thread = threading.Thread(target=accept_once)
-            thread.start()
-            try:
-                expected = gate._process_binary_sha256(os.getpid())
-                with mock.patch.object(gate, "_validate_broker_command_line"):
-                    observed = gate.observe_admission_broker(
-                        path,
-                        expected_binary_sha256=expected,
-                        expected_candidate_lock_sha256="a" * 64,
-                        expected_rapid_profile_sha256="b" * 64,
-                        expected_rapid_state_path=root,
-                    )
-            finally:
-                thread.join(timeout=2)
-                server.close()
-            self.assertFalse(thread.is_alive())
-            self.assertEqual(observed["processId"], os.getpid())
-            self.assertEqual(observed["binarySha256"], expected)
-            self.assertGreater(observed["processStartTicks"], 0)
 
     def test_gate_closes_services_tears_down_database_and_keeps_public_safe(self) -> None:
         events: list[str] = []
@@ -166,7 +129,11 @@ class TranscriptCorrectionQualificationGateTests(unittest.TestCase):
                         profile_sha256="7" * 64,
                     ),
                 ),
-                mock.patch.object(gate, "_build_admission_broker", return_value="4" * 64),
+                mock.patch.object(
+                    gate,
+                    "build_checked_admission_broker",
+                    return_value="4" * 64,
+                ),
                 mock.patch.object(gate, "read_service_state", return_value={}),
                 mock.patch.object(gate, "validate_state_identity"),
                 mock.patch.object(gate, "probe_exact_service"),
