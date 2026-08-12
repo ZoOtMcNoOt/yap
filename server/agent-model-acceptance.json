@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "candidateLock": "agent-reasoning-candidates.lock.json",
   "fixtureFile": "agent-workload-fixtures.json",
   "candidateLockSha256": "3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013",
@@ -41,6 +41,7 @@
       "maximumProposalOutputTokens": 160,
       "maximumCommonFixtureP95LatencyMilliseconds": 3000,
       "maximumProposalFixtureP95LatencyMilliseconds": 10000,
+      "proposalFixtureRepetitionsPerCase": 8,
       "proposalFixtureCaseIds": [
         "cited-summary-proposal",
         "terminology-preservation-en",

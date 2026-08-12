@@ -1,11 +1,14 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–9 system plus the merged
-hardware-independent Phase 10 Slice 10.1 supervised-provider lifecycle. The
-current unmerged Slice 10.2 candidate binds exact Qwen/Gemma profiles and has
-passed its private lifecycle, route-qualification, and aggregate gates; hosted
-review and merge remain open. Later Phase 10 slices remain called out separately
-below and are not part of the merged baseline. Phase 7
+This document describes the merged executable Phase 1–9 system plus merged
+Phase 10 Slices 10.1 and 10.2: the supervised-provider lifecycle and immutable
+Qwen/Gemma service profiles. Their hosted closure merged through PRs #155 and
+#157. Exact protected head `7bd93dc6...` adds a bounded owner-fair admission
+substrate for already-warm services; exact public-lock head `135cc2ba...` passed
+replacement route qualification and the aggregate gate, but no product
+workflow consumes it yet.
+Later Phase 10 slices remain called out separately below and are not part of the
+merged baseline. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -919,7 +922,7 @@ or enable Qwen, Gemma, Cohere, Nemotron, or Tiron; connect an application route;
 or prove simultaneous residency, throughput, p95/p99, fairness, capacity,
 observability, or production deployment.
 
-The current Slice 10.2 candidate consumes that owner through two immutable
+Merged Slice 10.2 consumes that owner through two immutable
 profiles: Qwen rapid automation and Gemma complex orchestration. Exact lifecycle
 head `4b103c1bd8b393b7cabf6d219071fa8ba37bda09` passed sequential
 start/readiness/restart/stop plus zero-residue teardown for both routes with
@@ -933,12 +936,26 @@ then returned `governed-knowledge-gate-passed` with evidence SHA-256
 `008d748bfe88b5eb68b2c8abbecd682e0a4aceb6634872ead077e0993a2455b2`,
 157 portable tests across 26 modules, Ruff, 17 zero-skip Postgres tests across
 four modules, real restart/retrieval/stale/successor proof, unchanged desktop
-scope, and exact teardown. Hosted review and merge remain open.
+scope, and exact teardown. Hosted-green head `6d1400cc...` merged through PR
+#157 as `cac8989b...`.
 
 The intended multi-user topology keeps both exact route services warm behind
 bounded owner-fair admission; request handling never launches or swaps a model.
-That topology is not enabled yet. Simultaneous residency, sustained multi-owner
-capacity/fairness, production p95/p99, authenticated application integration,
+Exact protected head `7bd93dc6...` implements the admission substrate in Rust:
+all eight role/purpose/route/class bindings, one conservative active slot per
+route, bounded global and per-owner queues, owner round robin, weighted priority,
+idle-only exclusion, queue-inclusive deadlines, token-bound terminal controls,
+and provider-generation disruption. A hardened service exposes one owner-
+private Unix socket to a strict Python adapter. It does not start either
+provider, substitute routes, automatically restart after losing lease state, or
+expose an application endpoint. The replacement qualification admitted both
+exact routes with public-safe evidence SHA-256 `a75500c3...`; public-lock and
+aggregate head `135cc2ba...` then passed semantic admission, 169 portable tests
+across 28 modules, Ruff, 17 zero-skip Postgres tests across four modules, real
+restart/retrieval/stale/successor proof, unchanged desktop dependency scope,
+and exact teardown with public-safe evidence SHA-256 `350c13a5...`.
+Simultaneous residency, sustained multi-owner
+capacity/fairness, production p95/p99, native/server workflow integration,
 observability, and deployment remain later gates. If one node cannot satisfy
 the simultaneous evidence, the exact services require separate owned nodes,
 not fallback or per-request model swapping.

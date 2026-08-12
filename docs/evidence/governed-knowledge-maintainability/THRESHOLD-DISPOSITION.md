@@ -9,14 +9,14 @@ The inventory includes the repository's tracked source, text, policy, and
 provenance contract extensions and excludes only the two tracked OpenAPI products, the
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
-hand-maintained policy. At this tree the complete 250-line inventory is 488
-files: 257 listed below at 350 or more lines and 231 from 250 through 349.
+hand-maintained policy. At this tree the complete 250-line inventory is 494
+files: 259 listed below at 350 or more lines and 235 from 250 through 349.
 
 Each line contains up to two independent entries in the form
 `physical-lines disposition exact-path`.
 
 ```text
-  941 CI                   .github/workflows/ci.yml ||   431 CI                   .github/workflows/release.yml
+  945 CI                   .github/workflows/ci.yml ||   431 CI                   .github/workflows/release.yml
   390 NATIVE-MIGRATION     desktop/src-tauri/migrations/0001_current_job_ledger.sql ||   393 NATIVE-SOURCE        desktop/src-tauri/src/app.rs
   639 NATIVE-SOURCE        desktop/src-tauri/src/app/instance_activation.rs ||   840 NATIVE-SOURCE        desktop/src-tauri/src/app/tests.rs
   387 NATIVE-SOURCE        desktop/src-tauri/src/audio/coordinator/sink.rs ||   360 NATIVE-SOURCE        desktop/src-tauri/src/audio/coordinator/tests/lifecycle.rs
@@ -60,18 +60,18 @@ Each line contains up to two independent entries in the form
   480 NATIVE-TEST          desktop/src-tauri/tests/audio_foundation.rs ||   409 NATIVE-TEST          desktop/src-tauri/tests/model_download.rs
   401 UI-SOURCE            desktop/src/App.tsx ||   474 UI-SOURCE            desktop/src/components/live/live-overlay-views.tsx
   407 UI-SOURCE            desktop/src/components/ui/sidebar.tsx ||   386 UI-SOURCE            desktop/src/hooks/use-settings-control.ts
-  518 DESKTOP-TEST         desktop/tests/e2e/live-overlay.spec.ts ||   390 DESKTOP-TEST         desktop/tests/scripts/release-contract/bounded-command-windows-job.contract.mjs
+  518 DESKTOP-TEST         desktop/tests/e2e/live-overlay.spec.ts ||   391 DESKTOP-TEST         desktop/tests/scripts/release-contract/bounded-command-windows-job.contract.mjs
  1052 DESKTOP-TEST         desktop/tests/scripts/release-contract/github-hosted-checkout.contract.mjs ||  3253 DESKTOP-TEST         desktop/tests/scripts/release-contract/integrated-gate.contract.mjs
-  393 DESKTOP-TEST         desktop/tests/scripts/release-contract/windows-command-job-protocol.contract.mjs ||   431 DESKTOP-TEST         desktop/tests/scripts/release-contract/windows-installer.contract.mjs
-  630 DESKTOP-TEST         desktop/tests/scripts/release-contract/workflow.contract.mjs ||   549 DESKTOP-TEST         desktop/tests/scripts/shipped-dependency-inventory.mjs
+  398 DESKTOP-TEST         desktop/tests/scripts/release-contract/windows-command-job-protocol.contract.mjs ||   431 DESKTOP-TEST         desktop/tests/scripts/release-contract/windows-installer.contract.mjs
+  634 DESKTOP-TEST         desktop/tests/scripts/release-contract/workflow.contract.mjs ||   549 DESKTOP-TEST         desktop/tests/scripts/shipped-dependency-inventory.mjs
   526 DESKTOP-TEST         desktop/tests/wdio.target-client-language-routing.conf.ts ||   479 DESKTOP-TEST         desktop/tests/wdio/live-overlay-window-fixture.js
   415 DESKTOP-TEST         desktop/tests/wdio/live-overlay.hardware.spec.js ||   472 DESKTOP-TEST         desktop/tests/wdio/live-overlay.spec.js
   859 DESKTOP-TEST         desktop/tests/wdio/private-server-asr.gate.spec.js ||   488 DESKTOP-TEST         desktop/tests/wdio/smoke.spec.js
   388 DESKTOP-TEST         desktop/tests/wdio/target-client-language-routing-hardware.js ||   465 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md
   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md ||   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md
   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md ||   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md
-  438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   899 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
- 1034 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||   981 CURRENT-DOC          docs/CURRENT-STATUS.md
+  438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   943 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
+ 1051 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1005 CURRENT-DOC          docs/CURRENT-STATUS.md
   380 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
   998 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
@@ -81,20 +81,21 @@ Each line contains up to two independent entries in the form
   923 HISTORICAL-DOC       docs/research/2026-07-16-dynamic-language-detection-evaluation.md ||   913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md
   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md ||   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md
  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md ||   554 CURRENT-DOC          docs/specs/source-aware-diarization.md
-  582 CURRENT-DOC          docs/specs/testing-strategy.md ||  1198 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md
+  582 CURRENT-DOC          docs/specs/testing-strategy.md ||  1204 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md
   696 INFRA                infra/yap-server-node/owned-process-group.sh ||   989 INFRA                infra/yap-server-node/owned-process-supervisor.py
   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
-  504 INFRA                infra/yap-server-node/setup-server.sh ||   670 SERVER-RUNBOOK       server/README.md
-  463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs ||   452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
+  504 INFRA                infra/yap-server-node/setup-server.sh ||   691 SERVER-RUNBOOK       server/README.md
+  350 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs ||   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs
+  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
-  414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   585 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
-  483 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   717 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
-  492 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py ||   382 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_observation.py
+  414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   586 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
+  539 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   803 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
+  517 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py ||   382 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_observation.py
   582 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_runtime.py ||   626 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py
   506 EVALUATION           server/src/yap_server/evaluation/ami_meeting_lock.py ||  1396 EVALUATION           server/src/yap_server/evaluation/corpus_manifest.py
   612 EVALUATION           server/src/yap_server/evaluation/duration_tracks.py ||   399 EVALUATION           server/src/yap_server/evaluation/european_parliament_speech_source.py
   350 EVALUATION           server/src/yap_server/evaluation/fleurs_cohere_comparator.py ||   797 EVALUATION           server/src/yap_server/evaluation/fleurs_corpus.py
-  571 EVALUATION           server/src/yap_server/evaluation/governed_knowledge_gate.py ||   427 EVALUATION           server/src/yap_server/evaluation/human_reference_adjudication.py
+  573 EVALUATION           server/src/yap_server/evaluation/governed_knowledge_gate.py ||   427 EVALUATION           server/src/yap_server/evaluation/human_reference_adjudication.py
   672 EVALUATION           server/src/yap_server/evaluation/manifest_scoring.py ||   703 EVALUATION           server/src/yap_server/evaluation/meeting_acceptance_plan.py
   753 EVALUATION           server/src/yap_server/evaluation/owned_postgres_knowledge_runtime.py ||   719 EVALUATION           server/src/yap_server/evaluation/provider_cancellation_qualification.py
   619 EVALUATION           server/src/yap_server/evaluation/provider_capacity_qualification.py ||   669 EVALUATION           server/src/yap_server/evaluation/provider_duration_suite.py
@@ -124,8 +125,9 @@ Each line contains up to two independent entries in the form
   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py ||   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py
   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py ||   520 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py
   352 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py ||   395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py
-  754 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py ||   750 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py
+  790 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py ||   880 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py
   354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py ||   647 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py
+  359 TEST-EVALUATION      server/tests/evaluation/test_governed_knowledge_gate.py
  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py ||   495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py
   388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py ||   552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py
   358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py ||   580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py

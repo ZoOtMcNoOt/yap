@@ -444,8 +444,12 @@ test("server orchestrator CI owns the locked Linux lifecycle closure", async () 
     exactCommands.get("Verify service installer and systemd boundary contracts"),
     [
       "bash -n infra/yap-server-node/install-provider-supervisor-service.sh",
+      "bash -n infra/yap-server-node/install-agent-admission-service.sh",
       "cd server",
-      "python3 -m unittest tests.infra.test_provider_supervisor_service",
+      "PYTHONPATH=src python3 -m unittest \\",
+      "  tests.agents.test_agent_admission_client \\",
+      "  tests.infra.test_agent_admission_service \\",
+      "  tests.infra.test_provider_supervisor_service",
     ].join("\n"),
   );
   assert.doesNotMatch(

@@ -1,14 +1,17 @@
 # Complete eight-agent Voice OS delivery
 
-**Status:** Active; Slice A exact-head lifecycle, private qualification, and
-aggregate evidence passed; hosted review/merge and later slices pending.
+**Status:** Active; Slice A merged through PR #157. Slice B's bounded admission
+substrate passed replacement route qualification at exact protected head
+`7bd93dc624e6d8651dffc710026ca144909b2399` and the aggregate gate at
+exact public-lock head `135cc2ba8534f41d91ff52cd6b6d366460c7b60f`.
+PR #158 hosted review, application integration, and later slices remain open.
 
-**Branch:** `feat/phase10-agent-service-profiles` for the first executable
-slice. Later slices use focused branches and merge only after their exact heads
-are reviewed and hosted-green.
+**Branch:** `feat/phase10-agent-admission` for Slice B. Later slices use focused
+branches and merge only after their exact heads are reviewed and hosted-green.
 
-**Base:** merged Phase 10 Slice 10.1 and documentation closure at
-`4f194c2d0a9fde619c7d9793ec19fdd1feffc203`.
+**Base:** merged Slice A / Phase 10 Slice 10.2 at
+`cac8989b762ada02d6196aad6bbcbc37f2d1a339` from hosted-green head
+`6d1400ccdf481333840700b51f516c813960272b` and PR #157.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -81,17 +84,49 @@ promotion.
 
 ## Slice B — authenticated admission and adapters
 
-- [ ] Add typed agent-work requests bound to tenant, subject, purpose, role,
+- [x] Add typed agent-work requests bound to tenant, subject, purpose, role,
   source identity, route, deadline, and cancellation token.
-- [ ] Admit work only to already-warm route services; model startup and swapping
+- [x] Admit work only to already-warm route services; model startup and swapping
   are lifecycle/operations concerns, never per-request behavior.
-- [ ] Implement HOT, INTERACTIVE, BACKGROUND_IO, BACKGROUND_LLM, and IDLE_ONLY
+- [x] Implement HOT, INTERACTIVE, BACKGROUND_IO, BACKGROUND_LLM, and IDLE_ONLY
   admission with bounded queues, fair owner limits, typed overload, and no route
   substitution.
 - [ ] Add bounded native-to-server and Rust-to-Python adapters; keep bearer
-  tokens and provider credentials out of the renderer and Python domain payloads.
-- [ ] Prove cancellation acknowledgement, deadline inclusion of queue time,
-  provider restart/unready behavior, owner fairness, and local-control survival.
+  tokens and provider credentials out of the renderer and Python domain
+  payloads. The owner-private Rust-to-Python adapter is complete; the native
+  HTTP integration remains part of the first role slice.
+- [x] Prove cancellation acknowledgement, deadline inclusion of queue time,
+  provider restart/unready behavior, and owner fairness at the broker boundary.
+- [ ] Prove local-control survival through the first authenticated native/server
+  role workflow; the aggregate gate currently proves only an unchanged desktop
+  dependency boundary.
+
+Exact protected executable head
+`7bd93dc624e6d8651dffc710026ca144909b2399`
+implements the eight-role request map, one conservative active slot per route,
+a 64-request global pending bound, a four-active-plus-pending per-owner bound,
+owner round-robin scheduling, weighted class admission, idle-only exclusion,
+queue-inclusive deadlines, token-bound completion/cancellation, provider-
+generation disruption, and a private Unix-socket broker. The broker never
+starts either provider, never swaps or substitutes a route, never replaces an
+existing socket owner, and does not automatically restart after losing its
+in-memory lease state. Windows and Linux Rust format/lint/all-target tests, the
+Linux socket lifecycle, the exact 169-test portable matrix across 28 modules,
+and Ruff pass. Replacement qualification returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`a75500c344eaa7546695ab1e7415466c031ccf394620ed442ca618ea1ede8c06`;
+both routes were admitted and Qwen's proposal evidence comprised 24
+independently scored samples under unchanged 160-token and 10-second bounds.
+Public-lock successor `135cc2ba...` then returned
+`governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`350c13a5569cfc7237174d1f7e2132857ffb3aaf28b6afd2eca03aa1999aea79`.
+It ran the 169-test portable matrix, Ruff, 17 zero-skip Postgres tests across
+four modules, real restart/retrieval/stale/successor checks, the unchanged
+desktop dependency boundary, and exact teardown. These checks prove the
+admission substrate, not an exposed workflow, simultaneous residency,
+sustained capacity, or production availability. A prior exact
+`c4b5e084...` qualification remains terminal rejected evidence; its raw output,
+measurements, and private location remain unpublished.
 
 ## Slice C — Scribe
 

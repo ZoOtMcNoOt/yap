@@ -1,8 +1,11 @@
 # Phase 10 supervised provider services
 
-**Status:** Active; Slice 10.1 merged through PR #155; Slice 10.2 exact-head
-lifecycle, private qualification, and aggregate evidence passed with hosted
-review/merge pending.
+**Status:** Active; Slice 10.1 merged through PR #155 and Slice 10.2 merged
+through PR #157. Slice 10.3's bounded admission substrate passed replacement
+qualification at exact protected head
+`7bd93dc624e6d8651dffc710026ca144909b2399` and the aggregate gate at
+`135cc2ba8534f41d91ff52cd6b6d366460c7b60f`; hosted review and application
+integration remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -20,7 +23,7 @@ the complete product roster applied by
 lifecycle lane and every required repository CI/CodeQL lane. PR #155 merged it
 as `e2d82b89532addb26fda73f652ae4f68b2127ef7`.
 
-**Slice 10.2 candidate evidence:** exact lifecycle head `4b103c1b...` passed
+**Slice 10.2 merged evidence:** exact lifecycle head `4b103c1b...` passed
 both sequential route lifecycles with evidence SHA-256 `9b6a34f6...`; exact
 private qualification head `4d623212...` returned
 `required-workload-routes-qualified` with evidence SHA-256 `4a856f3e...`; and
@@ -28,8 +31,9 @@ public-lock successor `0471b158...` returned
 `governed-knowledge-gate-passed` with evidence SHA-256 `008d748b...`. The
 aggregate composed 157 portable tests across 26 modules, Ruff, 17 zero-skip
 Postgres tests across four modules, real restart/retrieval/stale/successor
-proof, unchanged desktop scope, and exact teardown. Hosted review and merge
-remain open. This evidence is sequential and makes no simultaneous-residency,
+proof, unchanged desktop scope, and exact teardown. Hosted-green head
+`6d1400cc...` merged through PR #157 as `cac8989b...`. This evidence is
+sequential and makes no simultaneous-residency,
 multi-user capacity, SLO, or production claim.
 
 ## Objective
@@ -107,6 +111,17 @@ claim simultaneous model residency, or publish a capacity/SLO result.
   workflows in the
   [complete-roster plan](2026-08-11-eight-agent-voice-os-delivery.md); this
   infrastructure is not itself evidence that any persona has shipped.
+
+The current exact protected head `7bd93dc6...` supplies the Rust-owned request,
+priority, owner-fair queue, provider-generation, deadline, cancellation, Unix
+broker, and strict Python adapter foundation. It conservatively admits one
+active request per route and fails closed when its state owner fails. The unit
+does not start provider services and is installed without enable/start. Native
+HTTP endpoints and role execution are still absent, so Slice 10.3 is not yet
+complete. Replacement qualification admitted both routes; public-lock and
+aggregate head `135cc2ba...` passed semantic admission, 169 portable tests,
+Ruff, 17 Postgres tests, real restart/retrieval/stale/successor proof, unchanged
+desktop scope, and exact teardown.
 
 ### Slice 10.4 — simultaneous residency and capacity promotion
 

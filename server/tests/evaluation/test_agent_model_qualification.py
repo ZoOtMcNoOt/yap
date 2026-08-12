@@ -13,6 +13,7 @@ from yap_server.evaluation.agent_model_candidate_runner import (
     agent_evidence_sha256,
 )
 from yap_server.evaluation.agent_model_qualification import (
+    _proposal_latency_evidence,
     _validate_runtime_receipt,
     _verify_runtime_children,
     evaluate_agent_model_qualification,
@@ -30,11 +31,11 @@ from yap_server.evaluation.provider_runtime_observations import (
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-PROPOSAL_CASE_IDS = {
+PROPOSAL_CASE_IDS = (
     "cited-summary-proposal",
     "terminology-preservation-en",
     "terminology-preservation-es",
-}
+)
 INPUTS = tuple(
     REPOSITORY_ROOT / relative
     for relative in (
@@ -210,6 +211,95 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate=candidate, runs=failing_runs
             )
         self.assertEqual(failing["outcome"], "deterministic-no-model")
+
+    def test_derives_proposal_p95_from_twenty_four_repeated_samples(self) -> None:
+        candidate = _checked_candidate()
+        one_outlier = [10_000] * 23 + [10_001]
+        passing_runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                proposal_sample_latencies=one_outlier,
+            ),
+            _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10),
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            passing = evaluate_agent_model_qualification(
+                candidate=candidate, runs=passing_runs
+            )
+
+        qwen = next(
+            summary
+            for summary in passing["candidateSummaries"]
+            if summary["candidateId"] == "qwen3.6-35b-a3b-nvfp4"
+        )
+        self.assertEqual(passing["outcome"], "required-workload-routes-qualified")
+        self.assertEqual(qwen["proposalFixtureSampleCount"], 24)
+        self.assertEqual(qwen["proposalFixtureP95LatencyMilliseconds"], 10_000)
+
+        two_outliers = [10_000] * 22 + [10_001, 10_001]
+        failing_runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                proposal_sample_latencies=two_outliers,
+            ),
+            passing_runs[1],
+        )
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            failing = evaluate_agent_model_qualification(
+                candidate=candidate, runs=failing_runs
+            )
+        self.assertEqual(failing["outcome"], "deterministic-no-model")
+
+    def test_rejects_a_semantically_wrong_repeated_proposal_sample(self) -> None:
+        candidate = _checked_candidate()
+        runs = (
+            _candidate_run(
+                candidate,
+                "qwen3.6-35b-a3b-nvfp4",
+                20,
+                wrong_proposal_sample_index=0,
+            ),
+            _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10),
+        )
+
+        with patch.object(CheckedCandidate, "verify_unchanged"):
+            decision = evaluate_agent_model_qualification(
+                candidate=candidate, runs=runs
+            )
+
+        self.assertEqual(decision["outcome"], "deterministic-no-model")
+
+    def test_rejects_incomplete_or_unbalanced_proposal_samples(self) -> None:
+        candidate = _checked_candidate()
+        run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
+        samples = list(run.evidence["proposalLatencySamples"])
+
+        with self.assertRaisesRegex(ValueError, "sample set"):
+            _proposal_latency_evidence(
+                REPOSITORY_ROOT,
+                results=list(run.evidence["results"]),
+                samples=samples[:-1],
+                workload_class="rapid-automation",
+                case_ids=PROPOSAL_CASE_IDS,
+                repetitions_per_case=8,
+            )
+
+        unbalanced = json.loads(json.dumps(samples))
+        unbalanced[-1]["caseId"] = PROPOSAL_CASE_IDS[0]
+        with self.assertRaisesRegex(ValueError, "repetitions"):
+            _proposal_latency_evidence(
+                REPOSITORY_ROOT,
+                results=list(run.evidence["results"]),
+                samples=unbalanced,
+                workload_class="rapid-automation",
+                case_ids=PROPOSAL_CASE_IDS,
+                repetitions_per_case=8,
+            )
 
     def test_rejects_incomplete_complex_orchestration_sequence(self) -> None:
         candidate = _checked_candidate()
@@ -393,7 +483,7 @@ class AgentModelQualificationTests(unittest.TestCase):
         other = _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 10)
         obsolete_evidence = dict(run.evidence)
         obsolete_evidence.pop("evidenceSha256")
-        obsolete_evidence["schemaVersion"] = 1
+        obsolete_evidence["schemaVersion"] = 2
         obsolete_evidence["evidenceSha256"] = canonical_evidence_sha256(
             obsolete_evidence
         )
@@ -411,13 +501,16 @@ class AgentModelQualificationTests(unittest.TestCase):
 
         children = {
             **run.children,
-            "fixtures": {**run.children["fixtures"], "schemaVersion": 1},
+            "fixtures": {**run.children["fixtures"], "schemaVersion": 2},
         }
         with self.assertRaisesRegex(ValueError, "child evidence"):
             _verify_runtime_children(
                 children,
                 checked_head=candidate.checked_head,
                 evidence_results=run.evidence["results"],
+                evidence_proposal_latency_samples=run.evidence[
+                    "proposalLatencySamples"
+                ],
                 pressure=run.evidence["runtimePressure"],
             )
 
@@ -449,6 +542,8 @@ def _candidate_run(
     wrong_proposal_case: str | None = None,
     fixture_latency: int = 10,
     fixture_latency_overrides: dict[str, int] | None = None,
+    proposal_sample_latencies: list[int] | None = None,
+    wrong_proposal_sample_index: int | None = None,
 ) -> AgentCandidateRun:
     lock = json.loads(
         (REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json").read_text(
@@ -498,12 +593,37 @@ def _candidate_run(
         result["latencyMilliseconds"] = (fixture_latency_overrides or {}).get(
             str(result["caseId"]), fixture_latency
         )
+    proposal_latency_samples = (
+        [
+            json.loads(json.dumps(result))
+            for _repetition in range(8)
+            for case_id in PROPOSAL_CASE_IDS
+            for result in results
+            if result["caseId"] == case_id
+        ]
+        if model["workloadClass"] == "rapid-automation"
+        else []
+    )
+    if proposal_sample_latencies is not None:
+        if len(proposal_sample_latencies) != len(proposal_latency_samples):
+            raise ValueError("test proposal latency sample count differs")
+        for sample, sample_latency in zip(
+            proposal_latency_samples,
+            proposal_sample_latencies,
+            strict=True,
+        ):
+            sample["latencyMilliseconds"] = sample_latency
+    if wrong_proposal_sample_index is not None:
+        proposal_latency_samples[wrong_proposal_sample_index]["arguments"][
+            "proposed_content"
+        ] = "Unrelated cafeteria menu."
     launch_arguments = _launch_arguments(model)
     launch_sha256 = canonical_evidence_sha256(launch_arguments)
     children = _children(
         candidate,
         model,
         results,
+        proposal_latency_samples,
         latency,
         launch_sha256,
         runtime["observedImageId"],
@@ -534,12 +654,13 @@ def _candidate_run(
     }
     evidence = bind_checked_candidate_evidence(
         {
-            "schemaVersion": 2,
+            "schemaVersion": 3,
             "candidateId": candidate_id,
             "model": model["model"],
             "revision": model["revision"],
             "runtimeReceiptSha256": agent_evidence_sha256(receipt),
             "results": results,
+            "proposalLatencySamples": proposal_latency_samples,
             "runtimePressure": {
                 "coldLatencyMilliseconds": latency,
                 "warmLatencyMilliseconds": [latency] * 12,
@@ -603,13 +724,22 @@ def _failed_run(
     return FailedAgentCandidateRun(candidate_id, failure)
 
 
-def _children(candidate, model, results, latency, launch_sha256, image_id):
+def _children(
+    candidate,
+    model,
+    results,
+    proposal_latency_samples,
+    latency,
+    launch_sha256,
+    image_id,
+):
     return {
         "fixtures": {
-            "schemaVersion": 2,
+            "schemaVersion": 3,
             "checkedHead": candidate.checked_head,
             "candidateId": model["candidateId"],
             "results": results,
+            "proposalLatencySamples": proposal_latency_samples,
         },
         "pressure": {
             "schemaVersion": 1,

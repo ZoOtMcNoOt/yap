@@ -68,11 +68,13 @@ ADR 0030 makes systemd plus one Rust supervisor the production provider
 lifecycle boundary. ADR 0031 defines the complete eight-agent roster as bounded
 product workflows across that supervised private-server route while preserving
 raw/local controls and prohibiting renderer-owned provider access or silent
-cross-route fallback. The current unmerged Slice 10.2 candidate binds the exact
-Qwen/Gemma profiles and has passed sequential lifecycle, fresh private route
-qualification, and aggregate governed gates; hosted merge, warm simultaneous
-residency, authenticated owner-fair admission, and the roster workflows remain
-open.
+cross-route fallback. Merged Slice 10.2 binds the exact Qwen/Gemma profiles and
+passed sequential lifecycle, fresh private route qualification, aggregate
+governed, and hosted gates through PR #157. Exact protected head `7bd93dc6...`
+adds the bounded owner-fair admission substrate for already-warm services, and
+public-lock/aggregate head `135cc2ba...` passed its gate; native/
+server integration, warm simultaneous residency, roster workflows, and
+promotion remain open.
 
 ## Applicability and precedence
 
@@ -122,8 +124,8 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) | Tiron joint speaker-attributed meeting transcription | Accepted Phase 8 explicit Preview baseline; PR #142 merged Preview, PR #143 merged maintainability closure, PR #144 merged the sole source-time route, and PR #150 merged the `unadvertised-baseline` qualification closure. No fallback or production claim was added. |
 | [0028](0028-model-independent-terminology-authority.md) | Model-independent terminology authority and frozen projections | Accepted; merged Phase 9 has server-derived ownership, immutable job snapshots, bounded projections, revocation, governed-agent consumption, and a passed complete gate; production UI and operations remain open |
 | [0029](0029-vllm-agent-reasoning-runtime.md) | vLLM agent reasoning runtime on DGX Spark | Accepted; exact-head private Qwen rapid/Gemma complex route qualification and aggregate Phase 9 admission passed and merged through PR #152; the post-Phase-9 checkpoint gate passed at `22c3f369...` and hosted head `84c22ec9...` merged through PR #153; production serving, simultaneous residency, and sustained capacity remain Phase 10 |
-| [0030](0030-rust-supervised-provider-service-lifecycle.md) | Rust-supervised provider service lifecycle | Accepted Phase 10 target; merged Slice 10.1 implements the hardware-independent systemd/Rust/foreground-launcher boundary through PR #155; provider profiles, application integration, and capacity remain later slices |
-| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; complete roster implementation, qualification, capacity, and production promotion remain pending |
+| [0030](0030-rust-supervised-provider-service-lifecycle.md) | Rust-supervised provider service lifecycle | Accepted Phase 10 target; Slices 10.1 and 10.2 merged the hardware-independent systemd/Rust/foreground-launcher boundary and immutable Qwen/Gemma profiles through PRs #155 and #157; admission integration and capacity remain later slices |
+| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; exact protected head `7bd93dc6...` implements the bounded multi-user admission substrate for already-warm routes and exact public-lock/aggregate head `135cc2ba...` passed its qualification and gate; product workflows, capacity, hosted merge, and production promotion remain pending |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

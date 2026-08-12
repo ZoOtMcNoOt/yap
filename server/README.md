@@ -563,7 +563,7 @@ passed the dedicated Linux lifecycle lane, every required repository CI and
 CodeQL lane, and the native WDIO smoke. PR #155 merged Slice 10.1 as
 `e2d82b89532addb26fda73f652ae4f68b2127ef7`.
 
-Slice 10.2 now binds the exact Qwen rapid and Gemma complex profiles to separate
+Merged Slice 10.2 binds the exact Qwen rapid and Gemma complex profiles to separate
 supervised instances. Exact lifecycle head
 `4b103c1bd8b393b7cabf6d219071fa8ba37bda09` passed sequential
 start/readiness/restart/stop and exact teardown for both routes with public-safe
@@ -578,15 +578,36 @@ then returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
 `008d748bfe88b5eb68b2c8abbecd682e0a4aceb6634872ead077e0993a2455b2`.
 The aggregate ran 157 portable tests across 26 modules, Ruff, and 17 zero-skip
 Postgres tests across four modules, then proved restart/retrieval and exact
-teardown. The focused PR and hosted checks remain open.
+teardown. Hosted-green head `6d1400ccdf481333840700b51f516c813960272b`
+merged through PR #157 as `cac8989b762ada02d6196aad6bbcbc37f2d1a339`.
 
 The intended multi-user topology keeps both exact route services warm behind
-bounded fair admission; requests never cold-start or swap models. Neither
-service is enabled or connected to an application route yet, and this
-sequential evidence does not prove simultaneous residency, sustained capacity,
-fairness, production p95/p99, or deployment. Build, installation,
+bounded fair admission; requests never cold-start or swap models. Exact
+protected head `7bd93dc624e6d8651dffc710026ca144909b2399` adds the
+Rust admission broker and strict Python adapter for the complete eight-role
+map. It conservatively permits one active request per route, bounds pending and
+per-owner work, schedules owners fairly across typed priorities, includes queue
+time in deadlines, requires cancellation acknowledgement before releasing
+capacity, and fails work on provider-generation changes without substituting a
+route. Its owner-private Unix socket carries no bearer or provider credential.
+
+The broker is installed without enable/start, never starts provider units, and
+deliberately uses `Restart=no`: after losing in-memory lease state, an operator
+must first contain any external workers before starting a new scheduler. No
+service is enabled or connected to a native/server product route yet.
+Replacement private qualification admitted both routes with public-safe
+evidence SHA-256
+`a75500c344eaa7546695ab1e7415466c031ccf394620ed442ca618ea1ede8c06`.
+Public-lock/aggregate head `135cc2ba...` then passed semantic admission, 169
+portable tests across 28 modules, Ruff, 17 zero-skip Postgres tests across four
+modules, real restart/retrieval/stale/successor checks, unchanged desktop
+dependency scope, and exact teardown with public-safe evidence SHA-256
+`350c13a5569cfc7237174d1f7e2132857ffb3aaf28b6afd2eca03aa1999aea79`.
+This evidence does not prove simultaneous residency, sustained
+capacity/fairness, production p95/p99, or deployment. Build, installation,
 configuration, state, and verification details are in the
-[provider supervisor runbook](../docs/runbooks/provider-supervisor-service.md).
+[provider supervisor runbook](../docs/runbooks/provider-supervisor-service.md)
+and [agent admission runbook](../docs/runbooks/agent-admission-service.md).
 
 ## Local checks
 

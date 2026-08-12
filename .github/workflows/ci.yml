@@ -705,8 +705,12 @@ jobs:
         shell: bash
         run: |
           bash -n infra/yap-server-node/install-provider-supervisor-service.sh
+          bash -n infra/yap-server-node/install-agent-admission-service.sh
           cd server
-          python3 -m unittest tests.infra.test_provider_supervisor_service
+          PYTHONPATH=src python3 -m unittest \
+            tests.agents.test_agent_admission_client \
+            tests.infra.test_agent_admission_service \
+            tests.infra.test_provider_supervisor_service
       - name: Verify exact GitHub-hosted checkout remained unchanged
         shell: /opt/microsoft/powershell/7/pwsh -NoLogo -NoProfile -NonInteractive -File {0}
         working-directory: ${{ github.workspace }}

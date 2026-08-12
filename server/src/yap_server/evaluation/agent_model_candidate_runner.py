@@ -15,6 +15,7 @@ from yap_server.private_artifact import read_json_object_with_identity
 from .agent_model_acceptance import load_agent_model_acceptance
 from .agent_model_fixture_runner import (
     run_agent_model_fixtures,
+    run_agent_model_proposal_latency_samples,
     warm_agent_model_fixture_runtime,
 )
 from .agent_runtime_pressure import run_agent_runtime_pressure
@@ -113,6 +114,20 @@ def run_agent_model_candidate(
                 request_json=request_json,
             )
         )
+        proposal_latency_samples = (
+            tuple(
+                item.record()
+                for item in run_agent_model_proposal_latency_samples(
+                    repository_root,
+                    model=str(model_candidate["model"]),
+                    maximum_output_tokens=maximum_output_tokens,
+                    final_response_protocol=final_response_protocol,
+                    request_json=request_json,
+                )
+            )
+            if workload_class == "rapid-automation"
+            else ()
+        )
         tracks = acceptance.runtime_tracks
         stage = "pressure"
         reasoning_client = VllmReasoningClient(
@@ -134,6 +149,7 @@ def run_agent_model_candidate(
             checked_head=checked_candidate.checked_head,
             candidate_id=candidate_id,
             records=records,
+            proposal_latency_samples=proposal_latency_samples,
             pressure=pressure,
             started=started,
         )
@@ -163,12 +179,13 @@ def run_agent_model_candidate(
     checked_candidate.verify_unchanged()
     evidence = bind_checked_candidate_evidence(
         {
-            "schemaVersion": 2,
+            "schemaVersion": 3,
             "candidateId": candidate_id,
             "model": model_candidate["model"],
             "revision": model_candidate["revision"],
             "runtimeReceiptSha256": agent_evidence_sha256(receipt),
             "results": list(records),
+            "proposalLatencySamples": list(proposal_latency_samples),
             "runtimePressure": {
                 "coldLatencyMilliseconds": pressure.cold_latency_milliseconds,
                 "warmLatencyMilliseconds": list(pressure.warm_latency_milliseconds),
@@ -232,13 +249,22 @@ def agent_evidence_sha256(value: object) -> str:
     return hashlib.sha256(body).hexdigest()
 
 
-def _children(*, checked_head, candidate_id, records, pressure, started):
+def _children(
+    *,
+    checked_head,
+    candidate_id,
+    records,
+    proposal_latency_samples,
+    pressure,
+    started,
+):
     return {
         "fixtures": {
-            "schemaVersion": 2,
+            "schemaVersion": 3,
             "checkedHead": checked_head,
             "candidateId": candidate_id,
             "results": list(records),
+            "proposalLatencySamples": list(proposal_latency_samples),
         },
         "pressure": {
             "schemaVersion": 1,

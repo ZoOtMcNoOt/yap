@@ -71,8 +71,8 @@ out above rather than treated as refactor candidates.
 | Documentation | 103 | 33,237 |
 | Root/configuration/provenance text | 49 | 19,801 |
 
-The reproducible threshold screen finds 477 tracked regular source, text, and
-policy surfaces at or above 250 lines: 252 at or above 350 and 225 from 250
+The reproducible threshold screen finds 494 tracked regular source, text, and
+policy surfaces at or above 250 lines: 259 at or above 350 and 235 from 250
 through 349. The exact extension set, five excluded generated/dependency
 artifacts, disposition rules, and current output are owned by
 `verification/list-maintainability-threshold-surfaces.ps1`. Review
@@ -154,12 +154,12 @@ net additive; no LOC-reduction claim is made for those correctness repairs.
 
 ### Complete threshold disposition
 
-At the current Phase 10 Slice 10.2 candidate tree, the inventory contains 488
+At the current Phase 10 bounded-admission candidate tree, the inventory contains 494
 in-scope tracked source, text, policy, and provenance surfaces at or above 250
-physical lines: 257 at or above 350 and 231 from 250 through 349. The completed
+physical lines: 259 at or above 350 and 235 from 250 through 349. The completed
 checkpoint reviews deep-traced the inherited surfaces
 through the same workflow owners and found no additional mixed authority. The
-mutually exclusive rows below classify every one of the 257
+mutually exclusive rows below classify every one of the 259
 decomposition-triggering surfaces. The exact path/line/disposition read-back is
 recorded in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md); generated
 OpenAPI, the package lock, dependency-inventory JSON, media, model artifacts,
@@ -178,7 +178,7 @@ decisions.
 | `docs/plans/{archived,completed}/**` and `docs/research/**` | 11 | Retain as immutable historical delivery/evidence records. Rewriting or splitting them would damage provenance; current truth lives in current/normative documents. |
 | `infra/**` | 5 | Retain each process-group, supervisor, loopback proxy, resident lifecycle, and setup owner because containment must remain end to end within its script/process boundary. |
 | `server/README.md` | 1 | Retain the server runbook as the single operator navigation surface; executable gates and source modules remain authoritative. |
-| `server/orchestrator/**` | 2 | Retain the supervisor as the single runtime lifecycle owner and the hardware-independent integration suite as its end-to-end contract: together they prove immutable process-group ownership, loopback readiness, bounded restart/backoff, shutdown/reap, private state, and the feature-gated fixture while configuration and readiness concerns remain split across functional Rust modules. |
+| `server/orchestrator/**` | 3 | Retain the supervisor as the provider-lifecycle owner, the admission scheduler as the bounded multi-user lease/fairness owner, and the hardware-independent integration suite as the end-to-end lifecycle contract. The two state machines consume typed snapshots but do not share mutation authority. Configuration, protocol, queue, terminal, and readiness concerns remain split across functional Rust modules. |
 | `server/src/yap_server/auth/**` | 3 | Retain identity repository, token validation, and OIDC metadata as separate trust-boundary owners. The obsolete identity migration was deleted; no caller-chosen tenant/subject path remains. |
 | `server/src/yap_server/evaluation/**` | 33 | Retain each named acceptance, corpus/review, scorer, runtime observation, lifecycle, qualification, and aggregate-decision owner. The existing qualification runtime and the supervised-service lifecycle runtime/observation owners remain separate because one measures candidate behavior while the other proves production-service restart and containment. Duplicate product-tool schemas and misleading evidence publication ownership remain removed. |
 | `server/src/yap_server/jobs/**` | 5 | Retain completion/store/runtime plus the single locked service aggregate. The 1,401-line service owns one `RLock`; pure policies may move only when they do not create a second job-state authority. |
@@ -188,7 +188,7 @@ decisions.
 | `server/src/yap_server/meeting_transcription/**` | 3 | Retain container worker, immutable result-revision authority, and runtime provenance as distinct meeting execution/evidence owners; speaker naming remains outside scope. |
 | `server/src/yap_server/pools/**` | 13 | Retain provider-neutral pool contracts, the exact agent-service profile reader, and provider-specific engine/client/service/scheduler boundaries. Each large file owns one runtime or request protocol; no universal fallback/router was reintroduced. |
 | `server/tests/{auth,capabilities,contract}/**` | 5 | Retain by trust/contract owner; these suites intentionally enumerate adversarial token, metadata, catalog, and public-contract cases. |
-| `server/tests/evaluation/**` | 11 | Retain one suite per corpus/runtime/qualification/evidence owner. Aggregate-gate and owned-Postgres lifecycle tests were split; the affected route/lifecycle suites are itemized below. |
+| `server/tests/evaluation/**` | 12 | Retain one suite per corpus/runtime/qualification/evidence owner. Aggregate-gate and owned-Postgres lifecycle tests were split; the affected route/lifecycle suites are itemized below. |
 | `server/tests/infra/**` | 4 | Retain end-to-end process/proxy/lifecycle harnesses because their failure cases span subprocess boundaries while production owners stay in `infra/`. |
 | `server/tests/jobs/**` | 8 | Retain suites by runtime, commit admission, contract, meeting result, processing, restart, recovery, and retention workflow. They share fixtures, not production state. |
 | `server/tests/knowledge/**` | 4 | Retain the compiler and three real-Postgres integration owners. Each is itemized below and the database lane requires every test with zero skips. |
@@ -209,8 +209,9 @@ navigable.
 | `server/src/yap_server/knowledge/okf_compiler.py` | 387 | One deterministic compiler contract parses the Yap OKF profile, derives every projection identity, and revalidates canonical POSIX path/profile/resource/projection/generation identities plus raw-source digest shape before durable admission. Lane 1 exact source binding and Lane 2 curator authority remain outside it. |
 | `server/src/yap_server/knowledge/postgres_knowledge_retrieval.py` | 404 | One query-family owner shares the same transaction-pinned authorized generation/result/citation projection across tree, lexical, vector, and hybrid reads. |
 | `server/src/yap_server/evaluation/owned_postgres_knowledge_runtime.py` | 753 | One lifecycle state machine owns immutable image/container/network/volume/start/restart/readiness/containment/teardown identity; decomposition would split failure containment. |
-| `server/src/yap_server/evaluation/governed_knowledge_gate.py` | 571 | One aggregate decision composes exact candidate admission, portable/Ruff/Postgres/restart children, teardown, and create-once publication. Child lifecycle and evidence validators remain separate modules. |
-| `server/src/yap_server/evaluation/agent_route_qualification_evidence.py` | 492 | One private-tree admission boundary verifies exact membership, hashes, permissions, semantic summaries, predecessor identity, protected drift, and route-specific service/build inputs without importing raw output into public evidence. The obsolete one-file transition allowance is deleted. |
+| `server/orchestrator/src/agent_admission.rs` | 350 | One bounded scheduler owns queue admission, per-route capacity, owner round robin, priority selection, provider generations, deadlines, cancellation acknowledgement, and terminal retention. Protocol, dispatch, queue, priority, terminal, and DTO helpers are already separate; splitting the state transition owner would create competing lease authority. |
+| `server/src/yap_server/evaluation/governed_knowledge_gate.py` | 573 | One aggregate decision composes exact candidate admission, portable/Ruff/Postgres/restart children, teardown, and create-once publication. Child lifecycle and evidence validators remain separate modules. |
+| `server/src/yap_server/evaluation/agent_route_qualification_evidence.py` | 517 | One private-tree admission boundary verifies exact membership, hashes, permissions, semantic summaries, predecessor identity, protected drift, and route-specific service/build inputs without importing raw output into public evidence. The admission/gate owners and the new production-admission contract are protected. |
 | `server/src/yap_server/evaluation/agent_service_lifecycle_observation.py` | 382 | One read-only observation owner validates exact service state, container launch policy, model readiness, process/listener absence, and the public-safe receipt projection without owning lifecycle mutation. |
 | `server/src/yap_server/evaluation/agent_service_lifecycle_runtime.py` | 582 | One sequential lifecycle state machine stages the immutable launcher, owns the route network/supervisor/container observations, forces one restart, and proves every observed process and resource absent on success or failure. Splitting mutation from containment would weaken exact teardown. |
 | `server/src/yap_server/evaluation/agent_model_qualification.py` | 717 | One fail-closed route decision recomputes both owned candidate results, route-specific runtime evidence, protected build inputs, runtime children, common/proposal latency groups, and atomic tree publication. Runtime execution remains separately owned. |
@@ -224,6 +225,7 @@ navigable.
 | `server/tests/evaluation/test_agent_model_fixture_runner.py` | 754 | One conversation-driver test owner covers route and proposal output caps, tool/result sequencing, exact cited-proposal and semantic context withholding, warmups, contract parity, malformed tool-response continuation, and complex no-replay behavior. |
 | `server/tests/evaluation/test_agent_model_scoring.py` | 354 | One scorer test owner independently rejects malformed or semantically different tool, argument, citation, terminology, request-count, and proposal evidence without trusting aggregates. |
 | `server/tests/evaluation/test_agent_model_final_response_retry.py` | 269 | One narrow retry-contract test owner covers the observed proposal fixture, both final-response protocols, exhaustion, exact citation retention, semantic non-retry, request counting, latency, and no tool replay. It owns no product state. |
+| `server/tests/evaluation/test_governed_knowledge_gate.py` | 359 | One aggregate-gate contract owner freezes exact child membership/counts, protected-route drift, dependency identities, receipt shape, local/offline boundary, and runner failure classification. Docker lifecycle behavior remains in its separate test owner. |
 | `server/tests/evaluation/test_agent_vllm_runtime.py` | 647 | One immutable vLLM lifecycle test owner covers route-specific image/platform/build labels, strict tool guidance, launch policy, partial-start identity, name replacement, containment retry, cgroup/listener/PID teardown, and exact model artifacts. |
 | `server/tests/knowledge/test_okf_compiler.py` | 544 | One compiler-contract test owner covers pinned conformance, permission/source projection, canonical hashes and POSIX paths, relationship authority, linked-directory rejection, and authenticated curator admission identity. |
 | `server/tests/knowledge/test_postgres_generation_ledger.py` | 802 | One real-Postgres generation lifecycle test owner covers stage/embedding/activation/rollback/retention, exact admission, persisted tamper, proposal disposition, and reconnect semantics under the tenant lock. |

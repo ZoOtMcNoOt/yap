@@ -101,6 +101,7 @@ instructions. Detailed historical task reports live under
 
 - [Server-node setup](runbooks/yap-server-node-setup.md)
 - [Provider supervisor service](runbooks/provider-supervisor-service.md)
+- [Agent admission service](runbooks/agent-admission-service.md)
 - [Dependency audit policy](runbooks/dependency-audit-policy.md)
 - [Repository housekeeping](runbooks/repo-housekeeping.md)
 - [Target-client language-routing qualification](runbooks/target-client-language-routing-qualification.md)

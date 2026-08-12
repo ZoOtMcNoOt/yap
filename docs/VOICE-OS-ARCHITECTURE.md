@@ -191,11 +191,14 @@ loopback origin. That gated path connects the Phase 4 router/pool and isolated
 Cohere worker without exposing an application port: Windows reaches server
 loopback only through a manually selected SSH forward. Fixed-loopback discovery
 and authenticated REST/private-WebSocket admission exist; live ASR and the
-managed enterprise edge remain absent. Merged ADR 0030 Slice 10.1 implements
-the hardware-independent one-launcher lifecycle boundary. The current unmerged
-Slice 10.2 candidate binds exact Qwen/Gemma profiles to that owner and has
-passed sequential lifecycle, fresh qualification, and aggregate governed gates;
-application admission remains absent. The accepted performance topology is provider-specific: Cohere batch
+managed enterprise edge remain absent. Merged ADR 0030 Slices 10.1 and 10.2
+implement the hardware-independent one-launcher lifecycle boundary and bind the
+exact Qwen/Gemma profiles to separate owners after sequential lifecycle, fresh
+qualification, aggregate governed, and hosted gates. Exact protected head
+`7bd93dc6...` adds bounded multi-user admission for already-warm services;
+public-lock/aggregate head `135cc2ba...` qualified both routes and passed the
+complete admission-slice gate. Application workflows remain absent. The
+accepted performance topology is provider-specific: Cohere batch
 uses a digest-pinned vLLM candidate, Nemotron keeps a Transformers correctness
 reference and evaluates NeMo for server streaming. Under ADR 0029, vLLM serves
 two assigned agent workload candidates—Qwen 3.6 NVFP4 for rapid automation and
@@ -948,7 +951,7 @@ timeline
 | **7** | Merged and gated | Phase 7 merged as `66d314d7`; its adversarial checkpoint closed at `ef6d977`. The merged work has a provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` ownership, owner-scoped jobs/LID, authenticated bounded private WebSocket admission, and a qualified native lower handshake. The desktop has only a narrow native token-provider seam; no production adapter is approved. Exact application/runtime candidate `dc6359162fb16909d38f410cdb75c2729d83972f` passed the one complete private 25-cell matrix and independent receipt validation. Hosted CI exposed only runner-portability defects. Reviewed repairs through `c1d81fc085218cf91a4e370087bcc5927e5b1f70` change hosted/gate tooling, its contracts, and documentation—not shipped product/runtime or candidate-manifest behavior—so the passed candidate matrix remains authoritative. Purpose grants, revocation, and their audit records are implemented and unit-tested but reachable only from tests: nothing calls `IdentityAuthorizationService`, so `access_disabled` and grants can be changed only by editing `identity.sqlite` directly. The layer is not a shipped capability; a future purpose-authorized speaker reconciliation/naming workflow must expose or remove it under review. Real IT-provided Entra policy conformance remains open. |
 | **8** | Closed as unadvertised baseline | ADR 0020, ADR 0027, and the source-aware design are canonical. PR #144 merged exact 30-second Tiron epochs, request-scoped reuse of its ECAPA encoder, an eight-slot decode-window boundary, a 32-speaker session target, a 64-speaker ceiling, strict `Unknown`, and clean one-speaker History projection. The server has one meeting-inference path and no ASR-plus-diarization fallback. Exact candidate `3ddb930...` recorded `unadvertised-baseline` because the independent private holdout was unconfigured; Tiron remains explicit Preview and absent from the default catalog. |
 | **9** | Merged and gated | Google OKF conformance, deterministic compilation, immutable terminology snapshots, Postgres permission/relationship generations, pgvector retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and privately qualified Qwen rapid/Gemma complex vLLM routes execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. The separate maintainability checkpoint gate passed at exact head `22c3f369...`; final hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`. Postgres remains the sole projection because no measured gap justified Neo4j. Production supervision, simultaneous residency, sustained mixed-user capacity, and external serving remain Phase 10. |
-| **10** | Slice 10.1 merged; Slice 10.2 gated, hosted merge pending | The merged hardware-independent baseline implements one systemd-contained, Rust-owned foreground provider-launcher lifecycle with exact loopback/model readiness, bounded restart/stop, and private state counters. Exact hosted-green head `1a487db8...` merged through PR #155 as `e2d82b89...`. The current candidate binds exact Qwen/Gemma profiles; lifecycle head `4b103c1b...`, qualification head `4d623212...`, and aggregate head `0471b158...` passed their gates. Authenticated integration, warm simultaneous residency, owner-fair admission, mixed-load capacity promotion, observability, corporate access hardening, HTTP/3 edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
+| **10** | Slices 10.1/10.2 merged; bounded admission gated and under hosted review | The merged baseline implements one systemd-contained, Rust-owned foreground provider-launcher lifecycle with exact loopback/model readiness, bounded restart/stop, private state counters, and immutable Qwen/Gemma service profiles. Exact hosted-green heads `1a487db8...` and `6d1400cc...` merged through PRs #155 and #157. Exact protected head `7bd93dc6...` adds bounded owner-fair admission for all eight role bindings over an owner-private Rust/Python boundary; public-lock/aggregate head `135cc2ba...` qualified both routes and passed the 169-test/17-database-test gate with real restart and teardown. No product workflow consumes it and the broker is not enabled. Native/server integration, warm simultaneous residency, mixed-load capacity promotion, observability, corporate access hardening, HTTP/3 edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
 
 The client-convergence PR was an MVP prerequisite merged separately before this
 server-node change; it does not rename canonical Phase 4 or imply that the
@@ -1000,7 +1003,10 @@ head. The separate post-Phase-9 maintainability checkpoint gate passed at
 `ca151b1b...`; PR #154 merged the corresponding documentation reconciliation as
 `fc8a1651...`. Exact hosted-green head `1a487db8...` passed the dedicated Linux
 lifecycle and every required repository check; PR #155 merged Slice 10.1 as
-`e2d82b89...`. Provider-specific Slice 10.2 is next.
+`e2d82b89...`. Hosted-green head `6d1400cc...` then merged the exact provider
+profiles through PR #157 as `cac8989b...`. The bounded admission substrate
+passed replacement route qualification at `7bd93dc6...` and the aggregate gate
+at `135cc2ba...`; PR #158 hosted review and product workflows remain next.
 Live ASR,
 managed LAN/enterprise and
 live-endpoint discovery, external

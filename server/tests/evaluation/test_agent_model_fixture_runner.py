@@ -3,10 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from yap_server.evaluation.agent_model_fixture_runner import (
     _step_visible_context,
     run_agent_model_fixtures,
+    run_agent_model_proposal_latency_samples,
     warm_agent_model_fixture_runtime,
 )
 from yap_server.evaluation.agent_model_scoring import score_agent_model_results
@@ -20,6 +22,40 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 class AgentModelFixtureRunnerTests(unittest.TestCase):
+    def test_repeats_each_proposal_case_eight_times_for_latency(self) -> None:
+        marker = object()
+        with patch(
+            "yap_server.evaluation.agent_model_fixture_runner._run_case_safely",
+            return_value=marker,
+        ) as run_case:
+            samples = run_agent_model_proposal_latency_samples(
+                REPOSITORY_ROOT,
+                model="synthetic",
+                maximum_output_tokens=256,
+                final_response_protocol="json-schema",
+                request_json=lambda _payload: {},
+            )
+
+        self.assertEqual(samples, (marker,) * 24)
+        self.assertEqual(
+            [call.args[0]["caseId"] for call in run_case.call_args_list],
+            [
+                case_id
+                for _repetition in range(8)
+                for case_id in (
+                    "cited-summary-proposal",
+                    "terminology-preservation-en",
+                    "terminology-preservation-es",
+                )
+            ],
+        )
+        self.assertTrue(
+            all(
+                call.kwargs["maximum_output_tokens"] == 160
+                for call in run_case.call_args_list
+            )
+        )
+
     def test_warms_exact_tool_and_structured_response_shapes(self) -> None:
         requests: list[dict[str, object]] = []
 

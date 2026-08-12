@@ -32,7 +32,7 @@ from yap_server.evaluation.owned_postgres_knowledge_runtime import (
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_LOCAL_OFFLINE_DESKTOP_BASE_HEAD = "4f194c2d0a9fde619c7d9793ec19fdd1feffc203"
+_LOCAL_OFFLINE_DESKTOP_BASE_HEAD = "6d1400ccdf481333840700b51f516c813960272b"
 _EXPECTED_DATABASE_MODULES = (
     "tests.knowledge.test_postgres_generation_ledger",
     "tests.knowledge.test_postgres_permission_safe_retrieval",
@@ -44,6 +44,7 @@ _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
 )
 _EXPECTED_PORTABLE_MODULES = (
+    "tests.agents.test_agent_admission_client",
     "tests.evaluation.test_agent_model_acceptance",
     "tests.evaluation.test_agent_model_final_response_retry",
     "tests.evaluation.test_agent_model_fixture_runner",
@@ -60,6 +61,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.evaluation.test_private_json_evidence",
     "tests.evaluation.test_provider_runtime_observations",
     "tests.evaluation.test_vllm_runtime_metrics",
+    "tests.infra.test_agent_admission_service",
     "tests.knowledge.test_agent_reasoning_routes",
     "tests.knowledge.test_cancellable_database_operation",
     "tests.knowledge.test_governed_answer_protocol",
@@ -71,7 +73,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 157
+_EXPECTED_PORTABLE_TEST_COUNT = 169
 
 
 def evaluate_governed_knowledge_gate(

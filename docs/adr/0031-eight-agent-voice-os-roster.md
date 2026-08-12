@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; service profiles gated, roster implementation and promotion pending
+**Status:** Accepted target; service profiles merged, bounded admission candidate implemented, roster workflows and promotion pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -15,9 +15,11 @@
 The product architecture names eight agents, but the merged system does not yet
 deliver that complete roster. Phase 9 merged the governed knowledge, tool,
 retrieval, terminology, and two qualified reasoning-route foundations. Phase 10
-Slice 10.1 merged a Rust-supervised provider lifecycle. The current unmerged
-Slice 10.2 candidate binds and independently gates the exact Qwen rapid and
-Gemma complex profiles, but does not yet admit application work. The desktop
+Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
+Gemma complex profiles. Exact protected head `7bd93dc6...` now implements a
+bounded admission substrate and exact public-lock head `135cc2ba...` passed its
+replacement route qualification and aggregate gate, but no application
+workflow consumes it yet. The desktop
 still has a development-only Polish prototype that sends an unrestricted
 transcript to a renderer-owned Ollama endpoint, and most named agent personas
 remain documented targets rather than executing product workflows.
@@ -124,8 +126,16 @@ or deployment claim is authorized without its later exact-head evidence.
 
 Slice 10.2 exact lifecycle head `4b103c1b...` passed both sequential route
 lifecycles, exact qualification head `4d623212...` qualified both routes, and
-public-lock successor `0471b158...` passed the aggregate governed gate. Hosted
-review/merge, warm simultaneous residency, authenticated admission, the eight
+public-lock successor `0471b158...` passed the aggregate governed gate, and
+hosted-green head `6d1400cc...` merged through PR #157. Bounded admission head
+`7bd93dc6...` qualified both exact routes with public-safe evidence SHA-256
+`a75500c344eaa7546695ab1e7415466c031ccf394620ed442ca618ea1ede8c06`;
+public-lock successor `135cc2ba...` passed the aggregate gate with public-safe
+evidence SHA-256
+`350c13a5569cfc7237174d1f7e2132857ffb3aaf28b6afd2eca03aa1999aea79`.
+It remains unmerged, disabled, and unintegrated while PR #158 is under hosted
+review. Warm
+simultaneous residency, authenticated product endpoints, the eight
 product workflows, sustained multi-owner capacity, and production promotion
 remain open.
 
