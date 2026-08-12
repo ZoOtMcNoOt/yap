@@ -28,6 +28,7 @@ def _request(
     ),
     second_text: str = "Um, the follow-up is tomorrow.",
     terminology: tuple[str, ...] = ("follow-up",),
+    authorized_replacements: tuple[tuple[str, str], ...] = (),
 ) -> BoundTranscriptCorrectionRequest:
     first = first_text
     second = second_text
@@ -63,7 +64,11 @@ def _request(
     )
     return bind_transcript_correction_request(
         source_request,
-        TranscriptCorrectionTerminology("c" * 64, terminology),
+        TranscriptCorrectionTerminology(
+            "c" * 64,
+            terminology,
+            authorized_replacements,
+        ),
     )
 
 
@@ -83,6 +88,120 @@ def _response(
 
 
 class TranscriptCorrectionTests(unittest.TestCase):
+    def test_authorized_terminology_mapping_is_canonical_and_server_bound(self) -> None:
+        invalid = (
+            (("variant", "unapproved"),),
+            (("same", "same"),),
+            (("zeta", "dosage"), ("alpha", "dosage")),
+            (("Variant", "dosage"), ("variant", "dosage")),
+        )
+        for replacements in invalid:
+            with self.subTest(replacements=replacements), self.assertRaises(
+                (TypeError, ValueError)
+            ):
+                TranscriptCorrectionTerminology(
+                    "c" * 64,
+                    ("dosage",),
+                    replacements,
+                )
+
+    def test_server_applies_only_whole_token_authorized_terminology_replacements(
+        self,
+    ) -> None:
+        request = _request(
+            first_text="Rivera says the doasge remains stable. ",
+            second_text="A doasgeable label and 25 remain unchanged.",
+            terminology=("dosage", "30", "Riviera"),
+            authorized_replacements=(
+                ("25", "30"),
+                ("doasge", "dosage"),
+                ("Rivera", "Riviera"),
+            ),
+        )
+
+        correction = validate_transcript_correction(
+            request,
+            parse_transcript_correction_response(_response(request, edits=[])),
+        )
+
+        self.assertEqual(
+            correction.corrected_text,
+            "Rivera says the dosage remains stable. "
+            "A doasgeable label and 25 remain unchanged.",
+        )
+        self.assertEqual(len(correction.edits), 1)
+        self.assertEqual(correction.edits[0].source_text, "doasge")
+        self.assertEqual(correction.edits[0].replacement_text, "dosage")
+
+    def test_authorized_terminology_is_bound_into_request_identity(self) -> None:
+        without_replacement = _request(
+            first_text="The doasge remains stable. ",
+            terminology=("dosage",),
+            authorized_replacements=(),
+        )
+        with_replacement = _request(
+            first_text="The doasge remains stable. ",
+            terminology=("dosage",),
+            authorized_replacements=(("doasge", "dosage"),),
+        )
+
+        self.assertNotEqual(
+            correction_request_sha256(without_replacement),
+            correction_request_sha256(with_replacement),
+        )
+        self.assertEqual(
+            with_replacement.to_wire()["authorizedTerminologyReplacements"],
+            [{"source": "doasge", "replacement": "dosage"}],
+        )
+        self.assertEqual(with_replacement.to_wire()["schemaVersion"], 2)
+
+    def test_authorized_terminology_overrides_conflicting_model_edit(self) -> None:
+        request = _request(
+            first_text="The tavi plan is ready. ",
+            terminology=("transcatheter aortic valve implantation",),
+            authorized_replacements=(
+                ("tavi", "transcatheter aortic valve implantation"),
+            ),
+        )
+        proposed = {
+            "segmentId": "segment-0001",
+            "segmentSha256": request.segments[0].text_sha256,
+            "sourceText": "tavi",
+            "replacementText": "taxi",
+        }
+
+        correction = validate_transcript_correction(
+            request,
+            parse_transcript_correction_response(
+                _response(request, edits=[proposed])
+            ),
+        )
+
+        self.assertEqual(
+            correction.corrected_text,
+            "The transcatheter aortic valve implantation plan is ready. "
+            "Um, the follow-up is tomorrow.",
+        )
+
+    def test_uncertainty_preserves_raw_source_despite_authorized_replacement(self) -> None:
+        request = _request(
+            first_text="The doasge remains unclear. ",
+            terminology=("dosage",),
+            authorized_replacements=(("doasge", "dosage"),),
+        )
+
+        correction = validate_transcript_correction(
+            request,
+            parse_transcript_correction_response(
+                _response(request, edits=[], uncertain=True)
+            ),
+        )
+
+        self.assertEqual(
+            apply_validated_transcript_correction(request, correction),
+            request.source_text,
+        )
+
     def test_protected_spans_match_validation_categories(self) -> None:
         request = _request(
             first_text=(

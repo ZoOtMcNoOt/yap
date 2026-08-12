@@ -80,6 +80,7 @@ class TranscriptCorrectionTerminologyTests(unittest.TestCase):
 
         self.assertEqual(resolved.snapshot_sha256, snapshot.snapshot_sha256)
         self.assertEqual(resolved.exact_forms, ("Dosage",))
+        self.assertEqual(resolved.authorized_replacements, (("dosage", "Dosage"),))
         store.assert_called_once()
         self.assertIs(store.call_args.args[0], seen[0])
         self.assertEqual(store.call_args.kwargs["locale"], "en-US")

@@ -434,10 +434,15 @@ class TranscriptCorrectionRequest:
 class TranscriptCorrectionTerminology:
     snapshot_sha256: str
     exact_forms: tuple[str, ...]
+    authorized_replacements: tuple[tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
         _lower_sha256(self.snapshot_sha256, "terminology snapshot hash")
         _validated_terminology(self.exact_forms)
+        _validated_authorized_replacements(
+            self.authorized_replacements,
+            exact_forms=self.exact_forms,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -465,13 +470,21 @@ class BoundTranscriptCorrectionRequest:
     def approved_terminology(self) -> tuple[str, ...]:
         return self.terminology.exact_forms
 
+    @property
+    def authorized_terminology_replacements(self) -> tuple[tuple[str, str], ...]:
+        return self.terminology.authorized_replacements
+
     def to_wire(self) -> dict[str, object]:
         return {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "sourceRevisionSha256": self.source_revision_sha256,
             "sourceSha256": self.source_sha256,
             "terminologySnapshotSha256": self.terminology.snapshot_sha256,
             "approvedTerminology": list(self.approved_terminology),
+            "authorizedTerminologyReplacements": [
+                {"source": source, "replacement": replacement}
+                for source, replacement in self.authorized_terminology_replacements
+            ],
             "segments": [segment.to_wire() for segment in self.segments],
         }
 
@@ -677,17 +690,34 @@ def validate_transcript_correction(
         previous_end_by_segment[edit.segment_id] = edit.end_character
         changed_source_characters += len(edit.source_text)
         resolved_edits.append(edit)
+    authorized_edits = _authorized_terminology_edits(request)
+    for authorized in authorized_edits:
+        resolved_edits = [
+            edit
+            for edit in resolved_edits
+            if not (
+                edit.segment_id == authorized.segment_id
+                and edit.start_character < authorized.end_character
+                and authorized.start_character < edit.end_character
+            )
+        ]
+        resolved_edits.append(authorized)
+    resolved_edits.sort(
+        key=lambda edit: (segment_order[edit.segment_id], edit.start_character)
+    )
+    changed_source_characters = sum(len(edit.source_text) for edit in resolved_edits)
     maximum_changed_characters = max(32, len(request.source_text) // 4)
     if changed_source_characters > maximum_changed_characters:
         raise ValueError("transcript correction edit coverage is too large")
     edits = tuple(resolved_edits)
     corrected_text = _apply_edits(request, edits)
+    authorized_text = _apply_edits(request, authorized_edits)
     if protected_transcript_fact_values(
-        request.source_text
+        authorized_text
     ) != protected_transcript_fact_values(corrected_text):
         raise ValueError("transcript correction changed protected transcript facts")
     for term in terminology:
-        if corrected_text.count(term) < request.source_text.count(term):
+        if corrected_text.count(term) < authorized_text.count(term):
             raise ValueError("transcript correction changed protected transcript facts")
     return ValidatedTranscriptCorrection(
         request_sha256=request_sha256,
@@ -967,6 +997,82 @@ def _validated_terminology(values: Sequence[str]) -> tuple[str, ...]:
             raise ValueError("approved terminology is invalid")
         result.append(term)
     return tuple(result)
+
+
+def _validated_authorized_replacements(
+    values: object,
+    *,
+    exact_forms: Sequence[str],
+) -> tuple[tuple[str, str], ...]:
+    if not isinstance(values, tuple) or len(values) > 128:
+        raise TypeError("authorized terminology replacements must be a tuple")
+    allowed = set(exact_forms)
+    result: list[tuple[str, str]] = []
+    folded_sources: set[str] = set()
+    for value in values:
+        if not isinstance(value, tuple) or len(value) != 2:
+            raise TypeError("authorized terminology replacement is invalid")
+        source = _bounded_text(value[0], "authorized terminology source", 128)
+        replacement = _bounded_text(
+            value[1], "authorized terminology replacement", 128
+        )
+        folded = source.casefold()
+        if (
+            replacement not in allowed
+            or source == replacement
+            or folded in folded_sources
+        ):
+            raise ValueError("authorized terminology replacement is invalid")
+        folded_sources.add(folded)
+        result.append((source, replacement))
+    canonical = tuple(sorted(result, key=lambda item: (item[0].casefold(), item[1])))
+    if tuple(values) != canonical:
+        raise ValueError("authorized terminology replacements are not canonical")
+    return canonical
+
+
+def _authorized_terminology_edits(
+    request: BoundTranscriptCorrectionRequest,
+) -> tuple[TranscriptCorrectionEdit, ...]:
+    replacements = dict(request.authorized_terminology_replacements)
+    if not replacements:
+        return ()
+    folded_replacements = {
+        source.casefold(): replacement for source, replacement in replacements.items()
+    }
+    pattern = re.compile(
+        r"(?<!\w)(?:"
+        + "|".join(
+            re.escape(source)
+            for source in sorted(replacements, key=lambda item: (-len(item), item))
+        )
+        + r")(?!\w)",
+        re.IGNORECASE,
+    )
+    protected_by_segment: dict[str, list[tuple[int, int]]] = {}
+    for span in protected_transcript_spans(request):
+        protected_by_segment.setdefault(span.segment_id, []).append(
+            (span.start_character, span.end_character)
+        )
+    edits: list[TranscriptCorrectionEdit] = []
+    for segment in request.segments:
+        protected = protected_by_segment.get(segment.segment_id, [])
+        for match in pattern.finditer(segment.text):
+            if any(
+                start < match.end() and match.start() < end for start, end in protected
+            ):
+                continue
+            replacement = folded_replacements[match.group(0).casefold()]
+            edit = TranscriptCorrectionEdit(
+                segment_id=segment.segment_id,
+                segment_sha256=segment.text_sha256,
+                start_character=match.start(),
+                end_character=match.end(),
+                source_text=match.group(0),
+                replacement_text=replacement,
+            )
+            edits.append(edit)
+    return tuple(edits)
 
 
 def _source_text(value: object, field: str, maximum: int) -> str:

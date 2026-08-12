@@ -93,6 +93,16 @@ def _source_evidence(
     }
 
 
+def _terminology(owner_id: str) -> dict[str, object]:
+    return {
+        "recordId": f"term-{owner_id}",
+        "ownerId": owner_id,
+        "locale": "en-US",
+        "canonicalForm": "dosage",
+        "variants": ["doasge"],
+    }
+
+
 def _loaded_source_evidence(
     evidence_sha256: str,
     source: str,
@@ -141,7 +151,7 @@ def _case(
         else ()
     )
     basis = {
-        "corrected": "reviewed-safe-correction",
+        "corrected": "authorized-terminology-correction",
         "source-preserved": "protected-reference-change",
         "uncertain": "reviewed-unsafe-ambiguity",
         "unchanged": "reference-identical",
@@ -342,7 +352,7 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
                     "sourceAudioSha256": "e" * 64,
                     "ownerId": "owner-1",
                     "expectedDisposition": "corrected",
-                    "expectedDispositionBasis": "reviewed-safe-correction",
+                    "expectedDispositionBasis": "authorized-terminology-correction",
                     "request": _request(source).to_wire(),
                     "referenceText": "The dosage is correct.",
                     "criticalTokens": [],
@@ -356,7 +366,7 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
                     ],
                 }
             ],
-            "terminology": [],
+            "terminology": [_terminology("owner-1")],
         }
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -403,7 +413,7 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
                         "The dosage is correct.",
                     ),
                 ),
-                self.assertRaisesRegex(ValueError, "does not improve word error"),
+                self.assertRaisesRegex(ValueError, "lacks terminology authorization"),
             ):
                 load_private_transcript_correction_corpus(
                     path,
@@ -497,7 +507,10 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
                     "reviewedCorrectionEdits": [],
                 },
             ],
-            "terminology": [],
+            "terminology": [
+                _terminology("owner-1"),
+                _terminology("owner-2"),
+            ],
         }
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -537,7 +550,7 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
             "sourceAudioSha256": "e" * 64,
             "ownerId": "owner-1",
             "expectedDisposition": "corrected",
-            "expectedDispositionBasis": "reviewed-safe-correction",
+            "expectedDispositionBasis": "authorized-terminology-correction",
             "request": _request(source).to_wire(),
             "referenceText": "The dosage is correct.",
             "criticalTokens": [],
@@ -554,7 +567,10 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
             "schemaVersion": 3,
             "corpusId": "scribe-private-v2",
             "cases": [case, {**case, "caseId": "real-2", "ownerId": "owner-2"}],
-            "terminology": [],
+            "terminology": [
+                _terminology("owner-1"),
+                _terminology("owner-2"),
+            ],
         }
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -590,7 +606,7 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
                     "sourceAudioSha256": "c" * 64,
                     "ownerId": "owner-1",
                     "expectedDisposition": "corrected",
-                    "expectedDispositionBasis": "reviewed-safe-correction",
+                    "expectedDispositionBasis": "authorized-terminology-correction",
                     "request": _request(source).to_wire(),
                     "referenceText": "The dosage is correct.",
                     "criticalTokens": [],
@@ -604,7 +620,7 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
                     ],
                 }
             ],
-            "terminology": [],
+            "terminology": [_terminology("owner-1")],
         }
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

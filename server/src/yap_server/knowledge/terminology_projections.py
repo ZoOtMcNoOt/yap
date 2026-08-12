@@ -22,6 +22,7 @@ class GrammarPreservationConstraints:
     snapshot_sha256: str
     locale: str
     exact_forms: tuple[str, ...]
+    authorized_replacements: tuple[tuple[str, str], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,6 +79,7 @@ def compile_grammar_preservation_constraints(
         snapshot_sha256=snapshot.snapshot_sha256,
         locale=snapshot.locale,
         exact_forms=tuple(sorted({item.canonical_form for item in snapshot.entries})),
+        authorized_replacements=tuple(sorted(snapshot.variant_map.items())),
     )
 
 

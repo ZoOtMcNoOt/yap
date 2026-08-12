@@ -112,6 +112,7 @@ class TranscriptCorrectionCaseObservation:
             "sourceAudioSha256": self.case.source_audio_sha256,
             "ownerId": self.case.owner_id,
             "expectedDisposition": self.case.expected_disposition,
+            "expectedDispositionBasis": self.case.expected_disposition_basis,
             "status": self.status,
             "applied": self.applied,
             "reason": self.reason,

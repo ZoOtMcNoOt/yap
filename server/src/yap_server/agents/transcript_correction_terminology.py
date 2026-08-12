@@ -83,6 +83,7 @@ class PostgresTranscriptCorrectionTerminologyResolver:
             return TranscriptCorrectionTerminology(
                 snapshot_sha256=constraints.snapshot_sha256,
                 exact_forms=constraints.exact_forms,
+                authorized_replacements=constraints.authorized_replacements,
             )
         except (OSError, psycopg.Error, RuntimeError, TypeError, ValueError) as error:
             raise TranscriptCorrectionTerminologyUnavailable(

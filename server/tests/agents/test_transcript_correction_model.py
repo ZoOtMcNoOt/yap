@@ -116,6 +116,44 @@ def _model_response(payload: dict[str, object]) -> dict[str, object]:
 
 
 class TranscriptCorrectionModelTests(unittest.TestCase):
+    def test_model_applies_server_authorized_terminology_after_unchanged_response(
+        self,
+    ) -> None:
+        source = _request_for_text("The doasge remains stable.")
+        request = bind_transcript_correction_request(
+            source.source,
+            TranscriptCorrectionTerminology(
+                "c" * 64,
+                ("dosage",),
+                (("doasge", "dosage"),),
+            ),
+        )
+
+        def unchanged(payload: dict[str, object]) -> dict[str, object]:
+            user = json.loads(payload["messages"][1]["content"])  # type: ignore[index]
+            response = {
+                "schemaVersion": 2,
+                "requestSha256": user["responseBinding"]["requestSha256"],
+                "sourceSha256": user["responseBinding"]["sourceSha256"],
+                "uncertain": False,
+                "edits": [],
+            }
+            return {"choices": [{"message": {"content": json.dumps(response)}}]}
+
+        transport = _Transport(unchanged)
+        correction = TranscriptCorrectionModel(
+            transport=transport,
+            model="nvidia/Qwen3.6-35B-A3B-NVFP4",
+            maximum_output_tokens=512,
+        ).correct(request, cancellation=threading.Event())
+
+        self.assertEqual(correction.corrected_text, "The dosage remains stable.")
+        user = json.loads(transport.calls[0][0]["messages"][1]["content"])  # type: ignore[index]
+        self.assertEqual(
+            user["request"]["authorizedTerminologyReplacements"],
+            [{"source": "doasge", "replacement": "dosage"}],
+        )
+
     def test_masking_fails_closed_when_ascii_placeholders_are_exhausted(self) -> None:
         request = _request()
         bound = bind_transcript_correction_request(
@@ -202,6 +240,10 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         self.assertIn("explicit '[inaudible]' gap", messages[0]["content"])
         self.assertIn(
             "text-only inference cannot authorize its replacement",
+            messages[0]["content"],
+        )
+        self.assertIn(
+            "server applies those mappings deterministically",
             messages[0]["content"],
         )
         self.assertIn("Never emit an edit whose replacement equals", messages[0]["content"])

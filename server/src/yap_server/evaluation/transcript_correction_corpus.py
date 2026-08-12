@@ -38,7 +38,7 @@ _IDENTIFIER = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _SOURCE_KINDS = frozenset({"real-asr", "safety-probe"})
 _DISPOSITION_BASES = {
-    "corrected": "reviewed-safe-correction",
+    "corrected": "authorized-terminology-correction",
     "source-preserved": "protected-reference-change",
     "unchanged": "reference-identical",
     "uncertain": "reviewed-unsafe-ambiguity",
@@ -116,13 +116,17 @@ def load_private_transcript_correction_corpus(
     term_ids = {item.record_id for item in terminology}
     if len(term_ids) != len(terminology):
         raise ValueError("transcript correction corpus terminology is duplicated")
-    terms_by_owner: dict[str, list[str]] = {}
+    terms_by_owner_locale: dict[
+        tuple[str, str], list[TranscriptCorrectionQualificationTerm]
+    ] = {}
     for term in terminology:
-        terms_by_owner.setdefault(term.owner_id, []).append(term.canonical_form)
+        terms_by_owner_locale.setdefault((term.owner_id, term.locale), []).append(term)
     raw_cases = value["cases"]
     if not isinstance(raw_cases, list) or not 1 <= len(raw_cases) <= _MAXIMUM_CASES:
         raise ValueError("transcript correction corpus case count is invalid")
-    cases = tuple(_case(item, terms_by_owner=terms_by_owner) for item in raw_cases)
+    cases = tuple(
+        _case(item, terms_by_owner_locale=terms_by_owner_locale) for item in raw_cases
+    )
     case_ids = {item.case_id for item in cases}
     if len(case_ids) != len(cases):
         raise ValueError("transcript correction corpus case identity is duplicated")
@@ -177,7 +181,9 @@ def _bind_real_asr_cases(
 def _case(
     value: object,
     *,
-    terms_by_owner: dict[str, list[str]],
+    terms_by_owner_locale: dict[
+        tuple[str, str], list[TranscriptCorrectionQualificationTerm]
+    ],
 ) -> TranscriptCorrectionQualificationCase:
     if not isinstance(value, dict) or set(value) != {
         "caseId",
@@ -240,13 +246,28 @@ def _case(
         raise ValueError("transcript correction critical tokens are duplicated")
     owner_id = _identifier(value["ownerId"], "owner")
     request = TranscriptCorrectionRequest.from_wire(value["request"])
+    owner_terms = tuple(
+        terms_by_owner_locale.get((owner_id, request.language_bcp47), ())
+    )
+    approved_terminology = tuple(
+        sorted({term.canonical_form for term in owner_terms})
+    )
+    replacement_map: dict[str, str] = {}
+    for term in owner_terms:
+        for variant in term.variants:
+            key = variant.casefold()
+            existing = replacement_map.get(key)
+            if existing is not None and existing != term.canonical_form:
+                raise ValueError("transcript correction terminology variants conflict")
+            replacement_map[key] = term.canonical_form
     reviewed_edits = _reviewed_correction_edits(
         value["reviewedCorrectionEdits"],
         source_kind=str(source_kind),
         disposition=str(disposition),
         request=request,
         reference=reference,
-        approved_terminology=tuple(terms_by_owner.get(owner_id, ())),
+        approved_terminology=approved_terminology,
+        authorized_replacements=tuple(sorted(replacement_map.items())),
     )
     return TranscriptCorrectionQualificationCase(
         case_id=_identifier(value["caseId"], "case"),
@@ -272,6 +293,7 @@ def _reviewed_correction_edits(
     request: TranscriptCorrectionRequest,
     reference: str,
     approved_terminology: tuple[str, ...],
+    authorized_replacements: tuple[tuple[str, str], ...],
 ) -> tuple[TranscriptCorrectionProposedEdit, ...]:
     if (
         not isinstance(value, list)
@@ -317,6 +339,7 @@ def _reviewed_correction_edits(
         TranscriptCorrectionTerminology(
             snapshot_sha256="0" * 64,
             exact_forms=approved_terminology,
+            authorized_replacements=authorized_replacements,
         ),
     )
     response = parse_transcript_correction_response(
@@ -328,6 +351,12 @@ def _reviewed_correction_edits(
             "edits": value,
         }
     )
+    authorized = set(authorized_replacements)
+    if any(
+        (edit.source_text.casefold(), edit.replacement_text) not in authorized
+        for edit in response.edits
+    ):
+        raise ValueError("reviewed correction lacks terminology authorization")
     correction = validate_transcript_correction(bound, response)
     corrected_errors = _word_errors(
         reference,
