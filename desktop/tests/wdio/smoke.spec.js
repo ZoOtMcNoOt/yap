@@ -412,6 +412,7 @@ describe("Yap desktop shell", () => {
         batchJobs: false,
         liveStreaming: false,
         jobStatus: false,
+        transcriptCorrection: false,
       });
       const catalog = await invokeTauriCommandInSession(
         firstSession,
