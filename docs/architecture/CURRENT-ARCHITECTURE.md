@@ -12,9 +12,10 @@ private qualification gate with public-safe semantic evidence SHA-256
 Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged Scribe
 as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks and PR
 #165 merged the no-LLM Archivist ingestion core as `2a7ec819...`. The current
-Student source-grounding repair is complete-portable-test green on the unchanged full Qwen
-rapid profile; replacement private qualification, hosted merge, and product
-exposure remain open after adversarial review invalidated its prior receipt.
+Student evidence-index repair is complete-portable-test green on the unchanged
+full Qwen rapid profile; replacement private qualification, hosted merge, and
+product exposure remain open after exact
+candidate `476f7a9c...` returned terminal `deterministic-no-student`.
 Later Phase 10 roles and capacity/operations layers are not part of the merged
 baseline. Phase 7
 implements provider-neutral
@@ -1024,20 +1025,27 @@ zero-residue checks; hosted-green head `e1899db7...` passed all 12 checks and PR
 The unmerged Student core is a separate BACKGROUND_LLM workflow on the rapid
 route. It reads one authenticated owner-scoped permission-safe conversation
 generation, accepts only bounded topic text, and requests bounded learning
-questions. The model selects only an exact source subject and exact support
-quotes paired to complete server-owned citations. The server rebinds every
-support to frozen evidence, derives support spans, and alone renders the fixed
-question template. It cannot mutate the source, write proposals, or activate
-knowledge.
+questions. The model sees ordered evidence indexes and text and returns exactly
+one source subject, one evidence index, and one exact support quote. The server
+validates the index, binds the frozen evidence and complete citation identity,
+derives the support span, and alone renders the fixed question template. It
+cannot mutate the source, write proposals, or activate knowledge.
+
+Exact candidate `476f7a9c...` returned terminal `deterministic-no-student`
+with public-safe evidence SHA-256 `9c2f68ff...`. Six of eight cases completed
+and two failed closed while the unchanged warm-provider/profile, broker,
+synchronized eight-owner queue wave, PostgreSQL restart/cross-owner/audit
+checks, and exact teardown held. The evidence-index successor changes protected
+inputs, so that receipt is inadmissible and not reused.
 
 Exact candidate `452c8b76...` originally returned
 `student-learning-questions-qualified` with public-safe evidence SHA-256
 `3e1ddc61...`, but post-gate adversarial review proved that its caller-controlled
 focus could supply a target question and that an unrelated exact citation could
 authorize an unsupported premise. That receipt is terminal and inadmissible.
-The repaired focused set runs 31 total tests: 29 pass and two are declared
-database skips. The complete portable server suite runs 1,238 total tests:
-1,204 pass and 34 are declared skips. The
+The repaired focused set runs 34 total tests: 32 pass and two are declared
+database skips. Its complete portable suite ran 1,241 total tests: 1,207 passed
+and 34 were declared skips. The
 workload still preserves the full Qwen rapid profile (`0.40` GPU-memory
 utilization, four maximum sequences, 8,192 maximum batched tokens) and a
 512-token Student output cap; neither the workflow nor its gate launches,

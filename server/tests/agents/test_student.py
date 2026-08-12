@@ -89,6 +89,23 @@ def _question() -> StudentQuestion:
     )
 
 
+def _model_response(
+    subject: str = "crash safety",
+    quote: str = "crash safety",
+    *,
+    evidence_index: object = 0,
+) -> dict[str, object]:
+    return {
+        "questions": [
+            {
+                "sourceSubject": subject,
+                "sourceEvidenceIndex": evidence_index,
+                "supportQuote": quote,
+            }
+        ]
+    }
+
+
 def _runtime_identity() -> StudentRuntimeAuditIdentity:
     return StudentRuntimeAuditIdentity(
         candidate_id="qwen-rapid",
@@ -235,23 +252,27 @@ class _Admission:
 
 
 class StudentTests(unittest.TestCase):
-    def test_result_auditor_rejects_success_without_questions(self) -> None:
+    def test_result_auditor_requires_exactly_one_successful_question(self) -> None:
         auditor = PostgresStudentResultAuditor(
             lambda: (_ for _ in ()).throw(AssertionError("database opened")),
             _runtime_identity(),
         )
-        with self.assertRaisesRegex(ValueError, "result audit is invalid"):
-            auditor.record(
-                principal=_principal(),
-                request_id="student-1",
-                request=_request(),
-                provider_generation=7,
-                status="complete",
-                reason=None,
-                evidence=_evidence(),
-                question_count=0,
-                duration_milliseconds=1,
-            )
+        for count in (0, 2):
+            with self.subTest(count=count), self.assertRaisesRegex(
+                ValueError,
+                "result audit is invalid",
+            ):
+                auditor.record(
+                    principal=_principal(),
+                    request_id="student-1",
+                    request=_request(),
+                    provider_generation=7,
+                    status="complete",
+                    reason=None,
+                    evidence=_evidence(),
+                    question_count=count,
+                    duration_milliseconds=1,
+                )
 
     def test_request_requires_exact_meeting_generation_and_topic(self) -> None:
         self.assertEqual(
@@ -315,20 +336,7 @@ class StudentTests(unittest.TestCase):
                 StudentRequest.from_wire(value)
 
     def test_model_returns_only_questions_with_exact_visible_citations(self) -> None:
-        content = {
-            "questions": [
-                {
-                    "sourceSubject": "crash safety",
-                    "sourceSupports": [
-                        {
-                            "sourceCitation": _item().citation_wire(),
-                            "supportQuote": "crash safety",
-                        }
-                    ],
-                }
-            ]
-        }
-        transport = _Transport(content)
+        transport = _Transport(_model_response())
         questions = StudentQuestionModel(
             transport=transport,
             model="rapid-model",
@@ -357,59 +365,41 @@ class StudentTests(unittest.TestCase):
             prompt_value["visibleEvidence"],
             [
                 {
-                    "sourceCitation": _item().citation_wire(),
+                    "sourceEvidenceIndex": 0,
                     "text": _item().text,
                 }
             ],
         )
-        self.assertIn("source subjects copied byte-for-byte", payload["messages"][0]["content"])
+        self.assertIn(
+            "exactly one concise source subject copied byte-for-byte",
+            payload["messages"][0]["content"],
+        )
+        schema = payload["response_format"]["json_schema"]["schema"]
+        self.assertEqual(schema["properties"]["questions"]["maxItems"], 1)
+        self.assertEqual(
+            set(schema["properties"]["questions"]["items"]["properties"]),
+            {"sourceSubject", "sourceEvidenceIndex", "supportQuote"},
+        )
 
-    def test_model_rejects_hidden_or_duplicate_evidence_claims(self) -> None:
-        hidden = _item().citation_wire()
-        hidden["conceptId"] = "meetings/hidden"
-        narrowed = _item().citation_wire()
-        narrowed["charStart"] += 1
+    def test_model_rejects_invalid_evidence_selection_or_multiple_questions(self) -> None:
         responses = (
+            _model_response(evidence_index=-1),
+            _model_response(evidence_index=1),
+            _model_response(evidence_index=True),
             {
                 "questions": [
-                    {
-                        "sourceSubject": "hidden fact",
-                        "sourceSupports": [
-                            {"sourceCitation": hidden, "supportQuote": "crash safety"}
-                        ],
-                    }
+                    _model_response()["questions"][0],
+                    _model_response("reviewed meeting", "reviewed meeting")[
+                        "questions"
+                    ][0],
                 ]
             },
             {
                 "questions": [
                     {
-                        "sourceSubject": "crash safety",
-                        "sourceSupports": [
-                            {"sourceCitation": narrowed, "supportQuote": "crash safety"}
-                        ],
+                        **_model_response()["questions"][0],
+                        "sourceCitation": _item().citation_wire(),
                     }
-                ]
-            },
-            {
-                "questions": [
-                    {
-                        "sourceSubject": "crash safety",
-                        "sourceSupports": [
-                            {
-                                "sourceCitation": _item().citation_wire(),
-                                "supportQuote": "crash safety",
-                            }
-                        ],
-                    },
-                    {
-                        "sourceSubject": "crash safety",
-                        "sourceSupports": [
-                            {
-                                "sourceCitation": _item().citation_wire(),
-                                "supportQuote": "crash safety",
-                            }
-                        ],
-                    },
                 ]
             },
         )
@@ -453,21 +443,13 @@ class StudentTests(unittest.TestCase):
             (_item("Ratio 1:2 today."), "2", "2"),
             (_item("Dose 5°C today."), "°C", "°C"),
             (_item("Failure 5% today."), "% today", "% today"),
+            (_item("Dose +5 mg today."), "5 mg", "5 mg"),
+            (_item("Dose −5 mg today."), "5 mg", "5 mg"),
+            (_item("Dose ≤5 mg today."), "5 mg", "5 mg"),
+            (_item("Dose 3–5 mg today."), "5 mg", "5 mg"),
         )
         for item, subject, quote in cases:
-            response = {
-                "questions": [
-                    {
-                        "sourceSubject": subject,
-                        "sourceSupports": [
-                            {
-                                "sourceCitation": item.citation_wire(),
-                                "supportQuote": quote,
-                            }
-                        ],
-                    }
-                ]
-            }
+            response = _model_response(subject, quote)
             with self.subTest(subject=subject, quote=quote), self.assertRaises(
                 ValueError
             ):
@@ -495,21 +477,13 @@ class StudentTests(unittest.TestCase):
             ("Jean‑Luc approved.", "Jean‑Luc"),
             ("anti‐inflammatory dose.", "anti‐inflammatory"),
             ("Decision: approved.", "approved"),
+            ("Dose +5 mg today.", "+5 mg"),
+            ("Dose −5 mg today.", "−5 mg"),
+            ("Dose ≤5 mg today.", "≤5 mg"),
+            ("Dose 3–5 mg today.", "3–5 mg"),
         ):
             item = _item(text)
-            response = {
-                "questions": [
-                    {
-                        "sourceSubject": subject,
-                        "sourceSupports": [
-                            {
-                                "sourceCitation": item.citation_wire(),
-                                "supportQuote": text,
-                            }
-                        ],
-                    }
-                ]
-            }
+            response = _model_response(subject, text)
             with self.subTest(valid_subject=subject):
                 questions = StudentQuestionModel(
                     transport=_Transport(response),
@@ -573,7 +547,7 @@ class StudentTests(unittest.TestCase):
         self.assertEqual(view.status, "failed")
         self.assertEqual(view.reason, "invalid-output")
 
-    def test_model_rejects_unrelated_additional_support(self) -> None:
+    def test_model_binds_only_the_selected_visible_evidence(self) -> None:
         primary = _item("Alice approved TAVI.")
         unrelated = replace(
             _item("Bob denied CABG."),
@@ -588,29 +562,18 @@ class StudentTests(unittest.TestCase):
             items=(primary, unrelated),
             output_budget_exhausted=False,
         )
-        response = {
-            "questions": [
-                {
-                    "sourceSubject": "TAVI",
-                    "sourceSupports": [
-                        {
-                            "sourceCitation": primary.citation_wire(),
-                            "supportQuote": primary.text,
-                        },
-                        {
-                            "sourceCitation": unrelated.citation_wire(),
-                            "supportQuote": unrelated.text,
-                        },
-                    ],
-                }
-            ]
-        }
-        with self.assertRaisesRegex(ValueError, "not source-grounded"):
-            StudentQuestionModel(
-                transport=_Transport(response),
-                model="rapid-model",
-                maximum_output_tokens=256,
-            ).generate(_request(), evidence, cancellation=threading.Event())
+        questions = StudentQuestionModel(
+            transport=_Transport(
+                _model_response("CABG", unrelated.text, evidence_index=1)
+            ),
+            model="rapid-model",
+            maximum_output_tokens=256,
+        ).generate(_request(), evidence, cancellation=threading.Event())
+
+        self.assertEqual(
+            questions[0].supports,
+            (StudentQuestionSupport(unrelated, unrelated.text),),
+        )
 
     def test_empty_or_hidden_evidence_never_submits_or_calls_the_model(self) -> None:
         admission = _Admission()

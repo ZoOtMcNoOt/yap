@@ -200,7 +200,8 @@ def load_student_qualification_acceptance(
         or acceptance.concurrent_request_count > acceptance.minimum_case_count
         or acceptance.minimum_questions_per_case
         > acceptance.maximum_questions_per_case
-        or acceptance.maximum_questions_per_case > 5
+        or acceptance.minimum_questions_per_case != 1
+        or acceptance.maximum_questions_per_case != 1
         or acceptance.maximum_p95_latency_milliseconds > 60_000
     ):
         raise ValueError("Student qualification acceptance values conflict")
@@ -242,7 +243,7 @@ def evaluate_student_qualification(
     acceptance: StudentQualificationAcceptance,
     tenant_id: str,
     generation_sha256: str,
-    expected_evidence: Mapping[str, StudentExpectedEvidence],
+    expected_evidence: Mapping[str, tuple[StudentExpectedEvidence, ...]],
     observe_warm_state: Callable[[], Mapping[str, object]],
     observe_admission_state: Callable[[], Mapping[str, object]],
 ) -> StudentQualificationResult:
@@ -252,7 +253,15 @@ def evaluate_student_qualification(
         generation_sha256
     ) is None:
         raise ValueError("Student qualification knowledge identity is invalid")
-    if set(expected_evidence) != {case.case_id for case in corpus.cases}:
+    if (
+        set(expected_evidence) != {case.case_id for case in corpus.cases}
+        or any(
+            not isinstance(items, tuple)
+            or not 1 <= len(items) <= 8
+            or any(not isinstance(item, StudentExpectedEvidence) for item in items)
+            for items in expected_evidence.values()
+        )
+    ):
         raise ValueError("Student qualification expected evidence differs")
     before = _warm_state(observe_warm_state())
     admission_before = _admission_state(observe_admission_state())
@@ -431,7 +440,7 @@ def _run_case(
     case: StudentQualificationCase,
     tenant_id: str,
     generation_sha256: str,
-    expected_evidence: StudentExpectedEvidence,
+    expected_evidence: tuple[StudentExpectedEvidence, ...],
     barrier: threading.Barrier,
 ) -> StudentCaseObservation:
     principal = AuthenticatedPrincipal(
@@ -510,20 +519,23 @@ def _questions_are_grounded(questions: tuple[StudentQuestion, ...]) -> bool:
 
 def _question_supports_are_exact(
     question: StudentQuestion,
-    expected: StudentExpectedEvidence,
+    expected: tuple[StudentExpectedEvidence, ...],
 ) -> bool:
     try:
         validate_student_question_grounding(question)
     except (TypeError, ValueError):
         return False
     return bool(question.supports) and all(
-        support.evidence.concept_id == expected.concept_id
-        and support.evidence.source_revision == expected.source_revision
-        and support.evidence.content_sha256 == expected.content_sha256
-        and support.evidence.char_start == expected.char_start
-        and support.evidence.char_end == expected.char_end
-        and support.evidence.text == expected.text
-        and support.quote in expected.text
+        any(
+            support.evidence.concept_id == item.concept_id
+            and support.evidence.source_revision == item.source_revision
+            and support.evidence.content_sha256 == item.content_sha256
+            and support.evidence.char_start == item.char_start
+            and support.evidence.char_end == item.char_end
+            and support.evidence.text == item.text
+            and support.quote in item.text
+            for item in expected
+        )
         for support in question.supports
     )
 

@@ -2,9 +2,9 @@
 
 **Status:** Active; Slices A and B merged through PRs #157/#158. Slice C Scribe
 merged through PR #164. Slice D Archivist merged through PR #165 as
-`2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`. Student's source-grounding repair
-is complete-portable-test green on the unchanged full Qwen rapid profile; replacement
-private qualification, hosted review/merge, Curator, shared product
+`2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`. Student's evidence-index repair
+is complete-portable-test green on the unchanged full Qwen rapid profile;
+replacement private qualification, hosted review/merge, Curator, shared product
 integration, simultaneous-capacity evidence, and later role slices remain
 open.
 
@@ -283,13 +283,13 @@ Student adds one internal BACKGROUND_LLM workflow on the already-warm rapid
 route. It reads one owner-scoped, permission-safe admitted conversation
 generation and asks the unchanged full Qwen profile for bounded learning
 questions. The repaired contract accepts bounded topic text as untrusted
-context. The model may select only an exact source subject and exact supports;
-the server rebinds each support to frozen evidence, derives its span, and alone
+context. The model sees ordered evidence indexes and text and returns exactly
+one source subject, evidence index, and support quote. The server binds the
+frozen evidence and complete citation identity, derives its span, and alone
 renders the fixed question template. The model cannot write question wording,
-source, proposals, or knowledge. The current focused set runs 31 total tests:
-29 pass and two are declared database skips. The complete portable server suite
-runs 1,238 total tests: 1,204 pass and 34 are declared skips for this schema-v3
-repair.
+source, proposals, or knowledge. The current focused set runs 34 total tests:
+32 pass and two are declared database skips. The complete portable server suite
+runs 1,241 total tests: 1,207 pass and 34 are declared skips.
 
 Exact head `452c8b76a9a60681a962048caed12749e8bb80d0` originally returned
 `student-learning-questions-qualified` with public-safe semantic evidence
@@ -308,6 +308,14 @@ The earlier predecessor `ffe9088573a1a8453a3cb529f1fc62c8ef9d7dda` is terminal
 `bc65dd55dc3c751caa340312fc6435beba5ba0c0d7a2fa43e323297cadf32c3d`.
 Seven cases completed and one failed closed after altering a citation span.
 No failed or invalidated evidence is reused.
+
+Exact head `476f7a9c38287f8c6ba08cd9be4a70addabe3069` returned terminal
+`deterministic-no-student` with public-safe evidence SHA-256
+`9c2f68ffe411d1333c6799158fa28db30ffa0ced6359eb9f291528ded4c0d0d4`.
+Six of eight cases completed and two failed closed while the unchanged warm
+profile/provider, broker, synchronized eight-owner wave, PostgreSQL boundaries,
+and exact teardown held. It is inadmissible for the protected evidence-index
+successor and is not reused.
 
 ## Slice E — knowledge and coordination agents
 

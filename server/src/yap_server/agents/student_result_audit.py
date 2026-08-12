@@ -113,7 +113,7 @@ def install_student_result_audit_schema(connection: Connection[object]) -> None:
                 CHECK (
                     (outcome = 'succeeded' AND reason IS NULL
                         AND provider_generation IS NOT NULL
-                        AND result_count BETWEEN 1 AND 5)
+                        AND result_count = 1)
                     OR
                     (outcome != 'succeeded' AND reason IS NOT NULL
                         AND result_count = 0)
@@ -178,7 +178,7 @@ class PostgresStudentResultAuditor:
                 and (
                     evidence is None
                     or provider_generation is None
-                    or not 1 <= question_count <= 5
+                    or question_count != 1
                 )
             )
             or (status != "complete" and question_count != 0)

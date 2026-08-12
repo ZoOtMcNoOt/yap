@@ -63,6 +63,34 @@ class StudentQualificationGateTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "full rapid profile"):
                     gate._require_full_rapid_profile(sequences, arguments)
 
+    def test_multi_chunk_evidence_read_audit_uses_exact_item_count(self) -> None:
+        corpus = gate.load_student_qualification_corpus(
+            REPOSITORY_ROOT / "server/student-workload-fixtures.json"
+        )
+        expected = {
+            case.case_id: tuple(
+                mock.Mock(spec=gate.StudentExpectedEvidence)
+                for _ in (
+                    range(2)
+                    if case.case_id
+                    in {"instruction-is-data", "librarian-boundary"}
+                    else range(1)
+                )
+            )
+            for case in corpus.cases
+        }
+
+        audits = gate._expected_evidence_read_audits(corpus, expected)
+
+        self.assertIn(
+            ("owner-06", "conversation-evidence", "succeeded", 2),
+            audits,
+        )
+        self.assertIn(
+            ("owner-08", "conversation-evidence", "succeeded", 2),
+            audits,
+        )
+
     def test_gate_restarts_database_tears_down_and_keeps_public_safe(self) -> None:
         events: list[str] = []
 

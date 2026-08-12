@@ -203,13 +203,14 @@ def run_student_qualification_gate(
             )
             if not cross_owner_rejected:
                 raise RuntimeError("Student cross-owner evidence was visible")
+            expected_evidence = _expected_student_evidence(generation, corpus)
             result = evaluate_student_qualification(
                 service=runtime.service,
                 corpus=corpus,
                 acceptance=acceptance,
                 tenant_id=_TENANT_ID,
                 generation_sha256=generation.generation_sha256,
-                expected_evidence=_expected_student_evidence(generation, corpus),
+                expected_evidence=expected_evidence,
                 observe_warm_state=observe_provider,
                 observe_admission_state=observe_admission,
             )
@@ -220,6 +221,7 @@ def run_student_qualification_gate(
                 result,
                 cross_owner_view,
                 profile,
+                expected_evidence,
             )
         teardown = database.stop(timeout_seconds=15)
         started = None
@@ -344,29 +346,49 @@ def _initialize_student_knowledge(
 def _expected_student_evidence(
     generation: CompiledKnowledgeGeneration,
     corpus: StudentQualificationCorpus,
-) -> dict[str, StudentExpectedEvidence]:
+) -> dict[str, tuple[StudentExpectedEvidence, ...]]:
     concepts = {concept.concept_id: concept for concept in generation.concepts}
     chunks_by_concept: dict[str, list[CompiledChunk]] = {}
     for chunk in generation.chunks:
         chunks_by_concept.setdefault(chunk.concept_id, []).append(chunk)
-    expected: dict[str, StudentExpectedEvidence] = {}
+    expected: dict[str, tuple[StudentExpectedEvidence, ...]] = {}
     for case in corpus.cases:
         concept = concepts.get(case.concept_id)
         chunks = chunks_by_concept.get(case.concept_id, [])
-        if concept is None or len(chunks) != 1:
+        if concept is None or not 1 <= len(chunks) <= 8:
             raise RuntimeError("Student qualification compiled evidence differs")
-        chunk = chunks[0]
-        if chunk.text != case.body:
+        ordered = tuple(sorted(chunks, key=lambda item: (item.char_start, item.chunk_id)))
+        if any(chunk.text not in case.body for chunk in ordered):
             raise RuntimeError("Student qualification compiled body differs")
-        expected[case.case_id] = StudentExpectedEvidence(
-            concept_id=case.concept_id,
-            source_revision=generation.source_revision,
-            content_sha256=concept.content_sha256,
-            char_start=chunk.char_start,
-            char_end=chunk.char_end,
-            text=chunk.text,
+        expected[case.case_id] = tuple(
+            StudentExpectedEvidence(
+                concept_id=case.concept_id,
+                source_revision=generation.source_revision,
+                content_sha256=concept.content_sha256,
+                char_start=chunk.char_start,
+                char_end=chunk.char_end,
+                text=chunk.text,
+            )
+            for chunk in ordered
         )
     return expected
+
+
+def _expected_evidence_read_audits(
+    corpus: StudentQualificationCorpus,
+    expected_evidence: dict[str, tuple[StudentExpectedEvidence, ...]],
+) -> list[tuple[object, ...]]:
+    if set(expected_evidence) != {case.case_id for case in corpus.cases}:
+        raise RuntimeError("Student expected evidence audit identity differs")
+    return [
+        (
+            case.owner_id,
+            "conversation-evidence",
+            "succeeded",
+            len(expected_evidence[case.case_id]),
+        )
+        for case in corpus.cases
+    ]
 
 
 def _run_cross_owner_hidden(
@@ -405,6 +427,7 @@ def _verify_student_database_state(
     result: StudentQualificationResult,
     cross_owner_view: StudentJobView,
     profile: AgentVllmServiceProfile,
+    expected_evidence: dict[str, tuple[StudentExpectedEvidence, ...]],
 ) -> dict[str, bool]:
     private_cases = result.private_evidence.get("cases")
     if not isinstance(private_cases, list) or len(private_cases) != len(corpus.cases):
@@ -455,11 +478,11 @@ def _verify_student_database_state(
     if set(private_by_owner) != {case.owner_id for case in corpus.cases}:
         raise RuntimeError("Student private case ownership differs")
 
-    expected_evidence_audits: list[tuple[object, ...]] = []
+    expected_evidence_audits = _expected_evidence_read_audits(
+        corpus,
+        expected_evidence,
+    )
     for case in corpus.cases:
-        expected_evidence_audits.append(
-            (case.owner_id, "conversation-evidence", "succeeded", 1)
-        )
         item = private_by_owner[case.owner_id]
         request = StudentRequest(
             conversation_concept_id=case.concept_id,

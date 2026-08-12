@@ -1,8 +1,8 @@
 # Student learning-question verification
 
-**Status:** The current source-grounding repair is complete-portable-test green. A fresh
-exact-head private qualification, hosted review, merge, HTTP/native/UI exposure,
-Curator integration, and the aggregate Phase 10 gate remain pending.
+**Status:** The current evidence-index repair is complete-portable-test green.
+Its exact-head private qualification, hosted review, merge, HTTP/native/UI
+exposure, Curator integration, and the aggregate Phase 10 gate remain pending.
 
 ## Current candidate contract
 
@@ -12,10 +12,12 @@ Curator integration, and the aggregate Phase 10 gate remain pending.
   another owner, mutate the source, write a proposal, or activate knowledge.
 - The request carries bounded topic text rather than a caller-authored target
   question. Topic and evidence are explicitly untrusted model inputs.
-- The model may select only a bounded `sourceSubject` copied byte-for-byte from
-  exact support quotes paired to complete server-owned citation identities. The
-  server resolves each quote to one unique substring, derives its span, and
-  rejects an invented, ambiguous, or rewritten citation.
+- The model sees only ordered `{sourceEvidenceIndex,text}` entries and must
+  return exactly one `{sourceSubject,sourceEvidenceIndex,supportQuote}` record.
+  The server rejects a Boolean, negative, or out-of-range index, selects the
+  frozen evidence object itself, binds the complete citation identity, resolves
+  the quote to one unique substring, and derives its span. The model never
+  receives authority to create, copy, narrow, or rewrite citation identity.
 - The server alone renders `What should you remember about {sourceSubject}?`.
   It requires the exact subject at lexical boundaries in every support and
   rebinds every support to the frozen evidence object. The model cannot change
@@ -30,16 +32,28 @@ Curator integration, and the aggregate Phase 10 gate remain pending.
 
 ## Current public verification
 
-- The focused Student set ran 31 total tests: 29 passed and two were declared
-  local database skips.
-- The complete portable server suite ran 1,238 total tests: 1,204 passed and 34
-  were declared skips against the schema-v3 source-subject repair.
-- Server-wide Ruff and `git diff --check` passed.
+- The focused Student set ran 34 total tests: 32 passed and two were declared
+  local database skips. It includes multi-chunk cases whose required evidence
+  appears at index zero and at a nonzero index, so always-first and always-last
+  selection both fail qualification.
+- The complete portable server suite ran 1,241 total tests: 1,207 passed and 34
+  were declared skips. Server-wide Ruff and `git diff --check` passed.
 - The exact current implementation head and checked input hashes will be frozen
   only after documentation reconciliation. A complete new private qualification
   must then run; no historical model result may authorize the successor.
 
 ## Terminal private evidence
+
+Exact head `476f7a9c38287f8c6ba08cd9be4a70addabe3069` returned
+`deterministic-no-student` with public-safe semantic evidence SHA-256
+`9c2f68ffe411d1333c6799158fa28db30ffa0ced6359eb9f291528ded4c0d0d4`.
+Six of eight cases completed and two failed closed. The unchanged full warm
+profile, provider generation, broker, synchronized eight-owner queue wave,
+PostgreSQL restart, cross-owner and audit boundaries, and exact teardown all
+held. The receipt is terminal and inadmissible: it cannot authorize or be
+relabeled for the evidence-index successor, which changes protected inputs and
+requires its own exact-head qualification. No failed output or measurement is
+published or reused.
 
 Exact head `452c8b76a9a60681a962048caed12749e8bb80d0` originally returned
 `student-learning-questions-qualified` with public-safe semantic evidence

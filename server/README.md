@@ -760,15 +760,23 @@ deadline, provider loss, cross-owner access, stale source identity, and audit
 failure are terminal and publish no successful result.
 
 The current repair replaces caller-controlled target-question text with a
-bounded topic. The model may select only an exact bounded source subject and
-exact supports; the server rebinds those supports to frozen evidence, derives
-their spans, and alone renders the fixed learning-question template. The model
-cannot rewrite the selected subject or write question wording. The current
-focused set is green at 31 total tests: 29 passed and two declared database
-skips. The complete portable server suite is green at 1,238 total tests: 1,204
-passed and 34 were declared skips for the
-schema-v3 source-subject repair. A complete fresh
-exact-head private qualification is still required before merge.
+bounded topic. The model sees only ordered evidence indexes and text and must
+return exactly one source subject, one evidence index, and one exact support
+quote. The server validates the index, binds the frozen evidence and complete
+citation identity, derives the support span, and alone renders the fixed
+learning-question template. The model cannot create citation identity, rewrite
+the selected subject, or write question wording. The focused set is green at
+34 total tests: 32 passed and two were declared database skips. The complete
+portable server suite ran 1,241 total tests: 1,207 passed and 34 were declared
+skips. A fresh exact-head private qualification is still required before merge.
+
+Exact head `476f7a9c38287f8c6ba08cd9be4a70addabe3069` returned terminal
+`deterministic-no-student` evidence with public-safe SHA-256
+`9c2f68ffe411d1333c6799158fa28db30ffa0ced6359eb9f291528ded4c0d0d4`.
+Six of eight cases completed and two failed closed. The unchanged full warm
+profile, provider generation, broker, synchronized eight-owner queue wave,
+PostgreSQL restart, cross-owner and audit boundaries, and exact teardown held.
+The receipt is inadmissible for the evidence-index successor and is not reused.
 
 Exact head `452c8b76a9a60681a962048caed12749e8bb80d0` originally returned
 `student-learning-questions-qualified` with public-safe SHA-256

@@ -1001,11 +1001,12 @@ cross-owner/cancellation tests with exact six-part teardown. Hosted-green head
   stored in that audit ledger.
 - **Trust boundary:** tenant/subject comes from the authenticated principal;
   request identity binds the expected generation and conversation concept. The
-  server constructs the evidence pack and complete citation objects. The model
-  may select among exact visible citations, but it may not create, narrow, or
-  rewrite an evidence identity. It supplies one exact source subject plus exact
-  support quotes; the server rebinds every support to frozen evidence, resolves
-  each unique quote, derives its span, and alone renders the question text.
+  server constructs the evidence pack and retains complete citation objects.
+  The model sees only ordered evidence indexes and text and supplies exactly
+  one source subject, one non-Boolean in-range evidence index, and one support
+  quote. The server selects the frozen evidence object, binds the complete
+  citation, resolves the unique quote, derives its span, and alone renders the
+  question text.
 - **Dependencies/events:** permission-safe generation read -> rapid-route lease
   -> bounded exact-subject selection -> canonical citation/support validation
   -> server-rendered question -> one terminal audit. The route is already warm;
@@ -1020,8 +1021,10 @@ cross-owner/cancellation tests with exact six-part teardown. Hosted-green head
 
 Exact candidate `452c8b76...` produced a nominally green private receipt, but
 adversarial review demonstrated unsupported-premise admission and invalidated
-that evidence. The repaired owner is complete-portable-test green on the unchanged full
-Qwen rapid profile; replacement private qualification, hosted merge, and an
+that evidence. Exact `476f7a9c...` then returned terminal
+`deterministic-no-student`; the evidence-index repair changes protected inputs
+and is complete-portable-test green on the unchanged full Qwen rapid profile.
+Replacement private qualification, hosted merge, and an
 HTTP/native/UI surface remain open.
 
 ## Persistent-state owners

@@ -240,9 +240,10 @@ correction benefit, exact raw fallback, one stable warm rapid generation, and
 zero residue. Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164
 merged it as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks
 and PR #165 merged the no-LLM Archivist core as `2a7ec819...`. Student's
-support-grounding repair is complete-portable-test green on the unchanged full Qwen rapid
-profile, but replacement private qualification is pending because adversarial
-review invalidated the nominally green `452c8b76...` receipt. Student hosted
+evidence-index repair is complete-portable-test green on the unchanged full
+Qwen rapid profile at 1,241 total tests (1,207 passed and 34 declared skips),
+but replacement private qualification remains pending. Exact `476f7a9c...` returned terminal
+`deterministic-no-student` and is inadmissible for the protected successor. Student hosted
 review/product exposure and the five remaining workflows (Curator, Auditor,
 Librarian, Analyst, and Coordinator) remain open. One
 Spark cannot retain both

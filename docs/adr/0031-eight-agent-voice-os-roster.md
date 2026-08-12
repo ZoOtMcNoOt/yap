@@ -32,10 +32,11 @@ one stable warm rapid generation, bounded raw fallback, and exact teardown.
 Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged it as
 `ec3af506...`. Hosted-green head `e1899db7...` then passed all 12 checks and PR
 #165 merged the no-LLM Archivist reviewed-source compilation/staging core as
-`2a7ec819...`. Student's bounded learning-question workflow is now
-complete-portable-test green with exact support-quote grounding on the already-warm full Qwen rapid
-route. Its previous private receipt was invalidated by adversarial review, so
-replacement qualification, hosted merge, and product exposure remain open.
+`2a7ec819...`. Student's bounded learning-question workflow now has a
+complete-portable-test-green evidence-index repair on the already-warm full Qwen
+rapid route. Exact `476f7a9c...` returned terminal
+`deterministic-no-student`; replacement qualification,
+hosted merge, and product exposure remain open.
 The five remaining workflows—Curator, Auditor, Librarian, Analyst, and
 Coordinator—remain pending.
 
@@ -197,14 +198,19 @@ provide the target question and that an unsupported premise could pass beside
 an unrelated exact citation. That receipt is terminal and inadmissible.
 
 The repaired contract accepts bounded topic text as untrusted context. The
-model may select only an exact source subject and exact supports; the server
-rebinds every support to frozen evidence, derives its span, and alone renders
-the fixed question template. It is complete-portable-test green and retains
+model sees ordered evidence indexes and text and returns exactly one source
+subject, evidence index, and support quote; the server selects the frozen
+evidence object, binds its complete citation, derives the span, and alone
+renders the fixed question template. It is complete-portable-test green and retains
 `0.40` GPU-memory utilization,
 four maximum sequences, 8,192 maximum batched tokens, and a 512-token Student
 output cap. It adds no request-time launch, model swap, source mutation,
 proposal write, knowledge activation, retry, or threshold relaxation. The
-earlier `ffe90885...` failure is also terminal and not reused. Replacement
+complete portable suite ran 1,241 total tests: 1,207 passed and 34 were declared
+skips. The earlier `ffe90885...` failure is also terminal and not reused. Exact
+`476f7a9c...` returned terminal `deterministic-no-student` with public-safe
+evidence SHA-256 `9c2f68ff...`; six of eight cases completed while the warm
+provider/broker, queue wave, database boundaries, and teardown held. Replacement
 qualification, hosted merge, product exposure, warm simultaneous two-route
 residency, the five remaining workflows (Curator, Auditor, Librarian, Analyst,
 and Coordinator), sustained multi-owner capacity,
