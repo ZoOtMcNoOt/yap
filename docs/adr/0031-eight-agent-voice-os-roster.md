@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; service profiles and bounded admission merged, Scribe qualification passed, hosted merge, remaining workflows, and promotion pending
+**Status:** Accepted target; service profiles, bounded admission, and Scribe merged; Archivist core focused-green; remaining workflows and promotion pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -21,7 +21,7 @@ bounded admission substrate, exact public-lock head `135cc2ba...` passed its
 replacement route qualification and aggregate gate, and PR #158 merged that
 substrate as `84d95842...` after all 12 hosted checks passed.
 
-The exact-qualified Scribe candidate is the first application workflow to consume the
+The merged Scribe workflow is the first application workflow to consume the
 merged owner. It removes the development renderer-to-Ollama Polish prototype
 and replaces unrestricted rewriting with authenticated source-hashed finalized
 segments, structured edits, server-bound terminology, native-owned immutable
@@ -29,8 +29,11 @@ publication, visible diff, and raw-ASR fallback. Exact source-lock head
 `e5858424...` passed its complete 24-case bilingual/eight-owner private gate
 with public-safe semantic evidence SHA-256 `5e187ed4...`, correction benefit,
 one stable warm rapid generation, bounded raw fallback, and exact teardown.
-Hosted review/merge remain pending. The other seven named roles remain
-documented targets rather than executing product workflows.
+Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged it as
+`ec3af506...`. Exact unmerged Archivist candidate `3ec9885e...` now supplies the
+no-LLM reviewed-source compilation/staging core with focused portable and real
+PostgreSQL evidence. Student, Curator, product exposure, and the other six named
+roles remain pending.
 
 Calling the foundations "the agent team" would be incorrect. Conversely,
 implementing eight unrelated prompts would duplicate authority, bypass
@@ -163,7 +166,7 @@ public-lock successor `135cc2ba...` passed the aggregate gate with public-safe
 evidence SHA-256
 `350c13a5569cfc7237174d1f7e2132857ffb3aaf28b6afd2eca03aa1999aea79`.
 Hosted-green head `cf1e69a4...` merged the bounded admission slice through PR
-#158 as `84d95842...`. The Scribe candidate now supplies one
+#158 as `84d95842...`. The Scribe workflow now supplies one
 authenticated rapid-route product endpoint and native/UI workflow without
 enabling a service or changing the model lifecycle. Its 24-case private
 qualification uses English and Spanish real-ASR source evidence, eight distinct
@@ -173,7 +176,12 @@ and queue-inclusive latency. Exact source-lock head `e5858424...` then returned
 SHA-256 `5e187ed4...`; all correction-benefit, preservation, raw-fallback,
 latency, warm-generation, broker, database, and teardown checks passed. The
 exact rejected attempts remain terminal evidence and were not reused.
-Warm simultaneous residency, the other seven product workflows, sustained
+Hosted-green head `bc9a88bc...` then merged Scribe through PR #164 as
+`ec3af506...`. Exact unmerged Archivist candidate `3ec9885e...` consumes only a
+durable owner-scoped reviewed capture, compiles/stages deterministically without
+an LLM or activation, and passed focused portable plus real PostgreSQL
+restart/idempotency/cross-owner/cancellation/teardown evidence. Warm simultaneous
+residency, Student/Curator and the other six product workflows, sustained
 multi-owner capacity, and production promotion remain open.
 
 ## Consequences

@@ -228,7 +228,7 @@ and exact teardown with public-safe evidence SHA-256 `350c13a5...`. Hosted-green
 head `cf1e69a4...` passed all 12 required checks and PR #158 merged it as
 `84d95842...`.
 
-The current Scribe candidate is the first native/server workflow integration.
+The merged Scribe workflow is the first native/server workflow integration.
 It replaces the renderer/Ollama prototype with finalized source-hashed segment
 input, an authenticated asynchronous server route, structured source-bound
 edits, immutable terminology, semantic-preservation validation, explicit cancel,
@@ -237,8 +237,13 @@ remains authoritative and all local controls survive remote failure. Exact
 source-lock head `e5858424...` passed the 24-case bilingual/eight-owner private
 qualification gate with public-safe semantic evidence SHA-256 `5e187ed4...`,
 correction benefit, exact raw fallback, one stable warm rapid generation, and
-zero residue. Hosted merge and the other seven roles remain open. Simultaneous residency,
-sustained mixed-owner route-specific capacity and p95/p99 evidence,
+zero residue. Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164
+merged it as `ec3af506...`. Exact unmerged Archivist candidate `3ec9885e...`
+has focused portable/real-PostgreSQL evidence; Student, Curator, product
+exposure, and the other six roles remain open. One Spark cannot retain both
+unchanged full profiles simultaneously, so warm two-route promotion requires a
+second owned GPU node/private routing rather than throttling or model swapping.
+Sustained mixed-owner route-specific capacity and p95/p99 evidence,
 observability, rollback, external serving, and IT-owned deployment remain later
 gates or handoffs. If one node cannot satisfy simultaneous evidence, the routes
 use separate owned nodes rather than model fallback or per-request swapping. No

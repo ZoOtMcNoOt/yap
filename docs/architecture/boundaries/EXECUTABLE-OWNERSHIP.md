@@ -908,7 +908,7 @@ qualification admitted both routes; public-lock/aggregate head `135cc2ba...`
 passed semantic admission, the portable and 17-test Postgres matrices, real
 restart/retrieval/stale/successor proof, unchanged desktop dependency scope,
 and exact teardown. Hosted-green head `cf1e69a4...` merged the substrate through
-PR #158 as `84d95842...`. The Scribe candidate below is its first product
+PR #158 as `84d95842...`. The merged Scribe workflow below is its first product
 consumer. Simultaneous residency, sustained capacity, and production promotion
 remain open.
 
@@ -949,6 +949,42 @@ remain open.
 - **Duplicate owner:** none. The deleted renderer/Ollama Polish implementation is
   not retained as a fallback or compatibility path.
 
+Exact Scribe source-lock head `e5858424...` passed its private gate; hosted-green
+head `bc9a88bc...` passed all 12 required checks and PR #164 merged the workflow
+as `ec3af506...`.
+
+### 28. Archivist reviewed-source ingestion
+
+- **Entry point:** `yap_server/agents/archivist_service.py` owns one synchronous
+  BACKGROUND_IO broker workflow; `yap_server/agents/archivist.py` owns the
+  reviewed-capture-to-compiled-generation boundary.
+- **Authoritative owner:** the reviewed-capture ledger owns durable source
+  identity and bytes; the existing compiler, source-admission ledger, and
+  generation ledger remain the only compilation/admission/staging writers.
+  Archivist composes them and does not become a second database authority.
+- **Persisted state:** one source admission plus one immutable staged generation.
+  Archivist never stores raw caller content, embeddings, an active-generation
+  pointer, or a separate success ledger.
+- **Trust boundary:** the request contains only schema version and capture SHA.
+  Tenant/owner comes from the authenticated principal. The capture is read,
+  compiled in an owner-private temporary workspace, and re-read before one
+  admission/staging transaction.
+- **Dependencies/events:** durable reviewed capture -> SERVER_IO lease ->
+  deterministic OKF compile -> source admission -> exact idempotent generation
+  stage -> typed result. No LLM/GPU route is selected.
+- **Failure/recovery:** queued/active cancellation, deadline, invalid/cross-owner
+  source, storage failure, and wrong-route lease fail without activation or a
+  success result. Exact retry succeeds only when the complete persisted
+  non-embedding generation is identical.
+- **Duplicate owner:** none. `ArchivistService` owns broker state/cancellation;
+  `archivist.py` owns private compilation; existing ledgers retain durable
+  authority.
+
+Exact unmerged candidate `3ec9885e...` passed focused unit checks, the complete
+1,207-test portable server suite, and two real PostgreSQL retry/restart/
+cross-owner/cancellation tests with exact six-part teardown. HTTP/native/UI
+exposure and shared Student/Curator integration remain later work.
+
 ## Persistent-state owners
 
 | State | Owner | Projection/consumer |
@@ -972,6 +1008,7 @@ remain open.
 | Boot-scoped provider lifecycle snapshot | one Rust provider supervisor | systemd/operators; not durable application truth |
 | Boot-scoped agent admission leases | Rust agent admission broker | authenticated Python role workflows; not durable application truth |
 | Accepted transcript-correction revisions | native Scribe revision owner | React diff/history projection; raw transcript remains authoritative |
+| Archivist ingestion outcomes | reviewed-capture, source-admission, and generation ledgers | typed staged-generation result; no activation |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

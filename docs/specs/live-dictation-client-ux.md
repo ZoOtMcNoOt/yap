@@ -12,7 +12,7 @@
 
 > **2026-07-08 implemented local-fallback baseline:** The local live-transcription path uses one local model: Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. It keeps native punctuation, uses 1120 ms chunks until smaller chunks profile under real-time, and saves local live WAV/TXT output into Home history. Rust Silero ONNX, `vad_segments` chunk manifests, Opus/server WSS, Scribe, and diarization remain follow-on work.
 
-> **2026-08-12 Scribe amendment:** The current Scribe candidate is a manual
+> **2026-08-12 Scribe amendment:** The merged Scribe workflow is a manual
 > correction workflow for finalized trusted transcripts, not an automatic live-
 > token rewrite. It uses authenticated native/server ownership, a warm rapid
 > route, structured source-bound edits, visible diff, and a separate accepted

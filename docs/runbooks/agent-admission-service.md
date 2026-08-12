@@ -5,9 +5,10 @@ exact protected head `7bd93dc624e6d8651dffc710026ca144909b2399` and
 admitted by exact public-lock/aggregate head
 `135cc2ba8534f41d91ff52cd6b6d366460c7b60f`. It is not yet an enabled
 production service: hosted-green head `cf1e69a4...` merged it through PR #158 as
-`84d95842...`, and the Scribe candidate now consumes it in an authenticated
-native/server workflow. Scribe qualification, simultaneous residency, sustained
-capacity, and production operations evidence remain open.
+`84d95842...`, and qualified Scribe now consumes it in an authenticated
+native/server workflow merged through PR #164 as `ec3af506...`. Simultaneous
+full-profile residency, sustained capacity, later workflows, and production
+operations evidence remain open.
 
 ## Ownership and safety boundary
 

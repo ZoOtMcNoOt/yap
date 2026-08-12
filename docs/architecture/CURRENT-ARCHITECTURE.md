@@ -9,8 +9,11 @@ hosted closures merged through PRs #155, #157, and #158; the admission merge is
 native/server workflow to consume that merged boundary and passed its complete
 private qualification gate with public-safe semantic evidence SHA-256
 `5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
-Hosted review and merge remain open. Later Phase 10 roles and capacity/operations layers are
-not part of the merged baseline. Phase 7
+Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged Scribe
+as `ec3af506...`. Exact unmerged Archivist candidate `3ec9885e...` is the first
+remaining role core and has focused portable/real-PostgreSQL evidence. Later
+Phase 10 roles, product exposure, and capacity/operations layers are not part
+of the merged baseline. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -959,7 +962,7 @@ and exact teardown with public-safe evidence SHA-256 `350c13a5...`. Hosted-green
 head `cf1e69a4...` passed all 12 required checks and merged through PR #158 as
 `84d95842...`.
 
-The exact-qualified Scribe candidate adds an asynchronous authenticated transcript-correction
+The merged exact-qualified Scribe workflow adds an asynchronous authenticated transcript-correction
 workflow on top of that merged scheduler. Native code reads only trusted
 finalized live or remote transcript sources, carries immutable source/revision/
 segment hashes and exact timing/language, acquires one connector credential
