@@ -973,7 +973,10 @@ restores the original values only when the response has the same block-run
 lengths and order, and rejects partial, missing, duplicated, reordered, or
 invented blocks. One strictly identical source/replacement edit normalizes to
 unchanged; no-op behavior cannot pass correction-quality thresholds. Approved
-terminology remains context rather than rename authority. The unchanged
+terminology remains context rather than rename authority. After exact
+model-facing string bounds are checked, identical prefix and suffix context is
+trimmed; the resulting minimal edit must still pass the same unique-source,
+protected-fact, bounded-correction, ordering, and total-coverage checks. The unchanged
 raw-source validation preserves ordering, timing, coverage, names, numbers,
 dates, units,
 medication-like tokens, negation, and unsupported-content boundaries.

@@ -115,7 +115,10 @@ blocks. The model contract restricts each edit string to 256 characters and asks
 for the shortest unique quote. Projection restores the original values only when
 every included block run retains its exact length and order. A strictly identical
 source/replacement edit normalizes to unchanged; it cannot satisfy correction-
-quality thresholds.
+quality thresholds. Model edit strings must first satisfy the exact 256-character
+and content bounds. Identical prefix/suffix context is then removed
+deterministically before validation, so a broad quote cannot inflate the
+changed-source budget or bypass the same unique-source and preservation checks.
 Approved terminology is immutable context rather than permission to rename a
 term. Placeholder presence and instruction-like transcript content do not by
 themselves make a response uncertain. A source needing no correction is a

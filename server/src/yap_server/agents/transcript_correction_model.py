@@ -81,7 +81,11 @@ class TranscriptCorrectionModel:
             request,
             masked,
             parse_transcript_correction_response(
-                _without_exact_noop_edits(_response_content(response))
+                _without_unchanged_edit_context(
+                    _without_exact_noop_edits(
+                        _validated_model_edit_strings(_response_content(response))
+                    )
+                )
             ),
         )
         return validate_transcript_correction(
@@ -232,6 +236,88 @@ def _without_exact_noop_edits(value: dict[str, object]) -> dict[str, object]:
         )
     ]
     return value if len(retained) == len(edits) else {**value, "edits": retained}
+
+
+def _validated_model_edit_strings(
+    value: dict[str, object],
+) -> dict[str, object]:
+    edits = value.get("edits")
+    if not isinstance(edits, list):
+        return value
+    for edit in edits:
+        if not isinstance(edit, dict):
+            continue
+        source = edit.get("sourceText")
+        replacement = edit.get("replacementText")
+        if (
+            not isinstance(source, str)
+            or not source
+            or len(source) > _MAXIMUM_MODEL_EDIT_CHARACTERS
+            or "\x00" in source
+            or not isinstance(replacement, str)
+            or len(replacement) > _MAXIMUM_MODEL_EDIT_CHARACTERS
+            or "\x00" in replacement
+        ):
+            raise ValueError("transcript correction model edit text is invalid")
+    return value
+
+
+def _without_unchanged_edit_context(
+    value: dict[str, object],
+) -> dict[str, object]:
+    edits = value.get("edits")
+    if not isinstance(edits, list):
+        return value
+    expected_keys = {
+        "segmentId",
+        "segmentSha256",
+        "sourceText",
+        "replacementText",
+    }
+    normalized: list[object] = []
+    changed = False
+    for edit in edits:
+        if (
+            not isinstance(edit, dict)
+            or set(edit) != expected_keys
+            or not isinstance(edit.get("sourceText"), str)
+            or not isinstance(edit.get("replacementText"), str)
+        ):
+            normalized.append(edit)
+            continue
+        source = edit["sourceText"]
+        replacement = edit["replacementText"]
+        prefix = 0
+        while (
+            prefix < len(source)
+            and prefix < len(replacement)
+            and source[prefix] == replacement[prefix]
+        ):
+            prefix += 1
+        suffix = 0
+        while (
+            suffix < len(source) - prefix
+            and suffix < len(replacement) - prefix
+            and source[len(source) - suffix - 1]
+            == replacement[len(replacement) - suffix - 1]
+        ):
+            suffix += 1
+        source_end = len(source) - suffix if suffix else len(source)
+        replacement_end = (
+            len(replacement) - suffix if suffix else len(replacement)
+        )
+        trimmed_source = source[prefix:source_end]
+        if not trimmed_source:
+            normalized.append(edit)
+            continue
+        trimmed = {
+            **edit,
+            "sourceText": trimmed_source,
+            "replacementText": replacement[prefix:replacement_end],
+        }
+        normalized.append(trimmed)
+        changed |= trimmed != edit
+    return value if not changed else {**value, "edits": normalized}
 
 
 class _DuplicateKey(ValueError):

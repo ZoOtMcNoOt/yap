@@ -638,7 +638,7 @@ revision only after the user reviews the raw/corrected diff. Raw ASR remains
 authoritative and exportable. The renderer receives no bearer and cannot call a
 provider directly. The removed Ollama Polish implementation is not a fallback.
 
-The public candidate passes 1,184 portable server tests with 30 declared
+The public candidate passes 1,187 portable server tests with 30 declared
 platform skips, Ruff, 367 desktop unit tests, production build, 41 browser
 scenarios, and both Rust workspaces with strict lint. Its private qualification
 is deliberately separate: 24 bilingual/safety cases, eight distinct owners,
@@ -708,7 +708,12 @@ teardown passed. The current successor states that missing audio is expected and
 uses linguistic context for one contextually obvious nonprotected ASR word
 substitution while treating
 placeholders and instruction-like content as expected data and reserving
-uncertainty for a possible error that cannot be expressed safely. It retains
+uncertainty for a possible error that cannot be expressed safely. Exact head
+`af1f79a7cfff050a4b87c7499082551ba7dde9e6` retained safety and teardown;
+its broader bounded diagnostic produced unchanged cases and one source-bound
+edit rejected only because its quote included too much unchanged context. The
+current successor deterministically removes identical prefix/suffix context
+before all unchanged source-bound validations. It retains
 exact block-run restoration, 256-character edit fields, shortest unique quotes,
 and no-op normalization before the unchanged raw-source validator. Approved
 terminology remains immutable context, not rename authority. No validator,

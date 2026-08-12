@@ -327,6 +327,80 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         self.assertEqual(correction.corrected_text, request.source_text)
         self.assertEqual(correction.edits, ())
 
+    def test_model_trims_unchanged_context_before_bounded_validation(self) -> None:
+        request = _request()
+
+        def broad_edit(payload: dict[str, object]) -> dict[str, object]:
+            messages = payload["messages"]
+            user = json.loads(messages[1]["content"])  # type: ignore[index]
+            segment = user["request"]["segments"][0]
+            result = {
+                "schemaVersion": 2,
+                "requestSha256": user["responseBinding"]["requestSha256"],
+                "sourceSha256": user["responseBinding"]["sourceSha256"],
+                "uncertain": False,
+                "edits": [
+                    {
+                        "segmentId": segment["segmentId"],
+                        "segmentSha256": segment["textSha256"],
+                        "sourceText": segment["text"],
+                        "replacementText": segment["text"].replace("Um, t", "T"),
+                    }
+                ],
+            }
+            return {"choices": [{"message": {"content": json.dumps(result)}}]}
+
+        model = TranscriptCorrectionModel(
+            transport=_Transport(broad_edit),
+            model="nvidia/Qwen3.6-35B-A3B-NVFP4",
+            maximum_output_tokens=512,
+        )
+        correction = model.correct(request, cancellation=threading.Event())
+
+        self.assertEqual(correction.corrected_text, "The dosage is 25 mg.")
+        self.assertEqual(len(correction.edits), 1)
+        self.assertEqual(correction.edits[0].source_text, "Um, t")
+        self.assertEqual(correction.edits[0].replacement_text, "T")
+
+    def test_model_cannot_trim_invalid_identical_context(self) -> None:
+        request = _request()
+
+        def invalid_context(payload: dict[str, object]) -> dict[str, object]:
+            response = _model_response(payload)
+            content = json.loads(response["choices"][0]["message"]["content"])  # type: ignore[index]
+            content["edits"][0]["sourceText"] = "\x00Um, t"
+            content["edits"][0]["replacementText"] = "\x00T"
+            response["choices"][0]["message"]["content"] = json.dumps(content)  # type: ignore[index]
+            return response
+
+        model = TranscriptCorrectionModel(
+            transport=_Transport(invalid_context),
+            model="nvidia/Qwen3.6-35B-A3B-NVFP4",
+            maximum_output_tokens=512,
+        )
+        with self.assertRaisesRegex(ValueError, "model edit text is invalid"):
+            model.correct(request, cancellation=threading.Event())
+
+    def test_model_cannot_trim_an_overlong_edit_to_the_model_cap(self) -> None:
+        request = _request()
+
+        def overlong_context(payload: dict[str, object]) -> dict[str, object]:
+            response = _model_response(payload)
+            content = json.loads(response["choices"][0]["message"]["content"])  # type: ignore[index]
+            context = "x" * 256
+            content["edits"][0]["sourceText"] = context + "a"
+            content["edits"][0]["replacementText"] = context + "b"
+            response["choices"][0]["message"]["content"] = json.dumps(content)  # type: ignore[index]
+            return response
+
+        model = TranscriptCorrectionModel(
+            transport=_Transport(overlong_context),
+            model="nvidia/Qwen3.6-35B-A3B-NVFP4",
+            maximum_output_tokens=512,
+        )
+        with self.assertRaisesRegex(ValueError, "model edit text is invalid"):
+            model.correct(request, cancellation=threading.Event())
+
 
 if __name__ == "__main__":
     unittest.main()
