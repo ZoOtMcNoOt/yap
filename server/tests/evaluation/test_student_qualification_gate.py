@@ -113,13 +113,13 @@ class StudentQualificationGateTests(unittest.TestCase):
 
         result = mock.Mock(
             public_evidence={
-                "schemaVersion": 1,
+                "schemaVersion": 3,
                 "qualificationScope": "student-learning-questions",
                 "outcome": "student-learning-questions-qualified",
                 "evidenceSha256": "2" * 64,
             },
             private_evidence={
-                "schemaVersion": 1,
+                "schemaVersion": 3,
                 "evidenceSha256": "2" * 64,
                 "cases": [{"questions": ["private question"]}],
             },
@@ -187,6 +187,9 @@ class StudentQualificationGateTests(unittest.TestCase):
                 mock.patch.object(gate, "OwnedPostgresKnowledgeRuntime", Database),
                 mock.patch.object(
                     gate, "_initialize_student_knowledge", return_value=generation
+                ),
+                mock.patch.object(
+                    gate, "_expected_student_evidence", return_value={}
                 ),
                 mock.patch.object(gate, "build_student_runtime", return_value=runtime),
                 mock.patch.object(

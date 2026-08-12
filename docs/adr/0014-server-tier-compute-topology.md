@@ -12,6 +12,7 @@
 **Amended by:** [ADR 0025](0025-provider-specific-asr-serving.md) (Cohere batch uses vLLM; Nemotron retains a Transformers reference and a separately gated NeMo streaming candidate; Rust retains orchestration authority; its former SGLang agent note is superseded by ADR 0029)
 **Amended by:** [ADR 0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) (Phase 8 adds one server-only Tiron joint speaker-attributed meeting worker behind the same Rust-owned job/result authority)
 **Amended by:** [ADR 0029](0029-vllm-agent-reasoning-runtime.md) (vLLM replaces SGLang as the sole checked agent/LLM serving runtime)
+**Amended by:** [ADR 0030](0030-rust-supervised-provider-service-lifecycle.md) and [ADR 0031](0031-eight-agent-voice-os-roster.md) (Phase 10 adds supervised exact profiles, bounded already-warm admission, merged Scribe and Archivist workflows, and separately gated roster workflows)
 **Implementation status:** Client capture/local fallback, machine-readable HTTP/live contracts, the bounded loopback capability-health service, desktop connector state, and the durable SQLite imported-job ledger exist. Phase 4 supplied the bounded router and transient isolated Cohere worker. Phase 5 connected them to durable loopback create/upload/commit/status/result/cancel, reconnect/restart recovery, and verified native History publication; exact PR head `4771d9be60562fa009ccecbcd3c7111b699883a5` passed the one-time local/native/server/GB10 gate and merged. Phase 6 added pinned Transformers references, a bounded authenticated Cohere vLLM adapter/image/launcher, and a resident native NeMo worker/service/image/launcher. Exact executable candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the frozen 30-child Phase 6 matrix, including the composed 18-child provider lifecycle, the connected interruption/recovery/History path, and exact teardown after the focused three-agent remediation re-review. Runtime images were prepared before admission from digest-pinned bases and pinned dependencies; the admitted gate verified the exact prepared ARM64 image, checked-head revision, and base digest by inspection and could not build, pull, reconnect, or substitute an image. Hosted CI, CodeQL, and stock-NSIS passed at first attempt on final reviewed head `50f0f9e5e3cf288f41efa3745514dd08c9ee1929`; PR #67 merged as `87c8654250cba8b9eafa5007bf719c52e4749cdf`. The earlier Triton experiment is retired. Phase 7 added fail-closed authenticated REST ownership and bounded private WebSocket admission with a native bearer/subprotocol handshake primitive. It does not add live ASR, discover or publish a client-facing live endpoint, or implement the external same-origin WSS/TLS edge. Neither replaceable provider is promoted; representative model-quality/replacement work remains Phase 8. Persistent production supervision, external application networking, representative long-recording promotion evidence, multi-worker capacity, and the TLS/QUIC edge remain unimplemented.
 
 ## Context
@@ -90,7 +91,7 @@ flowchart TB
     ASR & Batch --> Diar
     ASR -->|"partial/final tokens (WSS)"| Client
     Batch -->|"transcript JSON"| Client
-    LLM -->|"polish / agent response"| Client
+    LLM -->|"bounded correction / agent response"| Client
     KB -->|"permission-filtered KB view"| Client
 ```
 

@@ -12,7 +12,10 @@ import time
 from typing import Callable, Mapping, Protocol
 
 from yap_server.agents.student import StudentRequest
-from yap_server.agents.student_model import StudentQuestion
+from yap_server.agents.student_model import (
+    StudentQuestion,
+    validate_student_question_grounding,
+)
 from yap_server.agents.student_service import StudentJobView, StudentServiceError
 from yap_server.auth import AuthenticatedPrincipal
 from yap_server.evaluation.provider_runtime_observations import (
@@ -58,9 +61,8 @@ class StudentQualificationCase:
     case_id: str
     owner_id: str
     title: str
-    focus: str
+    topic: str
     body: str
-    expected_question: str
     required_question_terms: tuple[str, ...]
     forbidden_question_terms: tuple[str, ...]
 
@@ -77,6 +79,16 @@ class StudentQualificationCorpus:
 
 
 @dataclass(frozen=True, slots=True)
+class StudentExpectedEvidence:
+    concept_id: str
+    source_revision: str
+    content_sha256: str
+    char_start: int
+    char_end: int
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
 class StudentCaseObservation:
     case: StudentQualificationCase = field(repr=False)
     status: str
@@ -88,16 +100,15 @@ class StudentCaseObservation:
     required_term_count: int
     covered_required_term_count: int
     forbidden_term_hit_count: int
-    citations_exact: bool
+    supports_exact: bool
     output_budget_exhausted: bool
 
     def private_evidence(self) -> dict[str, object]:
         return {
             "caseId": self.case.case_id,
             "ownerId": self.case.owner_id,
-            "focus": self.case.focus,
+            "topic": self.case.topic,
             "body": self.case.body,
-            "expectedQuestion": self.case.expected_question,
             "status": self.status,
             "reason": self.reason,
             "requestId": self.request_id,
@@ -110,7 +121,7 @@ class StudentCaseObservation:
                 "requiredTermCount": self.required_term_count,
                 "coveredRequiredTermCount": self.covered_required_term_count,
                 "forbiddenTermHitCount": self.forbidden_term_hit_count,
-                "citationsExact": self.citations_exact,
+                "supportsExact": self.supports_exact,
                 "outputBudgetExhausted": self.output_budget_exhausted,
             },
         }
@@ -206,7 +217,7 @@ def load_student_qualification_corpus(path: Path) -> StudentQualificationCorpus:
         raise ValueError("Student qualification fixture shape differs")
     if (
         isinstance(value["schemaVersion"], bool)
-        or value["schemaVersion"] != 1
+        or value["schemaVersion"] != 2
         or value["qualificationScope"] != "student-learning-questions"
         or _IDENTITY.fullmatch(value["corpusId"])
         is None
@@ -231,6 +242,7 @@ def evaluate_student_qualification(
     acceptance: StudentQualificationAcceptance,
     tenant_id: str,
     generation_sha256: str,
+    expected_evidence: Mapping[str, StudentExpectedEvidence],
     observe_warm_state: Callable[[], Mapping[str, object]],
     observe_admission_state: Callable[[], Mapping[str, object]],
 ) -> StudentQualificationResult:
@@ -240,6 +252,8 @@ def evaluate_student_qualification(
         generation_sha256
     ) is None:
         raise ValueError("Student qualification knowledge identity is invalid")
+    if set(expected_evidence) != {case.case_id for case in corpus.cases}:
+        raise ValueError("Student qualification expected evidence differs")
     before = _warm_state(observe_warm_state())
     admission_before = _admission_state(observe_admission_state())
     observations: list[StudentCaseObservation] = []
@@ -259,6 +273,7 @@ def evaluate_student_qualification(
                     case,
                     tenant_id,
                     generation_sha256,
+                    expected_evidence[case.case_id],
                     barrier,
                 )
                 for case in wave
@@ -310,16 +325,14 @@ def evaluate_student_qualification(
             <= acceptance.maximum_questions_per_case
             for item in observations
         ),
-        "exactQuestionsMet": all(
-            tuple(question.question for question in item.questions)
-            == (item.case.expected_question,)
-            for item in observations
+        "questionsSourceGrounded": all(
+            _questions_are_grounded(item.questions) for item in observations
         ),
         "requiredTermCoverageMet": coverage_rate
         >= acceptance.minimum_required_term_coverage_rate,
         "forbiddenTermsAbsent": counts["forbiddenTermHitCount"]
         <= acceptance.maximum_forbidden_term_hit_count,
-        "sourceCitationsExact": all(item.citations_exact for item in observations),
+        "sourceSupportsExact": all(item.supports_exact for item in observations),
         "outputBudgetMet": counts["outputBudgetExhaustedCount"]
         <= acceptance.maximum_output_budget_exhausted_count,
         "terminalFailuresMet": counts["terminalFailureCount"]
@@ -331,7 +344,7 @@ def evaluate_student_qualification(
     }
     passed = all(checks.values())
     public = {
-        "schemaVersion": 1,
+        "schemaVersion": 3,
         "qualificationScope": "student-learning-questions",
         "outcome": (
             "student-learning-questions-qualified"
@@ -379,9 +392,8 @@ def _case(value: object) -> StudentQualificationCase:
         "caseId",
         "ownerId",
         "title",
-        "focus",
+        "topic",
         "body",
-        "expectedQuestion",
         "requiredQuestionTerms",
         "forbiddenQuestionTerms",
     }
@@ -392,13 +404,10 @@ def _case(value: object) -> StudentQualificationCase:
     ) is None:
         raise ValueError("Student qualification case identity is invalid")
     title = _text(value["title"], "title", 128)
-    focus = _text(value["focus"], "focus", 512)
+    topic = _text(value["topic"], "topic", 128)
     body = _text(value["body"], "body", 4_096, multiline=True)
-    expected_question = _text(
-        value["expectedQuestion"], "expected question", 512
-    )
-    if not expected_question.endswith("?") or expected_question not in focus:
-        raise ValueError("Student qualification expected question is not frozen")
+    if any(character in topic for character in "?\r\n"):
+        raise ValueError("Student qualification topic is not topic-only")
     required = _terms(value["requiredQuestionTerms"], "required terms", required=True)
     forbidden = _terms(
         value["forbiddenQuestionTerms"], "forbidden terms", required=False
@@ -410,9 +419,8 @@ def _case(value: object) -> StudentQualificationCase:
         value["caseId"],
         value["ownerId"],
         title,
-        focus,
+        topic,
         body,
-        expected_question,
         required,
         forbidden,
     )
@@ -423,6 +431,7 @@ def _run_case(
     case: StudentQualificationCase,
     tenant_id: str,
     generation_sha256: str,
+    expected_evidence: StudentExpectedEvidence,
     barrier: threading.Barrier,
 ) -> StudentCaseObservation:
     principal = AuthenticatedPrincipal(
@@ -434,7 +443,7 @@ def _run_case(
     request = StudentRequest(
         conversation_concept_id=case.concept_id,
         expected_generation_sha256=generation_sha256,
-        focus=case.focus,
+        topic=case.topic,
     )
     barrier.wait(timeout=5.0)
     started = time.monotonic()
@@ -470,9 +479,8 @@ def _run_case(
     forbidden = sum(
         term.casefold() in combined for term in case.forbidden_question_terms
     )
-    citations_exact = bool(questions) and all(
-        question.citations
-        and all(citation.concept_id == case.concept_id for citation in question.citations)
+    supports_exact = bool(questions) and all(
+        _question_supports_are_exact(question, expected_evidence)
         for question in questions
     )
     return StudentCaseObservation(
@@ -486,8 +494,37 @@ def _run_case(
         len(case.required_question_terms),
         covered,
         forbidden,
-        citations_exact,
+        supports_exact,
         view.output_budget_exhausted,
+    )
+
+
+def _questions_are_grounded(questions: tuple[StudentQuestion, ...]) -> bool:
+    try:
+        for question in questions:
+            validate_student_question_grounding(question)
+    except (TypeError, ValueError):
+        return False
+    return bool(questions)
+
+
+def _question_supports_are_exact(
+    question: StudentQuestion,
+    expected: StudentExpectedEvidence,
+) -> bool:
+    try:
+        validate_student_question_grounding(question)
+    except (TypeError, ValueError):
+        return False
+    return bool(question.supports) and all(
+        support.evidence.concept_id == expected.concept_id
+        and support.evidence.source_revision == expected.source_revision
+        and support.evidence.content_sha256 == expected.content_sha256
+        and support.evidence.char_start == expected.char_start
+        and support.evidence.char_end == expected.char_end
+        and support.evidence.text == expected.text
+        and support.quote in expected.text
+        for support in question.supports
     )
 
 
@@ -595,6 +632,7 @@ __all__ = [
     "StudentQualificationAcceptance",
     "StudentQualificationCase",
     "StudentQualificationCorpus",
+    "StudentExpectedEvidence",
     "StudentQualificationResult",
     "evaluate_student_qualification",
     "load_student_qualification_acceptance",

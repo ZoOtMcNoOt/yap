@@ -33,7 +33,7 @@ from yap_server.private_postgres_connection import (
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _CONVERSATION_PREFIX = "meetings/"
 _CONVERSATION_SUFFIX = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
-_MAXIMUM_FOCUS_CHARACTERS = 512
+_MAXIMUM_TOPIC_CHARACTERS = 128
 _MAXIMUM_EVIDENCE_ITEMS = 8
 _MAXIMUM_EVIDENCE_CHARACTERS = 8_192
 _STATEMENT_TIMEOUT_MILLISECONDS = 15_000
@@ -43,7 +43,7 @@ _STATEMENT_TIMEOUT_MILLISECONDS = 15_000
 class StudentRequest:
     conversation_concept_id: str
     expected_generation_sha256: str
-    focus: str
+    topic: str
 
     def __post_init__(self) -> None:
         concept_id = validate_bounded_text(
@@ -61,11 +61,13 @@ class StudentRequest:
             or _SHA256.fullmatch(self.expected_generation_sha256) is None
         ):
             raise ValueError("student generation identity is invalid")
-        validate_bounded_text(
-            self.focus,
-            field="student focus",
-            maximum=_MAXIMUM_FOCUS_CHARACTERS,
+        topic = validate_bounded_text(
+            self.topic,
+            field="student topic",
+            maximum=_MAXIMUM_TOPIC_CHARACTERS,
         )
+        if any(character in topic for character in "?\r\n"):
+            raise ValueError("student topic must be a topic, not an instruction")
 
     @classmethod
     def from_wire(cls, value: object) -> StudentRequest:
@@ -73,15 +75,15 @@ class StudentRequest:
             "schemaVersion",
             "conversationConceptId",
             "expectedGenerationSha256",
-            "focus",
+            "topic",
         }:
             raise ValueError("student request fields differ")
-        if isinstance(value["schemaVersion"], bool) or value["schemaVersion"] != 1:
+        if isinstance(value["schemaVersion"], bool) or value["schemaVersion"] != 2:
             raise ValueError("student request schema differs")
         return cls(
             conversation_concept_id=value["conversationConceptId"],
             expected_generation_sha256=value["expectedGenerationSha256"],
-            focus=value["focus"],
+            topic=value["topic"],
         )
 
 
@@ -291,7 +293,7 @@ def student_request_sha256(request: StudentRequest) -> str:
     value = {
         "conversationConceptId": request.conversation_concept_id,
         "expectedGenerationSha256": request.expected_generation_sha256,
-        "focus": request.focus,
+        "topic": request.topic,
     }
     return hashlib.sha256(_canonical_json(value)).hexdigest()
 
@@ -316,7 +318,7 @@ def student_work_identity_sha256(
         "conversationConceptId": request.conversation_concept_id,
         "evidenceSha256": evidence_sha256,
         "expectedGenerationSha256": request.expected_generation_sha256,
-        "focus": request.focus,
+        "topic": request.topic,
     }
     return hashlib.sha256(_canonical_json(value)).hexdigest()
 

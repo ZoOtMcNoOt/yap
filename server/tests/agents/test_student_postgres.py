@@ -84,7 +84,7 @@ class StudentPostgresTests(unittest.TestCase):
         request = StudentRequest(
             conversation_concept_id=f"meetings/{job_id}",
             expected_generation_sha256=compiled.generation_sha256,
-            focus="crash safety",
+            topic="crash safety",
         )
         reader = PostgresStudentEvidenceReader(_connect)
         visible = reader.read(
@@ -102,7 +102,7 @@ class StudentPostgresTests(unittest.TestCase):
         stale = StudentRequest(
             conversation_concept_id=request.conversation_concept_id,
             expected_generation_sha256="0" * 64,
-            focus=request.focus,
+            topic=request.topic,
         )
         with self.assertRaisesRegex(ValueError, "stale"):
             reader.read(
@@ -268,7 +268,7 @@ class StudentPostgresTests(unittest.TestCase):
                 StudentRequest(
                     conversation_concept_id=f"meetings/job-{suffix}",
                     expected_generation_sha256="a" * 64,
-                    focus="crash safety",
+                    topic="crash safety",
                 ),
                 principal=_authenticated(owner),
                 cancellation=cancellation,

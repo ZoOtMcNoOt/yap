@@ -493,7 +493,8 @@ owner's state but may not recreate its transition logic.
 - **Persisted state:** immutable transcript/revision files, commit/result
   metadata, hash-chained language-label correction revisions, and native
   hidden/deletion state where applicable.
-- **Transient state:** frontend preview, selection, search, and polish draft;
+- **Transient state:** frontend preview, selection, search, and manual correction
+  comparison;
   one serialized latest-wins native speaker-detail read and a bounded page of
   canonical turn IDs.
 - **Trust boundary:** text/result size, revision identity/hash, catalog path,
@@ -506,7 +507,7 @@ owner's state but may not recreate its transition logic.
   restart validates and finalizes the complete locally published bundle before
   acquiring any server lease, while cancellation removes the unattached owned
   spool and prevents a later terminal commit.
-- **Cancellation:** aborts preview/polish projection. Result publication and
+- **Cancellation:** aborts preview/correction projection. Result publication and
   cancellation share the native mutation gate, so cancellation either wins
   before publication or observes the completed terminal record afterward.
 - **Duplicate owner:** `localStorage` owns browser-created presentation entries
@@ -980,10 +981,48 @@ as `ec3af506...`.
   `archivist.py` owns private compilation; existing ledgers retain durable
   authority.
 
-Exact unmerged candidate `3ec9885e...` passed focused unit checks, the complete
+Exact source candidate `3ec9885e...` passed focused unit checks, the complete
 1,207-test portable server suite, and two real PostgreSQL retry/restart/
-cross-owner/cancellation tests with exact six-part teardown. HTTP/native/UI
-exposure and shared Student/Curator integration remain later work.
+cross-owner/cancellation tests with exact six-part teardown. Hosted-green head
+`e1899db7...` passed all 12 checks and PR #165 merged the core as
+`2a7ec819...`. HTTP/native/UI exposure remains later work.
+
+### 29. Student learning-question workflow
+
+- **Entry point:** `yap_server/agents/student_service.py` owns one synchronous
+  BACKGROUND_LLM broker workflow; `yap_server/agents/student_runtime.py` binds
+  it only to the authenticated already-warm rapid profile.
+- **Authoritative owner:** the Postgres permission/retrieval owners supply one
+  active owner-scoped conversation generation and its exact citations;
+  `student_model.py` owns strict bounded response decoding. Student creates no
+  second source, permission, proposal, or knowledge authority.
+- **Persisted state:** `student_result_audit.py` writes one immutable redacted
+  terminal outcome identity. Question text is returned to the caller but is not
+  stored in that audit ledger.
+- **Trust boundary:** tenant/subject comes from the authenticated principal;
+  request identity binds the expected generation and conversation concept. The
+  server constructs the evidence pack and complete citation objects. The model
+  may select among exact visible citations, but it may not create, narrow, or
+  rewrite an evidence identity. It supplies one exact source subject plus exact
+  support quotes; the server rebinds every support to frozen evidence, resolves
+  each unique quote, derives its span, and alone renders the question text.
+- **Dependencies/events:** permission-safe generation read -> rapid-route lease
+  -> bounded exact-subject selection -> canonical citation/support validation
+  -> server-rendered question -> one terminal audit. The route is already warm;
+  Student never launches, swaps, or reduces it.
+- **Failure/recovery:** cancellation, deadline, provider loss, invalid/stale
+  evidence, cross-owner access, invalid output, and audit/storage failure yield
+  no successful questions. Capacity remains owned until cancellation is
+  acknowledged.
+- **Duplicate owner:** none. Retrieval owns evidence, the Rust broker owns the
+  lease, the Qwen client owns one bounded inference, and the audit ledger owns
+  only the redacted terminal record.
+
+Exact candidate `452c8b76...` produced a nominally green private receipt, but
+adversarial review demonstrated unsupported-premise admission and invalidated
+that evidence. The repaired owner is complete-portable-test green on the unchanged full
+Qwen rapid profile; replacement private qualification, hosted merge, and an
+HTTP/native/UI surface remain open.
 
 ## Persistent-state owners
 
@@ -1009,6 +1048,7 @@ exposure and shared Student/Curator integration remain later work.
 | Boot-scoped agent admission leases | Rust agent admission broker | authenticated Python role workflows; not durable application truth |
 | Accepted transcript-correction revisions | native Scribe revision owner | React diff/history projection; raw transcript remains authoritative |
 | Archivist ingestion outcomes | reviewed-capture, source-admission, and generation ledgers | typed staged-generation result; no activation |
+| Student workflow outcomes | immutable Student result-audit ledger | typed source-supported question result; question text is not durable audit state |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

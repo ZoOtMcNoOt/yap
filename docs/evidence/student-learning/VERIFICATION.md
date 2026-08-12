@@ -1,0 +1,82 @@
+# Student learning-question verification
+
+**Status:** The current source-grounding repair is complete-portable-test green. A fresh
+exact-head private qualification, hosted review, merge, HTTP/native/UI exposure,
+Curator integration, and the aggregate Phase 10 gate remain pending.
+
+## Current candidate contract
+
+- Work class and route: `BACKGROUND_LLM` / rapid automation.
+- Student reads one authenticated owner-scoped, permission-safe admitted
+  conversation generation. It cannot accept caller-authored evidence, read
+  another owner, mutate the source, write a proposal, or activate knowledge.
+- The request carries bounded topic text rather than a caller-authored target
+  question. Topic and evidence are explicitly untrusted model inputs.
+- The model may select only a bounded `sourceSubject` copied byte-for-byte from
+  exact support quotes paired to complete server-owned citation identities. The
+  server resolves each quote to one unique substring, derives its span, and
+  rejects an invented, ambiguous, or rewritten citation.
+- The server alone renders `What should you remember about {sourceSubject}?`.
+  It requires the exact subject at lexical boundaries in every support and
+  rebinds every support to the frozen evidence object. The model cannot change
+  the selected subject's bytes, order, case, or punctuation and cannot write
+  question wording; invalid output publishes no questions. Topic text is
+  untrusted context, not executable authority. This is not a claim that every
+  possible numeric or linguistic fragment has independent semantic meaning.
+- The workload still requires the unchanged full Qwen rapid profile: GPU-memory
+  utilization `0.40`, four maximum sequences, 8,192 maximum batched tokens, and
+  a 512-token Student output cap. Neither Student nor its gate launches, stops,
+  swaps, substitutes, or reduces a model.
+
+## Current public verification
+
+- The focused Student set ran 31 total tests: 29 passed and two were declared
+  local database skips.
+- The complete portable server suite ran 1,238 total tests: 1,204 passed and 34
+  were declared skips against the schema-v3 source-subject repair.
+- Server-wide Ruff and `git diff --check` passed.
+- The exact current implementation head and checked input hashes will be frozen
+  only after documentation reconciliation. A complete new private qualification
+  must then run; no historical model result may authorize the successor.
+
+## Terminal private evidence
+
+Exact head `452c8b76a9a60681a962048caed12749e8bb80d0` originally returned
+`student-learning-questions-qualified` with public-safe semantic evidence
+SHA-256
+`3e1ddc61bf0c8d009a25b06ef261f0b6f7dcd8d7c1f58eeb666ba31e98420c41`.
+Its acceptance-plan SHA-256 was
+`99471659c91618028a3c2e5d58739b8f2635aee1a7d3800c445ac7c855aa6e67`,
+and its frozen-corpus SHA-256 was
+`b9d300137b2720e91dcafc1fae8dcda15d4fa4febb79623b4ddd453c6d857962`.
+The run did prove the unchanged full profile, an unchanged warm-provider
+generation and broker, one synchronized eight-owner workflow wave, real
+PostgreSQL restart/cross-owner/audit behavior, and exact owned-database teardown.
+
+Post-gate adversarial review then demonstrated that a caller-controlled focus
+could contain a target question and that the decoder accepted an unsupported
+question premise when it copied an unrelated but exact visible citation. The
+qualification corpus also embedded each expected question in that focus text,
+so the run proved citation copying and lifecycle behavior but did not prove
+source-grounded question generation. That receipt is therefore terminal and
+inadmissible; it cannot authorize merge or be relabeled after the repair.
+
+Exact predecessor `ffe9088573a1a8453a3cb529f1fc62c8ef9d7dda` remains terminal
+`deterministic-no-student` evidence with public-safe SHA-256
+`bc65dd55dc3c751caa340312fc6435beba5ba0c0d7a2fa43e323297cadf32c3d`.
+Seven of eight cases completed; `instruction-is-data` failed closed because the
+model altered one citation span. No failed or invalidated output, measurement,
+or candidate result is reused. The repair changes no model, resource profile,
+output cap, timeout, queue bound, or acceptance threshold.
+
+## Deliberate limits
+
+Student remains an unmerged internal core. There is no Student HTTP endpoint,
+native adapter, renderer/UI workflow, user review surface, or production
+deployment. Current evidence does not prove sustained multi-owner throughput,
+route p95/p99 SLOs, simultaneous full Qwen/Gemma residency, a two-node warm
+topology, the five remaining workflows (Curator, Auditor, Librarian, Analyst,
+and Coordinator), or aggregate Phase
+10 completion. The current single Spark keeps the unchanged full Qwen rapid
+route warm for this work; full-strength two-route promotion requires a second
+owned GPU node and private routing rather than throttling or model swapping.

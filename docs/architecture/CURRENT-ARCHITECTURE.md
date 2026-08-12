@@ -10,10 +10,13 @@ native/server workflow to consume that merged boundary and passed its complete
 private qualification gate with public-safe semantic evidence SHA-256
 `5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
 Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged Scribe
-as `ec3af506...`. Exact unmerged Archivist candidate `3ec9885e...` is the first
-remaining role core and has focused portable/real-PostgreSQL evidence. Later
-Phase 10 roles, product exposure, and capacity/operations layers are not part
-of the merged baseline. Phase 7
+as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks and PR
+#165 merged the no-LLM Archivist ingestion core as `2a7ec819...`. The current
+Student source-grounding repair is complete-portable-test green on the unchanged full Qwen
+rapid profile; replacement private qualification, hosted merge, and product
+exposure remain open after adversarial review invalidated its prior receipt.
+Later Phase 10 roles and capacity/operations layers are not part of the merged
+baseline. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -1007,12 +1010,49 @@ one unchanged warm rapid generation, broker identity, database teardown, and
 zero owned residue. See the
 [public verification record](../evidence/scribe-transcript-correction/VERIFICATION.md).
 
+The merged Archivist core is the no-LLM source-admission workflow. It accepts
+only one authenticated owner-scoped durable reviewed-capture identity, re-reads
+that exact source, compiles deterministic OKF projections in an owner-private
+temporary workspace, and commits source admission plus one staged generation
+in one transaction. It neither embeds nor activates knowledge. Exact retry is
+idempotent only when the durable admission and complete persisted non-embedding
+generation still match. Exact source candidate `3ec9885e...` passed the complete
+portable server suite plus real PostgreSQL retry/restart/cross-owner/cancel and
+zero-residue checks; hosted-green head `e1899db7...` passed all 12 checks and PR
+#165 merged the core as `2a7ec819...`. It has no HTTP/native/UI exposure.
+
+The unmerged Student core is a separate BACKGROUND_LLM workflow on the rapid
+route. It reads one authenticated owner-scoped permission-safe conversation
+generation, accepts only bounded topic text, and requests bounded learning
+questions. The model selects only an exact source subject and exact support
+quotes paired to complete server-owned citations. The server rebinds every
+support to frozen evidence, derives support spans, and alone renders the fixed
+question template. It cannot mutate the source, write proposals, or activate
+knowledge.
+
+Exact candidate `452c8b76...` originally returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`3e1ddc61...`, but post-gate adversarial review proved that its caller-controlled
+focus could supply a target question and that an unrelated exact citation could
+authorize an unsupported premise. That receipt is terminal and inadmissible.
+The repaired focused set runs 31 total tests: 29 pass and two are declared
+database skips. The complete portable server suite runs 1,238 total tests:
+1,204 pass and 34 are declared skips. The
+workload still preserves the full Qwen rapid profile (`0.40` GPU-memory
+utilization, four maximum sequences, 8,192 maximum batched tokens) and a
+512-token Student output cap; neither the workflow nor its gate launches,
+swaps, substitutes, or reduces a model. Replacement private qualification and
+hosted merge remain open. See the
+[public verification record](../evidence/student-learning/VERIFICATION.md).
+
 The current multi-user contract is one warm Qwen rapid lane with owner-fair
 queueing, not eight parallel GPU sequences: one active request per route, 64
-global pending, four active-plus-pending per owner, round-robin owners, and a
-queue-inclusive 60-second Scribe deadline. Private qualification synchronizes
-eight distinct owners through that warm generation. Simultaneous route
-residency, sustained multi-owner capacity/fairness, production p95/p99,
+global pending, four active-plus-pending per owner, round-robin owners, and
+queue-inclusive workflow deadlines. Private Scribe qualification synchronized
+eight distinct owners through that warm generation; Student's historical wave
+is lifecycle evidence only and cannot authorize the repaired semantics.
+Simultaneous route residency, sustained multi-owner capacity/fairness,
+production p95/p99,
 observability, and deployment remain later gates. If one node cannot satisfy
 the simultaneous evidence, the exact services require separate owned nodes,
 not fallback or per-request model swapping.

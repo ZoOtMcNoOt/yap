@@ -27,6 +27,8 @@ from yap_server.agents.student_result_audit import (
 from yap_server.agents.student_model import (
     StudentQuestion,
     StudentQuestionModel,
+    StudentQuestionSupport,
+    student_question_text,
 )
 from yap_server.agents.student_service import StudentService
 from yap_server.auth import AuthenticatedPrincipal
@@ -46,12 +48,13 @@ def _request() -> StudentRequest:
     return StudentRequest(
         conversation_concept_id="meetings/job-1",
         expected_generation_sha256="a" * 64,
-        focus="crash safety",
+        topic="crash safety",
     )
 
 
-def _item() -> StudentEvidenceItem:
-    text = "The reviewed meeting records crash safety."
+def _item(
+    text: str = "The reviewed meeting records crash safety.",
+) -> StudentEvidenceItem:
     return StudentEvidenceItem(
         concept_id="meetings/job-1",
         source_revision="b" * 64,
@@ -62,21 +65,27 @@ def _item() -> StudentEvidenceItem:
     )
 
 
-def _evidence(*, visible: bool = True) -> StudentEvidence:
+def _evidence(
+    *,
+    visible: bool = True,
+    item: StudentEvidenceItem | None = None,
+) -> StudentEvidence:
     return StudentEvidence.create(
         generation_sha256="a" * 64,
         permission_hash="d" * 64,
         authorization_hash="e" * 64,
         conversation_concept_id="meetings/job-1",
-        items=(_item(),) if visible else (),
+        items=((item or _item()),) if visible else (),
         output_budget_exhausted=False,
     )
 
 
 def _question() -> StudentQuestion:
+    subject = "crash safety"
     return StudentQuestion(
-        "What crash-safety property does the reviewed meeting record?",
-        (_item(),),
+        subject,
+        student_question_text(subject),
+        (StudentQuestionSupport(_item(), "crash safety"),),
     )
 
 
@@ -244,14 +253,14 @@ class StudentTests(unittest.TestCase):
                 duration_milliseconds=1,
             )
 
-    def test_request_requires_exact_meeting_generation_and_focus(self) -> None:
+    def test_request_requires_exact_meeting_generation_and_topic(self) -> None:
         self.assertEqual(
             StudentRequest.from_wire(
                 {
-                    "schemaVersion": 1,
+                    "schemaVersion": 2,
                     "conversationConceptId": "meetings/job-1",
                     "expectedGenerationSha256": "a" * 64,
-                    "focus": "crash safety",
+                    "topic": "crash safety",
                 }
             ),
             _request(),
@@ -259,34 +268,46 @@ class StudentTests(unittest.TestCase):
         invalid = (
             {
                 "schemaVersion": 1,
+                "conversationConceptId": "meetings/job-1",
+                "expectedGenerationSha256": "a" * 64,
+                "topic": "crash safety",
+            },
+            {
+                "schemaVersion": 2,
                 "conversationConceptId": "projects/voiceos",
                 "expectedGenerationSha256": "a" * 64,
-                "focus": "crash safety",
+                "topic": "crash safety",
             },
             {
-                "schemaVersion": 1,
+                "schemaVersion": 2,
                 "conversationConceptId": "meetings/job-1",
                 "expectedGenerationSha256": "bad",
-                "focus": "crash safety",
+                "topic": "crash safety",
             },
             {
-                "schemaVersion": 1,
+                "schemaVersion": 2,
                 "conversationConceptId": "meetings/job-1",
                 "expectedGenerationSha256": False,
-                "focus": "crash safety",
+                "topic": "crash safety",
             },
             {
-                "schemaVersion": 1,
+                "schemaVersion": 2,
                 "conversationConceptId": "meetings/job-1",
                 "expectedGenerationSha256": "a" * 64,
-                "focus": "crash safety",
+                "topic": "crash safety",
                 "transcript": "caller supplied",
             },
             {
-                "schemaVersion": 1,
+                "schemaVersion": 2,
                 "conversationConceptId": "meetings/job\\1",
                 "expectedGenerationSha256": "a" * 64,
-                "focus": "crash safety",
+                "topic": "crash safety",
+            },
+            {
+                "schemaVersion": 2,
+                "conversationConceptId": "meetings/job-1",
+                "expectedGenerationSha256": "a" * 64,
+                "topic": "What should be invented?",
             },
         )
         for value in invalid:
@@ -297,8 +318,13 @@ class StudentTests(unittest.TestCase):
         content = {
             "questions": [
                 {
-                    "question": "What crash-safety property was reviewed?",
-                    "sourceCitations": [_item().citation_wire()],
+                    "sourceSubject": "crash safety",
+                    "sourceSupports": [
+                        {
+                            "sourceCitation": _item().citation_wire(),
+                            "supportQuote": "crash safety",
+                        }
+                    ],
                 }
             ]
         }
@@ -314,11 +340,14 @@ class StudentTests(unittest.TestCase):
         )
 
         self.assertEqual(len(questions), 1)
-        self.assertEqual(questions[0].citations, (_item(),))
+        self.assertEqual(
+            questions[0].supports,
+            (StudentQuestionSupport(_item(), "crash safety"),),
+        )
         payload = transport.payloads[0]
         self.assertEqual(payload["max_tokens"], 256)
         prompt = payload["messages"][1]["content"]
-        self.assertIn('"focus":"crash safety"', prompt)
+        self.assertIn('"topic":"crash safety"', prompt)
         self.assertIn(
             '"evidenceSha256":"' + _evidence().evidence_sha256 + '"',
             prompt,
@@ -333,10 +362,7 @@ class StudentTests(unittest.TestCase):
                 }
             ],
         )
-        self.assertIn(
-            "Copy at least one complete sourceCitation object unchanged",
-            payload["messages"][0]["content"],
-        )
+        self.assertIn("source subjects copied byte-for-byte", payload["messages"][0]["content"])
 
     def test_model_rejects_hidden_or_duplicate_evidence_claims(self) -> None:
         hidden = _item().citation_wire()
@@ -347,36 +373,42 @@ class StudentTests(unittest.TestCase):
             {
                 "questions": [
                     {
-                        "question": "What hidden fact exists?",
-                        "sourceCitations": [hidden],
+                        "sourceSubject": "hidden fact",
+                        "sourceSupports": [
+                            {"sourceCitation": hidden, "supportQuote": "crash safety"}
+                        ],
                     }
                 ]
             },
             {
                 "questions": [
                     {
-                        "question": "Summarize the reviewed fact.",
-                        "sourceCitations": [_item().citation_wire()],
+                        "sourceSubject": "crash safety",
+                        "sourceSupports": [
+                            {"sourceCitation": narrowed, "supportQuote": "crash safety"}
+                        ],
                     }
                 ]
             },
             {
                 "questions": [
                     {
-                        "question": "What crash-safety property was reviewed?",
-                        "sourceCitations": [narrowed],
-                    }
-                ]
-            },
-            {
-                "questions": [
-                    {
-                        "question": "What was reviewed?",
-                        "sourceCitations": [_item().citation_wire()],
+                        "sourceSubject": "crash safety",
+                        "sourceSupports": [
+                            {
+                                "sourceCitation": _item().citation_wire(),
+                                "supportQuote": "crash safety",
+                            }
+                        ],
                     },
                     {
-                        "question": "What was reviewed?",
-                        "sourceCitations": [_item().citation_wire()],
+                        "sourceSubject": "crash safety",
+                        "sourceSupports": [
+                            {
+                                "sourceCitation": _item().citation_wire(),
+                                "supportQuote": "crash safety",
+                            }
+                        ],
                     },
                 ]
             },
@@ -395,6 +427,190 @@ class StudentTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "source identity"):
             replace(_item(), source_revision="not-a-source-sha")
+
+    def test_model_rejects_subject_not_exactly_supported(self) -> None:
+        audit = _item("Alice approved TAVI. Bob approved CABG.")
+        decimal = _item("The medication dose was 0,5 mg on 08/31/2026.")
+        cases = (
+            (audit, "Alice approved CABG", audit.text),
+            (audit, "Was Bob approved by Alice", audit.text),
+            (decimal, "5,0 mg", decimal.text),
+            (decimal, "31/08/2026", decimal.text),
+            (decimal, "medication dose?", decimal.text),
+            (_item("A discontinued device."), "continued", "A discontinued device."),
+            (_item("The drug was discontinued."), "continued", "continued"),
+            (_item("The patient can't drive."), "can", "can"),
+            (_item("Dose 0,5 mg."), "5 mg", "5 mg"),
+            (_item("Date 08/31/2026 today."), "31/2026", "31/2026"),
+            (_item("$100 was approved."), "100", "100"),
+            (_item("Dose 5°C today."), "5", "5"),
+            (_item("Dose 5 mg/day today."), "5 mg", "5 mg"),
+            (_item("Failure was 5%."), "5", "5"),
+            (_item("José approved."), "Jose", "Jose"),
+            (_item("Jean‑Luc approved."), "Luc", "Luc"),
+            (_item("anti‐inflammatory dose."), "inflammatory", "inflammatory"),
+            (_item("Time 10:15 today."), "15", "15"),
+            (_item("Ratio 1:2 today."), "2", "2"),
+            (_item("Dose 5°C today."), "°C", "°C"),
+            (_item("Failure 5% today."), "% today", "% today"),
+        )
+        for item, subject, quote in cases:
+            response = {
+                "questions": [
+                    {
+                        "sourceSubject": subject,
+                        "sourceSupports": [
+                            {
+                                "sourceCitation": item.citation_wire(),
+                                "supportQuote": quote,
+                            }
+                        ],
+                    }
+                ]
+            }
+            with self.subTest(subject=subject, quote=quote), self.assertRaises(
+                ValueError
+            ):
+                StudentQuestionModel(
+                    transport=_Transport(response),
+                    model="rapid-model",
+                    maximum_output_tokens=256,
+                ).generate(
+                    _request(),
+                    _evidence(item=item),
+                    cancellation=threading.Event(),
+                )
+
+        for text, subject in (
+            ("Dose 0,5 mg.", "0,5 mg"),
+            ("Date 08/31/2026 today.", "08/31/2026"),
+            ("$100 was approved.", "$100"),
+            ("Dose 5°C today.", "5°C"),
+            ("Dose 5 mg/day today.", "5 mg/day"),
+            ("Failure was 5%.", "5%"),
+            ("Date 2026-08-31.", "2026-08-31"),
+            ("Time 10:15 today.", "10:15"),
+            ("Ratio 1:2 today.", "1:2"),
+            ("José approved.", "José"),
+            ("Jean‑Luc approved.", "Jean‑Luc"),
+            ("anti‐inflammatory dose.", "anti‐inflammatory"),
+            ("Decision: approved.", "approved"),
+        ):
+            item = _item(text)
+            response = {
+                "questions": [
+                    {
+                        "sourceSubject": subject,
+                        "sourceSupports": [
+                            {
+                                "sourceCitation": item.citation_wire(),
+                                "supportQuote": text,
+                            }
+                        ],
+                    }
+                ]
+            }
+            with self.subTest(valid_subject=subject):
+                questions = StudentQuestionModel(
+                    transport=_Transport(response),
+                    model="rapid-model",
+                    maximum_output_tokens=256,
+                ).generate(
+                    _request(),
+                    _evidence(item=item),
+                    cancellation=threading.Event(),
+                )
+                self.assertEqual(questions[0].source_subject, subject)
+
+    def test_model_derives_support_span_and_rejects_repeated_quote(self) -> None:
+        item = _item("Audit evidence. Audit evidence.")
+        with self.assertRaisesRegex(ValueError, "support is invalid"):
+            StudentQuestionSupport(item, "Audit evidence")
+
+        with self.assertRaisesRegex(ValueError, "support is invalid"):
+            StudentQuestionSupport(_item("Audit Audit Audit"), "Audit Audit")
+
+        support = StudentQuestionSupport(_item(), "crash safety")
+        self.assertEqual(
+            support.to_wire(),
+            {
+                "sourceCitation": _item().citation_wire(),
+                "supportQuote": "crash safety",
+                "supportCharStart": 29,
+                "supportCharEnd": 41,
+            },
+        )
+
+    def test_service_rejects_same_identity_support_with_changed_text(self) -> None:
+        admission = _Admission()
+        canonical = _item()
+        forged_text = (
+            "X" * (len(canonical.text) - len("crash safety")) + "crash safety"
+        )
+        forged = replace(
+            canonical,
+            text=forged_text,
+        )
+        view = StudentService(
+            admission=admission,
+            evidence_reader=_Reader(_evidence(item=canonical)),
+            question_generator=_Generator(
+                questions=(
+                    StudentQuestion(
+                        "crash safety",
+                        student_question_text("crash safety"),
+                        (StudentQuestionSupport(forged, "crash safety"),),
+                    ),
+                )
+            ),
+            result_auditor=_Auditor(),
+        ).create_questions(
+            _request(),
+            principal=_principal(),
+            cancellation=threading.Event(),
+        )
+
+        self.assertEqual(view.status, "failed")
+        self.assertEqual(view.reason, "invalid-output")
+
+    def test_model_rejects_unrelated_additional_support(self) -> None:
+        primary = _item("Alice approved TAVI.")
+        unrelated = replace(
+            _item("Bob denied CABG."),
+            source_revision="d" * 64,
+            content_sha256="e" * 64,
+        )
+        evidence = StudentEvidence.create(
+            generation_sha256="a" * 64,
+            permission_hash="d" * 64,
+            authorization_hash="e" * 64,
+            conversation_concept_id="meetings/job-1",
+            items=(primary, unrelated),
+            output_budget_exhausted=False,
+        )
+        response = {
+            "questions": [
+                {
+                    "sourceSubject": "TAVI",
+                    "sourceSupports": [
+                        {
+                            "sourceCitation": primary.citation_wire(),
+                            "supportQuote": primary.text,
+                        },
+                        {
+                            "sourceCitation": unrelated.citation_wire(),
+                            "supportQuote": unrelated.text,
+                        },
+                    ],
+                }
+            ]
+        }
+        with self.assertRaisesRegex(ValueError, "not source-grounded"):
+            StudentQuestionModel(
+                transport=_Transport(response),
+                model="rapid-model",
+                maximum_output_tokens=256,
+            ).generate(_request(), evidence, cancellation=threading.Event())
 
     def test_empty_or_hidden_evidence_never_submits_or_calls_the_model(self) -> None:
         admission = _Admission()
@@ -449,6 +665,11 @@ class StudentTests(unittest.TestCase):
         view = outcomes[0]
         self.assertEqual(view.status, "complete")
         self.assertEqual(view.questions, (_question(),))
+        self.assertEqual(view.to_wire()["schemaVersion"], 3)
+        self.assertEqual(
+            view.to_wire()["questions"][0]["sourceSubject"],
+            "crash safety",
+        )
         assert admission.submission is not None
         work = admission.submission["work"]
         self.assertEqual(work.role, AgentRole.STUDENT)
@@ -539,7 +760,13 @@ class StudentTests(unittest.TestCase):
             admission=admission,
             evidence_reader=_Reader(_evidence()),
             question_generator=_Generator(
-                questions=(StudentQuestion("What hidden fact exists?", (hidden,)),)
+                questions=(
+                    StudentQuestion(
+                        "crash safety",
+                        student_question_text("crash safety"),
+                        (StudentQuestionSupport(hidden, "crash safety"),),
+                    ),
+                )
             ),
             result_auditor=_Auditor(),
         ).create_questions(

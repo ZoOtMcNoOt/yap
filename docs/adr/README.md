@@ -74,8 +74,11 @@ governed, and hosted gates through PR #157. Exact protected head `7bd93dc6...`
 adds the bounded owner-fair admission substrate for already-warm services, and
 public-lock/aggregate head `135cc2ba...` passed its gate. Native/server Scribe
 integration is now exact-qualified at `e5858424...` with public-safe semantic
-evidence SHA-256 `5e187ed4...`; its hosted merge, warm simultaneous residency,
-the other seven roster workflows, and promotion remain open.
+evidence SHA-256 `5e187ed4...` and merged through PR #164. Archivist merged
+through PR #165. Student's support-grounding repair is complete-portable-test green, but
+replacement private qualification remains open after adversarial review
+invalidated the `452c8b76...` receipt. Warm simultaneous residency, the
+remaining workflows, and promotion remain open.
 
 ## Applicability and precedence
 
@@ -125,8 +128,8 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0027](0027-tiron-joint-speaker-attributed-meeting-transcription.md) | Tiron joint speaker-attributed meeting transcription | Accepted Phase 8 explicit Preview baseline; PR #142 merged Preview, PR #143 merged maintainability closure, PR #144 merged the sole source-time route, and PR #150 merged the `unadvertised-baseline` qualification closure. No fallback or production claim was added. |
 | [0028](0028-model-independent-terminology-authority.md) | Model-independent terminology authority and frozen projections | Accepted; merged Phase 9 has server-derived ownership, immutable job snapshots, bounded projections, revocation, governed-agent consumption, and a passed complete gate; production UI and operations remain open |
 | [0029](0029-vllm-agent-reasoning-runtime.md) | vLLM agent reasoning runtime on DGX Spark | Accepted; exact-head private Qwen rapid/Gemma complex route qualification and aggregate Phase 9 admission passed and merged through PR #152; the post-Phase-9 checkpoint gate passed at `22c3f369...` and hosted head `84c22ec9...` merged through PR #153; production serving, simultaneous residency, and sustained capacity remain Phase 10 |
-| [0030](0030-rust-supervised-provider-service-lifecycle.md) | Rust-supervised provider service lifecycle | Accepted Phase 10 target; Slices 10.1 and 10.2 merged the hardware-independent systemd/Rust/foreground-launcher boundary and immutable Qwen/Gemma profiles through PRs #155 and #157; admission integration and capacity remain later slices |
-| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; bounded already-warm multi-user admission merged through PR #158, and qualified Scribe merged through PR #164 as `ec3af506...`. Exact unmerged Archivist head `3ec9885e...` is focused-green. Student, Curator, the other six workflows, simultaneous full-profile residency, sustained capacity, and production promotion remain pending. |
+| [0030](0030-rust-supervised-provider-service-lifecycle.md) | Rust-supervised provider service lifecycle | Accepted Phase 10 target; Slices 10.1 and 10.2 merged the hardware-independent systemd/Rust/foreground-launcher boundary and immutable Qwen/Gemma profiles through PRs #155 and #157. Slice 10.3 bounded admission merged under ADR 0031 through PR #158; simultaneous residency, sustained capacity, and production operation remain open. |
+| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; bounded already-warm multi-user admission merged through PR #158, qualified Scribe through PR #164, and the Archivist core through PR #165 as `2a7ec819...`. Student's support-grounding repair is complete-portable-test green but replacement private qualification, merge, and exposure remain pending after the prior receipt was invalidated. The five remaining workflows (Curator, Auditor, Librarian, Analyst, and Coordinator), simultaneous full-profile residency, sustained capacity, and production promotion remain pending. |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

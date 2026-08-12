@@ -137,7 +137,7 @@ class StudentJobView:
 
     def to_wire(self) -> dict[str, object]:
         value: dict[str, object] = {
-            "schemaVersion": 1,
+            "schemaVersion": 3,
             "requestId": self.request_id,
             "status": self.status,
             "conversationConceptId": self.conversation_concept_id,

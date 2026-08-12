@@ -737,9 +737,62 @@ checks passed. The executing correction authority is now exact
 server-authorized terminology replacement plus separately validated bounded
 model edits; protected facts remain immutable and uncertainty returns raw ASR.
 The [public verification record](../docs/evidence/scribe-transcript-correction/VERIFICATION.md)
-contains the exact hashes, counts, and limits. Hosted review and merge remain
-open. This result does not prove simultaneous Qwen/Gemma residency, sustained
-mixed-route capacity, production SLOs, or the other seven role workflows.
+contains the exact hashes, counts, and limits. Hosted review and merge closed
+through PR #164. This result does not prove simultaneous Qwen/Gemma residency, sustained
+mixed-route capacity, production SLOs, or completion of the remaining role workflows.
+
+## Student learning questions
+
+The Student core is an internal `BACKGROUND_LLM` consumer of the already-warm
+rapid route. Its runtime builder is enabled only in authenticated team mode;
+each invocation receives one server-derived principal. The workflow reads one
+owner-scoped, permission-safe admitted conversation generation, freezes its
+exact evidence/citation tuples, and returns bounded source-supported learning
+questions. Caller-authored source text, another owner's evidence, direct
+knowledge mutation, proposal writes, and generation activation are rejected.
+
+Student submits a bounded request through the same owner-fair broker. Its
+queue-inclusive deadline is 60 seconds and its model output cap is 512 tokens.
+It neither starts nor swaps a model. Student does not reduce the pinned full
+Qwen rapid profile: GPU-memory utilization remains `0.40`, with four maximum
+sequences and 8,192 maximum batched tokens. Invalid output, cancellation,
+deadline, provider loss, cross-owner access, stale source identity, and audit
+failure are terminal and publish no successful result.
+
+The current repair replaces caller-controlled target-question text with a
+bounded topic. The model may select only an exact bounded source subject and
+exact supports; the server rebinds those supports to frozen evidence, derives
+their spans, and alone renders the fixed learning-question template. The model
+cannot rewrite the selected subject or write question wording. The current
+focused set is green at 31 total tests: 29 passed and two declared database
+skips. The complete portable server suite is green at 1,238 total tests: 1,204
+passed and 34 were declared skips for the
+schema-v3 source-subject repair. A complete fresh
+exact-head private qualification is still required before merge.
+
+Exact head `452c8b76a9a60681a962048caed12749e8bb80d0` originally returned
+`student-learning-questions-qualified` with public-safe SHA-256
+`3e1ddc61bf0c8d009a25b06ef261f0b6f7dcd8d7c1f58eeb666ba31e98420c41`,
+but post-gate adversarial review proved that it could publish an unsupported
+question premise beside an unrelated exact citation. Its corpus also embedded
+each target question in the caller-controlled focus. That receipt is terminal
+and inadmissible even though its warm-provider, broker, PostgreSQL restart,
+cross-owner, audit, and teardown observations remain historical facts.
+
+Exact predecessor `ffe9088573a1a8453a3cb529f1fc62c8ef9d7dda` remains terminal
+`deterministic-no-student` evidence with public-safe SHA-256
+`bc65dd55dc3c751caa340312fc6435beba5ba0c0d7a2fa43e323297cadf32c3d`.
+One case failed closed after altering a citation span. Neither historical run
+is reused. The current repair changes no model, full profile, output cap, retry
+behavior, queue bound, timeout, or acceptance threshold.
+
+The [public verification record](../docs/evidence/student-learning/VERIFICATION.md)
+contains the exact public-safe identities and limits. Student still has no HTTP
+endpoint, native adapter, renderer/UI workflow, hosted merge, or production
+promotion. A second owned GPU node/private route remains required before both
+unchanged full Qwen and Gemma services can be kept warm together. Student does
+not reduce the pinned full profile, and request-time model swapping remains
+prohibited.
 
 ## Local checks
 

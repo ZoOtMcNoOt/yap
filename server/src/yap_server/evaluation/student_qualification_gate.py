@@ -71,11 +71,13 @@ from yap_server.knowledge.okf_compiler import (
     CompiledKnowledgeGeneration,
     compile_okf_bundle,
 )
+from yap_server.knowledge.okf_projection import CompiledChunk
 from yap_server.pools.agent_vllm_service_profile import AgentVllmServiceProfile
 
 from .student_qualification import (
     StudentQualificationCase,
     StudentQualificationCorpus,
+    StudentExpectedEvidence,
     StudentQualificationResult,
     evaluate_student_qualification,
     load_student_qualification_acceptance,
@@ -207,6 +209,7 @@ def run_student_qualification_gate(
                 acceptance=acceptance,
                 tenant_id=_TENANT_ID,
                 generation_sha256=generation.generation_sha256,
+                expected_evidence=_expected_student_evidence(generation, corpus),
                 observe_warm_state=observe_provider,
                 observe_admission_state=observe_admission,
             )
@@ -338,6 +341,34 @@ def _initialize_student_knowledge(
     return generation
 
 
+def _expected_student_evidence(
+    generation: CompiledKnowledgeGeneration,
+    corpus: StudentQualificationCorpus,
+) -> dict[str, StudentExpectedEvidence]:
+    concepts = {concept.concept_id: concept for concept in generation.concepts}
+    chunks_by_concept: dict[str, list[CompiledChunk]] = {}
+    for chunk in generation.chunks:
+        chunks_by_concept.setdefault(chunk.concept_id, []).append(chunk)
+    expected: dict[str, StudentExpectedEvidence] = {}
+    for case in corpus.cases:
+        concept = concepts.get(case.concept_id)
+        chunks = chunks_by_concept.get(case.concept_id, [])
+        if concept is None or len(chunks) != 1:
+            raise RuntimeError("Student qualification compiled evidence differs")
+        chunk = chunks[0]
+        if chunk.text != case.body:
+            raise RuntimeError("Student qualification compiled body differs")
+        expected[case.case_id] = StudentExpectedEvidence(
+            concept_id=case.concept_id,
+            source_revision=generation.source_revision,
+            content_sha256=concept.content_sha256,
+            char_start=chunk.char_start,
+            char_end=chunk.char_end,
+            text=chunk.text,
+        )
+    return expected
+
+
 def _run_cross_owner_hidden(
     service: object,
     corpus: StudentQualificationCorpus,
@@ -357,7 +388,7 @@ def _run_cross_owner_hidden(
         StudentRequest(
             conversation_concept_id=case.concept_id,
             expected_generation_sha256=generation_sha256,
-            focus=case.focus,
+            topic=case.topic,
         ),
         principal=principal,
         cancellation=threading.Event(),
@@ -433,7 +464,7 @@ def _verify_student_database_state(
         request = StudentRequest(
             conversation_concept_id=case.concept_id,
             expected_generation_sha256=generation_sha256,
-            focus=case.focus,
+            topic=case.topic,
         )
         outcome = outcome_by_status[item["status"]]
         count = len(item["questions"])
@@ -473,7 +504,7 @@ def _verify_student_database_state(
     cross_request = StudentRequest(
         conversation_concept_id=cross_case.concept_id,
         expected_generation_sha256=generation_sha256,
-        focus=cross_case.focus,
+        topic=cross_case.topic,
     )
     if (
         _REQUEST_ID.fullmatch(cross_owner_view.request_id) is None

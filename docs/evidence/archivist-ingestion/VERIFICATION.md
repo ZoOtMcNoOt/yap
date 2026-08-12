@@ -1,14 +1,17 @@
 # Archivist ingestion verification
 
-**Status:** Focused exact-head implementation and real PostgreSQL verification
-passed; hosted review, merge, Student/Curator integration, and the aggregate
-Phase 10 gate remain pending.
+**Status:** Focused exact-head implementation, real PostgreSQL verification,
+hosted review, and merge passed; product exposure, Student/Curator integration,
+and the aggregate Phase 10 gate remain pending.
 
 ## Exact candidate
 
 - Executable head: `3ec9885ee902926f3f7672d2438e1da23c18c284`
 - Base: merged Scribe head
   `ec3af506da68bbb7a0ce855369dd09c8a791742d`
+- Hosted-green head: `e1899db7312643a32ae67cfdf196aa3c1d40a298`
+- Merge: [PR #165](https://github.com/mcnatg1/yap/pull/165) as
+  `2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`
 - Work class and route: `BACKGROUND_IO` / `SERVER_IO`; no LLM or GPU route
 
 ## What the focused evidence proved
@@ -45,11 +48,12 @@ Phase 10 gate remain pending.
 - Server-wide Ruff, Python compilation, and `git diff --check` passed.
 - A disposable private-server worktree matched the exact candidate tree and was
   removed after successful zero-residue teardown.
+- The exact hosted successor passed all 12 required checks before merge.
 
 ## Deliberate limits
 
-This evidence closes only the Archivist core workflow. It does not expose an
-HTTP/native/UI product surface, activate knowledge, qualify Student or Curator,
+This evidence closes and merges only the Archivist core workflow. It does not expose an
+HTTP/native/UI product surface, activate knowledge, integrate Student or Curator,
 prove the complete Slice D audit matrix, run an LLM, prove simultaneous Qwen and
 Gemma residency, establish sustained capacity/SLOs, or promote a production
 service. No DSN, credential, database content, private path, or raw reviewed
