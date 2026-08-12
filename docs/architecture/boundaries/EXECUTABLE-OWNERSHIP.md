@@ -901,12 +901,15 @@ evidence.
 - **Duplicate owner:** none. Provider supervisors remain lifecycle owners;
   role workflows remain domain owners; the broker only owns admission.
 
-Exact executable head `9b14beff...` passes Windows and Linux Rust format,
-all-target lint/tests, the Linux private-socket lifecycle, the exact 165-test
-portable matrix across 28 modules, and Ruff. No native HTTP endpoint or role
-workflow consumes the broker yet. Simultaneous residency, sustained capacity,
-hosted review, fresh protected-route qualification, and production promotion
-remain open.
+Exact protected head `7bd93dc6...` passes Windows and Linux Rust format,
+all-target lint/tests, the Linux private-socket lifecycle, the exact 169-test
+portable matrix across 28 modules, and Ruff. Its replacement private
+qualification admitted both routes; public-lock/aggregate head `135cc2ba...`
+passed semantic admission, the portable and 17-test Postgres matrices, real
+restart/retrieval/stale/successor proof, unchanged desktop dependency scope,
+and exact teardown. No native HTTP endpoint or role workflow consumes the
+broker yet. Simultaneous residency, sustained capacity, hosted review, and
+production promotion remain open.
 
 ## Persistent-state owners
 

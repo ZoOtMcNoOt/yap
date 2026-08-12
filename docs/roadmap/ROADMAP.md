@@ -213,15 +213,19 @@ tests across four modules, real restart/retrieval/stale/successor proof,
 unchanged desktop scope, and exact teardown. Hosted-green head `6d1400cc...`
 merged through PR #157 as `cac8989b...`.
 
-Exact local executable head `9b14beff...` implements the next bounded-admission
+Exact protected head `7bd93dc6...` implements the next bounded-admission
 substrate: all eight role bindings, conservative per-route capacity, bounded
 global/per-owner queues, owner round robin, weighted work classes, idle-only
 exclusion, queue-inclusive deadlines, provider-generation disruption, and
 token-bound completion/cancellation over an owner-private Unix socket. It keeps
 already-started exact services warm; requests do not launch or swap models. The
 broker is not enabled and does not automatically restart after losing its
-in-memory lease state. Native/server workflow integration and fresh protected-
-route qualification remain open. Simultaneous
+in-memory lease state. Replacement private qualification admitted both routes
+with public-safe evidence SHA-256 `a75500c3...`; public-lock/aggregate head
+`135cc2ba...` passed the 169-test portable matrix, Ruff, the 17-test Postgres
+matrix, real restart/retrieval/stale/successor proof, unchanged desktop scope,
+and exact teardown with public-safe evidence SHA-256 `350c13a5...`.
+Native/server workflow integration remains open. Simultaneous
 residency, sustained mixed-owner route-specific capacity and p95/p99 evidence,
 observability, rollback, external serving, and IT-owned deployment remain later
 gates or handoffs. If one node cannot satisfy simultaneous evidence, the routes

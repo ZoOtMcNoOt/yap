@@ -1,10 +1,11 @@
 # Agent admission service
 
 This runbook covers the bounded multi-user admission substrate implemented at
-exact local executable head `9b14beffd0643cfe09cc2ba501669f01b5be775d`.
-It is not yet an enabled product service: hosted review, fresh protected-route
-qualification, native/server workflow integration, simultaneous residency, and
-sustained capacity evidence remain open.
+exact protected head `7bd93dc624e6d8651dffc710026ca144909b2399` and
+admitted by exact public-lock/aggregate head
+`135cc2ba8534f41d91ff52cd6b6d366460c7b60f`. It is not yet an enabled
+product service: hosted review, native/server workflow integration,
+simultaneous residency, and sustained capacity evidence remain open.
 
 ## Ownership and safety boundary
 
@@ -103,17 +104,20 @@ PYTHONPATH=src uv run --locked --all-extras python \
 uv run --locked --all-extras ruff check src tests
 ```
 
-At executable head `9b14beff...`, Windows and Linux Rust checks, the Linux
-owner-private socket lifecycle, 165 portable tests across 28 modules, and Ruff
-passed. These are admission-contract checks. They are not simultaneous-model,
-capacity, production-availability, endpoint, or deployment evidence.
+At protected head `7bd93dc6...`, Windows and Linux Rust checks, the Linux
+owner-private socket lifecycle, 169 portable tests across 28 modules, and Ruff
+passed. Replacement qualification admitted both routes; aggregate head
+`135cc2ba...` passed semantic admission, the portable and 17-test Postgres
+matrices, real restart/retrieval/stale/successor proof, unchanged desktop scope,
+and exact teardown. These are admission-contract checks. They are not
+simultaneous-model, capacity, production-availability, endpoint, or deployment
+evidence.
 
 ## Later enablement and recovery
 
 Do not enable or start the admission unit until all of these are true:
 
-1. the exact candidate has passed hosted review and fresh protected-route
-   qualification;
+1. PR #158 has passed hosted exact-head review;
 2. the selected provider topology has passed simultaneous-residency evidence;
 3. the authenticated Python workflow owns cancellation through final worker
    termination and can prove no work survives a released lease; and

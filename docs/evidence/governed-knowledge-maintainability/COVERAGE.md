@@ -71,8 +71,8 @@ out above rather than treated as refactor candidates.
 | Documentation | 103 | 33,237 |
 | Root/configuration/provenance text | 49 | 19,801 |
 
-The reproducible threshold screen finds 477 tracked regular source, text, and
-policy surfaces at or above 250 lines: 252 at or above 350 and 225 from 250
+The reproducible threshold screen finds 494 tracked regular source, text, and
+policy surfaces at or above 250 lines: 259 at or above 350 and 235 from 250
 through 349. The exact extension set, five excluded generated/dependency
 artifacts, disposition rules, and current output are owned by
 `verification/list-maintainability-threshold-surfaces.ps1`. Review

@@ -8,9 +8,16 @@ merged Phase 10 Slice 10.2 as
 `6d1400ccdf481333840700b51f516c813960272b`. It binds the exact supervised
 Qwen rapid and Gemma complex profiles after sequential lifecycle, fresh private
 qualification, and aggregate gate evidence. The current unmerged Slice 10.3
-admission core is locally verified at exact executable head
-`9b14beffd0643cfe09cc2ba501669f01b5be775d`; no service is enabled, no product
-workflow consumes it, and no capacity or production promotion is claimed.
+admission substrate passed replacement protected-route qualification at exact
+executable head `7bd93dc624e6d8651dffc710026ca144909b2399` with public-safe
+evidence SHA-256
+`a75500c344eaa7546695ab1e7415466c031ccf394620ed442ca618ea1ede8c06`.
+Public-lock successor `135cc2ba8534f41d91ff52cd6b6d366460c7b60f` then passed
+the aggregate governed-knowledge gate with public-safe evidence SHA-256
+`350c13a5569cfc7237174d1f7e2132857ffb3aaf28b6afd2eca03aa1999aea79`.
+PR #158 remains under hosted review; no service is enabled, no product workflow
+consumes the broker, and no simultaneous-capacity or production promotion is
+claimed.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after
@@ -139,7 +146,7 @@ merged through PR #157 as `cac8989b...`.
 
 The intended multi-user service topology keeps both routes warm behind bounded
 fair admission; requests do not launch or swap models. Exact admission-core
-head `9b14beff...` now implements all eight role bindings, conservative one-
+head `7bd93dc6...` now implements all eight role bindings, conservative one-
 active-per-route admission, a 64-request global pending bound, a four-request
 active-plus-pending owner bound, owner round robin, weighted HOT/INTERACTIVE/
 BACKGROUND/IDLE scheduling, queue-inclusive deadlines, token-bound completion
@@ -147,9 +154,17 @@ and cancellation acknowledgement, provider-generation disruption, strict
 private Unix transport, and a bounded Python adapter. Its service never starts
 the provider units and fails closed instead of automatically restarting after
 loss of its in-memory leases. Windows/Linux Rust checks, the Linux socket
-lifecycle, the exact 165-test portable matrix across 28 modules, and Ruff pass
-locally. Simultaneous residency, sustained capacity/fairness, production
-p95/p99, native HTTP integration, and deployment remain unproved. If one node
+lifecycle, the exact 169-test portable matrix across 28 modules, and Ruff pass.
+The protected replacement qualification at `7bd93dc6...` admitted both exact
+routes after 24 independently scored Qwen proposal samples under unchanged
+token and latency bounds. Public-lock and aggregate head `135cc2ba...` then
+passed semantic admission, the portable matrix, 17 zero-skip Postgres tests
+across four modules, real restart/recovered retrieval/stale-generation
+rejection/successor retrieval, the unchanged desktop dependency boundary, and
+exact teardown. A prior `c4b5e084...` attempt remains terminal rejected
+evidence; no private output or measurement is published. Simultaneous
+residency, sustained capacity/fairness, production p95/p99, native HTTP
+integration, and deployment remain unproved. If one node
 cannot meet the simultaneous evidence, the exact routes require separate owned
 nodes, not fallback or swapping. The merged `server/orchestrator` provider
 supervisor owns one explicit provider-launcher lifecycle,
@@ -192,7 +207,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Slices 10.1/10.2 merged; Slice 10.3 admission core locally verified | The merged baseline owns supervised exact Qwen/Gemma service lifecycles. Exact admission head `9b14beff...` adds bounded owner-fair multi-user scheduling and private Rust-to-Python transport, but no workflow or native endpoint consumes it. Fresh route qualification, hosted review, simultaneous residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
+| Phase 10 | Slices 10.1/10.2 merged; Slice 10.3 gated and under hosted review | The merged baseline owns supervised exact Qwen/Gemma service lifecycles. Exact protected head `7bd93dc6...` adds bounded owner-fair multi-user scheduling and private Rust-to-Python transport; exact public-lock/gate head `135cc2ba...` qualified both routes and passed the 169-test/17-database-test aggregate with real restart and exact teardown. No workflow or native endpoint consumes it. Hosted review, simultaneous residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -976,9 +991,9 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Complete hosted review and merge of exact bounded-admission head
-   `9b14beff...`, then run the required fresh protected-route qualification
-   before any aggregate gate. Do not enable the broker or claim capacity.
+1. Complete hosted review and merge of PR #158 without rerunning or relabeling
+   the exact `7bd93dc6...` qualification or `135cc2ba...` aggregate gate.
+   Do not enable the broker or claim capacity from this bounded-admission proof.
 2. Implement the first complete product workflow, Scribe, through authenticated
    native/server integration while preserving raw ASR and local controls.
 3. Keep Tiron absent from the default catalog at the recorded

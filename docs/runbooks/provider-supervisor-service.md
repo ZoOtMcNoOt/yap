@@ -190,7 +190,7 @@ boolean lifecycle/teardown facts, and explicit `false` capacity and
 simultaneous-residency claims. Logs, process identities, owner tokens, model
 paths, and private measurements stay under the private evidence root.
 
-The admission layer at exact local head `9b14beff...` keeps both exact services
+The gated admission layer at exact protected head `7bd93dc6...` keeps both exact services
 warm behind bounded owner-fair admission. A request never starts or swaps a
 model. It is documented separately in the
 [agent admission runbook](agent-admission-service.md). If a single node cannot

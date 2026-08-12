@@ -3,8 +3,10 @@
 This document describes the merged executable Phase 1–9 system plus merged
 Phase 10 Slices 10.1 and 10.2: the supervised-provider lifecycle and immutable
 Qwen/Gemma service profiles. Their hosted closure merged through PRs #155 and
-#157. Exact local head `9b14beff...` adds a bounded owner-fair admission
-substrate for already-warm services, but no product workflow consumes it yet.
+#157. Exact protected head `7bd93dc6...` adds a bounded owner-fair admission
+substrate for already-warm services; exact public-lock head `135cc2ba...` passed
+replacement route qualification and the aggregate gate, but no product
+workflow consumes it yet.
 Later Phase 10 slices remain called out separately below and are not part of the
 merged baseline. Phase 7
 implements provider-neutral
@@ -939,14 +941,20 @@ scope, and exact teardown. Hosted-green head `6d1400cc...` merged through PR
 
 The intended multi-user topology keeps both exact route services warm behind
 bounded owner-fair admission; request handling never launches or swaps a model.
-Exact executable head `9b14beff...` implements the admission substrate in Rust:
+Exact protected head `7bd93dc6...` implements the admission substrate in Rust:
 all eight role/purpose/route/class bindings, one conservative active slot per
 route, bounded global and per-owner queues, owner round robin, weighted priority,
 idle-only exclusion, queue-inclusive deadlines, token-bound terminal controls,
 and provider-generation disruption. A hardened service exposes one owner-
 private Unix socket to a strict Python adapter. It does not start either
 provider, substitute routes, automatically restart after losing lease state, or
-expose an application endpoint. Simultaneous residency, sustained multi-owner
+expose an application endpoint. The replacement qualification admitted both
+exact routes with public-safe evidence SHA-256 `a75500c3...`; public-lock and
+aggregate head `135cc2ba...` then passed semantic admission, 169 portable tests
+across 28 modules, Ruff, 17 zero-skip Postgres tests across four modules, real
+restart/retrieval/stale/successor proof, unchanged desktop dependency scope,
+and exact teardown with public-safe evidence SHA-256 `350c13a5...`.
+Simultaneous residency, sustained multi-owner
 capacity/fairness, production p95/p99, native/server workflow integration,
 observability, and deployment remain later gates. If one node cannot satisfy
 the simultaneous evidence, the exact services require separate owned nodes,
