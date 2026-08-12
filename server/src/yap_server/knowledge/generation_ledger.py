@@ -214,6 +214,32 @@ def stage_compiled_generation(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
             (generation.tenant_id,),
         )
+        existing = connection.execute(
+            """SELECT tenant_id, generation_sha256, source_revision,
+                      okf_version, concept_count, permission_count,
+                      source_admission_sha256
+               FROM yap_knowledge_builds
+               WHERE tenant_id = %s AND generation_sha256 = %s""",
+            (generation.tenant_id, generation.generation_sha256),
+        ).fetchone()
+        if existing is not None:
+            if existing[6] != source_admission_sha256:
+                raise ValueError(
+                    "staged knowledge generation source admission differs"
+                )
+            persisted = _load_persisted_generation(
+                connection,
+                tenant_id=generation.tenant_id,
+                generation_sha256=generation.generation_sha256,
+                source_revision=str(existing[2]),
+                okf_version=str(existing[3]),
+            )
+            validate_compiled_generation(persisted)
+            if persisted != generation:
+                raise ValueError(
+                    "staged knowledge generation differs from stored truth"
+                )
+            return KnowledgeGenerationDescriptor(*existing[:6])
         connection.execute(
             """INSERT INTO yap_knowledge_builds (
                 tenant_id, generation_sha256, source_admission_sha256,
