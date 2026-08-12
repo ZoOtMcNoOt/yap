@@ -323,10 +323,26 @@ class StudentTests(unittest.TestCase):
             '"evidenceSha256":"' + _evidence().evidence_sha256 + '"',
             prompt,
         )
+        prompt_value = json.loads(prompt)
+        self.assertEqual(
+            prompt_value["visibleEvidence"],
+            [
+                {
+                    "sourceCitation": _item().citation_wire(),
+                    "text": _item().text,
+                }
+            ],
+        )
+        self.assertIn(
+            "Copy at least one complete sourceCitation object unchanged",
+            payload["messages"][0]["content"],
+        )
 
     def test_model_rejects_hidden_or_duplicate_evidence_claims(self) -> None:
         hidden = _item().citation_wire()
         hidden["conceptId"] = "meetings/hidden"
+        narrowed = _item().citation_wire()
+        narrowed["charStart"] += 1
         responses = (
             {
                 "questions": [
@@ -341,6 +357,14 @@ class StudentTests(unittest.TestCase):
                     {
                         "question": "Summarize the reviewed fact.",
                         "sourceCitations": [_item().citation_wire()],
+                    }
+                ]
+            },
+            {
+                "questions": [
+                    {
+                        "question": "What crash-safety property was reviewed?",
+                        "sourceCitations": [narrowed],
                     }
                 ]
             },
