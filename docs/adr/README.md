@@ -72,9 +72,10 @@ cross-route fallback. Merged Slice 10.2 binds the exact Qwen/Gemma profiles and
 passed sequential lifecycle, fresh private route qualification, aggregate
 governed, and hosted gates through PR #157. Exact protected head `7bd93dc6...`
 adds the bounded owner-fair admission substrate for already-warm services, and
-public-lock/aggregate head `135cc2ba...` passed its gate; native/
-server integration, warm simultaneous residency, roster workflows, and
-promotion remain open.
+public-lock/aggregate head `135cc2ba...` passed its gate. Native/server Scribe
+integration is now exact-qualified at `e5858424...` with public-safe semantic
+evidence SHA-256 `5e187ed4...`; its hosted merge, warm simultaneous residency,
+the other seven roster workflows, and promotion remain open.
 
 ## Applicability and precedence
 
@@ -125,7 +126,7 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0028](0028-model-independent-terminology-authority.md) | Model-independent terminology authority and frozen projections | Accepted; merged Phase 9 has server-derived ownership, immutable job snapshots, bounded projections, revocation, governed-agent consumption, and a passed complete gate; production UI and operations remain open |
 | [0029](0029-vllm-agent-reasoning-runtime.md) | vLLM agent reasoning runtime on DGX Spark | Accepted; exact-head private Qwen rapid/Gemma complex route qualification and aggregate Phase 9 admission passed and merged through PR #152; the post-Phase-9 checkpoint gate passed at `22c3f369...` and hosted head `84c22ec9...` merged through PR #153; production serving, simultaneous residency, and sustained capacity remain Phase 10 |
 | [0030](0030-rust-supervised-provider-service-lifecycle.md) | Rust-supervised provider service lifecycle | Accepted Phase 10 target; Slices 10.1 and 10.2 merged the hardware-independent systemd/Rust/foreground-launcher boundary and immutable Qwen/Gemma profiles through PRs #155 and #157; admission integration and capacity remain later slices |
-| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; bounded already-warm multi-user admission merged through PR #158, and the first authenticated product workflow, Scribe, is implemented and public-green. Private Scribe qualification/aggregate admission, the other seven workflows, sustained capacity, hosted Scribe merge, and production promotion remain pending. |
+| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; bounded already-warm multi-user admission merged through PR #158, and exact Scribe head `e5858424...` passed its bilingual/eight-owner private qualification gate. Hosted Scribe merge, the other seven workflows, simultaneous residency, sustained capacity, and production promotion remain pending. |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

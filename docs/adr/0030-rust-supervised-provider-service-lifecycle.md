@@ -1,6 +1,6 @@
 # ADR 0030: Rust-supervised provider service lifecycle
 
-**Status:** Accepted; Slices 10.1–10.3 merged, Scribe consumer qualification and later production layers pending
+**Status:** Accepted; Slices 10.1–10.3 merged, Scribe qualification passed, hosted merge and later production layers pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md),
@@ -109,7 +109,9 @@ than adding a second container owner. This option is selected.
   provider or auto-restart after losing lease state. Replacement qualification
   admitted both routes; public-lock/aggregate head `135cc2ba...` passed the
   complete admission-slice gate, and PR #158 merged it. Scribe is the first
-  candidate consumer; its private qualification and merge remain pending.
+  candidate consumer; exact head `e5858424...` passed its private gate with
+  public-safe semantic evidence SHA-256 `5e187ed4...`. Its hosted merge remains
+  pending.
 
 ## Action items
 

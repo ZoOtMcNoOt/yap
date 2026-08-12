@@ -4,10 +4,12 @@ This document describes the merged executable Phase 1–9 system plus Phase 10
 Slices 10.1–10.3: the supervised-provider lifecycle, immutable Qwen/Gemma
 profiles, and bounded owner-fair admission for already-warm services. Their
 hosted closures merged through PRs #155, #157, and #158; the admission merge is
-`84d95842950860e3f8d5cc70895aaae9243abe9c`. The current Scribe
-candidate is the first authenticated native/server workflow to consume that
-merged boundary, but its private qualification, aggregate gate, hosted review,
-and merge remain open. Later Phase 10 roles and capacity/operations layers are
+`84d95842950860e3f8d5cc70895aaae9243abe9c`. Exact Scribe head
+`e585842485a7cd38b2935cc8f79314b19b37f7fd` is the first authenticated
+native/server workflow to consume that merged boundary and passed its complete
+private qualification gate with public-safe semantic evidence SHA-256
+`5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
+Hosted review and merge remain open. Later Phase 10 roles and capacity/operations layers are
 not part of the merged baseline. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -957,7 +959,7 @@ and exact teardown with public-safe evidence SHA-256 `350c13a5...`. Hosted-green
 head `cf1e69a4...` passed all 12 required checks and merged through PR #158 as
 `84d95842...`.
 
-The Scribe candidate adds an asynchronous authenticated transcript-correction
+The exact-qualified Scribe candidate adds an asynchronous authenticated transcript-correction
 workflow on top of that merged scheduler. Native code reads only trusted
 finalized live or remote transcript sources, carries immutable source/revision/
 segment hashes and exact timing/language, acquires one connector credential
@@ -972,8 +974,10 @@ string at 256 characters and asks for the shortest unique quote. Projection
 restores the original values only when the response has the same block-run
 lengths and order, and rejects partial, missing, duplicated, reordered, or
 invented blocks. One strictly identical source/replacement edit normalizes to
-unchanged; no-op behavior cannot pass correction-quality thresholds. Approved
-terminology remains context rather than rename authority. After exact
+unchanged; no-op behavior cannot pass correction-quality thresholds. Exact
+reviewed terminology mappings are server-owned correction authority: the server
+may replace one authorized variant with its canonical form while the model
+cannot mint or broaden that authorization. After exact
 model-facing string bounds and exact protected-block restoration are checked,
 then identical prefix and suffix context is trimmed to the shortest whole-token
 quote that remains unique in the raw segment; the resulting edit must still pass
@@ -993,7 +997,12 @@ raw/corrected diff and explicitly
 publishes a separate hash-chained correction revision; raw ASR remains the
 authoritative export and fallback. Cancellation, source change, deadline,
 provider loss, malformed output, and server unavailability cannot publish a
-correction or disable local controls.
+correction or disable local controls. The exact `e5858424...` gate completed 24
+terminal cases across eight owners and 16 unique real-audio inputs with frozen
+correction benefit, source preservation, raw fallback, queue-inclusive p95,
+one unchanged warm rapid generation, broker identity, database teardown, and
+zero owned residue. See the
+[public verification record](../evidence/scribe-transcript-correction/VERIFICATION.md).
 
 The current multi-user contract is one warm Qwen rapid lane with owner-fair
 queueing, not eight parallel GPU sequences: one active request per route, 64

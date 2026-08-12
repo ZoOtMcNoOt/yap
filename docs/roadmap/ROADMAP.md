@@ -233,9 +233,11 @@ It replaces the renderer/Ollama prototype with finalized source-hashed segment
 input, an authenticated asynchronous server route, structured source-bound
 edits, immutable terminology, semantic-preservation validation, explicit cancel,
 visible raw/corrected diff, and a separately accepted native revision. Raw ASR
-remains authoritative and all local controls survive remote failure. Its public
-matrix is green; private bilingual/multi-owner qualification, aggregate gate,
-hosted merge, and the other seven roles remain open. Simultaneous residency,
+remains authoritative and all local controls survive remote failure. Exact
+source-lock head `e5858424...` passed the 24-case bilingual/eight-owner private
+qualification gate with public-safe semantic evidence SHA-256 `5e187ed4...`,
+correction benefit, exact raw fallback, one stable warm rapid generation, and
+zero residue. Hosted merge and the other seven roles remain open. Simultaneous residency,
 sustained mixed-owner route-specific capacity and p95/p99 evidence,
 observability, rollback, external serving, and IT-owned deployment remain later
 gates or handoffs. If one node cannot satisfy simultaneous evidence, the routes

@@ -2,9 +2,9 @@
 
 **Status:** Active; Slices 10.1, 10.2, and the bounded-admission foundation of
 Slice 10.3 merged through PRs #155, #157, and #158. The first authenticated
-application workflow, Scribe transcript correction, is implemented and public-
-green; private bilingual/multi-owner qualification, aggregate admission, hosted
-review, and merge remain open.
+application workflow, Scribe transcript correction, is implemented and passed
+its exact bilingual/eight-owner private qualification gate; hosted review and
+merge remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -123,7 +123,7 @@ Ruff, 17 Postgres tests, real restart/retrieval/stale/successor proof, unchanged
 desktop scope, and exact teardown. Hosted-green head `cf1e69a4...` then passed
 all 12 required checks and merged through PR #158 as `84d95842...`.
 
-The current Scribe candidate is the first consumer of that merged admission
+The exact-qualified Scribe candidate is the first consumer of that merged admission
 owner. Native code acquires one authenticated connector lease, submits bounded
 finalized source-hashed segments to a Python HTTP workflow, and keeps bearer
 material out of the renderer and domain payload. Python binds the request to the
@@ -132,6 +132,10 @@ provider generation. One route-active slot, a 64-request global pending bound,
 a four-active-plus-pending per-owner bound, owner round robin, and queue-
 inclusive deadlines provide the current multi-user behavior. This is bounded
 fair scheduling, not simultaneous GPU execution or sustained-capacity evidence.
+Exact source-lock head `e5858424...` passed its 24-case bilingual/eight-owner
+private qualification gate with public-safe semantic evidence SHA-256
+`5e187ed4...`, one unchanged warm rapid generation, frozen correction benefit,
+raw fallback, and exact teardown. Hosted Scribe merge remains open.
 
 ### Slice 10.4 — simultaneous residency and capacity promotion
 

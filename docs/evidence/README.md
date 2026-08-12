@@ -6,6 +6,7 @@ development checks from a one-time phase/checkpoint gate.
 
 Current architecture-review evidence:
 
+- [Scribe transcript-correction verification](scribe-transcript-correction/VERIFICATION.md)
 - [Governed-knowledge maintainability coverage](governed-knowledge-maintainability/COVERAGE.md)
 - [Governed-knowledge maintainability findings](governed-knowledge-maintainability/FINDINGS.md)
 - [Governed-knowledge maintainability verification](governed-knowledge-maintainability/VERIFICATION.md)

@@ -2,8 +2,9 @@
 
 **Status:** Active; Slice A merged through PR #157 and Slice B merged through
 PR #158 as `84d95842950860e3f8d5cc70895aaae9243abe9c`. Slice C Scribe
-implementation and its public matrix are complete; private bilingual/multi-owner
-qualification, aggregate gate, hosted merge, and later role slices remain open.
+implementation and its exact bilingual/multi-owner qualification gate are
+complete; hosted review/merge, simultaneous-capacity evidence, and later role
+slices remain open.
 
 **Current branch:** `agent/phase10-scribe-transcript-correction` for Slice C.
 Later slices use focused branches and merge only after their exact heads are
@@ -138,7 +139,7 @@ measurements, and private location remain unpublished.
   preserve and export raw ASR.
 - [x] Remove the development renderer-to-Ollama path when the authenticated
   native/server Scribe route is complete.
-- [ ] Qualify representative real ASR mistakes for correction benefit,
+- [x] Qualify representative real ASR mistakes for correction benefit,
   preservation, hallucination/deletion, uncertainty, timeout, and p95 latency.
 
 The implementation consumes only the merged already-warm rapid route. It adds
@@ -147,12 +148,27 @@ model validation, queue-inclusive 60-second completion, 64 server in-flight and
 256 retained-terminal bounds, trusted native source re-read before publication,
 one separately revisioned user acceptance, and a manual visible-diff UI. Old
 timingless raw transcripts are deliberately ineligible. The public matrix passes
-1,189 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
+1,198 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
 the production build, 41 browser scenarios, and both Rust workspaces with strict
 lint. The private corpus freezes 24 bilingual/safety cases across eight distinct
 owners and real ASR source evidence; its raw inputs, outputs, measurements, and
-paths remain outside Git. This paragraph records implementation readiness, not a
-qualification or production-capacity result.
+paths remain outside Git.
+
+Exact source-lock head `e585842485a7cd38b2935cc8f79314b19b37f7fd`
+passed the complete private gate as `scribe-transcript-correction-qualified`
+with public-safe semantic evidence SHA-256
+`5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
+The untouched final corpus produced 24 terminal outcomes across eight owners and
+16 unique real-audio inputs: eight English, eight Spanish, eight safety, eight
+corrected references, eight source-preserved references, six unchanged
+outcomes, and two uncertainty outcomes. Correction benefit, protected-fact and
+no-regression checks, bounded raw fallback, queue-inclusive p95, one unchanged
+warm rapid generation, broker identity, database teardown, and complete owned
+runtime teardown all passed. Exact server-authorized terminology normalization
+is now one correction authority; independently validated model edits remain
+bounded and uncertainty returns raw ASR. See the
+[public verification record](../../evidence/scribe-transcript-correction/VERIFICATION.md).
+Hosted review/merge and production/capacity promotion remain open.
 
 Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` is terminal
 rejected evidence, not a resumable attempt. Its public-safe decision SHA-256 is
@@ -181,7 +197,7 @@ replacement; the server accepts the quote only when it occurs exactly once and
 derives the Unicode span. Missing or ambiguous source fails closed. It does not
 change the warm model, 512-token allowance, owner-fair broker, retry policy,
 timeout, queue-inclusive deadline, validators, or qualification thresholds, and
-it must run a complete fresh qualification before this slice can close.
+at that point it still required a complete fresh qualification.
 
 Exact schema-v2 head `cbd7335a26bd7700106b331827756af19c34e38a`
 passed public verification. Its bounded private smoke proved the exact quote and
@@ -192,23 +208,23 @@ safety response was also not stable across repeated cold diagnostic runs. The
 validator remains unchanged. Exact prompt-grounding head
 `e62d33e41d2d85154a07da1d7a1254ea642a5638` then retained safety and exact
 cleanup but repeated the unauthorized name edit in its bounded real-case smoke,
-so instruction-only grounding is rejected as insufficient. The current
+so instruction-only grounding was rejected as insufficient. The next
 protected successor at `b80fe0b46c8a511b93dd2c85f8ed053d24648663`
 masked every detected immutable source span with equal-length private-use
 markers, but its bounded real response was an invalid replacement and its safety
 disposition did not pass; teardown remained exact. Visible-block head
 `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also contained exactly but returned
-malformed JSON and missed both bounded dispositions. The current successor uses
-an ASCII equal-length block. Exact head
+malformed JSON and missed both bounded dispositions. The following successor
+used an ASCII equal-length block. Exact head
 `7d546163dd08fd3cb6eafce91c64419c84df9f2d` returned valid structured output but
 marked the representative correction uncertain and missed the safety probe's
-required unchanged disposition; teardown remained exact. The current successor
+required unchanged disposition; teardown remained exact. A later successor
 at exact head `92554be304d5061c84ee04a7eeb9829829705102` fixed the safety
 disposition but left the representative single-word ASR substitution unchanged;
 teardown remained exact. Exact head `e3ab6b6af6c7757b987a6b8fcc4ef213c4706bc9`
 explicitly permitted that correction but also returned it unchanged; safety and
-teardown passed. The current successor states that missing audio is expected and
-uses linguistic context for one contextually obvious nonprotected ASR word
+teardown passed. The following successor stated that missing audio was expected and
+used linguistic context for one contextually obvious nonprotected ASR word
 substitution while treating
 placeholders and instruction-like content as expected data and reserving
 uncertainty for a possible error that cannot be expressed safely. Exact head
@@ -222,13 +238,12 @@ was repeated; safety and teardown passed. Exact head
 `33d9b4d0362689a58be0c16bf26de88ac55d56b2` also applied no correction: two
 representatives were unchanged and the third quote, minimized against masked
 text, was ambiguous after raw protected values were restored. Safety and every
-teardown predicate passed. The current successor restores protected values first,
-then retains the shortest whole-token context needed to make the raw source
-unique before all unchanged source-bound validations. It retains
-exact block-run restoration, 256-character edit fields, shortest unique quotes,
-and byte-identical no-op normalization. There is still no retry and no model,
-512-token allowance, timeout/deadline, route, validator, or acceptance-threshold
-change. One complete fresh qualification remains required.
+teardown predicate passed. The later server-authorized terminology successor
+retained protected-fact immutability and all unchanged source-bound validation
+while allowing only an exact reviewed variant-to-canonical mapping to produce a
+deterministic correction. It added no retry and changed no model, 512-token
+allowance, timeout/deadline, route, validator, or acceptance threshold. That
+successor is the exact qualified head recorded above.
 
 ## Slice D — source and review agents
 

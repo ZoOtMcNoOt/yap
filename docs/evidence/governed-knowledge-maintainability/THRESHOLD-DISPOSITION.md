@@ -10,7 +10,7 @@ provenance contract extensions and excludes only the two tracked OpenAPI product
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
 hand-maintained policy. At this tree the complete 250-line inventory is 512
-files: 274 listed below at 350 or more lines and 238 from 250 through 349.
+files: 275 listed below at 350 or more lines and 237 from 250 through 349.
 
 Each line contains up to two independent entries in the form
 `physical-lines disposition exact-path`.
@@ -73,7 +73,7 @@ Each line contains up to two independent entries in the form
   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md ||   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md
   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md ||   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md
   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   982 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
- 1097 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1095 CURRENT-DOC          docs/CURRENT-STATUS.md
+ 1106 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1111 CURRENT-DOC          docs/CURRENT-STATUS.md
   495 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1003 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md ||   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md
   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md ||   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md
@@ -83,13 +83,13 @@ Each line contains up to two independent entries in the form
   913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md ||  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md
   554 CURRENT-DOC          docs/specs/source-aware-diarization.md ||   582 CURRENT-DOC          docs/specs/testing-strategy.md
- 1217 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
+ 1218 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
   989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
   350 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs ||   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs
-  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   812 SERVER-RUNBOOK       server/README.md
-  427 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_model.py ||   754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py
- 1027 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction.py
+  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   820 SERVER-RUNBOOK       server/README.md
+  439 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_model.py ||   754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py
+ 1136 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction.py
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
   414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   586 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
   539 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   803 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
@@ -107,7 +107,8 @@ Each line contains up to two independent entries in the form
   718 EVALUATION           server/src/yap_server/evaluation/reference_review_registry.py ||   391 EVALUATION           server/src/yap_server/evaluation/resident_provider_duration_qualification.py
   533 EVALUATION           server/src/yap_server/evaluation/resident_provider_lifecycle_evidence.py ||   573 EVALUATION           server/src/yap_server/evaluation/resident_provider_resource_sampler.py
   831 EVALUATION           server/src/yap_server/evaluation/runtime_plan.py ||   622 EVALUATION           server/src/yap_server/evaluation/transcript_correction_qualification_gate.py
-  713 EVALUATION           server/src/yap_server/evaluation/transcript_correction_qualification.py ||   447 EVALUATION           server/src/yap_server/evaluation/transcript_correction_source_evidence.py
+  448 EVALUATION           server/src/yap_server/evaluation/transcript_correction_corpus.py ||   775 EVALUATION           server/src/yap_server/evaluation/transcript_correction_qualification.py
+  447 EVALUATION           server/src/yap_server/evaluation/transcript_correction_source_evidence.py
   401 EVALUATION           server/src/yap_server/evaluation/transcript_reference_review.py ||  1231 EVALUATION           server/src/yap_server/evaluation/transcript_scoring.py
   390 EVALUATION           server/src/yap_server/evaluation/vllm_runtime_metrics.py ||   667 JOBS                 server/src/yap_server/jobs/completion.py
   357 JOBS                 server/src/yap_server/jobs/intake_contract.py ||   746 JOBS                 server/src/yap_server/jobs/job_store.py
@@ -127,8 +128,8 @@ Each line contains up to two independent entries in the form
   488 POOLS                server/src/yap_server/pools/nemotron_nemo_service.py ||   418 POOLS                server/src/yap_server/pools/nemotron_nemo_streaming.py
   378 POOLS                server/src/yap_server/pools/provider_worker_factory.py ||   513 POOLS                server/src/yap_server/pools/utterance_plan.py
   577 POOLS                server/src/yap_server/pools/vllm_transcription_client.py ||   778 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_service.py
-  486 SERVER-CONTRACT      server/tests/agents/test_transcript_correction.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
-  513 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_model.py
+  605 SERVER-CONTRACT      server/tests/agents/test_transcript_correction.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
+  562 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_model.py
   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py ||   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py
   350 TEST-AUTH-CONTRACT   server/tests/contract/contract_http_values.py ||   549 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py
   358 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py ||   395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py
@@ -137,7 +138,7 @@ Each line contains up to two independent entries in the form
  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py ||   359 TEST-EVALUATION      server/tests/evaluation/test_governed_knowledge_gate.py
   495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py ||   388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py
   552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py ||   358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py
-  822 TEST-EVALUATION      server/tests/evaluation/test_transcript_correction_qualification.py ||   580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py
+ 1137 TEST-EVALUATION      server/tests/evaluation/test_transcript_correction_qualification.py ||   580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py
   966 TEST-INFRA           server/tests/infra/test_mock_oidc_harness.py ||   898 TEST-INFRA           server/tests/infra/test_owned_process_supervisor.py
  1458 TEST-INFRA           server/tests/infra/test_private_container_loopback_proxy_behavior.py ||   801 TEST-INFRA           server/tests/infra/test_resident_provider_lifecycle_gate.py
  1049 TEST-JOBS            server/tests/jobs/test_runtime.py ||   646 TEST-JOBS            server/tests/jobs/test_service_commit_admission.py

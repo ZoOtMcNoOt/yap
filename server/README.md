@@ -638,7 +638,7 @@ revision only after the user reviews the raw/corrected diff. Raw ASR remains
 authoritative and exportable. The renderer receives no bearer and cannot call a
 provider directly. The removed Ollama Polish implementation is not a fallback.
 
-The public candidate passes 1,189 portable server tests with 30 declared
+The exact candidate passes 1,198 portable server tests with 30 declared
 platform skips, Ruff, 367 desktop unit tests, production build, 41 browser
 scenarios, and both Rust workspaces with strict lint. Its private qualification
 is deliberately separate: 24 bilingual/safety cases, eight distinct owners,
@@ -646,8 +646,6 @@ real-ASR source evidence, one warm rapid-provider generation, correction
 benefit, zero protected-fact regression/invention/deletion, bounded fallback,
 queue-inclusive latency, and exact teardown. No private corpus, output,
 measurement, credential, or filesystem path belongs in Git or hosted logs.
-Until that exact qualification and aggregate gate pass, Scribe is an
-unpromoted candidate rather than production availability or capacity evidence.
 
 Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` returned terminal
 `deterministic-no-scribe` evidence SHA-256
@@ -677,8 +675,8 @@ offsets from model authority: the model quotes an exact source substring, and
 the server derives its Unicode span only when that quote occurs exactly once in
 the bound segment. Missing or repeated text fails closed. Model residency,
 broker fairness, the 512-token allowance, no-tool-retry behavior,
-timeout/deadline, validation, and quality thresholds are unchanged. A complete
-fresh qualification remains required.
+timeout/deadline, validation, and quality thresholds were unchanged. A complete
+fresh qualification was required at that point.
 
 Exact schema-v2 head `cbd7335a26bd7700106b331827756af19c34e38a`
 subsequently passed public verification. A bounded private smoke proved that
@@ -695,17 +693,17 @@ Exact private-use masking head
 `b80fe0b46c8a511b93dd2c85f8ed053d24648663` retained exact teardown but returned
 an invalid real replacement and missed the safety disposition. Visible-block
 head `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also contained exactly but returned
-malformed JSON and missed both bounded dispositions. The current protected
-successor uses an ASCII equal-length redaction block. Exact head
+malformed JSON and missed both bounded dispositions. The next protected
+successor used an ASCII equal-length redaction block. Exact head
 `7d546163dd08fd3cb6eafce91c64419c84df9f2d` returned valid structured output but
 marked the representative correction uncertain and missed the safety probe's
-required unchanged disposition; teardown remained exact. The current successor
+required unchanged disposition; teardown remained exact. A later successor
 at exact head `92554be304d5061c84ee04a7eeb9829829705102` fixed the safety
 disposition but left the representative single-word ASR substitution unchanged;
 teardown remained exact. Exact head `e3ab6b6af6c7757b987a6b8fcc4ef213c4706bc9`
 explicitly permitted that correction but also returned it unchanged; safety and
-teardown passed. The current successor states that missing audio is expected and
-uses linguistic context for one contextually obvious nonprotected ASR word
+teardown passed. The following successor stated that missing audio was expected and
+used linguistic context for one contextually obvious nonprotected ASR word
 substitution while treating
 placeholders and instruction-like content as expected data and reserving
 uncertainty for a possible error that cannot be expressed safely. Exact head
@@ -715,20 +713,30 @@ edit rejected only because its quote included too much unchanged context. Exact
 minimization head `6cf82239569760383dca88d0702d71b35f60e8ad` removed that
 coverage failure, but its three-case diagnostic still applied no correction:
 one proposal was outside the narrow lexical grammar and another's minimal quote
-was repeated; safety and teardown passed. Exact head
+was repeated; safety and teardown passed. Historical exact head
 `33d9b4d0362689a58be0c16bf26de88ac55d56b2` also applied no correction: two
 representatives were unchanged and the third quote, minimized against masked
 text, was ambiguous after raw protected values were restored. Safety and every
-teardown predicate passed. The current successor restores protected values first,
-then retains the shortest whole-token context needed to make the raw source
-unique before all unchanged source-bound validations. It retains
-exact block-run restoration, 256-character edit fields, shortest unique quotes,
-and no-op normalization before the unchanged raw-source validator. Approved
-terminology remains immutable context, not rename authority. No validator,
-retry, model, route, 512-token allowance, timeout/deadline, latency, or quality
-threshold is relaxed. A complete fresh qualification remains
-required; no raw diagnostic input, output, measurement, credential, or private
-path is published.
+teardown predicate passed.
+
+Exact source-lock head `e585842485a7cd38b2935cc8f79314b19b37f7fd`
+then passed the complete private qualification gate with outcome
+`scribe-transcript-correction-qualified` and public-safe semantic evidence
+SHA-256
+`5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
+The untouched final corpus contained 24 terminal cases, 16 unique real-audio
+inputs, eight owners, eight English and eight Spanish real-ASR cases, eight
+safety cases, eight corrected references, eight source-preserved references,
+six unchanged outcomes, and two uncertainty outcomes. All frozen benefit,
+preservation, no-invention, insertion/deletion, critical-fact, fallback,
+queue-inclusive p95, warm-generation, broker-identity, database, and teardown
+checks passed. The executing correction authority is now exact
+server-authorized terminology replacement plus separately validated bounded
+model edits; protected facts remain immutable and uncertainty returns raw ASR.
+The [public verification record](../docs/evidence/scribe-transcript-correction/VERIFICATION.md)
+contains the exact hashes, counts, and limits. Hosted review and merge remain
+open. This result does not prove simultaneous Qwen/Gemma residency, sustained
+mixed-route capacity, production SLOs, or the other seven role workflows.
 
 ## Local checks
 
