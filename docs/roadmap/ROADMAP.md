@@ -242,8 +242,9 @@ merged it as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks
 and PR #165 merged the no-LLM Archivist core as `2a7ec819...`. Student's
 topic-copy prompt repair is complete-portable-test green on the unchanged full
 Qwen rapid profile at 1,241 tests (1,207 passed and 34 declared skips). Exact
-`0970d74c...` returned terminal `deterministic-no-student`; the protected
-successor needs replacement private qualification. Student hosted
+head `428d6e48...` then returned `student-learning-questions-qualified` with
+public-safe evidence SHA-256 `f597cca7...`; exact `0970d74c...` remains terminal
+`deterministic-no-student`. Student hosted
 review/product exposure and the five remaining workflows (Curator, Auditor,
 Librarian, Analyst, and Coordinator) remain open. One
 Spark cannot retain both

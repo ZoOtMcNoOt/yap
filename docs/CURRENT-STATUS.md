@@ -35,8 +35,8 @@ contains the exact hashes, counts, and limits. Hosted-green head
 `bc9a88bc...` passed all 12 required checks and PR #164 merged it as
 `ec3af506...`.
 
-Student's current topic-copy prompt repair is complete-portable-test green but
-not yet privately qualified. It preserves the
+Student's current topic-copy prompt repair is complete-portable-test green and
+privately qualified. It preserves the
 exact-one evidence-index boundary that replaces
 caller-controlled target-question text with a bounded topic. The model sees
 only ordered evidence indexes and text and returns exactly one source subject,
@@ -49,6 +49,14 @@ full Qwen rapid
 profile remains unchanged (`0.40` GPU
 memory, four maximum sequences, 8,192 maximum batched tokens) with a 512-token
 Student output cap; Student launches, swaps, substitutes, or reduces no model.
+
+Exact head `428d6e48...` returned `student-learning-questions-qualified` with
+public-safe evidence SHA-256 `f597cca7...`. All eight distinct owners completed
+with one grounded question each and zero terminal failures. The full warm
+profile, provider generation, admission broker, synchronized queue wave,
+PostgreSQL restart/cross-owner/audit boundaries, and exact six-part teardown
+held. This is bounded internal-core evidence; hosted review/merge, product
+exposure, sustained capacity, and production promotion remain open.
 
 Exact head `0970d74c...` returned terminal `deterministic-no-student` with
 public-safe evidence SHA-256 `316631d5...`. Seven of eight cases completed and
@@ -70,8 +78,8 @@ Exact head `452c8b76...` previously returned
 but adversarial review proved that it could publish an unsupported premise
 beside an unrelated exact citation and that the corpus placed each target
 question in caller-controlled focus text. That receipt and predecessor
-`ffe90885...` are terminal and inadmissible. A complete new exact-head private
-qualification is required before hosted review or merge. Simultaneous full-
+`ffe90885...` are terminal and inadmissible. Exact `428d6e48...` supplies the
+replacement qualification; hosted review and merge remain pending. Simultaneous full-
 profile Qwen/Gemma residency, sustained mixed-route capacity, production SLOs,
 and the other five unfinished role workflows remain open.
 
@@ -347,7 +355,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Slices 10.1–10.3, Scribe, and Archivist merged; Student topic-copy prompt repair complete-portable-test green | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...`; exact Scribe head `e5858424...` passed its private gate and PR #164 merged it as `ec3af506...`. Raw ASR stays authoritative. PR #165 merged the no-LLM Archivist core as `2a7ec819...` after hosted-green head `e1899db7...`. The current unmerged Student successor lets the model return exactly one source subject, evidence index, and support quote while the server binds the complete frozen citation and renders the question; its prompt now forbids topic-derived subjects absent from that quote/evidence. Its focused and complete portable sets are green; private qualification remains pending after exact `0970d74c...` returned terminal `deterministic-no-student`. Student hosted review/product integration, the five remaining workflows (Curator, Auditor, Librarian, Analyst, and Coordinator), simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
+| Phase 10 | Slices 10.1–10.3, Scribe, and Archivist merged; Student privately qualified at exact `428d6e48...` | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...`; exact Scribe head `e5858424...` passed its private gate and PR #164 merged it as `ec3af506...`. Raw ASR stays authoritative. PR #165 merged the no-LLM Archivist core as `2a7ec819...` after hosted-green head `e1899db7...`. The current unmerged Student successor lets the model return exactly one source subject, evidence index, and support quote while the server binds the complete frozen citation and renders the question; its prompt forbids topic-derived subjects absent from that quote/evidence. It passed 1,241 portable tests and exact private qualification with public-safe evidence SHA-256 `f597cca7...`: eight owners completed, zero terminal failures, the full warm Qwen profile/broker stayed unchanged, PostgreSQL restart/cross-owner/audits were exact, and teardown was complete. Student hosted review/product integration, the five remaining workflows (Curator, Auditor, Librarian, Analyst, and Coordinator), simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -1131,9 +1139,8 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Freeze the source-grounded Student successor, run one complete replacement
-   private qualification on the unchanged warm full Qwen profile, then obtain
-   hosted-green review and merge without claiming endpoint/UI, aggregate Slice
+1. Obtain hosted-green review and merge for exact privately qualified Student
+   head `428d6e48...` without claiming endpoint/UI, aggregate Slice
    D, sustained capacity, or production availability.
 2. Deliver Curator to close the source/review slice, then Librarian, Analyst,
    Coordinator, and Auditor as bounded workflows; do not substitute an

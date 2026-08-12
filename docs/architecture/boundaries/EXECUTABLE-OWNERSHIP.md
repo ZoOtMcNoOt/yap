@@ -1026,8 +1026,9 @@ that evidence. Exact `476f7a9c...` then returned terminal
 also returned terminal `deterministic-no-student` after a model-selected
 subject was absent from its exact quote/evidence; the server rejected it. The
 current prompt/test repair changes protected inputs and is complete-portable-
-test green on the unchanged full Qwen rapid profile. Replacement private
-qualification, hosted merge, and an
+test green and privately qualified at exact head `428d6e48...` on the unchanged
+full Qwen rapid profile, with public-safe evidence SHA-256 `f597cca7...`.
+Hosted merge and an
 HTTP/native/UI surface remain open.
 
 ## Persistent-state owners

@@ -1,7 +1,7 @@
 # Student learning-question verification
 
-**Status:** The current topic-copy prompt repair is complete-portable-test
-green. Its exact-head private qualification, hosted review, merge,
+**Status:** Exact head `428d6e48690621cc2242944c049e06ccfd2e45e2`
+is complete-portable-test green and privately qualified. Hosted review, merge,
 HTTP/native/UI exposure, Curator integration, and the aggregate Phase 10 gate
 remain pending.
 
@@ -49,9 +49,22 @@ remain pending.
   total tests: 1,207 passed and 34 were declared skips. Because the prompt and
   its contract test are protected inputs changed from exact `0970d74c...`, this
   rerun is the current public verification; the predecessor result is historical.
-- The exact current implementation head and checked input hashes will be frozen
-  only after documentation reconciliation. A complete new private qualification
-  must then run; no historical model result may authorize the successor.
+- Exact clean head `428d6e48690621cc2242944c049e06ccfd2e45e2`
+  returned `student-learning-questions-qualified` with public-safe evidence
+  SHA-256
+  `f597cca728d261caad66d6629332c76ffd900bc78f6be20aa7bb0c849275ebe8`.
+  All eight distinct owners completed with one grounded question each, zero
+  terminal failures, zero forbidden-term hits, and no output-budget exhaustion.
+  The unchanged full warm profile, provider generation, broker process,
+  synchronized eight-owner queue wave, PostgreSQL restart, exact cross-owner
+  denial and durable audits, and all six teardown checks held.
+- The persisted private receipt was independently read back as exactly one
+  owner-private `0600` regular file with one link, the exact checked head and
+  public evidence hash, and clean repository state. No private path, raw model
+  output, case content, latency, or private measurement is published here.
+- This qualifies only the internal bounded Student core. It does not prove
+  HTTP/native/UI integration, sustained multi-user capacity, simultaneous
+  Qwen/Gemma residency, production SLOs, or deployment readiness.
 
 ## Terminal private evidence
 

@@ -3,8 +3,8 @@
 **Status:** Active; Slices A and B merged through PRs #157/#158. Slice C Scribe
 merged through PR #164. Slice D Archivist merged through PR #165 as
 `2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`. Student's topic-copy prompt
-repair is complete-portable-test green on the unchanged full Qwen rapid profile;
-replacement private qualification, hosted review/merge,
+repair is privately qualified at exact `428d6e48...` on the unchanged full Qwen
+rapid profile; hosted review/merge,
 Curator, shared product
 integration, simultaneous-capacity evidence, and later role slices remain
 open.
@@ -301,8 +301,8 @@ unrelated exact citation. That receipt is terminal and inadmissible. The
 current repair retained the full rapid profile (GPU-memory utilization `0.40`,
 four maximum sequences, 8,192 maximum batched tokens) and a 512-token Student
 output cap; no model launch, swap, substitute, resource reduction, retry, or
-threshold relaxation was added. A complete fresh qualification remains before
-hosted merge or product exposure. See the
+threshold relaxation was added. Exact head `428d6e48...` passed private
+qualification before hosted merge or product exposure. See the
 [public verification record](../../evidence/student-learning/VERIFICATION.md).
 
 The earlier predecessor `ffe9088573a1a8453a3cb529f1fc62c8ef9d7dda` is terminal
@@ -326,6 +326,15 @@ Seven of eight cases completed and one unsupported topic-derived subject failed
 closed while the full warm profile, broker/wave, PostgreSQL boundaries, and
 teardown held. No raw output or measurement is published, and the receipt is
 not reused.
+
+Exact head `428d6e48690621cc2242944c049e06ccfd2e45e2` returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`f597cca728d261caad66d6629332c76ffd900bc78f6be20aa7bb0c849275ebe8`.
+All eight distinct owners completed with one grounded question each and zero
+terminal failures. The unchanged full warm profile, provider generation,
+admission broker, synchronized eight-owner queue wave, PostgreSQL
+restart/cross-owner/durable audits, and exact six-part teardown held. This is
+internal-core qualification, not product exposure or sustained capacity.
 
 ## Slice E — knowledge and coordination agents
 

@@ -768,8 +768,15 @@ learning-question template. The model cannot create citation identity, rewrite
 the selected subject, or write question wording. The focused set is green at
 34 total tests: 32 passed and two were declared database skips. The current
 successor also passed the complete portable server suite at 1,241 total tests:
-1,207 passed and 34 were declared skips. Its prompt/test change is a protected
-input, so a fresh exact-head private qualification must run before merge.
+1,207 passed and 34 were declared skips. Exact head
+`428d6e48690621cc2242944c049e06ccfd2e45e2` then returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`f597cca728d261caad66d6629332c76ffd900bc78f6be20aa7bb0c849275ebe8`.
+All eight distinct owners completed with one grounded question each and zero
+terminal failures. The full warm profile, provider generation, broker,
+PostgreSQL restart/cross-owner/audit boundaries, and six-part teardown remained
+exact. This proves the bounded internal core, not product exposure or sustained
+capacity; hosted review and merge remain pending.
 
 Exact head `0970d74c7961a63bd1b2366bc0ecef6b5fc55714` returned terminal
 `deterministic-no-student` evidence with public-safe SHA-256

@@ -12,10 +12,11 @@ private qualification gate with public-safe semantic evidence SHA-256
 Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged Scribe
 as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks and PR
 #165 merged the no-LLM Archivist ingestion core as `2a7ec819...`. The current
-Student topic-copy prompt repair is complete-portable-test green on the unchanged
-full Qwen rapid profile; replacement private qualification,
-hosted merge, and product exposure remain open after exact candidate
-`0970d74c...` returned terminal `deterministic-no-student`.
+Student topic-copy prompt repair is complete-portable-test green and privately
+qualified at exact head `428d6e48...` on the unchanged full Qwen rapid profile,
+with public-safe evidence SHA-256 `f597cca7...`. Hosted merge and product
+exposure remain open; exact predecessor `0970d74c...` remains terminal
+`deterministic-no-student` evidence.
 Later Phase 10 roles and capacity/operations layers are not part of the merged
 baseline. Phase 7
 implements provider-neutral
@@ -1058,16 +1059,20 @@ tests (1,207 passed and 34 declared skips). The
 workload still preserves the full Qwen rapid profile (`0.40` GPU-memory
 utilization, four maximum sequences, 8,192 maximum batched tokens) and a
 512-token Student output cap; neither the workflow nor its gate launches,
-swaps, substitutes, or reduces a model. Replacement private qualification and
-hosted merge remain open. See the
+swaps, substitutes, or reduces a model. Exact head `428d6e48...` returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`f597cca7...`: all eight owners completed, the unchanged warm profile and broker
+held, PostgreSQL restart/cross-owner/durable audits were exact, and six-part
+teardown completed. Hosted merge remains open. See the
 [public verification record](../evidence/student-learning/VERIFICATION.md).
 
 The current multi-user contract is one warm Qwen rapid lane with owner-fair
 queueing, not eight parallel GPU sequences: one active request per route, 64
 global pending, four active-plus-pending per owner, round-robin owners, and
-queue-inclusive workflow deadlines. Private Scribe qualification synchronized
-eight distinct owners through that warm generation; Student's historical wave
-is lifecycle evidence only and cannot authorize the repaired semantics.
+queue-inclusive workflow deadlines. Private Scribe and exact `428d6e48...`
+Student qualification each synchronized eight distinct owners through that
+warm generation; neither proves eight parallel GPU executions or sustained
+capacity.
 Simultaneous route residency, sustained multi-owner capacity/fairness,
 production p95/p99,
 observability, and deployment remain later gates. If one node cannot satisfy

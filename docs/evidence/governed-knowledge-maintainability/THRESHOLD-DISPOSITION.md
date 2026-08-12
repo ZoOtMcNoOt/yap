@@ -73,23 +73,23 @@ Each line contains up to two independent entries in the form
   466 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md ||   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md
   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md ||   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
- 1065 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md ||  1166 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md
- 1153 CURRENT-DOC          docs/CURRENT-STATUS.md ||   495 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
+ 1066 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md ||  1171 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md
+ 1160 CURRENT-DOC          docs/CURRENT-STATUS.md ||   495 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
  1009 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
-  365 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
+  374 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md ||   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md
   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md ||  1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md
   391 HISTORICAL-DOC       docs/plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md ||   646 HISTORICAL-DOC       docs/plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md
   923 HISTORICAL-DOC       docs/research/2026-07-16-dynamic-language-detection-evaluation.md ||   913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md
-  352 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
+  353 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md ||  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md
   554 CURRENT-DOC          docs/specs/source-aware-diarization.md ||   586 CURRENT-DOC          docs/specs/testing-strategy.md
  1233 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
   989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
   350 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs ||   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs
-  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   895 SERVER-RUNBOOK       server/README.md
+  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   902 SERVER-RUNBOOK       server/README.md
   426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py ||   512 SERVER-CONTRACT      server/src/yap_server/agents/student_model.py
   680 SERVER-CONTRACT      server/src/yap_server/agents/student_service.py ||   430 SERVER-CONTRACT      server/src/yap_server/agents/student.py
   439 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_model.py ||   754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py

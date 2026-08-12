@@ -3,9 +3,10 @@
 **Status:** Active; Slices 10.1, 10.2, the bounded-admission foundation, Scribe
 transcript correction, and the no-LLM Archivist core merged through PRs #155,
 #157, #158, #164, and #165. Student's topic-copy prompt repair is
-complete-portable-test green on the unchanged full Qwen profile, but
-replacement private qualification remains pending after exact
-`0970d74c...` returned terminal `deterministic-no-student`. Hosted
+complete-portable-test green and privately qualified at exact `428d6e48...` on
+the unchanged full Qwen profile, with public-safe evidence SHA-256
+`f597cca7...`. Exact `0970d74c...` remains terminal
+`deterministic-no-student`. Hosted
 merge/product exposure, later workflows, simultaneous full-profile capacity,
 and production promotion remain open.
 

@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; service profiles, bounded admission, Scribe, and Archivist merged; Student topic-copy prompt repair awaits replacement private qualification; remaining workflows and promotion pending
+**Status:** Accepted target; service profiles, bounded admission, Scribe, and Archivist merged; Student privately qualified and awaiting hosted merge; remaining workflows and promotion pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -34,9 +34,10 @@ Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged it as
 #165 merged the no-LLM Archivist reviewed-source compilation/staging core as
 `2a7ec819...`. Student's bounded learning-question workflow now has a
 complete-portable-test-green topic-copy prompt repair on the already-warm full Qwen
-rapid route. Exact `0970d74c...` returned terminal
-`deterministic-no-student`; replacement qualification,
-hosted merge, and product exposure remain open.
+rapid route. Exact `428d6e48...` returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`f597cca7...`; exact predecessor `0970d74c...` remains terminal
+`deterministic-no-student`. Hosted merge and product exposure remain open.
 The five remaining workflows—Curator, Auditor, Librarian, Analyst, and
 Coordinator—remain pending.
 
@@ -213,10 +214,15 @@ declared skips) but then returned terminal `deterministic-no-student` with
 public-safe evidence SHA-256 `316631d5...`: seven of eight cases completed,
 and one unsupported subject failed closed. Its evidence is not reused. The
 earlier `ffe90885...` failure is also terminal and not reused. Exact
+`428d6e48...` then passed private qualification with public-safe evidence
+SHA-256 `f597cca7...`: all eight owners completed with one grounded question
+each and zero terminal failures; the unchanged full warm profile and broker,
+PostgreSQL restart/cross-owner/durable audits, and six-part teardown held. This
+does not prove product exposure or sustained capacity. Exact
 `476f7a9c...` returned terminal `deterministic-no-student` with public-safe
 evidence SHA-256 `9c2f68ff...`; six of eight cases completed while the warm
-provider/broker, queue wave, database boundaries, and teardown held. Replacement
-qualification, hosted merge, product exposure, warm simultaneous two-route
+provider/broker, queue wave, database boundaries, and teardown held. Hosted
+merge, product exposure, warm simultaneous two-route
 residency, the five remaining workflows (Curator, Auditor, Librarian, Analyst,
 and Coordinator), sustained multi-owner capacity,
 and production promotion remain open.
