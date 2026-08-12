@@ -109,10 +109,12 @@ Scribe is transcript correction, not summarization. The server receives only a
 bounded ordered set of finalized segments with immutable source hashes. It may
 return structured edit operations tied to those hashes and exact source quotes.
 The model does not own character offsets: the server derives a Unicode span only
-when the quoted text occurs exactly once in the bound segment. The product also
-supplies the validator's exact immutable fact categories to the model; approved
-terminology is immutable context rather than permission to rename a term. It
-validates full source coverage; unchanged ordering and timing; preservation of
+when the quoted text occurs exactly once in the bound segment. Before inference,
+the product replaces protected source spans with equal-length opaque
+placeholders. Projection restores the original values only when every included
+placeholder remains exact, once, and ordered; approved terminology is immutable
+context rather than permission to rename a term. The raw-source validator then
+checks full source coverage; unchanged ordering and timing; preservation of
 names, numbers, dates, units, medication-like terms, and negation unless a
 source-bound edit explicitly proves the change; approved terminology use; and
 the absence of inserted unsupported content. A valid result is saved as a

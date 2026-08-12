@@ -488,6 +488,14 @@ def bind_transcript_correction_request(
 
 
 @dataclass(frozen=True, slots=True)
+class TranscriptCorrectionProtectedSpan:
+    segment_id: str
+    start_character: int
+    end_character: int
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
 class TranscriptCorrectionEdit:
     segment_id: str
     segment_sha256: str
@@ -534,30 +542,54 @@ def correction_request_sha256(request: BoundTranscriptCorrectionRequest) -> str:
     ).hexdigest()
 
 
-def protected_transcript_facts(
+def protected_transcript_spans(
     request: BoundTranscriptCorrectionRequest,
-) -> dict[str, list[str]]:
-    """Return the exact fact tokens the model and validator must preserve."""
+) -> tuple[TranscriptCorrectionProtectedSpan, ...]:
+    """Return non-overlapping source spans that model inference cannot alter."""
 
     if not isinstance(request, BoundTranscriptCorrectionRequest):
         raise TypeError("transcript correction request type is invalid")
-    numbers, units, _, names, _ = _protected_facts(request.source_text)
-    words = tuple(match.group(0) for match in _WORD.finditer(request.source_text))
-    return {
-        "numbersAndDates": list(numbers),
-        "measurementUnits": list(units),
-        "negations": [word for word in words if word.casefold() in _NEGATIONS],
-        "capitalizedNameCandidates": list(names),
-        "numberDateUnitWords": [
-            word for word in words if word.casefold() in _NUMBER_DATE_UNIT_WORDS
-        ],
-        "medicationLikeTerms": [
-            word
-            for word in words
-            if len(word) >= 5 and word.casefold().endswith(_MEDICATION_SUFFIXES)
-        ],
-        "approvedTerminology": list(request.approved_terminology),
-    }
+    protected: list[TranscriptCorrectionProtectedSpan] = []
+    for segment in request.segments:
+        candidates = [
+            (match.start(), match.end())
+            for pattern in (_NUMBER_OR_DATE, _MEASUREMENT_UNIT)
+            for match in pattern.finditer(segment.text)
+        ]
+        for match in _WORD.finditer(segment.text):
+            word = match.group(0)
+            folded = word.casefold()
+            if (
+                folded in _NEGATIONS
+                or folded in _NUMBER_DATE_UNIT_WORDS
+                or (word[0].isupper() and folded not in _NON_NAME_CAPITALIZED_WORDS)
+                or (len(word) >= 5 and folded.endswith(_MEDICATION_SUFFIXES))
+            ):
+                candidates.append((match.start(), match.end()))
+        for term in request.approved_terminology:
+            offset = 0
+            while True:
+                start = segment.text.find(term, offset)
+                if start < 0:
+                    break
+                candidates.append((start, start + len(term)))
+                offset = start + len(term)
+        merged: list[tuple[int, int]] = []
+        for start, end in sorted(candidates):
+            if merged and start < merged[-1][1]:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+            else:
+                merged.append((start, end))
+        protected.extend(
+            TranscriptCorrectionProtectedSpan(
+                segment_id=segment.segment_id,
+                start_character=start,
+                end_character=end,
+                text=segment.text[start:end],
+            )
+            for start, end in merged
+        )
+    return tuple(protected)
 
 
 def parse_transcript_correction_response(
@@ -978,6 +1010,7 @@ __all__ = [
     "BoundTranscriptCorrectionRequest",
     "TranscriptCorrectionEdit",
     "TranscriptCorrectionProposedEdit",
+    "TranscriptCorrectionProtectedSpan",
     "TranscriptCorrectionRequest",
     "TranscriptCorrectionResponse",
     "TranscriptCorrectionSegment",
@@ -987,7 +1020,7 @@ __all__ = [
     "bind_transcript_correction_request",
     "correction_request_sha256",
     "parse_transcript_correction_response",
-    "protected_transcript_facts",
+    "protected_transcript_spans",
     "transcript_correction_response_schema",
     "validate_approved_terminology",
     "validate_transcript_correction",

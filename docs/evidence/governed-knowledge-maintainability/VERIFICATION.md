@@ -172,7 +172,7 @@ environment and Python 3.12.
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 508 tracked regular surfaces: 272 at or above 350 lines and 236
+  enumerated 510 tracked regular surfaces: 272 at or above 350 lines and 238
   from 250 through 349. A read-back comparison of the 350-line output against
   `THRESHOLD-DISPOSITION.md` found all 272 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
@@ -193,7 +193,7 @@ environment and Python 3.12.
 
 ### Phase 10 Scribe prequalification public read-back
 
-- `./verification/test-portable-python-server.ps1` ran 1,180 tests with 30
+- `./verification/test-portable-python-server.ps1` ran 1,182 tests with 30
   declared platform/capability skips and no failures. The exact Scribe source-
   evidence, qualification, service, API, terminology, and contract owners are in
   that discovery.
@@ -205,7 +205,7 @@ environment and Python 3.12.
 - `desktop/src-tauri` passed Rust formatting, locked tests, and strict all-target
   Clippy. `server/orchestrator` passed formatting, locked all-target/all-feature
   tests, and strict all-target/all-feature Clippy.
-- The focused Scribe request/model/runtime/service/qualification/gate set ran 58
+- The focused Scribe request/model/runtime/service/qualification/gate set ran 60
   tests with one declared platform skip and no failure. Public source locks bind
   only release, plan, model, membership, and evidence hashes; transcript content,
   model output, measurements, credentials, and private locations remain outside
@@ -265,11 +265,17 @@ but proposed a name change that was neither exact approved terminology nor
 present in the frozen reference; the safety result also varied across repeated
 cold diagnostics. The validator rejected the unsafe name change and was not
 relaxed. No raw transcript, response, metric, credential, or private location is
-published. The current protected successor exposes the validator's exact
-immutable fact categories to the model, requires identical spelling/case/count/
-order, treats approved terminology as immutable context rather than rename
-authority, and retains the same model, response allowance, no-retry contract,
-timeouts, route, validators, and thresholds. It requires a complete new private
+published. Exact prompt-grounding successor
+`e62d33e41d2d85154a07da1d7a1254ea642a5638` passed its public checks and its
+bounded smoke retained the safety disposition and exact runtime/database
+teardown, but the real case repeated the unauthorized name edit and did not
+improve its frozen reference. Prompt-only preservation is therefore rejected as
+insufficient and remains non-promotional. The current protected successor masks
+each protected source span with an equal-length opaque placeholder before
+inference. It projects back to raw text only when every included placeholder is
+exact, occurs once, and remains ordered, then runs the unchanged raw-source
+validator. It retains the same model, response allowance, no-retry contract,
+timeouts, route, validators, and thresholds and requires a complete new private
 qualification.
 
 These checks validate the repair seams while preserving the separate one-spend

@@ -638,7 +638,7 @@ revision only after the user reviews the raw/corrected diff. Raw ASR remains
 authoritative and exportable. The renderer receives no bearer and cannot call a
 provider directly. The removed Ollama Polish implementation is not a fallback.
 
-The public candidate passes 1,180 portable server tests with 30 declared
+The public candidate passes 1,182 portable server tests with 30 declared
 platform skips, Ruff, 367 desktop unit tests, production build, 41 browser
 scenarios, and both Rust workspaces with strict lint. Its private qualification
 is deliberately separate: 24 bilingual/safety cases, eight distinct owners,
@@ -688,12 +688,16 @@ database, listener, process, and network cleanup. A real case selected from the
 prior invalid-output set then attempted an unauthorized name change that was
 neither approved terminology nor present in the frozen reference; a safety
 response also varied across repeated cold diagnostics. The protected-fact guard
-correctly rejected the name change. The next protected successor adds the
-guard's exact immutable fact categories to the model payload and requires them
-to retain identical spelling, case, count, and order. Approved terminology is
-immutable context, not rename authority. No validator, retry, model, route,
-token, timeout/deadline, latency, or quality threshold is relaxed. A complete
-fresh qualification remains required; no raw diagnostic input, output,
+correctly rejected the name change. Exact prompt-grounding head
+`e62d33e41d2d85154a07da1d7a1254ea642a5638` retained safety and exact teardown
+but repeated that unsafe edit, proving prompt compliance alone insufficient.
+The current protected successor masks each protected source span with an
+equal-length opaque placeholder before inference. It restores source text only
+when the response preserves every included placeholder exactly once and in
+order, then applies the unchanged raw-source validator. Approved terminology
+remains immutable context, not rename authority. No validator, retry, model,
+route, token, timeout/deadline, latency, or quality threshold is relaxed. A
+complete fresh qualification remains required; no raw diagnostic input, output,
 measurement, credential, or private path is published.
 
 ## Local checks

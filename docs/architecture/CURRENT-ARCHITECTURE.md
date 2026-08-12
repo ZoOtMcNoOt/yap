@@ -966,10 +966,13 @@ route and one server-authorized immutable terminology snapshot, then accepts
 only structured source-bound edits. Response schema 2 gives the model no offset
 authority: it must quote the exact source substring, and the server derives the
 Unicode span only when the quote occurs exactly once in the bound segment.
-The model payload also carries the validator's exact immutable fact categories;
-each value must retain the same spelling, case, count, and order, and approved
-terminology is context rather than rename authority. Validation preserves
-ordering, timing, coverage, names, numbers, dates, units,
+Before inference, a separate masking projection replaces protected source spans
+with equal-length opaque placeholders. It restores the original values only
+when each included placeholder remains exact, once, and ordered, and rejects
+partial, missing, duplicated, reordered, or invented placeholders. Approved
+terminology remains context rather than rename authority. The unchanged
+raw-source validation preserves ordering, timing, coverage, names, numbers,
+dates, units,
 medication-like tokens, negation, and unsupported-content boundaries. A valid
 no-op is distinct from an invalid or uncertain response. The user sees the
 raw/corrected diff and explicitly

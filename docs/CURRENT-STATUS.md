@@ -17,7 +17,7 @@ merged boundary. It replaces renderer-owned Ollama polishing with authenticated
 native/server transcript correction over finalized source-hashed segments,
 structured source-bound edits, a separate immutable accepted revision, visible
 diff, manual publication, exact cancellation, and raw-ASR fallback. Its public
-matrix is green: 1,180 portable server tests with 30 declared platform skips,
+matrix is green: 1,182 portable server tests with 30 declared platform skips,
 Ruff, 367 desktop unit tests, production TypeScript/Vite build, 41 Playwright
 scenarios, and both Rust workspaces with formatting, tests, and strict Clippy.
 Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` then ran the
@@ -64,10 +64,15 @@ change that was neither approved terminology nor present in the frozen human
 reference. The protected-fact validator correctly rejected it; all diagnostic
 runs proved exact broker, database, provider, listener, process, and network
 cleanup. No raw transcript, output, measurement, credential, or private path is
-published. The next protected successor exposes the validator's exact immutable
-fact categories to the model request and requires identical spelling, case,
-count, and order. It does not relax validation, add a retry, change the model,
-or change any route, timeout, token, latency, or quality threshold.
+published. Exact prompt-grounding head
+`e62d33e41d2d85154a07da1d7a1254ea642a5638` kept safety and teardown intact,
+but its bounded real-case smoke showed that instruction-only immutable facts did
+not prevent the same unauthorized name edit. That diagnostic is non-promotional.
+The current protected successor instead replaces every protected source span
+with an equal-length opaque placeholder before inference and restores it only
+when the model returns the exact placeholder once and in order. Raw source
+bindings and the unchanged validators still run after restoration. It adds no
+retry and changes no model, route, timeout, token, latency, or quality threshold.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after
@@ -257,7 +262,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Slices 10.1–10.3 merged; Scribe candidate implemented and publicly green | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...` after all 12 hosted checks passed. The current Scribe candidate consumes only the already-warm rapid route through authenticated native/server adapters, preserves raw ASR, publishes only a user-accepted immutable correction revision, derives edit spans server-side from one exact source quote, and exposes the validator's immutable facts to the model without relaxing enforcement. Three terminal full private attempts and the bounded exact-head diagnostic are retained as rejected/non-promotional evidence; a fresh bilingual/multi-owner qualification, aggregate gate, hosted merge, simultaneous residency, sustained capacity/SLOs, production operations, the other seven roles, and explicit IT/security handoffs remain open. |
+| Phase 10 | Slices 10.1–10.3 merged; Scribe candidate implemented and publicly green | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...` after all 12 hosted checks passed. The current Scribe candidate consumes only the already-warm rapid route through authenticated native/server adapters, preserves raw ASR, publishes only a user-accepted immutable correction revision, derives edit spans server-side from one exact source quote, and masks protected source facts before inference so they can be restored only from exact placeholders. Three terminal full private attempts and the bounded exact-head diagnostics are retained as rejected/non-promotional evidence; a fresh bilingual/multi-owner qualification, aggregate gate, hosted merge, simultaneous residency, sustained capacity/SLOs, production operations, the other seven roles, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact

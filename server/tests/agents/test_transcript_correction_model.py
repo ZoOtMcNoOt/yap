@@ -4,13 +4,13 @@ import hashlib
 import json
 import threading
 import unittest
+from typing import Callable
 
 from yap_server.agents.transcript_correction import (
     BoundTranscriptCorrectionRequest,
     TranscriptCorrectionRequest,
     TranscriptCorrectionTerminology,
     bind_transcript_correction_request,
-    correction_request_sha256,
 )
 from yap_server.agents.transcript_correction_model import TranscriptCorrectionModel
 
@@ -47,7 +47,10 @@ def _request() -> BoundTranscriptCorrectionRequest:
 
 
 class _Transport:
-    def __init__(self, response: dict[str, object]) -> None:
+    def __init__(
+        self,
+        response: dict[str, object] | Callable[[dict[str, object]], dict[str, object]],
+    ) -> None:
         self.response = response
         self.calls: list[tuple[dict[str, object], threading.Event]] = []
 
@@ -59,19 +62,23 @@ class _Transport:
     ) -> dict[str, object]:
         del dispatched
         self.calls.append((payload, cancellation))
-        return self.response
+        return self.response(payload) if callable(self.response) else self.response
 
 
-def _model_response(request: BoundTranscriptCorrectionRequest) -> dict[str, object]:
+def _model_response(payload: dict[str, object]) -> dict[str, object]:
+    messages = payload["messages"]
+    user = json.loads(messages[1]["content"])  # type: ignore[index]
+    request = user["request"]
+    segment = request["segments"][0]
     result = {
         "schemaVersion": 2,
-        "requestSha256": correction_request_sha256(request),
-        "sourceSha256": request.source_sha256,
+        "requestSha256": user["responseBinding"]["requestSha256"],
+        "sourceSha256": user["responseBinding"]["sourceSha256"],
         "uncertain": False,
         "edits": [
             {
                 "segmentId": "segment-0001",
-                "segmentSha256": request.segments[0].text_sha256,
+                "segmentSha256": segment["textSha256"],
                 "sourceText": "Um, t",
                 "replacementText": "T",
             }
@@ -83,7 +90,7 @@ def _model_response(request: BoundTranscriptCorrectionRequest) -> dict[str, obje
 class TranscriptCorrectionModelTests(unittest.TestCase):
     def test_model_uses_exact_source_bound_json_schema_request(self) -> None:
         request = _request()
-        transport = _Transport(_model_response(request))
+        transport = _Transport(_model_response)
         cancellation = threading.Event()
         model = TranscriptCorrectionModel(
             transport=transport,
@@ -109,38 +116,30 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         schema = response_format["json_schema"]["schema"]  # type: ignore[index]
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(schema["properties"]["edits"]["maxItems"], 128)
-        self.assertEqual(
-            schema["properties"]["requestSha256"]["const"],
-            correction_request_sha256(request),
-        )
-        self.assertEqual(
-            schema["properties"]["sourceSha256"]["const"],
-            request.source_sha256,
-        )
         messages = payload["messages"]
         self.assertEqual([message["role"] for message in messages], ["system", "user"])
         self.assertIn("occurs exactly once in its segment", messages[0]["content"])
         user_payload = json.loads(messages[1]["content"])
-        self.assertEqual(user_payload["request"], request.to_wire())
-        self.assertEqual(
-            user_payload["immutableFacts"],
-            {
-                "approvedTerminology": ["dosage"],
-                "capitalizedNameCandidates": [],
-                "measurementUnits": ["mg"],
-                "medicationLikeTerms": [],
-                "negations": [],
-                "numberDateUnitWords": [],
-                "numbersAndDates": ["25"],
-            },
+        self.assertNotEqual(user_payload["request"], request.to_wire())
+        placeholders = user_payload["immutablePlaceholders"]
+        self.assertEqual(len(placeholders), 3)
+        masked_text = user_payload["request"]["segments"][0]["text"]
+        self.assertEqual(len(masked_text), len(request.source_text))
+        self.assertNotIn("dosage", masked_text)
+        self.assertNotIn(" 25 ", masked_text)
+        self.assertNotIn(" mg", masked_text)
+        self.assertTrue(all(token in masked_text for token in placeholders))
+        self.assertIn(
+            "Every placeholder inside an edited source quote",
+            messages[0]["content"],
         )
-        self.assertIn("same spelling, case, count, and order", messages[0]["content"])
         self.assertEqual(
-            user_payload["responseBinding"],
-            {
-                "requestSha256": correction_request_sha256(request),
-                "sourceSha256": request.source_sha256,
-            },
+            schema["properties"]["requestSha256"]["const"],
+            user_payload["responseBinding"]["requestSha256"],
+        )
+        self.assertEqual(
+            schema["properties"]["sourceSha256"]["const"],
+            user_payload["responseBinding"]["sourceSha256"],
         )
         self.assertEqual(
             user_payload["request"]["approvedTerminology"],
@@ -171,7 +170,7 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
 
     def test_model_does_not_dispatch_after_cancellation(self) -> None:
         request = _request()
-        transport = _Transport(_model_response(request))
+        transport = _Transport(_model_response)
         cancellation = threading.Event()
         cancellation.set()
         model = TranscriptCorrectionModel(
@@ -186,6 +185,74 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
                 cancellation=cancellation,
             )
         self.assertEqual(transport.calls, [])
+
+    def test_model_cannot_remove_or_rewrite_a_protected_placeholder(self) -> None:
+        request = _request()
+
+        def changed_fact(payload: dict[str, object]) -> dict[str, object]:
+            messages = payload["messages"]
+            user = json.loads(messages[1]["content"])  # type: ignore[index]
+            masked = user["request"]["segments"][0]
+            result = {
+                "schemaVersion": 2,
+                "requestSha256": user["responseBinding"]["requestSha256"],
+                "sourceSha256": user["responseBinding"]["sourceSha256"],
+                "uncertain": False,
+                "edits": [
+                    {
+                        "segmentId": masked["segmentId"],
+                        "segmentSha256": masked["textSha256"],
+                        "sourceText": masked["text"],
+                        "replacementText": masked["text"].replace(
+                            user["immutablePlaceholders"][0],
+                            "invented",
+                        ),
+                    }
+                ],
+            }
+            return {"choices": [{"message": {"content": json.dumps(result)}}]}
+
+        model = TranscriptCorrectionModel(
+            transport=_Transport(changed_fact),
+            model="nvidia/Qwen3.6-35B-A3B-NVFP4",
+            maximum_output_tokens=512,
+        )
+        with self.assertRaisesRegex(ValueError, "protected placeholder"):
+            model.correct(request, cancellation=threading.Event())
+
+    def test_model_restores_a_preserved_placeholder_before_validation(self) -> None:
+        request = _request()
+
+        def preserved_fact(payload: dict[str, object]) -> dict[str, object]:
+            messages = payload["messages"]
+            user = json.loads(messages[1]["content"])  # type: ignore[index]
+            masked = user["request"]["segments"][0]
+            dosage_placeholder = user["immutablePlaceholders"][0]
+            source = f"the {dosage_placeholder}"
+            result = {
+                "schemaVersion": 2,
+                "requestSha256": user["responseBinding"]["requestSha256"],
+                "sourceSha256": user["responseBinding"]["sourceSha256"],
+                "uncertain": False,
+                "edits": [
+                    {
+                        "segmentId": masked["segmentId"],
+                        "segmentSha256": masked["textSha256"],
+                        "sourceText": source,
+                        "replacementText": f"The {dosage_placeholder}",
+                    }
+                ],
+            }
+            return {"choices": [{"message": {"content": json.dumps(result)}}]}
+
+        model = TranscriptCorrectionModel(
+            transport=_Transport(preserved_fact),
+            model="nvidia/Qwen3.6-35B-A3B-NVFP4",
+            maximum_output_tokens=512,
+        )
+        correction = model.correct(request, cancellation=threading.Event())
+
+        self.assertEqual(correction.corrected_text, "Um, The dosage is 25 mg.")
 
 
 if __name__ == "__main__":

@@ -341,6 +341,7 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "src/yap_server/agents/admission_client.py",
         server / "src/yap_server/agents/admission_protocol.py",
         server / "src/yap_server/agents/transcript_correction.py",
+        server / "src/yap_server/agents/transcript_correction_masking.py",
         server / "src/yap_server/agents/transcript_correction_model.py",
         server / "src/yap_server/agents/transcript_correction_runtime.py",
         server / "src/yap_server/agents/transcript_correction_service.py",

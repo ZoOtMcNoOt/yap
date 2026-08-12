@@ -11,7 +11,7 @@ from yap_server.agents.transcript_correction import (
     bind_transcript_correction_request,
     correction_request_sha256,
     parse_transcript_correction_response,
-    protected_transcript_facts,
+    protected_transcript_spans,
     transcript_correction_response_schema,
     validate_transcript_correction,
 )
@@ -83,7 +83,7 @@ def _response(
 
 
 class TranscriptCorrectionTests(unittest.TestCase):
-    def test_protected_fact_prompt_contract_matches_validation_categories(self) -> None:
+    def test_protected_spans_match_validation_categories(self) -> None:
         request = _request(
             first_text=(
                 "Dr. Rivera did Not prescribe 25 MG Metoprolol on 2026-08-11. "
@@ -91,19 +91,20 @@ class TranscriptCorrectionTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            protected_transcript_facts(request),
-            {
-                "numbersAndDates": ["25", "2026-08-11"],
-                "measurementUnits": ["MG"],
-                "negations": ["Not"],
-                "capitalizedNameCandidates": ["Dr", "Rivera", "MG", "Metoprolol"],
-                "numberDateUnitWords": [],
-                "medicationLikeTerms": ["Metoprolol"],
-                "approvedTerminology": ["follow-up"],
-            },
+            tuple(span.text for span in protected_transcript_spans(request)),
+            (
+                "Dr",
+                "Rivera",
+                "Not",
+                "25",
+                "MG",
+                "Metoprolol",
+                "2026-08-11",
+                "follow-up",
+            ),
         )
         with self.assertRaisesRegex(TypeError, "request type"):
-            protected_transcript_facts(object())  # type: ignore[arg-type]
+            protected_transcript_spans(object())  # type: ignore[arg-type]
 
     def test_request_requires_exact_contiguous_finalized_source(self) -> None:
         request = _request()

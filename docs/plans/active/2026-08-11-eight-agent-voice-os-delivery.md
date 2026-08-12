@@ -147,7 +147,7 @@ model validation, queue-inclusive 60-second completion, 64 server in-flight and
 256 retained-terminal bounds, trusted native source re-read before publication,
 one separately revisioned user acceptance, and a manual visible-diff UI. Old
 timingless raw transcripts are deliberately ineligible. The public matrix passes
-1,180 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
+1,182 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
 the production build, 41 browser scenarios, and both Rust workspaces with strict
 lint. The private corpus freezes 24 bilingual/safety cases across eight distinct
 owners and real ASR source evidence; its raw inputs, outputs, measurements, and
@@ -189,13 +189,16 @@ derived-span repair, plus exact cleanup. A prior invalid-output real case then
 reached the protected-fact validator but proposed an unauthorized name change
 that was neither approved terminology nor present in the frozen reference; a
 safety response was also not stable across repeated cold diagnostic runs. The
-validator remains unchanged. The next protected successor supplies the exact
-server-derived immutable numbers/dates, units, negations, name candidates,
-number/date/unit words, medication-like terms, and approved terminology in the
-model request and requires identical spelling, case, count, and order. This is
-prompt grounding only: no tool or response retry, model, output allowance,
-timeout/deadline, route, validator, or acceptance threshold changes. It requires
-one new complete qualification.
+validator remains unchanged. Exact prompt-grounding head
+`e62d33e41d2d85154a07da1d7a1254ea642a5638` then retained safety and exact
+cleanup but repeated the unauthorized name edit in its bounded real-case smoke,
+so instruction-only grounding is rejected as insufficient. The current
+protected successor masks every detected immutable source span with an
+equal-length opaque placeholder before inference. Projection restores raw text
+only when each placeholder remains exact, once, and ordered; the raw response
+then passes the unchanged source-bound validator. There is still no tool or
+response retry and no model, allowance, timeout/deadline, route, validator, or
+acceptance-threshold change. One complete fresh qualification remains required.
 
 ## Slice D — source and review agents
 
