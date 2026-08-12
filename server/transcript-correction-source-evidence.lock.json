@@ -5,11 +5,11 @@
   "sources": [
     {
       "languageBcp47": "en-US",
-      "evidenceSha256": "16a8c396b6c3f66f8e223dce604e9a18d6f24963744328d5b81d47e6e7769290",
+      "evidenceSha256": "3ad2ba5ccafffc9a916cb2493ad6786363690ca528d1f7f61d2ba46a99c8f3f4",
       "comparatorPlanSha256": "95501d65af267f28e6ca9827d839128963175e4845786ad9fdcf849d77d1b725",
       "releaseLockSha256": "cd279a72b51e0e6bc557cfc570d72c92fe640bf96e89b7cfae04f8485e726d44",
-      "selectionId": "screen",
-      "caseCount": 20
+      "selectionId": "full",
+      "caseCount": 647
     },
     {
       "languageBcp47": "es-419",
