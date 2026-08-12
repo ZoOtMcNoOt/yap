@@ -895,9 +895,10 @@ unconfigured.
 ### Phase 10 — Production services, security, and enterprise handoff
 
 - PRs #155/#157/#158 merged Yap-owned Rust supervision, exact Qwen/Gemma
-  profiles, and already-warm owner-fair admission. The current Scribe candidate
-  adds the first authenticated consumer; private qualification/merge and seven
-  role workflows remain open.
+  profiles, and already-warm owner-fair admission. Qualified Scribe is the first
+  authenticated consumer and merged through PR #164 as `ec3af506...`. Exact
+  unmerged Archivist head `3ec9885e...` is focused-green; Student, Curator,
+  product exposure, and the other six role workflows remain open.
 - Integrate the remaining provider-specific ASR and vLLM agent/LLM workflows
   with Yap-owned Rust orchestration, health, backpressure, cancellation,
   restart, and metrics.

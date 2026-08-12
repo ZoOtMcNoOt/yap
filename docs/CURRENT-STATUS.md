@@ -2,17 +2,16 @@
 
 **As of:** 2026-08-12
 
-**Most recent merged closure:** [PR #158](https://github.com/mcnatg1/yap/pull/158)
-merged Phase 10 Slice 10.3 as
-`84d95842950860e3f8d5cc70895aaae9243abe9c` from exact hosted-green head
-`cf1e69a45be15e6663d096f486d0363726638382`; all 12 required hosted checks
-passed. Its protected admission head `7bd93dc624e6d8651dffc710026ca144909b2399`
-and public-lock/gate head `135cc2ba8534f41d91ff52cd6b6d366460c7b60f`
-retain their exact qualified evidence. The broker admits authenticated work only
-to already-warm Qwen/Gemma services with bounded owner-fair queues; it does not
-start, swap, or silently substitute a model.
+**Most recent merged closure:** [PR #164](https://github.com/mcnatg1/yap/pull/164)
+merged qualified Scribe transcript correction as
+`ec3af506da68bbb7a0ce855369dd09c8a791742d` from exact hosted-green head
+`bc9a88bc3d3ee3fd767dbfee1497b6bc61733ce6`; all 12 required hosted checks
+passed. The earlier PR #158 admission merge and its protected/public-lock heads
+retain their exact qualified evidence. The broker admits authenticated work
+only to already-warm Qwen/Gemma services with bounded owner-fair queues; it does
+not start, swap, or silently substitute a model.
 
-The exact Scribe candidate is the first product workflow to consume that
+The merged Scribe workflow is the first product workflow to consume that
 merged boundary. It replaces renderer-owned Ollama polishing with authenticated
 native/server transcript correction over finalized source-hashed segments,
 structured source-bound edits, a separate immutable accepted revision, visible
@@ -32,9 +31,10 @@ teardown checks all passed. Corrections are now limited to exact
 server-authorized terminology normalization plus separately validated bounded
 model edits; the model cannot mint an authorization. The
 [public verification record](evidence/scribe-transcript-correction/VERIFICATION.md)
-contains the exact hashes, counts, and limits. Hosted review and merge remain
-open, as do simultaneous Qwen/Gemma residency, sustained mixed-route capacity,
-production SLOs, and the other seven workflows.
+contains the exact hashes, counts, and limits. Hosted-green head
+`bc9a88bc...` passed all 12 required checks and PR #164 merged it as
+`ec3af506...`. Simultaneous Qwen/Gemma residency, sustained mixed-route
+capacity, production SLOs, and the other seven workflows remain open.
 
 The earlier exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` ran the
 private bilingual/multi-owner gate and returned terminal
@@ -308,7 +308,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Slices 10.1–10.3 merged; Scribe exact qualification gate passed | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...` after all 12 hosted checks passed. Exact Scribe source-lock head `e5858424...` passed its 24-case bilingual/eight-owner private gate with public-safe semantic evidence SHA-256 `5e187ed4...`, one stable warm rapid generation, correction benefit, exact raw fallback, and zero residue. Corrections are limited to exact server-authorized terminology normalization plus separately validated bounded model edits; raw ASR stays authoritative. Hosted Scribe review/merge, simultaneous residency, sustained capacity/SLOs, production operations, the other seven roles, and explicit IT/security handoffs remain open. |
+| Phase 10 | Slices 10.1–10.3 and Scribe merged; Archivist core focused-green | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...`; exact Scribe head `e5858424...` passed its private gate and hosted-green head `bc9a88bc...` merged through PR #164 as `ec3af506...`. Raw ASR stays authoritative. Exact unmerged Archivist candidate `3ec9885e...` adds no-LLM reviewed-capture compilation/staging and passed the 1,207-test portable suite plus two real PostgreSQL tests with exact teardown. Student/Curator, hosted Archivist review, simultaneous full-profile residency, sustained capacity/SLOs, production operations, the other six roles, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -1092,16 +1092,18 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Reconcile the passed exact Scribe gate using only public-safe evidence, obtain
-   hosted-green exact-head review,
-   and merge the focused Scribe PR without claiming simultaneous residency,
-   sustained capacity, or production availability.
-2. Prove simultaneous warm Qwen/Gemma residency and sustained mixed-owner,
-   mixed-route fairness/capacity on the target node; use separate owned nodes if
-   one node cannot meet the evidence rather than swapping models.
-3. Deliver Archivist, Student, Curator, Librarian, Analyst, Coordinator, and
-   Auditor as the remaining bounded role slices; do not substitute an eight-
-   prompt facade for their source, permission, persistence, and failure owners.
+1. Review and merge exact Archivist candidate `3ec9885e...` after hosted-green
+   checks without claiming endpoint/UI, aggregate Slice D, or production
+   availability.
+2. Deliver Student and Curator to close the source/review slice, then Librarian,
+   Analyst, Coordinator, and Auditor as bounded workflows; do not substitute an
+   eight-prompt facade for their source, permission, persistence, and failure
+   owners.
+3. Provision a second full-strength owned GPU node and IT-controlled private
+   routing if the single Spark cannot keep the unchanged Qwen and Gemma profiles
+   warm together. Do not reduce either qualified profile or swap models per
+   request; run sustained mixed-owner/mixed-route capacity evidence only on the
+   admitted topology.
 4. Keep Tiron absent from the default catalog at the recorded
    `unadvertised-baseline`; the source-time implementation remains the sole
    server meeting path.

@@ -1,8 +1,8 @@
 # Scribe transcript-correction verification
 
-**Status:** Exact private qualification gate passed; hosted review and merge are
-pending. This evidence does not promote a production service or close the other
-seven Voice OS roles.
+**Status:** Exact private qualification gate and hosted review passed. PR #164
+merged the Scribe slice; this evidence does not promote a production service or
+close the other seven Voice OS roles.
 
 ## Exact candidate
 
@@ -17,6 +17,10 @@ seven Voice OS roles.
   `1c901eb8c66974a44997da28c63658942bd51c2f42b8b8494e163f370e5c8913`
 - Full English source-evidence SHA-256:
   `3ad2ba5ccafffc9a916cb2493ad6786363690ca528d1f7f61d2ba46a99c8f3f4`
+- Hosted-green head:
+  `bc9a88bc3d3ee3fd767dbfee1497b6bc61733ce6`
+- Merge head: `ec3af506da68bbb7a0ce855369dd09c8a791742d`
+  through PR #164 after all 12 required hosted checks passed
 
 The private corpus, model output, detailed measurements, credentials, database
 content, process records, and filesystem locations remain outside Git.

@@ -1,18 +1,19 @@
 # Complete eight-agent Voice OS delivery
 
-**Status:** Active; Slice A merged through PR #157 and Slice B merged through
-PR #158 as `84d95842950860e3f8d5cc70895aaae9243abe9c`. Slice C Scribe
-implementation and its exact bilingual/multi-owner qualification gate are
-complete; hosted review/merge, simultaneous-capacity evidence, and later role
-slices remain open.
+**Status:** Active; Slices A and B merged through PRs #157/#158. Slice C Scribe
+merged through PR #164 as `ec3af506da68bbb7a0ce855369dd09c8a791742d`
+after its exact bilingual/multi-owner qualification gate and all 12 hosted
+checks passed. The Archivist core in Slice D is implemented and focused-green;
+Student, Curator, shared product integration, simultaneous-capacity evidence,
+and later role slices remain open.
 
-**Current branch:** `agent/phase10-scribe-transcript-correction` for Slice C.
+**Current branch:** `agent/phase10-archivist` for the first Slice D workflow.
 Later slices use focused branches and merge only after their exact heads are
 reviewed and hosted-green.
 
-**Base:** merged Slice B / Phase 10 Slice 10.3 at
-`84d95842950860e3f8d5cc70895aaae9243abe9c` from hosted-green head
-`cf1e69a45be15e6663d096f486d0363726638382` and PR #158.
+**Base:** merged Scribe slice at
+`ec3af506da68bbb7a0ce855369dd09c8a791742d` from hosted-green head
+`bc9a88bc3d3ee3fd767dbfee1497b6bc61733ce6` and PR #164.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -168,7 +169,10 @@ runtime teardown all passed. Exact server-authorized terminology normalization
 is now one correction authority; independently validated model edits remain
 bounded and uncertainty returns raw ASR. See the
 [public verification record](../../evidence/scribe-transcript-correction/VERIFICATION.md).
-Hosted review/merge and production/capacity promotion remain open.
+Hosted-green head `bc9a88bc3d3ee3fd767dbfee1497b6bc61733ce6`
+passed all 12 required checks and PR #164 merged Scribe as
+`ec3af506da68bbb7a0ce855369dd09c8a791742d`. Production/capacity promotion
+and the other seven workflows remain open.
 
 Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` is terminal
 rejected evidence, not a resumable attempt. Its public-safe decision SHA-256 is
@@ -247,7 +251,7 @@ successor is the exact qualified head recorded above.
 
 ## Slice D — source and review agents
 
-- [ ] Archivist consumes only durable reviewed-source admissions and owns
+- [x] Archivist consumes only durable reviewed-source admissions and owns
   deterministic compilation/staging outcomes without an LLM.
 - [ ] Student creates bounded cited questions from permission-safe admitted
   conversations and never mutates source or knowledge.
@@ -255,6 +259,20 @@ successor is the exact qualified head recorded above.
   proposals only, and cannot directly activate knowledge.
 - [ ] Prove restart read-back, duplicate/idempotent transitions, cross-owner
   rejection, cancellation, invalid output, and no-success-after-failure audit.
+
+Exact Archivist candidate `3ec9885ee902926f3f7672d2438e1da23c18c284`
+adds a dedicated BACKGROUND_IO workflow with no LLM. It reads only an
+owner-scoped durable reviewed capture, compiles in an owner-private temporary
+workspace, re-reads the source before one admission/staging transaction, and
+returns a typed staged-generation result without activation. Exact retry is
+idempotent and revalidates the persisted non-embedding generation; conflicting
+content fails closed. The complete 1,207-test portable server suite passed with
+32 declared platform/database skips, focused Archivist tests passed, Ruff and
+diff checks passed, and two real PostgreSQL tests proved exact retry/restart
+read-back, cross-owner rejection, pre-cancel no-write behavior, zero active
+generation, and all six owned-runtime teardown predicates. This is focused
+workflow evidence, not hosted merge, product endpoint/UI, or aggregate Slice D
+closure. See the [public verification record](../../evidence/archivist-ingestion/VERIFICATION.md).
 
 ## Slice E — knowledge and coordination agents
 

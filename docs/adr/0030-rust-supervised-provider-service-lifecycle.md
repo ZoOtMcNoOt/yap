@@ -1,6 +1,6 @@
 # ADR 0030: Rust-supervised provider service lifecycle
 
-**Status:** Accepted; Slices 10.1–10.3 merged, Scribe qualification passed, hosted merge and later production layers pending
+**Status:** Accepted; Slices 10.1–10.3 and Scribe merged; later workflows and production layers pending
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0014](0014-server-tier-compute-topology.md),
@@ -48,8 +48,8 @@ fixture. Slice 10.2 binds immutable Qwen rapid and Gemma complex profiles to
 separate supervised instances and proves their sequential lifecycles plus fresh
 route qualification. Slice 10.3 now has a merged, gated Rust admission core with strict
 private Python transport; hosted-green head `cf1e69a4...` merged it through PR
-#158 as `84d95842...`. The current Scribe candidate is its first authenticated
-application consumer. Simultaneous warm residency, sustained multi-owner capacity,
+#158 as `84d95842...`. Qualified Scribe is its first authenticated application
+consumer and merged through PR #164 as `ec3af506...`. Simultaneous warm residency, sustained multi-owner capacity,
 p95/p99 SLOs, and deployment promotion remain later evidence layers.
 
 ## Options considered

@@ -36,6 +36,24 @@ foreach ($RequiredPort in @($HttpPort, $LivePort)) {
     }
 }
 
+# Build the exact Rust test binary before minting the short-lived synthetic
+# bearer. A clean hosted checkout can spend several minutes compiling; build
+# time must not consume the credential lifetime being exercised by the test.
+Push-Location -LiteralPath (Join-Path $Repository 'desktop\src-tauri')
+try {
+    & cargo test `
+        --locked `
+        'python_authenticated_server_accepts_signed_bearer' `
+        --lib `
+        --no-run
+    if ($LASTEXITCODE -ne 0) {
+        throw "The authenticated connector test binary failed to build with exit code $LASTEXITCODE."
+    }
+}
+finally {
+    Pop-Location
+}
+
 $CanonicalTemp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
 $StateRoot = [IO.Path]::GetFullPath(
     (Join-Path $CanonicalTemp "yap-authenticated-connector-$([guid]::NewGuid().ToString('N'))")

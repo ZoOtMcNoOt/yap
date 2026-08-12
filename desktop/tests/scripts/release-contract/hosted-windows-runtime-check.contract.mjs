@@ -136,6 +136,33 @@ test("hosted Windows runtime profiles name only exact product runtime checks", (
   );
 });
 
+test("authenticated connector compilation cannot consume bearer lifetime", () => {
+  const source = readFileSync(
+    path.join(
+      repositoryRoot,
+      "verification",
+      "test-authenticated-server-connector.ps1",
+    ),
+    "utf8",
+  );
+  const testFilter = "'python_authenticated_server_accepts_signed_bearer'";
+  const buildFilter = source.indexOf(testFilter);
+  const buildOnly = source.indexOf("--no-run", buildFilter);
+  const serverStart = source.indexOf("$Server = Start-Process");
+  const executionFilter = source.indexOf(testFilter, serverStart);
+
+  assert.ok(buildFilter >= 0, "the exact authenticated test build is missing");
+  assert.ok(buildOnly > buildFilter, "the preflight must be build-only");
+  assert.ok(
+    buildOnly < serverStart,
+    "the exact test binary must build before the server mints its bearer",
+  );
+  assert.ok(
+    executionFilter > serverStart,
+    "the exact authenticated tests must execute after the server starts",
+  );
+});
+
 test("hosted Windows runtime children cannot inherit GitHub credentials", () => {
   const environment = hostedWindowsRuntimeEnvironment(checkedHead, {
     ACTIONS_ID_TOKEN_REQUEST_TOKEN: "id-token",

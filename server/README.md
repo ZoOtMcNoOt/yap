@@ -611,10 +611,10 @@ configuration, state, and verification details are in the
 [provider supervisor runbook](../docs/runbooks/provider-supervisor-service.md)
 and [agent admission runbook](../docs/runbooks/agent-admission-service.md).
 
-## Scribe transcript-correction candidate
+## Scribe transcript correction
 
-The first product consumer of the broker is the authenticated asynchronous
-Scribe route:
+The first merged product consumer of the broker is the authenticated
+asynchronous Scribe route:
 
 - `POST /v1/transcript-corrections` admits one bounded correction and returns
   `202` with its typed queued/running/terminal projection.
@@ -724,6 +724,9 @@ then passed the complete private qualification gate with outcome
 `scribe-transcript-correction-qualified` and public-safe semantic evidence
 SHA-256
 `5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
+Hosted-green head `bc9a88bc3d3ee3fd767dbfee1497b6bc61733ce6`
+passed all 12 required checks and PR #164 merged the slice as
+`ec3af506da68bbb7a0ce855369dd09c8a791742d`.
 The untouched final corpus contained 24 terminal cases, 16 unique real-audio
 inputs, eight owners, eight English and eight Spanish real-ASR cases, eight
 safety cases, eight corrected references, eight source-preserved references,
