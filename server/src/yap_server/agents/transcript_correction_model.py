@@ -84,7 +84,9 @@ class TranscriptCorrectionModel:
                 _without_unchanged_edit_context(
                     _without_exact_noop_edits(
                         _validated_model_edit_strings(_response_content(response))
-                    )
+                    ),
+                    masked.request,
+                    placeholder_character=masked.placeholder_character,
                 )
             ),
         )
@@ -264,6 +266,9 @@ def _validated_model_edit_strings(
 
 def _without_unchanged_edit_context(
     value: dict[str, object],
+    request: BoundTranscriptCorrectionRequest,
+    *,
+    placeholder_character: str,
 ) -> dict[str, object]:
     edits = value.get("edits")
     if not isinstance(edits, list):
@@ -274,6 +279,7 @@ def _without_unchanged_edit_context(
         "sourceText",
         "replacementText",
     }
+    segments = {segment.segment_id: segment for segment in request.segments}
     normalized: list[object] = []
     changed = False
     for edit in edits:
@@ -287,6 +293,19 @@ def _without_unchanged_edit_context(
             continue
         source = edit["sourceText"]
         replacement = edit["replacementText"]
+        segment_id = edit.get("segmentId")
+        segment_sha256 = edit.get("segmentSha256")
+        segment = segments.get(segment_id) if isinstance(segment_id, str) else None
+        source_start = segment.text.find(source) if segment is not None else -1
+        if (
+            segment is None
+            or not isinstance(segment_sha256, str)
+            or segment_sha256 != segment.text_sha256
+            or source_start < 0
+            or segment.text.find(source, source_start + 1) >= 0
+        ):
+            normalized.append(edit)
+            continue
         prefix = 0
         while (
             prefix < len(source)
@@ -302,22 +321,96 @@ def _without_unchanged_edit_context(
             == replacement[len(replacement) - suffix - 1]
         ):
             suffix += 1
-        source_end = len(source) - suffix if suffix else len(source)
-        replacement_end = (
+        source_difference_end = len(source) - suffix if suffix else len(source)
+        replacement_difference_end = (
             len(replacement) - suffix if suffix else len(replacement)
         )
-        trimmed_source = source[prefix:source_end]
-        if not trimmed_source:
+        candidate = _shortest_unique_edit_context(
+            segment.text,
+            source,
+            replacement,
+            prefix=prefix,
+            source_difference_end=source_difference_end,
+            replacement_difference_end=replacement_difference_end,
+            common_suffix_length=suffix,
+            source_occurrence_start=source_start,
+            placeholder_character=placeholder_character,
+        )
+        if candidate is None:
             normalized.append(edit)
             continue
+        trimmed_source, trimmed_replacement = candidate
         trimmed = {
             **edit,
             "sourceText": trimmed_source,
-            "replacementText": replacement[prefix:replacement_end],
+            "replacementText": trimmed_replacement,
         }
         normalized.append(trimmed)
         changed |= trimmed != edit
     return value if not changed else {**value, "edits": normalized}
+
+
+def _shortest_unique_edit_context(
+    segment_text: str,
+    source: str,
+    replacement: str,
+    *,
+    prefix: int,
+    source_difference_end: int,
+    replacement_difference_end: int,
+    common_suffix_length: int,
+    source_occurrence_start: int,
+    placeholder_character: str,
+) -> tuple[str, str] | None:
+    for total_context in range(prefix + common_suffix_length + 1):
+        minimum_left_context = max(0, total_context - common_suffix_length)
+        maximum_left_context = min(prefix, total_context)
+        for left_context in range(minimum_left_context, maximum_left_context + 1):
+            right_context = total_context - left_context
+            source_slice_start = prefix - left_context
+            source_slice_end = source_difference_end + right_context
+            candidate_start = source_occurrence_start + source_slice_start
+            candidate_end = source_occurrence_start + source_slice_end
+            candidate_source = source[source_slice_start:source_slice_end]
+            if (
+                not candidate_source
+                or _splits_placeholder_run(
+                    segment_text,
+                    candidate_start,
+                    placeholder_character,
+                )
+                or _splits_placeholder_run(
+                    segment_text,
+                    candidate_end,
+                    placeholder_character,
+                )
+                or segment_text.find(candidate_source) < 0
+                or segment_text.find(
+                    candidate_source,
+                    segment_text.find(candidate_source) + 1,
+                )
+                >= 0
+            ):
+                continue
+            replacement_start = prefix - left_context
+            replacement_end = replacement_difference_end + right_context
+            return (
+                candidate_source,
+                replacement[replacement_start:replacement_end],
+            )
+    return None
+
+
+def _splits_placeholder_run(
+    value: str,
+    boundary: int,
+    placeholder_character: str,
+) -> bool:
+    return (
+        0 < boundary < len(value)
+        and value[boundary - 1] == placeholder_character
+        and value[boundary] == placeholder_character
+    )
 
 
 class _DuplicateKey(ValueError):

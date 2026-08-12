@@ -49,6 +49,31 @@ def _request() -> BoundTranscriptCorrectionRequest:
     )
 
 
+def _request_for_text(text: str) -> BoundTranscriptCorrectionRequest:
+    return bind_transcript_correction_request(
+        TranscriptCorrectionRequest.from_wire(
+            {
+                "schemaVersion": 1,
+                "sourceRevisionSha256": "e" * 64,
+                "sourceSha256": _sha256(text),
+                "segments": [
+                    {
+                        "segmentId": "segment-0001",
+                        "startCharacter": 0,
+                        "endCharacter": len(text),
+                        "startMilliseconds": 0,
+                        "endMilliseconds": 1_500,
+                        "languageBcp47": "en-US",
+                        "text": text,
+                        "textSha256": _sha256(text),
+                    }
+                ],
+            }
+        ),
+        TranscriptCorrectionTerminology("f" * 64, ()),
+    )
+
+
 class _Transport:
     def __init__(
         self,
@@ -400,6 +425,81 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "model edit text is invalid"):
             model.correct(request, cancellation=threading.Event())
+
+    def test_model_retains_the_shortest_context_needed_for_unique_source(self) -> None:
+        request = _request_for_text("the cat can walk and the dog can walk")
+
+        def repeated_minimum(payload: dict[str, object]) -> dict[str, object]:
+            messages = payload["messages"]
+            user = json.loads(messages[1]["content"])  # type: ignore[index]
+            segment = user["request"]["segments"][0]
+            result = {
+                "schemaVersion": 2,
+                "requestSha256": user["responseBinding"]["requestSha256"],
+                "sourceSha256": user["responseBinding"]["sourceSha256"],
+                "uncertain": False,
+                "edits": [
+                    {
+                        "segmentId": segment["segmentId"],
+                        "segmentSha256": segment["textSha256"],
+                        "sourceText": segment["text"],
+                        "replacementText": "the cat can walk and the dog can walks",
+                    }
+                ],
+            }
+            return {"choices": [{"message": {"content": json.dumps(result)}}]}
+
+        model = TranscriptCorrectionModel(
+            transport=_Transport(repeated_minimum),
+            model="nvidia/Qwen3.6-35B-A3B-NVFP4",
+            maximum_output_tokens=512,
+        )
+        correction = model.correct(request, cancellation=threading.Event())
+
+        self.assertEqual(
+            correction.corrected_text,
+            "the cat can walk and the dog can walks",
+        )
+        self.assertEqual(len(correction.edits), 1)
+        self.assertEqual(correction.edits[0].source_text, "g can walk")
+        self.assertEqual(correction.edits[0].replacement_text, "g can walks")
+
+    def test_model_does_not_split_a_protected_placeholder_for_unique_context(
+        self,
+    ) -> None:
+        request = _request_for_text("Alice can walk and Bob can walk")
+
+        def protected_context(payload: dict[str, object]) -> dict[str, object]:
+            messages = payload["messages"]
+            user = json.loads(messages[1]["content"])  # type: ignore[index]
+            segment = user["request"]["segments"][0]
+            result = {
+                "schemaVersion": 2,
+                "requestSha256": user["responseBinding"]["requestSha256"],
+                "sourceSha256": user["responseBinding"]["sourceSha256"],
+                "uncertain": False,
+                "edits": [
+                    {
+                        "segmentId": segment["segmentId"],
+                        "segmentSha256": segment["textSha256"],
+                        "sourceText": segment["text"],
+                        "replacementText": f'{segment["text"]}s',
+                    }
+                ],
+            }
+            return {"choices": [{"message": {"content": json.dumps(result)}}]}
+
+        model = TranscriptCorrectionModel(
+            transport=_Transport(protected_context),
+            model="nvidia/Qwen3.6-35B-A3B-NVFP4",
+            maximum_output_tokens=512,
+        )
+        correction = model.correct(request, cancellation=threading.Event())
+
+        self.assertEqual(correction.corrected_text, "Alice can walk and Bob can walks")
+        self.assertEqual(len(correction.edits), 1)
+        self.assertEqual(correction.edits[0].source_text, " Bob can walk")
+        self.assertEqual(correction.edits[0].replacement_text, " Bob can walks")
 
 
 if __name__ == "__main__":

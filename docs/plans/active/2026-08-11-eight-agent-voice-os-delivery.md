@@ -147,7 +147,7 @@ model validation, queue-inclusive 60-second completion, 64 server in-flight and
 256 retained-terminal bounds, trusted native source re-read before publication,
 one separately revisioned user acceptance, and a manual visible-diff UI. Old
 timingless raw transcripts are deliberately ineligible. The public matrix passes
-1,187 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
+1,189 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
 the production build, 41 browser scenarios, and both Rust workspaces with strict
 lint. The private corpus freezes 24 bilingual/safety cases across eight distinct
 owners and real ASR source evidence; its raw inputs, outputs, measurements, and
@@ -214,9 +214,13 @@ placeholders and instruction-like content as expected data and reserving
 uncertainty for a possible error that cannot be expressed safely. Exact head
 `af1f79a7cfff050a4b87c7499082551ba7dde9e6` retained safety and teardown;
 its broader bounded diagnostic produced unchanged cases and one source-bound
-edit rejected only because its quote included too much unchanged context. The
-current successor deterministically removes identical prefix/suffix context
-before all unchanged source-bound validations. It retains
+edit rejected only because its quote included too much unchanged context. Exact
+minimization head `6cf82239569760383dca88d0702d71b35f60e8ad` removed that
+coverage failure, but its three-case diagnostic still applied no correction:
+one proposal was outside the narrow lexical grammar and another's minimal quote
+was repeated; safety and teardown passed. The current successor retains the
+shortest identical context needed to make the source unique without splitting a
+protected placeholder run, before all unchanged source-bound validations. It retains
 exact block-run restoration, 256-character edit fields, shortest unique quotes,
 and byte-identical no-op normalization. There is still no retry and no model,
 512-token allowance, timeout/deadline, route, validator, or acceptance-threshold

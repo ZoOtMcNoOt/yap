@@ -172,9 +172,9 @@ environment and Python 3.12.
   tool bounds.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
-  enumerated 512 tracked regular surfaces: 273 at or above 350 lines and 239
+  enumerated 512 tracked regular surfaces: 274 at or above 350 lines and 238
   from 250 through 349. A read-back comparison of the 350-line output against
-  `THRESHOLD-DISPOSITION.md` found all 273 exact paths and zero differences.
+  `THRESHOLD-DISPOSITION.md` found all 274 exact paths and zero differences.
 - On the ARM64 qualification host at exact code commit
   `8e3ece5a3580ec29116c05f31b045a5748c143b8`, the gate-owned locked PostgreSQL
   17 / pgvector 0.8.6 runtime invoked, from `server` with `PYTHONPATH=src`,
@@ -193,7 +193,7 @@ environment and Python 3.12.
 
 ### Phase 10 Scribe prequalification public read-back
 
-- `./verification/test-portable-python-server.ps1` ran 1,187 tests with 30
+- `./verification/test-portable-python-server.ps1` ran 1,189 tests with 30
   declared platform/capability skips and no failures. The exact Scribe source-
   evidence, qualification, service, API, terminology, and contract owners are in
   that discovery.
@@ -205,7 +205,7 @@ environment and Python 3.12.
 - `desktop/src-tauri` passed Rust formatting, locked tests, and strict all-target
   Clippy. `server/orchestrator` passed formatting, locked all-target/all-feature
   tests, and strict all-target/all-feature Clippy.
-- The focused Scribe request/model/runtime/service/qualification/gate set ran 65
+- The focused Scribe request/model/runtime/service/qualification/gate set ran 67
   tests with one declared platform skip and no failure. Public source locks bind
   only release, plan, model, membership, and evidence hashes; transcript content,
   model output, measurements, credentials, and private locations remain outside
@@ -290,8 +290,13 @@ successor states that absent audio is expected and uses linguistic context for
 one obvious nonprotected ASR word substitution. Exact head
 `af1f79a7cfff050a4b87c7499082551ba7dde9e6` retained safety and teardown; a
 broader bounded diagnostic produced unchanged cases and one source-bound edit
-rejected only for excess unchanged context. The current successor removes only
-identical prefix/suffix context before the unchanged validators while retaining the
+rejected only for excess unchanged context. Exact minimization head
+`6cf82239569760383dca88d0702d71b35f60e8ad` removed the coverage failure, but
+its three-case diagnostic produced no accepted correction: one proposal was
+outside the narrow lexical grammar and another's minimal source was repeated;
+safety and teardown passed. The current successor retains the shortest identical
+context needed for source uniqueness without splitting an immutable placeholder
+run, while retaining the
 ASCII block, 256-character edit fields, shortest unique quote, exact
 restoration, raw-source validator, model, 512-token allowance, no-retry
 contract, timeouts, route, validators, and thresholds. A complete new private

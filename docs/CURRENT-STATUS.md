@@ -17,7 +17,7 @@ merged boundary. It replaces renderer-owned Ollama polishing with authenticated
 native/server transcript correction over finalized source-hashed segments,
 structured source-bound edits, a separate immutable accepted revision, visible
 diff, manual publication, exact cancellation, and raw-ASR fallback. Its public
-matrix is green: 1,187 portable server tests with 30 declared platform skips,
+matrix is green: 1,189 portable server tests with 30 declared platform skips,
 Ruff, 367 desktop unit tests, production TypeScript/Vite build, 41 Playwright
 scenarios, and both Rust workspaces with formatting, tests, and strict Clippy.
 Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` then ran the
@@ -90,7 +90,12 @@ uncertainty for a possible error that cannot be expressed safely. Exact head
 `af1f79a7cfff050a4b87c7499082551ba7dde9e6` retained safety and teardown;
 its broader bounded diagnostic produced unchanged cases and one source-bound
 edit rejected only because its quote included too much unchanged context. The
-current successor deterministically removes identical prefix/suffix context
+minimization head `6cf82239569760383dca88d0702d71b35f60e8ad` removed that
+coverage failure, but its three-case diagnostic still produced no accepted
+correction: one proposal was outside the narrow lexical grammar and another's
+minimal source was repeated; safety and teardown passed. The current successor
+retains only the shortest identical context needed to make the source unique,
+without splitting an immutable protected-placeholder run,
 before all unchanged source-bound validations. It retains
 the 256-character edit fields, shortest unique quote, exact block-run
 restoration, and identical-edit normalization. Raw bindings and validators still
