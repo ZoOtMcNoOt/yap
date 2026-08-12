@@ -534,6 +534,32 @@ def correction_request_sha256(request: BoundTranscriptCorrectionRequest) -> str:
     ).hexdigest()
 
 
+def protected_transcript_facts(
+    request: BoundTranscriptCorrectionRequest,
+) -> dict[str, list[str]]:
+    """Return the exact fact tokens the model and validator must preserve."""
+
+    if not isinstance(request, BoundTranscriptCorrectionRequest):
+        raise TypeError("transcript correction request type is invalid")
+    numbers, units, _, names, _ = _protected_facts(request.source_text)
+    words = tuple(match.group(0) for match in _WORD.finditer(request.source_text))
+    return {
+        "numbersAndDates": list(numbers),
+        "measurementUnits": list(units),
+        "negations": [word for word in words if word.casefold() in _NEGATIONS],
+        "capitalizedNameCandidates": list(names),
+        "numberDateUnitWords": [
+            word for word in words if word.casefold() in _NUMBER_DATE_UNIT_WORDS
+        ],
+        "medicationLikeTerms": [
+            word
+            for word in words
+            if len(word) >= 5 and word.casefold().endswith(_MEDICATION_SUFFIXES)
+        ],
+        "approvedTerminology": list(request.approved_terminology),
+    }
+
+
 def parse_transcript_correction_response(
     value: object,
 ) -> TranscriptCorrectionResponse:
@@ -961,6 +987,7 @@ __all__ = [
     "bind_transcript_correction_request",
     "correction_request_sha256",
     "parse_transcript_correction_response",
+    "protected_transcript_facts",
     "transcript_correction_response_schema",
     "validate_approved_terminology",
     "validate_transcript_correction",

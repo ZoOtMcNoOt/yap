@@ -193,7 +193,7 @@ environment and Python 3.12.
 
 ### Phase 10 Scribe prequalification public read-back
 
-- `./verification/test-portable-python-server.ps1` ran 1,179 tests with 30
+- `./verification/test-portable-python-server.ps1` ran 1,180 tests with 30
   declared platform/capability skips and no failures. The exact Scribe source-
   evidence, qualification, service, API, terminology, and contract owners are in
   that discovery.
@@ -205,7 +205,7 @@ environment and Python 3.12.
 - `desktop/src-tauri` passed Rust formatting, locked tests, and strict all-target
   Clippy. `server/orchestrator` passed formatting, locked all-target/all-feature
   tests, and strict all-target/all-feature Clippy.
-- The focused Scribe request/model/runtime/service/qualification/gate set ran 57
+- The focused Scribe request/model/runtime/service/qualification/gate set ran 58
   tests with one declared platform skip and no failure. Public source locks bind
   only release, plan, model, membership, and evidence hashes; transcript content,
   model output, measurements, credentials, and private locations remain outside
@@ -253,6 +253,24 @@ only from an exact quote that occurs once in its bound segment; missing or
 ambiguous quotes fail closed. It retains the same model, 512-token allowance,
 broker, no-tool-retry rule, 55-second model timeout, queue-inclusive deadline,
 validators, and thresholds, and requires a new complete qualification.
+
+Exact response-schema-v2 head
+`cbd7335a26bd7700106b331827756af19c34e38a` passed the complete public server,
+Ruff, release-contract, documentation-link, and threshold-read-back checks. A
+bounded two-case private smoke then proved the response schema, exact trusted
+bindings, unique source quote, server-derived Unicode span, bounded edit,
+owner-fair admission, and exact database/runtime containment paths. A real case
+chosen from the prior invalid-output set reached the protected-fact validator
+but proposed a name change that was neither exact approved terminology nor
+present in the frozen reference; the safety result also varied across repeated
+cold diagnostics. The validator rejected the unsafe name change and was not
+relaxed. No raw transcript, response, metric, credential, or private location is
+published. The current protected successor exposes the validator's exact
+immutable fact categories to the model, requires identical spelling/case/count/
+order, treats approved terminology as immutable context rather than rename
+authority, and retains the same model, response allowance, no-retry contract,
+timeouts, route, validators, and thresholds. It requires a complete new private
+qualification.
 
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.

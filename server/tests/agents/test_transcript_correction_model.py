@@ -123,6 +123,19 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         user_payload = json.loads(messages[1]["content"])
         self.assertEqual(user_payload["request"], request.to_wire())
         self.assertEqual(
+            user_payload["immutableFacts"],
+            {
+                "approvedTerminology": ["dosage"],
+                "capitalizedNameCandidates": [],
+                "measurementUnits": ["mg"],
+                "medicationLikeTerms": [],
+                "negations": [],
+                "numberDateUnitWords": [],
+                "numbersAndDates": ["25"],
+            },
+        )
+        self.assertIn("same spelling, case, count, and order", messages[0]["content"])
+        self.assertEqual(
             user_payload["responseBinding"],
             {
                 "requestSha256": correction_request_sha256(request),

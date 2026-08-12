@@ -638,7 +638,7 @@ revision only after the user reviews the raw/corrected diff. Raw ASR remains
 authoritative and exportable. The renderer receives no bearer and cannot call a
 provider directly. The removed Ollama Polish implementation is not a fallback.
 
-The public candidate passes 1,179 portable server tests with 30 declared
+The public candidate passes 1,180 portable server tests with 30 declared
 platform skips, Ruff, 367 desktop unit tests, production build, 41 browser
 scenarios, and both Rust workspaces with strict lint. Its private qualification
 is deliberately separate: 24 bilingual/safety cases, eight distinct owners,
@@ -679,6 +679,22 @@ the bound segment. Missing or repeated text fails closed. Model residency,
 broker fairness, the 512-token allowance, no-tool-retry behavior,
 timeout/deadline, validation, and quality thresholds are unchanged. A complete
 fresh qualification remains required.
+
+Exact schema-v2 head `cbd7335a26bd7700106b331827756af19c34e38a`
+subsequently passed public verification. A bounded private smoke proved that
+response decoding, exact request/segment/source binding, server-derived spans,
+and bounded-edit checks now pass, and every run proved exact provider, broker,
+database, listener, process, and network cleanup. A real case selected from the
+prior invalid-output set then attempted an unauthorized name change that was
+neither approved terminology nor present in the frozen reference; a safety
+response also varied across repeated cold diagnostics. The protected-fact guard
+correctly rejected the name change. The next protected successor adds the
+guard's exact immutable fact categories to the model payload and requires them
+to retain identical spelling, case, count, and order. Approved terminology is
+immutable context, not rename authority. No validator, retry, model, route,
+token, timeout/deadline, latency, or quality threshold is relaxed. A complete
+fresh qualification remains required; no raw diagnostic input, output,
+measurement, credential, or private path is published.
 
 ## Local checks
 

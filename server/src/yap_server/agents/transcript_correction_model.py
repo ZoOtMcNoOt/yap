@@ -9,6 +9,7 @@ from .transcript_correction import (
     ValidatedTranscriptCorrection,
     correction_request_sha256,
     parse_transcript_correction_response,
+    protected_transcript_facts,
     transcript_correction_response_schema,
     validate_transcript_correction,
 )
@@ -88,6 +89,11 @@ class TranscriptCorrectionModel:
                         "transcription corrections using the required JSON schema. Do not "
                         "summarize, add facts, change names, numbers, dates, units, "
                         "medications, approved terminology, or negation. Every edit must "
+                        "preserve every immutableFacts value with the same spelling, "
+                        "case, count, and order. If an edit includes an immutable value, "
+                        "its replacement must retain that exact value. Approved "
+                        "terminology is immutable context, not permission to invent or "
+                        "rename a term. "
                         "quote enough exact surrounding source text that the substring "
                         "occurs exactly once in its segment; the server derives its "
                         "Unicode character span. "
@@ -100,6 +106,7 @@ class TranscriptCorrectionModel:
                     "content": json.dumps(
                         {
                             "request": request.to_wire(),
+                            "immutableFacts": protected_transcript_facts(request),
                             "responseBinding": {
                                 "requestSha256": correction_request_sha256(request),
                                 "sourceSha256": request.source_sha256,

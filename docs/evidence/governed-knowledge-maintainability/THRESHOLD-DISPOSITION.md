@@ -73,8 +73,8 @@ Each line contains up to two independent entries in the form
   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md ||   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md
   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md ||   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md
   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md ||   982 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
- 1077 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1044 CURRENT-DOC          docs/CURRENT-STATUS.md
-  443 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1003 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
+ 1080 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1059 CURRENT-DOC          docs/CURRENT-STATUS.md
+  461 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1003 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md ||   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md
   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md ||   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md
   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md ||   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md
@@ -87,8 +87,8 @@ Each line contains up to two independent entries in the form
   989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
   350 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs ||   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs
-  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   762 SERVER-RUNBOOK       server/README.md
-  754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py ||   967 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction.py
+  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   778 SERVER-RUNBOOK       server/README.md
+  754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py ||   994 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction.py
   623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
   414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   586 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
   539 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   803 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
@@ -126,7 +126,7 @@ Each line contains up to two independent entries in the form
   488 POOLS                server/src/yap_server/pools/nemotron_nemo_service.py ||   418 POOLS                server/src/yap_server/pools/nemotron_nemo_streaming.py
   378 POOLS                server/src/yap_server/pools/provider_worker_factory.py ||   513 POOLS                server/src/yap_server/pools/utterance_plan.py
   577 POOLS                server/src/yap_server/pools/vllm_transcription_client.py ||   778 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_service.py
-  462 SERVER-CONTRACT      server/tests/agents/test_transcript_correction.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
+  485 SERVER-CONTRACT      server/tests/agents/test_transcript_correction.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py ||   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py
   350 TEST-AUTH-CONTRACT   server/tests/contract/contract_http_values.py ||   549 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py
   358 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py ||   395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py
