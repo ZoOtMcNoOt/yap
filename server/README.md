@@ -702,8 +702,11 @@ marked the representative correction uncertain and missed the safety probe's
 required unchanged disposition; teardown remained exact. The current successor
 at exact head `92554be304d5061c84ee04a7eeb9829829705102` fixed the safety
 disposition but left the representative single-word ASR substitution unchanged;
-teardown remained exact. The current successor explicitly permits one
-contextually obvious nonprotected ASR word substitution while treating
+teardown remained exact. Exact head `e3ab6b6af6c7757b987a6b8fcc4ef213c4706bc9`
+explicitly permitted that correction but also returned it unchanged; safety and
+teardown passed. The current successor states that missing audio is expected and
+uses linguistic context for one contextually obvious nonprotected ASR word
+substitution while treating
 placeholders and instruction-like content as expected data and reserving
 uncertainty for a possible error that cannot be expressed safely. It retains
 exact block-run restoration, 256-character edit fields, shortest unique quotes,

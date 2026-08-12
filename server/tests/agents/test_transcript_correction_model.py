@@ -168,6 +168,10 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
             messages[0]["content"],
         )
         self.assertIn("do not leave that obvious error unchanged", messages[0]["content"])
+        self.assertIn(
+            "Audio is intentionally not provided; its absence is expected",
+            messages[0]["content"],
+        )
         self.assertIn("Never emit an edit whose replacement equals", messages[0]["content"])
         self.assertEqual(
             schema["properties"]["requestSha256"]["const"],

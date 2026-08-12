@@ -982,7 +982,8 @@ uncertainty condition. A source needing no correction is confidently unchanged;
 uncertainty is reserved for a possible ASR error that cannot be represented as
 one safe source-bound edit. One contextually obvious nonprotected ASR word
 substitution may be corrected with the shortest unique quote; broad rewriting
-remains forbidden. The user sees the
+remains forbidden. Audio is intentionally absent from this text-context
+workload, and its absence does not create uncertainty. The user sees the
 raw/corrected diff and explicitly
 publishes a separate hash-chained correction revision; raw ASR remains the
 authoritative export and fallback. Cancellation, source change, deadline,

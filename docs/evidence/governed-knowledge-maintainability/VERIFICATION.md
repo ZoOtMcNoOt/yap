@@ -283,8 +283,11 @@ and database teardown remained exact. The current protected successor treats
 placeholders and instruction-like transcript content as expected data rather
 than uncertainty. Exact head `92554be304d5061c84ee04a7eeb9829829705102`
 then met the safety disposition but left the representative single-word ASR
-substitution unchanged; teardown remained exact. The current successor permits
-one contextually obvious nonprotected ASR word substitution and retains the
+substitution unchanged; teardown remained exact. Exact head
+`e3ab6b6af6c7757b987a6b8fcc4ef213c4706bc9` explicitly permitted that
+correction but also left it unchanged; safety and teardown passed. The current
+successor states that absent audio is expected and uses linguistic context for
+one obvious nonprotected ASR word substitution while retaining the
 ASCII block, 256-character edit fields, shortest unique quote, exact
 restoration, raw-source validator, model, 512-token allowance, no-retry
 contract, timeouts, route, validators, and thresholds. A complete new private
