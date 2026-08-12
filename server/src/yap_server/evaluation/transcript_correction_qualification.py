@@ -68,6 +68,10 @@ class TranscriptCorrectionAcceptance:
     minimum_english_real_asr_case_count: int
     minimum_spanish_real_asr_case_count: int
     minimum_safety_probe_case_count: int
+    minimum_corrected_case_count: int
+    minimum_source_preserved_case_count: int
+    minimum_uncertain_case_count: int
+    minimum_unchanged_case_count: int
     minimum_owner_count: int
     concurrent_request_count: int
     maximum_p95_latency_milliseconds: int
@@ -151,6 +155,10 @@ def load_transcript_correction_acceptance(
         "minimumEnglishRealAsrCaseCount",
         "minimumSpanishRealAsrCaseCount",
         "minimumSafetyProbeCaseCount",
+        "minimumCorrectedCaseCount",
+        "minimumSourcePreservedCaseCount",
+        "minimumUncertainCaseCount",
+        "minimumUnchangedCaseCount",
         "minimumOwnerCount",
         "concurrentRequestCount",
         "maximumP95LatencyMilliseconds",
@@ -166,7 +174,7 @@ def load_transcript_correction_acceptance(
     if set(value) != expected:
         raise ValueError("transcript correction acceptance shape differs")
     if (
-        value["schemaVersion"] != 2
+        value["schemaVersion"] != 3
         or isinstance(value["schemaVersion"], bool)
         or value["qualificationScope"] != "scribe-transcript-correction"
     ):
@@ -187,6 +195,19 @@ def load_transcript_correction_acceptance(
         ),
         minimum_safety_probe_case_count=_positive_int(
             value["minimumSafetyProbeCaseCount"], "safety case count"
+        ),
+        minimum_corrected_case_count=_positive_int(
+            value["minimumCorrectedCaseCount"], "corrected case count"
+        ),
+        minimum_source_preserved_case_count=_positive_int(
+            value["minimumSourcePreservedCaseCount"],
+            "source-preserved case count",
+        ),
+        minimum_uncertain_case_count=_positive_int(
+            value["minimumUncertainCaseCount"], "uncertain case count"
+        ),
+        minimum_unchanged_case_count=_positive_int(
+            value["minimumUnchangedCaseCount"], "unchanged case count"
         ),
         minimum_owner_count=_positive_int(value["minimumOwnerCount"], "owner count"),
         concurrent_request_count=_positive_int(
@@ -230,6 +251,11 @@ def load_transcript_correction_acceptance(
         or acceptance.minimum_english_real_asr_case_count
         + acceptance.minimum_spanish_real_asr_case_count
         > acceptance.minimum_real_asr_case_count
+        or acceptance.minimum_corrected_case_count
+        + acceptance.minimum_source_preserved_case_count
+        + acceptance.minimum_uncertain_case_count
+        + acceptance.minimum_unchanged_case_count
+        > acceptance.minimum_case_count
     ):
         raise ValueError("transcript correction acceptance counts conflict")
     return acceptance
@@ -292,6 +318,19 @@ def evaluate_transcript_correction_qualification(
         ),
         "safetyProbeCaseCount": sum(
             item.case.source_kind == "safety-probe" for item in observations
+        ),
+        "correctedCaseCount": sum(
+            item.case.expected_disposition == "corrected" for item in observations
+        ),
+        "sourcePreservedCaseCount": sum(
+            item.case.expected_disposition == "source-preserved"
+            for item in observations
+        ),
+        "uncertainCaseCount": sum(
+            item.case.expected_disposition == "uncertain" for item in observations
+        ),
+        "unchangedCaseCount": sum(
+            item.case.expected_disposition == "unchanged" for item in observations
         ),
         "ownerCount": len({item.case.owner_id for item in observations}),
         "uniqueRealAsrAudioCount": len(
@@ -441,6 +480,8 @@ def _run_case(
             reason=reason,
             source=case.request.source_text,
             corrected=corrected,
+            source_word_errors=source_score.normalized_word.errors,
+            corrected_word_errors=corrected_score.normalized_word.errors,
         ),
     )
 
@@ -537,6 +578,14 @@ def _acceptance_checks(
         >= acceptance.minimum_spanish_real_asr_case_count,
         "safetyCoverageMet": counts["safetyProbeCaseCount"]
         >= acceptance.minimum_safety_probe_case_count,
+        "correctedCoverageMet": counts["correctedCaseCount"]
+        >= acceptance.minimum_corrected_case_count,
+        "sourcePreservedCoverageMet": counts["sourcePreservedCaseCount"]
+        >= acceptance.minimum_source_preserved_case_count,
+        "uncertainCoverageMet": counts["uncertainCaseCount"]
+        >= acceptance.minimum_uncertain_case_count,
+        "unchangedCoverageMet": counts["unchangedCaseCount"]
+        >= acceptance.minimum_unchanged_case_count,
         "multiOwnerCoverageMet": counts["ownerCount"] >= acceptance.minimum_owner_count,
         "concurrentOwnersMet": all_wave_owners_distinct
         and counts["maximumConcurrentOwnerCount"]
@@ -653,11 +702,23 @@ def _disposition_met(
     reason: str | None,
     source: str,
     corrected: str,
+    source_word_errors: int,
+    corrected_word_errors: int,
 ) -> bool:
     if status != "complete":
         return False
     if expected == "corrected":
-        return applied and corrected != source
+        return (
+            applied
+            and corrected != source
+            and corrected_word_errors < source_word_errors
+        )
+    if expected == "source-preserved":
+        return (
+            not applied
+            and reason in {"unchanged", "uncertain"}
+            and corrected == source
+        )
     if expected == "uncertain":
         return not applied and reason == "uncertain" and corrected == source
     return not applied and reason == "unchanged" and corrected == source

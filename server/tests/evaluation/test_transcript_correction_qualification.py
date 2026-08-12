@@ -10,7 +10,10 @@ import time
 import unittest
 from unittest import mock
 
-from yap_server.agents.transcript_correction import TranscriptCorrectionRequest
+from yap_server.agents.transcript_correction import (
+    TranscriptCorrectionProposedEdit,
+    TranscriptCorrectionRequest,
+)
 from yap_server.agents.transcript_correction_service import TranscriptCorrectionJobView
 from yap_server.evaluation.transcript_correction_corpus import (
     TranscriptCorrectionQualificationCase,
@@ -125,6 +128,24 @@ def _case(
     critical_tokens: tuple[str, ...] = (),
     language_bcp47: str = "en-US",
 ) -> TranscriptCorrectionQualificationCase:
+    reviewed_edits = (
+        (
+            TranscriptCorrectionProposedEdit(
+                segment_id="segment-1",
+                segment_sha256=_sha256(source),
+                source_text="doasge",
+                replacement_text="dosage",
+            ),
+        )
+        if disposition == "corrected"
+        else ()
+    )
+    basis = {
+        "corrected": "reviewed-safe-correction",
+        "source-preserved": "protected-reference-change",
+        "uncertain": "reviewed-unsafe-ambiguity",
+        "unchanged": "reference-identical",
+    }[disposition]
     return TranscriptCorrectionQualificationCase(
         case_id=case_id,
         source_kind=source_kind,
@@ -137,9 +158,11 @@ def _case(
         ),
         owner_id=owner_id,
         expected_disposition=disposition,
+        expected_disposition_basis=basis,
         request=_request(source, language_bcp47=language_bcp47),
         reference_text=reference,
         critical_tokens=critical_tokens,
+        reviewed_correction_edits=reviewed_edits,
     )
 
 
@@ -151,6 +174,10 @@ def _acceptance() -> TranscriptCorrectionAcceptance:
         minimum_english_real_asr_case_count=1,
         minimum_spanish_real_asr_case_count=0,
         minimum_safety_probe_case_count=1,
+        minimum_corrected_case_count=1,
+        minimum_source_preserved_case_count=0,
+        minimum_uncertain_case_count=0,
+        minimum_unchanged_case_count=1,
         minimum_owner_count=2,
         concurrent_request_count=2,
         maximum_p95_latency_milliseconds=1_000,
@@ -275,6 +302,25 @@ class _InvalidOutputService(_Service):
         return view
 
 
+class _RegressingEditService(_Service):
+    def submit(self, request, *, principal):
+        with self._lock:
+            self._next += 1
+            request_id = f"request-{self._next}"
+            corrected = f"{request.source_text} invented"
+            view = TranscriptCorrectionJobView(
+                request_id=request_id,
+                status="complete",
+                source_revision_sha256=request.source_revision_sha256,
+                source_sha256=request.source_sha256,
+                terminology_snapshot_sha256="c" * 64,
+                applied=True,
+                corrected_text=corrected,
+            )
+            self._views[(principal.subject_id, request_id)] = view
+        return view
+
+
 class TranscriptCorrectionQualificationTests(unittest.TestCase):
     def test_private_corpus_is_exact_strict_owner_private_and_source_bound(self) -> None:
         source = "The doasge is correct."
@@ -285,7 +331,7 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
             sort_keys=True,
         ).encode()
         value = {
-            "schemaVersion": 2,
+            "schemaVersion": 3,
             "corpusId": "scribe-private-v1",
             "cases": [
                 {
@@ -296,9 +342,18 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
                     "sourceAudioSha256": "e" * 64,
                     "ownerId": "owner-1",
                     "expectedDisposition": "corrected",
+                    "expectedDispositionBasis": "reviewed-safe-correction",
                     "request": _request(source).to_wire(),
                     "referenceText": "The dosage is correct.",
                     "criticalTokens": [],
+                    "reviewedCorrectionEdits": [
+                        {
+                            "segmentId": "segment-1",
+                            "segmentSha256": _sha256(source),
+                            "sourceText": "doasge",
+                            "replacementText": "dosage",
+                        }
+                    ],
                 }
             ],
             "terminology": [],
@@ -329,6 +384,53 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
             self.assertEqual(loaded.corpus_id, "scribe-private-v1")
             self.assertEqual(loaded.cases[0].request.source_text, source)
 
+            value["cases"][0]["reviewedCorrectionEdits"][0][
+                "replacementText"
+            ] = "dosagex"
+            changed = json.dumps(
+                value,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode()
+            path.write_bytes(changed)
+            with (
+                mock.patch(
+                    "yap_server.evaluation.transcript_correction_corpus."
+                    "load_private_transcript_correction_source_evidence",
+                    return_value=_loaded_source_evidence(
+                        evidence_sha256,
+                        source,
+                        "The dosage is correct.",
+                    ),
+                ),
+                self.assertRaisesRegex(ValueError, "does not improve word error"),
+            ):
+                load_private_transcript_correction_corpus(
+                    path,
+                    expected_sha256=hashlib.sha256(changed).hexdigest(),
+                    repository_root=REPOSITORY_ROOT,
+                    source_evidence_paths=(),
+                )
+            value["cases"][0]["reviewedCorrectionEdits"][0][
+                "replacementText"
+            ] = "dosage"
+
+            value["schemaVersion"] = 2
+            changed = json.dumps(
+                value,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode()
+            path.write_bytes(changed)
+            with self.assertRaisesRegex(ValueError, "schema differs"):
+                load_private_transcript_correction_corpus(
+                    path,
+                    expected_sha256=hashlib.sha256(changed).hexdigest(),
+                    repository_root=REPOSITORY_ROOT,
+                    source_evidence_paths=(),
+                )
+            value["schemaVersion"] = 3
+
             value["cases"][0]["unexpected"] = True
             changed = json.dumps(value, separators=(",", ":"), sort_keys=True).encode()
             path.write_bytes(changed)
@@ -347,7 +449,83 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
         self.assertEqual(acceptance.minimum_real_asr_case_count, 16)
         self.assertEqual(acceptance.minimum_english_real_asr_case_count, 8)
         self.assertEqual(acceptance.minimum_spanish_real_asr_case_count, 8)
+        self.assertEqual(acceptance.minimum_corrected_case_count, 8)
+        self.assertEqual(acceptance.minimum_source_preserved_case_count, 8)
+        self.assertEqual(acceptance.minimum_uncertain_case_count, 2)
+        self.assertEqual(acceptance.minimum_unchanged_case_count, 6)
         self.assertEqual(acceptance.plan_sha256, hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_private_corpus_binds_safe_fallback_and_uncertainty_meanings(self) -> None:
+        real_source = "Alice approved the release."
+        real_reference = "Bob approved the release."
+        source_body = json.dumps(
+            _source_evidence(real_source, real_reference),
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode()
+        uncertain_source = "The result was [inaudible]."
+        value = {
+            "schemaVersion": 3,
+            "corpusId": "scribe-private-v3",
+            "cases": [
+                {
+                    "caseId": "real-preserved",
+                    "sourceKind": "real-asr",
+                    "sourceEvidenceSha256": hashlib.sha256(source_body).hexdigest(),
+                    "sourceEvidenceCaseId": "source-case-1",
+                    "sourceAudioSha256": "e" * 64,
+                    "ownerId": "owner-1",
+                    "expectedDisposition": "source-preserved",
+                    "expectedDispositionBasis": "protected-reference-change",
+                    "request": _request(real_source).to_wire(),
+                    "referenceText": real_reference,
+                    "criticalTokens": ["Bob"],
+                    "reviewedCorrectionEdits": [],
+                },
+                {
+                    "caseId": "safety-uncertain",
+                    "sourceKind": "safety-probe",
+                    "sourceEvidenceSha256": None,
+                    "sourceEvidenceCaseId": None,
+                    "sourceAudioSha256": None,
+                    "ownerId": "owner-2",
+                    "expectedDisposition": "uncertain",
+                    "expectedDispositionBasis": "reviewed-unsafe-ambiguity",
+                    "request": _request(uncertain_source).to_wire(),
+                    "referenceText": "The result was approved.",
+                    "criticalTokens": [],
+                    "reviewedCorrectionEdits": [],
+                },
+            ],
+            "terminology": [],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            root.chmod(0o700)
+            path = root / "corpus.json"
+            body = json.dumps(value, separators=(",", ":"), sort_keys=True).encode()
+            path.write_bytes(body)
+            path.chmod(0o600)
+            evidence_sha256 = hashlib.sha256(source_body).hexdigest()
+            with mock.patch(
+                "yap_server.evaluation.transcript_correction_corpus."
+                "load_private_transcript_correction_source_evidence",
+                return_value=_loaded_source_evidence(
+                    evidence_sha256,
+                    real_source,
+                    real_reference,
+                ),
+            ):
+                loaded = load_private_transcript_correction_corpus(
+                    path,
+                    expected_sha256=hashlib.sha256(body).hexdigest(),
+                    repository_root=REPOSITORY_ROOT,
+                    source_evidence_paths=(),
+                )
+            self.assertEqual(
+                [case.expected_disposition for case in loaded.cases],
+                ["source-preserved", "uncertain"],
+            )
 
     def test_private_corpus_rejects_reused_real_audio_identity(self) -> None:
         source = "The doasge is correct."
@@ -359,12 +537,21 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
             "sourceAudioSha256": "e" * 64,
             "ownerId": "owner-1",
             "expectedDisposition": "corrected",
+            "expectedDispositionBasis": "reviewed-safe-correction",
             "request": _request(source).to_wire(),
             "referenceText": "The dosage is correct.",
             "criticalTokens": [],
+            "reviewedCorrectionEdits": [
+                {
+                    "segmentId": "segment-1",
+                    "segmentSha256": _sha256(source),
+                    "sourceText": "doasge",
+                    "replacementText": "dosage",
+                }
+            ],
         }
         value = {
-            "schemaVersion": 2,
+            "schemaVersion": 3,
             "corpusId": "scribe-private-v2",
             "cases": [case, {**case, "caseId": "real-2", "ownerId": "owner-2"}],
             "terminology": [],
@@ -392,7 +579,7 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
             sort_keys=True,
         ).encode()
         value = {
-            "schemaVersion": 2,
+            "schemaVersion": 3,
             "corpusId": "scribe-private-v2",
             "cases": [
                 {
@@ -403,9 +590,18 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
                     "sourceAudioSha256": "c" * 64,
                     "ownerId": "owner-1",
                     "expectedDisposition": "corrected",
+                    "expectedDispositionBasis": "reviewed-safe-correction",
                     "request": _request(source).to_wire(),
                     "referenceText": "The dosage is correct.",
                     "criticalTokens": [],
+                    "reviewedCorrectionEdits": [
+                        {
+                            "segmentId": "segment-1",
+                            "segmentSha256": _sha256(source),
+                            "sourceText": "doasge",
+                            "replacementText": "dosage",
+                        }
+                    ],
                 }
             ],
             "terminology": [],
@@ -640,6 +836,109 @@ class TranscriptCorrectionQualificationTests(unittest.TestCase):
         self.assertEqual(result.public_evidence["outcome"], "deterministic-no-scribe")
         self.assertFalse(
             result.public_evidence["acceptance"]["expectedDispositionMet"]
+        )
+
+    def test_regressing_edit_does_not_satisfy_corrected_disposition(self) -> None:
+        corpus = TranscriptCorrectionQualificationCorpus(
+            corpus_id="scribe-private-v1",
+            corpus_sha256="b" * 64,
+            cases=(
+                _case(
+                    "real-1",
+                    "owner-1",
+                    "The doasge is correct.",
+                    "The dosage is correct.",
+                    source_kind="real-asr",
+                    disposition="corrected",
+                ),
+            ),
+            terminology=(),
+        )
+        acceptance = replace(
+            _acceptance(),
+            minimum_case_count=1,
+            minimum_real_asr_case_count=1,
+            minimum_safety_probe_case_count=0,
+            minimum_owner_count=1,
+            concurrent_request_count=1,
+            minimum_relative_word_error_reduction=0.0,
+        )
+        warm = {
+            "state": "ready",
+            "profileId": "rapid-automation",
+            "profileSha256": "d" * 64,
+            "candidateLockSha256": "e" * 64,
+            "processGeneration": 7,
+            "startCount": 1,
+            "restartCount": 0,
+        }
+
+        result = evaluate_transcript_correction_qualification(
+            service=_RegressingEditService(),
+            corpus=corpus,
+            acceptance=acceptance,
+            observe_warm_state=lambda: warm,
+            observe_admission_state=_admission_state,
+        )
+
+        self.assertEqual(result.public_evidence["outcome"], "deterministic-no-scribe")
+        self.assertFalse(
+            result.public_evidence["acceptance"]["expectedDispositionMet"]
+        )
+        self.assertFalse(result.public_evidence["acceptance"]["noRegressedCases"])
+
+    def test_protected_reference_change_accepts_only_preserved_source(self) -> None:
+        source = "Alice approved the release."
+        corpus = TranscriptCorrectionQualificationCorpus(
+            corpus_id="scribe-private-v3",
+            corpus_sha256="b" * 64,
+            cases=(
+                _case(
+                    "real-1",
+                    "owner-1",
+                    source,
+                    "Bob approved the release.",
+                    source_kind="real-asr",
+                    disposition="source-preserved",
+                ),
+            ),
+            terminology=(),
+        )
+        acceptance = replace(
+            _acceptance(),
+            minimum_case_count=1,
+            minimum_real_asr_case_count=1,
+            minimum_safety_probe_case_count=0,
+            minimum_corrected_case_count=0,
+            minimum_source_preserved_case_count=1,
+            minimum_unchanged_case_count=0,
+            minimum_owner_count=1,
+            concurrent_request_count=1,
+            minimum_relative_word_error_reduction=0.0,
+        )
+        warm = {
+            "state": "ready",
+            "profileId": "rapid-automation",
+            "profileSha256": "d" * 64,
+            "candidateLockSha256": "e" * 64,
+            "processGeneration": 7,
+            "startCount": 1,
+            "restartCount": 0,
+        }
+
+        result = evaluate_transcript_correction_qualification(
+            service=_Service(),
+            corpus=corpus,
+            acceptance=acceptance,
+            observe_warm_state=lambda: warm,
+            observe_admission_state=_admission_state,
+        )
+
+        self.assertTrue(
+            result.public_evidence["acceptance"]["expectedDispositionMet"]
+        )
+        self.assertTrue(
+            result.public_evidence["acceptance"]["sourcePreservedCoverageMet"]
         )
 
     def test_restart_or_quality_regression_rejects_qualification(self) -> None:

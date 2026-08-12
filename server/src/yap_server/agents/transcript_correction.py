@@ -682,7 +682,9 @@ def validate_transcript_correction(
         raise ValueError("transcript correction edit coverage is too large")
     edits = tuple(resolved_edits)
     corrected_text = _apply_edits(request, edits)
-    if _protected_facts(request.source_text) != _protected_facts(corrected_text):
+    if protected_transcript_fact_values(
+        request.source_text
+    ) != protected_transcript_fact_values(corrected_text):
         raise ValueError("transcript correction changed protected transcript facts")
     for term in terminology:
         if corrected_text.count(term) < request.source_text.count(term):
@@ -852,7 +854,7 @@ def _apply_edits(
     return "".join(corrected_segments)
 
 
-def _protected_facts(
+def protected_transcript_fact_values(
     text: str,
 ) -> tuple[
     tuple[str, ...],
@@ -1020,6 +1022,7 @@ __all__ = [
     "bind_transcript_correction_request",
     "correction_request_sha256",
     "parse_transcript_correction_response",
+    "protected_transcript_fact_values",
     "protected_transcript_spans",
     "transcript_correction_response_schema",
     "validate_approved_terminology",

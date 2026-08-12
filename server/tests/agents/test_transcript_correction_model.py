@@ -197,6 +197,13 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
             "Audio is intentionally not provided; its absence is expected",
             messages[0]["content"],
         )
+        self.assertIn("'doasge' to 'dosage'", messages[0]["content"])
+        self.assertIn("'proyeto' to 'proyecto'", messages[0]["content"])
+        self.assertIn("explicit '[inaudible]' gap", messages[0]["content"])
+        self.assertIn(
+            "text-only inference cannot authorize its replacement",
+            messages[0]["content"],
+        )
         self.assertIn("Never emit an edit whose replacement equals", messages[0]["content"])
         self.assertEqual(
             schema["properties"]["requestSha256"]["const"],

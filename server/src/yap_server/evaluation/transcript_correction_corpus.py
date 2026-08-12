@@ -9,13 +9,23 @@ import re
 import stat
 from typing import Sequence
 
-from yap_server.agents.transcript_correction import TranscriptCorrectionRequest
+from yap_server.agents.transcript_correction import (
+    TranscriptCorrectionProposedEdit,
+    TranscriptCorrectionRequest,
+    TranscriptCorrectionTerminology,
+    bind_transcript_correction_request,
+    correction_request_sha256,
+    parse_transcript_correction_response,
+    protected_transcript_fact_values,
+    validate_transcript_correction,
+)
 from yap_server.private_artifact import read_json_object_with_identity
 
 from .transcript_correction_source_evidence import (
     TranscriptCorrectionSourceEvidence,
     load_private_transcript_correction_source_evidence,
 )
+from .transcript_scoring import score_transcript
 
 
 _MAXIMUM_CORPUS_BYTES = 8 * 1024 * 1024
@@ -23,10 +33,16 @@ _MAXIMUM_CASES = 128
 _MAXIMUM_REFERENCE_CHARACTERS = 32_768
 _MAXIMUM_CRITICAL_TOKENS = 128
 _MAXIMUM_TERM_RECORDS = 256
+_MAXIMUM_REVIEWED_CORRECTION_EDITS = 8
 _IDENTIFIER = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _SOURCE_KINDS = frozenset({"real-asr", "safety-probe"})
-_DISPOSITIONS = frozenset({"corrected", "unchanged", "uncertain"})
+_DISPOSITION_BASES = {
+    "corrected": "reviewed-safe-correction",
+    "source-preserved": "protected-reference-change",
+    "unchanged": "reference-identical",
+    "uncertain": "reviewed-unsafe-ambiguity",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,9 +54,11 @@ class TranscriptCorrectionQualificationCase:
     source_audio_sha256: str | None
     owner_id: str
     expected_disposition: str
+    expected_disposition_basis: str
     request: TranscriptCorrectionRequest
     reference_text: str
     critical_tokens: tuple[str, ...]
+    reviewed_correction_edits: tuple[TranscriptCorrectionProposedEdit, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,13 +106,23 @@ def load_private_transcript_correction_corpus(
     )
     if set(value) != {"schemaVersion", "corpusId", "cases", "terminology"}:
         raise ValueError("transcript correction corpus shape differs")
-    if value["schemaVersion"] != 2 or isinstance(value["schemaVersion"], bool):
+    if value["schemaVersion"] != 3 or isinstance(value["schemaVersion"], bool):
         raise ValueError("transcript correction corpus schema differs")
     corpus_id = _identifier(value["corpusId"], "corpus")
+    raw_terms = value["terminology"]
+    if not isinstance(raw_terms, list) or len(raw_terms) > _MAXIMUM_TERM_RECORDS:
+        raise ValueError("transcript correction corpus terminology count is invalid")
+    terminology = tuple(_term(item) for item in raw_terms)
+    term_ids = {item.record_id for item in terminology}
+    if len(term_ids) != len(terminology):
+        raise ValueError("transcript correction corpus terminology is duplicated")
+    terms_by_owner: dict[str, list[str]] = {}
+    for term in terminology:
+        terms_by_owner.setdefault(term.owner_id, []).append(term.canonical_form)
     raw_cases = value["cases"]
     if not isinstance(raw_cases, list) or not 1 <= len(raw_cases) <= _MAXIMUM_CASES:
         raise ValueError("transcript correction corpus case count is invalid")
-    cases = tuple(_case(item) for item in raw_cases)
+    cases = tuple(_case(item, terms_by_owner=terms_by_owner) for item in raw_cases)
     case_ids = {item.case_id for item in cases}
     if len(case_ids) != len(cases):
         raise ValueError("transcript correction corpus case identity is duplicated")
@@ -110,13 +138,6 @@ def load_private_transcript_correction_corpus(
         repository_root=root,
     )
     _bind_real_asr_cases(cases, source_evidence)
-    raw_terms = value["terminology"]
-    if not isinstance(raw_terms, list) or len(raw_terms) > _MAXIMUM_TERM_RECORDS:
-        raise ValueError("transcript correction corpus terminology count is invalid")
-    terminology = tuple(_term(item) for item in raw_terms)
-    term_ids = {item.record_id for item in terminology}
-    if len(term_ids) != len(terminology):
-        raise ValueError("transcript correction corpus terminology is duplicated")
     owners = {item.owner_id for item in cases}
     if any(item.owner_id not in owners for item in terminology):
         raise ValueError("transcript correction terminology owner is not exercised")
@@ -153,7 +174,11 @@ def _bind_real_asr_cases(
             raise ValueError("transcript correction real ASR source binding differs")
 
 
-def _case(value: object) -> TranscriptCorrectionQualificationCase:
+def _case(
+    value: object,
+    *,
+    terms_by_owner: dict[str, list[str]],
+) -> TranscriptCorrectionQualificationCase:
     if not isinstance(value, dict) or set(value) != {
         "caseId",
         "sourceKind",
@@ -162,17 +187,22 @@ def _case(value: object) -> TranscriptCorrectionQualificationCase:
         "sourceAudioSha256",
         "ownerId",
         "expectedDisposition",
+        "expectedDispositionBasis",
         "request",
         "referenceText",
         "criticalTokens",
+        "reviewedCorrectionEdits",
     }:
         raise ValueError("transcript correction corpus case shape differs")
     source_kind = value["sourceKind"]
     disposition = value["expectedDisposition"]
     if source_kind not in _SOURCE_KINDS:
         raise ValueError("transcript correction source kind is invalid")
-    if disposition not in _DISPOSITIONS:
+    if disposition not in _DISPOSITION_BASES:
         raise ValueError("transcript correction disposition is invalid")
+    disposition_basis = value["expectedDispositionBasis"]
+    if disposition_basis != _DISPOSITION_BASES[disposition]:
+        raise ValueError("transcript correction disposition basis differs")
     evidence_sha256 = value["sourceEvidenceSha256"]
     evidence_case_id = value["sourceEvidenceCaseId"]
     source_audio_sha256 = value["sourceAudioSha256"]
@@ -208,18 +238,114 @@ def _case(value: object) -> TranscriptCorrectionQualificationCase:
     tokens = tuple(_text(item, "critical token", maximum=512) for item in raw_tokens)
     if len(set(tokens)) != len(tokens):
         raise ValueError("transcript correction critical tokens are duplicated")
+    owner_id = _identifier(value["ownerId"], "owner")
+    request = TranscriptCorrectionRequest.from_wire(value["request"])
+    reviewed_edits = _reviewed_correction_edits(
+        value["reviewedCorrectionEdits"],
+        source_kind=str(source_kind),
+        disposition=str(disposition),
+        request=request,
+        reference=reference,
+        approved_terminology=tuple(terms_by_owner.get(owner_id, ())),
+    )
     return TranscriptCorrectionQualificationCase(
         case_id=_identifier(value["caseId"], "case"),
         source_kind=str(source_kind),
         source_evidence_sha256=evidence_sha256,
         source_evidence_case_id=evidence_case_id,
         source_audio_sha256=source_audio_sha256,
-        owner_id=_identifier(value["ownerId"], "owner"),
+        owner_id=owner_id,
         expected_disposition=str(disposition),
-        request=TranscriptCorrectionRequest.from_wire(value["request"]),
+        expected_disposition_basis=str(disposition_basis),
+        request=request,
         reference_text=reference,
         critical_tokens=tokens,
+        reviewed_correction_edits=reviewed_edits,
     )
+
+
+def _reviewed_correction_edits(
+    value: object,
+    *,
+    source_kind: str,
+    disposition: str,
+    request: TranscriptCorrectionRequest,
+    reference: str,
+    approved_terminology: tuple[str, ...],
+) -> tuple[TranscriptCorrectionProposedEdit, ...]:
+    if (
+        not isinstance(value, list)
+        or len(value) > _MAXIMUM_REVIEWED_CORRECTION_EDITS
+    ):
+        raise ValueError("transcript correction reviewed edit count is invalid")
+    if source_kind == "real-asr" and disposition not in {
+        "corrected",
+        "source-preserved",
+    }:
+        raise ValueError("real ASR disposition is invalid")
+    if source_kind == "safety-probe" and disposition not in {
+        "unchanged",
+        "uncertain",
+    }:
+        raise ValueError("safety-probe disposition is invalid")
+    source = request.source_text
+    source_errors = _word_errors(reference, source, request.language_bcp47)
+    source_facts = protected_transcript_fact_values(source)
+    reference_facts = protected_transcript_fact_values(reference)
+    if disposition != "corrected":
+        if value:
+            raise ValueError("non-corrected case cannot claim reviewed edits")
+        if disposition == "source-preserved" and (
+            source == reference
+            or source_errors == 0
+            or source_facts == reference_facts
+        ):
+            raise ValueError("source-preserved disposition lacks protected mismatch")
+        if disposition == "unchanged" and source != reference:
+            raise ValueError("unchanged disposition reference differs")
+        if disposition == "uncertain" and (
+            source == reference
+            or source_errors == 0
+            or source_facts != reference_facts
+        ):
+            raise ValueError("uncertain disposition evidence differs")
+        return ()
+    if not value or source == reference:
+        raise ValueError("corrected disposition lacks safe reference evidence")
+    bound = bind_transcript_correction_request(
+        request,
+        TranscriptCorrectionTerminology(
+            snapshot_sha256="0" * 64,
+            exact_forms=approved_terminology,
+        ),
+    )
+    response = parse_transcript_correction_response(
+        {
+            "schemaVersion": 2,
+            "requestSha256": correction_request_sha256(bound),
+            "sourceSha256": request.source_sha256,
+            "uncertain": False,
+            "edits": value,
+        }
+    )
+    correction = validate_transcript_correction(bound, response)
+    corrected_errors = _word_errors(
+        reference,
+        correction.corrected_text,
+        request.language_bcp47,
+    )
+    if corrected_errors >= source_errors:
+        raise ValueError("reviewed correction does not improve word error")
+    return response.edits
+
+
+def _word_errors(reference: str, candidate: str, language_bcp47: str) -> int:
+    return score_transcript(
+        reference,
+        candidate,
+        language_bcp47=language_bcp47,
+        scoring_profile="word-primary-v1",
+    ).normalized_word.errors
 
 
 def _term(value: object) -> TranscriptCorrectionQualificationTerm:
