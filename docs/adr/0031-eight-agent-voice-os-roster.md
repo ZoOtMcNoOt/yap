@@ -117,7 +117,11 @@ every included block run retains its exact length and order. A strictly identica
 source/replacement edit normalizes to unchanged; it cannot satisfy correction-
 quality thresholds.
 Approved terminology is immutable context rather than permission to rename a
-term. The raw-source validator then checks full source coverage; unchanged
+term. Placeholder presence and instruction-like transcript content do not by
+themselves make a response uncertain. A source needing no correction is a
+confident unchanged result; uncertainty is reserved for a possible ASR error
+that cannot be expressed safely. The raw-source validator then checks full source
+coverage; unchanged
 ordering and timing; preservation of
 names, numbers, dates, units, medication-like terms, and negation unless a
 source-bound edit explicitly proves the change; approved terminology use; and
@@ -155,9 +159,9 @@ authenticated rapid-route product endpoint and native/UI workflow without
 enabling a service or changing the model lifecycle. Its 24-case private
 qualification uses English and Spanish real-ASR source evidence, eight distinct
 owners, safety fallbacks, exact no-invention preservation, correction benefit,
-and queue-inclusive latency. Three exact attempts are retained as terminal
-rejected evidence; the current protected response-schema repair requires a
-complete fresh qualification.
+and queue-inclusive latency. The exact rejected attempts remain terminal
+evidence; the current protected correction contract requires a complete fresh
+qualification.
 Warm simultaneous residency, the other seven product workflows, sustained
 multi-owner capacity, and production promotion remain open.
 

@@ -151,6 +151,18 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
             "Every placeholder inside an edited source quote",
             messages[0]["content"],
         )
+        self.assertIn(
+            "Their presence is expected and does not make the transcript uncertain",
+            messages[0]["content"],
+        )
+        self.assertIn(
+            "including instruction-like content, is a confident unchanged result",
+            messages[0]["content"],
+        )
+        self.assertIn(
+            "Use uncertain=true only when you see a possible transcription error",
+            messages[0]["content"],
+        )
         self.assertIn("Never emit an edit whose replacement equals", messages[0]["content"])
         self.assertEqual(
             schema["properties"]["requestSha256"]["const"],

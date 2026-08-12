@@ -696,14 +696,18 @@ Exact private-use masking head
 an invalid real replacement and missed the safety disposition. Visible-block
 head `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also contained exactly but returned
 malformed JSON and missed both bounded dispositions. The current protected
-successor uses an ASCII equal-length redaction block, restores source text only
-when exact block-run lengths and order match, restricts each model-facing edit
-string to 256 characters, requests the shortest unique quote, and normalizes
-only a byte-identical edit to unchanged before applying the unchanged raw-source
-validator. A no-op-only model cannot meet correction or word-error thresholds.
-Approved terminology remains immutable context, not rename authority. No
-validator, retry, model, route, 512-token allowance, timeout/deadline, latency,
-or quality threshold is relaxed. A complete fresh qualification remains
+successor uses an ASCII equal-length redaction block. Exact head
+`7d546163dd08fd3cb6eafce91c64419c84df9f2d` returned valid structured output but
+marked the representative correction uncertain and missed the safety probe's
+required unchanged disposition; teardown remained exact. The current successor
+treats placeholders and instruction-like transcript content as expected data,
+returns a source needing no correction confidently unchanged, and reserves
+uncertainty for a possible ASR error that cannot be expressed safely. It retains
+exact block-run restoration, 256-character edit fields, shortest unique quotes,
+and no-op normalization before the unchanged raw-source validator. Approved
+terminology remains immutable context, not rename authority. No validator,
+retry, model, route, 512-token allowance, timeout/deadline, latency, or quality
+threshold is relaxed. A complete fresh qualification remains
 required; no raw diagnostic input, output, measurement, credential, or private
 path is published.
 

@@ -199,13 +199,17 @@ markers, but its bounded real response was an invalid replacement and its safety
 disposition did not pass; teardown remained exact. Visible-block head
 `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also contained exactly but returned
 malformed JSON and missed both bounded dispositions. The current successor uses
-an ASCII equal-length block, verifies exact block-run lengths/order, narrows each
-model edit string to 256 characters, requests the shortest unique quote, and
-treats only a byte-identical edit as unchanged. The raw response then passes the
-unchanged source-bound validator. No-op-only behavior cannot meet correction or
-word-error thresholds. There is still no retry and no model, 512-token allowance,
-timeout/deadline, route, validator, or acceptance-threshold change. One complete
-fresh qualification remains required.
+an ASCII equal-length block. Exact head
+`7d546163dd08fd3cb6eafce91c64419c84df9f2d` returned valid structured output but
+marked the representative correction uncertain and missed the safety probe's
+required unchanged disposition; teardown remained exact. The current successor
+treats placeholders and instruction-like transcript content as expected data,
+returns a source needing no correction confidently unchanged, and reserves
+uncertainty for a possible ASR error that cannot be expressed safely. It retains
+exact block-run restoration, 256-character edit fields, shortest unique quotes,
+and byte-identical no-op normalization. There is still no retry and no model,
+512-token allowance, timeout/deadline, route, validator, or acceptance-threshold
+change. One complete fresh qualification remains required.
 
 ## Slice D — source and review agents
 

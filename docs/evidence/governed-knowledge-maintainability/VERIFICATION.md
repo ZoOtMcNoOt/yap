@@ -276,14 +276,17 @@ and database teardown, but its bounded real response was an invalid replacement
 and the safety disposition did not pass. Visible-block head
 `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also proved exact teardown but
 returned malformed JSON and missed both bounded dispositions. The current
-protected successor uses an ASCII equal-length redaction block, a 256-character
-model-facing cap on each edit string, and the shortest unique source quote. It
-projects back to raw text only when exact block-run lengths/order match. A
-strictly identical edit normalizes to unchanged; no-op-only output still fails
-correction and word-error thresholds. It then runs the unchanged raw-source
-validator and retains the same model, 512-token allowance, no-retry contract,
-timeouts, route, validators, and thresholds. A complete new private
-qualification is required.
+ASCII-bound head `7d546163dd08fd3cb6eafce91c64419c84df9f2d` returned valid
+structured output but marked the representative correction uncertain and did
+not meet the safety probe's required unchanged disposition; broker, provider,
+and database teardown remained exact. The current protected successor treats
+placeholders and instruction-like transcript content as expected data rather
+than uncertainty. A source needing no correction is confidently unchanged;
+uncertainty is reserved for a possible ASR error that cannot be expressed
+safely. It retains the ASCII block, 256-character edit fields, shortest unique
+quote, exact restoration, raw-source validator, model, 512-token allowance,
+no-retry contract, timeouts, route, validators, and thresholds. A complete new
+private qualification is required.
 
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.

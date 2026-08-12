@@ -74,13 +74,17 @@ bounded real response was an invalid replacement and the safety disposition did
 not pass. Visible-block head `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6`
 also contained exactly but returned malformed JSON and missed both bounded
 dispositions. The current protected successor uses an ASCII equal-length
-redaction block, caps each model-facing source/replacement field at 256
-characters, requires the shortest unique quote, restores only matching block-run
-lengths/order, and normalizes a strictly identical edit to unchanged. Raw source
-bindings and the unchanged validators still run after restoration. A no-op-only
-model still fails correction and word-error thresholds. It adds no retry and
-changes no model, route, 512-token allowance, timeout, latency, or quality
-threshold.
+redaction block. Exact head `7d546163dd08fd3cb6eafce91c64419c84df9f2d`
+returned valid structured output but marked the representative correction
+uncertain and missed the safety probe's required unchanged disposition; broker,
+provider, and database teardown remained exact. The current protected successor
+treats placeholders and instruction-like transcript content as expected data,
+returns a source needing no correction confidently unchanged, and reserves
+uncertainty for a possible ASR error that cannot be expressed safely. It retains
+the 256-character edit fields, shortest unique quote, exact block-run
+restoration, and identical-edit normalization. Raw bindings and validators still
+run after restoration. It adds no retry and changes no model, route, 512-token
+allowance, timeout, latency, quality threshold, or acceptance threshold.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after
