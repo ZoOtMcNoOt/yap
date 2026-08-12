@@ -294,9 +294,13 @@ rejected only for excess unchanged context. Exact minimization head
 `6cf82239569760383dca88d0702d71b35f60e8ad` removed the coverage failure, but
 its three-case diagnostic produced no accepted correction: one proposal was
 outside the narrow lexical grammar and another's minimal source was repeated;
-safety and teardown passed. The current successor retains the shortest identical
-context needed for source uniqueness without splitting an immutable placeholder
-run, while retaining the
+safety and teardown passed. Exact head
+`33d9b4d0362689a58be0c16bf26de88ac55d56b2` also produced no accepted
+correction: two representatives were unchanged and the third quote, minimized
+against masked text, became ambiguous after raw protected values were restored.
+Safety and exact teardown passed. The current successor restores those values
+first, then retains the shortest whole-token context needed for raw-source
+uniqueness while retaining the
 ASCII block, 256-character edit fields, shortest unique quote, exact
 restoration, raw-source validator, model, 512-token allowance, no-retry
 contract, timeouts, route, validators, and thresholds. A complete new private

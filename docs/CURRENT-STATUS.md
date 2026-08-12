@@ -93,10 +93,13 @@ edit rejected only because its quote included too much unchanged context. The
 minimization head `6cf82239569760383dca88d0702d71b35f60e8ad` removed that
 coverage failure, but its three-case diagnostic still produced no accepted
 correction: one proposal was outside the narrow lexical grammar and another's
-minimal source was repeated; safety and teardown passed. The current successor
-retains only the shortest identical context needed to make the source unique,
-without splitting an immutable protected-placeholder run,
-before all unchanged source-bound validations. It retains
+minimal source was repeated; safety and teardown passed. Exact head
+`33d9b4d0362689a58be0c16bf26de88ac55d56b2` also applied no correction: two
+representatives were unchanged and the third quote, minimized against masked
+text, was ambiguous after raw protected values were restored. Safety and every
+teardown predicate passed. The current successor restores protected values first,
+then retains the shortest whole-token context needed to make the raw source
+unique before all unchanged source-bound validations. It retains
 the 256-character edit fields, shortest unique quote, exact block-run
 restoration, and identical-edit normalization. Raw bindings and validators still
 run after restoration. It adds no retry and changes no model, route, 512-token

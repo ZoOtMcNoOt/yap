@@ -6,6 +6,8 @@ from typing import Protocol
 
 from .transcript_correction import (
     BoundTranscriptCorrectionRequest,
+    TranscriptCorrectionProposedEdit,
+    TranscriptCorrectionResponse,
     ValidatedTranscriptCorrection,
     correction_request_sha256,
     parse_transcript_correction_response,
@@ -77,18 +79,17 @@ class TranscriptCorrectionModel:
             cancellation,
             None,
         )
-        parsed = restore_masked_transcript_correction_response(
-            request,
-            masked,
-            parse_transcript_correction_response(
-                _without_unchanged_edit_context(
+        parsed = _without_unchanged_edit_context(
+            restore_masked_transcript_correction_response(
+                request,
+                masked,
+                parse_transcript_correction_response(
                     _without_exact_noop_edits(
                         _validated_model_edit_strings(_response_content(response))
-                    ),
-                    masked.request,
-                    placeholder_character=masked.placeholder_character,
-                )
+                    )
+                ),
             ),
+            request,
         )
         return validate_transcript_correction(
             request,
@@ -265,42 +266,20 @@ def _validated_model_edit_strings(
 
 
 def _without_unchanged_edit_context(
-    value: dict[str, object],
+    response: TranscriptCorrectionResponse,
     request: BoundTranscriptCorrectionRequest,
-    *,
-    placeholder_character: str,
-) -> dict[str, object]:
-    edits = value.get("edits")
-    if not isinstance(edits, list):
-        return value
-    expected_keys = {
-        "segmentId",
-        "segmentSha256",
-        "sourceText",
-        "replacementText",
-    }
+) -> TranscriptCorrectionResponse:
     segments = {segment.segment_id: segment for segment in request.segments}
-    normalized: list[object] = []
+    normalized: list[TranscriptCorrectionProposedEdit] = []
     changed = False
-    for edit in edits:
-        if (
-            not isinstance(edit, dict)
-            or set(edit) != expected_keys
-            or not isinstance(edit.get("sourceText"), str)
-            or not isinstance(edit.get("replacementText"), str)
-        ):
-            normalized.append(edit)
-            continue
-        source = edit["sourceText"]
-        replacement = edit["replacementText"]
-        segment_id = edit.get("segmentId")
-        segment_sha256 = edit.get("segmentSha256")
-        segment = segments.get(segment_id) if isinstance(segment_id, str) else None
+    for edit in response.edits:
+        source = edit.source_text
+        replacement = edit.replacement_text
+        segment = segments.get(edit.segment_id)
         source_start = segment.text.find(source) if segment is not None else -1
         if (
             segment is None
-            or not isinstance(segment_sha256, str)
-            or segment_sha256 != segment.text_sha256
+            or edit.segment_sha256 != segment.text_sha256
             or source_start < 0
             or segment.text.find(source, source_start + 1) >= 0
         ):
@@ -334,20 +313,27 @@ def _without_unchanged_edit_context(
             replacement_difference_end=replacement_difference_end,
             common_suffix_length=suffix,
             source_occurrence_start=source_start,
-            placeholder_character=placeholder_character,
         )
         if candidate is None:
             normalized.append(edit)
             continue
         trimmed_source, trimmed_replacement = candidate
-        trimmed = {
-            **edit,
-            "sourceText": trimmed_source,
-            "replacementText": trimmed_replacement,
-        }
+        trimmed = TranscriptCorrectionProposedEdit(
+            segment_id=edit.segment_id,
+            segment_sha256=edit.segment_sha256,
+            source_text=trimmed_source,
+            replacement_text=trimmed_replacement,
+        )
         normalized.append(trimmed)
         changed |= trimmed != edit
-    return value if not changed else {**value, "edits": normalized}
+    if not changed:
+        return response
+    return TranscriptCorrectionResponse(
+        request_sha256=response.request_sha256,
+        source_sha256=response.source_sha256,
+        uncertain=response.uncertain,
+        edits=tuple(normalized),
+    )
 
 
 def _shortest_unique_edit_context(
@@ -360,8 +346,22 @@ def _shortest_unique_edit_context(
     replacement_difference_end: int,
     common_suffix_length: int,
     source_occurrence_start: int,
-    placeholder_character: str,
 ) -> tuple[str, str] | None:
+    inserted = replacement[prefix:replacement_difference_end]
+    insertion_joins_left_token = (
+        source_difference_end == prefix
+        and bool(inserted)
+        and prefix > 0
+        and _token_character(inserted[0])
+        and _token_character(source[prefix - 1])
+    )
+    insertion_joins_right_token = (
+        source_difference_end == prefix
+        and bool(inserted)
+        and prefix < len(source)
+        and _token_character(inserted[-1])
+        and _token_character(source[prefix])
+    )
     for total_context in range(prefix + common_suffix_length + 1):
         minimum_left_context = max(0, total_context - common_suffix_length)
         maximum_left_context = min(prefix, total_context)
@@ -374,16 +374,10 @@ def _shortest_unique_edit_context(
             candidate_source = source[source_slice_start:source_slice_end]
             if (
                 not candidate_source
-                or _splits_placeholder_run(
-                    segment_text,
-                    candidate_start,
-                    placeholder_character,
-                )
-                or _splits_placeholder_run(
-                    segment_text,
-                    candidate_end,
-                    placeholder_character,
-                )
+                or (insertion_joins_left_token and left_context == 0)
+                or (insertion_joins_right_token and right_context == 0)
+                or _splits_token(segment_text, candidate_start)
+                or _splits_token(segment_text, candidate_end)
                 or segment_text.find(candidate_source) < 0
                 or segment_text.find(
                     candidate_source,
@@ -401,16 +395,16 @@ def _shortest_unique_edit_context(
     return None
 
 
-def _splits_placeholder_run(
-    value: str,
-    boundary: int,
-    placeholder_character: str,
-) -> bool:
+def _splits_token(value: str, boundary: int) -> bool:
     return (
         0 < boundary < len(value)
-        and value[boundary - 1] == placeholder_character
-        and value[boundary] == placeholder_character
+        and _token_character(value[boundary - 1])
+        and _token_character(value[boundary])
     )
+
+
+def _token_character(value: str) -> bool:
+    return value.isalnum() or value == "_"
 
 
 class _DuplicateKey(ValueError):

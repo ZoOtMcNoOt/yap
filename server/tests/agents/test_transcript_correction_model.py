@@ -384,8 +384,8 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
 
         self.assertEqual(correction.corrected_text, "The dosage is 25 mg.")
         self.assertEqual(len(correction.edits), 1)
-        self.assertEqual(correction.edits[0].source_text, "Um, t")
-        self.assertEqual(correction.edits[0].replacement_text, "T")
+        self.assertEqual(correction.edits[0].source_text, "Um, the")
+        self.assertEqual(correction.edits[0].replacement_text, "The")
 
     def test_model_cannot_trim_invalid_identical_context(self) -> None:
         request = _request()
@@ -461,13 +461,13 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
             "the cat can walk and the dog can walks",
         )
         self.assertEqual(len(correction.edits), 1)
-        self.assertEqual(correction.edits[0].source_text, "g can walk")
-        self.assertEqual(correction.edits[0].replacement_text, "g can walks")
+        self.assertEqual(correction.edits[0].source_text, "dog can walk")
+        self.assertEqual(correction.edits[0].replacement_text, "dog can walks")
 
-    def test_model_does_not_split_a_protected_placeholder_for_unique_context(
+    def test_model_minimizes_context_against_restored_raw_source(
         self,
     ) -> None:
-        request = _request_for_text("Alice can walk and Bob can walk")
+        request = _request_for_text("Catalog has entries and the log is useful")
 
         def protected_context(payload: dict[str, object]) -> dict[str, object]:
             messages = payload["messages"]
@@ -483,7 +483,11 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
                         "segmentId": segment["segmentId"],
                         "segmentSha256": segment["textSha256"],
                         "sourceText": segment["text"],
-                        "replacementText": f'{segment["text"]}s',
+                        "replacementText": segment["text"].replace(
+                            " log ",
+                            " logs ",
+                            1,
+                        ),
                     }
                 ],
             }
@@ -496,10 +500,13 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         )
         correction = model.correct(request, cancellation=threading.Event())
 
-        self.assertEqual(correction.corrected_text, "Alice can walk and Bob can walks")
+        self.assertEqual(
+            correction.corrected_text,
+            "Catalog has entries and the logs is useful",
+        )
         self.assertEqual(len(correction.edits), 1)
-        self.assertEqual(correction.edits[0].source_text, " Bob can walk")
-        self.assertEqual(correction.edits[0].replacement_text, " Bob can walks")
+        self.assertEqual(correction.edits[0].source_text, " log")
+        self.assertEqual(correction.edits[0].replacement_text, " logs")
 
 
 if __name__ == "__main__":

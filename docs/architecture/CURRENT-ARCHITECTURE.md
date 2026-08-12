@@ -974,9 +974,10 @@ lengths and order, and rejects partial, missing, duplicated, reordered, or
 invented blocks. One strictly identical source/replacement edit normalizes to
 unchanged; no-op behavior cannot pass correction-quality thresholds. Approved
 terminology remains context rather than rename authority. After exact
-model-facing string bounds are checked, identical prefix and suffix context is
-trimmed to the shortest quote that remains unique without splitting a protected
-placeholder run; the resulting edit must still pass the same unique-source,
+model-facing string bounds and exact protected-block restoration are checked,
+then identical prefix and suffix context is trimmed to the shortest whole-token
+quote that remains unique in the raw segment; the resulting edit must still pass
+the same unique-source,
 protected-fact, bounded-correction, ordering, and total-coverage checks. The unchanged
 raw-source validation preserves ordering, timing, coverage, names, numbers,
 dates, units,

@@ -715,9 +715,13 @@ edit rejected only because its quote included too much unchanged context. Exact
 minimization head `6cf82239569760383dca88d0702d71b35f60e8ad` removed that
 coverage failure, but its three-case diagnostic still applied no correction:
 one proposal was outside the narrow lexical grammar and another's minimal quote
-was repeated; safety and teardown passed. The current successor retains the
-shortest identical context needed to make the source unique without splitting a
-protected placeholder run, before all unchanged source-bound validations. It retains
+was repeated; safety and teardown passed. Exact head
+`33d9b4d0362689a58be0c16bf26de88ac55d56b2` also applied no correction: two
+representatives were unchanged and the third quote, minimized against masked
+text, was ambiguous after raw protected values were restored. Safety and every
+teardown predicate passed. The current successor restores protected values first,
+then retains the shortest whole-token context needed to make the raw source
+unique before all unchanged source-bound validations. It retains
 exact block-run restoration, 256-character edit fields, shortest unique quotes,
 and no-op normalization before the unchanged raw-source validator. Approved
 terminology remains immutable context, not rename authority. No validator,
