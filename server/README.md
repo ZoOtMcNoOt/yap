@@ -657,7 +657,18 @@ every model response was rejected because the response contract required a
 request digest that was not supplied as an exact trusted binding. The repaired
 candidate places the server-computed request and source hashes into the strict
 JSON schema as constants; validation still rechecks them and no failed evidence
-is reused. A complete fresh qualification remains required.
+is reused.
+
+Exact binding-repair head `b89fd9f118b881d107cc2025b9b8a41e51b9db37`
+returned a second terminal `deterministic-no-scribe` decision with public-safe
+evidence SHA-256
+`0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
+Valid unchanged responses began passing, while edited responses reached the
+Scribe workload's 256-token ceiling before completing their structured JSON.
+The next candidate raises only the Scribe response allowance to 512 tokens;
+model residency, broker fairness, no-tool-retry behavior, timeout/deadline,
+validation, and quality thresholds are unchanged. A complete fresh qualification
+remains required.
 
 ## Local checks
 

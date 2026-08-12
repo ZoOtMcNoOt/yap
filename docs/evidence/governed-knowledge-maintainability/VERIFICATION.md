@@ -228,6 +228,20 @@ JSON-schema constants for request/source identity and passed 53 focused
 contracts with one declared platform skip plus Ruff. It requires a new complete
 private qualification; the rejected tree is not mutated, resumed, or admitted.
 
+That binding repair ran at exact head
+`b89fd9f118b881d107cc2025b9b8a41e51b9db37` and also returned terminal
+`deterministic-no-scribe`, with public-safe evidence SHA-256
+`0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
+The warm-generation, eight-owner, broker, terminal, and teardown checks remained
+sound. Exact binding enabled valid unchanged responses, but edited structured
+responses reached Scribe's 256-token output ceiling before completing their JSON
+response. An owner-private diagnostic confirmed length termination without a
+fence or reasoning wrapper; no raw output, path, or private measurement is
+published here. The current protected successor changes only the Scribe-specific
+allowance to 512 tokens. It retains the same model, broker, no-tool-retry rule,
+55-second model timeout, queue-inclusive deadline, validators, and thresholds,
+and requires a new complete qualification.
+
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.
 

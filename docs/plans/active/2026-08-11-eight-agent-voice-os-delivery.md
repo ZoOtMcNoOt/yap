@@ -160,8 +160,17 @@ rejected evidence, not a resumable attempt. Its public-safe decision SHA-256 is
 The multi-owner, warm-generation, broker, terminal, and teardown contracts held,
 but the model was asked to generate a request digest rather than copy one exact
 trusted binding, so all responses failed closed and no correction was applied.
-The successor supplies server-computed request/source hashes as schema constants
-and must run a complete fresh qualification before this slice can close.
+The binding repair at exact head `b89fd9f118b881d107cc2025b9b8a41e51b9db37`
+also returned terminal `deterministic-no-scribe`, with public-safe decision
+SHA-256
+`0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
+It proved the exact request/source bindings and began admitting valid unchanged
+responses, but edited structured responses exhausted the Scribe-specific
+256-token allowance before completing the JSON response. The next protected
+candidate raises only that workload allowance to 512 tokens. It does not change
+the warm model, owner-fair broker, retry policy, timeout, queue-inclusive
+deadline, validators, or qualification thresholds, and it must run a complete
+fresh qualification before this slice can close.
 
 ## Slice D — source and review agents
 

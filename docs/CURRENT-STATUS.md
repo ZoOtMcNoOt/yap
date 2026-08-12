@@ -28,11 +28,20 @@ All 24 requests completed across eight distinct owners and 16 unique real-audio
 items with one unchanged warm generation, an unchanged broker, and exact
 database/runtime teardown, but the model response contract asked Qwen to emit a
 request digest it had not been given as an exact binding. The server therefore
-rejected every response and published no correction. The protected successor
-binds server-computed request and source identities as exact JSON-schema
-constants without weakening validation. Fresh qualification, aggregate gate
-admission, hosted review, and merge remain open; no production capacity or SLO
-is claimed.
+rejected every response and published no correction.
+
+The protected binding repair at exact head
+`b89fd9f118b881d107cc2025b9b8a41e51b9db37` also returned terminal
+`deterministic-no-scribe`, with public-safe evidence SHA-256
+`0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
+The exact request/source binding worked and valid unchanged responses began to
+pass, but edited structured responses exhausted Scribe's 256-token output bound
+before completing the JSON response. The next protected candidate changes only
+Scribe's workload-specific output allowance to 512 tokens; the warm model,
+owner-fair broker, no-tool-retry rule, 55-second model timeout, queue-inclusive
+deadline, validators, and qualification thresholds remain unchanged. Fresh
+qualification, aggregate gate admission, hosted review, and merge remain open;
+no production capacity or SLO is claimed.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after

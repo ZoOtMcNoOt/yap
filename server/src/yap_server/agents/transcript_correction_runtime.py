@@ -40,7 +40,7 @@ _RAPID_PROFILE_SHA256 = (
 )
 _MODEL_TIMEOUT_SECONDS = 55
 _MAXIMUM_RESPONSE_BYTES = 1_048_576
-_MAXIMUM_OUTPUT_TOKENS = 256
+_MAXIMUM_OUTPUT_TOKENS = 512
 _CONFIGURATION_PATHS = (
     TRANSCRIPT_CORRECTION_ADMISSION_SOCKET,
     TRANSCRIPT_CORRECTION_PROFILE,
@@ -56,6 +56,7 @@ class TranscriptCorrectionRuntime:
     model: str
     profile_sha256: str
     candidate_lock_sha256: str
+    maximum_output_tokens: int
 
     def close(self) -> None:
         self.service.close()
@@ -136,6 +137,7 @@ def build_transcript_correction_runtime(
         model=profile.expected_model,
         profile_sha256=profile.profile_sha256,
         candidate_lock_sha256=profile.candidate_lock_sha256,
+        maximum_output_tokens=_MAXIMUM_OUTPUT_TOKENS,
     )
 
 

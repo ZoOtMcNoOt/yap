@@ -75,6 +75,7 @@ class TranscriptCorrectionRuntimeTests(unittest.TestCase):
             runtime.candidate_lock_sha256,
             "3e9218c8245863c5f1bda8166a629361b51ed23cec259d7c69f11b1dee83d013",
         )
+        self.assertEqual(runtime.maximum_output_tokens, 512)
 
         with self.assertRaisesRegex(ValueError, "organization authentication"):
             build_transcript_correction_runtime(

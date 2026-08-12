@@ -324,21 +324,31 @@ class TranscriptCorrectionServiceTests(unittest.TestCase):
         self.assertEqual(admission.calls, [])
 
     def test_terminology_resolution_is_inside_the_total_deadline(self) -> None:
-        class _SlowTerminology(_Terminology):
+        class _DeadlineTerminology(_Terminology):
             def resolve(self, **kwargs):
-                time.sleep(0.06)
                 return super().resolve(**kwargs)
 
         admission = _Admission()
-        with mock.patch.object(
-            transcript_correction_service,
-            "_JOB_DEADLINE_SECONDS",
-            0.05,
+        with (
+            mock.patch.object(
+                transcript_correction_service,
+                "_JOB_DEADLINE_SECONDS",
+                0.05,
+            ),
+            mock.patch.object(
+                transcript_correction_service,
+                "time",
+                mock.Mock(
+                    monotonic=mock.Mock(
+                        side_effect=(100.0, 100.0, 100.06),
+                    )
+                ),
+            ),
         ):
             service = _service(
                 admission=admission,
                 model=_Model(),
-                terminology=_SlowTerminology(),
+                terminology=_DeadlineTerminology(),
             )
             self.addCleanup(service.close)
             with self.assertRaises(TranscriptCorrectionServiceError) as raised:
