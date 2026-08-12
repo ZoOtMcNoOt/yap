@@ -327,20 +327,24 @@ fn finalize_owned_work_before_quit(app: &tauri::AppHandle) -> Result<(), String>
     outcome.save_error.map_or(Ok(()), Err)?;
 
     let correction_owner = app.state::<crate::transcript_correction::TranscriptCorrectionOwner>();
-    let cancellation = tauri::async_runtime::block_on(tokio::time::timeout(
-        Duration::from_secs(5),
-        correction_owner.cancel_active_requests(),
-    ));
-    match cancellation {
-        Ok(Ok(_)) => {}
-        Ok(Err(error)) => crate::diagnostics::log(&format!(
+    if let Err(error) = cancel_transcript_corrections_before_quit(&correction_owner) {
+        crate::diagnostics::log(&format!(
             "transcript correction shutdown cancellation was incomplete: {error}"
-        )),
-        Err(_) => crate::diagnostics::log(
-            "transcript correction shutdown cancellation exceeded its bounded wait",
-        ),
+        ));
     }
     Ok(())
+}
+
+pub(super) fn cancel_transcript_corrections_before_quit(
+    owner: &crate::transcript_correction::TranscriptCorrectionOwner,
+) -> Result<usize, String> {
+    tauri::async_runtime::block_on(async {
+        tokio::time::timeout(Duration::from_secs(5), owner.cancel_active_requests())
+            .await
+            .map_err(|_| {
+                "transcript correction shutdown cancellation exceeded its bounded wait".to_string()
+            })?
+    })
 }
 
 /// Show the pending shutdown failure and wait for the user to dismiss it.
