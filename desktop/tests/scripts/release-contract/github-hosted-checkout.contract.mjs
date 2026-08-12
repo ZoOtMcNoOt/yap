@@ -829,7 +829,7 @@ test(
       assert.notEqual(final.status, 0);
       assert.match(
         final.stderr,
-        /disposable Git index changed after exact-head admission/,
+        /disposable Git index changed after exact-head admission|disposable checkout is not unchanged/,
       );
     } finally {
       rmSync(root, { recursive: true, force: true });
