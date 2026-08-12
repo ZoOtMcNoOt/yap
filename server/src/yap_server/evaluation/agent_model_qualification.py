@@ -50,6 +50,7 @@ _EVIDENCE_KEYS = {
     "model",
     "revision",
     "results",
+    "proposalLatencySamples",
     "runtimePressure",
     "candidate",
     "runtimeReceiptSha256",
@@ -134,7 +135,7 @@ def _candidate_summary(
     if isinstance(run, FailedAgentCandidateRun):
         return _failed_candidate_summary(candidate, run, expected=expected)
     evidence = run.evidence
-    if set(evidence) != _EVIDENCE_KEYS or evidence["schemaVersion"] != 2:
+    if set(evidence) != _EVIDENCE_KEYS or evidence["schemaVersion"] != 3:
         raise ValueError("agent model candidate evidence differs from the contract")
     supplied_hash = evidence["evidenceSha256"]
     unhashed = dict(evidence)
@@ -164,7 +165,8 @@ def _candidate_summary(
         children=run.children,
     )
     results = evidence["results"]
-    if not isinstance(results, list):
+    proposal_latency_samples = evidence["proposalLatencySamples"]
+    if not isinstance(results, list) or not isinstance(proposal_latency_samples, list):
         raise ValueError("agent model candidate results are invalid")
     score = score_agent_model_results(
         candidate.repository_root,
@@ -176,6 +178,7 @@ def _candidate_summary(
         run.children,
         checked_head=candidate.checked_head,
         evidence_results=results,
+        evidence_proposal_latency_samples=proposal_latency_samples,
         pressure=pressure,
     )
     warm_p95 = _p95(pressure["warmLatencyMilliseconds"])
@@ -185,9 +188,27 @@ def _candidate_summary(
         for result in results
         if isinstance(result, dict)
     }
-    proposal_fixture_p95 = _p95(
-        tuple(latency_by_case[case_id] for case_id in proposal_fixture_case_ids)
-    )
+    if str(expected["workloadClass"]) == "rapid-automation":
+        proposal_fixture_p95, proposal_fixture_sample_count, proposal_samples_passed = (
+            _proposal_latency_evidence(
+                candidate.repository_root,
+                results=results,
+                samples=proposal_latency_samples,
+                workload_class=str(expected["workloadClass"]),
+                case_ids=proposal_fixture_case_ids,
+                repetitions_per_case=int(
+                    route_policy["proposalFixtureRepetitionsPerCase"]
+                ),
+            )
+        )
+    else:
+        if proposal_latency_samples:
+            raise ValueError("complex route supplied proposal latency samples")
+        proposal_fixture_p95 = _p95(
+            tuple(latency_by_case[case_id] for case_id in proposal_fixture_case_ids)
+        )
+        proposal_fixture_sample_count = 0
+        proposal_samples_passed = True
     common_fixture_p95 = _p95(
         tuple(
             latency
@@ -203,6 +224,7 @@ def _candidate_summary(
         proposal_fixture_p95=proposal_fixture_p95,
         warm_p95=warm_p95,
         c8_p95=c8_p95,
+        proposal_samples_passed=proposal_samples_passed,
         route_specific_evidence_passed=score.route_specific_evidence_passed,
     )
     eligible = (
@@ -226,6 +248,7 @@ def _candidate_summary(
         "concurrencyC8P95LatencyMilliseconds": c8_p95,
         "commonFixtureP95LatencyMilliseconds": common_fixture_p95,
         "proposalFixtureP95LatencyMilliseconds": proposal_fixture_p95,
+        "proposalFixtureSampleCount": proposal_fixture_sample_count,
         "warmP95LatencyMilliseconds": warm_p95,
         "incrementalCgroupMemoryBytes": max(
             0,
@@ -243,6 +266,7 @@ def _route_evidence_passed(
     proposal_fixture_p95: int,
     warm_p95: int,
     c8_p95: int,
+    proposal_samples_passed: bool,
     route_specific_evidence_passed: bool,
 ) -> bool:
     if not isinstance(policy, dict):
@@ -253,6 +277,7 @@ def _route_evidence_passed(
             <= policy["maximumCommonFixtureP95LatencyMilliseconds"]
             and proposal_fixture_p95
             <= policy["maximumProposalFixtureP95LatencyMilliseconds"]
+            and proposal_samples_passed
             and warm_p95 <= policy["maximumWarmP95LatencyMilliseconds"]
             and c8_p95 <= policy["maximumC8P95LatencyMilliseconds"]
         )
@@ -271,6 +296,58 @@ def _route_evidence_passed(
             and len(result["toolCalls"]) == 3
         )
     raise ValueError("agent workload class is invalid")
+
+
+def _proposal_latency_evidence(
+    repository_root: Path,
+    *,
+    results: list[object],
+    samples: list[object],
+    workload_class: str,
+    case_ids: tuple[str, ...],
+    repetitions_per_case: int,
+) -> tuple[int, int, bool]:
+    """Validate every repeated proposal semantically before deriving p95."""
+
+    expected_count = len(case_ids) * repetitions_per_case
+    if (
+        workload_class != "rapid-automation"
+        or len(case_ids) != 3
+        or repetitions_per_case != 8
+        or len(samples) != expected_count
+    ):
+        raise ValueError("agent proposal latency sample set is invalid")
+    counts = {case_id: 0 for case_id in case_ids}
+    latencies: list[int] = []
+    semantics_passed = True
+    for sample in samples:
+        if not isinstance(sample, dict) or sample.get("caseId") not in counts:
+            raise ValueError("agent proposal latency sample identity is invalid")
+        case_id = str(sample["caseId"])
+        counts[case_id] += 1
+        substituted = tuple(
+            sample
+            if isinstance(result, dict) and result.get("caseId") == case_id
+            else result
+            for result in results
+        )
+        score = score_agent_model_results(
+            repository_root,
+            substituted,
+            workload_class=workload_class,
+        )
+        semantics_passed = (
+            semantics_passed
+            and score.passed
+            and score.route_specific_evidence_passed
+        )
+        latency = sample.get("latencyMilliseconds")
+        if not _nonnegative_int(latency):
+            raise ValueError("agent proposal latency sample is invalid")
+        latencies.append(int(latency))
+    if counts != {case_id: repetitions_per_case for case_id in case_ids}:
+        raise ValueError("agent proposal latency repetitions are incomplete")
+    return _p95(latencies), len(latencies), semantics_passed
 
 
 def _failed_candidate_summary(
@@ -488,6 +565,7 @@ def _verify_runtime_children(
     *,
     checked_head: str,
     evidence_results: object,
+    evidence_proposal_latency_samples: object,
     pressure: dict[str, object],
 ) -> None:
     if any(child.get("checkedHead") != checked_head for child in children.values()):
@@ -498,9 +576,17 @@ def _verify_runtime_children(
     resources = children["resources"]
     lifecycle = children["lifecycle"]
     if (
-        set(fixtures) != {"schemaVersion", "checkedHead", "candidateId", "results"}
-        or fixtures["schemaVersion"] != 2
+        set(fixtures)
+        != {
+            "schemaVersion",
+            "checkedHead",
+            "candidateId",
+            "results",
+            "proposalLatencySamples",
+        }
+        or fixtures["schemaVersion"] != 3
         or fixtures["results"] != evidence_results
+        or fixtures["proposalLatencySamples"] != evidence_proposal_latency_samples
         or set(pressure_child)
         != {
             "schemaVersion",

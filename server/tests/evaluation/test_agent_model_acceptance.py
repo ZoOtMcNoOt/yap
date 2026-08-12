@@ -165,7 +165,7 @@ class AgentModelAcceptanceTests(unittest.TestCase):
                 REPOSITORY_ROOT / "server" / "agent-model-acceptance.json"
             ).read_text(encoding="utf-8")
         )
-        self.assertEqual(acceptance["schemaVersion"], 4)
+        self.assertEqual(acceptance["schemaVersion"], 5)
         plan = load_agent_model_acceptance(REPOSITORY_ROOT)
 
         self.assertEqual(
@@ -204,6 +204,7 @@ class AgentModelAcceptanceTests(unittest.TestCase):
                 "maximumProposalOutputTokens": 160,
                 "maximumCommonFixtureP95LatencyMilliseconds": 3_000,
                 "maximumProposalFixtureP95LatencyMilliseconds": 10_000,
+                "proposalFixtureRepetitionsPerCase": 8,
                 "proposalFixtureCaseIds": [
                     "cited-summary-proposal",
                     "terminology-preservation-en",

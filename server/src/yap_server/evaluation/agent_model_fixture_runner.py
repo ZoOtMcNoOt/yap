@@ -118,6 +118,61 @@ def run_agent_model_fixtures(
     )
 
 
+def run_agent_model_proposal_latency_samples(
+    repository_root: Path,
+    *,
+    model: str,
+    maximum_output_tokens: int,
+    final_response_protocol: str,
+    request_json: JsonRequest,
+) -> tuple[AgentFixtureResult, ...]:
+    """Repeat every frozen rapid proposal case enough times for a real p95."""
+
+    acceptance = load_agent_model_acceptance(repository_root)
+    fixture, _identity = read_json_object_with_identity(
+        repository_root / "server" / "agent-workload-fixtures.json",
+        maximum_bytes=256_000,
+        field="agent workload fixtures",
+        expected_sha256=acceptance.fixture_sha256,
+        containment_root=repository_root,
+    )
+    route_policy = acceptance.route_evidence["rapid-automation"]
+    if maximum_output_tokens != int(route_policy["maximumOutputTokens"]):
+        raise ValueError("agent proposal latency route output bound is invalid")
+    if final_response_protocol not in FINAL_RESPONSE_PROTOCOLS:
+        raise ValueError("agent proposal latency response protocol is invalid")
+    repetitions = route_policy["proposalFixtureRepetitionsPerCase"]
+    if repetitions != 8:
+        raise ValueError("agent proposal latency repetition count is invalid")
+    system_prompts = fixture["systemPrompts"]
+    cases = fixture["cases"]
+    proposal_case_ids = tuple(route_policy["proposalFixtureCaseIds"])
+    if not isinstance(system_prompts, dict) or not isinstance(cases, list):
+        raise ValueError("agent workload fixture is invalid")
+    by_id = {
+        case["caseId"]: case
+        for case in cases
+        if isinstance(case, dict) and isinstance(case.get("caseId"), str)
+    }
+    if any(case_id not in by_id for case_id in proposal_case_ids):
+        raise ValueError("agent proposal latency fixtures are incomplete")
+    return tuple(
+        _run_case_safely(
+            by_id[case_id],
+            model=model,
+            system_prompt=str(system_prompts["rapid-automation"]),
+            maximum_output_tokens=int(route_policy["maximumProposalOutputTokens"]),
+            maximum_final_response_attempts=int(
+                acceptance.runtime_tracks["maximumFinalResponseAttempts"]
+            ),
+            final_response_protocol=final_response_protocol,
+            request_json=request_json,
+        )
+        for _repetition in range(repetitions)
+        for case_id in proposal_case_ids
+    )
+
+
 def warm_agent_model_fixture_runtime(
     *,
     model: str,
@@ -480,4 +535,5 @@ def _message(response: dict[str, object]) -> dict[str, object]:
 __all__ = [
     "AgentFixtureResult",
     "run_agent_model_fixtures",
+    "run_agent_model_proposal_latency_samples",
 ]
