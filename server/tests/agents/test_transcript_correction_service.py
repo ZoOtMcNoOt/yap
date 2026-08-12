@@ -71,7 +71,7 @@ def _correction(request: BoundTranscriptCorrectionRequest):
         request,
         parse_transcript_correction_response(
             {
-                "schemaVersion": 1,
+                "schemaVersion": 2,
                 "requestSha256": correction_request_sha256(request),
                 "sourceSha256": request.source_sha256,
                 "uncertain": False,
@@ -79,8 +79,6 @@ def _correction(request: BoundTranscriptCorrectionRequest):
                     {
                         "segmentId": "segment-0001",
                         "segmentSha256": request.segments[0].text_sha256,
-                        "startCharacter": 0,
-                        "endCharacter": 5,
                         "sourceText": "Um, t",
                         "replacementText": "T",
                     }
@@ -217,7 +215,7 @@ class _NoChangeModel:
             request,
             parse_transcript_correction_response(
                 {
-                    "schemaVersion": 1,
+                    "schemaVersion": 2,
                     "requestSha256": correction_request_sha256(request),
                     "sourceSha256": request.source_sha256,
                     "uncertain": False,

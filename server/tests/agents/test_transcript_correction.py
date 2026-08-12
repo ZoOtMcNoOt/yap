@@ -73,7 +73,7 @@ def _response(
     uncertain: bool = False,
 ) -> dict[str, object]:
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "requestSha256": correction_request_sha256(request),
         "sourceSha256": request.source_sha256,
         "uncertain": uncertain,
@@ -145,8 +145,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
                     {
                         "segmentId": segment.segment_id,
                         "segmentSha256": segment.text_sha256,
-                        "startCharacter": 0,
-                        "endCharacter": 5,
                         "sourceText": "Um, t",
                         "replacementText": "T",
                     }
@@ -154,6 +152,8 @@ class TranscriptCorrectionTests(unittest.TestCase):
             )
         )
         validated = validate_transcript_correction(request, parsed)
+        self.assertEqual(validated.edits[0].start_character, 0)
+        self.assertEqual(validated.edits[0].end_character, 5)
 
         self.assertEqual(
             apply_validated_transcript_correction(request, validated),
@@ -163,6 +163,30 @@ class TranscriptCorrectionTests(unittest.TestCase):
             request.source_text,
             "Dr. Rivera did not prescribe 25 mg metoprolol on 2026-08-11. Um, the follow-up is tomorrow.",
         )
+
+    def test_server_derives_unicode_character_span_from_unique_source_quote(
+        self,
+    ) -> None:
+        request = _request(second_text="Sí, um, the follow-up is tomorrow.")
+        segment = request.segments[1]
+        parsed = parse_transcript_correction_response(
+            _response(
+                request,
+                edits=[
+                    {
+                        "segmentId": segment.segment_id,
+                        "segmentSha256": segment.text_sha256,
+                        "sourceText": "um, t",
+                        "replacementText": "t",
+                    }
+                ],
+            )
+        )
+
+        validated = validate_transcript_correction(request, parsed)
+
+        self.assertEqual(validated.edits[0].start_character, 4)
+        self.assertEqual(validated.edits[0].end_character, 9)
 
     def test_uncertain_response_must_be_edit_free_and_returns_raw_source(self) -> None:
         request = _request()
@@ -185,8 +209,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
                         {
                             "segmentId": request.segments[0].segment_id,
                             "segmentSha256": request.segments[0].text_sha256,
-                            "startCharacter": 0,
-                            "endCharacter": 2,
                             "sourceText": "Dr",
                             "replacementText": "Doctor",
                         }
@@ -209,7 +231,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
         )
         for source_text, replacement in protected_mutations:
             with self.subTest(source_text=source_text):
-                start = first.text.index(source_text)
                 parsed = parse_transcript_correction_response(
                     _response(
                         request,
@@ -217,8 +238,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
                             {
                                 "segmentId": first.segment_id,
                                 "segmentSha256": first.text_sha256,
-                                "startCharacter": start,
-                                "endCharacter": start + len(source_text),
                                 "sourceText": source_text,
                                 "replacementText": replacement,
                             }
@@ -232,7 +251,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
                     validate_transcript_correction(request, parsed)
 
         second = request.segments[1]
-        start = second.text.index("follow-up")
         parsed = parse_transcript_correction_response(
             _response(
                 request,
@@ -240,8 +258,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
                     {
                         "segmentId": second.segment_id,
                         "segmentSha256": second.text_sha256,
-                        "startCharacter": start,
-                        "endCharacter": start + len("follow-up"),
                         "sourceText": "follow-up",
                         "replacementText": "followup",
                     }
@@ -267,7 +283,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
                     terminology=(),
                 )
                 first = request.segments[0]
-                start = first.text.index(source_text)
                 parsed = parse_transcript_correction_response(
                     _response(
                         request,
@@ -275,8 +290,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
                             {
                                 "segmentId": first.segment_id,
                                 "segmentSha256": first.text_sha256,
-                                "startCharacter": start,
-                                "endCharacter": start + len(source_text),
                                 "sourceText": source_text,
                                 "replacementText": replacement_text,
                             }
@@ -298,7 +311,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
         )
         for source_text, replacement_text in cases:
             with self.subTest(source_text=source_text):
-                start = second.text.index(source_text)
                 parsed = parse_transcript_correction_response(
                     _response(
                         request,
@@ -306,8 +318,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
                             {
                                 "segmentId": second.segment_id,
                                 "segmentSha256": second.text_sha256,
-                                "startCharacter": start,
-                                "endCharacter": start + len(source_text),
                                 "sourceText": source_text,
                                 "replacementText": replacement_text,
                             }
@@ -321,7 +331,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
         request = _request()
         second = request.segments[1]
         source_text = "tomorrow"
-        start = second.text.index(source_text)
         parsed = parse_transcript_correction_response(
             _response(
                 request,
@@ -329,8 +338,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
                     {
                         "segmentId": second.segment_id,
                         "segmentSha256": second.text_sha256,
-                        "startCharacter": start,
-                        "endCharacter": start + len(source_text),
                         "sourceText": source_text,
                         "replacementText": "approved",
                     }
@@ -340,14 +347,12 @@ class TranscriptCorrectionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not a bounded correction"):
             validate_transcript_correction(request, parsed)
 
-    def test_response_binding_source_spans_and_order_fail_closed(self) -> None:
+    def test_response_source_binding_derived_spans_and_order_fail_closed(self) -> None:
         request = _request()
         second = request.segments[1]
         valid = {
             "segmentId": second.segment_id,
             "segmentSha256": second.text_sha256,
-            "startCharacter": 0,
-            "endCharacter": 5,
             "sourceText": "Um, t",
             "replacementText": "T",
         }
@@ -355,7 +360,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
             {**valid, "segmentId": "missing"},
             {**valid, "segmentSha256": "b" * 64},
             {**valid, "sourceText": "Er, "},
-            {**valid, "endCharacter": len(second.text) + 1},
         )
         for mutation in mutations:
             with self.subTest(mutation=mutation):
@@ -369,8 +373,6 @@ class TranscriptCorrectionTests(unittest.TestCase):
             valid,
             {
                 **valid,
-                "startCharacter": 3,
-                "endCharacter": 6,
                 "sourceText": " th",
                 "replacementText": " Th",
             },
@@ -380,6 +382,23 @@ class TranscriptCorrectionTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "ordered and non-overlapping"):
             validate_transcript_correction(request, parsed)
+
+        repeated = _request(second_text="um, um, the follow-up is tomorrow.")
+        parsed = parse_transcript_correction_response(
+            _response(
+                repeated,
+                edits=[
+                    {
+                        "segmentId": repeated.segments[1].segment_id,
+                        "segmentSha256": repeated.segments[1].text_sha256,
+                        "sourceText": "um",
+                        "replacementText": "uh",
+                    }
+                ],
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "edit source differs"):
+            validate_transcript_correction(repeated, parsed)
 
     def test_response_requires_exact_request_and_source_identity(self) -> None:
         request = _request()
@@ -392,6 +411,11 @@ class TranscriptCorrectionTests(unittest.TestCase):
             schema["properties"]["sourceSha256"]["const"],
             request.source_sha256,
         )
+        edit_schema = schema["properties"]["edits"]["items"]
+        self.assertEqual(
+            set(edit_schema["properties"]),
+            {"segmentId", "segmentSha256", "sourceText", "replacementText"},
+        )
         for field in ("requestSha256", "sourceSha256"):
             value = _response(request, edits=[])
             value[field] = "b" * 64
@@ -402,6 +426,11 @@ class TranscriptCorrectionTests(unittest.TestCase):
     def test_unknown_keys_and_noncanonical_types_are_rejected(self) -> None:
         request = _request()
         value = _response(request, edits=[])
+        value["schemaVersion"] = 1
+        with self.assertRaisesRegex(ValueError, "schema differs"):
+            parse_transcript_correction_response(value)
+
+        value = _response(request, edits=[])
         value["extra"] = True
         with self.assertRaisesRegex(ValueError, "shape"):
             parse_transcript_correction_response(value)
@@ -409,6 +438,23 @@ class TranscriptCorrectionTests(unittest.TestCase):
         value = _response(request, edits=[])
         value["uncertain"] = 0
         with self.assertRaisesRegex(TypeError, "uncertain"):
+            parse_transcript_correction_response(value)
+
+        segment = request.segments[1]
+        value = _response(
+            request,
+            edits=[
+                {
+                    "segmentId": segment.segment_id,
+                    "segmentSha256": segment.text_sha256,
+                    "startCharacter": 0,
+                    "endCharacter": 5,
+                    "sourceText": "Um, t",
+                    "replacementText": "T",
+                }
+            ],
+        )
+        with self.assertRaisesRegex(ValueError, "edit shape"):
             parse_transcript_correction_response(value)
 
 

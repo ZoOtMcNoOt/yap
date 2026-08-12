@@ -107,7 +107,9 @@ purpose, source, generation, and permission checks after scheduling.
 
 Scribe is transcript correction, not summarization. The server receives only a
 bounded ordered set of finalized segments with immutable source hashes. It may
-return structured edit operations tied to those hashes and spans. The product
+return structured edit operations tied to those hashes and exact source quotes.
+The model does not own character offsets: the server derives a Unicode span only
+when the quoted text occurs exactly once in the bound segment. The product
 validates full source coverage; unchanged ordering and timing; preservation of
 names, numbers, dates, units, medication-like terms, and negation unless a
 source-bound edit explicitly proves the change; approved terminology use; and
@@ -142,10 +144,12 @@ evidence SHA-256
 Hosted-green head `cf1e69a4...` merged the bounded admission slice through PR
 #158 as `84d95842...`. The current Scribe candidate now supplies one
 authenticated rapid-route product endpoint and native/UI workflow without
-enabling a service or changing the model lifecycle. Its 24-case planned private
+enabling a service or changing the model lifecycle. Its 24-case private
 qualification uses English and Spanish real-ASR source evidence, eight distinct
 owners, safety fallbacks, exact no-invention preservation, correction benefit,
-and queue-inclusive latency. That qualification has not yet been consumed.
+and queue-inclusive latency. Three exact attempts are retained as terminal
+rejected evidence; the current protected response-schema repair requires a
+complete fresh qualification.
 Warm simultaneous residency, the other seven product workflows, sustained
 multi-owner capacity, and production promotion remain open.
 

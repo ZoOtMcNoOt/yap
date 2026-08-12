@@ -963,10 +963,13 @@ finalized live or remote transcript sources, carries immutable source/revision/
 segment hashes and exact timing/language, acquires one connector credential
 lease, and exposes no bearer to React. Python binds the work to the Scribe rapid
 route and one server-authorized immutable terminology snapshot, then accepts
-only structured source-bound edits. Validation preserves ordering, timing,
-coverage, names, numbers, dates, units, medication-like tokens, negation, and
-unsupported-content boundaries. A valid no-op is distinct from an invalid or
-uncertain response. The user sees the raw/corrected diff and explicitly
+only structured source-bound edits. Response schema 2 gives the model no offset
+authority: it must quote the exact source substring, and the server derives the
+Unicode span only when the quote occurs exactly once in the bound segment.
+Validation preserves ordering, timing, coverage, names, numbers, dates, units,
+medication-like tokens, negation, and unsupported-content boundaries. A valid
+no-op is distinct from an invalid or uncertain response. The user sees the
+raw/corrected diff and explicitly
 publishes a separate hash-chained correction revision; raw ASR remains the
 authoritative export and fallback. Cancellation, source change, deadline,
 provider loss, malformed output, and server unavailability cannot publish a

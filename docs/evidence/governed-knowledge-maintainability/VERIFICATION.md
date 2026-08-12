@@ -193,7 +193,7 @@ environment and Python 3.12.
 
 ### Phase 10 Scribe prequalification public read-back
 
-- `./verification/test-portable-python-server.ps1` ran 1,178 tests with 30
+- `./verification/test-portable-python-server.ps1` ran 1,179 tests with 30
   declared platform/capability skips and no failures. The exact Scribe source-
   evidence, qualification, service, API, terminology, and contract owners are in
   that discovery.
@@ -205,7 +205,7 @@ environment and Python 3.12.
 - `desktop/src-tauri` passed Rust formatting, locked tests, and strict all-target
   Clippy. `server/orchestrator` passed formatting, locked all-target/all-feature
   tests, and strict all-target/all-feature Clippy.
-- The focused Scribe source-admission/qualification/gate/service set ran 39
+- The focused Scribe request/model/runtime/service/qualification/gate set ran 57
   tests with one declared platform skip and no failure. Public source locks bind
   only release, plan, model, membership, and evidence hashes; transcript content,
   model output, measurements, credentials, and private locations remain outside
@@ -237,10 +237,22 @@ sound. Exact binding enabled valid unchanged responses, but edited structured
 responses reached Scribe's 256-token output ceiling before completing their JSON
 response. An owner-private diagnostic confirmed length termination without a
 fence or reasoning wrapper; no raw output, path, or private measurement is
-published here. The current protected successor changes only the Scribe-specific
-allowance to 512 tokens. It retains the same model, broker, no-tool-retry rule,
-55-second model timeout, queue-inclusive deadline, validators, and thresholds,
-and requires a new complete qualification.
+published here. Exact successor
+`21559371db2a869e2c8b7ae3cd589f80c189d0cd` changed only the Scribe-specific
+allowance to 512 tokens and also returned terminal `deterministic-no-scribe`,
+with public-safe evidence SHA-256
+`a103144c66940ff55d8390c227bc73e6379cbfa6f73a199a9818839adaf48e2b`.
+All 24 cases completed across eight owners and 16 unique real-audio inputs; the
+unchanged warm generation and broker, queue-inclusive latency, critical-token,
+no-insertion/deletion/regression, database teardown, and runtime teardown checks
+held. Complete edited JSON exposed model-authored source offsets that did not
+exactly bind the quoted source. No raw output, private count, path, or measurement
+is published here. The current protected successor uses response schema 2 and
+removes offset authority from the model. The server derives each Unicode span
+only from an exact quote that occurs once in its bound segment; missing or
+ambiguous quotes fail closed. It retains the same model, 512-token allowance,
+broker, no-tool-retry rule, 55-second model timeout, queue-inclusive deadline,
+validators, and thresholds, and requires a new complete qualification.
 
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.

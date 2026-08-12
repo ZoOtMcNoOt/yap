@@ -638,7 +638,7 @@ revision only after the user reviews the raw/corrected diff. Raw ASR remains
 authoritative and exportable. The renderer receives no bearer and cannot call a
 provider directly. The removed Ollama Polish implementation is not a fallback.
 
-The public candidate passes 1,178 portable server tests with 30 declared
+The public candidate passes 1,179 portable server tests with 30 declared
 platform skips, Ruff, 367 desktop unit tests, production build, 41 browser
 scenarios, and both Rust workspaces with strict lint. Its private qualification
 is deliberately separate: 24 bilingual/safety cases, eight distinct owners,
@@ -665,10 +665,20 @@ evidence SHA-256
 `0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
 Valid unchanged responses began passing, while edited responses reached the
 Scribe workload's 256-token ceiling before completing their structured JSON.
-The next candidate raises only the Scribe response allowance to 512 tokens;
-model residency, broker fairness, no-tool-retry behavior, timeout/deadline,
-validation, and quality thresholds are unchanged. A complete fresh qualification
-remains required.
+Exact successor `21559371db2a869e2c8b7ae3cd589f80c189d0cd` raised only the
+Scribe response allowance to 512 tokens and returned terminal
+`deterministic-no-scribe`, with public-safe evidence SHA-256
+`a103144c66940ff55d8390c227bc73e6379cbfa6f73a199a9818839adaf48e2b`.
+The 24 cases, eight owners, 16 unique real-audio inputs, warm generation, broker,
+latency, preservation/no-regression, and exact database/runtime teardown checks
+held. Completed edited JSON showed that model-authored character offsets did not
+consistently bind the quoted source. Response schema 2 therefore removes those
+offsets from model authority: the model quotes an exact source substring, and
+the server derives its Unicode span only when that quote occurs exactly once in
+the bound segment. Missing or repeated text fails closed. Model residency,
+broker fairness, the 512-token allowance, no-tool-retry behavior,
+timeout/deadline, validation, and quality thresholds are unchanged. A complete
+fresh qualification remains required.
 
 ## Local checks
 

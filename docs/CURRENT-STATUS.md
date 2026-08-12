@@ -17,7 +17,7 @@ merged boundary. It replaces renderer-owned Ollama polishing with authenticated
 native/server transcript correction over finalized source-hashed segments,
 structured source-bound edits, a separate immutable accepted revision, visible
 diff, manual publication, exact cancellation, and raw-ASR fallback. Its public
-matrix is green: 1,178 portable server tests with 30 declared platform skips,
+  matrix is green: 1,179 portable server tests with 30 declared platform skips,
 Ruff, 367 desktop unit tests, production TypeScript/Vite build, 41 Playwright
 scenarios, and both Rust workspaces with formatting, tests, and strict Clippy.
 Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` then ran the
@@ -36,12 +36,23 @@ The protected binding repair at exact head
 `0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
 The exact request/source binding worked and valid unchanged responses began to
 pass, but edited structured responses exhausted Scribe's 256-token output bound
-before completing the JSON response. The next protected candidate changes only
-Scribe's workload-specific output allowance to 512 tokens; the warm model,
-owner-fair broker, no-tool-retry rule, 55-second model timeout, queue-inclusive
-deadline, validators, and qualification thresholds remain unchanged. Fresh
-qualification, aggregate gate admission, hosted review, and merge remain open;
-no production capacity or SLO is claimed.
+before completing the JSON response. Exact successor
+`21559371db2a869e2c8b7ae3cd589f80c189d0cd` raised only that workload allowance
+to 512 and also returned terminal `deterministic-no-scribe`, with public-safe
+evidence SHA-256
+`a103144c66940ff55d8390c227bc73e6379cbfa6f73a199a9818839adaf48e2b`.
+All 24 requests completed across eight owners and 16 unique real-audio items;
+the warm model, owner-fair broker, queue-inclusive latency, protected-fact and
+no-regression checks, database teardown, and runtime teardown held. Complete
+edited JSON exposed the next exact failure: model-authored character offsets did
+not consistently bind the quoted source. The protected response-schema-v2
+successor removes offset authority from the model. It accepts only an exact
+source quote that occurs once in the bound segment and derives the Unicode span
+server-side; missing or repeated quotes fail closed. The model, 512-token
+allowance, no-tool-retry rule, 55-second model timeout, queue-inclusive deadline,
+validators, and qualification thresholds remain unchanged. Fresh qualification,
+aggregate gate admission, hosted review, and merge remain open; no production
+capacity or SLO is claimed.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after
@@ -231,7 +242,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Slices 10.1–10.3 merged; Scribe candidate implemented and publicly green | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...` after all 12 hosted checks passed. The current Scribe candidate consumes only the already-warm rapid route through authenticated native/server adapters, preserves raw ASR, and publishes only a user-accepted immutable correction revision. Private bilingual/multi-owner qualification, aggregate gate, hosted merge, simultaneous residency, sustained capacity/SLOs, production operations, the other seven roles, and explicit IT/security handoffs remain open. |
+| Phase 10 | Slices 10.1–10.3 merged; Scribe candidate implemented and publicly green | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission and private Rust-to-Python transport. PR #158 merged the admission substrate as `84d95842...` after all 12 hosted checks passed. The current Scribe candidate consumes only the already-warm rapid route through authenticated native/server adapters, preserves raw ASR, publishes only a user-accepted immutable correction revision, and derives edit spans server-side from one exact source quote rather than trusting model-authored offsets. Three terminal private attempts are retained as rejected evidence; a fresh bilingual/multi-owner qualification, aggregate gate, hosted merge, simultaneous residency, sustained capacity/SLOs, production operations, the other seven roles, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact

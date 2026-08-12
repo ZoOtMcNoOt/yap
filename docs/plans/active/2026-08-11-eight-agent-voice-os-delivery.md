@@ -147,7 +147,7 @@ model validation, queue-inclusive 60-second completion, 64 server in-flight and
 256 retained-terminal bounds, trusted native source re-read before publication,
 one separately revisioned user acceptance, and a manual visible-diff UI. Old
 timingless raw transcripts are deliberately ineligible. The public matrix passes
-1,178 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
+1,179 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
 the production build, 41 browser scenarios, and both Rust workspaces with strict
 lint. The private corpus freezes 24 bilingual/safety cases across eight distinct
 owners and real ASR source evidence; its raw inputs, outputs, measurements, and
@@ -166,11 +166,22 @@ SHA-256
 `0c37120a03d3bcd7434c908ca24a086ccf785678b7c5e9ec49ec6fc051f81c74`.
 It proved the exact request/source bindings and began admitting valid unchanged
 responses, but edited structured responses exhausted the Scribe-specific
-256-token allowance before completing the JSON response. The next protected
-candidate raises only that workload allowance to 512 tokens. It does not change
-the warm model, owner-fair broker, retry policy, timeout, queue-inclusive
-deadline, validators, or qualification thresholds, and it must run a complete
-fresh qualification before this slice can close.
+256-token allowance before completing the JSON response. Exact successor
+`21559371db2a869e2c8b7ae3cd589f80c189d0cd` raised only that workload allowance
+to 512 and returned terminal `deterministic-no-scribe`, with public-safe decision
+SHA-256
+`a103144c66940ff55d8390c227bc73e6379cbfa6f73a199a9818839adaf48e2b`.
+All 24 cases completed across eight owners and 16 unique real-audio items; warm
+generation, broker identity, queue-inclusive latency, preservation/no-regression,
+database teardown, and runtime teardown held. Complete edited JSON then exposed
+model-authored offsets that did not exactly bind their quoted source. The next
+protected candidate bumps only the model response from schema 1 to schema 2:
+the model supplies segment identity, segment hash, exact source quote, and
+replacement; the server accepts the quote only when it occurs exactly once and
+derives the Unicode span. Missing or ambiguous source fails closed. It does not
+change the warm model, 512-token allowance, owner-fair broker, retry policy,
+timeout, queue-inclusive deadline, validators, or qualification thresholds, and
+it must run a complete fresh qualification before this slice can close.
 
 ## Slice D — source and review agents
 

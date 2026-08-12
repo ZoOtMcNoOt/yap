@@ -88,7 +88,9 @@ class TranscriptCorrectionModel:
                         "transcription corrections using the required JSON schema. Do not "
                         "summarize, add facts, change names, numbers, dates, units, "
                         "medications, approved terminology, or negation. Every edit must "
-                        "quote the exact source substring and its Unicode character span. "
+                        "quote enough exact surrounding source text that the substring "
+                        "occurs exactly once in its segment; the server derives its "
+                        "Unicode character span. "
                         "Copy the exact server-provided response bindings. When any "
                         "correction is uncertain, set uncertain=true and return no edits."
                     ),

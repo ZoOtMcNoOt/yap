@@ -64,7 +64,7 @@ class _Transport:
 
 def _model_response(request: BoundTranscriptCorrectionRequest) -> dict[str, object]:
     result = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "requestSha256": correction_request_sha256(request),
         "sourceSha256": request.source_sha256,
         "uncertain": False,
@@ -72,8 +72,6 @@ def _model_response(request: BoundTranscriptCorrectionRequest) -> dict[str, obje
             {
                 "segmentId": "segment-0001",
                 "segmentSha256": request.segments[0].text_sha256,
-                "startCharacter": 0,
-                "endCharacter": 5,
                 "sourceText": "Um, t",
                 "replacementText": "T",
             }
@@ -121,6 +119,7 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         )
         messages = payload["messages"]
         self.assertEqual([message["role"] for message in messages], ["system", "user"])
+        self.assertIn("occurs exactly once in its segment", messages[0]["content"])
         user_payload = json.loads(messages[1]["content"])
         self.assertEqual(user_payload["request"], request.to_wire())
         self.assertEqual(

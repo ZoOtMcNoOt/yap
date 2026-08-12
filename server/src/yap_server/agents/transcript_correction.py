@@ -498,11 +498,19 @@ class TranscriptCorrectionEdit:
 
 
 @dataclass(frozen=True, slots=True)
+class TranscriptCorrectionProposedEdit:
+    segment_id: str
+    segment_sha256: str
+    source_text: str
+    replacement_text: str
+
+
+@dataclass(frozen=True, slots=True)
 class TranscriptCorrectionResponse:
     request_sha256: str
     source_sha256: str
     uncertain: bool
-    edits: tuple[TranscriptCorrectionEdit, ...]
+    edits: tuple[TranscriptCorrectionProposedEdit, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -537,7 +545,7 @@ def parse_transcript_correction_response(
         "edits",
     }:
         raise ValueError("transcript correction response shape differs")
-    if value["schemaVersion"] != 1 or isinstance(value["schemaVersion"], bool):
+    if value["schemaVersion"] != 2 or isinstance(value["schemaVersion"], bool):
         raise ValueError("transcript correction response schema differs")
     uncertain = value["uncertain"]
     if not isinstance(uncertain, bool):
@@ -576,19 +584,28 @@ def validate_transcript_correction(
     segment_order = {
         segment.segment_id: index for index, segment in enumerate(request.segments)
     }
+    resolved_edits: list[TranscriptCorrectionEdit] = []
     previous_key: tuple[int, int] | None = None
     previous_end_by_segment: dict[str, int] = {}
     changed_source_characters = 0
-    for edit in response.edits:
-        segment = segments_by_id.get(edit.segment_id)
-        if segment is None or edit.segment_sha256 != segment.text_sha256:
+    for proposed in response.edits:
+        segment = segments_by_id.get(proposed.segment_id)
+        if segment is None or proposed.segment_sha256 != segment.text_sha256:
             raise ValueError("transcript correction edit segment identity differs")
+        start_character = segment.text.find(proposed.source_text)
         if (
-            edit.end_character > len(segment.text)
-            or segment.text[edit.start_character : edit.end_character]
-            != edit.source_text
+            start_character < 0
+            or segment.text.find(proposed.source_text, start_character + 1) >= 0
         ):
             raise ValueError("transcript correction edit source differs")
+        edit = TranscriptCorrectionEdit(
+            segment_id=proposed.segment_id,
+            segment_sha256=proposed.segment_sha256,
+            start_character=start_character,
+            end_character=start_character + len(proposed.source_text),
+            source_text=proposed.source_text,
+            replacement_text=proposed.replacement_text,
+        )
         if not _is_bounded_correction(edit, terminology):
             raise ValueError("transcript correction edit is not a bounded correction")
         if not _preserves_medication_like_terms(edit, terminology):
@@ -601,10 +618,12 @@ def validate_transcript_correction(
         previous_key = key
         previous_end_by_segment[edit.segment_id] = edit.end_character
         changed_source_characters += len(edit.source_text)
+        resolved_edits.append(edit)
     maximum_changed_characters = max(32, len(request.source_text) // 4)
     if changed_source_characters > maximum_changed_characters:
         raise ValueError("transcript correction edit coverage is too large")
-    corrected_text = _apply_edits(request, response.edits)
+    edits = tuple(resolved_edits)
+    corrected_text = _apply_edits(request, edits)
     if _protected_facts(request.source_text) != _protected_facts(corrected_text):
         raise ValueError("transcript correction changed protected transcript facts")
     for term in terminology:
@@ -613,7 +632,7 @@ def validate_transcript_correction(
     return ValidatedTranscriptCorrection(
         request_sha256=request_sha256,
         uncertain=response.uncertain,
-        edits=response.edits,
+        edits=edits,
         corrected_text=corrected_text,
     )
 
@@ -651,7 +670,7 @@ def transcript_correction_response_schema(
             "edits",
         ],
         "properties": {
-            "schemaVersion": {"type": "integer", "const": 1},
+            "schemaVersion": {"type": "integer", "const": 2},
             "requestSha256": {
                 **sha,
                 "const": request_sha256,
@@ -670,20 +689,21 @@ def transcript_correction_response_schema(
                     "required": [
                         "segmentId",
                         "segmentSha256",
-                        "startCharacter",
-                        "endCharacter",
                         "sourceText",
                         "replacementText",
                     ],
                     "properties": {
                         "segmentId": {"type": "string", "maxLength": 64},
                         "segmentSha256": sha,
-                        "startCharacter": {"type": "integer", "minimum": 0},
-                        "endCharacter": {"type": "integer", "minimum": 1},
                         "sourceText": {
                             "type": "string",
                             "minLength": 1,
                             "maxLength": _MAXIMUM_EDIT_SOURCE_CHARACTERS,
+                            "description": (
+                                "Exact source substring that occurs once in the bound "
+                                "segment; include surrounding source text when needed "
+                                "to make the occurrence unique."
+                            ),
                         },
                         "replacementText": {
                             "type": "string",
@@ -700,12 +720,10 @@ def validate_approved_terminology(values: Sequence[str]) -> tuple[str, ...]:
     return _validated_terminology(values)
 
 
-def _parse_edit(value: object) -> TranscriptCorrectionEdit:
+def _parse_edit(value: object) -> TranscriptCorrectionProposedEdit:
     if not isinstance(value, dict) or set(value) != {
         "segmentId",
         "segmentSha256",
-        "startCharacter",
-        "endCharacter",
         "sourceText",
         "replacementText",
     }:
@@ -713,17 +731,11 @@ def _parse_edit(value: object) -> TranscriptCorrectionEdit:
     segment_id = _bounded_text(value["segmentId"], "edit segment identity", 64)
     if _SEGMENT_ID.fullmatch(segment_id) is None:
         raise ValueError("transcript correction edit segment identity is invalid")
-    start_character = _integer(value["startCharacter"], "edit start", minimum=0)
-    end_character = _integer(value["endCharacter"], "edit end", minimum=1)
-    if end_character <= start_character:
-        raise ValueError("transcript correction edit span is invalid")
     source_text = _source_text(
         value["sourceText"],
         "edit source text",
         _MAXIMUM_EDIT_SOURCE_CHARACTERS,
     )
-    if len(source_text) != end_character - start_character:
-        raise ValueError("transcript correction edit span differs")
     replacement_text = value["replacementText"]
     if (
         not isinstance(replacement_text, str)
@@ -734,11 +746,9 @@ def _parse_edit(value: object) -> TranscriptCorrectionEdit:
         raise ValueError("transcript correction replacement is invalid")
     if len(replacement_text) > len(source_text) * 2 + 32:
         raise ValueError("transcript correction replacement is too large")
-    return TranscriptCorrectionEdit(
+    return TranscriptCorrectionProposedEdit(
         segment_id=segment_id,
         segment_sha256=_lower_sha256(value["segmentSha256"], "edit segment hash"),
-        start_character=start_character,
-        end_character=end_character,
         source_text=source_text,
         replacement_text=replacement_text,
     )
@@ -941,6 +951,7 @@ def _sha256_text(value: str) -> str:
 __all__ = [
     "BoundTranscriptCorrectionRequest",
     "TranscriptCorrectionEdit",
+    "TranscriptCorrectionProposedEdit",
     "TranscriptCorrectionRequest",
     "TranscriptCorrectionResponse",
     "TranscriptCorrectionSegment",
