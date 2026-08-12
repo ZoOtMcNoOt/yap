@@ -147,7 +147,7 @@ model validation, queue-inclusive 60-second completion, 64 server in-flight and
 256 retained-terminal bounds, trusted native source re-read before publication,
 one separately revisioned user acceptance, and a manual visible-diff UI. Old
 timingless raw transcripts are deliberately ineligible. The public matrix passes
-1,183 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
+1,184 server tests with 30 declared platform skips, Ruff, 367 desktop unit tests,
 the production build, 41 browser scenarios, and both Rust workspaces with strict
 lint. The private corpus freezes 24 bilingual/safety cases across eight distinct
 owners and real ASR source evidence; its raw inputs, outputs, measurements, and
@@ -196,13 +196,16 @@ so instruction-only grounding is rejected as insufficient. The current
 protected successor at `b80fe0b46c8a511b93dd2c85f8ed053d24648663`
 masked every detected immutable source span with equal-length private-use
 markers, but its bounded real response was an invalid replacement and its safety
-disposition did not pass; teardown remained exact. The current successor uses a
-visible equal-length redaction block, verifies exact block-run lengths/order,
-and treats only a byte-identical source/replacement edit as unchanged. The raw
-response then passes the unchanged source-bound validator. No-op-only behavior
-cannot meet correction or word-error thresholds. There is still no tool or
-response retry and no model, allowance, timeout/deadline, route, validator, or
-acceptance-threshold change. One complete fresh qualification remains required.
+disposition did not pass; teardown remained exact. Visible-block head
+`5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also contained exactly but returned
+malformed JSON and missed both bounded dispositions. The current successor uses
+an ASCII equal-length block, verifies exact block-run lengths/order, narrows each
+model edit string to 256 characters, requests the shortest unique quote, and
+treats only a byte-identical edit as unchanged. The raw response then passes the
+unchanged source-bound validator. No-op-only behavior cannot meet correction or
+word-error thresholds. There is still no retry and no model, 512-token allowance,
+timeout/deadline, route, validator, or acceptance-threshold change. One complete
+fresh qualification remains required.
 
 ## Slice D — source and review agents
 

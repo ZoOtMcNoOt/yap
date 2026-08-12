@@ -19,6 +19,7 @@ from .transcript_correction_masking import (
 
 
 _MAXIMUM_MODEL_RESPONSE_CHARACTERS = 256 * 1024
+_MAXIMUM_MODEL_EDIT_CHARACTERS = 256
 
 
 class TranscriptCorrectionJsonTransport(Protocol):
@@ -68,7 +69,11 @@ class TranscriptCorrectionModel:
             raise TranscriptCorrectionCancelled("transcript correction was cancelled")
         masked = mask_transcript_correction_request(request)
         response = self._transport.request(
-            self._payload(masked.request, masked.placeholders),
+            self._payload(
+                masked.request,
+                masked.placeholder_character,
+                masked.placeholders,
+            ),
             cancellation,
             None,
         )
@@ -87,6 +92,7 @@ class TranscriptCorrectionModel:
     def _payload(
         self,
         request: BoundTranscriptCorrectionRequest,
+        placeholder_character: str,
         placeholders: tuple[str, ...],
     ) -> dict[str, object]:
         return {
@@ -105,9 +111,11 @@ class TranscriptCorrectionModel:
                         "replacement with identical spelling and order; never add, remove, "
                         "rewrite, or interpret one. Approved terminology is immutable "
                         "context, not permission to invent or rename a term. "
-                        "quote enough exact surrounding source text that the substring "
-                        "occurs exactly once in its segment; the server derives its "
-                        "Unicode character span. "
+                        "Never emit an edit whose replacement equals its source. If no "
+                        "safe correction exists, return an empty edits array. Use the "
+                        "shortest exact source quote that occurs once; never quote a whole "
+                        "segment when a shorter unique quote exists. The server derives "
+                        "the Unicode character span. "
                         "Copy the exact server-provided response bindings. When any "
                         "correction is uncertain, set uncertain=true and return no edits."
                     ),
@@ -117,6 +125,7 @@ class TranscriptCorrectionModel:
                     "content": json.dumps(
                         {
                             "request": request.to_wire(),
+                            "immutablePlaceholderCharacter": placeholder_character,
                             "immutablePlaceholders": list(placeholders),
                             "responseBinding": {
                                 "requestSha256": correction_request_sha256(request),
@@ -137,10 +146,25 @@ class TranscriptCorrectionModel:
                 "json_schema": {
                     "name": "transcript_correction",
                     "strict": True,
-                    "schema": transcript_correction_response_schema(request),
+                    "schema": _model_response_schema(request),
                 },
             },
         }
+
+
+def _model_response_schema(
+    request: BoundTranscriptCorrectionRequest,
+) -> dict[str, object]:
+    schema = transcript_correction_response_schema(request)
+    properties = schema["properties"]
+    edits = properties["edits"]  # type: ignore[index]
+    item = edits["items"]  # type: ignore[index]
+    edit_properties = item["properties"]  # type: ignore[index]
+    edit_properties["sourceText"]["maxLength"] = _MAXIMUM_MODEL_EDIT_CHARACTERS  # type: ignore[index]
+    edit_properties["replacementText"]["maxLength"] = (  # type: ignore[index]
+        _MAXIMUM_MODEL_EDIT_CHARACTERS
+    )
+    return schema
 
 
 def _response_content(response: object) -> dict[str, object]:

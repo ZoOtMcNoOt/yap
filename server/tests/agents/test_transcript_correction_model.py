@@ -13,6 +13,9 @@ from yap_server.agents.transcript_correction import (
     bind_transcript_correction_request,
 )
 from yap_server.agents.transcript_correction_model import TranscriptCorrectionModel
+from yap_server.agents.transcript_correction_masking import (
+    mask_transcript_correction_request,
+)
 
 
 def _sha256(value: str) -> str:
@@ -42,7 +45,7 @@ def _request() -> BoundTranscriptCorrectionRequest:
     )
     return bind_transcript_correction_request(
         source_request,
-        TranscriptCorrectionTerminology("c" * 64, ("dosage",)),
+        TranscriptCorrectionTerminology("c" * 64, ("dosage", "~reserved")),
     )
 
 
@@ -88,6 +91,16 @@ def _model_response(payload: dict[str, object]) -> dict[str, object]:
 
 
 class TranscriptCorrectionModelTests(unittest.TestCase):
+    def test_masking_fails_closed_when_ascii_placeholders_are_exhausted(self) -> None:
+        request = _request()
+        bound = bind_transcript_correction_request(
+            request.source,
+            TranscriptCorrectionTerminology("d" * 64, ("~^@#=_+|%&*!",)),
+        )
+
+        with self.assertRaisesRegex(ValueError, "exhausts protected placeholders"):
+            mask_transcript_correction_request(bound)
+
     def test_model_uses_exact_source_bound_json_schema_request(self) -> None:
         request = _request()
         transport = _Transport(_model_response)
@@ -116,13 +129,18 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         schema = response_format["json_schema"]["schema"]  # type: ignore[index]
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(schema["properties"]["edits"]["maxItems"], 128)
+        edit_schema = schema["properties"]["edits"]["items"]["properties"]
+        self.assertEqual(edit_schema["sourceText"]["maxLength"], 256)
+        self.assertEqual(edit_schema["replacementText"]["maxLength"], 256)
         messages = payload["messages"]
         self.assertEqual([message["role"] for message in messages], ["system", "user"])
-        self.assertIn("occurs exactly once in its segment", messages[0]["content"])
+        self.assertIn("shortest exact source quote that occurs once", messages[0]["content"])
         user_payload = json.loads(messages[1]["content"])
         self.assertNotEqual(user_payload["request"], request.to_wire())
         placeholders = user_payload["immutablePlaceholders"]
         self.assertEqual(len(placeholders), 3)
+        self.assertEqual(user_payload["immutablePlaceholderCharacter"], "^")
+        self.assertTrue(all(set(token) == {"^"} for token in placeholders))
         masked_text = user_payload["request"]["segments"][0]["text"]
         self.assertEqual(len(masked_text), len(request.source_text))
         self.assertNotIn("dosage", masked_text)
@@ -133,6 +151,7 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
             "Every placeholder inside an edited source quote",
             messages[0]["content"],
         )
+        self.assertIn("Never emit an edit whose replacement equals", messages[0]["content"])
         self.assertEqual(
             schema["properties"]["requestSha256"]["const"],
             user_payload["responseBinding"]["requestSha256"],
@@ -143,7 +162,7 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         )
         self.assertEqual(
             user_payload["request"]["approvedTerminology"],
-            ["dosage"],
+            ["dosage", "~reserved"],
         )
 
     def test_model_response_must_be_one_json_content_message(self) -> None:

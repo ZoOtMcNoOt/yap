@@ -110,10 +110,12 @@ bounded ordered set of finalized segments with immutable source hashes. It may
 return structured edit operations tied to those hashes and exact source quotes.
 The model does not own character offsets: the server derives a Unicode span only
 when the quoted text occurs exactly once in the bound segment. Before inference,
-the product replaces protected source spans with equal-length visible redaction
-blocks. Projection restores the original values only when every included block
-run retains its exact length and order. A strictly identical source/replacement
-edit normalizes to unchanged; it cannot satisfy correction-quality thresholds.
+the product replaces protected source spans with equal-length ASCII redaction
+blocks. The model contract restricts each edit string to 256 characters and asks
+for the shortest unique quote. Projection restores the original values only when
+every included block run retains its exact length and order. A strictly identical
+source/replacement edit normalizes to unchanged; it cannot satisfy correction-
+quality thresholds.
 Approved terminology is immutable context rather than permission to rename a
 term. The raw-source validator then checks full source coverage; unchanged
 ordering and timing; preservation of

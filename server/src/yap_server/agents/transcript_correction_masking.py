@@ -16,20 +16,18 @@ from .transcript_correction import (
 
 
 _VISIBLE_PLACEHOLDERS = (
-    "▰",
-    "◆",
-    "●",
-    "■",
-    "▲",
-    "★",
-    "♦",
-    "♣",
-    "♠",
-    "♥",
-    "¤",
-    "§",
-    "¶",
-    "※",
+    "~",
+    "^",
+    "@",
+    "#",
+    "=",
+    "_",
+    "+",
+    "|",
+    "%",
+    "&",
+    "*",
+    "!",
 )
 
 
@@ -81,7 +79,9 @@ def mask_transcript_correction_request(
     spans_by_segment: dict[str, list[TranscriptCorrectionProtectedSpan]] = {}
     for span in protected_transcript_spans(request):
         spans_by_segment.setdefault(span.segment_id, []).append(span)
-    occupied_source = request.source_text
+    occupied_source = "\0".join(
+        (request.source_text, *request.approved_terminology)
+    )
     placeholder_character = _new_placeholder_character(occupied_source)
     masked_segments: list[_MaskedSegment] = []
     placeholders: list[str] = []
@@ -232,10 +232,6 @@ def restore_masked_transcript_correction_response(
 
 def _new_placeholder_character(source: str) -> str:
     for candidate in _VISIBLE_PLACEHOLDERS:
-        if candidate not in source:
-            return candidate
-    for value in range(0xE000, 0xF900):
-        candidate = chr(value)
         if candidate not in source:
             return candidate
     raise ValueError("transcript correction source exhausts protected placeholders")

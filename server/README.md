@@ -638,7 +638,7 @@ revision only after the user reviews the raw/corrected diff. Raw ASR remains
 authoritative and exportable. The renderer receives no bearer and cannot call a
 provider directly. The removed Ollama Polish implementation is not a fallback.
 
-The public candidate passes 1,183 portable server tests with 30 declared
+The public candidate passes 1,184 portable server tests with 30 declared
 platform skips, Ruff, 367 desktop unit tests, production build, 41 browser
 scenarios, and both Rust workspaces with strict lint. Its private qualification
 is deliberately separate: 24 bilingual/safety cases, eight distinct owners,
@@ -693,14 +693,17 @@ correctly rejected the name change. Exact prompt-grounding head
 but repeated that unsafe edit, proving prompt compliance alone insufficient.
 Exact private-use masking head
 `b80fe0b46c8a511b93dd2c85f8ed053d24648663` retained exact teardown but returned
-an invalid real replacement and missed the safety disposition. The current
-protected successor uses one visible equal-length redaction block, restores
-source text only when exact block-run lengths and order match, and normalizes
-only a byte-identical source/replacement edit to unchanged before applying the
-unchanged raw-source validator. A no-op-only model cannot meet correction or
-word-error thresholds. Approved terminology remains immutable context, not
-rename authority. No validator, retry, model, route, token, timeout/deadline,
-latency, or quality threshold is relaxed. A complete fresh qualification remains
+an invalid real replacement and missed the safety disposition. Visible-block
+head `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also contained exactly but returned
+malformed JSON and missed both bounded dispositions. The current protected
+successor uses an ASCII equal-length redaction block, restores source text only
+when exact block-run lengths and order match, restricts each model-facing edit
+string to 256 characters, requests the shortest unique quote, and normalizes
+only a byte-identical edit to unchanged before applying the unchanged raw-source
+validator. A no-op-only model cannot meet correction or word-error thresholds.
+Approved terminology remains immutable context, not rename authority. No
+validator, retry, model, route, 512-token allowance, timeout/deadline, latency,
+or quality threshold is relaxed. A complete fresh qualification remains
 required; no raw diagnostic input, output, measurement, credential, or private
 path is published.
 

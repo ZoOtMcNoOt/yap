@@ -193,7 +193,7 @@ environment and Python 3.12.
 
 ### Phase 10 Scribe prequalification public read-back
 
-- `./verification/test-portable-python-server.ps1` ran 1,183 tests with 30
+- `./verification/test-portable-python-server.ps1` ran 1,184 tests with 30
   declared platform/capability skips and no failures. The exact Scribe source-
   evidence, qualification, service, API, terminology, and contract owners are in
   that discovery.
@@ -205,7 +205,7 @@ environment and Python 3.12.
 - `desktop/src-tauri` passed Rust formatting, locked tests, and strict all-target
   Clippy. `server/orchestrator` passed formatting, locked all-target/all-feature
   tests, and strict all-target/all-feature Clippy.
-- The focused Scribe request/model/runtime/service/qualification/gate set ran 61
+- The focused Scribe request/model/runtime/service/qualification/gate set ran 62
   tests with one declared platform skip and no failure. Public source locks bind
   only release, plan, model, membership, and evidence hashes; transcript content,
   model output, measurements, credentials, and private locations remain outside
@@ -273,14 +273,17 @@ improve its frozen reference. Prompt-only preservation is therefore rejected as
 insufficient and remains non-promotional. Exact private-use masking head
 `b80fe0b46c8a511b93dd2c85f8ed053d24648663` retained exact broker, provider,
 and database teardown, but its bounded real response was an invalid replacement
-and the safety disposition did not pass. The current protected successor uses a
-visible equal-length redaction block and projects back to raw text only when the
-response preserves exact block-run lengths and order. A strictly identical
-source/replacement edit normalizes to unchanged; no-op-only output still fails
+and the safety disposition did not pass. Visible-block head
+`5bc8d10e8a3059941b00fa662dc2a4fbbff816a6` also proved exact teardown but
+returned malformed JSON and missed both bounded dispositions. The current
+protected successor uses an ASCII equal-length redaction block, a 256-character
+model-facing cap on each edit string, and the shortest unique source quote. It
+projects back to raw text only when exact block-run lengths/order match. A
+strictly identical edit normalizes to unchanged; no-op-only output still fails
 correction and word-error thresholds. It then runs the unchanged raw-source
-validator and retains the same model, response allowance, no-retry contract,
-timeouts, route, validators, and thresholds. A complete new private qualification
-is required.
+validator and retains the same model, 512-token allowance, no-retry contract,
+timeouts, route, validators, and thresholds. A complete new private
+qualification is required.
 
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.

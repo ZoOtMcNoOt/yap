@@ -17,7 +17,7 @@ merged boundary. It replaces renderer-owned Ollama polishing with authenticated
 native/server transcript correction over finalized source-hashed segments,
 structured source-bound edits, a separate immutable accepted revision, visible
 diff, manual publication, exact cancellation, and raw-ASR fallback. Its public
-matrix is green: 1,183 portable server tests with 30 declared platform skips,
+matrix is green: 1,184 portable server tests with 30 declared platform skips,
 Ruff, 367 desktop unit tests, production TypeScript/Vite build, 41 Playwright
 scenarios, and both Rust workspaces with formatting, tests, and strict Clippy.
 Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` then ran the
@@ -71,13 +71,16 @@ not prevent the same unauthorized name edit. That diagnostic is non-promotional.
 Exact private-use masking head
 `b80fe0b46c8a511b93dd2c85f8ed053d24648663` retained exact teardown but its
 bounded real response was an invalid replacement and the safety disposition did
-not pass. The current protected successor uses a visible equal-length redaction
-block for every protected source span, restores it only when exact block-run
-lengths and order match, and normalizes a strictly identical source/replacement
-edit to unchanged. Raw source bindings and the unchanged validators still run
-after restoration. A model that only returns no-ops still fails correction and
-word-error thresholds. It adds no retry and changes no model, route, timeout,
-token, latency, or quality threshold.
+not pass. Visible-block head `5bc8d10e8a3059941b00fa662dc2a4fbbff816a6`
+also contained exactly but returned malformed JSON and missed both bounded
+dispositions. The current protected successor uses an ASCII equal-length
+redaction block, caps each model-facing source/replacement field at 256
+characters, requires the shortest unique quote, restores only matching block-run
+lengths/order, and normalizes a strictly identical edit to unchanged. Raw source
+bindings and the unchanged validators still run after restoration. A no-op-only
+model still fails correction and word-error thresholds. It adds no retry and
+changes no model, route, 512-token allowance, timeout, latency, or quality
+threshold.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after
