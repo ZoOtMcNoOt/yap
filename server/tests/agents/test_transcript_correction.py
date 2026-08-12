@@ -11,6 +11,7 @@ from yap_server.agents.transcript_correction import (
     bind_transcript_correction_request,
     correction_request_sha256,
     parse_transcript_correction_response,
+    transcript_correction_response_schema,
     validate_transcript_correction,
 )
 
@@ -382,6 +383,15 @@ class TranscriptCorrectionTests(unittest.TestCase):
 
     def test_response_requires_exact_request_and_source_identity(self) -> None:
         request = _request()
+        schema = transcript_correction_response_schema(request)
+        self.assertEqual(
+            schema["properties"]["requestSha256"]["const"],
+            correction_request_sha256(request),
+        )
+        self.assertEqual(
+            schema["properties"]["sourceSha256"]["const"],
+            request.source_sha256,
+        )
         for field in ("requestSha256", "sourceSha256"):
             value = _response(request, edits=[])
             value[field] = "b" * 64

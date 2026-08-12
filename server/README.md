@@ -649,6 +649,16 @@ measurement, credential, or filesystem path belongs in Git or hosted logs.
 Until that exact qualification and aggregate gate pass, Scribe is an
 unpromoted candidate rather than production availability or capacity evidence.
 
+Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` returned terminal
+`deterministic-no-scribe` evidence SHA-256
+`80718c6c8ad2fedd6bec5300c99a2a0af8ae71473c2457313a79b9138f5d8415`.
+The warm, broker, eight-owner, terminal, and teardown boundaries passed, but
+every model response was rejected because the response contract required a
+request digest that was not supplied as an exact trusted binding. The repaired
+candidate places the server-computed request and source hashes into the strict
+JSON schema as constants; validation still rechecks them and no failed evidence
+is reused. A complete fresh qualification remains required.
+
 ## Local checks
 
 ```powershell

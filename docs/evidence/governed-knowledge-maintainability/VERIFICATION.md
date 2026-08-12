@@ -216,6 +216,18 @@ qualification. They do not claim a qualifying Scribe outcome, simultaneous GPU
 execution, sustained capacity, a production SLO, hosted merge, or delivery of
 the other seven roles.
 
+Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` subsequently
+returned terminal `deterministic-no-scribe` with public-safe evidence SHA-256
+`80718c6c8ad2fedd6bec5300c99a2a0af8ae71473c2457313a79b9138f5d8415`.
+The 24-case/eight-owner/16-audio membership, unchanged warm generation and
+broker, zero terminal failures, and teardown checks held. The quality decision
+failed closed because the model response contract required a computed request
+digest without supplying it as an exact response binding, so all outputs were
+invalid and no correction was applied. The successor uses trusted dynamic
+JSON-schema constants for request/source identity and passed 53 focused
+contracts with one declared platform skip plus Ruff. It requires a new complete
+private qualification; the rejected tree is not mutated, resumed, or admitted.
+
 These checks validate the repair seams while preserving the separate one-spend
 rule for the final aggregate matrix.
 

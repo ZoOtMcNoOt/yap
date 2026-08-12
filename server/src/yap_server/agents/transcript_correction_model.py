@@ -7,6 +7,7 @@ from typing import Protocol
 from .transcript_correction import (
     BoundTranscriptCorrectionRequest,
     ValidatedTranscriptCorrection,
+    correction_request_sha256,
     parse_transcript_correction_response,
     transcript_correction_response_schema,
     validate_transcript_correction,
@@ -88,8 +89,8 @@ class TranscriptCorrectionModel:
                         "summarize, add facts, change names, numbers, dates, units, "
                         "medications, approved terminology, or negation. Every edit must "
                         "quote the exact source substring and its Unicode character span. "
-                        "When any correction is uncertain, set uncertain=true and return "
-                        "no edits."
+                        "Copy the exact server-provided response bindings. When any "
+                        "correction is uncertain, set uncertain=true and return no edits."
                     ),
                 },
                 {
@@ -97,6 +98,10 @@ class TranscriptCorrectionModel:
                     "content": json.dumps(
                         {
                             "request": request.to_wire(),
+                            "responseBinding": {
+                                "requestSha256": correction_request_sha256(request),
+                                "sourceSha256": request.source_sha256,
+                            },
                         },
                         ensure_ascii=False,
                         separators=(",", ":"),
@@ -112,7 +117,7 @@ class TranscriptCorrectionModel:
                 "json_schema": {
                     "name": "transcript_correction",
                     "strict": True,
-                    "schema": transcript_correction_response_schema(),
+                    "schema": transcript_correction_response_schema(request),
                 },
             },
         }

@@ -20,8 +20,19 @@ diff, manual publication, exact cancellation, and raw-ASR fallback. Its public
 matrix is green: 1,178 portable server tests with 30 declared platform skips,
 Ruff, 367 desktop unit tests, production TypeScript/Vite build, 41 Playwright
 scenarios, and both Rust workspaces with formatting, tests, and strict Clippy.
-Private bilingual/multi-owner Scribe qualification, aggregate gate admission,
-hosted review, and merge remain open; no production capacity or SLO is claimed.
+Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` then ran the
+private bilingual/multi-owner gate and returned terminal
+`deterministic-no-scribe` evidence SHA-256
+`80718c6c8ad2fedd6bec5300c99a2a0af8ae71473c2457313a79b9138f5d8415`.
+All 24 requests completed across eight distinct owners and 16 unique real-audio
+items with one unchanged warm generation, an unchanged broker, and exact
+database/runtime teardown, but the model response contract asked Qwen to emit a
+request digest it had not been given as an exact binding. The server therefore
+rejected every response and published no correction. The protected successor
+binds server-computed request and source identities as exact JSON-schema
+constants without weakening validation. Fresh qualification, aggregate gate
+admission, hosted review, and merge remain open; no production capacity or SLO
+is claimed.
 [PR #154](https://github.com/mcnatg1/yap/pull/154) previously merged the
 post-Phase-9 documentation reconciliation as
 `fc8a16510fa27514db244eb641dea582918a940b` after

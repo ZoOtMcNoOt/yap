@@ -632,7 +632,13 @@ def apply_validated_transcript_correction(
     return request.source_text if correction.uncertain else correction.corrected_text
 
 
-def transcript_correction_response_schema() -> dict[str, object]:
+def transcript_correction_response_schema(
+    request: BoundTranscriptCorrectionRequest,
+) -> dict[str, object]:
+    if not isinstance(request, BoundTranscriptCorrectionRequest):
+        raise TypeError("transcript correction schema request is invalid")
+    request_sha256 = correction_request_sha256(request)
+    source_sha256 = request.source_sha256
     sha = {"type": "string", "pattern": "^[0-9a-f]{64}$"}
     return {
         "type": "object",
@@ -646,8 +652,14 @@ def transcript_correction_response_schema() -> dict[str, object]:
         ],
         "properties": {
             "schemaVersion": {"type": "integer", "const": 1},
-            "requestSha256": sha,
-            "sourceSha256": sha,
+            "requestSha256": {
+                **sha,
+                "const": request_sha256,
+            },
+            "sourceSha256": {
+                **sha,
+                "const": source_sha256,
+            },
             "uncertain": {"type": "boolean"},
             "edits": {
                 "type": "array",

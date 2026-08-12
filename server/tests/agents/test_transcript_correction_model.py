@@ -111,10 +111,25 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         schema = response_format["json_schema"]["schema"]  # type: ignore[index]
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(schema["properties"]["edits"]["maxItems"], 128)
+        self.assertEqual(
+            schema["properties"]["requestSha256"]["const"],
+            correction_request_sha256(request),
+        )
+        self.assertEqual(
+            schema["properties"]["sourceSha256"]["const"],
+            request.source_sha256,
+        )
         messages = payload["messages"]
         self.assertEqual([message["role"] for message in messages], ["system", "user"])
         user_payload = json.loads(messages[1]["content"])
         self.assertEqual(user_payload["request"], request.to_wire())
+        self.assertEqual(
+            user_payload["responseBinding"],
+            {
+                "requestSha256": correction_request_sha256(request),
+                "sourceSha256": request.source_sha256,
+            },
+        )
         self.assertEqual(
             user_payload["request"]["approvedTerminology"],
             ["dosage"],

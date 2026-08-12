@@ -154,6 +154,15 @@ owners and real ASR source evidence; its raw inputs, outputs, measurements, and
 paths remain outside Git. This paragraph records implementation readiness, not a
 qualification or production-capacity result.
 
+Exact candidate `a53333a577534148b11a49f6f8625ce4ac9b2d00` is terminal
+rejected evidence, not a resumable attempt. Its public-safe decision SHA-256 is
+`80718c6c8ad2fedd6bec5300c99a2a0af8ae71473c2457313a79b9138f5d8415`.
+The multi-owner, warm-generation, broker, terminal, and teardown contracts held,
+but the model was asked to generate a request digest rather than copy one exact
+trusted binding, so all responses failed closed and no correction was applied.
+The successor supplies server-computed request/source hashes as schema constants
+and must run a complete fresh qualification before this slice can close.
+
 ## Slice D — source and review agents
 
 - [ ] Archivist consumes only durable reviewed-source admissions and owns
