@@ -2,9 +2,10 @@
 
 **Status:** Active; Slices A and B merged through PRs #157/#158. Slice C Scribe
 merged through PR #164. Slice D Archivist merged through PR #165 as
-`2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`. Student's evidence-index repair
-is complete-portable-test green on the unchanged full Qwen rapid profile;
-replacement private qualification, hosted review/merge, Curator, shared product
+`2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`. Student's topic-copy prompt
+repair is complete-portable-test green on the unchanged full Qwen rapid profile;
+replacement private qualification, hosted review/merge,
+Curator, shared product
 integration, simultaneous-capacity evidence, and later role slices remain
 open.
 
@@ -287,9 +288,10 @@ context. The model sees ordered evidence indexes and text and returns exactly
 one source subject, evidence index, and support quote. The server binds the
 frozen evidence and complete citation identity, derives its span, and alone
 renders the fixed question template. The model cannot write question wording,
-source, proposals, or knowledge. The current focused set runs 34 total tests:
-32 pass and two are declared database skips. The complete portable server suite
-runs 1,241 total tests: 1,207 pass and 34 are declared skips.
+source, proposals, or knowledge. The prompt explicitly rejects topic-derived
+subjects absent from the selected quote/evidence. The current focused set runs
+34 total tests: 32 pass and two are declared database skips. The protected
+successor also passed 1,241 portable tests (1,207 passed and 34 declared skips).
 
 Exact head `452c8b76a9a60681a962048caed12749e8bb80d0` originally returned
 `student-learning-questions-qualified` with public-safe semantic evidence
@@ -316,6 +318,14 @@ Six of eight cases completed and two failed closed while the unchanged warm
 profile/provider, broker, synchronized eight-owner wave, PostgreSQL boundaries,
 and exact teardown held. It is inadmissible for the protected evidence-index
 successor and is not reused.
+
+Exact head `0970d74c7961a63bd1b2366bc0ecef6b5fc55714` returned terminal
+`deterministic-no-student` with public-safe evidence SHA-256
+`316631d593e51477d855ed146e2a5bea49eec236b0753655bdd4814a20a0cb99`.
+Seven of eight cases completed and one unsupported topic-derived subject failed
+closed while the full warm profile, broker/wave, PostgreSQL boundaries, and
+teardown held. No raw output or measurement is published, and the receipt is
+not reused.
 
 ## Slice E — knowledge and coordination agents
 

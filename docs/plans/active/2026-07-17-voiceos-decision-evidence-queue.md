@@ -898,9 +898,10 @@ unconfigured.
   profiles, and already-warm owner-fair admission. Qualified Scribe is the first
   authenticated consumer and merged through PR #164 as `ec3af506...`. PR #165
   merged the no-LLM Archivist core as `2a7ec819...`. Student's source-grounding
-  repair is complete-portable-test green on the unchanged full Qwen rapid
-  profile, but replacement private qualification remains open after
-  exact `476f7a9c...` returned terminal `deterministic-no-student`. Student product exposure and the five
+  topic-copy prompt repair is complete-portable-test green on the unchanged full
+  Qwen rapid profile, but replacement private
+  qualification remain open after exact `0970d74c...` returned terminal
+  `deterministic-no-student`. Student product exposure and the five
   remaining workflows (Curator, Auditor, Librarian, Analyst, and Coordinator)
   remain open.
 - Integrate the remaining provider-specific ASR and vLLM agent/LLM workflows

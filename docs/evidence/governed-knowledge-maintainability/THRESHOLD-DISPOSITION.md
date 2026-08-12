@@ -73,10 +73,10 @@ Each line contains up to two independent entries in the form
   466 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md ||   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md
   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md ||   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
- 1062 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md ||  1157 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md
- 1143 CURRENT-DOC          docs/CURRENT-STATUS.md ||   495 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
-  1008 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
-  355 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
+ 1065 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md ||  1166 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md
+ 1153 CURRENT-DOC          docs/CURRENT-STATUS.md ||   495 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
+ 1009 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
+  365 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md ||   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md
   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md ||  1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md
@@ -85,12 +85,12 @@ Each line contains up to two independent entries in the form
   352 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md ||  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md
   554 CURRENT-DOC          docs/specs/source-aware-diarization.md ||   586 CURRENT-DOC          docs/specs/testing-strategy.md
- 1230 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
+ 1233 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
   989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
   350 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs ||   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs
-  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   884 SERVER-RUNBOOK       server/README.md
-  426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py ||   506 SERVER-CONTRACT      server/src/yap_server/agents/student_model.py
+  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   895 SERVER-RUNBOOK       server/README.md
+  426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py ||   512 SERVER-CONTRACT      server/src/yap_server/agents/student_model.py
   680 SERVER-CONTRACT      server/src/yap_server/agents/student_service.py ||   430 SERVER-CONTRACT      server/src/yap_server/agents/student.py
   439 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_model.py ||   754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py
  1136 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction.py ||   623 AUTH                 server/src/yap_server/auth/identity_repository.py
@@ -132,7 +132,7 @@ Each line contains up to two independent entries in the form
   488 POOLS                server/src/yap_server/pools/nemotron_nemo_service.py ||   418 POOLS                server/src/yap_server/pools/nemotron_nemo_streaming.py
   378 POOLS                server/src/yap_server/pools/provider_worker_factory.py ||   513 POOLS                server/src/yap_server/pools/utterance_plan.py
   577 POOLS                server/src/yap_server/pools/vllm_transcription_client.py ||   380 SERVER-CONTRACT      server/tests/agents/test_student_postgres.py
-  833 SERVER-CONTRACT      server/tests/agents/test_student.py ||   562 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_model.py
+  841 SERVER-CONTRACT      server/tests/agents/test_student.py ||   562 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_model.py
   778 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_service.py ||   605 SERVER-CONTRACT      server/tests/agents/test_transcript_correction.py
   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py ||   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py
   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py ||   350 TEST-AUTH-CONTRACT   server/tests/contract/contract_http_values.py

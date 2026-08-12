@@ -374,6 +374,14 @@ class StudentTests(unittest.TestCase):
             "exactly one concise source subject copied byte-for-byte",
             payload["messages"][0]["content"],
         )
+        self.assertIn(
+            "Never copy topic text into sourceSubject unless those identical bytes",
+            payload["messages"][0]["content"],
+        )
+        self.assertIn(
+            "sourceSubject is an exact contiguous substring of supportQuote",
+            payload["messages"][0]["content"],
+        )
         schema = payload["response_format"]["json_schema"]["schema"]
         self.assertEqual(schema["properties"]["questions"]["maxItems"], 1)
         self.assertEqual(

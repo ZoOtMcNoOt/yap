@@ -766,9 +766,20 @@ quote. The server validates the index, binds the frozen evidence and complete
 citation identity, derives the support span, and alone renders the fixed
 learning-question template. The model cannot create citation identity, rewrite
 the selected subject, or write question wording. The focused set is green at
-34 total tests: 32 passed and two were declared database skips. The complete
-portable server suite ran 1,241 total tests: 1,207 passed and 34 were declared
-skips. A fresh exact-head private qualification is still required before merge.
+34 total tests: 32 passed and two were declared database skips. The current
+successor also passed the complete portable server suite at 1,241 total tests:
+1,207 passed and 34 were declared skips. Its prompt/test change is a protected
+input, so a fresh exact-head private qualification must run before merge.
+
+Exact head `0970d74c7961a63bd1b2366bc0ecef6b5fc55714` returned terminal
+`deterministic-no-student` evidence with public-safe SHA-256
+`316631d593e51477d855ed146e2a5bea49eec236b0753655bdd4814a20a0cb99`.
+Seven of eight cases completed and one failed closed. The warm full profile,
+broker/wave, PostgreSQL boundaries, and teardown held. A bounded diagnostic
+showed a topic-derived subject absent from the selected exact quote/evidence;
+the server rejected it. The prompt now explicitly forbids that promotion and
+requires an exact contiguous subject-inside-quote-inside-evidence chain. No raw
+response or measurement is published, and the receipt is not reused.
 
 Exact head `476f7a9c38287f8c6ba08cd9be4a70addabe3069` returned terminal
 `deterministic-no-student` evidence with public-safe SHA-256

@@ -12,10 +12,10 @@ private qualification gate with public-safe semantic evidence SHA-256
 Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged Scribe
 as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks and PR
 #165 merged the no-LLM Archivist ingestion core as `2a7ec819...`. The current
-Student evidence-index repair is complete-portable-test green on the unchanged
-full Qwen rapid profile; replacement private qualification, hosted merge, and
-product exposure remain open after exact
-candidate `476f7a9c...` returned terminal `deterministic-no-student`.
+Student topic-copy prompt repair is complete-portable-test green on the unchanged
+full Qwen rapid profile; replacement private qualification,
+hosted merge, and product exposure remain open after exact candidate
+`0970d74c...` returned terminal `deterministic-no-student`.
 Later Phase 10 roles and capacity/operations layers are not part of the merged
 baseline. Phase 7
 implements provider-neutral
@@ -1038,14 +1038,23 @@ synchronized eight-owner queue wave, PostgreSQL restart/cross-owner/audit
 checks, and exact teardown held. The evidence-index successor changes protected
 inputs, so that receipt is inadmissible and not reused.
 
+Exact successor `0970d74c...` also returned terminal
+`deterministic-no-student` with public-safe evidence SHA-256
+`316631d5...`: seven of eight cases completed, one failed closed, and the
+warm-profile, broker, queue-wave, database, and teardown evidence held. A
+bounded diagnostic found a topic-derived source subject absent from the
+selected quote/evidence; the server rejected it. The current prompt explicitly
+forbids that promotion and requires the exact contiguous subject/quote/evidence
+chain. The receipt is terminal and not reused.
+
 Exact candidate `452c8b76...` originally returned
 `student-learning-questions-qualified` with public-safe evidence SHA-256
 `3e1ddc61...`, but post-gate adversarial review proved that its caller-controlled
 focus could supply a target question and that an unrelated exact citation could
 authorize an unsupported premise. That receipt is terminal and inadmissible.
-The repaired focused set runs 34 total tests: 32 pass and two are declared
-database skips. Its complete portable suite ran 1,241 total tests: 1,207 passed
-and 34 were declared skips. The
+The current focused set runs 34 total tests: 32 pass and two are declared
+database skips. The current prompt/test successor also passed 1,241 portable
+tests (1,207 passed and 34 declared skips). The
 workload still preserves the full Qwen rapid profile (`0.40` GPU-memory
 utilization, four maximum sequences, 8,192 maximum batched tokens) and a
 512-token Student output cap; neither the workflow nor its gate launches,

@@ -1022,9 +1022,12 @@ cross-owner/cancellation tests with exact six-part teardown. Hosted-green head
 Exact candidate `452c8b76...` produced a nominally green private receipt, but
 adversarial review demonstrated unsupported-premise admission and invalidated
 that evidence. Exact `476f7a9c...` then returned terminal
-`deterministic-no-student`; the evidence-index repair changes protected inputs
-and is complete-portable-test green on the unchanged full Qwen rapid profile.
-Replacement private qualification, hosted merge, and an
+`deterministic-no-student`. Exact evidence-index successor `0970d74c...`
+also returned terminal `deterministic-no-student` after a model-selected
+subject was absent from its exact quote/evidence; the server rejected it. The
+current prompt/test repair changes protected inputs and is complete-portable-
+test green on the unchanged full Qwen rapid profile. Replacement private
+qualification, hosted merge, and an
 HTTP/native/UI surface remain open.
 
 ## Persistent-state owners

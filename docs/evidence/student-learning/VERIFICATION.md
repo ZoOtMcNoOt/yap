@@ -1,8 +1,9 @@
 # Student learning-question verification
 
-**Status:** The current evidence-index repair is complete-portable-test green.
-Its exact-head private qualification, hosted review, merge, HTTP/native/UI
-exposure, Curator integration, and the aggregate Phase 10 gate remain pending.
+**Status:** The current topic-copy prompt repair is complete-portable-test
+green. Its exact-head private qualification, hosted review, merge,
+HTTP/native/UI exposure, Curator integration, and the aggregate Phase 10 gate
+remain pending.
 
 ## Current candidate contract
 
@@ -18,6 +19,11 @@ exposure, Curator integration, and the aggregate Phase 10 gate remain pending.
   frozen evidence object itself, binds the complete citation identity, resolves
   the quote to one unique substring, and derives its span. The model never
   receives authority to create, copy, narrow, or rewrite citation identity.
+- The prompt explicitly forbids promoting topic text into `sourceSubject`
+  unless identical bytes occur in the selected quote, requires an exact
+  contiguous subject-inside-quote-inside-evidence chain, and forbids combining
+  or paraphrasing source phrases. The unchanged server validator remains the
+  executable authority.
 - The server alone renders `What should you remember about {sourceSubject}?`.
   It requires the exact subject at lexical boundaries in every support and
   rebinds every support to the frozen evidence object. The model cannot change
@@ -36,13 +42,29 @@ exposure, Curator integration, and the aggregate Phase 10 gate remain pending.
   local database skips. It includes multi-chunk cases whose required evidence
   appears at index zero and at a nonzero index, so always-first and always-last
   selection both fail qualification.
-- The complete portable server suite ran 1,241 total tests: 1,207 passed and 34
-  were declared skips. Server-wide Ruff and `git diff --check` passed.
+- The focused Student set remains green at 34 total tests: 32 passed and two
+  were declared local database skips. Changed-file Ruff and `git diff --check`
+  passed.
+- The current successor passed the complete portable server suite at 1,241
+  total tests: 1,207 passed and 34 were declared skips. Because the prompt and
+  its contract test are protected inputs changed from exact `0970d74c...`, this
+  rerun is the current public verification; the predecessor result is historical.
 - The exact current implementation head and checked input hashes will be frozen
   only after documentation reconciliation. A complete new private qualification
   must then run; no historical model result may authorize the successor.
 
 ## Terminal private evidence
+
+Exact head `0970d74c7961a63bd1b2366bc0ecef6b5fc55714` returned
+`deterministic-no-student` with public-safe semantic evidence SHA-256
+`316631d593e51477d855ed146e2a5bea49eec236b0753655bdd4814a20a0cb99`.
+Seven of eight cases completed and one failed closed. The unchanged full warm
+profile, provider generation, broker, synchronized eight-owner queue wave,
+PostgreSQL restart, cross-owner and audit boundaries, and exact teardown all
+held. A bounded follow-up diagnostic found valid structured selection of the
+server-owned evidence but a source subject absent from the selected quote and
+evidence; no raw response or measurement is published. The receipt is terminal
+and inadmissible for the prompt-repaired successor.
 
 Exact head `476f7a9c38287f8c6ba08cd9be4a70addabe3069` returned
 `deterministic-no-student` with public-safe semantic evidence SHA-256
